@@ -24,10 +24,10 @@
   },
   "posts": {
     "side-project-design": {
-      "title": "AI와 사이드 프로젝트를 만들며 바꾼 것들",
+      "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
       "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
-      "description": "사진 커뮤니티와 Game Mate, 블로그를 만들며 제품 범위와 UI를 바꿨어요. AI 결과 검토, 캐시와 S3 업로드, Sentry와 Amplitude MCP 수신 검증까지 정리했어요.",
-      "keywords": ["사이드 프로젝트", "AI workflow", "캐시", "S3", "Sentry", "MCP", "모노레포"]
+      "description": "사진 대회로 시작했다가 상시 사진 커뮤니티를 만들었어요. Game Mate의 첫 게임을 고르고, 직접 써보며 홈과 가입·프로필 화면을 고친 이야기예요.",
+      "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템"]
     },
     "puppeteer-event-lifecycle": {
       "title": "Puppeteer에서 요청과 응답을 함께 기다릴 때 놓쳤던 것",
@@ -200,6 +200,12 @@
       "slug": "저는-코드를-읽어요",
       "description": "블랙박스 테스트만으로 작업을 마쳤다가 핫픽스가 많았던 스프린트가 있었어요. 지금은 코드 내부를 읽는 화이트박스 테스트를 함께 하고, 그러려고 코드를 읽기 쉽게 관리해요.",
       "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
+    },
+    "side-project-infrastructure": {
+      "title": "일단 EC2 한 대에 올려보기로 했어요",
+      "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+      "description": "비용을 보다가 RDS를 빼고 EC2 small에 PostgreSQL을 같이 넣기로 했어요. 서버리스와 R2도 알아보고 S3 권한 때문에 CI가 실패하던 부분도 고쳤어요.",
+      "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"]
     }
   }
 }

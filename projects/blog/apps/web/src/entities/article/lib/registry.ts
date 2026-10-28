@@ -56,6 +56,10 @@ const loaders = {
   'sentry-observability/en': () => import('../../../../content/posts/sentry-observability/en.mdx'),
   'side-project-design/ko': () => import('../../../../content/posts/side-project-design/ko.mdx'),
   'side-project-design/en': () => import('../../../../content/posts/side-project-design/en.mdx'),
+  'side-project-infrastructure/ko': () =>
+    import('../../../../content/posts/side-project-infrastructure/ko.mdx'),
+  'side-project-infrastructure/en': () =>
+    import('../../../../content/posts/side-project-infrastructure/en.mdx'),
   'sitemap-api-boundaries/ko': () => import('../../../../content/posts/sitemap-api-boundaries/ko.mdx'),
   'sitemap-api-boundaries/en': () => import('../../../../content/posts/sitemap-api-boundaries/en.mdx'),
   'testing-standards/ko': () => import('../../../../content/posts/testing-standards/ko.mdx'),

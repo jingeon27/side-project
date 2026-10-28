@@ -1,6 +1,7 @@
 {
   "category": "engineering",
-  "tags": ["side-project", "product", "architecture", "nextjs", "ai-workflow", "observability", "testing"],
+  "tags": ["side-project", "product", "design", "ux"],
   "publishedAt": "2026-10-17",
-  "updatedAt": "2026-10-26T20:03:00+09:00"
+  "updatedAt": "2026-10-28",
+  "coverImage": "/images/covers/side-project-design.png"
 }

@@ -1,0 +1,16 @@
+{
+  "createdAt": "2026-10-28",
+  "tool": "built-in image_gen",
+  "images": [
+    {
+      "articleId": "side-project-design",
+      "path": "projects/blog/apps/web/public/images/covers/side-project-design.png",
+      "prompt": "Use case: illustration-story. Asset type: a 16:9 landscape cover illustration for a bilingual independent software developer's blog article about revising a photo community and a game-feedback service after trying the actual screens. Create a restrained editorial illustration showing a small set of mobile application screen cards being rearranged: a photo feed with image tiles and a separate game conversation with simple speech bubbles, alongside a lightly sketched earlier wireframe. Convey hands-on product planning and interface revision without displaying an actual branded UI. Use flat screen-print-style shapes, precise restrained linework, slight paper grain, a pale off-white background with dark slate, muted blue and teal accents. A clear simple composition that remains readable as a small thumbnail, comfortable margins, no busy background. No text, letters, numbers, logos, brand marks, watermarks, people, robots, glossy 3D, neon, gradients or AI sparkles. All background opaque. Wide 16:9 image."
+    },
+    {
+      "articleId": "side-project-infrastructure",
+      "path": "projects/blog/apps/web/public/images/covers/side-project-infrastructure.png",
+      "prompt": "Use case: illustration-story. Asset type: a 16:9 landscape cover illustration for a bilingual independent software developer's blog article titled 'Starting with one EC2 instance'. Create a quiet, thoughtfully composed editorial illustration of one modest compact server hosting two small applications, with a separate database storage drive and an archive of backup files nearby. Show the deliberate small scale of a side project through a single server and two simple application panels; no huge cloud infrastructure. Use flat screen-print-style shapes, precise restrained linework, slight paper grain, a pale off-white background with dark slate, muted blue and teal accents. The subjects should remain readable as a small thumbnail and leave comfortable margins. This is an illustrative cover, not a technical architecture diagram. No text, letters, numbers, logos, brand marks, watermarks, people, glossy 3D, neon, gradients, AI sparkles, decorative circuitry or unrelated objects. All background opaque. Wide 16:9 image."
+    }
+  ]
+}

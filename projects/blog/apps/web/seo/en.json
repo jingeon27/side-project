@@ -24,10 +24,10 @@
   },
   "posts": {
     "side-project-design": {
-      "title": "What I Changed While Building Side Projects with AI",
+      "title": "How my side project plans and screens changed",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "Revising the scope and UI of a photo community, Game Mate, and a blog: reviewing AI work, designing caching and S3 uploads, and verifying Sentry and Amplitude data through MCP.",
-      "keywords": ["side projects", "AI workflow", "caching", "S3", "Sentry", "MCP", "monorepo"]
+      "description": "A private photo contest became an ongoing community. I chose a first game for Game Mate and changed the home, signup, and profile screens as I tried them.",
+      "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"]
     },
     "puppeteer-event-lifecycle": {
       "title": "Waiting for Puppeteer requests and responses without leaking listeners",
@@ -199,6 +199,21 @@
       "slug": "reading-ai-code",
       "description": "Black-box checks alone led to a sprint full of hotfixes. I now pair them with white-box testing that starts from reading the code, and keep the code manageable enough to read.",
       "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
+    },
+    "side-project-infrastructure": {
+      "title": "Starting with one EC2 instance",
+      "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
+      "description": "I dropped RDS to reduce initial cost and chose a small EC2 instance with PostgreSQL. Along the way I explored serverless and R2 and fixed S3 permissions that broke CI.",
+      "keywords": [
+        "side projects",
+        "AWS",
+        "EC2",
+        "PostgreSQL",
+        "S3",
+        "Terraform",
+        "infrastructure",
+        "backups"
+      ]
     }
   }
 }

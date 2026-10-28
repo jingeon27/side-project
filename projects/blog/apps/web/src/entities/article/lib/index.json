@@ -1,93 +1,172 @@
 [
   {
     "category": "engineering",
-    "tags": ["side-project", "product", "architecture", "nextjs", "ai-workflow", "observability", "testing"],
+    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "publishedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-infrastructure.png",
+    "title": "일단 EC2 한 대에 올려보기로 했어요",
+    "description": "비용을 보다가 RDS를 빼고 EC2 small에 PostgreSQL을 같이 넣기로 했어요. 서버리스와 R2도 알아보고 S3 권한 때문에 CI가 실패하던 부분도 고쳤어요.",
+    "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+    "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"],
+    "id": "side-project-infrastructure",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "서버리스로-옮길까도-생각했어요",
+        "title": "서버리스로 옮길까도 생각했어요",
+        "level": 2
+      },
+      {
+        "id": "small-한-대에-db까지-넣으면-괜찮을까",
+        "title": "small 한 대에 DB까지 넣으면 괜찮을까",
+        "level": 2
+      },
+      {
+        "id": "db를-직접-돌리기로-했으니-백업도-필요했어요",
+        "title": "DB를 직접 돌리기로 했으니 백업도 필요했어요",
+        "level": 2
+      },
+      {
+        "id": "s3-권한을-넣었는데도-ci가-실패했어요",
+        "title": "S3 권한을 넣었는데도 CI가 실패했어요",
+        "level": 2
+      },
+      {
+        "id": "r2도-알아봤어요",
+        "title": "R2도 알아봤어요",
+        "level": 2
+      },
+      {
+        "id": "api-도메인을-추가하면서-쿠키까지-바꾸지는-않았어요",
+        "title": "API 도메인을 추가하면서 쿠키까지 바꾸지는 않았어요",
+        "level": 2
+      },
+      {
+        "id": "terraform-권한과-ci-권한도-헷갈렸어요",
+        "title": "Terraform 권한과 CI 권한도 헷갈렸어요",
+        "level": 2
+      },
+      {
+        "id": "실제-서버에서-봐야-할-것들",
+        "title": "실제 서버에서 봐야 할 것들",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+      "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "publishedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-infrastructure.png",
+    "title": "Starting with one EC2 instance",
+    "description": "I dropped RDS to reduce initial cost and chose a small EC2 instance with PostgreSQL. Along the way I explored serverless and R2 and fixed S3 permissions that broke CI.",
+    "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
+    "keywords": ["side projects", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "infrastructure", "backups"],
+    "id": "side-project-infrastructure",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-considered-moving-to-serverless",
+        "title": "I considered moving to serverless",
+        "level": 2
+      },
+      {
+        "id": "would-one-small-instance-be-enough-for-the-database-too",
+        "title": "Would one small instance be enough for the database too?",
+        "level": 2
+      },
+      {
+        "id": "running-the-database-meant-preparing-backups",
+        "title": "Running the database meant preparing backups",
+        "level": 2
+      },
+      {
+        "id": "i-added-s3-permissions-but-ci-still-failed",
+        "title": "I added S3 permissions, but CI still failed",
+        "level": 2
+      },
+      {
+        "id": "i-looked-into-r2-too",
+        "title": "I looked into R2 too",
+        "level": 2
+      },
+      {
+        "id": "adding-api-domains-did-not-mean-changing-the-cookies",
+        "title": "Adding API domains did not mean changing the cookies",
+        "level": 2
+      },
+      {
+        "id": "i-also-got-mixed-up-about-terraform-and-ci-permissions",
+        "title": "I also got mixed up about Terraform and CI permissions",
+        "level": 2
+      },
+      {
+        "id": "what-i-still-need-to-check-on-the-server",
+        "title": "What I still need to check on the server",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+      "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-26T20:03:00+09:00",
-    "title": "AI와 사이드 프로젝트를 만들며 바꾼 것들",
-    "description": "사진 커뮤니티와 Game Mate, 블로그를 만들며 제품 범위와 UI를 바꿨어요. AI 결과 검토, 캐시와 S3 업로드, Sentry와 Amplitude MCP 수신 검증까지 정리했어요.",
+    "updatedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-design.png",
+    "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
+    "description": "사진 대회로 시작했다가 상시 사진 커뮤니티를 만들었어요. Game Mate의 첫 게임을 고르고, 직접 써보며 홈과 가입·프로필 화면을 고친 이야기예요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
-    "keywords": ["사이드 프로젝트", "AI workflow", "캐시", "S3", "Sentry", "MCP", "모노레포"],
+    "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템"],
     "id": "side-project-design",
     "locale": "ko",
     "toc": [
       {
-        "id": "에이전트가-준-완성본을-검토해요",
-        "title": "에이전트가 준 완성본을 검토해요",
+        "id": "사진을-보러-왔는데-그룹-목록부터-나왔어요",
+        "title": "사진을 보러 왔는데 그룹 목록부터 나왔어요",
         "level": 2
       },
       {
-        "id": "처음에는-비공개-사진-대회였어요",
-        "title": "처음에는 비공개 사진 대회였어요",
+        "id": "game-mate는-클래시로얄부터",
+        "title": "Game Mate는 클래시로얄부터",
         "level": 2
       },
       {
-        "id": "홈-화면에서-바로-사진을-볼-수-있게-했어요",
-        "title": "홈 화면에서 바로 사진을 볼 수 있게 했어요",
+        "id": "질문을-올리면-누가-답해줄까",
+        "title": "질문을 올리면 누가 답해줄까",
         "level": 2
       },
       {
-        "id": "가입과-프로필-화면도-다시-다듬었어요",
-        "title": "가입과 프로필 화면도 다시 다듬었어요",
+        "id": "게임-프로필을-불러왔다고-본인-계정은-아니었어요",
+        "title": "게임 프로필을 불러왔다고 본인 계정은 아니었어요",
         "level": 2
       },
       {
-        "id": "여러-프로젝트에서-쓸-코딩-규칙을-정리했어요",
-        "title": "여러 프로젝트에서 쓸 코딩 규칙을 정리했어요",
+        "id": "가입할-때-안-해도-되는-것들",
+        "title": "가입할 때 안 해도 되는 것들",
         "level": 2
       },
       {
-        "id": "develop과-기능-브랜치를-구분했어요",
-        "title": "develop과 기능 브랜치를 구분했어요",
+        "id": "게시글만-번역하면-답변은",
+        "title": "게시글만 번역하면 답변은?",
         "level": 2
       },
       {
-        "id": "첫-게임은-클래시로얄로-정했어요",
-        "title": "첫 게임은 클래시로얄로 정했어요",
-        "level": 2
-      },
-      {
-        "id": "피드백을-요청할-사람과-답변할-사람이-모두-필요했어요",
-        "title": "피드백을 요청할 사람과 답변할 사람이 모두 필요했어요",
-        "level": 2
-      },
-      {
-        "id": "rest로-캐시-모델을-직접-설계해-보고-싶었어요",
-        "title": "REST로 캐시 모델을 직접 설계해 보고 싶었어요",
-        "level": 2
-      },
-      {
-        "id": "파일은-api-서버를-거치지-않고-올리게-했어요",
-        "title": "파일은 API 서버를 거치지 않고 올리게 했어요",
-        "level": 2
-      },
-      {
-        "id": "수집-설정-뒤에-실제로-들어온-데이터도-확인했어요",
-        "title": "수집 설정 뒤에 실제로 들어온 데이터도 확인했어요",
-        "level": 2
-      },
-      {
-        "id": "게임-프로필-조회와-계정-소유-확인을-나눴어요",
-        "title": "게임 프로필 조회와 계정 소유 확인을 나눴어요",
-        "level": 2
-      },
-      {
-        "id": "다국어-메뉴와-서로-대화할-수-있는-서비스는-차이가-있었어요",
-        "title": "다국어 메뉴와 서로 대화할 수 있는 서비스는 차이가 있었어요",
-        "level": 2
-      },
-      {
-        "id": "블로그는-db-없이-운영하기로-했어요",
-        "title": "블로그는 DB 없이 운영하기로 했어요",
-        "level": 2
-      },
-      {
-        "id": "같은-저장소에서-서로의-데이터를-건드리지-않게-했어요",
-        "title": "같은 저장소에서 서로의 데이터를 건드리지 않게 했어요",
+        "id": "블로그-소개에-이력서까지-넣을-필요는-없었어요",
+        "title": "블로그 소개에 이력서까지 넣을 필요는 없었어요",
         "level": 2
       }
     ],
-    "readingMinutes": 16,
+    "readingMinutes": 6,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -95,93 +174,54 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "product", "architecture", "nextjs", "ai-workflow", "observability", "testing"],
+    "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-26T20:03:00+09:00",
-    "title": "What I Changed While Building Side Projects with AI",
-    "description": "Revising the scope and UI of a photo community, Game Mate, and a blog: reviewing AI work, designing caching and S3 uploads, and verifying Sentry and Amplitude data through MCP.",
+    "updatedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-design.png",
+    "title": "How my side project plans and screens changed",
+    "description": "A private photo contest became an ongoing community. I chose a first game for Game Mate and changed the home, signup, and profile screens as I tried them.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
-    "keywords": ["side projects", "AI workflow", "caching", "S3", "Sentry", "MCP", "monorepo"],
+    "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"],
     "id": "side-project-design",
     "locale": "en",
     "toc": [
       {
-        "id": "reviewing-the-agents-completed-work",
-        "title": "Reviewing the agent's completed work",
+        "id": "i-came-to-see-photos-and-got-a-group-list",
+        "title": "I came to see photos and got a group list",
         "level": 2
       },
       {
-        "id": "the-first-service-was-a-private-photo-contest",
-        "title": "The first service was a private photo contest",
+        "id": "game-mate-starts-with-clash-royale",
+        "title": "Game Mate starts with Clash Royale",
         "level": 2
       },
       {
-        "id": "showing-photos-as-soon-as-the-home-screen-opens",
-        "title": "Showing photos as soon as the home screen opens",
+        "id": "who-would-answer-the-first-question",
+        "title": "Who would answer the first question?",
         "level": 2
       },
       {
-        "id": "revising-signup-and-profile-editing",
-        "title": "Revising signup and profile editing",
+        "id": "looking-up-a-game-profile-did-not-prove-ownership",
+        "title": "Looking up a game profile did not prove ownership",
         "level": 2
       },
       {
-        "id": "defining-coding-rules-to-use-across-projects",
-        "title": "Defining coding rules to use across projects",
+        "id": "things-people-do-not-have-to-do-during-signup",
+        "title": "Things people do not have to do during signup",
         "level": 2
       },
       {
-        "id": "i-separated-develop-from-feature-branches",
-        "title": "I separated develop from feature branches",
+        "id": "if-the-post-is-translated-what-about-the-reply",
+        "title": "If the post is translated, what about the reply?",
         "level": 2
       },
       {
-        "id": "i-chose-clash-royale-as-the-first-game",
-        "title": "I chose Clash Royale as the first game",
-        "level": 2
-      },
-      {
-        "id": "i-needed-both-people-asking-for-feedback-and-people-answering",
-        "title": "I needed both people asking for feedback and people answering",
-        "level": 2
-      },
-      {
-        "id": "i-chose-rest-to-work-through-the-cache-model",
-        "title": "I chose REST to work through the cache model",
-        "level": 2
-      },
-      {
-        "id": "uploading-files-without-passing-through-the-api-server",
-        "title": "Uploading files without passing through the API server",
-        "level": 2
-      },
-      {
-        "id": "checking-what-the-collection-services-actually-received",
-        "title": "Checking what the collection services actually received",
-        "level": 2
-      },
-      {
-        "id": "i-separated-profile-lookup-from-account-ownership",
-        "title": "I separated profile lookup from account ownership",
-        "level": 2
-      },
-      {
-        "id": "translated-navigation-does-not-complete-a-conversation",
-        "title": "Translated navigation does not complete a conversation",
-        "level": 2
-      },
-      {
-        "id": "i-chose-to-run-the-blog-without-a-database",
-        "title": "I chose to run the blog without a database",
-        "level": 2
-      },
-      {
-        "id": "i-isolated-the-projects-within-the-repository",
-        "title": "I isolated the projects within the repository",
+        "id": "the-blogs-about-page-did-not-need-my-resume-too",
+        "title": "The blog's about page did not need my resume too",
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 6,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

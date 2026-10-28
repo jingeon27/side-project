@@ -7,6 +7,7 @@
 - Generate and validate the static registry before building. Keep generated files deterministic; no runtime file-path imports.
 - Migration includes only public Tistory posts matched to local blog entries; unpublished resume drafts stay private. The initial import used public text. Subsequent user-requested editorial changes live in MDX; preserve code examples, original image archives and source provenance. Record image replacements in `apps/web/content/image-replacements.json`. Do not rerun the importer over edited content without reviewing the diff. See `docs/migration.md`.
 - UI translations are in messages; article prose is in MDX; SEO translations are in seo JSON.
+- Every blog article needs an image made for its subject. When writing a new article or revising one without a dedicated cover, create the image, save it under `apps/web/public/images`, set `coverImage`, and include it in the article body with meaningful localized alt text. Use the same image in Korean and English, check the thumbnail and body rendering, and preserve existing screenshots and image archives. Make illustrations clearly distinguishable from actual product screenshots.
 - Tests and runner configs belong to `apps/web`; use its isolated port 3100 (E2E 3101).
 - Run content validation, typecheck, lint, unit/component tests, production build and E2E for release changes. Record actual results; external account/domain setup is not completed by code alone.
 - Never commit credentials. DSNs, analytics, and source-map upload remain optional and isolated.

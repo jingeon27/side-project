@@ -1,106 +1,44 @@
 <Summary>
 
-I am building a photo community, Game Mate, and a blog with AI. This is how I revised their scope and screens, chose caching and upload designs, and checked the data the services collected.
+The first idea was a service where friends could share photos and vote on them. Trying it led me to change the photo feed and signup screens. I also started building Game Mate and a personal blog.
 
 </Summary>
 
-Delegating implementation to AI made me want to try work beyond frontend development. I began exploring several ideas while reviewing and implementing the backend, database, and design work each service needed.
+![An illustration of revising wireframes, a photo feed, and a game conversation screen](/images/covers/side-project-design.png)
 
-I began exploring ideas that interested me and decided to plan and work toward launching several services together. That led to [a photo community](https://github.com/jingeon27/side-project/tree/82199271/projects/photo-contest), [Game Mate](https://github.com/jingeon27/side-project/tree/82199271/projects/game-feedback), and [my personal blog](https://github.com/jingeon27/side-project/tree/develop/projects/blog).
+*An illustration of revising the screens.*
 
-I wanted to reduce the work of setting up a development environment each time I started another project. I organized the services separately in the [side-project repository](https://github.com/jingeon27/side-project) and first shared TypeScript configuration. Coding rules and a design system followed as I worked out what to share and what belonged within each service.
+I wanted to turn ideas I cared about into services. I am building a photo community, Game Mate, and a personal blog. I ask AI to implement things, try the resulting screens myself, and send back changes.
 
-![Game Mate feed and signup alongside the photo community group explorer](/images/posts/side-project-design/01-service-screens.png)
+The first project was `photo-contest`: invite friends to a group, submit photos, then vote. It had separate submission and voting periods, with rules for ties and contests without votes.
 
-*Screens from development, populated with test data.*
+![Game Mate feed and signup alongside the photo community group discovery screen](/images/posts/side-project-design/01-service-screens.png)
 
-## Reviewing the agent's completed work
+*Development screens with test data.*
 
-I delegate implementation and test writing to coding agents. I decide what to build, review the plan, then read the completed code and tests. If the result falls short, I return it with changes to make. For large features too, I review submitted work rather than edit the implementation while the agent is still building it.
+## I came to see photos and got a group list
 
-Review the goal and plan → Write tests → Agent implementation and agent review → Changed tests, lint, and typecheck → My diff review and screen checks → Full CI
+The first home screen was mostly about choosing a group. I wanted the latest photos from my groups instead. I moved the group list to My Page and made photos the first thing on the home screen.
 
-I check whether the specifications cover the behavior each component needs. In the code, I look for duplicated state and implementations that diverge from our conventions. I also use the screens. Repeated review points go into skills, and criteria that can be checked statically become lint rules.
+I also wanted a place that did not close when a contest ended. I added ongoing posts without a submission period, including videos and edited images alongside photos. Administrators could remove posts and see the month's popular posts too.
 
-For unfamiliar technology, I ask about advantages, costs, and alternatives. If I do not understand an explanation, I ask how it works and read the code and documentation. I used that process to decide when to invalidate server caches, how files should be uploaded, and how much infrastructure to manage.
+Running the screens brought up design changes. I changed layouts that covered photos and removed a story-style border when there was no story feature. I checked spacing and layout on desktop separately.
 
-## The first service was a private photo contest
+The entry screen brings login, signup, and “Start anonymously” together. Anonymous sessions can browse public groups. Private groups require login and membership approval.
 
-I started building `photo-contest` around groups where friends could join by invitation, upload photos, and vote. Submission and voting had separate periods, and results handled ties and contests without votes.
+## Game Mate starts with Clash Royale
 
-I wanted each app to manage its tests within the shared repository. I put Vitest and Playwright configurations inside the apps so each could run the tests it needed independently.
+I wanted to bring people to a service and try operating it. The idea was for someone stuck in a game to post their situation and receive advice from other players. I chose Clash Royale because I thought I could reach the first users through its communities.
 
-The root owned Yarn workspaces, common configuration, and delegation to project commands. Services belonged under `projects/<name>`, and shared configuration went into `packages`. The first shared package held TypeScript configuration.
+I considered Brawl Stars and League of Legends too, but decided against supporting several games at the start. I made five boards under Clash Royale: feedback, friend-add sales, friendly matches, coaching, and general discussion. More games could use those boards later. I left account trading out because of the risk.
 
-```text
-projects/
-  photo-contest/
-    apps/
-      api/
-      web/
-packages/
-  typescript-config/
-```
+Friend-add sales have a price field. Coaching posts can list hourly, monthly, or target-rating fees, and either students or coaches can post. People can read the terms and talk through chat. I decided not to add payments inside the service.
 
-From there, I added the mobile app and other services. API, web, and mobile apps each have their own test configurations and commands.
+I kept the photo service and Game Mate's accounts and data separate. Both involve other people's opinions, but that did not give people viewing photos and people asking for game advice a reason to share an account.
 
-## Showing photos as soon as the home screen opens
+## Who would answer the first question?
 
-The first home screen was closer to a group selector. I wanted to see recent photos from every group I belonged to as soon as I opened it. The group list could live on my profile page.
-
-I then decided that a place to keep posting suited the service better than events that closed after a deadline. I added scope for videos and composite images, administrator removal, and popular posts for the month. That led to a permanent post model alongside the existing contest model.
-
-I revised the design from the running screens too. I changed layouts that obscured photos and removed borders that suggested a story feature we did not have. I checked desktop spacing and layout separately. References from other services still needed to fit the actual features and how people would view photos.
-
-I brought login, signup, and an option to start anonymously onto the photo service's entry screen. Anonymous sessions can browse public groups; private groups require login and membership approval. I also distinguished having no session from entering the service with an anonymous session.
-
-## Revising signup and profile editing
-
-Connecting a game profile is optional during Game Mate signup. People who want to connect it can look up their Player Tag. Others can finish with a nickname and the required agreements, then connect a game account later.
-
-As the form grew longer, I made the body scroll while keeping the completion button at the bottom. I checked that the inputs and button did not overlap in short viewports.
-
-I did not like editing the profile through an expandable section. I asked for an Edit Profile button that opens a Bottom Sheet, with the nickname and bio in one place. Web addresses in the bio also became clickable on the public profile. The change included a database field, the API contract, and the generated SDK as well as the screen.
-
-![Photo community group posts alongside the Game Mate profile editing sheet](/images/posts/side-project-design/09-product-interactions.png)
-
-*Viewing photos in a group and editing a profile. The displayed content is test data.*
-
-## Defining coding rules to use across projects
-
-As features grew, I organized the implementation conventions. Uploads used mutations to manage request state and failure handling together. Event handlers used only once stayed where they were used, while UI with a separate context, such as photo and video selection, became separate components.
-
-I moved [custom ESLint rules](https://github.com/jingeon27/side-project/tree/develop/packages/config/eslint) into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
-
-When game feedback joined the repository, I also worked on [a design system](https://github.com/jingeon27/side-project/tree/82199271/packages/design-system) shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
-
-## I separated develop from feature branches
-
-When starting game feedback, I created [develop](https://github.com/jingeon27/side-project/tree/develop) from `main` and kept `feat/game-feedback` as a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
-
-I worked on the game service and blog while continuing to revise the photo service. I implemented and checked changes on feature branches, then opened PRs targeting `develop`. The photo feed, login, shared lint work, and blog migration were integrated through that branch.
-
-I used different worktrees to work on the blog and game service in separate sessions. Each working directory could keep its own feature branch while I worked.
-
-## I chose Clash Royale as the first game
-
-I wanted to try a B2C or C2C service. I wanted experience bringing people from communities I could reach and finding out whether they would keep using it.
-
-The game feedback idea was straightforward: someone stuck in a game describes their situation, and another player offers advice. I chose Clash Royale first because I thought I could reach its initial users more readily. Brawl Stars and League of Legends remained possible additions, but I decided to start with one game.
-
-I treated photo feedback and game feedback as separate services. Both involve asking for opinions, but people use them for different reasons and need different context. Building them under the same brand did not give me a reason to combine their accounts or data.
-
-I also wanted friend-add sales, friendly-match recruitment, and chat in the game service. Boards belong under a game such as Clash Royale. I later added coaching and general discussion, making five common categories to reuse across games. I dropped account trading because of the risk involved.
-
-Friend-add sales needed a price field. Coaching needed hourly, monthly, and target-rating pricing, and either students or coaches could post a request. The scope covers displaying terms and connecting people through chat. Payment processing stayed outside the initial scope.
-
-## I needed both people asking for feedback and people answering
-
-Game feedback needed both people asking questions and people willing to answer them. Alongside authentication, game profile integration, multiple languages, and caching, I needed to consider who would answer the first question.
-
-If someone posts a question and receives no reply, they have less reason to return. The flow needed to continue through receiving an answer and coming back to read it.
-
-I brought the following flow to the front of the plan.
+I was adding game profiles and multiple languages, but the first question still needed someone to answer it. A question left unanswered gives its author little reason to come back.
 
 ```text
 Someone posts a question
@@ -109,109 +47,48 @@ Someone posts a question
   → The requester reads it and marks whether it helped
 ```
 
-Reply notifications and the `Helpful` action became important here. I had considered how to store questions and answers, but the plan did not complete the path back to the requester. I also needed a way to see whether the answer had been useful.
+I had initially thought as far as saving questions and replies. I also needed to tell the requester that a reply had arrived and get them back to read it. That is why I added reply notifications and a `Helpful` action.
 
-The initial metric became the number of requests with at least one answer marked helpful. Several helpful answers on the same request still count as one request. I also want to track time to the first reply and the proportion of requests answered within 24 hours.
+First, I want to see how many requests receive at least one reply marked helpful. Several helpful replies on one request still count as one request. I also want to look at time to the first reply and the proportion answered within 24 hours.
 
-I plan to find five to ten potential responders and manually connect questions with answers in existing communities first. I have not started recruiting them yet.
+I plan to find five to ten people willing to answer and manually connect them with questions in existing communities. I have not started recruiting yet.
 
-## I chose REST to work through the cache model
+## Looking up a game profile did not prove ownership
 
-The photo service used GraphQL and Apollo Client. For game feedback, I chose REST and TanStack Query. I wanted to define cache boundaries for lists and detail pages, then decide which queries to refresh after a change. Organizing those relationships through REST felt familiar and suited the work I wanted to do in this project.
+Connecting a game account starts with entering a Player Tag and loading the profile. But someone can enter another player's tag. A successful lookup should not produce an ownership verification label.
 
-I selected TanStack Query for browser server state. The feed uses cursor-based infinite scrolling, and creating a post or reply refreshes the relevant queries. For the server, I chose NestJS with Express.
+I decided connected profiles should start with ownership unverified. I also treated administrator-managed user verification separately from ownership of a game account. I did not want the screen to call something verified when we had not checked it.
 
-I initially left Next.js server caching for later. Refreshing the browser cache could still return older server data, making an edit appear to revert. Public posts now use a server cache, and NestJS calls a Next.js Route Handler after a change to expire the relevant tags. User-specific data stays separate from that public cache.
+The early plan included saving a snapshot of the deck and game information with each post. During implementation, I moved game profiles to the user account and removed deck attachments from the writing screen. Profile verification requests now start a one-to-one chat with an administrator.
 
-This needs more coordination than time-based expiration. The data change and the tags to invalidate are stored in one transaction, then delivered to Next.js after commit. Failed delivery leaves a pending record to retry.
+## Things people do not have to do during signup
 
-Returning a write failure just because invalidation failed could make someone submit the same post again. I return the successful write and retry only the invalidation. I also compare revisions so an older request that finishes late cannot delete a newer pending change for the same tag.
+Connecting a game profile is optional at signup. People who want to connect immediately can look up their tag. Others can join with a nickname and the required agreements, then connect later.
 
-Tests cover restarting after failed delivery and overlapping changes to the same tag. The implementation is more involved, but it handles both prompt invalidation and recovery after delivery failures. The [invalidation implementation and tests](https://github.com/jingeon27/side-project/tree/82199271/projects/game-feedback/apps/api/src/cache-invalidation) show that flow.
+As the form grew, I made the body scroll while keeping the completion button at the bottom. I checked short viewports to make sure the inputs and button did not overlap.
 
-## Uploading files without passing through the API server
+I also disliked editing a profile through an expandable section. I changed it to an Edit Profile button that opens a Bottom Sheet, with the nickname and bio in one place. Web addresses in the bio became clickable on the profile too.
 
-I first limited file processing on the server to three concurrent jobs and twelve waiting jobs. I later moved every Game Mate upload, including profile photos, to direct S3 uploads. I wanted fewer paths that required the API server to receive an entire file.
+![Photo community group posts and the Game Mate profile editing screen](/images/posts/side-project-design/09-product-interactions.png)
 
-The browser uploads to a signed destination, then asks the API to complete the upload. Game Mate checks the size and type with HEAD and reads the first 4 KB. It copies the file to a separate final object only if the ETag still matches the inspected file.
+*Group posts and profile editing, also checked with test data.*
 
-The photo service keeps originals, so I removed server-side transformation. Completion checks only size and type with HEAD. That has a different cost and validation scope from inspecting content and copying objects in Game Mate. Sharing a repository did not require identical policies.
+Buttons, inputs, and dialogs come from a shared [design system](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system). The photo service needed room for the photos. Game Mate needed the game and the author's situation to be easy to read. I still adjusted layout and spacing separately for each screen.
 
-I maintain [Game Mate file completion](https://github.com/jingeon27/side-project/blob/82199271/projects/game-feedback/apps/api/src/media-storage/media-storage.service.ts) separately from [photo service uploads](https://github.com/jingeon27/side-project/blob/82199271/projects/photo-contest/apps/api/src/media-upload/media-upload.service.ts).
+## If the post is translated, what about the reply?
 
-Repeatable tests use a local S3 substitute. For Game Mate, I also checked uploads and reads against actual AWS S3. HTTP and API checks covered post, profile, and chat files, including completion, matching original bytes, and Range reads.
+I started Game Mate with Korean, English, and Japanese in mind. At first, translating menus and posts seemed enough.
 
-## Checking what the collection services actually received
+But a Japanese-speaking player could read a translated Korean question and answer in Japanese. The person who asked might then be unable to read the reply. Replies needed translation too.
 
-I use Sentry for error monitoring and logging. Amplitude collects actions such as page visits, signup, posting, and chat. Both are connected through MCP so agents can inspect collected data alongside the code.
+Language routes are in place, but translation features and running the service for each language still need work. The mobile app uses the web screens through a WebView. I want to refine asking and reading replies on the web first, then deal with app distribution and the stores.
 
-After connecting them, I sent verification errors and page views to the actual collection services. I retrieved errors by eventId in Sentry and checked page-view aggregation in the development Amplitude project. This also exposed duplicate development-mode page views and search terms attached through automatic URL collection in the photo service, which I corrected.
+## The blog's about page did not need my resume too
 
-I added Web Vitals to both web apps as well. Sentry BrowserTracing collects LCP, CLS, INP, FCP, and TTFB. Errors and performance spans have separate delivery paths, so they use separate filters. IDs and search terms are removed from screen paths while metric values are retained.
+I started the blog because maintaining the same articles in a repository and on Tistory was cumbersome. I wanted to edit and publish from an editor I already used.
 
-![Errors, Web Vitals, and user actions collected separately and queried again through MCP](/images/posts/side-project-design/08-monitoring-mcp.png)
+I considered putting my resume and project introductions on the about page. That felt like too much to put in a place for reading articles, so I kept contact information. Korean and English editions only appear where an actual translation exists.
 
-INP needs interaction, and some metrics may be finalized when a page is hidden or left. I tested delivery of all five metrics by clicking in Chromium and then hiding or leaving the page. I also sent verification interactions to actual Sentry and queried the resulting LCP, CLS, and INP spans by trace ID through MCP.
+I am still trying the screens and revising them. For Game Mate, I need to find people who will ask and people who will answer. I want to see whether someone receives a reply and comes back to read it.
 
-The [Game Mate monitoring guide](https://github.com/jingeon27/side-project/blob/82199271/projects/game-feedback/docs/observability.md) and [photo service monitoring guide](https://github.com/jingeon27/side-project/blob/82199271/projects/photo-contest/docs/observability.md) record the commands and receipt checks. Ordinary tests disable real collection; external receipt checks run separately.
-
-## I separated profile lookup from account ownership
-
-The game account connection flow starts with entering a Player Tag and loading the profile. A successful lookup does not establish that the person entering the tag owns the account. They could enter someone else's tag.
-
-That distinction mattered when designing verification labels. Showing profile lookup and ownership verification as the same state would imply more trust than the service had established.
-
-I decided that a connected game profile would initially have unverified ownership, with a separate verification process to investigate. An administrator-managed user verification label also has a different meaning from ownership of a game account. The label needs to reflect what was checked and the evidence used.
-
-The early plan also included snapshots of the deck and game information when a request was written. During implementation, I moved game profile registration to the user account and removed deck attachment from the writing screen. Verification requests became a one-to-one chat with an administrator. Running the screens led to further changes in what users connect and what a verification label means.
-
-## Translated navigation does not complete a conversation
-
-I considered Korean, English, and Japanese for the game service from the start. Locale routes, translated interface text, and post translation initially seemed to cover the main requirements.
-
-Translating posts alone left a gap. A Japanese-speaking player might read a translated Korean question and reply, while the original requester could not read the answer. The translation scope needed to include replies if it was going to support the whole feedback exchange.
-
-I kept locale routing in the early structure and left translation features and operating in each language as separate items to validate. The existence of `/en` or `/ja` routes did not establish that those users could complete the flow.
-
-I built the mobile app around a WebView that uses the web screens. I want to refine posting a request and reading its answer on the web first, then work on app distribution and store operation.
-
-## I chose to run the blog without a database
-
-The blog has different data needs from the game service. The game service has many users continually creating posts and replies. I am the blog's only author.
-
-I had been keeping articles in a repository and also publishing them on Tistory. Maintaining that process felt cumbersome, so I decided to build my own blog. I briefly considered a database and an admin editor because changing an article would otherwise require another deployment.
-
-I settled on Git and MDX. I wanted to edit articles in a familiar editor and keep their change history as I published them. Automating deployment after a Git push would also save me from running deployment commands for every article edit.
-
-Korean and English bodies live in separate MDX files grouped under one content ID. Titles, slugs, and search descriptions live in locale-specific SEO JSON. Shared metadata holds fields such as the publication date and tags.
-
-```text
-content/posts/side-project-design/
-  meta.json
-  ko.mdx
-  en.mdx
-
-seo/
-  ko.json
-  en.json
-```
-
-I wanted to avoid creating an English URL when no English article had been written. Only locales with an actual body appear in the listing and sitemap. I also kept URLs stable when changing titles and required explicit redirects when changing a URL.
-
-I limited the about page to contact information. Adding a resume and project introductions would expand what I was trying to show again. For the blog, I chose to concentrate on writing and reading articles.
-
-## I isolated the projects within the repository
-
-I planned to work on the game service and blog in different sessions. The existing photo service was in the same repository too, so I separated working directories and branches with Git worktrees.
-
-Source directories were only part of that separation. Each project also needed its own ports, API configuration, cookie name, database, and test schemas. A separate folder would not help if its web app sent requests to another project's running API.
-
-I documented the boundaries for data and local execution. Tests use separate ports and temporary database schemas rather than the development server in use. Settings and UI move to a shared package when there is a demonstrated reason to share them; service data and business logic stay within their projects.
-
-I also updated the worktree command to copy existing project environment files. That does not make it safe to run several servers against the same ports and databases, so test runners use separate ports and schemas.
-
-The initial deployment plan put both services on one EC2 instance and the databases in RDS. To reduce the initial cost further, I changed the plan to run PostgreSQL in a container on the same EC2 instance. Files stay in separate service S3 buckets, while database data goes on a dedicated EBS volume.
-
-An EC2 failure would stop both services and the database. I also have to manage database backup and recovery, so I prepared daily snapshots and a dump to S3 before each deployment. A failed dump upload prevents the migration from running. [The Terraform and deployment configuration](https://github.com/jingeon27/side-project/tree/b758d2e8/deploy/shared-instance) includes restart and rollback checks. Provisioning the full AWS infrastructure and verifying production load remain separate work.
-
-I am still building features and refining them in the running screens. Next, I want to find people who will ask questions and others who will answer them. I want to start by checking whether someone receives an answer and comes back to read it.
+I wrote about deployment in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
