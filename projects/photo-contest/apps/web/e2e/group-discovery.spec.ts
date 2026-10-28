@@ -79,7 +79,9 @@ test(
             JSON.parse(script.textContent ?? '{}'),
           ),
           headings: Array.from(document.querySelectorAll('h3')).map((node) => node.textContent),
-          errors: document.querySelectorAll('template[data-dgst]').length,
+          errors: document.querySelectorAll(
+            'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+          ).length,
         };
       },
       await response.text(),

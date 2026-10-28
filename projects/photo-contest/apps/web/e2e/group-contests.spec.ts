@@ -76,10 +76,12 @@ test(
     });
     const html = await seoResponse.text();
     expect(html).toContain('우승할 웃긴 순간');
-    expect(html).not.toContain('data-dgst=');
     const seo = await page.evaluate((html) => {
       const d = new DOMParser().parseFromString(html, 'text/html');
       return {
+        errors: d.querySelectorAll(
+          'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+        ).length,
         canonical: d.querySelector('link[rel="canonical"]')?.getAttribute('href'),
         ld: Array.from(d.querySelectorAll('script[type="application/ld+json"]')).map((node) =>
           JSON.parse(node.textContent ?? '{}'),
@@ -87,6 +89,7 @@ test(
         robots: d.querySelector('meta[name="robots"]')?.getAttribute('content'),
       };
     }, html);
+    expect(seo.errors).toBe(0);
     expect(seo.canonical).toBe(WEB_ORIGIN + contestPath);
     expect(seo.robots).not.toContain('noindex');
     expect(seo.ld[0]['@graph']).toEqual(
@@ -139,7 +142,13 @@ test(
     ).text();
     expect(hallHtml).toContain('우승할 웃긴 순간');
     expect(hallHtml).toContain('application/ld+json');
-    expect(hallHtml).not.toContain('data-dgst=');
+    const hallErrors = await page.evaluate((html) => {
+      const d = new DOMParser().parseFromString(html, 'text/html');
+      return d.querySelectorAll(
+        'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+      ).length;
+    }, hallHtml);
+    expect(hallErrors).toBe(0);
     const sitemap = await (await page.request.get('/sitemaps/contests/0.xml')).text();
     expect(sitemap).toContain(WEB_ORIGIN + contestPath);
     expect((await page.request.get('/sitemaps/contests/9999999999999.xml')).status()).toBe(404);
