@@ -18,7 +18,6 @@ export function NavigationGuardProvider({ children }: { children: ReactNode }) {
     if (!hasGuards) return;
     const handleUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      event.returnValue = '';
     };
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
