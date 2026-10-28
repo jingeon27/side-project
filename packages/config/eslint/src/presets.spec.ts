@@ -68,3 +68,18 @@ describe('preset별 jsx-a11y 배선', () => {
     expect(enabledJsxA11yRules(config)).toEqual(rules);
   });
 });
+
+describe('모든 preset의 명시적 export', () => {
+  it.each([
+    ['base', baseConfig],
+    ['react', reactConfig],
+    ['react-dom', reactDomConfig],
+    ['next', nextConfig],
+    ['expo', expoConfig],
+  ])('%s에서도 와일드카드 타입 재수출을 막아야 한다', (_, config) => {
+    const messages = new Linter({ configType: 'flat' }).verify("export type * from './contracts';", config, {
+      filename: path.join(import.meta.dirname, 'PublicApi.ts'),
+    });
+    expect(messages.some(({ ruleId }) => ruleId === 'side/no-wildcard-exports')).toBe(true);
+  });
+});

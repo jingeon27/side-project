@@ -115,6 +115,12 @@ HUSKY=0 git rebase -i develop   # hook이 필요 없는 명령·자동화에서 
 git commit --no-verify          # 비상시에만 사용한다
 ```
 
+## 미사용 코드 검사
+
+`yarn knip`은 모든 워크스페이스의 새 미사용 파일, 의존성, export와 타입을 검사하며 루트 `check`와 Static analysis CI에도 연결되어 있습니다. `knip.ts`에 프레임워크 진입점과 생성 코드 범위를 정의합니다. Playwright 설정은 실행하지 않고 정적으로 분석하므로 검사 중 테스트 서버를 시작하지 않습니다.
+
+기존 미사용 항목 131개는 `knip-baseline.json`에 종류, 파일, 이름별로 기록했습니다. `yarn knip:report`로 기존 항목까지 포함한 전체 결과를 확인합니다. 새 문제를 기준선에 추가해 통과시키지 말고 원인을 수정하며, 기존 코드를 정리하면 해당 기준선 항목도 삭제합니다. ESLint의 `side/no-wildcard-exports`는 값, 타입, namespace의 `export *`를 모든 앱과 패키지에서 막습니다. 필요한 이름을 명시해서 내보내세요.
+
 ## 검증
 
 별도 터미널에서 `yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.

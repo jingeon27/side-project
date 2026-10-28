@@ -1,10 +1,11 @@
 import type { ESLint } from 'eslint';
 
 import { noElse } from './rules/common/no-else/no-else';
+import { noWildcardExports } from './rules/common/no-wildcard-exports/no-wildcard-exports';
 import { noComponentFetch } from './rules/web/no-component-fetch/no-component-fetch';
 import { noOverlayState } from './rules/web/no-overlay-state/no-overlay-state';
 
-const commonRules = { 'no-else': noElse };
+const commonRules = { 'no-else': noElse, 'no-wildcard-exports': noWildcardExports };
 const webRules = { 'no-component-fetch': noComponentFetch, 'no-overlay-state': noOverlayState };
 
 // ESLint flat config는 같은 이름의 플러그인을 다른 객체로 다시 등록하면 `Cannot redefine plugin "side"` 오류를 낸다.
