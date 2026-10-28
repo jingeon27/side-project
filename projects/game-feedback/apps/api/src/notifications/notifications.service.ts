@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'es-toolkit';
+import { match } from 'ts-pattern';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
@@ -42,11 +43,11 @@ export class NotificationsService {
     };
     const [kind, id] = eventId.split(':');
     const [row, postUnread, chatUnread] = await Promise.all([
-      kind === 'chat'
-        ? this.db.chatNotification.findFirst({ where: { ...chatWhere, id } })
-        : kind === 'post'
-          ? this.db.notification.findFirst({ where: { ...postWhere, id } })
-          : null,
+      // 푸시 큐에 저장된 `<kind>:<id>`라 모르는 종류는 대상 없음으로 본다.
+      match(kind)
+        .with('chat', () => this.db.chatNotification.findFirst({ where: { ...chatWhere, id } }))
+        .with('post', () => this.db.notification.findFirst({ where: { ...postWhere, id } }))
+        .otherwise(() => null),
       this.db.notification.count({ where: postWhere }),
       this.db.chatNotification.count({ where: chatWhere }),
     ]);
