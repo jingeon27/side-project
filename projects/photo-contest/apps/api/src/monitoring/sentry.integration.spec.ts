@@ -4,8 +4,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createContest, createGroup } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
-import { ContestCompletionService } from '../analytics/contest-completion.service';
-import { SessionService } from '../auth/session.service';
+import { ContestCompletionService } from '../analytics/completion/contest-completion.service';
+import { SessionService } from '../auth/session/session.service';
 import { GroupService } from '../group/group.service';
 import { MaintenanceService } from '../maintenance/maintenance.service';
 import { MediaStorage } from '../storage/media-storage.service';

@@ -9,7 +9,7 @@ import {
   type IPushMessage,
 } from '@side/toolkit/push-notifications';
 
-import { SessionService } from '../auth/session.service';
+import { SessionService } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { mobilePushSettings } from '../config/env';
 import { PUSH_DEVICE_LIMIT, PUSH_INTERVAL_MS, PUSH_QUEUE_BATCH_SIZE } from '../config/limits';

@@ -6,7 +6,7 @@ description: API의 prisma/schema.prisma에 모델·컬럼·인덱스·제약을
 ## 스키마 편집 (`prisma/schema.prisma`)
 
 - 지금의 압축 형식을 지킨다: 블록 사이 빈 줄 없음, `이름 타입 속성`을 공백 하나로(열 정렬 없음), `@@id`·`@@unique`·`@@index`는 모델 끝. `prisma format`(에디터의 저장 시 포맷 포함)을 돌리지 않는다 — 파일 전체가 다시 정렬된다.
-- 역할·상태 값은 Prisma enum 대신 `String` + TS `as const`로 둔다(`GroupMember.role` ↔ `src/group/group-role.ts`, 모르는 값은 권한이 적은 쪽으로 읽는다).
+- 역할·상태 값은 Prisma enum 대신 `String` + TS `as const`로 둔다(`GroupMember.role` ↔ `src/group/membership/group-role.ts`, 모르는 값은 권한이 적은 쪽으로 읽는다).
 - "한 사람당 하나"는 DB 제약으로 건다(`Vote`의 `@@unique([contestId, voterId])`, `Like`의 `@@id([submissionId, userId])`). 토큰으로 찾는 열은 원문 대신 `sha256Hex` 값을 저장한다(`Session.tokenHash`, `Upload.tokenHash`, `AppLoginTicket.codeHash`).
 - 부모와 함께 지워져야 하는 관계는 `onDelete: Cascade`를 명시한다 — 사진 삭제가 투표·좋아요·신고를 지우는 것이 여기에 기댄다.
 - 개수(좋아요·표·신고)는 읽을 때 `_count`로 센다. 카운터 열을 더해 `increment`·`decrement`로 관리하지 않는다(사용자 결정).

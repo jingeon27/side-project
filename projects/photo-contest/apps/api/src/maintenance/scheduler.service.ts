@@ -1,6 +1,6 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 
-import { ContestCompletionService } from '../analytics/contest-completion.service';
+import { ContestCompletionService } from '../analytics/completion/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { ContestNotificationService } from '../notification/contest-notification.service';

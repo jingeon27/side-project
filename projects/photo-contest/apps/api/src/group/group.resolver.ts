@@ -1,11 +1,11 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import type { IViewer } from '../auth/session/session.service';
+import { OptionalViewer, Viewer } from '../auth/session/viewer.decorator';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { ClientAddress } from '../rate-limit/client-address.decorator';
-import type { TGroupVisibility } from './group-visibility';
 import { GroupService, type IGroupNode } from './group.service';
+import type { TGroupVisibility } from './membership/group-visibility';
 
 // Group.contests는 그룹이 대회 모듈에 의존하지 않도록 contest 모듈의 GroupContestsResolver가 해석한다.
 @Resolver('Group')

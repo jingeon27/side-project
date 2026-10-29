@@ -1,7 +1,7 @@
 import { Body, Controller, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { SessionService } from '../auth/session.service';
+import { SessionService } from '../auth/session/session.service';
 import {
   CreateLegacyTestContestSchema,
   CreateTestUserSchema,

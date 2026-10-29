@@ -4,17 +4,17 @@ import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { ERROR_CODE } from '../common/errors';
 import type { IGraphqlContext } from '../common/graphql/graphql-context';
 import { createInputValidationPipe } from '../common/input-validation';
-import { AnonymousAuthService } from './anonymous-auth.service';
-import { PasswordAttemptGuard } from './auth-attempt.guard';
+import { AnonymousAuthService } from './anonymous/anonymous-auth.service';
+import { PasswordAttemptGuard } from './password/auth-attempt.guard';
 import {
   LoginWithPasswordSchema,
   RegisterWithPasswordSchema,
   type TLoginWithPasswordDto,
   type TRegisterWithPasswordDto,
-} from './auth.dto';
-import { PasswordAuthService } from './password-auth.service';
-import type { IViewer } from './session.service';
-import { OptionalViewer } from './viewer.decorator';
+} from './password/auth.dto';
+import { PasswordAuthService } from './password/password-auth.service';
+import type { IViewer } from './session/session.service';
+import { OptionalViewer } from './session/viewer.decorator';
 
 @Resolver()
 export class AuthResolver {

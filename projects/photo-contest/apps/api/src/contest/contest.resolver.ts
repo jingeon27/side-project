@@ -1,8 +1,8 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
-import { isAdmin } from '../group/group-role';
+import type { IViewer } from '../auth/session/session.service';
+import { Viewer } from '../auth/session/viewer.decorator';
+import { isAdmin } from '../group/membership/group-role';
 import { phase } from './contest.policy';
 import { ContestService, type IContestNode, type ICreateContestInput } from './contest.service';
 

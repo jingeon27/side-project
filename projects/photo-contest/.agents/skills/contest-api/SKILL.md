@@ -25,7 +25,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 인증
 
-- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
+- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/session/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
@@ -88,3 +88,9 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 Service에서 Database(Prisma)를 직접 사용한다. Repository 전달 계층을 만들지 않으며 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.
 
 게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 같은 수명(사진 60초, 동영상 10분)의 presigned GET(attachment)을 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.
+
+
+## 책임별 경로
+
+- 인증은 `auth/session/`, `auth/password/`, `auth/anonymous/`에 구현과 테스트를 함께 둔다. 그룹은 `group/membership/`, `profile/`, `categories/`, `administration/`, `ranking/`, 게시물은 `post/comments/`, `categories/`, `moderation/`, `media/`로 응집된 책임을 묶는다.
+- 그룹 대회는 `contest/group-contest/`, 기존 대회 순위는 `contest/ranking/`, 종료 집계는 `analytics/completion/`을 사용한다. 도메인 루트 module·GraphQL 계약·Prisma 경로를 유지하고 이동 시 소비자 import와 상대 파일 URL도 갱신한다.

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import {
@@ -14,8 +14,8 @@ import {
 import { phase, PHASE } from '../contest/contest.policy';
 import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
-import { postUploadPolicy } from '../post/post-upload.policy';
+import { MembershipService } from '../group/membership/membership.service';
+import { postUploadPolicy } from '../post/media/post-upload.policy';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { assertStorageQuota } from './storage-quota';

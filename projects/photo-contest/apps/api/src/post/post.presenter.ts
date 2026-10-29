@@ -1,5 +1,5 @@
 import { phase } from '../contest/contest.policy';
-import { isAdmin } from '../group/group-role';
+import { isAdmin } from '../group/membership/group-role';
 import type { TPostRow } from './post.query';
 
 export function presentPost(row: TPostRow, userId: string | null) {

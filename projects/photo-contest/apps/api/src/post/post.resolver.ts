@@ -1,9 +1,9 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import type { IViewer } from '../auth/session/session.service';
+import { OptionalViewer, Viewer } from '../auth/session/viewer.decorator';
 import { ClientAddress } from '../rate-limit/client-address.decorator';
-import { PostModerationService } from './post-moderation.service';
+import { PostModerationService } from './moderation/post-moderation.service';
 import { PostService } from './post.service';
 
 @Resolver()
