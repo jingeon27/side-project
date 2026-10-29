@@ -118,16 +118,15 @@ DB 구성 파일을 바꾸면 `prepare.sh`로 다시 복사한 뒤 `database.sh 
 
 ## 소셜 로그인과 선택적 외부 서비스
 
-GF용 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **game-feedback-production의 `SERVICE_ENV`**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호와 익명 로그인만 제공하므로 OAuth 키가 필요 없다.
+GF용 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **game-feedback-production의 `SERVICE_ENV` 또는 `SERVICE_ENV_OVERRIDES`**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호와 익명 로그인만 제공하므로 OAuth 키가 필요 없다.
 
 | 제공자  | 설정 화면과 행동                                                                                                                                                                                                                                                                                                                                               | GF 콜백                                                     |
 | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Google  | [Google Auth Platform](https://console.cloud.google.com/auth/overview)에서 프로젝트 선택 → Branding/Audience 설정 → [Clients](https://console.cloud.google.com/auth/clients)에서 웹 애플리케이션 클라이언트 생성. 승인된 리디렉션 URI 입력, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 저장. 공개 출시 시 Audience의 게시 상태와 필요한 도메인 확인을 완료한다. | `https://game.bambyul.com/api/auth/google/callback`         |
 | Kakao   | [Kakao 앱 관리](https://developers.kakao.com/console/app)에서 앱 생성 → 카카오 로그인 활성화 → 리디렉션 URI 등록. 플랫폼 키의 REST API 키와 해당 Client Secret을 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`에 저장한다.                                                                                                                                           | `https://game.bambyul.com/api/auth/social/kakao/callback`   |
-| X       | [Developer Console](https://console.x.com/)에서 앱의 OAuth 2.0 사용자 인증을 설정한다. 서버용 confidential/web app의 Client ID/secret을 `X_CLIENT_ID`/`X_CLIENT_SECRET`에 저장하고 콜백 URL·웹사이트 URL을 입력한다. 현재 코드는 `tweet.read users.read`와 PKCE를 사용한다. 콘솔의 이용 조건과 API 접근 가능 여부도 확인한다.                                  | `https://game.bambyul.com/api/auth/social/x/callback`       |
 | Discord | [Developer Portal](https://discord.com/developers/applications) → New Application → OAuth2에서 Redirects를 추가한다. Client ID/secret을 `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`에 저장한다. 로그인 범위는 `identify`다. 봇 생성·서버 초대는 필요 없다.                                                                                                     | `https://game.bambyul.com/api/auth/social/discord/callback` |
 
-콜백은 문자 단위로 맞춘다. Google은 [공식 웹 서버 OAuth 안내](https://developers.google.com/identity/protocols/oauth2/web-server), Kakao는 [사전 설정 안내](https://developers.kakao.com/docs/ko/kakaologin/prerequisite), X는 [OAuth 2.0 PKCE 안내](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code), Discord는 [OAuth2 안내](https://docs.discord.com/developers/topics/oauth2)를 따른다. 초기에는 테스트 사용자로 실제 로그인·취소·재로그인을 확인한 뒤 제공자의 공개 설정을 적용한다.
+콜백은 문자 단위로 맞춘다. Google은 [공식 웹 서버 OAuth 안내](https://developers.google.com/identity/protocols/oauth2/web-server), Kakao는 [사전 설정 안내](https://developers.kakao.com/docs/ko/kakaologin/prerequisite), Discord는 [OAuth2 안내](https://docs.discord.com/developers/topics/oauth2)를 따른다. 초기에는 테스트 사용자로 실제 로그인·취소·재로그인을 확인한 뒤 제공자의 공개 설정을 적용한다.
 
 Google Branding에 입력할 서비스 홈페이지·약관·개인정보 주소는 아래 경로를 실제 도메인과 조합한다. 도메인 소유권 확인이 필요하면 [Search Console](https://search.google.com/search-console/)에서 제공하는 DNS 레코드를 등록한다. OAuth 동의 화면을 테스트 상태로 두면 일반 사용자 공개 로그인 확인을 마친 것이 아니다. [Google OAuth 정책](https://developers.google.com/identity/protocols/oauth2/policies)의 홈페이지·도메인 요구사항도 확인한다.
 
@@ -292,7 +291,24 @@ PC의 운영 `SERVICE_ENV`는 `PC_DATABASE_URL`, `PC_DATABASE_MIGRATION_URL`, `P
 
 Secret을 저장하는 것만으로 배포가 시작되지는 않는다. 다음 CD가 SSH/SSM의 암호화된 표준입력으로 전달하고 서비스별 임시 파일에 저장한다. 빈 Secret·전송 중단·Compose 설정 오류는 배포를 중단한다. runtime 접근 검사·백업·migration을 통과한 뒤 호스트 잠금 안에서 `.env`를 원자 교체하고 새 컨테이너를 시작한다. 앱 시작 실패 시 이전 환경 파일을 복원한 뒤 이전 이미지로 되돌린다. 임시 파일과 이전 환경 파일 사본은 작업 종료 시 지우며 릴리스 아카이브에는 넣지 않는다.
 
-서버에서 서비스 파일만 직접 수정하면 다음 CD가 Secret 값으로 덮어쓴다. 환경 설정을 바꾸려면 해당 Environment의 `SERVICE_ENV` 전체 내용을 갱신한다. 수동 이미지 rollback은 현재 서버 환경 파일을 사용하며 과거 Secret 버전을 보관하지 않는다. DB migration은 기존과 같이 되돌리지 않는다. 웹의 공개 Sentry·Amplitude 키는 위 파일이 아니라 repository Variables에서 바꾸고 새 이미지를 빌드한다. DB 비밀번호 변경은 URL 파일 편집뿐 아니라 해당 PostgreSQL role의 비밀번호도 함께 변경해야 한다.
+서버에서 서비스 파일만 직접 수정하면 다음 CD가 Secret 값으로 덮어쓴다. 전체 환경 설정은 해당 Environment의 `SERVICE_ENV`를 갱신한다. OAuth·API Sentry만 추가하거나 바꿀 때는 같은 Environment에 선택 Secret `SERVICE_ENV_OVERRIDES`를 dotenv 형식으로 등록할 수 있다. CD가 `SERVICE_ENV` 뒤에 합치므로 같은 키는 추가 Secret의 값이 우선한다. 이 Secret에는 변경할 키만 넣고 DB·스토리지 설정을 복사하지 않는다. 기본 `SERVICE_ENV`는 여전히 필수이며 두 Secret을 합친 값에 같은 전송 제한·환경 검증·원자 교체·롤백을 적용한다. 수동 이미지 rollback은 현재 서버 환경 파일을 사용하며 과거 Secret 버전을 보관하지 않는다. DB migration은 기존과 같이 되돌리지 않는다. 웹의 공개 Sentry·Amplitude 키는 위 파일이 아니라 repository Variables에서 바꾸고 새 이미지를 빌드한다. DB 비밀번호 변경은 URL 파일 편집뿐 아니라 해당 PostgreSQL role의 비밀번호도 함께 변경해야 한다.
+
+### Sentry 릴리스와 OAuth 추가 설정
+
+두 웹의 공개 DSN은 repository Variables `GAME_FEEDBACK_WEB_SENTRY_DSN`, `PHOTO_CONTEST_WEB_SENTRY_DSN`에서 읽는다. API DSN은 `game-feedback-production`의 `SENTRY_DSN`, `photo-contest-production`의 `PC_SENTRY_DSN`이며 각각 `SERVICE_ENV` 또는 `SERVICE_ENV_OVERRIDES`에 둔다.
+
+`SENTRY_RELEASE`를 GitHub Variable로 고정하지 않는다. 웹 빌드는 `github.sha`, API·웹 런타임은 같은 배포의 `RELEASE_SHA`를 쓰므로 오류를 해당 커밋과 연결할 수 있다. 설정 저장만으로 운영 컨테이너가 바뀌지는 않으며 다음 정상 빌드·CD에서 반영한다.
+
+실제 배포가 성공한 뒤 `sentry-release.ts`가 웹·서버 프로젝트별 Releases 웹훅에 같은 SHA와 배포 시각·GitHub 커밋 링크를 등록한다. 더 최신 커밋 때문에 배포를 건너뛴 경우에는 등록하지 않는다. 토큰이 없으면 해당 프로젝트의 등록만 건너뛰며, 인증·전송 오류는 CI에 실패로 표시한다. **Project Settings → Releases에서 발급한 웹훅 토큰**을 사용하며 별도 조직 Auth Token은 필요 없다. [Sentry 공식 구현](https://github.com/getsentry/sentry/blob/master/src/sentry/web/frontend/release_webhook.py)에 따라 토큰으로 `builtin-<project ID>`의 HMAC-SHA256 서명을 만든다. repository Secrets는 이미 등록한 이름을 유지한다.
+
+| 서비스        | 웹 토큰 Secret                        | 서버 토큰 Secret                         |
+| ------------- | ------------------------------------- | ---------------------------------------- |
+| Game Feedback | `GAME_FEEDBACK_WEB_SENTRY_AUTH_TOKEN` | `GAME_FEEDBACK_SERVER_SENTRY_AUTH_TOKEN` |
+| Photo Contest | `PHOTO_CONTEST_WEB_SENTRY_AUTH_TOKEN` | `PHOTO_CONTEST_SERVER_SENTRY_AUTH_TOKEN` |
+
+로컬 `.env`의 `SENTRY_WEB_RELEASE_TOKEN`, `SENTRY_SERVER_RELEASE_TOKEN`을 위 Secret에 각각 등록한다. 위 Secret의 기존 이름에는 `AUTH_TOKEN`이 남아 있지만 값은 프로젝트 Releases 웹훅 토큰이며, workflow에서는 `SENTRY_RELEASE_TOKEN`으로 읽는다. 프로젝트 ID와 이름은 workflow에서 서비스별로 지정한다. 토큰은 CI 웹훅 서명에만 사용하고 Docker 빌드 인자·`SERVICE_ENV`·런타임 컨테이너에 넣지 않는다. 이 단계는 Releases 등록을 연결하며 별도의 Deploy API 기록이나 소스맵 업로드를 하지 않는다.
+
+Game Feedback의 추가 Secret에는 필요한 제공자의 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`, `DISCORD_CLIENT_ID`·`DISCORD_CLIENT_SECRET`을 한 쌍씩 넣는다. 운영 콜백은 위 표의 `https://game.bambyul.com/api/auth/.../callback`이며 `/app-auth/callback`은 서버가 인증 후 앱으로 돌아가는 경로이므로 OAuth 제공자에 등록할 콜백과 다르다.
 
 ## 운영·롤백
 

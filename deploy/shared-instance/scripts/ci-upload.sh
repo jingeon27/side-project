@@ -12,6 +12,11 @@ SERVICE=${1:-}
 : "${REGISTRY_USER:?Set registry user}"
 : "${SERVICE_ENV:?Set the SERVICE_ENV Environment Secret}"
 [[ "$SERVICE_ENV" =~ [^[:space:]] ]] || { echo 'SERVICE_ENV must not be blank.' >&2; exit 2; }
+# 기존 DB·스토리지 Secret을 읽거나 교체하지 않고 OAuth·모니터링 설정만 추가한다.
+if [[ "${SERVICE_ENV_OVERRIDES:-}" =~ [^[:space:]] ]]; then
+  SERVICE_ENV="${SERVICE_ENV}"$'\n'"${SERVICE_ENV_OVERRIDES}"
+fi
+unset SERVICE_ENV_OVERRIDES
 environment_bytes=$(printf '%s' "$SERVICE_ENV" | wc -c | tr -d '[:space:]')
 ((environment_bytes <= 65536)) || { echo 'SERVICE_ENV exceeds the transfer limit.' >&2; exit 2; }
 [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]

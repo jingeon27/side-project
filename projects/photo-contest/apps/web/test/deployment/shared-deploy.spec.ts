@@ -139,6 +139,7 @@ function upload(extra: Record<string, string> = {}) {
       REGISTRY_TOKEN: token,
       REGISTRY_USER: 'jingeon27',
       SERVICE_ENV: serviceEnv,
+      SERVICE_ENV_OVERRIDES: '',
       DEPLOY_HOST: 'deploy.example.test',
       DEPLOY_USER: 'deploy',
       DEPLOY_SSH_KEY: 'fixture-key',
@@ -205,6 +206,30 @@ describe('공유 호스트 원격 배포', () => {
     expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
       'DATABASE_URL=fixture\n',
     );
+  });
+
+  it('추가 Secret은 기존 DB 설정을 보존하며 합치고 로그와 릴리스에 남기지 않아야 한다', () => {
+    const overrides =
+      "PC_SENTRY_DSN='https://public@sentry.example/1'\nGOOGLE_CLIENT_SECRET='oauth-secret:$literal'\n";
+    const argumentsFile = join(state.root, 'ssh-arguments');
+    const result = upload({ SERVICE_ENV_OVERRIDES: overrides, FAKE_SSH_ARGS: argumentsFile });
+    expect(result.status, result.stderr).toBe(0);
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      `${serviceEnv}\n${overrides}`,
+    );
+    expect(`${result.stdout}${result.stderr}${readFileSync(argumentsFile, 'utf8')}`).not.toContain(
+      'oauth-secret',
+    );
+    for (const file of readdirSync(releaseDirectory(), { recursive: true }).map(String)) {
+      const path = join(releaseDirectory(), file);
+      if (statSync(path).isFile()) expect(readFileSync(path, 'utf8')).not.toContain('oauth-secret');
+    }
+  }, 60_000);
+
+  it('추가 Secret만으로 빈 운영 환경 파일을 대신하지 못해야 한다', () => {
+    const result = upload({ SERVICE_ENV: '', SERVICE_ENV_OVERRIDES: 'PC_SENTRY_DSN=fixture' });
+    expect(result.status).not.toBe(0);
+    expect(existsSync(releaseDirectory())).toBe(false);
   });
 
   it('Compose 설정 오류에 Secret이 포함돼도 출력하지 않고 기존 환경을 보존해야 한다', () => {

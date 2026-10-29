@@ -94,6 +94,10 @@ export function sentryEnvironment() {
   return optional('NODE_ENV') ?? 'development';
 }
 
+export function sentryRelease() {
+  return optional('SENTRY_RELEASE')?.trim() || undefined;
+}
+
 function assertS3Settings() {
   const { endpoint } = s3Settings();
   s3KeyPrefix();
