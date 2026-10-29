@@ -33,22 +33,20 @@ export function useAndroidBackPress(options: IUseAndroidBackPressOptions) {
     if (Platform.OS !== 'android') return undefined;
     const lifetime = new AbortController();
     const mutex = new Mutex();
+    const askBeforeGoingBack = async () => {
+      await mutex.acquire();
+      try {
+        if (lifetime.signal.aborted) return;
+        const action = await resolveBackPress(askWeb, canGoBack);
+        if (lifetime.signal.aborted) return;
+        if (action === 'go-back') goBack();
+        if (action === 'exit') BackHandler.exitApp();
+      } finally {
+        mutex.release();
+      }
+    };
     const handleHardwareBackPress = () => {
-      if (mutex.isLocked) return true;
-      void mutex.acquire().then(async () => {
-        try {
-          if (lifetime.signal.aborted) return;
-          const action = await resolveBackPress(
-            () => askWeb(),
-            () => canGoBack(),
-          );
-          if (lifetime.signal.aborted) return;
-          if (action === 'go-back') goBack();
-          if (action === 'exit') BackHandler.exitApp();
-        } finally {
-          mutex.release();
-        }
-      });
+      if (!mutex.isLocked) void askBeforeGoingBack();
       return true;
     };
 

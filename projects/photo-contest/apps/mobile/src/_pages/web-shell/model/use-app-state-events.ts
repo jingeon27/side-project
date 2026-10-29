@@ -23,7 +23,7 @@ export function useAppStateEvents(options: IUseAppStateEventsOptions) {
   });
 
   useEffect(() => {
-    const subscription = new AppStateSubscription((state) => emitState(state));
+    const subscription = new AppStateSubscription(emitState);
     return () => subscription.dispose();
   }, []);
 }

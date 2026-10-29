@@ -502,11 +502,17 @@ describe('WebShellPageTemplate', () => {
     }
 
     pressBack();
+    await waitFor(() =>
+      expect(dispatchedMessages().filter((message) => message.kind === 'request')).toHaveLength(1),
+    );
     answerBack(true);
     await act(async () => undefined);
     expect(fakeWebView.handle.goBack).not.toHaveBeenCalled();
 
     pressBack();
+    await waitFor(() =>
+      expect(dispatchedMessages().filter((message) => message.kind === 'request')).toHaveLength(2),
+    );
     answerBack(false);
     await waitFor(() => expect(fakeWebView.handle.goBack).toHaveBeenCalledTimes(1));
     expect(exitApp).toHaveBeenCalledTimes(1);

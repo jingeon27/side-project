@@ -231,8 +231,6 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     if (isWebOriginUrl(state.url)) currentUrlRef.current = state.url;
   }, []);
 
-  const handleLoadEnd = useCallback<TWebViewHandler<'onLoadEnd'>>(() => finishLoading(), [finishLoading]);
-
   const handleError = useCallback<TWebViewHandler<'onError'>>(
     (event) => {
       // WebView 기본 오류 화면(영문)을 띄우지 않는다. 연결 문제일 때만 오프라인 화면으로 바꾼다.
@@ -283,7 +281,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       onOpenWindow: handleOpenWindow,
       onMessage: handleMessage,
       onLoadStart: handleLoadStart,
-      onLoadEnd: handleLoadEnd,
+      onLoadEnd: finishLoading,
       onNavigationStateChange: handleNavigationStateChange,
       onError: handleError,
       onHttpError: handleHttpError,
