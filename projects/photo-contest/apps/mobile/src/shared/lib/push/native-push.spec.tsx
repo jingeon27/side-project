@@ -114,6 +114,15 @@ describe('OS 푸시 등록', () => {
     expect(AsyncStorage.getItem).toHaveBeenCalledTimes(2);
     expect(AsyncStorage.setItem).toHaveBeenCalledOnce();
   });
+  it('저장소가 동기 예외를 던져도 실패한 초기화를 캐시하지 않고 재시도해야 한다', async () => {
+    vi.mocked(AsyncStorage.getItem).mockImplementationOnce(() => {
+      throw new Error('native storage missing');
+    });
+    const { getPushRegistration } = await import('./native-push');
+    await expect(getPushRegistration(true)).rejects.toThrow('native storage missing');
+    expect(await getPushRegistration(true)).toMatchObject({ installationId, status: 'granted' });
+    expect(AsyncStorage.getItem).toHaveBeenCalledTimes(2);
+  });
   it('토큰 조회 실패 후 등록은 다시 시도하고 설치 ID는 유지해야 한다', async () => {
     vi.mocked(Notifications.getExpoPushTokenAsync).mockRejectedValueOnce(new Error('푸시 토큰 조회 실패'));
     const { getPushRegistration } = await import('./native-push');

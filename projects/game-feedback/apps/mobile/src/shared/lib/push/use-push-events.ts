@@ -20,9 +20,13 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
     inbox.bindConsumed(() => {
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     });
-    let active = true;
+    const lifetime = new AbortController();
     const receiveResponse = (response: Notifications.NotificationResponse | null) => {
-      if (!active || !response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER)
+      if (
+        lifetime.signal.aborted ||
+        !response ||
+        response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER
+      )
         return;
       inbox.tap(response.notification.request.identifier, response.notification.request.content.data?.path);
     };
@@ -33,7 +37,7 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
       .then(receiveResponse)
       .catch(() => undefined);
     return () => {
-      active = false;
+      lifetime.abort();
       tapped.remove();
       received.remove();
       tokenChanged.remove();

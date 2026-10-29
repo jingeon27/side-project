@@ -33,13 +33,16 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!mobilePushSettings().enabled) return;
     this.timer = setInterval(() => {
       if (this.running) return;
-      this.running = this.runOnce()
-        .catch(() => {
+      const dispatch = async () => {
+        try {
+          await this.runOnce();
+        } catch {
           this.logger.warn('푸시 큐 처리에 실패했습니다.');
-        })
-        .finally(() => {
+        } finally {
           this.running = undefined;
-        });
+        }
+      };
+      this.running = dispatch();
     }, PUSH_INTERVAL_MS);
     this.timer.unref();
   }

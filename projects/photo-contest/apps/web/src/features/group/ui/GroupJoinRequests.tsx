@@ -112,7 +112,7 @@ function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> 
         <p className="py-5 text-body text-muted">대기 중인 가입 신청이 없어요.</p>
       )}
       {hasNextPage ? (
-        <Button variant="secondary" size="md" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+        <Button variant="secondary" size="md" loading={isFetchingNextPage} onClick={fetchNextPage}>
           가입 신청 더 보기
         </Button>
       ) : null}
@@ -162,7 +162,7 @@ export function GroupJoinRequests({ groupId }: { groupId: string }) {
         </Button>
       </div>
       <p className="mt-1 text-caption text-muted">수락한 멤버만 이 그룹의 게시물을 볼 수 있어요.</p>
-      <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
+      <AsyncBoundary fallback={fallback} onRetry={refetch}>
         {queryRef ? <RequestList queryRef={queryRef} /> : fallback}
       </AsyncBoundary>
     </section>

@@ -136,7 +136,7 @@ export function OnboardingPageTemplate() {
     <div className="flex flex-1 flex-col">
       <TopAppBar title="가입 설정" />
       <div className="mx-auto w-full max-w-app px-4 py-8 tablet:px-8">
-        <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-96 w-full" />}>
+        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-96 w-full" />}>
           <OnboardingForm queryRef={queryRef} />
         </AsyncBoundary>
       </div>

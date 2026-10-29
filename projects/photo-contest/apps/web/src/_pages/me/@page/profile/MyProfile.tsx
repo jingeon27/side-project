@@ -52,7 +52,7 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
           size="sm"
           onClick={() =>
             overlay.open(({ isOpen, close, unmount }) => (
-              <EditProfileBottomSheet isOpen={isOpen} onClose={() => close()} unmount={unmount} />
+              <EditProfileBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
             ))
           }
         >

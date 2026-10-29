@@ -55,7 +55,7 @@ function CompositionExample() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>댓글 보기</Button>
-      <BottomSheet.Root open={open} onOpenChange={(nextOpen) => setOpen(nextOpen)} snapPoints={[0.75, 1]}>
+      <BottomSheet.Root open={open} onOpenChange={setOpen} snapPoints={[0.75, 1]}>
         <BottomSheet.Handle label="시트 높이 조절" />
         <BottomSheet.Header title="댓글 3개" description="최신순으로 보여요."></BottomSheet.Header>
         <BottomSheet.Content className="px-5">

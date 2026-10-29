@@ -31,7 +31,7 @@ function ViewerContent({
 export function ViewerBoundary({ children, guest, fallback }: IViewerBoundaryProps) {
   const [viewerRef, { refetch }] = useBackgroundQuery(MeDocument);
   return (
-    <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
+    <AsyncBoundary fallback={fallback} onRetry={refetch}>
       <ViewerContent viewerRef={viewerRef} guest={guest} fallback={fallback}>
         {children}
       </ViewerContent>

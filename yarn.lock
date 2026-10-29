@@ -6261,6 +6261,7 @@ __metadata:
     jiti: "catalog:"
     jsdom: "catalog:"
     lucide-react: "catalog:"
+    motion: "npm:14.7.1"
     next: "catalog:"
     overlay-kit: "catalog:"
     react: "catalog:"
@@ -6270,6 +6271,7 @@ __metadata:
     tailwindcss: "catalog:"
     ts-pattern: "catalog:"
     typescript: "catalog:"
+    vite: "catalog:"
     vitest: "catalog:"
     zod: "catalog:"
   languageName: unknown
@@ -14229,6 +14231,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"framer-motion@npm:14.7.1":
+  version: 14.7.1
+  resolution: "framer-motion@npm:14.7.1"
+  dependencies:
+    motion-dom: "npm:14.7.1"
+    motion-utils: "npm:14.7.0"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/6223e4ee50f14d8c3ddba49427b448350029c1c6e97be9be6ed41218c13432970a5063bd18ab611b69ac896148653ae49660e108a29f417acb0732df9d5b1d69
+  languageName: node
+  linkType: hard
+
 "fresh@npm:^2.0.0":
   version: 2.0.0
   resolution: "fresh@npm:2.0.0"
@@ -17581,10 +17602,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"motion-dom@npm:14.7.1":
+  version: 14.7.1
+  resolution: "motion-dom@npm:14.7.1"
+  dependencies:
+    motion-utils: "npm:14.7.0"
+  checksum: 10c0/7e3c326e759dec21de6c76effbd3115e328d3acbb8379f1f8e0c8ac9ba70594fe1233d63756759753d64ba3a7679b832f3693578995e3aafffd39b45145a4b01
+  languageName: node
+  linkType: hard
+
 "motion-utils@npm:14.1.1":
   version: 14.1.1
   resolution: "motion-utils@npm:14.1.1"
   checksum: 10c0/ee89684857aae2b02897d7297568e1e6dc6c1eec08c61533fbc0a9650de5d5c454aa888532b825baabac92defddecd364cbb8cd7fa63b2171152edf8f9f819f0
+  languageName: node
+  linkType: hard
+
+"motion-utils@npm:14.7.0":
+  version: 14.7.0
+  resolution: "motion-utils@npm:14.7.0"
+  checksum: 10c0/99f4fff3c164998a053ae698f171858735631d4da980d27de67817899a708b2d6ba7246a8fb007b1d883dfd90ee06cfaa1dcfb55abb00511c8e169eb0bd14769
+  languageName: node
+  linkType: hard
+
+"motion@npm:14.7.1":
+  version: 14.7.1
+  resolution: "motion@npm:14.7.1"
+  dependencies:
+    framer-motion: "npm:14.7.1"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10c0/025328b2cbf07f70bf9a8afe60a95a42f08dc686a35786e46b58c4e30c25aa033ebe281866e62ac8bf832a8dbbfcf6d1b3d29734b6432969065c48b4d94f3df0
   languageName: node
   linkType: hard
 

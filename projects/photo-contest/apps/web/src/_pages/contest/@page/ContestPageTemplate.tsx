@@ -84,7 +84,7 @@ function ContestQuerySection({ id, viewerId }: { id: string; viewerId: string })
     <AsyncBoundary
       resetKey={id}
       fallback={<ContestLoading />}
-      onRetry={() => refetch()}
+      onRetry={refetch}
       renderError={(error, onRetry) => <ContestFailure id={id} error={error} onRetry={onRetry} />}
     >
       <ContestContent id={id} contestRef={contestRef} viewerId={viewerId} onRetry={handleRetry} />

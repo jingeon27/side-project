@@ -1,8 +1,10 @@
-# Actions and base images are pinned by digest/SHA; Dependabot proposes the updates as reviewable PRs.
+# Actions and base images stay pinned by digest/SHA; updates are reviewed and opened manually.
+# Set every version-update PR limit to zero to stop automatic Dependabot PRs.
 # Commit messages follow `<type>(deps): …` so the Commits check accepts them (PRs land with merge commits).
 version: 2
 updates:
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 0
     directory: /
     target-branch: develop
     schedule:
@@ -16,6 +18,7 @@ updates:
       github-actions:
         patterns: ['*']
   - package-ecosystem: docker
+    open-pull-requests-limit: 0
     directories:
       - /projects/photo-contest/apps/api
       - /projects/photo-contest/apps/web
@@ -36,6 +39,7 @@ updates:
       - dependency-name: node
         update-types: ['version-update:semver-major']
   - package-ecosystem: docker-compose
+    open-pull-requests-limit: 0
     directory: /deploy/shared-instance
     target-branch: develop
     schedule:

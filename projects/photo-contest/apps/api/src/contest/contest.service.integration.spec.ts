@@ -52,14 +52,13 @@ describe('대회', () => {
     await api?.close();
   });
 
-  function viewerFields(cookie: string, contestId: string) {
-    return api
-      .gqlOk<{ contest: IViewerFields }>(
-        cookie,
-        'query($id: ID!) { contest(id: $id) { phase isAdmin mySubmissionId votedSubmissionId submissionCount } }',
-        { id: contestId },
-      )
-      .then(({ contest }) => contest);
+  async function viewerFields(cookie: string, contestId: string) {
+    const { contest } = await api.gqlOk<{ contest: IViewerFields }>(
+      cookie,
+      'query($id: ID!) { contest(id: $id) { phase isAdmin mySubmissionId votedSubmissionId submissionCount } }',
+      { id: contestId },
+    );
+    return contest;
   }
 
   it('비회원의 대회 접근과 일반 멤버의 대회 생성을 거부해야 한다', async () => {

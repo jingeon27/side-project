@@ -70,18 +70,20 @@ export function App() {
   // 기기 ID는 웹 문서보다 먼저 심어야 해서 첫 링크와 함께 WebView를 열기 전에 받는다.
   // 오류 경계 밖인 앱 루트에서 읽어, 화면을 다시 시작해도 app_opened를 다시 보내지 않는다.
   useEffect(() => {
-    let isActive = true;
-    // 둘 다 거부하지 않는다(실패하면 홈 경로, 기기 ID 없음). 그래서 스플래시에 갇히지 않는다.
-    void Promise.all([readInitialLink(), startAnalytics(), restoreAppearance()]).then(
-      ([link, analyticsDeviceId]) => {
-        if (!isActive) return;
-        trackLaunch(link);
-        setLaunch({ initialPath: link.path, analyticsDeviceId });
-      },
-    );
-    return () => {
-      isActive = false;
+    const lifetime = new AbortController();
+    const initialize = async () => {
+      // 세 작업은 거부하지 않는다. 실패하면 홈 경로·기기 ID 없음·기본 테마로 진행한다.
+      const [link, analyticsDeviceId] = await Promise.all([
+        readInitialLink(),
+        startAnalytics(),
+        restoreAppearance(),
+      ]);
+      if (lifetime.signal.aborted) return;
+      trackLaunch(link);
+      setLaunch({ initialPath: link.path, analyticsDeviceId });
     };
+    void initialize();
+    return () => lifetime.abort();
   }, []);
 
   return (

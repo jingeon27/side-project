@@ -136,6 +136,18 @@ describe('link.open', () => {
     await expect(result).resolves.toEqual({ opened: true });
   });
 
+  it('먼저 응답한 뒤 브라우저가 늦게 거부되어도 처리되지 않은 거부를 남기지 않아야 한다', async () => {
+    vi.useFakeTimers();
+    const deps = createFakeDependencies();
+    const browser = Promise.withResolvers<{ type: string }>();
+    deps.openBrowser.mockReturnValue(browser.promise);
+    const result = createCapabilities(deps)['link.open']({ url: 'https://help.example/terms' });
+    await vi.advanceTimersByTimeAsync(300);
+    await expect(result).resolves.toEqual({ opened: true });
+    browser.reject(new Error('late browser failure'));
+    await vi.runAllTimersAsync();
+  });
+
   it('다른 브라우저가 이미 열려 있으면 opened false여야 한다', async () => {
     const deps = createFakeDependencies();
     deps.openBrowser.mockResolvedValue({ type: 'locked' });

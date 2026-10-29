@@ -23,7 +23,7 @@ export default defineConfig({
           environment: 'node',
           // 루트의 *.test.ts는 next.config 같은 앱 설정 파일 옆에 둔 테스트다.
           include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts', 'test/deployment/*.{spec,test}.ts'],
-          exclude: ['src/**/*.api.{spec,test}.ts'],
+          exclude: ['src/**/*.api.{spec,test}.ts', 'src/**/*.browser.{spec,test}.ts'],
         },
       },
       {

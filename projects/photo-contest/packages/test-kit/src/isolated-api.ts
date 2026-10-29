@@ -61,7 +61,7 @@ export async function startIsolatedApi({
   const stop = () =>
     new Promise<void>((done) => {
       if (child.exitCode !== null || child.signalCode !== null) return done();
-      child.once('exit', () => done());
+      child.once('exit', done);
       child.kill('SIGTERM');
     });
   try {

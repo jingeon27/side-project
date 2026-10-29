@@ -12,7 +12,7 @@ Expo 58 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글�
 - 소셜 로그인 코드는 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback`으로만 받는다(iOS associated domains `applinks`·`webcredentials`, Android `autoVerify` intent filter, 웹 AASA·assetlinks). 최소 iOS는 17.4(`ASWebAuthenticationSession` https 콜백)이고 `openAuthSessionAsync(…, { preferUniversalLinks: true })`로 연다. 딥링크 처리기는 콜백 경로를 열지 않는다. `gamefeedback://`는 로그인 밖 딥링크용이다.
 - `originWhitelist=['*']`와 동기 탐색 정책, 모든 메시지의 `nativeEvent.url` 검증을 유지한다. 새 창도 같은 정책을 사용한다. 딥링크는 알려진 locale·화면·안전한 ID만 받는다.
 - Android 뒤로 가기는 웹 overlay를 먼저 닫고, 800ms 내 미처리면 WebView history/종료로 이어진다. 응답을 기다리는 중 중복 누름은 무시한다. foreground는 세션을 먼저 확인하고 계정 변경 시 private cache를 지운다.
-- `WebViewChannel`은 화면 snapshot을 소유하고 `useWebShell`이 useSyncExternalStore로 구독한다. `ShellLifecycle`은 OS 전환·back 중복·초기/후속 링크 경합과 폐기를 관리한다. lifecycle 훅에 가변 let/ref 플래그를 두지 않으며 useCallback과 개별 의존성으로 OS 구독을 안정화한다. WebView props는 `satisfies WebViewProps`로 검증해 타입 추론을 유지한다.
+- `WebViewChannel`은 화면 snapshot을 소유하고 `useWebShell`이 useSyncExternalStore로 구독한다. `ShellLifecycle`은 OS 전환·back 중복·초기/후속 링크 경합과 폐기를 관리한다. lifecycle 훅에 가변 let/ref 플래그를 두지 않으며 OS 구독은 셸 마운트 수명으로 유지하고 useEffectEvent로 최신 처리 콜백을 읽는다. 구독 대상이 바뀌는 effect의 reactive 의존성은 유지한다. WebView props는 `satisfies WebViewProps`로 검증해 타입 추론을 유지한다.
 - 테스트 설정·파일은 이 앱이 소유한다. Vitest unit은 순수 함수, UI는 RN Web과 OS 모듈 대역, Playwright는 실제 웹/API + 실제 native host 로직을 쓴다. Web 3302/API 4302, `.next/e2e-mobile`, 전용 55444 DB의 `gf_test_mobile_*`만 사용한다. DB를 reset하지 않는다.
 - `bundle:check`는 Metro Android/iOS export를 검사한다. Playwright 통과를 dev client·실기기 또는 스토어 빌드 검증으로 표현하지 않는다.
 

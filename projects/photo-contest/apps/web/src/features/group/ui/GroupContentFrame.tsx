@@ -136,7 +136,7 @@ export function GroupContentFrame({
     <div className="flex flex-1 flex-col">
       {breadcrumb ? (
         <AsyncBoundary
-          onRetry={() => refetch()}
+          onRetry={refetch}
           fallback={
             <TopAppBar title={title} backHref={ROUTES.GROUP_CONTESTS(groupId)} actions={headerActions} />
           }
@@ -152,12 +152,12 @@ export function GroupContentFrame({
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 tablet:px-8">
         <AsyncBoundary
           fallback={<Skeleton className="h-64 w-full" />}
-          onRetry={() => refetch()}
+          onRetry={refetch}
           renderError={(error, onRetry) => <GroupContentFailure error={error} onRetry={onRetry} />}
         >
           <GroupContent
             groupRef={groupRef}
-            onRefresh={() => refetch()}
+            onRefresh={refetch}
             actions={actions}
             showNavigation={showNavigation}
           >
