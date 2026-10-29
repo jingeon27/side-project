@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getArticles, getPublishedCategories } from '@/entities/article/lib/get-articles';
-import { ArticleCard } from '@/entities/article/ui/article-card';
+import { ArticleCard } from '@/features/article/ui/article-card';
+import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 

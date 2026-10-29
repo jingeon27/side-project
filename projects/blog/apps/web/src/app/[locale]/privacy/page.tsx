@@ -20,12 +20,22 @@ export default async function PrivacyPage({ params }: Props) {
       <h1>{t.title}</h1>
       <p className="privacy-updated">{t.updated}</p>
       <p>{t.intro}</p>
-      {t.sections.map((section) => (
-        <section key={section.heading}>
-          <h2>{section.heading}</h2>
-          <p>{section.body}</p>
-        </section>
-      ))}
+      <section>
+        <h2>{t.sections.analytics.heading}</h2>
+        <p>{t.sections.analytics.body}</p>
+      </section>
+      <section>
+        <h2>{t.sections.heatmaps.heading}</h2>
+        <p>{t.sections.heatmaps.body}</p>
+      </section>
+      <section>
+        <h2>{t.sections.processors.heading}</h2>
+        <p>{t.sections.processors.body}</p>
+      </section>
+      <section>
+        <h2>{t.sections.retention.heading}</h2>
+        <p>{t.sections.retention.body}</p>
+      </section>
       <section>
         <h2>{t.optOut.heading}</h2>
         <p>{t.optOut.body}</p>

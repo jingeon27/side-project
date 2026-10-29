@@ -20,11 +20,7 @@ beforeEach(() => {
 });
 
 describe('language and theme preferences', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(vi.unstubAllGlobals);
 
   it('persists theme choice and updates accessible pressed state', async () => {
     render(<ThemeSwitch locale="en" />);

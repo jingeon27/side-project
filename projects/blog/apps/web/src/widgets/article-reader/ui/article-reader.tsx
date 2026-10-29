@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
-import type { Article } from '@/entities/article/model/types';
-import { ArticleCard } from '@/entities/article/ui/article-card';
-import { ArticleMeta } from '@/entities/article/ui/article-meta';
-import { ArticleTags } from '@/entities/article/ui/article-tags';
+import { orderBy } from 'es-toolkit';
+
 import { ArticleShare } from '@/features/article-share/ui/article-share';
+import { ArticleCard } from '@/features/article/ui/article-card';
+import { ArticleMeta } from '@/features/article/ui/article-meta';
+import { ArticleTags } from '@/features/article/ui/article-tags';
+import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 
 import { TableOfContents } from './table-of-contents';
@@ -26,10 +28,11 @@ export function ArticleReader({
   const score = (candidate: Article) =>
     (candidate.category === article.category ? 2 : 0) +
     candidate.tags.filter((tag) => article.tags.includes(tag)).length;
-  const related = articles
-    .filter((candidate) => candidate.id !== article.id)
-    .sort((a, b) => score(b) - score(a))
-    .slice(0, 3);
+  const related = orderBy(
+    articles.filter((candidate) => candidate.id !== article.id),
+    [score],
+    ['desc'],
+  ).slice(0, 3);
   return (
     <main id="main-content" className="article-page">
       <div className="article-layout">

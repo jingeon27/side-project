@@ -13,9 +13,16 @@ export default function ErrorPage({
 }) {
   const locale = useLocale();
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-      void import('@sentry/nextjs').then((Sentry) => Sentry.captureException(error)).catch(() => undefined);
-    }
+    if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
+    const reportError = async () => {
+      try {
+        const Sentry = await import('@sentry/nextjs');
+        Sentry.captureException(error);
+      } catch {
+        /* 선택적 모니터링 실패가 오류 화면을 방해하지 않게 한다. */
+      }
+    };
+    void reportError();
   }, [error]);
   return (
     <main id="main-content" className="page-container" style={{ paddingBlock: '6rem' }}>

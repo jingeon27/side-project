@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getArticles, getCategoryLocales, getPublishedCategories } from '@/entities/article/lib/get-articles';
-import type { Category, Locale } from '@/entities/article/model/types';
+import { getArticles, getCategoryLocales, getPublishedCategories } from '@/shared/article/lib/get-articles';
+import type { Category, Locale } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import { getArticleBySlug, getArticles } from '@/entities/article/lib/get-articles';
-import { loadArticle } from '@/entities/article/lib/registry';
+import { getArticleBySlug, getArticles } from '@/shared/article/lib/get-articles';
+import { loadArticle } from '@/shared/article/lib/registry';
 import { articleMetadata } from '@/shared/lib/seo/metadata';
 import { articleJsonLd, serializeJsonLd } from '@/shared/lib/seo/structured-data';
 import { ArticleReader } from '@/widgets/article-reader/ui/article-reader';

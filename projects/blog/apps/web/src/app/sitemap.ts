@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next';
 
-import { getArticles, getCategoryLocales, getPublishedCategories } from '@/entities/article/lib/get-articles';
+import { uniq } from 'es-toolkit';
+
 import { locales, type Locale } from '@/i18n/routing';
+import { getArticles, getCategoryLocales, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import { absoluteUrl } from '@/shared/config/site';
 import { articleAlternates, articlePath, withDefaultLanguage } from '@/shared/lib/seo/metadata';
 
@@ -25,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ),
       },
     }));
-    for (const tag of new Set(articles.flatMap((article) => article.tags))) {
+    for (const tag of uniq(articles.flatMap((article) => article.tags))) {
       entries.push({ url: absoluteUrl(`/${locale}/blog/tag/${encodeURIComponent(tag)}`) });
     }
     return [

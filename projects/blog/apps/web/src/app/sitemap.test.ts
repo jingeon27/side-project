@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getArticles, getPublishedCategories } from '@/entities/article/lib/get-articles';
-import { categories } from '@/entities/article/model/categories';
+import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-articles';
+import { categories } from '@/shared/article/model/categories';
 import { siteUrl } from '@/shared/config/site';
 
 import sitemap from './sitemap';
@@ -41,9 +41,11 @@ describe('multilingual SEO', () => {
     for (const entry of sitemap()) {
       const languages = entry.alternates?.languages ?? {};
       const versions = Object.keys(languages).filter((key) => key !== 'x-default');
-      if (versions.length > 1 && 'ko' in languages)
+      if (versions.length > 1 && 'ko' in languages) {
         expect(languages['x-default'], entry.url).toBe(languages.ko);
-      else expect(languages, entry.url).not.toHaveProperty('x-default');
+        continue;
+      }
+      expect(languages, entry.url).not.toHaveProperty('x-default');
     }
     expect(sitemap().find((entry) => entry.url === `${siteUrl.origin}/en`)?.alternates?.languages).toEqual({
       ko: `${siteUrl.origin}/ko`,
