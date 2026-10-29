@@ -66,7 +66,7 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   });
   useEffect(() => {
     if (!bridge) return;
-    return bridge.handleRequest('navigation.back', () => handleBack());
+    return bridge.handleRequest('navigation.back', handleBack);
   }, [bridge]);
 
   const openPath = useEffectEvent((path: string) => router.push(path));

@@ -33,7 +33,7 @@ function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery>
         <Button
           variant="secondary"
           loading={pagination.isFetchingNextPage}
-          onClick={() => pagination.fetchNextPage()}
+          onClick={pagination.fetchNextPage}
         >
           게시물 더 보기
         </Button>
@@ -49,7 +49,7 @@ export function PublicGalleryBoard() {
   return (
     <section className="mx-auto flex w-full max-w-feed flex-col gap-5" aria-label="공개 그룹의 최신 사진">
       <h2 className="border-b border-line pb-3 text-subtitle text-ink">공개 그룹의 최신 사진</h2>
-      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-60 w-full" />}>
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-60 w-full" />}>
         <PublicPosts queryRef={queryRef} />
       </AsyncBoundary>
     </section>

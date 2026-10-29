@@ -11,7 +11,7 @@ export function useOverlayHistory(isOpen: boolean, onClose: () => void) {
     const lifetime = new AbortController();
     // StrictMode가 effect를 두 번 실행할 때 항목을 두 번 쌓고 back()이 엇갈리지 않게 한 틱 미룬다.
     const timer = window.setTimeout(() => {
-      const key = pushOverlayEntry(() => close());
+      const key = pushOverlayEntry(close);
       lifetime.signal.addEventListener('abort', () => releaseOverlayEntry(key), { once: true });
     }, 0);
     return () => {

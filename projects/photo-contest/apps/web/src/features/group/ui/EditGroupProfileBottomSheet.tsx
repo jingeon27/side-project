@@ -159,8 +159,8 @@ export function EditGroupProfileBottomSheet({
   return (
     <BottomSheet.Root {...controls}>
       <BottomSheet.Header title="그룹 프로필 수정" />
-      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
-        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={() => controls.onClose()} />
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={controls.onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>
   );

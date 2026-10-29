@@ -123,8 +123,8 @@ export function EditProfileBottomSheet(controls: IBottomSheetControlProps) {
         description="사진과 닉네임을 원하는 모습으로 바꿔 보세요."
         className="mx-auto w-full max-w-app px-0"
       />
-      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
-        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={() => controls.onClose()} />
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={controls.onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>
   );

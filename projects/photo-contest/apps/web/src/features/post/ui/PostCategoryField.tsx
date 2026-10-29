@@ -42,7 +42,7 @@ export function PostCategoryField({ groupId, form }: { groupId: string; form: TP
   );
   if (!queryRef) return <Skeleton className="h-14 w-full" />;
   return (
-    <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-14 w-full" />}>
+    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-14 w-full" />}>
       <CategoryFieldContent queryRef={queryRef} form={form} />
     </AsyncBoundary>
   );

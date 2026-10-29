@@ -47,7 +47,7 @@ export function NotificationCounter() {
       <NotificationCountSync />
       <AsyncBoundary
         fallback={<NotificationLink />}
-        onRetry={() => refetch()}
+        onRetry={refetch}
         renderError={() => <NotificationLink />}
       >
         <Count queryRef={queryRef} />

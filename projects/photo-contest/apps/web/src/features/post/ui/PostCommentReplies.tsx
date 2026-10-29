@@ -37,7 +37,7 @@ function ReplyList({
           size="sm"
           loading={isFetchingNextPage}
           className="mt-2 text-muted"
-          onClick={() => fetchNextPage()}
+          onClick={fetchNextPage}
         >
           답글 더 보기
         </Button>
@@ -61,7 +61,7 @@ export function PostCommentReplies({
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-20 w-full" />}>
+    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-20 w-full" />}>
       <ReplyList queryRef={queryRef} replyToName={replyToName} />
     </AsyncBoundary>
   );

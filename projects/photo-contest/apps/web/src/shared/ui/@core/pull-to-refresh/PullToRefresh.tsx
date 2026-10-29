@@ -44,7 +44,7 @@ export function PullToRefresh({
       }
     });
   };
-  const refreshFromGesture = useEffectEvent(() => handleRefresh());
+  const refreshFromGesture = useEffectEvent(handleRefresh);
 
   useEffect(() => {
     if (!target) return;

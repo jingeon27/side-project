@@ -94,7 +94,7 @@ export function InvitePageTemplate({ token }: { token: string }) {
           resetKey={token}
           fallback={<Skeleton className="h-48 w-full" />}
           errorTitle="초대 링크를 확인해 주세요"
-          onRetry={() => refetch()}
+          onRetry={refetch}
         >
           <InviteContent token={token} previewRef={previewRef} />
         </AsyncBoundary>

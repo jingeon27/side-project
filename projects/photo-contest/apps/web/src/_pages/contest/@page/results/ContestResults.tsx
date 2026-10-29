@@ -120,7 +120,7 @@ function ResultsQuerySection({
   );
   const fallback = <Skeleton className="aspect-square w-full" />;
   return (
-    <AsyncBoundary resetKey={contestId} fallback={fallback} onRetry={() => refetch()}>
+    <AsyncBoundary resetKey={contestId} fallback={fallback} onRetry={refetch}>
       {resultsRef ? (
         <ResultsContent resultsRef={resultsRef} contestRef={contestRef} viewerId={viewerId} />
       ) : (
