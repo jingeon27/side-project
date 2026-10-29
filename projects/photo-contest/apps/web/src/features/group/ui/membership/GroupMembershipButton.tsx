@@ -9,6 +9,7 @@ import {
   GalleryDocument,
   GalleryPostsDocument,
   GroupAccessFragmentDoc,
+  GroupContestDocument,
   GroupVisibility,
   MeDocument,
   MyGroupsDocument,
@@ -34,7 +35,13 @@ export function GroupMembershipButton({ groupId }: { groupId: string }) {
       prependMyGroup(cache, data.requestGroupMembership);
       if (data.requestGroupMembership.role) resetGalleryPosts(cache);
     },
-    refetchQueries: [GalleryDocument, DiscoverGroupsDocument, MyGroupsDocument, GalleryPostsDocument],
+    refetchQueries: [
+      GalleryDocument,
+      GroupContestDocument,
+      DiscoverGroupsDocument,
+      MyGroupsDocument,
+      GalleryPostsDocument,
+    ],
     awaitRefetchQueries: true,
     onCompleted: ({ requestGroupMembership: result }) => {
       toast.success(

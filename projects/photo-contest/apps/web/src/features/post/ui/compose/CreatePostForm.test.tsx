@@ -57,6 +57,7 @@ async function openForm() {
     </StrictMode>,
   );
   await screen.findByRole('form', { name: '그룹에 글쓰기' });
+  expect(screen.getByLabelText('첨부 링크', { exact: false })).not.toBeRequired();
   return { user, ...view, input: screen.getByLabelText('사진 또는 동영상 선택') };
 }
 
@@ -194,6 +195,7 @@ async function fillUploadForm({
     </ApolloProvider>,
   );
   await screen.findByRole('form', { name: '그룹에 글쓰기' });
+  expect(screen.getByLabelText('첨부 링크', { exact: false })).not.toBeRequired();
   await user.upload(screen.getByLabelText('사진 또는 동영상 선택'), photo());
   await user.type(screen.getByLabelText('제목', { exact: false }), '웃긴 순간');
   await user.click(screen.getByRole('checkbox', { name: /공유할 권리/ }));
