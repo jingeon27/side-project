@@ -32,7 +32,7 @@ describe('Sentry 초기화', () => {
       expect.objectContaining({
         dsn: 'https://public@sentry.example/1',
         environment: 'production',
-        tracesSampleRate: 0,
+        tracesSampleRate: 0.1,
         dataCollection: {
           userInfo: false,
           cookies: false,
@@ -46,14 +46,6 @@ describe('Sentry 초기화', () => {
         beforeSendTransaction: scrubEvent,
       }),
     );
-  });
-
-  it('추적 비율이 없거나 0~1 사이 숫자가 아니면 0이어야 한다', () => {
-    vi.stubEnv('SENTRY_DSN', 'https://public@sentry.example/1');
-    for (const invalid of ['', 'abc', '-0.1', '1.5', 'Infinity']) {
-      expect(sentryOptions()?.tracesSampleRate, invalid).toBe(0);
-    }
-    expect(sentryOptions()?.tracesSampleRate).toBe(0);
   });
 });
 

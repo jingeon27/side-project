@@ -15,6 +15,7 @@ import { originGuard } from './common/http/origin-guard.middleware';
 import { createInputValidationPipe } from './common/input-validation';
 import { assertProductionConfig, isTest, trustedProxyHops } from './config/env';
 import { MAX_JSON_BODY } from './config/limits';
+import { traceHttpRequest } from './monitoring/http-performance.middleware';
 import { TestingModule } from './testing/testing.module';
 
 const LOG_LEVELS = ['error', 'warn', 'log'] satisfies LogLevel[];
@@ -47,6 +48,7 @@ export async function createApp({
   });
   // 운영에서는 외부에 포트를 열지 않고 Caddy 한 단계가 전달한 주소만 사용한다.
   app.set('trust proxy', trustedProxyHops());
+  app.use(traceHttpRequest);
   app.use(noStore);
   app.use(originGuard);
   app.use('/graphql', graphqlRateLimit());

@@ -1,3 +1,11 @@
+## 2026-10-30 API p95와 GraphQL 성능 계측
+
+오류 수집에 수동 HTTP·GraphQL 최상위 resolver 추적(10%)과 샘플링에 독립인 Sentry Application Metrics를 추가했다. HTTP 지연·요청 수는 라우트 템플릿·상태별로, GraphQL 지연·실행 필드 수는 서버 스키마의 필드와 업무 거절/내부 실패로 나눈다. HTTP 200의 GraphQL 오류도 성능 outcome으로 구분한다. health probe는 제외하며 API release도 연결한다.
+
+operationName·alias·문서·변수·쿠키·ID는 성능 데이터에 넣지 않는다. SDK가 metric hook 뒤 합치는 scope 정보도 최종 envelope에서 제거한다. 실제 Apollo 실행과 메모리 transport로 이 제거 정책과 오류 분류를 확인했다. Web Vitals는 기존 브라우저 계측을 유지하며 Sentry MCP에서 최근 7일 LCP 저장 표본을 확인했다.
+
+검증: 기존 API 단위 195개와 새 Apollo 플러그인 검사 1개, API 타입·변경 파일 ESLint 통과. 실제 Nest HTTP·DB 통합 사양도 추가했으나 로컬 테스트 DB(55434)가 응답하지 않아 로컬 실행은 완료하지 못했다. 해당 검사는 CI integration 레인에서도 수집한다. 개발 DB·실행 중인 서버·운영 배포는 변경하지 않았다.
+
 ## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
 
 현재 인증은 아이디·비밀번호와 익명 세션만 제공한다. 아래 과거 검증 기록의 외부 인증·앱 로그인 항목은 제거된 구현에 대한 이력이다.
