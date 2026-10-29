@@ -23,3 +23,6 @@ description: Apply the user's code structure and React UI feedback when implemen
 - `useRef`를 기본 상태 저장소로 쓰지 않는다. 순수 계산·파생 값, state/reducer, 외부 store·구독 API를 먼저 검토한다. `const` 객체 속성 변경이나 불필요한 class로 가변 상태를 숨기지 않는다. ref는 DOM 포커스처럼 명확한 imperative 자원에 대안이 부적절한 경우만 유지한다.
 
 - 생성자 인자를 그대로 보관하는 클래스 필드는 별도 선언·대입 대신 TypeScript parameter property로 합친다. 접근 범위·readonly·인자 순서는 보존하고 단순 초기값은 기본 인자를 검토한다. 변환·검증·자원 생성을 억지로 인자로 노출하지 않으며, 기본 인자에서 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않는다. 필드 초기화와 `super()` 순서를 보존한다.
+
+- 추가 처리나 인자 변환이 없는 콜백은 불필요한 화살표 래퍼·별칭 대신 함수 참조를 직접 넘긴다. 이벤트 객체가 옵션 인자로 전달되거나 this 바인딩·지연 평가·반환형 조정이 필요한 래퍼는 유지한다. `useEffectEvent`의 최신 값 연결 역할은 보존한다.
+- `.then()` 체인보다 `async`/`await`와 필요한 `try/catch/finally`를 우선한다. 불필요하게 오류를 삼키지 말고 상위에서 처리할 오류는 전파한다. 기존 병렬 실행·취소·정리·오류 처리 범위를 보존한다.
