@@ -12,7 +12,9 @@ import { appRoutes } from '@game-feedback/bridge';
 import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
 import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
 
+import { useSession } from '@/features/auth';
 import { createPostMutationOptions } from '@/features/post';
+import { uploadPostMediaMutationOptions } from '@/features/post-media';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -21,7 +23,6 @@ import { ErrorNotice, Field, useNotify } from '@/shared/ui';
 
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
-import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
 
 interface ICreatePostFormProps {
@@ -45,7 +46,8 @@ export function CreatePostForm({
   const router = useRouter();
   const notify = useNotify();
   const create = useMutation(createPostMutationOptions(client));
-  const { upload, handleUpload } = usePostMediaUpload();
+  const { session } = useSession();
+  const upload = useMutation(uploadPostMediaMutationOptions(session.user?.id));
   const form = useZodForm(postComposerSchema, {
     defaultValues: {
       title: '',
@@ -130,7 +132,7 @@ export function CreatePostForm({
           </NativeSelect>
         )}
       </Field>
-      <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
+      <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
       <ErrorNotice message={errorMessage && t(errorMessage)} />
       <Button
         variant="accent"

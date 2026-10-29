@@ -42,9 +42,18 @@ function NotificationsContent({ locale }: INotificationsPageProps) {
       </div>
     );
   return (
-    <AsyncBoundary clientOnly title={t('내 알림')} resetKey={session.user.id}>
-      <NotificationInbox userId={session.user.id} locale={locale} />
-    </AsyncBoundary>
+    <>
+      <div className="page-heading">
+        <h1>{t('새로운 시선이 도착했어요')}</h1>
+        <p>{t('플레이를 함께 고민해 준 사람들의 이야기를 확인하세요.')}</p>
+      </div>
+      <AsyncBoundary clientOnly title={t('앱 알림')} resetKey={session.user.id}>
+        <PushNotificationSettings userId={session.user.id} />
+      </AsyncBoundary>
+      <AsyncBoundary clientOnly title={t('내 알림')} resetKey={session.user.id}>
+        <NotificationInbox userId={session.user.id} locale={locale} />
+      </AsyncBoundary>
+    </>
   );
 }
 function NotificationInbox({ userId, locale }: INotificationsPageProps & { userId: string }) {
@@ -53,14 +62,9 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
   const query = useSuspenseInfiniteQuery(notificationListOptions(userId, { limit: 20 }));
   const mutation = useMutation(readNotificationMutationOptions(client));
   if (query.error && !query.isFetching) throw query.error;
-  const items = query.data.pages.flatMap((page) => page.items) || [];
+  const items = query.data.pages.flatMap((page) => page.items);
   return (
     <>
-      <div className="page-heading">
-        <h1>{t('새로운 시선이 도착했어요')}</h1>
-        <p>{t('플레이를 함께 고민해 준 사람들의 이야기를 확인하세요.')}</p>
-      </div>
-      <PushNotificationSettings userId={userId} />
       <div className="section-title-row">
         <h2>
           {t('내 알림')}

@@ -14,11 +14,14 @@ import { useNativePushSupported } from '../model/use-native-push-supported';
 
 export function PushNotificationSettings({ userId }: { userId: string }) {
   const supported = useNativePushSupported();
+  return supported ? <NativePushSettings userId={userId} /> : null;
+}
+
+function NativePushSettings({ userId }: { userId: string }) {
   const { t, locale } = useI18n();
   const client = useQueryClient();
-  const { data: status } = useQuery({ ...pushStatusOptions(userId, locale), enabled: supported });
+  const { data: status } = useQuery(pushStatusOptions(userId, locale));
   const enable = useMutation(enablePushMutationOptions(client, userId, locale));
-  if (!supported) return null;
   const message = match(status)
     .with('unavailable', () => t('앱 알림을 준비하고 있어요. 잠시 후 다시 확인해 주세요.'))
     .with('granted', () => t('앱 알림이 켜져 있어요.'))
@@ -30,13 +33,13 @@ export function PushNotificationSettings({ userId }: { userId: string }) {
     .with({ status: 'denied' }, () => t('기기 설정 열기'))
     .with({ pending: false }, () => t('알림 켜기'))
     .exhaustive();
-  function handleAction() {
+  const handleAction = () => {
     if (status === 'denied') {
       postToNative({ type: 'push-settings' });
       return;
     }
     enable.mutate();
-  }
+  };
   return (
     <section className="info-card" aria-label={t('앱 알림')}>
       <strong>{t('앱 알림')}</strong>
