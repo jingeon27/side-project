@@ -26,7 +26,7 @@ const sha = 'a'.repeat(40);
 const apiImage = `ghcr.io/jingeon27/side-project-photo-contest-api@sha256:${'b'.repeat(64)}`;
 const webImage = `ghcr.io/jingeon27/side-project-photo-contest-web@sha256:${'c'.repeat(64)}`;
 const token = 'registry-token-fixture-only';
-const serviceEnv = "DATABASE_URL=fixture-new\nENV_SECRET='secret:$literal ${unexpanded} 한글'\n";
+const serviceEnv = "PC_DATABASE_URL=fixture-new\nENV_SECRET='secret:$literal ${unexpanded} 한글'\n";
 const state = {} as { root: string; tools: string };
 
 // 원격 호스트·Docker·SSH만 대역으로 바꾸고 배포 스크립트는 그대로 실행한다.

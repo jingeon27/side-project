@@ -1,18 +1,20 @@
+# SERVICE_ENV uses PC_*; legacy names remain readable until existing Secrets are replaced.
+# Container variable names follow the API's existing configuration contract.
 name: side-photo-contest
 x-api: &api
   NODE_ENV: production
-  PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
-  EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+  PUSH_NOTIFICATIONS_ENABLED: ${PC_PUSH_NOTIFICATIONS_ENABLED-${PUSH_NOTIFICATIONS_ENABLED:-false}}
+  EXPO_ACCESS_TOKEN: ${PC_EXPO_ACCESS_TOKEN-${EXPO_ACCESS_TOKEN:-}}
   API_URL: http://pc-api:4200
   WEB_ORIGIN: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}
-  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
-  S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
-  S3_REGION: ap-northeast-2
-  S3_KEY_PREFIX: ${S3_KEY_PREFIX:-photo-contest/production}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
-  AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
-  SENTRY_DSN: ${SENTRY_DSN:-}
+  DATABASE_URL: ${PC_DATABASE_URL:-${DATABASE_URL:?Set DATABASE_URL}}
+  S3_BUCKET: ${PC_S3_BUCKET:-${S3_BUCKET:?Set S3_BUCKET}}
+  S3_REGION: ${PC_S3_REGION-${S3_REGION:-ap-northeast-2}}
+  S3_KEY_PREFIX: ${PC_S3_KEY_PREFIX-${S3_KEY_PREFIX:-photo-contest/production}}
+  AWS_ACCESS_KEY_ID: ${PC_AWS_ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}}
+  AWS_SECRET_ACCESS_KEY: ${PC_AWS_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}}
+  AWS_SESSION_TOKEN: ${PC_AWS_SESSION_TOKEN-${AWS_SESSION_TOKEN:-}}
+  SENTRY_DSN: ${PC_SENTRY_DSN-${SENTRY_DSN:-}}
   NODE_OPTIONS: --max-old-space-size=384
 x-logging: &logging
   driver: json-file
@@ -103,7 +105,7 @@ services:
     command: [node, scripts/production.ts, migrate]
     environment:
       <<: *api
-      DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
+      DATABASE_URL: ${PC_DATABASE_MIGRATION_URL:-${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}}
     networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']

@@ -113,14 +113,14 @@ cloud-init 실패 시 `/var/log/cloud-init-output.log`를 본다. 볼륨 연결�
 
 ### 5. 비밀 발급(Terraform 밖)
 
-| 비밀                           | 발급                                                                  | 넣는 곳                                                                                           |
-| ------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| GF S3 액세스 키                | `aws iam create-access-key --user-name side-shared-game-feedback-s3`  | `/srv/side-project/services/game-feedback/.env`의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY` |
-| PC S3 액세스 키                | `aws iam create-access-key --user-name side-shared-photo-contest-s3`  | `/srv/side-project/services/photo-contest/.env`의 `AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`     |
-| 서비스 DB 비밀번호 4개         | `openssl rand -base64 36` 등으로 서로 다른 32자 이상                  | 6단계 `\password` 프롬프트, 7단계 `DATABASE_URL`·`DATABASE_MIGRATION_URL`(URL 인코딩)             |
-| `GF_CACHE_REVALIDATION_SECRET` | `openssl rand -hex 32`                                                | GF 서비스 `.env`                                                                                  |
-| 배포용 SSH 키                  | `ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f side-deploy` | 공개 키는 호스트 `/home/ubuntu/.ssh/authorized_keys`, 개인 키는 9단계 GitHub Secret               |
-| OAuth·Supercell·Sentry         | 각 공급자 콘솔                                                        | 서비스별 `.env`                                                                                   |
+| 비밀                           | 발급                                                                  | 넣는 곳                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| GF S3 액세스 키                | `aws iam create-access-key --user-name side-shared-game-feedback-s3`  | `/srv/side-project/services/game-feedback/.env`의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY`   |
+| PC S3 액세스 키                | `aws iam create-access-key --user-name side-shared-photo-contest-s3`  | `/srv/side-project/services/photo-contest/.env`의 `PC_AWS_ACCESS_KEY_ID`·`PC_AWS_SECRET_ACCESS_KEY` |
+| 서비스 DB 비밀번호 4개         | `openssl rand -base64 36` 등으로 서로 다른 32자 이상                  | 6단계 `\password` 프롬프트, 7단계 DB URL 두 개(GF는 `DATABASE_*`, PC는 `PC_DATABASE_*`, URL 인코딩) |
+| `GF_CACHE_REVALIDATION_SECRET` | `openssl rand -hex 32`                                                | GF 서비스 `.env`                                                                                    |
+| 배포용 SSH 키                  | `ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f side-deploy` | 공개 키는 호스트 `/home/ubuntu/.ssh/authorized_keys`, 개인 키는 9단계 GitHub Secret                 |
+| OAuth·Supercell·Sentry         | 각 공급자 콘솔                                                        | 서비스별 `.env`                                                                                     |
 
 PostgreSQL superuser 비밀번호는 `prepare.sh`가 `/srv/side-project/database/.env`에 만들며 initdb에만 쓰인다. `pg_hba.conf`가 네트워크의 superuser 로그인을 거부하므로 따로 발급하거나 보관하지 않는다.
 
@@ -150,7 +150,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 ### 7. 서버 환경 파일
 
 - `/srv/side-project/.env`: `terraform output -raw host_env`의 값(`BACKUP_BUCKET`·`BACKUP_REGION` 포함)으로 바꾸고 `ACME_EMAIL`은 확인해 둔다.
-- 서비스별 `.env` 초안: `DATABASE_URL`·`DATABASE_MIGRATION_URL`의 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
+- 서비스별 `.env` 초안: GF의 `DATABASE_URL`·`DATABASE_MIGRATION_URL`, PC의 `PC_DATABASE_URL`·`PC_DATABASE_MIGRATION_URL`에 있는 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
 
 이어서 [공통 EC2 배포](../README.md#프록시와-github-actions)대로 `proxy.sh validate` → `proxy.sh start`를 실행한다.
 
