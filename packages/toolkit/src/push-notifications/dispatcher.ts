@@ -16,7 +16,7 @@ export interface IPushJob {
 export interface IPushJobUpdate {
   status: 'PENDING' | 'TICKET' | 'DELIVERED' | 'FAILED' | 'CANCELLED';
   nextAttemptAt?: Date;
-  ticketId?: string;
+  ticketId?: string | null;
   attempts?: number;
 }
 export interface IPushStore {
@@ -103,6 +103,10 @@ export class PushDispatcher {
             });
             continue;
           }
+          if (result.status === 'error' && result.code === 'MessageRateExceeded') {
+            await this.retry(item, now, true);
+            continue;
+          }
           if (result.status === 'error' && result.code === 'DeviceNotRegistered')
             await this.store.disable(item.job.deviceId);
           await this.store.finish(item.job.id, item.lease, {
@@ -124,7 +128,10 @@ export class PushDispatcher {
     await this.store.finish(item.job.id, item.lease, {
       status: retryable && attempts < MAX_ATTEMPTS ? 'PENDING' : 'FAILED',
       attempts,
-      nextAttemptAt: new Date(now.getTime() + Math.max(delay ?? 0, 30_000 * 2 ** (attempts - 1))),
+      ticketId: null,
+      nextAttemptAt: new Date(
+        now.getTime() + Math.max(delay ?? 0, 30_000 * 2 ** Math.min(attempts - 1, MAX_ATTEMPTS - 1)),
+      ),
     });
   }
 }

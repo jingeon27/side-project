@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { requestLogout } from '../api/auth-request.helper';
 import { saveNotifiedUserId } from '../lib/login-marker.helper';
+import { notifySessionChanged } from '../lib/session-change-signal';
 
 const LOGOUT_FAILED = '로그아웃하지 못했어요. 다시 시도해 주세요.';
 
@@ -34,6 +35,7 @@ export function LogoutButton({ isAnonymous = false }: { isAnonymous?: boolean })
     resetAnalytics();
     saveNotifiedUserId(null);
     bridge?.notify('auth.changed', { signedIn: false });
+    notifySessionChanged();
     navigateDocument(ROUTES.SIGN);
   };
 

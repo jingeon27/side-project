@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { useQuery } from '@apollo/client/react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -12,11 +12,14 @@ import {
   getSafeNextPath,
   isSessionRequiredPath,
 } from '@/shared/lib/auth-gate.helper';
+import { reloadDocument } from '@/shared/lib/document-navigation.helper';
 import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { useAppRouter } from '@/shared/model/router';
 
 import { readNotifiedUserId, saveNotifiedUserId, takePendingLogin } from '../../lib/login-marker.helper';
+import { AUTH_SESSION_SIGNAL } from '../../lib/session-change-signal';
+import { authSession } from '../../model/auth-session';
 
 /**
  * 레이아웃에 한 번 둔다(화면은 그리지 않는다). 누가 로그인했는지 확인되면 분석 도구와 앱에 같은 사용자 ID를 알린다.
@@ -29,8 +32,41 @@ export function AuthSessionSync() {
   const bridge = useBridge();
   const router = useAppRouter();
   const pathname = usePathname();
+  const client = useApolloClient();
+  const session = authSession(client);
   const { data } = useQuery(MeDocument);
   const me = data?.me;
+
+  const handleSessionChanged = useEffectEvent(() => {
+    // RSC·폼·열린 시트도 이전 사용자의 상태이므로 같은 문서를 다시 연다.
+    reloadDocument();
+  });
+  useEffect(() => {
+    const stop = session.subscribe(handleSessionChanged);
+    const handleRefresh = () => {
+      void session.refresh().catch(() => undefined);
+    };
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible') handleRefresh();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === AUTH_SESSION_SIGNAL) handleRefresh();
+    };
+    window.addEventListener('focus', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisible);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      stop();
+      session.stopRefresh();
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisible);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (data) void session.accept(data, false).catch(() => undefined);
+  }, [data, session]);
 
   useEffect(() => {
     if (me === undefined) return;

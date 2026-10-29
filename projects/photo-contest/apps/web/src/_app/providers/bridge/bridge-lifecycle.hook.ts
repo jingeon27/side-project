@@ -7,6 +7,7 @@ import { match } from 'ts-pattern';
 
 import type { IWebBridge } from '@photo-contest/bridge/web';
 
+import { refreshAuthSession } from '@/features/auth';
 import { buildSentryClientTags } from '@/shared/lib/sentry.helper';
 import {
   closeTopOverlay,
@@ -72,6 +73,7 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   const handleOpenPath = useEffectEvent((path: string) => router.push(path));
   const handleActiveState = useEffectEvent(async () => {
     try {
+      if (await refreshAuthSession(client)) return;
       await client.refetchQueries({ include: 'active' });
     } catch {
       // 각 쿼리의 실패는 그 화면이 보여 준다.

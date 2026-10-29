@@ -110,6 +110,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
               where: {
                 id,
                 status: { in: ['PENDING', 'TICKET'] },
+                nextAttemptAt: { lte: date },
                 OR: [{ leaseUntil: null }, { leaseUntil: { lte: date } }],
               },
               data: { leaseToken: lease, leaseUntil: until },

@@ -11,6 +11,7 @@ import {
   type ITestUser,
 } from '../../../test/support/app';
 import { createGroup } from '../../../test/support/fixtures';
+import { ERROR_MESSAGE } from '../../common/errors';
 import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../../config/limits';
 
 const REQUEST =
@@ -122,13 +123,19 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
   it('파일 전송 전에는 완료·게시하지 못하고 완료는 티켓 소유자만 실행하며 같은 키를 확정해야 한다', async () => {
     const image = await createTestImage();
     const grant = await ticket(image);
-    expect(await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).toEqual({
-      code: 'BAD_USER_INPUT',
-      message: '파일 전송을 완료한 뒤 다시 시도해 주세요.',
+    // AWS HEAD는 ListBucket 권한에 따라 없는 객체에도 403을 준다. 확인된 404만 업무 오류로 처리한다.
+    expect([
+      { code: 'BAD_USER_INPUT', message: '파일 전송을 완료한 뒤 다시 시도해 주세요.' },
+      { code: 'INTERNAL_SERVER_ERROR', message: ERROR_MESSAGE.INTERNAL },
+    ]).toContainEqual(await api.gqlFail(member.cookie, COMPLETE, { id: grant.id }));
+    expect(await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).toMatchObject({
+      storageKey: null,
+      stagingKey: field(grant, 'key'),
     });
     expect((await api.gqlFail(member.cookie, CREATE, { group: groupId, upload: grant.id })).code).toBe(
       'BAD_USER_INPUT',
     );
+    expect(await api.db.post.count({ where: { uploadId: grant.id } })).toBe(0);
     expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
     expect((await api.gqlFail(undefined, COMPLETE, { id: grant.id })).code).toBe('UNAUTHENTICATED');
     expect((await api.gqlFail(owner.cookie, COMPLETE, { id: grant.id })).code).toBe('FORBIDDEN');

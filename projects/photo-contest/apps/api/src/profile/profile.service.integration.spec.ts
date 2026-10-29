@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestImage } from '@photo-contest/test-kit';
 
 import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
+import { ERROR_MESSAGE } from '../common/errors';
 import { UPLOAD_TICKET_TTL_MS } from '../config/limits';
 
 const REQUEST =
@@ -39,7 +40,24 @@ describe('프로필 사진과 가입 설정', () => {
   it('브라우저가 S3에 직접 올린 사진만 HEAD 확인 후 적용하고 조회 때 짧은 서명 URL로 보내야 한다', async () => {
     const body = await createTestImage();
     const upload = await ticket(body);
-    expect((await api.gqlFail(owner.cookie, COMPLETE, { uploadId: upload.id })).code).toBe('BAD_USER_INPUT');
+    const previous = await api.db.user.findUniqueOrThrow({
+      where: { id: owner.id },
+      select: { avatarUploadId: true },
+    });
+    // ListBucket 권한이 없는 AWS HEAD는 미전송 객체도 403이라 원인을 확정할 수 없어 서버 오류로 보고한다.
+    expect([
+      { code: 'BAD_USER_INPUT', message: '파일 전송을 완료한 뒤 다시 시도해 주세요.' },
+      { code: 'INTERNAL_SERVER_ERROR', message: ERROR_MESSAGE.INTERNAL },
+    ]).toContainEqual(await api.gqlFail(owner.cookie, COMPLETE, { uploadId: upload.id }));
+    expect(await api.db.profileUpload.findUniqueOrThrow({ where: { id: upload.id } })).toMatchObject({
+      completedAt: null,
+    });
+    expect(
+      await api.db.user.findUniqueOrThrow({ where: { id: owner.id }, select: { avatarUploadId: true } }),
+    ).toEqual(previous);
+    expect(
+      (await api.gqlFail(owner.cookie, UPDATE, { nickname: owner.nickname, avatarId: upload.id })).code,
+    ).toBe('FORBIDDEN');
     expect((await api.gqlFail(other.cookie, COMPLETE, { uploadId: upload.id })).code).toBe('FORBIDDEN');
     expect((await uploadToStorage(upload, body, 'image/png')).ok).toBe(true);
     await api.gqlOk(owner.cookie, COMPLETE, { uploadId: upload.id });

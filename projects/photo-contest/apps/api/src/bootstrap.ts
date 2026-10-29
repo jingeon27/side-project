@@ -53,7 +53,8 @@ export async function createApp({
   app.use(originGuard);
   app.use('/graphql', graphqlRateLimit());
   app.use(mediaRateLimit());
-  app.use(json({ limit: MAX_JSON_BODY }));
+  // 클라이언트는 JSON을 그대로 보내므로 요청 압축 해제 스트림을 만들지 않는다.
+  app.use(json({ limit: MAX_JSON_BODY, inflate: false }));
   app.use(bodyParserErrorHandler);
   app.useGlobalPipes(createInputValidationPipe());
   app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));

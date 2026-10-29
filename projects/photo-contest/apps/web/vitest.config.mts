@@ -33,11 +33,22 @@ export default defineConfig({
       },
       {
         extends: true,
+        // 실제 AppApolloProvider를 jsdom에서 실행할 때 Next 통합의 SSR 전송을 사용하지 않는다.
+        resolve: { conditions: ['browser'] },
         test: {
           name: 'ui',
           environment: 'jsdom',
           include: ['src/**/*.{spec,test}.tsx'],
           setupFiles: ['./vitest.setup.ts'],
+          server: {
+            deps: {
+              inline: [
+                /@apollo\/client-integration-nextjs/,
+                /@apollo\/client-react-streaming/,
+                /@sentry\/nextjs/,
+              ],
+            },
+          },
         },
       },
       {
