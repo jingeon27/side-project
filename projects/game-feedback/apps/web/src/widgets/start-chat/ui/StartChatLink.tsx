@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MessageCircle } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button, Spinner } from '@side/design-system';
+import { Button, type IButtonProps } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { chatError, createConversationMutationOptions } from '@/features/chat';
@@ -19,10 +19,18 @@ interface IStartChatLinkProps {
   userId: string;
   nickname: string;
   label?: string;
-  appearance?: 'text' | 'button';
+  variant?: IButtonProps['variant'];
+  size?: IButtonProps['size'];
 }
 
-export function StartChatLink({ source, userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
+export function StartChatLink({
+  source,
+  userId,
+  nickname,
+  label,
+  variant = 'ghost',
+  size = 'sm',
+}: IStartChatLinkProps) {
   const client = useQueryClient();
   const { t } = useI18n();
   const { session, requireLogin } = useSession();
@@ -47,30 +55,18 @@ export function StartChatLink({ source, userId, nickname, label, appearance = 't
 
   if (session?.user?.id === userId) return null;
   const text = label ?? t('채팅하기');
-  const icon = <MessageCircle size={13} aria-hidden />;
-  const controlProps = {
-    type: 'button' as const,
-    disabled: mutation.isPending,
-    onClick: handleStart,
-    'aria-label': label ? `${nickname} ${label}` : `${nickname}님과 채팅하기`,
-  };
-  if (appearance === 'button')
-    return (
-      <Button
-        {...controlProps}
-        className="chat-author-link"
-        variant="accent"
-        size="md"
-        loading={mutation.isPending}
-        icon={icon}
-      >
-        {text}
-      </Button>
-    );
   return (
-    <button {...controlProps} className="text-action chat-author-link">
-      {mutation.isPending ? <Spinner className="size-3" /> : icon}
+    <Button
+      type="button"
+      onClick={handleStart}
+      aria-label={label ? `${nickname} ${label}` : t('{name}님과 채팅하기', { name: nickname })}
+      className="chat-author-link"
+      variant={variant}
+      size={size}
+      loading={mutation.isPending}
+      icon={<MessageCircle size={13} aria-hidden />}
+    >
       {text}
-    </button>
+    </Button>
   );
 }

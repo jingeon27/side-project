@@ -20,6 +20,9 @@ test('public comments identify the post author and remain readable on mobile and
   const authorComment = comments.locator('article').filter({ hasText: ownComment.body });
   await expect(authorComment.locator('.comment-author-label')).toHaveText('작성자');
   await expect(authorComment.locator('time')).toHaveAttribute('datetime', ownComment.createdAt);
+  await expect(comments).not.toContainText('#GG829JGY');
+  await expect(comments).not.toContainText('#9QY82JGY');
+  await expect(comments.getByText('인증 유저', { exact: true })).toBeVisible();
   await expect(comments.getByRole('button', { name: '로그인하고 댓글 남기기', exact: true })).toBeVisible();
   await expect(page.locator('.detail-card .detail-author')).toContainText(detail.post.author.nickname);
   await expect(page.locator('.detail-card .avatar')).toHaveCount(1);
@@ -125,7 +128,7 @@ test('comment drafts support line breaks and author chat opens the correct conve
     const ownBox = await mine.boundingBox();
     const peerBox = await theirs.boundingBox();
     if (!ownBox || !peerBox) throw new Error('Both comment bubbles must be visible.');
-    expect(ownBox.x + ownBox.width).toBeGreaterThan(peerBox.x + peerBox.width);
+    expect(Math.abs(ownBox.x - peerBox.x)).toBeLessThanOrEqual(1);
     expect((await page.locator('.comment-compose').boundingBox())?.height).toBeLessThanOrEqual(64);
   }
   await page.setViewportSize({ width: 393, height: 852 });

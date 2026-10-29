@@ -9,17 +9,17 @@ import { PostCommentThread } from './PostCommentThread';
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: { id: 'viewer' } }, login: vi.fn() }),
 }));
-vi.mock('@/features/user', () => ({
+vi.mock('@/features/user', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/user')>()),
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
-  UserBadges: () => null,
 }));
 vi.mock('./CommentActions', () => ({ CommentActions: () => null }));
 
 const author = {
   id: 'author',
   nickname: '먼저쓴사람',
-  isVerified: false,
-  supercellTag: null,
+  isVerified: true,
+  supercellTag: '#GG829JGY',
   isTestAccount: false,
 };
 const post = {
@@ -67,4 +67,19 @@ describe('답글 버튼 접근성', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: '답글 내용' }));
     expectControlledElementsExist(container);
   });
+});
+
+it('댓글과 답글에서는 태그를 숨기고 인증 표시는 유지한다', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PostCommentThread
+        thread={{ comment, replies: [{ ...comment, id: 'reply', parentId: comment.id, body: '답글 본문' }] }}
+        postAuthorId={post.author.id}
+        locale="ko"
+      />
+    </QueryClientProvider>,
+  );
+  expect(screen.queryByText('#GG829JGY')).toBeNull();
+  expect(screen.getAllByText('인증 유저')).toHaveLength(2);
+  expect(screen.getByText('답글 본문', { exact: false })).toBeTruthy();
 });

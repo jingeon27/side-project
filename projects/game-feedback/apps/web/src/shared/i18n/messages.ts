@@ -4,6 +4,8 @@ import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '{name}님의 댓글 메뉴': ['Comment menu for {name}', '{name}さんのコメントメニュー'],
+  '{name}님과 채팅하기': ['Chat with {name}', '{name}さんとチャット'],
   '앱 알림을 준비하고 있어요. 잠시 후 다시 확인해 주세요.': [
     'App notifications are being set up. Please check again later.',
     'アプリ通知を準備しています。後でもう一度確認してください。',

@@ -61,9 +61,6 @@
   .profile-person .muted {
     display: block;
   }
-  .conversation-preview > .user-badges {
-    margin: 0 0 7px;
-  }
   .test-account-picker {
     margin: 3px 0 23px;
   }

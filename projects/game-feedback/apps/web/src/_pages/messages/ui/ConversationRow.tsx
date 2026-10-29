@@ -29,13 +29,15 @@ export function ConversationRow({ conversation, selected, locale, replace }: ICo
       aria-label={`${t('{name}님과의 대화', { name: conversation.peer.nickname })}${conversation.unreadCount ? `, ${t('읽지 않은 메시지 {count}개', { count: conversation.unreadCount })}` : ''}`}
       aria-current={selected ? 'page' : undefined}
     >
-      <Avatar src={conversation.peer.avatarUrl} name={conversation.peer.nickname} />
+      <Avatar src={conversation.peer.avatarUrl} name={conversation.peer.nickname} size="small" />
       <div className="conversation-preview">
         <div>
-          <strong>{conversation.peer.nickname}</strong>
+          <span className="conversation-peer-name">
+            <strong>{conversation.peer.nickname}</strong>
+            <UserBadges author={conversation.peer} compact showTag={false} />
+          </span>
           <time dateTime={conversation.updatedAt}>{timeAgo(conversation.updatedAt, textLocale)}</time>
         </div>
-        <UserBadges author={conversation.peer} compact />
         <div>
           <p>
             {conversation.lastMessage?.body ||

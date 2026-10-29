@@ -27,34 +27,18 @@ function ThreadComment({
   postAuthorId,
   locale,
   replyToName,
+  canReply = true,
 }: {
   comment: Comment;
   postAuthorId: string;
   locale: string;
   replyToName?: string;
+  canReply?: boolean;
 }) {
-  const { session } = useSession();
-  const author = comment.author;
-  return (
-    <CommentItem
-      comment={comment}
-      replyToName={replyToName}
-      mine={author?.id === session.user?.id}
-      isPostAuthor={author?.id === postAuthorId}
-      authorName={author && <AuthorLink author={author} locale={locale} />}
-      authorContent={author && <UserBadges author={author} compact />}
-      actions={!comment.isDeleted && <CommentActions comment={comment} />}
-    />
-  );
-}
-
-export function PostCommentThread({ thread, postAuthorId, locale }: IPostCommentThreadProps) {
   const { t } = useI18n();
   const { session, requireLogin } = useSession();
   const [replying, setReplying] = useState(false);
-  const { comment, replies } = thread;
   const author = comment.author;
-
   const handleReply = () => {
     if (!session.user) {
       requireLogin();
@@ -62,43 +46,60 @@ export function PostCommentThread({ thread, postAuthorId, locale }: IPostComment
     }
     setReplying(true);
   };
-
-  const handleCloseReply = () => {
-    setReplying(false);
-  };
-
+  const handleCloseReply = () => setReplying(false);
   return (
-    <li className="comment-thread">
-      <ThreadComment comment={comment} postAuthorId={postAuthorId} locale={locale} />
-      {!comment.isDeleted && author && (
-        <div className="comment-reply-action">
-          {/* 답글 버튼은 입력 폼으로 바뀌는 진입점이다. 펼침 상태를 가진 토글이 아니므로 aria-expanded·aria-controls를 두지 않는다. */}
-          {!replying && (
+    <>
+      <CommentItem
+        comment={comment}
+        replyToName={replyToName}
+        mine={author?.id === session.user?.id}
+        isPostAuthor={author?.id === postAuthorId}
+        authorName={author && <AuthorLink author={author} locale={locale} />}
+        authorContent={author && <UserBadges author={author} compact showTag={false} />}
+        actions={!comment.isDeleted && <CommentActions comment={comment} />}
+        replyAction={
+          !comment.isDeleted &&
+          canReply &&
+          !replying && (
             <Button variant="ghost" size="sm" type="button" onClick={handleReply}>
               <Reply size={14} aria-hidden="true" />
               {t('답글')}
             </Button>
-          )}
-          {replying && (
-            <PostCommentReplyForm
-              postId={comment.postId}
-              parentId={comment.id}
-              nickname={author.nickname}
-              onCancel={handleCloseReply}
-              onSuccess={handleCloseReply}
-            />
-          )}
-        </div>
+          )
+        }
+      />
+      {replying && canReply && author && !comment.isDeleted && (
+        <PostCommentReplyForm
+          postId={comment.postId}
+          parentId={comment.id}
+          nickname={author.nickname}
+          onCancel={handleCloseReply}
+          onSuccess={handleCloseReply}
+        />
       )}
+    </>
+  );
+}
+
+export function PostCommentThread({ thread, postAuthorId, locale }: IPostCommentThreadProps) {
+  const { t } = useI18n();
+  const { comment, replies } = thread;
+  const authors = new Map([comment, ...replies].map((item) => [item.id, item.author]));
+  return (
+    <li className="comment-thread">
+      <ThreadComment comment={comment} postAuthorId={postAuthorId} locale={locale} />
       {replies.length > 0 && (
         <ol className="comment-replies" aria-label={t('답글')}>
           {replies.map((reply) => (
             <li key={reply.id}>
               <ThreadComment
                 comment={reply}
+                canReply={!comment.isDeleted}
                 postAuthorId={postAuthorId}
                 locale={locale}
-                replyToName={author?.nickname}
+                replyToName={
+                  reply.isDeleted ? undefined : authors.get(reply.replyToId ?? comment.id)?.nickname
+                }
               />
             </li>
           ))}

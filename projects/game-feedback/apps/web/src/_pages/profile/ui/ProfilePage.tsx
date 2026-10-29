@@ -121,7 +121,8 @@ function ProfileContent({
               source="profile"
               userId={author.id}
               nickname={author.nickname}
-              appearance="button"
+              variant="accent"
+              size="md"
             />
             <ReportUserButton userId={author.id} />
           </div>

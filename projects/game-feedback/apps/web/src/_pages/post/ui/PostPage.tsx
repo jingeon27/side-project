@@ -93,7 +93,8 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
                 userId={post.author.id}
                 nickname={post.author.nickname}
                 label={t('작성자와 1:1 채팅')}
-                appearance="button"
+                variant="accent"
+                size="md"
               />
             )
           }
