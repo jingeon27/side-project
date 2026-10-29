@@ -44,12 +44,12 @@ export function PullToRefresh({
       }
     });
   };
-  const refreshFromGesture = useEffectEvent(handleRefresh);
+  const handleRefreshFromGesture = useEffectEvent(handleRefresh);
 
   useEffect(() => {
     if (!target) return;
     const lifetime = new AbortController();
-    const start = (event: TouchEvent) => {
+    const handleTouchStart = (event: TouchEvent) => {
       if (refreshMutex.isLocked || event.touches.length !== 1 || window.scrollY > 0) return;
       const origin = event.touches[0];
       if (!origin || !(event.target instanceof Element)) return;
@@ -61,13 +61,13 @@ export function PullToRefresh({
       };
       if (hasScrolledAncestor(event.target)) return;
       const session = new AbortController();
-      const cancel = () => {
+      const handleTouchCancel = () => {
         session.abort();
         if (!refreshMutex.isLocked) pullDistance.set(0);
       };
       pullDistance.set(0);
-      lifetime.signal.addEventListener('abort', cancel, { once: true, signal: session.signal });
-      const move = (next: TouchEvent) => {
+      lifetime.signal.addEventListener('abort', handleTouchCancel, { once: true, signal: session.signal });
+      const handleTouchMove = (next: TouchEvent) => {
         const touch = next.touches[0];
         if (
           !touch ||
@@ -75,32 +75,32 @@ export function PullToRefresh({
           touch.identifier !== origin.identifier ||
           window.scrollY > 0
         ) {
-          cancel();
+          handleTouchCancel();
           return;
         }
         const y = touch.clientY - origin.clientY;
         if (y <= 0 || Math.abs(touch.clientX - origin.clientX) > Math.max(y, 10)) {
-          cancel();
+          handleTouchCancel();
           return;
         }
         if (next.cancelable) next.preventDefault();
         pullDistance.set(Math.min(MAX_PULL_DISTANCE, y / 2));
       };
-      const end = () => {
+      const handleTouchEnd = () => {
         session.abort();
         if (pullDistance.get() >= REFRESH_DISTANCE) {
-          refreshFromGesture();
+          handleRefreshFromGesture();
           return;
         }
         pullDistance.set(0);
       };
       // Motion pan은 세로 touch-action 제한이 필요하다. 기본 스크롤·핀치를 보존하려고 유효한 당기기만 중재한다.
-      target.addEventListener('touchmove', move, { passive: false, signal: session.signal });
-      target.addEventListener('touchend', end, { signal: session.signal });
-      target.addEventListener('touchcancel', cancel, { signal: session.signal });
-      target.addEventListener('touchstart', cancel, { signal: session.signal });
+      target.addEventListener('touchmove', handleTouchMove, { passive: false, signal: session.signal });
+      target.addEventListener('touchend', handleTouchEnd, { signal: session.signal });
+      target.addEventListener('touchcancel', handleTouchCancel, { signal: session.signal });
+      target.addEventListener('touchstart', handleTouchCancel, { signal: session.signal });
     };
-    target.addEventListener('touchstart', start, { passive: true, signal: lifetime.signal });
+    target.addEventListener('touchstart', handleTouchStart, { passive: true, signal: lifetime.signal });
     return () => lifetime.abort();
   }, [target, pullDistance, refreshMutex]);
 

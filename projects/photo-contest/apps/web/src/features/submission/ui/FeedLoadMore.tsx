@@ -16,7 +16,7 @@ interface IFeedLoadMoreProps {
  */
 export function FeedLoadMore({ hasMore, loading, onLoadMore }: IFeedLoadMoreProps) {
   const sentinel = useRef<HTMLDivElement>(null);
-  const loadIfVisible = useEffectEvent((entries: IntersectionObserverEntry[]) => {
+  const handleIntersection = useEffectEvent((entries: IntersectionObserverEntry[]) => {
     if (entries.some((entry) => entry.isIntersecting) && !loading) onLoadMore();
   });
 
@@ -24,7 +24,7 @@ export function FeedLoadMore({ hasMore, loading, onLoadMore }: IFeedLoadMoreProp
     const target = sentinel.current;
     if (!hasMore || !target || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
-      loadIfVisible,
+      handleIntersection,
       // 한 화면쯤 남았을 때 미리 불러온다.
       { rootMargin: '0px 0px 600px 0px' },
     );

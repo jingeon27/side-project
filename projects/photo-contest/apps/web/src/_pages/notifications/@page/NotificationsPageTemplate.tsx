@@ -48,7 +48,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
       if (data?.markAllNotificationsRead) markAllNotificationsReadInCache(cache, new Date().toISOString());
     },
   });
-  function handleOpen(notice: NotificationCardFragment) {
+  const handleOpen = (notice: NotificationCardFragment) => {
     if (!notice.readAt) {
       const readAt = new Date().toISOString();
       // 읽음 저장을 기다리지 않고 바로 연다. 실패해도 알림 내용 열기는 막지 않는다.
@@ -79,7 +79,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
       return;
     }
     router.push(ROUTES.GROUP(notice.groupId));
-  }
+  };
   return (
     <>
       <div className="flex items-center justify-between gap-3">
