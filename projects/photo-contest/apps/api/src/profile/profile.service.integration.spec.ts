@@ -18,7 +18,7 @@ interface ITicket {
   fields: { name: string; value: string }[];
 }
 
-describe('프로필 사진과 소셜 가입 설정', () => {
+describe('프로필 사진과 가입 설정', () => {
   let api: ITestApi, owner: ITestUser, other: ITestUser;
   beforeAll(async () => {
     api = await createTestApp();
@@ -101,14 +101,14 @@ describe('프로필 사진과 소셜 가입 설정', () => {
     await expect(api.storage.head(row.storageKey)).rejects.toThrow();
   });
 
-  it('소셜 이름·사진을 기본값으로 주고 약관 동의와 수정·제거를 확정해야 한다', async () => {
-    const user = await api.signIn('소셜가입전');
+  it('기존 이름·사진을 기본값으로 주고 약관 동의와 수정·제거를 확정해야 한다', async () => {
+    const user = await api.signIn('가입완료전');
     await api.db.user.update({
       where: { id: user.id },
-      data: { needsOnboarding: true, nickname: 'OAuth 이름', avatar: 'https://provider.example/profile.jpg' },
+      data: { needsOnboarding: true, nickname: '기존 이름', avatar: 'https://provider.example/profile.jpg' },
     });
     expect(await api.gqlOk(user.cookie, '{me{nickname avatar needsOnboarding}}')).toEqual({
-      me: { nickname: 'OAuth 이름', avatar: 'https://provider.example/profile.jpg', needsOnboarding: true },
+      me: { nickname: '기존 이름', avatar: 'https://provider.example/profile.jpg', needsOnboarding: true },
     });
     expect((await api.gqlFail(user.cookie, 'mutation{createGroup(name:"가입전 금지"){id}}')).code).toBe(
       'FORBIDDEN',
