@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ChatAccessService } from '../chat/chat-access.service';
 import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';

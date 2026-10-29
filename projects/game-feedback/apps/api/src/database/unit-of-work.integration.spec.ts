@@ -7,7 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { historyWhere } from '../chat/chat-history';
 import { hash, token } from '../common/crypto';
 import { PrismaClient } from '../generated/prisma';

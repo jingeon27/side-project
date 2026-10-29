@@ -18,7 +18,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 
 ## 권한·가시성
 
-- `@UseGuards(UserGuard | AdminGuard)`(`src/common/http/session.guard.ts`)를 붙여도 서비스 첫 줄에서 `requireUser(req)`·`requireAdmin(req)`(`src/auth/session-access.ts`)로 사용자를 받는다. Guard가 파이프보다 먼저라 비로그인은 400보다 401이 먼저 나온다.
+- `@UseGuards(UserGuard | AdminGuard)`(`src/common/http/session.guard.ts`)를 붙여도 서비스 첫 줄에서 `requireUser(req)`·`requireAdmin(req)`(`src/auth/session/session-access.ts`)로 사용자를 받는다. Guard가 파이프보다 먼저라 비로그인은 400보다 401이 먼저 나온다.
 - 소유 확인은 서비스에서 한다(`authorId !== u.id` → 403 `FORBIDDEN`). 볼 수 없는 대상은 404로 존재를 숨긴다.
 - 공개 목록·상세는 `ACTIVE_CONTENT`/`ACTIVE_POST`(`src/common/content.ts`)와 `authorId: { notIn: await this.visibility.excluded(req) }`(양방향 차단 + 일반 모드의 테스트 계정)를 함께 건다. 답변·댓글 개수 같은 하위 집계에도 같은 조건을 쓴다.
 - 커서 목록: `decodeCursor`/`encodeCursor`(`src/common/pagination.ts`), `orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]`, `take: limit + 1`, 응답 `{ items, nextCursor }`.

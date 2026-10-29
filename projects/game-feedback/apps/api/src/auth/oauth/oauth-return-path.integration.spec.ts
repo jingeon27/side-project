@@ -6,12 +6,12 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createApp } from '../app';
-import { assertDatabaseUrl } from '../database/database-url';
-import { createPrismaAdapter } from '../database/prisma-adapter';
-import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
-import { PrismaClient } from '../generated/prisma';
-import { responseLocation } from '../testing/http-response';
+import { createApp } from '../../app';
+import { assertDatabaseUrl } from '../../database/database-url';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
+import { DemoProfileProvider } from '../../game-profiles/providers/demo-profile.provider';
+import { PrismaClient } from '../../generated/prisma';
+import { responseLocation } from '../../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
 
 const target = process.env.DATABASE_URL;

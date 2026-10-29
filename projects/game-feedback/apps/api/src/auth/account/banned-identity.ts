@@ -2,9 +2,9 @@ import { uniqBy } from 'es-toolkit';
 
 import type { TSocialProvider } from '@game-feedback/contracts';
 
-import { hash } from '../common/crypto';
-import { ApiError } from '../common/http/api-error';
-import type { Prisma, PrismaClient } from '../generated/prisma';
+import { hash } from '../../common/crypto';
+import { ApiError } from '../../common/http/api-error';
+import type { Prisma, PrismaClient } from '../../generated/prisma';
 
 type TClient = PrismaClient | Prisma.TransactionClient;
 

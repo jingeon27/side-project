@@ -3,8 +3,8 @@ import { match } from 'ts-pattern';
 
 import { AuthReturnPathSchema } from '@game-feedback/contracts';
 
-import { cookies } from '../common/http/cookies';
-import { parse } from '../common/validation';
+import { cookies } from '../../common/http/cookies';
+import { parse } from '../../common/validation';
 
 export const OAUTH_RETURN_COOKIE = 'gamefeedback_oauth_return';
 

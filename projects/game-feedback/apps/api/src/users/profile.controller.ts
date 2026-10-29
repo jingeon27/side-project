@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { AvatarUploadInputSchema, type TAvatarUploadDto } from './avatar-upload.dto';

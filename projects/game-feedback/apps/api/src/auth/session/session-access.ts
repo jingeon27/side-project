@@ -1,4 +1,4 @@
-import { ApiError } from '../common/http/api-error';
+import { ApiError } from '../../common/http/api-error';
 import type { SessionRequest } from './session.types';
 
 export function requireUser(req: SessionRequest) {

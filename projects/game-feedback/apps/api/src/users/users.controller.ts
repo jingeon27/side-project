@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, Req } from '@nestjs/common';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { UsersService } from './users.service';
 
 @Controller('api')

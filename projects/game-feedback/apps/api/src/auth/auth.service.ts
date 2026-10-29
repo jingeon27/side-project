@@ -14,21 +14,21 @@ import { GameProfilesService } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
-import { AccountWithdrawalService } from './account-withdrawal.service';
-import { AppAuthService } from './app-auth.service';
+import { AccountWithdrawalService } from './account/account-withdrawal.service';
+import { bannedIdentityError, isBannedIdentity } from './account/banned-identity';
+import { SocialIdentityService } from './account/social-identity.service';
+import { AppAuthService } from './app-login/app-auth.service';
 import { type TDemoLoginDto, type TOnboardDto, type TTestLoginDto } from './auth-input.dto';
-import { bannedIdentityError, isBannedIdentity } from './banned-identity';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
   savedReturnPath,
-} from './oauth-return-path';
-import { requireUser } from './session-access';
-import { sessionToken } from './session-token';
-import { SessionService } from './session.service';
-import type { SessionRequest } from './session.types';
-import { SocialIdentityService } from './social-identity.service';
+} from './oauth/oauth-return-path';
+import { requireUser } from './session/session-access';
+import { sessionToken } from './session/session-token';
+import { SessionService } from './session/session.service';
+import type { SessionRequest } from './session/session.types';
 
 /**
  * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 보낸다. 코드 원문은 이 URL에만 실린다.

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import type { AppConfig } from '../config/app.config';
 import type { Prisma, PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from './user-visibility.service';

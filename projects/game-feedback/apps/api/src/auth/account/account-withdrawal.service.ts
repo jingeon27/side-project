@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { DISCOVERY_CACHE_TAG, POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { ApiError } from '../common/http/api-error';
-import { Prisma } from '../generated/prisma';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
+import { ApiError } from '../../common/http/api-error';
+import { Prisma } from '../../generated/prisma';
 import { clearBannedIdentities, recordBannedIdentities } from './banned-identity';
 
 @Injectable()

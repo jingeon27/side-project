@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
-import { clearBannedIdentities, recordBannedIdentities } from '../../auth/banned-identity';
-import { requireAdmin } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
+import { clearBannedIdentities, recordBannedIdentities } from '../../auth/account/banned-identity';
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ChatEvents } from '../../chat/chat.events';
 import { ApiError } from '../../common/http/api-error';

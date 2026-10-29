@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
-import { requireProfileLookupSession, requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireProfileLookupSession, requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';

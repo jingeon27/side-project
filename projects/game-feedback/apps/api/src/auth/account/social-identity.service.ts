@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { GameProfile, TSocialProvider } from '@game-feedback/contracts';
 
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../../generated/prisma';
 import { assertIdentityNotBanned } from './banned-identity';
 
 @Injectable()

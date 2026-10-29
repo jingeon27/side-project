@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
 import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';

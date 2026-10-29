@@ -1,6 +1,7 @@
 import { match, P } from 'ts-pattern';
 
-import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
+import { resolveIdentityProviders } from '../auth/oauth/identity-providers.factory';
+import type { IdentityProvider, TIdentityProviders } from '../auth/oauth/providers/identity-provider';
 import {
   resolveCacheRevalidationConfig,
   type ICacheRevalidationConfig,
@@ -13,7 +14,6 @@ import { SupercellProfileProvider } from '../game-profiles/providers/supercell-p
 import type { PrismaClient } from '../generated/prisma';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
 import { resolveAppAuthCallbackUrl } from './app-auth-callback';
-import { resolveIdentityProviders } from './identity-providers';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 

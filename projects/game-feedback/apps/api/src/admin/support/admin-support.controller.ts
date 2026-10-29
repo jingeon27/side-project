@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 
-import type { SessionRequest } from '../../auth/session.types';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { ChatMessageInputSchema, type TSendMessageDto } from '../../chat/chat-input.dto';
 import { ListQuerySchema, type TListQueryDto } from '../../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../../common/http/request-validation';

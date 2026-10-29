@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ProfileLinksSchema } from '@game-feedback/contracts';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { PrismaClient } from '../generated/prisma';

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
 import { mediaRange } from '../common/media-file';
 import { UnitOfWork } from '../database/unit-of-work';

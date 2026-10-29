@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { requireAdmin } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { ChatAttachmentService } from '../../chat/chat-attachment.service';
 import { type TSendMessageDto } from '../../chat/chat-input.dto';
 import { ChatMessageService } from '../../chat/chat-message.service';

@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, Inject, Param, Post, Req, UseGuards } from '
 
 import { PlayerTagSchema } from '@game-feedback/contracts';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
 import { ProfileLookupGuard, UserGuard } from '../common/http/session.guard';
 import { GameAccountInputSchema, type TGameAccountDto } from './game-account-input.dto';

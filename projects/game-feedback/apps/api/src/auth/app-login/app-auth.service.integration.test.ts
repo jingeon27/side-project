@@ -6,11 +6,11 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createApp } from '../app';
-import { createPrismaAdapter } from '../database/prisma-adapter';
-import { PrismaClient } from '../generated/prisma';
-import { assertDatabaseUrl, hash } from '../security';
-import { responseCookies, responseLocation } from '../testing/http-response';
+import { createApp } from '../../app';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
+import { PrismaClient } from '../../generated/prisma';
+import { assertDatabaseUrl, hash } from '../../security';
+import { responseCookies, responseLocation } from '../../testing/http-response';
 
 const baseUrl = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';

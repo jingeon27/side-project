@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, Patch, Req, UseGuards } from '@nestjs/common';
 
-import type { SessionRequest } from '../../auth/session.types';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { ValidatedBody } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminUsersService } from './admin-users.service';

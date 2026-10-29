@@ -5,15 +5,15 @@ import type { Response } from 'express';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
-import { hash, token } from '../common/crypto';
-import { ApiError } from '../common/http/api-error';
-import { parse } from '../common/validation';
-import { PrismaClient } from '../generated/prisma';
-import { type TAppExchangeDto } from './auth-input.dto';
-import { assertIdentityNotBanned } from './banned-identity';
-import { SessionService } from './session.service';
-import type { SessionRequest } from './session.types';
-import { SocialIdentityService } from './social-identity.service';
+import { hash, token } from '../../common/crypto';
+import { ApiError } from '../../common/http/api-error';
+import { parse } from '../../common/validation';
+import { PrismaClient } from '../../generated/prisma';
+import { assertIdentityNotBanned } from '../account/banned-identity';
+import { SocialIdentityService } from '../account/social-identity.service';
+import { type TAppExchangeDto } from '../auth-input.dto';
+import { SessionService } from '../session/session.service';
+import type { SessionRequest } from '../session/session.types';
 
 @Injectable()
 export class AppAuthService {

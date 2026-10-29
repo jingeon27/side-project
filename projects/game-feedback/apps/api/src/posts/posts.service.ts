@@ -4,8 +4,8 @@ import { match } from 'ts-pattern';
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
 
 import { ANSWER_PAGE, answerPage } from '../answers/answer-page';
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';

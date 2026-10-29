@@ -1,8 +1,8 @@
 import type { Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { SessionService } from '../../auth/session.service';
-import type { SessionRequest } from '../../auth/session.types';
+import type { SessionService } from '../../auth/session/session.service';
+import type { SessionRequest } from '../../auth/session/session.types';
 import type { AppConfig } from '../../config/app.config';
 import { ApiAccessMiddleware } from './api-access.middleware';
 

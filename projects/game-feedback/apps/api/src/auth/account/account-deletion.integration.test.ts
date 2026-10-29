@@ -8,11 +8,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
 
-import { createApp } from '../app';
-import { assertDatabaseUrl } from '../database/database-url';
-import { createPrismaAdapter } from '../database/prisma-adapter';
-import { PrismaClient } from '../generated/prisma';
-import { seed } from '../seed';
+import { createApp } from '../../app';
+import { assertDatabaseUrl } from '../../database/database-url';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
+import { PrismaClient } from '../../generated/prisma';
+import { seed } from '../../seed';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';

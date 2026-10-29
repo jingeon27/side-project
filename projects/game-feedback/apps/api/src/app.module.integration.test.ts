@@ -2,7 +2,7 @@ import supertest from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from './app';
-import { SessionService } from './auth/session.service';
+import { SessionService } from './auth/session/session.service';
 import { ChatEvents } from './chat/chat.events';
 import { createPrismaAdapter } from './database/prisma-adapter';
 import { DemoProfileProvider } from './game-profiles/providers/demo-profile.provider';

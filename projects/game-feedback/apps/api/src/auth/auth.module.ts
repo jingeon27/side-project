@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 
 import { GameProfilesModule } from '../game-profiles/game-profiles.module';
-import { AccountWithdrawalService } from './account-withdrawal.service';
-import { AppAuthService } from './app-auth.service';
+import { AccountWithdrawalService } from './account/account-withdrawal.service';
+import { SocialIdentityService } from './account/social-identity.service';
+import { AppAuthService } from './app-login/app-auth.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { SessionService } from './session.service';
-import { SocialIdentityService } from './social-identity.service';
+import { SessionService } from './session/session.service';
 
 @Module({
   imports: [GameProfilesModule],

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ChatConversationService } from '../chat/chat-conversation.service';
 import { conversationPair } from '../chat/conversation-pair';
 import { ApiError } from '../common/http/api-error';

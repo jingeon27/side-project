@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { hiddenUserIds } from './hidden-users';

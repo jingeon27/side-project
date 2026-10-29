@@ -8,13 +8,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SessionSchema, SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
-import { createApp } from '../app';
-import { hash, token } from '../common/crypto';
-import { assertDatabaseUrl } from '../database/database-url';
-import { createPrismaAdapter } from '../database/prisma-adapter';
-import { PrismaClient } from '../generated/prisma';
-import { seed } from '../seed';
-import { responseLocation } from '../testing/http-response';
+import { createApp } from '../../app';
+import { hash, token } from '../../common/crypto';
+import { assertDatabaseUrl } from '../../database/database-url';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
+import { PrismaClient } from '../../generated/prisma';
+import { seed } from '../../seed';
+import { responseLocation } from '../../testing/http-response';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';

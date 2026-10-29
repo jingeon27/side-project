@@ -1,4 +1,4 @@
-import { COOKIE, cookies } from '../common/http/cookies';
+import { COOKIE, cookies } from '../../common/http/cookies';
 import type { SessionRequest } from './session.types';
 
 export function sessionToken(req: SessionRequest) {

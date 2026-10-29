@@ -15,8 +15,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { mediaRange } from '../common/media-file';
 import { MediaUploadInputSchema, type TMediaUploadDto } from '../common/media-upload.dto';

@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';

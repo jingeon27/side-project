@@ -4,8 +4,8 @@ import { match } from 'ts-pattern';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag } from '@game-feedback/contracts';
 
-import { requireAdmin } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
 import { decodeCursor, nextCursor } from '../../common/pagination';

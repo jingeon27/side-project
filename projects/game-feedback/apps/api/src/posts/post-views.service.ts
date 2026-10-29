@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ACTIVE_POST } from '../common/content';
 import { hash } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';

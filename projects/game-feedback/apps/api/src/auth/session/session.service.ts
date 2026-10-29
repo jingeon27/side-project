@@ -3,14 +3,14 @@ import type { Response } from 'express';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
-import { ADMIN_COOKIE, isAdminPath } from '../admin/auth/admin-session';
-import { hash, token } from '../common/crypto';
-import { ApiError } from '../common/http/api-error';
-import { COOKIE, cookies, setCookie } from '../common/http/cookies';
-import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-import { userDto } from '../users/user.presenter';
+import { ADMIN_COOKIE, isAdminPath } from '../../admin/auth/admin-session';
+import { hash, token } from '../../common/crypto';
+import { ApiError } from '../../common/http/api-error';
+import { COOKIE, cookies, setCookie } from '../../common/http/cookies';
+import { APP_CONFIG, type AppConfig } from '../../config/app.config';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
+import { userDto } from '../../users/user.presenter';
 import { sessionToken } from './session-token';
 import type { SessionRequest } from './session.types';
 

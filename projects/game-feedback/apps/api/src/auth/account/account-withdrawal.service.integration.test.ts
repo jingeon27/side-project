@@ -8,14 +8,14 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
-import { createAdminAccount } from '../admin/auth/admin-account';
-import { createApp } from '../app';
-import { assertDatabaseUrl } from '../database/database-url';
-import { createPrismaAdapter } from '../database/prisma-adapter';
-import { PrismaClient } from '../generated/prisma';
-import { seed } from '../seed';
-import { responseLocation } from '../testing/http-response';
-import { SessionService } from './session.service';
+import { createAdminAccount } from '../../admin/auth/admin-account';
+import { createApp } from '../../app';
+import { assertDatabaseUrl } from '../../database/database-url';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
+import { PrismaClient } from '../../generated/prisma';
+import { seed } from '../../seed';
+import { responseLocation } from '../../testing/http-response';
+import { SessionService } from '../session/session.service';
 
 class TestGate {
   resolve: () => void = () => undefined;
