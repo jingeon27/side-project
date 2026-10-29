@@ -1486,3 +1486,13 @@ GF apps·packages·scripts의 authored 생성자를 점검했다. 대부분 이�
 WebViewChannel의 초기 URL 별칭과 파생 snapshot, Quill placeholder·SDK validation issues·S3 client·EventReader iterator도 기존 초기화를 유지했다. 단순화를 위해 생성자에 파생 자원용 선택 인자를 추가하거나 공개 API를 넓히지 않았다. 최종 코드 변경 없이 기존 minimize-ref 지침을 보존하고 접근 수준·readonly·인자 순서·기본값·초기화 순서·실행기 지원에 관한 판단 기준을 code-style 스킬에 추가했다.
 
 검증: 검토 중 Mobile/API typecheck, 후보 파일 ESLint·Prettier, 기존 WebViewChannel 테스트 4개(`--maxWorkers=2`) 통과. 후보 코드는 위 판단에 따라 모두 원복했다. 최종 스킬 validator·diff 검사 통과. 새 테스트·전체 E2E·외부 서비스 smoke는 실행하지 않았다.
+
+## 2026-10-29 직접 콜백 전달과 async/await
+
+GF authored 앱·패키지의 전달 callback과 Promise 체인을 점검했다. Web 로그인·설정 진입, RHF blur/checkbox, 첨부 mutation, callback ref setter와 초안 가드에는 원래 함수를 직접 전달한다. 인자를 변환하거나 고정하는 callback, React Query의 event/options 차단, observer/DOM 메서드의 this 바인딩, React Compiler가 controller 전체를 ref로 오인하는 RichTextEditor callback-ref 어댑터는 유지했다. SDK 호출을 감싸는 API 진입점은 요청 옵션 등 공개 시그니처 경계를 유지한다.
+
+Admin lazy import, API 숨김 대상 조회·seed 종료, Mobile 초기 링크·알림 응답·푸시 등록·인증 응답, Web 최초 문서 데이터·Quill 초기화/업로드·업로드 정리를 async/await로 정리했다. 링크/푸시의 취소 가드와 NativeHost generation·중복 인증 방지, 푸시 memoize 캐시 해제, 실패한 업로드 초안, 원래 업로드 오류와 seed disconnect 오류 처리를 유지한다. NativeHost는 제공자 오류 정규화와 응답 전송을 분리해 전송 예외를 로그인 실패로 바꾸지 않는다. fire-and-forget의 짧은 catch, SSR fallback, smoke 도구의 Promise.race timeout callback과 테스트 callback은 기계적으로 늘리지 않았다. Zod catch는 Promise가 아니므로 그대로 둔다.
+
+code-style 스킬에 직접 전달의 인자/this/반환값/identity 기준과 async/await의 병렬성·취소·오류 범위 기준을 추가했다. 명명 규칙 때문에 불필요한 wrapper를 만들지 않도록 공유 ESLint 변경 46830c8b를 이 브랜치에도 반영한다. authored handler의 handle*·props의 on* 지침은 유지한다.
+
+검증: Mobile 63개·Web 263개·Admin 23개 기존 테스트, API report.policy 6개 테스트 통과(maxWorkers=2). Web·Mobile·Admin·API 타입 검사, 스킬 validator·format·diff 검사 통과. API unit 실행기는 contracts build와 Prisma client 생성을 수행했으며 DB 스키마 변경이나 외부 서비스 호출은 없었다. 브라우저 E2E·실기기·실제 seed·외부 smoke 실행은 범위에 포함하지 않았다.

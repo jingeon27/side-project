@@ -41,6 +41,14 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 객체 타입은 타입 추론을 유지하는 `satisfies`를 우선한다. 상태를 가진 외부 채널·수명 관리는 가변 let 클로저 대신 class로 캡슐화한다. UI 데이터 변환을 위해 class를 추가하지 않는다.
 - 버튼·입력·모달·토큰은 `@side/design-system`의 shadcn + Base UI를 사용한다. 앱에서 기본 컨트롤과 타이포를 다시 정의하지 않는다. 고정 메뉴·상태 선택지는 JSX로 명시하고 서버 목록은 map으로 렌더링한다.
 
+## 콜백 전달과 Promise 처리
+
+Game Feedback authored 앱·패키지 코드에 적용한다.
+
+- 인자를 그대로 넘기기만 하는 콜백은 원래 함수를 직접 전달한다. 이때 추가 인자(event·mutation options 등), `this` 바인딩, 반환값/cleanup, 함수 identity가 같아야 한다. 인자 고정·차단·변환, 오류 경계, 실제 구독 해제를 위한 adapter는 유지한다. 직접 전달을 막는 naming lint 때문에 의미 없는 handle 별칭을 만들지 않는다. 직접 작성하는 핸들러는 const arrow와 handle*, props는 on* 지침을 따른다.
+- `.then` 체인보다 async/await와 try/catch/finally를 우선한다. 병렬 시작은 Promise.all/race로 유지하고, effect 자체를 async로 만들지 않는다. 취소·세대 검사와 중복 요청 방지, 원래 오류를 보존하는 정리 실패 처리, 전파/흡수 범위를 유지한다. 짧은 fire-and-forget `.catch`나 timeout race를 바꾸기 위해 불필요한 helper·상태 객체를 만들지 않는다. Zod `.catch`는 Promise 처리가 아니다.
+- 타입·lint와 해당 구독/폼/오류 경계의 기존 테스트로 검증한다. 단순 전달 구문을 복사하는 테스트는 추가하지 않는다. React Compiler가 controller를 ref로 오인하는 callback-ref 경계도 실제 검증 결과에 따라 유지한다.
+
 ## 생성자 parameter property
 
 Game Feedback의 authored TypeScript(apps·packages·scripts)에 적용한다. 생성한 코드는 직접 수정하지 않는다.
