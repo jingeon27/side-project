@@ -45,3 +45,6 @@ link.open의 HTTP·HTTPS URL은 S3 서명의 임시 자격 증명·한글 파일
 
 - 단순 전달 래퍼는 인자 개수·변환/차단, `this`, 반환값/Promise, 호출 시점과 최신 값 조회가 같은 경우에만 직접 함수 참조로 바꾼다. 메서드 receiver·인자 어댑터·최신 ref 조회·동기 이벤트 반환·Effect 경계를 지키는 래퍼는 유지한다.
 - Promise 체인은 `async`/`await`와 `try`/`catch`/`finally`를 우선한다. `Promise.all`·`race`의 작업을 순차 await로 바꾸지 않으며, 경쟁에서 진 작업의 늦은 실패도 처리한다. cleanup·잠금 해제·취소 후 결과 무시·메모이즈 실패 재시도와 동기 콜백 반환값을 보존한다.
+
+- 직접 작성해 이벤트 prop·리스너·observer에 등록하는 내부 함수와 Effect Event는 `const handle* = …`로 선언한다. 클래스 이벤트 필드는 `private readonly handle* = …`로 receiver를 보존한다. 기존 라이브러리·부모 prop 함수 참조는 이름을 바꾸거나 `handle*` 별칭으로 감싸지 않으며 순수 계산 함수에는 이 접두사를 강제하지 않는다.
+- 래퍼 감사는 TypeScript AST로 typed arrow·단일 return 블록·함수 선언까지 확인한다. 직접 참조로 바꾸기 전에 전달 인자, `this`, 반환값, 실행 시점과 참조 수명을 검토한다. `AbortController.abort()`의 무인자 호출은 receiver와 취소 reason을 지키므로 이벤트에 메서드를 그대로 넘기지 않는다.

@@ -96,3 +96,6 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - URL 입력은 화면 경계에서 필드별 스키마·허용 목록으로 검증한다. 잘못된 필드 하나만 기본값으로 되돌리고, 갱신은 원본 URL에 소유한 키만 병합해 다른 필터·상세 키·중복 키·hash를 보존한다.
 - 사진 유지/삭제/교체처럼 의미 있는 DTO→폼 초기값·검증된 폼→요청 변환은 호출부 가까운 순수 helper로 검증한다. File·표시 URL을 JSON에 섞지 않고, 업로드·취소·mutation·캐시 갱신은 실행 흐름에 남긴다. 단순 일대일 복사를 전부 helper로 만들지 않는다.
 - 등록·수정처럼 요청과 초기값이 다른 맥락은 각자 폼을 소유하고 실제 공통 입력 primitive만 조합한다. 한 곳을 위한 범용 모드 prop·공통 훅·전역 추상화를 추가하지 않는다. 기존 RHF/Zod·Base UI를 유지한다.
+
+- 직접 작성해 이벤트 prop·리스너·observer에 등록하는 내부 함수와 Effect Event는 `const handle* = …`로 선언한다. 클래스 이벤트 필드는 `private readonly handle* = …`로 receiver를 보존한다. 기존 라이브러리·부모 prop 함수 참조는 이름을 바꾸거나 `handle*` 별칭으로 감싸지 않으며 순수 계산 함수에는 이 접두사를 강제하지 않는다.
+- 래퍼 감사는 TypeScript AST로 typed arrow·단일 return 블록·함수 선언까지 확인한다. 직접 참조로 바꾸기 전에 전달 인자, `this`, 반환값, 실행 시점과 참조 수명을 검토한다. `AbortController.abort()`의 무인자 호출은 receiver와 취소 reason을 지키므로 이벤트에 메서드를 그대로 넘기지 않는다.
