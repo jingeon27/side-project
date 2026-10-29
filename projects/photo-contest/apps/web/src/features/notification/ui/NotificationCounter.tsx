@@ -34,9 +34,8 @@ function NotificationCountSync() {
     void refetch().catch(() => undefined);
   });
   useEffect(() => {
-    const onVisible = () => refresh();
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
   }, []);
   return null;
 }
