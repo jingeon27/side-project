@@ -1478,3 +1478,11 @@ Web·Admin·Mobile의 effect, DOM/OS listener, observer, 외부 채널과 접근
 준비 단계에서 `@game-feedback/contracts`의 dist와 API Prisma client가 없었다. 필요한 명령은 각각 `yarn workspace @game-feedback/contracts build`, `yarn workspace @game-feedback/api prisma:generate`다. DB 접근·스키마 변경·SDK 전체 재생성은 필요하지 않았다. 의존성 catalog와 루트 lockfile은 변경하지 않았다.
 
 검증: Node 24.18.0·Yarn 4.17.0 immutable 설치, Mobile unit/UI 63개(17파일)·typecheck·lint, Web unit/UI 263개(75파일)·lint, Admin 23개(5파일)·typecheck·lint 통과. Vitest는 `--maxWorkers=2`로 실행했다. 모바일 신규 회귀는 변경 전 구현에서 callback 교체 시 OS listener가 두 번 설치되는 실패를 재현했고 변경 후 통과했다. Android Metro dev export도 `--max-workers 2`로 통과했으며 출력은 제거했다. Web/Admin 소스는 변경하지 않았다. iOS 번들·Playwright E2E·dev client 실기기·운영 검증은 실행하지 않았다. 다른 서버·DB를 조작하지 않았다.
+
+## 2026-10-29 생성자 parameter property 판단 기준
+
+GF apps·packages·scripts의 authored 생성자를 점검했다. 대부분 이미 parameter property다. API shared-instance smoke `Client`의 domain·port·ca는 직접 대입이지만 CI가 변환기 없이 `node file.ts`로 실행하므로 유지했다. Node 24.18.0의 strip-only 모드에서 최소 예제의 parameter property가 `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`를 내는 것을 확인했다. 타입 검사만으로 실행기 지원을 보장할 수 없다.
+
+WebViewChannel의 초기 URL 별칭과 파생 snapshot, Quill placeholder·SDK validation issues·S3 client·EventReader iterator도 기존 초기화를 유지했다. 단순화를 위해 생성자에 파생 자원용 선택 인자를 추가하거나 공개 API를 넓히지 않았다. 최종 코드 변경 없이 기존 minimize-ref 지침을 보존하고 접근 수준·readonly·인자 순서·기본값·초기화 순서·실행기 지원에 관한 판단 기준을 code-style 스킬에 추가했다.
+
+검증: 검토 중 Mobile/API typecheck, 후보 파일 ESLint·Prettier, 기존 WebViewChannel 테스트 4개(`--maxWorkers=2`) 통과. 후보 코드는 위 판단에 따라 모두 원복했다. 최종 스킬 validator·diff 검사 통과. 새 테스트·전체 E2E·외부 서비스 smoke는 실행하지 않았다.

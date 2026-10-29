@@ -41,6 +41,15 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 객체 타입은 타입 추론을 유지하는 `satisfies`를 우선한다. 상태를 가진 외부 채널·수명 관리는 가변 let 클로저 대신 class로 캡슐화한다. UI 데이터 변환을 위해 class를 추가하지 않는다.
 - 버튼·입력·모달·토큰은 `@side/design-system`의 shadcn + Base UI를 사용한다. 앱에서 기본 컨트롤과 타이포를 다시 정의하지 않는다. 고정 메뉴·상태 선택지는 JSX로 명시하고 서버 목록은 map으로 렌더링한다.
 
+## 생성자 parameter property
+
+Game Feedback의 authored TypeScript(apps·packages·scripts)에 적용한다. 생성한 코드는 직접 수정하지 않는다.
+
+- 먼저 실행 경로를 확인한다. 변환기 없이 `node file.ts`로 실행하는 strip-only 스크립트는 parameter property를 지원하지 않으므로 명시적 필드·대입을 유지한다. 이를 줄이기 위해 실행기·CI를 변경하지 않는다.
+- 생성자 인자를 그대로 필드에 저장하면 별도 필드 선언과 `this.field = field` 대신 TypeScript parameter property를 쓴다. 기존 접근 수준·readonly·인자 순서·기본값·호출 시그니처를 유지하고, 변경 가능한 필드에 readonly를 임의로 붙이지 않는다.
+- class field initializer와 arrow handler의 즉시 평가, super 호출, 다른 필드 참조의 초기화 순서를 확인한다. 지연 실행 콜백의 참조와 생성 중 즉시 읽기를 구분하며 초기화 순서가 달라지면 명시적 대입을 유지한다. 매개변수 기본값에서 아직 초기화되지 않은 arrow 필드를 참조하지 않는다.
+- 인자를 검증·가공하거나 다른 자원을 만드는 초기화는 그대로 둔다. 필드 기본값을 옮기기 위해 불필요한 생성자 인자를 추가하지 않는다. 순수 구문 정리는 기존 타입·lint·관련 테스트로 확인하고 새 테스트를 억지로 만들지 않는다.
+
 ## satisfies와 ts-pattern
 
 이 절은 Web·Admin과 함께 API·contracts·SDK·bridge를 포함한 Game Feedback TypeScript 전체에 적용한다.
@@ -60,3 +69,5 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 
 - 대상 앱의 lint·typecheck·기존 테스트를 실행한다. 탐색·캐시·폼 동작을 변경했다면 사용자 동작을 검증하는 테스트를 추가하고 관련 E2E를 실행한다. 코드 배치나 문구를 그대로 복사하는 테스트는 만들지 않는다.
 - 커밋과 PR 제목은 `refactor(game-feedback): ...`처럼 서비스 scope를 넣는다. 검증과 커밋 절차는 프로젝트의 `game-feedback-test`, `game-feedback-commit` 스킬을 따른다. 외부 검증을 로컬 성공으로 대체하지 않는다.
+
+- `let`을 없애기 위해 `const` 임시 객체 속성을 재할당하거나 `useRef`로 기계적으로 옮기지 않는다. 순수 계산·state/reducer·외부 store·기존 구독 API를 먼저 검토하고, 실제 수명과 취소를 소유하는 자원 객체만 분리한다. DOM 연결은 정리 가능한 callback ref를 우선하며 ref는 대안이 부적절한 imperative 자원에만 제한한다.
