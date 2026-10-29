@@ -19,7 +19,7 @@ DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는
 
 - CHECK 제약은 migration SQL에만 있다: `PostMedia_published_upload_ready`, `ChatAttachment_sent_upload_ready`(미완료 업로드를 글·메시지에 연결 금지), `UserAvatar_storage_check`(`bytes`·`objectId` 중 하나), `UserAvatar_size_check`.
 - 게시글 검색의 pg_trgm GIN 인덱스(`Post_title_trgm_idx`·`Post_body_trgm_idx`)도 migration SQL에만 있다. 확장은 DB 단위라 `public`에 두고 연산자 클래스를 `public.gin_trgm_ops`로 지정한다(DB 소유 역할이 만들 수 있는 trusted extension).
-- `db push`로 만든 스키마(로컬 `db:sync`, 옛 `*.integration.test.ts` 하네스)에는 이 제약이 없다. 제약에 기대는 테스트는 `migrate deploy`로 스키마를 만드는 `*.integration.spec.ts` 형식으로 쓴다.
+- 로컬·테스트도 `migrate deploy`로 SQL 제약과 인덱스를 적용한다. schema.prisma만으로 스키마를 만드는 하네스는 두지 않는다.
 
 ## migration 만들기 (DB에 접속하지 않는다)
 
@@ -43,7 +43,7 @@ yarn workspace @game-feedback/api db:generate
 
 ## 적용 경로 — 에이전트는 실행하지 않는다
 
-- 로컬 개발 DB: `yarn workspace @side/game-feedback db:sync` → `../../scripts/db.ts sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
+- 로컬 개발 DB: `yarn workspace @side/game-feedback db:sync` → `../../scripts/db.ts sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma migrate deploy`)를 부른다. 프로젝트 `dev`·`setup`도 같은 경로다. 기존 데이터가 있는 미추적 DB는 자동 baseline하거나 초기화하지 않고 실패한다. 백업에서 스키마·SQL 전용 제약을 대조한 뒤 이력을 별도로 정리한다.
 - API `prisma:sync`를 직접 부르지 않는다 — URL 가드가 없다. `prisma migrate dev`·`migrate reset`·`--accept-data-loss`·`--force-reset`도 쓰지 않는다.
 - 운영: `scripts/migrate.ts`(빌드된 `dist`와 `NODE_ENV=production` 필요)가 `validateProductionEnvironment` → `prisma migrate deploy` → `seed(db, false)`(카테고리) → shared-instance면 권한 GRANT/REVOKE 순서로 돈다. `../../../../deploy/shared-instance/scripts/service.sh`가 `../../deploy/shared-instance/compose.yaml`의 `migrate` 서비스를 실행한다. 로컬에서 돌리지 않는다.
 - `db:generate`(API `test` 스크립트와 `codegen`도 실행)는 사용자의 개발 서버가 쓰는 `src/generated/prisma`를 다시 쓴다. 개발 DB에 적용되기 전까지 새 열을 쓰는 요청은 실패한다고 알린다.
@@ -58,7 +58,7 @@ yarn workspace @game-feedback/api db:generate
 
 ## 검증
 
-- `test:integration`에서 `db push` 하네스 파일은 schema.prisma만 쓰고, `migrate deploy` 하네스 파일(`src/database/unit-of-work.integration.spec.ts`, `src/users/profile/profile.service.integration.spec.ts`, `src/media-storage/media-storage.service.integration.spec.ts`, `src/posts/media/post-media-upload.service.integration.spec.ts`, `src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`)은 모든 migration을 새 `gf_test_` 스키마에 적용한다. migration이 빠뜨린 열·제약은 그것을 쓰는 migrate-deploy 테스트에서만 드러나므로 새 열·제약을 쓰는 spec을 같이 더한다.
+- 모든 통합 하네스는 새 `gf_test_` 스키마에 전체 migration을 적용한다. DB 전용 검증은 `test:database`, S3 전송까지 포함한 검증은 `test:integration`을 사용한다.
 
 ```sh
 yarn workspace @game-feedback/api db:generate

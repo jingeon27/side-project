@@ -228,10 +228,10 @@ describe('그룹과 초대', () => {
 
     it('관리자가 여럿이면 가장 먼저 가입한 관리자의 닉네임을 보여줘야 한다', async () => {
       const group = await createGroup(api, owner, '공동 관리 그룹', [friend]);
-      // 관리자를 더 만드는 화면은 없으므로 DB에서 역할을 바꾼다.
+      // 그룹장은 한 명만 유지하고 부관리자를 추가한다.
       await api.db.groupMember.update({
         where: { groupId_userId: { groupId: group.id, userId: friend.id } },
-        data: { role: 'OWNER' },
+        data: { role: 'MODERATOR' },
       });
       const { invitePreview } = await api.gqlOk<{ invitePreview: { ownerNickname: string } }>(
         undefined,

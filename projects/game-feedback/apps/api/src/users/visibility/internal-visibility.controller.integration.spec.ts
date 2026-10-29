@@ -31,10 +31,14 @@ describe.skipIf(!testDatabaseUrl)('웹 서버 전용 제외 작성자 조회', (
     target.searchParams.set('schema', schema);
     const databaseUrl = target.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-      encoding: 'utf8',
-    });
+    const migration = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+      },
+    );
     if (migration.status !== 0)
       throw new Error(`Isolated visibility schema setup failed: ${migration.stderr}\n${migration.stdout}`);
     db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });

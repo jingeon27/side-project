@@ -69,8 +69,8 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
     return bridge.handleRequest('navigation.back', handleBack);
   }, [bridge]);
 
-  const openPath = useEffectEvent((path: string) => router.push(path));
-  const refreshActive = useEffectEvent(async () => {
+  const handleOpenPath = useEffectEvent((path: string) => router.push(path));
+  const handleActiveState = useEffectEvent(async () => {
     try {
       await client.refetchQueries({ include: 'active' });
     } catch {
@@ -80,9 +80,9 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   useEffect(() => {
     if (!bridge) return;
     // 프로토콜이 같은 origin의 상대 경로만 통과시킨다.
-    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => openPath(path));
+    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => handleOpenPath(path));
     const stopState = bridge.onEvent('app.state', ({ state }) => {
-      if (state === 'active') void refreshActive();
+      if (state === 'active') void handleActiveState();
     });
     return () => {
       stopOpen();

@@ -15,7 +15,7 @@ function makeClient() {
     cache: new InMemoryCache({ typePolicies: APP_TYPE_POLICIES }),
     link: createAppLink({
       isServer: typeof window === 'undefined',
-      onError: (message) => toast.error(message),
+      onError: toast.error,
     }),
   });
 }

@@ -57,7 +57,7 @@ yarn test:photo-contest                       # 프로젝트 전체 unit
 ## 테스트 fixture API
 
 - 격리 API는 NODE_ENV=test·ENABLE_TEST_API=true로 시작한다. 실제 Sentry·푸시 키는 기본값에서 지우고 필요한 경계 테스트만 가짜 값을 지정한다.
-- 웹·모바일 준비는 test-kit의 createTestUser·moveTestContest와 제품 GraphQL·업로드 API를 쓴다. DB를 직접 고치지 않는다.
+- 웹·모바일 준비는 test-kit의 createTestUser·createLegacyTestContest·moveTestContest와 제품 GraphQL·업로드 API를 쓴다. DB를 직접 고치지 않는다.
 - API integration은 제약·만료·실패 조건을 위해 test/support에서 격리 DB를 준비하고 결과를 확인할 수 있다.
 - 모든 레인이 끝난 뒤 `yarn workspace @photo-contest/test-kit check:cleanup`으로 스키마 정리를 확인한다. 실행 중인 레인의 스키마는 정리 대상이 아니다.
 

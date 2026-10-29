@@ -21,6 +21,9 @@ describe('테스트 fixture API', () => {
         (await normal.http().post('/testing/users').set('Origin', TEST_WEB_ORIGIN).send({ nickname: '차단' }))
           .status,
       ).toBe(404);
+      expect(
+        (await normal.http().post('/testing/legacy-contests').set('Origin', TEST_WEB_ORIGIN).send({})).status,
+      ).toBe(404);
       expect(await normal.db.user.count()).toBe(before);
     } finally {
       await normal.close();
@@ -62,22 +65,20 @@ describe('테스트 fixture API', () => {
       'mutation { createGroup(name: "fixture-그룹") { id } }',
     );
     const now = Date.now();
-    const contest = await api.gqlOk<{ createContest: { id: string } }>(
-      cookie,
-      'mutation($groupId: ID!, $startsAt: DateTime!, $submissionEndsAt: DateTime!, $endsAt: DateTime!) { createContest(groupId: $groupId, title: "fixture", startsAt: $startsAt, submissionEndsAt: $submissionEndsAt, endsAt: $endsAt) { id } }',
-      {
-        groupId: group.createGroup.id,
-        startsAt: new Date(now),
-        submissionEndsAt: new Date(now + 60_000),
-        endsAt: new Date(now + 120_000),
-      },
-    );
+    const contest = await post('/testing/legacy-contests', {
+      groupId: group.createGroup.id,
+      title: 'fixture',
+      startsAt: new Date(now),
+      submissionEndsAt: new Date(now + 60_000),
+      endsAt: new Date(now + 120_000),
+    });
+    expect(contest.status).toBe(201);
     for (const phase of ['UPCOMING', 'SUBMISSION', 'VOTING', 'COMPLETED']) {
-      expect((await post(`/testing/contests/${contest.createContest.id}/phase`, { phase })).status).toBe(201);
+      expect((await post(`/testing/contests/${contest.body.id}/phase`, { phase })).status).toBe(201);
       const data = await api.gqlOk<{ contest: { phase: string } }>(
         cookie,
         'query($id: ID!) { contest(id: $id) { phase } }',
-        { id: contest.createContest.id },
+        { id: contest.body.id },
       );
       expect(data.contest.phase).toBe(phase);
     }

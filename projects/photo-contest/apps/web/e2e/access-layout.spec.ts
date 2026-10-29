@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 
-import { graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
+import { createLegacyTestContest, moveTestContest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { seedPost } from './support/photos';
@@ -13,21 +13,12 @@ test('열어둔 대회는 서버 단계가 바뀌면 새로고침 없이 투표 
   test.setTimeout(110_000);
   const cookie = await signIn('자동전환-관리자');
   const group = await seedGroup(cookie, '자동전환 모임');
-  const now = Date.now();
-  const result = await graphqlRequest<{ createContest: { id: string } }>(API_URL, {
+  const { id: contestId } = await createLegacyTestContest(API_URL, {
     cookie,
+    groupId: group.id,
+    title: '자동전환 대회',
     origin: WEB_ORIGIN,
-    query:
-      'mutation($groupId: ID!, $startsAt: DateTime!, $submissionEndsAt: DateTime!, $endsAt: DateTime!) { createContest(groupId: $groupId, title: "자동전환 대회", startsAt: $startsAt, submissionEndsAt: $submissionEndsAt, endsAt: $endsAt) { id } }',
-    variables: {
-      groupId: group.id,
-      startsAt: new Date(now).toISOString(),
-      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-      endsAt: new Date(now + 7_200_000).toISOString(),
-    },
   });
-  const contestId = result.data?.createContest.id;
-  if (!contestId || result.errors?.length) throw new Error(JSON.stringify(result.errors));
   await moveTestContest(API_URL, { contestId, phase: 'UPCOMING', origin: WEB_ORIGIN });
   await page.goto(`/contests/${contestId}`);
   await expect(page.getByText('시작 예정', { exact: true })).toBeVisible();

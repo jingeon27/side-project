@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma';
+import { archiveAnalyticsEvents } from '../analytics/analytics-retention.repository';
 import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database, type TDatabaseClient } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
@@ -80,6 +81,7 @@ export class MaintenanceService {
     await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.session.deleteMany({ where: { expiresAt: { lt: now } } });
+    await archiveAnalyticsEvents({ client: this.db, now });
   }
   private async attempt(work: () => Promise<void>) {
     try {

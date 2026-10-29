@@ -29,7 +29,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
   start() {
     if (this.timer) return;
-    this.timer = setInterval(() => this.handleTick(), MAINTENANCE_INTERVAL_MS);
+    this.timer = setInterval(this.handleTick, MAINTENANCE_INTERVAL_MS);
     // 대기 중인 타이머 때문에 프로세스가 끝나지 않는 일이 없게 한다.
     this.timer.unref();
   }
@@ -69,14 +69,14 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     return run;
   }
 
-  private async handleTick() {
+  private readonly handleTick = async () => {
     if (this.running) return;
     try {
       await this.runOnce();
     } catch (error) {
       reportUnexpectedError(error, { job: 'maintenance' });
     }
-  }
+  };
 
   private async runSteps() {
     const steps = [

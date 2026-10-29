@@ -135,7 +135,7 @@ DatabaseModule은 실행별 AppConfig와 PrismaClient를 컨테이너에 제공�
 
 로컬 DB 관리자는 `.data/postgres-dev`와 `.data/postgres-test`만 관리한다. TCP loopback과 고정 전용 포트를 사용한다. 임의 포트 프로세스를 종료하지 않는다. 시작한 DB 소유 프로세스는 랜덤 토큰으로만 제어하며 관리자 비밀과 제어 메타데이터는 Git에서 제외한다.
 
-스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 배포 전에는 `schema.prisma`만 관리하며 URL 검증 뒤 `prisma db push`로 적용한다. 데이터 손실 경고가 발생하면 강제하지 않고 실패한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
+스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. schema.prisma와 migration SQL을 함께 관리하며 로컬·테스트·운영 모두 `prisma migrate deploy`로 FK·CHECK·부분 인덱스까지 적용한다. 기존 데이터가 있고 migration 이력이 없는 DB는 자동 baseline하거나 초기화하지 않는다. 별도 백업에서 스키마와 모든 SQL 제약을 대조한 뒤 이력을 정리해야 한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
 
 ## API 계약과 갱신
 

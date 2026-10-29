@@ -3,6 +3,7 @@ import { uniq } from 'es-toolkit';
 
 import { postCacheTag } from '@game-feedback/contracts';
 
+import { lockActiveUser } from '../auth/account/user-write';
 import { requireUser } from '../auth/session/session-access';
 import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
@@ -31,6 +32,7 @@ export class CommentsService {
     const u = requireUser(req);
     const c = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${postId} FOR UPDATE`;
         const excluded = await this.visibility.excluded(req, tx);
         const post = await tx.post.findFirst({
@@ -100,6 +102,7 @@ export class CommentsService {
     return responseComment(
       await this.cache.change(
         async (tx) => {
+          await lockActiveUser({ client: tx, userId: u.id });
           // createComment와 같은 글 → 댓글 순서로 잠근 뒤 숨김·삭제·차단을 다시 확인한다.
           await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${c.postId} FOR UPDATE`;
           await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`;
@@ -127,6 +130,7 @@ export class CommentsService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`;
         // 작성자 삭제는 소유권만 본다. 숨겨진 댓글이나 숨겨진 원댓글 아래 답글도 지울 수 있다.
         const own = await tx.comment.findFirst({

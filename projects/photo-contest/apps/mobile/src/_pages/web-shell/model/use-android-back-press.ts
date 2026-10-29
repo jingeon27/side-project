@@ -22,12 +22,12 @@ interface IUseAndroidBackPressOptions {
  * 답을 기다리는 동안 다시 누른 뒤로 가기는 무시해 두 단계를 한꺼번에 건너뛰지 않게 한다.
  */
 export function useAndroidBackPress(options: IUseAndroidBackPressOptions) {
-  const askWeb = useEffectEvent(() => {
+  const handleWebBack = useEffectEvent(() => {
     if (!options.isWebReady()) return Promise.resolve({ handled: false });
     return options.router.requestWeb('navigation.back', {}, { timeoutMs: BACK_REQUEST_TIMEOUT_MS });
   });
-  const canGoBack = useEffectEvent(() => options.canGoBack());
-  const goBack = useEffectEvent(() => options.goBack());
+  const handleCanGoBack = useEffectEvent(() => options.canGoBack());
+  const handleGoBack = useEffectEvent(() => options.goBack());
 
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
@@ -37,9 +37,9 @@ export function useAndroidBackPress(options: IUseAndroidBackPressOptions) {
       await mutex.acquire();
       try {
         if (lifetime.signal.aborted) return;
-        const action = await resolveBackPress(askWeb, canGoBack);
+        const action = await resolveBackPress(handleWebBack, handleCanGoBack);
         if (lifetime.signal.aborted) return;
-        if (action === 'go-back') goBack();
+        if (action === 'go-back') handleGoBack();
         if (action === 'exit') BackHandler.exitApp();
       } finally {
         mutex.release();

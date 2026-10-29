@@ -1,10 +1,18 @@
 'use client';
 
-import { useEffect, useEffectEvent, useState, useTransition, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type ReactNode,
+} from 'react';
 
 import { Mutex } from 'es-toolkit';
 import { RefreshCw } from 'lucide-react';
-import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from 'motion/react';
+import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 
 import { cn } from '../../../lib/cn.helper';
 
@@ -23,9 +31,20 @@ export function PullToRefresh({
   const pullDistance = useMotionValue(0);
   const springDistance = useSpring(pullDistance, { stiffness: 400, damping: 40 });
   const reducedMotion = useReducedMotion();
-  const [distance, setDistance] = useState(0);
+  const subscribeToDistance = useCallback(
+    (onChange: () => void) => pullDistance.on('change', onChange),
+    [pullDistance],
+  );
+  const phase = useSyncExternalStore(
+    subscribeToDistance,
+    () => {
+      const distance = pullDistance.get();
+      if (distance === 0) return 'idle';
+      return distance >= REFRESH_DISTANCE ? 'ready' : 'pulling';
+    },
+    () => 'idle',
+  );
   const [pending, startTransition] = useTransition();
-  useMotionValueEvent(pullDistance, 'change', setDistance);
 
   const handleRefresh = () => {
     if (refreshMutex.isLocked) return;
@@ -52,21 +71,31 @@ export function PullToRefresh({
     const handleTouchStart = (event: TouchEvent) => {
       if (refreshMutex.isLocked || event.touches.length !== 1 || window.scrollY > 0) return;
       const origin = event.touches[0];
-      if (!origin || !(event.target instanceof Element)) return;
-      if (event.target.closest('input, textarea, select, button, a, video, [contenteditable="true"]')) return;
-      const hasScrolledAncestor = (ancestor: Element | null): boolean => {
-        if (!ancestor || ancestor === target) return false;
-        if (ancestor.scrollTop > 0) return true;
-        return hasScrolledAncestor(ancestor.parentElement);
-      };
-      if (hasScrolledAncestor(event.target)) return;
+      if (!origin) return;
+      const path = event.composedPath();
+      if (
+        path
+          .slice(0, path.indexOf(target))
+          .some(
+            (node) =>
+              node instanceof Element &&
+              (node.scrollTop > 0 ||
+                node.matches('input, textarea, select, button, a, video, [contenteditable="true"]')),
+          )
+      )
+        return;
       const session = new AbortController();
-      const handleTouchCancel = () => {
+      const handleSettle = (next: Event) => {
         session.abort();
-        if (!refreshMutex.isLocked) pullDistance.set(0);
+        if (refreshMutex.isLocked) return;
+        if (next.type === 'touchend' && pullDistance.get() >= REFRESH_DISTANCE) {
+          handleRefreshFromGesture();
+          return;
+        }
+        pullDistance.set(0);
       };
       pullDistance.set(0);
-      lifetime.signal.addEventListener('abort', handleTouchCancel, { once: true, signal: session.signal });
+      lifetime.signal.addEventListener('abort', handleSettle, { once: true, signal: session.signal });
       const handleTouchMove = (next: TouchEvent) => {
         const touch = next.touches[0];
         if (
@@ -75,30 +104,22 @@ export function PullToRefresh({
           touch.identifier !== origin.identifier ||
           window.scrollY > 0
         ) {
-          handleTouchCancel();
+          handleSettle(next);
           return;
         }
         const y = touch.clientY - origin.clientY;
         if (y <= 0 || Math.abs(touch.clientX - origin.clientX) > Math.max(y, 10)) {
-          handleTouchCancel();
+          handleSettle(next);
           return;
         }
         if (next.cancelable) next.preventDefault();
         pullDistance.set(Math.min(MAX_PULL_DISTANCE, y / 2));
       };
-      const handleTouchEnd = () => {
-        session.abort();
-        if (pullDistance.get() >= REFRESH_DISTANCE) {
-          handleRefreshFromGesture();
-          return;
-        }
-        pullDistance.set(0);
-      };
       // Motion pan은 세로 touch-action 제한이 필요하다. 기본 스크롤·핀치를 보존하려고 유효한 당기기만 중재한다.
       target.addEventListener('touchmove', handleTouchMove, { passive: false, signal: session.signal });
-      target.addEventListener('touchend', handleTouchEnd, { signal: session.signal });
-      target.addEventListener('touchcancel', handleTouchCancel, { signal: session.signal });
-      target.addEventListener('touchstart', handleTouchCancel, { signal: session.signal });
+      for (const type of ['touchend', 'touchcancel', 'touchstart']) {
+        target.addEventListener(type, handleSettle, { signal: session.signal });
+      }
     };
     target.addEventListener('touchstart', handleTouchStart, { passive: true, signal: lifetime.signal });
     return () => lifetime.abort();
@@ -120,14 +141,10 @@ export function PullToRefresh({
         className="flex items-center justify-center gap-2 overflow-hidden text-caption text-muted"
         style={{ height: reducedMotion ? pullDistance : springDistance }}
       >
-        {distance > 0 ? (
+        {phase !== 'idle' ? (
           <>
             <RefreshCw aria-hidden className={cn('size-4', pending && !reducedMotion && 'animate-spin')} />
-            {pending
-              ? '새로고침 중'
-              : distance >= REFRESH_DISTANCE
-                ? '놓으면 새로고침'
-                : '아래로 당겨 새로고침'}
+            {pending ? '새로고침 중' : phase === 'ready' ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
           </>
         ) : null}
       </motion.div>

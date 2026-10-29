@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { lockActiveUser } from '../auth/account/user-write';
 import { requireUser } from '../auth/session/session-access';
 import type { SessionRequest } from '../auth/session/session.types';
 import { ChatConversationService } from '../chat/conversation/chat-conversation.service';
@@ -29,7 +30,7 @@ export class SupportService {
         : {}),
     };
     const thread = await this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+      await lockActiveUser({ client: tx, userId: user.id });
       const existing = await (tx ?? this.db).supportConversation.findFirst({
         where: { requesterId: user.id, admin: availableAdmin },
       });

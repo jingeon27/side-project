@@ -31,8 +31,8 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
       inbox.tap(response.notification.request.identifier, response.notification.request.content.data?.path);
     };
     const tapped = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
-    const received = Notifications.addNotificationReceivedListener(inbox.notify);
-    const tokenChanged = Notifications.addPushTokenListener(inbox.notify);
+    const received = Notifications.addNotificationReceivedListener(inbox.handleNotificationReceived);
+    const tokenChanged = Notifications.addPushTokenListener(inbox.handleNotificationReceived);
     const restoreResponse = async () => {
       try {
         handleNotificationResponse(await Notifications.getLastNotificationResponseAsync());

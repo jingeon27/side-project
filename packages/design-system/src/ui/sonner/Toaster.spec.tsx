@@ -5,7 +5,7 @@ import { afterEach, expect, it } from 'vitest';
 import { Toaster } from './Toaster';
 
 afterEach(() => {
-  act(() => toast.dismiss());
+  act(toast.dismiss);
 });
 
 it('알림을 공통 토큰과 앱이 넘긴 테마·번역으로 보여 줘야 한다', async () => {

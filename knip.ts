@@ -31,6 +31,13 @@ export default defineConfig({
       ignoreDependencies: ['expo-updates'],
     },
     'projects/photo-contest/apps/api': {
+      // database 프로젝트는 CLI로 선택할 때만 등록되므로 초기화 진입점을 명시한다.
+      entry: [
+        'src/main.ts',
+        '*.config.{ts,mts,cts,js,mjs,cjs}',
+        '**/*.{spec,test,e2e}.{ts,tsx}',
+        'test/support/database-global-setup.ts',
+      ],
       // 같은 수치를 쓰되 용도를 구분하는 페이지 크기 상수다.
       ignoreIssues: { 'src/config/limits.ts': ['duplicates'] },
       // Nest GraphQL과 생성 Prisma client가 런타임에 읽는다.

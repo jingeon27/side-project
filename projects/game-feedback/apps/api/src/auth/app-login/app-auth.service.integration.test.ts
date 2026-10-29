@@ -44,10 +44,14 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     schema = `gf_test_mobile_auth_${randomBytes(8).toString('hex')}`;
     target.searchParams.set('schema', schema);
     const url = assertDatabaseUrl(target.toString(), 'test');
-    const migrated = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
-      encoding: 'utf8',
-    });
+    const migrated = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
+        encoding: 'utf8',
+      },
+    );
     if (migrated.status !== 0) throw new Error(migrated.stderr + migrated.stdout);
     db = new PrismaClient({ adapter: createPrismaAdapter(url) });
     await db.user.create({

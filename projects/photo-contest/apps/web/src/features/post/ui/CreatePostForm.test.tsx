@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { EMPTY, of, Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,6 +41,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

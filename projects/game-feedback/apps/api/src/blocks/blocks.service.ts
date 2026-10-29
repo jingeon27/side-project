@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { lockActiveUser } from '../auth/account/user-write';
 import { requireUser } from '../auth/session/session-access';
 import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
@@ -32,6 +33,7 @@ export class BlocksService {
       throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     await this.transactions.run(async (tx) => {
       await lockUserRelationship(tx, u.id, input.blockedUserId);
+      await lockActiveUser({ client: tx, userId: u.id });
       await (tx ?? this.db).block.upsert({
         where: { userId_blockedUserId: { userId: u.id, blockedUserId: input.blockedUserId } },
         update: {},

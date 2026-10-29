@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
+import { lockActiveUser } from '../../auth/account/user-write';
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
@@ -35,15 +36,17 @@ export class ProfileService {
     const user = requireUser(req);
     const { links, nickname, bio } = input;
     await this.cache.change(
-      (tx) =>
-        tx.user.update({
+      async (tx) => {
+        await lockActiveUser({ client: tx, userId: user.id });
+        return tx.user.update({
           where: { id: user.id },
           data: {
             ...(links !== undefined ? { profileLinks: links } : {}),
             ...(nickname !== undefined ? { nickname } : {}),
             ...(bio !== undefined ? { bio } : {}),
           },
-        }),
+        });
+      },
       [POSTS_CACHE_TAG],
     );
     return this.users.profile(req, user.id);
@@ -52,7 +55,7 @@ export class ProfileService {
     const user = requireUser(req);
     const upload = await this.storage.reserveUpload(data.mimeType, data.size);
     const ticket = await this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+      await lockActiveUser({ client: tx, userId: user.id });
       if (
         (await tx.avatarUpload.count({
           where: { userId: user.id, completedAt: null, expiresAt: { gt: new Date() } },
@@ -87,6 +90,7 @@ export class ProfileService {
     const stored = await this.storage.completeUpload(ticket);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: user.id });
         const changed = await tx.avatarUpload.updateMany({
           where: {
             id,
@@ -127,7 +131,10 @@ export class ProfileService {
   async remove(req: SessionRequest) {
     const user = requireUser(req);
     await this.cache.change(
-      (tx) => tx.userAvatar.deleteMany({ where: { userId: user.id } }),
+      async (tx) => {
+        await lockActiveUser({ client: tx, userId: user.id });
+        return tx.userAvatar.deleteMany({ where: { userId: user.id } });
+      },
       [POSTS_CACHE_TAG],
     );
     return this.users.profile(req, user.id);

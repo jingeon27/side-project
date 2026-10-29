@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
+import { lockActiveUser } from '../../auth/account/user-write';
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
 import { ACTIVE_POST } from '../../common/content';
@@ -25,7 +26,7 @@ export class PostMediaService {
     stored: { bytes: null; objectId: string },
   ) {
     return this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${uploaderId} FOR UPDATE`;
+      await lockActiveUser({ client: tx, userId: uploaderId });
       await (tx ?? this.db).postMedia.deleteMany({
         where: { uploaderId, postId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
       });

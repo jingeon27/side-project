@@ -128,3 +128,7 @@ export const CONTEST_LIKE_LIMIT_MAX = 100;
 export const PUSH_DEVICE_LIMIT = 10;
 export const PUSH_INTERVAL_MS = 15_000;
 export const PUSH_QUEUE_BATCH_SIZE = 100;
+
+// 원본은 90일, 이후 UTC 일자·이벤트 종류별 건수만 보관한다.
+export const ANALYTICS_RETENTION_MS = 90 * DAY_MS;
+export const ANALYTICS_ARCHIVE_BATCH_SIZE = 1000;

@@ -96,3 +96,12 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - URL 입력은 화면 경계에서 필드별 스키마·허용 목록으로 검증한다. 잘못된 필드 하나만 기본값으로 되돌리고, 갱신은 원본 URL에 소유한 키만 병합해 다른 필터·상세 키·중복 키·hash를 보존한다.
 - 사진 유지/삭제/교체처럼 의미 있는 DTO→폼 초기값·검증된 폼→요청 변환은 호출부 가까운 순수 helper로 검증한다. File·표시 URL을 JSON에 섞지 않고, 업로드·취소·mutation·캐시 갱신은 실행 흐름에 남긴다. 단순 일대일 복사를 전부 helper로 만들지 않는다.
 - 등록·수정처럼 요청과 초기값이 다른 맥락은 각자 폼을 소유하고 실제 공통 입력 primitive만 조합한다. 한 곳을 위한 범용 모드 prop·공통 훅·전역 추상화를 추가하지 않는다. 기존 RHF/Zod·Base UI를 유지한다.
+
+- 직접 작성해 이벤트 prop·리스너·observer에 등록하는 내부 함수와 Effect Event는 `const handle* = …`로 선언한다. 클래스 이벤트 필드는 `private readonly handle* = …`로 receiver를 보존한다. 기존 라이브러리·부모 prop 함수 참조는 이름을 바꾸거나 `handle*` 별칭으로 감싸지 않으며 순수 계산 함수에는 이 접두사를 강제하지 않는다.
+- 래퍼 감사는 TypeScript AST로 typed arrow·단일 return 블록·함수 선언까지 확인한다. 직접 참조로 바꾸기 전에 전달 인자, `this`, 반환값, 실행 시점과 참조 수명을 검토한다. `AbortController.abort()`의 무인자 호출은 receiver와 취소 reason을 지키므로 이벤트에 메서드를 그대로 넘기지 않는다.
+
+- 명명 검사는 기존 `react/jsx-handler-names` 옵션을 우선한다. `checkLocalVariables: false`는 직접 작성한 로컬 함수도 모두 검사에서 제외하므로 로컬 함수·리스너·observer의 `handle*` 명명은 리뷰로 유지한다. 사용자 정책에 따라 명명용 커스텀 규칙을 새로 만들거나 재도입하지 않으며, 이름을 맞추기 위한 별칭 래퍼·disable도 추가하지 않는다.
+
+- DOM 노드가 소유하는 구독·미디어 정리는 안정적인 `useCallback` ref에서 설정하고 반환 cleanup으로 노드 교체·제거·StrictMode 재연결을 처리한다. RHF 등 기존 callback ref는 직접 사용하고, 여러 ref의 조합은 각각의 연결·해제를 보존한다. 파일/요청 상태·전역 구독은 노드 수명에 억지로 옮기지 않는다. callback ref에서 설치한 콜백도 Effect Event를 직접·간접 호출하지 않는다. 최신 콜백 교체 중 진행 중인 작업을 보존하려면 기존 Effect를 유지하며 이를 피하려고 임시 ref/store/class나 범용 훅을 추가하지 않는다.
+
+- `useState` setter를 JSX `on*`에 연결할 때는 `onOpenChange={(nextOpen) => setOpen(nextOpen)}`처럼 새 값만 전달하는 인라인 어댑터를 쓴다. 이벤트·라이브러리의 추가 인자를 차단하는 예외이며 일반 API·props 콜백·Server Action에 일괄 래퍼를 추가하지 않는다. `ref={setNode}`는 매 렌더 인라인 래퍼로 바꾸면 detach/attach가 반복될 수 있으므로 안정적인 ref 참조를 보존한다.

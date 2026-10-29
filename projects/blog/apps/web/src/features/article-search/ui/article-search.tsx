@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useId, useRef, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Autocomplete } from '@base-ui/react/autocomplete';
@@ -27,7 +27,6 @@ export function ArticleSearch({
   const t = labels(locale);
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const hintId = useId();
   const query = normalizeSearchText(value, locale);
   const articleResults = articles
@@ -43,28 +42,29 @@ export function ArticleSearch({
         .slice(0, 5)
     : [];
 
-  const handleShortcut = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      !event.isComposing &&
-      !event.altKey &&
-      (event.metaKey || event.ctrlKey) &&
-      event.key.toLowerCase() === 'k'
-    ) {
-      event.preventDefault();
-      inputRef.current?.focus();
-      setOpen(true);
-    }
-  });
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleShortcut);
-    return () => document.removeEventListener('keydown', handleShortcut);
+  const handleInputRef = useCallback((input: HTMLInputElement | null) => {
+    if (!input) return;
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (
+        !event.isComposing &&
+        !event.altKey &&
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === 'k'
+      ) {
+        event.preventDefault();
+        input.focus();
+        setOpen(true);
+      }
+    };
+    const ownerDocument = input.ownerDocument;
+    ownerDocument.addEventListener('keydown', handleShortcut);
+    return () => ownerDocument.removeEventListener('keydown', handleShortcut);
   }, []);
 
   return (
     <Autocomplete.Root
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(nextOpen) => setOpen(nextOpen)}
       value={value}
       onValueChange={(next, details) => {
         if (details.reason === 'input-change' || details.reason === 'clear-press') onChange(next);
@@ -81,7 +81,7 @@ export function ArticleSearch({
       <Autocomplete.InputGroup className="search-field">
         <SearchIcon />
         <Autocomplete.Input
-          ref={inputRef}
+          ref={handleInputRef}
           data-clarity-mask="true"
           type="search"
           aria-label={t.common.search}

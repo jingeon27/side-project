@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { lockActiveUser } from '../auth/account/user-write';
 import { requireUser } from '../auth/session/session-access';
 import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
@@ -42,6 +43,9 @@ export class FollowsService {
     await this.target(req, id);
     const follow = await this.transactions.run(async (tx) => {
       await lockUserRelationship(tx, user.id, id);
+      await lockActiveUser({ client: tx, userId: user.id });
+      const target = await tx.user.findUnique({ where: { id, withdrawnAt: null, bannedAt: null } });
+      if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
       const blocked = await (tx ?? this.db).block.findFirst({
         where: {
           OR: [
@@ -65,6 +69,7 @@ export class FollowsService {
     const user = requireUser(req);
     await this.transactions.run(async (tx) => {
       await lockUserRelationship(tx, user.id, id);
+      await lockActiveUser({ client: tx, userId: user.id });
       await (tx ?? this.db).userFollow.deleteMany({ where: { followerId: user.id, followingId: id } });
     });
     return { ok: true };

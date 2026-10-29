@@ -10,6 +10,8 @@ NestJS REST API이며 입력과 응답 계약은 `@game-feedback/contracts`의 Z
 yarn workspace @game-feedback/api test
 # DB 없이 순수 정책·검증 단위 테스트
 yarn workspace @game-feedback/api test:unit
+# S3를 사용하지 않는 사용자 경합·DB 제약 통합 테스트
+yarn workspace @game-feedback/api test:database
 # 격리 PostgreSQL + Supertest 통합 테스트
 yarn workspace @game-feedback/api test:integration
 # 특정 HTTP 통합 테스트만 실행
@@ -21,6 +23,8 @@ yarn workspace @game-feedback/api test src/posts/posts.controller.integration.te
 단위·통합 테스트는 주 대상 구현 파일과 같은 디렉터리에 둔다. 단위 레인은 `*.spec.ts`와 `*.test.ts`에서 통합 파일을 제외하고 프로젝트의 `scripts/database-guard.test.ts`도 수집한다. 통합 레인은 `*.integration.spec.ts`·`*.integration.test.ts`를 수집한다. `app.integration.test.ts`는 전체 API 흐름을, `app.module.integration.test.ts`는 모듈 구성과 종료를 검증한다. `database/unit-of-work.integration.spec.ts`의 Repository 테스트는 실제 DB로 도메인 간 커밋·배열/콜백 롤백·단일 연결 가시성·동일 시각 페이지네이션을 검사한다. 관리자 숨김의 세 분기와 신고의 네 분기를 HTTP로 검증하고, 실제 감사 테이블 제약 위반으로 알림 삭제까지 롤백되는지 확인한다. 단위 테스트는 커서·채팅 삭제 경계·콘텐츠별 알림 정리 정책을 검증한다.
 
 개발 DB 55442는 사용하지 않는다. 외부 카카오·Discord·Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
+
+`test:database`는 탈퇴 경합과 `*.database.integration.*` 테스트만 실제 PostgreSQL에서 실행한다. S3에는 연결하지 않으며 파일 전송·삭제 검증은 전체 integration 레인에서 수행한다. 이 테스트들은 전체 integration 레인에도 포함된다.
 
 루트 `yarn workspace @side/game-feedback test`와 CI도 같은 API 명령을 호출한다. 테스트 DB는 재사용할 수 있도록 유지되며 작업 후 소유 DB만 종료한다.
 
@@ -46,7 +50,7 @@ DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 �
 
 ### Prisma 7
 
-Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `db push`는 Client를 자동 생성하지 않는다.
+Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `migrate deploy`는 Client를 자동 생성하지 않는다.
 
 기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.
 
@@ -60,3 +64,19 @@ Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.
 - `OAuthException`·`ProfileException`은 ApiError와 전역 필터의 `{ errorCode, message }` 형식을 유지한다. Guard·전역 입력 검증·세션 회전·PKCE·온보딩·레거시 Google 계정 판정은 그대로 둔다.
 
 `test:unit`의 `src/auth/oauth/identity-provider.registry.spec.ts`는 HTTP·Prisma 없이 Nest application context로 DI를 검사한다. 실제 HTTP 응답은 `src/auth/auth.module.integration.spec.ts`와 기존 auth integration 레인에서 검사한다. 이 모듈 HTTP fixture는 Prisma 외부 경계를 대체하며 실제 DB·S3 검증을 대체하지 않는다. integration 실행기는 실제 테스트 DB와 S3 설정이 필요하고 가짜 S3나 skip으로 우회하지 않는다.
+
+## DB 정합성과 보관 정책
+
+로컬 `db:sync`와 모든 통합 테스트는 `migrate deploy`를 사용한다. Prisma에 표현되지 않는 CHECK·GIN 인덱스도 운영과 함께 검사한다. 데이터가 있지만 migration 이력이 없는 개발 DB는 P3005로 중단한다. 자동 baseline·reset은 하지 않는다. 기존 DB를 백업한 뒤 별도 복제본에서 schema.prisma와 SQL 전용 제약을 대조하고 이력을 정리해야 한다.
+
+탈퇴와 사용자 쓰기는 User 행 잠금으로 순서를 정한다. 탈퇴보다 늦게 잠금을 얻은 요청은 활성 상태를 다시 확인해 401로 거절한다. 알림의 답변·댓글과 대화 첨부의 메시지는 같은 게시물·대화에 속해야 하며 복합 FK로 보장한다.
+
+배포 전 읽기 전용 점검으로 아래 값이 모두 0인지 확인한다. 어긋난 데이터는 임의 삭제하거나 재연결하지 않으며, 새 migration의 VALIDATE가 실패하면 데이터 정리 기준을 먼저 정한다.
+
+```sql
+SELECT count(*) FROM "Notification" n LEFT JOIN "Answer" a ON a.id = n."answerId" WHERE n."answerId" IS NOT NULL AND (a.id IS NULL OR n."postId" IS DISTINCT FROM a."postId");
+SELECT count(*) FROM "Notification" n JOIN "Comment" c ON c.id = n."commentId" WHERE n."postId" IS DISTINCT FROM c."postId";
+SELECT count(*) FROM "ChatAttachment" a JOIN "ChatMessage" m ON m.id = a."messageId" WHERE a."conversationId" <> m."conversationId";
+```
+
+운영 `maintenance` 명령은 미디어 정리 후 48시간 지난 PostView를 최대 1,000개 지운다. 24시간 중복 방지 창과 최근 방문은 유지하고 Post.viewCount는 바꾸지 않는다. `postViewsRemoved`가 1,000이면 남은 기록을 다음 실행에서 처리한다. 정기 운영 실행 주기를 잡아야 보관 기간에 가깝게 유지된다. 이 PR은 운영 DB 적용·유지보수 명령 실행을 포함하지 않는다.

@@ -21,7 +21,7 @@ export function copyWorktreeEnv(targetRoot: string) {
   ])
     .split('\0')
     .filter(Boolean);
-  const directories = new Set(['.', ...templates.map((file) => path.dirname(file))]);
+  const directories = new Set(['.', ...templates.map(path.dirname)]);
   const copied: string[] = [];
   for (const directory of directories) {
     const source = path.join(sourceRoot, directory);

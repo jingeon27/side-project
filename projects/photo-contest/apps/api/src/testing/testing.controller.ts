@@ -3,8 +3,10 @@ import type { Response } from 'express';
 
 import { SessionService } from '../auth/session.service';
 import {
+  CreateLegacyTestContestSchema,
   CreateTestUserSchema,
   MoveTestContestSchema,
+  type TCreateLegacyTestContestDto,
   type TCreateTestUserDto,
   type TMoveTestContestDto,
 } from './testing.dto';
@@ -32,5 +34,10 @@ export class TestingController {
   @Post('contests/:id/phase')
   moveContest(@Param('id') id: string, @Body({ schema: MoveTestContestSchema }) body: TMoveTestContestDto) {
     return this.testing.moveContest(id, body.phase);
+  }
+
+  @Post('legacy-contests')
+  createLegacyContest(@Body({ schema: CreateLegacyTestContestSchema }) body: TCreateLegacyTestContestDto) {
+    return this.testing.createLegacyContest(body);
   }
 }
