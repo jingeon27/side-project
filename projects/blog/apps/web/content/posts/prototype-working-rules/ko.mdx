@@ -8,13 +8,13 @@
 
 *글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
 
-검증용 SPA 프로토타입을 실사용 서비스로 옮기면서 SSR, SEO, 다국어, 폼 검증과 관리자 화면을 붙여야 했다. 비슷한 페이지와 폼을 반복해서 만들게 될 것 같아, Claude Code에 작업을 맡기기 전에 계획부터 검증까지의 순서를 정리했다.
+검증용 SPA 프로토타입을 실사용 서비스로 옮기면서 SSR, SEO, 다국어, 폼 검증과 관리자 화면을 붙여야 했어요. 비슷한 페이지와 폼을 반복해서 만들게 될 것 같아, Claude Code에 작업을 맡기기 전에 계획부터 검증까지의 순서를 정리했어요.
 
-여기서 규칙은 "항상 hook을 써라" 같은 취향 목록이 아니었다. Jira task를 읽고 plan을 세우는 단계부터 구현, 검증, code review, commit까지 반복되는 판단을 문서화한 것이었다.
+Jira task를 읽고 plan을 세우는 단계부터 구현, 검증, code review, commit까지, 매번 비슷하게 판단하던 내용을 skill에 적었어요.
 
 ## 작업 흐름부터 고정하기
 
-서비스 작업용 skill에는 다음 순서를 넣었다.
+서비스 작업용 skill에는 다음 순서를 넣었어요.
 
 ```text
 Jira task와 acceptance criteria 확인
@@ -26,20 +26,20 @@ Jira task와 acceptance criteria 확인
   -> 지적 반영 후 commit
 ```
 
-component를 생성하는 command 이름보다 중요한 것은 각 단계의 입출력이었다.
+각 단계에서 무엇을 확인하고 다음 단계에 넘길지 적었어요.
 
-- plan에는 바꿀 route, 재사용할 pattern, loading/error/empty state를 적는다.
-- 구현 전에 현재 codebase에서 가장 가까운 예제를 찾는다.
-- review에서는 task 범위를 벗어난 변경, hydration, 접근성, 번역 누락을 확인한다.
-- commit은 검증을 통과한 한 작업 단위로 만든다.
+- plan에는 바꿀 route, 재사용할 pattern, loading/error/empty state를 적어요.
+- 구현 전에 현재 codebase에서 가장 가까운 예제를 찾아요.
+- review에서는 task 범위를 벗어난 변경, hydration, 접근성, 번역 누락을 확인해요.
+- commit은 검증을 통과한 한 작업 단위로 만들어요.
 
-form, query, drawer 같은 반복 구현은 별도 skill에 실제 codebase의 pattern과 금지 사례를 함께 적었다. 새로운 화면을 만들 때마다 설명을 다시 쓰지 않고, Jira task의 차이만 plan에 남기는 구조였다.
+form, query, drawer 같은 반복 구현은 별도 skill에 실제 codebase의 pattern과 금지 사례를 함께 적었어요. 새로운 화면을 만들 때마다 설명을 다시 쓰지 않고, Jira task의 차이만 plan에 남기는 구조였어요.
 
-## 규칙에 적용 조건을 적었다
+## 규칙에 적용 조건을 적었어요
 
-처음에는 AI가 반복해서 만든 문제를 짧게 막으려다 너무 강한 규칙을 만들기도 했다. 예를 들어 "hook으로 얻을 수 있는 값은 prop으로 넘기지 않는다"는 규칙이다.
+처음에는 AI가 반복해서 만든 문제를 짧게 막으려다 너무 강한 규칙을 만들기도 했어요. 예를 들어 "hook으로 얻을 수 있는 값은 prop으로 넘기지 않는다"는 규칙이에요.
 
-이 문장은 prop drilling을 줄이는 데는 도움이 되지만 항상 맞지는 않는다. props는 component의 입력을 명시하고 순수하게 테스트할 수 있게 해준다. 수정한 규칙은 다음과 같다.
+이 문장은 prop drilling을 줄이는 데는 도움이 되지만 항상 맞지는 않아요. props는 component의 입력을 명시하고 순수하게 테스트할 수 있게 해줘요. 수정한 규칙은 다음과 같아요.
 
 > router, locale, theme처럼 이미 공통 provider가 소유한 값을 관계없는 중간 component들이 전달만 하지 않는다. 반면 부모가 계산한 화면 데이터와 component의 명시적 입력은 props로 전달한다.
 
@@ -66,11 +66,11 @@ function ProductName({ locale }: { locale: Locale }) {
 }
 ```
 
-viewport도 표시만 달라진다면 JavaScript hook보다 CSS media query를 우선한다. 하지만 viewport에 따라 fetch나 행동 자체가 달라진다면 그 결정은 별도 client logic으로 명시한다.
+viewport도 표시만 달라진다면 JavaScript hook보다 CSS media query를 우선해요. 하지만 viewport에 따라 fetch나 행동 자체가 달라진다면 그 결정은 별도 client logic으로 명시해요.
 
-## mount gate와 Suspense는 같은 해결책이 아니다
+## mount gate와 Suspense가 필요한 경우는 달라요
 
-레거시에는 mounted가 된 뒤에만 children을 보여주는 component가 있었다.
+레거시에는 mounted가 된 뒤에만 children을 보여주는 component가 있었어요.
 
 ```typescript
 function ClientOnly({ children }: { children: React.ReactNode }) {
@@ -80,16 +80,16 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 }
 ```
 
-AI에게 제거를 요청했더니 같은 코드를 useMounted hook으로 옮겼다. 이름은 바뀌었지만 첫 paint를 비우는 동작은 그대로였다.
+AI에게 제거를 요청했더니 같은 코드를 useMounted hook으로 옮겼어요. 이름은 바뀌었지만 첫 paint를 비우는 동작은 그대로였어요.
 
-그렇다고 "layout에 Suspense가 있으니 모든 mount gate를 제거한다"도 정확하지 않다. Suspense는 suspend하는 작업의 fallback을 처리하지만 window 접근이나 viewport 기반 hydration mismatch를 자동으로 해결하지 않는다.
+그렇다고 "layout에 Suspense가 있으니 모든 mount gate를 제거한다"도 정확하지 않아요. Suspense는 suspend하는 작업의 fallback을 처리하지만 window 접근이나 viewport 기반 hydration mismatch를 자동으로 해결하지 않아요.
 
-규칙을 원인별로 나눴다.
+규칙을 원인별로 나눴어요.
 
-- useSearchParams처럼 정적 rendering을 client rendering으로 전환할 수 있는 hook은 사용하는 가장 작은 subtree를 Suspense로 감싼다.
-- browser API는 event handler나 effect에서 읽고, 첫 server/client render가 같은 markup을 만들게 한다.
-- 표시 차이는 가능한 CSS media query로 처리한다.
-- 외부 widget처럼 SSR이 불가능한 component만 client-only boundary를 사용한다.
+- useSearchParams처럼 정적 rendering을 client rendering으로 전환할 수 있는 hook은 사용하는 가장 작은 subtree를 Suspense로 감싸요.
+- browser API는 event handler나 effect에서 읽고, 첫 server/client render가 같은 markup을 만들게 해요.
+- 표시 차이는 가능한 CSS media query로 처리해요.
+- 외부 widget처럼 SSR이 불가능한 component만 client-only boundary를 사용해요.
 
 ```tsx
 function SearchSection() {
@@ -101,11 +101,9 @@ function SearchSection() {
 }
 ```
 
-핵심은 gate를 금지하는 것이 아니라 왜 첫 render가 달라지는지 먼저 분류하는 것이다.
-
 ## mutation state를 복제하지 않을 조건
 
-폼 제출을 useMutation으로 옮긴 뒤에도 성공 여부와 마지막 제출 값을 local state와 ref에 다시 저장한 코드가 있었다.
+폼 제출을 useMutation으로 옮긴 뒤에도 성공 여부와 마지막 제출 값을 local state와 ref에 다시 저장한 코드가 있었어요.
 
 ```typescript
 const mutation = useMutation({ mutationFn: submitForm });
@@ -114,46 +112,36 @@ const submittedValues = mutation.variables;
 const isComplete = mutation.isSuccess;
 ```
 
-한 번에 하나만 제출할 수 있고 마지막 mutation의 lifecycle만 화면에 필요하다면 variables와 isSuccess를 그대로 쓸 수 있다. 같은 값을 useState와 useRef에 복제하지 않아도 된다.
+한 번에 하나만 제출할 수 있고 마지막 mutation의 lifecycle만 화면에 필요하다면 variables와 isSuccess를 그대로 쓸 수 있어요. 같은 값을 useState와 useRef에 복제하지 않아도 돼요.
 
-하지만 이것도 조건부 규칙이다.
+하지만 이것도 조건부 규칙이에요.
 
-- 여러 제출이 동시에 진행될 수 있다.
-- 성공 이후에도 snapshot을 오래 보존해야 한다.
-- mutation reset과 무관한 업무 상태다.
+- 여러 제출이 동시에 진행될 수 있어요.
+- 성공 이후에도 snapshot을 오래 보존해야 해요.
+- mutation을 reset해도 남겨야 하는 상태예요.
 
-이 경우에는 mutation state와 별도의 domain state가 필요하다. "상태를 줄인다"가 목표가 아니라 source of truth가 이미 있는 값을 다시 저장하지 않는 것이 목표다.
+이런 값은 mutation state와 따로 보관해야 해요. 이미 mutation에서 얻을 수 있고 수명도 같은 값에만 복제를 피하는 규칙을 적용했어요.
 
 ## review 결과를 skill에 되돌려 넣기
 
-몇 개 route를 옮긴 뒤 전체 diff를 다시 검토했다. 발견한 문제를 해당 파일만 고치는 데서 끝내지 않고, 반복될 가능성이 있는 항목만 skill에 반영했다.
+몇 개 route를 옮긴 뒤 전체 diff를 다시 검토했어요. 발견한 문제를 해당 파일만 고치는 데서 끝내지 않고, 반복될 가능성이 있는 항목만 skill에 반영했어요.
 
-예를 들어 다음 항목이 추가됐다.
+예를 들어 다음 항목이 추가됐어요.
 
-- async page props는 현재 Next.js version의 타입에 맞춰 먼저 await한다.
-- query prefetch는 SEO가 필요한지, streaming 가능한지 plan에서 정한다.
-- form의 async initial value는 Suspense gate 또는 reset 정책을 명시한다.
-- icon button에는 접근 가능한 이름과 tooltip을 둔다.
-- 다국어 route는 새 문구의 모든 locale key를 함께 검증한다.
+- async page props는 현재 Next.js version의 타입에 맞춰 먼저 await해요.
+- query prefetch는 SEO가 필요한지, streaming 가능한지 plan에서 정해요.
+- form의 async initial value는 Suspense gate 또는 reset 정책을 명시해요.
+- icon button에는 접근 가능한 이름과 tooltip을 둬요.
+- 다국어 route는 새 문구의 모든 locale key를 함께 검증해요.
 
-모든 review 지적을 영구 규칙으로 만들지는 않았다. 한 화면에만 해당하거나 앞으로 반복될 가능성이 낮은 예외는 code에서만 고쳤다. 규칙이 너무 많아지면 서로 충돌하고 중요한 기준이 묻히기 때문이다.
+모든 review 지적을 영구 규칙으로 만들지는 않았어요. 한 화면에만 해당하거나 앞으로 반복될 가능성이 낮은 예외는 code에서만 고쳤어요. 규칙이 너무 많아지면 서로 충돌하고 중요한 기준이 묻히기 때문이에요.
 
-## 완료 기준
+## route 작업을 마치는 조건
 
-빠르게 끝났다는 인상만으로 실사용 전환을 설명하지 않기 위해 완료 조건을 명시했다.
+코드가 빨리 나왔다는 이유로 작업을 끝내지는 않도록 완료 조건도 적었어요. 바뀐 route의 typecheck와 lint, production build를 통과하고, 주요 route를 desktop과 mobile에서 열어 smoke test를 하게 했어요. server-rendered HTML과 metadata, locale별 누락 key도 확인 대상에 넣었고요.
 
-- 변경 route의 typecheck와 lint 통과
-- production build 통과
-- 주요 route의 desktop/mobile smoke test
-- server-rendered HTML과 metadata 확인
-- form의 validation, submit, error path 확인
-- locale별 누락 key 확인
-- diff code review 후 task 밖 변경 제거
+폼은 validation, submit, error path를 확인하고, 마지막 diff review에서 task 밖의 변경을 걷어내도록 했어요.
 
-AI가 코드를 생성한 속도보다 같은 종류의 지적이 다음 작업에서 줄었는지를 봤다. 규칙으로 옮길 가치가 있는 것도 이 기준으로 골랐다.
-
-## 다음 작업에도 적용할 규칙
-
-다음 route를 옮길 때도 기존 패턴을 먼저 찾고, SEO와 streaming 조건을 plan에 적으려고 한다. 이번에 추가한 규칙 중 실제로 지적을 줄인 것은 남기고, 계속 예외가 생기는 규칙은 다시 고칠 생각이다. skill을 보강한 뒤에도 build와 화면 확인은 같은 순서로 진행한다.
+AI가 코드를 생성한 속도보다 같은 종류의 지적이 다음 작업에서 줄었는지를 봤어요. 규칙으로 옮길 가치가 있는 것도 이 기준으로 골랐어요.
 
 참고: [Next.js useSearchParams와 Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

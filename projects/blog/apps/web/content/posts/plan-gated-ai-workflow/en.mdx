@@ -120,13 +120,7 @@ When several PRs are collected for deployment, I read their combined diff. Abstr
 
 After deployment, troubling patterns can trigger a repository-wide search and changes to skills, lint, or shared implementations. Removing portal entities and reducing cross-page references from 62 to zero began here. That redesign reached develop, but the repositories still have different structures and rules. [The FSD article describes it.](/en/blog/fsd-layer-boundaries)
 
-I review structure and requirements in the plan, read finished code and tests, then verify the running UI. Before deployment I check the combined changes for consistency. Repeated decisions go into skills; mechanically checkable ones become lint rules.
-
-## Criteria carried forward
-
-- AGENTS.md records test-first work and checking that a new test pattern fails when the implementation is deliberately broken.
-- Skills record plan approval, review, and which stage to return to after a failed check. Reviewer guidance also explains recurring false positives.
-- Chat code that was once excluded is back under lint and tests. I revisit exceptions rather than assuming they remain necessary.
+Chat code that was once excluded is back under lint and tests. The separate API routes, on the other hand, have a reviewer exception so the same factory suggestion does not recur. Repeated corrections have helped me adjust what runs automatically and what I need to read and judge myself.
 
 ## References
 

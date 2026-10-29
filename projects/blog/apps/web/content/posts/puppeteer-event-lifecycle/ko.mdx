@@ -8,9 +8,9 @@ Puppeteer에서 요청과 응답을 함께 기다리며 리스너 정리, 타임
 
 *글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
 
-Electron 수집 앱에서 Puppeteer의 request와 response 이벤트를 함께 기다려야 했다. request에서는 다음 API 호출에 쓸 header를, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었다. 두 이벤트가 모두 끝나야 다음 작업을 시작할 수 있었다.
+Electron 수집 앱에서 Puppeteer의 request와 response 이벤트를 함께 기다려야 했어요. request에서는 다음 API 호출에 쓸 header를, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었어요. 두 이벤트가 모두 끝나야 다음 작업을 시작할 수 있었어요.
 
-처음에는 외부 변수에 값을 넣고 1초마다 확인했다.
+처음에는 외부 변수에 값을 넣고 1초마다 확인했어요.
 
 ```typescript
 let result: PreInfo | undefined;
@@ -26,15 +26,15 @@ while (result === undefined) {
 }
 ```
 
-동작은 했지만 문제가 있었다.
+동작은 했지만 문제가 있었어요.
 
-- 함수를 다시 호출할 때마다 listener가 누적됐다.
-- 원하는 이벤트가 오지 않으면 영원히 기다렸다.
-- if (result)로 검사하면 0, false, 빈 문자열처럼 유효한 값도 완료로 처리하지 못했다.
-- request와 response callback이 같은 변수를 덮어쓸 수 있었다.
-- listener를 등록하기 전에 reload하면 빠른 이벤트를 놓칠 수 있었다.
+- 함수를 다시 호출할 때마다 listener가 누적됐어요.
+- 원하는 이벤트가 오지 않으면 영원히 기다렸어요.
+- if (result)로 검사하면 0, false, 빈 문자열처럼 유효한 값도 완료로 처리하지 못했어요.
+- request와 response callback이 같은 변수를 덮어쓸 수 있었어요.
+- listener를 등록하기 전에 reload하면 빠른 이벤트를 놓칠 수 있었어요.
 
-이벤트를 기다리는 작업을 Promise로 묶고, 성공, 실패, 시간 초과 어느 경로로 끝나든 listener를 해제하도록 바꿨다.
+이벤트를 기다리는 작업을 Promise로 묶고, 성공, 실패, 시간 초과 어느 경로로 끝나든 listener를 해제하도록 바꿨어요.
 
 ## 이벤트를 기다리는 공통 함수
 
@@ -109,11 +109,11 @@ export function waitForPreInfo<T>({
 }
 ```
 
-이 함수는 처음으로 유효한 결과를 반환한 callback에서 완료된다. 완료, 실패, timeout 어느 경로에서도 listener를 제거한다.
+이 함수는 처음으로 유효한 결과를 반환한 callback에서 완료돼요. 완료, 실패, timeout 어느 경로에서도 listener를 제거해요.
 
 ## closure로 두 이벤트의 값을 합치기
 
-request와 response가 각각 절반의 정보만 주는 경우에는 작은 collector를 만든다.
+request와 response가 각각 절반의 정보만 주는 경우에는 작은 collector를 만들어요.
 
 ```typescript
 interface SitePreInfo {
@@ -154,8 +154,8 @@ const preInfo = await waitForPreInfo({
 });
 ```
 
-closure는 headers와 filePassword를 외부에서 직접 수정하지 못하게 가두고, 두 값이 모두 모였을 때만 완성된 객체를 내보낸다.
+closure는 headers와 filePassword를 외부에서 직접 수정하지 못하게 가두고, 두 값이 모두 모였을 때만 완성된 객체를 내보내요.
 
-## 정리
+## 두 값을 모은 뒤에는 구독을 끝내요
 
-이 작업에서 closure는 여러 비동기 callback이 한 번의 수집 상태를 공유하게 해줬다. 하지만 운영 코드에서 더 중요했던 것은 listener cleanup, timeout, 명시적인 완료 조건이었다. 이벤트 기반 코드는 값을 어떻게 저장할지만큼 **언제 구독을 끝낼지**를 함께 설계해야 했다.
+headers와 filePassword는 collector 안에서 모으고, 둘 다 준비되면 Promise를 완료하게 했어요. 원하는 이벤트가 오지 않으면 타임아웃으로 끝내고요. 어느 쪽으로 끝나든 listener를 해제하니, 다음 수집을 시작할 때 이전 listener가 남지 않게 됐어요.

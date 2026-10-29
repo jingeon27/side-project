@@ -392,12 +392,6 @@ While deriving types from Zod and narrowing nullability, I compared the change b
 
 A Sentry waterfall also showed main-banner links prefetching several routes merely by entering the viewport. Disabling their prefetch removed the requests. I did not measure a Web Vitals improvement; this is evidence of finding unnecessary network work, not a performance gain figure.
 
-## Checks for the next configuration change
-
-For SDK upgrades and newly enabled features, I inspect the actual event, breadcrumb, transaction, and span payloads. I retain both automatic-collection restrictions and final sanitization.
-
-I verified Web Vitals through envelopes, MCP through actual API calls, and releases through artifact bundles. Configuration and successful transmission remain different checks. User-impact levels and noise policy then make the collected list actionable.
-
 ## References
 
 - [Woowa Brothers: Sentry optimization for proactive incident response](https://techblog.woowahan.com/21604/): starting point for impact levels and filtering

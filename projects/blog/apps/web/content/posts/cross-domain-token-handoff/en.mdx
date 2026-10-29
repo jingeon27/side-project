@@ -74,8 +74,6 @@ The registrable domains differ. Browsers treat them as separate sites despite co
 
 > Opening settlement while signed in requires an explicit token handoff.
 
-This records how that handoff changed, separating implemented changes from proposed hardening.
-
 ---
 
 ## First approach: tokens in URL parameters
@@ -116,7 +114,7 @@ if (request.nextUrl.pathname.startsWith('/finance')) {
 }
 ```
 
-It worked. The token URL was an intermediate server redirect and did not remain in the final address or history, but it still traveled through the network.
+The token URL was an intermediate server redirect and did not remain in the final address or history, but it still traveled through the network.
 
 - Reverse proxies, CDNs, and web servers could log the complete token-bearing URL.
 - Reusing the intermediate URL as a document or in another request creates further exposure to check. A server-side 3xx URL does not automatically become the next request's Referer; [Fetch's redirect algorithm](https://fetch.spec.whatwg.org/#http-redirect-fetch) handles those separately.
@@ -472,22 +470,12 @@ The matcher fix addressed the /_next/** outage. Exact /api and /_next paths, rob
 - Fix page/API/static matcher cases with unstable_doesProxyMatch.
 - Integration-test 200 chunk responses on both hosts and redirect preservation of queries and environment-defined hosts.
 - Test Server Action Origin/Host combinations and CORS preflights/credential scope.
-- Compare the same SSR HTML before releasing the version pin after the upstream fix ships.
-
-Comments alone cannot prevent recurrence. Configuration, browser request mode, and framework regressions each need reproducible checks.
+- Compare the same SSR HTML before releasing the version pin.
 
 ---
 
-## What changed
-
-| Stage | Transfer channel | Result |
-| --- | --- | --- |
-| 1 | URL query, two middleware redirects | A clean final address, but intermediate URLs remain subject to access and proxy logging |
-| 2 | Form POST to BFF | Less URL/access-log exposure; body-recording risk remains |
-| 3 | Exact Origin validation | Proposed, not implemented; requires changing no-referrer too |
-| 4 | Dedicated handoff route | Middleware only routes; handoff generation is centralized |
-| 5 | CSP, X-Frame-Options, resolveDestination | Current unsafe-inline and prefix checks; nonce and path-boundary hardening remain |
+## What remained after removing tokens from URLs
 
 Moving from URL to body reduced exposure but left token duplication, rotation/logout coordination, login CSRF, and JavaScript access. Shared state was outside scope, preventing authorization-code exchange. Centralizing the BFF entrypoint at least narrowed later replacement.
 
-Independently, incorrect host-enforcement scope can stop the screen itself loading. A matcher remained silent for three months before meeting a framework regression. Current successful behavior does not prove either our settings or every framework assumption correct.
+The matcher needed a separate fix. It had redirected static assets to another host without symptoms for three months, until a framework regression combined with it to break the screen.

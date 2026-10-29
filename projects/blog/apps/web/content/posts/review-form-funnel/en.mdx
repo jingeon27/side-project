@@ -244,7 +244,7 @@ Closing the shared sheet unmounts its content after the exit animation. Each ope
 
 The count rule exists twice. The sheet blocks a sixth temporary item with a toast and removes an already selected item when tapped again, preventing duplicates. The step schema checks committed items using `min(1)`, `max(5)`, and a duplicate check omitted from the earlier example. This field has no error message; schema failure only disables Next.
 
-The difference between temporary and committed values caused a mistake. When the sheet first merged into develop, the limit checked opening-time `initialItems` instead of `draft`. If shipped, a sheet opened with fewer than five items could accept unlimited selections, then disable Next after confirmation without explaining why. I corrected it to use draft the following day, before production. When a rule exists in two places, each must explicitly identify the values it checks.
+The difference between temporary and committed values caused a mistake. When the sheet first merged into develop, the limit checked opening-time `initialItems` instead of `draft`. If shipped, a sheet opened with fewer than five items could accept unlimited selections, then disable Next after confirmation without explaining why. I corrected it to use draft the following day, before production. The sheet needed to count the items the user was choosing now, not those present when it opened.
 
 This pattern repeats at the step level: a step validates its temporary values before merging them into the parent form.
 
@@ -386,14 +386,6 @@ The server waits for both requests before rendering. Edit data is therefore alre
 
 ## The stores are gone, but some work remains
 
-The changes were:
-
-- Remove the review-writing Zustand store.
-- Move conditional validation scattered across components into step schemas.
-- Separate navigation from form validation.
-- Let each step determine submission validity using its own schema.
-- Keep unconfirmed treatment choices in the sheet and update the form once through `replace`.
-
 Each step now knows its fields and validation. That was more useful than merely deleting two stores. Because each step still creates its own form instance, merging defaultValues and resetting remains necessary.
 
 Visibility also still uses a boolean rather than an enum that reveals its meaning. Actual request conversion processes other fields too; this extracts only visibility conversion.
@@ -414,5 +406,3 @@ function toSubmissionRequest(form: ReviewDraft): SubmissionRequest {
 The conversion works, but understanding whether `true` means hidden or public requires reading both the field name and conversion. Values such as `PUBLIC | HIDDEN` inside the form would be clearer. That is a proposed improvement, not the current implementation.
 
 The funnel library deserves another look. Values containing browser objects such as images cannot easily restore navigation history through URL serialization alone. Three steps do not inherently require a funnel library. Since this implementation leaves context empty and uses only replace, local state or an explicit reducer may be simpler.
-
-If I revisit this, I will first assemble an overall schema retaining step refinements, then add a test that final submission validates all steps' values again.

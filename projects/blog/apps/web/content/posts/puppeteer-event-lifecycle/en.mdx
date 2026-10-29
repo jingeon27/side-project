@@ -156,6 +156,6 @@ const preInfo = await waitForPreInfo({
 
 The closure keeps `headers` and `filePassword` from being changed directly by outside code. It returns a complete object only after both values have arrived.
 
-## What mattered in production
+## End the subscription after collecting both values
 
-The closure let several asynchronous callbacks share the state of one collection attempt. Listener cleanup, a timeout, and an explicit completion condition mattered just as much. When designing event-driven code, I needed to decide when the subscription ends as well as where to store its values.
+The collector holds headers and filePassword until both are ready, then resolves the Promise. If the expected events do not arrive, the timeout ends the wait. Both paths remove the listeners, so the next collection starts without listeners left over from the previous attempt.

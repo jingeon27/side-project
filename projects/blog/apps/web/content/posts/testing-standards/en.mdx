@@ -1,6 +1,6 @@
 <Summary>
 
-After introducing tests, I refined them against real submission paths and server constraints. I review what a test verifies as well as whether it passes.
+I reviewed which behaviors the tests checked and refined them against actual submission paths and server constraints.
 
 </Summary>
 
@@ -197,8 +197,6 @@ This reduces simultaneous full checks across sessions. Narrow local checks still
 Admin PR Vitest initially ran all MSW tests, but the runner shared an instance with dev, and those runs stopped the dev environment too. MSW integration tests moved to affected pre-push checks.
 
 Admin CI now runs lint, typecheck, Knip, and tests without MSW. Dev-API live tests run separately without blocking PRs because server deployments and data changes can cause failures; I inspect results for contract differences. Portal CI runs lint, typecheck, and Knip. Both repositories check E2E outside CI.
-
-The criteria continue to change. New features add conditions, missed bugs add regression tests, and code changes prompt a check that tests still exercise their subjects. Each task leaves more precise things to verify next time.
 
 ## References
 

@@ -10,7 +10,7 @@ The boundary between entities and features was too vague to explain where files 
 
 We repeatedly disagreed on whether a new file belonged in entity or feature. The benefits portal had entities, features, widgets, and pages. The admin monorepo followed the same layer documentation without pages. The folders and explanations existed, but they did not sufficiently determine where real code belonged.
 
-This describes the state on September 8, 2026. The admin monorepo changes were merged into develop; the benefits portal changes were still waiting on a separate branch.
+After the move, the admin monorepo changes had merged into develop, while the benefits portal changes were still on a separate branch.
 
 ## The initial rule was domain code that seemed reusable
 
@@ -122,11 +122,11 @@ pages/catalog/search/
 
 A screen's slice lives inside `@page`; code shared by child screens lives in `@common`. These folder names are explanatory examples grouped by screen rather than literal URLs. Within @page, ui, model, and lib divide roles. Domain code shared more widely moves to the appropriate lower layer instead of all accumulating in @common.
 
-## Criteria carried into the next task
+## The structure after the move
 
 The initial structure did not remain unchanged. Admin folder depth was reduced after excessive URL mirroring, and the portal added @page after abandoning mirroring. Moving real files exposed counterexamples the documentation alone did not reveal.
 
-Three things remain. Portal lint makes layer direction, slice Public API, and cross-page restrictions errors; admin still warns on the first two and has no cross-page rule. Portal folders distinguish @page screen code from @common support. Domain code used beyond a screen belongs in features, but two callers alone do not justify moving it. Verification also requires `pnpm build` after barrel exports or package merges.
+Portal lint makes layer direction, slice Public API, and cross-page restrictions errors; admin still warns on the first two and has no cross-page rule. Portal folders distinguish @page screen code from @common support. Domain code used beyond a screen belongs in features, but two callers alone do not justify moving it. Verification also requires `pnpm build` after barrel exports or package merges.
 
 I now look for server-domain APIs, models, and UI in features and screen composition in pages. This codebase needed an explainable place to find the next file more than it needed every standard layer.
 

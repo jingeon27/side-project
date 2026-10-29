@@ -92,13 +92,13 @@ The presence of `void` alone does not determine whether the implementation is co
 | Data that can appear later within Suspense | pending dehydration + streaming |
 | Data needed only after an interaction | client query |
 
-## Distinguish SEO from the sitemap
+## Check the sitemap and page HTML separately
 
-A sitemap does not read a page's internal data. It tells search engines about URLs; their crawlers then request those URLs and read the HTML. The precise description is that the crawler's initial HTML was missing essential content, rather than that the sitemap could not read it.
+A sitemap tells search engines about URLs. Whether the HTML returned to a crawler contains the needed content is a separate check. In this case, the missing data was in the page's initial HTML.
 
-Multiple HydrationBoundaries are not necessarily duplicates either. Different Server Components can prefetch their own caches and pass them to nearby client subtrees. I consider moving a boundary upward when the same query and state are passed repeatedly.
+Different Server Components can prefetch their own caches and pass them to nearby client subtrees, so a page can have several HydrationBoundaries. I check whether they repeat the same query and state before deciding to combine them.
 
-For queries that matter to SEO, I first decide how much the server must finish. Then I choose between waiting for completion and streaming the pending state.
+I awaited the data needed in the initial HTML and streamed regions that could appear later. Queries whose failures the server must handle use fetchQuery rather than prefetchQuery.
 
 References: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js searchParams](https://nextjs.org/docs/app/api-reference/file-conventions/page#searchparams-optional)
 

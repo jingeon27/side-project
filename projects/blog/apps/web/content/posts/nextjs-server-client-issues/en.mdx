@@ -10,7 +10,7 @@ I traced searches that did not update the URL and chunk errors after an upgrade,
 
 I encountered three Next.js problems, in Router Cache, proxy, and Server Actions. Their causes differed. Router Cache and action issues led me to move behavior to the client; the proxy needed a narrower matcher and a pinned version.
 
-Forms exposed state-ownership problems too. Making the URL authoritative erased unfinished search edits, while framework state preservation in the portal retained submitted inputs from July into early August. This records the fixes and remaining costs.
+Forms had problems too. Synchronizing them with the URL erased unfinished search edits, while framework state preservation in the portal retained submitted inputs from July into early August. I fixed some of these issues; others remain.
 
 ## Search conditions changed, but the address did not
 
@@ -100,7 +100,7 @@ The root fix excluded static paths such as _next from the matcher. Only page rou
 
 I still left the admin monorepo on 16.2.x temporarily. Other apps or configurations might recreate the conditions, and remaining on a version without the attribute cost less until a stable upstream fix was available.
 
-Version upgrades and URL design became separate decisions. Same-path query updates remain on History API. I will revisit that if requirements make the router responsible for those changes, rather than because a version changes.
+I made separate decisions about pinning the admin version and using History API for query conditions. After an upgrade, the client will still fetch the lists, so URL changes still need no server round trip. I would revisit this if a feature needed the server to read those conditions.
 
 ## Server Actions failed in long-open tabs
 
@@ -215,18 +215,11 @@ I considered bfcacheId as a key, but [its documentation](https://nextjs.org/docs
 
 Submitting pushes away from the form without recreating its segment. Back restores that same segment, retaining bfcacheId and its key. Pushing a new form from a completion screen can create a new segment, but the guidance still favors an explicit reset or data-derived key in new code, reserving bfcacheId as a last resort.
 
-## Conditions for removing workarounds
+## Changes still waiting
 
-All four workarounds were still in the code.
+I confirmed that the 16.3.6 artifact omitted the manifest field, but the admin monorepo remains pinned to 16.2.x. The refresh fallback for old httpOnly sessionToken sessions remains too. It can be removed once those sessions have expired.
 
-- Upgrade after a stable release contains the manifest fix. The 16.3.6 artifact met that condition, but admin was still pinned to 16.2.x.
-- Remove the refresh fallback after old httpOnly sessionToken sessions expire.
-- Limit form resets to form-owned keys.
-- Move the notice cookie to a Route Handler and restore httpOnly.
-
-History API is not on that list. It avoids an unnecessary round trip for same-path query data the server does not read, independently of the Router Cache bug.
-
-CORS and form initialization both failed where otherwise reasonable decisions met. This did not eliminate framework dependencies, but clarified which behavior belongs to the framework and which I must manage.
+Opening or closing a Drawer still clears unfinished search input, and the client still reads and writes the notice cookie directly. Form resets need to watch only query conditions, and moving the notice cookie to a Route Handler would restore httpOnly. I will keep History API: fetching these lists still needs no server render after the cache bug is fixed.
 
 ## References
 

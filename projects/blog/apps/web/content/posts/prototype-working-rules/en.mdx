@@ -10,7 +10,7 @@ While moving a prototype into a Next.js proof of concept, I recorded repeated de
 
 Moving an SPA prototype into a usable service meant adding SSR, SEO, multiple languages, form validation, and admin screens. I expected to build similar pages and forms repeatedly, so before giving the work to Claude Code, I wrote down the sequence from planning to verification.
 
-These rules documented recurring decisions from reading a Jira task through planning, implementation, validation, code review, and committing. They were more specific than preferences such as “always use a hook.”
+I recorded decisions I kept making from reading a Jira task through planning, implementation, validation, code review, and committing.
 
 ## Fix the workflow first
 
@@ -26,7 +26,7 @@ Jira task와 acceptance criteria 확인
   -> 지적 반영 후 commit
 ```
 
-The inputs and outputs of each stage mattered more than the name of a component-generation command.
+I wrote down what each stage should check and pass to the next.
 
 - The plan lists routes to change, patterns to reuse, and loading, error, and empty states.
 - Before implementation, find the closest example in the current codebase.
@@ -101,8 +101,6 @@ function SearchSection() {
 }
 ```
 
-Before deciding whether to remove a gate, determine why the first render differs.
-
 ## When mutation state does not need another copy
 
 After moving form submission to `useMutation`, some code still copied success state and the last submitted values into local state and a ref.
@@ -120,9 +118,9 @@ That rule has exceptions too.
 
 - Several submissions may run concurrently.
 - A snapshot may need to survive long after success.
-- The business state may be independent of resetting a mutation.
+- Screen state may need to survive resetting the mutation.
 
-Those cases need domain state separate from mutation state. The aim is to avoid storing another copy of a value that already has an owner.
+Those values need storage separate from mutation state. I applied the rule against copying only when the mutation already supplied the value for as long as the screen needed it.
 
 ## Feed review findings back into the skill
 
@@ -138,22 +136,12 @@ For example:
 
 I did not turn every review comment into a permanent rule. Exceptions relevant to one screen or unlikely to recur stayed in code. Too many rules create conflicts and bury the criteria that matter.
 
-## Completion criteria
+## When a route migration is finished
 
-I made the completion criteria explicit so that a fast-looking implementation would not be mistaken for a finished migration.
+I wrote down completion criteria so that fast code generation alone would not end the task. Changed routes must pass typecheck and lint, the production build must pass, and main routes must receive desktop and mobile smoke tests. Server-rendered HTML, metadata, and missing locale keys also need checks.
 
-- Typecheck and lint pass for changed routes.
-- The production build passes.
-- Main routes pass desktop and mobile smoke tests.
-- Server-rendered HTML and metadata are checked.
-- Forms are checked for validation, submission, and errors.
-- Missing locale keys are checked.
-- The diff is reviewed and changes outside the task are removed.
+Forms must be checked for validation, submission, and errors. The final diff review removes changes outside the task.
 
 I looked for fewer repeated review findings in the next task, rather than measuring only code generation speed. That also helped decide which findings belonged in the rules.
-
-## Rules to carry into the next task
-
-For the next route, I will find the existing pattern first and record SEO and streaming requirements in the plan. I will keep rules that reduced repeated review comments and revise those that keep needing exceptions. Builds and screen checks still follow the same sequence after the skill changes.
 
 References: [Next.js useSearchParams and Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)
