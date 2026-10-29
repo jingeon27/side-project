@@ -26,9 +26,17 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 로딩과 조회 실패는 영역별 `AsyncBoundary`로 제한한다. 문의 하나가 실패해도 메뉴와 문의 목록을 사용할 수 있어야 한다. 계정 전환은 실행 중 쿼리 취소 → 이전 캐시 삭제 → 새 세션 저장 순서를 유지한다.
 - URL이 선택 화면·사용자·문의의 단일 출처다. 외부 구독은 useSyncExternalStore를 사용한다. useRef는 외부 자원 식별 등 실제 필요한 경우에 제한하며 DOM 연결은 정리 가능한 callback ref를 우선한다. QueryClient처럼 수명이 고정된 자원을 만드는 lazy useState는 허용한다.
 
+## UI 라이브러리와 이벤트 수명
+
+- 메뉴·선택·시트·대화상자의 outside-click, focus 이동/복원, Escape, ARIA 상태는 기존 `@side/design-system`/Base UI primitive에 맡긴다. 직접 DOM listener·role·펼침 상태를 복제하지 않는다. 네이티브 back을 Base UI의 Escape 처리에 연결하는 어댑터와 Quill 전용 DOM은 별도 외부 경계다.
+- effect가 소유하는 전역/OS 구독에서 최신 props·콜백만 읽어야 하면 `useEffectEvent`로 이벤트 처리와 구독 수명을 분리한다. Effect Event는 effect가 설치한 콜백에서만 호출하고 JSX 이벤트·일반 외부 공개 API로 전달하지 않는다.
+- 계정·대화 ID, 구독 대상/활성 여부, DOM 노드처럼 자원의 수명을 바꾸는 값은 reactive dependencies에 유지한다. URL·테마·visibility·채널 snapshot은 `useSyncExternalStore`를 유지한다. 비React 채널은 자체 bind/dispose·취소·큐 수명을 유지하며 일괄 변환하지 않는다.
+- cleanup은 OS listener·observer·타이머를 해제하고 늦은 promise 응답을 취소 가드로 버린다. 콜백 교체, StrictMode 재구독, unmount 후 응답, 진행 중 back/초기 링크 경합을 동작 테스트로 확인한다.
+
 ## 표현과 타입
 
 - 컴포넌트는 PascalCase 파일의 named function, 나머지 파일은 kebab-case로 작성한다. interface는 `I`, type alias는 `T`, 내부 이벤트는 `handle*`, 전달 prop은 `on*`을 사용한다. any·non-null assertion·enum·else를 추가하지 않는다.
+- 컴포넌트 내부 콜백은 `const` arrow로 선언한다. 실제 재사용·구독 해제에 필요한 named callback은 유지한다.
 - const와 순수 변환을 우선한다. 유니온 분기는 ts-pattern의 exhaustive match, 중복 제거 등 컬렉션 처리는 es-toolkit을 사용한다. 단순한 두 상태 표현까지 억지로 추상화하지 않는다. 외부 응답의 열린 문자열은 임의로 기존 상태라고 단정하지 않는다.
 - 객체 타입은 타입 추론을 유지하는 `satisfies`를 우선한다. 상태를 가진 외부 채널·수명 관리는 가변 let 클로저 대신 class로 캡슐화한다. UI 데이터 변환을 위해 class를 추가하지 않는다.
 - 버튼·입력·모달·토큰은 `@side/design-system`의 shadcn + Base UI를 사용한다. 앱에서 기본 컨트롤과 타이포를 다시 정의하지 않는다. 고정 메뉴·상태 선택지는 JSX로 명시하고 서버 목록은 map으로 렌더링한다.
