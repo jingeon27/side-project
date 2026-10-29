@@ -3,6 +3,8 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
+import { handlerNamesConfig } from '@side/config/eslint/react';
+
 const layers = ['shared', 'features', 'widgets', 'app'];
 const boundaries = layers.slice(0, -1).map((layer, index): Linter.Config => {
   const uppers = layers.slice(index + 1);
@@ -26,6 +28,7 @@ const boundaries = layers.slice(0, -1).map((layer, index): Linter.Config => {
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  handlerNamesConfig,
   ...boundaries,
   {
     rules: {
