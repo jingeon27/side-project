@@ -57,9 +57,8 @@ export function ArticleSearch({
   });
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => shortcut(event);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', shortcut);
+    return () => document.removeEventListener('keydown', shortcut);
   }, []);
 
   return (
