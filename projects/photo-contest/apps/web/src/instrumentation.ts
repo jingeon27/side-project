@@ -13,6 +13,7 @@ export function register() {
     enableOpenTelemetrySetup: false,
     initialScope: { tags: { service: 'photo-contest', layer: 'next-server' } },
     environment: process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE?.trim() || undefined,
     dataCollection: SENTRY_DATA_COLLECTION,
     tracesSampleRate: 0,
     traceLifecycle: 'static',

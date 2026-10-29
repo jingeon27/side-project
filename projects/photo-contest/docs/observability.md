@@ -4,6 +4,8 @@
 
 프로젝트 집계 명령뿐 아니라 `@photo-contest/web dev/build/start`도 실행 전에 루트 .env를 읽는다. 명시한 프로세스 값(빈 키 포함)이 우선한다. build/start는 프레임워크 NODE_ENV를 production으로 고정한다. 공개 키는 빌드 전에 반영해야 한다.
 
+웹의 `SENTRY_RELEASE`는 Next 서버와 브라우저 오류에 함께 사용한다. 운영 CI는 검증할 이미지를 빌드할 때 커밋 SHA를 넣고 배포도 같은 SHA의 이미지 digest를 사용한다. 로컬에서는 비워 두거나 검사할 버전을 넣은 뒤 웹을 다시 빌드한다. release는 브라우저 번들에도 들어가는 공개 값이므로 비밀 정보를 넣지 않는다.
+
 ## 실제 전송 확인
 
 전용 테스트 PostgreSQL과 루트 TEST_DATABASE_URL을 준비한다. 다른 개발 서버는 종료하거나 재사용하지 않는다. 처음 만든 worktree에서는 Prisma와 GraphQL 문서를 생성한다.
