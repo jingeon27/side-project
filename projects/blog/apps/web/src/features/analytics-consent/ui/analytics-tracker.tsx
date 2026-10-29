@@ -24,13 +24,11 @@ export function AnalyticsTracker() {
   }, [pathname]);
 
   useEffect(() => {
-    const onConsentChange = () => track();
-    const onStorage = (event: StorageEvent) => syncConsent(event);
-    window.addEventListener(consentChangedEvent, onConsentChange);
-    window.addEventListener('storage', onStorage);
+    window.addEventListener(consentChangedEvent, track);
+    window.addEventListener('storage', syncConsent);
     return () => {
-      window.removeEventListener(consentChangedEvent, onConsentChange);
-      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(consentChangedEvent, track);
+      window.removeEventListener('storage', syncConsent);
     };
   }, []);
   return null;
