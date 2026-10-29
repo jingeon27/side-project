@@ -33,6 +33,7 @@
     "es-toolkit": "catalog:",
     "graphql": "catalog:",
     "lucide-react": "catalog:",
+    "motion": "14.7.1",
     "next": "catalog:",
     "overlay-kit": "catalog:",
     "react": "catalog:",
