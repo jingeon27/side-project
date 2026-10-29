@@ -6,6 +6,8 @@ operationName·alias·문서·변수·쿠키·ID는 성능 데이터에 넣지 �
 
 검증: 기존 API 단위 195개와 새 Apollo 플러그인 검사 1개, API 타입·변경 파일 ESLint 통과. 실제 Nest HTTP·DB 통합 사양도 추가했으나 로컬 테스트 DB(55434)가 응답하지 않아 로컬 실행은 완료하지 못했다. 해당 검사는 CI integration 레인에서도 수집한다. 개발 DB·실행 중인 서버·운영 배포는 변경하지 않았다.
 
+실제 수집 확인: `test` 환경·`api-metrics-verification-20261030-81607000` release의 DB 없는 Apollo probe를 실행하고 `photo-contest-server`에서 `api.graphql.duration` 저장을 Sentry MCP로 확인했다. 운영 부하나 DB 포함 API 지연을 측정한 값은 아니다. SDK 11 stream 모드에서 무시되는 beforeSendTransaction은 제거하고 beforeSendSpan을 사용한다.
+
 ## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
 
 현재 인증은 아이디·비밀번호와 익명 세션만 제공한다. 아래 과거 검증 기록의 외부 인증·앱 로그인 항목은 제거된 구현에 대한 이력이다.

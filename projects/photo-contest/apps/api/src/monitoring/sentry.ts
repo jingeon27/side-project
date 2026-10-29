@@ -74,7 +74,6 @@ export function sentryOptions(): NodeOptions | undefined {
     enableRuntimeChannelInjection: false,
     integrations: [performancePrivacyIntegration],
     beforeSend: scrubEvent,
-    beforeSendTransaction: scrubEvent,
     beforeSendSpan: scrubPerformanceSpan,
     beforeSendMetric: scrubPerformanceMetric,
   };

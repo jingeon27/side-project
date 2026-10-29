@@ -1557,3 +1557,5 @@ CI에서 실제 답글 205개를 7페이지에 걸쳐 읽는 UI 테스트가 기
 비공개 입력과 ID를 차원에 넣지 않고 beforeSendMetric 뒤 합쳐지는 scope 속성까지 최종 envelope에서 제거한다. SSE 접근 조회의 내부 장애는 권한 거부로 흡수하지 않아 전달 실패로 집계한다. 계약·DB 스키마·연결 제한·heartbeat 조회 주기는 유지한다.
 
 검증: API 단위 233개, 실제 PostgreSQL·HTTP·SSE 성능 통합 8개, 기존 채팅 통합 16개, API 타입·변경 파일 ESLint 통과. 실제 SDK 메모리 transport에서 추적 비율 0의 메트릭 수집과 scope 개인정보 제거, 오류 객체 보존, 연결 종료/heartbeat 장애 집계를 검증했다. 브라우저 Web Vitals는 기존 코드에서 수집하며 Sentry MCP로 두 서비스의 최근 7일 LCP 저장 표본을 확인했다. 이는 운영 트래픽만을 분리한 성능 측정이 아니다.
+
+실제 수집 확인: 전용 gf_test_live_metrics_ 스키마의 실제 HTTP·채팅·SSE 요청을 `test` 환경·`api-metrics-verification-20261030-81607000` release로 보냈다. `game-feedback-server`의 `chat.http.duration` 5개 저장과 p95 집계를 Sentry MCP로 확인했고 서버·스키마를 정리했다. 이 소량의 검증 데이터를 운영 p95로 해석하지 않는다.
