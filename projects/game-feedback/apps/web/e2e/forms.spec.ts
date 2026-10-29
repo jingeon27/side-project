@@ -36,7 +36,8 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
   const comment = page.locator('article.comment').filter({ hasText: commentBody });
   await expect(comment).toBeVisible();
-  await comment.getByRole('button', { name: '수정', exact: true }).click();
+  await comment.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await page.getByRole('menuitem', { name: '수정', exact: true }).click();
   const commentEditor = page.getByRole('dialog', { name: '댓글 수정' });
   const editedBody = `댓글도 수정하고 저장했어요. ${suffix}`;
   await commentEditor.getByRole('textbox', { name: '수정 내용' }).fill(editedBody);
@@ -45,14 +46,16 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   const editedComment = page.locator('article.comment').filter({ hasText: editedBody });
   await expect(editedComment).toBeVisible();
 
-  await editedComment.getByRole('button', { name: '삭제', exact: true }).click();
+  await editedComment.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page
     .getByRole('dialog', { name: '정말 삭제할까요?' })
     .getByRole('button', { name: '돌아가기' })
     .click();
   await expect(page.getByRole('dialog', { name: '정말 삭제할까요?' })).toHaveCount(0);
   await expect(editedComment).toBeVisible();
-  await editedComment.getByRole('button', { name: '삭제', exact: true }).click();
+  await editedComment.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page
     .getByRole('dialog', { name: '정말 삭제할까요?' })
     .getByRole('button', { name: '삭제하기' })
