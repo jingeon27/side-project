@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from 'react';
 
 import { RefreshCw } from 'lucide-react';
 
@@ -39,6 +47,8 @@ export function PullToRefresh({
     });
   }, [onRefresh]);
 
+  const refreshFromGesture = useEffectEvent(() => handleRefresh());
+
   useEffect(() => {
     const element = root.current;
     if (!element) return;
@@ -54,11 +64,12 @@ export function PullToRefresh({
       if (!touch || event.touches.length !== 1 || window.scrollY > 0) return;
       if (!(event.target instanceof Element)) return;
       if (event.target.closest('input, textarea, select, button, video, [contenteditable="true"]')) return;
-      let ancestor: Element | null = event.target;
-      while (ancestor && ancestor !== element) {
-        if (ancestor.scrollTop > 0) return;
-        ancestor = ancestor.parentElement;
-      }
+      const hasScrolledAncestor = (ancestor: Element | null): boolean => {
+        if (!ancestor || ancestor === element) return false;
+        if (ancestor.scrollTop > 0) return true;
+        return hasScrolledAncestor(ancestor.parentElement);
+      };
+      if (hasScrolledAncestor(event.target)) return;
       gesture.current = { ...gesture.current, x: touch.clientX, y: touch.clientY, tracking: true };
     };
     const move = (event: TouchEvent) => {
@@ -84,7 +95,7 @@ export function PullToRefresh({
     const end = () => {
       if (!gesture.current.tracking) return;
       if (gesture.current.distance >= REFRESH_DISTANCE) {
-        handleRefresh();
+        refreshFromGesture();
         return;
       }
       cancel();
@@ -99,7 +110,7 @@ export function PullToRefresh({
       element.removeEventListener('touchend', end);
       element.removeEventListener('touchcancel', cancel);
     };
-  }, [handleRefresh]);
+  }, []);
 
   return (
     <div ref={root} className="min-w-0" aria-busy={pending}>

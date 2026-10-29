@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { useBackgroundQuery, useQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
@@ -29,14 +29,15 @@ function NotificationCountSync() {
     errorPolicy: 'all',
     notifyOnNetworkStatusChange: false,
   });
+  const refresh = useEffectEvent(() => {
+    if (isHidden()) return;
+    void refetch().catch(() => undefined);
+  });
   useEffect(() => {
-    const refresh = () => {
-      if (isHidden()) return;
-      void refetch().catch(() => undefined);
-    };
-    document.addEventListener('visibilitychange', refresh);
-    return () => document.removeEventListener('visibilitychange', refresh);
-  }, [refetch]);
+    const onVisible = () => refresh();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
   return null;
 }
 

@@ -40,6 +40,31 @@ describe('당겨서 새로고침', () => {
     await waitFor(() => expect(screen.getByRole('status')).toBeEmptyDOMElement());
   });
 
+  it('당기는 중 콜백이 바뀌어도 제스처를 유지하고 최신 조회를 실행해야 한다', async () => {
+    const onFirstRefresh = vi.fn(async () => {});
+    const onLatestRefresh = vi.fn(async () => {});
+    const { rerender, unmount } = render(
+      <PullToRefresh onRefresh={onFirstRefresh}>
+        <p>피드</p>
+      </PullToRefresh>,
+    );
+    const feed = screen.getByText('피드');
+    fireEvent.touchStart(feed, { touches: [{ clientX: 50, clientY: 50 }] });
+    fireEvent.touchMove(feed, { touches: [{ clientX: 50, clientY: 210 }], cancelable: true });
+    rerender(
+      <PullToRefresh onRefresh={onLatestRefresh}>
+        <p>피드</p>
+      </PullToRefresh>,
+    );
+    fireEvent.touchEnd(feed, { touches: [] });
+    await waitFor(() => expect(screen.getByRole('status')).toBeEmptyDOMElement());
+    expect(onFirstRefresh).not.toHaveBeenCalled();
+    expect(onLatestRefresh).toHaveBeenCalledOnce();
+    unmount();
+    pull(feed, 180);
+    expect(onLatestRefresh).toHaveBeenCalledOnce();
+  });
+
   it('스크롤 중·가로 밀기·취소·여러 손가락 동작은 새로고침하지 않아야 한다', () => {
     const onRefresh = vi.fn(async () => {});
     render(
