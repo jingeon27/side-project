@@ -1507,3 +1507,13 @@ code-style 스킬에 직접 전달의 인자/this/반환값/identity 기준과 a
 - TanStack 결과: 단일 업로드 mutation을 upload/handleUpload로 포장하던 usePostMediaUpload를 제거했다. 작성·수정 폼이 options factory와 useMutation을 직접 조합하고 mutateAsync를 전달한다. error/status/variables/reset을 표준 결과에서 사용할 수 있다. useVisibleRead 같은 외부 구독/요청 수명 조합은 유지했다.
 
 검증: Web 관련 unit/UI 12개(6파일), Admin unit 25개(6파일), 실제 Chromium UI 1개 통과. Web/Admin 타입·lint, 변경 스킬 validator·Prettier·diff 검사 통과. 알림 목록 오류의 설정 보존과 비지원 문서의 푸시 훅 미생성은 별도 회귀 테스트로 확인했다. 실제 API/DB 통합 E2E와 네이티브 실기기 푸시 권한은 검증하지 않았다. 신규 의존성·루트/공유 설정 변경은 없다.
+
+## 2026-10-29 AST 기반 전달 wrapper와 핸들러 명명 재점검
+
+GF authored source·scripts·tests 993개 파일을 TypeScript AST로 점검했다. typed arrow·return 블록·function 선언의 전달형 후보 234개(테스트 90개), 반환값을 버리는 단일 호출 블록도 확인했다. 후보를 일괄 치환하지 않고 인자·receiver·실행 시점·참조 안정성·반환값을 구분했다.
+
+안전한 전달 6곳을 정리했다. 채팅 제출은 form.handleSubmit 결과를 직접 사용하고, 순수 게시글 캐시 태그는 같은 공개 이름으로 명시적으로 재수출한다. smoke의 Object.keys, 테스트 cleanup과 이미 바인딩된 snapshot spy 2곳도 직접 전달한다. API controller의 decorator·권한/검증 경계와 SDK 추가 요청 옵션 차단, mutation callback의 추가 인자 차단, 클래스 receiver, DOM cleanup, waitFor/act의 실행 시점·retry assertion은 유지했다.
+
+직접 작성한 내부 이벤트 핸들러의 function 선언을 const handle* arrow로 정리했다. 설정 열기, 푸시 응답 수신, native listener, chip ResizeObserver, Quill text-change, DB 종료 신호와 브라우저 테스트 listener 이름도 구분했다. 순수 helper·query 함수·공개/상속 API나 라이브러리·prop 참조를 handle 별칭으로 바꾸지 않았다. effect/observer 해제는 설치 때와 같은 callback을 사용한다.
+
+Web 265개·Admin 25개·Mobile 63개 기존 테스트(maxWorkers=2), Admin 실제 Chromium 1개 통과. Web/Admin/Mobile/API 타입 검사, 앱 lint·GF 공통 lint, 스킬 validator·Prettier·diff 검사 통과. 새 테스트는 만들지 않았고 실제 DB 종료·외부 smoke·네이티브 실기기는 실행하지 않았다. 공유 lint 구현은 이 작업에서 수정하지 않았으며 직접 작성 핸들러와 외부 참조를 구분하는 기준을 GF 스킬에 보강했다.
