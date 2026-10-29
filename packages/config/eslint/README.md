@@ -27,7 +27,6 @@
 | `web`      | `side/no-overlay-state`   | `nextConfig`                   | Next(PC·GF web)만                                                                                   |
 | `api`      | 아직 없음                 | -                              | -                                                                                                   |
 | `fsd`      | `fsd/*`                   | `fsdBoundaries(srcDir)`        | PC web·mobile, GF web·admin·mobile                                                                  |
-| `react`    | `react/jsx-handler-names` | `reactConfig`                  | 구현 없이 `eslint-plugin-react`에 `jsxHandlerNamesOptions`를 넘기고 spec이 같은 상수로 검증         |
 | `jsx-a11y` | `jsx-a11y/*` recommended  | `reactDomConfig`, `nextConfig` | PC·GF web, GF admin, design-system. Expo 제외                                                       |
 
 ESLint flat config는 같은 이름의 플러그인을 다른 객체로 다시 등록하면 `Cannot redefine plugin` 오류를 냅니다. 그래서 `side` 규칙은 분류와 관계없이 `src/plugin.ts`의 객체 하나에 모으고, 각 preset은 그 객체를 등록한 뒤 자기 분류의 규칙만 켭니다. 새 분류 규칙을 더하면 `plugin.ts`에 넣고 켤 preset과 `presets.spec.ts`의 기대값을 함께 고칩니다.
@@ -54,6 +53,6 @@ Vitest와 RuleTester는 이 패키지가 소유합니다. 오류 메시지 ID와
 
 `installConfig.hoistingLimits`는 이 패키지의 의존성을 워크스페이스 안에 둡니다. 다른 앱의 Vitest peer 구성과 합쳐지며 Yarn의 실행 파일 경로가 누락되는 문제를 방지합니다.
 
-`jsx-handler-names`는 콜백 prop에 `on*`, 지역 핸들러에 `handle*` 이름을 요구합니다. 받은 `on*` 콜백과 RHF의 `field.onChange`는 그대로 전달하고, 일반 함수(`refetch` 등)는 JSX에서 인라인으로 호출합니다.
+콜백 prop은 `on*`, 직접 작성한 지역 핸들러는 `handle*`로 이름 짓습니다. 기존 함수는 이름을 맞추려고 래퍼나 별칭을 만들지 않고 인자·this·반환값이 호환되면 그대로 전달합니다. `react/jsx-handler-names`는 라이브러리 콜백까지 래퍼를 강제하므로 적용하지 않습니다. DOM 이벤트를 refetch/mutate의 옵션으로 전달하지 않도록 필요한 인자 차단 래퍼는 유지합니다.
 
 `jsx-a11y`는 DOM 요소 규칙이라 React DOM 앱에만 겁니다. `eslint-config-next`가 플러그인을 다른 객체로 이미 등록하므로 `nextConfig`는 `jsxA11yRules`만 더하고, `reactDomConfig`는 플러그인까지 등록합니다. `label-has-associated-control`은 디자인 시스템의 `Input`·`Textarea`·`NativeSelect`·`Checkbox`를 입력으로, `Label`을 label로 봅니다. 사용자가 올린 동영상의 자막(`media-has-caption`), 사용자가 연 입력창·검색 전용 화면의 포커스 이동(`no-autofocus`)처럼 규칙이 의도를 구분하지 못하는 경우만 이유를 적은 줄 단위 disable로 남깁니다.
