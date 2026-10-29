@@ -36,3 +36,5 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 - Effect에서 설치한 AppState·Linking 구독의 최신 콜백은 `useEffectEvent`로 분리한다. 구독 대상·활성 조건은 dependency에 남기고 cleanup에서 리스너와 진행 중 작업의 후속 동작을 해제한다.
 - WebView prop·callback ref·렌더 중 만든 라우터/PushInbox는 Effect 밖에서도 호출된다. 여기에 Effect Event를 넘기지 않고 일반 콜백·필요한 최신 ref를 유지한다. 외부 상태 렌더는 `useSyncExternalStore`, 값 변화 동기화는 reactive Effect를 사용한다.
 - `else`·`else if`는 쓰지 않는다. 기존 공통 no-else lint와 가드·조기 반환 기준을 유지한다.
+
+- `let`을 피하려고 `const state = { value: ... }`의 속성을 재할당하는 임시 가변 객체를 만들지 않는다. `useRef`로 기계적으로 옮기는 것도 피한다. 순수 계산·파생 값, state/reducer, 기존 외부 store·구독 API를 우선한다. 실제 이벤트 이력·취소·동시 실행처럼 React 렌더와 별도인 수명은 해당 자원을 소유하는 구독 객체나 AbortController·라이브러리 Mutex에 맡긴다. 단지 가변 변수를 숨기기 위한 class를 추가하지 않는다. `useRef`는 대안이 부적절하고 비렌더 값을 보존할 필요가 명확한 경우에만 쓴다.

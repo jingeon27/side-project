@@ -79,5 +79,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 - outside-click·포커스 이동/복귀·Escape·키보드 탐색·ARIA 연결은 기존 `@side/design-system`/Base UI primitive에 맡긴다. 앱은 overlay-kit·history·portal·업무 비동기 동작만 조합하고 직접 DOM 리스너로 같은 기능을 복제하지 않는다.
 - Effect가 설치하는 외부 이벤트/observer의 콜백에서 최신 props·상태만 읽어야 하면 `useEffectEvent`로 분리한다. Effect에는 구독 대상·활성 조건 등 실제 수명 의존성을 남기며, 의존성 검사를 피하려고 값을 감추지 않는다. 반환 함수를 JSX 핸들러·다른 훅·렌더 중 만든 채널에 넘기지 않는다.
-- 렌더에 쓰는 외부 상태는 `useSyncExternalStore`, 사용자 조작은 일반 핸들러, 값 변화에 동기화하는 Effect는 reactive dependency를 유지한다. PullToRefresh는 공통 primitive에 대응 동작이 없고 passive:false·중첩 스크롤·핀치 취소가 필요하므로 유지한다.
+- 렌더에 쓰는 외부 상태는 `useSyncExternalStore`, 사용자 조작은 일반 핸들러, 값 변화에 동기화하는 Effect는 reactive dependency를 유지한다. PullToRefresh의 거리·복귀 애니메이션은 Motion에 맡긴다. 전체 피드에 `drag="y"`나 `touch-action: none/pan-x`를 적용해 기본 스크롤·핀치를 막지 않는다. passive:false·중첩 스크롤·핀치 취소를 위한 최소 터치 중재는 유지하고 실제 브라우저 터치 입력으로 스크롤을 확인한다.
 - `else`·`else if`는 새로 쓰지 않는다. 기존 공통 no-else lint와 가드/조기 반환·ts-pattern 기준을 유지한다.
+
+- `let`을 피하려고 `const state = { value: ... }`의 속성을 재할당하는 임시 가변 객체를 만들지 않는다. `useRef`로 기계적으로 옮기는 것도 피한다. 순수 계산·파생 값, state/reducer, 기존 외부 store·구독 API를 우선한다. 실제 이벤트 이력·취소·동시 실행처럼 React 렌더와 별도인 수명은 해당 자원을 소유하는 구독 객체나 AbortController·라이브러리 Mutex에 맡긴다. 단지 가변 변수를 숨기기 위한 class를 추가하지 않는다. `useRef`는 대안이 부적절하고 비렌더 값을 보존할 필요가 명확한 경우에만 쓴다.
