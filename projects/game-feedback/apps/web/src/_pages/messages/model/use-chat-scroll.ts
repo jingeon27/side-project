@@ -36,7 +36,10 @@ export function useChatScroll({
       observer.observe(node);
       const content = node.firstElementChild;
       if (content) observer.observe(content);
-      return () => observer.disconnect();
+      return () => {
+        observer.disconnect();
+        setElement(null);
+      };
     },
     [controller, unavailable],
   );

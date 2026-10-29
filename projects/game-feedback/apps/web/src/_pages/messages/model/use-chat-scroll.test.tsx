@@ -7,6 +7,7 @@ import { ChatScrollController } from './chat-scroll-controller';
 import { useChatScroll } from './use-chat-scroll';
 
 const observers = new Set<{ observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }>();
+const intersections = new Set<{ observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }>();
 const installObservers = () => {
   vi.stubGlobal(
     'ResizeObserver',
@@ -19,7 +20,9 @@ const installObservers = () => {
   vi.stubGlobal(
     'IntersectionObserver',
     vi.fn(function () {
-      return { observe: vi.fn(), disconnect: vi.fn() };
+      const observer = { observe: vi.fn(), disconnect: vi.fn() };
+      intersections.add(observer);
+      return observer;
     }),
   );
 };
@@ -27,6 +30,7 @@ const installObservers = () => {
 afterEach(() => {
   cleanup();
   observers.clear();
+  intersections.clear();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -77,6 +81,26 @@ describe('chat viewport callback ref lifecycle', () => {
     expect(observers.size).toBe(3);
     view.unmount();
     for (const observer of observers) expect(observer.disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('clears the detached node before later messages can reconcile or observe it', () => {
+    installObservers();
+    const reconcile = vi.spyOn(ChatScrollController.prototype, 'reconcile');
+    const view = render(<Viewport />);
+    const reading = [...intersections][0];
+    expect(reading?.observe).toHaveBeenCalledOnce();
+    view.rerender(<Viewport visible={false} />);
+    expect(reading?.disconnect).toHaveBeenCalledOnce();
+    reconcile.mockClear();
+    const count = intersections.size;
+    view.rerender(<Viewport visible={false} stamp="detached-message" />);
+    expect(reconcile).not.toHaveBeenCalled();
+    expect(intersections.size).toBe(count);
+    view.rerender(<Viewport stamp="reattached-message" />);
+    expect(reconcile).toHaveBeenLastCalledWith(expect.any(HTMLDivElement), 'reattached-message', false);
+    expect(intersections.size).toBe(count + 1);
+    view.unmount();
+    for (const observer of intersections) expect(observer.disconnect).toHaveBeenCalledOnce();
   });
 
   it('releases a hidden Activity viewport and reattaches when shown', () => {
