@@ -21,7 +21,7 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     });
     const lifetime = new AbortController();
-    const receiveResponse = (response: Notifications.NotificationResponse | null) => {
+    const handleNotificationResponse = (response: Notifications.NotificationResponse | null) => {
       if (
         lifetime.signal.aborted ||
         !response ||
@@ -30,12 +30,12 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
         return;
       inbox.tap(response.notification.request.identifier, response.notification.request.content.data?.path);
     };
-    const tapped = Notifications.addNotificationResponseReceivedListener(receiveResponse);
+    const tapped = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
     const received = Notifications.addNotificationReceivedListener(inbox.notify);
     const tokenChanged = Notifications.addPushTokenListener(inbox.notify);
     const restoreResponse = async () => {
       try {
-        receiveResponse(await Notifications.getLastNotificationResponseAsync());
+        handleNotificationResponse(await Notifications.getLastNotificationResponseAsync());
       } catch {
         // 마지막 알림 복원 실패는 실시간 구독을 막지 않는다.
       }
