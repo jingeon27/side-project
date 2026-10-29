@@ -137,6 +137,7 @@ describe('원댓글별 이전 답글', () => {
     expect(screen.getByRole('list', { name: '답글' }).querySelector('ol')).toBeNull();
   });
 
+  // 실제 댓글 205개를 7페이지에 걸쳐 렌더링하므로 CI의 기본 5초보다 긴 실행 예산이 필요하다.
   it('200개가 넘는 답글을 끝까지 오래된 순으로 합치고 겹치는 항목은 한 번만 보여야 한다', async () => {
     const replies = Array.from({ length: 205 }, (_, index) => reply(index + 1));
     state.fetchReplies.mockImplementation(async ({ cursor }: { cursor: string }) => {
@@ -151,8 +152,9 @@ describe('원댓글별 이전 답글', () => {
     renderThread({ ...comment, replyCount: 205, repliesCursor: '200' }, replies.slice(199));
     expect(state.fetchReplies).not.toHaveBeenCalled();
 
+    const showOlder = screen.getByRole('button', { name: '이전 답글 더 보기' });
     for (const start of [170, 140, 110, 80, 50, 20, 1]) {
-      fireEvent.click(screen.getByRole('button', { name: '이전 답글 더 보기' }));
+      fireEvent.click(showOlder);
       await screen.findByText(`답글 ${start}`, { exact: true });
     }
 
@@ -172,7 +174,7 @@ describe('원댓글별 이전 답글', () => {
       '20',
     ]);
     expect(screen.queryByRole('button', { name: '이전 답글 더 보기' })).toBeNull();
-  });
+  }, 15_000);
 
   it('초기 답글이 없는 삭제된 원댓글도 더 읽을 수 있고 댓글 변경 시 함께 다시 받아야 한다', async () => {
     const older = reply(1);
