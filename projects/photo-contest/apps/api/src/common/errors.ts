@@ -38,8 +38,9 @@ export class DomainError extends GraphQLError {
   constructor(
     message: string,
     readonly code: TErrorCode = ERROR_CODE.BAD_USER_INPUT,
+    originalError?: Error,
   ) {
-    super(message, { extensions: { code } });
+    super(message, { extensions: { code }, originalError });
     this.name = 'DomainError';
   }
 }

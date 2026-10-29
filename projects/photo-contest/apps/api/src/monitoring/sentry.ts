@@ -10,8 +10,18 @@ export type TErrorTags = Record<string, string>;
 
 // Apollo(graphql CJS)가 만든 GraphQLError는 테스트에서 다른 graphql 사본일 수 있어 instanceof 대신 속성으로 본다.
 function wrappedError(error: unknown): unknown {
-  if (typeof error !== 'object' || error === null || !('originalError' in error)) return undefined;
-  return error.originalError instanceof Error ? error.originalError : undefined;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const original = 'originalError' in error ? error.originalError : undefined;
+  if (original instanceof Error) return original;
+  const cause = 'cause' in error ? error.cause : undefined;
+  return cause instanceof Error ? cause : undefined;
+}
+
+function sourceError(error: unknown, seen = new Set<unknown>()): unknown {
+  if (seen.has(error) || seen.size >= 8) return error;
+  seen.add(error);
+  const source = wrappedError(error);
+  return source === undefined ? error : sourceError(source, seen);
 }
 
 function stringProperty(value: unknown, name: string) {
@@ -32,7 +42,7 @@ function errorCode(error: unknown) {
  * 오류 종류·코드와 호출 위치(stack frame)만 남긴 오류를 만든다.
  */
 export function reportableError(error: unknown): Error {
-  const original = wrappedError(error) ?? error;
+  const original = sourceError(error);
   const kind = original instanceof Error ? original.name : typeof original;
   const code = errorCode(original);
   const reportable = new Error(`Unexpected ${kind}${code ? ` ${code}` : ''}`);
