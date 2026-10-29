@@ -27,16 +27,16 @@ export function ThemeProvider({
   }, []);
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const sync = () => {
+    const handleThemeChange = () => {
       document.documentElement.dataset.theme = preference;
       const dark = preference === 'dark' || (preference === 'system' && media.matches);
       for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
         meta.content = dark ? DARK_THEME_COLOR : THEME_COLOR;
       }
     };
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
+    handleThemeChange();
+    media.addEventListener('change', handleThemeChange);
+    return () => media.removeEventListener('change', handleThemeChange);
   }, [preference]);
   const value = useMemo(() => ({ preference, setPreference }), [preference, setPreference]);
   return <ThemeContext value={value}>{children}</ThemeContext>;
