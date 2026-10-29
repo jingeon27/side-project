@@ -43,15 +43,15 @@ test('profile drafts survive cancelled links and back navigation and saved chang
   await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
   await expect(bio).toHaveValue(originalBio);
   await bio.fill('저장한 프로필 소개');
-  const unexpectedDialog = async (confirmation: import('@playwright/test').Dialog) => {
+  const handleUnexpectedDialog = async (confirmation: import('@playwright/test').Dialog) => {
     await confirmation.dismiss();
     throw new Error('저장 후에는 이탈 확인을 표시하지 않아야 한다.');
   };
-  page.on('dialog', unexpectedDialog);
+  page.on('dialog', handleUnexpectedDialog);
   await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
   await expect(page).toHaveURL('/ko/users/sample-user-0');
   await expect(page.getByText('저장한 프로필 소개', { exact: true })).toBeVisible();
-  page.off('dialog', unexpectedDialog);
+  page.off('dialog', handleUnexpectedDialog);
 });
 
 test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {

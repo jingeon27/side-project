@@ -31,10 +31,10 @@ function ServiceErrorFallback(
   // Bootstrap errors can render outside the service's QueryClientProvider.
   const [client] = useState(() => new QueryClient());
   const recovery = useMutation(errorRecoveryMutationOptions(), client);
-  function handleRetry() {
+  const handleRetry = () => {
     if (recovery.isPending) return;
     recovery.mutate({ onReset, refreshOnRetry, reset, retry });
-  }
+  };
   return (
     <ErrorRecovery
       title={title}

@@ -17,11 +17,11 @@ export function usePostSearch(q: string) {
     window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
   }
 
-  function handleClear() {
+  const handleClear = () => {
     form.setValue('q', '');
     commitSearch('');
     form.setFocus('q');
-  }
+  };
 
   const handleSubmit = form.handleSubmit(({ q: value }) => commitSearch(value.trim()));
   return { form, search, handleClear, handleSubmit };

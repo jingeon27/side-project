@@ -44,7 +44,7 @@ export function PostAnswersSection({
   );
   const hasLater = !!cursor && (!showLater || later.isPending || later.isError || later.hasNextPage);
 
-  function handleShowLater() {
+  const handleShowLater = () => {
     if (!showLater) {
       setShowLater(true);
       return;
@@ -54,7 +54,7 @@ export function PostAnswersSection({
       return;
     }
     void later.fetchNextPage();
-  }
+  };
 
   return (
     <section className="answers-section">

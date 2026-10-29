@@ -32,7 +32,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
     [overlayId],
   );
 
-  function handleBlock(author: Author) {
+  const handleBlock = (author: Author) => {
     openOverlay(
       (control) => (
         <BlockUserDialog
@@ -47,7 +47,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
       ),
       { overlayId },
     );
-  }
+  };
 
   return { handleBlock };
 }

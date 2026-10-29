@@ -47,7 +47,7 @@ interface IConfirmationRequest {
 
 /** hydration 전의 탐색 감시와 Provider를 연결하며, 가드 자체는 보관하지 않는다. */
 export function bindNavigationGuard({ registry }: { registry: NavigationGuardRegistry }) {
-  function handleConfirmation(event: Event) {
+  const handleConfirmation = (event: Event) => {
     if (event.defaultPrevented) return;
     try {
       const discard = registry.prepare();
@@ -60,7 +60,7 @@ export function bindNavigationGuard({ registry }: { registry: NavigationGuardReg
       event.preventDefault();
       throw error;
     }
-  }
+  };
   window.addEventListener(confirmationEvent, handleConfirmation);
   return () => window.removeEventListener(confirmationEvent, handleConfirmation);
 }

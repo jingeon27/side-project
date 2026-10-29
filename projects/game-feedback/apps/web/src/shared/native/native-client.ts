@@ -38,7 +38,7 @@ export function requestNativeLogin(
       clearTimeout(timer);
       window.removeEventListener(BRIDGE_EVENT, handleMessage);
     }
-    function handleMessage(event: Event) {
+    const handleMessage = (event: Event) => {
       const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
       if (message?.type !== 'auth-result' || message.id !== id) return;
       cleanup();
@@ -47,7 +47,7 @@ export function requestNativeLogin(
         .with({ status: 'failed' }, () => reject(new Error('로그인하지 못했습니다. 다시 시도해 주세요.')))
         .with({ status: 'success' }, ({ code, verifier }) => resolve({ code, verifier }))
         .exhaustive();
-    }
+    };
     window.addEventListener(BRIDGE_EVENT, handleMessage);
     postToNative({ type: 'auth-request', id, provider });
   });
@@ -64,9 +64,9 @@ export function requestNativePush(requestPermission = false): Promise<TPushRegis
     const id = crypto.randomUUID();
     const cleanup = () => {
       clearTimeout(timer);
-      window.removeEventListener(BRIDGE_EVENT, receive);
+      window.removeEventListener(BRIDGE_EVENT, handlePushMessage);
     };
-    const receive = (event: Event) => {
+    const handlePushMessage = (event: Event) => {
       const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
       if (message?.type !== 'push-result' || message.id !== id) return;
       cleanup();
@@ -76,7 +76,7 @@ export function requestNativePush(requestPermission = false): Promise<TPushRegis
       cleanup();
       reject(new Error('알림 설정 시간을 초과했어요. 다시 시도해 주세요.'));
     }, 120_000);
-    window.addEventListener(BRIDGE_EVENT, receive);
+    window.addEventListener(BRIDGE_EVENT, handlePushMessage);
     postToNative({ type: 'push-request', id, requestPermission });
   });
 }

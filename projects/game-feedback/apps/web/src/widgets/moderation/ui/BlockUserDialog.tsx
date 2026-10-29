@@ -23,7 +23,7 @@ export function BlockUserDialog({
   const client = useQueryClient();
   const { t } = useI18n();
   const mutation = useMutation(blockUserMutationOptions(client));
-  function handleBlock() {
+  const handleBlock = () => {
     mutation.mutate(
       { blockedUserId: author.id },
       {
@@ -33,7 +33,7 @@ export function BlockUserDialog({
         },
       },
     );
-  }
+  };
   return (
     <BottomSheet
       open={open}

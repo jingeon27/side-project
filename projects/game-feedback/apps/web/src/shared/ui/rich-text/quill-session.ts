@@ -125,7 +125,7 @@ class QuillSession {
       if (this.options.document) this.editor.setContents(this.options.document.ops, 'silent');
       if (!this.options.document) this.editor.setText(this.options.body, 'silent');
       this.editor.enable(!this.disabled);
-      this.editor.on('text-change', this.change);
+      this.editor.on('text-change', this.handleChange);
     } catch (error) {
       if (!this.lifetime.signal.aborted)
         this.options.onError(error instanceof Error ? error : new Error('Editor unavailable'));
@@ -159,7 +159,7 @@ class QuillSession {
     );
     input.click();
   }
-  private change = () => {
+  private handleChange = () => {
     if (!this.editor || this.lifetime.signal.aborted) return;
     const document = RichTextDocumentSchema.safeParse(this.editor.getContents());
     this.options.onChange({
@@ -179,7 +179,7 @@ class QuillSession {
   }
   dispose = () => {
     this.lifetime.abort();
-    this.editor?.off('text-change', this.change);
+    this.editor?.off('text-change', this.handleChange);
     this.editor?.disable();
     this.root.replaceChildren();
   };

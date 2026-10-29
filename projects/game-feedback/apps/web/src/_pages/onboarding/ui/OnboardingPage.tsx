@@ -35,7 +35,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     if (isFetching || error || session.needsOnboarding) return;
     router.replace(session.user ? returnTo : appRoutes.login(locale, returnTo));
   }, [isFetching, error, session.needsOnboarding, session.user, router, locale, returnTo]);
-  async function handleSubmit({ nickname }: TAccountSetupValues) {
+  const handleSubmit = async ({ nickname }: TAccountSetupValues) => {
     try {
       await onboarding.mutateAsync({
         nickname,
@@ -47,7 +47,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     } catch {
       // mutation 오류는 폼에 표시하고 닉네임과 동의 초안을 유지한다.
     }
-  }
+  };
   if (error && !isFetching) throw error;
   return (
     <section className="onboarding-page" lang={locale} aria-labelledby="onboarding-title">

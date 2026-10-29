@@ -121,7 +121,7 @@ export function installBrowserNavigation() {
     installation.browserIndex = browserHistoryIndex();
     notifyLocation();
   };
-  function handlePop(event: PopStateEvent) {
+  const handlePop = (event: PopStateEvent) => {
     if (installation.restoring) {
       installation.restoring = false;
       event.stopImmediatePropagation();
@@ -143,7 +143,7 @@ export function installBrowserNavigation() {
     installation.path = currentPath();
     installation.browserIndex = nextBrowserIndex;
     notifyLocation();
-  }
+  };
   function restorationDelta(target: INavigationEntry | null, nextBrowserIndex: number | undefined) {
     if (installation.browserIndex !== undefined && nextBrowserIndex !== undefined)
       return installation.browserIndex - nextBrowserIndex;
@@ -152,7 +152,7 @@ export function installBrowserNavigation() {
     // 초기 hydration 이전 기록이나 Next가 다시 쓴 같은 번호도 이탈 확인을 생략하지 않는다.
     return target?.previous === installation.path ? -1 : 1;
   }
-  function handleClick(event: MouseEvent) {
+  const handleClick = (event: MouseEvent) => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -171,7 +171,7 @@ export function installBrowserNavigation() {
     if (path === currentPath() || !resolveAppRoute(path) || confirmNavigation()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-  }
+  };
   history.pushState = handlePush;
   history.replaceState = handleReplace;
   window.addEventListener('popstate', handlePop, true);

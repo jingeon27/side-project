@@ -26,9 +26,9 @@ import { ThemeSettings } from './ThemeSettings';
 interface ISettingsPageProps {
   locale: string;
 }
-function openAccountDeletion() {
+const handleOpenAccountDeletion = () => {
   openOverlay((control) => <DeleteAccountDialog {...control} />);
-}
+};
 function SettingsContent({ locale }: ISettingsPageProps) {
   const client = useQueryClient();
   const notify = useNotify();
@@ -104,7 +104,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
           <span>{t('로그아웃')}</span>
           <ArrowUpRight size={16} />
         </button>
-        <button className="settings-action danger-text" onClick={openAccountDeletion}>
+        <button className="settings-action danger-text" onClick={handleOpenAccountDeletion}>
           <Trash2 size={18} />
           <span>{t('회원 탈퇴')}</span>
           <ArrowUpRight size={16} />

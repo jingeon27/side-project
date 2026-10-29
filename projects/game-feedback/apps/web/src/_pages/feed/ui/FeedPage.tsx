@@ -33,13 +33,13 @@ function FeedContent({
   const { t } = useI18n();
   const { session, requireLogin } = useSession();
   const router = useRouter();
-  function handleCompose() {
+  const handleCompose = () => {
     if (!session?.user) {
       requireLogin();
       return;
     }
     router.push(appRoutes.compose(locale));
-  }
+  };
 
   return (
     <section className="feed-section">
