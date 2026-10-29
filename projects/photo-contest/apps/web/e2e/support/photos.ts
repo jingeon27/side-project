@@ -1,4 +1,5 @@
 import {
+  createLegacyTestContest,
   createTestImage,
   graphqlRequest,
   uploadTestPostMedia,
@@ -35,19 +36,7 @@ export async function productRequest<T>(
 }
 
 export async function seedContest(cookie: string, groupId: string, title: string): Promise<string> {
-  const now = Date.now();
-  const data = await productRequest<{ createContest: { id: string } }>(
-    cookie,
-    'mutation($groupId: ID!, $title: String!, $startsAt: DateTime!, $submissionEndsAt: DateTime!, $endsAt: DateTime!) { createContest(groupId: $groupId, title: $title, startsAt: $startsAt, submissionEndsAt: $submissionEndsAt, endsAt: $endsAt) { id } }',
-    {
-      groupId,
-      title,
-      startsAt: new Date(now).toISOString(),
-      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-      endsAt: new Date(now + 7_200_000).toISOString(),
-    },
-  );
-  return data.createContest.id;
+  return (await createLegacyTestContest(API_URL, { cookie, groupId, title, origin: WEB_ORIGIN })).id;
 }
 
 export async function seedPhoto(cookie: string, contestId: string, caption: string): Promise<string> {

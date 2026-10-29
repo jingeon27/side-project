@@ -11,6 +11,7 @@
     "test": "node scripts/test.ts",
     "test:unit": "node scripts/test.ts --project unit",
     "test:integration": "node scripts/test.ts --project integration",
+    "test:database": "node scripts/test.ts --project database",
     "test:server": "yarn workspace @side/toolkit build && tsx src/testing/e2e-server.ts",
     "prisma:generate": "prisma generate",
     "db:seed": "tsx src/seed.ts",
@@ -18,7 +19,7 @@
     "db:generate": "prisma generate",
     "openapi": "yarn workspace @side/toolkit build && tsx src/openapi.ts",
     "db:sync": "node ../../scripts/db.ts sync",
-    "prisma:sync": "prisma db push"
+    "prisma:sync": "prisma migrate deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",

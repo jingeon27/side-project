@@ -130,6 +130,7 @@ model Contest {
   posts Post[]
   postVotes PostContestVote[]
   notifications Notification[]
+  @@unique([id,groupId])
   @@index([groupId, format, endsAt, id])
   @@index([groupId, createdAt])
 }
@@ -211,6 +212,19 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
   deliveredAt DateTime?
   @@index([deliveredAt, createdAt])
+  @@index([createdAt, id])
+}
+
+// 원본 삭제 이후에도 같은 사실의 재시도를 중복 집계하지 않기 위한 단방향 해시 키만 남긴다.
+model AnalyticsEventReceipt {
+  keyHash String @id
+}
+model AnalyticsDailySummary {
+  day DateTime @db.Date
+  type String
+  eventCount BigInt @default(0)
+  updatedAt DateTime @updatedAt
+  @@id([day, type])
 }
 
 model PostUpload {
@@ -236,6 +250,7 @@ model PostUpload {
   groupAvatar GroupAvatar?
   @@index([expiresAt])
   @@index([userId])
+  @@unique([id,groupId,userId])
 }
 model PostUploadAttempt {
   key String @id
@@ -250,6 +265,7 @@ model Post {
   category GroupCategory? @relation(fields: [categoryId, groupId], references: [id, groupId], onUpdate: NoAction, onDelete: Restrict)
   @@index([groupId, categoryId, createdAt])
   contestId String?
+  // 같은 그룹 복합 FK는 SQL에 둔다. 기존 단일 FK가 대회 삭제 시 contestId만 비운다.
   contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
@@ -264,6 +280,7 @@ model Post {
   legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // 같은 그룹·업로더 복합 FK는 SQL에 두고, 단일 unique로 업로드 재사용을 막는다.
   upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict)
   likes PostLike[]
   comments PostComment[]

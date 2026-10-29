@@ -6,6 +6,7 @@ import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-fe
 import { ANSWER_PAGE, answerPage } from '../answers/answer-page';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/user-write';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
@@ -93,6 +94,7 @@ export class PostsService {
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
     const p = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         const created = await (tx ?? this.db).post.create({
           data: {
             authorId: u.id,
@@ -160,6 +162,7 @@ export class PostsService {
     const excluded = await this.visibility.excluded(req);
     const updated = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
         // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
         const current = await tx.post.findFirst({
@@ -189,6 +192,7 @@ export class PostsService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
         // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 글도 지울 수 있어야 한다.
         const own = await tx.post.findFirst({
@@ -233,6 +237,7 @@ export class PostsService {
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '요청자만 답변을 확인할 수 있습니다.');
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         const changed = await tx.answer.updateMany({
           where: { postId: id, readAt: null, ...ACTIVE_CONTENT },
           data: { readAt: new Date() },

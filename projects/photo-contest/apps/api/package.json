@@ -13,7 +13,8 @@
     "test": "yarn workspace @side/toolkit build && vitest run --project unit",
     "test:unit": "yarn workspace @side/toolkit build && vitest run --project unit",
     "test:e2e": "yarn test:integration",
-    "test:integration": "yarn workspace @side/toolkit build && vitest run --project integration"
+    "test:integration": "yarn workspace @side/toolkit build && vitest run --project integration",
+    "test:database": "yarn workspace @side/toolkit build && vitest run --project database"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",

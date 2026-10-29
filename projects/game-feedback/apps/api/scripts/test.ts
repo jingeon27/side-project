@@ -18,6 +18,7 @@ const projects = args.flatMap((arg, index) => {
   return [];
 });
 const unitOnly = projects.length > 0 && projects.every((project) => project === 'unit');
+const databaseOnly = projects.length > 0 && projects.every((project) => project === 'database');
 const env = {
   ...configured,
   NODE_ENV: 'test',
@@ -35,7 +36,7 @@ const env = {
   SUPERCELL_API_TOKEN: '',
   PUSH_NOTIFICATIONS_ENABLED: 'false',
   EXPO_ACCESS_TOKEN: '',
-  ...(unitOnly
+  ...(unitOnly || databaseOnly
     ? {
         GF_S3_BUCKET: 'unit-signing-only',
         GF_S3_REGION: 'ap-northeast-2',
@@ -60,7 +61,7 @@ const storage: { s3?: S3TestStorage } = {};
 
 try {
   assertNode();
-  if (!unitOnly) {
+  if (!unitOnly && !databaseOnly) {
     Object.assign(process.env, configured);
     const s3 = new S3TestStorage();
     await s3.verifyAccess();

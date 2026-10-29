@@ -27,10 +27,14 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-      encoding: 'utf8',
-    });
+    const migration = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+      },
+    );
     if (migration.status !== 0) throw new Error('Isolated support schema setup failed');
     db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);

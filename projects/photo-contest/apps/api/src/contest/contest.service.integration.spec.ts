@@ -66,16 +66,15 @@ describe('대회', () => {
     expect(await api.gqlFail(member.cookie, CREATE_CONTEST, variables)).toEqual(GROUP_FORBIDDEN);
     expect(await api.gqlFail(outsider.cookie, CREATE_CONTEST, variables)).toEqual(GROUP_FORBIDDEN);
 
-    const created = await api.gqlOk<{ createContest: { id: string; phase: string } }>(
-      owner.cookie,
-      CREATE_CONTEST,
-      variables,
-    );
-    expect(created.createContest.phase).toBe('SUBMISSION');
+    expect(await api.gqlFail(owner.cookie, CREATE_CONTEST, variables)).toEqual({
+      code: 'FORBIDDEN',
+      message: '기존 대회는 새로 만들 수 없습니다. 그룹 대회를 이용해 주세요.',
+    });
+    const contestId = await createContest(api, owner, group.id, '기존 대회');
 
     const query = 'query($id: ID!) { contest(id: $id) { title } }';
     // 기존 대회는 멤버 전용이라 비회원에게는 없는 대회와 같은 응답을 준다.
-    expect(await api.gqlFail(outsider.cookie, query, { id: created.createContest.id })).toEqual({
+    expect(await api.gqlFail(outsider.cookie, query, { id: contestId })).toEqual({
       code: 'NOT_FOUND',
       message: '대회를 찾을 수 없습니다.',
     });
@@ -110,15 +109,16 @@ describe('대회', () => {
         JSON.stringify(schedule),
       ).toEqual(INVALID_SCHEDULE);
 
-    // 폼을 채우는 사이 막 지난 시작 시각(1분 이내)과 딱 90일은 받는다.
-    const accepted = await api.gqlOk<{ createContest: { phase: string } }>(owner.cookie, CREATE_CONTEST, {
-      groupId: group.id,
-      title: '유예 시작',
-      startsAt: iso(-30 * 1000),
-      submissionEndsAt: iso(DAY_MS),
-      endsAt: iso(90 * DAY_MS - 30 * 1000),
-    });
-    expect(accepted.createContest.phase).toBe('SUBMISSION');
+    // 유효한 경계 일정은 입력 검사를 통과한 후 생성 종료로 응답한다.
+    expect(
+      await api.gqlFail(owner.cookie, CREATE_CONTEST, {
+        groupId: group.id,
+        title: '유예 시작',
+        startsAt: iso(-30 * 1000),
+        submissionEndsAt: iso(DAY_MS),
+        endsAt: iso(90 * DAY_MS - 30 * 1000),
+      }),
+    ).toMatchObject({ code: 'FORBIDDEN' });
 
     // 변수 변환 오류는 graphql-js가 변수 이름을 앞에 붙여 감싼다.
     expect(
@@ -131,17 +131,7 @@ describe('대회', () => {
     ).toEqual({ code: 'BAD_USER_INPUT', message: expect.stringContaining('올바른 날짜를 입력해 주세요.') });
   });
 
-  it('대회 제목은 앞뒤 공백을 지우고 1~80자여야 한다', async () => {
-    const created = await api.gqlOk<{ createContest: { id: string } }>(owner.cookie, CREATE_CONTEST, {
-      groupId: group.id,
-      title: '  공백 제목  ',
-      ...contestSchedule(),
-    });
-    expect(
-      await api.gqlOk(owner.cookie, 'query($id: ID!) { contest(id: $id) { title } }', {
-        id: created.createContest.id,
-      }),
-    ).toEqual({ contest: { title: '공백 제목' } });
+  it('생성이 종료되어도 잘못된 제목은 기존 입력 오류로 응답한다', async () => {
     for (const title of ['', '가'.repeat(81)])
       expect(
         await api.gqlFail(owner.cookie, CREATE_CONTEST, { groupId: group.id, title, ...contestSchedule() }),

@@ -6,11 +6,10 @@ import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
-import { fail } from '../common/errors';
+import { ERROR_CODE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin, toGroupRole, type TGroupRole } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
@@ -68,7 +67,6 @@ const EMPTY_STATS: IContestViewerStats = {
 export class ContestService {
   constructor(
     private readonly db: Database,
-    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
 
@@ -89,22 +87,10 @@ export class ContestService {
 
   /** 관리자만. 권한을 먼저 확인한 뒤 입력을 검사한다. */
   async createContest(viewer: IViewer, input: ICreateContestInput): Promise<IContestNode> {
-    const { contest, role } = await this.transactions.atomic(async (tx) => {
-      const member = await this.membership.requireAdmin(viewer.id, input.groupId, tx);
-      const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-      const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
-      const created = await (tx ?? this.db).contest.create({
-        data: { groupId: input.groupId, title, ...dates },
-      });
-      await recordEvent(tx ?? this.db, {
-        id: `contest:${created.id}`,
-        type: ANALYTICS_EVENT.CONTEST_CREATED,
-        userId: viewer.id,
-        properties: { groupId: input.groupId, contestId: created.id },
-      });
-      return { contest: created, role: member.role };
-    });
-    return this.toNode(viewer.id, contest, role);
+    await this.membership.requireAdmin(viewer.id, input.groupId);
+    contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
+    textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
+    fail('기존 대회는 새로 만들 수 없습니다. 그룹 대회를 이용해 주세요.', ERROR_CODE.FORBIDDEN);
   }
 
   /** 종료된 대회만. 숨긴 사진은 빼고 득표순 경쟁 순위로 돌려준다. */

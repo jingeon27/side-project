@@ -3,6 +3,7 @@ import type { Response } from 'express';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/user-write';
 import { ApiError } from '../common/http/api-error';
 import { mediaRange } from '../common/media-file';
 import { UnitOfWork } from '../database/unit-of-work';
@@ -25,7 +26,7 @@ export class ChatAttachmentService {
     stored: { bytes: null; objectId: string },
   ) {
     return this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+      await lockActiveUser({ client: tx, userId: userId });
       await (tx ?? this.db).chatAttachment.deleteMany({
         where: { uploaderId: userId, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
       });

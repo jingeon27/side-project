@@ -268,6 +268,69 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     await login(user.agent, 'google', user.subject, 403);
   });
 
+  it.each(['post', 'answer', 'comment', 'profile'] as const)(
+    '인증 후 탈퇴를 기다린 %s 요청은 개인정보를 다시 남기지 않아야 한다',
+    async (kind) => {
+      const user = await account();
+      const peer = await account('kakao');
+      const own = await db.post.create({ data: { ...postInput, authorId: user.id } });
+      const target = await db.post.create({ data: { ...postInput, authorId: peer.id } });
+      const locked = new TestGate();
+      const release = new TestGate();
+      const blocker = { pid: 0 };
+      const held = db.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${own.id} FOR UPDATE`;
+          const [row] = await tx.$queryRaw<Array<{ pid: number }>>`SELECT pg_backend_pid() AS pid`;
+          blocker.pid = row?.pid ?? 0;
+          locked.resolve();
+          await release.promise;
+        },
+        { timeout: 15_000 },
+      );
+      const waitingFor = (pid: number) => db.$queryRaw<Array<{ pid: number }>>`
+        SELECT pid FROM pg_stat_activity WHERE ${pid} = ANY(pg_blocking_pids(pid))
+      `;
+      await locked.promise;
+      const deletion = withdraw(user.agent).then((response) => response);
+      try {
+        // 탈퇴가 사용자 행을 잡은 뒤 기존 글 정리에서 기다리는 실제 DB 순서를 만든다.
+        await expect.poll(() => waitingFor(blocker.pid), { interval: 10, timeout: 2500 }).not.toHaveLength(0);
+        const [withdrawing] = await waitingFor(blocker.pid);
+        expect(withdrawing).toBeDefined();
+        const requests = {
+          post: () => user.agent.post('/api/posts').send({ ...postInput, body: '남으면 안 되는 본문' }),
+          answer: () =>
+            user.agent.post(`/api/posts/${target.id}/answers`).send({ body: '남으면 안 되는 답변' }),
+          comment: () =>
+            user.agent.post(`/api/posts/${target.id}/comments`).send({ body: '남으면 안 되는 댓글' }),
+          profile: () => user.agent.patch('/api/profile').send({ nickname: '다시 남은 개인정보' }),
+        };
+        const writing = requests[kind]()
+          .set('Origin', origin)
+          .then((response) => response);
+        await expect
+          .poll(() => waitingFor(withdrawing?.pid ?? 0), { interval: 10, timeout: 2500 })
+          .not.toHaveLength(0);
+        release.resolve();
+        await held;
+        await deletion;
+        expect((await writing).status).toBe(401);
+      } finally {
+        release.resolve();
+        await Promise.allSettled([held, deletion]);
+      }
+      expect(await db.post.count({ where: { authorId: user.id, deletedAt: null } })).toBe(0);
+      expect(await db.answer.count({ where: { authorId: user.id, deletedAt: null } })).toBe(0);
+      expect(await db.comment.count({ where: { authorId: user.id, deletedAt: null } })).toBe(0);
+      expect(await db.user.findUniqueOrThrow({ where: { id: user.id } })).toMatchObject({
+        withdrawnAt: expect.any(Date),
+        nickname: '탈퇴한 사용자',
+        bio: '',
+      });
+    },
+  );
+
   it('탈퇴 요청이 세션을 읽은 뒤 관리자가 밴을 확정해도 최신 제재를 보존해야 한다', async () => {
     const user = await account();
     const gate = new TestGate();

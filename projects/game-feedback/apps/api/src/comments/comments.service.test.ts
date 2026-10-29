@@ -10,6 +10,7 @@ import { CommentsService } from './comments.service';
 
 const transaction = {
   $queryRaw: async () => [],
+  user: { findUnique: async () => ({ id: 'commenter', withdrawnAt: null }) },
   post: { findFirst: async () => null },
 };
 const cache = {

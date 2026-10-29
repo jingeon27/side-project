@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import type { BrowserContext } from '@playwright/test';
 
 import {
+  createLegacyTestContest,
   createTestImage,
   createTestUser,
   graphqlRequest,
@@ -61,21 +62,12 @@ export async function joinGroup(memberCookie: string, inviteToken: string) {
 
 /** 지금 제출을 받는 대회 */
 export async function seedOpenContest(ownerCookie: string, groupId: string, title = '가을 사진전') {
-  const now = Date.now();
-  const data = await gql<{ createContest: { id: string } }>(
-    ownerCookie,
-    `mutation CreateContest($groupId: ID!, $title: String!, $startsAt: DateTime!, $submissionEndsAt: DateTime!, $endsAt: DateTime!) {
-      createContest(groupId: $groupId, title: $title, startsAt: $startsAt, submissionEndsAt: $submissionEndsAt, endsAt: $endsAt) { id }
-    }`,
-    {
-      groupId,
-      title,
-      startsAt: new Date(now).toISOString(),
-      submissionEndsAt: new Date(now + 60 * 60_000).toISOString(),
-      endsAt: new Date(now + 2 * 60 * 60_000).toISOString(),
-    },
-  );
-  return data.createContest;
+  return createLegacyTestContest(E2E_API_URL, {
+    cookie: ownerCookie,
+    groupId,
+    title,
+    origin: E2E_WEB_ORIGIN,
+  });
 }
 
 /** 업로드 티켓으로 실제 이미지를 올리고 제출한다. */

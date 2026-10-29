@@ -69,7 +69,7 @@ describe.skipIf(!testDatabaseUrl)(
       assertDatabaseUrl(databaseUrl, 'test');
       const migration = spawnSync(
         process.execPath,
-        [require.resolve('prisma/build/index.js'), 'db', 'push'],
+        [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
         {
           env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
           encoding: 'utf8',
