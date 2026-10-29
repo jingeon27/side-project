@@ -28,9 +28,12 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
         const value = new FormData(event.currentTarget).get('q');
         form.setValue('q', typeof value === 'string' ? value : '');
         void form.handleSubmit(({ q }) => {
-          const query = new URLSearchParams();
+          const query = new URLSearchParams(window.location.search);
+          query.delete('q');
           if (q) query.set('q', q);
-          startTransition(() => router.replace(`${ROUTES.EXPLORE}${q ? `?${query}` : ''}`));
+          const search = query.toString();
+          const href = `${ROUTES.EXPLORE}${search ? `?${search}` : ''}${window.location.hash}`;
+          startTransition(() => router.replace(href));
         })(event);
       }}
     >

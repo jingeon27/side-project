@@ -43,11 +43,7 @@ export function ExplorePageTemplate({ search }: { search: string }) {
           <h2 className="text-title-lg text-ink">
             {search ? `“${search}” 검색 결과` : '새로 만들어진 그룹'}
           </h2>
-          <AsyncBoundary
-            resetKey={search}
-            onRetry={() => refetch()}
-            fallback={<Skeleton className="h-60 w-full" />}
-          >
+          <AsyncBoundary resetKey={search} onRetry={refetch} fallback={<Skeleton className="h-60 w-full" />}>
             <GroupDiscoveryResults key={search} queryRef={queryRef} />
           </AsyncBoundary>
         </section>

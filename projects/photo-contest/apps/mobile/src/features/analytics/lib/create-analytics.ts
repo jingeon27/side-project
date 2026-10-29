@@ -1,4 +1,5 @@
 import type * as Amplitude from '@amplitude/analytics-react-native';
+import { memoize } from 'es-toolkit';
 
 import type { TWebEventPayload } from '@photo-contest/bridge';
 
@@ -56,34 +57,35 @@ function safely(run: () => void) {
 
 /** Amplitude 연결. 판단만 하고 SDK는 주입받아 키가 없을 때 아무것도 하지 않는지 테스트한다. */
 export function createAnalytics({ apiKey, sdk, startTimeoutMs = START_TIMEOUT_MS }: ICreateAnalyticsOptions) {
-  let starting: Promise<string | null> | null = null;
-
-  async function initialize(key: string) {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<null>((resolve) => {
-      timer = setTimeout(() => resolve(null), startTimeoutMs);
-    });
-    // 앱 시작이 이 결과를 기다리므로 SDK가 거부하거나 던져도 null로 끝낸다.
-    const ready = Promise.resolve()
-      .then(() => sdk.init(key, undefined, INIT_OPTIONS).promise)
-      .then(() => {
-        const deviceId = sdk.getDeviceId();
-        return deviceId && deviceId.length <= MAX_DEVICE_ID_LENGTH ? deviceId : null;
-      })
-      .catch(() => null);
+  const initializeSdk = async (key: string) => {
     try {
-      return await Promise.race([ready, timeout]);
-    } finally {
-      clearTimeout(timer);
+      // SDK 호출을 다음 microtask로 미뤄 동시 start도 같은 초기화 Promise를 받게 한다.
+      await Promise.resolve();
+      await sdk.init(key, undefined, INIT_OPTIONS).promise;
+      const deviceId = sdk.getDeviceId();
+      return deviceId && deviceId.length <= MAX_DEVICE_ID_LENGTH ? deviceId : null;
+    } catch {
+      return null;
     }
-  }
+  };
+  const initialize = memoize(async (key: string) => {
+    const lifetime = new AbortController();
+    const timeout = new Promise<null>((resolve) => {
+      const timer = setTimeout(resolve, startTimeoutMs, null);
+      lifetime.signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
+    });
+    try {
+      return await Promise.race([initializeSdk(key), timeout]);
+    } finally {
+      lifetime.abort();
+    }
+  });
 
   return {
     /** 한 번만 초기화하고 웹에 넘길 기기 ID를 돌려준다. 키가 없거나 실패·시간 초과면 null. 거부하지 않는다. */
     start: (): Promise<string | null> => {
       if (!apiKey) return Promise.resolve(null);
-      starting ??= initialize(apiKey);
-      return starting;
+      return initialize(apiKey);
     },
     track: (event: TAnalyticsEvent) => {
       if (!apiKey) return;

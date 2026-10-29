@@ -125,7 +125,7 @@ export function UploadPhotoBottomSheet({
                     aria-describedby={errors.photo ? photoErrorId : undefined}
                     disabled={isSubmitting}
                     className="sr-only"
-                    onBlur={() => field.onBlur()}
+                    onBlur={field.onBlur}
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0] ?? null;
                       // 같은 사진을 다시 골라도 change가 일어나게 비운다.

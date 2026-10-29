@@ -30,7 +30,7 @@ export function GroupDiscoveryResults({ queryRef }: { queryRef: QueryRef<Discove
         ))}
       </div>
       {hasNextPage ? (
-        <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+        <Button variant="secondary" loading={isFetchingNextPage} onClick={fetchNextPage}>
           그룹 더 보기
         </Button>
       ) : null}

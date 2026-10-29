@@ -31,7 +31,7 @@ function MyPosts({ groupId }: { groupId: string | null }) {
         },
   );
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
+    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
       {queryRef ? (
         <MyPostList queryRef={queryRef} filtered={Boolean(groupId)} />
       ) : (
@@ -61,7 +61,7 @@ function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQ
         ))}
       </PostCardList>
       {hasNextPage ? (
-        <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+        <Button variant="secondary" loading={isFetchingNextPage} onClick={fetchNextPage}>
           게시물 더 보기
         </Button>
       ) : null}
@@ -107,7 +107,7 @@ export function MyPostsSection() {
   return (
     <section className="flex min-w-0 flex-col gap-4" aria-label="올린 게시물">
       <h2 className="text-title text-ink">올린 게시물</h2>
-      <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
+      <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
         <MyPostFilters groupsRef={groupsRef} />
       </AsyncBoundary>
     </section>

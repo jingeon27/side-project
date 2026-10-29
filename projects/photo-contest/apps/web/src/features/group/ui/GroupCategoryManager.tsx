@@ -132,7 +132,9 @@ function CategoryRow({
                 title="카테고리를 보관할까요?"
                 description="새 글에서는 선택할 수 없고 기존 글의 분류는 그대로 남아요."
                 confirmLabel="보관하기"
-                onConfirm={() => archive({ variables: { categoryId: category.id } }).then(() => undefined)}
+                onConfirm={async () => {
+                  await archive({ variables: { categoryId: category.id } });
+                }}
               />
             ))
           }
@@ -230,7 +232,7 @@ export function GroupCategoryManager({ groupId }: { groupId: string }) {
         카테고리 관리
       </summary>
       <div className="mt-4">
-        <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
+        <AsyncBoundary onRetry={refetch} fallback={fallback}>
           {queryRef ? <CategoryManagement queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>

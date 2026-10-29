@@ -43,14 +43,13 @@ describe('그룹과 초대', () => {
     await api?.close();
   });
 
-  function membersOf(cookie: string, groupId: string) {
-    return api
-      .gqlOk<{ group: { members: IMemberView[] } }>(
-        cookie,
-        'query($id: ID!) { group(id: $id) { members { user { id nickname } role } } }',
-        { id: groupId },
-      )
-      .then(({ group }) => group.members);
+  async function membersOf(cookie: string, groupId: string) {
+    const { group } = await api.gqlOk<{ group: { members: IMemberView[] } }>(
+      cookie,
+      'query($id: ID!) { group(id: $id) { members { user { id nickname } role } } }',
+      { id: groupId },
+    );
+    return group.members;
   }
 
   it('그룹을 만들고 초대로 가입해야 한다', async () => {

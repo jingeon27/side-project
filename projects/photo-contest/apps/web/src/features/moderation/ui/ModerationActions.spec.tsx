@@ -137,6 +137,19 @@ afterEach(() => {
 });
 
 describe('ModerationActions', () => {
+  it('일반 멤버의 신고 행동은 관리자 mutation 컨텍스트 없이 표시해야 한다', () => {
+    render(
+      <ModerationActions
+        submission={{ id: 'photo-public', hidden: false, reportCount: 0, reports: [] }}
+        contestId="contest-1"
+        isAdmin={false}
+        isMine={false}
+        isCompleted={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '신고' })).toBeVisible();
+  });
+
   it('일반 멤버는 남의 사진만 신고할 수 있고 관리 버튼은 보지 않아야 한다', () => {
     renderFeed({ isAdmin: false });
 

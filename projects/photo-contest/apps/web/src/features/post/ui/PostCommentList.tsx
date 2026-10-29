@@ -59,7 +59,7 @@ export function PostCommentList({
           size="md"
           loading={isFetchingNextPage}
           className="self-center rounded-full px-5 text-muted"
-          onClick={() => fetchNextPage()}
+          onClick={fetchNextPage}
         >
           댓글 더 보기
         </Button>

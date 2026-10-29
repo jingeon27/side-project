@@ -47,7 +47,7 @@ export function LogoutButton({ isAnonymous = false }: { isAnonymous?: boolean })
           overlay.open(({ isOpen, close, unmount }) => (
             <ConfirmDialog
               isOpen={isOpen}
-              onClose={() => close()}
+              onClose={close}
               unmount={unmount}
               title="익명 프로필에서 로그아웃할까요?"
               description="로그아웃하면 이 익명 프로필과 기록에 다시 접근할 수 없어요. 기록을 계속 이어가려면 먼저 회원가입해 주세요."

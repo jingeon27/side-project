@@ -142,7 +142,7 @@ function GroupQuerySection({ id }: { id: string }) {
     <AsyncBoundary
       resetKey={id}
       fallback={<GroupLoading />}
-      onRetry={() => refetch()}
+      onRetry={refetch}
       renderError={(error, onRetry) => (
         <GroupFrame>
           {match(getErrorCode(error))
@@ -153,7 +153,7 @@ function GroupQuerySection({ id }: { id: string }) {
         </GroupFrame>
       )}
     >
-      <GroupContent id={id} groupRef={groupRef} onRefresh={() => refetch()} />
+      <GroupContent id={id} groupRef={groupRef} onRefresh={refetch} />
     </AsyncBoundary>
   );
 }

@@ -24,6 +24,7 @@ import { ImageFileField } from '@/shared/ui/@core/image-file-field';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
+import { getGroupProfileDefaults, toGroupProfileVariables } from '../model/group-profile-form.helper';
 import { groupProfileSchema } from '../model/group-profile.schema';
 import { GroupImagePicker } from './GroupImagePicker';
 
@@ -39,7 +40,7 @@ function ProfileForm({
   const { data } = useReadQuery(queryRef);
   const group = data.group;
   const form = useZodForm(groupProfileSchema, {
-    defaultValues: { name: group.name, description: group.description, avatar: null, removeAvatar: false },
+    defaultValues: getGroupProfileDefaults(group),
   });
   const formId = useId();
   // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
@@ -62,7 +63,8 @@ function ProfileForm({
           id={formId}
           noValidate
           className="mx-auto flex w-full max-w-app flex-col gap-6 py-3"
-          onSubmit={form.handleSubmit(async ({ avatar, cover, ...values }) => {
+          onSubmit={form.handleSubmit(async (values) => {
+            const { avatar, cover } = values;
             const signal = beginSubmit();
             try {
               const uploadImage = (image: File | null) =>
@@ -84,7 +86,7 @@ function ProfileForm({
               // 닫힌 시트에서는 저장하지 않는다. 저장 요청을 보낸 뒤에는 결과를 토스트로 알린다.
               throwIfClosed(signal);
               await save({
-                variables: { groupId: group.id, ...values, avatarId, coverId },
+                variables: toGroupProfileVariables(group.id, values, { avatarId, coverId }),
               });
               toast.success('그룹 프로필을 수정했어요');
               onClose();
@@ -159,8 +161,8 @@ export function EditGroupProfileBottomSheet({
   return (
     <BottomSheet.Root {...controls}>
       <BottomSheet.Header title="그룹 프로필 수정" />
-      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
-        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={() => controls.onClose()} />
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={controls.onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>
   );

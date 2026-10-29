@@ -116,7 +116,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
         </div>
       )}
       {hasNextPage ? (
-        <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+        <Button variant="secondary" loading={isFetchingNextPage} onClick={fetchNextPage}>
           알림 더 보기
         </Button>
       ) : null}
@@ -133,11 +133,7 @@ function NotificationFeed({ viewerId }: { viewerId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
       <PushNotificationSettings />
-      <AsyncBoundary
-        resetKey={viewerId}
-        onRetry={() => refetch()}
-        fallback={<Skeleton className="h-48 w-full" />}
-      >
+      <AsyncBoundary resetKey={viewerId} onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
         <NotificationList queryRef={queryRef} />
       </AsyncBoundary>
     </div>
