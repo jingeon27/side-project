@@ -1,6 +1,14 @@
 'use client';
 
-import { Children, isValidElement, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from 'react';
 
 import { useLocale } from 'next-intl';
 
@@ -29,6 +37,13 @@ export function CodeBlock({
   ...props
 }: ComponentPropsWithoutRef<'pre'> & { 'data-language'?: string }) {
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimer.current !== null) clearTimeout(copyTimer.current);
+    },
+    [],
+  );
   const locale = useLocale();
   const t = labels(locale === 'en' ? 'en' : 'ko');
   return (
@@ -43,7 +58,8 @@ export function CodeBlock({
             try {
               await navigator.clipboard.writeText(source);
               setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
+              if (copyTimer.current !== null) clearTimeout(copyTimer.current);
+              copyTimer.current = setTimeout(() => setCopied(false), 2000);
             } catch {
               /* The code remains selectable when clipboard is unavailable. */
             }
