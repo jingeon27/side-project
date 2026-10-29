@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
 import { AnswersService } from '../answers/answers.service';
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { lockActiveUser } from '../auth/user-write';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CommentsService } from '../comments/comments.service';
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';

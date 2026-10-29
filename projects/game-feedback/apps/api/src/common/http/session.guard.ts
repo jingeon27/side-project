@@ -1,7 +1,7 @@
 import { Inject, Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 
-import { requireAdmin, requireProfileLookupSession, requireUser } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
+import { requireAdmin, requireProfileLookupSession, requireUser } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { APP_CONFIG, type AppConfig } from '../../config/app.config';
 import { ApiError } from './api-error';
 

@@ -3,9 +3,9 @@ import { uniq } from 'es-toolkit';
 
 import { postCacheTag } from '@game-feedback/contracts';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { lockActiveUser } from '../auth/user-write';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
@@ -13,8 +13,8 @@ import { type TListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { writePostNotifications } from '../push/post-notification.writer';
-import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { type TCommentBodyDto, type TCreateCommentBodyDto } from './comment-input.dto';
 import { commentThreadPage } from './comment-page';
 import { activeCommentWhere } from './comment-visibility';

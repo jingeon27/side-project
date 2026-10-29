@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { lockActiveUser } from '../auth/user-write';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { lockUserRelationship } from '../users/relationship-lock';
-import { UserVisibilityService } from '../users/user-visibility.service';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { type TFollowUserDto } from './follow-input.dto';
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { access, mkdir, open, readFile, unlink, writeFile } from 'node:fs/promises';
-import { createConnection, createServer, type Server } from 'node:net';
+import { createConnection, createServer, type Server, type Socket } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,6 +20,18 @@ import {
   rolePrivilegesSchema,
 } from './database-state.ts';
 import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from './env.ts';
+
+interface IDatabaseLifecycle {
+  pg?: EmbeddedPostgres;
+  server?: Server;
+  stopping: boolean;
+}
+
+interface IControlConnectionOptions {
+  token: string;
+  target: Pick<ReturnType<typeof guardDatabaseUrl>, 'database' | 'port'>;
+  onShutdown: () => Promise<void>;
+}
 
 const command = process.argv[2] ?? 'status';
 const isTest = process.argv.includes('--test');
@@ -89,6 +101,18 @@ async function portInUse(port: number) {
   });
 }
 
+async function waitForReady(state: { failure?: Error }, logPath: string, attempt = 0): Promise<void> {
+  if (attempt === 180)
+    throw new Error(`Database did not become ready. See ${path.relative(projectDir, logPath)}.`);
+  if ((await control('status'))?.ready) {
+    console.log(`Game Feedback ${label} database started on ${target.port}.`);
+    return;
+  }
+  if (state.failure) throw new Error(`${state.failure.message} See ${path.relative(projectDir, logPath)}.`);
+  await delay(250);
+  return waitForReady(state, logPath, attempt + 1);
+}
+
 async function start() {
   const existing = await control('status');
   if (existing?.ready) {
@@ -119,70 +143,130 @@ async function start() {
   child.once('exit', (code) => {
     state.failure = new Error(`Database owner exited with status ${code}.`);
   });
-  const waitForReady = async (attempt = 0): Promise<void> => {
-    if (attempt === 180)
-      throw new Error(`Database did not become ready. See ${path.relative(projectDir, logPath)}.`);
-    if ((await control('status'))?.ready) {
-      console.log(`Game Feedback ${label} database started on ${target.port}.`);
-      return;
-    }
-    if (state.failure) throw new Error(`${state.failure.message} See ${path.relative(projectDir, logPath)}.`);
-    await delay(250);
-    return waitForReady(attempt + 1);
+  await waitForReady(state, logPath);
+}
+
+function isProcessAlive(pid: number) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return !(error instanceof Error && 'code' in error && error.code === 'ESRCH');
+  }
+}
+
+async function shutdown(lifecycle: IDatabaseLifecycle, statePath: string, lockPath: string) {
+  if (lifecycle.stopping) return;
+  lifecycle.stopping = true;
+  lifecycle.server?.close();
+  try {
+    await lifecycle.pg?.stop();
+  } finally {
+    await Promise.all([unlink(statePath).catch(() => {}), unlink(lockPath).catch(() => {})]);
+  }
+  process.exit(0);
+}
+
+async function isDatabaseInitialized(dataDir: string) {
+  try {
+    await access(path.join(dataDir, 'PG_VERSION'));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function createOwner(dataDir: string, ownerPath: string, project: string) {
+  if (await isDatabaseInitialized(dataDir))
+    throw new Error('Database directory has no Game Feedback owner marker. Refusing to manage it.');
+  const owner = {
+    project,
+    user: 'game_feedback_local_admin',
+    password: randomBytes(32).toString('hex'),
   };
-  await waitForReady();
+  await writeFile(ownerPath, JSON.stringify(owner), { mode: 0o600, flag: 'wx' });
+  return owner;
+}
+
+async function configureServiceDatabase(pg: EmbeddedPostgres, target: ReturnType<typeof guardDatabaseUrl>) {
+  const client = pg.getPgClient('postgres', '127.0.0.1');
+  await client.connect();
+  try {
+    const role = await client.query<Record<string, unknown>>(
+      'SELECT rolsuper, rolcreatedb, rolcreaterole FROM pg_roles WHERE rolname = $1',
+      [target.user],
+    );
+    const privileges = z.array(rolePrivilegesSchema).parse(role.rows);
+    if (privileges.some((row) => row.rolsuper || row.rolcreatedb || row.rolcreaterole))
+      throw new Error('Service role unexpectedly has elevated privileges.');
+    const roleStatement = role.rowCount
+      ? `ALTER ROLE ${client.escapeIdentifier(target.user)} PASSWORD`
+      : `CREATE ROLE ${client.escapeIdentifier(target.user)} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD`;
+    await client.query(`${roleStatement} ${client.escapeLiteral(target.password)}`);
+    const database = await client.query<Record<string, unknown>>(
+      'SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1',
+      [target.database],
+    );
+    const owners = z.array(databaseRoleSchema).parse(database.rows);
+    if (database.rowCount && owners[0]?.owner !== target.user)
+      throw new Error('Service database has an unexpected owner.');
+    if (!database.rowCount)
+      await client.query(
+        `CREATE DATABASE ${client.escapeIdentifier(target.database)} OWNER ${client.escapeIdentifier(target.user)}`,
+      );
+    await client.query(`REVOKE CONNECT ON DATABASE postgres FROM PUBLIC`);
+    await client.query(`REVOKE CONNECT ON DATABASE template1 FROM PUBLIC`);
+  } finally {
+    await client.end();
+  }
+}
+
+function parseControlMessage(request: string) {
+  try {
+    const parsed = controlMessageSchema.safeParse(JSON.parse(request));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function handleControlRequest(
+  request: string,
+  socket: Socket,
+  { token, target, onShutdown }: IControlConnectionOptions,
+) {
+  if (request.length > 2048) return socket.destroy();
+  if (!request.includes('\n')) return;
+  const message = parseControlMessage(request);
+  if (!message || message.token !== token) return socket.destroy();
+  socket.end(JSON.stringify({ ready: true, database: target.database, port: target.port }) + '\n');
+  if (message.action === 'stop') setTimeout(onShutdown, 30);
+}
+
+function handleControlConnection(socket: Socket, options: IControlConnectionOptions) {
+  const chunks: string[] = [];
+  socket.setTimeout(1500, () => socket.destroy());
+  socket.on('data', (chunk) => {
+    chunks.push(chunk.toString());
+    handleControlRequest(chunks.join(''), socket, options);
+  });
 }
 
 async function serve() {
   await mkdir(dataRoot, { recursive: true });
   const stale = await readJson(lockPath, databaseLockSchema);
-  if (stale?.pid) {
-    const alive = (() => {
-      try {
-        process.kill(stale.pid, 0);
-        return true;
-      } catch (error) {
-        return !(error instanceof Error && 'code' in error && error.code === 'ESRCH');
-      }
-    })();
-    if (!alive) await unlink(lockPath);
-  }
+  if (stale?.pid && !isProcessAlive(stale.pid)) await unlink(lockPath);
   const lock = await open(lockPath, 'wx', 0o600);
   await lock.writeFile(JSON.stringify({ pid: process.pid }));
   await lock.close();
-  const lifecycle: { pg?: EmbeddedPostgres; server?: Server; stopping: boolean } = { stopping: false };
-  async function shutdown() {
-    if (lifecycle.stopping) return;
-    lifecycle.stopping = true;
-    lifecycle.server?.close();
-    try {
-      await lifecycle.pg?.stop();
-    } finally {
-      await Promise.all([unlink(statePath).catch(() => {}), unlink(lockPath).catch(() => {})]);
-    }
-    process.exit(0);
-  }
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
+  const lifecycle: IDatabaseLifecycle = { stopping: false };
+  const handleShutdown = () => shutdown(lifecycle, statePath, lockPath);
+  process.once('SIGTERM', handleShutdown);
+  process.once('SIGINT', handleShutdown);
   try {
     const ownerPath = path.join(dataRoot, `postgres-${label}.owner.json`);
     const existingOwner = await readJson(ownerPath, databaseOwnerSchema);
-    const createOwner = async () => {
-      const initialized = await access(path.join(dataDir, 'PG_VERSION')).then(
-        () => true,
-        () => false,
-      );
-      if (initialized)
-        throw new Error('Database directory has no Game Feedback owner marker. Refusing to manage it.');
-      const owner = {
-        project: projectDir,
-        user: 'game_feedback_local_admin',
-        password: randomBytes(32).toString('hex'),
-      };
-      await writeFile(ownerPath, JSON.stringify(owner), { mode: 0o600, flag: 'wx' });
-      return owner;
-    };
-    const owner = existingOwner ?? (await createOwner());
+    const owner = existingOwner ?? (await createOwner(dataDir, ownerPath, projectDir));
     if (owner.project !== projectDir || owner.user !== 'game_feedback_local_admin')
       throw new Error('Database owner marker belongs to another project.');
     const { default: EmbeddedPostgres } = await import('embedded-postgres');
@@ -195,64 +279,13 @@ async function serve() {
       persistent: true,
       postgresFlags: ['-h', '127.0.0.1', '-c', 'unix_socket_directories='],
     }));
-    try {
-      await access(path.join(dataDir, 'PG_VERSION'));
-    } catch {
-      await pg.initialise();
-    }
+    if (!(await isDatabaseInitialized(dataDir))) await pg.initialise();
     await pg.start();
-    const client = pg.getPgClient('postgres', '127.0.0.1');
-    await client.connect();
-    try {
-      const role = await client.query<Record<string, unknown>>(
-        'SELECT rolsuper, rolcreatedb, rolcreaterole FROM pg_roles WHERE rolname = $1',
-        [target.user],
-      );
-      const privileges = z.array(rolePrivilegesSchema).parse(role.rows);
-      if (privileges.some((row) => row.rolsuper || row.rolcreatedb || row.rolcreaterole))
-        throw new Error('Service role unexpectedly has elevated privileges.');
-      const roleStatement = role.rowCount
-        ? `ALTER ROLE ${client.escapeIdentifier(target.user)} PASSWORD`
-        : `CREATE ROLE ${client.escapeIdentifier(target.user)} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD`;
-      await client.query(`${roleStatement} ${client.escapeLiteral(target.password)}`);
-      const database = await client.query<Record<string, unknown>>(
-        'SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1',
-        [target.database],
-      );
-      const owners = z.array(databaseRoleSchema).parse(database.rows);
-      if (database.rowCount && owners[0]?.owner !== target.user)
-        throw new Error('Service database has an unexpected owner.');
-      if (!database.rowCount)
-        await client.query(
-          `CREATE DATABASE ${client.escapeIdentifier(target.database)} OWNER ${client.escapeIdentifier(target.user)}`,
-        );
-      await client.query(`REVOKE CONNECT ON DATABASE postgres FROM PUBLIC`);
-      await client.query(`REVOKE CONNECT ON DATABASE template1 FROM PUBLIC`);
-    } finally {
-      await client.end();
-    }
+    await configureServiceDatabase(pg, target);
     const token = randomBytes(32).toString('hex');
-    const server = (lifecycle.server = createServer((socket) => {
-      const chunks: string[] = [];
-      socket.setTimeout(1500, () => socket.destroy());
-      socket.on('data', (chunk) => {
-        chunks.push(chunk.toString());
-        const request = chunks.join('');
-        if (request.length > 2048) return socket.destroy();
-        if (!request.includes('\n')) return;
-        const message = (() => {
-          try {
-            const parsed = controlMessageSchema.safeParse(JSON.parse(request));
-            return parsed.success ? parsed.data : null;
-          } catch {
-            return null;
-          }
-        })();
-        if (!message || message.token !== token) return socket.destroy();
-        socket.end(JSON.stringify({ ready: true, database: target.database, port: target.port }) + '\n');
-        if (message.action === 'stop') setTimeout(shutdown, 30);
-      });
-    }));
+    const server = (lifecycle.server = createServer((socket) =>
+      handleControlConnection(socket, { token, target, onShutdown: handleShutdown }),
+    ));
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
       server.listen(0, '127.0.0.1', resolve);
@@ -270,16 +303,17 @@ async function serve() {
   }
 }
 
+async function waitForStop(remaining = 80): Promise<void> {
+  if (!remaining || !(await control('status'))) return;
+  await delay(100);
+  return waitForStop(remaining - 1);
+}
+
 async function stop() {
   if (!(await control('stop'))) {
     console.log(`No owned Game Feedback ${label} database is running.`);
     return;
   }
-  const waitForStop = async (remaining = 80): Promise<void> => {
-    if (!remaining || !(await control('status'))) return;
-    await delay(100);
-    return waitForStop(remaining - 1);
-  };
   await waitForStop();
   if (await control('status')) throw new Error('Database shutdown is still pending.');
   console.log(`Game Feedback ${label} database stopped; data retained.`);

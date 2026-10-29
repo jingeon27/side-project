@@ -41,7 +41,7 @@ export function PostCommentsSection({
   const count = loaded.filter((comment) => !comment.isDeleted).length;
   const hasOlder = !!cursor && (!showOlder || older.isPending || older.isError || older.hasNextPage);
 
-  function handleShowOlder() {
+  const handleShowOlder = () => {
     if (!showOlder) {
       setShowOlder(true);
       return;
@@ -51,7 +51,7 @@ export function PostCommentsSection({
       return;
     }
     void older.fetchNextPage();
-  }
+  };
 
   return (
     <section className="comments-section" aria-labelledby={headingId}>

@@ -8,8 +8,10 @@ import { Check } from 'lucide-react';
 
 import { Button, Input } from '@side/design-system';
 
+import { useSession } from '@/features/auth';
 import { boardByKind } from '@/features/board';
 import { updatePostMutationOptions } from '@/features/post';
+import { uploadPostMediaMutationOptions } from '@/features/post-media';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
@@ -17,7 +19,6 @@ import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps }
 
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
-import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
 
 interface IEditPostSheetProps extends IOverlayControlProps {
@@ -30,7 +31,8 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
   const router = useRouter();
   const notify = useNotify();
   const update = useMutation(updatePostMutationOptions(client));
-  const { upload, handleUpload } = usePostMediaUpload();
+  const { session } = useSession();
+  const upload = useMutation(uploadPostMediaMutationOptions(session.user?.id));
   const form = useZodForm(postComposerSchema, {
     defaultValues: {
       title: post.title,
@@ -91,7 +93,7 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
         <Field label={t('게임')}>
           <Input readOnly value={post.category.name} aria-label={t('선택한 게임')} />
         </Field>
-        <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
+        <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
         <ErrorNotice message={errorMessage && t(errorMessage)} />
       </form>
     </BottomSheet>

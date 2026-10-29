@@ -20,10 +20,10 @@ export function LanguageSelect({ id, compact = false }: ILanguageSelectProps) {
     { value: 'en', label: 'English' },
     { value: 'ja', label: '日本語' },
   ];
-  function handleChange(value: string | null) {
+  const handleChange = (value: string | null) => {
     if (!value) return;
     changePreference(languagePreference(value));
-  }
+  };
   return (
     <Select items={items} value={preference} onValueChange={handleChange} disabled={pending}>
       <SelectTrigger

@@ -31,7 +31,7 @@ export function StartChatLink({ source, userId, nickname, label, appearance = 't
   const { locale } = useParams<{ locale: string }>();
   const mutation = useMutation(createConversationMutationOptions(client, session?.user?.id));
 
-  function handleStart() {
+  const handleStart = () => {
     if (!session?.user) {
       requireLogin();
       return;
@@ -43,7 +43,7 @@ export function StartChatLink({ source, userId, nickname, label, appearance = 't
       },
       onError: (error) => notify(t(chatError(error))),
     });
-  }
+  };
 
   if (session?.user?.id === userId) return null;
   const text = label ?? t('채팅하기');

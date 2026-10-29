@@ -15,14 +15,14 @@ interface IReportVisibilityActionsProps {
 export function ReportVisibilityActions({ targetType, report }: IReportVisibilityActionsProps) {
   const client = useQueryClient();
   const visibility = useMutation(visibilityMutationOptions(client));
-  function handleVisibility(hidden: boolean) {
+  const handleVisibility = (hidden: boolean) => {
     visibility.mutate({
       targetType,
       targetId: report.targetId,
       hidden,
       reason: report.detail || report.reason,
     });
-  }
+  };
   return (
     <>
       <div className="admin-actions">

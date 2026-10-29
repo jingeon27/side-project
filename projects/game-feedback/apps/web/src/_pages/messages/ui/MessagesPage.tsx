@@ -33,7 +33,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
         </span>
         <h1>{t('플레이 이야기를, 조금 더 가까이')}</h1>
         <p>{t('로그인하면 다른 플레이어와 1:1 메시지를 나눌 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={login}>
           {t('로그인하고 대화하기')}
           <ArrowUpRight size={16} />
         </Button>

@@ -48,14 +48,14 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
     },
   });
 
-  function handleDetailsSaved() {
+  const handleDetailsSaved = () => {
     if (!hasOtherDrafts) {
       onSaved();
       return;
     }
     // 바뀐 닉네임이 서버가 그린 화면에도 보이도록 현재 경로만 다시 받는다.
     router.refresh();
-  }
+  };
 
   return (
     <div className="settings-card profile-edit-page">

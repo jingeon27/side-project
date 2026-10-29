@@ -2,17 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { ChatAccessService } from '../chat/chat-access.service';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
+import { ChatAccessService } from '../chat/conversation/chat-access.service';
 import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { PrismaClient, type Prisma } from '../generated/prisma';
-import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 
 @Injectable()
 export class NotificationsService {

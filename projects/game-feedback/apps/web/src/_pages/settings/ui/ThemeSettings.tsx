@@ -17,11 +17,11 @@ export function ThemeSettings() {
     { value: 'light', label: t('라이트 모드'), icon: Sun },
     { value: 'dark', label: t('다크 모드'), icon: Moon },
   ];
-  function handleChange(value: string | null) {
+  const handleChange = (value: string | null) => {
     if (!value || value === preference) return;
     setThemePreference(themePreference(value));
     notify(t('화면 모드를 변경했어요'));
-  }
+  };
   return (
     <section className="settings-card theme-settings" aria-labelledby="theme-title">
       <h2 id="theme-title">

@@ -42,7 +42,7 @@ function BoardsContent(props: IBoardsPageProps) {
   if (!board) return null;
   // RSC 이동은 snapshot이 Promise라 브라우저 URL을 그대로 읽는다.
   const filterSearch = 'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard);
-  function handleCompose() {
+  const handleCompose = () => {
     if (!session.user) {
       requireLogin();
       return;
@@ -55,7 +55,7 @@ function BoardsContent(props: IBoardsPageProps) {
         coachingRole: parseCoachingRole(params.get('coachingRole')),
       }),
     );
-  }
+  };
   return (
     <section className="board-page">
       <div className="page-heading board-heading">

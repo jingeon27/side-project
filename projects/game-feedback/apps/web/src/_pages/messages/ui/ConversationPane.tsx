@@ -52,10 +52,10 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
     unavailable,
   });
 
-  function handleLoadOlder() {
+  const handleLoadOlder = () => {
     scroll.handleCaptureHistory();
     void query.fetchNextPage();
-  }
+  };
 
   if (query.error && !query.isFetching) throw query.error;
   if (!conversation) throw new Error('Conversation is unavailable.');

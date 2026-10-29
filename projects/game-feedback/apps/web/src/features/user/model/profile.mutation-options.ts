@@ -34,7 +34,7 @@ export function updateProfileMutationOptions(client: QueryClient) {
 export function uploadAvatarMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: [...profileMutationKey, 'upload-avatar'],
-    mutationFn: (file: File) => uploadAvatar(file),
+    mutationFn: uploadAvatar,
     onSuccess: (profile) => saveProfile(client, profile),
   });
 }

@@ -24,7 +24,7 @@ export function PostCommentForm({ postId }: { postId: string }) {
   if (!session.user)
     return (
       <div className="comment-login">
-        <Button variant="secondary" size="md" type="button" onClick={() => requireLogin()}>
+        <Button variant="secondary" size="md" type="button" onClick={requireLogin}>
           {t('로그인하고 댓글 남기기')}
         </Button>
       </div>

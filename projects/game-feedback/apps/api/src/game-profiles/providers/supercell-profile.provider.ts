@@ -2,6 +2,7 @@ import type { GameProfile } from '@game-feedback/contracts';
 
 import { ApiError } from '../../common/http/api-error';
 import type { ProfileProvider } from './profile-provider';
+import { ProfileException } from './profile.exception';
 
 function globalRank(result?: { rank?: number | null } | null) {
   const rank = result?.rank;
@@ -19,8 +20,7 @@ export class SupercellProfileProvider implements ProfileProvider {
           signal: AbortSignal.timeout(10000),
         },
       );
-      if (response.status === 404)
-        throw new ApiError(404, 'PLAYER_NOT_FOUND', '플레이어를 찾을 수 없습니다.');
+      if (response.status === 404) throw ProfileException.playerNotFound();
       if (!response.ok) throw new Error('Upstream failed');
       const p = (await response.json()) as {
         tag: string;
@@ -54,11 +54,7 @@ export class SupercellProfileProvider implements ProfileProvider {
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError(
-        503,
-        'PROFILE_UNAVAILABLE',
-        '게임 프로필을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.',
-      );
+      throw ProfileException.unavailable();
     }
   }
 }

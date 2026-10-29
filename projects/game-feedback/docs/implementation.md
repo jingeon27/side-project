@@ -1478,3 +1478,42 @@ Web·Admin·Mobile의 effect, DOM/OS listener, observer, 외부 채널과 접근
 준비 단계에서 `@game-feedback/contracts`의 dist와 API Prisma client가 없었다. 필요한 명령은 각각 `yarn workspace @game-feedback/contracts build`, `yarn workspace @game-feedback/api prisma:generate`다. DB 접근·스키마 변경·SDK 전체 재생성은 필요하지 않았다. 의존성 catalog와 루트 lockfile은 변경하지 않았다.
 
 검증: Node 24.18.0·Yarn 4.17.0 immutable 설치, Mobile unit/UI 63개(17파일)·typecheck·lint, Web unit/UI 263개(75파일)·lint, Admin 23개(5파일)·typecheck·lint 통과. Vitest는 `--maxWorkers=2`로 실행했다. 모바일 신규 회귀는 변경 전 구현에서 callback 교체 시 OS listener가 두 번 설치되는 실패를 재현했고 변경 후 통과했다. Android Metro dev export도 `--max-workers 2`로 통과했으며 출력은 제거했다. Web/Admin 소스는 변경하지 않았다. iOS 번들·Playwright E2E·dev client 실기기·운영 검증은 실행하지 않았다. 다른 서버·DB를 조작하지 않았다.
+
+## 2026-10-29 생성자 parameter property 판단 기준
+
+GF apps·packages·scripts의 authored 생성자를 점검했다. 대부분 이미 parameter property다. API shared-instance smoke `Client`의 domain·port·ca는 직접 대입이지만 CI가 변환기 없이 `node file.ts`로 실행하므로 유지했다. Node 24.18.0의 strip-only 모드에서 최소 예제의 parameter property가 `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`를 내는 것을 확인했다. 타입 검사만으로 실행기 지원을 보장할 수 없다.
+
+WebViewChannel의 초기 URL 별칭과 파생 snapshot, Quill placeholder·SDK validation issues·S3 client·EventReader iterator도 기존 초기화를 유지했다. 단순화를 위해 생성자에 파생 자원용 선택 인자를 추가하거나 공개 API를 넓히지 않았다. 최종 코드 변경 없이 기존 minimize-ref 지침을 보존하고 접근 수준·readonly·인자 순서·기본값·초기화 순서·실행기 지원에 관한 판단 기준을 code-style 스킬에 추가했다.
+
+검증: 검토 중 Mobile/API typecheck, 후보 파일 ESLint·Prettier, 기존 WebViewChannel 테스트 4개(`--maxWorkers=2`) 통과. 후보 코드는 위 판단에 따라 모두 원복했다. 최종 스킬 validator·diff 검사 통과. 새 테스트·전체 E2E·외부 서비스 smoke는 실행하지 않았다.
+
+## 2026-10-29 직접 콜백 전달과 async/await
+
+GF authored 앱·패키지의 전달 callback과 Promise 체인을 점검했다. Web 로그인·설정 진입, RHF blur/checkbox, 첨부 mutation, callback ref setter와 초안 가드에는 원래 함수를 직접 전달한다. 인자를 변환하거나 고정하는 callback, React Query의 event/options 차단, observer/DOM 메서드의 this 바인딩, React Compiler가 controller 전체를 ref로 오인하는 RichTextEditor callback-ref 어댑터는 유지했다. SDK 호출을 감싸는 API 진입점은 요청 옵션 등 공개 시그니처 경계를 유지한다.
+
+Admin lazy import, API 숨김 대상 조회·seed 종료, Mobile 초기 링크·알림 응답·푸시 등록·인증 응답, Web 최초 문서 데이터·Quill 초기화/업로드·업로드 정리를 async/await로 정리했다. 링크/푸시의 취소 가드와 NativeHost generation·중복 인증 방지, 푸시 memoize 캐시 해제, 실패한 업로드 초안, 원래 업로드 오류와 seed disconnect 오류 처리를 유지한다. NativeHost는 제공자 오류 정규화와 응답 전송을 분리해 전송 예외를 로그인 실패로 바꾸지 않는다. fire-and-forget의 짧은 catch, SSR fallback, smoke 도구의 Promise.race timeout callback과 테스트 callback은 기계적으로 늘리지 않았다. Zod catch는 Promise가 아니므로 그대로 둔다.
+
+code-style 스킬에 직접 전달의 인자/this/반환값/identity 기준과 async/await의 병렬성·취소·오류 범위 기준을 추가했다. 명명 규칙 때문에 불필요한 wrapper를 만들지 않도록 공유 ESLint 변경 46830c8b를 이 브랜치에도 반영한다. authored handler의 handle*·props의 on* 지침은 유지한다.
+
+검증: Mobile 63개·Web 263개·Admin 23개 기존 테스트, API report.policy 6개 테스트 통과(maxWorkers=2). Web·Mobile·Admin·API 타입 검사, 스킬 validator·format·diff 검사 통과. API unit 실행기는 contracts build와 Prisma client 생성을 수행했으며 DB 스키마 변경이나 외부 서비스 호출은 없었다. 브라우저 E2E·실기기·실제 seed·외부 smoke 실행은 범위에 포함하지 않았다.
+
+## 2026-10-29 화면 맥락과 URL·조회 경계 보완
+
+- 맥락 분리: 네이티브 푸시 지원 여부를 고르는 부모와 조회·mutation을 소유하는 NativePushSettings를 나눴다. 일반 브라우저에서는 푸시 쿼리/뮤테이션을 만들지 않는다. 단순 표현 차이인 기존 분기는 유지했다.
+- 영역별 오류: 알림 페이지 제목·앱 푸시 설정을 목록 경계 밖으로 옮기고 설정·목록을 별도 AsyncBoundary로 분리했다. 관리자 문의 목록/상세의 기존 독립 경계는 유지했다.
+- URL: 관리자 문의 상태 변경이 선택 문의와 다른 query 값을 지우던 문제를 수정했다. status만 쓰고 기본 ALL은 키를 제거한다. 기존 필드별 Zod fallback은 유지하며 유효한 thread와 잘못된 status의 조합을 검증했다. 반복 query 값도 보존한다. 서버 404/권한 가드는 완화하지 않았다.
+- 순수 변환: 기존 postContentInput과 폼/계약 스키마가 게시판별 요청 필드를 이미 선택·검증하고 있어 유지했다. 단순 객체/markup을 위한 새 추상화는 만들지 않았다.
+- 브라우저: 새 Admin UI 레인은 3305의 실제 Vite 앱·SDK·Query·폼을 Chromium에서 실행하고 API 경계만 대체한다. 목록 503 중 열린 문의·답변 초안·필터·URL 보존과 복구를 검증했다. DB/운영 터널은 호출하지 않는다.
+- TanStack 결과: 단일 업로드 mutation을 upload/handleUpload로 포장하던 usePostMediaUpload를 제거했다. 작성·수정 폼이 options factory와 useMutation을 직접 조합하고 mutateAsync를 전달한다. error/status/variables/reset을 표준 결과에서 사용할 수 있다. useVisibleRead 같은 외부 구독/요청 수명 조합은 유지했다.
+
+검증: Web 관련 unit/UI 12개(6파일), Admin unit 25개(6파일), 실제 Chromium UI 1개 통과. Web/Admin 타입·lint, 변경 스킬 validator·Prettier·diff 검사 통과. 알림 목록 오류의 설정 보존과 비지원 문서의 푸시 훅 미생성은 별도 회귀 테스트로 확인했다. 실제 API/DB 통합 E2E와 네이티브 실기기 푸시 권한은 검증하지 않았다. 신규 의존성·루트/공유 설정 변경은 없다.
+
+## 2026-10-29 AST 기반 전달 wrapper와 핸들러 명명 재점검
+
+GF authored source·scripts·tests 993개 파일을 TypeScript AST로 점검했다. typed arrow·return 블록·function 선언의 전달형 후보 234개(테스트 90개), 반환값을 버리는 단일 호출 블록도 확인했다. 후보를 일괄 치환하지 않고 인자·receiver·실행 시점·참조 안정성·반환값을 구분했다.
+
+안전한 전달 6곳을 정리했다. 채팅 제출은 form.handleSubmit 결과를 직접 사용하고, 순수 게시글 캐시 태그는 같은 공개 이름으로 명시적으로 재수출한다. smoke의 Object.keys, 테스트 cleanup과 이미 바인딩된 snapshot spy 2곳도 직접 전달한다. API controller의 decorator·권한/검증 경계와 SDK 추가 요청 옵션 차단, mutation callback의 추가 인자 차단, 클래스 receiver, DOM cleanup, waitFor/act의 실행 시점·retry assertion은 유지했다.
+
+직접 작성한 내부 이벤트 핸들러의 function 선언을 const handle* arrow로 정리했다. 설정 열기, 푸시 응답 수신, native listener, chip ResizeObserver, Quill text-change, DB 종료 신호와 브라우저 테스트 listener 이름도 구분했다. 순수 helper·query 함수·공개/상속 API나 라이브러리·prop 참조를 handle 별칭으로 바꾸지 않았다. effect/observer 해제는 설치 때와 같은 callback을 사용한다.
+
+Web 265개·Admin 25개·Mobile 63개 기존 테스트(maxWorkers=2), Admin 실제 Chromium 1개 통과. Web/Admin/Mobile/API 타입 검사, 앱 lint·GF 공통 lint, 스킬 validator·Prettier·diff 검사 통과. 새 테스트는 만들지 않았고 실제 DB 종료·외부 smoke·네이티브 실기기는 실행하지 않았다. 공유 lint 구현은 이 작업에서 수정하지 않았으며 직접 작성 핸들러와 외부 참조를 구분하는 기준을 GF 스킬에 보강했다.

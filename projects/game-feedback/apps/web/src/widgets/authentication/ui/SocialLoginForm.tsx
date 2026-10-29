@@ -30,7 +30,7 @@ export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLogin
   const selected = nativeLogin.isPending ? nativeLogin.variables : browserLogin.variables?.provider;
   const configured = (provider: TSocialProvider) =>
     providers.some((item) => item.provider === provider && item.configured);
-  function handleSubmit(event: FormEvent<HTMLFormElement>, provider: TSocialProvider) {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>, provider: TSocialProvider) => {
     event.preventDefault();
     if (pending || !configured(provider)) return;
     savePendingLogin(provider);
@@ -44,7 +44,7 @@ export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLogin
         if (result) onSuccess?.();
       },
     });
-  }
+  };
   const common = { pending, selected, returnTo, onSubmit: handleSubmit };
   if (isNativeApp()) return <p className="login-unavailable">로그인은 웹 브라우저에서 이용해 주세요.</p>;
   const errorMessage = nativeLogin.error?.message ?? browserLogin.error?.message;

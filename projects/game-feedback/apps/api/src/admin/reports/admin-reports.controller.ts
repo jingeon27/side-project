@@ -1,6 +1,6 @@
 import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 
-import type { SessionRequest } from '../../auth/session.types';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { ValidatedBody, ValidatedQuery } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminReportsService } from './admin-reports.service';

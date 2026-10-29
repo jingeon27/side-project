@@ -10,15 +10,15 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 1. **계약** `../../packages/contracts/src/index.ts`: 입력은 `.strict()` Zod 객체로 쓴다(trim·정규화·한국어 오류 문장이 여기 있다). 응답의 시각은 `ResponseTimestampSchema`(ISO 문자열), ID는 `ResponseIdSchema`. 이름 있는 모델이 필요하면 `schemas`에 더하고 `operations`에 `{ method, path: '/api/x/{id}', id, body?, response, query?, contentType? }`를 더한다. `id`가 SDK 함수 이름이 된다.
 2. **OpenAPI 한계** (`src/openapi.ts`): 성공 응답은 항상 `'200'`만 기록한다. `query: true`는 `cursor`·`limit`만 만들고, 그 밖의 쿼리는 `listPosts`·`listReports`(status) 분기처럼 이 파일에 직접 적는다. SSE(`/api/chat/events`)와 바이너리 GET(`/api/post-media/:id`, `/api/users/:id/avatar`, 채팅 첨부 GET)은 `operations`에 넣지 않는다.
 3. **계약 빌드**: API는 `@game-feedback/contracts`의 `dist`를 import한다. 계약을 고친 뒤 `codegen`(또는 contracts `build`) 전에는 API `typecheck`가 옛 타입을 본다. API `test` 스크립트는 빌드를 먼저 한다.
-4. **DTO** `src/<domain>/<name>-input.dto.ts`: contracts의 입력 스키마를 공개하고 `T<Name>Dto = z.output<typeof XInputSchema>`로 타입을 추론한다. Controller는 `@ValidatedBody(XInputSchema)`·`@ValidatedQuery(XQuerySchema)`로 Nest 12 schema 메타데이터를 지정한다. 전역 `RequestValidationPipe`는 내장 `StandardSchemaValidationPipe`를 통해 Zod를 한 번 실행하고 정규화된 plain object를 전달한다. strict body와 query의 알 수 없는 키 처리는 각 스키마가 소유한다. 원본 JSON의 금지된 키도 스키마가 거부하며 실패는 400 `VALIDATION_ERROR`다.
-5. **Controller** `src/<domain>/<domain>.controller.ts`: `@Controller('api')` 또는 `'api/<prefix>'`. 본문 `@ValidatedBody(XInputSchema)`, 쿼리 `@ValidatedQuery(XQuerySchema)`(목록은 `ListQuerySchema`), enum 경로 값 `@Param('x', new ContractValuePipe(Schema))`. `@Req() req: SessionRequest`를 서비스로 넘기고 규칙은 서비스에 둔다. `PATCH /api/profile`도 UserGuard와 UpdateProfileInputSchema를 거쳐 검증한 입력만 Service로 전달한다.
+4. **DTO** `src/<domain>/<책임>/<name>-input.dto.ts`(작은 도메인은 root 유지): contracts의 입력 스키마를 공개하고 `T<Name>Dto = z.output<typeof XInputSchema>`로 타입을 추론한다. Controller는 `@ValidatedBody(XInputSchema)`·`@ValidatedQuery(XQuerySchema)`로 Nest 12 schema 메타데이터를 지정한다. 전역 `RequestValidationPipe`는 내장 `StandardSchemaValidationPipe`를 통해 Zod를 한 번 실행하고 정규화된 plain object를 전달한다. strict body와 query의 알 수 없는 키 처리는 각 스키마가 소유한다. 원본 JSON의 금지된 키도 스키마가 거부하며 실패는 400 `VALIDATION_ERROR`다.
+5. **Controller** `src/<domain>/<책임>/<domain>.controller.ts`(root 조합 controller는 유지): `@Controller('api')` 또는 `'api/<prefix>'`. 본문 `@ValidatedBody(XInputSchema)`, 쿼리 `@ValidatedQuery(XQuerySchema)`(목록은 `ListQuerySchema`), enum 경로 값 `@Param('x', new ContractValuePipe(Schema))`. `@Req() req: SessionRequest`를 서비스로 넘기고 규칙은 서비스에 둔다. `PATCH /api/profile`도 UserGuard와 UpdateProfileInputSchema를 거쳐 검증한 입력만 Service로 전달한다.
 6. **POST는 `@HttpCode(200)`**: 계약이 200만 선언하므로 기존 POST가 모두 붙인다. 쿠키를 쓰면서 JSON을 돌려주면 `@Res({ passthrough: true })`.
 7. **주입은 항상 `@Inject(Token)`**: `dev`(tsx)와 Vitest가 `design:paramtypes`를 만들지 않아 타입만으로는 주입되지 않는다(`request-validation.ts` 주석). 서비스는 `@Inject(PrismaClient)`, `@Inject(UnitOfWork)`, `@Inject(APP_CONFIG)`를 쓴다. Repository 계층은 없다.
 8. **Module**: 도메인 module의 `controllers`·`providers`에 등록하고 새 module은 `src/app.module.ts` `imports`에 더한다. 다른 도메인 서비스는 그 module의 `exports`로 받는다(`PostsModule` → `UsersModule`의 `UserVisibilityService`). `DatabaseModule`(PrismaClient·UnitOfWork·APP_CONFIG)과 `MediaStorageModule`은 `@Global`이다.
 
 ## 권한·가시성
 
-- `@UseGuards(UserGuard | AdminGuard)`(`src/common/http/session.guard.ts`)를 붙여도 서비스 첫 줄에서 `requireUser(req)`·`requireAdmin(req)`(`src/auth/session-access.ts`)로 사용자를 받는다. Guard가 파이프보다 먼저라 비로그인은 400보다 401이 먼저 나온다.
+- `@UseGuards(UserGuard | AdminGuard)`(`src/common/http/session.guard.ts`)를 붙여도 서비스 첫 줄에서 `requireUser(req)`·`requireAdmin(req)`(`src/auth/session/session-access.ts`)로 사용자를 받는다. Guard가 파이프보다 먼저라 비로그인은 400보다 401이 먼저 나온다.
 - 소유 확인은 서비스에서 한다(`authorId !== u.id` → 403 `FORBIDDEN`). 볼 수 없는 대상은 404로 존재를 숨긴다.
 - 공개 목록·상세는 `ACTIVE_CONTENT`/`ACTIVE_POST`(`src/common/content.ts`)와 `authorId: { notIn: await this.visibility.excluded(req) }`(양방향 차단 + 일반 모드의 테스트 계정)를 함께 건다. 답변·댓글 개수 같은 하위 집계에도 같은 조건을 쓴다.
 - 커서 목록: `decodeCursor`/`encodeCursor`(`src/common/pagination.ts`), `orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]`, `take: limit + 1`, 응답 `{ items, nextCursor }`.
@@ -30,6 +30,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 
 ## 오류
 
+- OAuth·프로필 외부 경계의 반복 오류는 `auth/oauth/oauth.exception.ts`·`game-profiles/providers/profile.exception.ts`를 재사용한다. 상태 검증별로 오류 클래스를 늘리지 않는다.
 - `throw new ApiError(status, 'UPPER_SNAKE', '한국어 문장')`(`src/common/http/api-error.ts`) → `{ errorCode, message }`. SDK는 `^[A-Z][A-Z0-9_]{0,99}$`가 아닌 코드를 `REQUEST_FAILED`로 바꾼다. Nest 내장 예외(`NotFoundException` 등)는 `ApiExceptionFilter`가 일반 문장으로 덮으므로 쓰지 않는다.
 - 필터는 Prisma P2002 → 409 `CONFLICT`, P2025 → 404 `NOT_FOUND`, 나머지 → 500 `INTERNAL_ERROR` + Sentry로 바꾼다. 의미 있는 코드가 필요하면 서비스에서 잡는다(`ChatMessageService.send`의 P2002 → `MESSAGE_CONFLICT`).
 
@@ -44,7 +45,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 새 경로를 만들거나 이름을 바꾸면 함께 본다.
 - `src/common/http/banned-access.ts`: 밴 사용자에게 허용하는 쓰기 경로.
 - `src/rate-limit.ts`: 인증 시도(`authAttempts`)·업로드·업로드 완료·게임 프로필 조회 버킷, health 경로.
-- `src/chat/chat-lifecycle.middleware.ts`: 세션을 바꾸는 POST, `DELETE /api/me`, 차단 경로의 SSE 종료·알림.
+- `src/chat/events/chat-lifecycle.middleware.ts`: 세션을 바꾸는 POST, `DELETE /api/me`, 차단 경로의 SSE 종료·알림.
 - `../../packages/sdk/src/index.ts`: 생성 함수 re-export 목록(손으로 관리한다). 빠지면 Web·Admin이 `@game-feedback/sdk`에서 import하지 못한다.
 
 ## 설정값

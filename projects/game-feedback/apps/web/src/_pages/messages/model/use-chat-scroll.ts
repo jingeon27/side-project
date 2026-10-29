@@ -19,7 +19,6 @@ export function useChatScroll({
 }: IChatScrollOptions) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const [controller] = useState(() => new ChatScrollController());
-  const scroller = useCallback((node: HTMLDivElement | null) => setElement(node), []);
   const unseen = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [visibleBoundary, setVisibleBoundary] = useState('');
 
@@ -28,14 +27,22 @@ export function useChatScroll({
     controller.reconcile(element, newestId, fetchingOlder);
   }, [controller, element, messageStamp, newestId, pending, unavailable, fetchingOlder]);
 
-  useEffect(() => {
-    if (!element || unavailable) return;
-    const observer = new ResizeObserver(() => controller.resize(element));
-    observer.observe(element);
-    const content = element.firstElementChild;
-    if (content) observer.observe(content);
-    return () => observer.disconnect();
-  }, [controller, element, unavailable]);
+  const handleScroller = useCallback(
+    (node: HTMLDivElement | null) => {
+      setElement(node);
+      if (!node || unavailable) return;
+      const handleResize = () => controller.resize(node);
+      const observer = new ResizeObserver(handleResize);
+      observer.observe(node);
+      const content = node.firstElementChild;
+      if (content) observer.observe(content);
+      return () => {
+        observer.disconnect();
+        setElement(null);
+      };
+    },
+    [controller, unavailable],
+  );
 
   useEffect(() => {
     if (!element || unavailable) return;
@@ -80,7 +87,7 @@ export function useChatScroll({
   }, [controller, element]);
 
   return {
-    scroller,
+    scroller: handleScroller,
     unseen,
     visibleBoundary,
     handleScroll,

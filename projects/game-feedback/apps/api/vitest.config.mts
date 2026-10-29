@@ -19,7 +19,7 @@ export default defineConfig({
                 hookTimeout: 60_000,
                 include: [
                   'src/**/*.database.integration.{spec,test}.ts',
-                  'src/auth/account-withdrawal.service.integration.test.ts',
+                  'src/auth/account/account-withdrawal.service.integration.test.ts',
                 ],
                 globalSetup: ['./scripts/integration-setup.ts'],
               },

@@ -1,19 +1,14 @@
-import { match, P } from 'ts-pattern';
-
-import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
+import type { IdentityProvider, TIdentityProviders } from '../auth/oauth/providers/identity-provider';
 import {
   resolveCacheRevalidationConfig,
   type ICacheRevalidationConfig,
 } from '../cache-invalidation/cache-invalidation.config';
 import { forwardedClientKey } from '../common/http/forwarded-client';
 import { assertDatabaseUrl } from '../database/database-url';
-import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
-import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
 import type { PrismaClient } from '../generated/prisma';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
 import { resolveAppAuthCallbackUrl } from './app-auth-callback';
-import { resolveIdentityProviders } from './identity-providers';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
@@ -47,6 +42,7 @@ export interface AppConfig {
   webOrigin: string;
   /** 앱 로그인 일회용 코드를 보내는 검증된 https 콜백(App Link·Universal Link) */
   appAuthCallbackUrl: string;
+  /** 명시적 override만 보관하며 기본 전략 생성은 AuthModule의 Nest factory가 담당한다. */
   identityProvider?: IdentityProvider;
   identityProviders: TIdentityProviders;
   profileProvider?: ProfileProvider;
@@ -67,11 +63,6 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     throw new Error('Production WEB_ORIGIN must use HTTPS.');
   const appAuthCallbackUrl = resolveAppAuthCallbackUrl(options.appAuthCallbackUrl, webOrigin, production);
 
-  const identityProviders = resolveIdentityProviders(
-    webOrigin,
-    options.identityProviders,
-    options.identityProvider,
-  );
   const cacheRevalidation = options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env);
   const forwardedClientSecret = options.forwardedClientSecret ?? cacheRevalidation?.secret;
   return {
@@ -89,22 +80,8 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     appAuthCallbackUrl,
     rateLimit: options.rateLimit !== false,
     mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
-    identityProvider: identityProviders.google,
-    identityProviders,
-    profileProvider: options.profileProvider ?? resolveProfileProvider(demoMode, testAuthEnabled),
+    identityProvider: options.identityProvider,
+    identityProviders: options.identityProviders ?? {},
+    profileProvider: options.profileProvider,
   };
-}
-
-/** 데모 모드는 가짜 제공자, 아니면 Supercell 토큰을 쓰고, 토큰 없이 테스트 인증만 켜졌으면 가짜 제공자를 쓴다. */
-function resolveProfileProvider(demoMode: boolean, testAuthEnabled: boolean) {
-  return match({ demoMode, testAuthEnabled, supercellToken: process.env.SUPERCELL_API_TOKEN })
-    .returnType<ProfileProvider | undefined>()
-    .with({ demoMode: true }, () => new DemoProfileProvider())
-    .with(
-      { supercellToken: P.string.minLength(1) },
-      ({ supercellToken }) => new SupercellProfileProvider(supercellToken),
-    )
-    .with({ testAuthEnabled: true }, () => new DemoProfileProvider())
-    .with({ testAuthEnabled: false }, () => undefined)
-    .exhaustive();
 }

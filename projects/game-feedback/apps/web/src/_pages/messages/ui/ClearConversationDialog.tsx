@@ -29,7 +29,7 @@ export function ClearConversationDialog({
   const mutation = useMutation(clearChatHistoryMutationOptions(client, userId, conversationId));
   const router = useRouter();
   const notify = useNotify();
-  async function handleClear() {
+  const handleClear = async () => {
     try {
       await mutation.mutateAsync(throughMessageId);
       onOpenChange(false);
@@ -38,7 +38,7 @@ export function ClearConversationDialog({
     } catch {
       /* Keep the failed action and retry inside this dialog. */
     }
-  }
+  };
   return (
     <BottomSheet
       open={open}

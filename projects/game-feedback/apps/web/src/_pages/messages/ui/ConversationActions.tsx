@@ -46,7 +46,7 @@ export function ConversationActions({
     },
     [clearOverlayId, reportOverlayId],
   );
-  function handleClear() {
+  const handleClear = () => {
     if (!throughMessageId) return;
     openOverlay(
       (control) => (
@@ -59,7 +59,7 @@ export function ConversationActions({
       ),
       { overlayId: clearOverlayId },
     );
-  }
+  };
   return (
     <div className="conversation-actions" role="group" aria-label={t('대화 관리')}>
       <IconButton

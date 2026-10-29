@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
+import { useEffect, useEffectEvent, type KeyboardEvent } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
@@ -52,7 +52,7 @@ export function useChatComposer({
   });
   useEffect(() => () => handleLeave(conversationId), [conversationId]);
 
-  async function handleSend({ body }: z.output<typeof messageSchema>) {
+  const handleSend = async ({ body }: z.output<typeof messageSchema>) => {
     if (
       client.isMutating({ mutationKey: options.mutationKey, exact: true }) ||
       client.isMutating({ mutationKey: uploadOptions.mutationKey, exact: true }) ||
@@ -78,13 +78,11 @@ export function useChatComposer({
     } catch (error) {
       if (error instanceof ApiError && [401, 403, 404].includes(error.status)) await onUnavailable();
     }
-  }
+  };
 
-  function handleSubmit(event?: BaseSyntheticEvent) {
-    return form.handleSubmit(handleSend)(event);
-  }
+  const handleSubmit = form.handleSubmit(handleSend);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (
       event.key !== 'Enter' ||
       !desktopKeyboard ||
@@ -96,12 +94,12 @@ export function useChatComposer({
     event.preventDefault();
     if (event.repeat) return;
     void handleSubmit();
-  }
+  };
 
-  function handleDraftChange() {
+  const handleDraftChange = () => {
     if (mutation.isError) mutation.reset();
-  }
-  async function handleRemoveFile() {
+  };
+  const handleRemoveFile = async () => {
     if (!upload.data || busy) return;
     try {
       await remove.mutateAsync(upload.data.id);
@@ -111,8 +109,8 @@ export function useChatComposer({
     } catch {
       /* The attachment remains available for retry. */
     }
-  }
-  async function handleFile(file?: File) {
+  };
+  const handleFile = async (file?: File) => {
     if (!file || busy || unavailable) return;
     if (!isUploadableMediaSize(file.size)) {
       form.setError('root.attachment', { message: '파일은 25MB 이하로 선택해주세요.' });
@@ -130,7 +128,7 @@ export function useChatComposer({
     } catch (error) {
       if (error instanceof ApiError && [401, 403, 404].includes(error.status)) await onUnavailable();
     }
-  }
+  };
 
   return {
     form,

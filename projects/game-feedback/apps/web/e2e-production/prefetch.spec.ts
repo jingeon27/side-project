@@ -9,7 +9,7 @@ function trackPrefetches({ page, contentOnly = false }: { page: Page; contentOnl
   page.on('response', (response) => {
     if (response.ok()) successful.add(response.request());
   });
-  function handleComplete(request: Request) {
+  const handleComplete = (request: Request) => {
     const headers = request.headers();
     if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return;
     if (contentOnly && headers['next-router-segment-prefetch'] === '/_tree') return;
@@ -17,7 +17,7 @@ function trackPrefetches({ page, contentOnly = false }: { page: Page; contentOnl
     if (failure && failure.errorText !== 'net::ERR_ABORTED') return;
     if (!successful.has(request)) return;
     completed.add(new URL(request.url()).pathname);
-  }
+  };
   page.on('requestfinished', handleComplete);
   // Next는 셸을 필요한 바이트만 읽고 reader.cancel()할 수 있다. 이때 Response.finished()는 완료되지 않는다.
   page.on('requestfailed', handleComplete);

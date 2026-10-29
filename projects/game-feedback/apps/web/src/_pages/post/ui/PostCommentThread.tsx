@@ -55,17 +55,17 @@ export function PostCommentThread({ thread, postAuthorId, locale }: IPostComment
   const { comment, replies } = thread;
   const author = comment.author;
 
-  function handleReply() {
+  const handleReply = () => {
     if (!session.user) {
       requireLogin();
       return;
     }
     setReplying(true);
-  }
+  };
 
-  function handleCloseReply() {
+  const handleCloseReply = () => {
     setReplying(false);
-  }
+  };
 
   return (
     <li className="comment-thread">

@@ -14,21 +14,22 @@ import { GameProfilesService } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
-import { AccountWithdrawalService } from './account-withdrawal.service';
-import { AppAuthService } from './app-auth.service';
+import { AccountWithdrawalService } from './account/account-withdrawal.service';
+import { bannedIdentityError, isBannedIdentity } from './account/banned-identity';
+import { SocialIdentityService } from './account/social-identity.service';
+import { AppAuthService } from './app-login/app-auth.service';
 import { type TDemoLoginDto, type TOnboardDto, type TTestLoginDto } from './auth-input.dto';
-import { bannedIdentityError, isBannedIdentity } from './banned-identity';
+import { IdentityProviderRegistry } from './oauth/identity-provider.registry';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
   savedReturnPath,
-} from './oauth-return-path';
-import { requireUser } from './session-access';
-import { sessionToken } from './session-token';
-import { SessionService } from './session.service';
-import type { SessionRequest } from './session.types';
-import { SocialIdentityService } from './social-identity.service';
+} from './oauth/oauth-return-path';
+import { requireUser } from './session/session-access';
+import { sessionToken } from './session/session-token';
+import { SessionService } from './session/session.service';
+import type { SessionRequest } from './session/session.types';
 
 /**
  * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 보낸다. 코드 원문은 이 URL에만 실린다.
@@ -48,6 +49,7 @@ export class AuthService {
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
     @Inject(GameProfilesService) private readonly gameProfiles: GameProfilesService,
+    @Inject(IdentityProviderRegistry) private readonly providers: IdentityProviderRegistry,
   ) {}
   async demo(req: SessionRequest, res: Response, input: TDemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
@@ -121,8 +123,7 @@ export class AuthService {
 
   async social(req: Request, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const returnPath = requestedReturnPath(req);
     const appChallenge = req.query.app_challenge;
     if (
@@ -159,8 +160,7 @@ export class AuthService {
 
   async socialCallback(req: SessionRequest, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const state = typeof req.query.state === 'string' ? req.query.state : '';
     const code = typeof req.query.code === 'string' ? req.query.code : '';
     if (!state || cookies(req).gamefeedback_oauth !== state)

@@ -38,7 +38,7 @@ export function requestNativeLogin(
       clearTimeout(timer);
       window.removeEventListener(BRIDGE_EVENT, handleMessage);
     }
-    function handleMessage(event: Event) {
+    const handleMessage = (event: Event) => {
       const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
       if (message?.type !== 'auth-result' || message.id !== id) return;
       cleanup();
@@ -47,7 +47,7 @@ export function requestNativeLogin(
         .with({ status: 'failed' }, () => reject(new Error('로그인하지 못했습니다. 다시 시도해 주세요.')))
         .with({ status: 'success' }, ({ code, verifier }) => resolve({ code, verifier }))
         .exhaustive();
-    }
+    };
     window.addEventListener(BRIDGE_EVENT, handleMessage);
     postToNative({ type: 'auth-request', id, provider });
   });

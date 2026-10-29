@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { SessionService } from '../../auth/session.service';
-import type { SessionRequest } from '../../auth/session.types';
+import { SessionService } from '../../auth/session/session.service';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { hash, token } from '../../common/crypto';
 import { ApiError } from '../../common/http/api-error';
 import { cookies } from '../../common/http/cookies';

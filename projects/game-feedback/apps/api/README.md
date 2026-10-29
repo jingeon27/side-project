@@ -56,6 +56,15 @@ Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.
 
 게시글·채팅·프로필 파일은 로컬·통합 테스트까지 모두 실제 S3 직접 업로드를 사용한다. AWS 자격 증명, 테스트 객체 격리·정리와 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.
 
+## 책임별 소스 경계
+
+- `src/auth/{oauth,session,app-login,account}`: OAuth 전략·세션·앱 PKCE 티켓·계정 식별/탈퇴. root auth controller/service는 HTTP·가입 흐름을 조합한다.
+- `src/chat/{conversation,message,attachment,events}`: 대화 접근·전송/히스토리/읽음·첨부·SSE 수명. `src/posts/{media,views}`는 미디어와 조회수, `src/users/{profile,visibility}`는 프로필 수정/아바타와 조회 가시성을 묶는다. 여러 책임이 쓰는 DTO·presenter와 module 조합은 root에 유지한다.
+- AuthModule은 `IDENTITY_PROVIDERS` factory와 `IdentityProviderRegistry`, GameProfilesModule은 `PROFILE_PROVIDER` factory를 등록한다. AppOptions의 identityProvider/identityProviders/profileProvider fake 주입은 유지한다. APP_CONFIG에서 제공자 구현을 직접 생성하지 않는다.
+- `OAuthException`·`ProfileException`은 ApiError와 전역 필터의 `{ errorCode, message }` 형식을 유지한다. Guard·전역 입력 검증·세션 회전·PKCE·온보딩·레거시 Google 계정 판정은 그대로 둔다.
+
+`test:unit`의 `src/auth/oauth/identity-provider.registry.spec.ts`는 HTTP·Prisma 없이 Nest application context로 DI를 검사한다. 실제 HTTP 응답은 `src/auth/auth.module.integration.spec.ts`와 기존 auth integration 레인에서 검사한다. 이 모듈 HTTP fixture는 Prisma 외부 경계를 대체하며 실제 DB·S3 검증을 대체하지 않는다. integration 실행기는 실제 테스트 DB와 S3 설정이 필요하고 가짜 S3나 skip으로 우회하지 않는다.
+
 ## DB 정합성과 보관 정책
 
 로컬 `db:sync`와 모든 통합 테스트는 `migrate deploy`를 사용한다. Prisma에 표현되지 않는 CHECK·GIN 인덱스도 운영과 함께 검사한다. 데이터가 있지만 migration 이력이 없는 개발 DB는 P3005로 중단한다. 자동 baseline·reset은 하지 않는다. 기존 DB를 백업한 뒤 별도 복제본에서 schema.prisma와 SQL 전용 제약을 대조하고 이력을 정리해야 한다.

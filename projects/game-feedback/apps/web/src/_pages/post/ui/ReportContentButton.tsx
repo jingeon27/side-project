@@ -17,13 +17,13 @@ interface IReportContentButtonProps {
 export function ReportContentButton({ targetType, targetId }: IReportContentButtonProps) {
   const { t } = useI18n();
   const { session, requireLogin } = useSession();
-  function handleReport() {
+  const handleReport = () => {
     if (!session.user) {
       requireLogin();
       return;
     }
     openOverlay((control) => <ReportDialog {...control} targetType={targetType} targetId={targetId} />);
-  }
+  };
   return (
     <button type="button" className="text-action" onClick={handleReport}>
       <Flag size={13} />

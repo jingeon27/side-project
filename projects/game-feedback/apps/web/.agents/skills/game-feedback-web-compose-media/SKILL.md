@@ -30,7 +30,7 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 4. 성공하면 `complete(id)`로 확정한다. S3 전송 실패·확정 실패는 모두 `remove(id)`로 예약을 정리하고 원래 오류를 던진다.
 5. 프로필은 `features/user/api/avatar.api.ts`에서 `prepareAvatar`로 방향·중앙 자르기·512px JPEG 변환 후 같은 전송 함수를 사용한다. 5MB JPEG/PNG/WebP만 받으며 변환 오류는 초안을 보존한다.
 
-- 게시글: `features/post-media/api/post-media.api.ts`의 `uploadMedia` → `uploadPostMediaMutationOptions(userId)` → `widgets/post-composer/model/use-post-media-upload.ts`의 `handleUpload`(`mutateAsync`). Quill 툴바가 숨은 file input을 만들고 받은 `media.url`을 선택 위치에 embed한다. 실패하면 편집기는 아무것도 넣지 않고 mutation 오류만 남는다.
+- 게시글: `features/post-media/api/post-media.api.ts`의 `uploadMedia` → `uploadPostMediaMutationOptions(userId)` → 작성·수정 폼이 직접 호출하는 `useMutation` 결과의 `mutateAsync`. Quill 툴바가 숨은 file input을 만들고 받은 `media.url`을 선택 위치에 embed한다. 실패하면 편집기는 아무것도 넣지 않고 mutation 오류만 남는다.
 - 채팅: `features/chat/api/chat.api.ts`의 `uploadAttachment(conversationId, file)` → `uploadChatAttachmentMutationOptions`. 메시지당 파일 하나이며 `upload.data.id`를 `attachmentIds`로 보낸다. 다른 파일로 바꿀 때는 기존 첨부를 `removeChatAttachmentMutationOptions`로 먼저 지운다(`ATTACHMENT_NOT_FOUND`는 성공으로 본다). 대화를 떠나면(언마운트·대화 변경) effect cleanup이 `useEffectEvent`로 그때 남은 미전송 첨부만 `discardChatAttachment`(keepalive)로 정리 요청한다. 보냈거나 지운 첨부는 `upload.reset()`으로 비울 뿐 다시 지우지 않는다(`use-chat-composer.test.tsx`).
 - 미디어 URL은 항상 같은 origin이다(`/api/post-media/<id>`, `/api/conversations/<id>/attachments/<id>`). S3 저장소에서는 API가 권한 확인 뒤 짧은 S3 주소로 이동시킨다. S3 주소·서명 필드를 저장·로그·분석 이벤트에 넣지 않고, S3 키를 `NEXT_PUBLIC_*`에 두지 않는다.
 

@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
@@ -23,8 +23,8 @@ import {
   type TPostViewDto,
   type TUpdatePostDto,
 } from './post-input.dto';
-import { PostViewsService } from './post-views.service';
 import { PostsService } from './posts.service';
+import { PostViewsService } from './views/post-views.service';
 
 @Controller('api')
 export class PostsController {

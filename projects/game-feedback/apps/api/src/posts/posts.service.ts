@@ -4,9 +4,9 @@ import { match } from 'ts-pattern';
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
 
 import { ANSWER_PAGE, answerPage } from '../answers/answer-page';
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { lockActiveUser } from '../auth/user-write';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
@@ -15,10 +15,10 @@ import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
-import { UserVisibilityService } from '../users/user-visibility.service';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
+import { PostMediaService } from './media/post-media.service';
 import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
-import { PostMediaService } from './post-media.service';
 import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()

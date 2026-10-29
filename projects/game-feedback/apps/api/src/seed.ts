@@ -1,4 +1,4 @@
-import { conversationPair } from './chat/conversation-pair';
+import { conversationPair } from './chat/conversation/conversation-pair';
 import { createPrismaAdapter } from './database/prisma-adapter';
 import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
@@ -223,11 +223,18 @@ export async function seed(db: PrismaClient, demoMode = false) {
 }
 if (require.main === module) {
   const db = new PrismaClient({ adapter: createPrismaAdapter(assertDatabaseUrl(process.env.DATABASE_URL)) });
-  seed(db, process.argv.includes('--fixtures'))
-    .then(() => console.log('Game Feedback seed complete (existing content preserved).'))
-    .finally(() => db.$disconnect())
-    .catch((error) => {
+  const runSeed = async () => {
+    try {
+      try {
+        await seed(db, process.argv.includes('--fixtures'));
+        console.log('Game Feedback seed complete (existing content preserved).');
+      } finally {
+        await db.$disconnect();
+      }
+    } catch (error) {
       console.error(error);
       process.exitCode = 1;
-    });
+    }
+  };
+  void runSeed();
 }

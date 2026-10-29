@@ -6,10 +6,10 @@ export function MobileViewport() {
   useEffect(() => {
     const viewport = window.visualViewport;
     const root = document.documentElement;
-    function handleResize() {
+    const handleResize = () => {
       root.style.setProperty('--visual-viewport-height', `${viewport?.height ?? window.innerHeight}px`);
       root.style.setProperty('--visual-viewport-top', `${viewport?.offsetTop ?? 0}px`);
-    }
+    };
     handleResize();
     viewport?.addEventListener('resize', handleResize);
     viewport?.addEventListener('scroll', handleResize);
