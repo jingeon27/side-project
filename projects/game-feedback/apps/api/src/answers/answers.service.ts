@@ -4,6 +4,7 @@ import { postCacheTag } from '@game-feedback/contracts';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/user-write';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
@@ -29,6 +30,7 @@ export class AnswersService {
     const u = requireUser(req);
     const a = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         // 잠금 뒤 다시 확인해 그 사이 숨김·삭제·차단된 글에 답변이 붙지 않게 한다.
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${postId} FOR UPDATE`;
         const excluded = await this.visibility.excluded(req, tx);
@@ -103,6 +105,7 @@ export class AnswersService {
     return responseAnswer(
       await this.cache.change(
         async (tx) => {
+          await lockActiveUser({ client: tx, userId: u.id });
           await this.lockVisibleAnswer(req, tx, a);
           // 수정하면 도움됨 표시가 풀리므로 그 알림도 남기지 않는다.
           await tx.notification.deleteMany({ where: { answerId: id, type: 'HELPFUL' } });
@@ -120,6 +123,7 @@ export class AnswersService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Answer" WHERE "id" = ${id} FOR UPDATE`;
         // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 답변도 지울 수 있어야 한다.
         const own = await tx.answer.findFirst({
@@ -162,6 +166,7 @@ export class AnswersService {
       throw new ApiError(403, 'FORBIDDEN', '요청자만 다른 사용자의 답변에 도움됨을 표시할 수 있습니다.');
     const row = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await this.lockVisibleAnswer(req, tx, a);
         const changed = await (tx ?? this.db).answer.updateMany({
           where: { id, helpful: !input.helpful },

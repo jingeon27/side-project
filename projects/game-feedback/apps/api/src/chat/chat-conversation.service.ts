@@ -5,11 +5,14 @@ import { type Conversation } from '@game-feedback/contracts';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/user-write';
 import { ApiError } from '../common/http/api-error';
 import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor, nextPageAnchor } from '../common/pagination';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { UnitOfWork } from '../database/unit-of-work';
 import { Prisma, PrismaClient } from '../generated/prisma';
+import { lockUserRelationship } from '../users/relationship-lock';
 import { authorDto } from '../users/user.presenter';
 import { ChatAccessService } from './chat-access.service';
 import { type TCreateConversationDto } from './chat-input.dto';
@@ -28,6 +31,7 @@ import { conversationPair } from './conversation-pair';
 export class ChatConversationService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(ChatEvents) private readonly events: ChatEvents,
     @Inject(ChatAccessService) private readonly access: ChatAccessService,
@@ -112,33 +116,40 @@ export class ChatConversationService {
     const { firstUserId, secondUserId } = conversationPair(user.id, recipientId);
     const mine = firstUserId === user.id ? 'firstHidden' : 'secondHidden';
     const peerSide = mine === 'firstHidden' ? 'secondHidden' : 'firstHidden';
-    let row: ConversationRow;
-    try {
-      // 메시지 없이 연 대화는 상대 목록에 보이지 않는다. 첫 메시지 전송이 양쪽 숨김을 푼다.
-      row = await this.db.chatConversation.upsert({
+    const row = await this.transactions.run(async (tx) => {
+      await lockUserRelationship(tx, user.id, recipientId);
+      const current = await lockActiveUser({ client: tx, userId: user.id });
+      if (current.bannedAt)
+        throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
+      const recipient = await tx.user.findUnique({ where: { id: recipientId } });
+      if (
+        !recipient ||
+        recipient.withdrawnAt ||
+        recipient.bannedAt ||
+        (await this.access.blocked(user.id, recipientId, tx))
+      )
+        throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
+      // 두 사용자 잠금이 같은 쌍의 생성과 탈퇴를 함께 직렬화한다.
+      const conversation = await tx.chatConversation.upsert({
         where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
         update: {},
         create: { firstUserId, secondUserId, [peerSide]: true },
         include: conversationInclude,
       });
-    } catch (error) {
-      // Prisma may emulate upsert with relation reads; the pair's unique key settles concurrent starts.
-      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
-      row = await this.db.chatConversation.findUniqueOrThrow({
-        where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
-        include: conversationInclude,
-      });
-    }
-    // 상대가 먼저 연 빈 대화를 나도 열면 내 목록에도 보이게 한다. 지운 기록 때문에 숨긴 대화는 그대로 둔다.
-    if (
-      row[mine] &&
-      !(await this.db.chatMessage.findFirst({ where: { conversationId: row.id }, select: { id: true } }))
-    )
-      row = await this.db.chatConversation.update({
-        where: { id: row.id },
-        data: { [mine]: false },
-        include: conversationInclude,
-      });
+      if (
+        conversation[mine] &&
+        !(await tx.chatMessage.findFirst({
+          where: { conversationId: conversation.id },
+          select: { id: true },
+        }))
+      )
+        return tx.chatConversation.update({
+          where: { id: conversation.id },
+          data: { [mine]: false },
+          include: conversationInclude,
+        });
+      return conversation;
+    });
     // Recheck after a concurrent block or deletion before returning private metadata.
     await this.access.visible(user.id, row.id);
     void this.events.publish([user.id, recipientId], row.id);

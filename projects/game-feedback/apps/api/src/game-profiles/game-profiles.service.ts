@@ -4,6 +4,7 @@ import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
 import { requireProfileLookupSession, requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/user-write';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
@@ -49,8 +50,7 @@ export class GameProfilesService {
       profile = await this.lookup(input.playerTag);
     await this.cache.change(
       async (tx) => {
-        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
-        const current = await (tx ?? this.db).user.findUniqueOrThrow({ where: { id: u.id } });
+        const current = await lockActiveUser({ client: tx, userId: u.id });
         await (tx ?? this.db).gameAccount.upsert({
           where: { userId_playerTag: { userId: u.id, playerTag: input.playerTag } },
           update: { profile: profile as unknown as Prisma.InputJsonValue },
