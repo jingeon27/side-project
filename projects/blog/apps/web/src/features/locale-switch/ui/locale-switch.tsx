@@ -31,33 +31,36 @@ export function LocaleSwitch({
   const [notice, setNotice] = useState(false);
   const next = locale === 'ko' ? 'en' : 'ko';
   const t = labels(locale);
-  function changeLocale() {
-    const parts = pathname.split('/').filter(Boolean);
-    if (parts[1] === 'blog' && parts.length === 3) {
-      const slug = decodeSegment(parts[2] ?? '');
-      const translated = translations[slug]?.[next];
-      if (!translated) {
-        setNotice(true);
-        return;
-      }
-      trackEvent('language_changed', { from_locale: locale, to_locale: next });
-      router.push(`/${next}/blog/${translated}`);
-      return;
-    }
-    if (parts[1] === 'blog' && parts[2] === 'tag' && !targetTags.includes(decodeSegment(parts[3] ?? ''))) {
-      trackEvent('language_changed', { from_locale: locale, to_locale: next });
-      router.push(`/${next}/blog`);
-      return;
-    }
-    trackEvent('language_changed', { from_locale: locale, to_locale: next });
-    router.push(pathname.replace(/^\/(ko|en)(?=\/|$)/, `/${next}`));
-  }
   return (
     <div className="locale-switch">
       <button
         type="button"
         className="locale-button"
-        onClick={changeLocale}
+        onClick={() => {
+          const parts = pathname.split('/').filter(Boolean);
+          if (parts[1] === 'blog' && parts.length === 3) {
+            const slug = decodeSegment(parts[2] ?? '');
+            const translated = translations[slug]?.[next];
+            if (!translated) {
+              setNotice(true);
+              return;
+            }
+            trackEvent('language_changed', { from_locale: locale, to_locale: next });
+            router.push(`/${next}/blog/${translated}`);
+            return;
+          }
+          if (
+            parts[1] === 'blog' &&
+            parts[2] === 'tag' &&
+            !targetTags.includes(decodeSegment(parts[3] ?? ''))
+          ) {
+            trackEvent('language_changed', { from_locale: locale, to_locale: next });
+            router.push(`/${next}/blog`);
+            return;
+          }
+          trackEvent('language_changed', { from_locale: locale, to_locale: next });
+          router.push(pathname.replace(/^\/(ko|en)(?=\/|$)/, `/${next}`));
+        }}
         aria-label={`${t.nav.language}: ${next.toUpperCase()} (${next === 'ko' ? '한국어' : 'English'})`}
         aria-expanded={notice}
       >

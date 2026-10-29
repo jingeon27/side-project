@@ -15,7 +15,7 @@ beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', 'G-TEST123');
   localStorage.clear();
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(vi.unstubAllEnvs);
 
 describe('privacy page opt-out control', () => {
   it('renders nothing when the build has no analytics IDs', async () => {

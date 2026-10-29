@@ -16,7 +16,7 @@ beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
 });
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(vi.unstubAllEnvs);
 
 describe.each(runtimes)('Sentry %s configuration', (_runtime, load) => {
   it('does not initialize without a DSN', async () => {

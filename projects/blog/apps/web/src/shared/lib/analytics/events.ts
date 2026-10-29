@@ -58,7 +58,7 @@ export function setAnalyticsOptOut(optedOut: boolean): void {
   if (typeof window === 'undefined') return;
   try {
     if (optedOut) window.localStorage.setItem(consentKey, 'denied');
-    else window.localStorage.removeItem(consentKey);
+    if (!optedOut) window.localStorage.removeItem(consentKey);
   } catch {
     /* Storage can be blocked. */
   }

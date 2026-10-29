@@ -1,14 +1,26 @@
+import { useSyncExternalStore } from 'react';
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Article } from '@/entities/article/model/types';
+import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
+  useSearchParams: () =>
+    new URLSearchParams(
+      useSyncExternalStore(
+        (callback) => {
+          window.addEventListener('popstate', callback);
+          return () => window.removeEventListener('popstate', callback);
+        },
+        () => window.location.search,
+      ),
+    ),
   usePathname: () => navigation.pathname,
   useRouter: () => ({ push: navigation.push }),
 }));
@@ -54,6 +66,14 @@ const nestedTag: Article = {
 };
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/ko/blog');
+  for (const method of ['replaceState', 'pushState'] as const) {
+    const original = window.history[method].bind(window.history);
+    vi.spyOn(window.history, method).mockImplementation((...args) => {
+      original(...args);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+  }
   localStorage.clear();
   document.documentElement.dataset.theme = 'light';
   document.documentElement.style.removeProperty('color-scheme');
@@ -61,6 +81,31 @@ beforeEach(() => {
 });
 
 describe('article discovery', () => {
+  it('reads URL filters and treats an unknown category as all', () => {
+    window.history.replaceState(null, '', '?q=react&category=unknown');
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    expect(screen.getByRole('combobox')).toHaveValue('react');
+    expect(screen.getByRole('link', { name: other.title })).toBeVisible();
+    expect(screen.queryByRole('link', { name: article.title })).not.toBeInTheDocument();
+  });
+
+  it('preserves unrelated params and hash when updating and clearing URL filters', async () => {
+    window.history.replaceState(null, '', '?ref=mail&ref=sidebar#archive');
+    const user = userEvent.setup();
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    await user.type(screen.getByRole('combobox'), 'react');
+    expect(new URLSearchParams(window.location.search).get('q')).toBe('react');
+    await user.keyboard('{Escape}');
+    await user.click(
+      within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /TIL/ }),
+    );
+    expect(new URLSearchParams(window.location.search).get('category')).toBe('til');
+    await user.click(screen.getAllByRole('button', { name: /필터 초기화/ })[0]!);
+    expect(window.location.search).toBe('?ref=mail&ref=sidebar');
+    expect(window.location.hash).toBe('#archive');
+    expect(screen.getByRole('combobox')).toHaveValue('');
+  });
+
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',
@@ -76,23 +121,24 @@ describe('article discovery', () => {
     });
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(vi.unstubAllGlobals);
 
   it('combines unified search with category filters and resets an empty result', async () => {
     const user = userEvent.setup();
     render(<BlogFeed locale="ko" articles={[article, other]} />);
     const search = screen.getByRole('combobox', { name: labels('ko').common.search });
     await user.type(search, '캐시');
+    await user.keyboard('{Escape}');
     expect(screen.getByRole('link', { name: article.title })).toBeVisible();
     expect(screen.queryByRole('link', { name: other.title })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
     await user.click(
       within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /TIL/ }),
     );
     expect(screen.getByRole('heading', { name: labels('ko').common.noResults })).toBeVisible();
     await user.click(screen.getAllByRole('button', { name: /필터 초기화/ })[0]!);
     expect(screen.getByRole('link', { name: other.title })).toBeVisible();
+    await user.keyboard('{Escape}');
     await user.click(
       within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /TIL/ }),
     );
@@ -106,10 +152,12 @@ describe('article discovery', () => {
     const search = screen.getByRole('combobox', { name: labels('ko').common.search });
     expect(screen.queryByRole('combobox', { name: '태그' })).not.toBeInTheDocument();
     await user.type(search, 'REACT');
+    await user.keyboard('{Escape}');
     for (const match of [other, tagOnly, nestedTag]) {
       expect(screen.getByRole('link', { name: match.title })).toBeVisible();
     }
     expect(screen.queryByRole('link', { name: article.title })).not.toBeInTheDocument();
+    await user.click(search);
     await user.click(screen.getByRole('option', { name: '#react' }));
     expect(search).toHaveValue('#react');
     expect(search).toHaveAttribute('aria-expanded', 'false');
@@ -136,10 +184,11 @@ describe('article discovery', () => {
     const listbox = screen.getByRole('listbox');
     expect(listbox).toBeVisible();
     expect(search).toHaveAttribute('aria-controls', listbox.id);
+    await user.keyboard('{ArrowDown}');
     await waitFor(() =>
       expect(search).toHaveAttribute(
         'aria-activedescendant',
-        screen.getByRole('option', { selected: true }).id,
+        screen.getAllByRole('option').find((option) => option.hasAttribute('data-highlighted'))!.id,
       ),
     );
     // Empty input offers article shortcuts, without dumping all tags into the menu.
@@ -156,9 +205,10 @@ describe('article discovery', () => {
     const search = screen.getByRole('combobox', { name: labels('ko').common.search });
     await user.click(search);
     const options = screen.getAllByRole('option');
-    await waitFor(() => expect(options[0]).toHaveAttribute('aria-selected', 'true'));
     await user.keyboard('{ArrowDown}');
-    expect(options[1]).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(options[0]).toHaveAttribute('data-highlighted'));
+    await user.keyboard('{ArrowDown}');
+    expect(options[1]).toHaveAttribute('data-highlighted');
     expect(search).toHaveAttribute('aria-activedescendant', options[1]!.id);
     await user.keyboard('{Enter}');
     expect(navigation.push).toHaveBeenCalledWith(`/ko/blog/${encodeURIComponent(other.slug)}`);
@@ -173,16 +223,27 @@ describe('article discovery', () => {
     expect(navigation.push).toHaveBeenCalledWith(`/ko/blog/${encodeURIComponent(tagOnly.slug)}`);
   });
 
-  it('closes the suggestions when focus moves to another control', async () => {
+  it('closes suggestions on an outside pointer click', async () => {
     const user = userEvent.setup();
     render(<BlogFeed locale="ko" articles={[article, other]} />);
-    const search = screen.getByRole('combobox', { name: labels('ko').common.search });
+    const tilButton = within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', {
+      name: /TIL/,
+    });
+    const search = screen.getByRole('combobox');
     await user.click(search);
     expect(screen.getByRole('listbox')).toBeVisible();
-    await user.click(
-      within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /TIL/ }),
-    );
-    expect(search).toHaveAttribute('aria-expanded', 'false');
+    await user.click(tilButton);
+    await waitFor(() => expect(search).toHaveAttribute('aria-expanded', 'false'));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('closes suggestions when Tab moves focus out of search', async () => {
+    const user = userEvent.setup();
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    const search = screen.getByRole('combobox');
+    await user.click(search);
+    await user.tab();
+    await waitFor(() => expect(search).toHaveAttribute('aria-expanded', 'false'));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
@@ -198,6 +259,7 @@ describe('article discovery', () => {
     await user.keyboard('{Enter}');
     expect(search).toHaveValue('');
     expect(search).toHaveFocus();
+    await user.keyboard('{Escape}');
     expect(screen.getByRole('link', { name: article.title })).toBeVisible();
     expect(navigation.push).not.toHaveBeenCalled();
   });
@@ -209,13 +271,28 @@ describe('article discovery', () => {
       render(<BlogFeed locale="ko" articles={[tagOnly]} />);
       const search = screen.getByRole('combobox', { name: labels('ko').common.search });
       await user.type(search, '상태');
-      await waitFor(() => expect(screen.getByRole('option')).toHaveAttribute('aria-selected', 'true'));
+      await waitFor(() => expect(screen.getByRole('option')).toHaveAttribute('data-highlighted'));
       fireEvent.keyDown(search, { key: 'Enter', code: 'Enter', ...composition });
       expect(navigation.push).not.toHaveBeenCalled();
       expect(search).toHaveValue('상태');
       expect(search).toHaveAttribute('aria-expanded', 'true');
     },
   );
+
+  it('deduplicates tag suggestions using the same normalization as search', async () => {
+    const user = userEvent.setup();
+    render(
+      <BlogFeed
+        locale="ko"
+        articles={[
+          { ...article, tags: ['React'] },
+          { ...other, tags: ['react'] },
+        ]}
+      />,
+    );
+    await user.type(screen.getByRole('combobox'), 'react');
+    expect(screen.getAllByRole('option', { name: /^#react$/i })).toHaveLength(1);
+  });
 
   it('only suggests matching tags after typing and bounds the menu size', async () => {
     const user = userEvent.setup();

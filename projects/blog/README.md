@@ -45,7 +45,7 @@ Playwright는 빌드한 서버를 별도 포트 `3101`에서 실행합니다. �
 
 MDX에는 `Summary`, `Decision`, `Callout`, `Figure`, `CodeBlock`을 사용할 수 있습니다. 그 밖의 JSX, `import`·`export`, `{}` 식과 spread prop은 콘텐츠 검증에서 실패합니다. prop의 식은 `width={640}` 같은 숫자만 허용하며 JSX `src`도 Markdown 이미지처럼 `/images/` 파일 존재나 https 주소를 검사합니다. Markdown 코드 블록은 Shiki로 강조됩니다. `##`·`###` 제목으로 목차를 생성하며 heading과 목차에는 같은 anchor 규칙을 적용합니다.
 
-목록 썸네일은 `meta.json`의 `coverImage`를 우선 사용합니다. 별도 커버가 없으면 `apps/web/src/entities/article/lib/article-thumbnails.ts`에서 지정한 본문 그림이나 주제 도해를, 매핑도 없으면 중립 기본 이미지(`thumbnails/default.svg`)를 표시합니다. 새 글에 맞는 이미지를 지정하려면 `coverImage` 또는 이 매핑을 추가합니다. 도해 파일은 `apps/web/public/images/thumbnails/`에 둡니다.
+목록 썸네일은 `meta.json`의 `coverImage`를 우선 사용합니다. 별도 커버가 없으면 `apps/web/src/shared/article/lib/article-thumbnails.ts`에서 지정한 본문 그림이나 주제 도해를, 매핑도 없으면 중립 기본 이미지(`thumbnails/default.svg`)를 표시합니다. 새 글에 맞는 이미지를 지정하려면 `coverImage` 또는 이 매핑을 추가합니다. 도해 파일은 `apps/web/public/images/thumbnails/`에 둡니다.
 
 Slug는 제목을 고쳐도 유지합니다. 공개 URL을 변경해야 하면 `apps/web/content/redirects.json`에 `{ "locale": "ko", "from": "old-slug", "to": "new-slug" }`을 추가합니다. 기존 URL에서 새 URL로 301을 반환하며 대상 글이 실제로 존재하는지 생성 단계에서 검사합니다. 공개했던 글 주소가 redirect 없이 사라지면 `content:generate`(커밋된 HEAD와 비교)와 `content:validate`(대상 브랜치와의 merge base와 비교, `CONTENT_BASE_REF` → `origin/$GITHUB_BASE_REF` → `origin/develop` 순)가 실패합니다. shallow clone처럼 기준 브랜치가 없으면 HEAD와 비교합니다.
 

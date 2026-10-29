@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import type { Article } from '../model/types';
+import type { Article } from '@/shared/article/model/types';
 
 export function ArticleTags({ article }: { article: Article }) {
   return (
