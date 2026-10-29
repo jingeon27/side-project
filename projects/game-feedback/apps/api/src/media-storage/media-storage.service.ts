@@ -92,7 +92,14 @@ export class MediaStorage implements OnModuleDestroy {
       etag = metadata.ETag;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+      const name = error instanceof Error ? error.name : undefined;
+      const status = this.storageStatus(error);
+      if (
+        name !== 'NoSuchBucket' &&
+        (status === 404 || (status === undefined && (name === 'NotFound' || name === 'NoSuchKey')))
+      )
+        throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+      throw this.storageError(error, '파일 업로드 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
     const validated = validateMediaHeader({
       name: file.name,
@@ -138,16 +145,23 @@ export class MediaStorage implements OnModuleDestroy {
     }
   }
 
+  private storageStatus(error: unknown) {
+    if (typeof error !== 'object' || error === null || !('$metadata' in error)) return undefined;
+    const metadata = error.$metadata;
+    if (typeof metadata !== 'object' || metadata === null || !('httpStatusCode' in metadata))
+      return undefined;
+    return typeof metadata.httpStatusCode === 'number' ? metadata.httpStatusCode : undefined;
+  }
+
   /** 검증과 복사 사이에 임시 객체가 바뀌면(412) 다시 올리게 하고, 그 밖의 실패는 저장소 장애로 본다. */
   private storageError(error: unknown, message: string) {
     if (error instanceof ApiError) return error;
-    const status =
-      typeof error === 'object' && error !== null && '$metadata' in error
-        ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
-        : undefined;
+    const status = this.storageStatus(error);
     if (status === 412)
-      return new ApiError(409, 'UPLOAD_CHANGED', '업로드한 파일이 바뀌었습니다. 파일을 다시 선택해주세요.');
-    return new ApiError(503, 'STORAGE_UNAVAILABLE', message);
+      return new ApiError(409, 'UPLOAD_CHANGED', '업로드한 파일이 바뀌었습니다. 파일을 다시 선택해주세요.', {
+        cause: error,
+      });
+    return new ApiError(503, 'STORAGE_UNAVAILABLE', message, { cause: error });
   }
 
   async presignRead(file: IMediaReference, mimeType: string, disposition: string) {
