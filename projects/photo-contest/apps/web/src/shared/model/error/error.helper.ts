@@ -34,12 +34,12 @@ const NETWORK_FAILURE = /failed to fetch|load failed|networkerror/i;
 
 /** `/backend/*` REST 호출이 실패했을 때. message는 서버가 보낸 한국어 안내문이다. */
 export class RequestError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
     this.name = 'RequestError';
-    this.status = status;
   }
 }
 
