@@ -3,6 +3,7 @@ import { print } from 'graphql';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
+  createLegacyTestContest,
   createTestImage,
   createTestUser,
   createTestVideo,
@@ -128,15 +129,21 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
     inviteToken = token;
     await ok(JoinGroupDocument, member, { token: inviteToken });
+    contestId = (
+      await createLegacyTestContest(url, { cookie: owner, groupId, title: '문서 계약 대회', origin })
+    ).id;
+  });
+
+  it('구대회 생성 문서는 종료 응답을 받는다', async () => {
     const now = Date.now();
-    const contest = await ok(CreateContestDocument, owner, {
+    const result = await execute(CreateContestDocument, owner, {
       groupId,
-      title: '문서 계약 대회',
+      title: '종료된 생성',
       startsAt: new Date(now).toISOString(),
       submissionEndsAt: new Date(now + 3_600_000).toISOString(),
       endsAt: new Date(now + 7_200_000).toISOString(),
     });
-    contestId = contest.createContest.id;
+    expect(result.errors?.[0]).toMatchObject({ extensions: { code: 'FORBIDDEN' } });
   });
 
   it('그룹 사진 presigned POST와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
