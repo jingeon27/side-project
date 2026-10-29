@@ -19,7 +19,7 @@ export function SupportThreadCard({ thread, status: filter }: ISupportThreadCard
     .with('VERIFICATION', () => '프로필 인증 문의')
     .with('GENERAL', () => '관리자 문의')
     .exhaustive();
-  function handleToggleStatus() {
+  const handleToggleStatus = () => {
     status.mutate({
       id: thread.id,
       status: match(thread.status)
@@ -27,7 +27,7 @@ export function SupportThreadCard({ thread, status: filter }: ISupportThreadCard
         .with('CLOSED', () => 'OPEN' as const)
         .exhaustive(),
     });
-  }
+  };
   return (
     <article className="admin-card form-stack" data-thread-id={thread.id}>
       <h2>{thread.requester.nickname}</h2>
