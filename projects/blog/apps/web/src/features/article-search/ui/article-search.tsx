@@ -43,7 +43,7 @@ export function ArticleSearch({
         .slice(0, 5)
     : [];
 
-  const shortcut = useEffectEvent((event: KeyboardEvent) => {
+  const handleShortcut = useEffectEvent((event: KeyboardEvent) => {
     if (
       !event.isComposing &&
       !event.altKey &&
@@ -57,8 +57,8 @@ export function ArticleSearch({
   });
 
   useEffect(() => {
-    document.addEventListener('keydown', shortcut);
-    return () => document.removeEventListener('keydown', shortcut);
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
   }, []);
 
   return (

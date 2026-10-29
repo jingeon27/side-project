@@ -84,7 +84,7 @@ function BlogFeedContent({
     return () => clearTimeout(timer);
   }, [query]);
   const isFiltered = Boolean(query || (category !== 'all' && !fixedCategory));
-  const resetFilters = () => {
+  const handleResetFilters = () => {
     updateFilters({ q: '', category: 'all' }, true);
   };
   return (
@@ -113,7 +113,7 @@ function BlogFeedContent({
           <strong>{filtered.length}</strong> {t.blog.results}
         </p>
         {isFiltered && (
-          <button type="button" className="text-button reset-filters" onClick={resetFilters}>
+          <button type="button" className="text-button reset-filters" onClick={handleResetFilters}>
             {t.common.clearFilters}
           </button>
         )}
@@ -130,7 +130,7 @@ function BlogFeedContent({
           <div className="empty-state">
             <h2>{t.common.noResults}</h2>
             <p>{t.common.noResultsDescription}</p>
-            <button type="button" className="text-link" onClick={resetFilters}>
+            <button type="button" className="text-link" onClick={handleResetFilters}>
               {t.common.clearFilters}
             </button>
           </div>

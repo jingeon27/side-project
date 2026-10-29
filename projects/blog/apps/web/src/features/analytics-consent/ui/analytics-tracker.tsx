@@ -12,8 +12,8 @@ import {
 
 export function AnalyticsTracker() {
   const pathname = usePathname();
-  const track = useEffectEvent(() => trackPageView(pathname));
-  const syncConsent = useEffectEvent((event: StorageEvent) => {
+  const handleConsentChange = useEffectEvent(() => trackPageView(pathname));
+  const handleStorage = useEffectEvent((event: StorageEvent) => {
     if (event.key !== consentKey && event.key !== null) return;
     applyAnalyticsConsent();
     trackPageView(pathname);
@@ -24,11 +24,11 @@ export function AnalyticsTracker() {
   }, [pathname]);
 
   useEffect(() => {
-    window.addEventListener(consentChangedEvent, track);
-    window.addEventListener('storage', syncConsent);
+    window.addEventListener(consentChangedEvent, handleConsentChange);
+    window.addEventListener('storage', handleStorage);
     return () => {
-      window.removeEventListener(consentChangedEvent, track);
-      window.removeEventListener('storage', syncConsent);
+      window.removeEventListener(consentChangedEvent, handleConsentChange);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
   return null;
