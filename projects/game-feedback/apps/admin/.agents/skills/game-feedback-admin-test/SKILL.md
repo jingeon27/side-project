@@ -52,3 +52,8 @@ yarn workspace @side/game-feedback db:test:stop   # 필요할 때만. 이 프로
 
 - 실패한 테스트의 trace는 `test-results/`(Git 제외)에 남는다.
 - 운영 토큰 환경변수와 테스트 로그인 버튼은 사용하지 않는다.
+
+
+## DB 없는 브라우저 UI 회귀
+
+`yarn workspace @game-feedback/admin exec playwright test --config playwright.ui.config.ts`는 전용 Vite 3305에서 `e2e/ui/*.test.ts`를 실제 Chromium으로 실행한다. SDK·Query·폼·경계를 그대로 사용하고 `/api/` 경로의 응답만 Playwright route로 대체한다. 소스 파일의 api 디렉터리까지 가로채는 glob을 쓰지 않는다. 알 수 없는 API 요청은 abort하며 운영 터널·DB를 호출하지 않는다. `reuseExistingServer: false`로 다른 서버를 재사용하지 않는다. 이 레인은 실제 API/DB E2E를 대체하지 않는다.

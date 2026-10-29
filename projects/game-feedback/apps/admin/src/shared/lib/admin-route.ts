@@ -30,13 +30,12 @@ const subscribe = (listener: () => void) => {
   return () => window.removeEventListener('hashchange', listener);
 };
 export function useAdminRoute() {
-  return parseAdminRoute(
-    useSyncExternalStore(
-      subscribe,
-      () => window.location.hash,
-      () => '',
-    ),
+  const hash = useSyncExternalStore(
+    subscribe,
+    () => window.location.hash,
+    () => '',
   );
+  return { ...parseAdminRoute(hash), hash };
 }
 export function adminUserPath(id: string) {
   return `#users?user=${encodeURIComponent(idSchema.parse(id))}`;
@@ -48,7 +47,11 @@ export function adminSupportPath(id: string, status: TSupportStatusFilter = 'ALL
   const filter = supportStatusSchema.parse(status);
   return `#support?thread=${encodeURIComponent(idSchema.parse(id))}${filter === 'ALL' ? '' : `&status=${filter}`}`;
 }
-export function adminSupportListPath(status: TSupportStatusFilter) {
+export function adminSupportListPath(status: TSupportStatusFilter, currentHash = '#support') {
   const filter = supportStatusSchema.parse(status);
-  return filter === 'ALL' ? '#support' : `#support?status=${filter}`;
+  const params = new URLSearchParams(currentHash.split('?').slice(1).join('?'));
+  params.delete('status');
+  if (filter !== 'ALL') params.set('status', filter);
+  const search = params.toString();
+  return `#support${search ? `?${search}` : ''}`;
 }
