@@ -26,7 +26,11 @@ export class ChatAttachmentService {
     stored: { bytes: null; objectId: string },
   ) {
     return this.transactions.run(async (tx) => {
-      await lockActiveUser({ client: tx, userId: userId });
+      const support = await tx.supportConversation.findUnique({
+        where: { conversationId },
+        select: { id: true },
+      });
+      await lockActiveUser({ client: tx, userId, allowBanned: !!support });
       await (tx ?? this.db).chatAttachment.deleteMany({
         where: { uploaderId: userId, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
       });
