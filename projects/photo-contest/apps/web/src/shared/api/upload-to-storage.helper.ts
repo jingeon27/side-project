@@ -29,10 +29,10 @@ export async function uploadToStorage(
   body.append('file', file);
   // AbortSignal.any·timeout은 구형 WebView에 없어 직접 잇는다.
   const controller = new AbortController();
-  const cancel = () => controller.abort();
-  const timer = setTimeout(cancel, getUploadTimeoutMs(ticket.expiresAt));
-  signal?.addEventListener('abort', cancel);
-  if (signal?.aborted) cancel();
+  const handleAbort = () => controller.abort();
+  const timer = setTimeout(handleAbort, getUploadTimeoutMs(ticket.expiresAt));
+  signal?.addEventListener('abort', handleAbort);
+  if (signal?.aborted) handleAbort();
   try {
     const response = await fetch(ticket.url, {
       method: 'POST',
@@ -50,7 +50,7 @@ export async function uploadToStorage(
     throw new StorageUploadError('파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.');
   } finally {
     clearTimeout(timer);
-    signal?.removeEventListener('abort', cancel);
+    signal?.removeEventListener('abort', handleAbort);
   }
 }
 

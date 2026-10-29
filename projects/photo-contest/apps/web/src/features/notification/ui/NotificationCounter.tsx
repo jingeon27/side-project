@@ -29,13 +29,13 @@ function NotificationCountSync() {
     errorPolicy: 'all',
     notifyOnNetworkStatusChange: false,
   });
-  const refresh = useEffectEvent(() => {
+  const handleVisibilityChange = useEffectEvent(() => {
     if (isHidden()) return;
     void refetch().catch(() => undefined);
   });
   useEffect(() => {
-    document.addEventListener('visibilitychange', refresh);
-    return () => document.removeEventListener('visibilitychange', refresh);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
   return null;
 }
