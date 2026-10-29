@@ -20,9 +20,9 @@ AI 에이전트에게 최대한 자율성을 주면 어느 정도의 결과물�
 
 그룹에 친구를 초대하고 사진을 올린 뒤 투표하는 형태로 시작했어요. 제출 기간과 투표 기간을 나누고 공동 우승이나 득표가 없는 경우도 처리했어요.
 
-![Game Mate 피드와 회원가입, 사진 커뮤니티의 그룹 탐색 화면](/images/posts/side-project-design/01-service-screens.png)
+![Game Mate 피드와 별사대의 그룹 탐색 화면](/images/posts/side-project-design/01-service-screens-revised.jpg)
 
-_개발 중인 화면이에요. 표시된 내용은 테스트 데이터예요._
+_테스트 계정으로 실행한 Game Mate 피드와 별사대의 그룹 탐색 화면이에요._
 
 ## 사진을 보러 왔는데 그룹 목록부터 나왔어요
 
@@ -153,9 +153,9 @@ Game Mate에서는 원댓글을 지워도 다른 사람의 답글은 남기도�
 
 프로필을 수정하다 그만두는 동작도 같은 화면에서 찾을 수 있어야 했어요. 모바일에서 올라오는 창에는 X 대신 취소와 저장을 나란히 두었어요. 본문은 스크롤하되 마지막 입력칸과 버튼은 작은 화면에서도 닿도록 했어요.
 
-![사진 커뮤니티의 그룹 게시물과 Game Mate의 프로필 수정 화면](/images/posts/side-project-design/09-product-interactions.png)
+![Game Mate의 게임 계정이 보이는 공개 프로필과 별도 프로필 수정 페이지](/images/posts/side-project-design/09-profile-pages.jpg)
 
-_그룹 게시물과 프로필 수정 화면이에요. 여기도 테스트 데이터를 넣어 확인했어요._
+_공개 프로필에는 연결한 게임 계정이 보이고, 수정은 별도 페이지에서 해요. 테스트 계정과 가짜 게임 API 응답으로 확인한 화면이에요._
 
 버튼과 입력, 모달은 두 서비스가 함께 쓰는 [디자인 시스템](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system)으로 만들었어요. 사진 서비스에서는 사진을 크게 보는 게 중요했고, Game Mate에서는 게임 종류와 작성자의 상황이 잘 읽혀야 했어요. 공통 UI를 쓰면서도 각 화면의 배치와 여백은 따로 고쳤어요.
 

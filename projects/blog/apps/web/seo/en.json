@@ -24,7 +24,7 @@
   },
   "posts": {
     "side-project-design": {
-      "title": "How my side project plans and screens changed",
+      "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
       "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
       "keywords": [

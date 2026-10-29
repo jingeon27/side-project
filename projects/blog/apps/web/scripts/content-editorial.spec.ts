@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../../../docs/migration-manifest.json';
+import imageReplacements from '../content/image-replacements.json';
 import enSeo from '../seo/en.json';
 import koSeo from '../seo/ko.json';
 
@@ -49,7 +50,11 @@ describe('edited article contracts', () => {
       const source = await readFile(path.join(contentRoot, 'side-project-design', `${locale}.mdx`), 'utf8');
 
       for (const image of ['01-service-screens', '09-product-interactions']) {
-        expect(source).toContain(`/images/posts/side-project-design/${image}.png`);
+        const archived = `/images/posts/side-project-design/${image}.png`;
+        const replacement = Object.entries(imageReplacements).find(
+          ([original]) => original === archived,
+        )?.[1];
+        expect(source).toContain(replacement ?? archived);
       }
       const seo = locale === 'ko' ? koSeo : enSeo;
       expect(source).toContain(`](/${locale}/blog/${seo.posts['side-project-infrastructure'].slug})`);

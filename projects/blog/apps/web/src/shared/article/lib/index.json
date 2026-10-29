@@ -265,7 +265,7 @@
     "publishedAt": "2026-10-17",
     "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
-    "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
+    "title": "AI 에이전트에게 자율적으로 맡겨 보고, 결과물을 검토하며 고친 과정",
     "description": "기능과 아키텍처만 정해 주고 AI 에이전트에게 구현을 최대한 자율적으로 맡겨 봤어요. 나온 서비스를 직접 써 보고 코드를 읽으면서 화면 구성, 익명 기록, 그룹 권한과 채팅 재전송처럼 부족하거나 빠진 부분을 채워 나갔어요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
     "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템", "AI 에이전트"],
@@ -365,7 +365,7 @@
     "publishedAt": "2026-10-17",
     "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
-    "title": "How my side project plans and screens changed",
+    "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
     "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
     "keywords": [
