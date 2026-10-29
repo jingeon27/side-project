@@ -471,7 +471,13 @@ try {
             ...storage['photo-contest'],
           }),
     };
-    saveEnv(join(root, `services/${service}/.env`), environment);
+    // 운영 PC 입력의 접두사를 실제 Compose 경계에서 검증한다.
+    saveEnv(
+      join(root, `services/${service}/.env`),
+      service === 'photo-contest'
+        ? Object.fromEntries(Object.entries(environment).map(([key, value]) => [`PC_${key}`, value]))
+        : environment,
+    );
     refs[service] = [reference(service, 'api'), reference(service, 'web')];
   }
   writeFileSync(baseEnv.SIDE_SMOKE_IMAGE_MAP, JSON.stringify(images));
