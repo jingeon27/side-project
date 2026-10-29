@@ -32,7 +32,7 @@ export function createNativeDependencies(): ICapabilityDependencies {
     ...(supportsNativePush() ? { getPushRegistration, setPushBadge, openPushSettings } : {}),
     platform: Platform.OS === 'ios' ? 'ios' : 'android',
     share: (content, options) => Share.share(content, { ...options, tintColor: COLORS.brand }),
-    copyText: (text) => setStringAsync(text),
+    copyText: setStringAsync,
     impact: (style) => impactAsync(IMPACT_STYLE[style]),
     notify: (type) => notificationAsync(NOTIFICATION_TYPE[type]),
     openBrowser: (url) =>

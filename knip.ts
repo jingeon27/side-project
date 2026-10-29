@@ -1,5 +1,11 @@
 import { defineConfig } from 'knip/config';
 
+const appEntries = [
+  '*.config.{ts,mts,cts,js,mjs,cjs}',
+  '{scripts,e2e}/*.{ts,js,mjs,cjs}',
+  '**/*.{spec,test,e2e}.{ts,tsx}',
+];
+
 export default defineConfig({
   ignoreExportsUsedInFile: true,
   ignore: ['**/generated/**', '**/__fixtures__/**'],
@@ -16,13 +22,8 @@ export default defineConfig({
       ignoreDependencies: ['eslint-config-expo', 'eslint-plugin-jsx-a11y'],
     },
     'projects/photo-contest': { entry: ['scripts/*.ts'] },
-    'projects/*/apps/*': {
-      entry: [
-        '*.config.{ts,mts,cts,js,mjs,cjs}',
-        '{scripts,e2e}/*.{ts,js,mjs,cjs}',
-        '**/*.{spec,test,e2e}.{ts,tsx}',
-      ],
-    },
+    'projects/*/apps/*': { entry: appEntries },
+    'projects/photo-contest/apps/web': { entry: [...appEntries, 'test/browser/main.tsx'] },
     // k6의 내장 모듈은 npm 의존성이 아니다.
     'projects/*/apps/*/scripts': { entry: ['*.{ts,js}'], ignoreDependencies: ['k6'] },
     'projects/game-feedback/apps/mobile': {

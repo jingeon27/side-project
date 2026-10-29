@@ -12,6 +12,12 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 매직 넘버는 `config/limits.ts`, 환경변수는 `config/env.ts`의 getter로 호출할 때마다 읽는다(테스트가 실행 중에 바꾼다). 미디어 저장소는 항상 S3 설정(`S3_*`)을 쓴다.
 - 닫힌 집합 분기(Phase, 오류 코드→HTTP, provider)는 ts-pattern `exhaustive()`, 묶기·nil 검사는 es-toolkit. 직접 유틸을 만들지 않는다.
 
+## 비동기 흐름·콜백
+
+- Promise의 성공 값 투영과 오류 처리는 `async`/`await`·`try`/`catch`를 우선한다. 병렬 작업의 `Promise.all`과 오류 전달·추가 오류 보고 순서는 유지한다. 재할당을 피하려고 일회성 async IIFE나 가변 ref 객체를 만들지 않는다.
+- 인자를 그대로 전달하는 불필요한 콜백은 함수 참조로 줄인다. 단, 클래스 메서드는 `this`가 필요하므로 타이머·단계 실행 콜백에서 `() => this.method()`를 무작정 제거하지 않는다.
+- 스케줄러는 실행을 직렬로 대기하고 이전 실패 뒤에도 다음 실행을 이어 간다. 호출자의 실패 Promise와 종료 대기용 Promise를 구분하며, 완료 시 `this.running`이 자기 Promise일 때만 비운다. 종료 훅은 마지막 대기 작업까지 기다린다.
+
 ## 오류
 
 - `fail(message, ERROR_CODE)`로 GraphQLError를 던진다. HTTP 매핑: UNAUTHENTICATED 401, FORBIDDEN 403, NOT_FOUND 404, CONFLICT 409, RATE_LIMITED 429, UNAVAILABLE 503, 그 밖 400. REST 오류 본문은 `{ message }`.

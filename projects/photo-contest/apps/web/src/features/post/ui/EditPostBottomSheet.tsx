@@ -126,7 +126,7 @@ export function EditPostBottomSheet({
   return (
     <BottomSheet.Root {...controls} onClose={onClose}>
       <BottomSheet.Header title="게시물 수정" />
-      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
         <EditPostForm queryRef={queryRef} postId={postId} onClose={onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 
-/** 네이티브 이벤트 구독을 다시 만들지 않고도 최신 콜백을 부르기 위해 쓴다. */
+/** WebView prop·렌더 중 만든 채널처럼 Effect 밖에서도 호출되는 콜백에 최신 값을 전달한다. */
 export function useLatest<T>(value: T) {
   const ref = useRef(value);
   useLayoutEffect(() => {

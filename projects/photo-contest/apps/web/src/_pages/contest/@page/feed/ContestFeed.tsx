@@ -64,7 +64,6 @@ function FeedContent({
   const { contest } = context;
   const photos = data.submissions.filter((submission) => !submission.hidden);
   const hasMore = pagination.hasNextPage;
-  const handleLoadMore = () => pagination.fetchNextPage();
   const handleRefresh = () =>
     startTransition(async () => {
       try {
@@ -123,7 +122,7 @@ function FeedContent({
         <FeedLoadMore
           hasMore={hasMore}
           loading={pending || pagination.isFetchingNextPage}
-          onLoadMore={handleLoadMore}
+          onLoadMore={pagination.fetchNextPage}
         />
       </div>
     </div>
@@ -143,7 +142,7 @@ function FeedQuerySection({
     <AsyncBoundary
       resetKey={contestId + ':' + sort}
       fallback={<Skeleton className="aspect-square w-full" />}
-      onRetry={() => refetch()}
+      onRetry={refetch}
     >
       <FeedContent contestRef={contestRef} submissionsRef={submissionsRef} viewerId={viewerId} />
     </AsyncBoundary>

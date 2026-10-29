@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 
 import { Button } from '@/shared/ui/@core/button';
 
@@ -16,19 +16,15 @@ interface IFeedLoadMoreProps {
  */
 export function FeedLoadMore({ hasMore, loading, onLoadMore }: IFeedLoadMoreProps) {
   const sentinel = useRef<HTMLDivElement>(null);
-  const latest = useRef({ loading, onLoadMore });
-  useLayoutEffect(() => {
-    latest.current = { loading, onLoadMore };
+  const loadIfVisible = useEffectEvent((entries: IntersectionObserverEntry[]) => {
+    if (entries.some((entry) => entry.isIntersecting) && !loading) onLoadMore();
   });
 
   useEffect(() => {
     const target = sentinel.current;
     if (!hasMore || !target || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting) && !latest.current.loading)
-          latest.current.onLoadMore();
-      },
+      loadIfVisible,
       // 한 화면쯤 남았을 때 미리 불러온다.
       { rootMargin: '0px 0px 600px 0px' },
     );

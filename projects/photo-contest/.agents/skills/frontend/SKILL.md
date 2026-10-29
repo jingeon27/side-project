@@ -74,3 +74,25 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 메시지를 추가·변경할 때는 `bridge` 스킬을 따른다.
 
 그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 `useIsSSR`·`skipToken`으로 브라우저에서 받는다.
+
+## 사용자 피드백: primitive와 이벤트 수명
+
+- outside-click·포커스 이동/복귀·Escape·키보드 탐색·ARIA 연결은 기존 `@side/design-system`/Base UI primitive에 맡긴다. 앱은 overlay-kit·history·portal·업무 비동기 동작만 조합하고 직접 DOM 리스너로 같은 기능을 복제하지 않는다.
+- Effect가 설치하는 외부 이벤트/observer의 콜백에서 최신 props·상태만 읽어야 하면 `useEffectEvent`로 분리한다. Effect에는 구독 대상·활성 조건 등 실제 수명 의존성을 남기며, 의존성 검사를 피하려고 값을 감추지 않는다. 반환 함수를 JSX 핸들러·다른 훅·렌더 중 만든 채널에 넘기지 않는다.
+- 렌더에 쓰는 외부 상태는 `useSyncExternalStore`, 사용자 조작은 일반 핸들러, 값 변화에 동기화하는 Effect는 reactive dependency를 유지한다. PullToRefresh의 거리·복귀 애니메이션은 Motion에 맡긴다. 전체 피드에 `drag="y"`나 `touch-action: none/pan-x`를 적용해 기본 스크롤·핀치를 막지 않는다. passive:false·중첩 스크롤·핀치 취소를 위한 최소 터치 중재는 유지하고 실제 브라우저 터치 입력으로 스크롤을 확인한다.
+- `else`·`else if`는 새로 쓰지 않는다. 기존 공통 no-else lint와 가드/조기 반환·ts-pattern 기준을 유지한다.
+
+- `let`을 피하려고 `const state = { value: ... }`의 속성을 재할당하는 임시 가변 객체를 만들지 않는다. `useRef`로 기계적으로 옮기는 것도 피한다. 순수 계산·파생 값, state/reducer, 기존 외부 store·구독 API를 우선한다. 실제 이벤트 이력·취소·동시 실행처럼 React 렌더와 별도인 수명은 해당 자원을 소유하는 구독 객체나 AbortController·라이브러리 Mutex에 맡긴다. 단지 가변 변수를 숨기기 위한 class를 추가하지 않는다. `useRef`는 대안이 부적절하고 비렌더 값을 보존할 필요가 명확한 경우에만 쓴다.
+
+- 생성자 인자를 같은 이름의 필드에 그대로 저장하면 별도 필드 선언과 `this.x = x` 대신 TypeScript parameter property(`private readonly x: T`, `readonly code: T`)로 합친다. 기존 접근 범위·readonly·인자 순서를 보존하고 단순 초기값은 매개변수 기본값을 검토한다. 변환·검증·자원 생성까지 억지로 기본 인자로 옮겨 API를 늘리지 않는다. 기본 인자에서는 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않으며, 필드 초기화 순서와 상속 클래스의 `super()` 순서를 확인한다.
+
+- 추가 처리·인자 변환이 없는 콜백은 `() => fn()`·`(value) => fn(value)`로 감싸거나 별도 별칭을 만들지 않고 함수 참조를 직접 넘긴다. 단, DOM 이벤트가 refetch/mutate의 옵션으로 들어가는 경우, this 바인딩·인자 제한·지연 평가·반환형 조정이 필요한 경우는 래퍼를 유지한다. `useEffectEvent` 자체는 최신 값 연결이라는 역할이 있으므로 불필요한 래퍼와 구분한다.
+- 비동기 흐름은 `.then()` 체인보다 `async`/`await`와 필요한 `try/catch/finally`를 우선한다. 상위에서 처리할 오류는 그대로 전파하고 빈 catch를 기계적으로 추가하지 않는다. 병렬 실행·취소·정리·실행 순서와 기존 오류 처리 범위는 보존한다.
+
+## 화면·조회·입력 경계에 관한 사용자 피드백
+
+- 역할·모드별로 서로 다른 훅·조회·mutation이 실행되면 맥락별 로컬 컴포넌트로 나누고 부모는 선택한다. 같은 상태를 공유하며 모양만 다른 갈래, 로딩·오류·빈 상태를 억지로 분리하지 않는다.
+- 페이지는 섹션과 경계를 조립한다. 목록의 로딩·실패가 필터·탭·별도 상세를 가리지 않게 조회 구획별 `AsyncBoundary`를 두고, 조회 조건이 바뀌면 해당 경계만 초기화한다. Apollo의 `useBackgroundQuery` 부모·`QueryRef`·정규화 캐시·RSC `PreloadQuery` 계약은 유지하며 페이지의 조회를 일괄 금지하지 않는다.
+- URL 입력은 화면 경계에서 필드별 스키마·허용 목록으로 검증한다. 잘못된 필드 하나만 기본값으로 되돌리고, 갱신은 원본 URL에 소유한 키만 병합해 다른 필터·상세 키·중복 키·hash를 보존한다.
+- 사진 유지/삭제/교체처럼 의미 있는 DTO→폼 초기값·검증된 폼→요청 변환은 호출부 가까운 순수 helper로 검증한다. File·표시 URL을 JSON에 섞지 않고, 업로드·취소·mutation·캐시 갱신은 실행 흐름에 남긴다. 단순 일대일 복사를 전부 helper로 만들지 않는다.
+- 등록·수정처럼 요청과 초기값이 다른 맥락은 각자 폼을 소유하고 실제 공통 입력 primitive만 조합한다. 한 곳을 위한 범용 모드 prop·공통 훅·전역 추상화를 추가하지 않는다. 기존 RHF/Zod·Base UI를 유지한다.

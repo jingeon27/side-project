@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ExplorePageTemplate } from '@/_pages/explore';
+import { ExplorePageTemplate, exploreSearchSchema } from '@/_pages/explore';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import { DiscoverGroupsDocument, MeDocument } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
@@ -12,19 +12,18 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<{ q?: string | string[] }>;
 }): Promise<Metadata> {
-  const { q } = await searchParams;
+  const { q } = exploreSearchSchema.parse(await searchParams);
   return createPageMetadata({
     origin: getWebOrigin(),
     path: ROUTES.EXPLORE,
     title: '그룹 탐색',
     description: '공개 그룹의 게시물을 둘러보고, 마음에 드는 그룹에 가입하거나 직접 만들어 보세요.',
-    index: !(typeof q === 'string' && q.trim()),
+    index: !q,
   });
 }
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
-  const { q } = await searchParams;
-  const search = typeof q === 'string' ? q.trim().slice(0, 40) : '';
+  const { q: search } = exploreSearchSchema.parse(await searchParams);
   return (
     <PreloadQuery query={MeDocument}>
       <PreloadQuery query={DiscoverGroupsDocument} variables={{ search, offset: 0, limit: 24 }}>

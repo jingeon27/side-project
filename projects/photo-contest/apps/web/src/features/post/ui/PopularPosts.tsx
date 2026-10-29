@@ -44,7 +44,7 @@ export function PopularPosts({ groupId, preloaded = true }: { groupId?: string; 
         <Sparkles aria-hidden className="size-5 text-accent-ink" />
         이달의 인기
       </h2>
-      <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
+      <AsyncBoundary onRetry={refetch} fallback={fallback}>
         {postsRef ? <PopularPostList postsRef={postsRef} /> : fallback}
       </AsyncBoundary>
     </section>

@@ -63,7 +63,7 @@ function ContestSelection({
         ))}
       </select>
       {hasNextPage ? (
-        <Button size="sm" variant="ghost" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+        <Button size="sm" variant="ghost" loading={isFetchingNextPage} onClick={fetchNextPage}>
           대회 더 불러오기
         </Button>
       ) : null}
@@ -88,7 +88,7 @@ export function PostContestField({ form, groupId }: { form: TPostForm; groupId: 
   );
   if (!queryRef) return null;
   return (
-    <AsyncBoundary fallback={null} onRetry={() => refetch()}>
+    <AsyncBoundary fallback={null} onRetry={refetch}>
       <AvailableContests form={form} groupId={groupId} queryRef={queryRef} />
     </AsyncBoundary>
   );

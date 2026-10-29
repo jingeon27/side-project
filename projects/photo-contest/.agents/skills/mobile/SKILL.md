@@ -29,3 +29,17 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 - 네이티브 빌드·실기기 확인(키보드, 소셜 로그인 복귀, 파일 업로드, 공유 시트)은 테스트가 대신하지 못한다. 바꾼 뒤에는 실기기에서 직접 확인한다.
 
 메시지 계약을 바꿀 때는 `bridge` 스킬, 이벤트·오류 수집은 `monitoring` 스킬, 테스트 레인은 `testing` 스킬과 `apps/mobile/AGENTS.md`를 따른다.
+
+## 사용자 피드백: 라이브러리 우선과 구독 수명
+
+- 네이티브 동작은 설치된 React Native·Expo·WebView API에 우선 맡긴다. Base UI는 DOM primitive이므로 네이티브 제스처·Android BackHandler·WebView 메시지 전송을 대체하지 못한다. origin 검증·요청 짝짓기·800ms 뒤로 가기 정책은 앱/bridge가 소유한다.
+- Effect에서 설치한 AppState·Linking 구독의 최신 콜백은 `useEffectEvent`로 분리한다. 구독 대상·활성 조건은 dependency에 남기고 cleanup에서 리스너와 진행 중 작업의 후속 동작을 해제한다.
+- WebView prop·callback ref·렌더 중 만든 라우터/PushInbox는 Effect 밖에서도 호출된다. 여기에 Effect Event를 넘기지 않고 일반 콜백·필요한 최신 ref를 유지한다. 외부 상태 렌더는 `useSyncExternalStore`, 값 변화 동기화는 reactive Effect를 사용한다.
+- `else`·`else if`는 쓰지 않는다. 기존 공통 no-else lint와 가드·조기 반환 기준을 유지한다.
+
+- `let`을 피하려고 `const state = { value: ... }`의 속성을 재할당하는 임시 가변 객체를 만들지 않는다. `useRef`로 기계적으로 옮기는 것도 피한다. 순수 계산·파생 값, state/reducer, 기존 외부 store·구독 API를 우선한다. 실제 이벤트 이력·취소·동시 실행처럼 React 렌더와 별도인 수명은 해당 자원을 소유하는 구독 객체나 AbortController·라이브러리 Mutex에 맡긴다. 단지 가변 변수를 숨기기 위한 class를 추가하지 않는다. `useRef`는 대안이 부적절하고 비렌더 값을 보존할 필요가 명확한 경우에만 쓴다.
+
+- 생성자 인자를 같은 이름의 필드에 그대로 저장하면 별도 필드 선언과 `this.x = x` 대신 TypeScript parameter property(`private readonly x: T`, `readonly code: T`)로 합친다. 기존 접근 범위·readonly·인자 순서를 보존하고 단순 초기값은 매개변수 기본값을 검토한다. 변환·검증·자원 생성까지 억지로 기본 인자로 옮겨 API를 늘리지 않는다. 기본 인자에서는 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않으며, 필드 초기화 순서와 상속 클래스의 `super()` 순서를 확인한다.
+
+- 단순 전달 래퍼는 인자 개수·변환/차단, `this`, 반환값/Promise, 호출 시점과 최신 값 조회가 같은 경우에만 직접 함수 참조로 바꾼다. 메서드 receiver·인자 어댑터·최신 ref 조회·동기 이벤트 반환·Effect 경계를 지키는 래퍼는 유지한다.
+- Promise 체인은 `async`/`await`와 `try`/`catch`/`finally`를 우선한다. `Promise.all`·`race`의 작업을 순차 await로 바꾸지 않으며, 경쟁에서 진 작업의 늦은 실패도 처리한다. cleanup·잠금 해제·취소 후 결과 무시·메모이즈 실패 재시도와 동기 콜백 반환값을 보존한다.

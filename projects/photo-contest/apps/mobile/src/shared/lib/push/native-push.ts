@@ -12,24 +12,28 @@ import type { TPushRegistration } from '@photo-contest/bridge';
 
 const INSTALLATION_KEY = 'photo-contest:push-installation';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const installationId = memoize((): Promise<string> =>
-  AsyncStorage.getItem(INSTALLATION_KEY)
-    .then(async (saved) => {
-      if (saved && UUID.test(saved)) return saved;
-      const id = randomUUID();
-      await AsyncStorage.setItem(INSTALLATION_KEY, id);
-      return id;
-    })
-    .catch((error: unknown) => {
-      installationId.cache.clear();
-      throw error;
-    }),
-);
+const installationId = memoize(async (): Promise<string> => {
+  try {
+    // 동기 예외도 memoize에 Promise가 등록된 뒤 캐시에서 제거한다.
+    await Promise.resolve();
+    const saved = await AsyncStorage.getItem(INSTALLATION_KEY);
+    if (saved && UUID.test(saved)) return saved;
+    const id = randomUUID();
+    await AsyncStorage.setItem(INSTALLATION_KEY, id);
+    return id;
+  } catch (error) {
+    installationId.cache.clear();
+    throw error;
+  }
+});
 const registration = memoize(
-  (requestPermission: boolean): Promise<TPushRegistration> =>
-    register(requestPermission).finally(() => {
+  async (requestPermission: boolean): Promise<TPushRegistration> => {
+    try {
+      return await register(requestPermission);
+    } finally {
       registration.cache.clear();
-    }),
+    }
+  },
   // 권한 요청 여부가 달라도 진행 중인 등록 결과를 공유한다.
   { getCacheKey: () => undefined },
 );

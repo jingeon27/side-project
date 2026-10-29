@@ -44,7 +44,7 @@ export interface ICapabilityDependencies {
 const LINK_OPEN_SETTLE_MS = 300;
 
 function wait(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+  return new Promise<null>((resolve) => setTimeout(resolve, ms, null));
 }
 
 /** 웹 요청(브리지 기능)을 플랫폼 기능으로 처리한다. 판단만 하고 실제 동작은 주입받는다. */
@@ -106,11 +106,15 @@ export function createCapabilities(
     },
     'link.open': async ({ url }) => {
       // 실패도 값으로 받아 경쟁에서 진 뒤에 거부돼도 처리되지 않은 거부가 남지 않게 한다.
-      const opening = deps.openBrowser(url).then(
-        (result) => ({ ok: true as const, type: result.type }),
-        (error: unknown) => ({ ok: false as const, error }),
-      );
-      const settled = await Promise.race([opening, wait(LINK_OPEN_SETTLE_MS).then(() => null)]);
+      const open = async () => {
+        try {
+          const result = await deps.openBrowser(url);
+          return { ok: true as const, type: result.type };
+        } catch (error) {
+          return { ok: false as const, error };
+        }
+      };
+      const settled = await Promise.race([open(), wait(LINK_OPEN_SETTLE_MS)]);
       if (settled && !settled.ok) throw settled.error;
       // locked: iOS에서 다른 브라우저가 이미 열려 있다.
       return { opened: settled?.type !== 'locked' };
