@@ -737,13 +737,13 @@ try {
     ?.split(';')[0];
   assert.ok(publicPc.cookie, 'Anonymous browsing requires an HttpOnly session.');
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
-  // Both services currently omit native association files while preserving the login callback.
-  assert.equal((await publicPc.http('/.well-known/apple-app-site-association')).status, 404);
-  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 404);
-  const appCallback = await publicPc.http('/app-auth/callback?code=shared-smoke-login-code-0123');
-  assert.equal(appCallback.status, 200);
-  assert.equal(appCallback.headers['cache-control'], 'no-store');
-  assert.equal(appCallback.text().includes('shared-smoke-login-code'), false);
+  // PC는 소셜 로그인과 앱 링크 검증 경로를 제공하지 않는다.
+  for (const removedPath of [
+    '/.well-known/apple-app-site-association',
+    '/.well-known/assetlinks.json',
+    '/app-auth/callback?code=shared-smoke-login-code-0123',
+  ])
+    assert.equal((await publicPc.http(removedPath)).status, 404, `Retired PC route: ${removedPath}`);
   // Photo Contest no longer ships sharp; an 8x8 PNG keeps both services' upload checks real.
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGNwav+KFTEMLQkAZI1vgcNLzfoAAAAASUVORK5CYII=',
