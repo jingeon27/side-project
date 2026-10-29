@@ -97,7 +97,11 @@ export function LatestPosts({
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label={title}>
       <h2 className="flex min-h-touch items-center gap-2 text-title-lg text-ink">{title}</h2>
-      <AsyncBoundary onRetry={refetch} fallback={fallback}>
+      <AsyncBoundary
+        resetKey={`${groupId ?? ''}:${contestId ?? ''}:${categoryId ?? ''}`}
+        onRetry={refetch}
+        fallback={fallback}
+      >
         {postsRef ? <LatestPostList postsRef={postsRef} empty={empty} postAction={postAction} /> : fallback}
       </AsyncBoundary>
     </section>
