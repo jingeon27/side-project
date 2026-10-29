@@ -263,7 +263,7 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "AI 에이전트에게 자율적으로 맡겨 보고, 결과물을 검토하며 고친 과정",
     "description": "기능과 아키텍처만 정해 주고 AI 에이전트에게 구현을 최대한 자율적으로 맡겨 봤어요. 나온 서비스를 직접 써 보고 코드를 읽으면서 화면 구성, 익명 기록, 그룹 권한과 채팅 재전송처럼 부족하거나 빠진 부분을 채워 나갔어요.",
@@ -298,13 +298,13 @@
         "level": 2
       },
       {
-        "id": "game-mate는-클래시로얄부터",
-        "title": "Game Mate는 클래시로얄부터",
+        "id": "game-mate는-친추판매와-코칭에서-시작했어요",
+        "title": "Game Mate는 친추판매와 코칭에서 시작했어요",
         "level": 2
       },
       {
-        "id": "질문을-올리면-누가-답해줄까",
-        "title": "질문을 올리면 누가 답해줄까",
+        "id": "피드백-게시판에서는-누가-답해줄까",
+        "title": "피드백 게시판에서는 누가 답해줄까",
         "level": 2
       },
       {
@@ -373,7 +373,7 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
     "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
@@ -416,13 +416,13 @@
         "level": 2
       },
       {
-        "id": "game-mate-starts-with-clash-royale",
-        "title": "Game Mate starts with Clash Royale",
+        "id": "game-mate-began-with-friend-add-sales-and-coaching",
+        "title": "Game Mate began with friend-add sales and coaching",
         "level": 2
       },
       {
-        "id": "who-would-answer-the-first-question",
-        "title": "Who would answer the first question?",
+        "id": "who-would-answer-questions-on-the-feedback-board",
+        "title": "Who would answer questions on the feedback board?",
         "level": 2
       },
       {
