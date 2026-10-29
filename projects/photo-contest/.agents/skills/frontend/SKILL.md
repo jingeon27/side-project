@@ -101,3 +101,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 래퍼 감사는 TypeScript AST로 typed arrow·단일 return 블록·함수 선언까지 확인한다. 직접 참조로 바꾸기 전에 전달 인자, `this`, 반환값, 실행 시점과 참조 수명을 검토한다. `AbortController.abort()`의 무인자 호출은 receiver와 취소 reason을 지키므로 이벤트에 메서드를 그대로 넘기지 않는다.
 
 - 명명 검사는 기존 `react/jsx-handler-names` 옵션을 우선한다. `checkLocalVariables: false`는 직접 작성한 로컬 함수도 모두 검사에서 제외하므로 로컬 함수·리스너·observer의 `handle*` 명명은 리뷰로 유지한다. 사용자 정책에 따라 명명용 커스텀 규칙을 새로 만들거나 재도입하지 않으며, 이름을 맞추기 위한 별칭 래퍼·disable도 추가하지 않는다.
+
+- DOM 노드가 소유하는 구독·미디어 정리는 안정적인 `useCallback` ref에서 설정하고 반환 cleanup으로 노드 교체·제거·StrictMode 재연결을 처리한다. RHF 등 기존 callback ref는 직접 사용하고, 여러 ref의 조합은 각각의 연결·해제를 보존한다. 파일/요청 상태·전역 구독은 노드 수명에 억지로 옮기지 않는다. callback ref에서 설치한 콜백도 Effect Event를 직접·간접 호출하지 않는다. 최신 콜백 교체 중 진행 중인 작업을 보존하려면 기존 Effect를 유지하며 이를 피하려고 임시 ref/store/class나 범용 훅을 추가하지 않는다.
+
+- `useState` setter를 JSX `on*`에 연결할 때는 `onOpenChange={(nextOpen) => setOpen(nextOpen)}`처럼 새 값만 전달하는 인라인 어댑터를 쓴다. 이벤트·라이브러리의 추가 인자를 차단하는 예외이며 일반 API·props 콜백·Server Action에 일괄 래퍼를 추가하지 않는다. `ref={setNode}`는 매 렌더 인라인 래퍼로 바꾸면 detach/attach가 반복될 수 있으므로 안정적인 ref 참조를 보존한다.
