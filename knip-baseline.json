@@ -72,7 +72,7 @@
     ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "prependGroupContest"],
     [
       "exports",
-      "projects/photo-contest/apps/web/src/features/contest/ui/ContestListItem.tsx",
+      "projects/photo-contest/apps/web/src/features/contest/ui/card/ContestListItem.tsx",
       "ContestListItem"
     ],
     ["exports", "projects/photo-contest/apps/web/src/features/group/index.ts", "splitContests"],
