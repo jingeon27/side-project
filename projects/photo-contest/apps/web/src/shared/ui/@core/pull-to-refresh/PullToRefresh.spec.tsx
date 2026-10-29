@@ -1,3 +1,5 @@
+import { Profiler } from 'react';
+
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +11,7 @@ function touch(target: HTMLElement, y: number, x = 50, identifier = 1) {
 }
 
 function send(target: HTMLElement, type: string, touches: ReturnType<typeof touch>[], changed = touches) {
-  const event = new Event(type, { bubbles: true, cancelable: true });
+  const event = new Event(type, { bubbles: true, cancelable: true, composed: true });
   Object.defineProperties(event, {
     touches: { value: touches },
     targetTouches: { value: touches },
@@ -40,6 +42,57 @@ function pull(target: HTMLElement, distance: number) {
 afterEach(() => Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 }));
 
 describe('당겨서 새로고침', () => {
+  it('첫 이동을 같은 native 이벤트 작업에서 처리하고 같은 표시 구간에서는 다시 commit하지 않아야 한다', () => {
+    const handleRender = vi.fn();
+    const onRefresh = vi.fn(async () => {});
+    render(
+      <Profiler id="pull-to-refresh" onRender={handleRender}>
+        <PullToRefresh onRefresh={onRefresh}>
+          <p>피드</p>
+        </PullToRefresh>
+      </Profiler>,
+    );
+    const feed = screen.getByText('피드');
+    act(() => {
+      start(feed);
+      expect(move(feed, 20).defaultPrevented).toBe(true);
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('아래로 당겨 새로고침');
+    handleRender.mockClear();
+    for (const distance of [30, 60, 100, 120]) move(feed, distance);
+    expect(handleRender).not.toHaveBeenCalled();
+    move(feed, 128);
+    expect(screen.getByRole('status')).toHaveTextContent('놓으면 새로고침');
+    handleRender.mockClear();
+    for (const distance of [140, 160, 180]) move(feed, distance);
+    expect(handleRender).not.toHaveBeenCalled();
+    move(feed, 120);
+    expect(screen.getByRole('status')).toHaveTextContent('아래로 당겨 새로고침');
+    end(feed, 120);
+    expect(onRefresh).not.toHaveBeenCalled();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('shadow DOM 안의 입력과 스크롤 영역도 이벤트 경로에서 제외해야 한다', () => {
+    const onRefresh = vi.fn(async () => {});
+    render(
+      <PullToRefresh onRefresh={onRefresh}>
+        <div data-testid="host" />
+      </PullToRefresh>,
+    );
+    const shadow = screen.getByTestId('host').attachShadow({ mode: 'open' });
+    const button = document.createElement('button');
+    const scroller = document.createElement('div');
+    scroller.scrollTop = 100;
+    shadow.append(button, scroller);
+    for (const target of [button, scroller]) {
+      start(target);
+      expect(move(target, 180).defaultPrevented).toBe(false);
+      end(target);
+    }
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
   it('임계값을 넘겨 놓을 때만 조회하고 작업 완료 전 중복 요청을 막아야 한다', async () => {
     const task = Promise.withResolvers<void>();
     const onRefresh = vi.fn(() => task.promise);
