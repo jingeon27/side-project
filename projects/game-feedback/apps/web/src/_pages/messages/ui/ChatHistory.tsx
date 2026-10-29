@@ -56,7 +56,13 @@ export function ChatHistory({
         {!hasOlder && (
           <div className="chat-beginning">
             <ShieldCheck size={14} />
-            <span>{t('대화의 시작이에요. 먼저 가볍게 인사해보세요.')}</span>
+            <span>
+              {t(
+                conversation.supportTopic === 'VERIFICATION'
+                  ? '프로필 인증을 위해 클래시 로얄 프로필과 최근 전적 스크린샷을 보내주세요. 촬영 시각을 확인할 수 있도록 기기의 시계도 함께 보이게 찍어주세요.'
+                  : '대화의 시작이에요. 먼저 가볍게 인사해보세요.',
+              )}
+            </span>
           </div>
         )}
         <AnimatePresence initial={false}>
@@ -90,7 +96,7 @@ export function ChatHistory({
             );
           })}
         </AnimatePresence>
-        {messages.length === 0 && (
+        {messages.length === 0 && conversation.supportTopic !== 'VERIFICATION' && (
           <div className="conversation-first-message">
             <MessageCircle size={33} />
             <strong>

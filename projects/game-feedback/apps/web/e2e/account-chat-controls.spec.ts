@@ -44,6 +44,8 @@ test('verification encouragement opens the administrator chat and stays hidden f
   await page.getByRole('button', { name: '프로필 인증 신청', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/messages\/[^/]+$/);
   await expect(page.locator('.conversation-peer-meta')).toContainText('프로필 인증 문의');
+  await expect(page.getByRole('log')).toContainText('클래시 로얄 프로필과 최근 전적 스크린샷');
+  await expect(page.getByRole('log')).toContainText('기기의 시계도 함께');
   const roomId = new URL(page.url()).pathname.split('/').at(-1);
   const messages = await (await page.request.get(`/api/conversations/${roomId}/messages`)).json();
   expect(messages.conversation.supportTopic).toBe('VERIFICATION');
