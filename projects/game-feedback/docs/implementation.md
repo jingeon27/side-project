@@ -1496,3 +1496,14 @@ Admin lazy import, API 숨김 대상 조회·seed 종료, Mobile 초기 링크·
 code-style 스킬에 직접 전달의 인자/this/반환값/identity 기준과 async/await의 병렬성·취소·오류 범위 기준을 추가했다. 명명 규칙 때문에 불필요한 wrapper를 만들지 않도록 공유 ESLint 변경 46830c8b를 이 브랜치에도 반영한다. authored handler의 handle*·props의 on* 지침은 유지한다.
 
 검증: Mobile 63개·Web 263개·Admin 23개 기존 테스트, API report.policy 6개 테스트 통과(maxWorkers=2). Web·Mobile·Admin·API 타입 검사, 스킬 validator·format·diff 검사 통과. API unit 실행기는 contracts build와 Prisma client 생성을 수행했으며 DB 스키마 변경이나 외부 서비스 호출은 없었다. 브라우저 E2E·실기기·실제 seed·외부 smoke 실행은 범위에 포함하지 않았다.
+
+## 2026-10-29 화면 맥락과 URL·조회 경계 보완
+
+- 맥락 분리: 네이티브 푸시 지원 여부를 고르는 부모와 조회·mutation을 소유하는 NativePushSettings를 나눴다. 일반 브라우저에서는 푸시 쿼리/뮤테이션을 만들지 않는다. 단순 표현 차이인 기존 분기는 유지했다.
+- 영역별 오류: 알림 페이지 제목·앱 푸시 설정을 목록 경계 밖으로 옮기고 설정·목록을 별도 AsyncBoundary로 분리했다. 관리자 문의 목록/상세의 기존 독립 경계는 유지했다.
+- URL: 관리자 문의 상태 변경이 선택 문의와 다른 query 값을 지우던 문제를 수정했다. status만 쓰고 기본 ALL은 키를 제거한다. 기존 필드별 Zod fallback은 유지하며 유효한 thread와 잘못된 status의 조합을 검증했다. 반복 query 값도 보존한다. 서버 404/권한 가드는 완화하지 않았다.
+- 순수 변환: 기존 postContentInput과 폼/계약 스키마가 게시판별 요청 필드를 이미 선택·검증하고 있어 유지했다. 단순 객체/markup을 위한 새 추상화는 만들지 않았다.
+- 브라우저: 새 Admin UI 레인은 3305의 실제 Vite 앱·SDK·Query·폼을 Chromium에서 실행하고 API 경계만 대체한다. 목록 503 중 열린 문의·답변 초안·필터·URL 보존과 복구를 검증했다. DB/운영 터널은 호출하지 않는다.
+- TanStack 결과: 단일 업로드 mutation을 upload/handleUpload로 포장하던 usePostMediaUpload를 제거했다. 작성·수정 폼이 options factory와 useMutation을 직접 조합하고 mutateAsync를 전달한다. error/status/variables/reset을 표준 결과에서 사용할 수 있다. useVisibleRead 같은 외부 구독/요청 수명 조합은 유지했다.
+
+검증: Web 관련 unit/UI 12개(6파일), Admin unit 25개(6파일), 실제 Chromium UI 1개 통과. Web/Admin 타입·lint, 변경 스킬 validator·Prettier·diff 검사 통과. 알림 목록 오류의 설정 보존과 비지원 문서의 푸시 훅 미생성은 별도 회귀 테스트로 확인했다. 실제 API/DB 통합 E2E와 네이티브 실기기 푸시 권한은 검증하지 않았다. 신규 의존성·루트/공유 설정 변경은 없다.

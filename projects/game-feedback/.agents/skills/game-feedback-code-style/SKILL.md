@@ -26,6 +26,15 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 로딩과 조회 실패는 영역별 `AsyncBoundary`로 제한한다. 문의 하나가 실패해도 메뉴와 문의 목록을 사용할 수 있어야 한다. 계정 전환은 실행 중 쿼리 취소 → 이전 캐시 삭제 → 새 세션 저장 순서를 유지한다.
 - URL이 선택 화면·사용자·문의의 단일 출처다. 외부 구독은 useSyncExternalStore를 사용한다. useRef는 외부 자원 식별 등 실제 필요한 경우에 제한하며 DOM 연결은 정리 가능한 callback ref를 우선한다. QueryClient처럼 수명이 고정된 자원을 만드는 lazy useState는 허용한다.
 
+## 화면 맥락·오류·데이터 경계
+
+- 분기마다 필요한 훅·조회·요청·effect가 다르면 해당 맥락의 자식 컴포넌트로 분리하고 부모는 선택한다. 단순 문구·markup 차이만으로 파일이나 컴포넌트를 늘리지 않는다.
+- 목록·설정·열린 상세처럼 독립적인 작업은 별도 AsyncBoundary로 감싼다. 목록 실패가 필터·탭·상세·입력 초안을 unmount하지 않아야 한다. 오류 reset key는 실패한 자원의 ID/필터 수명에 맞춘다.
+- URL 입력은 필드별 Zod fallback으로 유효한 형제 필드를 보존한다. 404·권한·ID 판정에 필요한 서버 가드는 엄격하게 유지한다. 필터 하나를 쓸 때는 원래 query에서 해당 키만 바꾸고 관련 없는 키·선택 ID·반복 키를 보존한다. 화면 기본값을 URL에 불필요하게 쓰지 않는다.
+- DTO·폼·요청 사이에서 의미 있게 값을 정규화하거나 도메인별 필드를 선택할 때 순수 변환 함수를 둔다. 단순 객체 전달이나 화면 markup만 분리하는 helper는 만들지 않는다. 검증은 기존 계약과 useZodForm 스키마에 둔다.
+- 단일 Query/Mutation options 호출을 감싸거나 mutateAsync를 별칭으로 내보내는 훅은 만들지 않는다. 호출부가 표준 TanStack 결과의 data/error/status/variables/reset을 직접 사용한다. 외부 구독·여러 요청·흐름을 조합하는 훅은 실제 수명을 소유하고 원래 query/mutation 결과를 보존한다.
+- URL 탐색·필터·오류 경계·초안 보존은 실제 브라우저 상호작용으로 검증한다. API 경계만 대체한 UI 검증과 DB/서버 통합 E2E를 구분해 기록한다. 순수 변환·fallback은 unit, 렌더 경계는 UI 회귀 테스트로 보완한다.
+
 ## UI 라이브러리와 이벤트 수명
 
 - 메뉴·선택·시트·대화상자의 outside-click, focus 이동/복원, Escape, ARIA 상태는 기존 `@side/design-system`/Base UI primitive에 맡긴다. 직접 DOM listener·role·펼침 상태를 복제하지 않는다. 네이티브 back을 Base UI의 Escape 처리에 연결하는 어댑터와 Quill 전용 DOM은 별도 외부 경계다.
