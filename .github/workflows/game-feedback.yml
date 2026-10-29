@@ -102,6 +102,7 @@ jobs:
             projects/game-feedback/apps/admin/test-results
             projects/game-feedback/apps/mobile/test-results
           retention-days: 7
+          include-hidden-files: true
           if-no-files-found: ignore
       - name: Stop owned test database
         if: always() && steps.install.outcome == 'success'

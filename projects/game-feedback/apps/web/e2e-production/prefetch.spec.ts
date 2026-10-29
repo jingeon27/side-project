@@ -1,15 +1,26 @@
 import { instant } from '@next/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3353';
 
-function trackPrefetches(page: Page) {
+function trackPrefetches({ page, contentOnly = false }: { page: Page; contentOnly?: boolean }) {
   const completed = new Set<string>();
-  page.on('requestfinished', (request) => {
+  const successful = new WeakSet<Request>();
+  page.on('response', (response) => {
+    if (response.ok()) successful.add(response.request());
+  });
+  function handleComplete(request: Request) {
     const headers = request.headers();
     if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return;
+    if (contentOnly && headers['next-router-segment-prefetch'] === '/_tree') return;
+    const failure = request.failure();
+    if (failure && failure.errorText !== 'net::ERR_ABORTED') return;
+    if (!successful.has(request)) return;
     completed.add(new URL(request.url()).pathname);
-  });
+  }
+  page.on('requestfinished', handleComplete);
+  // Next는 셸을 필요한 바이트만 읽고 reader.cancel()할 수 있다. 이때 Response.finished()는 완료되지 않는다.
+  page.on('requestfailed', handleComplete);
   return async (path: string) => expect.poll(() => completed.has(path)).toBe(true);
 }
 
@@ -52,7 +63,7 @@ for (const width of [400, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    const waitForPrefetch = trackPrefetches(page);
+    const waitForPrefetch = trackPrefetches({ page });
     await page.goto('/ko/guide');
     const navigation = width === 400 ? page.locator('.mobile-nav') : page.locator('.left-sidebar');
     const home = navigation.getByRole('link', { name: '홈', exact: true });
@@ -88,30 +99,13 @@ for (const width of [400, 1440]) {
 }
 
 test('a production navigation shows the prefetched guide with its own page header', async ({ page }) => {
-  const guidePrefetched = page.waitForResponse(async (response) => {
-    const headers = response.request().headers();
-    if (new URL(response.url()).pathname !== '/ko/guide') return false;
-    if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return false;
-    // 경로 트리가 아니라 본문 완료를 기다린다. CDP의 문자 디코딩과 무관한 ASCII 표식을 쓴다.
-    return (
-      response.ok() &&
-      (await response.finished()) === null &&
-      (await response.text()).includes('guide-sections')
-    );
-  });
-  await page.goto('/ko');
-  await expect(page.locator('.feed-heading:visible')).toBeVisible();
-  await expect(page.locator('.post-card:visible').first()).toBeVisible();
-  // 무한 목록이 늘면 푸터가 화면 밖으로 밀려 prefetch가 취소된다. fixture 목록을 끝까지 읽는다.
-  await expect
-    .poll(async () => {
-      await page.locator('.feed-sentinel:visible').scrollIntoViewIfNeeded();
-      return page.locator('.feed-end:visible').count();
-    })
-    .toBe(1);
+  const waitForPrefetch = trackPrefetches({ page, contentOnly: true });
+  // 무한 피드의 페이지 추가는 푸터 prefetch를 취소한다. 헤더 교체 검사는 높이가 고정된 안내 화면에서 한다.
+  await page.goto('/ko/terms');
+  await expect(page.getByRole('banner').locator('.mobile-page-title')).toHaveText('이용약관');
   const guide = page.locator('.site-footer').getByRole('link', { name: '이용 가이드', exact: true });
   await guide.hover();
-  await guidePrefetched;
+  await waitForPrefetch('/ko/guide');
   await page.evaluate(() =>
     Object.defineProperty(window, '__navigationDocument', { value: 'kept', configurable: true }),
   );
@@ -172,7 +166,7 @@ test('the static document applies a saved appearance before hydration and keeps 
 });
 
 test('an uncached post streams beneath the prefetched shell', async ({ page }) => {
-  const waitForPrefetch = trackPrefetches(page);
+  const waitForPrefetch = trackPrefetches({ page });
   await page.goto('/ko');
   const post = page.locator('.post-title-link:visible').first();
   await expect(post).toBeVisible();

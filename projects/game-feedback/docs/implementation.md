@@ -1453,3 +1453,11 @@ NavigationGuardRegistry의 등록 여부를 useSyncExternalStore로 구독하고
 `beforeunload`에서 deprecated인 `returnValue` 대입을 제거하고 `preventDefault()`를 사용한다. Chrome/Edge 119 미만을 위한 호환 처리는 두지 않는다. 초안이 있을 때만 리스너를 등록하고 마지막 초안이 저장되면 해제하는 동작은 유지한다.
 
 검증: 초안 가드 단위·UI 테스트 10개와 변경 파일 ESLint, Web typecheck 통과. 별도 Playwright 페이지에서 사용자 클릭 후 Chromium·WebKit을 새로고침했을 때 `preventDefault()`만으로 실제 `beforeunload` 확인창이 뜨는 것을 확인했다. 실제 모바일 앱 종료 동작은 검증 범위에 포함하지 않는다.
+
+## 2026-10-29 릴리스 PR의 CI 검사 수정
+
+#133의 GF·PC verify는 main 이후 기존 migration 42개를 검사하면서 과거 SQL 12개에서 실패했다. 공통 검사기는 파일별 원문 SHA-256과 검토 사유를 별도로 확인하며 기존 SQL을 수정하지 않는다. 새 SQL의 호환성 검사와 기존 이력 수정·삭제 거부는 유지한다. 커밋 검사는 도입 직전 공유 이력만 고정 SHA로 제외하고 이후 릴리스 커밋은 모두 검사한다. 두 서비스가 쓰는 루트 scripts·toolkit을 수정한 이유다.
+
+별도로 develop GF의 가이드 테스트는 Next Partial Prefetching이 필요한 바이트를 읽고 스트림을 취소했을 때 Response.finished()가 완료되지 않아 실패했다. HTTP 성공 응답과 requestfinished/requestfailed 이벤트를 동기적으로 기록하고 정상 ERR_ABORTED만 구분한다. 경로 트리는 가이드 본문 준비로 인정하지 않으며 instant() 안의 실제 제목·헤더·본문·같은 문서 탐색 단언을 유지한다. 무한 피드 페이지 추가와 분리해 이용약관 화면의 푸터에서 가이드로 이동한다. 실패 추적이 .e2e-build 안에 남도록 CI artifact의 숨김 경로 수집도 켰다.
+
+검증: main 기준 migration 42개와 도입 후 커밋 234개 검사, toolkit 타입·lint·98개 테스트, config tooling 55개 테스트, scripts·Web 타입·Web lint, CI와 같은 test 환경의 knip이 통과했다. 실제 운영 빌드와 격리 API 대역(3393/4393)으로 저장소의 가이드 spec을 12회 연속 실행해 모두 통과했다. 페이지 종료 시 비동기 request.response()가 남는 문제도 재현해 동기 응답 기록으로 바꿨다. 실제 S3·DB를 사용하는 전체 통합·E2E는 로컬 자격 증명이 없어 실행하지 않았으며 원격 CI에서 확인한다.
