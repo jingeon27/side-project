@@ -1,4 +1,4 @@
-import { conversationPair } from './chat/conversation-pair';
+import { conversationPair } from './chat/conversation/conversation-pair';
 import { createPrismaAdapter } from './database/prisma-adapter';
 import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';

@@ -42,6 +42,7 @@ export interface AppConfig {
   webOrigin: string;
   /** 앱 로그인 일회용 코드를 보내는 검증된 https 콜백(App Link·Universal Link) */
   appAuthCallbackUrl: string;
+  /** 명시적 override만 보관하며 기본 전략 생성은 AuthModule의 Nest factory가 담당한다. */
   identityProvider?: IdentityProvider;
   identityProviders: TIdentityProviders;
   profileProvider?: ProfileProvider;

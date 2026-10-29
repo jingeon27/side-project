@@ -6,7 +6,7 @@ import { clearBannedIdentities, recordBannedIdentities } from '../../auth/accoun
 import { requireAdmin } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
-import { ChatEvents } from '../../chat/chat.events';
+import { ChatEvents } from '../../chat/events/chat.events';
 import { ApiError } from '../../common/http/api-error';
 import { PrismaClient } from '../../generated/prisma';
 import { userDto } from '../../users/user.presenter';

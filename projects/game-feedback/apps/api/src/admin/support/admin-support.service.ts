@@ -3,9 +3,9 @@ import type { Response } from 'express';
 
 import { requireAdmin } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
-import { ChatAttachmentService } from '../../chat/chat-attachment.service';
+import { ChatAttachmentService } from '../../chat/attachment/chat-attachment.service';
 import { type TSendMessageDto } from '../../chat/chat-input.dto';
-import { ChatMessageService } from '../../chat/chat-message.service';
+import { ChatMessageService } from '../../chat/message/chat-message.service';
 import { ApiError } from '../../common/http/api-error';
 import { type TListQueryDto } from '../../common/http/list-query.dto';
 import { decodeCursor, encodeCursor } from '../../common/pagination';

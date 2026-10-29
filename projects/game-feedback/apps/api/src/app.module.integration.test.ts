@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from './app';
 import { SessionService } from './auth/session/session.service';
-import { ChatEvents } from './chat/chat.events';
+import { ChatEvents } from './chat/events/chat.events';
 import { createPrismaAdapter } from './database/prisma-adapter';
 import { DemoProfileProvider } from './game-profiles/providers/demo-profile.provider';
 import { PrismaClient } from './generated/prisma';

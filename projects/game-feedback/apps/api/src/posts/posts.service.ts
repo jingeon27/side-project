@@ -14,10 +14,10 @@ import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
-import { UserVisibilityService } from '../users/user-visibility.service';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
+import { PostMediaService } from './media/post-media.service';
 import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
-import { PostMediaService } from './post-media.service';
 import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()

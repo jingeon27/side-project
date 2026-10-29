@@ -4,8 +4,6 @@ import type { SessionRequest } from '../auth/session/session.types';
 import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { ChatConversationService } from './chat-conversation.service';
-import { ChatHistoryService } from './chat-history.service';
 import {
   ChatMessageInputSchema,
   ChatReadInputSchema,
@@ -16,8 +14,10 @@ import {
   type TReadMessageDto,
   type TSendMessageDto,
 } from './chat-input.dto';
-import { ChatMessageService } from './chat-message.service';
-import { ChatEvents } from './chat.events';
+import { ChatConversationService } from './conversation/chat-conversation.service';
+import { ChatEvents } from './events/chat.events';
+import { ChatHistoryService } from './message/chat-history.service';
+import { ChatMessageService } from './message/chat-message.service';
 
 @Controller('api')
 export class ChatController {

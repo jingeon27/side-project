@@ -8,10 +8,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
 import type { SessionRequest } from '../auth/session/session.types';
-import { historyWhere } from '../chat/chat-history';
+import { historyWhere } from '../chat/message/chat-history';
 import { hash, token } from '../common/crypto';
 import { PrismaClient } from '../generated/prisma';
-import { UserVisibilityService } from '../users/user-visibility.service';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { assertDatabaseUrl } from './database-url';
 import { createPrismaAdapter } from './prisma-adapter';
 import { UnitOfWork } from './unit-of-work';

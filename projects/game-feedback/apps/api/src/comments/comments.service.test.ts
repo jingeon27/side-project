@@ -5,7 +5,7 @@ import type { CacheInvalidationService } from '../cache-invalidation/cache-inval
 import { ApiError } from '../common/http/api-error';
 import type { PrismaClient } from '../generated/prisma';
 import type { PostsService } from '../posts/posts.service';
-import type { UserVisibilityService } from '../users/user-visibility.service';
+import type { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { CommentsService } from './comments.service';
 
 const transaction = {

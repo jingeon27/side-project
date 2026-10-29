@@ -23,8 +23,8 @@ import {
   type TPostViewDto,
   type TUpdatePostDto,
 } from './post-input.dto';
-import { PostViewsService } from './post-views.service';
 import { PostsService } from './posts.service';
+import { PostViewsService } from './views/post-views.service';
 
 @Controller('api')
 export class PostsController {

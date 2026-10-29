@@ -6,8 +6,8 @@ import type { SessionRequest } from '../auth/session/session.types';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { PrismaClient } from '../generated/prisma';
-import { UserVisibilityService } from './user-visibility.service';
 import { authorDto, authorSelect } from './user.presenter';
+import { UserVisibilityService } from './visibility/user-visibility.service';
 
 @Injectable()
 export class UsersService {
