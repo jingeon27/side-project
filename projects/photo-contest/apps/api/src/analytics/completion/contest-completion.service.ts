@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { uniq } from 'es-toolkit';
 
 import { CLEANUP_BATCH_SIZE } from '../../config/limits';
@@ -6,6 +6,7 @@ import { Database } from '../../database/database.service';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { ANALYTICS_EVENT } from '../analytics-event';
 import { recordEvent } from '../analytics-event.writer';
+import { COMPLETION_READERS, type TCompletionReaders } from './completion-reader';
 
 // 참여자가 이만큼 이상이면 활발한 대회로 본다.
 const ACTIVE_CONTEST_PARTICIPANTS = 3;
@@ -15,6 +16,7 @@ export class ContestCompletionService {
   constructor(
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
+    @Inject(COMPLETION_READERS) private readonly readers: TCompletionReaders,
   ) {}
 
   /**
@@ -34,33 +36,15 @@ export class ContestCompletionService {
     });
     for (const contest of contests) {
       await this.transactions.atomic(async (tx) => {
-        const [submissions, votes] =
-          contest.format === 'POST'
-            ? await Promise.all([
-                (tx ?? this.db).post.findMany({
-                  where: { contestId: contest.id, hidden: false },
-                  select: { authorId: true },
-                }),
-                (tx ?? this.db).postContestVote.findMany({
-                  where: { contestId: contest.id, post: { hidden: false } },
-                  select: { voterId: true },
-                }),
-              ])
-            : await Promise.all([
-                (tx ?? this.db).submission.findMany({
-                  where: { contestId: contest.id, hidden: false },
-                  select: { authorId: true },
-                }),
-                (tx ?? this.db).vote.findMany({
-                  where: { contestId: contest.id, submission: { hidden: false } },
-                  select: { voterId: true },
-                }),
-              ]);
+        // format은 DB의 문자열이다. POST 외의 기존 값은 이전 사진 집계로 처리한다.
+        const format = contest.format === 'POST' ? 'POST' : 'LEGACY';
+        const client = tx ?? this.db;
+        const { submissions, votes } = await this.readers[format].read(client, contest.id);
         const participants = uniq([
           ...submissions.map((submission) => submission.authorId),
           ...votes.map((vote) => vote.voterId),
         ]).length;
-        await recordEvent(tx ?? this.db, {
+        await recordEvent(client, {
           id: `completed:${contest.id}`,
           type: ANALYTICS_EVENT.CONTEST_COMPLETED,
           userId: null,
@@ -73,7 +57,7 @@ export class ContestCompletionService {
             activeContest: participants >= ACTIVE_CONTEST_PARTICIPANTS,
           },
         });
-        await (tx ?? this.db).contest.update({
+        await client.contest.update({
           where: { id: contest.id },
           data: { completionTrackedAt: new Date() },
         });
