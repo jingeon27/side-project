@@ -1,6 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import reviewedMigrations from './reviewed-migrations.json' with { type: 'json' };
 
 interface IScanResult {
   masked: string;
@@ -17,6 +20,33 @@ interface IMigrationBaseOptions {
   deployRef?: string;
   fallback?: string;
   cwd?: string;
+}
+interface IMigrationReview {
+  sha256: string;
+  reason: string;
+}
+
+/** 적용 이력은 SQL 주석도 고치지 않는다. 파일 경로와 원문 해시가 일치한 검토 기록만 인정한다. */
+export function migrationReviews({
+  cwd,
+  reviews = reviewedMigrations,
+}: {
+  cwd: string;
+  reviews?: Record<string, IMigrationReview>;
+}) {
+  const files = new Set(Object.keys(reviews));
+  const errors = Object.entries(reviews).flatMap(([file, review]) => {
+    try {
+      const digest = createHash('sha256')
+        .update(readFileSync(path.join(cwd, file)))
+        .digest('hex');
+      if (digest === review.sha256 && review.reason.trim().length >= 5) return [];
+      return [`${file}: reviewed migration.sql or its review was modified; add a new migration instead.`];
+    } catch {
+      return [`${file}: reviewed migration.sql is missing or unreadable; do not delete migration history.`];
+    }
+  });
+  return { files, errors };
 }
 
 const MIGRATION_PATHSPEC = 'projects/*/apps/api/prisma/migrations/*/migration.sql';
@@ -436,7 +466,8 @@ function explain(rule: string) {
 export function main({
   env = process.env,
   cwd = process.cwd(),
-}: { env?: NodeJS.ProcessEnv; cwd?: string } = {}) {
+  reviews = reviewedMigrations,
+}: { env?: NodeJS.ProcessEnv; cwd?: string; reviews?: Record<string, IMigrationReview> } = {}) {
   const resolveBase = () => {
     try {
       return migrationBase({ requested: env.MIGRATION_BASE_REF, event: env.GITHUB_EVENT_NAME, cwd });
@@ -449,16 +480,20 @@ export function main({
   const base = resolveBase();
   if (!base) return;
   const { added, changed } = migrationChanges({ base, cwd });
+  const reviewed = migrationReviews({ cwd, reviews });
   const errors = [
+    ...reviewed.errors,
     ...changed.map(
       ({ file, status }) =>
         `${file}: existing migration.sql was ${status}; add a new migration instead of rewriting history.`,
     ),
-    ...added.flatMap((file) =>
-      checkMigration(readFileSync(path.join(cwd, file), 'utf8')).map(
-        (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+    ...added
+      .filter((file) => !reviewed.files.has(file))
+      .flatMap((file) =>
+        checkMigration(readFileSync(path.join(cwd, file), 'utf8')).map(
+          (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+        ),
       ),
-    ),
   ];
   for (const error of errors) console.error(error);
   console.log(`Migration compatibility: ${added.length} newly added SQL files checked against ${base}.`);
