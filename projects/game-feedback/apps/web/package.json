@@ -13,6 +13,7 @@
     "test:prefetch": "playwright test --config playwright.prefetch.config.ts",
     "test:test-auth": "playwright test --config playwright.test-auth.config.ts",
     "test:observability": "playwright test --config playwright.observability.config.ts",
+    "benchmark:chat": "playwright test --config playwright.chat-benchmark.config.ts",
     "monitoring:check": "playwright test --config playwright.monitoring.config.ts"
   },
   "dependencies": {
