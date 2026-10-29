@@ -20,7 +20,7 @@ There were three options.
 
 I chose caching so each crawler visit would not repeat every API request, using Next.js Cache Components and `use cache`. This article uses Next.js 16. These APIs require `cacheComponents: true` in next.config.
 
-I established a cacheable call boundary but did not finish the entire generator. The remaining metadata, full-list fetching, and failure-handling issues are described separately below.
+Public API calls could now run inside the cache. Reading through the generator also revealed unfinished work in modification timestamps, full-list fetching, and failure handling.
 
 ## Place a cache boundary around the sitemap
 
@@ -165,9 +165,5 @@ Measurements are also missing.
 - Cache hit rate and origin API request count
 
 I have not measured these or changes in crawling. The verified result is limited to changing authentication defaults and revalidation policy so public calls can enter the cache boundary.
-
-## Completed work and remaining debt
-
-Public sitemap queries no longer read cookies by default, and the days revalidation policy is explicit. Generation-time lastModified, priority, total-as-page-size requests, errors converted to empty arrays, and manual XML escaping remain. This records the cacheable boundary and the accuracy and observability work still needed.
 
 References: [Next.js use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache), [Next.js cacheLife](https://nextjs.org/docs/app/api-reference/functions/cacheLife), [Google sitemap guide](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)

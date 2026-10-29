@@ -51,7 +51,7 @@ try {
 
 Where corrupted values already had a defined failure path, I used `parse` to block them. I could not immediately apply the same policy to every production API response.
 
-## Observe mismatches in existing API responses first
+## Log mismatched fields in existing API responses first
 
 I added a schema-checking layer to 76 API functions and 316 call sites. It currently does not return parsed data.
 
@@ -92,7 +92,7 @@ This has a clear limit.
 
 This is not complete runtime type safety. It preserves behavior while collecting actual contract differences, allowing confirmed schemas to move toward strict parsing. New APIs, authentication, and stream events with isolated failure scopes use parsed results from the beginning.
 
-## Make validation logs input to a fix
+## Use validation logs to correct schemas
 
 Observational validation does little without someone reviewing its logs. I connected SCHEMA_MISMATCH reports to a correction workflow.
 
@@ -133,7 +133,7 @@ An unknown status is dropped while the keyword and detail screen remain. Whole-o
 
 This changes observability. Whole-object safeParse failures log mismatches, but a field's `.catch` recovers and makes object parsing succeed, leaving no log in the current implementation. Old links do not accumulate errors, but invalid-value frequency becomes unknown. Parameters that require tracking must avoid `.catch` and record failure at the object boundary.
 
-## Block invalid forms because users can correct them
+## Show invalid fields and block form submission
 
 Forms let users correct their values. Invalid input therefore blocks submission and displays a reason on the relevant field, rather than passing originals through or replacing them with defaults.
 
@@ -202,7 +202,7 @@ The roles differ even with the same tool.
 
 A schema mismatch and a decision to stop the screen are separate questions. Sharing a validation tool does not require one failure behavior.
 
-## Test policies beyond successful parsing
+## Test what happens when validation fails
 
 Accepting valid input alone cannot verify these boundaries. Tests focus on failure behavior.
 
@@ -223,13 +223,3 @@ After correcting schemas, I temporarily restored old definitions and checked tha
 - Per-field catch preserves UI but silently discards bad values. It is inappropriate when frequency must be known or silent recovery is dangerous, as with payments or permissions.
 - A schema source does not eliminate differences between OpenAPI and frontend schemas. Real-server contract tests and mismatch logs expose that gap.
 - Some custom guards remain where validation is too costly or supplements external-library typing. Tests fix which fields they check.
-
-## The policies left at each boundary
-
-Existing APIs are observed first to reduce rollout risk. URLs preserve usable conditions while recovering. Forms block values users can fix. Authentication and streams use parsed data where failure can be isolated. Problems solvable through internal type flow do not gain Zod.
-
-The guiding question became:
-
-> Where did this value come from, whom would validation failure affect, and at what scope can it be recovered?
-
-Schemas execute that decision. Connecting mismatch logs back to contract tests and fixes made this an operational boundary rather than a one-off assertion cleanup.

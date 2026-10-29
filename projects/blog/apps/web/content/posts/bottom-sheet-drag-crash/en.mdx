@@ -149,13 +149,9 @@ it('두 번째로 높은 스냅에서 시작하면 그 자리를 가리켜야 �
 
 Other cases cover reversing order, the highest snap becoming 1, inserting the closed position, initial-index adjustment, and content height. I deliberately broke the index calculation to check that the tests failed.
 
-## Criteria for the next task
+## Fixing the crash and header scrolling separately
 
 The 2.2.1 null-ref path is gone. The public interface for 26 callers and the positional meaning of three explicit snap configurations remain. Before deployment, the crash reached at least 75 events and 57 users. After September 10 deployment, the same error groups had zero events through the September 28 check. The separate header-scrolling problem remained until September 21. Disappearance of the crash and preservation of sheet usability were distinct checks.
-
-I kept five criteria: prioritize intermittent failures with event and affected-user counts; read the installed dependency source and later releases before adding app workarounds; convert changed value meanings at a shared boundary; exercise scrolling and dragging after layout changes even when tests pass; and avoid definitive causal claims for an unreproduced trigger. Revising this article gave me the last one.
-
-Observability did not solve the error. It showed who was affected, how often, and where to start reading, turning an occasional “the sheet is strange” report into a problem I could investigate and close.
 
 ## References
 

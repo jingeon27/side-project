@@ -71,8 +71,6 @@ That connection keyword led to the next requirement.
 
 Questions AI could not resolve needed a human counselor. Responses came from the separate session backend's SSE, with start / subscribe / message / end operations opening sessions and receiving messages and statuses.
 
-These were separate externally controlled services, not two channels of one API. No endpoint combined them and no shared owner could add one.
-
 The first UI mirrored them: AiChatPanel for the AI stream and CounselingPanel for session SSE, switching modes with a counselor button.
 
 ```typescript
@@ -148,8 +146,6 @@ export async function openSessionStream(sessionId, init) {
 }
 ```
 
-This was another constraint of consuming an external API: the browser's standard API did not match its authentication model.
-
 ---
 
 ## Gathering transitions in useReducer
@@ -205,7 +201,7 @@ This version worked, but I replaced it anyway.
 
 ChatStore accumulated messages, deduplicated IDs with seen, managed subscriptions, and updated immutable snapshots. Those are common message-store responsibilities already handled by AI message frameworks.
 
-The chatbot was expected to gain token streaming, tool calls, and multipart messages with cards or attachments. Those features would eventually require a standard AI message model. Moving from the useSyncExternalStore version was a chance to pay that migration cost once.
+The plan was to add token streaming, tool calls, and messages with cards or attachments. Those features would also require changes to the custom store's message model. While using the useSyncExternalStore version, I decided to move to the library's model.
 
 The session SSE still did not match useChat's expected connection format, and we could not change it. I put it behind a SubscribeConnectionAdapter.
 
@@ -250,7 +246,7 @@ export function makeSessionConnection({ sessionId, onStatus }): SubscribeConnect
 
 The empty send function reflects our split architecture. A conventional connection sends and returns a response stream. Here sending routes by source, while receiving always uses session SSE, leaving the adapter's send side empty.
 
-### Match mounting to the library's lifetime assumptions
+### Matching useChat initialization and subscription timing
 
 The adapter was only part of the work. useChat made several assumptions.
 
@@ -301,5 +297,3 @@ Other debt remains.
 The session SSE supplies messages for display; sends go to the AI or session service depending on the conversation state. Giving each channel a role reduced the screen code that had to distinguish their sources.
 
 Retransmitted message IDs and cancellation while the queue is empty still need checks. The adapter example's finally block alone does not make a pending await end immediately. Cancellation must reach the subscription and wake the waiting queue before I can establish that the connection closes. The example is a shortened view of the integration structure.
-
-Next I want to render UIMessage.parts directly and reproduce a message appearing in both history and SSE. Moving to the library still leaves those cases to verify.

@@ -2,7 +2,7 @@
   "category": "engineering",
   "tags": ["nextjs", "authentication", "bff", "security"],
   "publishedAt": "2026-05-29T21:28:13+09:00",
-  "updatedAt": "2026-10-28",
+  "updatedAt": "2026-10-29",
   "sourceUrl": "https://jingeon27.tistory.com/19",
   "coverImage": "/images/covers/cross-domain-token-handoff.png"
 }

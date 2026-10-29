@@ -26,7 +26,7 @@
     "side-project-design": {
       "title": "How my side project plans and screens changed",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "Building a photo community and Game Mate meant deciding what happens to anonymous activity, group access, contest deadlines, and message retries—not just their successful paths.",
+      "description": "While building a photo community and Game Mate, I worked through anonymous accounts, group permissions, contest deadlines, and message retries.",
       "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"]
     },
     "puppeteer-event-lifecycle": {
@@ -137,7 +137,7 @@
     "testing-standards": {
       "title": "The standards I developed while introducing tests",
       "slug": "testing-standards",
-      "description": "After introducing tests, I refined them against real submission paths and server constraints. I review what a test verifies as well as whether it passes.",
+      "description": "I reviewed which behaviors the tests checked and refined them against actual submission paths and server constraints.",
       "keywords": ["testing", "vitest", "playwright", "react"]
     },
     "declarative-code": {
@@ -197,7 +197,7 @@
     "reading-ai-code": {
       "title": "Why I still read the code",
       "slug": "reading-ai-code",
-      "description": "Black-box checks alone led to a sprint full of hotfixes. I now pair them with white-box testing that starts from reading the code, and keep the code manageable enough to read.",
+      "description": "A sprint with many hotfixes led me to read diffs alongside UI checks, find missed branches, and test those paths.",
       "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
     },
     "side-project-infrastructure": {

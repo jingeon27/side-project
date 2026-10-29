@@ -136,10 +136,10 @@ export function HomePageView() {
 
 The dehydrated server cache and the client use the same query key, so the first render uses the same data. Later invalidation and refetching stay within TanStack Query's cache flow.
 
-## Choosing how to prefetch
+## Queries to await and queries to stream
 
-- Await `prefetchQuery` for data needed in the initial HTML. In v5 it does not throw failures to the caller, so use `fetchQuery` when the server must handle an error directly.
-- To stream pending queries, enable pending dehydration and subscribe with `useSuspenseQuery` inside a Suspense boundary.
-- In either case, create a server QueryClient per request and reuse one QueryClient in the browser.
+Await `prefetchQuery` for data needed in the initial HTML. In v5, it does not throw failures to the caller. Use `fetchQuery` when the server must handle an error directly.
+
+To send the page before prefetching finishes, enable pending dehydration. The component consuming that data subscribes with `useSuspenseQuery` inside a Suspense boundary.
 
 Reference: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr)

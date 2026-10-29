@@ -93,7 +93,7 @@ Visibility and color helpers predated coupons. I wrote the color helper in March
 
 Details check `id` first. Even when choosing a payment date changes the status to complete, inputs remain until saving. The header and dot color follow status immediately, so a row can briefly show both a “payment complete” tag and editable inputs.
 
-## Gather visibility rules in a domain function
+## Decide which payment records to show in one function
 
 ```typescript
 const VISIBLE_STATUSES = ['COMPLETED', 'PROCESSING', 'WAITING'] as const;
@@ -210,10 +210,10 @@ On the morning of June 24, I first added an `if` to the existing renderer. That 
 
 The existing visibility helper gained the coupon rule. Rendering now branches in one `match`, starting with saved state. The coupon component owns selection, clearing, and amount calculation, and the editing-only discount amount is excluded from confirmation requests.
 
-A new payment method still requires changing the renderer, so I would not call this an implementation of OCP. The places that need changing have become more predictable.
+A new payment method still requires changing the renderer, so I would not call this an implementation of OCP. But I can now find which detail component each row reaches in that one renderer.
 
 ![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04.png)
 
 *Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.*
 
-Even one coupon feature changed the method enum, response type, visibility, renderer, completion details, both apps' payment totals and settlement details, and the hospital admin confirmation code. Dot color and header needed no changes because coupons fell back to the gray dot and pending header, but future methods still need those outputs checked. There are no tests for these combinations yet. The next task is table-driven tests for payment method × status × saved state.
+Even one coupon feature changed the method enum, response type, visibility, renderer, completion details, both apps' payment totals and settlement details, and the hospital admin confirmation code. Dot color and header needed no changes because coupons fell back to the gray dot and pending header, but future methods still need those outputs checked. There are still no tests covering these outputs across combinations of payment method, status, and saved state.

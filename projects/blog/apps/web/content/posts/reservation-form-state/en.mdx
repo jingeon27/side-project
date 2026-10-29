@@ -235,7 +235,7 @@ Passing the new date/time as overrides to `initParticipant` changes each entry's
 
 Only the participant-list component calls `useFieldArray`. The page's date handler and synchronization hook replace the array through `setValue`. They specify neither `shouldDirty` nor `shouldValidate`, so button updates still rely on the field-array behavior described above.
 
-## A shorter file did not mean all the logic disappeared
+## Splitting the file and removing the Zustand store
 
 ParticipantSelector went from 519 lines to 55. More precisely, I deleted the old 519-line file and created a 55-line file elsewhere. The work is now split into the selector at 55 lines, a family-selection child at 172, and a server-list synchronization hook at 61. The 140-line Zustand store was removed. The entire feature therefore did not shrink by 464 lines. The useful change is that each piece has clearer inputs and outputs, and one file no longer coordinates three stores.
 
@@ -247,7 +247,7 @@ React Hook Form introduced costs too.
 
 I have not added automated tests for synchronization yet.
 
-Describing this as “519 lines became 55” misses the cause of the bug: three stores shared ownership of the same values. With one owner per value, validation is derived from values and the form follows the server's membership list. New family members inherit the common preferred date/time, removing the old mismatch path. Manual validation after every action, the Zustand store, and screen cleanup code are gone. Explicit validation timing and synchronization tests are still needed to finish these boundaries.
+New family members now receive the form's common preferred date/time. I no longer update the cache, store, and local state together to keep dates aligned. Manual validation after every action, the Zustand store, and screen cleanup code are gone too. Button updates still rely on useFieldArray behavior, though, and I have not verified synchronization between the server list and form array with automated tests.
 
 ## References
 

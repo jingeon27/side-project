@@ -249,7 +249,7 @@ That leaves several requirements.
 - A new cache displaying likes needs to be reviewed for inclusion in the optimistic update.
 - The server must be queried again at the end to verify the client's calculation.
 
-The benefit of `getQueriesData` is that it finds existing list caches with different parameters using the query key convention. It does not discover every screen automatically.
+`getQueriesData` finds existing list caches with different parameters through their query keys. I updated the detail cache separately because it uses a different key.
 
 ## Repeated clicks are a separate problem
 
@@ -286,7 +286,7 @@ Failures and overlapping caches matter more here than the success path alone.
 6. Applying the same state twice does not increment the count twice or make it negative.
 7. After revalidation, the UI matches the server's final value.
 
-## A shared source for the UI
+## Let lists and details observe the same change
 
 List and detail views subscribe to the same cache updates and return to their own snapshots if the request fails. A final server fetch reconciles the like state and count.
 
