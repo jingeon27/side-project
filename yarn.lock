@@ -6269,6 +6269,7 @@ __metadata:
     tailwindcss: "catalog:"
     ts-pattern: "catalog:"
     typescript: "catalog:"
+    vite: "catalog:"
     vitest: "catalog:"
     zod: "catalog:"
   languageName: unknown
