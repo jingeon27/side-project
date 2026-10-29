@@ -38,7 +38,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 
 ```sh
 yarn workspace @game-feedback/api test:unit
-yarn workspace @game-feedback/api test:integration src/posts src/chat src/media-storage src/users/profile.service
+yarn workspace @game-feedback/api test:integration src/posts src/chat src/media-storage src/users/profile/profile.service
 ```
 
 ## 책임별 경로
