@@ -19,3 +19,7 @@ description: Apply the user's code structure and React UI feedback when implemen
 - 닫힌 다중 상태 분기는 `ts-pattern`의 exhaustive 매칭을, 정규화 기준 중복 제거·집계·정렬은 `es-toolkit`의 적합한 함수를 우선 검토한다. 단순 이항 조건·네이티브 메서드까지 기계적으로 바꾸거나 고정 JSX를 다시 배열 기반 렌더링으로 만들지 않는다. 의존성은 루트 catalog를 참조한다.
 
 리뷰할 때 기존 동작 보존과 위 기준을 함께 확인한다. URL 직접 진입·새로고침·뒤로/앞으로 가기, 검색·초기화와 고정 경로 범위를 실제 테스트한다. UI 변경은 프로덕션 빌드와 데스크톱·모바일 E2E까지 확인하고, 실제 실행 결과만 보고한다.
+
+- `useRef`를 기본 상태 저장소로 쓰지 않는다. 순수 계산·파생 값, state/reducer, 외부 store·구독 API를 먼저 검토한다. `const` 객체 속성 변경이나 불필요한 class로 가변 상태를 숨기지 않는다. ref는 DOM 포커스처럼 명확한 imperative 자원에 대안이 부적절한 경우만 유지한다.
+
+- 생성자 인자를 그대로 보관하는 클래스 필드는 별도 선언·대입 대신 TypeScript parameter property로 합친다. 접근 범위·readonly·인자 순서는 보존하고 단순 초기값은 기본 인자를 검토한다. 변환·검증·자원 생성을 억지로 인자로 노출하지 않으며, 기본 인자에서 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않는다. 필드 초기화와 `super()` 순서를 보존한다.
