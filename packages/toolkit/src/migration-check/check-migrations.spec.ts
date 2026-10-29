@@ -171,7 +171,7 @@ describe('기준 ref 이후 바뀐 migration 파일', () => {
       put('old', 'CREATE TABLE old(id text, x text);');
       put('new', 'ALTER TABLE old ADD COLUMN y TEXT NOT NULL;');
       commit('next');
-      main({ env: { MIGRATION_BASE_REF: base, GITHUB_EVENT_NAME: 'pull_request' }, cwd });
+      main({ env: { MIGRATION_BASE_REF: base, GITHUB_EVENT_NAME: 'pull_request' }, cwd, reviews: {} });
     });
     expect(process.exitCode).toBe(1);
     expect(errors).toEqual([

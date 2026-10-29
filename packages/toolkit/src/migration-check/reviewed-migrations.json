@@ -1,0 +1,50 @@
+{
+  "projects/game-feedback/apps/api/prisma/migrations/20261021000000_presigned_media/migration.sql": {
+    "sha256": "85bf4cb95c89da1dd0d4e4e3540d2eb4ddd1933cc2ffa8cba5b37d94184525f5",
+    "reason": "검사 강화(#40) 전 이력. uploadedAt 기본값이 기존 첨부를 채워 CHECK를 만족한다. 기존 테이블 검증 잠금은 배포 전 점검한다."
+  },
+  "projects/game-feedback/apps/api/prisma/migrations/20261022030000_comment_replies/migration.sql": {
+    "sha256": "8ea51a8dc34ea670e50e5e207cc034caf3354b611af6d4944a6f033487ddaff1",
+    "reason": "검사 강화(#40) 전 이력. id를 포함한 유일 키는 중복되지 않고 새 parentId·commentId는 NULL이다. 기존 테이블 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261019010000_public_groups/migration.sql": {
+    "sha256": "650cfb650eb4209b4dba2b009f3ab26aa34834a21c1c8733be9b6928929f6694",
+    "reason": "검사 강화(#40) 전 이력. 기존 Group의 조회 인덱스만 추가하며 데이터를 바꾸지 않는다. 인덱스 생성 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261020010000_group_contests/migration.sql": {
+    "sha256": "d90a558ca49f55000c5cb98413334c149013137d9035131101c2359bd865c8cf",
+    "reason": "검사 강화(#40) 전 이력. id를 포함한 유일 키는 중복되지 않고 새 contestId는 NULL이다. 기존 테이블 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261020030000_post_links/migration.sql": {
+    "sha256": "e7dc0c9ee783f473f166e05b2ba99cc947799024ec34c4c84d37ca3721017537",
+    "reason": "검사 강화(#40) 전 이력. 기존 미디어 글은 uploadId가 있어 CHECK를 만족한다. 구버전 앱은 NULL uploadId를 읽지 못하므로 링크 글은 새 API·웹 배포 후에만 생성한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261020040000_group_categories/migration.sql": {
+    "sha256": "85949ab7da9813cc9bb5a803e7a3f0ab4b8d9d8a4289a9230bf09ceb48c19cb9",
+    "reason": "검사 강화(#40) 전 이력. 새 categoryId는 NULL이라 기존 글이 FK를 만족한다. 기존 Post의 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261021010000_presigned_post_uploads/migration.sql": {
+    "sha256": "af9d5928d16d12ddbe9701c3952dca352e20fa0f1dba3086a3ac72250ec95b05",
+    "reason": "검사 강화(#40) 전 이력. 새 stagingKey·completionKey는 NULL이고 PostgreSQL 유일 인덱스는 NULL 중복을 허용한다. 기존 테이블 인덱스 생성 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261022030000_presigned_submission_uploads/migration.sql": {
+    "sha256": "28f64c115e38c9674f84c09b5a7150e3eef239379b367c8fe844f53eb3382c3f",
+    "reason": "검사 강화(#40) 전 이력. 새 mediaUploadId는 NULL이라 유일 키와 FK를 만족한다. 기존 테이블 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261022130000_post_comment_replies/migration.sql": {
+    "sha256": "5fd9f17c818f7d1ef6c20a78657fb72d70dc060381fb1170b2e2332798d53d0c",
+    "reason": "검사 강화(#40) 전 이력. id를 포함한 유일 키는 중복되지 않고 새 parentId는 NULL이다. 기존 테이블 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261022140000_group_profile_contest_like_limit/migration.sql": {
+    "sha256": "fa2b1dfa468f456ac70139d672022f9bbcdf846189e02b132c29a1ee3051f837",
+    "reason": "검사 강화(#40) 전 이력. 새 avatarId는 NULL이라 복합 FK가 기존 그룹을 거부하지 않는다. 기존 Group의 검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261022152000_presigned_group_avatars/migration.sql": {
+    "sha256": "713376640f40533f7efc827a87d6d4b27d2a7720fc7fbc8b38e87ea716396152",
+    "reason": "검사 강화(#40) 전 이력. 새 mediaUploadId는 NULL이라 유일 키와 FK를 만족한다. 기존 테이블 인덱스·검증 잠금은 배포 전 점검한다."
+  },
+  "projects/photo-contest/apps/api/prisma/migrations/20261023040000_profile_uploads_and_onboarding/migration.sql": {
+    "sha256": "793fee68fbf570b0e654fbd0a53ee59680a853e7ad5566a3a0dd6a710a5b3571",
+    "reason": "#63에서 추가된 기존 이력을 #133에서 검토했다. 새 avatarUploadId는 NULL이라 기존 사용자가 유일 키와 FK를 만족하고 기존 앱은 새 필드를 요구하지 않는다. User 인덱스·검증 잠금은 배포 전 점검한다."
+  }
+}

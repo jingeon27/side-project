@@ -98,6 +98,8 @@ yarn prettier --write packages/design-system/src/index.ts
 - `pre-commit`: lint-staged가 스테이징된 파일만 루트 설정으로 `prettier --write`합니다. `.prettierignore` 대상과 Prettier가 모르는 파일은 건드리지 않습니다. lint는 각 프로젝트의 검사 명령으로 실행합니다.
 - `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현은 루트 `scripts/check-commit-message.ts`에 두며, 옆의 테스트는 `@side/config` 러너가 실행합니다.
 
+PR의 `Commits` 검사는 대상 브랜치에 더해지는 모든 일반 커밋에서 fixup·WIP·형식 오류·Co-Authored-By를 거부합니다. 검사 도입 직전의 공유 이력(`ebe5571f`)만 고정 SHA로 제외하므로 develop → main 릴리스가 과거 squash 제목 때문에 막히지 않습니다. 이후 커밋은 이미 develop에 병합됐어도 검사하며, PR 제목에는 이 검사가 적용되지 않습니다.
+
 새 worktree는 다음 명령으로 만들면 기본 worktree의 로컬 `.env*`도 함께 복사합니다. 루트와 환경변수 예제가 있는 프로젝트·앱 디렉터리만 대상으로 하며, 기존 대상 파일과 예제 파일은 보존합니다. 복사본 권한은 `600`이며 값은 출력하지 않습니다.
 
 ```sh

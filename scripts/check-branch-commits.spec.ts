@@ -1,8 +1,44 @@
-import { checkBranchCommits } from './check-branch-commits';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { branchCommits, checkBranchCommits } from './check-branch-commits';
 
 const commit = (message: string, sha = '0123456789abcdef') => ({ sha, message });
 
 describe('PR 브랜치 커밋 검사', () => {
+  it('릴리스 PR은 도입 전 이력만 제외하고 develop의 새 커밋과 곁가지도 검사한다', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'branch-commits-'));
+    const git = (...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+    const save = (message: string) => {
+      git('-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '-qm', message);
+      return git('rev-parse', 'HEAD');
+    };
+    try {
+      git('init', '-q', '-b', 'main');
+      git('config', 'user.name', 'Test');
+      git('config', 'user.email', 'test@example.invalid');
+      const base = save('초기 릴리스');
+      git('checkout', '-qb', 'old-feature');
+      const side = save('잘못된 새 곁가지 커밋');
+      git('checkout', '-qb', 'develop', base);
+      const legacyHistory = save('이전 squash 제목 (#18)');
+      const valid = save('ci: 커밋 검사를 도입한다');
+      const invalid = save('잘못된 새 커밋');
+      git('-c', 'commit.gpgsign=false', 'merge', '--no-ff', '-qm', 'Merge old-feature', 'old-feature');
+      const commits = branchCommits({ base, legacyHistory, cwd });
+      expect(commits.map(({ sha }) => sha)).toEqual(expect.arrayContaining([side, valid, invalid]));
+      expect(commits).toHaveLength(3);
+      expect(checkBranchCommits(commits)).toHaveLength(2);
+      expect(branchCommits({ base: valid, legacyHistory, cwd }).map(({ sha }) => sha)).toEqual(
+        expect.arrayContaining([side, invalid]),
+      );
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   it('규칙 형식의 커밋만 있으면 통과시킨다', () => {
     expect(
       checkBranchCommits([
