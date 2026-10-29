@@ -62,3 +62,9 @@ yarn test:photo-contest                       # 프로젝트 전체 unit
 - 모든 레인이 끝난 뒤 `yarn workspace @photo-contest/test-kit check:cleanup`으로 스키마 정리를 확인한다. 실행 중인 레인의 스키마는 정리 대상이 아니다.
 
 API `test:e2e`는 `test:integration`에 위임하는 호환 이름이다. 새 사양은 unit·integration 모두 `.spec.ts`로 만든다. 그룹 대회·부관리자·양도는 실제 DB에서 권한·동시 투표·동시 양도·복합 FK·접수 마감·비공개 결과를 검증한다. 웹은 생성 문서·실제 API와 Chrome/WebKit/데스크톱에서 개최→참여→투표→명예의 전당을 검사한다. SEO는 cookie 없는 조회·공개만 있는 48개 분할 사이트맵·서버 HTML·canonical·JSON-LD를 확인한다.
+
+## 서버 없는 실제 브라우저 컴포넌트 검사
+
+- 단순 계산은 node, DOM 렌더·입력은 jsdom, 실제 포커스·레이아웃·스크롤·제스처는 앱의 `test:browser`(Playwright)로 검증한다. 경로 이동·서버 연동은 기존 E2E가 소유한다. 실제 검증 대상을 observer/scroll stub으로 대체하지 않는다.
+- `playwright.components.config.ts`는 실제 컴포넌트와 제품 CSS를 Vite fixture(:3349)에 띄운다. 스펙은 구현 옆 `*.browser.spec.ts`에 두고 Vitest 레인에서는 제외한다. fixture는 `test/browser`에 둔다. DB·S3·프로젝트 환경변수를 읽지 않으며 CI `components` job에서 독립 실행한다.
+- Chromium CDP로 실제 터치·중첩 스크롤·핀치 취소를 확인하고 Chromium/WebKit에서 키보드 포커스·모션 감소를 검사한다. WebKit의 주입 터치는 지원되지 않아 이 결과를 iOS 실기기 제스처 검증으로 보고하지 않는다.
