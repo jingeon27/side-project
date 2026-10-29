@@ -74,3 +74,10 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 메시지를 추가·변경할 때는 `bridge` 스킬을 따른다.
 
 그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 `useIsSSR`·`skipToken`으로 브라우저에서 받는다.
+
+## 사용자 피드백: primitive와 이벤트 수명
+
+- outside-click·포커스 이동/복귀·Escape·키보드 탐색·ARIA 연결은 기존 `@side/design-system`/Base UI primitive에 맡긴다. 앱은 overlay-kit·history·portal·업무 비동기 동작만 조합하고 직접 DOM 리스너로 같은 기능을 복제하지 않는다.
+- Effect가 설치하는 외부 이벤트/observer의 콜백에서 최신 props·상태만 읽어야 하면 `useEffectEvent`로 분리한다. Effect에는 구독 대상·활성 조건 등 실제 수명 의존성을 남기며, 의존성 검사를 피하려고 값을 감추지 않는다. 반환 함수를 JSX 핸들러·다른 훅·렌더 중 만든 채널에 넘기지 않는다.
+- 렌더에 쓰는 외부 상태는 `useSyncExternalStore`, 사용자 조작은 일반 핸들러, 값 변화에 동기화하는 Effect는 reactive dependency를 유지한다. PullToRefresh는 공통 primitive에 대응 동작이 없고 passive:false·중첩 스크롤·핀치 취소가 필요하므로 유지한다.
+- `else`·`else if`는 새로 쓰지 않는다. 기존 공통 no-else lint와 가드/조기 반환·ts-pattern 기준을 유지한다.

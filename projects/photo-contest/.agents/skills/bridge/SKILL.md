@@ -34,3 +34,9 @@ description: 웹과 모바일 앱 사이 메시지 계약(packages/bridge)에 �
 - 앱 감지 결과로 권한을 판단하지 않는다(화면 모양에만 쓴다).
 
 link.open의 HTTP·HTTPS URL은 S3 서명의 임시 자격 증명·한글 파일명을 위해 최대 8192자를 허용한다. 일반 share.open URL의 2048자 제한과 쿠키·사용자 세션을 보내지 않는 규칙은 유지한다. 서명 URL은 파일을 잠시 읽는 권한이며 이벤트·로그·영구 상태에 기록하지 않는다.
+
+## React 경계와 수명
+
+- 이 패키지는 React 밖에서도 쓰이는 전송·검증·요청/응답 채널이다. React Hook이나 `useEffectEvent`를 넣지 않는다. 웹의 Effect가 설치한 구독만 그 훅 안에서 Effect Event로 최신 콜백을 읽고 구독 대상 교체/cleanup은 유지한다.
+- 네이티브 라우터는 WebView `onMessage`에서도 호출되므로 Effect Event를 주입하지 않는다. 패키지 자체의 dispose·타임아웃·origin 검증과 최신 ref 연결을 유지한다.
+- DOM outside-click·focus·Escape·ARIA는 웹 primitive가 맡으며 브리지에는 `navigation.back` 계약만 둔다.

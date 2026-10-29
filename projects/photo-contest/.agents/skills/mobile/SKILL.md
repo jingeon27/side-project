@@ -29,3 +29,10 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 - 네이티브 빌드·실기기 확인(키보드, 소셜 로그인 복귀, 파일 업로드, 공유 시트)은 테스트가 대신하지 못한다. 바꾼 뒤에는 실기기에서 직접 확인한다.
 
 메시지 계약을 바꿀 때는 `bridge` 스킬, 이벤트·오류 수집은 `monitoring` 스킬, 테스트 레인은 `testing` 스킬과 `apps/mobile/AGENTS.md`를 따른다.
+
+## 사용자 피드백: 라이브러리 우선과 구독 수명
+
+- 네이티브 동작은 설치된 React Native·Expo·WebView API에 우선 맡긴다. Base UI는 DOM primitive이므로 네이티브 제스처·Android BackHandler·WebView 메시지 전송을 대체하지 못한다. origin 검증·요청 짝짓기·800ms 뒤로 가기 정책은 앱/bridge가 소유한다.
+- Effect에서 설치한 AppState·Linking 구독의 최신 콜백은 `useEffectEvent`로 분리한다. 구독 대상·활성 조건은 dependency에 남기고 cleanup에서 리스너와 진행 중 작업의 후속 동작을 해제한다.
+- WebView prop·callback ref·렌더 중 만든 라우터/PushInbox는 Effect 밖에서도 호출된다. 여기에 Effect Event를 넘기지 않고 일반 콜백·필요한 최신 ref를 유지한다. 외부 상태 렌더는 `useSyncExternalStore`, 값 변화 동기화는 reactive Effect를 사용한다.
+- `else`·`else if`는 쓰지 않는다. 기존 공통 no-else lint와 가드·조기 반환 기준을 유지한다.
