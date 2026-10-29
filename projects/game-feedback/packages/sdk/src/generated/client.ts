@@ -63,6 +63,7 @@ import type {
   HideInput,
   ListAdminSupportMessagesParams,
   ListChatMessagesParams,
+  ListCommentRepliesParams,
   ListConversationsParams,
   ListNotificationsParams,
   ListPostAnswersParams,
@@ -1798,6 +1799,37 @@ return apiFetch<Comment>(getCreateCommentUrl(id),
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(createCommentInput),
     schema: Comment
+  }
+);}
+
+
+
+export const getListCommentRepliesUrl = (id: string,
+    params?: ListCommentRepliesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/comments/${encodeURIComponent(String(id))}/replies?${stringifiedParams}` : `/api/comments/${encodeURIComponent(String(id))}/replies`
+}
+
+export const listCommentReplies = async (id: string,
+    params?: ListCommentRepliesParams, options?: Parameters<typeof apiFetch>[1]): Promise<CommentPage> => {
+
+  return apiFetch<CommentPage>(getListCommentRepliesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: CommentPage
   }
 );}
 

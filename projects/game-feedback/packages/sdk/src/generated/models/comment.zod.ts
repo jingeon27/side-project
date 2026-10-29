@@ -10,6 +10,10 @@ export const commentOneIdMax = 100;
 
 export const commentOnePostIdMax = 100;
 
+export const commentOneReplyCountMin = 0;
+export const commentOneReplyCountMax = 9007199254740991;
+
+
 export const commentOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const commentOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const commentOneParentIdOneMax = 100;
@@ -22,12 +26,18 @@ export const commentTwoIdMax = 100;
 
 export const commentTwoPostIdMax = 100;
 
+export const commentTwoReplyCountMin = 0;
+export const commentTwoReplyCountMax = 9007199254740991;
+
+
 export const commentTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const commentTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 export const Comment = zod.union([zod.object({
   "id": zod.string().min(1).max(commentOneIdMax),
   "postId": zod.string().min(1).max(commentOnePostIdMax),
+  "replyCount": zod.int().min(commentOneReplyCountMin).max(commentOneReplyCountMax),
+  "repliesCursor": zod.union([zod.string().min(1),zod.null()]),
   "createdAt": zod.iso.datetime({"offset":true}).regex(commentOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(commentOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(commentOneParentIdOneMax),zod.null()]),
@@ -44,6 +54,8 @@ export const Comment = zod.union([zod.object({
 }),zod.object({
   "id": zod.string().min(1).max(commentTwoIdMax),
   "postId": zod.string().min(1).max(commentTwoPostIdMax),
+  "replyCount": zod.int().min(commentTwoReplyCountMin).max(commentTwoReplyCountMax),
+  "repliesCursor": zod.union([zod.string().min(1),zod.null()]),
   "createdAt": zod.iso.datetime({"offset":true}).regex(commentTwoCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(commentTwoUpdatedAtRegExp),
   "parentId": zod.null(),

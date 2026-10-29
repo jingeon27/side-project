@@ -43,6 +43,7 @@ export {
   readAnswers,
   recordPostView,
   listPostComments,
+  listCommentReplies,
   createComment,
   updateComment,
   deleteComment,
