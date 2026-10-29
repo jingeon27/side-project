@@ -78,47 +78,15 @@
   },
   "about": {
     "title": "Jingeon Kim",
-    "role": "Software Engineer · Building and writing",
-    "headline": "Building things, running them, and writing down the reasons behind the choices.",
-    "description": "Hi, I'm Jingeon, a software engineer. I build for the web with React and Next.js and enjoy following problems across interfaces, APIs, data, and deployment to understand what it takes to solve them.",
-    "perspective": "This blog is a record of the places I got stuck and the decisions I made along the way. Rather than listing the tools I used, I try to explain why I chose an approach and what happened when I tested it. That includes failed attempts and ideas I later changed my mind about.",
-    "readArticles": "Explore the writing",
-    "topics": {
-      "title": "What I write about",
-      "intro": "Questions that come up while turning a feature into something usable.",
-      "interface": {
-        "title": "Interfaces and user experience",
-        "description": "React rendering and state, the boundary between server and client, and the small usability issues that only show up in a real browser."
-      },
-      "design": {
-        "title": "Boundaries in code and data",
-        "description": "How to split responsibilities, what APIs and data should promise, and the changes I made when those boundaries stopped working."
-      },
-      "operation": {
-        "title": "Beyond the first working version",
-        "description": "Problems found through testing, deployment, and monitoring. I'm interested in the work between code running locally and a service people can use."
-      }
-    },
+    "role": "Software Engineer",
+    "description": "Hi, I'm Jingeon, a software engineer. I write about problems I run into while building services and what I learn along the way.",
+    "perspective": "Mostly, I write about why I chose an approach and what I changed after trying it.",
+    "readArticles": "Read the blog",
     "projects": {
-      "title": "Learning by building",
-      "intro": "Side projects give me a place to turn an idea into an interface and working code, then revisit the choices I made.",
-      "gameMate": {
-        "title": "Game Mate",
-        "description": "A gaming companion service that began with paid friend adds and coaching. I'm adding a feedback board to the experience of finding someone to play with.",
-        "link": "View Game Mate code"
-      },
-      "contest": {
-        "title": "Byeolsadae",
-        "description": "A community for sharing photos and videos and responding to each other's posts. It's a place to explore public feeds, group spaces, and participation permissions.",
-        "link": "View Byeolsadae code"
-      },
-      "blog": {
-        "title": "Bambyul Blog",
-        "description": "The site you're reading now. I write about development in Korean and English and keep the articles alongside the code in Git.",
-        "link": "View blog code"
-      }
+      "title": "Side projects",
+      "gameMate": "Game Mate",
+      "contest": "Byeolsadae"
     },
-    "contactDescription": "Have a thought about an article or something you'd like to discuss? You're welcome to get in touch.",
     "contact": "Contact"
   },
   "notFound": {

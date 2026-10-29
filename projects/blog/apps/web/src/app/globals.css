@@ -1162,134 +1162,75 @@ html:not([data-theme='dark']) .code-block span {
 
 /* About */
 .about-page {
-  max-width: 960px;
-}
-.about-intro {
-  padding: 64px 0 56px;
   max-width: 760px;
 }
+.about-intro {
+  padding: 48px 0 32px;
+  max-width: 660px;
+}
 .about-intro h1 {
-  margin: 12px 0 20px;
-  font-size: 44px;
+  margin: 10px 0 20px;
+  font-size: 32px;
   line-height: 1.5;
   font-weight: 620;
   letter-spacing: -0.05em;
 }
 .role-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--accent);
+  color: var(--muted);
   font-size: 13px;
   margin: 0;
 }
-.about-headline {
-  max-width: 650px;
-  margin: 0;
-  font-size: clamp(23px, 3vw, 32px);
-  line-height: 1.55;
-  font-weight: 550;
-  letter-spacing: -0.04em;
-}
 .about-description {
-  max-width: 690px;
-  font-size: 16px;
-  line-height: 1.95;
-  margin-top: 24px;
+  font-size: 15px;
+  line-height: 1.9;
+  margin: 20px 0 16px;
   color: var(--muted);
 }
-.about-description p + p {
-  margin-top: 16px;
+.about-description p {
+  margin: 0;
 }
-.about-text-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.about-description p + p {
+  margin-top: 12px;
+}
+.about-text-link,
+.about-project-links a {
   color: var(--accent);
   font-size: 14px;
-  font-weight: 550;
 }
-.about-text-link:hover {
+.about-text-link:hover,
+.about-project-links a:hover {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.about-section {
-  padding: 36px 0 44px;
-  border-top: 1px solid var(--line-strong);
-}
-.about-section-heading h2 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 550;
-  letter-spacing: -0.04em;
-}
-.about-section-heading p {
-  margin: 12px 0 0;
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--muted);
-}
-.about-topics,
-.about-projects {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px;
-  margin-top: 28px;
-}
-.about-topics h3,
-.about-projects h3 {
-  margin: 10px 0;
-  font-size: 17px;
-  font-weight: 600;
-}
-.about-topics p,
-.about-projects p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.9;
-  color: var(--muted);
-}
-.about-index {
-  color: var(--accent);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.about-projects article {
+.about-project-links {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 22px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 24px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
-.about-projects h3 {
-  margin-top: 0;
-}
-.about-projects p {
-  flex: 1;
-  margin-bottom: 24px;
+.about-project-links a {
+  font-size: inherit;
 }
 .contact-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  border-top: 1px solid var(--line-strong);
-  padding-top: 32px;
-  padding-bottom: 20px;
+  grid-template-columns: 160px 1fr;
+  gap: 32px;
+  border-top: 1px solid var(--line);
+  padding: 24px 0 20px;
 }
 .contact-section h2 {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 550;
   letter-spacing: -0.04em;
-  margin-top: 0;
+  margin: 0;
 }
 .contact-list {
   margin: 0;
-  padding-top: 6px;
 }
 .contact-list > div {
-  padding: 16px 0 20px;
+  padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
 .contact-list > div:first-child {
@@ -1303,12 +1244,6 @@ html:not([data-theme='dark']) .code-block span {
 .contact-list dd {
   margin: 0;
   font-size: 14px;
-}
-.contact-list a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
 }
 .contact-list a:hover {
   color: var(--accent);
@@ -1669,41 +1604,14 @@ html:not([data-theme='dark']) .code-block span {
     margin-bottom: 20px;
   }
   .about-intro {
-    padding: 54px 0 45px;
+    padding: 36px 0 28px;
   }
   .about-intro h1 {
-    font-size: 36px;
-    margin-top: 12px;
-    line-height: 1.55;
-  }
-  .role-label {
-    font-size: 13px;
-  }
-  .about-topics,
-  .about-projects {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .about-section {
-    padding: 30px 0;
-  }
-  .about-description {
-    font-size: 15px;
-    margin-top: 20px;
+    font-size: 30px;
   }
   .contact-section {
     grid-template-columns: 1fr;
-    gap: 28px;
-    padding-top: 30px;
-  }
-  .contact-section h2 {
-    font-size: 22px;
-  }
-  .contact-list {
-    padding-top: 0;
-  }
-  .contact-list dd {
-    font-size: 13px;
+    gap: 20px;
   }
   .site-footer {
     margin-top: 70px;

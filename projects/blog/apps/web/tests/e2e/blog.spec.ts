@@ -50,23 +50,18 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
-test('About introduces the author and projects in both locales without horizontal overflow', async ({
-  page,
-}) => {
+test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
   for (const [locale, messages] of [
     ['ko', ko],
     ['en', en],
   ] as const) {
     await page.goto(`/${locale}/about`);
     await expect(page.getByRole('heading', { level: 1, name: messages.about.title })).toBeVisible();
-    await expect(page.getByText(messages.about.headline)).toBeVisible();
-    await expect(
-      page.getByRole('region', { name: messages.about.topics.title }).getByRole('article'),
-    ).toHaveCount(3);
-    await expect(
-      page.getByRole('region', { name: messages.about.projects.title }).getByRole('article'),
-    ).toHaveCount(3);
-    await expect(page.getByRole('link', { name: messages.about.projects.gameMate.link })).toHaveAttribute(
+    await expect(page.getByText('Software Engineer', { exact: true })).toBeVisible();
+    await expect(page.getByText(messages.about.description)).toBeVisible();
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(1);
+    await expect(page.getByRole('main').getByRole('article')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: messages.about.projects.gameMate })).toHaveAttribute(
       'href',
       'https://github.com/jingeon27/side-project/tree/main/projects/game-feedback',
     );
