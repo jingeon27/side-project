@@ -1461,3 +1461,20 @@ NavigationGuardRegistry의 등록 여부를 useSyncExternalStore로 구독하고
 별도로 develop GF의 가이드 테스트는 Next Partial Prefetching이 필요한 바이트를 읽고 스트림을 취소했을 때 Response.finished()가 완료되지 않아 실패했다. HTTP 성공 응답과 requestfinished/requestfailed 이벤트를 동기적으로 기록하고 정상 ERR_ABORTED만 구분한다. 경로 트리는 가이드 본문 준비로 인정하지 않으며 instant() 안의 실제 제목·헤더·본문·같은 문서 탐색 단언을 유지한다. 무한 피드 페이지 추가와 분리해 이용약관 화면의 푸터에서 가이드로 이동한다. 실패 추적이 .e2e-build 안에 남도록 CI artifact의 숨김 경로 수집도 켰다.
 
 검증: main 기준 migration 42개와 도입 후 커밋 234개 검사, toolkit 타입·lint·98개 테스트, config tooling 55개 테스트, scripts·Web 타입·Web lint, CI와 같은 test 환경의 knip이 통과했다. 실제 운영 빌드와 격리 API 대역(3393/4393)으로 저장소의 가이드 spec을 12회 연속 실행해 모두 통과했다. 페이지 종료 시 비동기 request.response()가 남는 문제도 재현해 동기 응답 기록으로 바꿨다. 실제 S3·DB를 사용하는 전체 통합·E2E는 로컬 자격 증명이 없어 실행하지 않았으며 원격 CI에서 확인한다.
+
+## 2026-10-29 이벤트 수명과 라이브러리 위임 점검
+
+Web·Admin·Mobile의 effect, DOM/OS listener, observer, 외부 채널과 접근성 처리를 점검했다. Web의 BottomSheet·DropdownMenu·Select와 Admin 컨트롤은 이미 `@side/design-system`/Base UI에 위임되어 있어 outside-click·focus·Escape·ARIA 구현을 추가하거나 교체하지 않았다. 네이티브 back의 Escape 전달은 Base UI 팝업을 닫는 어댑터로 유지한다.
+
+모바일 `useShellLifecycle`은 최신 링크·상태·back·fallback 콜백을 `useEffectEvent`로 읽는다. 콜백 교체로 OS 구독과 `ShellLifecycle`을 다시 만들지 않아 background 전환, 대기 중 back, 초기/후속 링크 경합 상태를 보존한다. 푸시 구독의 가변 active 플래그는 `AbortController`로 바꾸고 폐기된 초기 응답과 listener를 무시한다.
+
+유지 판단:
+
+- Web URL·테마·언어·visibility·media query, Admin hash route, Mobile WebView snapshot은 `useSyncExternalStore`를 유지한다.
+- 계정별 SSE 구독과 native push 지원 여부·사용자 ID, 경로·overlay 상태·locale 등록, 게시글/대화 읽음·조회수·observer DOM 대상은 reactive 수명과 의존성을 유지한다.
+- NativeBridgeChannel·브라우저 탐색·analytics·Quill·PushInbox는 비React 채널의 bind/dispose·큐·취소 수명을 유지한다. PushInbox의 callback 교체는 binding 갱신과 pending flush를 수행하므로 Effect Event로 숨기지 않는다.
+- MobileViewport는 최신 React 값을 읽지 않는 고정 DOM 구독이다. UI 이벤트와 callback ref는 일반 callback을 유지한다. 기존 `side/no-else: error`를 그대로 적용하며 새 else·let은 추가하지 않았다.
+
+준비 단계에서 `@game-feedback/contracts`의 dist와 API Prisma client가 없었다. 필요한 명령은 각각 `yarn workspace @game-feedback/contracts build`, `yarn workspace @game-feedback/api prisma:generate`다. DB 접근·스키마 변경·SDK 전체 재생성은 필요하지 않았다. 의존성 catalog와 루트 lockfile은 변경하지 않았다.
+
+검증: Node 24.18.0·Yarn 4.17.0 immutable 설치, Mobile unit/UI 63개(17파일)·typecheck·lint, Web unit/UI 263개(75파일)·lint, Admin 23개(5파일)·typecheck·lint 통과. Vitest는 `--maxWorkers=2`로 실행했다. 모바일 신규 회귀는 변경 전 구현에서 callback 교체 시 OS listener가 두 번 설치되는 실패를 재현했고 변경 후 통과했다. Android Metro dev export도 `--max-workers 2`로 통과했으며 출력은 제거했다. Web/Admin 소스는 변경하지 않았다. iOS 번들·Playwright E2E·dev client 실기기·운영 검증은 실행하지 않았다. 다른 서버·DB를 조작하지 않았다.
