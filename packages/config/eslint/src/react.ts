@@ -5,9 +5,20 @@ import { baseConfig } from './base';
 import { sidePlugin } from './plugin';
 
 export const handlerNamesConfig: Linter.Config = {
-  name: 'side/handler-names',
-  plugins: { side: sidePlugin },
-  rules: { 'side/handler-names': 'error' },
+  name: 'side/jsx-handler-names',
+  // React preset 또는 Next가 소유한 플러그인을 재등록하지 않고 옵션만 추가한다.
+  rules: {
+    'react/jsx-handler-names': [
+      'error',
+      {
+        eventHandlerPrefix: '(?:handle|on|fetchNext)',
+        eventHandlerPropPrefix: 'on',
+        // 함수의 출처를 구분하지 못하므로 로컬 함수와 인라인 콜백은 리뷰에서 이름을 확인한다.
+        checkLocalVariables: false,
+        checkInlineFunction: false,
+      },
+    ],
+  },
 };
 
 export const reactConfig: Linter.Config[] = [

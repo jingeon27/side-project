@@ -9,7 +9,7 @@ import { nextConfig } from './next';
 import { reactConfig } from './react';
 import { reactDomConfig } from './react-dom';
 
-// 네 규칙을 모두 어기는 컴포넌트로 preset마다 켜진 side 규칙을 확인한다.
+// 세 규칙을 모두 어기는 컴포넌트로 preset마다 켜진 side 규칙을 확인한다.
 const code = `export function Overlay() {
   const [open, setOpen] = useState(false);
   if (open) setOpen(false);
@@ -33,13 +33,9 @@ function enabledSideRules(config: Linter.Config[]) {
 describe('preset별 side 규칙 배선', () => {
   it.each([
     ['baseConfig', baseConfig, ['side/no-else']],
-    ['reactConfig', reactConfig, ['side/handler-names', 'side/no-component-fetch', 'side/no-else']],
-    [
-      'nextConfig',
-      nextConfig,
-      ['side/handler-names', 'side/no-component-fetch', 'side/no-else', 'side/no-overlay-state'],
-    ],
-    ['expoConfig', expoConfig, ['side/handler-names', 'side/no-component-fetch', 'side/no-else']],
+    ['reactConfig', reactConfig, ['side/no-component-fetch', 'side/no-else']],
+    ['nextConfig', nextConfig, ['side/no-component-fetch', 'side/no-else', 'side/no-overlay-state']],
+    ['expoConfig', expoConfig, ['side/no-component-fetch', 'side/no-else']],
   ])('%s는 분류 범위의 규칙만 켜고 side 플러그인을 다시 등록해도 충돌하지 않는다', (_, config, rules) => {
     expect(enabledSideRules(config)).toEqual(rules);
   });
@@ -86,5 +82,23 @@ describe('모든 preset의 명시적 export', () => {
       filename: path.join(import.meta.dirname, 'PublicApi.ts'),
     });
     expect(messages.some(({ ruleId }) => ruleId === 'side/no-wildcard-exports')).toBe(true);
+  });
+});
+
+// Next가 등록한 React 플러그인과 공통 옵션의 플러그인 객체가 충돌하지 않는지도 확인한다.
+describe('preset별 기존 핸들러 명명 규칙', () => {
+  it.each([
+    ['react', reactConfig],
+    ['react-dom', reactDomConfig],
+    ['next', nextConfig],
+    ['expo', expoConfig],
+  ])('%s는 react/jsx-handler-names를 켠다', (_, config) => {
+    const messages = new Linter({ configType: 'flat' }).verify(
+      'export function Editor() { return <Button onClick={actions.save} />; }',
+      config,
+      { filename: path.join(import.meta.dirname, 'Editor.tsx') },
+    );
+    expect(messages.filter(({ fatal }) => fatal)).toEqual([]);
+    expect(messages.some(({ ruleId }) => ruleId === 'react/jsx-handler-names')).toBe(true);
   });
 });
