@@ -47,4 +47,4 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 - 직접 작성해 이벤트 prop·리스너·observer에 등록하는 내부 함수와 Effect Event는 `const handle* = …`로 선언한다. 클래스 이벤트 필드는 `private readonly handle* = …`로 receiver를 보존한다. 기존 라이브러리·부모 prop 함수 참조는 이름을 바꾸거나 `handle*` 별칭으로 감싸지 않으며 순수 계산 함수에는 이 접두사를 강제하지 않는다.
 - 래퍼 감사는 TypeScript AST로 typed arrow·단일 return 블록·함수 선언까지 확인한다. 직접 참조로 바꾸기 전에 전달 인자, `this`, 반환값, 실행 시점과 참조 수명을 검토한다. `AbortController.abort()`의 무인자 호출은 receiver와 취소 reason을 지키므로 이벤트에 메서드를 그대로 넘기지 않는다.
 
-- 명명 규칙과 기존 함수 직접 전달이 충돌하면 ESLint를 통째로 끄지 않는다. 직접 작성한 핸들러와 기존 함수 참조를 구분하도록 검사 범위를 조정하고 오탐·미탐 회귀 테스트로 지킨다.
+- 명명 검사는 기존 `react/jsx-handler-names` 옵션을 우선한다. `checkLocalVariables: false`는 직접 작성한 로컬 함수도 모두 검사에서 제외하므로 로컬 함수·리스너·observer의 `handle*` 명명은 리뷰로 유지한다. 사용자 정책에 따라 명명용 커스텀 규칙을 새로 만들거나 재도입하지 않으며, 이름을 맞추기 위한 별칭 래퍼·disable도 추가하지 않는다.
