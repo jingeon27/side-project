@@ -22,7 +22,7 @@ description: Game Feedback 모바일 셸의 WebView prop, 탐색 정책·딥링�
 ## ShellLifecycle
 
 - `model/use-shell-lifecycle.ts`의 effect 하나가 expo-linking `getInitialURL`·`url` 이벤트, `AppState` `change`, Android에서만 `BackHandler` `hardwareBackPress`를 구독하고 cleanup에서 `dispose()` 뒤 모두 해제한다.
-- 의존성은 `[openLink, onState, onBack, onFallbackBack]` 개별 값이다. `handleOpenLink`·`handleFallbackBack`은 `useCallback`, `host.state`·`host.back`은 class arrow 속성이라 안정적이다. 인라인 함수를 넘기면 렌더마다 OS 구독이 다시 붙는다. 훅에 let/ref 플래그를 두지 않고 상태는 class에 둔다.
+- OS 구독은 셸 마운트 수명이다. `openLink`·`onState`·`onBack`·`onFallbackBack`은 `useEffectEvent`로 최신 구현을 읽으며 콜백 교체로 `ShellLifecycle`을 폐기하지 않는다. 진행 중 back·background·초기/후속 링크 경합 상태는 같은 class 인스턴스에 보존한다. snapshot은 `useSyncExternalStore`, WebView prop 콜백은 일반 함수/`useCallback`을 유지한다. 훅에 let/ref 플래그를 두지 않는다.
 - 경합: 후속 `url` 이벤트가 온 뒤 늦게 끝난 `getInitialURL`은 무시한다(`receivedLink`). `dispose` 뒤의 링크·상태·back 응답은 버린다(`AbortController`). `background`는 한 번, `active`는 background를 거친 뒤에만 알린다(`inactive` 무시).
 
 ## 탐색 정책·딥링크
