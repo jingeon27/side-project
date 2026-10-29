@@ -1,6 +1,8 @@
 import { useEffect, useEffectEvent } from 'react';
 import { BackHandler, Platform } from 'react-native';
 
+import { Mutex } from 'es-toolkit';
+
 import type { INativeRouter } from '@photo-contest/bridge/native';
 
 import { resolveBackPress } from '@/features/navigation';
@@ -29,26 +31,30 @@ export function useAndroidBackPress(options: IUseAndroidBackPressOptions) {
 
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    const lifecycle = { pending: false, active: true };
-
+    const lifetime = new AbortController();
+    const mutex = new Mutex();
     const handleHardwareBackPress = () => {
-      if (lifecycle.pending) return true;
-      lifecycle.pending = true;
-      void resolveBackPress(
-        () => askWeb(),
-        () => canGoBack(),
-      ).then((action) => {
-        if (!lifecycle.active) return;
-        lifecycle.pending = false;
-        if (action === 'go-back') goBack();
-        if (action === 'exit') BackHandler.exitApp();
+      if (mutex.isLocked) return true;
+      void mutex.acquire().then(async () => {
+        try {
+          if (lifetime.signal.aborted) return;
+          const action = await resolveBackPress(
+            () => askWeb(),
+            () => canGoBack(),
+          );
+          if (lifetime.signal.aborted) return;
+          if (action === 'go-back') goBack();
+          if (action === 'exit') BackHandler.exitApp();
+        } finally {
+          mutex.release();
+        }
       });
       return true;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', handleHardwareBackPress);
     return () => {
-      lifecycle.active = false;
+      lifetime.abort();
       subscription.remove();
     };
   }, []);

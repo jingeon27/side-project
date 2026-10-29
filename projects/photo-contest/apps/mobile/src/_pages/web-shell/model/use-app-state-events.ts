@@ -1,11 +1,11 @@
 import { useEffect, useEffectEvent } from 'react';
-import { AppState } from 'react-native';
 
 import type { INativeRouter } from '@photo-contest/bridge/native';
 
 import { ANALYTICS_EVENT, trackEvent } from '@/features/analytics';
 
-import { nextBridgeAppState, type TBridgeAppState } from '../lib/app-state';
+import type { TBridgeAppState } from '../lib/app-state';
+import { AppStateSubscription } from './app-state-subscription';
 
 interface IUseAppStateEventsOptions {
   router: INativeRouter;
@@ -18,20 +18,12 @@ interface IUseAppStateEventsOptions {
  */
 export function useAppStateEvents(options: IUseAppStateEventsOptions) {
   const emitState = useEffectEvent((state: TBridgeAppState) => {
+    if (state === 'active') trackEvent({ name: ANALYTICS_EVENT.AppForegrounded });
     if (options.isWebReady()) options.router.emit('app.state', { state });
   });
 
   useEffect(() => {
-    const history: { previous: TBridgeAppState } = {
-      previous: AppState.currentState === 'background' ? 'background' : 'active',
-    };
-    const subscription = AppState.addEventListener('change', (next) => {
-      const state = nextBridgeAppState(history.previous, next);
-      if (!state) return;
-      history.previous = state;
-      if (state === 'active') trackEvent({ name: ANALYTICS_EVENT.AppForegrounded });
-      emitState(state);
-    });
-    return () => subscription.remove();
+    const subscription = new AppStateSubscription((state) => emitState(state));
+    return () => subscription.dispose();
   }, []);
 }
