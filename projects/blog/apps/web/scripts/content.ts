@@ -190,8 +190,11 @@ export async function readContent(root: string) {
         images.push(node.url);
       });
       for (const url of images) {
-        if (url.startsWith('/images/')) await access(path.join(root, 'public', url));
-        else if (!/^https:\/\//.test(url)) throw new Error(`${id}/${locale}: unresolved image ${url}`);
+        if (url.startsWith('/images/')) {
+          await access(path.join(root, 'public', url));
+          continue;
+        }
+        if (!/^https:\/\//.test(url)) throw new Error(`${id}/${locale}: unresolved image ${url}`);
       }
       articles.push({ ...meta, ...seo[locale].posts[id]!, id, locale, toc, readingMinutes, translations });
       imports.push({ id, locale });

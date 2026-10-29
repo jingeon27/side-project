@@ -28,11 +28,11 @@ export function ArticleShare({
             if (navigator.share) {
               await navigator.share({ title, url: url.href });
               trackEvent('article_shared', { content_id: contentId, method: 'native' });
-            } else {
-              await navigator.clipboard.writeText(url.href);
-              setStatus(t.article.copied);
-              trackEvent('article_shared', { content_id: contentId, method: 'copy_link' });
+              return;
             }
+            await navigator.clipboard.writeText(url.href);
+            setStatus(t.article.copied);
+            trackEvent('article_shared', { content_id: contentId, method: 'copy_link' });
           } catch (error) {
             if (!(error instanceof DOMException && error.name === 'AbortError'))
               setStatus(t.article.shareFailed);

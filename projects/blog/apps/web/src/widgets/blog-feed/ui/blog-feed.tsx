@@ -50,17 +50,23 @@ function BlogFeedContent({
     fixedCategory ?? categories.find((entry) => entry === searchParams.get('category')) ?? 'all';
   const updateFilters = (updates: { q?: string; category?: Category | 'all' }, push = false) => {
     const url = new URL(window.location.href);
-    if (updates.q !== undefined) {
-      if (updates.q) url.searchParams.set('q', updates.q);
-      else url.searchParams.delete('q');
-    }
+    const updateParam = (key: string, next: string) => {
+      if (next) {
+        url.searchParams.set(key, next);
+        return;
+      }
+      url.searchParams.delete(key);
+    };
+    if (updates.q !== undefined) updateParam('q', updates.q);
     if (updates.category !== undefined) {
-      if (updates.category !== 'all' && !fixedCategory) url.searchParams.set('category', updates.category);
-      else url.searchParams.delete('category');
+      updateParam('category', updates.category !== 'all' && !fixedCategory ? updates.category : '');
     }
     if (url.href === window.location.href) return;
-    if (push) window.history.pushState(null, '', url);
-    else window.history.replaceState(null, '', url);
+    if (push) {
+      window.history.pushState(null, '', url);
+      return;
+    }
+    window.history.replaceState(null, '', url);
   };
   const counts = { ...countBy(articles, (article) => article.category), all: articles.length };
   const searchArticles = articles.filter(

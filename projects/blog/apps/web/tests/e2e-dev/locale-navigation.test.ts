@@ -13,8 +13,11 @@ for (const { saved, system, expected } of [
   }) => {
     await page.emulateMedia({ colorScheme: system });
     await page.addInitScript((theme) => {
-      if (theme) localStorage.setItem('blog-theme', theme);
-      else localStorage.removeItem('blog-theme');
+      if (theme) {
+        localStorage.setItem('blog-theme', theme);
+        return;
+      }
+      localStorage.removeItem('blog-theme');
     }, saved);
     await page.route(/\/_next\/.*\.js(?:\?.*)?$/, (route) => route.abort());
     await page.goto('/ko', { waitUntil: 'domcontentloaded' });

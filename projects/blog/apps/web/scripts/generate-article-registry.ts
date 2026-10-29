@@ -96,7 +96,8 @@ if (check) {
     if (actual !== expected)
       throw new Error(`Stale generated content: ${path.relative(root, file)}. Run yarn content:generate.`);
   }
-} else {
+}
+if (!check) {
   await mkdir(lib, { recursive: true });
   for (const [file, source] of files) {
     await mkdir(path.dirname(file), { recursive: true });

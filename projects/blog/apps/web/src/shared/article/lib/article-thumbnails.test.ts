@@ -29,10 +29,14 @@ async function expectLocalImage(src: string) {
     expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
     expect(bytes.readUInt32BE(16)).toBeGreaterThan(0);
     expect(bytes.readUInt32BE(20)).toBeGreaterThan(0);
-  } else if (extension === '.jpg' || extension === '.jpeg') {
+    return;
+  }
+  if (extension === '.jpg' || extension === '.jpeg') {
     expect(bytes.subarray(0, 3)).toEqual(Buffer.from([255, 216, 255]));
     expect(bytes.subarray(-2)).toEqual(Buffer.from([255, 217]));
-  } else if (extension === '.svg') {
+    return;
+  }
+  if (extension === '.svg') {
     const document = new DOMParser().parseFromString(bytes.toString('utf8'), 'image/svg+xml');
     expect(document.querySelector('parsererror')).toBeNull();
     expect(document.documentElement.localName).toBe('svg');
@@ -47,9 +51,9 @@ async function expectLocalImage(src: string) {
     expect(viewBox?.[2]).toBeGreaterThan(0);
     expect(viewBox?.[3]).toBeGreaterThan(0);
     expect(document.querySelector('script, foreignObject')).toBeNull();
-  } else {
-    throw new Error(`Unsupported thumbnail format: ${src}`);
+    return;
   }
+  throw new Error(`Unsupported thumbnail format: ${src}`);
 }
 
 describe('published article thumbnail assets', () => {

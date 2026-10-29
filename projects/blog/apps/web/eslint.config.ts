@@ -27,6 +27,17 @@ export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
   ...boundaries,
+  {
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'IfStatement[alternate!=null]',
+          message: 'Use guard clauses or exhaustive matching instead of else.',
+        },
+      ],
+    },
+  },
   globalIgnores([
     '.next/**',
     'playwright-report/**',
