@@ -1,5 +1,5 @@
 export { CommentItem } from './ui/CommentItem';
-export { olderCommentOptions } from './model/comment.options';
+export { olderCommentOptions, olderCommentRepliesOptions } from './model/comment.options';
 export {
   createCommentMutationOptions,
   updateCommentMutationOptions,

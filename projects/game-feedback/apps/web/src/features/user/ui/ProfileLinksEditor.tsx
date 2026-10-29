@@ -27,7 +27,7 @@ export function ProfileLinksEditor({ form }: { form: TProfileLinksForm }) {
     >
       <p className="muted small">{t('링크를 최대 5개 공개할 수 있어요. 이름과 주소를 함께 입력해주세요.')}</p>
       {fields.fields.map((field, index) => (
-        <fieldset key={field.id} className="profile-link-field">
+        <fieldset key={field.id} className="profile-link-field" disabled={mutation.isPending}>
           <legend>{t('링크 {number}', { number: index + 1 })}</legend>
           <label>
             {t('이름')} <span aria-hidden>*</span>

@@ -17,6 +17,7 @@ if (dsn) {
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE?.trim() || undefined,
     dataCollection: SENTRY_DATA_COLLECTION,
     tracesSampleRate: 1,
     integrations: [

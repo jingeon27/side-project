@@ -222,7 +222,7 @@ test('mobile composition can switch categories from a board and persist friend s
   await expect(price).toHaveCount(0);
   await editor.getByLabel('Category', { exact: true }).selectOption('FRIEND_SALE');
   await expect(price).toHaveValue('');
-  const title = `Mobile friend slot sale ${Date.now().toString(36)}`;
+  const title = `Friend slot sale ${Date.now().toString(36)}`;
   await editor.getByLabel('Title', { exact: true }).fill(title);
   await expect(editor.getByRole('textbox', { name: 'Content', exact: true })).toContainText(body);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

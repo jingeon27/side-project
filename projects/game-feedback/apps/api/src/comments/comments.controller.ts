@@ -34,6 +34,14 @@ export class CommentsController {
   ) {
     return this.service.page(req, id, query);
   }
+  @Get('comments/:id/replies')
+  replies(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedQuery(ListQuerySchema) query: TListQueryDto,
+  ) {
+    return this.service.replies(req, id, query);
+  }
   @HttpCode(200)
   @Post('posts/:id/comments')
   @UseGuards(UserGuard)

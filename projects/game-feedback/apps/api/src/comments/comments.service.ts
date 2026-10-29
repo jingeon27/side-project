@@ -16,7 +16,7 @@ import { writePostNotifications } from '../push/post-notification.writer';
 import { authorSelect } from '../users/user.presenter';
 import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { type TCommentBodyDto, type TCreateCommentBodyDto } from './comment-input.dto';
-import { commentThreadPage } from './comment-page';
+import { commentReplyPage, commentThreadPage, visibleCommentRoot } from './comment-page';
 import { activeCommentWhere } from './comment-visibility';
 import { responseComment } from './comment.presenter';
 
@@ -96,6 +96,16 @@ export class CommentsService {
       cursor: query.cursor,
       limit: query.limit,
     });
+  }
+  async replies(req: SessionRequest, id: string, query: TListQueryDto) {
+    const excluded = await this.visibility.excluded(req);
+    const root = await this.db.comment.findFirst({
+      where: { id, ...visibleCommentRoot(excluded) },
+      select: { postId: true },
+    });
+    if (!root) throw new ApiError(404, 'COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    await this.posts.visiblePost(req, root.postId);
+    return commentReplyPage(this.db, root.postId, id, excluded, query);
   }
   async visibleComment(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);

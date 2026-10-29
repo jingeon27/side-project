@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   create: vi.fn(),
   notify: vi.fn(),
   older: vi.fn(),
+  olderReplies: vi.fn(),
 }));
 
 vi.mock('@/features/auth', () => ({
@@ -20,6 +21,7 @@ vi.mock('@/features/auth', () => ({
 vi.mock('@/features/comment/api/comment.api', () => ({
   postComment: state.create,
   fetchPostComments: ({ cursor }: { cursor: string }) => state.older(cursor),
+  fetchCommentReplies: state.olderReplies,
   patchComment: vi.fn(),
   deleteCommentById: vi.fn(),
 }));
@@ -63,6 +65,8 @@ function comment(id: string, parentId: string | null = null): Comment {
   return {
     id,
     parentId,
+    replyCount: 0,
+    repliesCursor: null,
     postId: post.id,
     body: `${id} 본문`,
     author,
@@ -95,9 +99,20 @@ beforeEach(() => {
   state.create.mockReset().mockResolvedValue(comment('new-reply', 'first'));
   state.notify.mockReset();
   state.older.mockReset();
+  state.olderReplies.mockReset();
 });
 
 describe('comment replies', () => {
+  it('keeps the displayed count as a lower bound when earlier replies or filtered authors remain', () => {
+    renderComments([
+      { ...comment('first'), replyCount: 205, repliesCursor: 'earlier-replies' },
+      comment('visible-reply', 'first'),
+    ]);
+    expect(screen.getByRole('heading', { name: '댓글2개 이상' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '이전 답글 더 보기' })).toBeTruthy();
+    expect(state.olderReplies).not.toHaveBeenCalled();
+  });
+
   it('nests replies under their root and keeps replies beneath an anonymous deleted root', () => {
     const removed: Comment = {
       ...comment('removed'),
@@ -105,9 +120,10 @@ describe('comment replies', () => {
       body: '',
       isDeleted: true,
       parentId: null,
+      replyCount: 1,
     };
     renderComments([
-      comment('first'),
+      { ...comment('first'), replyCount: 1 },
       removed,
       comment('last'),
       comment('first-reply', 'first'),
@@ -202,7 +218,10 @@ describe('earlier comment pages', () => {
   it('prepends older threads page by page and hides the button after the oldest page', async () => {
     state.older.mockImplementation(async (cursor: string) =>
       cursor === 'cursor-1'
-        ? { items: [comment('older-2'), comment('older-2-reply', 'older-2')], nextCursor: 'cursor-2' }
+        ? {
+            items: [{ ...comment('older-2'), replyCount: 1 }, comment('older-2-reply', 'older-2')],
+            nextCursor: 'cursor-2',
+          }
         : { items: [comment('older-1')], nextCursor: null },
     );
     renderComments([comment('latest')], 'cursor-1');

@@ -1535,3 +1535,9 @@ API에 응답 finish/aborted close까지의 수동 HTTP span과 `chat.persist`·
 - 로컬 지정 게시글에 예시 댓글 2개와 답글 3개를 추가하고 실제 UI에서 대댓글의 답글도 하나 저장했다. 기존 콘텐츠는 보존했다.
 - 로컬 개발 DB에는 옛 migration 14개의 이력이 남아 있어 새 initial은 적용하지 않았다. 데이터를 비공개 로컬 파일로 백업하고 Git의 원본 SQL과 적용 체크섬을 대조한 뒤, 기존 migration 묶음에 이번 추가형 migration만 연결해 적용했다. 실패한 새 initial 실행 기록은 rolled-back으로 정리했다. 새 initial을 applied 처리하거나 기존 이력을 바꾸지 않았다. 표준 최신 migration 전체의 이력 정리는 이번 범위에 포함하지 않는다.
 - 검증: 계약·OpenAPI·SDK 재생성, API/Web 타입 검사, Web ESLint, Web 단위/UI 278개, 댓글 API 통합 15개, 기존 댓글 migration 회귀 1개, 댓글·대댓글·채팅 목록 E2E 7개와 Knip을 통과했다. 테스트는 전용 DB의 격리 스키마와 별도 포트를 사용했다.
+
+### PR #155 충돌 해결 (2026-10-30)
+
+develop의 이전 답글 페이지네이션과 댓글별 답글 폼·멘션을 함께 유지했다. 추가로 불러온 답글 작성자도 멘션 조회에 포함하며, 해당 답글의 폼을 같은 깊이에서 열 수 있다. 계약·OpenAPI·SDK를 재생성해 이전 답글 응답에도 replyToId가 보존되도록 했다.
+
+검증: API/Web 타입 검사, Web ESLint, Web 단위/UI 287개, SDK 78개, 답글 페이지네이션 DB 회귀 2개, 댓글·대댓글·205개 답글 페이지네이션·채팅 목록 브라우저 E2E 8개, 변경 파일 Prettier·diff 검사 통과. DB 검증은 기존 테스트 DB의 새 gf_test_ 스키마만 사용했고 브라우저 서버는 3301/4301에서 실행 후 정리했다. 개발·운영 DB 변경이나 배포는 수행하지 않았다.

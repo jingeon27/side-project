@@ -9,7 +9,7 @@ export const MEDIA_RATE_LIMITED = '요청이 너무 많습니다. 잠시 후 다
 
 // 권한을 확인한 뒤 서명 GET으로 보내는 고정 경로만 센다. 업로드 발급·완료는 GraphQL 제한을 따른다.
 const MEDIA_PATH =
-  /^\/(?:media\/[^/]+(?:\/download)?|photos\/[^/]+|(?:groups|profiles)\/[^/]+\/avatar\/[^/]+)\/?$/;
+  /^\/(?:media\/[^/]+(?:\/download)?|photos\/[^/]+|groups\/[^/]+\/(?:avatar|cover)\/[^/]+|profiles\/[^/]+\/avatar\/[^/]+)\/?$/i;
 
 export function isMediaPath(path: string) {
   return MEDIA_PATH.test(path);

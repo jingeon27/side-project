@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
-import type { Prisma } from '../../generated/prisma';
+import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session/session.service';
@@ -244,42 +244,51 @@ export class PostService {
   }
 
   async like(viewer: IViewer, postId: string, liked: boolean) {
-    const row = await this.transactions.atomic(async (tx) => {
-      const { post } = await this.membership.accessiblePost(viewer.id, postId, tx);
-      const existing = liked
-        ? await tx.postLike.findUnique({ where: { postId_userId: { postId, userId: viewer.id } } })
-        : null;
-      if (liked && !existing && post.contestId) {
-        const contest = await tx.contest.findUniqueOrThrow({ where: { id: post.contestId } });
-        // 숨긴 작품은 목록에 없어 취소할 수 없으므로 한도에서 뺀다. 그렇지 않으면 그 대회의 좋아요가 잠긴다.
-        const count = await tx.postLike.count({
-          where: { userId: viewer.id, post: { contestId: post.contestId, hidden: false } },
-        });
-        if (count >= contest.likeLimit)
-          fail(
-            `이 대회에서는 ${contest.likeLimit}개 작품까지만 좋아요를 남길 수 있어요. 다른 작품의 좋아요를 취소한 뒤 다시 선택해 주세요.`,
-          );
-      }
-      if (liked && !existing)
-        await (tx ?? this.db).postLike.upsert({
-          where: { postId_userId: { postId, userId: viewer.id } },
-          create: { postId, userId: viewer.id },
-          update: {},
-        });
-      if (!liked) await (tx ?? this.db).postLike.deleteMany({ where: { postId, userId: viewer.id } });
-      if (liked)
-        await recordEvent(tx ?? this.db, {
-          id: `post-like:${postId}:${viewer.id}`,
-          type: ANALYTICS_EVENT.POST_LIKED,
-          userId: viewer.id,
-          properties: { postId },
-        });
-      return (tx ?? this.db).post.findUniqueOrThrow({
-        where: { id: postId },
-        include: postInclude(viewer.id),
+    await this.transactions
+      .run(async (tx) => {
+        const { post } = await this.membership.accessiblePost(viewer.id, postId, tx);
+        if (post.contestId) {
+          // 한 회원의 같은 대회 반응만 순서대로 처리한다. 서로 다른 회원은 같은 작품에도 동시에 반응할 수 있다.
+          const key = `post-contest-like:${post.contestId}:${viewer.id}`;
+          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
+        }
+        const existing =
+          liked && post.contestId
+            ? await tx.postLike.findUnique({ where: { postId_userId: { postId, userId: viewer.id } } })
+            : null;
+        if (liked && !existing && post.contestId) {
+          const contest = await tx.contest.findUniqueOrThrow({ where: { id: post.contestId } });
+          // 숨긴 작품은 목록에 없어 취소할 수 없으므로 한도에서 뺀다. 그렇지 않으면 그 대회의 좋아요가 잠긴다.
+          const count = await tx.postLike.count({
+            where: { userId: viewer.id, post: { contestId: post.contestId, hidden: false } },
+          });
+          if (count >= contest.likeLimit)
+            fail(
+              `이 대회에서는 ${contest.likeLimit}개 작품까지만 좋아요를 남길 수 있어요. 다른 작품의 좋아요를 취소한 뒤 다시 선택해 주세요.`,
+            );
+        }
+        if (liked) {
+          const { count } = await tx.postLike.createMany({
+            data: [{ postId, userId: viewer.id }],
+            skipDuplicates: true,
+          });
+          if (count > 0)
+            await recordEvent(tx, {
+              id: `post-like:${postId}:${viewer.id}`,
+              type: ANALYTICS_EVENT.POST_LIKED,
+              userId: viewer.id,
+              properties: { postId },
+            });
+        }
+        if (!liked) await tx.postLike.deleteMany({ where: { postId, userId: viewer.id } });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2003', 'P2025'].includes(error.code))
+          fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+        throw error;
       });
-    });
-    return presentPost(row, viewer.id);
+    // 전체 반응 수는 커밋 뒤 읽어 서로 다른 회원의 쓰기까지 직렬화 대상으로 묶지 않는다.
+    return this.find(viewer, postId);
   }
   async delete(viewer: IViewer, postId: string) {
     const upload = await this.transactions.atomic(async (tx) => {

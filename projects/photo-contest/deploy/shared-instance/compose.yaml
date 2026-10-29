@@ -54,6 +54,7 @@ services:
     init: true
     environment:
       NODE_ENV: production
+      SENTRY_RELEASE: ${RELEASE_SHA:-}
       HOSTNAME: 0.0.0.0
       PORT: '3200'
       NEXT_TELEMETRY_DISABLED: '1'

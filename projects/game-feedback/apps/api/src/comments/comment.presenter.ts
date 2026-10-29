@@ -4,8 +4,12 @@ import type { Prisma } from '../generated/prisma';
 import { authorDto, authorSelect } from '../users/user.presenter';
 
 type CommentRecord = Prisma.CommentGetPayload<{ include: { author: { select: typeof authorSelect } } }>;
-export const responseComment = (c: CommentRecord): Comment => {
+export const responseComment = (
+  c: CommentRecord,
+  replies: Pick<Comment, 'replyCount' | 'repliesCursor'> = { replyCount: 0, repliesCursor: null },
+): Comment => {
   const shared = {
+    ...replies,
     id: c.id,
     postId: c.postId,
     createdAt: c.createdAt.toISOString(),

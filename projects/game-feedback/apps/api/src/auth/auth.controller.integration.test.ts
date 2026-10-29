@@ -391,7 +391,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         .post('/api/posts')
         .set('Origin', origin)
         .send({
-          title: `새 소식 ${randomUUID()}`,
+          title: '새 소식 알림 테스트',
           body: '함께 연습할 분을 구해요.',
           categoryId: 'clash-royale',
           board: 'FREE',

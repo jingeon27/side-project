@@ -199,6 +199,20 @@ Repeating the same review feedback in every request was tedious. I put recurring
 
 I wrote more about API and cache choices, server checks, and database behavior in [How I chose the technology for two side projects](/en/blog/choosing-the-stack-and-boundaries-for-two-side-projects).
 
+## I checked search entry points and cache behavior too
+
+I also looked at how someone would find a post through search or open a shared link. Game Mate's public posts have titles, descriptions, canonical URLs, share images, and structured data. I checked that a reader without JavaScript could still read the post and its comments. The sitemap includes public posts and profiles, while chat and settings pages are excluded from indexing.
+
+Caching needed decisions about what to share and when to discard it. Game Mate caches public post responses fetched without a login cookie. A signed-in reader's blocked authors are handled separately, so a result filtered for one person does not end up in the shared cache.
+
+Editing a post or leaving a comment expires the relevant cache entries. Saving in the API can succeed while the request to invalidate the cache fails, so pending invalidations stay in the database for retries. The browser's query results need updating too. I reviewed when changed content would appear again alongside how quickly the initial screen would load.
+
+## I chose what to keep in error logs
+
+I can see an error while testing locally. After deployment, I need a record of where it happened to investigate it. I connected Sentry to the web apps and APIs, with service and release identifiers, and separated expected input failures from unexpected server errors.
+
+I did not want collecting an error to send someone's post or chat message along with it. API reports exclude request bodies, cookies, and headers. Prisma error messages can contain query arguments, so I changed those reports to retain the error kind, code, and stack locations. I checked what the reports contained as well as whether they were sent.
+
 ## Many decisions came after I had built the feature
 
 The agent filled in things I had not specified. Showing a group list on the home screen and adding a resume to the blog were choices it made along the way. Trying the services helped me decide which of those choices to keep and which to change.

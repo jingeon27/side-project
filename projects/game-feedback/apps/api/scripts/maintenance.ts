@@ -10,7 +10,7 @@ const {
 }: typeof import('../src/config/production.config') = require('../dist/config/production.config.js');
 const {
   PostViewsService,
-}: typeof import('../src/posts/views/post-views.service') = require('../dist/posts/post-views.service.js');
+}: typeof import('../src/posts/views/post-views.service') = require('../dist/posts/views/post-views.service.js');
 validateProductionEnvironment(process.env);
 if (process.env.ENVIRONMENT !== 'production') throw new Error('Maintenance requires NODE_ENV=production.');
 const app = await createApp();

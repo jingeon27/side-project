@@ -49,7 +49,9 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   });
 
   const handleDetailsSaved = () => {
-    if (!hasOtherDrafts) {
+    // 저장 요청 뒤에 사진·링크 초안이 생길 수 있으므로 RHF의 최신 상태를 완료 시점에 읽는다.
+    const hasUnsavedDrafts = links.formState.isDirty || photo.formState.isDirty;
+    if (!hasUnsavedDrafts) {
       onSaved();
       return;
     }
