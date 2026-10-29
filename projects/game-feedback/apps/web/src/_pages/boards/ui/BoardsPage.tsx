@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -17,7 +16,7 @@ import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
-import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { AsyncBoundary, Await, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { boardSnapshotSearch, readBoardFilters, type TBoardFilters } from '../model/board-filters';
@@ -79,13 +78,19 @@ function BoardsContent(props: IBoardsPageProps) {
         suspense={'then' in initialBoard}
         pendingFallback={<PostListSkeleton />}
       >
-        <BoardPostsRegion locale={locale} slug={slug} initialBoard={initialBoard} />
+        <Await value={initialBoard}>
+          {(initial) => <BoardPostsRegion locale={locale} slug={slug} initialBoard={initial} />}
+        </Await>
       </AsyncBoundary>
     </section>
   );
 }
-function BoardPostsRegion({ locale, slug, initialBoard }: IBoardsPageProps) {
-  const initial = 'then' in initialBoard ? use(initialBoard) : initialBoard;
+function BoardPostsRegion({
+  locale,
+  slug,
+  initialBoard,
+}: Omit<IBoardsPageProps, 'initialBoard'> & { initialBoard: IBoardSnapshot }) {
+  const initial = initialBoard;
   const search = useBrowserSearch(boardSnapshotSearch(initial), appRoutes.boards(locale, slug));
   const filters = readBoardFilters(search);
   const { session } = useSession();

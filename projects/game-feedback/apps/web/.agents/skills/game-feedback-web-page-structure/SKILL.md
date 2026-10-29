@@ -16,7 +16,7 @@ description: Game Feedback 웹(apps/web)에 새 화면·라우트를 추가하�
 ## 첫 문서와 클라이언트 이동
 
 - 공개 목록(피드·게시판·검색): 라우트가 `blockUntilReady={!(await isClientNavigation())}`를 넘기고 `<Screen>Route`(server)가 `initialDocumentData(snapshot(), blockUntilReady)`로 값 또는 Promise를 만든다. 첫 문서는 목록까지 완성된 HTML(JavaScript 없이 읽힘), RSC 이동은 Promise를 넘겨 목록만 스켈레톤으로 스트리밍한다.
-- 클라이언트 화면은 `initial: T | Promise<T>`를 받아 `'then' in initial ? use(initial) : initial`로 읽고, 감싸는 `AsyncBoundary`에 `suspense={'then' in initial}`를 준다(`FeedPage`·`BoardsPage`·`SearchPage`). blocking 중 snapshot이 실패하면 rejected Promise가 넘어가 그 영역 경계만 실패한다.
+- 클라이언트 화면은 `initial: T | Promise<T>`를 받아 `shared/ui의 Await`로 읽고, 감싸는 `AsyncBoundary`에 `suspense={'then' in initial}`를 준다(`FeedPage`·`BoardsPage`·`SearchPage`). blocking 중 snapshot이 실패하면 rejected Promise가 넘어가 그 영역 경계만 실패한다.
 - snapshot 타입은 `_pages/<screen>/model/`(`feed-snapshot.type.ts`, `board-snapshot.type.ts`, 검색은 `search-query.ts`의 `ISearchSnapshot`)에 두고 `viewerId`를 넣는다. 클라이언트 조회의 `initialData` 조건은 `server-state` 스킬.
 - 공개 상세/프로필(`posts/[id]`, `users/[id]`)은 `DocumentContent`로 감싼다: 첫 문서는 Suspense 없이 완성하고 이동 때만 `fallback`을 쓴다. 상세의 `PostDocument`는 본문 경계 밖에서 헤더를 조립하고 `streamHeader={await isClientNavigation()}`를 받아 이동 때만 `Suspense fallback={<PostTopbarPlaceholder locale={locale} />}`로 실제 게시판 경로를 기다린다. 첫 문서는 헤더도 Suspense 없이 실제 게시판 경로를 완성한다. 동적 `params`는 헤더·본문의 비동기 자식 안에서 읽고 페이지 프레임을 그리기 전에 기다리지 않는다. `ProfileDocument`도 본문 경계 밖에서 프로필 헤더를 조립한다.
 - 첫 문서를 의도적으로 완성해서 보내는 라우트(피드·게시판 5종·상세·프로필·가이드·약관·개인정보·문의, `[locale]/layout.tsx`)는 `export const instant = false`로 instant 검증 피드백에서 뺀다. 이동 셸은 `test:prefetch`의 `instant()`가 따로 검증한다.
