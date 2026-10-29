@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import { ERROR_CODE, fail } from '../common/errors';
 import { COMPLETED_POST_UPLOAD_TTL_MS, MAX_PENDING_UPLOADS, UPLOAD_TICKET_TTL_MS } from '../config/limits';

@@ -2,7 +2,7 @@ import { EventEmitter, once } from 'node:events';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ContestCompletionService } from '../analytics/contest-completion.service';
+import type { ContestCompletionService } from '../analytics/completion/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import * as sentry from '../monitoring/sentry';
 import type { ContestNotificationService } from '../notification/contest-notification.service';

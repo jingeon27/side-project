@@ -6,7 +6,7 @@ import { groupBy, keyBy, mapValues, uniq } from 'es-toolkit';
 import { Prisma, type Group, type GroupCategory } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
@@ -20,17 +20,17 @@ import {
   PAGE_SIZE_DEFAULT,
   TEXT_LIMIT,
 } from '../config/limits';
-import { CONTEST_FORMAT } from '../contest/group-contest.policy';
+import { CONTEST_FORMAT } from '../contest/group-contest/group-contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { NOTIFICATION_TYPE } from '../notification/notification-type';
 import { writeNotifications } from '../notification/notification.writer';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
-import { GroupCategoryService } from './group-category.service';
-import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
-import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './group-visibility';
-import { buildLeaderboard, type ILeaderboardEntry } from './leaderboard';
-import { MembershipService } from './membership.service';
+import { GroupCategoryService } from './categories/group-category.service';
+import { GROUP_ROLE, toGroupRole, type TGroupRole } from './membership/group-role';
+import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './membership/group-visibility';
+import { MembershipService } from './membership/membership.service';
+import { buildLeaderboard, type ILeaderboardEntry } from './ranking/leaderboard';
 
 const groupCount = { _count: { select: { members: true } } } as const;
 

@@ -5,11 +5,11 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { pageRange } from '../common/validation';
 import { Database } from '../database/database.service';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import { NOTIFICATION_TYPE } from './notification-type';
 
 @Injectable()

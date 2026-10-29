@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import type { ISubmissionView } from '../submission/submission.presenter';
 import { SubmissionService } from '../submission/submission.service';
 

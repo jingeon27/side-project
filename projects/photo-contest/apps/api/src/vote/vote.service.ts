@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import { isAnonymous } from '../auth/anonymous';
-import type { IViewer } from '../auth/session.service';
+import { isAnonymous } from '../auth/anonymous/anonymous';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { phase, PHASE } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 
 /** GraphQL Vote */
 export interface IVoteView {

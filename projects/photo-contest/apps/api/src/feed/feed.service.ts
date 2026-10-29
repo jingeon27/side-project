@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { pageRange } from '../common/validation';
 import { PAGE_SIZE_DEFAULT } from '../config/limits';
 import { PHASE, phase, type TPhase } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
 import {
   presentSubmission,

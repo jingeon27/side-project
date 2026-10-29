@@ -11,7 +11,7 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 2. **모듈** `src/<name>/<name>.module.ts`: `providers: [<Name>Service, <Name>Resolver]`, REST는 `controllers`. 권한 확인이 필요하면 `imports: [GroupModule]`. `Database`·`MediaStorage`·`SessionService`는 `@Global` 모듈이 주고 `recordEvent`는 함수라 import할 모듈이 없다. `src/app.module.ts`의 `imports`에 등록한다.
 3. **리졸버**: `@Resolver('<Type>')` + `@Query()`·`@Mutation()`·`@ResolveField()`, 메서드 이름 = 필드 이름(겹치면 `@ResolveField('phase') currentPhase`). 로그인 필수는 `@Viewer() viewer: IViewer`, 공개는 `@OptionalViewer() viewer: IViewer | null`. 규칙·쿼리는 서비스로 넘긴다.
 4. **응답 모양**: schema-first라 TS가 `.graphql`과 맞는지 검사하지 않는다. 서비스의 `I<Type>View`(필드 리졸버가 있으면 `I<Type>Node`) 인터페이스로 모양을 고정하고, 스키마의 모든 필드를 같은 이름 속성이나 `@ResolveField`로 채운다 — 빠진 non-null 필드는 INTERNAL_SERVER_ERROR로 가려진다. User는 `USER_VIEW_SELECT`로 고른다.
-5. **다른 모듈의 타입에 필드**: 의존하는 쪽 모듈에 `@Resolver('<그 타입>')` 필드 리졸버를 둔다(`src/contest/group-contests.resolver.ts`가 `Group.contests`). 모듈 순환 import를 만들지 않는다.
+5. **다른 모듈의 타입에 필드**: 의존하는 쪽 모듈에 `@Resolver('<그 타입>')` 필드 리졸버를 둔다(`src/contest/group-contest/group-contests.resolver.ts`가 `Group.contests`). 모듈 순환 import를 만들지 않는다.
 6. **서비스**: 검증할 입력은 `unknown`으로 받아(`ICreateContestInput`) `textValue(value, TEXT_LIMIT.X, '라벨')`·`pageRange(offset, limit)`·zod `safeParse` + `fail()`로 좁힌다. 기본값이 있는 인자에도 명시적 `null`이 올 수 있으니 `?? 기본값`. 권한은 `MembershipService`의 `requireMember`·`requireAdmin`·`requireOwner`·`accessibleContest(userId, id, { owner, client })`·`accessibleSubmission(…)`으로만 확인한다 — `groupMember`를 직접 조회해 판단하지 않는다.
 
 ## 오류

@@ -1,5 +1,5 @@
-import { isAnonymous } from '../auth/anonymous';
-import type { IViewer } from '../auth/session.service';
+import { isAnonymous } from '../auth/anonymous/anonymous';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { ANONYMOUS_STORAGE_QUOTA_BYTES, USER_STORAGE_QUOTA_BYTES } from '../config/limits';
 import type { TDatabaseClient } from '../database/database.service';

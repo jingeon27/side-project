@@ -20,6 +20,14 @@
 | `health/` | `GET /health`(DB), `GET /app/config`(모바일 최소·최신 버전) |
 | `monitoring/` | Sentry 옵션(DSN 없으면 init 안 함, PII 제거 `beforeSend`)과 `reportUnexpectedError()`(원문 대신 오류 종류·code·호출 위치 + 태그) |
 
+## 책임별 하위 경계
+
+- `auth/session`은 세션·쿠키·조회자 파이프, `auth/password`는 비밀번호·입력·반복 시도 제한, `auth/anonymous`는 익명 세션을 소유한다. OAuth·앱 로그인은 현재 구현하지 않는다.
+- `group/membership`, `profile`, `categories`, `administration`, `ranking`은 접근·가입 신청, 그룹 프로필, 분류, 운영 권한, 순위를 각각 묶는다.
+- `post/comments`, `categories`, `moderation`, `media`는 댓글, 분류 변경, 숨김·삭제, 업로드·다운로드를 구현과 테스트 함께 둔다.
+- `contest/group-contest`, `ranking`은 그룹 게시물 대회와 기존 사진 순위를 구분한다. `analytics/completion`은 대회 종료 집계를 소유한다.
+- `*.module.ts`와 최상위 API 조립은 도메인 루트에 두며, 역할별 전역 `providers/guards/dto` 폴더나 전달용 배럴을 만들지 않는다. GraphQL은 기존 재귀 glob, Prisma는 API 루트 경로를 유지한다.
+
 ## 규칙
 
 - 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. members는 멤버에게도 한 페이지(offset·limit, 기본·최대 48, 그룹장·부관리자 먼저·가입 순)만 주며 목록의 그룹들을 창 함수 쿼리 하나로 자른다. 전체 수가 필요한 화면은 memberCount를 쓴다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
@@ -63,7 +71,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 `test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
 
-그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 회원 멤버 전용(익명 계정 제외)·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 목록의 종료 대회를 묶어 득표 groupBy로 우승작만 읽는다(참여작 전체를 싣지 않는다). groupContestResults만 한 대회의 전체 순위를 계산한다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
+그룹 대회는 `contest/group-contest/`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 회원 멤버 전용(익명 계정 제외)·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 목록의 종료 대회를 묶어 득표 groupBy로 우승작만 읽는다(참여작 전체를 싣지 않는다). groupContestResults만 한 대회의 전체 순위를 계산한다. 운영 역할은 `group/administration/`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 

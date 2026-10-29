@@ -33,8 +33,19 @@ export const ERROR_MESSAGE = {
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
 } as const satisfies Record<string, string>;
 
+/** 기존 GraphQL 직렬화·REST 필터 계약을 유지하면서 업무 오류 code를 타입으로 제공한다. */
+export class DomainError extends GraphQLError {
+  constructor(
+    message: string,
+    readonly code: TErrorCode = ERROR_CODE.BAD_USER_INPUT,
+  ) {
+    super(message, { extensions: { code } });
+    this.name = 'DomainError';
+  }
+}
+
 export function fail(message: string, code: TErrorCode = ERROR_CODE.BAD_USER_INPUT): never {
-  throw new GraphQLError(message, { extensions: { code } });
+  throw new DomainError(message, code);
 }
 
 export function isErrorCode(code: unknown): code is TErrorCode {

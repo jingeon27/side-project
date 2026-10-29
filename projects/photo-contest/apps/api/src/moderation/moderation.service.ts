@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { MediaStorage } from '../storage/media-storage.service';

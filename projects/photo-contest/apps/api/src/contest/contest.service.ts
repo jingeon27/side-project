@@ -4,14 +4,14 @@ import { groupBy, mapValues } from 'es-toolkit';
 import type { Contest } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
-import { isAdmin, toGroupRole, type TGroupRole } from '../group/group-role';
-import { MembershipService } from '../group/membership.service';
+import { isAdmin, toGroupRole, type TGroupRole } from '../group/membership/group-role';
+import { MembershipService } from '../group/membership/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
 import {
   presentSubmission,
@@ -19,7 +19,7 @@ import {
   type ISubmissionView,
 } from '../submission/submission.presenter';
 import { contestDates, phase, PHASE } from './contest.policy';
-import { rankResults } from './result-ranking';
+import { rankResults } from './ranking/result-ranking';
 
 /** 조회한 사용자 기준 값. 같은 목록의 대회들과 한 번에 불러온다. */
 export interface IContestViewerStats {

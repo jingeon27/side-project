@@ -20,12 +20,12 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 오류
 
-- `fail(message, ERROR_CODE)`로 GraphQLError를 던진다. HTTP 매핑: UNAUTHENTICATED 401, FORBIDDEN 403, NOT_FOUND 404, CONFLICT 409, RATE_LIMITED 429, UNAVAILABLE 503, 그 밖 400. REST 오류 본문은 `{ message }`.
+- `fail(message, ERROR_CODE)`는 GraphQLError 호환 `DomainError`를 던진다. 타입 있는 `code`와 기존 `extensions.code`를 함께 유지하고 REST 필터는 같은 상태·본문으로 연결한다. HTTP 매핑: UNAUTHENTICATED 401, FORBIDDEN 403, NOT_FOUND 404, CONFLICT 409, RATE_LIMITED 429, UNAVAILABLE 503, 그 밖 400. REST 오류 본문은 `{ message }`.
 - 사용자에게 보이는 한국어 메시지를 바꾸면 웹·테스트도 같이 바꾼다. INTERNAL_SERVER_ERROR는 메시지를 가리고 Sentry로만 보낸다.
 
 ## 인증
 
-- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
+- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/session/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
@@ -88,3 +88,17 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 Service에서 Database(Prisma)를 직접 사용한다. Repository 전달 계층을 만들지 않으며 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.
 
 게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 같은 수명(사진 60초, 동영상 10분)의 presigned GET(attachment)을 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.
+
+
+## 책임별 경로
+
+- 인증은 `auth/session/`, `auth/password/`, `auth/anonymous/`에 구현과 테스트를 함께 둔다. 그룹은 `group/membership/`, `profile/`, `categories/`, `administration/`, `ranking/`, 게시물은 `post/comments/`, `categories/`, `moderation/`, `media/`로 응집된 책임을 묶는다.
+- 그룹 대회는 `contest/group-contest/`, 기존 대회 순위는 `contest/ranking/`, 종료 집계는 `analytics/completion/`을 사용한다. 도메인 루트 module·GraphQL 계약·Prisma 경로를 유지하고 이동 시 소비자 import와 상대 파일 URL도 갱신한다.
+
+
+## DI 전략과 오류 경계
+
+- 서로 다른 데이터 경로를 선택하는 책임만 전략으로 나눈다. `analytics/completion`의 POST·LEGACY 조회는 `COMPLETION_READERS` 토큰과 Nest factory가 각 Injectable 구현을 연결하며, 호출자가 전달한 동일 tx로 조회한다. 이벤트·완료 시각 쓰기는 조립 서비스에 남긴다. 기존 문자열 format의 POST 외 fallback도 유지한다.
+- 비밀번호·익명 인증처럼 이미 서비스로 분리된 고정 진입점과 단순 권한 가드는 전략 계층으로 다시 감싸지 않는다. 기존 클래스 토큰과 factory 인스턴스·provider override 계약을 보존한다.
+- 새 업무 오류는 `DomainError`/`fail`을 사용하고 기존 한국어 메시지·GraphQL code·HTTP 상태·REST `{ message }`를 바꾸지 않는다. 예상하지 못한 오류와 Nest 예외·외부 GraphQLError의 기존 필터 경로도 유지한다.
+- HTTP/DB 통합은 `*.integration.spec.ts`에만 둔다. 네트워크 없는 DI 조합은 `createApplicationContext`, 정책·GraphQL 오류 직렬화는 unit으로 확인하고 DB/S3 미설정을 가짜 HTTP 앱으로 우회하지 않는다.

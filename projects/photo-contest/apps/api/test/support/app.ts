@@ -7,7 +7,7 @@ import { inject } from 'vitest';
 
 import { createDatabaseClient } from '@photo-contest/test-kit';
 
-import { sessionCookieName } from '../../src/auth/auth-cookie';
+import { sessionCookieName } from '../../src/auth/session/auth-cookie';
 import { createApp } from '../../src/bootstrap';
 import { randomToken, sha256Hex } from '../../src/common/crypto';
 import { SESSION_TTL_MS } from '../../src/config/limits';
