@@ -10,11 +10,12 @@ import { match, P } from 'ts-pattern';
 import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
 import { ArticleSearch } from '@/features/article-search/ui/article-search';
 import { ArticleCard } from '@/features/article/ui/article-card';
-import { CategoryFilter, type Category } from '@/features/category-filter/ui/category-filter';
-import { categories } from '@/shared/article/model/categories';
-import type { Article } from '@/shared/article/model/types';
+import { CategoryFilter } from '@/features/category-filter/ui/category-filter';
+import type { Article, Category } from '@/shared/article/model/types';
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
+
+import { blogFeedSearchParamsSchema } from '../model/blog-feed-search-params.schema';
 
 export function BlogFeed(props: ComponentProps<typeof BlogFeedContent>) {
   return (
@@ -45,9 +46,12 @@ function BlogFeedContent({
 }) {
   const t = labels(locale);
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') ?? '';
-  const category =
-    fixedCategory ?? categories.find((entry) => entry === searchParams.get('category')) ?? 'all';
+  const params = blogFeedSearchParamsSchema.parse({
+    q: searchParams.get('q') ?? undefined,
+    category: searchParams.get('category') ?? undefined,
+  });
+  const query = params.q ?? '';
+  const category = fixedCategory ?? params.category ?? 'all';
   const updateFilters = (updates: { q?: string; category?: Category | 'all' }, push = false) => {
     const url = new URL(window.location.href);
     const updateParam = (key: string, next: string) => {

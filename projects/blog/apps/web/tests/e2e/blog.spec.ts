@@ -596,6 +596,20 @@ test('URL filters survive reload and browser history navigation', async ({ page 
   expect(url.hash).toBe('#archive');
   await expect(search).toHaveValue('');
 
+  await page.goto('/ko/blog?q=react&category=unknown&ref=mail&ref=sidebar#archive');
+  await expect(search).toHaveValue('react');
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.article-list > article').first()).toBeVisible();
+  await til.click();
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: ko.common.clearFilters }).first().click();
+  const preserved = new URL(page.url());
+  expect(preserved.searchParams.getAll('ref')).toEqual(['mail', 'sidebar']);
+  expect(preserved.searchParams.has('q')).toBe(false);
+  expect(preserved.searchParams.has('category')).toBe(false);
+  expect(preserved.hash).toBe('#archive');
+
   await page.goto('/ko/blog/category/engineering?category=til&q=react');
   await expect(page.getByRole('group', { name: ko.common.category })).toHaveCount(0);
   await expect(search).toHaveValue('react');

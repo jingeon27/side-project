@@ -90,7 +90,7 @@ describe('article discovery', () => {
   });
 
   it('preserves unrelated params and hash when updating and clearing URL filters', async () => {
-    window.history.replaceState(null, '', '?ref=mail#archive');
+    window.history.replaceState(null, '', '?ref=mail&ref=sidebar#archive');
     const user = userEvent.setup();
     render(<BlogFeed locale="ko" articles={[article, other]} />);
     await user.type(screen.getByRole('combobox'), 'react');
@@ -101,7 +101,7 @@ describe('article discovery', () => {
     );
     expect(new URLSearchParams(window.location.search).get('category')).toBe('til');
     await user.click(screen.getAllByRole('button', { name: /필터 초기화/ })[0]!);
-    expect(window.location.search).toBe('?ref=mail');
+    expect(window.location.search).toBe('?ref=mail&ref=sidebar');
     expect(window.location.hash).toBe('#archive');
     expect(screen.getByRole('combobox')).toHaveValue('');
   });

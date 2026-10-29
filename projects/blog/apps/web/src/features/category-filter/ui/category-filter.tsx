@@ -1,8 +1,7 @@
 'use client';
 
+import type { Category } from '@/shared/article/model/types';
 import { labels, type UiLocale } from '@/shared/config/labels';
-
-export type Category = 'engineering' | 'til' | 'perspectives' | 'misc';
 
 export function CategoryFilter({
   locale,
