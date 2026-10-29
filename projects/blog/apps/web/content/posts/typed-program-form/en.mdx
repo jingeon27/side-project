@@ -8,23 +8,21 @@ Two admin apps shared program inputs but had different submission flows. I separ
 
 *An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
 
-Hospital administrators register programs and request review. Back-Office staff inspect those requests and approve or reject them. They work on the same programs, so many inputs overlap, but submission does different things.
+Changing a program input meant finding its FormItem in both hospital admin and Back-Office. Recommended patients, equipment, and precautions also appeared in the sub-treatment template editor. The same input had several separate implementations.
 
-Initially, the two apps had separate FormItems. Inputs such as recommended patients, treatment equipment, and precautions also appeared in the sub-treatment template editor. Changing a shared input meant checking whether every screen had been updated.
-
-Combining the forms was not straightforward. Back-Office has operational notes and visibility settings; hospital administrators supply requester and review-request details. Mapping API responses into inputs and turning edits into request bodies are separate concerns too.
+Submission was different in each app. Hospital administrators register programs and request review; Back-Office approves or rejects those requests. Operational notes and visibility settings belong to Back-Office, while requester and review-request details belong to hospital admin. Combining both forms wholesale would bring those differences into shared code too.
 
 ![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01.png)
 
 *The two apps need slightly different values for the same program. Input values in this diagram are examples.*
 
-I separated pieces with different reasons to change: common value types, shared inputs, API/form conversions, and loading sub-treatment templates. Each app retained its own review and submission flow.
+I shared the inputs and value types that should change together and left review and submission in each app. Mapping API responses into form values, turning edits into requests, and loading a category’s default template also became separate from the inputs.
 
 The examples include only the relevant code. Internal identifiers for hospitals have been renamed to `partner`.
 
 ## From shared field names to typed values
 
-At first, an enum gathered field names. That helped align scattered strings, but correct names did not guarantee correct values. A string assigned to `price`, or an incorrectly handled `getFieldValue` result, could still slip through.
+I first gathered field names in an enum. That helped with typos but did not stop a string being assigned to `price`. A `getFieldValue` call could name the right field while its caller misunderstood the returned value.
 
 The shared program form and each app's form now use `createTypedForm<T>()`. This wrapper accepts a value type once and applies it to Item, List, useForm, useFormInstance, and useWatch.
 
@@ -44,7 +42,7 @@ export const ProgramInspectionForm =
   createTypedForm<IProgramInspectionClient>();
 ```
 
-Shared FormItems use ProgramForm; app-specific fields use that app's ProgramInspectionForm. This does not create two form instances or copies of values. Both use the same Ant Design Form context, with different permitted field scopes in code.
+Shared inputs use ProgramForm to read common fields; Back-Office inputs use ProgramInspectionForm to reach its additional fields. Both APIs use the same Ant Design Form context. They split the permitted types without duplicating the values or instance.
 
 ```typescript
 const form = ProgramForm.useFormInstance();
@@ -60,7 +58,7 @@ form.getFieldValue('programNmae');
 form.setFieldValue('price', '100000');
 ```
 
-The requirement was to connect a permitted field name with its value type. `TFieldNamePath<T>` restricts names and nested paths; `TPathValue<T, P>` finds the value type at a path.
+I wanted `getFieldValue('price')` to return a number and `setFieldValue('price', ...)` to accept the same type. `TFieldNamePath<T>` limits names and nested paths, while `TPathValue<T, P>` finds the type at the chosen path.
 
 ```tsx
 // TFieldNamePath<T>와 TDeepPartial<T>의 구현은 생략했어요.
@@ -98,7 +96,7 @@ Assertions needed to connect Ant Design remain inside the wrapper. Callers use a
 
 The template editor and program form share inputs for recommended patients, treatment highlights, equipment, procedure, and precautions.
 
-Highlights differ. Templates register both an icon and text; programs retain the imported icon and edit only the text. Instead of adding more options to a shared component, I separated the list from the inputs inside each row.
+Treatment highlights exposed a difference. The template editor registers an icon and text, but the program keeps the imported icon and changes only the text. Instead of adding another option to the shared component, I separated FormList from the inputs placed inside it.
 
 ```typescript
 // 하위 시술 템플릿 편집: 아이콘과 문구를 함께 입력해요.
@@ -121,7 +119,7 @@ Highlights differ. Templates register both an icon and text; programs retain the
 
 FormList owns the toggle and list. The caller chooses each row's inputs. Recommended patients and procedures share the same implementation. Equipment and precautions provide default assembly while also exposing the pieces needed by callers.
 
-Some shared template inputs still use the original Ant Design Form. The typed program API and compound input structure serve different purposes: one limits field access, while the other defines how inputs can be reused.
+Some template inputs still use the original Ant Design Form. Compound composition does not itself make an input typed. The typed API limits fields the code can read and write; composition decides whether a screen shows the icon, text, or both.
 
 ![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03.png)
 
@@ -131,7 +129,7 @@ Common inputs know nothing about review-request or approval APIs. The app owns `
 
 ## Keep the server's representation out of inputs
 
-API responses and form values have different purposes. The server groups template items by type and adds `orderNo`. The form needs convenient row insertion and removal, and represents images as an upload component's file list.
+The server groups template items by type and adds `orderNo`, which was awkward to use directly in the editor. The screen needs to add and remove rows and edit images as the upload component’s file list.
 
 I therefore separated response-to-form and form-to-request functions. Input components handle only the shape needed for editing.
 
@@ -141,9 +139,9 @@ API 응답 → 응답 변환 함수 → 폼 값 → 요청 변환 함수 → API
                    FormItem은 이 모양만 다뤄요.
 ```
 
-The apps share inputs and value contracts while retaining different submission flows. Conversion functions handle the API/input mismatch instead of repeating it inside components.
+The input components no longer need to interpret response and request formats individually. Values stay in the form’s editing shape and are converted where they meet the API.
 
-Images illustrate this well. Converting a server image into UploadFile retains the original asset in `response`. Newly uploaded files put their response in the same place, so submission does not need separate handling for old and new images.
+The same input handles saved images and newly uploaded ones. Converting a saved asset to UploadFile with the asset in `response` puts it in the same place as a new upload’s result. Submission no longer needs separate branches for old and new files.
 
 Thumbnails and custom images currently use `UploadFile<TCommonAsset>`. The upload response generic preserves the asset type through reads of `response.id`.
 
@@ -180,13 +178,13 @@ Template conversions follow several rules.
 
 ## Separate initial loading from category changes
 
-Filling saved program values on opening a detail is different from loading a default template after a category change. An initial query response must not keep overwriting ongoing edits.
+The editor also needs to distinguish when values are filled. Opening a detail loads the saved program; changing its category loads a sub-treatment’s default template. Mixing those paths can let a query response overwrite the person’s edits.
 
 The review-detail container mounts the form after required queries finish and initial values can be built. Moving to another record in the same drawer calls `resetFields()` when initial values change. Passing a later asynchronous response to `initialValues` does not reinitialize an existing instance.
 
 SyncTreatmentSub loads the sub-treatment template. It reads treatment and sub-treatment IDs from the form, using `skipToken` in query options so the query runs only when both exist.
 
-The current effect checks the query result and touched fields. It checks both IDs' touched state to cover switching sub-items within the same treatment.
+The effect checks the response and whether the fields are touched. Looking only at the treatment ID misses a switch between sub-items of the same treatment, so it checks the sub-treatment ID too.
 
 ```typescript
 const form = ProgramForm.useFormInstance();
@@ -227,7 +225,7 @@ Synchronization is limited to five template sections. It leaves manually entered
 
 ## Preserve conversion rules in tests
 
-The first form had no tests fixing conversion inputs and outputs. Both apps now have tests for their conversion helpers, program requests, review requests, and draft conversions.
+I initially wrote the conversions without tests. Correct field types could still produce the wrong request, so I added cases for both apps’ response conversions, program and review requests, and drafts.
 
 These go beyond checking that a converted value exists. They verify that unordered before-and-after images pair by sequence, a separate ID is used when an image object lacks one, and a deleted thumbnail is submitted as `null`.
 
@@ -262,13 +260,9 @@ Type checking validates names and values accessed through the typed API. Convers
 
 *Inputs share one instance. Field access and submitted data are checked in different places.*
 
-## Follow the reason for a change
+A program-field change takes me to the shared type and FormItem; an API-format change takes me to conversions and their tests. Review requests and approvals no longer need to follow shared inputs into another screen.
 
-For a program field change, I now inspect its form type and FormItem first. For an API change, I inspect conversions and their tests. Inputs used across both apps and the template editor change in shared components; review and submission flows change in their own apps.
-
-I wanted values to reveal their types, shared inputs to avoid importing another screen's submission flow, and conversion changes to have clear checks. Gathering field names was only the start; value types and conversion tests completed more of that work.
-
-A typed form restricts field paths and value types at call sites. It does not guarantee actual server values or asynchronous browser behavior. Conversion tests cover data rules; the sequence from loading through editing to submission is checked separately in the UI.
+The typed form checks field paths and value types passed in code. It cannot verify the actual server response or prevent an asynchronous query from overwriting an edit. Conversion tests and checks of loading, editing, and submitting in the UI still have separate jobs.
 
 ## References
 

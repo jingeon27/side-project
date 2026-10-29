@@ -8,11 +8,11 @@ These are the TypeScript patterns I use to preserve inference and express relati
 
 *An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
 
-I often see code where a field name is correct but its value has the wrong type, or where incompatible props are passed together. These are four patterns I use at work to catch those combinations during type checking.
+Gathering field names in an enum did not guarantee the values attached to them. A caller could still pass a string as a price or combine incompatible props. I use `satisfies`, generics, and unions to catch those combinations where they are passed. With optional properties, I also look at which keys an object may omit, rather than only the type returned when reading them.
 
 ## Checking compatibility with satisfies while preserving inference
 
-In this example, `as const` preserves the path literals, while `satisfies` checks the required keys and path format without replacing that inferred type.
+For a route map, I want to check the required names without losing each concrete path. Here `as const` keeps the literals, while `satisfies` checks the required keys and path format.
 
 ```typescript
 type RouteName = 'home' | 'profile' | 'settings';
@@ -27,7 +27,7 @@ ROUTES.profile;
 // '/profile'로 추론된다.
 ```
 
-Annotating a variable directly with `Record<RouteName, string>` can widen its values to `string`. With `satisfies`, I can check for missing keys and invalid values while preserving literal information.
+Annotating the variable as `Record<RouteName, string>` can make `ROUTES.profile` read as the broader `string`. The combination keeps `'/profile'` while catching missing keys and invalid paths. I use it for exhaustive label maps too, such as payment-method labels.
 
 ```typescript
 const LABELS = {
@@ -55,7 +55,9 @@ Both properties can read as `number | undefined`, but constructing the object ca
 - `requiredKey` must exist, and its value may be `undefined`.
 - `optionalKey` may be omitted entirely.
 
-With `exactOptionalPropertyTypes` enabled, assigning `undefined` to `optionalKey?: number` requires explicitly including it in the value type. Also, `JSON.stringify` omits object properties whose values are `undefined`: a key existing in JavaScript does not mean it appears in a JSON request body.
+`exactOptionalPropertyTypes` makes the distinction explicit. `optionalKey?: number` allows the key to be absent. Assigning `undefined` requires adding it to the value type as well.
+
+JSON introduces another distinction: `JSON.stringify` omits object properties whose values are `undefined`. Keeping a key in a JavaScript object does not mean it will appear in the request body.
 
 ## Connecting a value and its callback with a generic
 
@@ -70,7 +72,7 @@ function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
 }
 ```
 
-The next call explicitly supplies `PaymentMethod` as its generic argument, so the value and callback use the same union.
+This Select passes its value to the callback. Supplying `PaymentMethod` at the call site gives both props the same union and keeps that set of payment methods visible inside the callback.
 
 ```tsx
 type PaymentMethod = 'normal' | 'coupon';
@@ -87,7 +89,7 @@ A single generic expresses that relationship instead of declaring each prop inde
 
 ## Expressing mutually exclusive props with a union
 
-When a component must allow exactly one of two usage patterns, a union using `never` makes that requirement explicit.
+A component may support a value with a change callback, or just a label. Making every property optional would also permit a label and value together. I use `never` for the properties each mode must reject, so the union describes the allowed combinations.
 
 ```tsx
 type ControlledProps<T extends string> = {
@@ -118,7 +120,7 @@ function Field<T extends string>(props: Props<T>) {
 
 Function overloads are useful for describing call signatures. For modeling valid React props, a discriminated union or a `never`-based XOR also lets the implementation narrow the types safely.
 
-I use `satisfies` to retain a value's specific type, and generics or unions to express relationships between props. For optional properties, I check separately whether the value may be `undefined` and whether the key itself may be omitted.
+In this example, an invalid combination fails where the component is called. The implementation can inspect the props and then read only the fields available for that mode.
 
 ## References
 

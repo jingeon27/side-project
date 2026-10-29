@@ -8,23 +8,13 @@ I connected browser and server errors to Sentry, set reporting policies and seve
 
 *Sanitize sensitive data before sending client, server, and edge events.*
 
-I introduced Sentry to observe frontend errors and Web Vitals in the benefits portal. Installing @sentry/nextjs and sending an event took a day. Making it usable in operations required considerably more.
+I added Sentry to inspect screen errors and Web Vitals in the benefits portal. Installing @sentry/nextjs and sending the first event was quick. Opening the payloads brought up the harder work: credentials had paths into events, metrics emitted by the browser were missing on the server, and a successful build had uploaded no source maps.
 
-- Initialize client, server, and edge runtimes.
-- Remove personal data from events, breadcrumbs, transactions, and spans.
-- Verify Web Vitals collection and actual transmission with E2E.
-- Connect MCP to our internal Sentry.
-- Upload releases and source-map artifacts.
-- Define levels and grouping by user impact.
-- Gate transmission and sample noise to reduce unnecessary traffic.
-
-After adding configuration, I checked what was actually sent: Web Vitals in envelopes, source maps matching deployed files, and sensitive fields in payloads. When an option did not explain the behavior, I followed the SDK source.
-
-This article uses Next.js 16 and @sentry/nextjs 10.70.
+I moved between actual events and SDK source to trace those problems. I decided what must stay out of payloads, closed the gaps in each runtime, and then separated errors by their effect on users. The setup used Next.js 16 and @sentry/nextjs 10.70.
 
 ## Collect errors from three runtimes
 
-Next.js uses different SDK implementations for browser, Node, and Edge, so initialization is split by runtime.
+Initializing the browser SDK does not collect server errors. Next.js uses separate SDK implementations for the browser, Node, and Edge, so I connected initialization in each runtime.
 
 ```text
 // sentry.client.ts
@@ -58,15 +48,17 @@ The browser initializes in instrumentation-client.ts. instrumentation.ts registe
 
 Next.js onRequestError receives failures from server component rendering, Route Handlers, Server Actions, and proxy. Errors already collected by an API interceptor are not sent again.
 
-Otherwise, one object could become three issues while passing through interceptor, boundary, and onRequestError. captureError adds a non-enumerable symbol; later collection points skip marked objects. Noise deliberately filtered out receives the mark too, preventing it from reappearing as fatal at a boundary.
+The same error could now pass through several collection points. An object reported by an API interceptor could reach the boundary and `onRequestError` and become separate issues. `captureError` marks handled objects with a non-enumerable symbol, which the later collectors check before sending.
+
+Filtered errors need that mark too. Otherwise, a boundary can send an error as fatal after the interceptor deliberately excluded it.
 
 ## Check the scope of automatic request collection
 
-In the SDK version examined here, sendDefaultPii: false alone did not block all headers and cookies in event.request. The token cookies renamed sessionToken and renewalToken here could also be included.
+I first traced what `sendDefaultPii: false` actually removed. In 10.70 it did not exclude every header and cookie from `event.request`. Authentication cookies could be included too; I have renamed them `sessionToken` and `renewalToken` here.
 
 The option transformed header/cookie collection into a deny-list object rather than false. requestDataIntegration checked only for false; an object enabled collection without applying the deny list. The filtering existed on the span path only.
 
-Request context can help investigation, but this service handling medical information had no reason to send credentials or user input. I explicitly disabled dataCollection entries rather than relying on sendDefaultPii.
+Request context can help debugging, but this service handles medical information. I explicitly disabled headers, cookies, bodies, queries, and user input in `dataCollection` so credentials and entered content would stay out.
 
 ```typescript
 export const SENTRY_DATA_COLLECTION = {
@@ -87,11 +79,11 @@ AI input/output is disabled because counseling prompts and answers can contain u
 
 stackFrameVariables matters too. Node's localVariablesIntegration adds exception-frame local variables, which could include member data or tokens.
 
-I retained five frameContextLines. That is source exposure rather than user-data collection, and the destination is our internal Sentry. Its debugging value outweighed that cost. Node currently sends minified lines because server source maps are not uploaded, as explained later.
+I kept five `frameContextLines`. They expose source rather than user input, and the destination is our internal Sentry, so I kept them for debugging. Node events still contain minified lines because I do not upload server source maps; I explain that choice below.
 
 ## Make new collection keys fail type checking
 
-When a dataCollection object is supplied, omitted entries default to full collection. The first version omitted keys such as stackFrameVariables and graphQL.
+Supplying a `dataCollection` object does not disable entries I leave out. Omitted keys default to full collection. The first configuration missed `stackFrameVariables` and `graphQL`, which made another omission during an SDK upgrade easy to imagine.
 
 The SDK type alone could not prevent this because every property was optional.
 
@@ -105,9 +97,9 @@ type TClosedDataCollection = Required<Omit<TSentryDataCollection, 'queryParams'>
 };
 ```
 
-Removing optionality makes a newly added SDK collection field fail type checking, requiring an explicit decision before rebuilding.
+Making the properties required causes type checking to fail on a new SDK field until I decide its value.
 
-Types do not prevent incorrectly setting true, so a full-object toEqual test also catches missing keys and reopened values. Types cover new keys; tests cover policy values.
+Types still allow an existing value to change accidentally to `true`. A full-object `toEqual` test covers those values alongside missing keys. The type and test catch different ways collection could reopen.
 
 ## dataCollection did not cover breadcrumbs
 
@@ -142,7 +134,7 @@ export function sanitizeBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
 }
 ```
 
-Application-supplied context is outside automatic collection restrictions too.
+Values the application adds to context sit outside those automatic collection settings too. I changed the code attaching screen and request locations so it would not send raw URLs.
 
 - Use pathname rather than location.href for screen location.
 - Remove query and hash from API URLs.
@@ -151,7 +143,7 @@ Application-supplied context is outside automatic collection restrictions too.
 
 ## Block reading and sanitize before sending
 
-Agent review and SDK-source inspection helped identify more URL and body paths. An option's scope depended on the field and integration handling the request information.
+Code review and SDK inspection found more URL and body paths after the header and breadcrumb changes. An option that sounded like a restriction on the whole request could apply to just one field or integration.
 
 - `urlQueryParams: false` disabled event.request.query_string only. The URL itself still carried its query.
 - The browser lacked the integration applying that option. Defaults attached full location.href and Referer to events and pageload transactions.
@@ -180,7 +172,9 @@ Sentry.init({
 });
 ```
 
-Collection options restrict reading; beforeSend hooks remove URL, Referer, and span attributes those options miss, and delete cookies/bodies again. This guards against one setting or a new SDK path immediately exposing tokens. The sanitizer knows only known keys, so SDK upgrades still require inspection.
+Node now avoids reading bodies, while the final hooks remove request data and span attributes still present in events. They delete cookies and bodies again even where `dataCollection` already blocks them. I kept both the restriction on reading and the cleanup of the final payload.
+
+A URL placed under a new SDK key can still escape a sanitizer that does not know its name. Upgrades require inspecting the URL fields and span attributes again.
 
 sanitizeEvent handles:
 
@@ -201,15 +195,11 @@ Plain url was the last one found. Fetch/XHR instrumentation put a cleaned URL in
 
 Standalone spans such as INP do not pass through beforeSendTransaction. The same attribute sanitizer therefore also runs in beforeSendSpan.
 
-## Test the policy and its wiring
+## Check that initialization actually receives the sanitizer
 
-A correct sanitizer does nothing if Sentry.init never receives it. I divided tests into three layers.
+A correct sanitizer still sends raw values if initialization never receives it. Alongside function tests, I check that client, server, and edge initialization receive `dataCollection` and every hook.
 
-1. **Policy object:** compare all dataCollection keys and disabled values.
-2. **Sanitizers:** check URL, body, cookies, Referer, breadcrumbs, and span attributes.
-3. **Initialization wiring:** verify policy and hooks reach client, server, and edge.
-
-New SDK collection keys break types; changed values or wiring break tests. New URL/span attribute names still require manual SDK-upgrade review.
+The sanitizer cases include URLs, bodies, cookies, differently cased Referer headers, breadcrumbs, and span attributes. The policy test compares all keys and values together. These protect known fields and connections, while new SDK attribute names still need inspection.
 
 ## Verify Web Vitals in actual envelopes
 
@@ -233,7 +223,7 @@ page.route intercepts the Sentry envelope without sending it to the real server.
 
 Service workers are blocked in that context because MSW would otherwise receive the request before page.route. A synthetic success response prevents SDK retries.
 
-The verified flow is:
+The test follows the payload the browser actually builds:
 
 ```text
 브라우저 진입
@@ -243,19 +233,19 @@ The verified flow is:
   → measurement 포함 여부 확인
 ```
 
-This verifies browser emission. Whether Sentry stores it is another question.
+The envelope contained the metrics, but some still did not appear in our Sentry dashboard.
 
 ## INP was sent but not stored
 
 The SDK sends INP as a standalone span rather than a pageload measurement. Our internal Sentry had span ingestion disabled and an empty spans dataset. INP was not stored, and Insights Web Vitals appeared empty.
 
-We currently inspect LCP, CLS, TTFB, and FCP in Discover's transaction dataset with transaction.op:pageload. Collection does not itself define performance-improvement thresholds or alerts; those still require product-specific decisions.
+We inspect LCP, CLS, TTFB, and FCP in Discover’s transaction dataset with `transaction.op:pageload`. Product-specific improvement thresholds and alerts are separate from that collection setup.
 
-beforeSendSpan or another client option cannot fix disabled server ingestion. The app emits spans, but server storage configuration needs separate work. I therefore do not describe this as operating all Core Web Vitals.
+A client-side `beforeSendSpan` hook cannot enable ingestion on the server. The app emits INP spans; storing them requires changing the server configuration.
 
 ## Connect agents to internal Sentry through MCP
 
-Manual dashboard checks separated investigation from code work. I connected repository MCP so agents could read actual issues, transactions, and settings and compare them with code.
+Investigating meant switching repeatedly between the dashboard and code. I connected Sentry MCP to the repository so agents could read issues, transactions, and project settings while tracing the implementation.
 
 @sentry/mcp-server runs over stdio with the internal host.
 
@@ -275,7 +265,7 @@ Manual dashboard checks separated investigation from code work. I connected repo
 
 Unavailable Seer tools are disabled. The repository references environment variable names rather than token values.
 
-Configuration still needed actual validation. Claude Code expands the token variable from its own process environment. Setting it only for Bash tools let terminal curl work while MCP authentication failed; Claude Code did not read .env.local. The token had to be available in the shell startup environment and Claude Code restarted.
+During setup, terminal `curl` succeeded while MCP authentication failed. Claude Code expands the token from its own process environment, but I had provided it only in local settings for Bash tools. It did not read `.env.local` either. Moving the token into the shell startup environment and restarting Claude Code made it available to MCP.
 
 MCP and source-map uploads use separate tokens.
 
@@ -284,7 +274,7 @@ MCP and source-map uploads use separate tokens.
 
 The MCP token lacked project:releases and could not be reused for upload. Tokens for the same service had different purposes and scopes.
 
-With MCP, I could inspect datasets and issue payloads instead of assuming code would collect something. It helped distinguish client omission from the server's missing span ingestion for INP.
+For INP, I used MCP to read the transaction dataset and issue payloads. Comparing them with browser emission pointed to disabled server span storage rather than an omitted client metric.
 
 ## Verify releases and source maps in build artifacts
 
@@ -308,25 +298,21 @@ withSentryConfig(nextConfig, {
 });
 ```
 
-For eight days after introduction, no source maps uploaded despite this configuration. None of the three deployment workflows had the build token, so sourcemaps.disable stayed true and accumulated stacks remained minified. Configuration existing did not prove deployment execution.
+Stacks stayed minified for eight days after I added the source-map configuration. No deployment workflow had the build token, leaving `sourcemaps.disable` true. Upload was not failing; it was never being attempted in deployment.
 
 I initially suspected Turbopack support. In 10.70, Sentry uploads through a post-production-compile hook; Next.js 16 creates debug IDs linking deployed files to artifact bundles.
 
-Token presence alone is insufficient.
+Adding a token still did not make build success proof of upload. An expired or unauthorized token can produce a 401 while `errorHandler` only warns and lets the build finish. `deleteSourcemapsAfterUpload` can also remove local maps after a failed upload.
 
-- Expired or unauthorized tokens still enter upload code.
-- An upload 401 may only warn through errorHandler, leaving a successful build.
-- deleteSourcemapsAfterUpload can remove local maps even after upload failure.
-
-Both Sentry and deployment could silently end up without maps. I checked release access with sentry-cli and verified artifact bundles through Sentry API instead of relying on build success.
+That leaves no maps in Sentry or the deployment output. I checked release access with sentry-cli and looked for the actual artifact bundle through the Sentry API.
 
 I chose not to upload server source maps. Turbopack left more than 1,000 under .next/server, causing internal Sentry uploads to return 502 and accounting for about half of a 199 MB .next directory. Deleting server maps in an earlier build hook limited uploads to browser maps. In that build, .next fell to 93 MB and upload completed without 502. Server stacks remain minified as the tradeoff.
 
-The completion condition is a deployed error's debug ID matching the actual Sentry artifact, rather than next build succeeding.
+Connecting a deployed error back to source requires its debug ID to match the uploaded artifact. That match, rather than the build’s exit code, was what I checked at the end.
 
 ## Assign severity by user impact
 
-Once transmission and sanitization worked, I needed to decide which collected errors deserved action.
+Once I could inspect the issues, I needed to decide which ones to act on first. An unavailable screen and a request someone can retry are difficult to distinguish if they arrive at the same level.
 
 The starting points were Sentry operations at my previous company and [Woowa Brothers' Sentry optimization article](https://techblog.woowahan.com/21604/). Previously, I filtered extension, Service Worker, network, and already handled business errors with ignoreErrors, denyUrls, and beforeSend, and excluded development/test traffic. The lesson was to preserve user-impacting signals rather than collect everything.
 
@@ -346,8 +332,6 @@ This app uses the table as a default distinction between failed screen-loading q
 - warning: an expected failure allows retry or an alternative flow
 
 401 handling also varies. A 401 recovered through token refresh is not sent. Refresh failure receives a separate fingerprint: a normally expired refresh token is warning because returning users naturally reach session expiry; other refresh failures are error.
-
-Severity reflects lost functionality and recovery options rather than the developer's impression.
 
 ## Attach only the member ID
 
@@ -371,18 +355,15 @@ GeolocationPositionError is neither Error nor Event, so the SDK produced a stack
 
 At the previous company, NODE_ENV excluded dev/test events. It was effective but could not precisely represent production-build E2E or local transmission verification.
 
-The principle remains that sending locally visible errors adds noise and collection cost. This time, an explicit gate selects collection by purpose. Even with a DSN, NEXT_PUBLIC_SENTRY_ENABLED false disables the SDK.
+Errors already visible in a local console were mixing with real-user issues. This time I used an explicit transmission setting based on the run’s purpose rather than `NODE_ENV`.
 
 ```typescript
 export const IS_SENTRY_ENABLED = Boolean(SENTRY_DSN) && SENTRY_ENABLED !== 'false';
 ```
 
-- Enable deployments collecting real-user errors or verifying transmission.
-- Disable routine development deployments and local execution by default.
-- dev, dev:mock, and build:e2e default to false to avoid consuming storage with test traffic.
-- Transmission E2E and local integration checks can explicitly enable it.
+Deployments collecting real-user errors and runs verifying Sentry transmission enable it. Ordinary local runs and development deployments keep it off. The dev, dev:mock, and build:e2e scripts default to false; transmission E2E and local integration checks can opt in explicitly.
 
-Initially I put local disabling in untracked .env.local. New clones or worktrees without it would read the then-true .env.development and mix local events into development issues. That day, I fixed defaults in execution scripts. New worktrees now start disabled and enable collection deliberately.
+I first put local disabling in `.env.local`. A new clone or worktree lacked that file and read the true value from `.env.development`. Moving the default into execution scripts made new workspaces start with reporting disabled too.
 
 ## Problems this setup helped uncover
 

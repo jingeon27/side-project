@@ -1,6 +1,6 @@
 <Summary>
 
-I recorded repeated decisions in skills, lint rules, and tests while delegating implementation to coding agents. I review the plan and finished changes, then check the code and the running UI.
+An agent reported a passing test that waited for text the screen never showed. Delegating implementation led me to read plans and diffs myself and turn recurring corrections into guidance for later work.
 
 </Summary>
 
@@ -8,55 +8,55 @@ I recorded repeated decisions in skills, lint rules, and tests while delegating 
 
 *Carry verified criteria from planning, implementation, checks, and review into the next task.*
 
-I once opened an E2E an agent reported as successful. In the banner-creation drawer, it waited for “Uploading...” to disappear. That text existed nowhere in the repository. I could not establish whether the line actually waited for an upload. Trusting the success report would have let it pass unnoticed.
+I opened an E2E an agent had reported as successful. It waited for Uploading... to disappear from the banner drawer, but no code in the repository displayed that text. I could not tell whether it had waited for an upload or simply passed because the text was already absent.
 
-The first Claude configuration files gave the repository settings without a workflow. Later, I attached a reviewer to push and introduced ticket-branch skills that presented a plan and stopped, first in the admin monorepo and then in the benefits portal. Code generation initially became faster, but detailed decisions still lived across code and my memory. Documents covered basics such as forms and Query Options, while I read and corrected every result. My criteria were insufficiently recorded.
+My first Claude configuration did not define how I would accept finished work. Documents covered where forms belonged and how to build Query Options, but I still corrected detailed choices after reading the result. Many of my criteria had never reached the model. I added a push reviewer and skills that present a plan and wait, first in the admin monorepo and then in the portal.
 
-In one sprint I relied on running the feature without reading the code, and there were many hotfixes. I now read the product changes and tests for features and refactorings. The workflow is ticket and plan review → tests → agent implementation and review → changed-scope tests, lint, and typecheck → my diff and UI review → full CI → a second check from a colleague.
+One sprint focused on screen behavior without reading the code and produced many hotfixes. I returned to reading feature and refactoring changes alongside their tests. After ticket and plan review, agents write tests and implement; changed-scope checks come before my diff and UI review, followed by CI and a QA double check.
 
 ![I judge plans, diffs, and screens; push gates and CI run automated checks.](/images/posts/plan-gated-ai-workflow/02.png)
 
 *I judge plans, diffs, and screens; push gates and CI run automated checks.*
 
-## Review the ticket before giving it to AI
+## Resolve missing behavior before implementation
 
-I first consider whether code can solve the ticket and whether a better approach exists than the current implementation. I sometimes participated in earlier requirements discussions, but did not define or verify every ticket's specification. Ambiguity or required backend work discovered during plan review goes to the relevant person.
+I read a ticket to consider whether code can solve it and whether the existing approach is appropriate. I joined some requirements discussions, but plans also reveal ambiguous behavior or necessary backend changes. I resolve those with the relevant person before implementation.
 
-The portal follows designer mockups; other products mostly use wireframes. I use Figma MCP where designs exist. For wireframes, I sometimes review UI during self-verification after agent implementation and tests. Global file uploads needed decisions beyond the wireframe, including how long to retain verification codes and what upload failures should show.
+The portal follows designer mockups; other products mostly use wireframes. Figma MCP helps compare an implementation with a design, but wireframes leave behavior undecided. Global file uploads needed separate decisions about retaining verification-code input and displaying upload failures.
 
-The agent then inspects related code and existing patterns. I distinguish work that can follow an established pattern, work needing clarification first, and work requiring a human check of the finished UI or data. I review the plan's assumptions and questions before implementation. Separately defined bug-fix and schema-mismatch tasks start with reproduction and verification.
+The agent finds related code and a close reference, then writes its plan. I distinguish established patterns, questions needing answers first, and finished screens or data requiring my inspection. Previously defined bug fixes and schema mismatches start with reproduction and verification.
 
-## Review the plan before the code
+## Change direction before there is code to discard
 
-Finding a wrong direction in a completed diff means discarding implementation. The ticket-branch skill therefore presents a plan and waits for my input, even in auto mode, before implementation.
+Discovering a wrong direction in a finished diff means throwing implementation away. The ticket-branch skill therefore waits for my input after presenting its plan, even in auto mode.
 
-Its template has four sections: ticket summary, impact, work order, and review items. I inspect assumptions in the summary and unresolved review items. An accurate file list is useless if the intended behavior is misunderstood. I also ask who owns state/data and what result ends the task, although those are not template fields. Missing states or mistaken API assumptions trigger more investigation and a revised plan. No code exists yet, so changing direction discards only a document.
+The template covers the ticket summary, impact, work order, and review questions. I read the interpretation of behavior before the file list. Missing cases, state placement, completion conditions, or misunderstood APIs send the agent back to investigate. After I review a revised plan, implementation can begin without discarding product code.
 
-## Avoid making the same correction twice
+## Stop repeating corrections in every prompt
 
-Initially, each prompt accumulated cautions. I split them into task-specific skills for forms, Query, FSD, and the design system. Error handling remains an admin policy document; the design-system skill exists only in the portal. When an implementation misses the intent, I correct both code and the relevant skill or lint rule. AGENTS.md remains the rule authority, with skills selected for each kind of task.
+At first I appended cautions to each prompt. As they grew, I split them into skills for forms, Query, and FSD. Admin error handling stayed in a policy document; the portal design system has its own skill. AGENTS.md holds shared rules and points to the relevant detail.
 
-I moved mechanically checkable import directions, slice boundaries, and raw query keys into lint. I cleaned up existing violations before expanding enforcement, without imposing identical severities on both repositories. I cared more about rules working at actual call sites and making new violations visible than about their number.
+When correcting generated code, I consider whether the mistake will recur. Import direction, slice boundaries, and raw query keys can be decided mechanically, so they moved into lint. I cleaned up existing violations before expanding enforcement, without forcing the same severity levels on both repositories.
 
-Context-dependent judgments, such as whether a component is a screen fragment or domain UI, remain in documentation and review.
+Whether a component assembles a screen layout or presents domain data needs its callers read. That judgment remains in documents and review.
 
 ![Record each recurring correction where its kind of judgment belongs.](/images/posts/plan-gated-ai-workflow/03.png)
 
 *Record each recurring correction where its kind of judgment belongs.*
 
-Following [Compound Engineering](https://every.to/guides/compound-engineering), I carried task decisions into subsequent rules. This did not arrive as one finished process. Repeated corrections improved skills, and better models also produced more results fitting my style.
+I developed this process with reference to [Compound Engineering](https://every.to/guides/compound-engineering). It was not a complete system from the start. Repeated corrections improved the guidance, while improving models also produced results closer to my style.
 
-## Check the actual screen
+## Find differences in the screen and the server
 
-For Figma work, I have the agent open the UI and capture screenshots at the same viewport. I compare spacing, typography, icons, responsive layout, and open and error states with the design. We list differences, fix them, and check again. I also operate the running UI myself.
+For design work, the agent opens the UI and captures it at the same viewport. I compare spacing, typography, icons, responsive layout, open states, and errors. Differences are fixed and checked again, and I operate the feature myself.
 
-I changed integration-test mocks to reject requests that violate server constraints. Mocks that accepted everything had hidden real 400 responses. When the dev API reveals another constraint, I update the form, mock, and tests together, then verify the contract against that server.
+Mocks once accepted requests that the real server rejected with 400. I changed them to enforce server constraints. When another constraint appears through the dev API, I update the form, mock, and tests together and check again against that server.
 
-## A passing test report still needs inspection
+## Read what a test actually waits for
 
-After introducing tests, I refined the environment around the behavior being checked: node for functions and schemas, jsdom or Browser Mode for forms and components, and Playwright for browser flows. New admin-service tests use the dev API by default; MSW recreates failure states that are difficult to prepare directly, in .mock files.
+Functions and schemas run in node; forms and components use jsdom or Browser Mode; navigation flows use Playwright. New admin tests use the dev API by default. MSW creates failure states that are difficult to prepare directly, in files marked .mock.
 
-I read all AI-written tests. The upload wait from the opening example became:
+The environment cannot rescue an incorrect assertion. I changed the upload test from waiting for screen text to inspecting actual upload-item state.
 
 ```typescript
 // before: 저장소에 없는 화면 문구가 사라지길 기다린다
@@ -66,61 +66,61 @@ await expect(drawer.getByText('업로드 중...')).toBeHidden();
 await expect(drawer.locator('.ant-upload-list-item-uploading')).toHaveCount(0);
 ```
 
-That wait only proves that no upload is in progress. The same condition holds if an upload never started or failed, so the uploaded file and saved result need checks too. I also examine the test environment: I aligned a test QueryClient whose initial failures did not reach the app's Error Boundary, and tested first-load failures separately from failed refetches with existing data.
+Even that wait only establishes that nothing is uploading. It can pass if the upload never starts or fails, so the uploaded file and saved result need checks too. QueryClient configuration also had to match the app. I fixed tests whose initial failures never reached the Error Boundary and separated first-load failures from refetch failures with existing data.
 
-Tests must show inputs, actions, and expectations directly. BDD-style `*.spec` covers new requirements by component; `*.test` reproduces production/QA bugs. AGENTS.md requires tests before refactoring and mutation checks that deliberately break product code and confirm failure. New test patterns receive the same check. I read each line against the plan's success conditions and compare execution results with those conditions.
+New requirements go in BDD-style `*.spec` files; production and QA bugs go in `*.test`. Inputs, actions, and expectations need to be readable in the test. AGENTS.md requires tests before refactoring and deliberately breaking product code to check new test patterns. I also compare what each test asserts with the plan's success conditions.
 
 ![Names distinguish specifications from bug reproduction, and testing starts where mocks are unnecessary.](/images/posts/plan-gated-ai-workflow/04.png)
 
 *Names distinguish specifications from bug reproduction, and testing starts where mocks are unnecessary.*
 
-Cross-app features use E2E spanning both apps. Hospital admin registers a program and requests review; Back-Office marks it under review, then rejects or approves. One app's render test cannot cover this. A separate Playwright configuration starts both dev servers on 3000 and 3002 against dev APIs. Because localhost shares cookie domains, hospital admin uses a separate browser context. Rejection is asserted through the reason entered by the test reappearing in details, not the word Reject already present on a button.
+Program review crosses hospital admin and Back-Office. Registration and a review request start in hospital admin; Back-Office marks the program under review and approves or rejects it. A separate Playwright configuration runs both dev servers on 3000 and 3002 against the dev API. Hospital admin uses another browser context because localhost shares cookie domains.
+
+Looking for Reject text could pass without a state change because the drawer already had that button. I check that the rejection reason entered by the test reappears in details instead.
 
 ![Verify rejection through the reason entered by the test, not a label already on screen.](/images/posts/plan-gated-ai-workflow/05.png)
 
 *Verify rejection through the reason entered by the test, not a label already on screen.*
 
-## Separate independent delegation from continuous joint editing
+## Separate independent tickets from shared changes
 
-I use separate worktrees and Orca sessions for independent tickets. Refactorings that change shared structures and APIs stay in one session. In both cases, the agent implements the change and I review the finished diff and tests. If it misses the intent, I explain why and ask for another revision.
+Independent tickets use separate Orca worktrees and sessions. Refactoring shared APIs and structures stays in one session. Either way, I read the finished diff and tests and explain deviations before asking for revisions.
 
-Plans align impact, preserved behavior, exceptions, and review questions. Implementation review checks the actual diff against those criteria. Agent findings also need code evidence and reproduction conditions. I do not equate tool review with a colleague agreeing on a design.
+Agent review findings also need inspection. I compare their reproduction conditions with the code and the behavior the plan intended to preserve. I treat that as different input from review by a colleague who helped agree on the design.
 
 ![Independent tickets use separate sessions; related structural changes stay in one session for finished-diff review.](/images/covers/ai-workflow-parallel.png)
 
 *I separate sessions by dependencies and review the finished changes myself.*
 
-## Parallel sessions made verification a bottleneck
+## More sessions made checks overlap
 
-Even before Orca, nonoverlapping tickets used separate Git worktrees to isolate branches and dependencies. More sessions exposed another bottleneck: checks.
+Worktrees isolated branches and dependencies but did not stop every session from launching full lint and tests together. Turbo cold-ran all packages and occupied the CPU. Some overlapping checks ended with exit 143. That code alone did not establish the cause, but an unfinished check left no basis for pushing.
 
-Simultaneous full lint and test runs made Turbo cold-run packages and consume the CPU. Some overlapping runs exited 143. That exit code alone does not prove CPU contention caused termination, but unfinished checks provided no result with which to judge code. The original admin push gate was one full `pnpm run lint`. Later I narrowed pre-push verification to changed-file ESLint, typechecking their packages, and related tests through `vitest --changed`.
+The original admin gate was full-package pnpm run lint. I narrowed the first checks to changed-file ESLint, affected-package typechecking, and related tests through vitest --changed. Typechecking includes affected consumers; Knip examines the repository graph. Admin CI runs lint and unit tests, with dev-API tests and E2E separately. Portal CI runs lint, typechecking, and Knip.
 
-Agents report changes and checks after implementation. I compare those reports against original requirements, not merely the plan: the plan is another agent-produced artifact and can be wrong.
+Checks run in the worktree containing the change, without temporary merges into the main checkout to reuse caches. Failures return to the plan, implementation, or tests according to their cause. I compare completion reports with the original requirements too, because following a plan does not prove the plan was correct.
 
-A failed check still means the task is unfinished. Depending on the cause, I return to the plan, implementation, or tests. Checks run in the working tree where the change was made; I do not temporarily merge into the main worktree merely to reuse its cache.
+## Distinguish reasons to stop before pushing
 
-Check scope depends on the tool. ESLint starts with changed files, tests with affected behavior, typechecking with packages and consumers, and Knip with the repository graph. The current admin CI runs lint and unit tests; dev-API tests and E2E run separately. Storefront CI runs lint, typechecking, and Knip.
+A separate reviewer reads origin/develop...HEAD and reports Critical, Warning, and Nit findings with confidence. Both repositories initially reviewed first, avoiding long checks if a Critical finding would stop the change. The portal retains that order. Admin now runs review and checks together, waiting for both before pushing.
 
-## Treat review findings separately from failed checks
+For admin changes classified as markup, wording, and style within one screen, the process skips reviewer and tests but runs ESLint, typechecking, and Knip. Changes to branches or data flow receive full review and checks even when small.
 
-A separate push reviewer reads origin/develop...HEAD and reports every finding with Critical, Warning, or Nit severity and confidence. Both repositories initially reviewed before expensive checks, avoiding those checks if Critical would stop the change. Portal retains that order. Admin now runs review and checks concurrently, then decides after both finish to reduce push delay. For changes an agent identifies as markup, wording, or style within one screen, admin skips the reviewer/tests and runs ESLint, typecheck, and Knip. A single changed branch or data-flow line requires the full process.
-
-The agent fixes Critical findings and checks again. Unresolved findings or decisions it cannot make stop for my review. Warning and Nit findings are reported without blocking on their own. Failed lint, typechecking, or tests also stop progress.
+Critical findings are fixed and checked again. Unresolved items or decisions needing my judgment stop progress. Warning and Nit findings are reported without blocking by themselves. Lint, typecheck, and test failures also prevent the next step.
 
 ![The agent fixes Critical findings and checks again. Unresolved findings and failed checks stop progress.](/images/covers/ai-workflow-push-gate.png)
 
 *Critical findings are fixed and rechecked; unresolved items need my review.*
 
-Repeated false positives become reviewer exceptions. Back-Office and hospital admin have similarly shaped src/app/api routes with different endpoints and service names. Review repeatedly suggested a common handler factory. Because each is tied to its app's backend and response types, I retained separation and documented an exception against recommending that extraction.
+I documented recurring false positives as exceptions. Similar src/app/api routes in Back-Office and hospital admin repeatedly attracted suggestions for a shared handler factory. Each was tied to its own backend and response types, so I retained separation and told the reviewer not to recommend that extraction again.
 
-## Read the combined code before deployment
+## Read the combined diff before deployment
 
-When several PRs are collected for deployment, I read their combined diff. Abstractions, names, or FSD boundaries that looked reasonable in isolation can conflict together. I do this when preparing a separate deployment PR to check consistency across the changes.
+Changes that look reasonable in separate PRs can produce duplicate abstractions, conflicting names, or inconsistent FSD boundaries together. I read the combined diff while preparing a deployment PR.
 
-After deployment, troubling patterns can trigger a repository-wide search and changes to skills, lint, or shared implementations. Removing portal entities and adding a rule against cross-page imports began here. That redesign reached develop, but the repositories still have different structures and rules. [The FSD article describes it.](/en/blog/fsd-layer-boundaries)
+A troublesome pattern after deployment can also lead to finding and changing similar code across the repository. Removing portal entities and blocking direct cross-page imports began this way and reached develop. It did not make admin and portal structures identical. [The FSD article covers that change.](/en/blog/fsd-layer-boundaries)
 
-Chat code that was once excluded is back under lint and tests. The separate API routes, on the other hand, have a reviewer exception so the same factory suggestion does not recur. Repeated corrections have helped me adjust what runs automatically and what I need to read and judge myself.
+Chat code once excluded from checks is back under lint and tests, while routes with a reason to remain separate have a review exception. Repeated findings have led me to reconsider whether a check fits the actual code, rather than simply making every rule stricter.
 
 ## References
 

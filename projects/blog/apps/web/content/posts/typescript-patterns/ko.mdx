@@ -8,11 +8,11 @@
 
 *글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
 
-필드 이름은 맞지만 값 타입이 틀리거나, 함께 쓸 수 없는 props가 동시에 들어오는 코드를 종종 봤어요. 이런 실수를 호출부에서 확인하려고 실무에서 쓰는 패턴을 정리했어요.
+필드 이름을 enum으로 모아도 값의 타입까지 맞아지는 건 아니었어요. price에 문자열을 넣거나 함께 쓰면 안 되는 props를 넘기는 실수는 따로 남았어요. 이런 조합을 호출하는 자리에서 드러내려고 satisfies와 제네릭, 유니언을 쓰고 있어요. optional property도 읽는 값뿐 아니라 객체를 만들 때 어떤 키를 생략할 수 있는지 함께 봐요.
 
 ## satisfies로 검사하면서 추론을 유지하기
 
-satisfies는 값이 지정한 타입을 만족하는지 검사해요. 아래 예제에서는 as const가 경로의 리터럴 타입을 유지하고, satisfies는 필요한 키와 경로 형식이 맞는지 확인해요.
+경로 목록에서는 필요한 이름이 빠지지 않았는지 검사하면서도 각 경로를 구체적인 문자열로 쓰고 싶었어요. 아래에서는 as const로 리터럴 타입을 유지하고, satisfies로 필수 키와 경로 형식을 검사해요.
 
 ```typescript
 type RouteName = 'home' | 'profile' | 'settings';
@@ -27,7 +27,7 @@ ROUTES.profile;
 // '/profile'로 추론된다.
 ```
 
-변수에 Record&lt;RouteName, string>을 직접 지정하면 읽는 값이 string으로 넓어질 수 있어요. 예제처럼 두 문법을 함께 쓰면 구체적인 경로를 유지하면서 누락한 키와 잘못된 값도 검사할 수 있어요.
+변수 타입을 Record&lt;RouteName, string>으로 지정하면 ROUTES.profile도 넓은 string으로 읽힐 수 있어요. 두 문법을 함께 쓰면 '/profile'이라는 값을 유지한 채 빠진 키나 잘못된 경로를 찾을 수 있어요. 결제 수단별 문구처럼 빠짐없이 채워야 하는 객체에도 같은 방식으로 적용해요.
 
 ```typescript
 const LABELS = {
@@ -55,7 +55,9 @@ const a: Example = {
 - requiredKey는 키가 있어야 하고, 값으로 undefined를 허용해요.
 - optionalKey는 키 자체를 생략할 수 있어요.
 
-exactOptionalPropertyTypes를 켜면 optionalKey?: number에 undefined를 직접 대입할 수 없어요. 그것도 허용하려면 값 타입에 undefined를 명시해야 해요. 한편 객체를 JSON.stringify로 보낼 때는 undefined인 프로퍼티가 생략되므로, 자바스크립트 객체에 키가 있다는 것과 요청 본문에 실린다는 것도 구분해야 해요.
+이 차이는 exactOptionalPropertyTypes를 켰을 때 더 분명해져요. optionalKey?: number는 키를 빼도 된다는 뜻이고, 값을 undefined로 적어도 된다는 뜻은 아니에요. 직접 대입하려면 값 타입에도 undefined를 넣어야 해요.
+
+요청 본문으로 보낼 때는 한 번 더 구분해요. JSON.stringify는 값이 undefined인 프로퍼티를 생략해요. 자바스크립트 객체에 키를 남겼더라도 JSON에 그대로 실리는 것은 아니에요.
 
 ## 제네릭으로 value와 callback의 타입을 연결하기
 
@@ -70,7 +72,7 @@ function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
 }
 ```
 
-다음 호출부에서는 PaymentMethod를 제네릭 인자로 지정해 value와 콜백이 같은 유니언을 사용하게 했어요.
+이 Select는 value로 받은 값을 콜백에도 그대로 넘겨요. 호출부에서 PaymentMethod를 지정하면 두 prop이 같은 유니언을 사용하고, 콜백 안에서도 결제 수단의 범위를 알 수 있어요.
 
 ```tsx
 type PaymentMethod = 'normal' | 'coupon';
@@ -87,7 +89,7 @@ type PaymentMethod = 'normal' | 'coupon';
 
 ## 서로 배타적인 props를 union으로 표현하기
 
-컴포넌트가 두 사용 방식 중 하나만 허용해야 한다면 never를 이용한 유니언으로 표현해요.
+값과 변경 콜백을 받는 방식, label만 보여 주는 방식을 한 컴포넌트에서 지원할 때도 있어요. 아무 속성이나 선택적으로 받으면 label과 value가 동시에 들어올 수 있어요. 각 방식에서 받지 않을 속성을 never로 적어 허용할 조합을 나눴어요.
 
 ```tsx
 type ControlledProps<T extends string> = {
@@ -118,7 +120,7 @@ function Field<T extends string>(props: Props<T>) {
 
 함수 오버로드로 호출 방식을 나눌 수도 있어요. 이 컴포넌트에서는 props 유니언을 쓰면 구현부에서도 어떤 속성을 사용할 수 있는지 확인하기 편했어요.
 
-이름이 맞는지만 검사할 때와 값 사이의 관계를 표현할 때는 필요한 타입이 달라요. 호출부에서 허용할 조합을 먼저 정한 뒤 satisfies와 제네릭, 유니언을 골라 쓰고 있어요.
+이 예제에서는 호출부에 잘못된 조합을 넘기면 바로 타입 오류가 나요. 구현부도 props를 확인한 뒤 그 방식에 맞는 속성만 읽을 수 있어요.
 
 ## 참고
 

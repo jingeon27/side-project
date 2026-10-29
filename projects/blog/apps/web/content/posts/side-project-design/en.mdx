@@ -8,11 +8,9 @@ The first idea was a service where friends could share photos and vote. Trying i
 
 _An illustration of revising the screens._
 
-I wanted to turn ideas I cared about into services. I am building a photo community, Game Mate, and a personal blog. I ask AI to implement things, try the resulting screens myself, and send back changes.
+I am building a photo community, Game Mate, and a personal blog by asking AI to implement features and trying the screens myself. My early requests mostly described actions: upload a photo, join a group, send a message. When a button produced the result I expected, I tended to consider the feature finished.
 
-At first I thought in terms of features: upload a photo, join a group, send a message. If a button produced the expected result, it was easy to consider the feature finished. But I had left many decisions open: what happens if someone logs out halfway through, a deadline passes, or the response to a request never arrives?
-
-I should have considered those situations when requesting the feature. Trying the screens and revisiting issues from other development work showed me that describing only the successful path was not enough.
+That left other decisions open. How would someone return to anonymous posts after logging out? What if they opened a submission form before the deadline but sent it afterward? Trying the screens and revisiting cases missed in other work kept bringing me back to features I had already built.
 
 The first project was `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” It made me think it would be fun to have a service where close friends could share funny photos within their own group.
 
@@ -26,23 +24,23 @@ _Development screens with test data._
 
 The first home screen was mostly about choosing a group. I wanted the latest photos from my groups instead. I moved the group list to My Page and made photos the first thing on the home screen.
 
-I also wanted a place that did not close when a contest ended. I added ongoing posts without a submission period, including videos and edited images alongside photos. Administrators could remove posts and see the month's popular posts too.
+Once the home screen centered on photos, it felt limiting to stop posting when a contest ended. I added ongoing posts with no submission period and supported videos and edited images too. Administrator deletion and the month’s popular posts followed.
 
 Running the screens brought up design changes. I changed layouts that covered photos and removed a story-style border when there was no story feature. I checked spacing and layout on desktop separately.
 
 The entry screen brings login, signup, and “Start anonymously” together. Anonymous sessions can browse public groups. Private groups require login and membership approval.
 
-Preserving anonymity was part of the plan too. I chose not to add social login so people could use the service without linking an external social account.
+Anonymous access also shaped login. I left social login out so people could use the service without linking an external account.
 
 ## What happens to activity after an anonymous start?
 
-When I added “Start anonymously,” I focused on entering without signing up. But what if someone posts and joins a group, then wants to continue on another device? Could they return to the same profile after logging out? Those needed answers too.
+Once people could enter anonymously, I had to consider what came afterward. Someone who had posted and joined groups would need a way back to that profile, whether on another device or after logging out.
 
 Signing up while using an anonymous profile now converts that profile into an account, preserving public-group memberships and authored content. Creating an unrelated account would defeat the purpose for someone signing up to keep their activity.
 
 Logging out before signing up means losing access to that anonymous profile and its history. Saying “your history will be deleted” would also be inaccurate. Removing posts that others can see and losing the ability to return as their author are different things.
 
-I changed where the explanation appears. “Your anonymous profile is maintained through a browser session” was familiar to a developer, but not helpful wording for everyone else. A confirmation before logout can explain the consequence directly: you will lose access, so sign up first if you want to continue. Signing up also gives people a way to continue on other devices.
+I also replaced the My Page explanation about a “browser session.” A confirmation at logout explains the consequence first: the anonymous profile will no longer be accessible, and signing up is the way to keep using it. People should not need to know what a session is to understand why signup matters.
 
 ## An invitation must not bypass a private group's approval
 
@@ -50,7 +48,7 @@ Groups started with a link for inviting friends. Once I introduced public and pr
 
 Public groups can be browsed before joining. Private groups require an account and membership approval, including when someone arrives through an invitation. Forwarding a link should not expose private posts. I made the server check access as well as hiding content on the screen.
 
-One administrator role was not enough either. I separated the group owner from moderators. Moderators can remove ordinary members, while the owner must transfer ownership before leaving. I needed to account for a group being left with nobody able to manage it.
+Inviting friends grew into managing members, which needed more than one administrator role. Moderators can remove ordinary members. An owner must transfer ownership before leaving, so the group is not left without someone able to manage it.
 
 Removing a member also raised a question about their posts and comments. I kept leaving a group separate from erasing its past conversations. Leaving or being removed does not automatically delete that content, and returning to a private group requires approval again.
 
@@ -58,13 +56,13 @@ Removing a member also raised a question about their posts and comments. I kept 
 
 A contest has upcoming, submission, voting, and completed phases. I made “Enter the contest” appear only during submissions, but hiding a button was not enough. Someone could leave the form open and publish after the deadline. Submissions could also close during an upload, so the server needed to check the time again when saving the entry.
 
-Requests arriving exactly at a deadline needed a clear answer too. The submission deadline belongs to the voting phase, and the voting deadline belongs to the completed phase. Server time determines the phase so different device clocks do not produce different decisions.
+The exact deadline needed a definition too. A request arriving at the submission deadline belongs to voting, and one arriving at the voting deadline belongs to the completed phase. The server clock makes that decision rather than each device’s clock.
 
 Being allowed to publish several entries does not mean being allowed several votes. Contest voting is limited to one vote per account, with no votes for one's own or hidden entries. The database also prevents duplicate votes when requests arrive together or someone presses the button twice. Anonymous profiles are easy to recreate, so contest voting requires a registered account. That alone does not solve the problem of one person creating several accounts.
 
 I kept likes separate from contest votes and set a per-person limit on how many contest entries could receive a like. Results also needed to distinguish a tie for first place from a contest with no votes. Calling every zero-vote entry a joint winner was not what I wanted. A contest only has winners when its highest vote count is greater than zero.
 
-None of this required a long explanation covering the contest screen. People came to see photos. I shortened the visible guidance to the actions currently available and the limits people need, while still enforcing the restrictions on the server.
+As the rules accumulated, explanations began filling a screen meant for photos. I kept the server restrictions and shortened the visible guidance to the actions available now and the limits people need to know.
 
 ## What if someone cancels a selection or the upload fails?
 
@@ -72,15 +70,15 @@ Selecting and uploading a photo has intermediate states too. I checked whether c
 
 Storing a file and publishing a post are separate steps. Someone might submit before the upload finishes, the upload could expire, or the author could leave the group in the meantime. Publishing also needs checks that the file is ready and the author still has permission.
 
-Losing everything typed after a failure would make me reluctant to try again. Explaining which step failed and allowing a retry needed to be part of uploading. Checking only whether a successfully uploaded photo appears would miss these cases.
+The screen after a failure is part of uploading too. If only the photo needs a retry, losing the written post would make the person start over. The form needs to explain which step failed and let the existing input carry on.
 
 ## Game Mate starts with Clash Royale
 
 Game Mate grew out of watching Clash Royale communities. The overseas players I saw used Twitter, while Korean players used KakaoTalk, DC Inside, and Naver Cafe.
 
-Getting added as a friend by top-ranked players overseas was difficult, and I also came across posts looking for someone to teach the game. Posting across several platforms and checking each one looked inconvenient. That made me consider building a service where people could make these requests and find each other in one place.
+Getting added by top-ranked overseas players was difficult, and I often saw posts looking for someone to teach the game. People posted across several platforms and checked each one separately. I wanted a place for friend requests, coaching offers, and advice about getting stuck in a game.
 
-I also wanted someone stuck in a game to be able to describe their situation and receive advice from other players. I chose Clash Royale first because I thought I could reach its initial users through communities I knew.
+The Clash Royale communities I knew were also where I could reach initial users, so I chose to start there rather than launch for several games at once.
 
 I considered Brawl Stars and League of Legends too, but decided against supporting several games at the start. I made five boards under Clash Royale: feedback, friend-add sales, friendly matches, coaching, and general discussion. More games could use those boards later. I left account trading out because of the risk.
 
@@ -88,7 +86,7 @@ Friend-add sales have a price field. Coaching posts can list an hourly fee, a fe
 
 A missing price needed a meaning too. Displaying an empty field as zero could imply that coaching was free, so it appears as “Fee negotiable.” Goal-based coaching asks for the target rating and the total fee until it is reached. “Fixed period” expresses the option better than “Monthly,” and “Until the goal is reached” makes the coaching arrangement clearer than “Target rating achieved.”
 
-Leaving payments out also defined the service's scope. Letting people discuss terms in chat is a different promise from handling payments and refunds. The screens should not suggest that an unbuilt service is available.
+Even after people agree on terms in chat, payment and refunds remain between them. Suggesting that the service handles payments would promise something I had not built, so I kept it to finding people and talking.
 
 I kept the photo service and Game Mate's accounts and data separate. Both involve other people's opinions, but that did not give people viewing photos and people asking for game advice a reason to share an account.
 
@@ -103,11 +101,11 @@ Someone posts a question
   → The requester reads it and marks whether it helped
 ```
 
-I had initially thought as far as saving questions and replies. I also needed to tell the requester that a reply had arrived and get them back to read it. That is why I added reply notifications and a `Helpful` action.
+Saving a reply does not continue the conversation if its requester never sees it. Reply notifications bring them back, and the `Helpful` action lets them respond after reading.
 
 First, I want to see how many requests receive at least one reply marked helpful. Several helpful replies on one request still count as one request. I also want to look at time to the first reply and the proportion answered within 24 hours.
 
-I plan to find five to ten people willing to answer and manually connect them with questions in existing communities. I have not started recruiting yet.
+I have not recruited people to answer yet. My plan is to start with five to ten people and manually connect them to questions in the communities I know.
 
 ## A failed send could still have reached the other person
 
@@ -115,7 +113,7 @@ Chat seemed complete once a message was saved and displayed to its recipient. Bu
 
 Retries of the same message now use the same request identifier. If the server has already saved it, it returns that result. Reusing the identifier for another conversation or different content is rejected. “Try again” should not quietly create another copy of the message.
 
-Read status needed more precision too. Entering a conversation should not mark everything as read because new messages could arrive while the person is viewing it. Read receipts advance only through the message the client has confirmed. Clearing a conversation also distinguishes what disappears from my view from what remains in the other person's history.
+Saving a message once and marking it read needed separate rules. More messages can arrive while someone is in a conversation, so entering it does not mark everything as read. The receipt advances only through the message the client has confirmed. Clearing history likewise affects my view while leaving the other person’s record intact.
 
 I checked logging out and entering with another account as well. Changing the server's login state could still leave the previous account's fetched lists or a late response on screen. Switching accounts also needed to cancel active queries and clear their previous results.
 
@@ -127,13 +125,13 @@ In Game Mate, replies by other people remain when the original comment is delete
 
 Blocking started with a button on a profile, but it also needed to govern starting a new conversation and sending messages in an existing one. Chat restrictions apply when the other participant sends the request too, including direct API calls. Adding a report button was also separate from deciding who reviews reports and what action follows.
 
-These safeguards do not mean I have solved every operational problem. How well they prevent abuse and which standards should guide report handling still need ongoing review as the service is used.
+The API can enforce a block immediately. A report still needs someone to review its content and decide what to do. Adding the button leaves that operational work to handle.
 
 ## Looking up a game profile did not prove ownership
 
 Connecting a game account starts with entering a Player Tag and loading the profile. But someone can enter another player's tag. A successful lookup should not produce an ownership verification label.
 
-I decided connected profiles should start with ownership unverified. I also treated administrator-managed user verification separately from ownership of a game account. I did not want the screen to call something verified when we had not checked it.
+Connected profiles therefore start with ownership unverified. Administrator-managed user verification is separate from game-account ownership too. A successful tag lookup alone must not attach a verification badge.
 
 The early plan included saving a snapshot of the deck and game information with each post. During implementation, I moved game profiles to the user account and removed deck attachments from the writing screen. Profile verification requests now start a one-to-one chat with an administrator.
 
@@ -147,7 +145,7 @@ As the form grew, I made the body scroll while keeping the completion button at 
 
 I also disliked editing a profile through an expandable section. I first changed it to an Edit Profile button that opened a Bottom Sheet. Later, I moved Game Mate's profile editor to a separate page so editing could happen in one place. Web addresses in the bio became clickable on the profile too.
 
-The editor needed a clear way to cancel as well as save. For sheets that slide up on mobile, I changed the controls from an X button to Cancel and Save next to each other. Long forms needed scrolling, with the last input and action buttons still reachable on small devices.
+Someone who stops editing needs to find that action in the editor too. For mobile sheets, I put Cancel beside Save rather than using an X. The body scrolls while the last field and buttons remain reachable on a small screen.
 
 ![Photo community group posts and the Game Mate profile editing screen](/images/posts/side-project-design/09-product-interactions.png)
 
@@ -161,7 +159,7 @@ Back navigation seems straightforward when I only consider clicking through scre
 
 For a contest opened inside a group, I asked for the header to show the group and contest names, with Back returning to the group. Keeping the group's Posts, Contests, and Hall of Fame tabs on the detail screen made the current location confusing. Public profiles also moved navigation into the header, leaving the body for the profile itself.
 
-Actions requiring login needed to explain why and offer a choice. Cancelling should keep someone on the current screen; logging in should return them to what they were viewing. Stopping an action or returning after an intermediate step needed planning alongside completing it.
+An action requiring login is another interruption. I made it explain why login is needed before leaving the screen. Cancelling keeps the current page, and completing login should return to what the person was viewing.
 
 ## If the post is translated, what about the reply?
 
@@ -179,12 +177,10 @@ During implementation, the AI agent went beyond what I had asked for and built a
 
 Korean and English editions only appear where an actual translation exists.
 
-The language button needed more than a change of text. I also had to check that a chosen dark theme survives switching languages, and that opening a URL directly behaves correctly alongside navigating within the site. I fixed a warning caused by rendering the theme initialization script again during a language change. Checking only the first page load would have missed it.
+Switching languages exposed a warning from rendering the theme initialization script again. Merely checking the translated text would have missed it. I fixed it while trying language changes with dark mode selected and comparing direct URL entry with navigation inside the site.
 
 ## Many decisions came after I had built the feature
 
-I wish I had included these cases in the original requests. When asking for an anonymous start, I could have also specified how someone would return to their history after logging out. When asking for chat, I could have included retrying a message after a failed send.
-
-At first, a screen appearing and a button working seemed enough. Trying them myself brought up more decisions. Some, like transferring group ownership before leaving, could have been made earlier. Others only became obvious when I clicked through the screens: an explanation covered the photos, or Back took me somewhere unexpected. Each time, I went back and changed what I had already built.
+Specifying anonymous-history recovery and message retries in the original requests would have saved some rework. Transferring ownership before leaving a group was a decision I could have made before building the screen. An explanation covering a photo or a Back button leading somewhere unexpected only became obvious when I tried it. Filling in the missing cases and changing those screens gradually took the services beyond the first plan.
 
 I wrote about deployment in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).

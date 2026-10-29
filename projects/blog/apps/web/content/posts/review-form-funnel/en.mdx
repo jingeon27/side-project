@@ -1,6 +1,6 @@
 <Summary>
 
-I separated input values, validation, and navigation in a review flow, including how multi-selection connected to the form and the constraints that remained.
+Moving review writing to RHF and Zod also meant reconnecting treatment selection. I changed the sheet to cancel on close and write selections to the form only after confirmation.
 
 </Summary>
 
@@ -8,19 +8,13 @@ I separated input values, validation, and navigation in a review flow, including
 
 *An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
 
-Adding one field to review writing required changing values, error messages, and next-step conditions in several files. The screen has three steps.
+Changing a review field meant following its storage action, error message, and next-step condition. Users upload visit proof, enter treatment and payment details, then add ratings, photos, and text. Each input nevertheless knew how to update global stores and run validation beyond its own field.
 
-1. Upload a receipt as proof of a visit.
-2. Enter treatment and payment details.
-3. Write a rating, photos, and review text.
+I moved values to React Hook Form, validation to Zod, and retained a funnel hook for navigation. Treatment selection also moved from a dropdown to a Bottom Sheet. Its update timing could not stay the same: closing without confirmation could cancel only if ongoing choices were separate from the form.
 
-Input values and the current step lived in different Zustand stores. Each input component also knew validation and store actions, leaving many places to follow for one field change.
+## Draft values and the current step were global
 
-I moved values to React Hook Form, validation to Zod, and navigation to a funnel hook. The overall schema still lacks the second step's extra validation, and validation of the complete final submission remains unfinished.
-
-## Two global stores held values and steps
-
-The previous structure looked like this.
+A draft store and a step store drove the screen, with step selecting the current view.
 
 ```tsx
 type DraftStore = {
@@ -48,19 +42,17 @@ switch (step) {
 }
 ```
 
-Neither screen navigation nor in-progress values needed app-wide sharing. A separate API handled drafts, and RHF instances could preserve values between steps within the screen.
+A separate API already handled saving drafts. Other screens did not need the ongoing values or current step, and page-local form instances could retain values between stages.
 
-## Separate responsibilities instead of building one huge form
+## Validate the fields visible in each step
 
-I initially tried combining everything into one form. Fields mounted and validation ran at different points in each step, so I separated three responsibilities instead.
+I first tried combining everything into one form. Different fields mounted and validation ran at different times in each stage. RHF therefore manages values and fields, Zod validates them, and a shared wrapper around @use-funnel/core changes the current step.
 
-React Hook Form owns values and field lifetimes, Zod owns validation rules, and a shared wrapper around `@use-funnel/core` owns navigation.
+A parent form retains the complete draft while each step has its own form. Passing a step merges those values into the parent before continuing.
 
-## Step schemas exist, but the overall schema copies only fields
+## Step refinements did not reach the overall schema
 
-Ideally, each step validates its own values and final submission validates the complete set again. Step schemas are separate in the current implementation, but assembling the overall schema still carries debt.
-
-This example keeps the important fields and extra validation. Custom schema and field names have been renamed for publication.
+The schemas separate fields by step. This example uses renamed fields and keeps the main definitions and additional validation.
 
 ```typescript
 import { z } from 'zod';
@@ -125,11 +117,13 @@ export const SubmissionSchema = z
   .extend(FeedbackStepSchema.shape);
 ```
 
-The second step's `superRefine` runs in that step's form. A refined schema is a ZodEffects wrapper, however, and has no `.shape`. The overall schema therefore uses the internal `_def.schema` property to extract the wrapped object's field definitions. Copying fields does not carry over `superRefine`, and this relies on Zod's internals. Step validation works, but fields and refinements are not fully reused together.
+Step two conditionally requires a quoted amount or a reason benefit information was not received. DetailsStepSchema checks those in superRefine. That refinement wraps the object in ZodEffects, without direct access to .shape.
 
-The proof step requires at least one file. Some flows skip it, so the overall SubmissionSchema intentionally has no `min(1)` for that field. The current implementation preserves that distinction.
+SubmissionSchema reaches the inner object's fields through the internal _def.schema property. Copying fields does not copy superRefine. Conditional validation runs in the step but is absent from the overall schema, which also remains coupled to Zod internals.
 
-## Connect custom inputs through Controller
+The different minimum for proofFiles is intentional. The proof step requires at least one file, but some routes skip that step. The overall schema therefore omits min(1) for it.
+
+## Connect amount inputs through values and changes
 
 ```tsx
 function AmountField() {
@@ -150,33 +144,29 @@ function AmountField() {
 }
 ```
 
-Controller contains the connection between a custom input's value/change handler and RHF. The step schema owns validation, so the component needs neither Zustand actions nor another validation function.
+Controller connects NumericInput's value and onChange to RHF. The step schema checks amount conditions, so the input no longer calls Zustand actions or a separate validation function.
 
-## A multiple-choice input needed more than Controller
+## Choosing several treatments was awkward on mobile
 
-`DetailsStepSchema.items` holds one to five treatments. Users repeatedly choose items to populate it. Its UI changed twice while the form shape and schema rules (one to five items with no duplicates) remained the same. Ownership of unconfirmed selection changed.
+Items holds one to five unique treatments. Its array shape and rules stayed the same while selection UI changed.
 
 ![Treatment selection changed twice: multiple selection inside the dropdown came in the second refactoring, and Bottom Sheet came with the design system. Form updates moved from each selection to confirmation.](/images/posts/review-form-funnel/01.png)
 
 *Treatment selection changed twice: multiple selection inside the dropdown came in the second refactoring, and Bottom Sheet came with the design system. Form updates moved from each selection to confirmation.*
 
-The first UI was a colleague's keyword-autocomplete dropdown. Clicking the input opened a treatment list below it. Selecting an item closed the list and cleared the input; selected treatments accumulated as chips underneath. The first refactoring connected that dropdown with Controller and left the UI unchanged.
+The original UI was a colleague's autocomplete dropdown. Tapping the input opened a list below it; choosing a treatment closed the list and cleared the search. Selections accumulated as chips below. The initial form migration only wrapped that UI in Controller.
 
-Using it on mobile meant tapping and searching again for every treatment. I recorded three problems in Jira and shared them with the PO.
+Trying it on mobile meant reopening and searching for every treatment. The keyboard obscured the list, and selected items were not marked. I recorded those problems in Jira and shared them with the PO. Planning and design included them in the next refactoring.
 
-- The keyboard obscured the list below the input.
-- The list closed after one selection despite supporting multiple items.
-- Already selected items were not distinguished in the list.
+We retained a dropdown but supported multiple choices within it, marked selections with checks and chips, and scrolled the input just below the header. I built that with Radix Popover and cmdk and released it. Each selection still immediately changed the form through useFieldArray.append or remove.
 
-This judgment came from trying the screen myself, not user data. Planning and design included it in the second refactoring: retain a dropdown, allow several choices inside it, mark selections with checks and chips, and scroll the input just below the header on focus. I implemented it using Radix Popover and cmdk and released it. Form values still changed immediately through `useFieldArray.append` and `remove`.
+Later design-system mockups replaced the selection UI with a Bottom Sheet. That was separate from the dropdown improvement. A colleague built the shared sheet; I connected it to review writing.
 
-Later, the design-system mockups changed selection to a Bottom Sheet. This was separate from the earlier refactoring. A colleague built the shared sheet, and I connected it to review writing.
+## Immediate form edits prevented cancellation
 
-## Let the sheet own unconfirmed choices
+I first connected the sheet like the dropdown, updating the form immediately. Closing without confirmation then retained the changes. I tried restoring old values after close, before changing direction the next day: keep temporary choices in the sheet and return them only on confirmation. Both approaches preceded release.
 
-Initially, the sheet edited form values immediately, like the dropdown. Opening the shared sheet stores an element globally and renders it at the app root. The work log records a problem controlling the sheet externally, without more detail. Immediate form edits meant closing the sheet did not cancel selections. I tried restoring previous values after close, then changed direction the next day: keep temporary selection inside the sheet and update the form once on confirmation. Both approaches were part of the same work before release.
-
-This reduced example retains only the field, renamed ItemsField, and the picker, renamed ItemPickerSheet.
+ItemsField and ItemPickerSheet are publication aliases. Their opening and confirmation connection looks like this.
 
 ```tsx
 // FieldBox는 입력칸 모양의 상자(가명)다. 필드 이름도 가명이다.
@@ -232,23 +222,25 @@ function ItemPickerSheet({ initialItems, onConfirm }: ItemPickerSheetProps) {
 }
 ```
 
-The field gets `items`, `replace`, and `remove` from useFieldArray. Clicking it passes the sheet element to the global store through `openBottomSheet`. The app-root Provider renders that element outside FormProvider, so the sheet receives opening-time items and `replace` as props rather than calling `useFormContext`.
+`openBottomSheet` stores the supplied element globally, and an app-root Provider renders it. The sheet is not a FormProvider child, so it cannot use useFormContext. The field passes items and replace from useFieldArray as props instead.
 
-Closing the shared sheet unmounts its content after the exit animation. Each opening therefore mounts a fresh sheet with temporary selection initialized from the current items. Clicking rows changes that temporary value. Only confirmation calls `replace` to update the entire field array once. Tapping the dimmed backdrop or dragging down changes only the store's open state, passing no values back. Unmounting discards the temporary selection, so closing is cancellation. The field's chip × stops propagation and calls `remove` without opening the sheet.
+The sheet creates draft from its opening-time items. Rows update draft, while confirmation alone calls replace on the form array. Tapping the backdrop or dragging down returns no values. After the exit animation, content unmounts and discards draft; reopening starts from the current form values.
+
+The chip's × stops propagation and calls remove without opening the sheet. Removing directly in the field and cancelling choices inside the sheet are separate actions.
 
 ![The sheet starts with the opening values and passes its temporary selection to the field through replace only on confirmation. Closing passes nothing back.](/images/posts/review-form-funnel/02.png)
 
 *The sheet starts with the opening values and passes its temporary selection to the field through replace only on confirmation. Closing passes nothing back.*
 
-## Repeated rules must check the right values
+## Count current draft choices rather than opening values
 
-The count rule exists twice. The sheet blocks a sixth temporary item with a toast and removes an already selected item when tapped again, preventing duplicates. The step schema checks committed items using `min(1)`, `max(5)`, and a duplicate check omitted from the earlier example. This field has no error message; schema failure only disables Next.
+The sheet blocks another selection with a toast when draft has five items. Selecting an existing treatment removes it, preventing duplicates. The schema checks confirmed items using min(1), max(5), and a duplicate check omitted from the earlier example. This field has no separate error message, so a failure only disables Next.
 
-The difference between temporary and committed values caused a mistake. When the sheet first merged into develop, the limit checked opening-time `initialItems` instead of `draft`. If shipped, a sheet opened with fewer than five items could accept unlimited selections, then disable Next after confirmation without explaining why. I corrected it to use draft the following day, before production. The sheet needed to count the items the user was choosing now, not those present when it opened.
+When first merged into develop, the sheet checked initialItems.length rather than draft. Opening with fewer than five items could then allow unlimited choices and disable Next only after confirmation. I changed it to draft the following day, before production. It needed to count ongoing choices, not the number previously committed to the form.
 
-This pattern repeats at the step level: a step validates its temporary values before merging them into the parent form.
+Step forms work similarly: they validate changes for that stage before merging them into the full draft.
 
-## The funnel navigates; validated values merge into the parent
+## Merge validated values before moving forward
 
 ```tsx
 // useSchemaForm·useStepFunnel·StepForm은 공용 폼 훅, 퍼널 훅, 단계 폼 래퍼의 공개용 가명이다.
@@ -332,15 +324,15 @@ return (
 );
 ```
 
-The step wrapper, renamed StepForm, creates an instance with `mode: 'all'` and validates against that step's schema. Valid values merge with the parent RHF instance's `defaultValues`; `reset` then supplies the next step's initial values. Navigation uses the funnel's `history.replace`. Values do not go into funnel context, and `history.push` does not accumulate step snapshots.
+StepForm creates a mode: 'all' form for each stage. Values passing its schema merge with the parent RHF defaultValues, then reset supplies initial values for the next stage. The funnel's history.replace changes the visible step. Values do not enter funnel context, and history.push does not accumulate step snapshots.
 
-Step three merges values the same way before sending them to confirmation and the API. This path has no explicit `SubmissionSchema.parse`. It assumes earlier validated values remain valid, leaving complete final validation as future work.
+The last stage merges values before confirmation and the API call too, but does not run SubmissionSchema.parse again. It assumes previously validated values remain valid. Final submission therefore lacks a fresh check of every step's conditions.
 
-## Prepare editable data before creating the form
+## Prepare edit data before building defaults
 
-The parent builds `defaultValues` from `savedDraft` when present. RHF caches defaultValues at creation, so late asynchronous edit data cannot be handled by supplying empty values on the first render and stopping there.
+An existing savedDraft is converted into defaultValues. RHF caches those when creating the form; starting with an empty form does not populate it merely because the response arrives later.
 
-The server page currently prefetches reservation and review data, then passes the populated cache through HydrationBoundary. The client template calls `useQueries` with the same options and reads those responses on its first render.
+The server page prefetches reservation and review data and transfers the cache through HydrationBoundary. The client reads it through useQueries with the same options.
 
 ```tsx
 // 컴포넌트, 쿼리 옵션, 경로 파라미터 이름은 공개용 가명이다.
@@ -382,13 +374,13 @@ function ReviewEditorPage() {
 }
 ```
 
-The server waits for both requests before rendering. Edit data is therefore already cached when the client template first renders, and response-to-form conversion supplies the first defaultValues. This path does not wait for data through Suspense.
+Because the server waits for the requests before rendering, edit data is already cached on the client's first render. The converted values become its initial defaultValues. This screen does not wait for the response through client Suspense.
 
-## The stores are gone, but some work remains
+## Navigation does not explain every form value
 
-Each step now knows its fields and validation. That was more useful than merely deleting two stores. Because each step still creates its own form instance, merging defaultValues and resetting remains necessary.
+Each stage now has its own fields and validation, but merging defaultValues and resetting between stages remains necessary. Funnel context is empty and replace only changes the screen, so the library's role deserves another look. Values containing browser objects such as photos are also difficult to restore through URL serialization alone.
 
-Visibility also still uses a boolean rather than an enum that reveals its meaning. Actual request conversion processes other fields too; this extracts only visibility conversion.
+The input types retain ambiguity too. Visibility is a boolean converted to the API's hidden/public enum. Omitting other request transformations, that conversion is:
 
 ```typescript
 function toSubmissionRequest(form: ReviewDraft): SubmissionRequest {
@@ -403,6 +395,4 @@ function toSubmissionRequest(form: ReviewDraft): SubmissionRequest {
 }
 ```
 
-The conversion works, but understanding whether `true` means hidden or public requires reading both the field name and conversion. Values such as `PUBLIC | HIDDEN` inside the form would be clearer. That is a proposed improvement, not the current implementation.
-
-The funnel library deserves another look. Values containing browser objects such as images cannot easily restore navigation history through URL serialization alone. Three steps do not inherently require a funnel library. Since this implementation leaves context empty and uses only replace, local state or an explicit reducer may be simpler.
+Understanding whether true means public or hidden requires reading this conversion. PUBLIC or HIDDEN within the form would expose its meaning directly, but the current form retains the boolean. Moving state out of a store did not resolve that interpretation.

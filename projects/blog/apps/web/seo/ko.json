@@ -26,19 +26,19 @@
     "side-project-design": {
       "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
       "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
-      "description": "사진 커뮤니티와 Game Mate를 만들며 익명 기록, 그룹 권한, 대회 마감, 채팅 재전송 같은 예외 상황을 정리했어요. 기능과 화면을 고치면서 어떤 정책을 결정했는지 적었어요.",
+      "description": "처음에는 친구끼리 사진을 올리고 투표하는 서비스를 만들었어요. 직접 써보니 화면뿐 아니라 익명 계정의 기록, 그룹 권한, 대회 마감, 채팅 재전송처럼 기능마다 빠뜨린 상황이 있었어요. 사진 커뮤니티와 Game Mate, 블로그를 만들며 어떤 결정을 다시 했는지 적었어요.",
       "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템"]
     },
     "puppeteer-event-lifecycle": {
       "title": "Puppeteer에서 요청과 응답을 함께 기다릴 때 놓쳤던 것",
       "slug": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
-      "description": "Puppeteer에서 요청과 응답을 함께 기다리며 리스너 정리, 타임아웃과 이벤트 순서를 맞춘 과정을 정리했어요.",
+      "description": "Electron 수집 앱에서 요청 헤더와 파일 정보를 함께 기다려야 했어요. 값을 모으는 일은 closure에, 기다림을 끝내고 리스너를 정리하는 일은 Promise에 맡겼어요.",
       "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"]
     },
     "electron-module-boundaries": {
       "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
       "slug": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
-      "description": "Electron 수집 앱의 공통 처리 순서와 플랫폼별 구현을 나눴어요. NestJS를 도입했다가 CTO 피드백으로 걷어낸 과정도 함께 적었어요.",
+      "description": "채용 플랫폼을 추가할 때마다 수집 흐름도 복사하고 있었어요. NestJS를 넣었다가 걷어냈지만, 요청을 받는 코드와 수집 순서, 사이트별 처리는 나눠 남겼어요.",
       "keywords": [
         "javascript",
         "nextjs",
@@ -54,7 +54,7 @@
     "query-key-factory": {
       "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
       "slug": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
-      "description": "query key와 조회 함수를 한곳에 두고, 목록과 상세 중 어디까지 무효화할지 호출부에서 구분하도록 했어요.",
+      "description": "후보자 메모를 고치고도 어떤 캐시를 갱신할지 찾으려면 문자열부터 검색해야 했어요. query key와 조회 함수를 함께 정의하고, mutation 옆에서 무효화할 범위를 고르게 바꿨어요.",
       "keywords": ["tanstack-query", "typescript", "query-key"]
     },
     "typescript-patterns": {
@@ -66,13 +66,13 @@
     "nextjs-tanstack-query-ssr": {
       "title": "Next.js App Router에서 서버와 브라우저의 QueryClient를 나눈 이유",
       "slug": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
-      "description": "서버 요청과 브라우저에서 QueryClient의 수명을 나누고, prefetch한 캐시를 화면의 조회와 연결했어요.",
+      "description": "서버에서 미리 조회한 데이터를 브라우저에서도 이어서 쓰려고 했어요. QueryClient는 두 환경에서 다르게 만들고, 조회 옵션은 함께 쓰도록 연결했어요.",
       "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"]
     },
     "reservation-form-state": {
       "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
       "slug": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
-      "description": "가족을 추가하면 날짜 선택이 어긋나던 예약 폼을 고쳤어요. 서버에서 받은 목록과 작성 중인 값을 나누고, 폼의 값을 React Hook Form으로 모았어요.",
+      "description": "예약할 가족을 추가했는데 날짜 선택은 이전 인원수대로 움직였어요. 서버의 가족 목록과 사용자가 고른 일시를 구분하고, 작성 중인 값은 React Hook Form에서 바꾸도록 고쳤어요.",
       "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"]
     },
     "review-like-optimistic-update": {
@@ -84,13 +84,13 @@
     "nextjs-seo-prefetch": {
       "title": "Next.js App Router에서 prefetch를 기다려야 하는 경우",
       "slug": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
-      "description": "브라우저에는 보이지만 초기 HTML에는 없던 데이터를 확인했어요. 서버에서 조회를 기다릴 때와 pending query를 스트리밍할 때를 나눴어요.",
+      "description": "예약 상세는 브라우저에서 멀쩡했지만 처음 받은 HTML에는 병원 정보가 없었어요. prefetch를 시작한 것과 서버가 데이터를 넘길 준비가 된 것은 달랐어요.",
       "keywords": ["nextjs", "tanstack-query", "seo", "ssr"]
     },
     "review-form-funnel": {
       "title": "3단계 리뷰 작성 폼의 역할을 RHF, Zod, 퍼널로 다시 나눈 과정",
       "slug": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
-      "description": "리뷰 작성에서 입력값과 검증, 단계 이동을 나눴어요. 여러 시술을 고르는 UI를 폼에 연결한 과정과 당시 남은 제약도 정리했어요.",
+      "description": "리뷰 폼을 RHF와 Zod로 옮기면서 시술 선택 UI도 다시 붙였어요. 시트를 닫으면 선택을 취소하고, 확인할 때만 폼에 넣도록 바꾼 과정이에요.",
       "keywords": ["react-hook-form", "zod", "react", "state-management"]
     },
     "typed-program-form": {
@@ -102,13 +102,13 @@
     "cross-domain-token-handoff": {
       "title": "정산 서비스를 별도 호스트로 분리하며 토큰 전달 방식을 바꾼 과정",
       "slug": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
-      "description": "정산 서비스를 다른 호스트로 나누며 인증 정보를 전달해야 했어요. URL과 POST 본문을 비교하고, 전달 뒤에도 남는 인증 상태의 제약을 정리했어요.",
+      "description": "같은 로그인으로 다른 호스트의 정산 화면을 열어야 했어요. 토큰을 URL에서 POST 본문으로 옮겼지만, 두 호스트에 복제된 인증 상태까지 해결된 것은 아니었어요.",
       "keywords": ["nextjs", "authentication", "bff", "security"]
     },
     "chatbot-message-layer": {
       "title": "서로 다른 두 SSE를 하나의 상담 화면에 연결한 과정",
       "slug": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
-      "description": "답변 생성과 최종 메시지 수신이 서로 다른 SSE로 오던 화면을 연결했어요. 메시지가 중복되거나 순서가 어긋나지 않도록 역할을 나눴어요.",
+      "description": "AI 답변과 상담사 메시지가 서로 다른 서비스에서 왔어요. 두 SSE를 한 대화창에 이어 붙이며, 메시지를 보내는 곳과 보여 주는 곳을 따로 정했어요.",
       "keywords": ["react", "typescript", "sse", "chatbot"]
     },
     "sitemap-api-boundaries": {
@@ -120,19 +120,19 @@
     "payment-coupon-branches": {
       "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
       "slug": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
-      "description": "결제내역에 쿠폰이 추가되며 조회와 입력, 제출 조건이 달라졌어요. 기존 화면에 분기를 더한 뒤 상태와 제출 데이터를 정리한 과정을 적었어요.",
+      "description": "쿠폰 결제를 넣으니 결제수단만으로는 화면을 고를 수 없었어요. 저장 전에는 금액을 고치고 쿠폰을 풀어야 했고, 저장 뒤에는 현장 결제와 함께 보여줘야 했어요.",
       "keywords": ["typescript", "refactoring", "react", "payment"]
     },
     "fsd-layer-boundaries": {
       "title": "FSD 레이어를 저장소에 맞게 다시 나눈 과정",
       "slug": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
-      "description": "entities와 features를 나눌 기준이 모호해 파일을 둘 곳을 설명하기 어려웠어요. 실제 사용처를 보고 레이어와 참조 규칙을 다시 정했어요.",
+      "description": "폴더는 FSD대로 나눴는데 새 파일을 어디에 둘지는 매번 달랐어요. 실제로 옮겨 보면서 도메인 코드와 화면 조합을 다시 나눴고, URL을 그대로 폴더로 쓰던 규칙도 바꿨어요.",
       "keywords": ["fsd", "architecture", "refactoring", "nextjs"]
     },
     "prototype-working-rules": {
       "title": "프로토타입을 옮기며 반복되는 판단을 skills에 남긴 과정",
       "slug": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
-      "description": "프로토타입을 Next.js PoC로 옮기며 반복되던 결정을 skills에 남겼어요. 훅과 props, Suspense에 같은 규칙을 일률적으로 적용하지 않도록 기준을 고쳤어요.",
+      "description": "프로토타입을 서비스로 옮기는 동안 비슷한 구현을 여러 번 맡겼어요. 그때마다 고치던 내용을 skills에 적었지만, 짧고 강한 규칙이 오히려 잘못된 코드를 만들기도 했어요.",
       "keywords": ["react", "nextjs", "architecture", "ai-workflow"]
     },
     "testing-standards": {
@@ -144,25 +144,25 @@
     "declarative-code": {
       "title": "선언적으로 코드를 쓰는 기준",
       "slug": "선언적으로-코드를-쓰는-기준",
-      "description": "화면과 데이터, 동작의 맥락을 나누고 같은 수준의 코드를 함께 읽을 수 있게 작성해요. 실제 코드와 skills에 남긴 기준을 정리했어요.",
+      "description": "화면을 보려는데 조회 순서와 계산부터 읽게 되는 코드가 불편했어요. 리뷰 상세와 검색 필터, 쿠폰 계산을 고치며 화면 구성과 세부 동작을 나눈 방법이에요.",
       "keywords": ["typescript", "react", "refactoring", "declarative-programming"]
     },
     "nextjs-server-client-issues": {
       "title": "Next.js의 라우팅과 캐시 문제를 추적한 기록",
       "slug": "nextjs를-사용하면서-겪었던-이슈들",
-      "description": "검색해도 주소가 바뀌지 않는 문제와 버전업 뒤의 청크 오류를 추적했어요. 서버의 처리가 필요한 이동과 URL만 바꾸면 되는 동작을 구분했어요.",
+      "description": "검색을 눌러도 주소가 그대로였고, 배포 뒤에는 열어 둔 탭의 공지가 닫히지 않았어요. 라우팅과 쿠키, 폼 초기화를 따라가며 서버가 다시 처리해야 할 일을 구분했어요.",
       "keywords": ["nextjs", "react", "cache", "react-hook-form"]
     },
     "error-boundary-recovery": {
       "title": "오류가 난 영역만 다시 시도하도록 Error Boundary 나누기",
       "slug": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
-      "description": "일부 조회가 실패해도 화면 전체를 잃지 않도록 오류 경계를 나눴어요. 응답 검증과 오류 수집, 다시 시도할 범위를 함께 정리했어요.",
+      "description": "목록 조회가 실패했는데 메뉴와 헤더까지 사라졌어요. 실패한 표나 필터만 다시 시도할 수 있도록 조회 위치와 Error Boundary를 함께 바꿨어요.",
       "keywords": ["react", "error-boundary", "zod", "observability"]
     },
     "low-effort-success": {
       "title": "다음 성공에 드는 수고를 줄이기",
       "slug": "가장-값진-성공은-노력이-적은-성공입니다",
-      "description": "노력한 성공과 실패를 어떻게 평가할지 묻는 질문을 받았어요. 이후에는 들인 노력이 다음 작업의 수고를 얼마나 줄이는지도 생각하게 됐어요.",
+      "description": "노력한 경험이 더 값지다고 답한 뒤에, 적게 애쓰고 해낸 일까지 그렇게 봐야 하나 싶었어요. AI에 구현을 맡겨 온 제 경험을 놓고 다시 생각해 봤어요.",
       "keywords": ["reflection", "ai-workflow", "productivity"]
     },
     "sentry-observability": {
@@ -174,7 +174,7 @@
     "plan-gated-ai-workflow": {
       "title": "AI에 구현을 맡기며 다듬은 개발 workflow",
       "slug": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
-      "description": "반복되는 판단을 skills와 lint rule, 테스트에 남기며 에이전트에 구현을 맡겼어요. 지금은 plan과 완성본을 검토하고 코드와 화면을 각각 확인해요.",
+      "description": "에이전트가 성공했다고 한 테스트에도 화면에 없는 문구를 기다리는 코드가 있었어요. 구현을 맡기면서도 plan과 diff를 직접 읽고, 반복된 지적은 다음 작업에 쓸 규칙으로 남기게 됐어요.",
       "keywords": ["ai-workflow", "testing", "eslint", "worktree"]
     },
     "zod-assertion-boundaries": {
@@ -186,31 +186,31 @@
     "bottom-sheet-drag-crash": {
       "title": "Sentry로 추적한 Bottom Sheet 드래그 크래시",
       "slug": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
-      "description": "드래그를 놓을 때 발생하는 오류를 라이브러리 소스까지 추적했어요. 버전을 올리며 기존 스냅 위치를 유지한 방법과 놓쳤던 헤더 스크롤 문제를 정리했어요.",
+      "description": "시트를 끌다 놓으면 화면이 멈추는 오류가 있었어요. 라이브러리를 올려 문제의 코드를 없앴지만, 제목까지 스크롤되는 문제는 그때도 놓쳤어요.",
       "keywords": ["sentry", "react", "debugging", "react-modal-sheet"]
     },
     "health-check-program": {
       "title": "건강검진 예약을 기존 서비스에 연결한 과정",
       "slug": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
-      "description": "외부 사이트와 전화로 이어지던 건강검진 예약을 복지몰과 두 관리자 서비스로 가져왔어요. 프로그램 관리와 검사 선택, 신청과 결제를 연결한 과정을 적었어요.",
+      "description": "전화로 문의하던 건강검진을 복지몰에서 고르고 결제할 수 있게 만들었어요. 기존 프로그램에 검진을 더하면서 등록 권한과 검사 선택, 결제 후 돌아올 화면을 따로 풀어야 했어요.",
       "keywords": ["react", "react-hook-form", "architecture", "payment"]
     },
     "reading-ai-code": {
       "title": "저는 코드를 읽어요",
       "slug": "저는-코드를-읽어요",
-      "description": "화면만 확인하고 작업을 마쳤다가 핫픽스가 많았던 스프린트가 있었어요. 이후에는 diff를 읽어 놓친 분기를 찾고, 그 경로를 테스트로 확인해요.",
+      "description": "화면에서 잘 돌아간다고 생각하고 마친 작업에 핫픽스가 이어졌어요. 그 뒤로는 코드를 읽어 확인할 분기를 찾고, 테스트와 실제 화면에서 각각 확인해요.",
       "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
     },
     "side-project-infrastructure": {
       "title": "일단 EC2 한 대에 올려보기로 했어요",
       "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
-      "description": "비용을 보다가 RDS를 빼고 EC2 small에 PostgreSQL을 같이 넣기로 했어요. 서버리스와 R2도 알아보고 S3 권한 때문에 CI가 실패하던 부분도 고쳤어요.",
+      "description": "배포 비용을 보다가 RDS를 빼기로 했어요. 서버리스도 알아봤지만, 일단 EC2 small 한 대에 웹과 API, PostgreSQL을 같이 올려보기로 했어요. 그 과정에서 스토리지와 백업, S3 권한도 하나씩 고쳤어요.",
       "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"]
     },
     "side-project-technology": {
       "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
       "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
-      "description": "두 서비스의 API와 캐시를 다르게 골랐어요. 계약 생성과 응답 검증, DB 동시성, 테스트, ESLint 규칙과 fixture로 구조를 검사한 과정을 적었어요.",
+      "description": "사진 서비스에는 GraphQL과 Apollo를, Game Mate에는 REST와 TanStack Query를 썼어요. 두 서비스를 만들면서 API 계약과 DB 정합성, 테스트를 정하고 ESLint로 코드의 경계를 검사한 과정을 적어 봤어요.",
       "keywords": [
         "사이드 프로젝트",
         "Next.js",
