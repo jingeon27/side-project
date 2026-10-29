@@ -7,7 +7,7 @@ export function useCurrentChipScroll() {
     const container = chip?.parentElement;
     if (!chip || !container) return;
 
-    const keepCurrentVisible = () => {
+    const handleCurrentVisible = () => {
       if (!container.clientWidth) return;
       const viewport = container.getBoundingClientRect();
       const style = getComputedStyle(container);
@@ -23,8 +23,8 @@ export function useCurrentChipScroll() {
       }
     };
 
-    keepCurrentVisible();
-    const resize = new ResizeObserver(keepCurrentVisible);
+    handleCurrentVisible();
+    const resize = new ResizeObserver(handleCurrentVisible);
     resize.observe(container);
     resize.observe(chip);
     return () => resize.disconnect();
