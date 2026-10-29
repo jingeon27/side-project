@@ -24,7 +24,7 @@
 
 - `auth/session`은 세션·쿠키·조회자 파이프, `auth/password`는 비밀번호·입력·반복 시도 제한, `auth/anonymous`는 익명 세션을 소유한다. OAuth·앱 로그인은 현재 구현하지 않는다.
 - `group/membership`, `profile`, `categories`, `administration`, `ranking`은 접근·가입 신청, 그룹 프로필, 분류, 운영 권한, 순위를 각각 묶는다.
-- `post/comments`, `categories`, `moderation`, `media`는 댓글, 분류 변경, 숨김·삭제, 업로드·다운로드를 구현과 테스트 함께 둔다.
+- `post/comments`, `categories`, `moderation`, `media`는 댓글, 분류 변경, 숨김·삭제, 업로드·다운로드를 구현과 테스트 함께 둔다. `media/post-file.service.ts`는 게시물 첨부의 완료 검증·보관/해제·커밋 뒤 파일 정리·권한을 확인한 서명 읽기/다운로드를 맡는다. 보관/해제는 호출자가 전달한 게시글 트랜잭션을 사용하고 S3 I/O는 그 밖에서 한다. 업로드 발급·HEAD 완료는 기존 `MediaUploadService`에 바로 연결한다.
 - `contest/group-contest`, `ranking`은 그룹 게시물 대회와 기존 사진 순위를 구분한다. `analytics/completion`은 대회 종료 집계를 소유한다.
 - `*.module.ts`와 최상위 API 조립은 도메인 루트에 두며, 역할별 전역 `providers/guards/dto` 폴더나 전달용 배럴을 만들지 않는다. GraphQL은 기존 재귀 glob, Prisma는 API 루트 경로를 유지한다.
 

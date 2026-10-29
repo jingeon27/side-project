@@ -13,11 +13,8 @@ import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { GroupCategoryService } from '../group/categories/group-category.service';
 import { MembershipService } from '../group/membership/membership.service';
-import { MediaUploadService } from '../media-upload/media-upload.service';
-import { reportUnexpectedError } from '../monitoring/sentry';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
-import { MediaStorage, mediaUrlTtlSeconds } from '../storage/media-storage.service';
-import { mediaDownloadDisposition, mediaDownloadFilename } from './media/media-download.policy';
+import { PostFileService } from './media/post-file.service';
 import { postLink } from './post-link.policy';
 import { koreanMonth } from './post-order';
 import { presentPost } from './post.presenter';
@@ -48,8 +45,7 @@ export class PostService {
     private readonly categories: GroupCategoryService,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
-    private readonly storage: MediaStorage,
-    private readonly uploads: MediaUploadService,
+    private readonly files: PostFileService,
     private readonly limits: RateLimitService,
   ) {}
 
@@ -112,18 +108,6 @@ export class PostService {
     });
     return rows.map((row) => presentPost(row, viewer?.id ?? null));
   }
-  requestUpload(
-    viewer: IViewer,
-    groupId: string,
-    contentType: string,
-    byteSize: number,
-    address: string | null = null,
-  ) {
-    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'POST' }, address);
-  }
-  completeUpload(viewer: IViewer, uploadId: string) {
-    return this.uploads.completeUpload(viewer, uploadId);
-  }
   async create(viewer: IViewer, input: IPostInput, address: string | null = null) {
     if (!input.rightsConfirmed) fail('공유할 권리와 촬영된 사람의 동의를 확인해 주세요.');
     const title = textValue(input.title, POST_TITLE_LIMIT, '제목');
@@ -138,25 +122,7 @@ export class PostService {
         // 응답을 받지 못해 다시 보낸 게시 요청은 새 글 없이 처음 만든 글을 돌려준다.
         const existing = await this.postOfUpload(viewer, input, tx);
         if (existing) return existing;
-        const upload = input.uploadId
-          ? await tx.postUpload.findUnique({
-              where: { id: input.uploadId },
-              include: { submissionUpload: true, groupAvatar: true, post: { select: { id: true } } },
-            })
-          : null;
-        if (upload?.post) fail(ERROR_MESSAGE.UPLOAD_ALREADY_USED, ERROR_CODE.CONFLICT);
-        if (
-          input.uploadId &&
-          (!upload ||
-            upload.submissionUpload !== null ||
-            upload.groupAvatar !== null ||
-            upload.userId !== viewer.id ||
-            upload.groupId !== input.groupId ||
-            !upload.storageKey ||
-            !upload.expiresAt ||
-            upload.expiresAt <= new Date())
-        )
-          fail('업로드가 완료되지 않았거나 만료되었습니다.');
+        const upload = await this.files.requireCompletedUpload(viewer, input.groupId, input.uploadId, tx);
         if (input.contestId) {
           const contest = await tx.contest.findUnique({ where: { id: input.contestId } });
           if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
@@ -176,8 +142,7 @@ export class PostService {
           },
           include: postInclude(viewer.id),
         });
-        // 게시한 업로드는 만료가 없다. 정리 작업의 만료 범위에서 빠져 지난 업로드를 매번 다시 읽지 않는다.
-        if (upload) await tx.postUpload.update({ where: { id: upload.id }, data: { expiresAt: null } });
+        if (upload) await this.files.retainUpload(upload.id, tx);
         await recordEvent(tx, {
           id: `post:${created.id}`,
           type: ANALYTICS_EVENT.POST_CREATED,
@@ -304,38 +269,10 @@ export class PostService {
       });
       if (post.legacySubmissionId)
         await (tx ?? this.db).submission.deleteMany({ where: { id: post.legacySubmissionId } });
-      // 파일 삭제가 일시 실패해도 정리 작업이 다시 시도할 수 있도록 티켓을 남긴다.
-      if (post.uploadId)
-        await (tx ?? this.db).postUpload.update({
-          where: { id: post.uploadId },
-          data: { expiresAt: new Date(0) },
-        });
+      if (post.uploadId) await this.files.releaseUpload(post.uploadId, tx);
       return post.upload;
     });
-    if (!upload) return true;
-    try {
-      if (upload.storageKey) await this.storage.delete(upload.storageKey);
-      if (upload.stagingKey) await this.storage.delete(upload.stagingKey);
-      // POST 정책이 아직 유효하면 업로더가 같은 키에 다시 올릴 수 있다. 행을 남겨 정리 작업이 정책 만료 뒤에 다시 지운다.
-      if (upload.policyExpiresAt && upload.policyExpiresAt > new Date()) return true;
-      await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
-    } catch (error) {
-      reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });
-    }
+    await this.files.cleanup(upload);
     return true;
-  }
-  async file(viewer: IViewer | null, postId: string) {
-    const { post } = await this.membership.readablePost(viewer?.id ?? null, postId);
-    if (!post.upload?.storageKey) fail('파일을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return {
-      key: post.upload.storageKey,
-      filename: mediaDownloadFilename(post.title, post.upload.storageKey),
-    };
-  }
-  async download(viewer: IViewer | null, postId: string) {
-    const file = await this.file(viewer, postId);
-    const url = await this.storage.presignRead(file.key, mediaDownloadDisposition(file.filename));
-    const expiresAt = new Date(Date.now() + mediaUrlTtlSeconds(file.key) * 1000);
-    return { url, filename: file.filename, expiresAt };
   }
 }
