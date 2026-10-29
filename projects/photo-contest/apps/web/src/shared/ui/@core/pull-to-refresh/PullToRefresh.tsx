@@ -109,7 +109,7 @@ export function PullToRefresh({
       <button
         type="button"
         className="sr-only rounded-control text-button text-ink focus:not-sr-only focus:mb-4 focus:min-h-touch focus:px-4"
-        disabled={pending}
+        aria-disabled={pending}
         onClick={handleRefresh}
       >
         피드 새로고침

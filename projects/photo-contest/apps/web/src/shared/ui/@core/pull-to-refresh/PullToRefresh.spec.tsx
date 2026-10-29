@@ -57,7 +57,9 @@ describe('당겨서 새로고침', () => {
     });
     await waitFor(() => expect(onRefresh).toHaveBeenCalledOnce());
     expect(screen.getByRole('status')).toHaveTextContent('새로고침 중');
-    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole('button')).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(screen.getByRole('button'));
+    expect(onRefresh).toHaveBeenCalledOnce();
     await act(async () => task.resolve());
     await waitFor(() => expect(screen.getByRole('status')).toBeEmptyDOMElement());
     expect(screen.getByRole('button')).toBeEnabled();

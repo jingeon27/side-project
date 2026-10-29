@@ -17,7 +17,8 @@
     "test:deploy": "playwright test --config playwright.deploy.config.ts",
     "test:cache": "playwright test --config playwright.cache.config.ts",
     "test:observability": "playwright test --config playwright.observability.config.ts",
-    "monitoring:check": "playwright test --config playwright.monitoring.config.ts"
+    "monitoring:check": "playwright test --config playwright.monitoring.config.ts",
+    "test:browser": "playwright test --config playwright.components.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "catalog:",
