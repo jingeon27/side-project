@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { addEventListener } from 'expo-linking';
-
-import { useLatest } from '@/shared/lib/use-latest';
 
 import { toWebPath } from '../lib/deep-link';
 import { LINK_OPTIONS } from './link-options';
@@ -12,13 +10,13 @@ import { LINK_OPTIONS } from './link-options';
  * 소셜 로그인 콜백과 모르는 링크는 toWebPath가 걸러 낸다.
  */
 export function useDeepLinkEvents(onOpenPath: (path: string) => void) {
-  const onOpenPathRef = useLatest(onOpenPath);
+  const openPath = useEffectEvent(onOpenPath);
 
   useEffect(() => {
     const subscription = addEventListener('url', ({ url }) => {
       const path = toWebPath(url, LINK_OPTIONS);
-      if (path) onOpenPathRef.current(path);
+      if (path) openPath(path);
     });
     return () => subscription.remove();
-  }, [onOpenPathRef]);
+  }, []);
 }
