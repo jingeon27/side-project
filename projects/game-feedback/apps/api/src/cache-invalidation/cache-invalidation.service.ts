@@ -5,7 +5,7 @@ import {
   Injectable,
   Logger,
   type OnApplicationBootstrap,
-  type OnApplicationShutdown,
+  type OnModuleDestroy,
 } from '@nestjs/common';
 
 import { CacheTagSchema } from '@game-feedback/contracts';
@@ -22,7 +22,7 @@ interface IPendingInvalidation {
 type TTags<T> = readonly string[] | ((result: T) => readonly string[]);
 
 @Injectable()
-export class CacheInvalidationService implements OnApplicationBootstrap, OnApplicationShutdown {
+export class CacheInvalidationService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(CacheInvalidationService.name);
   private timer?: ReturnType<typeof setInterval>;
   private retryAfter = 0;
@@ -65,7 +65,8 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnAppli
     void this.flushPending();
   }
 
-  async onApplicationShutdown() {
+  async onModuleDestroy() {
+    // root의 Sentry 종료 훅보다 먼저 재시도를 멈추고 진행 중인 오류 보고까지 마친다.
     clearInterval(this.timer);
     await this.draining;
   }
