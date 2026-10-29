@@ -142,6 +142,11 @@ const messages: Record<string, readonly [string, string]> = {
     'You can post without verification. Request profile verification in a private chat with an administrator.',
     '未認証でも投稿できます。管理者との1対1チャットでプロフィール認証を申請できます。',
   ],
+  '프로필 인증을 위해 클래시 로얄 프로필과 최근 전적 스크린샷을 보내주세요. 촬영 시각을 확인할 수 있도록 기기의 시계도 함께 보이게 찍어주세요.':
+    [
+      'Please send screenshots of your Clash Royale profile and recent battles for verification. Include your device clock so we can check when they were taken.',
+      'プロフィール認証のため、クラッシュ・ロワイヤルのプロフィールと最近の対戦履歴のスクリーンショットを送ってください。撮影時刻が分かるよう、端末の時計も一緒に写してください。',
+    ],
   '프로필 인증 신청': ['Request verification', 'プロフィール認証を申請'],
   '대화 메뉴': ['Conversation menu', 'チャットメニュー'],
   '대화내역 삭제': ['Delete chat history', 'チャット履歴を削除'],
@@ -952,9 +957,9 @@ const messages: Record<string, readonly [string, string]> = {
     'Example: How should I play Hog 2.6 against P.E.K.K.A.?',
     '例：ホグ2.6でペッカにどう対処すればいいですか？',
   ],
-  '제목을 4~60자로 입력해 주세요.': [
-    'Enter a title of 4–60 characters.',
-    'タイトルは4〜60文字で入力してください。',
+  '제목을 4~30자로 입력해 주세요.': [
+    'Enter a title of 4–30 characters.',
+    'タイトルは4〜30文字で入力してください。',
   ],
   '플레이와 고민': ['Your game and question', 'プレイと悩み'],
   '사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.': [
@@ -965,10 +970,8 @@ const messages: Record<string, readonly [string, string]> = {
     'What are your trophies and main deck? Where are you having trouble?',
     '現在のトロフィーと主なデッキ、困っている状況を教えてください。',
   ],
-  '내용을 입력해주세요. 최대 10,000자까지 작성할 수 있어요.': [
-    'Enter content, up to 10,000 characters.',
-    '内容を入力してください。最大10,000文字まで入力できます。',
-  ],
+  '내용을 조금 줄여주세요.': ['Please shorten the content.', '内容を少し短くしてください。'],
+  '내용을 입력해주세요.': ['Enter content.', '内容を入力してください。'],
   '내 게임 프로필': ['My game profile', '自分のゲームプロフィール'],
   '요청 시점의 프로필을 첨부해요': [
     'Attach your player profile to this request',

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
-import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { AsyncBoundary, Await, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { feedSnapshotSearch } from '../model/feed-snapshot-search';
@@ -51,7 +51,9 @@ function FeedContent({
         suspense={'then' in initialFeed}
         pendingFallback={<PostListSkeleton />}
       >
-        <FeedResultsRegion locale={locale} initialFeed={initialFeed} onCompose={handleCompose} />
+        <Await value={initialFeed}>
+          {(initial) => <FeedResultsRegion locale={locale} onCompose={handleCompose} initialFeed={initial} />}
+        </Await>
       </AsyncBoundary>
     </section>
   );
@@ -63,12 +65,12 @@ function FeedResultsRegion({
   onCompose,
 }: {
   locale: string;
-  initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
+  initialFeed: IFeedSnapshot;
   onCompose: () => void;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
-  const initial = 'then' in initialFeed ? use(initialFeed) : initialFeed;
+  const initial = initialFeed;
   const search = useBrowserSearch(feedSnapshotSearch(initial), appRoutes.feed(locale));
   const params = new URLSearchParams(search);
   const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';

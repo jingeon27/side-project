@@ -24,6 +24,9 @@ test('composer examples follow the classification, battle type, coaching role an
     'data-placeholder',
     '친구 추가 이용 기간과 제공 내용, 가능한 인원, 거래 방식을 알려주세요.',
   );
+  await expect(title).toHaveAttribute('maxlength', '30');
+  await title.fill('제'.repeat(31));
+  await expect(title).toHaveValue('제'.repeat(30));
   await title.fill('작성 중인 제목');
   await body.fill('작성 중인 본문을 유지합니다.');
   await classification.selectOption('FRIENDLY');
@@ -88,9 +91,7 @@ for (const width of [320, 1440]) {
     await form.getByLabel('분류', { exact: true }).selectOption('FREE');
     await form.getByLabel('제목', { exact: true }).fill(title);
     await form.getByRole('button', { name: '게시글 등록', exact: true }).click();
-    await expect(
-      form.getByText('내용을 입력해주세요. 최대 10,000자까지 작성할 수 있어요.', { exact: true }),
-    ).toBeVisible();
+    await expect(form.getByText('내용을 입력해주세요.', { exact: true })).toBeVisible();
     await form.getByRole('textbox', { name: '내용', exact: true }).fill('안');
     await page.route('**/api/posts', async (route) => {
       if (route.request().method() !== 'POST') return route.continue();

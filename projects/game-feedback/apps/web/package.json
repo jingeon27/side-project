@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "test": "node scripts/test.ts",
+    "test:chat:dev": "playwright test --config playwright.chat-dev.config.ts",
     "test:prefetch": "playwright test --config playwright.prefetch.config.ts",
     "test:test-auth": "playwright test --config playwright.test-auth.config.ts",
     "test:observability": "playwright test --config playwright.observability.config.ts",

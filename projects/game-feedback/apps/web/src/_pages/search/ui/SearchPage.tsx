@@ -1,7 +1,5 @@
 'use client';
 
-import { use } from 'react';
-
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search, X } from 'lucide-react';
 
@@ -13,7 +11,7 @@ import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
-import { AsyncBoundary } from '@/shared/ui';
+import { AsyncBoundary, Await } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
@@ -80,7 +78,9 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
           suspense={'then' in initialSearch}
           pendingFallback={<PostListSkeleton />}
         >
-          <SearchResults locale={locale} path={path} initialSearch={initialSearch} />
+          <Await value={initialSearch}>
+            {(initial) => <SearchResults locale={locale} path={path} initialSearch={initial} />}
+          </Await>
         </AsyncBoundary>
       )}
     </section>
@@ -94,10 +94,10 @@ function SearchResults({
 }: {
   locale: string;
   path: string;
-  initialSearch: ISearchPageProps['initialSearch'];
+  initialSearch: ISearchSnapshot;
 }) {
   const { t } = useI18n();
-  const initial = 'then' in initialSearch ? use(initialSearch) : initialSearch;
+  const initial = initialSearch;
   const { session } = useSession();
   const { board, request } = searchQuery(path);
   const same = initial.path === path && initial.viewerId === session.user?.id && initial.posts;

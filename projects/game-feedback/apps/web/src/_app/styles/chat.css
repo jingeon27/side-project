@@ -337,6 +337,9 @@
     line-height: 1.8;
     padding: 22px 0 8px;
   }
+  .chat-beginning > svg {
+    flex-shrink: 0;
+  }
   .chat-date {
     display: flex;
     align-items: center;

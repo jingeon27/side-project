@@ -392,7 +392,7 @@ export const AppExchangeInputSchema = z
   })
   .strict();
 export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
-export const POST_TITLE_MAX_LENGTH = 60;
+export const POST_TITLE_MAX_LENGTH = 30;
 export const PostInputSchema = z
   .object({
     title: z.string().trim().min(4).max(POST_TITLE_MAX_LENGTH),

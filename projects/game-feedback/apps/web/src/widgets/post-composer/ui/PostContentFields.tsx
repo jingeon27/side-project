@@ -49,7 +49,7 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
       <Field label={t('제목')}>
         <Input {...form.register('title')} maxLength={POST_TITLE_MAX_LENGTH} placeholder={t(copy.title)} />
         <span className="field-error">
-          {form.formState.errors.title && t('제목을 4~60자로 입력해 주세요.')}
+          {form.formState.errors.title && t('제목을 4~30자로 입력해 주세요.')}
         </span>
       </Field>
       {board === 'FRIEND_SALE' && (
@@ -90,7 +90,12 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
         </ServiceErrorBoundary>
         <small>{bodyHint}</small>
         <span className="field-error">
-          {form.formState.errors.body && t('내용을 입력해주세요. 최대 10,000자까지 작성할 수 있어요.')}
+          {form.formState.errors.body &&
+            t(
+              form.formState.errors.body.type === 'too_big'
+                ? '내용을 조금 줄여주세요.'
+                : '내용을 입력해주세요.',
+            )}
           {form.formState.errors.editorValid &&
             t('서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.')}
         </span>
