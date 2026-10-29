@@ -176,6 +176,17 @@ function jobStatus(job: string, offset = 0) {
 }
 
 describe('공유 호스트 원격 배포', () => {
+  it.each(['API_IMAGE', 'WEB_IMAGE'])(
+    '%s가 레지스트리 없는 로컬 주소면 SSH 접속 전에 원인을 알려야 한다',
+    (setting) => {
+      const result = upload({ [setting]: `photo-contest-api@sha256:${'a'.repeat(64)}` });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(`${setting} must be a fully qualified GHCR digest`);
+      expect(existsSync(releaseDirectory())).toBe(false);
+      expect(dockerCalls()).toEqual([]);
+    },
+  );
+
   it('SERVICE_ENV를 그대로 권한 600으로 반영하고 릴리스·로그·임시 파일에 남기지 않아야 한다', () => {
     const argumentsFile = join(state.root, 'ssh-arguments');
     const result = upload({ FAKE_SSH_ARGS: argumentsFile });

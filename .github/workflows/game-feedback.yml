@@ -146,6 +146,8 @@ jobs:
       api_image: ${{ steps.push.outputs.api_image }}
       web_image: ${{ steps.push.outputs.web_image }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: shared-game-feedback-images-${{ github.sha }}
@@ -165,7 +167,7 @@ jobs:
             image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
             docker tag "side-shared-gf-$app:$GITHUB_SHA" "$image"
             docker push "$image"
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            digest=$(bash deploy/shared-instance/scripts/ci-image-reference.sh "$image")
             echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
           done
 

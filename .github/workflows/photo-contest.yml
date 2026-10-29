@@ -262,7 +262,7 @@ jobs:
             image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
             docker tag "photo-contest-$app:$GITHUB_SHA" "$image"
             docker push "$image"
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            digest=$(bash deploy/shared-instance/scripts/ci-image-reference.sh "$image")
             echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
           done
 

@@ -21,8 +21,14 @@ environment_bytes=$(printf '%s' "$SERVICE_ENV" | wc -c | tr -d '[:space:]')
 ((environment_bytes <= 65536)) || { echo 'SERVICE_ENV exceeds the transfer limit.' >&2; exit 2; }
 [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
 [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ && "${DEPLOY_PORT:-22}" =~ ^[0-9]{1,5}$ ]]
-[[ "$API_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]]
-[[ "$WEB_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]]
+[[ "$API_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]] || {
+  echo 'API_IMAGE must be a fully qualified GHCR digest for this service.' >&2
+  exit 2
+}
+[[ "$WEB_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]] || {
+  echo 'WEB_IMAGE must be a fully qualified GHCR digest for this service.' >&2
+  exit 2
+}
 [[ "$REGISTRY_USER" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]]
 # The remote deployment runs detached; these only bound how long this job follows it.
 WAIT=${DEPLOY_WAIT_SECONDS:-2400}
