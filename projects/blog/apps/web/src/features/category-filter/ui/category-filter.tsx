@@ -1,9 +1,7 @@
 'use client';
 
+import type { Category } from '@/shared/article/model/types';
 import { labels, type UiLocale } from '@/shared/config/labels';
-
-export type Category = 'engineering' | 'til' | 'perspectives' | 'misc';
-export const categories: Category[] = ['engineering', 'til', 'perspectives', 'misc'];
 
 export function CategoryFilter({
   locale,
@@ -19,17 +17,30 @@ export function CategoryFilter({
   const t = labels(locale);
   return (
     <div className="category-filters" role="group" aria-label={t.common.category}>
-      {(['all', ...categories] as const).map((category) => (
-        <button
-          type="button"
-          key={category}
-          aria-pressed={selected === category}
-          onClick={() => onChange(category)}
-        >
-          {category === 'all' ? t.common.all : t.categories[category]}
-          <span>{counts[category] ?? 0}</span>
-        </button>
-      ))}
+      <button type="button" aria-pressed={selected === 'all'} onClick={() => onChange('all')}>
+        {t.common.all}
+        <span>{counts.all ?? 0}</span>
+      </button>
+      <button type="button" aria-pressed={selected === 'engineering'} onClick={() => onChange('engineering')}>
+        {t.categories.engineering}
+        <span>{counts.engineering ?? 0}</span>
+      </button>
+      <button type="button" aria-pressed={selected === 'til'} onClick={() => onChange('til')}>
+        {t.categories.til}
+        <span>{counts.til ?? 0}</span>
+      </button>
+      <button
+        type="button"
+        aria-pressed={selected === 'perspectives'}
+        onClick={() => onChange('perspectives')}
+      >
+        {t.categories.perspectives}
+        <span>{counts.perspectives ?? 0}</span>
+      </button>
+      <button type="button" aria-pressed={selected === 'misc'} onClick={() => onChange('misc')}>
+        {t.categories.misc}
+        <span>{counts.misc ?? 0}</span>
+      </button>
     </div>
   );
 }

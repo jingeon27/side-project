@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
+import { uniq } from 'es-toolkit';
+
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
@@ -17,7 +19,7 @@ function decodeTag(tag: string): string {
 }
 export function generateStaticParams() {
   return (['ko', 'en'] as const).flatMap((locale) =>
-    [...new Set(getArticles(locale).flatMap((article) => article.tags))].map((tag) => ({ locale, tag })),
+    uniq(getArticles(locale).flatMap((article) => article.tags)).map((tag) => ({ locale, tag })),
   );
 }
 export async function generateMetadata({ params }: Props) {

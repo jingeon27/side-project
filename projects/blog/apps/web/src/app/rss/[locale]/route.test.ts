@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { siteUrl } from '@/shared/config/site';
 
 import { GET as rssRoute } from './route';

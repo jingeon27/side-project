@@ -1,6 +1,13 @@
 'use client';
 
-import { Children, isValidElement, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from 'react';
 
 import { useLocale } from 'next-intl';
 
@@ -28,25 +35,33 @@ export function CodeBlock({
   children,
   ...props
 }: ComponentPropsWithoutRef<'pre'> & { 'data-language'?: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(0);
+  const copied = copyFeedback > 0;
+  useEffect(() => {
+    if (!copyFeedback) return;
+    const timer = setTimeout(() => setCopyFeedback(0), 2000);
+    return () => clearTimeout(timer);
+  }, [copyFeedback]);
   const locale = useLocale();
   const t = labels(locale === 'en' ? 'en' : 'ko');
-  async function copy() {
-    const lines = highlightedLines(children);
-    const source = lines.length ? `${lines.join('\n')}\n` : textContent(children);
-    try {
-      await navigator.clipboard.writeText(source);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* The code remains selectable when clipboard is unavailable. */
-    }
-  }
   return (
     <div className="code-block">
       <div className="code-toolbar">
         <span>{props['data-language'] ?? 'code'}</span>
-        <button type="button" onClick={copy} aria-label={copied ? t.article.copied : t.article.copyCode}>
+        <button
+          type="button"
+          onClick={async () => {
+            const lines = highlightedLines(children);
+            const source = lines.length ? `${lines.join('\n')}\n` : textContent(children);
+            try {
+              await navigator.clipboard.writeText(source);
+              setCopyFeedback((version) => version + 1);
+            } catch {
+              /* The code remains selectable when clipboard is unavailable. */
+            }
+          }}
+          aria-label={copied ? t.article.copied : t.article.copyCode}
+        >
           <svg
             width="14"
             height="14"

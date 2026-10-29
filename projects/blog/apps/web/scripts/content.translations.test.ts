@@ -4,7 +4,7 @@ import path from 'node:path';
 import { visit } from 'unist-util-visit';
 import { describe, expect, it } from 'vitest';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
+import { getArticles } from '@/shared/article/lib/get-articles';
 
 import manifest from '../../../docs/migration-manifest.json';
 import { analyzeMdx } from './content';

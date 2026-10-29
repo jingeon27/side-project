@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Article } from '@/entities/article/model/types';
 import { LocaleSwitch } from '@/features/locale-switch/ui/locale-switch';
+import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
@@ -36,11 +36,7 @@ beforeEach(() => {
 });
 
 describe('language and theme preferences', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(vi.unstubAllGlobals);
 
   it('keeps an untranslated article in place and offers the target language index', async () => {
     render(<LocaleSwitch locale="ko" translations={{ [article.slug]: article.translations }} />);

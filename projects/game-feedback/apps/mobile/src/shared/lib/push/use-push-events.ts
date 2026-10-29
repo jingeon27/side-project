@@ -21,7 +21,7 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     });
     const lifetime = new AbortController();
-    const receiveResponse = (response: Notifications.NotificationResponse | null) => {
+    const handleResponse = (response: Notifications.NotificationResponse | null) => {
       if (
         lifetime.signal.aborted ||
         !response ||
@@ -30,11 +30,11 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
         return;
       inbox.tap(response.notification.request.identifier, response.notification.request.content.data?.path);
     };
-    const tapped = Notifications.addNotificationResponseReceivedListener(receiveResponse);
+    const tapped = Notifications.addNotificationResponseReceivedListener(handleResponse);
     const received = Notifications.addNotificationReceivedListener(inbox.notify);
     const tokenChanged = Notifications.addPushTokenListener(inbox.notify);
     void Notifications.getLastNotificationResponseAsync()
-      .then(receiveResponse)
+      .then(handleResponse)
       .catch(() => undefined);
     return () => {
       lifetime.abort();

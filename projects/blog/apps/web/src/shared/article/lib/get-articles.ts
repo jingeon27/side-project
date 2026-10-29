@@ -9,9 +9,6 @@ export function getArticles(locale: Locale): Article[] {
 export function getArticleBySlug(locale: Locale, slug: string): Article | undefined {
   return articles.find((article) => article.locale === locale && article.slug === slug);
 }
-export function getArticleById(locale: Locale, id: string): Article | undefined {
-  return articles.find((article) => article.locale === locale && article.id === id);
-}
 /** Categories with at least one article in the locale. Empty categories are not published. */
 export function getPublishedCategories(locale: Locale): Category[] {
   const used = new Set(getArticles(locale).map((article) => article.category));

@@ -460,15 +460,11 @@ svg {
   font-size: 22px;
   padding: 2px 5px;
 }
-.search-combobox {
-  position: relative;
+.search-positioner {
+  z-index: 20;
+  width: var(--anchor-width);
 }
 .search-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  z-index: 20;
   max-height: min(420px, 50dvh);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -498,7 +494,7 @@ svg {
   line-height: 1.6;
   cursor: pointer;
 }
-.search-option[data-selected='true'] {
+.search-option[data-highlighted] {
   background: var(--accent-soft);
   color: var(--accent);
 }
