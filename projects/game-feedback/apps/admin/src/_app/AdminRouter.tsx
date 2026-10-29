@@ -8,10 +8,22 @@ import { useAdminRoute } from '@/shared/lib';
 import { AsyncBoundary } from '@/shared/ui';
 import { AdminShell } from '@/widgets/admin-shell';
 
-const LoginPage = lazy(() => import('@/_pages/login').then((page) => ({ default: page.LoginPage })));
-const ReportsPage = lazy(() => import('@/_pages/reports').then((page) => ({ default: page.ReportsPage })));
-const SupportPage = lazy(() => import('@/_pages/support').then((page) => ({ default: page.SupportPage })));
-const UsersPage = lazy(() => import('@/_pages/users').then((page) => ({ default: page.UsersPage })));
+const LoginPage = lazy(async () => {
+  const page = await import('@/_pages/login');
+  return { default: page.LoginPage };
+});
+const ReportsPage = lazy(async () => {
+  const page = await import('@/_pages/reports');
+  return { default: page.ReportsPage };
+});
+const SupportPage = lazy(async () => {
+  const page = await import('@/_pages/support');
+  return { default: page.SupportPage };
+});
+const UsersPage = lazy(async () => {
+  const page = await import('@/_pages/users');
+  return { default: page.UsersPage };
+});
 
 export function AdminRouter() {
   const { data: session } = useSuspenseQuery(sessionOptions());
