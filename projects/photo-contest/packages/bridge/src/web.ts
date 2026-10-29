@@ -63,7 +63,6 @@ const DEFAULT_TIMEOUT_MS: Record<TWebRequestType, number> = {
   'clipboard.copy': 10_000,
   'haptics.impact': 5_000,
   'link.open': 10_000,
-  'auth.socialLogin': 10 * 60_000,
 };
 
 interface IPendingRequest {

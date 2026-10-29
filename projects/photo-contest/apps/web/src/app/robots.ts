@@ -10,15 +10,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: [
-        '/me',
-        '/invite/',
-        '/contests/',
-        '/app-auth/',
-        '/backend/graphql',
-        '/backend/auth/',
-        '/backend/testing/',
-      ],
+      disallow: ['/me', '/invite/', '/contests/', '/backend/graphql', '/backend/auth/', '/backend/testing/'],
     },
     sitemap: siteUrl('/sitemap.xml', getWebOrigin()),
   };

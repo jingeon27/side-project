@@ -23,9 +23,7 @@ beforeEach(() => {
     vi
       .fn()
       .mockImplementation(() =>
-        Promise.resolve(
-          new Response(JSON.stringify({ developmentLogin: false, google: false, kakao: false })),
-        ),
+        Promise.resolve(new Response(JSON.stringify({ minimumVersion: '1.0.0', latestVersion: '1.0.0' }))),
       ),
   );
 });

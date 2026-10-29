@@ -27,7 +27,7 @@ description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude �
 - 로그인하면 `setUserId(user.id)`, 로그아웃하면 `reset()`. 세션 만료 등으로 비로그인이 확인되면 식별된 사용자가 남아 있을 때만 `reset()`하고(`forgetAnalyticsUser`) 앱에 `auth.changed { signedIn: false }`를 알린다(앱도 식별된 사용자가 있을 때만 reset). 앱 안의 웹은 앱이 넘긴 `analyticsDeviceId`를 기기 ID로 써서 네이티브와 같은 사용자로 묶이고, 웹이 `auth.changed { signedIn, userId }`로 앱에 알려 앱도 같은 userId를 쓴다.
 - 현재 카탈로그
   - 웹: page_viewed, login_started, login_succeeded, group_created, group_joined, category_created, category_filter_applied, post_created, invite_link_copied, invite_link_shared, invite_link_regenerated, contest_created, photo_submitted, vote_cast, photo_liked, photo_unliked, photo_sort_changed, result_viewed, result_shared, contest_shared, photo_reported (공유 method = native | web_share | clipboard, 앱 기능이 지원되는지가 아니라 실제로 성공한 경로)
-  - 앱: app_opened(source = launch | deep_link), app_foregrounded, deep_link_opened, social_login_started / succeeded / cancelled / failed, native_share_completed / dismissed, update_required_shown, webview_load_failed, webview_process_terminated
+  - 앱: app_opened(source = launch | deep_link), app_foregrounded, deep_link_opened, native_share_completed / dismissed, update_required_shown, webview_load_failed, webview_process_terminated
 - 서버만 아는 지표(대회 종료 `contest_completed`, 참여 3명 이상 활성 대회)는 Amplitude가 아니라 DB `AnalyticsEvent`에서 본다.
 
 ## 추가할 때

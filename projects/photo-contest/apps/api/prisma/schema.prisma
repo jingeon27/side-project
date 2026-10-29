@@ -27,7 +27,6 @@ model User {
   uploads Upload[]
   reports Report[]
   likes Like[]
-  appLoginTickets AppLoginTicket[]
   posts Post[]
   postUploads PostUpload[]
   postLikes PostLike[]
@@ -46,13 +45,6 @@ model Session {
   expiresAt DateTime
   @@index([expiresAt])
   pushDevices PushDevice[]
-}
-model OAuthAttempt {
-  stateHash String @id
-  provider String
-  verifier String
-  appChallenge String?
-  expiresAt DateTime
 }
 model Group {
   categories GroupCategory[]
@@ -195,14 +187,6 @@ model Like {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([submissionId, userId])
   @@index([userId])
-}
-model AppLoginTicket {
-  codeHash String @id
-  userId String
-  challenge String
-  expiresAt DateTime
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([expiresAt])
 }
 model AnalyticsEvent {
   id String @id

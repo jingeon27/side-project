@@ -7,5 +7,3 @@ export const E2E_API_URL = `http://127.0.0.1:${E2E_API_PORT}`;
 export const E2E_APP_VERSION = '1.0.0';
 /** 로그인 밖의 딥링크 스킴 */
 export const E2E_APP_SCHEME = 'photocontest';
-/** 테스트 API가 앱 로그인 코드를 보내는 콜백(WEB_ORIGIN의 /app-auth/callback) */
-export const E2E_AUTH_CALLBACK_URL = `${E2E_WEB_ORIGIN}/app-auth/callback`;

@@ -29,11 +29,7 @@ describe('proxy', () => {
   });
 
   it('앱 로그인 콜백과 앱 링크 검증 파일은 로그인 게이트 없이 열려야 한다', () => {
-    for (const path of [
-      '/app-auth/callback?code=abcdefghijklmnop',
-      '/.well-known/apple-app-site-association',
-      '/.well-known/assetlinks.json',
-    ]) {
+    for (const path of ['/.well-known/apple-app-site-association', '/.well-known/assetlinks.json']) {
       const response = proxy(request(path));
       expect(response.headers.get('location'), path).toBeNull();
       expect(response.headers.get('x-middleware-next'), path).toBe('1');

@@ -31,7 +31,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
 - 익명 세션은 `startAnonymousSession` mutation으로만 만든다. 세션이 있으면 그 사용자를 돌려주고, 새로 만들 때는 가입과 같은 IP 한도를 센다. 익명 계정은 공개 그룹만 즉시 가입하고 비공개 그룹 생성·가입 신청은 로그인을 안내한다. 익명 상태에서 가입하면 같은 사용자 행을 회원으로 바꾼다.
 - 로그아웃은 `POST /auth/logout`이다. 개발 로그인 엔드포인트는 없고, 격리 테스트만 NODE_ENV=test·ENABLE_TEST_API=true의 `POST /testing/users`로 사용자·세션을 만든다.
-- 현재 API에는 소셜(OAuth) 로그인과 앱 로그인 교환(`/auth/<provider>`, `/auth/app/exchange`)이 없다. OAuthAttempt·AppLoginTicket 테이블은 이전 앱 호환을 위해 남아 있을 뿐 쓰지 않는다. 다시 들일 때는 프로젝트 AGENTS.md의 앱 소셜 로그인 결정과 `auth` 스킬을 함께 고친다.
+- 현재 API에는 소셜(OAuth) 로그인과 앱 로그인 교환(`/auth/<provider>`, `/auth/app/exchange`)이 없다. 관련 Prisma 모델과 브리지 계약은 제거했다.
 
 ## 상시 그룹 게시물
 

@@ -76,14 +76,6 @@ describe('decodeWebMessage', () => {
     ).toBeNull();
     expect(decodeWebMessage('x'.repeat(20_001))).toBeNull();
   });
-
-  it('소셜 로그인 결과의 verifier 형식을 검사해야 한다', () => {
-    const verifier = 'v'.repeat(43);
-    const ok = decodeWebMessage(
-      encode({ v: 1, kind: 'response', id: 'a4', ok: true, result: { code: 'c'.repeat(16), verifier } }),
-    );
-    expect(ok?.kind).toBe('response');
-  });
 });
 
 describe('decodeNativeMessage', () => {

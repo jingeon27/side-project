@@ -34,16 +34,16 @@ description: 모바일 앱의 Vitest unit·ui·api 테스트나 Playwright nativ
 - `playwright.config.ts`가 격리 API :4330(`prepareE2eDatabase('mobile_e2e')`)과 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`)을 새로 띄운다(`reuseExistingServer: false`). 포트·origin·앱 버전·스킴은 `e2e/support/e2e-env.ts`에서만 고친다.
 - spec은 `./support/fixtures`의 `test`·`expect`를 쓴다. `nativeHost`가 `page.goto` 전에 앱의 실제 `createCapabilities`·`createNativeRouter`·`buildBootstrapScript`를 붙이고 플랫폼 기능만 기록용 가짜로 바꾼다.
 - 조작 전에 `await nativeHost.waitForEvent('app.ready')`. 단언은 `nativeHost.calls`(웹 요청)·`nativeHost.platform`(공유·복사·진동·브라우저·인증 세션)·`nativeHost.events`로 한다. 앱 → 웹은 `emit`·`requestBack()`·`openDeepLink(url)`, 결과는 `setShareAction`·`setCopySucceeds`·`setAuthSession`으로 조절한다.
-- 데이터는 `e2e/support/seed.ts`(`signUp`·`signInBrowser`·`seedGroup`·`seedContestWithMemberPhoto`·`issueAppLoginTicket`), 닉네임은 `uniqueNickname`. 사용자·단계·로그인 티켓은 test-kit의 테스트 API helper로 만들고 DB를 직접 수정하지 않는다. 웹 선택자는 `e2e/support/web-screens.ts`의 `webScreens`에만 역할·이름으로 둔다.
+- 데이터는 `e2e/support/seed.ts`(`signUp`·`signInBrowser`·`seedGroup`·`seedContestWithMemberPhoto`·`issueAppLoginTicket`), 닉네임은 `uniqueNickname`. 사용자·단계·세션은 test-kit의 테스트 API helper로 만들고 DB를 직접 수정하지 않는다. 웹 선택자는 `e2e/support/web-screens.ts`의 `webScreens`에만 역할·이름으로 둔다.
 - Android 전용은 `test.skip(testInfo.project.name !== 'android-webview', …)`.
 - e2e는 `useWebShell`의 WebView prop·핸들러, 탐색 정책 적용(브라우저 페이지라 `onShouldStartLoadWithRequest`가 없다), BackHandler·AppState·스플래시·오프라인 화면을 보지 않는다 — ui 레인에서 검증한다.
 
 ```sh
 yarn workspace @photo-contest/mobile test src/_pages/web-shell                 # unit·ui를 경로로 거른다
-yarn workspace @photo-contest/mobile test:e2e --project android-webview social-login
+yarn workspace @photo-contest/mobile test:e2e --project android-webview share
 yarn workspace @photo-contest/mobile exec playwright install chromium webkit   # 브라우저가 없을 때
 ```
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 소셜 로그인 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link 검증 상태 `adb shell pm get-app-links <패키지>`, 앱 미설치·검증 실패 때 웹 안내 페이지), 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.

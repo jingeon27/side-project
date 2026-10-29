@@ -28,9 +28,9 @@ describe('decideNavigation', () => {
   });
 
   it('다른 사이트로 가는 메인 문서 이동은 밖에서 열어야 한다', () => {
-    expect(decide('https://accounts.google.com/o/oauth2/v2/auth?client_id=x')).toEqual({
+    expect(decide('https://outside.example/path?ref=x')).toEqual({
       action: 'open-external',
-      url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=x',
+      url: 'https://outside.example/path?ref=x',
       fallbackUrl: null,
     });
     expect(decide('http://contest.example/groups/1')).toMatchObject({ action: 'open-external' });

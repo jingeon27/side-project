@@ -8,8 +8,6 @@ export function waitForHydrationOnLoad(page: Page) {
   const goto = page.goto.bind(page);
   const reload = page.reload.bind(page);
   const ready = async (response: Response | null) => {
-    // 콜백 안내 문서는 쿠키·분석·앱 런타임을 싣지 않는 독립 HTML이다.
-    if (response && new URL(response.url()).pathname === '/app-auth/callback') return response;
     if (response?.headers()['content-type']?.includes('text/html'))
       await page.locator('html[data-hydrated]').waitFor({ state: 'attached' });
     return response;

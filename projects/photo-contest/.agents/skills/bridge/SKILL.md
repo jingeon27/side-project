@@ -17,7 +17,7 @@ description: 웹과 모바일 앱 사이 메시지 계약(packages/bridge)에 �
 - 웹 → 앱: `window.ReactNativeWebView.postMessage(JSON 문자열)`.
 - 앱 → 웹: `injectJavaScript(buildNativeDispatchScript(message))`가 `window`에 `photo-contest:native` CustomEvent(detail = JSON 문자열)를 보낸다. 문자열은 ` `·`<`까지 이스케이프된다.
 - 앱 정보(플랫폼, 앱 버전, 프로토콜 버전, 지원 기능 목록, 분석 기기 ID)는 `injectedJavaScriptBeforeContentLoaded`(`buildBootstrapScript`)로 문서보다 먼저 심는다.
-- 요청은 id로 응답을 짝짓고 종류별 타임아웃이 있다(소셜 로그인 10분, 공유 5분, 그 밖 5~10초). 오류 코드: UNSUPPORTED·CANCELLED·FAILED·INVALID·TIMEOUT.
+- 요청은 id로 응답을 짝짓고 종류별 타임아웃이 있다(공유 5분, 그 밖 5~10초). 오류 코드: UNSUPPORTED·CANCELLED·FAILED·INVALID·TIMEOUT.
 
 ## 바꾸는 순서
 

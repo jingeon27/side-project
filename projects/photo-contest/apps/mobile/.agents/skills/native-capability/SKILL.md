@@ -1,6 +1,6 @@
 ---
 name: native-capability
-description: 모바일 앱이 웹 요청을 받아 실행하는 네이티브 기능(share.open·clipboard.copy·haptics.impact·link.open·auth.socialLogin 또는 새 기능)을 추가하거나 결과·오류 코드·대기 시간·소셜 로그인 PKCE 핸드오프를 바꿀 때 사용한다.
+description: 모바일 앱이 웹 요청을 받아 실행하는 네이티브 기능(share.open·clipboard.copy·haptics.impact·link.open 또는 새 기능)을 추가하거나 결과·오류 코드·대기 시간를 바꿀 때 사용한다.
 ---
 
 메시지 계약(`packages/bridge`의 `WEB_REQUEST`·`PROTOCOL_VERSION`)과 웹 대체 동작은 `bridge` 스킬이 기준이다. 앱 작업 안에서 `packages/bridge`를 고치지 않는다 — 계약이 부족하면 보고하고, 바꿀 때는 `bridge` 스킬 순서로 따로 커밋한다.
@@ -8,7 +8,7 @@ description: 모바일 앱이 웹 요청을 받아 실행하는 네이티브 기
 ## 두 층 (`src/features/bridge`)
 
 - `lib/create-capabilities.ts`의 `createCapabilities(deps)`: 판단만 한다. 플랫폼 동작은 전부 `ICapabilityDependencies`로 받는다. react-native·expo는 `import type`만 쓴다 — `e2e/support/native-host.ts`가 이 파일을 Node(Playwright)에서 그대로 돌린다.
-- `model/native-capabilities.ts`: `createNativeDependencies()`가 RN `Share`·expo-clipboard·expo-haptics·expo-web-browser·expo-crypto를 잇고 `createNativeCapabilities()`가 묶는다. 값 매핑(`IMPACT_STYLE`·`NOTIFICATION_TYPE`)과 색 옵션만 두고 판단은 넣지 않는다. 난수는 `getRandomValues`(`getRandomBytes`는 원격 디버깅 때 Math.random으로 바뀐다).
+- `model/native-capabilities.ts`: `createNativeDependencies()`가 RN `Share`·expo-clipboard·expo-haptics·expo-web-browser를 잇고 `createNativeCapabilities()`가 묶는다. 값 매핑(`IMPACT_STYLE`·`NOTIFICATION_TYPE`)과 색 옵션만 두고 판단은 넣지 않는다.
 - `useWebShell`이 화면당 한 번(`useState`) 만든다. 진행 중 플래그가 이 인스턴스에 있으므로 렌더마다 새로 만들지 않는다.
 
 ## 웹에 알리는 기능 목록
@@ -22,16 +22,8 @@ description: 모바일 앱이 웹 요청을 받아 실행하는 네이티브 기
 - 라우터가 결과를 `WEB_REQUEST[type].result`로 다시 검증하고, 틀리면 웹은 `FAILED`('앱 응답을 만들지 못했습니다.')만 받는다. 스키마부터 본다: `clipboard.copy`는 `copied: true`만 받으므로 실패를 결과로 돌려주지 않고 던진다.
 - 던지는 코드는 둘뿐이다. 사용자가 닫거나 취소 → `new NativeCapabilityError(BRIDGE_ERROR_CODE.Cancelled, '…')`(웹은 조용히), 그 밖 → `BRIDGE_ERROR_CODE.Failed`(웹이 토스트). 메시지는 짧은 사용자용 한국어로 쓰고 원래 오류 문구·URL·코드를 싣지 않는다. 그냥 던진 오류는 라우터가 일반 `FAILED`로 바꾸고, `UNSUPPORTED`·`INVALID`·`TIMEOUT`은 라우터·웹이 만든다.
 - 웹 대기 시간(`packages/bridge/src/web.ts`의 `DEFAULT_TIMEOUT_MS`)을 넘길 수 있는 API는 먼저 답한다. `link.open`은 `openBrowserAsync`(iOS는 닫혀야 끝난다)와 `LINK_OPEN_SETTLE_MS`(300ms)를 경주시키고, 진 쪽 실패도 값으로 받아 처리되지 않은 거부를 남기지 않는다.
-- 겹치면 안 되는 동작은 진행 중 플래그로 두 번째 요청을 `CANCELLED`로 답하고 `finally`에서 푼다(`isLoginInProgress`). 플랫폼 차이는 `deps.platform`으로 나눈다(공유: iOS는 `url`, Android는 `message`에 문구+URL).
+- 겹치면 안 되는 동작은 진행 중 플래그로 두 번째 요청을 `CANCELLED`로 답하고 `finally`에서 푼다. 플랫폼 차이는 `deps.platform`으로 나눈다(공유: iOS는 `url`, Android는 `message`에 문구+URL).
 
-## 소셜 로그인 핸드오프 (`lib/social-login.ts`)
-
-- 요청마다 verifier = `encodeBase64Url(deps.randomBytes(PKCE_VERIFIER_BYTES))`(32바이트 → 43자, `src/shared/lib/base64url.ts` — RN에는 Buffer·btoa가 늘 있지 않다), challenge = base64url(SHA-256(verifier)).
-- 시작 주소는 `buildSocialLoginUrl(API_BASE, provider, challenge)`(`${WEB_ORIGIN}/backend/auth/<provider>?app_challenge=`), 콜백은 `AUTH_CALLBACK_URL`(`src/shared/config/env.ts`, `${WEB_ORIGIN}/app-auth/callback`)이며 `deps.authCallbackUrl`로 받는다. API 주소를 따로 쓰지 않는다. 커스텀 스킴 콜백을 다시 쓰지 않는다(같은 스킴의 다른 앱이 코드를 가로챌 수 있다, 감사 M3).
-- `openAuthSessionAsync(url, callback, { preferUniversalLinks: true })`: 옵션이 없으면 iOS가 이전 `callbackURLScheme` API로 열어 https 콜백이 돌아오지 않는다(설치된 expo-web-browser `ios/WebAuthSession.swift`). Android 폴리필은 Custom Tabs를 열고 `Linking` `url` 이벤트가 콜백으로 시작하면 성공으로 본다.
-- `readAuthCallback`은 정규식으로만 읽는다: 콜백의 scheme·host·port는 대소문자 무시로 같고 경로는 정확히 같아야 한다. 쿼리는 `code=^[A-Za-z0-9._~-]{16,256}$` 하나나 `error=^[a-z_]{1,64}$` 하나만(다른 매개변수·중복·퍼센트 인코딩 거부), 해시는 무시한다.
-- 인증 세션 결과 `cancel`·`dismiss` → `CANCELLED`('로그인을 취소했습니다.'). 세션 예외·`locked`·`error=`·형식 오류 → `FAILED`('소셜 로그인에 실패했습니다.'). 성공하면 `{ code, verifier }`만 웹에 준다. 교환(`POST /backend/auth/app/exchange`)은 웹이 WebView 안에서 해야 쿠키가 WebView에 남는다 — 앱은 code·verifier를 저장하거나 직접 교환하지 않는다.
-- 콜백 경로를 바꾸면 `src/shared/config/app-links.ts`, `app.config.ts`(`AUTH_CALLBACK_PATH`), 웹 `src/shared/lib/app-links.helper.ts`·`src/app/app-auth/callback`, API `MOBILE_AUTH_CALLBACK_PATH`를 같이 바꾸고 네이티브를 다시 빌드한다. 딥링크 스킴은 `app.config.ts` `scheme`, `env.ts` `APP_SCHEME`, `e2e/support/e2e-env.ts` `E2E_APP_SCHEME`를 같이 바꾼다.
 
 ## 체크리스트
 

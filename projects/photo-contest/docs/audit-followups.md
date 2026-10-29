@@ -14,7 +14,9 @@
 
 ## 다음 릴리스의 DB 정리
 
-삭제 대상은 `OAuthAttempt`, `AppLoginTicket`, `PostUploadAttempt` 테이블과 `PostUpload.completionKey`·`completionStartedAt` 컬럼이다. 현재 런타임 소스에는 사용처가 없지만 Prisma 모델에는 남아 있다. 이번 후속 변경은 운영 DB나 Prisma 스키마를 삭제하지 않는다.
+이번 소셜 로그인 정리에서 `OAuthAttempt`·`AppLoginTicket` 모델과 관계를 제거하고 전용 contract migration을 추가했다. 두 테이블의 런타임 사용처는 #112 이후 없다. 적용 시 인증 시도·앱 교환 티켓 행은 삭제되며, User·PasswordCredential·Session은 유지한다. 운영 적용은 배포 전 백업 뒤에 진행한다.
+
+남은 삭제 대상은 `PostUploadAttempt` 테이블과 `PostUpload.completionKey`·`completionStartedAt` 컬럼이다. 현재 런타임 소스에는 사용처가 없지만 Prisma 모델에는 남아 있다. 업로드 관련 정리는 별도 후속 변경으로 남긴다.
 
 1. #112 이후 버전이 API와 정리 작업을 실행하는 모든 컨테이너에 배포됐는지 확인한다. 아직 실행 중인 구버전은 해당 테이블을 정리할 수 있으므로 PR 병합만으로 삭제 조건이 충족되지는 않는다.
 2. 컬럼은 명시적 참조가 없어도 이전 Prisma Client의 기본 조회에 포함된다. 먼저 삭제 대상 필드를 조회하지 않는 Client를 배포한다. 모델·필드의 `@@ignore`/`@ignore`를 이용하면 이 단계에서 실제 DB 구조를 유지할 수 있다. 사용하지 않는 관계 필드도 함께 처리하고 Client를 재생성한다.

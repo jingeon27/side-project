@@ -16,7 +16,7 @@ export class UserResolver {
 
   @ResolveField()
   avatar(@Parent() user: IUserView): string | null {
-    // 직접 올린 사진이 있으면 고정 S3 경로를 쓰고, 그 전에는 소셜 가입의 기본 사진을 쓴다.
+    // 직접 올린 사진이 있으면 고정 S3 경로를 쓰고, 그 전에는 기존 프로필 사진을 쓴다.
     return user.avatarUploadId ? `/backend/profiles/${user.id}/avatar/${user.avatarUploadId}` : user.avatar;
   }
 }

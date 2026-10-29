@@ -28,7 +28,7 @@ describe('알림 탭 이동', () => {
     for (const value of [
       'https://evil.example',
       '//evil.example',
-      '/app-auth/callback?code=x',
+      '/unsupported/route?token=x',
       '/notifications?next=evil',
       '/settings',
       null,

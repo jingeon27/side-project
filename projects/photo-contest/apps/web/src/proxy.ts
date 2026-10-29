@@ -20,7 +20,7 @@ export function proxy(request: NextRequest) {
     .exhaustive();
 }
 
-// 인증·약관·OAuth 콜백·API·정적 파일을 제외한 콘텐츠 화면만 검사한다.
+// 인증·약관·API·정적 파일을 제외한 콘텐츠 화면만 검사한다.
 export const config = {
   matcher: [
     '/',

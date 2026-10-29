@@ -2,7 +2,7 @@ import type { TLoginMethod } from '@/shared/model/analytics';
 
 const PENDING_LOGIN_KEY = 'photo-contest:pending-login';
 const NOTIFIED_USER_KEY = 'photo-contest:auth-notified-user';
-const LOGIN_METHODS = new Set<string>(['google', 'kakao', 'password', 'anonymous'] satisfies TLoginMethod[]);
+const LOGIN_METHODS = new Set<string>(['password', 'anonymous'] satisfies TLoginMethod[]);
 
 export interface IPendingLogin {
   method: TLoginMethod;
@@ -26,8 +26,7 @@ const isPendingLogin = (value: unknown): value is IPendingLogin =>
   typeof Reflect.get(value, 'next') === 'string';
 
 /**
- * 로그인 요청을 보내고 문서를 떠나기 전에 남긴다. OAuth는 API가 홈(`/`)으로 돌려보내므로
- * 다음 문서가 이 표시로 로그인 성공 이벤트를 보내고 원래 가려던 경로로 옮긴다.
+ * 로그인이 완료돼 문서를 새로 열기 전에 남긴다. 다음 문서에서 로그인 성공 이벤트를 한 번 보낸다.
  */
 export function savePendingLogin(pending: IPendingLogin) {
   try {

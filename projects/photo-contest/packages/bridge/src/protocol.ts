@@ -79,14 +79,6 @@ export const WEB_REQUEST = {
     payload: z.object({ url: downloadCapableUrl }),
     result: z.object({ opened: z.boolean() }),
   },
-  /** 시스템 브라우저로 소셜 로그인한 뒤 앱 로그인 교환에 쓸 일회용 코드와 verifier를 돌려준다. */
-  'auth.socialLogin': {
-    payload: z.object({ provider: z.enum(['google', 'kakao']) }),
-    result: z.object({
-      code: z.string().min(16).max(256),
-      verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
-    }),
-  },
 } as const satisfies TRequestSchemas;
 export type TWebRequestType = keyof typeof WEB_REQUEST;
 export type TWebRequestPayload<T extends TWebRequestType> = z.input<(typeof WEB_REQUEST)[T]['payload']>;
@@ -204,13 +196,6 @@ const webRequestSchema = z.discriminatedUnion('type', [
     id: messageId,
     type: z.literal('link.open'),
     payload: WEB_REQUEST['link.open'].payload,
-  }),
-  z.object({
-    v: z.literal(PROTOCOL_VERSION),
-    kind: z.literal('request'),
-    id: messageId,
-    type: z.literal('auth.socialLogin'),
-    payload: WEB_REQUEST['auth.socialLogin'].payload,
   }),
 ]);
 export type TWebRequestMessage = z.output<typeof webRequestSchema>;

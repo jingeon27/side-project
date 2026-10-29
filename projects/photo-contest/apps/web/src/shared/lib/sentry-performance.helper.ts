@@ -16,7 +16,6 @@ const PUBLIC_PATHS = new Set([
   'privacy',
   'terms',
   'notifications',
-  'app-auth',
 ]);
 const PERFORMANCE_ATTRIBUTES = new Set([
   'sentry.op',

@@ -1,5 +1,7 @@
 ## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
 
+현재 인증은 아이디·비밀번호와 익명 세션만 제공한다. 아래 과거 검증 기록의 외부 인증·앱 로그인 항목은 제거된 구현에 대한 이력이다.
+
 외부 RDS 대신 공통 EC2 안의 PostgreSQL 18 컨테이너를 Game Feedback과 함께 쓴다. RDS는 만든 적이 없어 옮길 데이터는 없다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이며 아래 2026-10-19 기록의 RDS·PITR 내용을 대신한다.
 
 - `photo_contest` DB와 `photo_contest`/`photo_contest_migrator` role 분리는 유지한다. API·ops·migrate만 내부 DB 네트워크에서 `shared-postgres`로 연결하고 Web은 연결하지 않는다. 운영 URL은 `sslmode=disable`이어야 하며 RDS 호스트·CA 검사를 제거했다.

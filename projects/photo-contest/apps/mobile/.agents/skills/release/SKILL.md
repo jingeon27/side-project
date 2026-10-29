@@ -28,24 +28,9 @@ adb reverse tcp:3200 tcp:3200                                                   
 - Expo는 `apps/mobile`의 `.env*`만 읽는다(프로젝트 루트 `.env`는 API·웹용). 셸 변수나 `apps/mobile/.env.local`(커밋 금지)로 주고, 토큰 같은 비밀은 넣지 않는다.
 - 운영 빌드에는 https `EXPO_PUBLIC_WEB_ORIGIN`(포트 없음)을 반드시 넣는다. 빠지거나 http면 prebuild·번들링이 설정 오류로 멈춘다(localhost가 박히면 모든 사용자가 오프라인 화면을 본다). 값을 바꾸면 바이너리를 다시 만들어 내야 반영된다.
 
-## 앱 링크 값 (빌드 설정, 번들에 넣지 않음)
+## 스토어 제출
 
-| 변수 | 쓰는 곳 | 운영 빌드에서 비었을 때 | 개발 빌드 기본 |
-| --- | --- | --- | --- |
-| `MOBILE_APPLE_TEAM_ID` | `ios.appleTeamId`(AASA의 `<Team ID>.<bundle id>`와 같아야 한다) | 멈춤 | 없음 |
-| `MOBILE_IOS_BUNDLE_ID` | `ios.bundleIdentifier` | 멈춤 | `dev.side.photocontest` |
-| `MOBILE_ANDROID_PACKAGE` | `android.package` | 멈춤 | `dev.side.photocontest` |
-
-- EAS 빌드는 production 환경의 EAS 환경변수(비밀 아님, plain text 가능)로 넣는다. 웹 배포 환경의 같은 이름 값과 Android 서명 지문(`MOBILE_ANDROID_SHA256_FINGERPRINTS`, 웹 전용)이 함께 맞아야 링크가 검증된다.
-- `app.config.ts`가 web origin host로 `ios.associatedDomains`(`applinks:<host>`·`webcredentials:<host>`)와 Android `intentFilters`(https·host·`/app-auth/callback`·`autoVerify`)를 만들고 `ios.deploymentTarget`을 17.4로 둔다(Expo SDK 56+ 내장 설정. `expo-build-properties`의 `ios.deploymentTarget`은 폐기 예정).
-
-## 스토어·콘솔 준비 (첫 제출 전, 식별자를 바꿀 때마다)
-
-1. Apple Developer: App ID(`MOBILE_IOS_BUNDLE_ID`)에 Associated Domains capability를 켠다(EAS가 capability를 동기화하지만 수동 서명이면 직접 켜고 프로비저닝 프로필을 다시 만든다). Team ID를 웹·EAS의 `MOBILE_APPLE_TEAM_ID`에 넣는다.
-2. 최소 iOS가 17.4로 올라가므로 App Store Connect의 지원 OS가 바뀐다. 17.4 미만 기기는 새 버전을 받지 못하고, https 콜백을 받지 못하는 이전 바이너리는 로그인할 수 없다(운영 사용자가 없어 호환 기간을 두지 않는다). 스토어 재배포가 필요하다.
-3. AASA: 웹 배포 후 `curl -sI https://<host>/.well-known/apple-app-site-association`이 리다이렉트 없이 200·`application/json`인지 본다. iOS는 설치·업데이트 때 Apple CDN(`https://app-site-association.cdn-apple.com/a/v1/<host>`)에서 받으며 CDN 캐시는 최대 하루쯤 늦을 수 있다. 내용을 바꾸면 CDN에 반영된 것을 확인한 뒤 앱을 다시 설치해 시험한다.
-4. Google Play Console: 앱 무결성 > 앱 서명의 "앱 서명 키 인증서" SHA-256(Play App Signing)을 웹 `MOBILE_ANDROID_SHA256_FINGERPRINTS`에 넣는다. 내부 테스트로 직접 서명한 APK를 배포하면 업로드 키 SHA-256도 쉼표로 함께 넣는다. 설치 후 `adb shell pm get-app-links <패키지>`가 `verified`인지 본다(재검증: `adb shell pm verify-app-links --re-verify <패키지>`).
-5. 개발용 앱 링크 확인: https 터널 origin을 `EXPO_PUBLIC_WEB_ORIGIN`·웹·API `WEB_ORIGIN`에 같이 넣고 `APP_VARIANT=development`로 다시 빌드한다(iOS는 `?mode=developer`라 기기 설정 > 개발자 > Associated Domains Development를 켠다). 웹에는 개발 서명의 Team ID·debug keystore SHA-256을 넣는다.
+`app.config.ts`의 iOS bundle ID·Android package를 스토어에 등록한다. App Link·Universal Link 인증 콜백은 사용하지 않는다.
 
 ## 버전과 강제 업데이트
 

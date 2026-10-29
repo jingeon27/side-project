@@ -8,7 +8,7 @@ import { DomainError, httpStatusOf } from '../errors';
 
 const UNMATCHED_ROUTE = '(unmatched)';
 
-/** 경로 원문에는 업로드·OAuth 토큰이 들어 있으므로 라우트 패턴(/uploads/:token)만 태그로 남긴다. */
+/** 경로 원문에는 업로드 토큰이 들어 있으므로 라우트 패턴(/uploads/:token)만 태그로 남긴다. */
 function routeOf(request: Request) {
   const route: unknown = request.route;
   const path =

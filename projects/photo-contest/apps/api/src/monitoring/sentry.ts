@@ -67,7 +67,7 @@ export function sentryOptions(): NodeOptions | undefined {
       urlQueryParams: false,
       graphQL: { document: false, variables: false },
     },
-    // 자동 계측은 요청 URL(업로드·OAuth 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
+    // 자동 계측은 요청 URL(업로드 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
     defaultIntegrations: false,
     beforeSend: scrubEvent,
     beforeSendTransaction: scrubEvent,

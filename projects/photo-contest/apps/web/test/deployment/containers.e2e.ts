@@ -200,15 +200,3 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
-
-test('운영 Caddy가 앱 링크 검증 파일과 앱 로그인 콜백 안내를 막지 않고 그대로 전달해야 한다', async ({
-  request,
-}) => {
-  const callback = await request.get('/app-auth/callback?code=smoke-login-code-0123456789', {
-    maxRedirects: 0,
-  });
-  expect(callback.status()).toBe(200);
-  expect(callback.headers()['cache-control']).toBe('no-store');
-  expect(callback.headers()['referrer-policy']).toContain('no-referrer');
-  expect(await callback.text()).not.toContain('smoke-login-code');
-});

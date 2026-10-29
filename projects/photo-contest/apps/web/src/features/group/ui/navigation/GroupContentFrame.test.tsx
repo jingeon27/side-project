@@ -63,7 +63,7 @@ async function renderFrame(mocks: MockLink.MockedResponse[]) {
 }
 
 beforeEach(() => {
-  // 로그인 패널이 소셜 로그인 설정을 읽는다.
+  // 로그인 패널의 인증 화면 의존성을 격리한다.
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response(JSON.stringify({ google: false, kakao: false }), { status: 200 })),

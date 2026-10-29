@@ -49,7 +49,6 @@ export interface INativeHost {
   openDeepLink: (url: string) => boolean;
   setShareAction: (action: TShareAction) => void;
   setCopySucceeds: (succeeds: boolean) => void;
-  /** 소셜 로그인 인증 세션 결과를 정한다. 기본은 사용자가 닫은 것(cancel)이다. */
   dispose: () => void;
 }
 
