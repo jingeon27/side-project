@@ -1,6 +1,6 @@
 <Summary>
 
-A sprint I finished by checking screens alone led to many hotfixes. I now read diffs to find missed branches, test those paths, and keep the code readable enough to do that.
+A sprint I considered finished after checking screens led to many hotfixes. I now read code to find paths to test, then check those paths and the actual UI separately.
 
 </Summary>
 
@@ -8,25 +8,23 @@ A sprint I finished by checking screens alone led to many hotfixes. I now read d
 
 *A diagram of reviewing state, request conditions, and tests in changed code.*
 
-Two sprints ago, I tried focusing on screen behavior without reading the code an agent produced. I thought working behavior would be enough, but many hotfixes followed. A screen that works only meant that the paths I clicked through worked.
+For one sprint, I focused on running the screens rather than reading code produced by an agent. I thought working behavior would be enough, but many hotfixes followed. Conditions I had never tried were missing from that judgment.
 
-Since then, I consider both **black-box testing**, based on requirements and user behavior, and **white-box testing**, which selects and exercises paths based on internal structure. Conditions I discover while reading become test cases, and I check the screen as well.
+Since then, I read diffs to decide what to test. Alongside black-box checks based on requirements, I use white-box tests whose paths come from branches and execution order in the code. Reading finds the cases; running them verifies the behavior.
 
-## Black-box and white-box testing
+## Cases chosen from behavior and cases found in code
 
-Black-box testing treats the internals as unknown and checks only inputs and results. Clicking through the screen against requirements, reproducing user flows with E2E tests, and QA running scenarios all belong here. It verifies what users actually experience, and the tests survive changes to the implementation.
+Black-box testing looks at inputs and results rather than implementation. Requirement-based screen checks, E2E user flows, and QA scenarios belong here. They test what users experience and can retain the same expectations after an implementation changes.
 
-White-box testing uses knowledge of the code to choose which paths to check. I look at the branches, the order in which conditions run, and who changes the state, then verify that each path behaves as intended. White-box testing therefore starts with reading and understanding the code.
+White-box testing chooses paths from the internals. I inspect condition order and state changes, then test those paths. It gives me cases I might not think of without knowing the code.
 
 | Aspect | Black-box testing | White-box testing |
 | --- | --- | --- |
-| Basis | Requirements and screen behavior | Branches, condition order, state and data flow |
-| Activities | Screen checks, E2E, QA scenarios | Selecting internal paths, writing and running per-path tests |
-| Easy to miss | Inputs I did not think of, internal branches | Real screen behavior that code does not reveal |
+| How cases are chosen | Requirements and user actions | Branches, condition order, and state flow |
+| What I do | Operate screens, run E2E and QA scenarios | Find internal paths, write and run tests |
+| What can be missed | Unimagined inputs and internal conditions | Screen behavior that code alone does not reveal |
 
-Neither replaces the other. Black-box testing shows how the product looks to users. White-box testing shows why it behaves that way and whether unchecked paths remain.
-
-Both kinds of testing sit in my workflow:
+Both are part of my workflow.
 
 ```text
 티켓·plan 검토
@@ -38,17 +36,13 @@ Both kinds of testing sit in my workflow:
 → QA 더블 체크 요청
 ```
 
-Diff review helps me find internal paths to test. Review itself is not white-box testing; writing and running tests based on those branches and conditions is the white-box approach. Dev screen checks and QA then check behavior against requirements.
+Diff review is not itself white-box testing. Finding a path in review, then writing and running a test for its conditions, is the white-box approach. Dev screens and QA also check whether behavior matches the requirements.
 
-## Black-box testing alone cannot call a product verified
+## A temporary-opening condition could exist without running
 
-Black-box testing only checks the inputs I think of. Without knowing the branches in the code, it is hard to know which cases to try. I did not write the code an agent produced, so I cannot know which branches it added until I read it.
+Refactoring can change initialization, retained state after navigation, or request-failure handling while leaving the screen looking the same. Following the happy path without reading an agent's new branches makes those changes difficult to find.
 
-Refactoring makes this worse. Data and state handling can change while the screen looks identical. Initialization timing, state retained after going back, and failed-request behavior are difficult to verify by following only the happy path.
-
-Adding temporary opening dates was one of those cases. Besides the input screen, I had to change the logic deciding bookable dates. A hospital's temporary opening must permit reservations even on its usual day off.
-
-This shortened example shows what happens if the new condition is merely appended after the old closure check. Date comparisons and response handling are omitted, and names have been changed.
+Temporary opening dates required checking reservation availability as well as the input screen. A hospital opening temporarily on its usual day off must allow bookings. Appending the new condition after the old closure check produces this order. The example keeps only that order and uses renamed functions.
 
 ```typescript
 if (isPastDate(day)) return false;
@@ -57,9 +51,7 @@ if (hasTemporaryOpening(day)) return true;
 return !isTemporarilyClosed(day);
 ```
 
-All the conditions exist, but their order is wrong.
-
-Returning `false` for the usual day off prevents the temporary-opening condition from running on that day. Checking only regular opening days could miss it. Reading the code helped me identify the overlapping weekly-closure and temporary-opening case to test.
+If the weekly-closure branch returns false first, hasTemporaryOpening never runs. Trying a temporary opening on a normally open day would miss it. The useful case is a date overlapping the weekly closure.
 
 ```typescript
 if (isPastDate(day)) return false;
@@ -68,51 +60,39 @@ if (isWeeklyClosed(day)) return false;
 return !isTemporarilyClosed(day);
 ```
 
-The actual implementation now blocks past dates first, then checks temporary openings before weekly and temporary closures. The server sends temporary openings and closures in one array, so code treating every entry as a closure also needed to distinguish their types. Legacy entries without `type` still count as closures.
+The actual implementation now rejects past dates first, then checks temporary openings before weekly and temporary closures. The server puts temporary openings and closures in the same array, so code that treated every entry as closed also had to distinguish types. Legacy entries without type still mean closure.
 
-This was a potential bug while adding a feature, not a report of temporary-opening reservations being blocked in production. I turned the paths I found in the code into tests: selecting a temporary opening on a usual day off, allowing it even when a temporary closure overlaps, and continuing to reject past dates.
+I found this while adding the feature, rather than through a production report of blocked bookings. Tests now cover opening on a usual day off, opening despite an overlapping temporary closure, and continuing to reject past dates. That checks both condition order and legacy-data interpretation, beyond merely confirming the new condition exists.
 
-Checking only whether a new condition exists misses its interaction with old conditions and data meanings. Reading the code identifies the paths to check before tests and screen verification. That is why I consider white-box testing an inexpensive form of verification.
+## Reading code still missed scrolling
 
-## Reading the code still missed screen behavior
+Code alone was not enough either. After converting the portal's Bottom Sheet into a compound structure, I accepted the AI implementation and existing review. Its header shared the body's scroll region, so the title moved away with the content.
 
-The opposite also happened. When converting the benefits portal's Bottom Sheet into a compound structure, I trusted the generated code and existing review process. The header ended up in the body's scroll region, so scrolling moved the title too. Later, while upgrading the library to address a drag crash, I carried that structure forward. I read the diff and checked heights and snap positions, but missed whether the title stayed fixed while scrolling.
+I carried that structure forward during a later library upgrade for a drag crash. I read the diff and checked heights and snap positions, but did not check whether the title stayed fixed. Since then, I operate scrolling and dragging in the browser and retain browser tests for recurrence. [The Bottom Sheet article describes the fix.](/en/blog/bottom-sheet-drag-crash)
 
-Reading code had still missed incorrect screen behavior. Interactions such as scrolling and dragging come from the browser and the library working together, and code alone rarely reveals them. Since then I check those interactions on the actual screen and leave browser tests to catch recurrences. [The detailed fix is in another article.](/en/blog/bottom-sheet-drag-crash)
+Reading condition order found the date worth testing; actually scrolling exposed the sheet behavior I had missed. That is why passing tests, code review, and screen checks remain separate steps.
 
-Passing tests, code review, and screen checks remain separate steps. I test the paths found in code, then exercise scrolling and dragging in the browser.
+## Follow the changed flow after receiving a finished version
 
-## How I do white-box testing while working with agents
+Not every diff needs the same reading depth. Formatting, behavior-preserving lint fixes, and agreed file moves with import changes receive checks suited to that scope. A lint task that reorders branches, or a move that changes server/client boundaries or module initialization, still gets read as a behavior change.
 
-I do not read every change at the same depth. Formatting, behavior-preserving lint fixes, or moving files to an agreed location while changing only import paths call for scope checks and suitable verification. A task labeled “apply lint” or “move folders” is not automatically mechanical, though. If satisfying lint changed branches or execution order, or a file move altered server/client boundaries or module initialization, I treat it as a behavior change and read it.
+For features and refactoring, I follow inputs, state changes, and request conditions. I compare changes with a flow I already know rather than rereading the entire repository, then follow callers where necessary.
 
-For features and refactoring, I read the diff to understand inputs, state ownership, and request conditions. I do not reread the whole repository every time. I inspect what changed in a flow I already know, then follow callers and connected code when necessary.
+I read tests the same way. BDD-style `*.spec` files show new requirements; `*.test` files reproduce production and QA bugs. With a new test pattern, I check that deliberately breaking product code makes the test fail. A passing test that never checks its named behavior tells me nothing about that behavior.
 
-I read the tests too. Expected behavior for new features goes into BDD-style `*.spec` files, where I check that component requirements are covered. Production and QA bugs are reproduced in `*.test`. For a new test pattern, I deliberately break product code to see whether the test fails. White-box testing includes checking that a test really covers the path it claims to cover.
+Large features rarely end when an agent submits a finished version. I read the diff and tests, explain missing requirements or departures from repository conventions, and review its revision. While the agent works on that or another task, I read an earlier diff or code connected to the next change. Implementation and reading overlap.
 
-No large feature has finished from one instruction. Screens, state, APIs, and effects on existing behavior all grow together. When an agent submits a finished version, I read the diff and tests, point out deviations from requirements or repository rules, and return it for revision. Then I check the revised result. An agent reporting completion does not mean my review is finished.
+With reference to [Compound Engineering](https://every.to/guides/compound-engineering), I put recurring corrections into skills, AGENTS.md, and lint. Small features and refactorings now sometimes need no edits from me. I still read and verify them before using them unchanged. Better implementation reduces editing time without removing the need to understand what was built.
 
-Review overlaps implementation. While an agent handles another task or revisions, I read an already submitted diff or follow existing code relevant to the next change. Reading code therefore does not feel as though it stops the whole workflow.
+## Keeping code readable is part of the work
 
-For about half a year, I referred to [Compound Engineering](https://every.to/guides/compound-engineering), strengthening skills, AGENTS.md, and lint whenever results missed my intent. Small features and refactorings now sometimes leave me nothing to edit. I still read and verify them before using them as they are. **Not changing code and not reading code are different decisions.**
+Different names or locations for the same role make me search before I can inspect behavior. Scattered state changes and UI mixed with data transformation also hide branches. When reading becomes too difficult, verification tends to end with clicking the visible screen.
 
-## White-box testing requires managed code
+I use Knip for unused code and lint for folder placement and import direction. State placement and abstraction choices need callers and context read, so they live in skills and AGENTS.md. Keeping functions at a consistent level and separating different contexts helps me follow execution conditions next time.
 
-The cost of white-box testing depends on how readable the code is. Different names or locations for the same role make me search for ownership before I can check behavior. Chasing state changes across files, or mixing UI behavior with data conversions, makes important branches easier to miss. When reading becomes too expensive, verification slides back to black-box clicking alone.
+Familiar names alone do not make code readable. Similar names with different roles, or branches hidden to shorten code, make review harder. I check whether I can explain what each part does and when it runs.
 
-That is why I care a lot about code hygiene. I use knip to find unused code and put rules decidable from code, such as folder locations and import direction, into lint. Context-dependent choices about where state lives and which abstractions to use stay in skills and AGENTS.md. The same concern drives cohesion, coupling, context boundaries, and consistent abstraction levels within functions.
-
-Consistent names and structure give agents examples and help me understand the code quickly. Familiar shapes alone are insufficient: similar names for different roles, or hidden branches introduced to shorten code, make review harder. I check whether I can explain each part's role and execution conditions.
-
-AI has also made larger structural changes easier. When reorganizing folders or changing shared component interfaces, I define the criteria, delegate the work, and check that callers follow the intended pattern. That lets me keep adjusting the repository to product needs while keeping ownership of state and data clear and changes easy to read.
-
-Code hygiene is not only about leaving good-looking code. It is the preparation that keeps white-box testing affordable.
-
-## Closing
-
-At first, I thought better generated code might remove the need to read it. Now I see it as reducing my editing time. It has not removed the need to understand it.
-
-I read code to find missed cases, then check them with tests and on screen. That still cannot guarantee the absence of bugs. It does let me explain what I checked and what remains, more clearly than when I finished after clicking through a few screens.
+AI also lets me delegate folder reorganizations and shared-component interface changes. I define the intended shape and follow callers to check the result. I see that maintenance as part of keeping the code readable enough to continue this process.
 
 ## References
 

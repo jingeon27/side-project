@@ -1,6 +1,6 @@
 <Summary>
 
-I needed to wait for both a request and its response in Puppeteer. This is how I handled event ordering, listener cleanup, and timeouts.
+An Electron collector needed request headers and file information before it could continue. A closure collected the values, while a Promise ended the wait and cleaned up the listeners.
 
 </Summary>
 
@@ -8,9 +8,9 @@ I needed to wait for both a request and its response in Puppeteer. This is how I
 
 *An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
 
-In an Electron data collection app, I needed to wait for both Puppeteer's request and response events. The request supplied headers for the next API call; the response supplied a value needed to open a downloaded file. The next task could start only after both were ready.
+One task reloaded a page through Puppeteer and read information from its network events. A request supplied headers for the next API call; a response supplied a value needed to open a downloaded file. The next task could not start with only one of them.
 
-My first implementation stored the result in an outer variable and checked it once a second.
+My first approach let a callback fill an outer variable, then polled that variable until a result appeared.
 
 ```typescript
 let result: PreInfo | undefined;
@@ -26,17 +26,11 @@ while (result === undefined) {
 }
 ```
 
-It worked, but several things could go wrong.
+Receiving a value and ending the wait were separate pieces of code. If the expected event never arrived, the loop kept waiting. Calling the function again left the previous listeners attached. Sharing one variable between request and response callbacks could also let a later value overwrite an earlier one.
 
-- Calling the function again accumulated listeners.
-- If the expected event never arrived, it waited forever.
-- A check such as `if (result)` treated valid values like `0`, `false`, and an empty string as unfinished.
-- The request and response callbacks could overwrite the same variable.
-- Reloading before registering the listeners could miss fast events.
+A simple if (result) check was unsuitable too: 0, false, and an empty string could all be valid results. I used undefined for an unfinished result and registered listeners before reloading. Registering them afterward could miss an event that had already fired.
 
-I wrapped the wait in a Promise and removed the listeners on every exit path: success, failure, and timeout.
-
-## A shared function for waiting on events
+## Resolve the Promise when an event supplies a result
 
 ```tsx
 import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
@@ -109,11 +103,13 @@ export function waitForPreInfo<T>({
 }
 ```
 
-The function resolves when a callback first returns a valid result. It removes its listeners whether it completes, fails, or times out.
+A callback returning undefined means there is still something to wait for. Any other value reaches finish, which resolves the Promise and removes both listeners. If another asynchronous result arrives later, settled prevents it from processing the completed Promise again.
 
-## Combining two events with a closure
+The default wait is limited to ten seconds. A timeout or failed reload goes through fail. That path clears the timer and listeners just as completion does, so a failed attempt does not leave subscriptions behind for the next one.
 
-When request and response each provide half the information, a small collector can combine them.
+## Keep the first value inside a closure
+
+The function cannot choose which network event arrives first. I added a collector that retains the first value and returns a complete result when the other one arrives.
 
 ```typescript
 interface SitePreInfo {
@@ -154,8 +150,6 @@ const preInfo = await waitForPreInfo({
 });
 ```
 
-The closure keeps `headers` and `filePassword` from being changed directly by outside code. It returns a complete object only after both values have arrived.
+Both callbacks share headers and filePassword inside createSitePreInfoCollector. Headers can arrive first, or the password can arrive first; getResult returns undefined until both exist. Only then does it return an object that lets waitForPreInfo resolve.
 
-## End the subscription after collecting both values
-
-The collector holds headers and filePassword until both are ready, then resolves the Promise. If the expected events do not arrive, the timeout ends the wait. Both paths remove the listeners, so the next collection starts without listeners left over from the previous attempt.
+Those variables belong to this collection attempt. Outside code receives the event handlers rather than direct access to the variables. The next attempt gets a fresh collector, while the previous attempt's listeners are removed when its Promise ends.

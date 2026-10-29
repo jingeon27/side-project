@@ -114,3 +114,7 @@ python3 apps/web/scripts/migrate-tistory.py --resume-blog /path/to/resume/blog
 ```
 
 스크립트에는 검토한 27개의 공개 URL과 대응 파일명만 명시돼 있다. 매번 공개 sitemap에 URL이 있는지와 로컬 대응 파일이 존재하는지를 확인하고, 본문은 공개 페이지에서만 읽는다. 새 글이나 초안을 자동으로 찾거나 발행하지 않는다. 원문이 바뀌면 생성된 MDX, SEO와 이미지 diff를 검토한다. 검토한 공개 HTML 캐시를 재사용하려면 `--cache-dir /path/to/public-html-cache`를 지정할 수 있다. 캐시와 로컬 저장소는 결과물에 포함하지 않는다.
+
+### 화면 캡처 갱신
+
+2026-10-29에 side-project-design의 예전 모바일 화면 모음을 다시 촬영한 화면으로 교체했다. 이전 이미지는 삭제하거나 덮어쓰지 않았다. 제거된 전체 목록 답변 대기 버튼과 그룹 탐색 안내, 바텀시트 프로필 편집이 현재 화면으로 오해되지 않도록 Game Mate 피드, 별사대 그룹 탐색, 공개 프로필과 별도 편집 페이지를 실었다. 캡처에는 격리된 테스트 계정과 가짜 게임 API를 사용했으며 촬영한 코드 revision, 경로, 크기와 이미지 해시는 [screen-captures.json](screen-captures.json)에 기록했다. 실제 화면 픽셀은 수정하지 않고 HTML과 CSS로 두 화면씩 배치해 브라우저에서 저장했다. 교체 경로는 image-replacements.json에 남겼다.

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 import redirects from '../../content/generated-redirects.json' with { type: 'json' };
+import imageReplacements from '../../content/image-replacements.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
 import ko from '../../messages/ko.json' with { type: 'json' };
 import index from '../../src/shared/article/lib/index.json' with { type: 'json' };
@@ -121,7 +122,10 @@ test('product screenshots load and the separate infrastructure article opens in 
     await expect(page.getByRole('heading', { level: 1, name: entry.title })).toBeVisible();
 
     for (const name of ['01-service-screens', '09-product-interactions']) {
-      const image = page.locator(`.article-prose img[src*="${name}.png"]`);
+      const archived = `/images/posts/side-project-design/${name}.png`;
+      const replacement = Object.entries(imageReplacements).find(([original]) => original === archived)?.[1];
+      const expected = replacement ?? archived;
+      const image = page.locator(`.article-prose img[src*="${expected.split('/').at(-1)}"]`);
       await image.scrollIntoViewIfNeeded();
       await expect(image).toBeVisible();
       await expect(image).toHaveAttribute('alt', /\S/);
@@ -131,9 +135,7 @@ test('product screenshots load and the separate infrastructure article opens in 
         )
         .toBe(true);
       const source = new URL((await image.getAttribute('src'))!, page.url());
-      expect(source.searchParams.get('url') || source.pathname).toBe(
-        `/images/posts/side-project-design/${name}.png`,
-      );
+      expect(source.searchParams.get('url') || source.pathname).toBe(expected);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     }
 

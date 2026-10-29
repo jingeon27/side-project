@@ -8,27 +8,27 @@ I dropped RDS while looking at deployment costs. I considered serverless options
 
 *An illustration of the two services, data storage, and backups.*
 
-Game Mate and the photo community needed somewhere to run. The first plan was one EC2 instance for the apps and RDS for PostgreSQL. I wanted to keep the initial cost down, so I decided to take RDS out.
+While preparing deployment for Game Mate and the photo community, I wanted to reduce fixed costs first. The plan put the apps on one EC2 instance and PostgreSQL on RDS. I began wondering whether the database could share the instance too.
 
-I did not settle on EC2 immediately. I asked about moving to Cloudflare and about coming back to EC2 after starting on a serverless platform. Deployment was unfamiliar territory, so whenever a product or setting came up that I did not understand, I asked about it and looked at the code.
+Deployment was unfamiliar to me, so I did not settle on EC2 immediately. I looked into keeping the containers on Cloudflare and what returning from serverless would involve. Comparing products soon meant comparing the code I would have to move and the work I would have to manage myself.
 
 ## I considered moving to serverless
 
 My first question was which Cloudflare product did the job of EC2. I looked into Workers and Containers, and checked whether R2 could handle the presigned uploads already in the apps.
 
-“Moving to serverless” could mean very different amounts of work. A platform that ran the existing Docker images would mainly need deployment changes. Workers meant looking at the APIs again. Game Mate has chat SSE connections, and the photo service runs scheduled work inside its process. I would have to work out how those would run in the new environment.
+Running the existing Docker images on another platform and adapting the APIs to Workers were different moves. The first starts with deployment settings; the second reaches into how the APIs run. Game Mate’s chat SSE connections and the photo service’s in-process scheduled work needed somewhere to live.
 
 I also wondered whether Hyperdrive could take care of the database. It turns out to [accelerate connections and queries to an existing database](https://developers.cloudflare.com/hyperdrive/). I would still need somewhere to run PostgreSQL.
 
-I asked about the work involved in returning to EC2 too. Keeping the same containers and PostgreSQL is different from changing an API around a particular platform and then moving back.
+Returning to EC2 would also depend on whether I had kept the containers and PostgreSQL. An API adapted to a platform would need changes again on the way back.
 
-In the end, I decided to start with a small EC2 instance and see how it went. The Node servers and Docker deployment were already there. Terraform, S3, and IAM were set up around AWS too. I chose to finish that work before adding another cloud.
+What I already had was a Node server and Docker deployment, with Terraform, S3, and IAM prepared around AWS. I chose to finish that setup and start on a small EC2 instance.
 
-Usage-based billing is another concern. A small service can still receive repeated requests that increase its bill. The [Workers documentation](https://developers.cloudflare.com/workers/platform/pricing/#custom-limits) recommends a per-invocation CPU limit for this kind of attack, but limiting each execution still leaves the cost of the total number of requests. If I revisit serverless, I also want to look at where to limit incoming traffic.
+Usage-based billing was another concern. Repeated calls can increase a small service’s bill too. The per-invocation CPU limit in the [Workers documentation](https://developers.cloudflare.com/workers/platform/pricing/#custom-limits) limits one execution, rather than the total number of calls. Comparing serverless costs also meant deciding where to limit incoming traffic.
 
 ## Would one small instance be enough for the database too?
 
-I changed PostgreSQL to run in a container on the same EC2 instance. If that server stops, both services and the database stop together. The initial cost is lower, but backups and recovery become my responsibility.
+Putting PostgreSQL in a container on EC2 made the failure scope clear: if that instance stops, the web apps, APIs, and database stop together. Leaving RDS also meant preparing backups and recovery myself.
 
 ```text
 One EC2 instance
@@ -45,11 +45,11 @@ Separate backup S3    Database dumps before deployment
 
 The blog stays on Vercel, outside this server. There is one PostgreSQL process, with separate databases and accounts for the two services. API runtime accounts and migration accounts are separate too.
 
-The [t3.small configuration](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/variables.tf) starts with 2 GiB of memory and 2 GiB of swap. I checked the container limits as well: Caddy, PostgreSQL, and both services' web and API containers add up to roughly 3.1 GiB.
+The [t3.small configuration](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/variables.tf) has 2 GiB of memory and 2 GiB of swap. The container limits for Caddy, PostgreSQL, and both services’ web apps and APIs total roughly 3.1 GiB. If they reach those limits together, physical memory will not cover them.
 
-Those limits do not reserve that much memory in advance, but 2 GiB would not cover simultaneous heavy use. I documented moving to 4 GiB if swap use stays high or containers are killed by OOM. How far the small instance actually gets needs a load test.
+The limits do not reserve that memory, so their sum alone does not rule out running the services. I set sustained swap use or OOM kills as reasons to move to 4 GiB. Keeping the small instance depends on its memory use and responses under load.
 
-The monthly estimate also needed more than the instance price. I included EBS, public IPv4, snapshots, and S3 storage, requests, and transfer. The estimate is still an estimate; I will need actual usage to compare it with the bill.
+I compared costs including EBS, public IPv4, snapshots, and S3 storage, requests, and transfer alongside the instance. Removing RDS did not remove those charges.
 
 ## Running the database meant preparing backups
 
@@ -57,9 +57,9 @@ I put database data on a separate encrypted EBS volume, mounted at `/srv/side-po
 
 The configuration takes a daily volume snapshot and keeps seven by default. Before a deployment migration, it runs `pg_dump` for that service and uploads the dump to a separate S3 backup bucket. If creating or uploading the dump fails, the migration stops too. The [deployment and backup scripts](https://github.com/jingeon27/side-project/tree/65c3d13a/deploy/shared-instance/scripts) follow that order.
 
-I looked at rollback again as well. Starting the previous application image does not undo a migration that has already run. I kept checks for the previous app working with the changed schema and a separate procedure for restoring the database.
+I separated restoring the database from rolling back an application image. An older container still sees a migration that has already run. Checking the old app against the changed schema and restoring the database from backup need separate procedures.
 
-So far, this prepares the backup files. Restoring a snapshot volume and loading a dump into a fresh database on AWS are still on the list. This setup does not provide RDS-style point-in-time recovery either.
+Recovery uses a snapshot volume or a dump loaded into a fresh database, rather than RDS-style point-in-time recovery. I still need to exercise those restore procedures on AWS.
 
 ## I added S3 permissions, but CI still failed
 
@@ -79,7 +79,7 @@ backup-bucket/
 
 Each production credential can only read and write under its service's `production/` prefix. Tests use run-specific paths under `ci/`. The console presents these as folders, but they are [prefixes in object names](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-prefixes.html). Different names do not enforce separate permissions by themselves.
 
-The first IAM policy had `GetObject`, `PutObject`, and `DeleteObject`. CI also listed objects before uploading, and that permission was missing. This made me look again at bucket and object ARNs.
+CI uploads still failed after I added `GetObject`, `PutObject`, and `DeleteObject`. The test listed objects before uploading. Accessing an object and listing names in a bucket require permissions on different resources.
 
 | Operation | Resource | Path restriction |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ The first IAM policy had `GetObject`, `PutObject`, and `DeleteObject`. CI also l
 
 An ARN ending in `.../game-feedback/` does not mean all files below it. The object pattern needs `*`. Listing needs permission on the bucket ARN, restricted by a prefix condition. The revised [IAM policy](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/iam.tf) has separate statements for the two operations.
 
-Browser uploads had a CORS issue too. The test origin was not allowed on the bucket, which blocked the browser upload. I had to check IAM and CORS separately. [CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) configures cross-origin browser access; IAM and signatures determine permission to use S3 objects.
+After IAM, browser uploads needed CORS attention too. The test origin was not allowed on the bucket. [CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) controls cross-origin browser access, while IAM and the signature control object permission. Having only one side configured did not make the upload work.
 
 I kept the backup bucket separate from media. The EC2 role can upload under `postgres/`, without permission to read or delete existing dumps.
 
@@ -98,7 +98,7 @@ Since R2 is S3-compatible, I asked whether it could handle the current upload fl
 
 The [R2 documentation](https://developers.cloudflare.com/r2/api/s3/presigned-urls/) supports GET, HEAD, PUT, and DELETE, but not HTML form POST uploads.
 
-Moving would mean switching to PUT and checking the upload conditions and completion checks again. I kept S3 for now. If media transfer becomes a large expense, I will compare them again. Changing storage would not require moving off EC2 at the same time.
+S3 compatibility did not make the current upload portable without changes. Switching to PUT would require revisiting the POST policy conditions and completion checks. I kept S3 and left that work for a storage comparison if media transfer costs warranted it. It did not need to be bundled with moving off EC2.
 
 ## Adding API domains did not mean changing the cookies
 
@@ -110,11 +110,9 @@ Web traffic enters through Caddy on ports 80 and 443. Web and API containers hav
 
 ## I used Terraform to manage infrastructure as code
 
-I introduced Terraform to define the EC2 instance, network, EBS volume for PostgreSQL data, IAM policies, and backup bucket in code. I wanted the infrastructure configuration and its change history in the repository rather than having to remember which settings I had changed in the console. That became the infrastructure-as-code approach for the services.
+I did not want rebuilding the server to depend on remembering console changes. Terraform defines EC2, the network, the PostgreSQL EBS volume, IAM policies, and the backup bucket, keeping their configuration and history in the repository.
 
-I considered Lightsail at first too. After choosing EC2 as the deployment target, I removed the standalone Lightsail deployment configuration, leftover scripts, and documentation references. I kept the configuration aligned with the deployment approach I had chosen.
-
-I also corrected variable names that did not make their purpose clear. I renamed them to show what each value was for and updated the example files and guides to use the same names.
+I considered Lightsail but chose EC2. I removed the unused Lightsail configuration and scripts so they would not remain as a competing deployment path.
 
 Terraform manages the underlying server and network. GitHub Actions builds the images and delivers deployment work to the existing EC2 instance over SSH. An application deployment replaces the containers on that server with the new versions.
 
@@ -124,6 +122,6 @@ The existing media bucket stays outside Terraform management, while a separate b
 
 The [CloudWatch configuration](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/monitoring.tf) includes a reboot action after failed instance status checks and an alarm for low CPU credits. A stopped server cannot send application errors, so I needed a check outside the apps too. Email notifications require confirming the subscription after entering an address.
 
-I still need to apply the infrastructure in the actual account and check that the volume attaches on first boot. Backup restoration and load testing remain as well. I want to look at memory, swap, container exits, and response times to find out whether the small instance is a workable starting point.
+The setup has not been applied to the actual account yet. The first server checks are whether a missing data volume stops the database and whether the backups restore it. Swap use, container exits, and response times under load will determine whether to keep the small instance.
 
-The product and screen changes are in [How my side project plans and screens changed](/en/blog/what-i-kept-changing-while-planning-my-side-projects).
+The product and screen changes are in [Giving an AI agent autonomy, then reviewing and revising what it built](/en/blog/what-i-kept-changing-while-planning-my-side-projects).

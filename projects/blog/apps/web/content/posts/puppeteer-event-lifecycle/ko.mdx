@@ -1,6 +1,6 @@
 <Summary>
 
-Puppeteer에서 요청과 응답을 함께 기다리며 리스너 정리, 타임아웃과 이벤트 순서를 맞춘 과정을 정리했어요.
+Electron 수집 앱에서 요청 헤더와 파일 정보를 함께 기다려야 했어요. 값을 모으는 일은 closure에, 기다림을 끝내고 리스너를 정리하는 일은 Promise에 맡겼어요.
 
 </Summary>
 
@@ -8,9 +8,9 @@ Puppeteer에서 요청과 응답을 함께 기다리며 리스너 정리, 타임
 
 *글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
 
-Electron 수집 앱에서 Puppeteer의 request와 response 이벤트를 함께 기다려야 했어요. request에서는 다음 API 호출에 쓸 header를, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었어요. 두 이벤트가 모두 끝나야 다음 작업을 시작할 수 있었어요.
+Puppeteer로 페이지를 새로 불러온 뒤 네트워크 이벤트에서 정보를 꺼내는 작업이 있었어요. request에서는 다음 API 호출에 쓸 헤더를 얻고, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었어요. 어느 한쪽만 준비돼서는 다음 작업으로 넘어갈 수 없었어요.
 
-처음에는 외부 변수에 값을 넣고 1초마다 확인했어요.
+처음에는 콜백이 외부 변수에 값을 넣게 하고, 그 변수가 채워졌는지 주기적으로 확인했어요.
 
 ```typescript
 let result: PreInfo | undefined;
@@ -26,17 +26,11 @@ while (result === undefined) {
 }
 ```
 
-동작은 했지만 문제가 있었어요.
+이 방식은 결과를 받는 것과 기다림을 끝내는 것이 떨어져 있었어요. 원하는 이벤트가 오지 않으면 while문에서 계속 기다렸고, 함수를 다시 부르면 이전에 등록한 리스너까지 남았어요. request와 response가 같은 변수를 쓰면 뒤에 도착한 값이 앞의 값을 덮을 수도 있었고요.
 
-- 함수를 다시 호출할 때마다 listener가 누적됐어요.
-- 원하는 이벤트가 오지 않으면 영원히 기다렸어요.
-- if (result)로 검사하면 0, false, 빈 문자열처럼 유효한 값도 완료로 처리하지 못했어요.
-- request와 response callback이 같은 변수를 덮어쓸 수 있었어요.
-- listener를 등록하기 전에 reload하면 빠른 이벤트를 놓칠 수 있었어요.
+완료 조건도 단순히 if (result)로 둘 수는 없었어요. 0이나 false, 빈 문자열도 유효한 결과일 수 있으니까요. 값을 받지 못한 상태는 undefined로 구분하고, 새로고침보다 리스너 등록이 먼저 끝나게 해야 했어요. 새로고침 뒤에 등록하면 빠르게 지나간 이벤트를 놓칠 수 있었어요.
 
-이벤트를 기다리는 작업을 Promise로 묶고, 성공, 실패, 시간 초과 어느 경로로 끝나든 listener를 해제하도록 바꿨어요.
-
-## 이벤트를 기다리는 공통 함수
+## 이벤트가 오면 Promise를 끝내요
 
 ```tsx
 import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
@@ -109,11 +103,13 @@ export function waitForPreInfo<T>({
 }
 ```
 
-이 함수는 처음으로 유효한 결과를 반환한 callback에서 완료돼요. 완료, 실패, timeout 어느 경로에서도 listener를 제거해요.
+콜백이 undefined를 돌려주면 아직 기다려야 한다는 뜻이에요. 다른 값을 받으면 finish가 Promise를 완료하고 request와 response 리스너를 함께 해제해요. 비동기 결과가 뒤늦게 더 도착해도 settled가 이미 끝난 Promise를 다시 처리하지 못하게 막아요.
 
-## closure로 두 이벤트의 값을 합치기
+기다림에는 기본 10초의 제한을 뒀어요. 그 안에 결과가 없거나 reload가 실패하면 fail로 끝내요. 성공했을 때와 마찬가지로 타이머와 리스너를 정리하므로, 실패한 수집이 다음 수집에 리스너를 남기지 않아요.
 
-request와 response가 각각 절반의 정보만 주는 경우에는 작은 collector를 만들어요.
+## 먼저 온 값을 closure 안에 보관해요
+
+request와 response를 받는 순서는 이 함수가 정할 수 없어요. 대신 먼저 도착한 값을 보관하고, 나머지 값이 들어왔을 때 완성된 결과를 돌려주는 collector를 만들었어요.
 
 ```typescript
 interface SitePreInfo {
@@ -154,8 +150,6 @@ const preInfo = await waitForPreInfo({
 });
 ```
 
-closure는 headers와 filePassword를 외부에서 직접 수정하지 못하게 가두고, 두 값이 모두 모였을 때만 완성된 객체를 내보내요.
+두 콜백은 createSitePreInfoCollector 안의 headers와 filePassword를 공유해요. 헤더가 먼저 오면 비밀번호를 기다리고, 비밀번호가 먼저 와도 헤더가 없으면 getResult는 undefined를 돌려줘요. 둘 다 모였을 때만 객체를 반환하니 waitForPreInfo도 그때 끝나요.
 
-## 두 값을 모은 뒤에는 구독을 끝내요
-
-headers와 filePassword는 collector 안에서 모으고, 둘 다 준비되면 Promise를 완료하게 했어요. 원하는 이벤트가 오지 않으면 타임아웃으로 끝내고요. 어느 쪽으로 끝나든 listener를 해제하니, 다음 수집을 시작할 때 이전 listener가 남지 않게 됐어요.
+상태는 이 수집을 위해 만든 closure 안에만 있어요. 바깥에서 두 변수를 직접 고치지 않고 request와 response를 처리하는 함수만 넘겨요. 다음 수집에는 새 collector를 만들고, 이전 수집의 리스너는 Promise가 끝날 때 지우도록 나눴어요.

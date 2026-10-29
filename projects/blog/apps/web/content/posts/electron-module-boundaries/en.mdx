@@ -1,6 +1,6 @@
 <Summary>
 
-I separated the shared workflow from platform-specific code in an Electron data-collection app. I also describe why I removed NestJS after feedback from the CTO.
+Adding a recruiting platform also copied the collection workflow. I introduced and then removed NestJS, while keeping request handling, collection order, and site-specific processing separate.
 
 </Summary>
 
@@ -8,11 +8,11 @@ I separated the shared workflow from platform-specific code in an Electron data-
 
 *An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
 
-When I joined, our Electron collection app retrieved applicant information from several recruiting platforms. This was applicant data the company was authorized to access through its corporate accounts. Login methods and DOM structures differed, but the overall sequence was the same: log in, check duplicates, save applicants, and upload resumes. Each platform file owned the entire sequence, so changing a shared behavior meant editing several files.
+When I joined, an Electron app collected applicants from several recruiting platforms using data the company was authorized to access through its corporate accounts. Login and DOM structure differed, but the sequence was shared: log in, check duplicates, save applicants, and upload resumes. Each platform repeated that sequence, so a shared change required editing their files together.
 
 ## Every platform file repeated the same workflow
 
-One platform-specific function performed all of the following work.
+Each platform function contained the sequence from start to finish.
 
 ```text
 로그인
@@ -22,29 +22,27 @@ One platform-specific function performed all of the following work.
   -> 파일 다운로드 및 업로드
 ```
 
-Adding a platform meant copying an existing file and changing selectors and exception handling. That made it increasingly difficult to distinguish shared logic from platform-specific logic.
+Adding a platform meant copying a file and changing selectors and exception handling. Site-specific behavior and the sequence common to every site remained in the same function.
 
-I first considered copying an existing platform file. That would have created a fourth copy of the shared post-login workflow.
+I first considered doing the same for my new platform. That would also add another copy of the post-login workflow.
 
-## Decide which change belongs in which file
+## Keeping collection order independent of site changes
 
-I was reading the backend team's NestJS code and learning why Controllers and Services were separate. I borrowed that distinction to divide the files by three reasons for change.
+I was reading the backend team's NestJS code and examining what Controllers and Services did. I borrowed that separation: receive IPC requests in one place, run the collection sequence in another, and implement site differences separately.
 
 - Change the Controller when the IPC request changes.
 - Change CrawlingService when the overall processing order changes.
 - Change a platform's adapter when its DOM or login method changes.
 
-## Removing NestJS while keeping the boundaries
+## Removing NestJS did not mean combining the files again
 
-I tried putting NestJS itself on top of these boundaries. The CTO rejected adding that much framework weight to Electron's main process. Five days after introducing it, I removed the dependency and kept the boundaries. The final structure has neither decorators nor a DI container.
+I initially introduced NestJS itself. The CTO rejected the added framework weight in Electron's main process. Five days later I removed the dependency, leaving neither decorators nor a DI container.
 
-The files still follow the same rule: a particular reason for change should lead to a particular place. I retained module boundaries and constructor injection, with a Factory assembling dependencies explicitly.
-
-Here is how each role works.
+I kept the separation. Passing PuppeteerService through a constructor and assembling it in a Factory let request handling, collection order, and site processing stay apart without a container.
 
 ## The Controller receives IPC requests
 
-I treated Electron's `ipcMain` handler as an entry point similar to an HTTP Controller. Platform names and some identifiers in the example have been changed.
+An ipcMain handler receives the app request, acting as an entry point much like an HTTP Controller. The platform names and some identifiers below are illustrative replacements.
 
 ```typescript
 const createCrawlingService =
@@ -66,7 +64,7 @@ const controller = createCrawlingController(puppeteer);
 ipcMain.handle('crawl', (_event, req) => controller.collect(req));
 ```
 
-The Controller creates the Service for the requested platform and delegates execution. It does not need login or DOM parsing rules, and it does not maintain a platform list. Adding a platform therefore does not require changing the Controller.
+The Controller obtains the Service for the requested platform and runs it. It knows neither login functions nor DOM selectors, and the platform list lives elsewhere. Registering another platform does not require changing this Controller.
 
 ## The Service owns the processing order
 
@@ -92,7 +90,7 @@ export class CrawlingService {
 }
 ```
 
-Passing PuppeteerService through the constructor was inspired by NestJS constructor injection. The Factory shown above creates the instance directly; no container injects it automatically. `CRAWLING_HANDLERS` is defined in the next section.
+CrawlingService uses the PuppeteerService it receives to execute the shared order. NestJS inspired the constructor injection, but the Factory creates the actual instance. The platform functions come from CRAWLING_HANDLERS below.
 
 ## Abstract classes and configuration hold platform differences
 
@@ -129,24 +127,21 @@ const CRAWLING_HANDLERS = {
 } as const satisfies Record<Platform, CrawlingHandler>;
 ```
 
-The abstract classes enforce the set of methods a platform must implement at compile time. CrawlingService decides their execution order. The configuration object connects implementation classes and helper functions in one place, somewhat like a NestJS Module, but without runtime DI or decorators.
+Abstract classes define methods each platform must implement. CrawlingService decides when to invoke them, while the configuration connects each platform's class and helpers. It resembles a NestJS Module without runtime DI or decorators.
 
-The Processor constructor type in this example was rewritten later. My implementation at the time used `any` there.
+The example gives Processor's constructor a specific type. That position used any in my original code.
 
-## Adding two platforms without copying their predecessors
+## Adding login and parsing for the next platforms
 
-After the split, CrawlingService held the shared sequence, while each implementation contained its own selectors and exception handling. The structural refactoring commit touched 14 files, with a net reduction of 140 lines. Adding more platforms was the practical test of the structure.
+For later platforms, I implemented their login and parsing and registered them in configuration. I no longer copied the collection function; CrawlingService retained the shared order.
 
-- One platform provided resumes as encrypted ZIP files. Another required two-factor authentication and pagination, plus its own education and employment extraction and duplicate-applicant handling. I added both by implementing their platform classes and registering them in the configuration object, without copying an existing platform file.
-- I caught errors per applicant so that one failed collection did not stop the remaining applicants.
+One platform delivered encrypted ZIP resumes. Another needed two-factor authentication, pagination, and its own handling for education, work history, and duplicate applicants. Those differences stayed in their platform implementations. Catching errors per applicant allowed collection to continue after one failure.
 
-IPC changes, shared collection-order changes, and site DOM changes now end in different files. Being able to add those two platforms without copying the existing workflow was evidence that the division was useful.
+IPC requests, collection-order changes, and DOM changes no longer start in the same file. NestJS was gone, but adding a platform no longer required copying the common sequence.
 
-## Testable boundaries without automated tests
+## Platform functions still come from static configuration
 
-I did not leave automated tests or performance measurements for this refactoring.
-
-A structure that permits tests is different from one that actually has them. Puppeteer can now be replaced through a constructor boundary, but CrawlingService still reads `CRAWLING_HANDLERS` directly from a module. Platform login functions and Processors remain statically coupled.
+Puppeteer can be replaced through its constructor argument. CrawlingService still reads CRAWLING_HANDLERS directly from a module, though, so login functions and Processors cannot all be swapped externally.
 
 ## References
 

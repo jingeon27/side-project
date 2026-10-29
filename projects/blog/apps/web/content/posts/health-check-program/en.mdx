@@ -1,6 +1,6 @@
 <Summary>
 
-I brought health-check reservations from an external site and phone calls into the member storefront and two admin apps, connecting program management, test selection, applications, and payment.
+I brought health checks from phone inquiries into portal selection and payment. Adding them to existing programs required separate decisions for registration rights, examination choices, and returning from payment.
 
 </Summary>
 
@@ -8,15 +8,15 @@ I brought health-check reservations from an external site and phone calls into t
 
 *An illustration made for this article, rather than a screenshot of the service.*
 
-Health checks originally sat outside Safedoc's program flow. Users viewed information on an external website and called to inquire. A partner asked to accept health-check reservations inside Safedoc, bringing them into the product.
+Health checks originally could not be booked inside Safedoc. Users read an external site and called to inquire. A partner asked to accept reservations through Safedoc, starting the work of adding health checks to existing programs.
 
-I wrote this after the reservation feature officially launched. Users can now browse, apply, and pay through the benefits portal, while hospitals and operations manage programs and reservations in the admin services.
+Users now browse, apply, and pay in the portal. Hospitals and operations manage programs and reservations in their admin services.
 
-Safedoc needs to grow both partner hospitals and partner companies. Most users arrive through their companies. Too few hospitals make it hard to find a desired region or examination, while too few reservations reduce a hospital's reason to join. I cannot claim UI improvements solved that marketplace problem. My work made existing partners' health checks available for browsing and reservation within the portal.
+Most Safedoc users arrive through partner companies. Too few hospitals make a desired region or examination hard to find, while hospitals need reservations to justify joining. This work connected existing partners' examinations to applications within the portal.
 
-The existing non-covered treatment program flow was established. Partners registered programs and requested review in hospital admin; operations checked regulations and service policy in Back-Office and approved them. Approved programs appeared in portal details, where users requested visits. I had originally built the hospital registration/review-request screens and Back-Office review screen.
+For existing non-covered treatment programs, hospitals registered and operations reviewed. Hospital admin submitted the request; Back-Office checked regulations and service policy before approval. Approved programs appeared in the portal for visit reservations. I had originally built those registration and review screens.
 
-Health checks could not simply reuse that flow. They might use corporate contract codes or require a deposit, and their configuration combined basic examinations with groups requiring a fixed number of choices. I clarified missing behavior and exceptions in the supplied specifications with the development lead and deputy lead.
+Health checks also use corporate codes, may require deposits, and combine basic examinations with groups requiring fixed selections. Adding a department to the existing form was not enough. I clarified missing behavior in the specifications with the development lead and deputy lead.
 
 The diagrams were redrawn from screens I checked directly. Code includes only the relevant parts.
 
@@ -26,27 +26,27 @@ The diagrams were redrawn from screens I checked directly. Code includes only th
 
 ## Restrict review by program rather than partner
 
-Non-covered program review follows statuses. A partner requests registration, modification, or deletion, and hospital admin shows it as under review. Operations opens the review in Back-Office. Rejection leaves a reason in the partner's review history; approval creates the program and sets its visibility time.
+A partner's registration, modification, or deletion request puts a treatment program under review. Operations can reject it with a reason recorded in hospital admin, or approve it to create the program and set its visibility time.
 
-Health checks bypass this review by specification. Operations registers their configuration directly in Back-Office, and hospitals only view it. Hospital admin therefore needs to block review entrypoints: the review-request menu, new/delete list actions, and request/delete-request detail actions. The detail form remains, with inputs locked.
+Operations registers health checks and their configuration directly in Back-Office. Hospitals only view the result, so review requests are unnecessary. Registration, deletion, review actions, and detail inputs needed to be disabled in hospital admin.
 
-I first applied this at partner level: block a partner with any health-check department. That also locked dermatology programs for a partner offering both. The restriction needed to apply to health-check programs, so I separated the decisions.
+I initially locked a partner if any department was health checks. That also locked dermatology programs at mixed hospitals and removed their review menu. Locking a hospital and locking only its health-check program needed separate decisions.
 
 - Program details use the fetched program's department, without depending on the partner query.
 - Menus and lists become read-only only for partners whose sole department is health checks. They have no programs requiring review.
 - Mixed partners use the same form for new registration, old drafts, and rejected-request resubmission. Its category validation rejects health-check departments, including those already present in drafts or rejected requests. This avoided a one-off prop on the shared cascader and enforced the rule in one place.
 
-Health-check detection was centralized too. Switching from department names to IDs had scattered six equality checks. I added `isHealthCheckDepartment` to the shared package, checked the department-list API for stable IDs across environments, and documented that next to the constant.
+Health-check detection changed from department names to IDs. I gathered those comparisons into shared isHealthCheckDepartment and recorded next to the constant what the department API showed about IDs across environments.
 
-## Store one configuration and read it in four screens
+## Editing, locking, and selecting the same examinations
 
-A configuration contains required examinations and selection groups. Each group has a name, `pickCount`, and selectable items. Back-Office stores one configuration, read by four screens.
+A configuration contains basic examinations and optional groups with a name, pickCount, and choices. Back-Office stores it; hospital admin displays it locked; the portal uses it for the detail summary and application choices.
 
 ![Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.](/images/posts/health-check-program/02.png)
 
 *Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.*
 
-The central Back-Office rule is that an examination may appear in only one place. To avoid duplicates in one reservation, items already used by another group are disabled.
+Putting an examination in multiple groups can duplicate it in a reservation. Registration disables items already used by another group.
 
 ```typescript
 /** owner 를 뺀 나머지 그룹이 이미 가져간 검사항목 id. 다른 그룹의 선택지는 잠근다. */
@@ -59,23 +59,23 @@ export function getItemIdsTakenByOtherGroups(values: CompositionValues, owner: '
 }
 ```
 
-I also changed the operations preview. Its original table placed group and item names on one line and did not resemble portal content. I reused the portal's configuration section: basic examinations show their count, while selected examinations show categories and item chips by group. In the preview, View Items is visual only and groups stay expanded.
+I also made the preview resemble the portal. A table placing names in one line did not show the customer-facing configuration well. I reused the detail section, showing basic counts and grouped categories and chips. View Items remains visual only in preview, with groups expanded.
 
-Changing a program's department away from health checks exposed save ordering. Program saving could succeed while clearing configuration failed. Reloaded details then disabled configuration fetching because the program was no longer a health check, and retries closed without clearing the remaining data. One save hook now remembers failed clearing and gives create/edit modals and details the same sequence. A test covers retrying it.
+Switching a health check to another department exposed request ordering. Program saving could succeed while clearing configuration failed. Reloaded details then disabled configuration fetching because the program was no longer a health check, and retries closed without clearing the old data. A shared save hook now remembers failed clearing across create/edit modals and details. Its retry test follows that order.
 
-A configuration update was also rejected with `HEALTH_CHECK_ITEM_UNAVAILABLE`. The query response included an already deleted examination. I passed that response to the backend engineer instead of filtering it out and masking the problem in the UI.
+A HEALTH_CHECK_ITEM_UNAVAILABLE rejection also came from a response containing a deleted examination. I sent that response to the backend engineer instead of quietly filtering it before saving.
 
 ## Split detail screens instead of adding conditions everywhere
 
-A colleague originally built non-covered treatment details. I could add healthCheck conditions throughout that screen or split it into two views.
+I could have added healthCheck branches to the treatment-detail screen a colleague had built. Removing coupons and phone consultation while adding examination configuration would have put branches throughout it.
 
-Health checks differ in three areas: no coupon query or coupon-adjusted price, an examination configuration section, and no phone consultation. Scattered branches would make both kinds of maintenance require reading both screens together.
+Health checks have no coupon query or adjusted price and show examination configuration without phone consultation. Separate Views keep changes to either screen from requiring a tour through both sets of branches.
 
 ![The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.](/images/posts/health-check-program/03.png)
 
 *The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.*
 
-I split on `programInfo.healthCheck`, the same value used to choose application forms.
+programInfo.healthCheck chooses the View, using the same value that chooses the application form.
 
 ```tsx
 // 설명을 위해 줄이고 이름을 바꾼 코드예요. 페이지는 조회·최근 본 시술 저장·화면 선택만 해요.
@@ -93,23 +93,23 @@ function ProgramPage({ programId }: Props) {
 }
 ```
 
-Each View declares its full composition. They share existing sections, the top bar, logged-out and reservation buttons, post-authentication navigation, and event helpers. The price section accepts a slot below the price rather than rendering a coupon accordion itself. The treatment View supplies coupon pricing; the health-check View leaves it empty. Query-event shapes remain identical. Health checks fill coupon fields with the pre-discount price so analytics does not need separate interpretations.
+Each View declares its composition. They share existing sections, the top bar, logged-out and reservation buttons, post-authentication navigation, and event helpers. The price section takes a slot below its price instead of knowing about the coupon accordion. Treatment supplies coupon pricing; health checks leave it empty. Analytics events keep one shape, using the undiscounted price in health checks' coupon fields.
 
-Information, buttons, and queried data all differ, so separate Views make each structure readable. Application forms are split for the same reason. Health-check examinations, national screening eligibility, address, corporate codes, and withdrawal notices do not branch within the same form as treatment coupons and extra inquiries.
+Application forms are separate too. Health checks need examination selection, national screening eligibility, address, corporate codes, and withdrawal notices. Treatment needs coupons and extra inquiries. Those fields no longer branch throughout a single form.
 
-Hospital-detail program cards cannot use this flag because that list response does not include it. Cards detect health checks by department and omit phone consultation.
+Hospital-detail cards could not use healthCheck because that list response lacked it. They use department information and omit phone consultation for health checks.
 
 ## Disable remaining chips after N choices
 
-Each optional-examination group requires a fixed count, such as two imaging tests. The first request was to open the next group automatically when one became complete.
+Each optional group has a fixed count, such as two imaging tests. The initial request was to open the next group automatically when the current one became full.
 
-That would also advance while a user was replacing a previous choice: deselect one, select another, and the count is full again. The existing implementation also silently displaced the earliest choice when exceeding N, so users could miss a removed examination. I raised the forced-navigation problem and discussed the behavior again.
+Replacing an earlier choice would also fill the group and trigger that move. The implementation additionally removed the oldest choice when selection exceeded the limit. A chosen examination could disappear without notice, so I discussed that behavior and automatic advancement with the person responsible.
 
 ![Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.](/images/posts/health-check-program/04.png)
 
 *Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.*
 
-We chose to prevent excess selection in the UI. Full groups disable unselected chips; users deselect a choice before replacing it. The sheet does not advance on its own. Selection logic only adds and removes array entries.
+We chose to lock unselected chips when a group is full. Changing choices requires deselecting first. The sheet neither advances itself nor displaces earlier choices, leaving selection logic to add and remove entries.
 
 ```tsx
 // 선택 로직은 넣고 빼기만 해요. 밀어내기와 pickCount 인자를 걷어냈어요.
@@ -121,27 +121,27 @@ const isFull = selected.length >= group.pickCount;
 <Chip pressed={isSelected} disabled={isFull && !isSelected} onClick={() => onToggle(item.id)} />;
 ```
 
-The design had no disabled-chip appearance. I requested one for the shared Chip and now use it in this sheet, its only current caller. Tests for displacing choices became tests for locking: full groups lock, incomplete groups remain selectable, and deselection unlocks them. Removing the lock code makes the tests fail.
+The design lacked a disabled style, so I requested one for shared Chip and used it here. Tests changed from displacing old choices to locking full groups and unlocking after deselection. Removing the lock makes those tests fail.
 
 ## Design the return path from payment failures first
 
-After completing the form and confirming the amount in a sheet, users proceed to payment. The backend contract changed during development. Previously, reservation creation came first and the payment screen created a separate order. Now one checkout call determines whether payment is needed. Corporate-funded and zero-cost applications finish there; only deposit reservations receive an order and open payment. Unpaid reservations are no longer left behind. I removed the old payment route, mocks, and E2E and rebuilt them for this flow.
+Completing the application and amount-confirmation sheet leads to payment. During development, creation order changed too. Previously a reservation came first; checkout now decides whether payment is needed. Corporate-funded and zero-cost applications finish there, while deposit applications receive an order for payment. Routes, mocks, and E2E changed with this flow that no longer leaves unpaid reservations.
 
 ![Each payment outcome has an explicit destination for the user.](/images/posts/health-check-program/05.png)
 
 *Each payment outcome has an explicit destination for the user.*
 
-On mobile, Toss Payments returns results only through redirects. The page reloads and memory state is lost. I store form values with the payment attempt's orderId in sessionStorage, restoring them once only when the attempt matches and current schema validation passes. Reading always deletes the saved value, valid or not, so a successful application's address and examination choices do not enter the next application.
+Toss Payments returns mobile results through redirects, so page memory is gone on return. I save form values in sessionStorage with orderId and restore them once only for the matching attempt and current schema. Reading deletes the stored value whether valid or not, keeping old addresses and examinations out of the next application.
 
-Testing found a successful approval response whose status was REFUNDED. Only cards and simple payments were allowed, but the widget defaulted to quick bank transfer. Using it made the server immediately refund the payment and create no reservation. Available methods were controlled by payment-provider dashboard settings, not SDK options. On the frontend, I changed the result screen: instead of sending users to reservation history when nothing had been reserved or charged, it returns them to the application, restores input, and explains the reason, like a payment failure. Only an unknown outcome goes to the reservation list.
+Payment testing found successful approval responses with REFUNDED status. Only cards and simple payments were allowed, yet quick bank transfer was selected by default. Paying that way triggered an immediate full refund with no reservation. Available methods come from provider-dashboard widget settings, not SDK options. I fixed the frontend result path that had sent users to history despite no reservation: return to the application, restore input, and explain why, like a payment failure. Only an unknown outcome goes to reservation history.
 
-I also blocked duplicates. After checkout finished, waiting up to ten seconds for the SDK reopened the application button. Another click created another order. One mutation now spans order creation through opening payment and keeps the button locked. Repeated clicks before the confirmation sheet opens are blocked with the existing form-submission state instead of another flag.
+Checkout completion did not immediately open payment. During up to ten seconds waiting for the SDK, the button unlocked and another click created another order. One mutation now spans order creation through opening payment. Existing form-submission state blocks repeated clicks before the confirmation sheet opens.
 
-## Test selection, saving, and payment
+## Existing reservations still had to work beside health checks
 
-- Portal: Vitest covers group locking, the form schema requiring all three mandatory agreements, and storage/restoration/deletion of payment handoff values. E2E against the dev API checks the Toss test widget, restored input after payment failure, reservation-list navigation after approval-request failure, and corporate examination codes.
-- Admin: specification tests check that a hospital offering both health checks and other departments can still register non-covered programs. Form tests exercise clearing the health-check configuration when switching departments. Dev-API E2E and contract tests verify that registration and reads connect to the server.
-- Beyond tests, I manually ran non-covered program registration → review request → approval, treatment reservation, health-check registration, and health-check application → payment. This checked that existing flows remained usable alongside the new ones.
+Vitest covers selection locking, required agreements, and saving, restoring, and deleting payment handoff values. Dev-API E2E opens the Toss test widget and follows failure restoration, approval-request-failure navigation, and corporate examination codes.
+
+Admin tests exercise mixed-department hospitals registering treatment programs and clearing configuration after a department change. Dev-API E2E and contract tests connect registration with reads. I also followed treatment registration, review, approval, and reservation in the screens, alongside health-check registration, application, and payment.
 
 ## References
 
