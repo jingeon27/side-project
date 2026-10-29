@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import { POST_TITLE_MAX_LENGTH } from '@game-feedback/contracts';
+
 import { adminApi } from './admin-api';
 import { expect, test } from './support/test';
 
@@ -102,7 +104,10 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   await page.goto('/ko/boards/free');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
-  await expect(editor.getByLabel('제목', { exact: true })).toHaveAttribute('maxlength', '60');
+  await expect(editor.getByLabel('제목', { exact: true })).toHaveAttribute(
+    'maxlength',
+    String(POST_TITLE_MAX_LENGTH),
+  );
   const title = `본문 미디어 삽입 ${Date.now().toString(36)}`;
   await editor.getByLabel('제목', { exact: true }).fill(title);
   await editor
