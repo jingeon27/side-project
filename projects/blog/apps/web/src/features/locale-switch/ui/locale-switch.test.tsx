@@ -36,11 +36,7 @@ beforeEach(() => {
 });
 
 describe('language and theme preferences', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(vi.unstubAllGlobals);
 
   it('keeps an untranslated article in place and offers the target language index', async () => {
     render(<LocaleSwitch locale="ko" translations={{ [article.slug]: article.translations }} />);

@@ -121,9 +121,7 @@ describe('article discovery', () => {
     });
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(vi.unstubAllGlobals);
 
   it('combines unified search with category filters and resets an empty result', async () => {
     const user = userEvent.setup();

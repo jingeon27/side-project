@@ -10,7 +10,7 @@ beforeEach(() => {
   delete window.__blogHeatmapsInitialized;
   delete window.__blogHeatmapsStopped;
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(vi.unstubAllEnvs);
 
 describe('opt-out behavior analytics', () => {
   it('loads Clarity once without GA4 and leaves its regional consent mode in charge', async () => {
@@ -50,7 +50,7 @@ describe('opt-out behavior analytics', () => {
     vi.stubEnv('NEXT_PUBLIC_CLARITY_PROJECT_ID', 'https://evil.example');
     const { initializeHeatmaps, heatmapsConfigured } = await import('./heatmaps');
     expect(heatmapsConfigured).toBe(false);
-    expect(() => initializeHeatmaps()).not.toThrow();
+    expect(initializeHeatmaps).not.toThrow();
     expect(document.querySelector('#blog-clarity')).toBeNull();
   });
 });
