@@ -9,7 +9,7 @@ interface IStartIsolatedApiOptions {
   webOrigin: string;
   /** 격리 스키마 이름 앞부분(TEST_SCHEMA_PREFIXES) */
   prefix: TTestSchemaPrefix;
-  /** API에만 더 넘길 환경변수 (예: 가짜 OAuth client id) */
+  /** API에만 더 넘길 환경변수 */
   env?: Record<string, string>;
 }
 

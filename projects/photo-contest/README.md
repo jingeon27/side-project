@@ -149,7 +149,7 @@ yarn format:check
 
 공개 그룹·대회 목록·대회 상세·명예의 전당에는 canonical·OG/Twitter·JSON-LD와 서버 HTML을 제공합니다. 사이트맵에는 공개 그룹과 공개 대회만 포함하고 비공개 대회는 로그인한 그룹장에게도 noindex·구조화 데이터 제외를 적용합니다. 도메인 설정과 검증 방법은 [SEO 안내](docs/seo.md)를 참고하세요.
 
-실제 네이티브 빌드·실기기의 키보드/그룹/시스템 공유 시트와 외부 OAuth는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](docs/product-plan.md), 코드와 검증 결과는 [구현 기록](docs/implementation.md)을 참고하세요.
+실제 네이티브 빌드·실기기의 키보드/그룹/시스템 공유 시트는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](docs/product-plan.md), 코드와 검증 결과는 [구현 기록](docs/implementation.md)을 참고하세요.
 
 새 기능 사양은 단위·통합 모두 `.spec.ts(x)`를 사용합니다. 기존 API `test:e2e` 명령은 `test:integration`에 위임하는 호환 이름입니다. 이번 변경은 `20261020010000_group_contests` 마이그레이션을 포함하며 기존 Contest는 LEGACY, 일반 Post는 contestId=null로 보존합니다.
 
