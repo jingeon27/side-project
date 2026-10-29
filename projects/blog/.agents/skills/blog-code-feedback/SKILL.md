@@ -14,7 +14,8 @@ description: Apply the user's code structure and React UI feedback when implemen
 - 한 번만 쓰는 콜백은 가능한 한 사용하는 곳에 인라인 화살표 함수로 쓴다. 재사용하거나 이벤트 등록·해제에 동일 참조가 필요한 함수는 이름을 유지한다. 컴포넌트 내부의 함수는 `const` 화살표 함수 표현식으로 선언한다. 이 기준 때문에 모듈 수준 컴포넌트나 재귀 유틸리티까지 기계적으로 인라인화하지 않는다.
 - 검색어와 선택 카테고리는 URL `q`, `category`를 단일 출처로 삼고 `useState`에 복제하지 않는다. 단순 검색어 변경은 `window.history.replaceState`와 `useSearchParams` 연동을 사용한다. 뒤로 가기로 복원할 선택 변경은 `pushState`를 쓴다. 다른 query·hash, 고정 카테고리·태그 경로 범위를 보존하고 잘못된 카테고리는 전체로 해석한다. 정적 페이지의 Suspense와 초기 글 목록도 보존한다.
 - outside click, 포커스 이동·복귀·트랩, Escape로 닫기와 ARIA 연결은 기존 UI 라이브러리의 프리미티브에 맡긴다. 팝업·드롭다운·다이얼로그에서 같은 동작을 document 리스너나 수동 DOM 검사로 재구현하지 않는다. 먼저 설치된 라이브러리의 지원 API를 확인한다.
-- effect가 등록한 전역 단축키처럼 최신 렌더 값이 필요한 이벤트 처리는 `useEffectEvent`로 분리하고 effect에는 구독·해제만 둔다. Effect Event를 의존성 회피 용도로 쓰거나 일반 JSX 이벤트 핸들러에 사용하지 않는다.
+- DOM 노드의 연결·교체·해제에만 의존하는 구독은 안정적인 callback ref와 반환 cleanup으로 소유한다. React 19 cleanup을 UI 라이브러리가 병합·해제하는지 실제로 확인한다. callback ref 구독에서 Effect Event를 호출하지 않는다. 검색 단축키처럼 노드와 안정적인 setter만 쓰면 노드를 직접 캡처하며, 최신 렌더 값이 필요한 effect 구독과 구분한다. 외부 heading을 관찰하는 목차나 state로 시작하는 복사 타이머를 무관한 DOM ref로 옮기지 않는다.
+- 최신 경로를 읽는 분석 이벤트처럼 effect가 등록하고 최신 렌더 값이 필요한 이벤트 처리는 `useEffectEvent`로 분리하고 effect에는 구독·해제만 둔다. Effect Event를 의존성 회피 용도로 쓰거나 일반 JSX 이벤트 핸들러에 사용하지 않는다.
 - 검색은 Base UI Autocomplete를 사용하고 앱에는 검색 계산, 선택 후 이동·태그 적용, 전역 검색 단축키만 둔다. 브라우저 IME 호환 처리처럼 남겨야 하는 최소 예외는 실제 회귀 테스트로 검증한다.
 
 - 닫힌 다중 상태 분기는 `ts-pattern`의 exhaustive 매칭을, 정규화 기준 중복 제거·집계·정렬은 `es-toolkit`의 적합한 함수를 우선 검토한다. 단순 이항 조건·네이티브 메서드까지 기계적으로 바꾸거나 고정 JSX를 다시 배열 기반 렌더링으로 만들지 않는다. 의존성은 루트 catalog를 참조한다.
@@ -26,6 +27,7 @@ description: Apply the user's code structure and React UI feedback when implemen
 - 생성자 인자를 그대로 보관하는 클래스 필드는 별도 선언·대입 대신 TypeScript parameter property로 합친다. 접근 범위·readonly·인자 순서는 보존하고 단순 초기값은 기본 인자를 검토한다. 변환·검증·자원 생성을 억지로 인자로 노출하지 않으며, 기본 인자에서 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않는다. 필드 초기화와 `super()` 순서를 보존한다.
 
 - 테스트 정리 훅도 설치된 API가 `this` 없이 호출되고 추가 인자를 무시하는지 확인한 뒤 직접 참조를 넘긴다. 중복 정리 훅은 하나로 합친다. observer 메서드의 바인딩, SDK callback의 추가 인자 차단, 타입 술어·지연 assertion처럼 의미가 있는 래퍼는 유지한다.
+- JSX `on*`에 `useState` setter를 넘길 때는 `onOpenChange={(nextOpen) => setOpen(nextOpen)}`처럼 이벤트 입력을 받는 인라인 어댑터를 둔다. setter의 함수형 갱신·추가 인자와 UI 콜백의 입력 계약을 구분하는 경계이므로 불필요한 래퍼 제거 대상이 아니다. SDK·API·props 함수·Server Action까지 일괄 적용하지 않는다. DOM ref는 별도 수명 계약이므로 `ref={setNode}`를 매 렌더 새 인라인 함수로 바꾸지 않고 안정적인 callback ref 기준을 유지한다.
 - 추가 처리나 인자 변환이 없는 콜백은 불필요한 화살표 래퍼·별칭 대신 함수 참조를 직접 넘긴다. 이벤트 객체가 옵션 인자로 전달되거나 this 바인딩·지연 평가·반환형 조정이 필요한 래퍼는 유지한다. `useEffectEvent`의 최신 값 연결 역할은 보존한다.
 - `.then()` 체인보다 `async`/`await`와 필요한 `try/catch/finally`를 우선한다. 불필요하게 오류를 삼키지 말고 상위에서 처리할 오류는 전파한다. 기존 병렬 실행·취소·정리·오류 처리 범위를 보존한다.
 
