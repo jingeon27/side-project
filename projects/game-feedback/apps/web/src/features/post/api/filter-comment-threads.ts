@@ -19,6 +19,9 @@ export function filterCommentThreads(comments: Comment[], excluded: ReadonlySet<
   const parentsWithReplies = new Set(replies.map((comment) => comment.parentId));
   return comments.filter((comment) => {
     if (comment.parentId !== null) return replyIds.has(comment.id);
-    return roots.has(comment.id) && (!comment.isDeleted || parentsWithReplies.has(comment.id));
+    return (
+      roots.has(comment.id) &&
+      (!comment.isDeleted || parentsWithReplies.has(comment.id) || Boolean(comment.repliesCursor))
+    );
   });
 }

@@ -15,6 +15,7 @@ test('실제 브라우저의 LCP·CLS·INP와 보조 지표가 개인정보 없�
 }, testInfo) => {
   const spans: ISpan[] = [];
   const envelopes: string[] = [];
+  const errors: { release?: string; exception: { values?: { type?: string }[] } }[] = [];
   const marker = 'web-vitals-private-canary';
   await context.addCookies([{ name: 'private-cookie', value: marker, url: baseURL ?? '' }]);
   const statuses: number[] = [];
@@ -27,8 +28,13 @@ test('실제 브라우저의 LCP·CLS·INP와 보조 지표가 개인정보 없�
     statuses.push(response.status());
     for (const line of body.split('\n')) {
       try {
-        const parsed = JSON.parse(line) as { items?: ISpan[] };
+        const parsed = JSON.parse(line) as {
+          items?: ISpan[];
+          release?: string;
+          exception?: { values?: { type?: string }[] };
+        };
         if (Array.isArray(parsed.items)) spans.push(...parsed.items);
+        if (parsed.exception) errors.push({ release: parsed.release, exception: parsed.exception });
       } catch {
         /* Sentry envelope의 헤더와 각 payload는 별도 JSON 줄이다. */
       }
@@ -62,6 +68,22 @@ test('실제 브라우저의 LCP·CLS·INP와 보조 지표가 개인정보 없�
     document.body.append(button);
   }, marker);
   await page.getByRole('button', { name: 'Web Vitals 확인', exact: true }).click();
+  await page.evaluate(() => {
+    setTimeout(() => {
+      const error = new Error('release verification');
+      error.name = 'MonitoringVerificationError';
+      throw error;
+    }, 0);
+  });
+  await expect
+    .poll(() =>
+      errors.some(
+        (event) =>
+          event.release === 'photo-contest-observability-release' &&
+          event.exception.values?.some((exception) => exception.type === 'MonitoringVerificationError'),
+      ),
+    )
+    .toBe(true);
   await page.evaluate(
     () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
   );

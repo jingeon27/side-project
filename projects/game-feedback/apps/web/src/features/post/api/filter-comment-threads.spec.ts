@@ -9,6 +9,8 @@ function comment(id: string, authorId: string, parentId: string | null = null): 
     id,
     postId: 'post-1',
     parentId,
+    replyCount: 0,
+    repliesCursor: null,
     isDeleted: false,
     body: '공개 댓글',
     author: { id: authorId, nickname: authorId, isVerified: false, isTestAccount: false, supercellTag: null },

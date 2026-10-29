@@ -56,8 +56,8 @@ describe('Zod HTTP requests and generated contract compatibility', () => {
       response: { errorCode: 'VALIDATION_ERROR' },
     });
   });
-  it('accepts 60-character titles and rejects 61 for both creation and edits', async () => {
-    const input = { title: '제'.repeat(60), body: '본문', categoryId: 'game', board: 'FREE' };
+  it('accepts 30-character titles and rejects 31 for both creation and edits', async () => {
+    const input = { title: '제'.repeat(30), body: '본문', categoryId: 'game', board: 'FREE' };
     await expect(
       new RequestValidationPipe(PostInputSchema).transform(input, metadata),
     ).resolves.toMatchObject({
@@ -67,8 +67,8 @@ describe('Zod HTTP requests and generated contract compatibility', () => {
       new RequestValidationPipe(PostPatchSchema).transform({ title: input.title }, metadata),
     ).resolves.toEqual({ title: input.title });
     for (const [dto, value] of [
-      [PostInputSchema, { ...input, title: '제'.repeat(61) }],
-      [PostPatchSchema, { title: '제'.repeat(61) }],
+      [PostInputSchema, { ...input, title: '제'.repeat(31) }],
+      [PostPatchSchema, { title: '제'.repeat(31) }],
     ] as const)
       await expect(new RequestValidationPipe(dto).transform(value, metadata)).rejects.toMatchObject({
         response: { errorCode: 'VALIDATION_ERROR' },

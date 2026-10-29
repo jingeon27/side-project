@@ -201,6 +201,10 @@ export const AnswerSchema = z.object({
 const CommentFields = {
   id: ResponseIdSchema,
   postId: ResponseIdSchema,
+  /** 원댓글의 가시 답글 수. 답글과 생성·수정의 단건 응답은 0이다. */
+  replyCount: ResponseCountSchema,
+  /** 아직 싣지 않은 이전 답글. listCommentReplies에 넘긴다. */
+  repliesCursor: z.string().min(1).nullable(),
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 };
@@ -249,7 +253,7 @@ export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
 });
-/** 최근 원댓글 스레드부터 나눈 댓글 한 페이지. 페이지 안은 오래된 순이고 각 원댓글의 답글을 함께 싣는다. */
+/** 최근 원댓글 페이지 또는 한 원댓글의 이전 답글 페이지. 항목은 오래된 순이다. */
 export const CommentPageSchema = z.object({
   items: z.array(CommentSchema),
   nextCursor: z.string().min(1).nullable(),
@@ -851,6 +855,13 @@ export const operations: OperationSpec[] = [
     id: 'createComment',
     body: CreateCommentInputSchema,
     response: CommentSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/comments/{id}/replies',
+    id: 'listCommentReplies',
+    response: CommentPageSchema,
+    query: true,
   },
   {
     method: 'patch',

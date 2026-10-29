@@ -33,6 +33,7 @@ it('Next 서버 오류도 실제 SDK에서 원문·요청 없이 서비스와 �
   vi.stubEnv('NEXT_PHASE', '');
   vi.stubEnv('NODE_ENV', 'test');
   vi.stubEnv('SENTRY_DSN', 'https://test@sentry.invalid/1');
+  vi.stubEnv('SENTRY_RELEASE', 'photo-release-test');
   register();
   await onRequestError(
     new Error('private-error-message'),
@@ -49,4 +50,5 @@ it('Next 서버 오류도 실제 SDK에서 원문·요청 없이 서비스와 �
   expect(envelopes[0]).toContain('"service":"photo-contest"');
   expect(envelopes[0]).toContain('"layer":"next-server"');
   expect(envelopes[0]).toContain('"exception"');
+  expect(envelopes[0]).toContain('"release":"photo-release-test"');
 });

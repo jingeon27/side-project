@@ -598,6 +598,12 @@ const messages: Record<string, readonly [string, string]> = {
   '아직 댓글이 없어요.': ['No comments yet.', 'コメントはまだありません。'],
   '{count}개 이상': ['{count}+', '{count}件以上'],
   '이전 댓글 더 보기': ['Show earlier comments', '以前のコメントを表示'],
+  '이전 답글 더 보기': ['Show earlier replies', '以前の返信を表示'],
+  '이전 답글을 불러오고 있어요': ['Loading earlier replies', '以前の返信を読み込んでいます'],
+  '이전 답글을 불러오지 못했어요. 다시 시도해주세요.': [
+    'Could not load earlier replies. Please try again.',
+    '以前の返信を読み込めませんでした。もう一度お試しください。',
+  ],
   '답변 더 보기': ['Show more feedback', 'フィードバックをもっと見る'],
   '답변을 더 불러오고 있어요': ['Loading more feedback', 'フィードバックを読み込んでいます'],
   '답변을 더 불러오지 못했어요. 다시 시도해주세요.': [

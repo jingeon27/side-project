@@ -154,6 +154,47 @@ describe('profile edit form', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
+  it('locks link inputs until the saved response has reset their baseline', async () => {
+    const saved = Promise.withResolvers<PublicProfile>();
+    state.updateProfile.mockReturnValueOnce(saved.promise);
+    renderForm();
+    const links = addLinkDraft();
+    fireEvent.change(within(links).getByRole('textbox', { name: /주소/ }), {
+      target: { value: 'https://example.com/' },
+    });
+    fireEvent.click(within(links).getByRole('button', { name: '링크 저장' }));
+    await waitFor(() => expect(state.updateProfile).toHaveBeenCalledOnce());
+
+    expect(within(links).getByRole('textbox', { name: /이름/ }).matches(':disabled')).toBe(true);
+    expect(within(links).getByRole('textbox', { name: /주소/ }).matches(':disabled')).toBe(true);
+    await act(async () =>
+      saved.resolve({ ...profile, links: [{ label: '나의 방송', url: 'https://example.com/' }] }),
+    );
+
+    expect(within(links).getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
+    expect(within(links).getByRole('textbox', { name: /이름/ }).matches(':disabled')).toBe(false);
+    expect(within(links).getByRole('textbox', { name: /주소/ }).matches(':disabled')).toBe(false);
+  });
+
+  it.each(['photo', 'links'])('keeps a new %s draft created while details were saving', async (section) => {
+    const saved = Promise.withResolvers<PublicProfile>();
+    state.updateProfile.mockReturnValueOnce(saved.promise);
+    const onSaved = renderForm();
+    saveNickname('새닉네임');
+    await waitFor(() => expect(state.updateProfile).toHaveBeenCalledOnce());
+
+    if (section === 'photo') choosePhoto();
+    if (section === 'links') addLinkDraft();
+    await act(async () => saved.resolve({ ...profile, author: { ...profile.author, nickname: '새닉네임' } }));
+
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(state.refresh).toHaveBeenCalledOnce();
+    if (section === 'photo')
+      expect(screen.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    if (section === 'links')
+      expect(screen.getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
+  });
+
   it('shows a failed photo upload as a translated error notice and keeps the selected photo', async () => {
     const upload = Promise.withResolvers<PublicProfile>();
     state.uploadAvatar.mockReturnValueOnce(upload.promise);

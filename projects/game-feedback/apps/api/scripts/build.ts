@@ -3,6 +3,8 @@ import { cpSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+import { checkBuiltImports } from './check-built-imports.ts';
+
 const require = createRequire(import.meta.url);
 const outputDir = new URL('../dist/', import.meta.url);
 rmSync(outputDir, { recursive: true, force: true });
@@ -20,3 +22,4 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 cpSync(new URL('../src/generated/prisma/', import.meta.url), new URL('generated/prisma/', outputDir), {
   recursive: true,
 });
+checkBuiltImports(fileURLToPath(new URL('./', import.meta.url)));

@@ -40,6 +40,8 @@ export function PostCommentsSection({
   const threads = commentThreads(loaded);
   const count = loaded.filter((comment) => !comment.isDeleted).length;
   const hasOlder = !!cursor && (!showOlder || older.isPending || older.isError || older.hasNextPage);
+  // SSR은 공개 캐시에서 차단된 작성자를 뺀다. 아직 받지 않은 답글까지 공개 개수로 단정하지 않는다.
+  const hasOlderReplies = threads.some(({ comment }) => Boolean(comment.repliesCursor));
 
   const handleShowOlder = () => {
     if (!showOlder) {
@@ -57,7 +59,7 @@ export function PostCommentsSection({
     <section className="comments-section" aria-labelledby={headingId}>
       <h2 id={headingId}>
         {t('댓글')}
-        <span>{hasOlder ? t('{count}개 이상', { count }) : count}</span>
+        <span>{hasOlder || hasOlderReplies ? t('{count}개 이상', { count }) : count}</span>
       </h2>
       {hasOlder && (
         <div className="comments-older">

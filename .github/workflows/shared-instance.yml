@@ -113,6 +113,7 @@ jobs:
           build-args: |
             WEB_ORIGIN=${{ vars.PHOTO_CONTEST_SITE_URL || 'https://contest.bambyul.com' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.PHOTO_CONTEST_WEB_SENTRY_DSN }}
+            SENTRY_RELEASE=${{ github.sha }}
             NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.PHOTO_CONTEST_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=photo-contest-web-amd64
           cache-to: type=gha,mode=max,scope=photo-contest-web-amd64
