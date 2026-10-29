@@ -6,7 +6,7 @@ import type {} from '@testing-library/jest-dom/vitest';
 
 expect.extend(matchers);
 
-afterEach(() => cleanup());
+afterEach(cleanup);
 
 class ResizeObserverStub {
   observe() {}

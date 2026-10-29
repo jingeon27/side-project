@@ -60,7 +60,7 @@ describe('package exports', () => {
     const subpaths = await Promise.all(
       [...uiFolders.map((folder) => `ui/${folder}`), 'lib/cn.helper'].map(importSubpath),
     );
-    const reachable = new Map(subpaths.flatMap((module) => Object.entries(module)));
+    const reachable = new Map(subpaths.flatMap(Object.entries));
     for (const [name, value] of Object.entries(root)) {
       expect.soft(reachable.get(name), name).toBe(value);
     }

@@ -15,7 +15,7 @@ function SheetExample({ dismissible = true }: { dismissible?: boolean }) {
       <Button onClick={() => setOpen(true)}>계정 등록</Button>
       <BottomSheet
         open={open}
-        onOpenChange={(nextOpen) => setOpen(nextOpen)}
+        onOpenChange={setOpen}
         title="게임 계정"
         description="플레이어 태그를 입력하세요."
         dismissible={dismissible}
@@ -34,7 +34,7 @@ function FooterSheetExample({ onSave }: { onSave: (value: FormDataEntryValue | n
   return (
     <BottomSheet
       open={open}
-      onOpenChange={(nextOpen) => setOpen(nextOpen)}
+      onOpenChange={setOpen}
       title="프로필 수정"
       responsive
       showCloseButton={false}
@@ -127,7 +127,7 @@ function CommentsSheet({
   return (
     <BottomSheet.Root
       open={open}
-      onOpenChange={(nextOpen) => setOpen(nextOpen)}
+      onOpenChange={setOpen}
       onOpenChangeComplete={(nextOpen) => {
         if (!nextOpen) onClosed();
       }}

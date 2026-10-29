@@ -16,7 +16,7 @@ function DialogExample({ onComplete }: { onComplete: (open: boolean) => void }) 
       <Button onClick={() => setOpen(true)}>프로필 설정</Button>
       <Dialog
         open={open}
-        onOpenChange={(nextOpen) => setOpen(nextOpen)}
+        onOpenChange={setOpen}
         onOpenChangeComplete={onComplete}
         title="프로필"
         description="사용할 이름을 설정해요."
@@ -24,12 +24,7 @@ function DialogExample({ onComplete }: { onComplete: (open: boolean) => void }) 
       >
         <TextField label="닉네임" />
         <Button onClick={() => setNested(true)}>추가 설정</Button>
-        <Dialog
-          open={nested}
-          onOpenChange={(nextOpen) => setNested(nextOpen)}
-          title="공개 범위"
-          closeLabel="닫기"
-        >
+        <Dialog open={nested} onOpenChange={setNested} title="공개 범위" closeLabel="닫기">
           <TextField label="공개 이름" />
         </Dialog>
       </Dialog>
@@ -40,13 +35,7 @@ function DialogExample({ onComplete }: { onComplete: (open: boolean) => void }) 
 function RequiredDialog() {
   const [open, setOpen] = useState(true);
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => setOpen(nextOpen)}
-      title="필수 확인"
-      dismissible={false}
-      closeLabel="닫기"
-    >
+    <Dialog open={open} onOpenChange={setOpen} title="필수 확인" dismissible={false} closeLabel="닫기">
       <Button onClick={() => setOpen(false)}>동의하고 계속</Button>
     </Dialog>
   );
