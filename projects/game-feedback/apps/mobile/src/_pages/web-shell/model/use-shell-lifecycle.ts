@@ -18,9 +18,14 @@ export function useShellLifecycle({ openLink, onState, onBack, onFallbackBack }:
       onBack: handleBack,
       onFallbackBack: handleFallbackBack,
     });
-    void Linking.getInitialURL()
-      .then(lifecycle.openInitialLink)
-      .catch(() => undefined);
+    const openInitialLink = async () => {
+      try {
+        lifecycle.openInitialLink(await Linking.getInitialURL());
+      } catch {
+        // OS 링크 조회 실패는 후속 url 구독을 막지 않는다.
+      }
+    };
+    void openInitialLink();
     const link = Linking.addEventListener('url', lifecycle.openLink);
     const state = AppState.addEventListener('change', lifecycle.changeState);
     const back =
