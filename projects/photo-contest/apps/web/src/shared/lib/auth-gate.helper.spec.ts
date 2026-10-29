@@ -38,8 +38,8 @@ describe('hasSessionCookie', () => {
     expect(hasSessionCookie('contest_session=abc')).toBe(true);
     expect(hasSessionCookie('__Host-contest_session=abc')).toBe(true);
     expect(hasSessionCookie('contest_session=')).toBe(false);
-    expect(hasSessionCookie('contest_oauth_state=abc')).toBe(false);
-    expect(hasSessionCookie('__Host-contest_oauth_state=abc')).toBe(false);
+    expect(hasSessionCookie('unrelated_state=abc')).toBe(false);
+    expect(hasSessionCookie('__Host-unrelated_state=abc')).toBe(false);
     expect(hasSessionCookie(undefined)).toBe(false);
   });
 

@@ -58,10 +58,6 @@ export function decideAuthGate({
   cookieHeader: string | null | undefined;
 }): TAuthGateDecision {
   if (!isSessionRequiredPath(pathname) || hasSessionCookie(cookieHeader)) return { type: 'allow' };
-  const params = new URLSearchParams(search);
-  // OAuth 제공자는 실패 시 홈으로 돌아오므로 인증 화면에서도 실패 안내를 유지한다.
-  if (pathname === ROUTES.HOME && (params.has('loginError') || params.has(NEXT_PATH_PARAM)))
-    return { type: 'redirect', location: `${ROUTES.SIGN}?${params.toString()}` };
   return { type: 'redirect', location: buildLoginRedirectPath(`${pathname}${search}`) };
 }
 

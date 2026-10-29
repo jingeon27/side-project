@@ -50,9 +50,7 @@ const config: NextConfig = {
   // 워크스페이스 패키지는 TypeScript 소스를 그대로 내보낸다.
   transpilePackages: ['@photo-contest/bridge', '@side/design-system'],
   async headers() {
-    // 앱 로그인 콜백 안내 페이지는 Route Handler가 더 엄격한 CSP·no-referrer를 직접 붙인다. Next는 설정 헤더가 이미 있으면
-    // 같은 이름의 응답 헤더를 버리므로(send-response) 이 경로만 공통 헤더에서 뺀다.
-    return [{ source: '/:path((?!app-auth/callback$).*)', headers: SECURITY_HEADERS }];
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },
   async rewrites() {
     return [

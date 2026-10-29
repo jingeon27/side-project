@@ -81,12 +81,12 @@ afterEach(() => {
 });
 
 describe('AuthSessionSync', () => {
-  it('OAuth로 홈에 돌아오면 로그인 성공을 보내고 가려던 경로로 옮겨야 한다', async () => {
-    savePendingLogin({ method: 'google', next: '/groups/group-1' });
+  it('로그인 후 홈에 돌아오면 로그인 성공을 보내고 가려던 경로로 옮겨야 한다', async () => {
+    savePendingLogin({ method: 'password', next: '/groups/group-1' });
     renderSync(ME);
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/groups/group-1', undefined));
-    expect(trackEvent).toHaveBeenCalledWith('login_succeeded', { provider: 'google' });
+    expect(trackEvent).toHaveBeenCalledWith('login_succeeded', { provider: 'password' });
     expect(identifyUser).toHaveBeenCalledWith('user-1');
     expect(authEvents()).toEqual([
       expect.objectContaining({ payload: { signedIn: true, userId: 'user-1' } }),
@@ -94,13 +94,21 @@ describe('AuthSessionSync', () => {
     expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull();
   });
 
-  it('소셜 가입 설정을 끝내기 전에는 원래 경로를 보존해 가입 설정으로 이동해야 한다', async () => {
-    savePendingLogin({ method: 'google', next: '/groups/group-1' });
+  it('가입 설정을 끝내기 전에는 원래 경로를 보존해 가입 설정으로 이동해야 한다', async () => {
+    savePendingLogin({ method: 'password', next: '/groups/group-1' });
     renderSync({ ...ME, needsOnboarding: true });
     await waitFor(() =>
       expect(router.replace).toHaveBeenCalledWith('/onboarding?next=%2Fgroups%2Fgroup-1', undefined),
     );
     expect(trackEvent).not.toHaveBeenCalled();
+  });
+
+  it.each(['google', 'kakao'])('이전 %s 로그인 표시는 성공 이벤트로 처리하지 않아야 한다', async (method) => {
+    window.sessionStorage.setItem('photo-contest:pending-login', JSON.stringify({ method, next: '/me' }));
+    renderSync(ME);
+    await waitFor(() => expect(identifyUser).toHaveBeenCalledWith('user-1'));
+    expect(trackEvent).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull();
   });
 
   it('이미 알린 사용자면 앱에 다시 알리지 않아야 한다', async () => {
@@ -113,7 +121,7 @@ describe('AuthSessionSync', () => {
   });
 
   it('로그인이 끝나지 않았으면(비로그인) 표시를 지우고 로그인 성공·사용자 식별을 보내지 않아야 한다', async () => {
-    savePendingLogin({ method: 'kakao', next: '/me' });
+    savePendingLogin({ method: 'password', next: '/me' });
     renderSync(null);
 
     await waitFor(() => expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull());

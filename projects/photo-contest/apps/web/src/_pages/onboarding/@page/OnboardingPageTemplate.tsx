@@ -75,9 +75,7 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
     >
       <div>
         <h2 className="text-title-lg text-ink">반가워요! 프로필을 확인해 주세요.</h2>
-        <p className="mt-2 text-body text-muted">
-          소셜 계정의 이름과 사진을 가져왔어요. 닉네임을 바꾸거나 사진을 제거할 수 있어요.
-        </p>
+        <p className="mt-2 text-body text-muted">가입을 마치기 전에 닉네임과 프로필 사진을 확인해 주세요.</p>
       </div>
       <ImageFileField
         control={form.control}
