@@ -5,11 +5,12 @@ import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 import { requireProfileLookupSession, requireUser } from '../auth/session/session-access';
 import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { ApiError } from '../common/http/api-error';
-import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { type TGameAccountDto } from './game-account-input.dto';
 import { ProfileLookupCache } from './profile-lookup-cache';
+import type { ProfileProvider } from './providers/profile-provider';
+import { PROFILE_PROVIDER } from './providers/profile-provider.factory';
+import { ProfileException } from './providers/profile.exception';
 
 /** 사용자마다 남기는 최근 게임 계정 조회 결과 수. 대표 태그는 User.supercellTag가 따로 가진다. */
 export const MAX_GAME_ACCOUNTS_PER_USER = 5;
@@ -21,7 +22,7 @@ export class GameProfilesService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(PROFILE_PROVIDER) private readonly profileProvider: ProfileProvider | null,
   ) {}
   async preview(req: SessionRequest, playerTag: string) {
     requireProfileLookupSession(req);
@@ -29,8 +30,8 @@ export class GameProfilesService {
   }
 
   private async lookup(playerTag: string) {
-    const provider = this.config.profileProvider;
-    if (!provider) throw new ApiError(503, 'PROFILE_UNAVAILABLE', '게임 API가 아직 설정되지 않았습니다.');
+    const provider = this.profileProvider;
+    if (!provider) throw ProfileException.notConfigured();
     return this.lookups.get(playerTag, () => provider.lookup(playerTag));
   }
 

@@ -19,6 +19,7 @@ import { bannedIdentityError, isBannedIdentity } from './account/banned-identity
 import { SocialIdentityService } from './account/social-identity.service';
 import { AppAuthService } from './app-login/app-auth.service';
 import { type TDemoLoginDto, type TOnboardDto, type TTestLoginDto } from './auth-input.dto';
+import { IdentityProviderRegistry } from './oauth/identity-provider.registry';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
@@ -48,6 +49,7 @@ export class AuthService {
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
     @Inject(GameProfilesService) private readonly gameProfiles: GameProfilesService,
+    @Inject(IdentityProviderRegistry) private readonly providers: IdentityProviderRegistry,
   ) {}
   async demo(req: SessionRequest, res: Response, input: TDemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
@@ -121,8 +123,7 @@ export class AuthService {
 
   async social(req: Request, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const returnPath = requestedReturnPath(req);
     const appChallenge = req.query.app_challenge;
     if (
@@ -159,8 +160,7 @@ export class AuthService {
 
   async socialCallback(req: SessionRequest, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const state = typeof req.query.state === 'string' ? req.query.state : '';
     const code = typeof req.query.code === 'string' ? req.query.code : '';
     if (!state || cookies(req).gamefeedback_oauth !== state)

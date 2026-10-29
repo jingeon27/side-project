@@ -1,6 +1,6 @@
 import { createPublicKey, verify, type JsonWebKey } from 'node:crypto';
 
-import { ApiError } from '../../../common/http/api-error';
+import { OAuthException } from '../oauth.exception';
 import type { IdentityProvider } from './identity-provider';
 
 export class GoogleIdentityProvider implements IdentityProvider {
@@ -94,7 +94,7 @@ export class GoogleIdentityProvider implements IdentityProvider {
         throw new Error('Invalid claims');
       return claims.sub;
     } catch {
-      throw new ApiError(502, 'OAUTH_FAILED', 'Google 로그인에 실패했습니다. 다시 시도해주세요.');
+      throw OAuthException.exchangeFailed('Google');
     }
   }
 }

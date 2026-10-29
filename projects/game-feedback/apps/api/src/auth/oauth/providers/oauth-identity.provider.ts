@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ApiError } from '../../../common/http/api-error';
+import { OAuthException } from '../oauth.exception';
 import type { IdentityProvider } from './identity-provider';
 
 interface IOAuthClient {
@@ -60,11 +60,7 @@ class OAuthIdentityProvider implements IdentityProvider {
       if (!user.ok) throw new Error('Identity lookup failed');
       return this.provider.subject(await user.json());
     } catch {
-      throw new ApiError(
-        502,
-        'OAUTH_FAILED',
-        `${this.provider.name} 로그인에 실패했습니다. 다시 시도해주세요.`,
-      );
+      throw OAuthException.exchangeFailed(this.provider.name);
     }
   }
 }

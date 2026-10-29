@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import { type TSocialProvider } from '@game-feedback/contracts';
 
 import { ADMIN_COOKIE, isAdminPath } from '../../admin/auth/admin-session';
 import { hash, token } from '../../common/crypto';
@@ -11,6 +11,7 @@ import { APP_CONFIG, type AppConfig } from '../../config/app.config';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient } from '../../generated/prisma';
 import { userDto } from '../../users/user.presenter';
+import { IdentityProviderRegistry } from '../oauth/identity-provider.registry';
 import { sessionToken } from './session-token';
 import type { SessionRequest } from './session.types';
 
@@ -20,6 +21,7 @@ export class SessionService {
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(IdentityProviderRegistry) private readonly providers: IdentityProviderRegistry,
   ) {}
   async loadSession(req: SessionRequest) {
     if (isAdminPath(req.path)) {
@@ -73,11 +75,8 @@ export class SessionService {
     return {
       user: req.gfSession?.user ? userDto(req.gfSession.user) : null,
       demoMode: this.config.demoMode,
-      googleConfigured: !!this.config.identityProvider,
-      socialProviders: SocialProviderSchema.options.map((provider) => ({
-        provider,
-        configured: !!this.config.identityProviders[provider],
-      })),
+      googleConfigured: this.providers.configured('google'),
+      socialProviders: this.providers.availability(),
       needsOnboarding: !!req.gfSession?.pendingSubject,
     };
   }
