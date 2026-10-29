@@ -55,7 +55,7 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 Game Feedback authored 앱·패키지 코드에 적용한다.
 
 - wrapper 점검은 typed arrow, 블록의 `return fn(...)`, function 선언을 포함해 TypeScript AST로 확인한다. 인자를 그대로 넘기기만 하는 콜백은 원래 함수를 직접 전달한다. 이때 추가 인자(event·mutation options 등), `this` 바인딩, 반환값/cleanup, 함수 identity가 같아야 한다. 인자 고정·차단·변환, 오류 경계, 실제 구독 해제를 위한 adapter는 유지한다. 이름 규칙 때문에 기존 함수 직접 전달에 의미 없는 handle 별칭이나 wrapper를 만들지 않는다. 직접 작성하는 핸들러는 const arrow와 handle*, props는 on* 지침을 따른다.
-- 명명 규칙과 기존 함수 직접 전달이 충돌하면 기존 react/jsx-handler-names 옵션을 우선 조정하고 옵션·preset 회귀 테스트로 지킨다. checkLocalVariables:false·checkInlineFunction:false는 로컬 함수와 inline 함수의 명명을 검사하지 않으므로, 직접 작성한 내부 핸들러의 const handle* 관례는 리뷰로 확인한다. 현재 prefix는 handle|on|fetchNext이며 불필요한 별칭·wrapper·disable을 추가하지 않는다.
+- 명명 규칙과 기존 함수 직접 전달이 충돌하면 기존 react/jsx-handler-names 옵션을 우선 조정하고 옵션·preset 회귀 테스트로 지킨다. checkLocalVariables:false·checkInlineFunction:false는 로컬 함수와 inline 함수의 명명을 검사하지 않으므로, 직접 작성한 내부 핸들러의 const handle* 관례는 리뷰로 확인한다. 현재 prefix는 handle|on|fetchNext|mutate이며 불필요한 별칭·wrapper·disable을 추가하지 않는다.
 - `.then` 체인보다 async/await와 try/catch/finally를 우선한다. 병렬 시작은 Promise.all/race로 유지하고, effect 자체를 async로 만들지 않는다. 취소·세대 검사와 중복 요청 방지, 원래 오류를 보존하는 정리 실패 처리, 전파/흡수 범위를 유지한다. 짧은 fire-and-forget `.catch`나 timeout race를 바꾸기 위해 불필요한 helper·상태 객체를 만들지 않는다. Zod `.catch`는 Promise 처리가 아니다.
 - 타입·lint와 해당 구독/폼/오류 경계의 기존 테스트로 검증한다. 단순 전달 구문을 복사하는 테스트는 추가하지 않는다. React Compiler가 controller를 ref로 오인하는 callback-ref 경계도 실제 검증 결과에 따라 유지한다.
 
