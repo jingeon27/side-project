@@ -15,7 +15,11 @@ export default defineConfig({
       {
         extends: true,
         // 루트의 *.spec.ts는 next.config처럼 앱 설정 파일 옆에 둔 테스트다.
-        test: { name: 'unit', environment: 'node', include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts'] },
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts', 'e2e-benchmark/measurement.spec.ts'],
+        },
       },
       {
         extends: true,

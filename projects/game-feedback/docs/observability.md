@@ -1,6 +1,6 @@
 # 오류와 이용 흐름 관측
 
-API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. 브라우저는 Web Vitals도 수집하고, Amplitude는 웹의 제품 이벤트를 수집한다. SDK 키가 비어 있으면 전송하지 않는다.
+API는 예상하지 못한 오류와 수동으로 계측한 HTTP·채팅 성능을 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. 브라우저는 Web Vitals도 수집하고, Amplitude는 웹의 제품 이벤트를 수집한다. SDK 키가 비어 있으면 전송하지 않는다.
 
 ## 설정과 실행
 
@@ -9,6 +9,27 @@ API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라�
 `@side/game-feedback dev`와 `@game-feedback/web dev` 모두 루트 설정을 읽는다. 웹의 build/start도 같은 실행기를 거친다. 프로세스에서 명시한 값(빈 키 포함)이 파일보다 우선하고 build/start의 프레임워크 `NODE_ENV`는 production이다. 공개 키·환경·release는 빌드에 고정되므로 운영 값을 바꾸면 다시 빌드한다. 로컬에서 이미 실행 중인 서버에는 이후 수정한 값이 자동 반영되지 않는다.
 
 Sentry에서 `service:game-feedback`과 `layer:api`, `layer:next-server`, `layer:browser`로 발생 위치를 구분한다. API와 Next 서버가 같은 DSN을 사용해도 이 태그로 나눌 수 있다. 브라우저·WebView는 기존 `client` 태그로 구분한다. Amplitude는 US 데이터 센터와 개발/운영 별도 프로젝트를 사용한다.
+
+## API와 채팅 성능
+
+API DSN이 있으면 HTTP 요청을 10% 샘플링하고, 선택한 요청의 자식 span도 같은 추적에 남긴다. 별도 환경변수나 자동 HTTP·SQL integration을 추가하지 않는다. `defaultIntegrations: false`와 `enableRuntimeChannelInjection: false`를 유지하므로 현재 초기화 순서에서 수동 span만 기록한다. 자동 계측을 도입할 때는 SDK 초기화·모듈 로딩 순서를 별도로 검토해야 한다.
+
+| span                                      | 측정 범위                                                                                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `METHOD /api/.../:id/...` (`http.server`) | JSON 파싱·세션·권한·요청 제한·controller 처리부터 응답 쓰기 완료까지. 클라이언트 네트워크 시간과 웹 프록시 시간은 포함하지 않는다. 응답 전에 연결이 끊어지면 aborted로 종료한다. |
+| `chat.persist` (`db.transaction`)         | 대화 잠금·트랜잭션 안 권한 조회·멱등 확인·메시지/알림/푸시 큐 쓰기·커밋. 트랜잭션 앞의 접근 확인은 HTTP에만 포함된다.                                                            |
+| `chat.insert` (`db.query`)                | Prisma `chatMessage.create`와 반환 관계 조회. 단일 SQL INSERT 시간이나 전체 SQL 실행 횟수를 뜻하지 않는다. 멱등 재전송에는 새 INSERT span이 없다.                                |
+| `chat.publish` (`messaging.publish`)      | 커밋 뒤 수신 연결의 세션·접근 확인과 `subscriber.next()` 호출까지. 상대 브라우저 수신·REST 재조회·화면 반영은 포함하지 않는다.                                                   |
+
+Sentry의 Traces에서 `service=game-feedback`, `layer=api`를 선택하고 HTTP 라우트 패턴·span 이름별 duration의 p50/p95/p99와 HTTP 상태를 비교한다. 추적 ID로 같은 요청의 HTTP·persist·insert·publish를 연결한다. HTTP와 비동기 publish 시간은 겹칠 수 있고, 구간별 p95를 더해 전체 p95를 계산하지 않는다. 샘플링된 span 개수로 전체 메시지 수나 정확한 요청·SQL 실행 횟수를 주장하지 않는다.
+
+`chat.publish.recipients`는 대상 사용자 수가 아니라 확인한 열린 연결 수다. `sent`는 서버 구독자에 넘긴 연결, `unavailable`은 세션 만료·이미 닫힌 연결, `denied`는 접근 확인이 false를 반환한 연결, `failed`는 전달 과정에서 예외가 난 연결 수다. failed가 하나라도 있으면 publish span을 오류 상태로 표시한다. 접근 확인 자체가 false로 흡수한 오류와 실제 권한 거부는 이 수치만으로 구분하지 않는다. 이 값들도 샘플링된 publish 단위 측정이며 누적 운영 카운터가 아니다.
+
+오래 열린 `GET /api/chat/events`와 health probe는 HTTP span을 만들지 않는다. SSE의 연결 시간은 메시지 지연이 아니다. heartbeat는 기존처럼 5초마다 세션 일괄 조회 한 번으로 동작한다. 활성 연결 수·종료 사유별 재연결률·DB 쿼리 횟수는 아직 별도 운영 지표로 수집하지 않는다.
+
+성능 전송은 오류용 `beforeSend`와 별도로 `beforeSendSpan`에서 작업명·라우트 템플릿·상태·유한한 숫자 측정값·추적 ID·SDK/환경/release만 남긴다. 원본 URL·쿼리·메시지·대화/사용자 ID·세션·쿠키·헤더·SQL·span link는 제거한다. span 바깥 envelope의 sampling metadata에도 원래 작업명이 남지 않도록 `createDsc`에서 transaction 이름을 제거한다. 라우트가 결정되기 전 거부된 요청과 알 수 없는 경로는 `unmatched`로 집계한다.
+
+`src/monitoring/sentry.spec.ts`는 실제 SDK의 메모리 transport로 정리 정책을 검사한다. `src/monitoring/chat-performance.database.integration.spec.ts`는 실제 격리 PostgreSQL·Nest HTTP·SSE를 통해 추적 관계와 커밋 뒤 전달을 검사한다. 실제 Sentry 수신 확인이나 운영 성능 측정을 대신하지 않는다. 두 브라우저의 전달 시간과 실제 REST 요청 횟수를 측정하는 opt-in 벤치마크는 [부하테스트 안내](load-testing.md)를 따른다.
 
 ## Web Vitals
 

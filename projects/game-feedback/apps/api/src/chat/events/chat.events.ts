@@ -1,4 +1,6 @@
 import { Inject, Injectable, type MessageEvent, type OnModuleDestroy } from '@nestjs/common';
+import { startSpan } from '@sentry/node';
+import { countBy } from 'es-toolkit';
 import { Observable, type Subscriber } from 'rxjs';
 
 import type { SessionRequest } from '../../auth/session/session.types';
@@ -7,6 +9,7 @@ import { APP_CONFIG, type AppConfig } from '../../config/app.config';
 import { PrismaClient } from '../../generated/prisma';
 
 type Client = { userId: string; sessionHash: string; subscriber: Subscriber<MessageEvent> };
+type TPublishOutcome = 'sent' | 'unavailable' | 'denied' | 'failed';
 
 /** Session re-check and heartbeat interval shared by every open stream. */
 export const CHAT_EVENTS_HEARTBEAT_MS = 5000;
@@ -103,26 +106,41 @@ export class ChatEvents implements OnModuleDestroy {
       };
     });
   }
-  private async checkAndSend(client: Client, conversationId: string | null) {
+  private async checkAndSend(client: Client, conversationId: string | null): Promise<TPublishOutcome> {
     try {
       if (!(await this.authenticated(client))) {
         client.subscriber.complete();
-        return;
+        return 'unavailable';
       }
-      if (conversationId && !(await this.canAccess(client.userId, conversationId))) return;
-      if (!client.subscriber.closed)
-        client.subscriber.next({ type: 'invalidate', retry: 3000, data: { conversationId } });
+      if (conversationId && !(await this.canAccess(client.userId, conversationId))) return 'denied';
+      if (client.subscriber.closed) return 'unavailable';
+      client.subscriber.next({ type: 'invalidate', retry: 3000, data: { conversationId } });
+      return 'sent';
     } catch {
       client.subscriber.complete();
+      return 'failed';
     }
   }
   async publish(userIds: string[], conversationId: string | null) {
     const recipients = new Set(userIds);
-    await Promise.allSettled(
-      [...this.clients]
-        .filter((client) => recipients.has(client.userId))
-        .map((client) => this.checkAndSend(client, conversationId)),
-    );
+    await startSpan({ name: 'chat.publish', op: 'messaging.publish' }, async (span) => {
+      const results = await Promise.allSettled(
+        [...this.clients]
+          .filter((client) => recipients.has(client.userId))
+          .map((client) => this.checkAndSend(client, conversationId)),
+      );
+      const outcomes = countBy(results, (result) =>
+        result.status === 'fulfilled' ? result.value : 'failed',
+      );
+      span.setAttributes({
+        'chat.publish.recipients': results.length,
+        'chat.publish.sent': outcomes.sent ?? 0,
+        'chat.publish.unavailable': outcomes.unavailable ?? 0,
+        'chat.publish.denied': outcomes.denied ?? 0,
+        'chat.publish.failed': outcomes.failed ?? 0,
+      });
+      if (outcomes.failed) span.setStatus({ code: 2 });
+    });
   }
   closeSession(sessionHash: string) {
     for (const client of this.clients) if (client.sessionHash === sessionHash) client.subscriber.complete();

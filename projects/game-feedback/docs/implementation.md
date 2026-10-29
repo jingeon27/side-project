@@ -1517,3 +1517,11 @@ GF authored source·scripts·tests 993개 파일을 TypeScript AST로 점검했�
 직접 작성한 내부 이벤트 핸들러의 function 선언을 const handle* arrow로 정리했다. 설정 열기, 푸시 응답 수신, native listener, chip ResizeObserver, Quill text-change, DB 종료 신호와 브라우저 테스트 listener 이름도 구분했다. 순수 helper·query 함수·공개/상속 API나 라이브러리·prop 참조를 handle 별칭으로 바꾸지 않았다. effect/observer 해제는 설치 때와 같은 callback을 사용한다.
 
 Web 265개·Admin 25개·Mobile 63개 기존 테스트(maxWorkers=2), Admin 실제 Chromium 1개 통과. Web/Admin/Mobile/API 타입 검사, 앱 lint·GF 공통 lint, 스킬 validator·Prettier·diff 검사 통과. 새 테스트는 만들지 않았고 실제 DB 종료·외부 smoke·네이티브 실기기는 실행하지 않았다. 공유 lint 구현은 이 작업에서 수정하지 않았으며 직접 작성 핸들러와 외부 참조를 구분하는 기준을 GF 스킬에 보강했다.
+
+## 2026-10-29 REST·SSE 채팅 성능 계측
+
+API에 응답 finish/aborted close까지의 수동 HTTP span과 `chat.persist`·`chat.insert`·`chat.publish`를 추가했다. DSN이 있을 때 10% 샘플링하며 자동 URL·헤더·SQL 계측은 끈다. 기존 권한 확인·멱등 전송·커밋 뒤 비동기 publish를 유지하고, 서버가 확인한 연결별 전달 결과를 숫자로 구분한다. health·SSE 연결 수명은 HTTP 지연에 포함하지 않는다. 오류 정리와 별도로 span allowlist와 envelope sampling context의 원본 작업명 제거를 실제 SDK 전송 경계에서 검증했다.
+
+웹에는 기존 격리 하네스를 재사용하는 opt-in `benchmark:chat`을 추가했다. 독립 두 사용자·SSE 준비·워밍업 뒤 입력 시간을 제외한 전송 클릭→상대 화면 표시, POST 요청 시간, 기준 구간과 표시 전후 실제 REST 요청 개수, p50/p95/p99를 비식별 JSON으로 남긴다. 일반 CI/E2E의 성능 threshold는 추가하지 않는다. 자세한 측정 범위와 실행 조건은 observability·load-testing 문서를 따른다.
+
+검증: API unit 225개, Web unit 138개·UI 137개, 실제 격리 PostgreSQL·Nest HTTP·SSE 통합 7개 통과. SDK 실제 메모리 전송, 정상·멱등·충돌, 인증/Origin/JSON 오류, 알 수 없는 경로, 응답 중단, 전달 실패 계수, 동시 두 요청의 trace 격리를 확인했다. API/Web 타입·lint, API 운영 빌드, Prettier·diff 검사 통과. 브라우저 벤치마크는 `--list`로 1개 수집을 확인했고, 로컬 S3 설정이 없어 전체 실측은 실행하지 않았다. 실제 Sentry 수신·운영 지연·수용량·DB SQL 실행 횟수·운영 SSE 연결/재연결 지표를 측정한 결과가 아니다. 의존성·계약·DB migration·공유 설정 변경은 없다.
