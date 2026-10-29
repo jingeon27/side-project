@@ -43,7 +43,6 @@ describe('Sentry 초기화', () => {
         },
         defaultIntegrations: false,
         beforeSend: scrubEvent,
-        beforeSendTransaction: scrubEvent,
       }),
     );
   });
