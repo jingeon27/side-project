@@ -31,9 +31,11 @@ export function graphqlPerformancePlugin(): ApolloServerPlugin {
                 op: 'graphql.resolve',
                 attributes: { 'graphql.field': info.fieldName, 'graphql.operation.type': kind },
               });
-              return (error) => {
-                const outcome = outcomeOf(error);
-                if (error) span.setStatus({ code: 2 });
+              return (error, result: unknown) => {
+                // Nest의 GraphQL 필터는 업무 오류를 값으로 반환하고 GraphQL이 이후에 던진다.
+                const failure = error ?? (result instanceof Error ? result : null);
+                const outcome = outcomeOf(failure);
+                if (failure) span.setStatus({ code: 2 });
                 recordGraphqlPerformance(info.fieldName, kind, performance.now() - started, outcome);
                 span.end();
               };

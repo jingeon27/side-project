@@ -38,7 +38,8 @@ it('실제 Apollo 실행에서 alias·operationName·변수 대신 스키마 필
     }),
   });
   const server = new ApolloServer({
-    typeDefs: 'type Query { sample: String reject: String crash: String }',
+    typeDefs:
+      'type Query { sample: String reject: String crash: String returnedReject: String returnedCrash: String }',
     resolvers: {
       Query: {
         sample: () => 'ok',
@@ -48,6 +49,8 @@ it('실제 Apollo 실행에서 alias·operationName·변수 대신 스키마 필
         crash: () => {
           throw new Error('private-crash');
         },
+        returnedReject: () => new DomainError('private-returned-rejection', ERROR_CODE.UNAUTHENTICATED),
+        returnedCrash: async () => new Error('private-returned-crash'),
       },
     },
     plugins: [graphqlPerformancePlugin()],
@@ -57,7 +60,7 @@ it('실제 Apollo 실행에서 alias·operationName·변수 대신 스키마 필
       scope.setUser({ id: 'private-user' });
       scope.setAttribute('private.scope', 'private-scope');
       await server.executeOperation({
-        query: 'query privateOperation { privateAlias: sample reject crash }',
+        query: 'query privateOperation { privateAlias: sample reject crash returnedReject returnedCrash }',
         variables: { privateVariable: 'private-value' },
       });
       recordHttpPerformance('/graphql', 'POST', 200, 4, false);
@@ -72,7 +75,13 @@ it('실제 Apollo 실행에서 alias·operationName·변수 대신 스키마 필
           ),
       );
     expect(samples('span').map((span) => span.name)).toEqual(
-      expect.arrayContaining(['query sample', 'query reject', 'query crash']),
+      expect.arrayContaining([
+        'query sample',
+        'query reject',
+        'query crash',
+        'query returnedReject',
+        'query returnedCrash',
+      ]),
     );
     expect(
       samples('trace_metric')
@@ -83,6 +92,8 @@ it('실제 Apollo 실행에서 alias·operationName·변수 대신 스키마 필
         ['sample', 'ok'],
         ['reject', 'rejected'],
         ['crash', 'failed'],
+        ['returnedReject', 'rejected'],
+        ['returnedCrash', 'failed'],
       ]),
     );
     expect(envelopes.join('\n')).not.toContain('private');
