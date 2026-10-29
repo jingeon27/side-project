@@ -151,7 +151,7 @@ async function serve() {
   await lock.writeFile(JSON.stringify({ pid: process.pid }));
   await lock.close();
   const lifecycle: { pg?: EmbeddedPostgres; server?: Server; stopping: boolean } = { stopping: false };
-  async function shutdown() {
+  const handleShutdown = async () => {
     if (lifecycle.stopping) return;
     lifecycle.stopping = true;
     lifecycle.server?.close();
@@ -161,9 +161,9 @@ async function serve() {
       await Promise.all([unlink(statePath).catch(() => {}), unlink(lockPath).catch(() => {})]);
     }
     process.exit(0);
-  }
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
+  };
+  process.once('SIGTERM', handleShutdown);
+  process.once('SIGINT', handleShutdown);
   try {
     const ownerPath = path.join(dataRoot, `postgres-${label}.owner.json`);
     const existingOwner = await readJson(ownerPath, databaseOwnerSchema);
@@ -250,7 +250,7 @@ async function serve() {
         })();
         if (!message || message.token !== token) return socket.destroy();
         socket.end(JSON.stringify({ ready: true, database: target.database, port: target.port }) + '\n');
-        if (message.action === 'stop') setTimeout(shutdown, 30);
+        if (message.action === 'stop') setTimeout(handleShutdown, 30);
       });
     }));
     await new Promise<void>((resolve, reject) => {
