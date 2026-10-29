@@ -107,7 +107,8 @@ describe('Photo Contest API performance', () => {
     await Sentry.close(1000);
     init(0);
     const { app, member } = api();
-    await app.gql(undefined, '{ myGroups { id } }');
+    const rejected = await app.gqlFail(undefined, '{ myGroups { id } }');
+    expect(rejected.code).toBe('UNAUTHENTICATED');
     vi.spyOn(app.app.get(GroupService), 'myGroups').mockRejectedValueOnce(
       new Error('private-database-query'),
     );

@@ -8,6 +8,8 @@ operationName·alias·문서·변수·쿠키·ID는 성능 데이터에 넣지 �
 
 실제 수집 확인: `test` 환경·`api-metrics-verification-20261030-81607000` release의 DB 없는 Apollo probe를 실행하고 `photo-contest-server`에서 `api.graphql.duration` 저장을 Sentry MCP로 확인했다. 운영 부하나 DB 포함 API 지연을 측정한 값은 아니다. SDK 11 stream 모드에서 무시되는 beforeSendTransaction은 제거하고 beforeSendSpan을 사용한다.
 
+CI의 실제 Nest 통합 검사에서 인증 거절이 `ok`로 기록되는 경로를 확인했다. GraphQL 예외 필터가 업무 오류를 값으로 반환하므로 Apollo resolver 완료 콜백의 오류 인자와 반환값을 함께 판별하도록 수정했다. 실제 Apollo에서 동기 업무 오류 반환·비동기 내부 오류 반환의 분류를 검증하며, Nest 통합 검사는 실제 응답의 `UNAUTHENTICATED`도 확인한다.
+
 ## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
 
 현재 인증은 아이디·비밀번호와 익명 세션만 제공한다. 아래 과거 검증 기록의 외부 인증·앱 로그인 항목은 제거된 구현에 대한 이력이다.
