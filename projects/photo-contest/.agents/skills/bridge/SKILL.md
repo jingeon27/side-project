@@ -42,3 +42,6 @@ link.open의 HTTP·HTTPS URL은 S3 서명의 임시 자격 증명·한글 파일
 - DOM outside-click·focus·Escape·ARIA는 웹 primitive가 맡으며 브리지에는 `navigation.back` 계약만 둔다.
 
 - 생성자 인자를 같은 이름의 필드에 그대로 저장하면 별도 필드 선언과 `this.x = x` 대신 TypeScript parameter property(`private readonly x: T`, `readonly code: T`)로 합친다. 기존 접근 범위·readonly·인자 순서를 보존하고 단순 초기값은 매개변수 기본값을 검토한다. 변환·검증·자원 생성까지 억지로 기본 인자로 옮겨 API를 늘리지 않는다. 기본 인자에서는 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않으며, 필드 초기화 순서와 상속 클래스의 `super()` 순서를 확인한다.
+
+- 단순 전달 래퍼는 인자 개수·변환/차단, `this`, 반환값/Promise, 호출 시점과 최신 값 조회가 같은 경우에만 직접 함수 참조로 바꾼다. 메서드 receiver·인자 어댑터·최신 ref 조회·동기 이벤트 반환·Effect 경계를 지키는 래퍼는 유지한다.
+- Promise 체인은 `async`/`await`와 `try`/`catch`/`finally`를 우선한다. `Promise.all`·`race`의 작업을 순차 await로 바꾸지 않으며, 경쟁에서 진 작업의 늦은 실패도 처리한다. cleanup·잠금 해제·취소 후 결과 무시·메모이즈 실패 재시도와 동기 콜백 반환값을 보존한다.
