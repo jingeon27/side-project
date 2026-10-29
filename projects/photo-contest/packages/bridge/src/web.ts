@@ -129,7 +129,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
     }
   }
 
-  function handleNativeEvent(event: Event) {
+  const handleNativeEvent = (event: Event) => {
     const message = decodeNativeMessage((event as CustomEvent<unknown>).detail);
     if (!message) return;
     if (message.kind === 'response') {
@@ -155,7 +155,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
       return;
     }
     void answer(message.id, message.type, message.payload);
-  }
+  };
 
   win?.addEventListener(NATIVE_EVENT_NAME, handleNativeEvent);
 
