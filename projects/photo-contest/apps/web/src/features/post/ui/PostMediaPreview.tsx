@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Image from 'next/image';
 
 import { match } from 'ts-pattern';
@@ -17,11 +17,10 @@ interface IPostMediaPreviewProps {
 
 export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: IPostMediaPreviewProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const video = videoRef.current;
-    return () => video?.pause();
-  }, [src]);
+  const handleVideoRef = useCallback((video: HTMLVideoElement | null) => {
+    if (!video) return;
+    return () => video.pause();
+  }, []);
   const handleLoaded = () => setStatus('ready');
   const handleUnavailable = () => setStatus('unavailable');
 
@@ -40,7 +39,8 @@ export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: I
           .with({ video: true }, () => (
             // eslint-disable-next-line jsx-a11y/media-has-caption -- 올리기 전에 고른 파일을 확인하는 미리보기라 자막 파일이 없다.
             <video
-              ref={videoRef}
+              key={src}
+              ref={handleVideoRef}
               src={src}
               controls
               playsInline

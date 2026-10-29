@@ -17,13 +17,13 @@ interface IUseAppStateEventsOptions {
  * 돌아온 횟수(app_foregrounded)는 웹 준비와 상관없이 기록한다.
  */
 export function useAppStateEvents(options: IUseAppStateEventsOptions) {
-  const emitState = useEffectEvent((state: TBridgeAppState) => {
+  const handleAppState = useEffectEvent((state: TBridgeAppState) => {
     if (state === 'active') trackEvent({ name: ANALYTICS_EVENT.AppForegrounded });
     if (options.isWebReady()) options.router.emit('app.state', { state });
   });
 
   useEffect(() => {
-    const subscription = new AppStateSubscription(emitState);
+    const subscription = new AppStateSubscription(handleAppState);
     return () => subscription.dispose();
   }, []);
 }
