@@ -26,8 +26,16 @@
     "side-project-design": {
       "title": "How my side project plans and screens changed",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "The first idea was a service where friends could share photos and vote. Trying it revealed more than layout problems: anonymous account recovery, group permissions, contest deadlines, and message retries all needed decisions. These are the changes I made while building the photo community, Game Mate, and my blog.",
-      "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"]
+      "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
+      "keywords": [
+        "side projects",
+        "product planning",
+        "product design",
+        "UI",
+        "UX",
+        "design system",
+        "AI agents"
+      ]
     },
     "puppeteer-event-lifecycle": {
       "title": "Waiting for Puppeteer requests and responses without leaking listeners",

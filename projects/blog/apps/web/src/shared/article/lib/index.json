@@ -266,9 +266,9 @@
     "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
-    "description": "처음에는 친구끼리 사진을 올리고 투표하는 서비스를 만들었어요. 직접 써보니 화면뿐 아니라 익명 계정의 기록, 그룹 권한, 대회 마감, 채팅 재전송처럼 기능마다 빠뜨린 상황이 있었어요. 사진 커뮤니티와 Game Mate, 블로그를 만들며 어떤 결정을 다시 했는지 적었어요.",
+    "description": "기능과 아키텍처만 정해 주고 AI 에이전트에게 구현을 최대한 자율적으로 맡겨 봤어요. 나온 서비스를 직접 써 보고 코드를 읽으면서 화면 구성, 익명 기록, 그룹 권한과 채팅 재전송처럼 부족하거나 빠진 부분을 채워 나갔어요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
-    "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템"],
+    "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템", "AI 에이전트"],
     "id": "side-project-design",
     "locale": "ko",
     "toc": [
@@ -343,12 +343,17 @@
         "level": 2
       },
       {
+        "id": "아키텍처를-정해-둬도-코드는-다시-읽어야-했어요",
+        "title": "아키텍처를 정해 둬도 코드는 다시 읽어야 했어요",
+        "level": 2
+      },
+      {
         "id": "만들고-나서-다시-정한-게-많았어요",
         "title": "만들고 나서 다시 정한 게 많았어요",
         "level": 2
       }
     ],
-    "readingMinutes": 15,
+    "readingMinutes": 17,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -361,9 +366,17 @@
     "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "How my side project plans and screens changed",
-    "description": "The first idea was a service where friends could share photos and vote. Trying it revealed more than layout problems: anonymous account recovery, group permissions, contest deadlines, and message retries all needed decisions. These are the changes I made while building the photo community, Game Mate, and my blog.",
+    "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
-    "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"],
+    "keywords": [
+      "side projects",
+      "product planning",
+      "product design",
+      "UI",
+      "UX",
+      "design system",
+      "AI agents"
+    ],
     "id": "side-project-design",
     "locale": "en",
     "toc": [
@@ -438,12 +451,17 @@
         "level": 2
       },
       {
+        "id": "specifying-the-architecture-still-left-code-to-review",
+        "title": "Specifying the architecture still left code to review",
+        "level": 2
+      },
+      {
         "id": "many-decisions-came-after-i-had-built-the-feature",
         "title": "Many decisions came after I had built the feature",
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 16,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

@@ -1,6 +1,6 @@
 <Summary>
 
-The first idea was a service where friends could share photos and vote. Trying it revealed more than layout problems: anonymous account recovery, group permissions, contest deadlines, and message retries all needed decisions. These are the changes I made while building the photo community, Game Mate, and my blog.
+I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.
 
 </Summary>
 
@@ -8,9 +8,13 @@ The first idea was a service where friends could share photos and vote. Trying i
 
 _An illustration of revising the screens._
 
-I am building a photo community, Game Mate, and a personal blog by asking AI to implement features and trying the screens myself. My early requests mostly described actions: upload a photo, join a group, send a message. When a button produced the result I expected, I tended to consider the feature finished.
+I wanted to see what an AI agent would produce if I gave it as much autonomy as possible. I specified the features and the overall architecture, then left the remaining decisions and implementation to the agent.
 
-That left other decisions open. How would someone return to anonymous posts after logging out? What if they opened a submission form before the deadline but sent it afterward? Trying the screens and revisiting cases missed in other work kept bringing me back to features I had already built.
+That is how I started building the photo community, Game Mate, and my personal blog. Instead of prescribing each layout and interaction, I let the agent choose, then tried the result and read the code. When something felt wrong or was missing, I described the behavior I wanted and asked it to revise the implementation.
+
+Having the requested features did not always produce a service I wanted to use. A screen meant for viewing photos opened with a group list, or long explanations covered the photos. Reading the code also meant revisiting mixed responsibilities and places where the same state had more than one owner.
+
+I had left many product decisions unspecified too. How would someone return to anonymous posts after logging out? What if they opened a submission form before the deadline but sent it afterward? Reviewing the screens and code gave me concrete cases to decide, and the implementation changed with those decisions.
 
 The first project was `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” It made me think it would be fun to have a service where close friends could share funny photos within their own group.
 
@@ -27,6 +31,8 @@ The first home screen was mostly about choosing a group. I wanted the latest pho
 Once the home screen centered on photos, it felt limiting to stop posting when a contest ended. I added ongoing posts with no submission period and supported videos and edited images too. Administrator deletion and the month’s popular posts followed.
 
 Running the screens brought up design changes. I changed layouts that covered photos and removed a story-style border when there was no story feature. I checked spacing and layout on desktop separately.
+
+Joining a group needed more than a working Join button. On a public group's contest page, joining did not immediately show the button for publishing a post. I had to leave the page and return to see it. I changed the membership flow to refresh contest posting permissions as well. A feature could exist while still leaving the next action unavailable on the current screen.
 
 The entry screen brings login, signup, and “Start anonymously” together. Anonymous sessions can browse public groups. Private groups require login and membership approval.
 
@@ -179,8 +185,24 @@ Korean and English editions only appear where an actual translation exists.
 
 Switching languages exposed a warning from rendering the theme initialization script again. Merely checking the translated text would have missed it. I fixed it while trying language changes with dark mode selected and comparing direct URL entry with navigation inside the site.
 
+## Specifying the architecture still left code to review
+
+I reviewed the implementation alongside trying the screens. Organizing code into feature folders did not help much when one feature imported another's internal files directly. I still had to trace how far a change might reach. I routed those imports through each feature's public entry point and revisited where screen composition and data queries belonged.
+
+I also looked at places where the same server data was managed separately. Apollo or TanStack Query would own fetched values, while forms would own input in progress. Copying query results into another state variable made it easy for a save to update the cache while the screen kept showing an older value.
+
+Wrapping code did not always make it easier to read either. I reconsidered hooks that only called and returned a library query hook, and callbacks that only forwarded their arguments. I kept options that defined a request and its cache updates together, but reduced wrappers that added another call to follow without doing anything else.
+
+An error boundary also needed more than a place in the component tree. In the photo service, a failed post-list query could leave its error visible after selecting another category. I kept the filter usable and reset the list's error when its group, contest, or category changed. Only checking a successfully loaded list would have missed that behavior.
+
+Repeating the same review feedback in every request was tedious. I put recurring code conventions in `AGENTS.md` and task-specific skills, and used ESLint for checks such as import boundaries and duplicated state. Describing where code should belong still left me with the work of checking what had actually been written.
+
+I wrote more about API and cache choices, server checks, and database behavior in [How I chose the technology for two side projects](/en/blog/choosing-the-stack-and-boundaries-for-two-side-projects).
+
 ## Many decisions came after I had built the feature
 
-Specifying anonymous-history recovery and message retries in the original requests would have saved some rework. Transferring ownership before leaving a group was a decision I could have made before building the screen. An explanation covering a photo or a Back button leading somewhere unexpected only became obvious when I tried it. Filling in the missing cases and changing those screens gradually took the services beyond the first plan.
+The agent filled in things I had not specified. Showing a group list on the home screen and adding a resume to the blog were choices it made along the way. Trying the services helped me decide which of those choices to keep and which to change.
+
+Some details, such as anonymous account recovery and what happens when a group owner leaves, were mine to define more clearly at the start. Other problems only became apparent on screen, or while reading code that already ran. Reviewing what had been built and deciding what to change became as much a part of the work as asking for another feature.
 
 I wrote about deployment in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
