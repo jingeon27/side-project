@@ -2,7 +2,9 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session/session.service';
 import { OptionalViewer, Viewer } from '../auth/session/viewer.decorator';
+import { MediaUploadService } from '../media-upload/media-upload.service';
 import { ClientAddress } from '../rate-limit/client-address.decorator';
+import { PostFileService } from './media/post-file.service';
 import { PostModerationService } from './moderation/post-moderation.service';
 import { PostService } from './post.service';
 
@@ -10,6 +12,8 @@ import { PostService } from './post.service';
 export class PostResolver {
   constructor(
     private readonly posts: PostService,
+    private readonly files: PostFileService,
+    private readonly uploads: MediaUploadService,
     private readonly moderation: PostModerationService,
   ) {}
   @Query()
@@ -31,7 +35,7 @@ export class PostResolver {
   }
   @Query()
   postDownload(@OptionalViewer() viewer: IViewer | null, @Args('postId') id: string) {
-    return this.posts.download(viewer, id);
+    return this.files.download(viewer, id);
   }
   @Query()
   publicGalleryPosts(
@@ -56,11 +60,11 @@ export class PostResolver {
     @Args('byteSize') byteSize: number,
     @ClientAddress() address: string | null,
   ) {
-    return this.posts.requestUpload(viewer, groupId, contentType, byteSize, address);
+    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'POST' }, address);
   }
   @Mutation()
   completePostUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
-    return this.posts.completeUpload(viewer, uploadId);
+    return this.uploads.completeUpload(viewer, uploadId);
   }
   @Mutation()
   createPost(
