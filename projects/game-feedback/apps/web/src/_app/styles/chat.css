@@ -90,7 +90,8 @@
   .conversation-row {
     display: flex;
     gap: 10px;
-    padding: 17px 17px;
+    align-items: center;
+    padding: 10px 16px;
     position: relative;
     border-left: 3px solid transparent;
     border-bottom: 1px solid var(--color-line);
@@ -105,7 +106,7 @@
     border-left-color: var(--color-accent);
   }
   .conversation-row > .avatar {
-    margin-top: 2px;
+    flex-shrink: 0;
   }
   .conversation-preview {
     flex: 1;
@@ -119,7 +120,16 @@
     min-width: 0;
   }
   .conversation-preview > div:first-child {
-    margin-bottom: 6px;
+    margin-bottom: 2px;
+  }
+  .conversation-peer-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  .conversation-peer-name > .user-badges {
+    flex-shrink: 0;
   }
   .conversation-preview strong {
     font-size: var(--text-caption);
@@ -144,7 +154,7 @@
     flex: 1 1 0;
     min-width: 0;
     width: 0;
-    line-height: 1.6;
+    line-height: 1.4;
   }
   .conversation-preview .chat-unread-count {
     height: 15px;
@@ -539,7 +549,7 @@
       grid-template-columns: 230px minmax(0, 1fr);
     }
     .conversation-row {
-      padding: 17px 13px;
+      padding: 10px 13px;
       gap: 8px;
     }
     .conversation-preview strong {
@@ -641,7 +651,7 @@
       padding: 5px 0;
     }
     .conversation-row {
-      padding: 18px 20px;
+      padding: 10px 20px;
       gap: 12px;
       border-left-width: 3px;
     }
@@ -655,7 +665,7 @@
       font-size: var(--text-caption);
     }
     .conversation-preview > div:first-child {
-      margin-bottom: 7px;
+      margin-bottom: 2px;
     }
     .conversation-preview .chat-unread-count {
       font-size: var(--text-micro);
@@ -756,7 +766,7 @@
       gap: 3px;
     }
     .conversation-row {
-      padding: 17px 16px;
+      padding: 10px 16px;
       gap: 10px;
     }
     .conversation-list-heading {

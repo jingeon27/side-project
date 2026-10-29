@@ -143,7 +143,8 @@ describe('comment replies', () => {
     );
     expect(within(removedRoot).queryByRole('button', { name: 'removed 수정·삭제' })).toBeNull();
     expect(screen.getByRole('heading', { name: '댓글4' })).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: '답글' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '답글' })).toHaveLength(3);
+    expect(within(removedRoot).queryByRole('button', { name: '답글' })).toBeNull();
     expect(screen.getByRole('button', { name: 'first-reply 수정·삭제' })).toBeTruthy();
   });
 

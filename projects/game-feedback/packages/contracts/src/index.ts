@@ -212,6 +212,7 @@ export const CommentSchema = z.discriminatedUnion('isDeleted', [
   z.object({
     ...CommentFields,
     parentId: ResponseIdSchema.nullable(),
+    replyToId: ResponseIdSchema.nullable().optional(),
     isDeleted: z.literal(false),
     body: z.string().min(1),
     author: AuthorSchema,

@@ -29,7 +29,6 @@ vi.mock('@/features/moderation/api/moderation.api', () => ({
   postBlockUser: state.blockUser,
   postReport: vi.fn(),
 }));
-vi.mock('@/widgets/start-chat', () => ({ StartChatLink: () => null }));
 
 const postAuthor = {
   id: 'post-author',
@@ -103,7 +102,8 @@ describe('comment actions', () => {
     state.viewerId = commenter.id;
     renderActions(comment(commenter));
     expect(screen.queryByRole('button', { name: '신고' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+    fireEvent.click(screen.getByRole('button', { name: /댓글 메뉴/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '삭제' }));
     const dialog = await screen.findByRole('dialog', { name: '정말 삭제할까요?' });
     expect(dialog.textContent).toContain('댓글을 삭제해도 다른 사람이 남긴 답글은 유지됩니다.');
     fireEvent.click(within(dialog).getByRole('button', { name: '삭제하기' }));
@@ -120,7 +120,9 @@ describe('comment actions', () => {
   it('leaves the post after blocking a commenter who also wrote the post', async () => {
     renderActions(comment(postAuthor));
     expect(screen.queryByRole('button', { name: '삭제' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '차단' }));
+    expect(screen.queryByRole('button', { name: /채팅하기/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /댓글 메뉴/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '차단' }));
     fireEvent.click(await screen.findByRole('button', { name: '차단하기' }));
     await waitFor(() => expect(state.replace).toHaveBeenCalledWith('/ko'));
     expect(state.blockUser).toHaveBeenCalledWith({ blockedUserId: postAuthor.id }, expect.anything());
@@ -128,7 +130,9 @@ describe('comment actions', () => {
 
   it('stays on the post after blocking another commenter', async () => {
     renderActions(comment(commenter));
-    fireEvent.click(screen.getByRole('button', { name: '차단' }));
+    expect(screen.queryByRole('button', { name: /채팅하기/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /댓글 메뉴/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '차단' }));
     fireEvent.click(await screen.findByRole('button', { name: '차단하기' }));
     await waitFor(() => expect(state.blockUser).toHaveBeenCalledOnce());
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());

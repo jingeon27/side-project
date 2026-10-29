@@ -64,9 +64,10 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   await expect(replies.locator('[data-slot="mention"]')).toHaveCSS('border-top-width', '1px');
   await expect(input).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /^댓글\s*2$/ })).toBeVisible();
-  await expect(replies.getByRole('button', { name: '답글', exact: true })).toHaveCount(0);
+  await expect(replies.getByRole('button', { name: '답글', exact: true })).toHaveCount(1);
 
-  await replies.getByRole('button', { name: '수정', exact: true }).click();
+  await replies.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await page.getByRole('menuitem', { name: '수정', exact: true }).click();
   const edit = page.getByRole('dialog', { name: '댓글 수정', exact: true });
   await edit.getByRole('textbox', { name: '수정 내용', exact: true }).fill('수정한 답글입니다.');
   await edit.getByRole('button', { name: '수정 완료', exact: true }).click();
@@ -83,7 +84,11 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
 
   await signIn(page.request, parentName, origin);
   await page.reload();
-  await thread.locator(':scope > article').getByRole('button', { name: '삭제', exact: true }).click();
+  await thread
+    .locator(':scope > article')
+    .getByRole('button', { name: /댓글 메뉴$/ })
+    .click();
+  await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
   const confirmation = page.getByRole('dialog', { name: '정말 삭제할까요?', exact: true });
   await expect(confirmation).toContainText('댓글을 삭제해도 다른 사람이 남긴 답글은 유지됩니다.');
   await confirmation.getByRole('button', { name: '삭제하기', exact: true }).click();
@@ -109,7 +114,8 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   }
   await signIn(page.request, replyName, origin);
   await page.reload();
-  await replies.getByRole('button', { name: '삭제', exact: true }).click();
+  await replies.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '삭제하기', exact: true }).click();
   await expect(thread).toHaveCount(0);
   await expect(page.getByText('아직 댓글이 없어요.', { exact: true })).toBeVisible();
@@ -242,5 +248,60 @@ test('a reply notifies both authors, updates unread counts and opens the exact r
       .toBe(0);
   } finally {
     await Promise.all([author.close(), parent.close()]);
+  }
+});
+
+test('replying to a reply mentions its author at the same depth and moves moderation into a menu', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
+  const suffix = Date.now().toString(36);
+  const parentName = `스레드_${suffix}`;
+  const replyName = `멘션_${suffix}`;
+  await signIn(page.request, parentName, origin);
+  const post = await createPost(page.request, origin);
+  const rootResponse = await page.request.post(`/api/posts/${post.id}/comments`, {
+    headers: { Origin: origin },
+    data: { body: '원댓글' },
+  });
+  expect(rootResponse.ok()).toBe(true);
+  const root = CommentSchema.parse(await rootResponse.json());
+  await signIn(page.request, replyName, origin);
+  const replyResponse = await page.request.post(`/api/posts/${post.id}/comments`, {
+    headers: { Origin: origin },
+    data: { body: '첫 대댓글', parentId: root.id },
+  });
+  expect(replyResponse.ok()).toBe(true);
+  const first = CommentSchema.parse(await replyResponse.json());
+  await signIn(page.request, parentName, origin);
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.goto(`/ko/posts/${post.id}?board=free`);
+  const replies = page.locator('.comment-replies');
+  await expect(replies.getByRole('button', { name: /채팅하기/ })).toHaveCount(0);
+  await replies.getByRole('button', { name: /댓글 메뉴$/ }).click();
+  await expect(page.getByRole('menuitem', { name: '신고', exact: true })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: '차단', exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: '신고', exact: true }).press('Escape');
+  await replies.getByRole('button', { name: '답글', exact: true }).click();
+  await page.getByRole('textbox', { name: '답글 내용', exact: true }).fill('대댓글에 이어 쓴 답글');
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith(`/api/posts/${post.id}/comments`),
+  );
+  await page.getByRole('button', { name: '답글 등록', exact: true }).click();
+  const nested = CommentSchema.parse(await (await saved).json());
+  expect(nested).toMatchObject({ parentId: root.id, replyToId: first.id });
+  await expect(replies.locator(':scope > li')).toHaveCount(2);
+  await expect(replies.locator('ol')).toHaveCount(0);
+  const next = replies.locator('article').filter({ hasText: '대댓글에 이어 쓴 답글' });
+  await expect(next.locator('[data-slot="mention"]')).toHaveText(`@${replyName}`);
+  for (const width of [320, 393, 1440]) {
+    await page.setViewportSize({ width, height: 852 });
+    const firstBox = await replies.locator('article').first().boundingBox();
+    const nextBox = await next.boundingBox();
+    if (!firstBox || !nextBox) throw new Error('Both replies must be visible.');
+    expect(Math.abs(firstBox.x - nextBox.x)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
 });

@@ -207,6 +207,9 @@ model Comment {
   parentId String?
   parent Comment? @relation("CommentReplies",fields:[parentId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
   replies Comment[] @relation("CommentReplies")
+  replyToId String?
+  replyTo Comment? @relation("CommentReplyTargets",fields:[replyToId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  targetedReplies Comment[] @relation("CommentReplyTargets")
   notifications Notification[]
   authorId String
   author User @relation(fields:[authorId],references:[id],onDelete:Restrict)

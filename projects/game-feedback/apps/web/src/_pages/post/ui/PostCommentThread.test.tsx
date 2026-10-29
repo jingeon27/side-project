@@ -18,17 +18,17 @@ vi.mock('@/features/comment/api/comment.api', () => ({
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: { id: 'viewer' } }, login: vi.fn() }),
 }));
-vi.mock('@/features/user', () => ({
+vi.mock('@/features/user', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/user')>()),
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
-  UserBadges: () => null,
 }));
 vi.mock('./CommentActions', () => ({ CommentActions: () => null }));
 
 const author = {
   id: 'author',
   nickname: '먼저쓴사람',
-  isVerified: false,
-  supercellTag: null,
+  isVerified: true,
+  supercellTag: '#GG829JGY',
   isTestAccount: false,
 };
 const post = {
@@ -68,7 +68,7 @@ function renderThread(root: Comment, replies: Comment[]) {
   return client;
 }
 
-function reply(index: number): Comment {
+function reply(index: number): Extract<Comment, { isDeleted: false }> {
   return {
     ...comment,
     id: `reply-${String(index).padStart(3, '0')}`,
@@ -103,7 +103,40 @@ describe('답글 버튼 접근성', () => {
   });
 });
 
+it('댓글과 답글에서는 태그를 숨기고 인증 표시는 유지한다', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PostCommentThread
+        thread={{ comment, replies: [{ ...comment, id: 'reply', parentId: comment.id, body: '답글 본문' }] }}
+        postAuthorId={post.author.id}
+        locale="ko"
+      />
+    </QueryClientProvider>,
+  );
+  expect(screen.queryByText('#GG829JGY')).toBeNull();
+  expect(screen.getAllByText('인증 유저')).toHaveLength(2);
+  expect(screen.getByText('답글 본문', { exact: false })).toBeTruthy();
+});
+
 describe('원댓글별 이전 답글', () => {
+  it('추가로 읽은 답글 작성자를 멘션하고 해당 답글에 이어 쓸 수 있어야 한다', async () => {
+    const older = { ...reply(1), author: { ...author, id: 'older-author', nickname: '이전답글작성자' } };
+    state.fetchReplies.mockResolvedValue({ items: [older], nextCursor: null });
+    renderThread({ ...comment, replyCount: 2, repliesCursor: 'cursor' }, [
+      { ...reply(2), replyToId: older.id },
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: '이전 답글 더 보기' }));
+    await screen.findByText('답글 1', { exact: true });
+    expect(screen.getByText('답글 2', { exact: true }).textContent).toBe('@이전답글작성자 답글 2');
+
+    const olderReply = screen.getByText('답글 1', { exact: true }).closest('li');
+    if (!olderReply) throw new Error('Expected the loaded reply.');
+    fireEvent.click(within(olderReply).getByRole('button', { name: '답글' }));
+    expect(screen.getByRole('form', { name: '이전답글작성자님에게 답글 남기기' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: '답글' }).querySelector('ol')).toBeNull();
+  });
+
   it('200개가 넘는 답글을 끝까지 오래된 순으로 합치고 겹치는 항목은 한 번만 보여야 한다', async () => {
     const replies = Array.from({ length: 205 }, (_, index) => reply(index + 1));
     state.fetchReplies.mockImplementation(async ({ cursor }: { cursor: string }) => {

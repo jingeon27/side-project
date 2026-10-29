@@ -101,6 +101,8 @@ export const postDetailCommentsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\
 export const postDetailCommentsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const postDetailCommentsItemOneParentIdOneMax = 100;
 
+export const postDetailCommentsItemOneReplyToIdOneMax = 100;
+
 
 export const postDetailCommentsItemOneAuthorIdMax = 100;
 
@@ -228,6 +230,7 @@ export const PostDetail = zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(postDetailCommentsItemOneParentIdOneMax),zod.null()]),
+  "replyToId": zod.union([zod.string().min(1).max(postDetailCommentsItemOneReplyToIdOneMax),zod.null()]).optional(),
   "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
