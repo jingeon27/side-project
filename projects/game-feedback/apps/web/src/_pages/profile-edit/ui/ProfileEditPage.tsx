@@ -51,7 +51,7 @@ export function ProfileEditPage({ locale }: { locale: string }) {
       ) : (
         <div className="empty-feed">
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
-          <Button type="button" onClick={() => login()}>
+          <Button type="button" onClick={login}>
             {t('로그인 / 시작하기')}
           </Button>
         </div>

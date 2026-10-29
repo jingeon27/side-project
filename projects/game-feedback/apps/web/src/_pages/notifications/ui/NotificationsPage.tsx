@@ -35,7 +35,7 @@ function NotificationsContent({ locale }: INotificationsPageProps) {
         </span>
         <h1>{t('당신의 플레이에 도착한 소식')}</h1>
         <p>{t('로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={login}>
           {t('로그인하고 확인하기')}
           <ArrowUpRight size={16} />
         </Button>

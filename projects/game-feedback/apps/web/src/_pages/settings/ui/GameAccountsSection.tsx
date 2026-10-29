@@ -23,7 +23,7 @@ export function GameAccountsSection({ userId }: { userId: string }) {
           <Gamepad2 size={20} aria-hidden />
           {t('게임 계정')}
         </h2>
-        <Button type="button" variant="secondary" size="sm" onClick={() => openProfileConnection()}>
+        <Button type="button" variant="secondary" size="sm" onClick={openProfileConnection}>
           <Plus size={16} aria-hidden />
           {t('계정 등록')}
         </Button>

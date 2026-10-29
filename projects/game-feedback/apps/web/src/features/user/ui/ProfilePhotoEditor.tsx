@@ -56,7 +56,7 @@ export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm
               accept={avatarAccept}
               aria-label={t('프로필 사진 선택')}
               disabled={pending}
-              onBlur={() => field.onBlur()}
+              onBlur={field.onBlur}
               onChange={(event) => {
                 const selected = event.target.files?.[0];
                 if (selected) field.onChange(selected);

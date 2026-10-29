@@ -80,8 +80,8 @@ export function AccountSetupForm({
                 <Checkbox
                   name={field.name}
                   checked={field.value}
-                  onCheckedChange={(checked) => field.onChange(checked)}
-                  onBlur={() => field.onBlur()}
+                  onCheckedChange={field.onChange}
+                  onBlur={field.onBlur}
                   inputRef={field.ref}
                   required
                   disabled={pending}
@@ -107,8 +107,8 @@ export function AccountSetupForm({
                 <Checkbox
                   name={field.name}
                   checked={field.value}
-                  onCheckedChange={(checked) => field.onChange(checked)}
-                  onBlur={() => field.onBlur()}
+                  onCheckedChange={field.onChange}
+                  onBlur={field.onBlur}
                   inputRef={field.ref}
                   required
                   disabled={pending}

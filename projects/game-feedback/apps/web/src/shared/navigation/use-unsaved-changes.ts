@@ -17,8 +17,8 @@ export function useUnsavedChanges({ hasChanges, confirm, onDiscard }: IUnsavedCh
   useEffect(() => {
     if (!hasChanges) return;
     return registry.register({
-      confirm: () => handleConfirm(),
-      onDiscard: () => handleDiscard(),
+      confirm: handleConfirm,
+      onDiscard: handleDiscard,
     });
   }, [hasChanges, registry]);
 }

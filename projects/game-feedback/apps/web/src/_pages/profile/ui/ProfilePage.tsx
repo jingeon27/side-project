@@ -116,7 +116,7 @@ function ProfileContent({
         </dl>
         {author.id !== session.user?.id && (
           <div className="public-profile-actions">
-            <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
+            <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={requireLogin} />
             <StartChatLink
               source="profile"
               userId={author.id}

@@ -40,7 +40,11 @@ async function uploadDirect<TMedia>(
       throw new ApiError(502, 'UPLOAD_FAILED', '파일 전송에 실패했어요. 파일을 다시 선택해주세요.');
     return await actions.complete(plan.id);
   } catch (error) {
-    await actions.remove(plan.id).catch(() => undefined);
+    try {
+      await actions.remove(plan.id);
+    } catch {
+      // 정리 오류가 원래 업로드 오류를 덮지 않게 한다.
+    }
     throw error;
   }
 }

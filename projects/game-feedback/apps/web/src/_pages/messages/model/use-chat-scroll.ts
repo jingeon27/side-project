@@ -19,7 +19,6 @@ export function useChatScroll({
 }: IChatScrollOptions) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const [controller] = useState(() => new ChatScrollController());
-  const scroller = useCallback((node: HTMLDivElement | null) => setElement(node), []);
   const unseen = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [visibleBoundary, setVisibleBoundary] = useState('');
 
@@ -80,7 +79,7 @@ export function useChatScroll({
   }, [controller, element]);
 
   return {
-    scroller,
+    scroller: setElement,
     unseen,
     visibleBoundary,
     handleScroll,

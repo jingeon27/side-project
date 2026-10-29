@@ -48,7 +48,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
           </span>
           <h1>{t('나의 플레이 공간')}</h1>
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
-          <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
+          <Button variant="primary" size="md" type="button" className="button" onClick={login}>
             {t('로그인 / 시작하기')}
             <ArrowUpRight size={16} />
           </Button>
@@ -104,7 +104,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
           <span>{t('로그아웃')}</span>
           <ArrowUpRight size={16} />
         </button>
-        <button className="settings-action danger-text" onClick={() => openAccountDeletion()}>
+        <button className="settings-action danger-text" onClick={openAccountDeletion}>
           <Trash2 size={18} />
           <span>{t('회원 탈퇴')}</span>
           <ArrowUpRight size={16} />
