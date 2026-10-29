@@ -28,7 +28,7 @@ function fixture(status: number | undefined = 200, responseEventId = 'verificati
   };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(vi.restoreAllMocks);
 
 describe('서비스 Sentry 설정 검사', () => {
   it('서비스의 오류 보고 경로로 보낸 이벤트의 성공 응답을 확인해야 한다', async () => {
