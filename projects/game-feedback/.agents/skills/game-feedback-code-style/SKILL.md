@@ -40,6 +40,7 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 메뉴·선택·시트·대화상자의 outside-click, focus 이동/복원, Escape, ARIA 상태는 기존 `@side/design-system`/Base UI primitive에 맡긴다. 직접 DOM listener·role·펼침 상태를 복제하지 않는다. 네이티브 back을 Base UI의 Escape 처리에 연결하는 어댑터와 Quill 전용 DOM은 별도 외부 경계다.
 - effect가 소유하는 전역/OS 구독에서 최신 props·콜백만 읽어야 하면 `useEffectEvent`로 이벤트 처리와 구독 수명을 분리한다. Effect Event는 effect가 설치한 콜백에서만 호출하고 JSX 이벤트·일반 외부 공개 API로 전달하지 않는다.
 - 계정·대화 ID, 구독 대상/활성 여부, DOM 노드처럼 자원의 수명을 바꾸는 값은 reactive dependencies에 유지한다. URL·테마·visibility·채널 snapshot은 `useSyncExternalStore`를 유지한다. 비React 채널은 자체 bind/dispose·취소·큐 수명을 유지하며 일괄 변환하지 않는다.
+- DOM 노드에 묶인 listener·observer는 stable useCallback ref에서 설치하고 반환 cleanup으로 해제한다. 수명을 바꾸는 props는 deps에 남기고 ref callback에서 useEffectEvent를 호출하지 않는다. 메시지별 관찰·동기 layout 보정·외부 라이브러리 ref처럼 별도 수명이 필요한 경계는 유지하며 StrictMode·노드 교체·숨김·unmount를 검증한다.
 - cleanup은 OS listener·observer·타이머를 해제하고 늦은 promise 응답을 취소 가드로 버린다. 콜백 교체, StrictMode 재구독, unmount 후 응답, 진행 중 back/초기 링크 경합을 동작 테스트로 확인한다.
 
 ## 표현과 타입
