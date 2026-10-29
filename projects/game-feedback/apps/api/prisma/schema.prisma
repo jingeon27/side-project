@@ -195,6 +195,8 @@ model Answer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
+  notifications Notification[]
+  @@unique([id,postId])
   @@index([authorId])
 }
 model Comment {
@@ -232,8 +234,9 @@ model Notification {
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
   answerId String?
+  answer Answer? @relation(fields:[answerId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
   commentId String?
-  comment Comment? @relation(fields:[commentId],references:[id],onDelete:Cascade)
+  comment Comment? @relation(fields:[commentId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
   type String
   // 알림 문구는 저장하지 않는다(actor·대상 id·유형만 둔다). 열은 추가형 migration 규칙에 따라 남긴다.
   message String @default("")
@@ -312,6 +315,7 @@ model ChatMessage {
   createdAt DateTime @default(now())
   attachments ChatAttachment[]
   notification ChatNotification?
+  @@unique([id,conversationId])
   @@unique([senderId,clientMessageId])
   @@index([conversationId,createdAt,id])
 }
@@ -332,7 +336,7 @@ model ChatAttachment {
   conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
   uploaderId String
   messageId String?
-  message ChatMessage? @relation(fields:[messageId],references:[id],onDelete:Cascade)
+  message ChatMessage? @relation(fields:[messageId,conversationId],references:[id,conversationId],onDelete:Cascade,onUpdate:NoAction)
   name String
   mimeType String
   size Int
