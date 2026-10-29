@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
-import { MAX_PENDING_UPLOADS, UPLOAD_ADDRESS_BUDGET, USER_STORAGE_QUOTA_BYTES } from '../config/limits';
+import {
+  MAX_PENDING_UPLOADS,
+  UPLOAD_ADDRESS_BUDGET,
+  USER_STORAGE_QUOTA_BYTES,
+  WRITE_RATE_LIMIT,
+} from '../config/limits';
 import { Database } from '../database/database.service';
 import { rateLimitBucket, RateLimitService, uploadBudgetUnits } from '../rate-limit/rate-limit.service';
 
@@ -15,17 +20,25 @@ const REQUEST_PROFILE =
 
 describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
   const state: { api?: ITestApi } = {};
+  const owned = { users: new Set<string>(), groups: new Set<string>(), buckets: new Set<string>() };
   function api() {
     if (!state.api) throw new Error('Expected an isolated upload budget fixture.');
     return state.api;
   }
-  function request(cookie: string, address: string, query: string, variables: Record<string, unknown>) {
-    return api()
-      .http()
-      .post('/graphql')
-      .set('Origin', ORIGIN)
-      .set('Cookie', cookie)
-      .set('X-Forwarded-For', address)
+  function budgetBucket(address: string) {
+    const bucket = rateLimitBucket(`UPLOAD_BYTES:address:${address}`, UPLOAD_ADDRESS_BUDGET.windowMs);
+    owned.buckets.add(bucket.keyHash);
+    return bucket;
+  }
+  function request(
+    cookie: string,
+    address: string | null,
+    query: string,
+    variables: Record<string, unknown>,
+  ) {
+    if (address) budgetBucket(address);
+    const pending = api().http().post('/graphql').set('Origin', ORIGIN).set('Cookie', cookie);
+    return (address ? pending.set('X-Forwarded-For', address) : pending)
       .send({ query, variables })
       .expect(200);
   }
@@ -35,22 +48,36 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
     const user = await api().db.user.findUniqueOrThrow({
       where: { provider_providerId: { provider: anonymous ? 'anonymous' : 'testing', providerId: nickname } },
     });
+    owned.users.add(user.id);
+    owned.buckets.add(
+      rateLimitBucket(`GROUP_CREATE:user:${user.id}`, WRITE_RATE_LIMIT.GROUP_CREATE.windowMs).keyHash,
+    );
     return { cookie, id: user.id, nickname };
   }
   async function ownerGroup(label: string) {
     const owner = await actor(label);
-    const response = await request(
-      owner.cookie,
-      '203.0.113.170',
-      'mutation{createGroup(name:"예산 회귀"){id}}',
-      {},
-    );
+    const response = await request(owner.cookie, null, 'mutation{createGroup(name:"예산 회귀"){id}}', {});
     expect(response.body.errors).toBeUndefined();
-    return { owner, groupId: String(response.body.data.createGroup.id) };
+    const groupId = String(response.body.data.createGroup.id);
+    owned.groups.add(groupId);
+    return { owner, groupId };
   }
   async function budgetCount(address: string) {
-    const bucket = rateLimitBucket(`UPLOAD_BYTES:address:${address}`, UPLOAD_ADDRESS_BUDGET.windowMs);
+    const bucket = budgetBucket(address);
     return (await api().db.rateLimitBucket.findUnique({ where: { keyHash: bucket.keyHash } }))?.count ?? 0;
+  }
+  async function cleanupOwnedFixtures() {
+    const app = state.api;
+    if (!app) return;
+    const userIds = [...owned.users];
+    // 이 사양이 생성 직후 기록한 ID만 정리한다. 다른 파일의 행이나 S3 객체를 삭제하지 않는다.
+    await app.db.analyticsEvent.deleteMany({ where: { userId: { in: userIds } } });
+    await app.db.group.deleteMany({ where: { id: { in: [...owned.groups] } } });
+    await app.db.user.deleteMany({ where: { id: { in: userIds } } });
+    await app.db.rateLimitBucket.deleteMany({ where: { keyHash: { in: [...owned.buckets] } } });
+    owned.groups.clear();
+    owned.users.clear();
+    owned.buckets.clear();
   }
 
   beforeAll(async () => {
@@ -68,9 +95,16 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
       { shutdownHooks: false },
     );
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await cleanupOwnedFixtures();
+  });
   afterAll(async () => {
-    await state.api?.close();
+    try {
+      await cleanupOwnedFixtures();
+    } finally {
+      await state.api?.close();
+    }
   });
 
   it('비멤버의 거절된 100MiB 요청은 같은 IP의 발급 예산을 소비하지 않아야 한다', async () => {
@@ -118,6 +152,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
   it('미완료 티켓 상한으로 거절된 게시물·프로필 요청은 발급 예산에 남기지 않아야 한다', async () => {
     const { owner, groupId } = await ownerGroup('예산-대기');
     const expiresAt = new Date(Date.now() + 60_000);
+    const prefix = inject('s3Env').S3_KEY_PREFIX ?? `tests/budget-${randomUUID()}`;
     await api().db.postUpload.createMany({
       data: Array.from({ length: MAX_PENDING_UPLOADS }, () => ({
         userId: owner.id,
@@ -132,7 +167,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
     await api().db.profileUpload.createMany({
       data: Array.from({ length: MAX_PENDING_UPLOADS }, () => ({
         userId: owner.id,
-        storageKey: `${randomUUID()}.png`,
+        storageKey: `${prefix}/${randomUUID()}.png`,
         contentType: 'image/png',
         byteSize: 1,
         expiresAt,
@@ -169,6 +204,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
 
   it('발급 트랜잭션의 후속 실패는 같은 트랜잭션의 예산도 롤백해야 한다', async () => {
     const address = '203.0.113.175';
+    budgetBucket(address);
     const failure = new Error('simulated ticket persistence failure');
     await expect(
       api()
@@ -184,7 +220,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
   it('같은 IP의 동시 게시물·프로필 발급은 커밋한 티켓만 한 번씩 예산에 반영해야 한다', async () => {
     const { owner, groupId } = await ownerGroup('예산-동시');
     const address = '203.0.113.176';
-    const bucket = rateLimitBucket(`UPLOAD_BYTES:address:${address}`, UPLOAD_ADDRESS_BUDGET.windowMs);
+    const bucket = budgetBucket(address);
     const budget = uploadBudgetUnits(UPLOAD_ADDRESS_BUDGET.bytes);
     await api().db.rateLimitBucket.create({ data: { ...bucket, count: budget - 8 } });
     const responses = await Promise.all(
