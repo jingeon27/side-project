@@ -6,12 +6,17 @@ import { match } from 'ts-pattern';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { PHASE, type TPhase } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
+import type { TCreateLegacyTestContestDto } from './testing.dto';
 
 const STEP_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class TestingService {
   constructor(private readonly db: Database) {}
+
+  createLegacyContest(input: TCreateLegacyTestContestDto) {
+    return this.db.contest.create({ data: { ...input, format: 'LEGACY' }, select: { id: true } });
+  }
 
   createUser(nickname: string, options: { needsOnboarding?: boolean; avatar?: string } = {}) {
     return this.db.user.create({
