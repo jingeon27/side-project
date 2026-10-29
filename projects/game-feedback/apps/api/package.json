@@ -19,7 +19,7 @@
     "db:generate": "prisma generate",
     "openapi": "yarn workspace @side/toolkit build && tsx src/openapi.ts",
     "db:sync": "node ../../scripts/db.ts sync",
-    "prisma:sync": "prisma db push"
+    "prisma:sync": "prisma migrate deploy"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",

@@ -41,10 +41,14 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     state.schema = `gf_test_access_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', state.schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
-    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-      encoding: 'utf8',
-    });
+    const migration = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+      },
+    );
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed.');
     const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     state.db = db;

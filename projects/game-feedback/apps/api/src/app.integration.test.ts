@@ -32,10 +32,14 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     parsed.searchParams.set('schema', schema);
     url = parsed.toString();
     assertDatabaseUrl(url, 'test');
-    const result = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
-      encoding: 'utf8',
-    });
+    const result = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
+        encoding: 'utf8',
+      },
+    );
     if (result.status !== 0)
       throw new Error(`Isolated test schema setup failed: ${result.stderr}\n${result.stdout}`);
     db = new PrismaClient({ adapter: createPrismaAdapter(url) });
