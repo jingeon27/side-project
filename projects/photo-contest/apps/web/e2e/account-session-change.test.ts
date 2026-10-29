@@ -34,6 +34,8 @@ test(
       await other.goto('/me');
       await expect(other.getByRole('heading', { name: bob, exact: true })).toBeVisible();
       await page.bringToFront();
+      // headless Chromium은 모든 탭을 focused로 에뮬레이션하므로 복귀 이벤트만 명시한다.
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await expect(page.getByRole('heading', { name: bob, exact: true })).toBeVisible();
       await expect(page).toHaveURL(/\/me#profile$/);
       await expect
