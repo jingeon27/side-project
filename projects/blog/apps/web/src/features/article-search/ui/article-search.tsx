@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Autocomplete } from '@base-ui/react/autocomplete';
@@ -43,23 +43,23 @@ export function ArticleSearch({
         .slice(0, 5)
     : [];
 
+  const shortcut = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      !event.isComposing &&
+      !event.altKey &&
+      (event.metaKey || event.ctrlKey) &&
+      event.key.toLowerCase() === 'k'
+    ) {
+      event.preventDefault();
+      inputRef.current?.focus();
+      setOpen(true);
+    }
+  });
+
   useEffect(() => {
-    const shortcut = (event: KeyboardEvent) => {
-      if (
-        !event.isComposing &&
-        !event.altKey &&
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === 'k'
-      ) {
-        event.preventDefault();
-        inputRef.current?.focus();
-        setOpen(true);
-      }
-    };
-    document.addEventListener('keydown', shortcut);
-    return () => {
-      document.removeEventListener('keydown', shortcut);
-    };
+    const handleKeyDown = (event: KeyboardEvent) => shortcut(event);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   return (

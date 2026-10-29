@@ -191,6 +191,7 @@ test('Command and Control shortcuts open search, Escape closes it, and Enter ope
 }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });
+  await expect(search).toBeVisible();
   for (const shortcut of ['Meta+k', 'Control+k']) {
     await page.keyboard.press(shortcut);
     await expect(search).toBeFocused();

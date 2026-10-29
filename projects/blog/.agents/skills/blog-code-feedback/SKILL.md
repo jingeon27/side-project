@@ -11,7 +11,9 @@ description: Apply the user's code structure and React UI feedback when implemen
 - 고정 메뉴, 카테고리 버튼, 고정 안내 섹션은 명시적인 JSX로 쓴다. 고정 배열을 만들고 `map`으로 감싸지 않는다. 글·태그·검색 결과·목차와 발행 데이터에서 계산한 목록은 동적이므로 `map`을 유지한다.
 - 한 번만 쓰는 콜백은 가능한 한 사용하는 곳에 인라인 화살표 함수로 쓴다. 재사용하거나 이벤트 등록·해제에 동일 참조가 필요한 함수는 이름을 유지한다. 컴포넌트 내부의 함수는 `const` 화살표 함수 표현식으로 선언한다. 이 기준 때문에 모듈 수준 컴포넌트나 재귀 유틸리티까지 기계적으로 인라인화하지 않는다.
 - 검색어와 선택 카테고리는 URL `q`, `category`를 단일 출처로 삼고 `useState`에 복제하지 않는다. 단순 검색어 변경은 `window.history.replaceState`와 `useSearchParams` 연동을 사용한다. 뒤로 가기로 복원할 선택 변경은 `pushState`를 쓴다. 다른 query·hash, 고정 카테고리·태그 경로 범위를 보존하고 잘못된 카테고리는 전체로 해석한다. 정적 페이지의 Suspense와 초기 글 목록도 보존한다.
-- 검색 팝업은 Base UI Autocomplete처럼 outside click·포커스 이동·Escape·ARIA를 담당하는 표준 프리미티브를 사용한다. cmdk만으로 팝업까지 수동 구현하거나 document pointerdown·contains 검사·DOM ARIA 수정·다중 키보드 분기를 쌓지 않는다. 앱에는 검색 계산, 선택 후 이동·태그 적용, 전역 검색 단축키만 둔다. 브라우저 IME 호환 처리처럼 남겨야 하는 최소 예외는 실제 회귀 테스트로 검증한다.
+- outside click, 포커스 이동·복귀·트랩, Escape로 닫기와 ARIA 연결은 기존 UI 라이브러리의 프리미티브에 맡긴다. 팝업·드롭다운·다이얼로그에서 같은 동작을 document 리스너나 수동 DOM 검사로 재구현하지 않는다. 먼저 설치된 라이브러리의 지원 API를 확인한다.
+- effect가 등록한 전역 단축키처럼 최신 렌더 값이 필요한 이벤트 처리는 `useEffectEvent`로 분리하고 effect에는 구독·해제만 둔다. Effect Event를 의존성 회피 용도로 쓰거나 일반 JSX 이벤트 핸들러에 사용하지 않는다.
+- 검색은 Base UI Autocomplete를 사용하고 앱에는 검색 계산, 선택 후 이동·태그 적용, 전역 검색 단축키만 둔다. 브라우저 IME 호환 처리처럼 남겨야 하는 최소 예외는 실제 회귀 테스트로 검증한다.
 
 - 닫힌 다중 상태 분기는 `ts-pattern`의 exhaustive 매칭을, 정규화 기준 중복 제거·집계·정렬은 `es-toolkit`의 적합한 함수를 우선 검토한다. 단순 이항 조건·네이티브 메서드까지 기계적으로 바꾸거나 고정 JSX를 다시 배열 기반 렌더링으로 만들지 않는다. 의존성은 루트 catalog를 참조한다.
 
