@@ -4,7 +4,6 @@ import {
   Children,
   isValidElement,
   useEffect,
-  useRef,
   useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -36,14 +35,13 @@ export function CodeBlock({
   children,
   ...props
 }: ComponentPropsWithoutRef<'pre'> & { 'data-language'?: string }) {
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (copyTimer.current !== null) clearTimeout(copyTimer.current);
-    },
-    [],
-  );
+  const [copyFeedback, setCopyFeedback] = useState(0);
+  const copied = copyFeedback > 0;
+  useEffect(() => {
+    if (!copyFeedback) return;
+    const timer = setTimeout(() => setCopyFeedback(0), 2000);
+    return () => clearTimeout(timer);
+  }, [copyFeedback]);
   const locale = useLocale();
   const t = labels(locale === 'en' ? 'en' : 'ko');
   return (
@@ -57,9 +55,7 @@ export function CodeBlock({
             const source = lines.length ? `${lines.join('\n')}\n` : textContent(children);
             try {
               await navigator.clipboard.writeText(source);
-              setCopied(true);
-              if (copyTimer.current !== null) clearTimeout(copyTimer.current);
-              copyTimer.current = setTimeout(() => setCopied(false), 2000);
+              setCopyFeedback((version) => version + 1);
             } catch {
               /* The code remains selectable when clipboard is unavailable. */
             }
