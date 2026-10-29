@@ -37,4 +37,4 @@ description: Apply the user's code structure and React UI feedback when implemen
 - 편집 폼이 실제로 생겼을 때만 입력 스키마와 제출 변환을 둔다. Autocomplete 검색 입력을 저장 폼으로 바꾸거나 빈 폼 계층을 미리 만들지 않는다.
 - 스키마·순수 계산은 node 단위 테스트, 렌더와 단순 입력은 기존 컴포넌트 테스트, URL 이동·새로고침·브라우저 history는 실제 Playwright로 확인한다. 라우터 mock 통과만으로 이동이 검증됐다고 보고하지 않는다.
 
-- 명명 규칙과 기존 함수 직접 전달이 충돌하면 ESLint를 통째로 끄지 않는다. 직접 작성한 핸들러와 기존 함수 참조를 구분하도록 검사 범위를 조정하고 오탐·미탐 회귀 테스트로 지킨다.
+- 핸들러 명명은 기존 `react/jsx-handler-names`의 공통 옵션을 사용한다. `checkLocalVariables: false`·`checkInlineFunction: false`이므로 로컬 함수·리스너·observer의 `const handle*` 관례는 리뷰로 확인한다. 이름 검사만을 위한 커스텀 규칙이나 전달 래퍼·별칭을 추가하지 않는다.
