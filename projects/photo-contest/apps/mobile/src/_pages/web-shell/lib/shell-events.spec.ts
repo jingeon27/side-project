@@ -16,19 +16,6 @@ describe('toCapabilityEvent', () => {
       name: 'native_share_dismissed',
     });
   });
-
-  it('소셜 로그인 단계를 provider와 함께 social_login 이벤트로 바꿔야 한다', () => {
-    const statuses = ['started', 'succeeded', 'cancelled', 'failed'] as const;
-
-    expect(
-      statuses.map((status) => toCapabilityEvent({ type: 'social-login', provider: 'kakao', status })),
-    ).toEqual([
-      { name: 'social_login_started', properties: { provider: 'kakao' } },
-      { name: 'social_login_succeeded', properties: { provider: 'kakao' } },
-      { name: 'social_login_cancelled', properties: { provider: 'kakao' } },
-      { name: 'social_login_failed', properties: { provider: 'kakao' } },
-    ]);
-  });
 });
 
 describe('toDeepLinkEvent', () => {

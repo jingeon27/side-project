@@ -10,8 +10,6 @@ export const webScreens = {
     page.getByRole('heading', { name: nickname, exact: true }),
   /** 서버가 앱 User-Agent를 보고 붙이는 표식 */
   appMarker: (page: Page) => page.locator('html[data-app]'),
-  socialLoginButton: (page: Page, provider: 'google' | 'kakao') =>
-    page.getByRole('button', { name: provider === 'google' ? /google|구글/i : /kakao|카카오/i }),
   galleryMembers: (page: Page) => page.getByText('초대와 그룹 멤버', { exact: true }),
   /** 그룹 화면의 초대 링크 공유 */
   inviteShareButton: (page: Page) =>

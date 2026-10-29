@@ -1,33 +1,18 @@
 /* eslint-disable fsd/slice-public-api -- unit 레인(node)이 이 순수 매핑을 읽으므로 배럴이 함께 불러오는 Amplitude·expo-linking(react-native) 대신 순수 모듈만 가져온다. */
-import {
-  ANALYTICS_EVENT,
-  type TAnalyticsEvent,
-  type TAnalyticsEventName,
-} from '@/features/analytics/config/events';
+import { ANALYTICS_EVENT, type TAnalyticsEvent } from '@/features/analytics/config/events';
 import type { TCapabilityOutcome } from '@/features/bridge';
 import { toLinkTemplate } from '@/features/navigation/lib/deep-link';
 /* eslint-enable fsd/slice-public-api */
 import type { TMonitoringTags } from '@/shared/lib/monitoring/create-monitoring';
 
-type TSocialLoginStatus = Extract<TCapabilityOutcome, { type: 'social-login' }>['status'];
-
-const SOCIAL_LOGIN_EVENT = {
-  started: ANALYTICS_EVENT.SocialLoginStarted,
-  succeeded: ANALYTICS_EVENT.SocialLoginSucceeded,
-  cancelled: ANALYTICS_EVENT.SocialLoginCancelled,
-  failed: ANALYTICS_EVENT.SocialLoginFailed,
-} as const satisfies Record<TSocialLoginStatus, TAnalyticsEventName>;
-
-/** 브리지 기능(공유·소셜 로그인) 결과를 분석 이벤트로 바꾼다. */
+/** 브리지 기능(공유) 결과를 분석 이벤트로 바꾼다. */
 export function toCapabilityEvent(outcome: TCapabilityOutcome): TAnalyticsEvent {
-  if (outcome.type === 'share')
-    return {
-      name:
-        outcome.status === 'completed'
-          ? ANALYTICS_EVENT.NativeShareCompleted
-          : ANALYTICS_EVENT.NativeShareDismissed,
-    };
-  return { name: SOCIAL_LOGIN_EVENT[outcome.status], properties: { provider: outcome.provider } };
+  return {
+    name:
+      outcome.status === 'completed'
+        ? ANALYTICS_EVENT.NativeShareCompleted
+        : ANALYTICS_EVENT.NativeShareDismissed,
+  };
 }
 
 /** 딥링크로 연 웹 경로를 이벤트로 바꾼다. 초대 토큰·ID 값은 빼고 path_template만 싣는다. */

@@ -3,19 +3,11 @@ import type { Share, ShareContent, ShareOptions } from 'react-native';
 import { BRIDGE_ERROR_CODE, type TPushRegistration } from '@photo-contest/bridge';
 import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
 
-type TSocialProvider = 'google' | 'kakao';
-
 export type TImpactStyle = 'light' | 'medium' | 'heavy';
 export type TNotificationType = 'success' | 'warning' | 'error';
 
 /** 분석에 남길 기능 결과. 어떤 도구로 보낼지는 기능을 쓰는 화면이 정한다. */
-export type TCapabilityOutcome =
-  | { type: 'share'; status: 'completed' | 'dismissed' }
-  | {
-      type: 'social-login';
-      provider: TSocialProvider;
-      status: 'started' | 'succeeded' | 'cancelled' | 'failed';
-    };
+export type TCapabilityOutcome = { type: 'share'; status: 'completed' | 'dismissed' };
 
 /** 플랫폼 기능. 앱은 expo 모듈로, 테스트와 E2E는 기록용 가짜로 채운다. */
 export interface ICapabilityDependencies {
@@ -23,8 +15,6 @@ export interface ICapabilityDependencies {
   setPushBadge?: (count: number) => Promise<{ updated: boolean }>;
   openPushSettings?: () => Promise<{ opened: boolean }>;
   platform: 'ios' | 'android';
-  /** 예: https://contest.example/backend */
-  /** 검증된 App Link·Universal Link 콜백. 예: https://contest.example/app-auth/callback */
   share: (
     content: ShareContent,
     options: ShareOptions,
@@ -35,8 +25,7 @@ export interface ICapabilityDependencies {
   notify: (type: TNotificationType) => Promise<void>;
   /** expo-web-browser openBrowserAsync. iOS는 사용자가 닫을 때, Android는 연 직후에 끝난다. */
   openBrowser: (url: string) => Promise<{ type: string }>;
-  /** expo-web-browser openAuthSessionAsync. redirectUrl은 https 콜백이다(iOS는 Universal Link 콜백으로 연다). */
-  /** 공유·소셜 로그인 결과. 없으면 기록하지 않는다. */
+  /** 공유 결과. 없으면 기록하지 않는다. */
   onOutcome?: (outcome: TCapabilityOutcome) => void;
 }
 
@@ -51,20 +40,14 @@ function wait(ms: number) {
 export function createCapabilities(
   deps: ICapabilityDependencies,
 ): Required<
-  Omit<
-    TNativeCapabilities,
-    'auth.socialLogin' | 'notifications.registration' | 'notifications.badge' | 'notifications.settings'
-  >
+  Omit<TNativeCapabilities, 'notifications.registration' | 'notifications.badge' | 'notifications.settings'>
 > &
-  Pick<
-    TNativeCapabilities,
-    'auth.socialLogin' | 'notifications.registration' | 'notifications.badge' | 'notifications.settings'
-  > {
+  Pick<TNativeCapabilities, 'notifications.registration' | 'notifications.badge' | 'notifications.settings'> {
   function report(outcome: TCapabilityOutcome) {
     try {
       deps.onOutcome?.(outcome);
     } catch {
-      // 기록이 실패해도 웹에 보낼 로그인·공유 결과는 그대로 둔다.
+      // 기록이 실패해도 웹에 보낼 공유 결과는 그대로 둔다.
     }
   }
 

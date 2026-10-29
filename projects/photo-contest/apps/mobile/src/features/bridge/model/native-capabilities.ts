@@ -41,13 +41,10 @@ export function createNativeDependencies(): ICapabilityDependencies {
         toolbarColor: COLORS.background,
         dismissButtonStyle: 'close',
       }),
-    // iOS는 17.4+ ASWebAuthenticationSession의 https 콜백(.https(host:path:), associated domains 필요)으로 받는다.
-    // 옵션이 없으면 이전 callbackURLScheme API로 열려 https 콜백이 돌아오지 않는다.
-    // Android는 Custom Tabs를 열고 검증된 App Link로 앱에 돌아온 URL(Linking 'url')을 받는다.
   };
 }
 
-/** 앱이 웹에 제공하는 브리지 기능 전체. onOutcome으로 공유·소셜 로그인 결과를 받는다. */
+/** 앱이 웹에 제공하는 브리지 기능 전체. onOutcome으로 공유 결과를 받는다. */
 export function createNativeCapabilities(
   onOutcome?: ICapabilityDependencies['onOutcome'],
 ): ReturnType<typeof createCapabilities> {
