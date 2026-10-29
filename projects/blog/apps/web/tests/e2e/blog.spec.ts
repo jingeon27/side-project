@@ -50,6 +50,33 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
+test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
+  for (const [locale, messages] of [
+    ['ko', ko],
+    ['en', en],
+  ] as const) {
+    await page.goto(`/${locale}/about`);
+    await expect(page.getByRole('heading', { level: 1, name: messages.about.title })).toBeVisible();
+    await expect(page.getByText('Software Engineer', { exact: true })).toBeVisible();
+    await expect(page.getByText(messages.about.description)).toBeVisible();
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(1);
+    await expect(page.getByRole('main').getByRole('article')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: messages.about.projects.gameMate })).toHaveAttribute(
+      'href',
+      'https://github.com/jingeon27/side-project/tree/main/projects/game-feedback',
+    );
+    await expect(page.getByRole('link', { name: 'contact@bambyul.com' })).toHaveAttribute(
+      'href',
+      'mailto:contact@bambyul.com',
+    );
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true);
+    await page.getByRole('link', { name: messages.about.readArticles }).click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}/blog$`));
+  }
+});
+
 test('privacy notice is linked from the footer in both locales', async ({ page }) => {
   for (const [locale, messages] of [
     ['ko', ko],

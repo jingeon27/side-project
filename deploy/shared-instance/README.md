@@ -16,6 +16,13 @@ api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB 
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. PostgreSQL은 같은 EC2의 컨테이너로 실행하고, 데이터는 루트 볼륨과 분리한 EBS 볼륨(`/srv/side-postgres`)에 둔다. 각 서비스의 API·ops·migrate만 서비스별 내부(`--internal`) DB 네트워크에 연결하며 Web과 Caddy는 DB에 닿지 않는다. 원본 미디어는 EC2에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스와 DB가 함께 중단되는 구조다.
 
+## 현재 운영 경로
+
+- Game Mate와 별사대: **main → GitHub Actions → 검증 이미지 GHCR 게시 → SSM/SSH → EC2**.
+- 운영 Environment는 `game-feedback-production`, `photo-contest-production`이다. 배포 활성화·대상 브랜치와 필수 변수가 맞아야 deploy가 실행된다.
+- [블로그](../../projects/blog/docs/deployment.md)는 이 호스트가 아니라 Vercel로 배포한다.
+- 앱 검증, 이미지 게시, 원격 배포, 공개 URL의 정상 응답을 각각 확인한다. 단순 push 성공이나 GHCR 게시 성공은 운영 완료가 아니다.
+
 ## 최초 배포 순서와 설정 화면
 
 절차는 2026-10-25의 shared-instance 코드 기준이다. 아래 콘솔 링크는 본인 계정으로 로그인해서 사용한다. 리소스 이름·도메인 예시는 실제 소유 값으로 바꾼다. 이 문서의 명령은 저장소 루트에서 실행하며, 서버 명령과 로컬 검증 명령을 구분한다.
@@ -38,7 +45,7 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 | 14   | [EBS 스냅샷](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Snapshots:)                                                                                                                                                                     | 첫 일일 스냅샷이 생겼는지 확인한다. 첫 배포 후 검증 데이터를 만들고 아래 절차로 덤프·스냅샷 복원을 연습한다.                                                                                                                                                                       | 스냅샷과 backup 버킷의 배포 전 덤프 확인             |
 | 15   | [develop → main 비교](https://github.com/jingeon27/side-project/compare/main...develop?expand=1) / [Actions](https://github.com/jingeon27/side-project/actions)                                                                                            | 배포 활성화 값을 `true`로 바꾸고 검토한 변경을 main에 반영해 초기 검증 배포를 한다. 아래 운영 검증과 복구 연습 후 공개한다.                                                                                                                                                        | 두 서비스 workflow의 deploy 성공, 아래 공개 URL 확인 |
 
-기본 CD는 GitHub `ubuntu-latest`에서 서버로 SSH 접속한다. **SSH를 본인 IP에만 허용하면 CD는 연결할 수 없다.** 현재 코드에는 VPN 가입이나 SSM 전송 단계가 없으며, OIDC용 AWS 역할을 등록해도 SSH 접속을 대신하지 않는다. 제한된 SSH 소스 정책을 쓰려면 VPN을 연결하는 단계 또는 고정 IP 배포 러너를 추가하고 실제 접속을 먼저 확인해야 한다. 일반 GitHub 호스트 러너의 전체 IP 대역을 고정 허용 목록으로 취급하지 않는다. [GitHub 공식 네트워크 안내](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#ip-addresses)를 따른다.
+현재 CD는 GitHub OIDC로 AWS에 인증하고 **SSM 터널 위의 SSH**로 배포한다. 외부에 22번 포트를 열 필요는 없다. SSM Agent·인스턴스 역할·OIDC 배포 역할과 Session Manager 플러그인이 필요하며, SSH 키와 검증한 host key도 계속 사용한다. SSM 인증이 SSH 인증이나 StrictHostKeyChecking을 대신하지 않는다. [SSM CD 설정](#외부-ssh를-열지-않는-ssm-cd)을 따른다.
 
 준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 네 호스트 이름, PostgreSQL 볼륨 ID, 버킷 이름 두 개(공용 미디어 버킷과 backup), 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
 
@@ -141,20 +148,20 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 
 현재 연결 상태부터 확인한다. 콘솔에서 키를 만들었다는 것과 운영에서 이벤트가 수집된다는 것은 별도로 확인해야 한다.
 
-| 대상            | 키 입력으로 사용할 수 있는 경로                                                                                                                                   | 코드 보완이 필요한 부분                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| PC API          | 서버 환경 파일의 `PC_SENTRY_DSN`을 앱의 `SENTRY_DSN`으로 전달해 예상하지 못한 오류 수집                                                                           | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.    |
-| PC Web 브라우저 | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입                                                                                          | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다. |
-| PC Next 서버    | 런타임 `SENTRY_DSN`을 우선하고, 없으면 빌드에 들어간 공개 DSN을 사용한다.                                                                                         | 별도 서버 프로젝트를 쓰려면 Web Compose에 런타임 DSN을 주입해야 한다. 서버 tracing은 꺼져 있다.          |
-| PC Mobile       | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY`                                                                                        | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                            |
-| GF Web/API      | Web 빌드의 `GAME_FEEDBACK_WEB_SENTRY_DSN`·`GAME_FEEDBACK_AMPLITUDE_API_KEY`, API 서버 환경 파일의 `SENTRY_DSN`을 사용한다. Next 서버는 공개 DSN으로 fallback한다. | tracing과 소스맵 업로드는 꺼져 있다. 실제 수신은 외부 콘솔에서 확인한다.                                 |
-| GF Mobile       | WebView 안의 웹 이벤트가 GF Web 키로 전송된다.                                                                                                                    | 네이티브 셸 전용 관측 SDK는 없다.                                                                        |
+| 대상            | 키 입력으로 사용할 수 있는 경로                                           | 코드 보완이 필요한 부분                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PC API          | `SERVICE_ENV`의 `PC_SENTRY_DSN` → API `SENTRY_DSN`                        | 명시적 HTTP·GraphQL span을 10% 수집한다. 자동 URL·헤더·SQL 계측은 꺼져 있으며 실제 수신은 별도 확인한다.                                                                  |
+| PC Web 브라우저 | 빌드 시 repository Variables의 DSN·Amplitude key 전달                     | BrowserTracing으로 Web Vitals를 수집한다. 실제 이벤트 수신·사용량과 소스맵 업로드는 별도 확인한다.                                                                        |
+| PC Next 서버    | 런타임 `SENTRY_DSN`을 우선하고, 없으면 빌드에 들어간 공개 DSN을 사용한다. | 별도 서버 프로젝트를 쓰려면 Web Compose에 런타임 DSN을 주입해야 한다. 서버 tracing은 꺼져 있다.                                                                           |
+| PC Mobile       | 프로젝트 루트 `.env`의 공개 Sentry·Amplitude 값                           | 웹 배포와 별도로 네이티브 앱을 다시 빌드해야 한다. 실제 기기 수신은 별도 확인한다.                                                                                        |
+| GF Web/API      | Web 공개 키는 repository Variables, API DSN은 `SERVICE_ENV`               | 브라우저 Web Vitals와 API의 명시적 HTTP·채팅 span을 지원한다. 샘플링·privacy 필터와 외부 수신은 [관측 안내](../../projects/game-feedback/docs/observability.md)를 따른다. |
+| GF Mobile       | WebView 안의 웹 이벤트가 GF Web 키로 전송된다.                            | 네이티브 셸 전용 관측 SDK는 없다.                                                                                                                                         |
 
 ### Sentry 프로젝트와 DSN
 
 1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF도 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
 2. [프로젝트 설정](https://sentry.io/settings/) → 해당 Organization → Projects → 프로젝트 → Client Keys (DSN)에서 DSN을 복사한다. **Auth Token이 아니라 DSN**을 아래 대응 위치에 입력한다. 브라우저 DSN은 공개 번들에 포함될 수 있는 값이다. [Sentry Next.js 설정 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)를 참고한다.
-3. PC API DSN을 `photo-contest-production`의 `SERVICE_ENV`에 있는 `PC_SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API의 운영 Compose는 오류 수집을 사용하며 tracing 설정을 전달하지 않는다. GF API DSN은 `game-feedback-production`의 `SERVICE_ENV`에 있는 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GAME_FEEDBACK_WEB_SENTRY_DSN`에 넣는다.
+3. PC API DSN을 `photo-contest-production`의 `SERVICE_ENV`에 있는 `PC_SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 명시적 HTTP·GraphQL span을 10% 수집하며 자동 계측을 켜는 방식이 아니다. GF API DSN은 `game-feedback-production`의 `SERVICE_ENV`에 있는 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GAME_FEEDBACK_WEB_SENTRY_DSN`에 넣는다.
 4. 프로젝트의 알림 설정에서 예상하지 못한 오류와 새 오류 알림의 수신자를 지정한다. 운영·개발 확인을 분리하려면 테스트 환경 또는 별도 테스트 프로젝트에서 먼저 검증한다.
 
 ### Amplitude 프로젝트와 API key
@@ -181,7 +188,7 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 
 ### Web Vitals와 소스맵
 
-오류 수집, 성능 tracing, 소스맵 업로드를 각각 확인한다. Web Vitals를 수집하려면 브라우저 tracing 설정과 샘플링을 보완해야 한다. 운영 샘플링을 처음에는 0.1 정도로 검토하고 실제 사용량에 맞춰 조정할 수 있다. **tracing 전송에 소스맵 업로드용 Auth Token이 필요한 것은 아니다.** [Sentry tracing/Web Vitals 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/tracing/)를 따른다.
+오류 수집, 성능 span·Web Vitals, 소스맵 업로드를 각각 확인한다. 두 웹의 브라우저 성능 수집 코드는 이미 있으며 DSN·privacy 설정과 실제 대시보드 수신을 확인한다. API는 허용한 명시적 span만 사용하고 자동 URL·SQL 계측과 구분한다. **span 전송에 소스맵 업로드용 Auth Token이 필요한 것은 아니다.** 외부 수신 확인은 [Game Mate 관측 안내](../../projects/game-feedback/docs/observability.md)와 각 서비스 실행 결과를 따른다.
 
 읽을 수 있는 운영 스택을 위해서는 Next 빌드에 `withSentryConfig`, 프로젝트 식별자 `SENTRY_ORG`/`SENTRY_PROJECT`, [GitHub Secret](https://github.com/jingeon27/side-project/settings/secrets/actions)의 `SENTRY_AUTH_TOKEN`을 연결하는 추가 작업이 필요하다. 현재 workflow에는 이 Secret을 읽거나 소스맵을 올리는 단계가 없으므로 등록만으로 업로드되지 않는다. 토큰은 `NEXT_PUBLIC_*`에 넣지 않고 비밀 빌드 입력으로 전달해야 한다. [소스맵 업로드 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/)를 참고한다.
 
@@ -369,106 +376,9 @@ DB 백업은 두 겹이다.
 
 자동화가 버킷을 만들거나 운영 DB를 삭제하지 않는다. 스냅샷은 DLM 정책이 만들고 보존 개수를 넘으면 지운다. 실제 AWS IAM, 네트워크, 인증서 발급, 스냅샷·덤프 복원은 운영 리소스에서 확인해야 한다.
 
-## 로컬 검증 범위와 이전 구성
+## 로컬 검증과 과거 기록
 
-로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. 운영 DB·S3·OAuth 키는 로컬 테스트에 넣지 않는다.
-
-공통 UI 검증은 `yarn workspace @side/design-system check`로 실행한다. 두 서비스의 UI가 함께 사용하는 lint·타입 검사·primitive 테스트를 확인한다.
-
-GF는 자체 55444 테스트 DB와 임의 `gf_test_` 스키마를 사용한다. 다른 서비스용 `TEST_DATABASE_URL`을 설정하지 않은 터미널에서 순서대로 실행한다.
-
-```sh
-yarn workspace @side/game-feedback check
-yarn workspace @side/game-feedback test
-yarn workspace @side/game-feedback test:e2e
-yarn workspace @side/game-feedback db:test:stop
-```
-
-PC는 별도 터미널에서 `yarn workspace @side/photo-contest db:test:local`로 전용 55434 DB를 시작한다. 다음 명령은 **PC 검증용 터미널에서만** 실행하고, 마치면 DB 터미널에서 Ctrl+C로 해당 DB만 종료한다. 앱별 임의 스키마는 테스트 teardown이 정리한다. API 빌드는 Docker 또는 test-kit의 `.e2e-build`에서 수행하므로 실행 중인 개발 서버의 `dist`를 바꾸지 않는다.
-
-```sh
-export TEST_DATABASE_URL='postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public'
-yarn workspace @side/photo-contest db:generate
-yarn workspace @side/photo-contest lint
-yarn workspace @side/photo-contest typecheck
-yarn workspace @side/photo-contest test
-yarn workspace @photo-contest/api test:e2e
-yarn workspace @photo-contest/web test:api
-yarn workspace @photo-contest/web test:e2e
-yarn workspace @photo-contest/test-kit check:cleanup
-```
-
-공통 배포 검증은 Docker Engine/Compose와 amd64 실행 지원이 필요하다. macOS에서는 [Docker Desktop 설치](https://docs.docker.com/desktop/setup/install/mac-install/) 또는 [Colima 설치](https://github.com/abiosoft/colima#installation) 중 하나로 별도 검증 환경을 준비한다. 작업할 Docker context를 확인한 뒤 저장소 루트의 **Bash**에서 아래 명령을 실행한다. `test:e2e`의 개발 서버 검증과 별개로 실제 운영 Dockerfile의 이미지 4개를 빌드한다.
-
-```bash
-deployment_test_sha="$(git rev-parse HEAD)"
-deployment_image_labels=(
-  --label org.opencontainers.image.source=https://github.com/jingeon27/side-project
-  --label "org.opencontainers.image.revision=$deployment_test_sha"
-)
-docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
-  -f projects/game-feedback/deploy/shared-instance/Dockerfile --target api \
-  -t "side-shared-gf-api:$deployment_test_sha" .
-docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
-  -f projects/game-feedback/deploy/shared-instance/Dockerfile --target web \
-  --build-arg WEB_ORIGIN=https://game-feedback.test \
-  --build-arg GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com \
-  -t "side-shared-gf-web:$deployment_test_sha" .
-docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
-  -f projects/photo-contest/apps/api/Dockerfile \
-  -t "side-shared-pc-api:$deployment_test_sha" .
-docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
-  -f projects/photo-contest/apps/web/Dockerfile \
-  --build-arg WEB_ORIGIN=https://photo-contest.test \
-  -t "side-shared-pc-web:$deployment_test_sha" .
-```
-
-Linux 호스트에 `flock` 등 위 운영 도구가 있으면 `SIDE_SMOKE_TAG="$deployment_test_sha" node projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`로 실행한다. macOS에는 Linux `flock`이 없으므로 Dockerfile의 기존 `smoke-tools` stage를 사용한다. Colima의 Linux Docker VM에서는 아래 host network로 검증할 수 있다. Docker Desktop은 [host networking 지원 설정](https://docs.docker.com/engine/network/drivers/host/#docker-desktop)을 먼저 활성화해야 한다. 이 도구 컨테이너는 테스트 중 Docker socket을 사용하며 운영 서비스로 배포하지 않는다.
-
-```bash
-deployment_test_root="$(pwd)"
-docker build -f projects/game-feedback/deploy/shared-instance/Dockerfile \
-  --target smoke-tools -t "side-shared-smoke-tools:$deployment_test_sha" .
-docker run --rm --network host \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
-  --volume "$deployment_test_root:$deployment_test_root" \
-  --workdir "$deployment_test_root" \
-  --env "SIDE_SMOKE_TAG=$deployment_test_sha" \
-  "side-shared-smoke-tools:$deployment_test_sha" \
-  projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts
-```
-
-성공 기준은 마지막 `Shared-instance smoke passed` 출력이다. runner는 임의 Docker project/network/volume과 loopback의 임의 포트를 사용하고 종료 시 자신이 만든 테스트 자원을 정리한다. 빌드 이미지와 Docker VM의 정리는 검증자가 소유한 것만 대상으로 한다. 전역 prune, 기존 서비스 중지, 기존 volume 삭제는 하지 않는다.
-
-API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy와 `prepare.sh`·`database.sh`로 띄운 공용 PostgreSQL 컨테이너를 실행한다. 미디어는 기존 AWS S3 버킷의 `<프로젝트 prefix>/tests/<실행 ID>/`에 직접 전송하며 S3 대역 컨테이너·인증서·DNS 별칭은 만들지 않는다. 업로드 전에 해당 prefix의 ListBucket 접근을 확인하고 종료 시 그 실행의 객체만 정리한다. backup 버킷 업로드와 registry 매핑은 계속 CLI fixture로 검사한다. 서비스 S3 폴더, DML/DDL 분리, Web의 DB 네트워크 차단, 배포 전 덤프와 업로드 실패 시 migration 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 운영 IAM 정책 변경·backup 버킷 전송·스냅샷을 검증했다는 뜻은 아니다. 필요한 실제 S3 키·CI Variables/Secrets·CORS·정리 권한은 [Game Feedback](../../projects/game-feedback/docs/media-upload.md#기본-로컬-실행)과 [Photo Contest](../../projects/photo-contest/docs/post-attachments.md#검증)의 테스트 설정을 따른다.
-
-### 2026-10-20 로컬 실행 기록
-
-애플리케이션 검증 기준은 develop의 `9f5d9afe68f929837e9f9466945bc7caf740122a`다. 아래 결과는 해당 날짜·기준 커밋의 과거 검증 기록이다. 최신 코드에서 재실행한 결과가 아니며 현재 배포 검증을 대신하지 않는다.
-
-| 검증                       | 결과                                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------------------------ |
-| 공통 디자인 시스템 `check` | lint/typecheck와 테스트 14개 통과                                                                |
-| GF `check`                 | API/Web/Mobile/Admin와 패키지 타입 검사, 앱 lint 통과                                            |
-| GF `test`                  | API 173, SDK 43, Web 102, Mobile 43, Admin 2개 통과                                              |
-| GF Web E2E                 | 일반 브라우저 94, 테스트 토큰 로그인 3, 운영 prefetch 12개 통과                                  |
-| GF Admin E2E               | 3개 통과                                                                                         |
-| GF Mobile E2E              | Playwright의 Android/iOS native host fixture 34개 통과                                           |
-| PC lint/typecheck          | 통과                                                                                             |
-| PC `test`                  | API unit 86, Web 287, Mobile 137, Bridge 35개 통과                                               |
-| PC API integration         | 실제 전용 PostgreSQL + Supertest 217개 통과                                                      |
-| PC Web API                 | 실제 격리 API에 생성 문서 실행 11개 통과                                                         |
-| PC Web E2E                 | mobile Chrome/Safari, desktop Chrome, WebView 총 42개 통과                                       |
-| 운영 Docker 이미지         | GF API/Web, PC API/Web의 linux/amd64 이미지 4개 빌드 및 revision label 확인                      |
-| 공통 배포 smoke            | `Shared-instance smoke passed` 확인. 실제 앱·TLS·저장/조회·SSE·롤백·재시작 보존·health 검사 통과 |
-
-컨테이너 검증은 macOS의 별도 Colima profile과 기존 `smoke-tools` 컨테이너에서 실행했다. 검증이 만든 Docker container/network/volume을 정리하고 전용 VM도 삭제했다. PC 테스트 DB는 임시 디렉터리·임의 비밀번호를 사용하는 별도 55434 인스턴스에서 실행한 뒤 종료·정리했고, GF 소유 55444 테스트 DB도 종료했다. 기존 GF 개발 서버/API와 55442 개발 DB를 재시작하지 않았다.
-
-실제 AWS 리소스 생성, 운영 IAM 권한, EBS 스냅샷·덤프의 실제 복원, 공인 DNS/인증서, 외부 OAuth 제공자의 로그인과 실제 운영 SSH 전송은 이번 로컬 실행 범위에 포함되지 않는다. 위 최초 배포 절차에서 계정 소유자가 리소스를 준비한 뒤 확인해야 한다.
-
-`projects/photo-contest/deploy/compose.yaml`은 별도 컨테이너 회귀 테스트용이다. Actions CD는 이 문서의 shared-instance 구성과 `projects/game-feedback/deploy/shared-instance/Dockerfile`을 사용한다.
-
-Photo Contest의 `/backend/graphql`은 pc-web의 Next Route Handler로 보내 공개 SEO·사이트맵 캐시 무효화를 수행한다. 나머지 `/backend/*`는 pc-api로 보낸다. Caddyfile이 바뀐 릴리스는 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)로 반영한다. PC route 블록의 내부 경로 차단·GraphQL·일반 API·Web 순서를 유지한다.
+현재 앱별 실행·검사는 [Game Mate 개발 가이드](../../projects/game-feedback/docs/development.md)와 [별사대 개발 가이드](../../projects/photo-contest/docs/development.md)를 따른다. 과거 단독 구성·컨테이너 검증과 날짜별 결과는 [검증 이력](docs/validation-history.md)으로 분리했다. 과거 테스트 성공은 현재 운영 배포 성공을 의미하지 않는다.
 
 ## 재생성 동안의 요청과 호환성
 
