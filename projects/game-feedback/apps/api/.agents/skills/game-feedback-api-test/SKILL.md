@@ -7,7 +7,8 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 
 ## 레인 (`vitest.config.mts`)
 
-- `unit`: `src/**/*.{spec,test}.ts` + 프로젝트 `../../scripts/**/*.{spec,test}.ts`(`database-guard.test.ts`)에서 integration 파일을 뺀 것. DB·Nest 앱 없이 도는 정책·검증이다(`src/common/http/request-validation.spec.ts`, `src/rate-limit.*`, `src/chat/chat-history.spec.ts`, `src/admin/reports/report.policy.spec.ts`, `src/common/pagination.spec.ts`, `src/config/production.config.spec.ts`).
+- `unit`: `src/**/*.{spec,test}.ts` + 프로젝트 `../../scripts/**/*.{spec,test}.ts`(`database-guard.test.ts`)에서 integration 파일을 뺀 것. DB·HTTP 없이 도는 정책·검증이다. provider 조합은 HTTP·Prisma 없이 NestFactory.createApplicationContext로 검증할 수 있다(`src/common/http/request-validation.spec.ts`, `src/rate-limit.*`, `src/chat/message/chat-history.spec.ts`, `src/admin/reports/report.policy.spec.ts`, `src/common/pagination.spec.ts`, `src/config/production.config.spec.ts`).
+- 실제 Nest HTTP 앱·Supertest 테스트는 DB fake 여부와 무관하게 `*.integration.spec.ts`로 분류하고 unit에서 제외한다. `auth/auth.module.integration.spec.ts`는 외부 Prisma 경계만 대체하는 모듈/HTTP 검사이며 실제 DB·S3 integration 성공을 대신하지 않는다.
 - `integration`: `src/**/*.integration.{spec,test}.ts`, `globalSetup: ./scripts/integration-setup.ts`(`TEST_DATABASE_URL`이 없거나 가드를 못 넘으면 실패). 파일은 병렬로 돌고 각자 스키마를 만든다. 새 파일은 `describe.skipIf`를 두지 않는다 — DB가 없으면 건너뛴 성공이 아니라 실패여야 한다.
 - SWC 플러그인이 없어 데코레이터 메타데이터가 없다. 테스트에서 만드는 provider·서비스도 `@Inject(Token)`을 명시해야 주입된다.
 - `typecheck`는 테스트를 포함한 `tsconfig.json`(Vitest처럼 `module: Preserve`·Bundler, `import.meta` 허용)과 빌드 전용 `tsconfig.build.json`(NodeNext의 CJS 출력, Node 24의 require(ESM) 지원, 테스트·`src/testing/**` 제외)을 모두 검사한다. 공통 하네스는 `src/testing/`에 두고 운영 코드에서 import하지 않는다. 테스트의 `Location`·`Set-Cookie`는 `src/testing/http-response.ts`의 `responseLocation`·`responseCookies`로 읽는다.
@@ -20,7 +21,7 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 
 ## integration 파일 골격
 
-기존 파일을 복사해 시작한다. 최근 형식은 `src/posts/post-media-upload.service.integration.spec.ts`, `src/database/unit-of-work.integration.spec.ts`.
+기존 파일을 복사해 시작한다. 최근 형식은 `src/posts/media/post-media-upload.service.integration.spec.ts`, `src/database/unit-of-work.integration.spec.ts`.
 
 1. 스키마 이름 `gf_test_<영역>_${randomBytes(8).toString('hex')}`를 `TEST_DATABASE_URL`의 `schema`에 넣고 `assertDatabaseUrl(url, 'test')`(`src/database/database-url.ts`: 55444·`game_feedback_test`·`gf_test_*`·`game_feedback` 역할·`options` 금지). 영역 접두사는 파일마다 다르게 한다.
 2. 구조: `spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: { ...process.env, DATABASE_URL } })`. 옛 파일의 `'db', 'push'`는 migration 전용 CHECK 제약을 만들지 않는다.

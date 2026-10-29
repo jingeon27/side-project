@@ -58,7 +58,7 @@ yarn workspace @game-feedback/api db:generate
 
 ## 검증
 
-- `test:integration`에서 `db push` 하네스 파일은 schema.prisma만 쓰고, `migrate deploy` 하네스 파일(`src/database/unit-of-work.integration.spec.ts`, `src/users/profile.service.integration.spec.ts`, `src/media-storage/media-storage.service.integration.spec.ts`, `src/posts/post-media-upload.service.integration.spec.ts`, `src/chat/chat-attachment-upload.service.integration.spec.ts`)은 모든 migration을 새 `gf_test_` 스키마에 적용한다. migration이 빠뜨린 열·제약은 그것을 쓰는 migrate-deploy 테스트에서만 드러나므로 새 열·제약을 쓰는 spec을 같이 더한다.
+- `test:integration`에서 `db push` 하네스 파일은 schema.prisma만 쓰고, `migrate deploy` 하네스 파일(`src/database/unit-of-work.integration.spec.ts`, `src/users/profile/profile.service.integration.spec.ts`, `src/media-storage/media-storage.service.integration.spec.ts`, `src/posts/media/post-media-upload.service.integration.spec.ts`, `src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`)은 모든 migration을 새 `gf_test_` 스키마에 적용한다. migration이 빠뜨린 열·제약은 그것을 쓰는 migrate-deploy 테스트에서만 드러나므로 새 열·제약을 쓰는 spec을 같이 더한다.
 
 ```sh
 yarn workspace @game-feedback/api db:generate

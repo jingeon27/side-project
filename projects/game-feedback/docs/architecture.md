@@ -76,26 +76,30 @@ API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mob
 
 ## API 모듈 구성
 
-`apps/api/src/app.ts`는 애플리케이션 생성·HTTP 설정·미들웨어 등록·초기화만 담당한다. `AppModule.register(options)`는 실행별 설정을 만들고 DatabaseModule과 12개 도메인 모듈을 조합한다. 도메인은 Controller에서 요청을 받고 Service에서 업무 동작을 수행하며, 공용 응답 presenter와 외부 제공자 구현도 소유 도메인에 둔다.
+`apps/api/src/app.ts`는 애플리케이션 생성·HTTP 설정·미들웨어 등록·초기화만 담당한다. `AppModule.register(options)`는 실행별 설정을 만들고 DatabaseModule과 도메인 모듈을 조합한다. 도메인은 Controller에서 요청을 받고 Service에서 업무 동작을 수행하며, 공용 응답 presenter와 외부 제공자 구현도 소유 도메인에 둔다.
 
-| 도메인          | 책임                                                        |
-| --------------- | ----------------------------------------------------------- |
-| `auth`          | Google·데모 인증, 가입, 세션 생성·조회·교체·종료, 계정 삭제 |
-| `users`         | 사용자 인증 표시, 공개 사용자 presenter, 조회 제외 사용자   |
-| `posts`         | 요청 CRUD와 상세·목록·답변 읽음                             |
-| `answers`       | 피드백 답변 CRUD와 도움됨                                   |
-| `comments`      | 일반 댓글 CRUD                                              |
-| `categories`    | 활성 카테고리 조회와 관리자 생성                            |
-| `game-profiles` | 게임 프로필 제공자, 조회·연결과 대표 태그 저장              |
-| `notifications` | 알림 조회와 읽음                                            |
-| `blocks`        | 사용자 차단·해제와 차단 목록                                |
-| `moderation`    | 콘텐츠 신고·숨김과 관리자 신고 조회                         |
-| `chat`          | 대화·메시지·읽음, SSE와 채팅 연결 수명                      |
-| `health`        | DB 연결 상태 확인                                           |
+| 도메인          | 책임                                                      |
+| --------------- | --------------------------------------------------------- |
+| `auth`          | 소셜·데모 인증, 가입, 세션 생성·조회·교체·종료, 계정 삭제 |
+| `users`         | 사용자 인증 표시, 공개 사용자 presenter, 조회 제외 사용자 |
+| `posts`         | 요청 CRUD와 상세·목록·답변 읽음                           |
+| `answers`       | 피드백 답변 CRUD와 도움됨                                 |
+| `comments`      | 일반 댓글 CRUD                                            |
+| `categories`    | 활성 카테고리 조회와 관리자 생성                          |
+| `game-profiles` | 게임 프로필 제공자, 조회·연결과 대표 태그 저장            |
+| `notifications` | 알림 조회와 읽음                                          |
+| `blocks`        | 사용자 차단·해제와 차단 목록                              |
+| `moderation`    | 콘텐츠 신고·숨김과 관리자 신고 조회                       |
+| `chat`          | 대화·메시지·읽음, SSE와 채팅 연결 수명                    |
+| `health`        | DB 연결 상태 확인                                         |
 
-`config`는 AppConfig와 `APP_CONFIG` 토큰, `database`는 전용 PrismaClient와 소유권에 따른 종료를 제공한다. `common`에는 검증·페이지네이션·HTTP 오류·쿠키·출처 검사 등 도메인에 의존하지 않는 공통 처리를 둔다. 인증 권한 검사는 `auth/session-access.ts`의 상태 없는 함수가 요청의 세션을 확인한다. 기존 `security.ts`는 이전 테스트·seed 소비자를 위한 export 호환 진입점이며 구현을 담지 않는다.
+`config`는 AppConfig와 `APP_CONFIG` 토큰, `database`는 전용 PrismaClient와 소유권에 따른 종료를 제공한다. `common`에는 검증·페이지네이션·HTTP 오류·쿠키·출처 검사 등 도메인에 의존하지 않는 공통 처리를 둔다. 인증 권한 검사는 `auth/session/session-access.ts`의 상태 없는 함수가 요청의 세션을 확인한다. 기존 `security.ts`는 이전 테스트·seed 소비자를 위한 export 호환 진입점이며 구현을 담지 않는다.
 
 Service는 명시적인 `@Inject` 토큰으로 PrismaClient·AppConfig·필요한 도메인 Service를 받는다. ModerationService는 PostsService·AnswersService·CommentsService의 기존 접근 검사를 호출하며, 도메인 전반을 포괄하는 GameService는 사용하지 않는다. HTTP 경로·상태·오류 코드·SQL·트랜잭션과 생성 계약은 유지한다.
+
+auth는 oauth·session·app-login·account, chat은 conversation·message·attachment·events, posts는 media·views, users는 profile·visibility로 함께 바뀌는 구현과 테스트를 묶는다. 여러 책임을 조합하는 controller/module·공통 DTO/presenter는 root에 둔다. 폴더마다 module이나 export barrel을 만들지 않고 기존 Nest module 경계와 exports를 유지한다.
+
+APP_CONFIG는 실행 설정과 명시적 테스트 제공자 override를 보관한다. AuthModule의 IDENTITY_PROVIDERS factory가 OAuth 구현을 만들고 IdentityProviderRegistry로 제공자 선택과 세션의 configured 표시를 일치시킨다. GameProfilesModule의 PROFILE_PROVIDER factory가 기존 profile override·데모·실제 토큰·테스트 인증 우선순위를 유지한다. 외부 오류는 OAuthException·ProfileException에서 ApiError로 전달하며 HTTP 상태와 `{ errorCode, message }`는 바뀌지 않는다.
 
 ## 인증과 도메인
 

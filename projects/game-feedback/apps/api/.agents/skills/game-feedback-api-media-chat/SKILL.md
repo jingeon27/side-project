@@ -22,16 +22,16 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 - 전송 `ChatMessageService.send`: 권한 확인을 멱등 조회보다 먼저 한다(다른 대화의 UUID를 드러내지 않게). 대화 행 `FOR UPDATE` 아래에서 같은 `(senderId, clientMessageId)` 재시도는 본문·첨부가 같으면 기존 메시지, 다르면 409 `MESSAGE_CONFLICT`, 내가 지운 경계 이전이면 409 `MESSAGE_HISTORY_CLEARED`. `createdAt`은 `max(now, 최신 + 1ms)`로 대화 안에서 단조 증가한다.
 - 경계는 `(createdAt, id)` 쌍이다: 기록 삭제 `first/secondClearedAt·Id`(`chat-history.ts`의 `historyWhere`·`advancesBoundary`), 읽음 `first/secondReadAt·Id`(`chat-read.policy.ts`). 둘 다 뒤로 가지 않고 상대 쪽 값에 영향을 주지 않는다.
 
-## SSE (`src/chat/chat.events.ts`, `GET /api/chat/events`)
+## SSE (`src/chat/events/chat.events.ts`, `GET /api/chat/events`)
 
 - 프로세스 메모리 구독이다(다중 인스턴스는 미지원). 이벤트는 `invalidate { conversationId }`와 `heartbeat`뿐 — 본문·발신자를 싣지 않고 클라이언트가 REST로 다시 읽는다. 연결 직후 `conversationId: null` 무효화를 한 번 보낸다.
-- 5초마다 하나의 타이머가 열린 모든 스트림의 세션(존재·같은 사용자·만료·테스트 계정 규칙)을 `session.findMany` 한 번으로 다시 확인해 아니면 닫고, 나머지에 heartbeat를 보낸다. 세션당 4개, 사용자당 8개(`MAX_STREAMS_PER_SESSION`·`MAX_STREAMS_PER_USER`)를 넘으면 가장 오래된 스트림을 닫는다. 단위 사양은 `src/chat/chat.events.spec.ts`. 수신자마다 `canAccess`(= `ChatAccessService.visible`)를 다시 본다.
+- 5초마다 하나의 타이머가 열린 모든 스트림의 세션(존재·같은 사용자·만료·테스트 계정 규칙)을 `session.findMany` 한 번으로 다시 확인해 아니면 닫고, 나머지에 heartbeat를 보낸다. 세션당 4개, 사용자당 8개(`MAX_STREAMS_PER_SESSION`·`MAX_STREAMS_PER_USER`)를 넘으면 가장 오래된 스트림을 닫는다. 단위 사양은 `src/chat/events/chat.events.spec.ts`. 수신자마다 `canAccess`(= `ChatAccessService.visible`)를 다시 본다.
 - `publish`는 트랜잭션이 끝난 뒤 `void this.events.publish([...userIds], conversationId)`로 부른다. 세션 회전·로그아웃·탈퇴·차단·해제는 `chat-lifecycle.middleware.ts`가 200 응답 뒤 처리하고, 밴은 `AdminUsersService.ban`이 `closeUser`를 부른다.
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/chat/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
-- integration: `src/posts/post-media-upload.service.integration.spec.ts`·`src/chat/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
+- unit: `src/chat/message/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
+- integration: `src/posts/media/post-media-upload.service.integration.spec.ts`·`src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
 - 로컬 fixture 성공을 실제 AWS 버킷·CORS·브라우저 업로드 확인으로 기록하지 않는다.
 
 ## 명령 (side 루트)
@@ -40,3 +40,8 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 yarn workspace @game-feedback/api test:unit
 yarn workspace @game-feedback/api test:integration src/posts src/chat src/media-storage src/users/profile.service
 ```
+
+## 책임별 경로
+
+- chat의 conversation은 접근·대화 쌍, message는 전송·히스토리·읽음, attachment는 업로드·파일 전달, events는 SSE와 세션 변경 수명을 소유한다. chat root의 controller·공통 입력·presenter·module은 여러 책임을 조합한다.
+- posts/media는 업로드·미디어 전달, posts/views는 조회수 집계를 소유한다. CRUD·검색·답변 수는 posts root에 유지한다. 모듈 exports·HTTP 경로·구독 수명은 폴더 이동으로 바꾸지 않는다.
