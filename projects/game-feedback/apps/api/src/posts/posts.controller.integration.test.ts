@@ -54,6 +54,22 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       await db.$disconnect();
     }
   });
+  it('accepts 30-character titles and rejects 31-character titles on create and edit', async () => {
+    const input = { categoryId, board: 'FREE', title: '제'.repeat(30), body: '본문' };
+    const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;
+    expect(created.title).toBe(input.title);
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, title: '제'.repeat(31) })
+      .expect(400);
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ title: '제'.repeat(31) })
+      .expect(400);
+    expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.title).toBe(input.title);
+  });
   it('creates and edits a one-character post while rejecting empty, oversized and mismatched content', async () => {
     const input = {
       categoryId,

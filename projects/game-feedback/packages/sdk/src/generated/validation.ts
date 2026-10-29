@@ -2057,7 +2057,7 @@ export const ListPostsResponse = zod.object({
 
 
 export const createPostBodyTitleMin = 4;
-export const createPostBodyTitleMax = 60;
+export const createPostBodyTitleMax = 30;
 
 export const createPostBodyBodyMax = 10000;
 
@@ -2539,7 +2539,7 @@ export const UpdatePostParams = zod.object({
 })
 
 export const updatePostBodyTitleMin = 4;
-export const updatePostBodyTitleMax = 60;
+export const updatePostBodyTitleMax = 30;
 
 export const updatePostBodyBodyMax = 10000;
 

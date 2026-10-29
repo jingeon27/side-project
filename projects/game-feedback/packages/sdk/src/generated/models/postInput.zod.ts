@@ -7,7 +7,7 @@
 import * as zod from 'zod';
 
 export const postInputTitleMin = 4;
-export const postInputTitleMax = 60;
+export const postInputTitleMax = 30;
 
 export const postInputBodyMax = 10000;
 
