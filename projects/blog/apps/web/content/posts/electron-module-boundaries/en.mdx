@@ -135,7 +135,7 @@ The Processor constructor type in this example was rewritten later. My implement
 
 ## Adding two platforms without copying their predecessors
 
-After the split, CrawlingService held the shared sequence, while each implementation contained its own selectors and exception handling. The structural refactoring commit touched 14 files, with a net reduction of 140 lines. Adding more platforms was the practical test of the structure.
+After the split, CrawlingService held the shared sequence, while each implementation contained its own selectors and exception handling. Adding more platforms was the practical test of the structure.
 
 - One platform provided resumes as encrypted ZIP files. Another required two-factor authentication and pagination, plus its own education and employment extraction and duplicate-applicant handling. I added both by implementing their platform classes and registering them in the configuration object, without copying an existing platform file.
 - I caught errors per applicant so that one failed collection did not stop the remaining applicants.

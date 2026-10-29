@@ -176,7 +176,7 @@ I centralized query functions and key hierarchy through the library, accepting t
 
 - Even callers needing only a key use the factory's `queryKey` or `_def`, rather than constructing arrays themselves.
 - Parameter objects contain serializable values before entering query keys.
-- I assess the migration by whether one definition owns a resource's key shape, rather than file counts or lines changed.
+- One definition owns each resource's key shape.
 
 Inferred return types cannot ensure that every variable affecting a request appears in the key. If `queryFn` uses a new sort condition omitted from the key, different results share a cache. Changes to query inputs and keys still need to be reviewed together. [TanStack Query key guidelines](https://tanstack.com/query/v4/docs/framework/react/guides/query-keys)
 

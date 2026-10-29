@@ -157,13 +157,6 @@ Throwing errors does not always preserve a previous result. Background revalidat
 
 Current helpers pre-escape query strings as XML. Assuming Next.js does not escape them without checking final serialization can miss double escaping. An integration test should parse the generated XML and verify each URL is escaped exactly once.
 
-Measurements are also missing.
-
-- Total entries and counts by type
-- Change rate from the previous generation
-- Generation time and request duration/failure per source
-- Cache hit rate and origin API request count
-
-I have not measured these or changes in crawling. The verified result is limited to changing authentication defaults and revalidation policy so public calls can enter the cache boundary.
+Changing authentication defaults and revalidation policy let public API calls run inside the cache without reading cookies. Pagination, failure handling, and XML validation still need work in the sitemap generator.
 
 References: [Next.js use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache), [Next.js cacheLife](https://nextjs.org/docs/app/api-reference/functions/cacheLife), [Google sitemap guide](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)

@@ -34,7 +34,7 @@ Its template has four sections: ticket summary, impact, work order, and review i
 
 ## Avoid making the same correction twice
 
-Initially, each prompt accumulated cautions. I split them into task-specific skills for forms, Query, FSD, and the design system. Error handling remains an admin policy document; the design-system skill exists only in the portal. When an implementation misses the intent, I correct both code and the relevant skill or lint rule. Admin has 33 skills and the portal 36; AGENTS.md is the rule authority.
+Initially, each prompt accumulated cautions. I split them into task-specific skills for forms, Query, FSD, and the design system. Error handling remains an admin policy document; the design-system skill exists only in the portal. When an implementation misses the intent, I correct both code and the relevant skill or lint rule. AGENTS.md remains the rule authority, with skills selected for each kind of task.
 
 I moved mechanically checkable import directions, slice boundaries, and raw query keys into lint. I cleaned up existing violations before expanding enforcement, without imposing identical severities on both repositories. I cared more about rules working at actual call sites and making new violations visible than about their number.
 
@@ -118,7 +118,7 @@ Repeated false positives become reviewer exceptions. Back-Office and hospital ad
 
 When several PRs are collected for deployment, I read their combined diff. Abstractions, names, or FSD boundaries that looked reasonable in isolation can conflict together. I do this when preparing a separate deployment PR to check consistency across the changes.
 
-After deployment, troubling patterns can trigger a repository-wide search and changes to skills, lint, or shared implementations. Removing portal entities and reducing cross-page references from 62 to zero began here. That redesign reached develop, but the repositories still have different structures and rules. [The FSD article describes it.](/en/blog/fsd-layer-boundaries)
+After deployment, troubling patterns can trigger a repository-wide search and changes to skills, lint, or shared implementations. Removing portal entities and adding a rule against cross-page imports began here. That redesign reached develop, but the repositories still have different structures and rules. [The FSD article describes it.](/en/blog/fsd-layer-boundaries)
 
 Chat code that was once excluded is back under lint and tests. The separate API routes, on the other hand, have a reviewer exception so the same factory suggestion does not recur. Repeated corrections have helped me adjust what runs automatically and what I need to read and judge myself.
 

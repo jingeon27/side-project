@@ -18,8 +18,6 @@ I initially thought adding Zod and more boundaries would suffice. The work requi
 - Where are external values checked?
 - What evidence is recorded for a mismatch?
 
-File and call-site counts were taken at individual commits. I did not measure changes in incident totals.
-
 ## There was nowhere consistent to place boundaries
 
 The original structure was simple.
@@ -39,8 +37,7 @@ Routes queried directly. A useQuery in page.tsx failed above the table it was me
 
 The monorepo has hospital admin, Back-Office, and a global admin app deployed as a PoC. Their routes also differed.
 
-- Detail Drawers were declared in ten routes and 23 list components.
-- Forty-four routes rendered layout directly, four delegated to page templates, and four delegated entirely to ListView.
+Some Detail Drawers lived in routes and others inside list components. Routes also varied: some rendered the layout directly, while others delegated to a page template or ListView.
 
 I needed to choose recovery units and create places to wrap them before adding more boundaries.
 
@@ -137,7 +134,7 @@ function ReservationPage() {
 }
 ```
 
-In one restructuring PR, the Back-Office account route went from 161 lines to 84, and 30 route files had a net reduction of 1,045 lines. Most code moved into ListViews; the whole implementation did not shrink by that amount.
+I moved list queries and table rendering into ListView. The route kept the search conditions and the recovery boundaries for the list and detail.
 
 Three details opened from row data stayed beside their lists. Moving them upward would make the page query the list again, contradicting the query-placement rule. Row-data details and URL-opened details have different recovery units.
 
@@ -199,7 +196,7 @@ This requires subscribing to pushState and replaceState. Previously, each bounda
 
 ## Observe response mismatches without stopping existing screens
 
-Runtime validation was introduced with error-handling changes across all three apps. One commit touched 250 files; another same-day change inferred response types from schemas across 85 files.
+I introduced response-schema checks alongside the error-handling changes and started inferring response types from those schemas.
 
 ```tsx
 export const reservationSchema = z.object({
@@ -233,7 +230,7 @@ export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T
 
 The schema deliberately is not constrained to `z.ZodType<T>`. It is an approximate validation schema with optional fields opened to nullish, rather than an exact response type. The returned type still trusts the Axios generic, though, so the compiler cannot catch a completely unrelated schema.
 
-Invalid values still reach callers, so this is not complete runtime type safety. It let the three deployed apps (with global admin as a PoC) collect real differences while introducing validation together. Three days later, logged nulls, missing enum members, and decimal strings informed schema changes in 20 files.
+Invalid values still reach callers, so this is not complete runtime type safety. It let the three deployed apps (with global admin as a PoC) collect real differences while introducing validation together. Logged nulls, missing enum members, and decimal strings showed me where to correct the schemas.
 
 New features and inputs that cannot accept bad values use blocking validation. [Another article](/en/blog/zod-assertion-boundaries) explains observation, recovery, and blocking by source.
 
@@ -322,7 +319,7 @@ Names do not follow code moves automatically. React componentStack looked like a
 
 I initially withdrew that attempt within an hour. Logs retained manual names, path, and error stack. Disabling mangling or publishing source maps seemed insufficiently valuable to justify deployment and source-exposure costs. The first published article stopped there.
 
-Six days later, I reversed the decision. Route restructuring increased handwritten names from 71 to 123 across the apps, comparing before and after the PR. Every moved detail needed a manually moved name, creating more chances for stale labels to misdirect investigation. I enabled productionBrowserSourceMaps in all three apps and removed caller names. Callers now specify only variant. On error, boundaries capture the path including query, boundaryVariant, one throwing componentFrame, and componentStack automatically. Production frames remain minified, but published source maps recover original files and lines. We accepted public source, including comments, as the cost.
+I later reversed the decision. Moving a detail into a route also meant updating its handwritten boundary name. A stale name could point an investigation at the wrong screen. I enabled productionBrowserSourceMaps in all three apps and removed caller names. Callers now specify only variant. On error, boundaries capture the path including query, boundaryVariant, one throwing componentFrame, and componentStack automatically. Production frames remain minified, but published source maps recover original files and lines. We accepted public source, including comments, as the cost.
 
 Operational readability remained the criterion. Initially I avoided source exposure and accepted manual naming; later I made the opposite tradeoff.
 
@@ -355,7 +352,7 @@ Machine-decidable checks moved to ESLint. The first branch plugin was not merged
 
 The first rule governs route composition: a client query hook called in src/app fails above the section boundary. To replace only the table, the querying component needs to be inside that boundary.
 
-Enforcement also took revisions. A shared only-warn plugin lowered all errors, so adding rules initially could not fail CI. I removed it the next day and explicitly assigned severity. app/no-query was set to warning. The passthrough-hook rule became an error only after violations reached zero. The central no-query rule still does not block CI.
+Enforcement also took revisions. A shared only-warn plugin lowered all errors, so adding rules initially could not fail CI. I removed it the next day and explicitly assigned severity. app/no-query was set to warning. The passthrough-hook rule became an error after I cleaned up the existing violations. The central no-query rule still does not block CI.
 
 Some checks remain manual: whether details belong in routes and whether a route lacks a boundary require context beyond these static rules.
 

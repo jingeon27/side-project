@@ -390,7 +390,7 @@ The Bottom Sheet drag crash initially showed 23 events across 17 users, reaching
 
 While deriving types from Zod and narrowing nullability, I compared the change before merge against 33 existing production schema mismatches. A field populated in all 12 dev samples was null in 27 of 200 production responses. Restoring that nullability prevented new warnings on valid responses from obscuring real issues.
 
-A Sentry waterfall also showed main-banner links prefetching several routes merely by entering the viewport. Disabling their prefetch removed the requests. I did not measure a Web Vitals improvement; this is evidence of finding unnecessary network work, not a performance gain figure.
+A Sentry waterfall also showed main-banner links prefetching several routes merely by entering the viewport. I disabled their prefetch and checked that those unnecessary requests stopped.
 
 ## References
 

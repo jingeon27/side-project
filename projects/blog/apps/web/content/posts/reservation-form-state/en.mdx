@@ -237,7 +237,7 @@ Only the participant-list component calls `useFieldArray`. The page's date handl
 
 ## Splitting the file and removing the Zustand store
 
-ParticipantSelector went from 519 lines to 55. More precisely, I deleted the old 519-line file and created a 55-line file elsewhere. The work is now split into the selector at 55 lines, a family-selection child at 172, and a server-list synchronization hook at 61. The 140-line Zustand store was removed. The entire feature therefore did not shrink by 464 lines. The useful change is that each piece has clearer inputs and outputs, and one file no longer coordinates three stores.
+ParticipantSelector now assembles the selection UI, with family selection handled by a child component. A synchronization hook keeps the server list and form array aligned, and I removed the Zustand store. One file no longer has to coordinate the cache, store, and local state together.
 
 React Hook Form introduced costs too.
 

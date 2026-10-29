@@ -176,7 +176,7 @@ API 함수를 감싼 코드 몇 줄을 줄이려던 건 아니었어요. 두 곳
 
 - query key만 필요한 곳에서도 factory의 queryKey나 \_def를 쓰고, 호출부에서 배열을 직접 만들지 않기로 했어요.
 - 파라미터 객체는 직렬화할 수 있는 값으로 만들어 query key에 넣기로 했어요.
-- 옮긴 정도는 파일 수나 변경 줄 수가 아니라, 같은 리소스의 query key 모양이 한곳에서 정해지는지로 봤어요.
+- 같은 리소스의 query key 모양은 한곳에서 정하도록 했어요.
 
 factory가 반환 타입을 만들어 줘도 요청 결과를 바꾸는 변수가 key에서 빠졌는지까지 보장하지는 않아요. 예를 들어 queryFn이 새 정렬 조건을 쓰는데 key에는 그 조건이 없다면 다른 결과가 같은 캐시를 사용하게 돼요. 조회에 영향을 주는 변수와 key가 함께 바뀌는지는 정의를 수정할 때 확인해야 해요. [TanStack Query의 query key 기준](https://tanstack.com/query/v4/docs/framework/react/guides/query-keys)
 

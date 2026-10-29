@@ -18,7 +18,7 @@ My early criterion for entities was “domain code likely to be reused by severa
 
 It was more ambiguous in admin work, where queries, mutations, forms, and screen composition changed together. Remembering “domain means entity, user action means feature” still did not produce agreement about the next file.
 
-The problem went beyond finding files. Admin filter widgets fetch their own data, so widgets need to sit above queries. But features, where composition happened, sat below widgets. With no layer able to combine filters and lists, that work moved into app route files. One route grew to 202 lines, with a domain filter-options array living in page.tsx.
+The problem went beyond finding files. Admin filter widgets fetch their own data, so widgets need to sit above queries. But features, where composition happened, sat below widgets. With no layer able to combine filters and lists, that work moved into app route files. Even a domain filter-options array ended up in page.tsx.
 
 ## Remove entities and put pages above widgets
 
@@ -34,7 +34,7 @@ Server-domain APIs, schemas, Query Options, state, and UI moved to features. Scr
 
 Pages own a screen's interactions and composition, which should be readable directly from JSX. Naturally procedural domain logic, such as call ordering and state transitions, stays in features. Widgets contain independent UI blocks that work across screens; domain-agnostic code goes to shared. App owns routing, providers, and SDK initialization.
 
-The actual move began on August 31 by moving existing features into pages, then entities into features. Reversing that order would have caused same-name slice collisions. I manually combined exports in nine colliding barrels.
+The actual move began on August 31 by moving existing features into pages, then entities into features. Reversing that order would have caused same-name slice collisions. I manually combined exports where barrel names collided.
 
 ```text
 before
@@ -46,15 +46,15 @@ features  서버 도메인 단위의 API·모델·스키마·도메인 UI
 pages     화면 단위의 인터랙션과 조합
 ```
 
-The main migration commit touched 853 files in the portal and 1,659 in the admin monorepo. It changed 1,489 module paths and 437 package references in the monorepo. Searching only aliased imports missed one relative import, which the final typecheck caught. Search results alone were insufficient even for a largely repetitive move.
+Moving the folders also meant updating module paths and package references. Searching only aliased imports missed a relative import, which the final typecheck caught. I still needed to check that references resolved after the bulk move.
 
-## Lint exposed 62 cross-page imports that afternoon
+## Lint exposed cross-page imports after the move
 
-After the move, lint reported 62 cases of one pages slice importing another. Twenty-two old features slices had moved into pages, making formerly unrestricted same-layer imports visible as cross-page coupling. I introduced `fsd/no-cross-page` as a warning and resolved them gradually rather than making all 62 errors immediately.
+After the move, lint found pages slices importing files from other pages slices. Moving the old features into pages exposed those formerly unrestricted imports as dependencies between screens. I enabled fsd/no-cross-page as a warning while I cleaned up the existing references.
 
-Eighteen imports were parent-route screens importing child-route screens. Program, search, and review-writing screens under a detail route had become sibling pages slices. Nesting them according to route composition made those references internal to a slice. Counts fell from 55 to 39 and then 37.
+Some parent-route screens imported their child-route screens. Program, search, and review-writing screens under a detail route had become sibling pages slices. Nesting them according to route composition made those references internal to a slice.
 
-I changed the plan for the rest. Initially I wrote “move UI blocks down to widgets,” but the remaining references were domain UI rendering server DTOs directly, such as review items and category lists. I revised the criterion to put server-aligned domain UI in features. On September 2, the final ten shared map, banner, and terms references moved to each domain's `features/{domain}/ui`, reaching zero. I then raised the rule to error.
+I changed the plan for the rest. Initially I wrote “move UI blocks down to widgets,” but the remaining references were domain UI rendering server DTOs directly, such as review items and category lists. I revised the criterion to put server-aligned domain UI in features. I moved the remaining shared map, banner, and terms references to each domain's `features/{domain}/ui`, then raised the rule to error.
 
 Custom ESLint rules already restricted layer direction and deep imports into another slice's internals. I did not ask lint to infer whether a component was a screen fragment or domain UI. Automating judgments that require reading context can encourage stranger folders to avoid false positives. Lint enforces dependency directions we have agreed on.
 
@@ -85,19 +85,19 @@ packages/shared/src/
 @app/shared/server
 ```
 
-I also combined Vitest configurations, accidentally putting 11 DOM-free utils test files in jsdom. Immediately afterward, they took 633 seconds, and three tests choosing server behavior based on the absence of document failed, including HTTP authentication headers. Just over two hours later, splitting node and jsdom projects returned that local run to eight seconds, with all three passing. Utils had already run in node before the merge. This repaired a regression I introduced rather than improving the previous baseline.
+Combining the Vitest configurations also put DOM-free utils tests in jsdom. A local run took 633 seconds, and tests selecting server behavior based on the absence of document failed, including HTTP authentication headers. Splitting node and jsdom projects returned the run to eight seconds and restored the tests. Utils had already run in node before the merge, so I was fixing a problem I had introduced.
 
 ## Four boundary errors passed all static checks
 
 Passing typecheck, ESLint, and Vitest did not eliminate server/client boundary errors. Those configurations and tests did not exercise the actual Next.js module graph.
 
-The first was on August 31. A moved slice's domain barrel exported a hook without `use client`. Typecheck and lint passed, but all portal E2E tests failed. Adding the directive to another 14 React Hook Form modules finally restored routes from 500 errors.
+The first was on August 31. A moved slice's domain barrel exported a hook without `use client`. Typecheck and lint passed, but all portal E2E tests failed. Adding the directive to the other affected React Hook Form modules finally restored routes from 500 errors.
 
-On September 2, every route importing the top-level pages barrel returned 500 in the dev server. A review-options hook reached the server graph through profile/index.ts → pages/index.ts. After removing it from the barrel and adding `use client`, I reopened 34 routes and confirmed 200 or 307 responses.
+On September 2, every route importing the top-level pages barrel returned 500 in the dev server. A review-options hook reached the server graph through profile/index.ts → pages/index.ts. After removing it from the barrel and adding `use client`, I reopened the routes and confirmed 200 or 307 responses.
 
-On September 3, widget cleanup produced four similar errors across 28 reopened routes. I added `use client` and reduced the login slice's barrel to its two screens.
+During widget cleanup on September 3, reopening the routes exposed similar errors. I added `use client` and limited the login slice's barrel to the screens it owned.
 
-The fourth affected the admin monorepo: production builds failed in all three apps after typecheck, lint, and 1,319 Vitest tests passed. The combined shared barrel pulled the entire client UI graph into route handlers importing any shared export. Twenty-two modules lacked `use client`. I added a rule to run `pnpm build` after adding barrel exports or combining packages. I manually opened portal dev routes at each commit, but had not documented that as a completion criterion.
+The fourth affected the admin monorepo: production builds failed in all three apps after typecheck, lint, and Vitest passed. The combined shared barrel pulled the client UI graph into route handlers importing any shared export, reaching modules without `use client`. I added a rule to run `pnpm build` after adding barrel exports or combining packages. I manually opened portal dev routes at each commit but had not documented that as a completion criterion.
 
 That week I also built an E2E flow running both dev servers from a hospital admin review request through Back-Office rejection. It came from fixing a rejection-flow bug, not this migration, and I have no record of rerunning it on the migrated tree. [Another article covers that E2E.](/en/blog/plan-gated-ai-workflow)
 

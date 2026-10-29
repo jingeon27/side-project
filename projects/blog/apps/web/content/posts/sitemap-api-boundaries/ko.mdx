@@ -157,13 +157,6 @@ async function getAllLocationIds() {
 
 현재 쿼리 문자열은 별도 헬퍼로 미리 XML 이스케이프해요. Next.js가 최종 사이트맵을 직렬화하는 방식을 통합 테스트로 확인하지 않은 채 “프레임워크가 이스케이프하지 않는다”고 단정하면 이중 이스케이프를 놓칠 수 있어요. 생성된 XML을 직접 파싱해 URL이 정확히 한 번만 이스케이프되는지 확인해야 해요.
 
-아직 남기지 못한 관측값도 있어요.
-
-- 전체 항목 수와 유형별 항목 수
-- 직전 생성 대비 증감률
-- 생성시간, 데이터 소스별 요청 시간과 실패
-- 캐시 적중률과 원본 API 호출 수
-
-아직 이 값과 크롤링 변화를 측정하지 않았어요. 확인된 성과는 공개 호출이 캐시 경계에 들어가도록 인증 기본값과 재검증 정책을 바꾼 데까지예요.
+인증 기본값과 재검증 정책을 바꾼 뒤에는 공개 API를 쿠키 없이 캐시 안에서 호출할 수 있게 됐어요. 사이트맵 생성 과정의 페이지 조회와 실패 처리, XML 검증은 아직 고칠 부분으로 남아 있어요.
 
 참고: [Next.js use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache), [Next.js cacheLife](https://nextjs.org/docs/app/api-reference/functions/cacheLife), [Google 사이트맵 가이드](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)

@@ -718,8 +718,8 @@
         "level": 2
       },
       {
-        "id": "성공했다는-말도-나눠서-확인했어요",
-        "title": "성공했다는 말도 나눠서 확인했어요",
+        "id": "좌표-변환-테스트로는-스크롤-문제를-잡지-못했어요",
+        "title": "좌표 변환 테스트로는 스크롤 문제를 잡지 못했어요",
         "level": 2
       },
       {
@@ -784,8 +784,8 @@
         "level": 2
       },
       {
-        "id": "separate-the-evidence-behind-success",
-        "title": "Separate the evidence behind success",
+        "id": "coordinate-tests-missed-the-scrolling-problem",
+        "title": "Coordinate tests missed the scrolling problem",
         "level": 2
       },
       {
@@ -1275,7 +1275,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 12,
     "translations": {
       "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
       "en": "sentry-observability"
@@ -2230,8 +2230,8 @@
         "level": 2
       },
       {
-        "id": "옮긴-날-오후-page-간-import-62건이-드러났어요",
-        "title": "옮긴 날 오후, page 간 import 62건이 드러났어요",
+        "id": "옮기고-나니-page-간-import가-드러났어요",
+        "title": "옮기고 나니 page 간 import가 드러났어요",
         "level": 2
       },
       {
@@ -2296,8 +2296,8 @@
         "level": 2
       },
       {
-        "id": "lint-exposed-62-cross-page-imports-that-afternoon",
-        "title": "Lint exposed 62 cross-page imports that afternoon",
+        "id": "lint-exposed-cross-page-imports-after-the-move",
+        "title": "Lint exposed cross-page imports after the move",
         "level": 2
       },
       {
@@ -2585,7 +2585,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 5,
     "translations": {
       "ko": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
       "en": "sitemap-api-boundaries"
@@ -3337,7 +3337,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 9,
+    "readingMinutes": 8,
     "translations": {
       "ko": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
       "en": "reservation-form-state"
@@ -3541,7 +3541,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "typescript", "query-key"],
     "publishedAt": "2024-04-10T03:32:20+09:00",
-    "updatedAt": "2026-10-28T18:15:00+09:00",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/query-key-factory.png",
     "sourceUrl": "https://jingeon27.tistory.com/6",
     "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
@@ -3607,7 +3607,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "typescript", "query-key"],
     "publishedAt": "2024-04-10T03:32:20+09:00",
-    "updatedAt": "2026-10-28T18:15:00+09:00",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/query-key-factory.png",
     "sourceUrl": "https://jingeon27.tistory.com/6",
     "title": "Keeping TanStack Query keys and query functions together",
@@ -3683,7 +3683,7 @@
       "architecture"
     ],
     "publishedAt": "2024-04-02T23:34:35+09:00",
-    "updatedAt": "2026-10-28T18:15:00+09:00",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/electron-module-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/5",
     "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
@@ -3769,7 +3769,7 @@
       "architecture"
     ],
     "publishedAt": "2024-04-02T23:34:35+09:00",
-    "updatedAt": "2026-10-28T18:15:00+09:00",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/electron-module-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/5",
     "title": "Separating responsibilities in an Electron data-collection app",

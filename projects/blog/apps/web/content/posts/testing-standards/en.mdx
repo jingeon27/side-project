@@ -92,7 +92,7 @@ Mocks are still not the authoritative contract. New constraints discovered on th
 
 ## Some passing assertions checked nothing
 
-Colocation alone did not prevent another mistake. Tabs, creation, and Drawer responsibilities moved from a global CMS list View to page.tsx, but tests still rendered the old View alone. Eight tests remained broken because the expected DOM was gone. The assertion that a Drawer was closed without an ID always passed because no Drawer was rendered at all. Five days later, I restored tests beside page.tsx and added an admin AGENTS.md rule to move tests with their responsibility.
+Colocation alone did not prevent another mistake. Tabs, creation, and Drawer responsibilities moved from a global CMS list View to page.tsx, but tests still rendered the old View alone. The tests broke because the expected DOM was gone. The assertion that a Drawer was closed without an ID always passed because no Drawer was rendered at all. Five days later, I restored tests beside page.tsx and added an admin AGENTS.md rule to move tests with their responsibility.
 
 A Back-Office banner E2E waited for “Uploading...” to disappear, but the text existed nowhere in the repository. Playwright passed immediately, potentially advancing before the image entered the form. Code review caught it, and I changed the wait to the actual upload-progress entry disappearing.
 

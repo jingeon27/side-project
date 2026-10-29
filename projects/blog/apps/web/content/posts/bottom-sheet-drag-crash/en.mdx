@@ -65,9 +65,9 @@ In 5.x, drag end no longer rereads ref. It uses sheetHeight previously measured 
 | --- | --- | --- | --- |
 | Delay closing at callers | Small scope | Cannot reliably stop the internal callback; an unreproduced trigger leaves no basis for a delay duration | Reject |
 | Patch a null guard into the package | Stops the failing read directly | A private patch must survive installation and be maintained independently of upstream fixes | Reject |
-| Upgrade to 5.6.0 | Removes the ref-access path | Changes snapPoints and detent semantics, moves imports in 30 files from framer-motion to motion/react, and updates AGENTS/SKILL guidance | Choose |
+| Upgrade to 5.6.0 | Removes the ref-access path | Changes snapPoints and detent semantics, moves imports from framer-motion to motion/react, and updates AGENTS/SKILL guidance | Choose |
 
-I upgraded to 5.6.0. A screen crash justified removing the path. Rollback required restoring the library version and shared Root, plus three detent props removed later; the animation package and 30 migrated imports could remain. No private patch would be left to maintain. The decision depended on absorbing major-version changes in one shared Root. I should also have checked which of header, body, and buttons scroll, beyond height and initial position. I missed that.
+I upgraded to 5.6.0. A screen crash justified removing the path. Rollback required restoring the library version and shared Root, plus the detent props removed later; the animation package and migrated imports could remain. No private patch would be left to maintain. The decision depended on absorbing major-version changes in one shared Root. I should also have checked which of header, body, and buttons scroll, beyond height and initial position. I missed that.
 
 ## Convert coordinate systems in the shared Root
 
@@ -80,7 +80,7 @@ The upgrade removed the crash path but changed snapPoints.
 | Index 0 | Highest open position | Closed; the last index is fully open |
 | Endpoints | No required 0 or 1 | Starts at 0 and ends at 1; missing values are inserted with console.error |
 
-There were 26 product uses of BottomSheet.Root, excluding five documentation examples. The commit message said 28, but recounting found 26. Three explicitly supplied viewport-based snapPoints: two `[0.8, 0.5, 0.3, 0]` and one `[0.8]`. Editing callers to use library coordinates would leak that rule into feature code. I preserved Root's public interface and converted internally, adding only comments to IBottomSheetRootProps.
+Some screens using BottomSheet.Root supplied viewport-based snapPoints directly. Rewriting each caller in the library's coordinates would spread that rule into feature code. I kept Root's public interface and converted internally, documenting the behavior in IBottomSheetRootProps.
 
 ```typescript
 function toSheetSnapConfig(points: number[], initialSnap: number) {
@@ -114,9 +114,9 @@ package.json changed from ^2.2.0 to ^5.6.0; the lockfile moved 2.2.1 to 5.6.0. L
 - v4.0.0, December 27, 2024: the peer dependency changed from framer-motion to motion.
 - v5.0.0, September 6, 2025: Sheet.Scroller was removed, Sheet.Content gained scrolling responsibility, and snapPoints and detent changed.
 
-I installed motion ^11.18.2. Motion 11 bundles its own copy of framer-motion 11, so direct app imports could include two runtimes. I moved 30 files to motion/react. The framer-motion declaration remained ^11.0.24, resolved to 11.18.2, because motion's type entrypoint reexports from framer-motion. Motion already depends on it; I removed the direct runtime import path, not its installation.
+I installed motion ^11.18.2. Motion 11 bundles its own copy of framer-motion 11, so direct app imports could include two runtimes. I moved the app's direct imports to motion/react. The framer-motion declaration remained ^11.0.24, resolved to 11.18.2, because motion's type entrypoint reexports from framer-motion. Motion already depends on it; I removed the direct runtime import path, not its installation.
 
-A later diff review found three more details. I removed detent from three callers. My initial claim that it had never affected them was wrong: SheetContainer.tsx:30–44 in 2.2.1 applied height for full-height and maxHeight for content-height even with snapPoints. It became ineffective only after the new Root forced content mode when snapPoints existed. I removed the misleading props and documented this. I also rounded CSS ratios to two decimals to avoid values such as 55.00000000000001dvh, and updated usage guidance to the current API.
+A later diff review found three more details. I removed the detent props left in callers. My initial claim that it had never affected them was wrong: SheetContainer.tsx:30–44 in 2.2.1 applied height for full-height and maxHeight for content-height even with snapPoints. It became ineffective only after the new Root forced content mode when snapPoints existed. I removed the misleading props and documented this. I also rounded CSS ratios to two decimals to avoid values such as 55.00000000000001dvh, and updated usage guidance to the current API.
 
 ## What the one-pass migration and review missed
 
@@ -128,14 +128,11 @@ On September 21, I changed Root to stop wrapping all children in the scroll regi
 
 Passing generated code and review no longer means the interaction boundary is checked. For scrolling, dragging, and focus, I move the actual screen and leave browser tests that can expose regressions.
 
-## Separate the evidence behind success
+## Coordinate tests missed the scrolling problem
 
-- **Fixed by tests:** seven coordinate-conversion cases in bottom-sheet.lib.test.ts.
-- **Seen in the dev server:** initial position and maximum height of the three explicit-snap sheets. Scroll-region checking was insufficient and missed the title.
-- **Added later as browser tests:** body-only scrolling, 80% snap height, and button position. Added September 21, they are not evidence for the original upgrade's verification.
-- **Requires a production bundle check:** whether only one animation runtime is included. Moving 30 imports was based on motion 11 bundling a framer-motion copy; I left no before/after bundle inspection record.
-- **Not reproduced:** the crash itself. I narrowed it to the slow-release ref read but could not identify the app action removing the tree, so there is no identical before/after interaction comparison.
-- **Not recorded:** pre-release device and staging checks. Their results are absent from commits and documentation.
+I tested coordinate conversion and checked the initial positions and maximum heights of explicit-snap sheets in the dev server. I missed the header problem because I did not scroll long content and check where the title and buttons stayed. The September 21 fix added browser tests for body-only scrolling, snap height, and button position.
+
+I changed the imports to avoid running duplicate Motion copies, but did not inspect the deployed bundle to confirm that duplication was gone. I also could not reproduce the crash directly. I found the ref read during a slow release but not the app action removing the sheet tree, so I could not compare the same interaction before and after the fix.
 
 To avoid duplicating implementation in conversion tests, I added `toViewportRatio`, converting a sheet-relative ratio back to its user-visible viewport meaning.
 
@@ -151,7 +148,7 @@ Other cases cover reversing order, the highest snap becoming 1, inserting the cl
 
 ## Fixing the crash and header scrolling separately
 
-The 2.2.1 null-ref path is gone. The public interface for 26 callers and the positional meaning of three explicit snap configurations remain. Before deployment, the crash reached at least 75 events and 57 users. After September 10 deployment, the same error groups had zero events through the September 28 check. The separate header-scrolling problem remained until September 21. Disappearance of the crash and preservation of sheet usability were distinct checks.
+The 2.2.1 null-ref path is gone. The public interface and the meaning of callers' explicit snap positions remain. Before deployment, the crash reached at least 75 events and 57 users. After September 10 deployment, the same error groups had zero events through the September 28 check. The separate header-scrolling problem remained until September 21. Disappearance of the crash and preservation of sheet usability were distinct checks.
 
 ## References
 

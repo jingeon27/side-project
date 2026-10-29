@@ -118,7 +118,7 @@ We chose client access because access-token cookies had moved there two days ear
 
 That rationale does not hold for the notice alone, which is not read on every request. A Route Handler could have removed its 404 while retaining httpOnly. Treating both cookies alike introduced unnecessary exposure; I record it as debt.
 
-Changing cookies in a Server Action also rerenders the current route and returns its RSC payload with the action result. That is not a full browser refresh or UI unmount; client state remains. It still attaches a server render to closing one notice. I did not measure that cost and cannot claim it caused substantial load. I considered the round trip unnecessary.
+Changing cookies in a Server Action also rerenders the current route and returns its RSC payload with the action result. That is not a full browser refresh or UI unmount; client state remains. It still attaches a server render to closing one notice. I considered that round trip unnecessary just to close the notice.
 
 The token changes were:
 

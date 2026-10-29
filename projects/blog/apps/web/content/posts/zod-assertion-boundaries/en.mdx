@@ -53,7 +53,7 @@ Where corrupted values already had a defined failure path, I used `parse` to blo
 
 ## Log mismatched fields in existing API responses first
 
-I added a schema-checking layer to 76 API functions and 316 call sites. It currently does not return parsed data.
+I added schema checks where API responses had previously been trusted through type assertions. It currently does not return parsed data.
 
 ```tsx
 export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T>): T {
