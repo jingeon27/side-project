@@ -1,6 +1,6 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
-import { sentryDsn, sentryEnvironment } from '../config/env';
+import { sentryDsn, sentryEnvironment, sentryRelease } from '../config/env';
 import { performancePrivacyIntegration, scrubPerformanceMetric, scrubPerformanceSpan } from './performance';
 
 const STACK_FRAME = /^\s+at /;
@@ -59,7 +59,7 @@ export function sentryOptions(): NodeOptions | undefined {
     dsn,
     initialScope: { tags: { service: 'photo-contest', layer: 'api' } },
     environment: sentryEnvironment(),
-    release: process.env.SENTRY_RELEASE?.trim() || undefined,
+    release: sentryRelease(),
     tracesSampleRate: 0.1,
     dataCollection: {
       userInfo: false,
