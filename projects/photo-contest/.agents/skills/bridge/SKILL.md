@@ -40,3 +40,5 @@ link.open의 HTTP·HTTPS URL은 S3 서명의 임시 자격 증명·한글 파일
 - 이 패키지는 React 밖에서도 쓰이는 전송·검증·요청/응답 채널이다. React Hook이나 `useEffectEvent`를 넣지 않는다. 웹의 Effect가 설치한 구독만 그 훅 안에서 Effect Event로 최신 콜백을 읽고 구독 대상 교체/cleanup은 유지한다.
 - 네이티브 라우터는 WebView `onMessage`에서도 호출되므로 Effect Event를 주입하지 않는다. 패키지 자체의 dispose·타임아웃·origin 검증과 최신 ref 연결을 유지한다.
 - DOM outside-click·focus·Escape·ARIA는 웹 primitive가 맡으며 브리지에는 `navigation.back` 계약만 둔다.
+
+- 생성자 인자를 같은 이름의 필드에 그대로 저장하면 별도 필드 선언과 `this.x = x` 대신 TypeScript parameter property(`private readonly x: T`, `readonly code: T`)로 합친다. 기존 접근 범위·readonly·인자 순서를 보존하고 단순 초기값은 매개변수 기본값을 검토한다. 변환·검증·자원 생성까지 억지로 기본 인자로 옮겨 API를 늘리지 않는다. 기본 인자에서는 아직 초기화되지 않은 인스턴스 필드·화살표 핸들러를 참조하지 않으며, 필드 초기화 순서와 상속 클래스의 `super()` 순서를 확인한다.
