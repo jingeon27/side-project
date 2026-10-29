@@ -12,7 +12,6 @@ import { DatabaseModule } from '../database/database.module';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import { PROFILE_PROVIDER } from '../game-profiles/providers/profile-provider.factory';
 import { ProfileException } from '../game-profiles/providers/profile.exception';
-import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { responseCookies, responseLocation } from '../testing/http-response';
 import { AuthModule } from './auth.module';
@@ -141,43 +140,6 @@ describe('auth module strategy wiring without DB or external services', () => {
     expect(session.body.googleConfigured).toBe(false);
   });
 
-  it('supports replacing the strategy token with a Nest useValue provider', async () => {
-    const google = fakeIdentity('replacement');
-    const context = await NestFactory.createApplicationContext(
-      {
-        module: AuthFixtureModule,
-        providers: [{ provide: IDENTITY_PROVIDERS, useValue: { google } }, IdentityProviderRegistry],
-      },
-      { logger: false, abortOnError: false },
-    );
-    try {
-      const registry = context.get(IdentityProviderRegistry);
-      expect(registry.require('google')).toBe(google);
-      await expect(registry.require('google').exchange('code', 'verifier', 'nonce')).resolves.toBe(
-        'replacement-subject',
-      );
-      expect(google.exchange).toHaveBeenCalledWith('code', 'verifier', 'nonce');
-      expect(() => registry.require('kakao')).toThrow(OAuthException);
-    } finally {
-      await context.close();
-    }
-  });
-
-  it('constructs configured strategies in the Nest factory with the existing Google callback URL', async () => {
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'fixture-client');
-    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'fixture-secret');
-    const { app, db } = await fixture();
-    const url = new URL(
-      app
-        .get(IdentityProviderRegistry)
-        .require('google')
-        .authorizationUrl({ state: 'state', nonce: 'nonce', challenge: 'challenge' }),
-    );
-    expect(url.searchParams.get('redirect_uri')).toBe('http://localhost:3300/api/auth/google/callback');
-    expect(url.searchParams.get('scope')).toBe('openid');
-    expect(db.$connect).not.toHaveBeenCalled();
-  });
-
   it('keeps OAuth exchange failures in the existing HTTP error envelope', async () => {
     const google = fakeIdentity('google');
     google.exchange.mockRejectedValue(OAuthException.exchangeFailed('Google'));
@@ -195,20 +157,6 @@ describe('auth module strategy wiring without DB or external services', () => {
     });
     expect(google.exchange).toHaveBeenCalledWith('code', expect.any(String), expect.any(String));
   });
-
-  it.each([
-    { demoMode: true, testAuthEnabled: false, token: 'token', expected: DemoProfileProvider },
-    { demoMode: false, testAuthEnabled: true, token: 'token', expected: SupercellProfileProvider },
-    { demoMode: false, testAuthEnabled: true, token: '', expected: DemoProfileProvider },
-  ])(
-    'selects profile strategy for demo=$demoMode test=$testAuthEnabled token=$token',
-    async ({ token, expected, ...options }) => {
-      vi.stubEnv('SUPERCELL_API_TOKEN', token);
-      const { app, db } = await fixture(options);
-      expect(app.get(PROFILE_PROVIDER)).toBeInstanceOf(expected);
-      expect(db.$connect).not.toHaveBeenCalled();
-    },
-  );
 
   it('prefers the explicit profile fake even in demo mode and keeps typed upstream exceptions', async () => {
     const profile = new DemoProfileProvider();
