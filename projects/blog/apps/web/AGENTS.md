@@ -12,4 +12,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-- Apply [blog code feedback](../../.agents/skills/blog-code-feedback/SKILL.md) for callback style, fixed JSX, cmdk behavior, and URL filter state.
+- Apply [blog code feedback](../../.agents/skills/blog-code-feedback/SKILL.md) for callback style, fixed JSX, autocomplete behavior, and URL filter state.

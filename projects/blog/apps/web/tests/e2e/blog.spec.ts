@@ -37,6 +37,7 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page).toHaveURL(/\/ko\/blog$/);
   await page.getByRole('combobox', { name: ko.common.search }).fill(article.title);
   await expect(page.locator('.article-list .article-row')).toHaveCount(1);
+  await page.getByRole('combobox', { name: ko.common.search }).press('Escape');
   await page.getByRole('link', { name: article.title, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
   await expect(page.locator('.article-prose')).toBeVisible();
@@ -203,7 +204,7 @@ test('Command and Control shortcuts open search, Escape closes it, and Enter ope
   const option = page.getByRole('option', { name: article.title, exact: true });
   await expect(option).toBeVisible();
   await search.press('ArrowDown');
-  await expect(option).toHaveAttribute('aria-selected', 'true');
+  await expect(option).toHaveAttribute('data-highlighted');
   await search.press('Enter');
   await expect(page).toHaveURL(new RegExp(`${encodeURIComponent(article.slug)}$`));
   await expect(page.getByRole('heading', { name: article.title, level: 1 })).toBeVisible();
@@ -269,6 +270,7 @@ test('English search opens a full translation and language switching preserves t
   await page.goto('/en/blog');
   await expect(page.locator('.article-list .article-row')).toHaveCount(english.length);
   await page.getByRole('combobox', { name: en.common.search }).fill(translated.title);
+  await page.getByRole('combobox', { name: en.common.search }).press('Escape');
   await expect(page.locator('.article-list .article-row')).toHaveCount(1);
   await page.getByRole('link', { name: translated.title, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/en/blog/${translated.slug}$`));
@@ -595,5 +597,24 @@ test('URL filters survive reload and browser history navigation', async ({ page 
 
   await page.goto('/ko/blog/category/engineering?category=til&q=react');
   await expect(page.getByRole('group', { name: ko.common.category })).toHaveCount(0);
+  await expect(search).toHaveValue('react');
+});
+
+test('search popup dismisses through outside click and Tab without clearing the URL query', async ({
+  page,
+}) => {
+  await page.goto('/ko/blog');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await search.fill('react');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.getByRole('heading', { level: 1, includeHidden: true }).click();
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await expect(search).toHaveValue('react');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('react');
+  await search.click();
+  await search.press('Tab');
+  await expect(page.getByRole('button', { name: ko.common.clear })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
   await expect(search).toHaveValue('react');
 });

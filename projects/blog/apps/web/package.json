@@ -20,11 +20,11 @@
     "test:e2e:dev": "playwright test --config playwright.dev.config.ts"
   },
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "catalog:",
     "@sentry/nextjs": "catalog:",
-    "cmdk": "^1.1.1",
     "es-toolkit": "catalog:",
     "github-slugger": "^2.0.0",
     "image-size": "^2.0.2",
