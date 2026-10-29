@@ -22,7 +22,7 @@ describe('기존 핸들러 명명 규칙 옵션', () => {
     'export function Editor() { return <Button onClick={actions.handleSave} />; }',
     'export function Editor() { return <Input onChange={props.onChange} />; }',
     'export function Editor() { const { refetch } = useQuery(); return <Boundary onRetry={refetch} />; }',
-    'export function Editor() { const [open, setOpen] = useState(false); return <Dialog onOpenChange={setOpen} />; }',
+    'export function Editor() { const [open, setOpen] = useState(false); return <Dialog onOpenChange={(nextOpen) => setOpen(nextOpen)} />; }',
     'export function Editor() { return <FeedLoadMore onLoadMore={pagination.fetchNextPage} />; }',
     'export function Editor() { return <MediaInput onUploadMedia={upload.mutateAsync} />; }',
     'export function Editor() { return <Button onClick={() => save()} />; }',
