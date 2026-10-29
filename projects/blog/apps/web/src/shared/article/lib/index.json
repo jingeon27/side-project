@@ -348,12 +348,22 @@
         "level": 2
       },
       {
+        "id": "검색으로-들어오는-화면과-캐시도-확인했어요",
+        "title": "검색으로 들어오는 화면과 캐시도 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "오류가-났을-때-남길-로그도-골랐어요",
+        "title": "오류가 났을 때 남길 로그도 골랐어요",
+        "level": 2
+      },
+      {
         "id": "만들고-나서-다시-정한-게-많았어요",
         "title": "만들고 나서 다시 정한 게 많았어요",
         "level": 2
       }
     ],
-    "readingMinutes": 17,
+    "readingMinutes": 19,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -456,12 +466,22 @@
         "level": 2
       },
       {
+        "id": "i-checked-search-entry-points-and-cache-behavior-too",
+        "title": "I checked search entry points and cache behavior too",
+        "level": 2
+      },
+      {
+        "id": "i-chose-what-to-keep-in-error-logs",
+        "title": "I chose what to keep in error logs",
+        "level": 2
+      },
+      {
         "id": "many-decisions-came-after-i-had-built-the-feature",
         "title": "Many decisions came after I had built the feature",
         "level": 2
       }
     ],
-    "readingMinutes": 16,
+    "readingMinutes": 17,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
