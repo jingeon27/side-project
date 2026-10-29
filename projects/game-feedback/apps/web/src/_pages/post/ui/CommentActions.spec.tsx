@@ -58,6 +58,8 @@ function comment(author: typeof postAuthor): Extract<Comment, { isDeleted: false
   return {
     id: `comment-by-${author.id}`,
     parentId: null,
+    replyCount: 0,
+    repliesCursor: null,
     postId: post.id,
     body: '댓글 본문',
     author,
