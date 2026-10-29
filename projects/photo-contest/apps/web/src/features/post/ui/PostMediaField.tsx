@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef } from 'react';
+import { useCallback, useId, useRef } from 'react';
 
 import { ImagePlus } from 'lucide-react';
 import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
@@ -28,6 +28,18 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
     fieldState: { error },
     formState: { isSubmitting },
   } = useController({ control, name: 'media' });
+  const handleInputRef = useCallback(
+    (element: HTMLInputElement | null) => {
+      fileInputRef.current = element;
+      inputRef(element);
+      if (!element) return;
+      return () => {
+        fileInputRef.current = null;
+        inputRef(null);
+      };
+    },
+    [inputRef],
+  );
   // 형식·크기가 맞지 않는 파일은 미리 보여 주지 않고 오류만 보여 준다.
   const previewUrl = useObjectUrl(media && postSchema.shape.media.safeParse(media).success ? media : null);
   const linkUrl = useWatch({ control, name: 'linkUrl' });
@@ -50,10 +62,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         aria-required={required}
         accept="image/*,.heic,.heif,video/mp4,video/webm"
         aria-label="사진 또는 동영상 선택"
-        ref={(element) => {
-          fileInputRef.current = element;
-          inputRef(element);
-        }}
+        ref={handleInputRef}
         name={name}
         onBlur={onBlur}
         disabled={isSSR || isSubmitting}
