@@ -1,33 +1,31 @@
 import {
   APP_MARKER_KEY,
   BRIDGE_ERROR_CODE,
-  NATIVE_EVENT,
-  NATIVE_EVENT_NAME,
-  NATIVE_REQUEST,
-  PROTOCOL_VERSION,
-  WEB_EVENT,
-  WEB_REQUEST,
   createMessageId,
   decodeWebMessage,
   errorResponse,
+  NATIVE_EVENT,
+  NATIVE_EVENT_NAME,
+  NATIVE_REQUEST,
   originOf,
+  PROTOCOL_VERSION,
   readRequestId,
   successResponse,
-} from './protocol';
-import type {
-  TBridgeErrorCode,
-  TNativeAppInfo,
-  TNativeEventPayload,
-  TNativeEventType,
-  TNativeMessage,
-  TNativeRequestPayload,
-  TNativeRequestResult,
-  TNativeRequestType,
-  TWebEventPayload,
-  TWebEventType,
-  TWebRequestPayload,
-  TWebRequestResult,
-  TWebRequestType,
+  WEB_EVENT,
+  WEB_REQUEST,
+  type TBridgeErrorCode,
+  type TNativeAppInfo,
+  type TNativeEventPayload,
+  type TNativeEventType,
+  type TNativeMessage,
+  type TNativeRequestPayload,
+  type TNativeRequestResult,
+  type TNativeRequestType,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebRequestPayload,
+  type TWebRequestResult,
+  type TWebRequestType,
 } from './protocol';
 
 /** 앱이 구현하는 기능. 없는 기능은 웹에 UNSUPPORTED로 답한다. */
@@ -37,12 +35,12 @@ export type TNativeCapabilities = {
 
 /** 기능 구현이 던지면 이 코드로 웹에 전달한다. 그 밖의 오류는 FAILED. */
 export class NativeCapabilityError extends Error {
-  readonly code: TBridgeErrorCode;
-
-  constructor(code: TBridgeErrorCode, message: string) {
+  constructor(
+    readonly code: TBridgeErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'NativeCapabilityError';
-    this.code = code;
   }
 }
 
@@ -102,8 +100,11 @@ export function createNativeRouter({
           : errorResponse(id, BRIDGE_ERROR_CODE.Failed, '앱 응답을 만들지 못했습니다.'),
       );
     } catch (error) {
-      if (error instanceof NativeCapabilityError) send(errorResponse(id, error.code, error.message));
-      else send(errorResponse(id, BRIDGE_ERROR_CODE.Failed, '요청을 처리하지 못했습니다.'));
+      if (error instanceof NativeCapabilityError) {
+        send(errorResponse(id, error.code, error.message));
+        return;
+      }
+      send(errorResponse(id, BRIDGE_ERROR_CODE.Failed, '요청을 처리하지 못했습니다.'));
     }
   }
 
@@ -134,11 +135,13 @@ export function createNativeRouter({
         return;
       }
       const result = NATIVE_REQUEST[request.type].result.safeParse(message.result);
-      if (result.success) request.resolve(result.data);
-      else
-        request.reject(
-          new NativeCapabilityError(BRIDGE_ERROR_CODE.Invalid, '웹 응답 형식이 올바르지 않습니다.'),
-        );
+      if (result.success) {
+        request.resolve(result.data);
+        return;
+      }
+      request.reject(
+        new NativeCapabilityError(BRIDGE_ERROR_CODE.Invalid, '웹 응답 형식이 올바르지 않습니다.'),
+      );
     },
     requestWeb: (type, payload, options) => {
       const id = createMessageId();

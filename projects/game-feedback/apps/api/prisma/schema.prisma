@@ -1,0 +1,457 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  withdrawnAt DateTime?
+  id String @id @default(cuid())
+  googleSubject String? @unique
+  demoKey String? @unique
+  nickname String
+  bio String @default("")
+  profileLinks Json @default("[]")
+  avatar UserAvatar?
+  isVerified Boolean @default(false)
+  verifiedAt DateTime?
+  bannedAt DateTime?
+  banReason String?
+  supercellTag String?
+  role String @default("USER")
+  termsVersion String
+  termsAcceptedAt DateTime @default(now())
+  ageConfirmed Boolean
+  createdAt DateTime @default(now())
+  chatAsFirst ChatConversation[] @relation("chatFirst")
+  chatAsSecond ChatConversation[] @relation("chatSecond")
+  chatMessages ChatMessage[]
+  pushDevices PushDevice[]
+  adminAccount AdminAccount?
+  sessions Session[]
+  gameAccounts GameAccount[]
+  posts Post[]
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  chatNotifications ChatNotification[]
+  reports Report[]
+  blocks Block[] @relation("blocker")
+  blockedBy Block[] @relation("blocked")
+  postMedia PostMedia[]
+  avatarUploads AvatarUpload[]
+  supportRequests SupportConversation[] @relation("supportRequester")
+  assignedSupport SupportConversation[] @relation("supportAdmin")
+  following UserFollow[] @relation("followFollower")
+  followers UserFollow[] @relation("followAuthor")
+  socialIdentities SocialIdentity[]
+}
+model UserAvatar {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @unique @default(cuid())
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  mimeType String
+  size Int
+}
+model AvatarUpload {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  objectId String @unique
+  object MediaObject @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  mimeType String
+  size Int
+  name String
+  expiresAt DateTime
+  completedAt DateTime?
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+model SocialIdentity {
+  provider String
+  subject String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([provider,subject])
+  @@unique([userId,provider])
+}
+// Survives account deletion so a banned social login cannot onboard a fresh account.
+model BannedIdentity {
+  provider String
+  subjectHash String
+  userId String
+  createdAt DateTime @default(now())
+  @@id([provider,subjectHash])
+  @@index([userId])
+}
+model UserFollow {
+  followerId String
+  follower User @relation("followFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following User @relation("followAuthor", fields: [followingId], references: [id], onDelete: Cascade)
+  notifyNewPosts Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@id([followerId,followingId])
+  @@index([followingId,notifyNewPosts])
+}
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pendingSubject String?
+  pendingProvider String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+  pushDevices PushDevice[]
+}
+model OAuthAttempt {
+  provider String @default("google")
+  appChallenge String?
+  stateHash String @id
+  nonce String
+  verifier String
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model AppLoginTicket {
+  provider String @default("google")
+  codeHash String @id
+  challenge String
+  subject String
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model Category {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  active Boolean @default(true)
+  posts Post[]
+}
+model GameAccount {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  playerTag String
+  profile Json
+  updatedAt DateTime @updatedAt
+  @@unique([userId,playerTag])
+}
+model Post {
+  id String @id @default(cuid())
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+  title String
+  body String
+  gameProfile Json?
+  board String @default("FEEDBACK")
+  document Json?
+  coaching Json?
+  friendSale Json?
+  battle Json?
+  hidden Boolean @default(false)
+  viewCount Int @default(0)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  media PostMedia[]
+  views PostView[]
+  @@index([createdAt,id])
+  @@index([categoryId,createdAt])
+  @@index([board,createdAt,id])
+  @@index([authorId,createdAt])
+}
+model PostView {
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  visitorHash String
+  networkHash String?
+  lastViewedAt DateTime @default(now())
+  @@id([postId,visitorHash])
+  @@index([postId,networkHash,lastViewedAt])
+  @@index([lastViewedAt,postId,visitorHash])
+}
+model Answer {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  helpful Boolean @default(false)
+  readAt DateTime?
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+  notifications Notification[]
+  @@unique([id,postId])
+  @@index([authorId])
+}
+model Comment {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  parentId String?
+  parent Comment? @relation("CommentReplies",fields:[parentId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  replies Comment[] @relation("CommentReplies")
+  replyToId String?
+  replyTo Comment? @relation("CommentReplyTargets",fields:[replyToId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  targetedReplies Comment[] @relation("CommentReplyTargets")
+  notifications Notification[]
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+  @@unique([id,postId])
+  @@index([parentId,postId])
+}
+model CacheInvalidation {
+  tag String @id
+  revision String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([updatedAt,tag])
+}
+
+model Notification {
+  id String @id @default(cuid())
+  actorId String?
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  answerId String?
+  answer Answer? @relation(fields:[answerId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
+  commentId String?
+  comment Comment? @relation(fields:[commentId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
+  type String
+  // 알림 문구는 저장하지 않는다(actor·대상 id·유형만 둔다). 열은 추가형 migration 규칙에 따라 남긴다.
+  message String @default("")
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,createdAt,id])
+  @@index([commentId])
+  @@index([postId])
+  @@index([answerId])
+}
+model Report {
+  id String @id @default(cuid())
+  reporterId String
+  reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
+  targetType String
+  targetId String
+  reason String
+  detail String?
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@unique([reporterId,targetType,targetId])
+  @@index([status,createdAt,id])
+}
+model Block {
+  id String @id @default(cuid())
+  userId String
+  user User @relation("blocker",fields:[userId],references:[id],onDelete:Cascade)
+  blockedUserId String
+  blockedUser User @relation("blocked",fields:[blockedUserId],references:[id],onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId,blockedUserId])
+  @@index([blockedUserId])
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String
+  action String
+  targetType String
+  targetId String
+  detail String
+  createdAt DateTime @default(now())
+}
+
+model ChatConversation {
+  id String @id @default(cuid())
+  firstUserId String
+  firstUser User @relation("chatFirst", fields:[firstUserId], references:[id], onDelete:Cascade)
+  secondUserId String
+  secondUser User @relation("chatSecond", fields:[secondUserId], references:[id], onDelete:Cascade)
+  firstReadAt DateTime?
+  firstReadId String?
+  secondReadAt DateTime?
+  secondReadId String?
+  firstClearedAt DateTime?
+  firstClearedId String?
+  secondClearedAt DateTime?
+  secondClearedId String?
+  firstHidden Boolean @default(false)
+  secondHidden Boolean @default(false)
+  updatedAt DateTime @default(now())
+  messages ChatMessage[]
+  attachments ChatAttachment[]
+  support SupportConversation?
+  @@unique([firstUserId,secondUserId])
+  @@index([firstUserId,updatedAt,id])
+  @@index([secondUserId,updatedAt,id])
+}
+model ChatMessage {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  senderId String
+  sender User @relation(fields:[senderId],references:[id],onDelete:Cascade)
+  clientMessageId String
+  body String
+  createdAt DateTime @default(now())
+  attachments ChatAttachment[]
+  notification ChatNotification?
+  @@unique([id,conversationId])
+  @@unique([senderId,clientMessageId])
+  @@index([conversationId,createdAt,id])
+}
+model ChatNotification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId String @unique
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt, id])
+}
+
+model ChatAttachment {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  uploaderId String
+  messageId String?
+  message ChatMessage? @relation(fields:[messageId,conversationId],references:[id,conversationId],onDelete:Cascade,onUpdate:NoAction)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
+  @@index([conversationId,messageId])
+  @@index([uploaderId,createdAt])
+}
+
+model PostMedia {
+  id String @id @default(cuid())
+  uploaderId String
+  uploader User @relation(fields:[uploaderId], references:[id], onDelete:Cascade)
+  postId String?
+  post Post? @relation(fields:[postId], references:[id], onDelete:Cascade)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
+  @@index([uploaderId,postId,createdAt])
+  @@index([postId])
+}
+
+model MediaObject {
+  id String @id @default(cuid())
+  backend String
+  key String @unique
+  createdAt DateTime @default(now())
+  retiredAt DateTime?
+  avatar UserAvatar?
+  avatarUpload AvatarUpload?
+  postMedia PostMedia?
+  chatAttachment ChatAttachment?
+  @@index([createdAt])
+  @@index([retiredAt])
+}
+
+model SupportConversation {
+  id String @id @default(cuid())
+  requesterId String
+  requester User @relation("supportRequester",fields:[requesterId],references:[id],onDelete:Cascade)
+  adminId String
+  admin User @relation("supportAdmin",fields:[adminId],references:[id],onDelete:Cascade)
+  conversationId String @unique
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  topic String
+  status String @default("OPEN")
+  historyStartAt DateTime?
+  historyStartId String?
+  createdAt DateTime @default(now())
+  @@index([adminId,status,createdAt])
+}
+
+model PushDevice {
+  id String @id
+  token String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionKey String
+  session Session @relation(fields: [sessionKey], references: [id], onDelete: Cascade)
+  platform String
+  locale String @default("ko")
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deliveries PushDelivery[]
+  @@index([userId, enabled])
+  @@index([sessionKey])
+}
+// 두 알림 테이블을 쓰는 서비스도 같은 큐를 쓰므로 eventId는 전송 직전에 도메인에서 다시 검증한다.
+model PushDelivery {
+  id String @id @default(cuid())
+  deviceId String
+  device PushDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  eventId String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  leaseUntil DateTime?
+  leaseToken String?
+  ticketId String?
+  createdAt DateTime @default(now())
+  @@unique([deviceId, eventId])
+  @@index([status, nextAttemptAt, leaseUntil])
+  @@index([createdAt])
+}
+
+// The User relation supplies the support-chat identity; public authentication never issues it a session.
+model AdminAccount {
+  id String @id @default(cuid())
+  username String @unique
+  passwordHash String
+  userId String @unique
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  disabledAt DateTime?
+  createdAt DateTime @default(now())
+  sessions AdminSession[]
+}
+model AdminSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  accountId String
+  account AdminAccount @relation(fields:[accountId],references:[id],onDelete:Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}

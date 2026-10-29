@@ -1,8 +1,0 @@
-{
-  "name": "@side/typescript-config",
-  "private": true,
-  "version": "0.0.0",
-  "exports": {
-    "./base": "./tsconfig.base.json"
-  }
-}

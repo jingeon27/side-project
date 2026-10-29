@@ -2,10 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { APP_MARKER_KEY, NATIVE_EVENT_NAME } from './protocol';
-import { installFakeNativeApp } from './test';
-import type { IFakeNativeApp } from './test';
-import { BridgeError, createWebBridge, readNativeAppInfo } from './web';
-import type { IWebBridge, TBridgeWindow } from './web';
+import { installFakeNativeApp, type IFakeNativeApp } from './test';
+import { BridgeError, createWebBridge, readNativeAppInfo, type IWebBridge, type TBridgeWindow } from './web';
 
 let fake: IFakeNativeApp | undefined;
 let bridge: IWebBridge | undefined;
@@ -68,16 +66,16 @@ describe('createWebBridge', () => {
   it('앱 오류 코드를 그대로 전달해야 한다', async () => {
     fake = installFakeNativeApp(window, {
       capabilities: {
-        'auth.socialLogin': async () => {
+        'share.open': async () => {
           const { NativeCapabilityError } = await import('./native');
-          throw new NativeCapabilityError('CANCELLED', '로그인을 취소했습니다.');
+          throw new NativeCapabilityError('CANCELLED', '공유를 취소했습니다.');
         },
       },
     });
     bridge = createWebBridge(window);
-    await expect(bridge.request('auth.socialLogin', { provider: 'google' })).rejects.toMatchObject({
+    await expect(bridge.request('share.open', { url: 'https://contest.example/' })).rejects.toMatchObject({
       code: 'CANCELLED',
-      message: '로그인을 취소했습니다.',
+      message: '공유를 취소했습니다.',
     });
   });
 

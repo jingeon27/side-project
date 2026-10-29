@@ -1,0 +1,23 @@
+import { Suspense } from 'react';
+import { locale as rootLocale } from 'next/root-params';
+
+import { SettingsPage as Screen } from '@/_pages/settings';
+import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
+
+async function RouteContent(_props: { params: Promise<{ locale: string }> }) {
+  const locale = await rootLocale();
+  return <Screen locale={locale} />;
+}
+
+export async function generateMetadata(_props: { params: Promise<{ locale: string }> }) {
+  return staticPageMetadata('settings', await rootLocale());
+}
+
+export default function Page(props: Parameters<typeof RouteContent>[0]) {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <RouteContent {...props} />
+    </Suspense>
+  );
+}

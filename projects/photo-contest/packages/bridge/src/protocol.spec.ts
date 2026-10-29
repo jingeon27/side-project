@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PROTOCOL_VERSION,
   buildAppUserAgent,
   decodeNativeMessage,
   decodeWebMessage,
   originOf,
   parseAppUserAgent,
   parseNativeAppInfo,
+  PROTOCOL_VERSION,
   readRequestId,
 } from './protocol';
 
@@ -16,6 +16,19 @@ function encode(value: unknown) {
 }
 
 describe('decodeWebMessage', () => {
+  it('앱 외부 브라우저로 긴 presigned 주소를 보내고 8KB를 넘는 주소는 거부해야 한다', () => {
+    const request = (url: string) =>
+      encode({
+        v: PROTOCOL_VERSION,
+        kind: 'request',
+        id: 'signed-download',
+        type: 'link.open',
+        payload: { url },
+      });
+    const url = 'https://storage.example/object?X-Amz-Security-Token=' + 'a'.repeat(3000);
+    expect(decodeWebMessage(request(url))).toMatchObject({ type: 'link.open', payload: { url } });
+    expect(decodeWebMessage(request('https://storage.example/' + 'a'.repeat(8192)))).toBeNull();
+  });
   it('알려진 요청을 본문 검증 후 돌려줘야 한다', () => {
     const message = decodeWebMessage(
       encode({
@@ -62,14 +75,6 @@ describe('decodeWebMessage', () => {
       ),
     ).toBeNull();
     expect(decodeWebMessage('x'.repeat(20_001))).toBeNull();
-  });
-
-  it('소셜 로그인 결과의 verifier 형식을 검사해야 한다', () => {
-    const verifier = 'v'.repeat(43);
-    const ok = decodeWebMessage(
-      encode({ v: 1, kind: 'response', id: 'a4', ok: true, result: { code: 'c'.repeat(16), verifier } }),
-    );
-    expect(ok?.kind).toBe('response');
   });
 });
 
@@ -170,5 +175,19 @@ describe('선택 필드 호환성', () => {
         analyticsDeviceId: 'device-123',
       })?.analyticsDeviceId,
     ).toBe('device-123');
+  });
+
+  it('화면 모드 알림은 알려진 세 가지 선택만 받아들여야 한다', () => {
+    for (const preference of ['system', 'light', 'dark'])
+      expect(
+        decodeWebMessage(
+          encode({ v: 1, kind: 'event', type: 'appearance.changed', payload: { preference } }),
+        ),
+      ).toMatchObject({ type: 'appearance.changed', payload: { preference } });
+    expect(
+      decodeWebMessage(
+        encode({ v: 1, kind: 'event', type: 'appearance.changed', payload: { preference: 'custom' } }),
+      ),
+    ).toBeNull();
   });
 });

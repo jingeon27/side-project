@@ -1,0 +1,457 @@
+<Summary>
+
+같은 로그인으로 다른 호스트의 정산 화면을 열어야 했어요. 토큰을 URL에서 POST 본문으로 옮겼지만, 두 호스트에 복제된 인증 상태까지 해결된 것은 아니었어요.
+
+</Summary>
+
+![서로 다른 두 웹 호스트 사이로 인증 정보를 전달하는 일러스트](/images/covers/cross-domain-token-handoff.png)
+
+*글의 주제를 표현한 일러스트예요. 실제 서비스 화면은 아니에요.*
+
+## 정산을 다른 호스트로 분리해야 했어요
+
+업무용 관리자 SaaS에서 상품과 예약, 정산을 함께 다루고 있었어요. 정산은 접근 권한과 감사 요구가 달라 별도 호스트에서 열어야 했어요. 여기서는 이 앱을 admin-app이라고 부를게요.
+
+- 메인 앱: app.example.com (이하 메인 호스트)
+- 정산 앱: finance.example.net (이하 정산 호스트)
+
+> 회사, 서비스, 도메인, 내부 경로, 식별자, 토큰 수명은 역할 중심의 예시로 바꿨어요. 두 호스트의 **등록 가능 도메인(registrable domain)이 서로 다르다**는 조건과 기술 흐름, 버전, 관찰 수치는 실제 값이에요.
+
+호스트가 달라도 저장소는 하나로 유지해야 했어요. 앱을 따로 만들면 공통 엔티티와 UI, 유틸리티도 나눠 관리하게 되고, 이미 있던 정산 코드를 떼어 내기도 어려웠어요.
+
+그래서 앱을 복제하는 대신 Next.js 라우트 그룹으로 레이아웃을 나누고, 미들웨어에서 요청이 들어갈 호스트를 정했어요.
+
+```text
+app/
+├── (auth)/login/*              # 로그인
+├── (main)/                     # 메인 기능
+├── finance/
+│   └── (secondaryLayout)/*     # 정산: 별도 레이아웃, 같은 코드베이스
+└── api/                        # API Routes (BFF)
+```
+
+finance 아래의 (secondaryLayout)에는 정산 전용 레이아웃을 뒀어요. middleware.ts는 메인 호스트로 들어온 /finance/\*를 정산 호스트로 보내고, 정산 호스트에서 그 밖의 경로를 열면 메인으로 돌려보내요.
+
+```typescript
+// middleware.ts (분리 8일 차 버전: 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
+function routeToRequiredHost(request: NextRequest, domain: string | undefined) {
+  if (!domain) return NextResponse.next();
+  const host = domain.replace(/^https?:\/\//, '');
+  if (request.headers.get('host') === host) return NextResponse.next();
+  return NextResponse.redirect(new URL(request.nextUrl.pathname, domain));
+}
+
+export function middleware(request: NextRequest) {
+  if (APP_MODE === 'local') return NextResponse.next();
+  const target = request.nextUrl.pathname.startsWith('/finance')
+    ? process.env.SECONDARY_ORIGIN
+    : process.env.MAIN_ORIGIN;
+  return routeToRequiredHost(request, target);
+}
+
+export const config = {
+  matcher: ['/((?!api).*)'],
+};
+```
+
+이 설정은 나중에 Next.js를 올리면서 다시 보게 됐어요. 정적 파일까지 다른 호스트로 보내던 matcher가 화면을 깨뜨렸고, 조사하면서 경로 검사와 쿼리 보존 문제도 찾았어요. 우선은 호스트를 나눈 직후의 로그인부터 이야기할게요.
+
+---
+
+## 두 호스트의 쿠키를 직접 공유할 수 없었어요
+
+액세스 토큰과 리프레시 토큰은 HttpOnly 쿠키에 저장돼 있었어요. 인증 요청에는 Axios 인터셉터가 액세스 토큰을 읽어 Authorization 헤더에 넣었어요.
+
+```typescript
+// 공용 쿠키 설정
+export const BASE_AUTH_COOKIE_SETTINGS: AuthCookieSettings = {
+  secure: process.env.NODE_ENV === 'production',
+  httpOnly: true,
+};
+```
+
+app.example.com에 로그인해도 finance.example.net에는 쿠키가 없어요. 두 주소는 등록 가능 도메인이 달라서, 같은 회사가 운영해도 브라우저가 쿠키를 공유해 주지 않아요.
+
+정산 메뉴를 눌렀을 때 다시 로그인시키지 않으려면, 메인 호스트의 인증 정보를 정산 호스트에 한 번 전달해야 했어요. 이 전달을 핸드오프라고 부를게요.
+
+---
+
+## 처음에는 URL 쿼리로 토큰을 넘겼어요
+
+처음 제안은 미들웨어에서 두 번 리다이렉트하는 방식이었어요.
+
+1. 메인 호스트의 /finance/\* 요청에서 쿠키를 읽어 **쿼리 문자열에 토큰을 넣고** 정산 호스트로 리다이렉트
+2. 정산 호스트에서 토큰을 쿠키로 옮긴 뒤, 쿼리 문자열을 제거한 URL로 다시 리다이렉트
+
+```typescript
+// middleware.ts (1단계: 지금은 제거된 버전)
+if (request.nextUrl.pathname.startsWith('/finance')) {
+  const secondaryHost = secondaryOrigin?.replace(/^https?:\/\//, '');
+
+  // 1단계: 메인 호스트 → 정산 호스트, 토큰을 쿼리에 실어 보냄
+  if (!secondaryHost || request.headers.get('host') !== secondaryHost) {
+    const sessionToken = request.cookies.get(authCookieKey('sessionToken'))?.value;
+    const renewalToken = request.cookies.get(authCookieKey('renewalToken'))?.value;
+    const url = new URL(request.nextUrl.pathname, secondaryOrigin);
+    if (sessionToken && renewalToken) {
+      url.searchParams.set('sessionToken', sessionToken);
+      url.searchParams.set('renewalToken', renewalToken);
+    }
+    return NextResponse.redirect(url);
+  }
+
+  // 2단계: 정산 호스트에서 쿼리의 토큰을 쿠키로 옮기고 깨끗한 URL로 리다이렉트
+  const sessionToken = request.nextUrl.searchParams.get('sessionToken');
+  const renewalToken = request.nextUrl.searchParams.get('renewalToken');
+  if (sessionToken && renewalToken) {
+    const sanitizedDestinationUrl = new URL(request.nextUrl.pathname, secondaryOrigin);
+    const response = NextResponse.redirect(sanitizedDestinationUrl);
+    response.cookies.set(authCookieKey('sessionToken'), sessionToken, AUTH_COOKIE_SETTINGS);
+    response.cookies.set(authCookieKey('renewalToken'), renewalToken, AUTH_COOKIE_SETTINGS);
+    return response;
+  }
+  return NextResponse.next();
+}
+```
+
+정산 화면의 최종 주소에서는 토큰이 지워졌어요. 하지만 그 주소에 도착하기 전에 토큰이 실린 URL로 이미 요청이 나갔어요.
+
+- 리버스 프록시, CDN, 웹서버의 **접근 로그**에 토큰을 포함한 전체 URL이 평문으로 남아요
+- 중간 URL을 문서로 열거나 다른 요청에 재사용하면 이후 노출 경로도 확인해야 해요. 다만 서버의 3xx 중간 URL이 자동으로 다음 요청의 Referer가 되는 것은 아니에요. [Fetch의 리다이렉트 처리](https://fetch.spec.whatwg.org/#http-redirect-fetch)도 이 둘을 별도로 다뤄요
+
+방문 기록에서 지운다고 프록시의 로그까지 지워지지는 않아요. 토큰이 들어가는 위치를 URL 밖으로 바꾸기로 했어요.
+
+---
+
+## 토큰을 HTML 폼의 POST 본문으로 옮겼어요
+
+GET 리다이렉트로는 본문을 보낼 수 없어서, 자동으로 제출되는 HTML 폼을 만들었어요. 폼이 정산 호스트로 토큰을 POST하면 프론트엔드 앱의 서버 계층인 BFF가 받아 쿠키에 저장해요.
+
+- 미들웨어가 리다이렉트 대신 토큰을 숨김 입력 필드에 담은 **&lt;form method="POST"> HTML**을 반환해요
+- 폼을 즉시 제출해 정산 호스트의 **BFF 라우트(/api/finance)**로 POST해요
+- BFF가 formData에서 토큰을 꺼내 쿠키에 저장하고 목적지로 리다이렉트해요
+
+이렇게 하면 쿼리 문자열과 일반적인 URL 접근 로그에 토큰을 남기지 않을 수 있어요. 요청 본문까지 숨겨지는 건 아니에요. WAF와 APM, 디버그 미들웨어에서 본문을 수집하면 거기에는 토큰이 남으므로, 이 경로는 본문 기록과 보존 설정도 살펴야 해요.
+
+```typescript
+// 토큰 수신 BFF
+export async function POST(req: NextRequest) {
+  const secondaryOrigin = process.env.SECONDARY_ORIGIN;
+  if (!secondaryOrigin) {
+    return NextResponse.json({ error: 'Secondary origin is not configured' }, { status: 500 });
+  }
+  const form = await req.formData();
+  const sessionToken = String(form.get('sessionToken') ?? '');
+  const renewalToken = String(form.get('renewalToken') ?? '');
+  const destination = resolveDestination(String(form.get('destination') ?? ''));
+
+  if (!sessionToken || !renewalToken) {
+    return NextResponse.redirect(new URL(destination, secondaryOrigin), 303);
+  }
+
+  const response = NextResponse.redirect(new URL(destination, secondaryOrigin), 303);
+  response.cookies.set(authCookieKey('sessionToken'), sessionToken, AUTH_COOKIE_SETTINGS);
+  response.cookies.set(authCookieKey('renewalToken'), renewalToken, AUTH_COOKIE_SETTINGS);
+  return response;
+}
+```
+
+위 수신 코드에는 아직 문제가 있어요. 새 토큰이 없어도 기존 정산 쿠키를 지우지 않아서, 이전 로그인으로 정산 화면을 계속 열 수 있어요. 토큰이 없는 요청을 거절하고 기존 인증 쿠키도 지우는 처리가 필요해요. 이른바 fail-open 상태예요.
+
+> POST 뒤에는 **303 See Other**로 리다이렉트해요. 이후 요청을 GET으로 바꿔 새로고침할 때 폼이 다시 제출되지 않게 해요.
+
+정산 화면에서도 토큰을 갱신해야 한다고 보고 리프레시 토큰까지 함께 넘겼어요. 그만큼 수명이 긴 토큰이 노출됐을 때의 피해도 커져요. 액세스 토큰만 보내고 만료되면 다시 핸드오프할 수도 있지만, 그 방식은 실제 체류 시간을 보고 판단하기로 했어요.
+
+리프레시 토큰을 복사하면 두 호스트가 같은 토큰으로 갱신할 수도 있어요. 순환 발급(rotation)이나 재사용 감지(reuse detection)를 쓰는 서버라면, 한쪽의 정상 갱신이 다른 쪽 세션을 무효화하거나 탈취 대응을 일으킬 수 있어요. 뒤에서 설명할 큐는 한 탭의 요청만 기다리게 해요. 다른 탭과 호스트의 갱신, 로그아웃, 토큰 폐기까지 맞춰 주지는 않아요.
+
+---
+
+## 아무 곳에서나 토큰을 보내도 되는 문제가 남았어요
+
+토큰을 받는 POST 엔드포인트는 누가 보냈는지도 확인해야 해요. 공격자가 자신의 토큰으로 폼을 제출하게 하면, 피해자가 공격자 계정으로 로그인할 수 있어요. 로그인 CSRF가 가능한 지점이에요.
+
+수신 BFF에는 아직 Origin 허용 목록이 없어요. 아래는 메인 호스트가 보낸 POST만 받도록 검토한 코드예요. 실제 적용본과는 구분해서 봐야 해요.
+
+```typescript
+// Origin 검증 보강안
+const mainOrigin = process.env.MAIN_ORIGIN
+  ? new URL(process.env.MAIN_ORIGIN).origin
+  : null;
+
+export async function POST(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  if (!mainOrigin || origin !== mainOrigin) {
+    return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
+  }
+  // ... 이하 토큰 처리 (2단계 코드와 동일)
+}
+```
+
+- **Origin 정확 일치 검증**: 메인 호스트의 POST만 허용하고, Origin이 없거나 null이면 거부해요
+- 폼 HTML의 **Cache-Control: no-store**와 secondaryOrigin 조기 반환은 유지해요
+
+다만 이 검사만 붙이면 정상 핸드오프도 거절할 수 있어요. 현재 폼 응답의 Referrer-Policy가 no-referrer라 교차 출처 POST의 Origin이 null이 될 수 있거든요. 적용하려면 Referrer-Policy도 origin으로 바꾸거나, 서명된 상태값이나 CSRF 토큰으로 제출을 확인해야 해요.
+
+Origin을 확인해도 이미 보낸 폼을 다시 쓰는 것까지 막지는 못해요. TTL과 nonce를 두고 한 번만 소비하며 사용자 세션에 묶으려면, 양쪽에서 확인할 상태나 별도 교환 절차가 필요해요. 현재 구현에는 그 처리가 없어요.
+
+---
+
+## 정산 메뉴가 전용 핸드오프 라우트를 열게 했어요
+
+처음에는 요청이 지날 때마다 실행되는 미들웨어에서 쿠키를 읽고 폼 HTML까지 만들었어요. 호스트를 고르는 코드와 로그인 정보를 옮기는 코드가 섞여 있었어요.
+
+핸드오프 HTML은 /api/finance/bridge로 옮겼어요. 정산 메뉴가 이 주소를 새 창으로 열고, 미들웨어에는 호스트 리다이렉트만 남겼어요.
+
+- **미들웨어**: 경로 기반 도메인 라우팅(routeToRequiredHost, 가명)만 담당
+- **핸드오프 라우트**: HttpOnly 쿠키를 읽어 폼 POST HTML을 만드는 유일한 곳
+- **정산 메뉴**: 미들웨어 리다이렉트에 기대지 않고 핸드오프 엔드포인트를 새 창으로 열어요
+
+```typescript
+// 정산 메뉴 클릭 핸들러
+const openFinanceApp = (args: { key: string }) => {
+  window.open(`/api/finance/bridge?destination=${encodeURIComponent(args.key)}`, '_blank');
+};
+```
+
+이 라우트는 직접 열 수도 있어요. 로컬 모드를 제외한 화면 흐름에서는 정산 메뉴를 눌렀을 때 호출돼요. 다만 window.open에 noopener가 없는 상태예요. 브라우저 기본값에 맡기지 않으려면 window.open(url, '\_blank', 'noopener')처럼 창을 격리해야 해요.
+
+---
+
+## 폼이 보낼 주소와 브라우저가 허용할 동작을 제한했어요
+
+bridge를 나누면서 목적지 경로를 정리하고 응답 헤더도 넣었어요. Origin 검사와 nonce 기반 CSP까지 들어간 것은 아니에요.
+
+목적지 파라미터는 그대로 URL에 붙이지 않아요. 오픈 리다이렉트와 제어문자 삽입을 피하려고 new URL로 파싱한 뒤 pathname만 남겨요. /finance로 시작하지 않으면 기본 정산 경로를 쓰고, bridge와 수신 BFF가 같은 함수를 사용해요.
+
+```typescript
+// 정산 경로 유틸리티
+export function resolveDestination(destination: string | null) {
+  try {
+    const { pathname } = new URL(destination ?? '', '<http://x>');
+    return pathname.startsWith('/finance') ? pathname : '/finance/overview';
+  } catch {
+    return '/finance/overview';
+  }
+}
+```
+
+http://x는 상대 경로를 파싱할 때 쓰는 기준 주소예요. 외부 URL을 넣어도 그 호스트와 쿼리는 버려져요. 다만 /finance-evil도 현재 접두어 검사를 통과해요. 정산 경로로 제한하려면 pathname === '/finance' || pathname.startsWith('/finance/')처럼 다음 문자까지 봐야 해요.
+
+응답에서는 폼을 캐시하거나 iframe에 넣는 동작, 다른 곳으로 제출하는 동작을 제한했어요.
+
+```tsx
+// 핸드오프 BFF
+const action = new URL('/api/finance', secondaryOrigin).toString();
+const submissionOrigin = new URL(action).origin;
+const html = `<!doctype html><html><body>
+  <form id="token-transfer" method="POST" action="${encodeHtmlAttribute(action)}">
+    <input type="hidden" name="sessionToken" value="${encodeHtmlAttribute(sessionToken)}" />
+    <input type="hidden" name="renewalToken" value="${encodeHtmlAttribute(renewalToken)}" />
+    <input type="hidden" name="destination"  value="${encodeHtmlAttribute(destination)}" />
+  </form>
+  <script>document.getElementById('token-transfer').submit();</script>
+</body></html>`;
+
+return new NextResponse(html, {
+  headers: {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+    'referrer-policy': 'no-referrer',
+    'x-frame-options': 'DENY',
+    'content-security-policy': `default-src 'none'; script-src 'unsafe-inline'; form-action ${submissionOrigin}`,
+  },
+});
+```
+
+- encodeHtmlAttribute(가명)로 토큰과 목적지 값을 통한 HTML 속성 삽입 위험을 줄여요
+- X-Frame-Options: DENY로 아이프레임 삽입을 막고, CSP form-action을 정산 호스트의 Origin으로 제한해요
+- Referrer-Policy: no-referrer는 Referer를 막지만 앞 장의 Origin 검증안과 함께 쓸 수 없어 같이 바꿔야 해요
+- CSP의 script-src 'unsafe-inline'은 모든 인라인 스크립트를 허용해요. 입력값을 이스케이프해도 nonce와 같은 보장은 없어요
+
+남은 보강안은 요청마다 nonce를 만들고 script-src 'nonce-…'로 스크립트를 제한하는 거예요. frame-ancestors 'none'과 base-uri 'none'도 검토했어요. 앞서 본 Referrer-Policy 변경과 수신 Origin 검사 역시 아직 적용하지 않았어요.
+
+---
+
+## 쿠키에 저장한 뒤에도 토큰은 다시 브라우저로 나왔어요
+
+여기까지 옮긴 핸드오프는 아래처럼 이어져요.
+
+```text
+[메인 호스트]
+  정산관리 메뉴 클릭
+        │  window.open('/api/finance/bridge?destination=/finance/overview')
+        ▼
+  GET /api/finance/bridge               ← 메인 호스트의 BFF
+   - HttpOnly 쿠키에서 access/refresh 토큰 읽기
+   - 토큰을 hidden input에 담은 auto-submit form HTML 반환
+   - no-store / referrer=no-referrer / DENY / CSP(unsafe-inline, form-action=정산도메인)
+        │  document.forms[0].submit()  (POST, 토큰은 body)
+        ▼
+[정산 호스트]
+  POST /api/finance                     ← 정산 호스트의 BFF
+   - 현재 Origin 화이트리스트 없음 (login-CSRF 보강 필요)
+   - formData에서 토큰 꺼내 HttpOnly 쿠키로 set
+   - resolveDestination(destination)으로 pathname만 추출 (prefix 경계 보강 필요)
+        │  303 redirect → destination
+        ▼
+  /finance/overview  (정산 호스트에 토큰 쿠키 보유 → 로그인된 상태)
+```
+
+폼 응답에는 여전히 no-referrer와 unsafe-inline을 쓰고 있어요. 도식의 nonce와 Origin 검사 부재도 현재 남아 있는 부분이에요.
+
+전달이 끝나면 정산 호스트의 Axios 인터셉터가 인증 요청을 준비해요. 이때 HttpOnly 쿠키는 브라우저가 직접 읽지 못하니 서버 함수로 읽어 와 헤더에 넣어요. 토큰 갱신 큐는 이 조회와 별개로, 갱신이 진행 중일 때만 요청을 기다리게 해요.
+
+가명인 readServerCookie는 서버에서 쿠키를 읽고 값을 브라우저 JavaScript로 반환하는 함수예요. 요청할 때마다 통신이 더 붙고, 돌아온 토큰은 XSS로 읽힐 수 있어요. 쿠키 이름을 인자로 받는 만큼 서버에서 허용할 이름도 제한해야 해요. 토큰을 브라우저로 주지 않으려면 BFF가 백엔드 API 호출까지 대신해야 해요.
+
+```typescript
+// 공용 Axios 인스턴스
+instance.interceptors.request.use(async (config) => {
+  if (requiresAuth) {
+    const sessionToken = await readServerCookie(authCookieKey('sessionToken'));
+    if (sessionToken) {
+      config.headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
+  }
+  return config;
+});
+```
+
+401을 받으면 갱신을 시작하고, 그동안 들어오는 요청은 refresh subscriber 큐에서 새 토큰을 기다려요. 갱신 뒤에는 함께 재시도해요.
+
+```typescript
+type PendingAuthRequest = {
+  resumeWithToken: (token: string) => void;
+  rejectWithError: (error: unknown) => void;
+};
+
+let refreshInProgress = false;
+let pendingAuthRequests: PendingAuthRequest[] = [];
+
+const notifyRefreshSuccess = (token: string) => {
+  const requests = pendingAuthRequests;
+  pendingAuthRequests = [];
+  requests.forEach(({ resumeWithToken }) => resumeWithToken(token));
+};
+
+const notifyRefreshFailure = (error: unknown) => {
+  const requests = pendingAuthRequests;
+  pendingAuthRequests = [];
+  requests.forEach(({ rejectWithError }) => rejectWithError(error));
+};
+
+// 401 처리: 갱신 중이면 새 토큰을 구독하며 대기
+if (refreshInProgress) {
+  return new Promise((resolve, reject) => {
+    pendingAuthRequests.push({
+      resumeWithToken: (token) => {
+        failedRequest.headers = { ...failedRequest.headers, Authorization: `Bearer ${token}` };
+        resolve(instance(failedRequest));
+      },
+      rejectWithError: reject,
+    });
+  });
+}
+```
+
+갱신이 성공해도 실패해도 큐를 비워요. \_hasRetried라는 가명 플래그로 같은 요청이 401을 반복하지 않게 했어요. 하지만 이 큐는 한 탭의 메모리에만 있어 두 호스트나 여러 탭의 갱신과 로그아웃을 조정할 수는 없어요.
+
+POST로 전달하고 HttpOnly 쿠키에 저장하는 것만으로 토큰이 서버 안에 머무르는 건 아니었어요. 인증 요청을 준비하는 과정에서 다시 브라우저로 나왔고, 두 호스트에 같은 토큰이 남았어요.
+
+---
+
+## 일회용 코드로 교환하려면 공유 상태가 필요했어요
+
+OAuth 방식으로 일회용 인가 코드만 브라우저에 보내고, 정산 서버가 그 코드를 토큰으로 교환하면 토큰 자체는 브라우저를 지나지 않아요. 이 전달에는 그 방식이 더 안전해요.
+
+하지만 당시에는 이런 제약이 있었어요.
+
+> **"백엔드 자원을 추가하지 말 것."**
+
+제품 백엔드를 건드리지 않고 프론트엔드 배포 안에서 끝내야 했어요. Next.js Route Handler로 교환 API를 만드는 것은 가능해요. 다만 두 호스트와 여러 인스턴스가 공유할 저장소, TTL, 코드를 원자적으로 한 번만 쓰는 처리, 사용자 세션 결합까지 필요했어요. 그 공유 상태를 운영하는 일은 당시 작업에 포함돼 있지 않았어요.
+
+그래서 프론트엔드가 소유한 /api/finance/bridge와 /api/finance에서 토큰을 읽고 저장하는 방식으로 진행했어요. 새 공유 상태 없이 전달하는 선택이었고, 인가 코드 교환과 같은 보호를 제공하지는 않아요.
+
+리프레시 토큰을 함께 넘기는 일, 두 호스트의 갱신과 로그아웃을 맞추는 일, 재사용을 막는 일은 여전히 남아요. 짧은 액세스 토큰 수명과 HTTPS도 요청 본문 수집이나 XSS를 막아 주지는 않아요. 나중에 교환 API와 공유 저장소를 둘 수 있다면, 핸드오프를 시작하는 /api/finance/bridge부터 교체할 수 있어요.
+
+---
+
+## Next.js 16.3 업그레이드 후 matcher가 실패했어요
+
+호스트를 나눈 지 석 달 뒤 Next.js 14.2를 16.3.0으로 올렸더니 정산 화면이 깨졌어요. Next.js 16은 Turbopack을 기본으로 쓰고 middleware.ts를 Node.js 런타임의 proxy.ts로 바꿔요. 이관할 때 matcher는 예전 것을 그대로 썼어요.
+
+### 오류가 발생한 조건
+
+/((?!api).\*)는 /\_next/**까지 포착해요. 정산 호스트의 청크 요청은 정산 경로가 아니라는 이유로 메인 호스트에 307 리다이렉트됐어요.
+
+```text
+GET <https://finance.example.net/_next/static/chunks/main.js>
+  → 307 Location: <https://app.example.com/_next/static/chunks/main.js>
+```
+
+같은 화면의 구버전, 신버전 SSR HTML을 비교했어요.
+
+```tsx
+<!-- 14.2.33, webpack: script 20개 중 crossorigin 0개 -->
+<script src="/_next/static/chunks/main-app.js" async=""></script>
+
+<!-- 16.3.0, Turbopack: script 18개 중 crossorigin="" 11개 -->
+<script src="/_next/static/chunks/client.js" async="" crossorigin=""></script>
+```
+
+빈 crossorigin은 무시되지 않고 anonymous로 해석돼 요청을 CORS 모드로 바꿔요. 장애에는 세 조건이 함께 필요했어요.
+
+1. 잘못된 matcher가 정산 호스트의 /\_next/**를 메인 호스트로 307 리다이렉트
+2. 16.3.0이 일부 청크에 crossorigin="" 추가
+3. 당시 메인 호스트의 정적 자산 응답에는 정산 Origin용 ACAO가 없음
+
+정적 자산을 리다이렉트하던 설정은 처음부터 있었어요. 여기에 crossorigin 속성이 붙으면서 브라우저가 전에 받아 주던 요청을 CORS로 막기 시작한 거예요.
+
+### 업스트림 회귀를 확인한 근거
+
+차이는 클라이언트 참조 매니페스트(client reference manifest)의 moduleLoading.crossOrigin 값이었어요.
+
+```text
+// 16.2.12
+"moduleLoading": { "prefix": "", "crossOrigin": null }
+// 16.3.0
+"moduleLoading": { "prefix": "", "crossOrigin": "none" }
+```
+
+React는 문자열 "none"을 빈 문자열로 바꿔 crossorigin=""을 만들었어요. moduleLoading으로 preinit한 클라이언트 컴포넌트 청크에만 붙어서, HTML을 비교할 때도 모든 script에서 보이지는 않았어요. 비교한 청크 18개 중 11개가 이 경우였어요.
+
+같은 원인을 다룬 Next.js 공식 이슈와 수정안도 확인했어요.
+
+- [vercel/next.js#96831](https://github.com/vercel/next.js/issues/96831): 재현과 증상 보고
+- [vercel/next.js#96834](https://github.com/vercel/next.js/pull/96834): merge되지 않고 닫힌 초기 수정안
+- [vercel/next.js#97164](https://github.com/vercel/next.js/pull/97164): CrossOrigin::None일 때 필드를 생략하는 실제 수정
+
+초기 수정안 #96834는 merge되지 않고 닫혔고, CrossOrigin::None일 때 필드를 생략하는 #97164가 8월 12일 canary에 들어갔어요. 이후 복지몰을 16.3.6으로 올렸을 때 매니페스트에서 이 필드가 빠진 것도 확인했어요. 그 산출물은 [Next.js 업그레이드 글](/ko/blog/nextjs를-사용하면서-겪었던-이슈들)에서 이어 설명해요.
+
+### 페이지 요청만 다른 호스트로 보냈어요
+
+먼저 장애의 직접 원인인 matcher에서 API와 정적 경로를 제외했어요.
+
+```typescript
+export const config = {
+  matcher: ['/((?!api/|_next/|favicon\\.ico|assets/).*)'],
+};
+```
+
+리다이렉트를 손보면서 쿼리도 보존했어요. new URL(pathname, domain)에 //로 시작하는 경로를 주면 다른 호스트를 가리키는 프로토콜 상대 URL로 해석될 수 있어요. 그래서 new URL(domain)으로 호스트를 먼저 고정하고 pathname과 search를 대입했어요. 배포 환경에서는 Next.js가 먼저 정규화해 이 문제가 재현되지는 않았지만, URL을 만드는 함수 자체가 호스트를 유지하게 했어요. 두 호스트는 experimental.serverActions.allowedOrigins에도 넣었어요.
+
+```typescript
+const destinationUrl = new URL(domain);
+destinationUrl.pathname = request.nextUrl.pathname;
+destinationUrl.search = request.nextUrl.search;
+return NextResponse.redirect(destinationUrl);
+```
+
+업스트림 수정이 안정 릴리스에 들어오기 전에는 ~16.2.12로 고정했어요. ^16.2.12로 두면 16.3.x도 설치할 수 있어서 같은 회귀를 피할 수 없어요.
+
+오류 수집용 CORS는 정확 일치 허용 목록과 Vary: Origin을 쓰지만 모든 경로에서 자격 증명을 허용해요. matcher 수정과 별개로, 오류 수집 경로에만 적용하도록 좁혀야 해요.
+
+### matcher 밖에 둬야 할 경로
+
+이 수정은 /\_next/**가 리다이렉트되던 문제를 막아요. 정확히 /api와 /\_next인 경로, robots.txt, sitemap.xml, manifest와 public 폰트도 실제 자산에 맞춰 분류해야 해요.
+
+페이지와 API, 정적 자산의 조합은 unstable\_doesProxyMatch로 확인할 수 있어요. 실제 요청에서는 두 호스트의 청크 응답과 쿼리 보존, 환경 변수의 호스트가 유지되는지를 함께 봐야 해요. 서버 액션의 Origin과 Host 조합, CORS 프리플라이트와 자격 증명 허용 범위도 같은 호스트 설정을 사용해요. 버전 고정을 풀 때는 같은 화면의 SSR HTML을 다시 비교해야 하고요.

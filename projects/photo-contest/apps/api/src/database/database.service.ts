@@ -1,20 +1,28 @@
-import { Injectable } from '@nestjs/common';
-import type { OnModuleDestroy } from '@nestjs/common';
+import { setTimeout as delay } from 'node:timers/promises';
+
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import { Prisma, PrismaClient } from '../../generated/prisma';
-import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { SERIALIZABLE_ATTEMPTS } from '../config/limits';
+import { ERROR_CODE, fail } from '../common/errors';
+import { databaseUrl } from '../config/env';
+import {
+  TRANSACTION_MAX_WAIT_MS,
+  TRANSACTION_RETRY_DELAY_MS,
+  TRANSACTION_TIMEOUT_MS,
+} from '../config/limits';
+import { createPrismaAdapter } from './prisma-adapter';
+import { transactionFailure } from './transaction.policy';
 
 /** 트랜잭션 안팎 어디서든 같은 조회 함수를 쓰도록 받는 클라이언트 타입 */
 export type TDatabaseClient = Prisma.TransactionClient;
 
-const PRISMA_ERROR = {
-  UNIQUE_VIOLATION: 'P2002',
-  SERIALIZATION_FAILURE: 'P2034',
-} as const;
-
 @Injectable()
 export class Database extends PrismaClient implements OnModuleDestroy {
+  constructor() {
+    super({ adapter: createPrismaAdapter(databaseUrl()) });
+  }
+
   async onModuleDestroy() {
     await this.$disconnect();
   }
@@ -24,21 +32,28 @@ export class Database extends PrismaClient implements OnModuleDestroy {
    * 1인 1장·1인 1표처럼 DB 제약으로 지키는 규칙은 이 경로로 쓴다.
    */
   async atomic<T>(work: (tx: TDatabaseClient) => Promise<T>): Promise<T> {
-    for (let attempt = 1; attempt <= SERIALIZABLE_ATTEMPTS; attempt++) {
-      try {
-        return await this.$transaction(work, {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        });
-      } catch (error) {
-        if (!(error instanceof Prisma.PrismaClientKnownRequestError)) throw error;
-        if (error.code === PRISMA_ERROR.SERIALIZATION_FAILURE && attempt < SERIALIZABLE_ATTEMPTS) continue;
-        if (error.code === PRISMA_ERROR.SERIALIZATION_FAILURE)
-          fail(ERROR_MESSAGE.REQUEST_CONFLICT, ERROR_CODE.CONFLICT);
-        if (error.code === PRISMA_ERROR.UNIQUE_VIOLATION)
-          fail(ERROR_MESSAGE.ALREADY_DONE, ERROR_CODE.CONFLICT);
-        throw error;
-      }
+    return this.attemptAtomic(work, 1);
+  }
+
+  private async attemptAtomic<T>(work: (tx: TDatabaseClient) => Promise<T>, attempt: number): Promise<T> {
+    try {
+      return await this.$transaction(work, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        maxWait: TRANSACTION_MAX_WAIT_MS,
+        timeout: TRANSACTION_TIMEOUT_MS,
+      });
+    } catch (error) {
+      return match(transactionFailure(error, attempt))
+        .with({ action: 'retry' }, async () => {
+          // 즉시 재시도하면 상대 트랜잭션이 끝나기 전에 같은 충돌로 한도를 소진할 수 있다.
+          await delay(TRANSACTION_RETRY_DELAY_MS * 2 ** (attempt - 1));
+          return this.attemptAtomic(work, attempt + 1);
+        })
+        .with({ action: 'conflict' }, ({ message }) => fail(message, ERROR_CODE.CONFLICT))
+        .with({ action: 'rethrow' }, ({ error: original }) => {
+          throw original;
+        })
+        .exhaustive();
     }
-    return fail(ERROR_MESSAGE.REQUEST_CONFLICT, ERROR_CODE.CONFLICT);
   }
 }

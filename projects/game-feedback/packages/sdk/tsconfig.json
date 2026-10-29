@@ -1,0 +1,10 @@
+{
+  "extends": "@side/config/typescript",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "orval.config.ts", "orval.config.spec.ts"]
+}

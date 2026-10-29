@@ -1,4 +1,4 @@
-import { InMemoryCache, gql } from '@apollo/client';
+import { gql, InMemoryCache } from '@apollo/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { APP_TYPE_POLICIES } from './app.type-policies';
@@ -64,6 +64,45 @@ const readIds = (cache: InMemoryCache, sort: string) =>
 
 describe('APP_TYPE_POLICIES', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('알림 다음 페이지를 이어 붙이고 첫 페이지 갱신 때 처리된 신청의 이전 페이지를 비워야 한다', () => {
+    const cache = new InMemoryCache({ typePolicies: APP_TYPE_POLICIES });
+    const query = gql`
+      query MyNotifications($offset: Int!, $limit: Int!) {
+        myNotifications(offset: $offset, limit: $limit) {
+          items {
+            id
+            readAt
+          }
+          unreadCount
+          hasMore
+        }
+      }
+    `;
+    const write = (offset: number, ids: string[], unreadCount: number, hasMore: boolean) =>
+      cache.writeQuery({
+        query,
+        variables: { offset, limit: 2 },
+        data: {
+          myNotifications: {
+            __typename: 'NotificationPage',
+            items: ids.map((id) => ({ __typename: 'ActivityNotification', id, readAt: null })),
+            unreadCount,
+            hasMore,
+          },
+        },
+      });
+    const read = () =>
+      cache.readQuery<{
+        myNotifications: { items: { id: string }[]; unreadCount: number; hasMore: boolean };
+      }>({ query, variables: { offset: 0, limit: 2 } });
+    write(0, ['n3', 'n2'], 3, true);
+    write(2, ['n1'], 3, false);
+    write(2, ['n1'], 3, false);
+    expect(read()?.myNotifications.items.map(({ id }) => id)).toEqual(['n3', 'n2', 'n1']);
+    write(0, ['n3'], 0, false);
+    expect(read()?.myNotifications).toMatchObject({ items: [{ id: 'n3' }], unreadCount: 0, hasMore: false });
+  });
 
   it('사진 목록은 정렬마다 따로 두고 더 받은 페이지를 offset 자리에 이어 붙여야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: APP_TYPE_POLICIES });

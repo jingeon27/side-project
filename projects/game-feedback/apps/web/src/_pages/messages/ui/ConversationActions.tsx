@@ -1,0 +1,89 @@
+'use client';
+
+import { useEffect } from 'react';
+
+import { Flag, Menu, ShieldBan, Trash2 } from 'lucide-react';
+import { overlay } from 'overlay-kit';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+} from '@side/design-system';
+
+import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { openOverlay } from '@/shared/ui';
+import { openUserReport } from '@/widgets/moderation';
+
+import { useChatBlock } from '../model/use-chat-block';
+import { ClearConversationDialog } from './ClearConversationDialog';
+
+interface IConversationActionsProps {
+  userId: string;
+  conversationId: string;
+  locale: string;
+  peer: Author;
+  throughMessageId?: string;
+}
+export function ConversationActions({
+  userId,
+  conversationId,
+  locale,
+  peer,
+  throughMessageId,
+}: IConversationActionsProps) {
+  const { t } = useI18n();
+  const { handleBlock } = useChatBlock({ userId, conversationId, locale });
+  const clearOverlayId = `clear-chat:${userId}:${conversationId}`;
+  const reportOverlayId = `report-chat:${userId}:${conversationId}`;
+  useEffect(
+    () => () => {
+      overlay.unmount(clearOverlayId);
+      overlay.unmount(reportOverlayId);
+    },
+    [clearOverlayId, reportOverlayId],
+  );
+  const handleClear = () => {
+    if (!throughMessageId) return;
+    openOverlay(
+      (control) => (
+        <ClearConversationDialog
+          {...control}
+          userId={userId}
+          conversationId={conversationId}
+          throughMessageId={throughMessageId}
+        />
+      ),
+      { overlayId: clearOverlayId },
+    );
+  };
+  return (
+    <div className="conversation-actions" role="group" aria-label={t('대화 관리')}>
+      <IconButton
+        type="button"
+        label={t('사용자 신고')}
+        onClick={() => openUserReport(peer.id, reportOverlayId)}
+      >
+        <Flag aria-hidden />
+      </IconButton>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<IconButton type="button" label={t('대화 메뉴')} />}>
+          <Menu aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem variant="danger" disabled={!throughMessageId} onClick={handleClear}>
+            <Trash2 aria-hidden="true" />
+            {t('대화내역 삭제')}
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="danger" onClick={() => handleBlock(peer)}>
+            <ShieldBan aria-hidden="true" />
+            {t('차단')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}

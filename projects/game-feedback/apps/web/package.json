@@ -1,0 +1,68 @@
+{
+  "name": "@game-feedback/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node ../../../../scripts/run-next.ts dev --port 3300 --hostname 0.0.0.0",
+    "build": "node ../../../../scripts/run-next.ts build",
+    "start": "node ../../../../scripts/run-next.ts start --port 3300 --hostname 0.0.0.0",
+    "typecheck": "next typegen && tsc7 --noEmit",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "test": "node scripts/test.ts",
+    "test:chat:dev": "playwright test --config playwright.chat-dev.config.ts",
+    "test:prefetch": "playwright test --config playwright.prefetch.config.ts",
+    "test:test-auth": "playwright test --config playwright.test-auth.config.ts",
+    "test:observability": "playwright test --config playwright.observability.config.ts",
+    "benchmark:chat": "playwright test --config playwright.chat-benchmark.config.ts",
+    "monitoring:check": "playwright test --config playwright.monitoring.config.ts"
+  },
+  "dependencies": {
+    "@amplitude/analytics-browser": "catalog:",
+    "@game-feedback/bridge": "workspace:*",
+    "@game-feedback/contracts": "workspace:*",
+    "@game-feedback/sdk": "workspace:*",
+    "@hookform/resolvers": "catalog:",
+    "@microsoft/fetch-event-source": "2.0.1",
+    "@sentry/nextjs": "catalog:",
+    "@side/design-system": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "dayjs": "catalog:",
+    "es-toolkit": "catalog:",
+    "framer-motion": "14.3.0",
+    "linkify-react": "4.3.3",
+    "linkifyjs": "4.3.3",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "overlay-kit": "catalog:",
+    "quill": "2.0.3",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "ts-pattern": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@next/playwright": "catalog:",
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "jsdom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "type": "module",
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
+  }
+}

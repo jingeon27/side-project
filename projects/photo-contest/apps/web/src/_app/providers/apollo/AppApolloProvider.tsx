@@ -1,7 +1,8 @@
 'use client';
 
-import { ApolloClient, ApolloNextAppProvider, InMemoryCache } from '@apollo/client-integration-nextjs';
 import type { ReactNode } from 'react';
+
+import { ApolloClient, ApolloNextAppProvider, InMemoryCache } from '@apollo/client-integration-nextjs';
 
 import { createAppLink } from '@/shared/api/apollo-link.helper';
 import { toast } from '@/shared/model/toast';
@@ -14,7 +15,7 @@ function makeClient() {
     cache: new InMemoryCache({ typePolicies: APP_TYPE_POLICIES }),
     link: createAppLink({
       isServer: typeof window === 'undefined',
-      onError: (message) => toast.error(message),
+      onError: toast.error,
     }),
   });
 }

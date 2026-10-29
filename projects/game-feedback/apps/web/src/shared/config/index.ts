@@ -1,0 +1,1 @@
+export { getContactEmail } from './contact';

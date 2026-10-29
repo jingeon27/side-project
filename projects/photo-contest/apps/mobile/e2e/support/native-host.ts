@@ -1,28 +1,27 @@
-import { PROTOCOL_VERSION } from '@photo-contest/bridge';
-import type {
-  TNativeAppInfo,
-  TNativeEventPayload,
-  TNativeEventType,
-  TWebEventPayload,
-  TWebEventType,
-  TWebRequestType,
+import type { Page } from '@playwright/test';
+
+import {
+  PROTOCOL_VERSION,
+  type TNativeAppInfo,
+  type TNativeEventPayload,
+  type TNativeEventType,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebRequestType,
 } from '@photo-contest/bridge';
 import {
   buildBootstrapScript,
   buildNativeDispatchScript,
   createNativeRouter,
+  type INativeRouter,
+  type TNativeCapabilities,
 } from '@photo-contest/bridge/native';
-import type { INativeRouter, TNativeCapabilities } from '@photo-contest/bridge/native';
-import type { Page } from '@playwright/test';
 
-import { createCapabilities } from '@/features/bridge/lib/create-capabilities';
-import type { ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
+import { createCapabilities, type ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
 import { toWebPath } from '@/features/navigation/lib/deep-link';
 
 import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_WEB_ORIGIN } from './e2e-env';
 
-type TAuthSessionResult = Awaited<ReturnType<ICapabilityDependencies['openAuthSession']>>;
-type TAuthSessionHandler = (authUrl: string, redirectUrl: string) => Promise<TAuthSessionResult>;
 type TShareAction = Awaited<ReturnType<ICapabilityDependencies['share']>>['action'];
 
 /** 앱 기능(capabilities)이 플랫폼에 시킨 일. 실제 앱이라면 공유 시트·클립보드·진동·브라우저가 된다. */
@@ -32,7 +31,6 @@ export interface IPlatformCalls {
   impacts: string[];
   notifications: string[];
   openedLinks: string[];
-  authSessions: { authUrl: string; redirectUrl: string }[];
 }
 
 export interface INativeHost {
@@ -51,13 +49,12 @@ export interface INativeHost {
   openDeepLink: (url: string) => boolean;
   setShareAction: (action: TShareAction) => void;
   setCopySucceeds: (succeeds: boolean) => void;
-  /** 소셜 로그인 인증 세션 결과를 정한다. 기본은 사용자가 닫은 것(cancel)이다. */
-  setAuthSession: (handler: TAuthSessionHandler) => void;
   dispose: () => void;
 }
 
 interface IInstallNativeHostOptions {
   platform: 'ios' | 'android';
+  push?: boolean;
 }
 
 /** 앱(use-android-back-press)과 같은 대기 시간 */
@@ -69,7 +66,7 @@ const BACK_REQUEST_TIMEOUT_MS = 800;
  */
 export async function installNativeHost(
   page: Page,
-  { platform }: IInstallNativeHostOptions,
+  { platform, push = false }: IInstallNativeHostOptions,
 ): Promise<INativeHost> {
   const calls: INativeHost['calls'] = [];
   const events: INativeHost['events'] = [];
@@ -79,17 +76,31 @@ export async function installNativeHost(
     impacts: [],
     notifications: [],
     openedLinks: [],
-    authSessions: [],
   };
   const eventWaiters: { type: TWebEventType; resolve: (payload: unknown) => void }[] = [];
   let shareAction: TShareAction = 'sharedAction';
   let copySucceeds = true;
-  let authSession: TAuthSessionHandler = async () => ({ type: 'cancel' });
 
+  const installationId = crypto.randomUUID();
+  let pushGranted = false;
   const capabilities = createCapabilities({
+    ...(push
+      ? {
+          getPushRegistration: async (requestPermission: boolean) => {
+            if (requestPermission) pushGranted = true;
+            return {
+              installationId,
+              platform,
+              status: pushGranted ? ('granted' as const) : ('undetermined' as const),
+              token: pushGranted ? `ExpoPushToken[${installationId.replaceAll('-', '')}]` : null,
+            };
+          },
+          setPushBadge: async () => ({ updated: true }),
+          openPushSettings: async () => ({ opened: true }),
+        }
+      : {}),
     platform,
-    apiBase: `${E2E_WEB_ORIGIN}/backend`,
-    appScheme: E2E_APP_SCHEME,
+
     share: async (content) => {
       platformCalls.shares.push(content);
       return { action: shareAction };
@@ -108,13 +119,6 @@ export async function installNativeHost(
       platformCalls.openedLinks.push(url);
       return { type: platform === 'ios' ? 'cancel' : 'opened' };
     },
-    openAuthSession: async (authUrl, redirectUrl) => {
-      platformCalls.authSessions.push({ authUrl, redirectUrl });
-      return authSession(authUrl, redirectUrl);
-    },
-    randomBytes: (count) => crypto.getRandomValues(new Uint8Array(count)),
-    sha256: async (text) =>
-      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
   });
 
   const recorded: TNativeCapabilities = {};
@@ -196,9 +200,6 @@ export async function installNativeHost(
     },
     setCopySucceeds: (succeeds) => {
       copySucceeds = succeeds;
-    },
-    setAuthSession: (handler) => {
-      authSession = handler;
     },
     dispose: () => router.dispose(),
   };

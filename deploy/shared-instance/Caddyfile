@@ -1,0 +1,146 @@
+{
+	email {$ACME_EMAIL}
+	admin localhost:2019
+}
+
+(private_logs) {
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 3
+		}
+		format filter {
+			wrap json
+			fields {
+				request>uri delete
+				request>headers delete
+				resp_headers delete
+			}
+		}
+	}
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000"
+	}
+}
+
+# Media, including GF avatars, is uploaded to S3 with presigned forms, so bodies are JSON
+# (PC 64KB, GF 256KB at the apps).
+(gf_request_body) {
+	request_body {
+		max_size 1MB
+	}
+}
+
+# Bound web drain (30s), API replacement (20s + 30s) and web startup (20s).
+(upstream_retry) {
+	lb_try_duration 140s
+	lb_try_interval 250ms
+}
+
+(web_health) {
+	health_uri /health-check/live
+	health_interval 1s
+	health_timeout 1s
+}
+
+{$GAME_FEEDBACK_DOMAIN} {
+	import private_logs
+	import gf_request_body
+	@internal path_regexp internal (?i)^/(?:internal(?:/|$)|api/auth/(?:demo|test-)|api/admin(?:/|$))
+	route {
+		respond @internal "edge-blocked" 404
+		handle /api/* {
+			reverse_proxy gf-api:4300 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+		handle {
+			reverse_proxy gf-web:3300 {
+				import web_health
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+	}
+}
+
+{$PHOTO_CONTEST_DOMAIN} {
+	import private_logs
+	request_body {
+		max_size 1MB
+	}
+	@internal path_regexp internal (?i)^/(?:internal(?:/|$)|backend/testing(?:/|$))
+	@graphql path_regexp graphql (?i)^/backend/graphql/?$
+	route {
+		respond @internal "edge-blocked" 404
+		handle @graphql {
+			rewrite * /backend/graphql
+			reverse_proxy pc-web:3200 {
+				import web_health
+				import upstream_retry
+			}
+		}
+		handle_path /backend/* {
+			reverse_proxy pc-api:4200 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+		handle {
+			reverse_proxy pc-web:3200 {
+				import web_health
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+	}
+}
+
+{$GAME_FEEDBACK_API_DOMAIN} {
+	import private_logs
+	header X-Robots-Tag "noindex, nofollow"
+	import gf_request_body
+	@internal path_regexp internal (?i)^/(?:internal(?:/|$)|api/auth/(?:demo|test-)|api/admin(?:/|$))
+	route {
+		respond @internal "edge-blocked" 404
+		handle /api/* {
+			reverse_proxy gf-api:4300 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+		handle {
+			respond 404
+		}
+	}
+}
+
+{$PHOTO_CONTEST_API_DOMAIN} {
+	import private_logs
+	header X-Robots-Tag "noindex, nofollow"
+	request_body {
+		max_size 1MB
+	}
+	@internal path_regexp internal (?i)^/(?:internal(?:/|$)|testing(?:/|$)|backend/testing(?:/|$))
+	@graphql path_regexp graphql (?i)^/graphql/?$
+	route {
+		respond @internal "edge-blocked" 404
+		handle @graphql {
+			rewrite * /backend/graphql
+			reverse_proxy pc-web:3200 {
+				import web_health
+				import upstream_retry
+			}
+		}
+		handle {
+			reverse_proxy pc-api:4200 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+	}
+}

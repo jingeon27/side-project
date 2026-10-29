@@ -15,12 +15,14 @@ export const BRIDGE_ERROR_CODE = {
   Failed: 'FAILED',
   Invalid: 'INVALID',
   Timeout: 'TIMEOUT',
-} as const;
+} as const satisfies Record<string, z.output<typeof errorSchema>['code']>;
 export type TBridgeErrorCode = (typeof BRIDGE_ERROR_CODE)[keyof typeof BRIDGE_ERROR_CODE];
 
 /** URL 생성자가 불완전한 런타임(구형 WKWebView, React Native)에서도 같은 결과를 내도록 정규식으로 검사한다. */
 const HTTP_URL = /^https?:\/\/[^\s/?#@]+(?:[/?#][^\s]*)?$/i;
 const httpUrl = z.string().max(2048).regex(HTTP_URL, 'http(s) URL만 허용합니다.');
+// S3 임시 자격 증명과 한글 파일명이 포함된 서명 URL은 일반 공유 링크보다 길다.
+const downloadCapableUrl = z.string().max(8192).regex(HTTP_URL, 'http(s) URL만 허용합니다.');
 
 /** `https://a.example:3000/path` → `https://a.example:3000`. 형식이 다르면 null. */
 export function originOf(url: string): string | null {
@@ -30,8 +32,33 @@ export function originOf(url: string): string | null {
 const messageId = z.string().min(1).max(64);
 const pathValue = z.string().min(1).max(2048);
 
+export const PushRegistrationSchema = z
+  .object({
+    installationId: z.uuidv4(),
+    platform: z.enum(['ios', 'android']),
+    status: z.enum(['granted', 'denied', 'undetermined', 'unavailable']),
+    token: z
+      .string()
+      .regex(/^(?:Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,200}\]$/)
+      .nullable(),
+  })
+  .strict()
+  .refine((value) => (value.status === 'granted') === (value.token !== null));
+export type TPushRegistration = z.infer<typeof PushRegistrationSchema>;
+
+type TRequestSchemas = Record<string, { payload: z.ZodType; result: z.ZodType }>;
+
 /** 웹이 앱에 요청하고 결과를 기다리는 기능 */
 export const WEB_REQUEST = {
+  'notifications.registration': {
+    payload: z.object({ requestPermission: z.boolean() }),
+    result: PushRegistrationSchema,
+  },
+  'notifications.badge': {
+    payload: z.object({ count: z.int().min(0).max(9999) }),
+    result: z.object({ updated: z.boolean() }),
+  },
+  'notifications.settings': { payload: z.object({}), result: z.object({ opened: z.boolean() }) },
   'share.open': {
     payload: z.object({
       url: httpUrl,
@@ -49,18 +76,10 @@ export const WEB_REQUEST = {
     result: z.object({}),
   },
   'link.open': {
-    payload: z.object({ url: httpUrl }),
+    payload: z.object({ url: downloadCapableUrl }),
     result: z.object({ opened: z.boolean() }),
   },
-  /** 시스템 브라우저로 소셜 로그인한 뒤 앱 로그인 교환에 쓸 일회용 코드와 verifier를 돌려준다. */
-  'auth.socialLogin': {
-    payload: z.object({ provider: z.enum(['google', 'kakao']) }),
-    result: z.object({
-      code: z.string().min(16).max(256),
-      verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
-    }),
-  },
-} as const;
+} as const satisfies TRequestSchemas;
 export type TWebRequestType = keyof typeof WEB_REQUEST;
 export type TWebRequestPayload<T extends TWebRequestType> = z.input<(typeof WEB_REQUEST)[T]['payload']>;
 export type TWebRequestResult<T extends TWebRequestType> = z.output<(typeof WEB_REQUEST)[T]['result']>;
@@ -72,7 +91,7 @@ export const NATIVE_REQUEST = {
     payload: z.object({}),
     result: z.object({ handled: z.boolean() }),
   },
-} as const;
+} as const satisfies TRequestSchemas;
 export type TNativeRequestType = keyof typeof NATIVE_REQUEST;
 export type TNativeRequestPayload<T extends TNativeRequestType> = z.input<
   (typeof NATIVE_REQUEST)[T]['payload']
@@ -87,7 +106,8 @@ export const WEB_EVENT = {
   'navigation.changed': z.object({ path: pathValue }),
   /** userId는 네이티브 분석 도구의 사용자 식별에만 쓴다(세션 토큰이 아니다). */
   'auth.changed': z.object({ signedIn: z.boolean(), userId: z.string().min(1).max(64).optional() }),
-} as const;
+  'appearance.changed': z.object({ preference: z.enum(['system', 'light', 'dark']) }),
+} as const satisfies Record<string, z.ZodType>;
 export type TWebEventType = keyof typeof WEB_EVENT;
 export type TWebEventPayload<T extends TWebEventType> = z.input<(typeof WEB_EVENT)[T]>;
 
@@ -96,10 +116,11 @@ const RELATIVE_PATH = /^\/(?![/\\])[^\s]*$/;
 
 /** 앱 → 웹 알림 (응답 없음) */
 export const NATIVE_EVENT = {
+  'notifications.received': z.object({}),
   'app.state': z.object({ state: z.enum(['active', 'background']) }),
   /** 딥링크·알림을 눌러 앱이 열렸을 때 웹이 그 경로로 이동한다. */
   'navigation.open': z.object({ path: z.string().max(2048).regex(RELATIVE_PATH) }),
-} as const;
+} as const satisfies Record<string, z.ZodType>;
 export type TNativeEventType = keyof typeof NATIVE_EVENT;
 export type TNativeEventPayload<T extends TNativeEventType> = z.input<(typeof NATIVE_EVENT)[T]>;
 
@@ -130,6 +151,28 @@ const webRequestSchema = z.discriminatedUnion('type', [
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('request'),
     id: messageId,
+    type: z.literal('notifications.registration'),
+    payload: WEB_REQUEST['notifications.registration'].payload,
+  }),
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
+    type: z.literal('notifications.badge'),
+    payload: WEB_REQUEST['notifications.badge'].payload,
+  }),
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
+    type: z.literal('notifications.settings'),
+    payload: WEB_REQUEST['notifications.settings'].payload,
+  }),
+
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
     type: z.literal('share.open'),
     payload: WEB_REQUEST['share.open'].payload,
   }),
@@ -154,17 +197,16 @@ const webRequestSchema = z.discriminatedUnion('type', [
     type: z.literal('link.open'),
     payload: WEB_REQUEST['link.open'].payload,
   }),
-  z.object({
-    v: z.literal(PROTOCOL_VERSION),
-    kind: z.literal('request'),
-    id: messageId,
-    type: z.literal('auth.socialLogin'),
-    payload: WEB_REQUEST['auth.socialLogin'].payload,
-  }),
 ]);
 export type TWebRequestMessage = z.output<typeof webRequestSchema>;
 
 const webEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('event'),
+    type: z.literal('appearance.changed'),
+    payload: WEB_EVENT['appearance.changed'],
+  }),
   z.object({
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('event'),
@@ -199,6 +241,12 @@ const nativeEventSchema = z.discriminatedUnion('type', [
   z.object({
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('event'),
+    type: z.literal('notifications.received'),
+    payload: NATIVE_EVENT['notifications.received'],
+  }),
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('event'),
     type: z.literal('app.state'),
     payload: NATIVE_EVENT['app.state'],
   }),
@@ -220,6 +268,18 @@ const kindSchema = z.object({
   v: z.literal(PROTOCOL_VERSION),
   kind: z.enum(['request', 'event', 'response']),
 });
+type TMessageKind = z.output<typeof kindSchema>['kind'];
+
+const WEB_MESSAGE_SCHEMA = {
+  request: webRequestSchema,
+  event: webEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
+const NATIVE_MESSAGE_SCHEMA = {
+  request: nativeRequestSchema,
+  event: nativeEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
 
 function parseJson(raw: unknown): unknown {
   if (typeof raw !== 'string' || raw.length > 20_000) return undefined;
@@ -235,13 +295,7 @@ export function decodeWebMessage(raw: unknown): TWebMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? webRequestSchema
-      : kind.data.kind === 'event'
-        ? webEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = WEB_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
@@ -250,13 +304,7 @@ export function decodeNativeMessage(raw: unknown): TNativeMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? nativeRequestSchema
-      : kind.data.kind === 'event'
-        ? nativeEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = NATIVE_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 

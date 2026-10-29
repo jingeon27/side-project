@@ -1,11 +1,13 @@
-import { readNativeAppInfo } from '@photo-contest/bridge/web';
 import * as Sentry from '@sentry/nextjs';
 
+import { readNativeAppInfo } from '@photo-contest/bridge/web';
+
+import { scrubSentryPerformanceSpan, sentryPerformancePath } from '@/shared/lib/sentry-performance.helper';
 import {
-  SENTRY_DATA_COLLECTION,
   buildSentryClientTags,
   resolveClientSentryDsn,
   scrubSentryEvent,
+  SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/sentry.helper';
 
 // 화면이 상호작용 가능해지기 전에 한 번 실행된다. DSN이 없으면(로컬·e2e) Sentry를 켜지 않는다.
@@ -15,12 +17,37 @@ if (dsn) {
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE?.trim() || undefined,
     dataCollection: SENTRY_DATA_COLLECTION,
-    // 성능 추적은 쓰지 않는다(소스맵·트레이스 업로드 토큰이 없다).
-    tracesSampleRate: 0,
+    tracesSampleRate: 1,
+    integrations: [
+      Sentry.browserTracingIntegration({
+        traceFetch: false,
+        traceXHR: false,
+        enableLongTask: false,
+        enableLongAnimationFrame: false,
+        beforeStartSpan: (options) => ({ ...options, name: sentryPerformancePath(options.name) }),
+      }),
+    ],
+    beforeSendSpan: (span) =>
+      scrubSentryPerformanceSpan({
+        ...span,
+        attributes: {
+          ...span.attributes,
+          service: 'photo-contest',
+          layer: 'browser',
+          ...buildSentryClientTags(readNativeAppInfo(window)),
+        },
+      }),
     beforeSend: scrubSentryEvent,
     // 앱이 문서 로드 전에 심은 앱 정보로 앱 WebView와 브라우저 오류를 나눈다.
-    initialScope: { tags: buildSentryClientTags(readNativeAppInfo(window)) },
+    initialScope: {
+      tags: {
+        service: 'photo-contest',
+        layer: 'browser',
+        ...buildSentryClientTags(readNativeAppInfo(window)),
+      },
+    },
   });
 }
 

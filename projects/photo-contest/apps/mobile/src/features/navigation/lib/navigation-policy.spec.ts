@@ -28,9 +28,9 @@ describe('decideNavigation', () => {
   });
 
   it('다른 사이트로 가는 메인 문서 이동은 밖에서 열어야 한다', () => {
-    expect(decide('https://accounts.google.com/o/oauth2/v2/auth?client_id=x')).toEqual({
+    expect(decide('https://outside.example/path?ref=x')).toEqual({
       action: 'open-external',
-      url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=x',
+      url: 'https://outside.example/path?ref=x',
       fallbackUrl: null,
     });
     expect(decide('http://contest.example/groups/1')).toMatchObject({ action: 'open-external' });
@@ -41,6 +41,21 @@ describe('decideNavigation', () => {
 
   it('다른 origin iframe은 앱 문서를 바꾸지 않으므로 그대로 둬야 한다', () => {
     expect(decide('https://www.youtube.com/embed/x', false)).toEqual({ action: 'allow' });
+  });
+
+  it('iframe이 http(s)가 아닌 스킴으로 이동하면 외부 앱·앱 이동 없이 막아야 한다', () => {
+    for (const url of [
+      'kakaotalk://inappbrowser?url=x',
+      'tel:01012345678',
+      'market://details?id=com.evil.app',
+      'intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end',
+      'photocontest://groups/12',
+      'javascript:alert(1)',
+    ])
+      expect(decide(url, false)).toEqual({ action: 'block' });
+    // 빈 문서·srcdoc iframe은 그대로 연다.
+    expect(decide('about:blank', false)).toEqual({ action: 'allow' });
+    expect(decide('about:srcdoc', false)).toEqual({ action: 'allow' });
   });
 
   it('전화·메일·다른 앱 스킴은 밖에서 열어야 한다', () => {

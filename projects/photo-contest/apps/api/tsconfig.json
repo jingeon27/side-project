@@ -1,12 +1,13 @@
 {
-  "extends": "@side/typescript-config/base",
+  "extends": "@side/config/typescript",
   "compilerOptions": {
     "module": "Preserve",
     "moduleResolution": "Bundler",
     "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "*.mts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.mts", "scripts/**/*.ts"]
 }

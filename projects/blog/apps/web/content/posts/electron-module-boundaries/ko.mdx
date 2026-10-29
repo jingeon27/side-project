@@ -1,0 +1,152 @@
+<Summary>
+
+채용 플랫폼을 추가할 때마다 수집 흐름도 복사하고 있었어요. NestJS를 넣었다가 걷어냈지만, 요청을 받는 코드와 수집 순서, 사이트별 처리는 나눠 남겼어요.
+
+</Summary>
+
+![데스크톱 앱의 메인 프로세스와 브리지, 화면의 책임을 나눠 그린 일러스트](/images/covers/electron-module-boundaries.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+입사 당시 Electron 앱은 여러 채용 플랫폼에서 지원자 정보를 모으고 있었어요. 자사가 기업회원으로 접근할 권한이 있는 지원자 데이터예요. 사이트마다 로그인과 DOM은 달랐지만, 로그인한 뒤 중복을 확인하고 지원자를 저장해 이력서를 올리는 흐름은 같았어요. 그 공통 순서까지 플랫폼마다 따로 있어서, 순서를 고치면 각 파일을 같이 수정해야 했어요.
+
+## 플랫폼 파일마다 같은 흐름이 한 벌씩 있었어요
+
+플랫폼별 함수 안에 이 흐름이 처음부터 끝까지 들어 있었어요.
+
+```text
+로그인
+  -> 목록 수집
+  -> 중복 확인
+  -> 지원자 등록
+  -> 파일 다운로드 및 업로드
+```
+
+플랫폼을 추가할 때는 기존 파일을 복사하고 selector와 예외 처리를 바꿨어요. 사이트 때문에 달라지는 코드와 모든 사이트에 같은 코드가 한 함수에 남았어요.
+
+저도 새 플랫폼을 맡아 먼저 기존 파일을 복사하려 했어요. 그러면 로그인 뒤의 같은 흐름도 한 벌 더 생기겠더라고요.
+
+## 사이트가 바뀌어도 수집 순서는 그대로 두고 싶었어요
+
+마침 백엔드 팀의 NestJS 코드를 읽으며 Controller와 Service가 하는 일을 살펴보던 때였어요. 그 구분을 수집 앱에도 가져왔어요. IPC 요청을 받는 곳, 수집 순서를 실행하는 곳, 사이트마다 달라지는 곳을 따로 두기로 했어요.
+
+- IPC 요청이 바뀌면 Controller만 고쳐요.
+- 전체 처리 순서가 바뀌면 CrawlingService만 고쳐요.
+- 특정 사이트의 DOM이나 로그인 방식이 바뀌면 해당 플랫폼 구현(adapter)만 고쳐요.
+
+## NestJS를 빼도 이 구분은 남았어요
+
+처음에는 NestJS 자체도 넣어 봤어요. 하지만 CTO가 Electron main 프로세스에 그 프레임워크까지 올리는 것은 무겁다고 반려했어요. 도입한 지 5일 만에 의존성을 뺐고, decorator와 DI container도 남기지 않았어요.
+
+프레임워크를 뺐다고 파일을 다시 합치지는 않았어요. PuppeteerService를 생성자로 받고 Factory에서 직접 조립하면, 컨테이너 없이도 요청과 수집 순서, 사이트 처리를 나눌 수 있었어요.
+
+## IPC 요청은 Controller에서 받아요
+
+앱에서 받은 요청은 ipcMain handler가 처리해요. 이곳을 HTTP Controller처럼 진입점으로 두었어요. 아래 플랫폼 이름과 일부 식별자는 예시용으로 바꿨어요.
+
+```typescript
+const createCrawlingService =
+  (puppeteer: PuppeteerService) =>
+  (platform: Platform) =>
+    new CrawlingService(puppeteer, platform);
+
+export function createCrawlingController(puppeteer: PuppeteerService) {
+  const createService = createCrawlingService(puppeteer);
+
+  return {
+    collect({ platform }: { platform: Platform }) {
+      return createService(platform).collect();
+    },
+  };
+}
+
+const controller = createCrawlingController(puppeteer);
+ipcMain.handle('crawl', (_event, req) => controller.collect(req));
+```
+
+Controller는 요청받은 플랫폼에 맞는 Service를 얻어 실행해요. 로그인 함수와 DOM selector는 여기에 없어요. 플랫폼 목록도 다른 곳에 있으니, 새 플랫폼을 등록할 때 Controller를 고치지 않아도 돼요.
+
+## Service에는 처리 순서만 남겼어요
+
+```typescript
+export class CrawlingService {
+  constructor(
+    private readonly puppeteer: PuppeteerService,
+    private readonly platform: Platform,) {}
+
+  async collect() {
+    // 예외 처리와 page 정리는 생략
+    const config = CRAWLING_HANDLERS[this.platform];
+    const page = await this.puppeteer.open(config.pages.recruit);
+
+    await config.login(page);
+
+    const processor = new config.Processor({ page });
+    await processor.collectCandidates();
+    await processor.removeDuplicates();
+    await processor.saveCandidates();
+    await processor.uploadResumes();
+  }
+}
+```
+
+CrawlingService는 받은 PuppeteerService를 써서 같은 순서를 실행해요. 생성자 주입은 NestJS에서 참고했지만, 실제 인스턴스는 앞의 Factory가 만들어요. 플랫폼별 함수는 다음의 CRAWLING\_HANDLERS에서 가져와요.
+
+## 플랫폼마다 다른 부분은 추상 클래스와 설정으로 나눴어요
+
+```tsx
+abstract class CandidateProcessor {
+  abstract collectCandidates(): Promise<void>;
+  abstract removeDuplicates(): Promise<void>;
+  abstract saveCandidates(): Promise<void>;
+  abstract uploadResumes(): Promise<void>;
+}
+
+interface CrawlingHandler {
+  pages: { recruit: string };
+  login: (page: Page) => Promise<void>;
+  Processor: new (args: { page: Page }) => CandidateProcessor;
+}
+
+const CRAWLING_HANDLERS = {
+  platformA: {
+    pages: PLATFORM_A_PAGES,
+    login: loginPlatformA,
+    Processor: PlatformAProcessor,
+  },
+  platformB: {
+    pages: PLATFORM_B_PAGES,
+    login: loginPlatformB,
+    Processor: PlatformBProcessor,
+  },
+  platformC: {
+    pages: PLATFORM_C_PAGES,
+    login: loginPlatformC,
+    Processor: PlatformCProcessor,
+  },
+} as const satisfies Record<Platform, CrawlingHandler>;
+```
+
+추상 클래스가 플랫폼에서 구현해야 할 메서드를 정해 줘요. 언제 어떤 메서드를 부를지는 CrawlingService에 있고, 설정 객체에는 각 플랫폼의 클래스와 보조 함수를 연결했어요. NestJS Module을 참고한 모양이지만 런타임 DI나 데코레이터를 쓰는 것은 아니에요.
+
+Processor 생성자의 타입은 예제에서 구체적으로 적었어요. 당시 코드에서는 any였던 자리예요.
+
+## 다음 플랫폼에는 로그인과 파싱을 새로 붙였어요
+
+이후 플랫폼을 더 붙일 때는 기존 수집 함수를 복사하지 않았어요. 공통 순서는 CrawlingService에 두고, 사이트가 요구하는 로그인과 파싱을 구현해 설정에 등록했어요.
+
+한 플랫폼은 이력서를 암호화된 ZIP으로 줬어요. 다른 플랫폼은 2차 인증과 페이지네이션이 있었고 학력과 경력, 중복 지원자를 처리하는 방식도 달랐어요. 그 차이는 각 플랫폼 구현에 넣었어요. 지원자 한 명을 수집하다 실패해도 나머지는 이어 가도록, 에러는 지원자 단위로 잡았어요.
+
+이제 IPC 요청을 바꾸는 일과 수집 순서를 바꾸는 일, 사이트 DOM을 고치는 일이 같은 파일에서 시작하지는 않아요. NestJS는 빠졌지만 플랫폼을 붙일 때 공통 순서까지 복사하던 방식은 바뀌었어요.
+
+## 플랫폼 함수는 아직 설정에 묶여 있어요
+
+Puppeteer는 생성자로 받으니 대체 객체를 넣을 수 있어요. 다만 CrawlingService가 CRAWLING\_HANDLERS를 모듈에서 직접 읽어서, 로그인 함수와 Processor까지 외부에서 바꿔 끼울 수 있는 구조는 아니에요.
+
+## 참고
+
+- [NestJS: Providers](https://docs.nestjs.com/providers): 생성자 주입과 컨테이너의 역할
+- [NestJS: Modules](https://docs.nestjs.com/modules)
+- [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc): ipcMain.handle로 요청을 받는 패턴
+- [TypeScript Handbook: abstract Classes and Members](https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members)
+- 관련 글: [Puppeteer에서 요청과 응답을 함께 기다릴 때 놓쳤던 것](/ko/blog/puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리): 같은 수집 앱에서 비밀번호가 걸린 파일을 받을 때 겪은 문제

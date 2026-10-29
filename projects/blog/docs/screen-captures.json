@@ -1,0 +1,53 @@
+{
+  "articleId": "side-project-design",
+  "capturedOn": "2026-10-29",
+  "timezone": "Asia/Seoul",
+  "data": "isolated test accounts and fake game-profile provider",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "composition": "Unmodified browser screenshots arranged with HTML and CSS, then captured in the browser.",
+  "captures": [
+    {
+      "original": "/images/posts/side-project-design/01-service-screens.png",
+      "replacement": "/images/posts/side-project-design/01-service-screens-revised.jpg",
+      "originalSha256": "ad9c83f07b2c727e31d4d5a864e23ee221de3937f851fd0ac552c765aa0ca899",
+      "replacementSha256": "362f5d53bb79e1d4d92770e5b72f9118dc94fed84f15364475f45464c8e3c74b",
+      "width": 952,
+      "height": 1139,
+      "screens": [
+        {
+          "service": "game-feedback",
+          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+          "route": "/ko"
+        },
+        {
+          "service": "photo-contest",
+          "revision": "50900ae818121aaf85256211f861724347baf2c9",
+          "route": "/explore"
+        }
+      ]
+    },
+    {
+      "original": "/images/posts/side-project-design/09-product-interactions.png",
+      "replacement": "/images/posts/side-project-design/09-profile-pages.jpg",
+      "originalSha256": "1694338f3e51ad10d1dfe4ab55cb72649b062847593ab616893b9ded86e6b3c6",
+      "replacementSha256": "624602376e3cd86318ebfb3f0240fdf810e60af6a944171ac015b8b2fac1f003",
+      "width": 952,
+      "height": 1139,
+      "screens": [
+        {
+          "service": "game-feedback",
+          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+          "route": "/ko/users/sample-user-0"
+        },
+        {
+          "service": "game-feedback",
+          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+          "route": "/ko/settings/profile"
+        }
+      ]
+    }
+  ]
+}

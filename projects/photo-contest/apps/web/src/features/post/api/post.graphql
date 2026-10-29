@@ -1,0 +1,226 @@
+fragment GalleryPostCard on GalleryPost {
+  category {
+    id
+    name
+    archivedAt
+  }
+  id
+  contestId
+  contest {
+    likeLimit
+    id
+    groupId
+    title
+    phase
+  }
+  groupId
+  groupName
+  title
+  body
+  kind
+  mediaUrl
+  linkUrl
+  createdAt
+  likeCount
+  commentCount
+  likedByMe
+  canDelete
+  canModerate
+  canInteract
+  author {
+    id
+    nickname
+    avatar
+  }
+}
+query MyGalleryPosts($groupId: ID, $offset: Int!, $limit: Int!) {
+  myGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
+query GalleryPosts(
+  $groupId: ID
+  $contestId: ID
+  $categoryId: ID
+  $sort: PostSort!
+  $offset: Int!
+  $limit: Int!
+) {
+  galleryPosts(
+    groupId: $groupId
+    contestId: $contestId
+    categoryId: $categoryId
+    sort: $sort
+    offset: $offset
+    limit: $limit
+  ) {
+    ...GalleryPostCard
+  }
+}
+mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
+  requestPostUpload(groupId: $groupId, contentType: $contentType, byteSize: $byteSize) {
+    id
+    url
+    fields {
+      name
+      value
+    }
+    expiresAt
+  }
+}
+mutation CreatePost(
+  $categoryId: ID
+  $contestId: ID
+  $groupId: ID!
+  $uploadId: ID
+  $linkUrl: String
+  $title: String!
+  $body: String
+  $rightsConfirmed: Boolean!
+) {
+  createPost(
+    categoryId: $categoryId
+    contestId: $contestId
+    groupId: $groupId
+    uploadId: $uploadId
+    linkUrl: $linkUrl
+    title: $title
+    body: $body
+    rightsConfirmed: $rightsConfirmed
+  ) {
+    ...GalleryPostCard
+  }
+}
+mutation LikePost($postId: ID!) {
+  likePost(postId: $postId) {
+    id
+    likeCount
+    likedByMe
+  }
+}
+mutation UnlikePost($postId: ID!) {
+  unlikePost(postId: $postId) {
+    id
+    likeCount
+    likedByMe
+  }
+}
+mutation DeletePost($postId: ID!) {
+  deletePost(postId: $postId)
+}
+
+mutation CompletePostUpload($uploadId: ID!) {
+  completePostUpload(uploadId: $uploadId) {
+    id
+    kind
+    contentType
+    byteSize
+  }
+}
+
+query PostDownload($postId: ID!) {
+  postDownload(postId: $postId) {
+    url
+    filename
+    expiresAt
+  }
+}
+
+fragment GalleryPostAuthor on GalleryPost {
+  id
+  author {
+    id
+  }
+}
+fragment PostCommentCard on PostComment {
+  parentId
+  replyCount
+  likeCount
+  likedByMe
+  canInteract
+  id
+  postId
+  body
+  createdAt
+  canDelete
+  author {
+    id
+    nickname
+    avatar
+  }
+}
+query PostComments($postId: ID!, $parentId: ID = null, $offset: Int!, $limit: Int!) {
+  postCommentCount(postId: $postId, parentId: $parentId)
+  postComments(postId: $postId, parentId: $parentId, offset: $offset, limit: $limit) {
+    ...PostCommentCard
+  }
+}
+mutation CreatePostComment($postId: ID!, $body: String!, $parentId: ID) {
+  createPostComment(postId: $postId, body: $body, parentId: $parentId) {
+    ...PostCommentCard
+  }
+}
+mutation DeletePostComment($commentId: ID!) {
+  deletePostComment(commentId: $commentId)
+}
+
+query PublicGalleryPosts($sort: PostSort!, $offset: Int!, $limit: Int!) {
+  publicGalleryPosts(sort: $sort, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
+
+query RefreshPost($id: ID!) {
+  galleryPost(id: $id) {
+    ...GalleryPostCard
+  }
+}
+query HiddenGalleryPosts($groupId: ID!, $offset: Int!, $limit: Int!) {
+  hiddenGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
+    id
+    title
+    createdAt
+  }
+}
+mutation SetPostHidden($postId: ID!, $hidden: Boolean!) {
+  setPostHidden(postId: $postId, hidden: $hidden)
+}
+
+fragment PostCategoryOptions on Group {
+  id
+  categories {
+    id
+    name
+  }
+}
+query PostCategoryOptions($id: ID!) {
+  group(id: $id) {
+    ...PostCategoryOptions
+  }
+}
+mutation SetPostCategory($postId: ID!, $categoryId: ID) {
+  setPostCategory(postId: $postId, categoryId: $categoryId) {
+    ...GalleryPostCard
+  }
+}
+
+mutation LikePostComment($commentId: ID!) {
+  likePostComment(commentId: $commentId) {
+    id
+    likeCount
+    likedByMe
+  }
+}
+mutation UnlikePostComment($commentId: ID!) {
+  unlikePostComment(commentId: $commentId) {
+    id
+    likeCount
+    likedByMe
+  }
+}
+
+mutation UpdatePost($postId: ID!, $title: String!, $body: String, $categoryId: ID) {
+  updatePost(postId: $postId, title: $title, body: $body, categoryId: $categoryId) {
+    ...GalleryPostCard
+  }
+}

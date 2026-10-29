@@ -1,26 +1,20 @@
 'use client';
 
-import { useReadQuery } from '@apollo/client/react';
-import { useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+import { useReadQuery } from '@apollo/client/react';
 import { match } from 'ts-pattern';
 
 import { Phase } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { replaceSearchParams } from '@/shared/model/router';
-import { ClientOnly } from '@/shared/ui/@core/async-boundary';
-import { SegmentedControl } from '@/shared/ui/@core/segmented-control';
-import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { SegmentedControl, SegmentedControlItem } from '@/shared/ui/@core/segmented-control';
 
 import { ContestFeed } from '../feed/ContestFeed';
-import { ContestResults } from '../results/ContestResults';
-import { contestSearchSchema } from '../model/contest-search.schema';
 import type { TContestQueryRef } from '../model/contest-query.type';
-
-const SORT_OPTIONS = [
-  { value: 'latest', label: '최신순' },
-  { value: 'popular', label: '좋아요순' },
-] as const;
+import { contestSearchSchema } from '../model/contest-search.schema';
+import { ContestResults } from '../results/ContestResults';
 
 export function ContestStage({ contestRef, viewerId }: { contestRef: TContestQueryRef; viewerId: string }) {
   const { data } = useReadQuery(contestRef);
@@ -36,21 +30,22 @@ export function ContestStage({ contestRef, viewerId }: { contestRef: TContestQue
         <SegmentedControl
           label="사진 정렬"
           value={sort}
-          options={SORT_OPTIONS}
           onValueChange={(next) =>
             startTransition(() => {
-              replaceSearchParams({ sort: next });
-              trackEvent(ANALYTICS_EVENT.PhotoSortChanged, { contest_id: contest.id, sort: next });
+              const nextSort = contestSearchSchema.parse({ sort: next }).sort;
+              replaceSearchParams({ sort: nextSort });
+              trackEvent(ANALYTICS_EVENT.PhotoSortChanged, { contest_id: contest.id, sort: nextSort });
             })
           }
-        />
+        >
+          <SegmentedControlItem value="latest">최신순</SegmentedControlItem>
+          <SegmentedControlItem value="popular">좋아요순</SegmentedControlItem>
+        </SegmentedControl>
         <ContestFeed key={sort} contestRef={contestRef} viewerId={viewerId} sort={sort} />
       </>
     ))
     .with(Phase.Completed, () => (
-      <ClientOnly fallback={<Skeleton className="aspect-square w-full" />}>
-        <ContestResults key={contest.id} contestRef={contestRef} viewerId={viewerId} />
-      </ClientOnly>
+      <ContestResults key={contest.id} contestRef={contestRef} viewerId={viewerId} />
     ))
     .exhaustive();
 }

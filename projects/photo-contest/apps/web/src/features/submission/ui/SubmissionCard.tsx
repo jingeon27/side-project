@@ -1,6 +1,5 @@
+import { useId, type ReactNode } from 'react';
 import Image from 'next/image';
-import { useId } from 'react';
-import type { ReactNode } from 'react';
 
 import type { SubmissionCardFragment } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
@@ -14,7 +13,7 @@ interface ISubmissionCardProps {
   isPriority?: boolean;
   /** 결과 화면의 우승작. 카드를 강조하고 data-winner를 붙인다. */
   isWinner?: boolean;
-  /** 사진 위 왼쪽 배지(순위 등) */
+  /** 사진 아래에 표시할 배지(순위 등) */
   badge?: ReactNode;
   /** 캡션 아래 숫자(득표수 등) */
   stats?: ReactNode;
@@ -65,7 +64,6 @@ export function SubmissionCard({
           fetchPriority={isPriority ? 'high' : 'auto'}
           className="object-cover"
         />
-        {badge ? <div className="absolute top-3 left-3 flex items-center gap-1.5">{badge}</div> : null}
         {submission.hidden ? (
           <Badge tone="danger" className="absolute top-3 right-3">
             숨겨진 사진
@@ -73,6 +71,7 @@ export function SubmissionCard({
         ) : null}
       </div>
       <div className="flex flex-col gap-3 p-4">
+        {badge ? <div className="flex flex-wrap items-center gap-1.5">{badge}</div> : null}
         <div className="flex flex-col gap-1.5">
           <h3 id={captionId} className="text-subtitle break-words text-ink">
             {submission.caption}
@@ -81,7 +80,7 @@ export function SubmissionCard({
             <Avatar name={submission.author.nickname} src={submission.author.avatar} size="sm" />
             <span className="line-clamp-1">
               {submission.author.nickname}
-              {isMine ? ' · 내 사진' : ''}
+              {isMine ? ' (내 사진)' : ''}
             </span>
           </p>
         </div>

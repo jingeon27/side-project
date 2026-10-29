@@ -1,0 +1,7 @@
+@import './styles/theme.css';
+@import './styles/shadcn.css';
+@import './styles/base.css';
+@import './styles/color-schemes.css';
+@import './ui/bottom-sheet/bottom-sheet.css';
+
+@source './ui/**/*.{ts,tsx}';

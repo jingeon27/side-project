@@ -1,7 +1,7 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { ANALYTICS_EVENT, initAnalytics, toPathTemplate, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
@@ -13,6 +13,7 @@ import { useBridge } from '@/shared/model/bridge';
 export function AnalyticsTracker() {
   const bridge = useBridge();
   const pathname = usePathname();
+  const sentPath = useRef<string | null>(null);
 
   // 같은 컴포넌트의 effect는 선언 순서대로 돌므로 초기화가 첫 page_viewed보다 먼저다.
   useEffect(() => {
@@ -20,7 +21,10 @@ export function AnalyticsTracker() {
   }, [bridge]);
 
   useEffect(() => {
+    // StrictMode가 effect를 다시 실행해도 같은 문서 방문을 두 번 집계하지 않는다.
+    if (sentPath.current === pathname) return;
     trackEvent(ANALYTICS_EVENT.PageViewed, { path_template: toPathTemplate(pathname) });
+    sentPath.current = pathname;
   }, [pathname]);
 
   return null;

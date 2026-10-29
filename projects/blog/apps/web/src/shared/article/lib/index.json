@@ -1,0 +1,3843 @@
+[
+  {
+    "category": "engineering",
+    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/side-project-infrastructure.png",
+    "title": "일단 EC2 한 대에 올려보기로 했어요",
+    "description": "배포 비용을 보다가 RDS를 빼기로 했어요. 서버리스도 알아봤지만, 일단 EC2 small 한 대에 웹과 API, PostgreSQL을 같이 올려보기로 했어요. 그 과정에서 스토리지와 백업, S3 권한도 하나씩 고쳤어요.",
+    "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+    "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"],
+    "id": "side-project-infrastructure",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "서버리스로-옮길까도-생각했어요",
+        "title": "서버리스로 옮길까도 생각했어요",
+        "level": 2
+      },
+      {
+        "id": "small-한-대에-db까지-넣으면-괜찮을까",
+        "title": "small 한 대에 DB까지 넣으면 괜찮을까",
+        "level": 2
+      },
+      {
+        "id": "db를-직접-돌리기로-했으니-백업도-필요했어요",
+        "title": "DB를 직접 돌리기로 했으니 백업도 필요했어요",
+        "level": 2
+      },
+      {
+        "id": "s3-권한을-넣었는데도-ci가-실패했어요",
+        "title": "S3 권한을 넣었는데도 CI가 실패했어요",
+        "level": 2
+      },
+      {
+        "id": "r2도-알아봤어요",
+        "title": "R2도 알아봤어요",
+        "level": 2
+      },
+      {
+        "id": "api-도메인을-추가하면서-쿠키까지-바꾸지는-않았어요",
+        "title": "API 도메인을 추가하면서 쿠키까지 바꾸지는 않았어요",
+        "level": 2
+      },
+      {
+        "id": "terraform으로-인프라도-코드로-관리했어요",
+        "title": "Terraform으로 인프라도 코드로 관리했어요",
+        "level": 2
+      },
+      {
+        "id": "실제-서버에서-봐야-할-것들",
+        "title": "실제 서버에서 봐야 할 것들",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+      "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/side-project-infrastructure.png",
+    "title": "Starting with one EC2 instance",
+    "description": "I dropped RDS while looking at deployment costs. I considered serverless options too, but decided to start with the web apps, APIs, and PostgreSQL on one small EC2 instance. That also meant working through storage, backups, and S3 permissions.",
+    "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
+    "keywords": ["side projects", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "infrastructure", "backups"],
+    "id": "side-project-infrastructure",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-considered-moving-to-serverless",
+        "title": "I considered moving to serverless",
+        "level": 2
+      },
+      {
+        "id": "would-one-small-instance-be-enough-for-the-database-too",
+        "title": "Would one small instance be enough for the database too?",
+        "level": 2
+      },
+      {
+        "id": "running-the-database-meant-preparing-backups",
+        "title": "Running the database meant preparing backups",
+        "level": 2
+      },
+      {
+        "id": "i-added-s3-permissions-but-ci-still-failed",
+        "title": "I added S3 permissions, but CI still failed",
+        "level": 2
+      },
+      {
+        "id": "i-looked-into-r2-too",
+        "title": "I looked into R2 too",
+        "level": 2
+      },
+      {
+        "id": "adding-api-domains-did-not-mean-changing-the-cookies",
+        "title": "Adding API domains did not mean changing the cookies",
+        "level": 2
+      },
+      {
+        "id": "i-used-terraform-to-manage-infrastructure-as-code",
+        "title": "I used Terraform to manage infrastructure as code",
+        "level": 2
+      },
+      {
+        "id": "what-i-still-need-to-check-on-the-server",
+        "title": "What I still need to check on the server",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
+      "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
+    "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/side-project-technology.png",
+    "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
+    "description": "사진 서비스에는 GraphQL과 Apollo를, Game Mate에는 REST와 TanStack Query를 썼어요. 두 서비스를 만들면서 API 계약과 DB 정합성, 테스트를 정하고 ESLint로 코드의 경계를 검사한 과정을 적어 봤어요.",
+    "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
+    "keywords": [
+      "사이드 프로젝트",
+      "Next.js",
+      "NestJS",
+      "GraphQL",
+      "TanStack Query",
+      "PostgreSQL",
+      "테스트",
+      "아키텍처",
+      "ESLint"
+    ],
+    "id": "side-project-technology",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "웹-화면을-먼저-만들고-앱에서도-같이-쓰기로-했어요",
+        "title": "웹 화면을 먼저 만들고 앱에서도 같이 쓰기로 했어요",
+        "level": 2
+      },
+      {
+        "id": "브라우저-캐시는-서로-다르게-골랐어요",
+        "title": "브라우저 캐시는 서로 다르게 골랐어요",
+        "level": 2
+      },
+      {
+        "id": "권한-확인과-데이터-처리는-nestjs에서-맡았어요",
+        "title": "권한 확인과 데이터 처리는 NestJS에서 맡았어요",
+        "level": 2
+      },
+      {
+        "id": "api-타입은-한곳에서-만들고-실제-응답도-검사해요",
+        "title": "API 타입은 한곳에서 만들고 실제 응답도 검사해요",
+        "level": 2
+      },
+      {
+        "id": "두-번-들어온-요청은-db에서도-막아야-했어요",
+        "title": "두 번 들어온 요청은 DB에서도 막아야 했어요",
+        "level": 2
+      },
+      {
+        "id": "저장-성공과-캐시-전달-실패를-나눴어요",
+        "title": "저장 성공과 캐시 전달 실패를 나눴어요",
+        "level": 2
+      },
+      {
+        "id": "테스트는-각-앱에서-필요한-경계를-확인해요",
+        "title": "테스트는 각 앱에서 필요한 경계를 확인해요",
+        "level": 2
+      },
+      {
+        "id": "리뷰에서-반복한-지적은-eslint로-옮겼어요",
+        "title": "리뷰에서 반복한 지적은 ESLint로 옮겼어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 11,
+    "translations": {
+      "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
+      "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
+    "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/side-project-technology.png",
+    "title": "GraphQL for the photo service, REST for Game Mate",
+    "description": "The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.",
+    "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
+    "keywords": [
+      "side projects",
+      "Next.js",
+      "NestJS",
+      "GraphQL",
+      "TanStack Query",
+      "PostgreSQL",
+      "testing",
+      "architecture",
+      "ESLint"
+    ],
+    "id": "side-project-technology",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "build-the-web-screens-first-then-share-them-with-the-app",
+        "title": "Build the web screens first, then share them with the app",
+        "level": 2
+      },
+      {
+        "id": "use-different-browser-caches",
+        "title": "Use different browser caches",
+        "level": 2
+      },
+      {
+        "id": "let-nestjs-check-permissions-and-save-data",
+        "title": "Let NestJS check permissions and save data",
+        "level": 2
+      },
+      {
+        "id": "generate-api-types-from-one-source-and-check-actual-responses",
+        "title": "Generate API types from one source and check actual responses",
+        "level": 2
+      },
+      {
+        "id": "enforce-duplicate-request-rules-in-the-database",
+        "title": "Enforce duplicate-request rules in the database",
+        "level": 2
+      },
+      {
+        "id": "separate-a-successful-save-from-failed-cache-delivery",
+        "title": "Separate a successful save from failed cache delivery",
+        "level": 2
+      },
+      {
+        "id": "let-each-app-own-tests-for-its-boundaries",
+        "title": "Let each app own tests for its boundaries",
+        "level": 2
+      },
+      {
+        "id": "turn-recurring-review-comments-into-eslint-rules",
+        "title": "Turn recurring review comments into ESLint rules",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
+      "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "product", "design", "ux"],
+    "publishedAt": "2026-10-17",
+    "updatedAt": "2026-10-30",
+    "coverImage": "/images/covers/side-project-design.png",
+    "title": "AI 에이전트에게 자율적으로 맡겨 보고, 결과물을 검토하며 고친 과정",
+    "description": "기능과 아키텍처만 정해 주고 AI 에이전트에게 구현을 최대한 자율적으로 맡겨 봤어요. 나온 서비스를 직접 써 보고 코드를 읽으면서 화면 구성, 익명 기록, 그룹 권한과 채팅 재전송처럼 부족하거나 빠진 부분을 채워 나갔어요.",
+    "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+    "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템", "AI 에이전트"],
+    "id": "side-project-design",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "사진을-보러-왔는데-그룹-목록부터-나왔어요",
+        "title": "사진을 보러 왔는데 그룹 목록부터 나왔어요",
+        "level": 2
+      },
+      {
+        "id": "익명으로-시작한-뒤의-기록도-생각해야-했어요",
+        "title": "익명으로 시작한 뒤의 기록도 생각해야 했어요",
+        "level": 2
+      },
+      {
+        "id": "초대받았다고-비공개-그룹에-바로-들어가면-안-됐어요",
+        "title": "초대받았다고 비공개 그룹에 바로 들어가면 안 됐어요",
+        "level": 2
+      },
+      {
+        "id": "대회-참여-버튼은-언제-사라져야-할까",
+        "title": "대회 참여 버튼은 언제 사라져야 할까",
+        "level": 2
+      },
+      {
+        "id": "사진을-고른-뒤-취소하거나-업로드가-실패한다면",
+        "title": "사진을 고른 뒤 취소하거나 업로드가 실패한다면",
+        "level": 2
+      },
+      {
+        "id": "game-mate는-친추판매와-코칭에서-시작했어요",
+        "title": "Game Mate는 친추판매와 코칭에서 시작했어요",
+        "level": 2
+      },
+      {
+        "id": "피드백-게시판에서는-누가-답해줄까",
+        "title": "피드백 게시판에서는 누가 답해줄까",
+        "level": 2
+      },
+      {
+        "id": "전송-실패라고-떠도-메시지는-도착했을-수-있었어요",
+        "title": "전송 실패라고 떠도 메시지는 도착했을 수 있었어요",
+        "level": 2
+      },
+      {
+        "id": "삭제와-차단은-다른-사람의-화면에도-영향을-줬어요",
+        "title": "삭제와 차단은 다른 사람의 화면에도 영향을 줬어요",
+        "level": 2
+      },
+      {
+        "id": "게임-프로필을-불러왔다고-본인-계정은-아니었어요",
+        "title": "게임 프로필을 불러왔다고 본인 계정은 아니었어요",
+        "level": 2
+      },
+      {
+        "id": "가입할-때-안-해도-되는-것들",
+        "title": "가입할 때 안 해도 되는 것들",
+        "level": 2
+      },
+      {
+        "id": "뒤로-가면-어디로-돌아가야-할까",
+        "title": "뒤로 가면 어디로 돌아가야 할까",
+        "level": 2
+      },
+      {
+        "id": "게시글만-번역하면-답변은",
+        "title": "게시글만 번역하면 답변은?",
+        "level": 2
+      },
+      {
+        "id": "블로그-소개에-이력서까지-넣을-필요는-없었어요",
+        "title": "블로그 소개에 이력서까지 넣을 필요는 없었어요",
+        "level": 2
+      },
+      {
+        "id": "아키텍처를-정해-둬도-코드는-다시-읽어야-했어요",
+        "title": "아키텍처를 정해 둬도 코드는 다시 읽어야 했어요",
+        "level": 2
+      },
+      {
+        "id": "검색으로-들어오는-화면과-캐시도-확인했어요",
+        "title": "검색으로 들어오는 화면과 캐시도 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "오류가-났을-때-남길-로그도-골랐어요",
+        "title": "오류가 났을 때 남길 로그도 골랐어요",
+        "level": 2
+      },
+      {
+        "id": "만들고-나서-다시-정한-게-많았어요",
+        "title": "만들고 나서 다시 정한 게 많았어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 19,
+    "translations": {
+      "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+      "en": "what-i-kept-changing-while-planning-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "product", "design", "ux"],
+    "publishedAt": "2026-10-17",
+    "updatedAt": "2026-10-30",
+    "coverImage": "/images/covers/side-project-design.png",
+    "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
+    "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
+    "slug": "what-i-kept-changing-while-planning-my-side-projects",
+    "keywords": [
+      "side projects",
+      "product planning",
+      "product design",
+      "UI",
+      "UX",
+      "design system",
+      "AI agents"
+    ],
+    "id": "side-project-design",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-came-to-see-photos-and-got-a-group-list",
+        "title": "I came to see photos and got a group list",
+        "level": 2
+      },
+      {
+        "id": "what-happens-to-activity-after-an-anonymous-start",
+        "title": "What happens to activity after an anonymous start?",
+        "level": 2
+      },
+      {
+        "id": "an-invitation-must-not-bypass-a-private-groups-approval",
+        "title": "An invitation must not bypass a private group's approval",
+        "level": 2
+      },
+      {
+        "id": "when-should-the-contest-entry-button-disappear",
+        "title": "When should the contest entry button disappear?",
+        "level": 2
+      },
+      {
+        "id": "what-if-someone-cancels-a-selection-or-the-upload-fails",
+        "title": "What if someone cancels a selection or the upload fails?",
+        "level": 2
+      },
+      {
+        "id": "game-mate-began-with-friend-add-sales-and-coaching",
+        "title": "Game Mate began with friend-add sales and coaching",
+        "level": 2
+      },
+      {
+        "id": "who-would-answer-questions-on-the-feedback-board",
+        "title": "Who would answer questions on the feedback board?",
+        "level": 2
+      },
+      {
+        "id": "a-failed-send-could-still-have-reached-the-other-person",
+        "title": "A failed send could still have reached the other person",
+        "level": 2
+      },
+      {
+        "id": "deleting-and-blocking-affect-other-peoples-screens",
+        "title": "Deleting and blocking affect other people's screens",
+        "level": 2
+      },
+      {
+        "id": "looking-up-a-game-profile-did-not-prove-ownership",
+        "title": "Looking up a game profile did not prove ownership",
+        "level": 2
+      },
+      {
+        "id": "things-people-do-not-have-to-do-during-signup",
+        "title": "Things people do not have to do during signup",
+        "level": 2
+      },
+      {
+        "id": "where-should-back-take-someone",
+        "title": "Where should Back take someone?",
+        "level": 2
+      },
+      {
+        "id": "if-the-post-is-translated-what-about-the-reply",
+        "title": "If the post is translated, what about the reply?",
+        "level": 2
+      },
+      {
+        "id": "the-blogs-about-page-did-not-need-my-resume-too",
+        "title": "The blog's about page did not need my resume too",
+        "level": 2
+      },
+      {
+        "id": "specifying-the-architecture-still-left-code-to-review",
+        "title": "Specifying the architecture still left code to review",
+        "level": 2
+      },
+      {
+        "id": "i-checked-search-entry-points-and-cache-behavior-too",
+        "title": "I checked search entry points and cache behavior too",
+        "level": 2
+      },
+      {
+        "id": "i-chose-what-to-keep-in-error-logs",
+        "title": "I chose what to keep in error logs",
+        "level": 2
+      },
+      {
+        "id": "many-decisions-came-after-i-had-built-the-feature",
+        "title": "Many decisions came after I had built the feature",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 17,
+    "translations": {
+      "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+      "en": "what-i-kept-changing-while-planning-my-side-projects"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "code-review", "testing", "reflection"],
+    "publishedAt": "2026-10-05T12:01:45+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/reading-ai-code.png",
+    "sourceUrl": "https://jingeon27.tistory.com/35",
+    "title": "저는 코드를 읽어요",
+    "description": "화면에서 잘 돌아간다고 생각하고 마친 작업에 핫픽스가 이어졌어요. 그 뒤로는 코드를 읽어 확인할 분기를 찾고, 테스트와 실제 화면에서 각각 확인해요.",
+    "slug": "저는-코드를-읽어요",
+    "keywords": ["ai-workflow", "code-review", "testing", "reflection"],
+    "id": "reading-ai-code",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "화면에서-고르는-경우와-코드에서-찾는-경우",
+        "title": "화면에서 고르는 경우와 코드에서 찾는 경우",
+        "level": 2
+      },
+      {
+        "id": "임시-진료일-조건이-있어도-실행되지-않을-수-있었어요",
+        "title": "임시 진료일 조건이 있어도 실행되지 않을 수 있었어요",
+        "level": 2
+      },
+      {
+        "id": "코드를-읽고도-스크롤은-놓쳤어요",
+        "title": "코드를 읽고도 스크롤은 놓쳤어요",
+        "level": 2
+      },
+      {
+        "id": "완성본을-받으면-바뀐-흐름을-따라-읽어요",
+        "title": "완성본을 받으면 바뀐 흐름을 따라 읽어요",
+        "level": 2
+      },
+      {
+        "id": "읽을-수-있게-고치는-것도-이-과정의-일부예요",
+        "title": "읽을 수 있게 고치는 것도 이 과정의 일부예요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "저는-코드를-읽어요",
+      "en": "reading-ai-code"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "code-review", "testing", "reflection"],
+    "publishedAt": "2026-10-05T12:01:45+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/reading-ai-code.png",
+    "sourceUrl": "https://jingeon27.tistory.com/35",
+    "title": "Why I still read the code",
+    "description": "A sprint I considered finished after checking screens led to many hotfixes. I now read code to find paths to test, then check those paths and the actual UI separately.",
+    "slug": "reading-ai-code",
+    "keywords": ["ai-workflow", "code-review", "testing", "reflection"],
+    "id": "reading-ai-code",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "cases-chosen-from-behavior-and-cases-found-in-code",
+        "title": "Cases chosen from behavior and cases found in code",
+        "level": 2
+      },
+      {
+        "id": "a-temporary-opening-condition-could-exist-without-running",
+        "title": "A temporary-opening condition could exist without running",
+        "level": 2
+      },
+      {
+        "id": "reading-code-still-missed-scrolling",
+        "title": "Reading code still missed scrolling",
+        "level": 2
+      },
+      {
+        "id": "follow-the-changed-flow-after-receiving-a-finished-version",
+        "title": "Follow the changed flow after receiving a finished version",
+        "level": 2
+      },
+      {
+        "id": "keeping-code-readable-is-part-of-the-work",
+        "title": "Keeping code readable is part of the work",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "저는-코드를-읽어요",
+      "en": "reading-ai-code"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "react-hook-form", "architecture", "payment"],
+    "publishedAt": "2026-09-30T21:27:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/health-check-program.png",
+    "sourceUrl": "https://jingeon27.tistory.com/34",
+    "title": "건강검진 예약을 기존 서비스에 연결한 과정",
+    "description": "전화로 문의하던 건강검진을 복지몰에서 고르고 결제할 수 있게 만들었어요. 기존 프로그램에 검진을 더하면서 등록 권한과 검사 선택, 결제 후 돌아올 화면을 따로 풀어야 했어요.",
+    "slug": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+    "keywords": ["react", "react-hook-form", "architecture", "payment"],
+    "id": "health-check-program",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "검수-입구를-막는-단위를-파트너에서-프로그램으로-옮겼어요",
+        "title": "검수 입구를 막는 단위를 파트너에서 프로그램으로 옮겼어요",
+        "level": 2
+      },
+      {
+        "id": "같은-검사-구성을-편집하고-잠그고-선택하게-했어요",
+        "title": "같은 검사 구성을 편집하고, 잠그고, 선택하게 했어요",
+        "level": 2
+      },
+      {
+        "id": "상세-화면은-조건을-얹지-않고-둘로-나눴어요",
+        "title": "상세 화면은 조건을 얹지 않고 둘로 나눴어요",
+        "level": 2
+      },
+      {
+        "id": "택-n을-채우면-남은-칩을-잠갔어요",
+        "title": "택 N을 채우면 남은 칩을 잠갔어요",
+        "level": 2
+      },
+      {
+        "id": "신청부터-접수까지는-실패하고-돌아오는-길부터-정했어요",
+        "title": "신청부터 접수까지는 실패하고 돌아오는 길부터 정했어요",
+        "level": 2
+      },
+      {
+        "id": "새-검진-옆에서-기존-예약도-이어져야-했어요",
+        "title": "새 검진 옆에서 기존 예약도 이어져야 했어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+      "en": "health-check-program"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "react-hook-form", "architecture", "payment"],
+    "publishedAt": "2026-09-30T21:27:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/health-check-program.png",
+    "sourceUrl": "https://jingeon27.tistory.com/34",
+    "title": "Bringing health-check reservations into the existing service",
+    "description": "I brought health checks from phone inquiries into portal selection and payment. Adding them to existing programs required separate decisions for registration rights, examination choices, and returning from payment.",
+    "slug": "health-check-program",
+    "keywords": ["react", "react-hook-form", "architecture", "payment"],
+    "id": "health-check-program",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "restrict-review-by-program-rather-than-partner",
+        "title": "Restrict review by program rather than partner",
+        "level": 2
+      },
+      {
+        "id": "editing-locking-and-selecting-the-same-examinations",
+        "title": "Editing, locking, and selecting the same examinations",
+        "level": 2
+      },
+      {
+        "id": "split-detail-screens-instead-of-adding-conditions-everywhere",
+        "title": "Split detail screens instead of adding conditions everywhere",
+        "level": 2
+      },
+      {
+        "id": "disable-remaining-chips-after-n-choices",
+        "title": "Disable remaining chips after N choices",
+        "level": 2
+      },
+      {
+        "id": "design-the-return-path-from-payment-failures-first",
+        "title": "Design the return path from payment failures first",
+        "level": 2
+      },
+      {
+        "id": "existing-reservations-still-had-to-work-beside-health-checks",
+        "title": "Existing reservations still had to work beside health checks",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+      "en": "health-check-program"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["sentry", "react", "debugging", "react-modal-sheet"],
+    "publishedAt": "2026-09-28T22:24:36+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/bottom-sheet-drag-crash.png",
+    "sourceUrl": "https://jingeon27.tistory.com/33",
+    "title": "Sentry로 추적한 Bottom Sheet 드래그 크래시",
+    "description": "시트를 끌다 놓으면 화면이 멈추는 오류가 있었어요. 라이브러리를 올려 문제의 코드를 없앴지만, 제목까지 스크롤되는 문제는 그때도 놓쳤어요.",
+    "slug": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+    "keywords": ["sentry", "react", "debugging", "react-modal-sheet"],
+    "id": "bottom-sheet-drag-crash",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "천천히-끌다-놓을-때만-ref를-읽었어요",
+        "title": "천천히 끌다 놓을 때만 ref를 읽었어요",
+        "level": 2
+      },
+      {
+        "id": "닫는-순간-언마운트되는-건-아니었어요",
+        "title": "닫는 순간 언마운트되는 건 아니었어요",
+        "level": 2
+      },
+      {
+        "id": "닫기를-늦추는-대신-라이브러리를-올렸어요",
+        "title": "닫기를 늦추는 대신 라이브러리를 올렸어요",
+        "level": 2
+      },
+      {
+        "id": "화면이-넘기는-스냅-값은-그대로-뒀어요",
+        "title": "화면이 넘기는 스냅 값은 그대로 뒀어요",
+        "level": 2
+      },
+      {
+        "id": "export와-애니메이션-패키지도-바뀌었어요",
+        "title": "export와 애니메이션 패키지도 바뀌었어요",
+        "level": 2
+      },
+      {
+        "id": "높이는-맞았는데-제목이-같이-올라갔어요",
+        "title": "높이는 맞았는데 제목이 같이 올라갔어요",
+        "level": 2
+      },
+      {
+        "id": "배열보다-화면에-보일-위치를-비교했어요",
+        "title": "배열보다 화면에 보일 위치를 비교했어요",
+        "level": 2
+      },
+      {
+        "id": "배포-뒤에는-같은-크래시가-잡히지-않았어요",
+        "title": "배포 뒤에는 같은 크래시가 잡히지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+      "en": "bottom-sheet-drag-crash"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["sentry", "react", "debugging", "react-modal-sheet"],
+    "publishedAt": "2026-09-28T22:24:36+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/bottom-sheet-drag-crash.png",
+    "sourceUrl": "https://jingeon27.tistory.com/33",
+    "title": "Tracing a Bottom Sheet drag crash with Sentry",
+    "description": "A sheet crashed when users released a drag. Upgrading removed the failing code, but I still missed a title that scrolled away with the body.",
+    "slug": "bottom-sheet-drag-crash",
+    "keywords": ["sentry", "react", "debugging", "react-modal-sheet"],
+    "id": "bottom-sheet-drag-crash",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "only-a-slow-release-reached-the-ref-read",
+        "title": "Only a slow release reached the ref read",
+        "level": 2
+      },
+      {
+        "id": "closing-did-not-immediately-unmount-the-sheet",
+        "title": "Closing did not immediately unmount the sheet",
+        "level": 2
+      },
+      {
+        "id": "upgrading-instead-of-delaying-close",
+        "title": "Upgrading instead of delaying close",
+        "level": 2
+      },
+      {
+        "id": "keeping-the-snap-values-supplied-by-screens",
+        "title": "Keeping the snap values supplied by screens",
+        "level": 2
+      },
+      {
+        "id": "exports-and-animation-imports-changed-too",
+        "title": "Exports and animation imports changed too",
+        "level": 2
+      },
+      {
+        "id": "the-height-was-right-but-the-title-scrolled-away",
+        "title": "The height was right, but the title scrolled away",
+        "level": 2
+      },
+      {
+        "id": "comparing-visible-positions-instead-of-copied-arrays",
+        "title": "Comparing visible positions instead of copied arrays",
+        "level": 2
+      },
+      {
+        "id": "the-crash-stopped-appearing-after-deployment",
+        "title": "The crash stopped appearing after deployment",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+      "en": "bottom-sheet-drag-crash"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["zod", "typescript", "validation", "error-handling"],
+    "publishedAt": "2026-09-05T20:01:00+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/zod-assertion-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/32",
+    "title": "타입 단언을 줄이며 정리한 런타임 검증 기준",
+    "description": "타입 단언을 정리하면서 API 응답과 URL, 폼의 실패 처리를 구분했어요. 타입을 좁히는 일과 실제 값이 안전한지 확인하는 일의 차이를 정리했어요.",
+    "slug": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+    "keywords": ["zod", "typescript", "validation", "error-handling"],
+    "id": "zod-assertion-boundaries",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "모든-타입-단언을-zod로-바꾸지는-않았어요",
+        "title": "모든 타입 단언을 Zod로 바꾸지는 않았어요",
+        "level": 2
+      },
+      {
+        "id": "api-응답은-먼저-어긋난-필드를-기록했어요",
+        "title": "API 응답은 먼저 어긋난 필드를 기록했어요",
+        "level": 2
+      },
+      {
+        "id": "검증-로그를-보고-스키마를-고쳤어요",
+        "title": "검증 로그를 보고 스키마를 고쳤어요",
+        "level": 2
+      },
+      {
+        "id": "url은-잘못된-필드만-복구했어요",
+        "title": "URL은 잘못된 필드만 복구했어요",
+        "level": 2
+      },
+      {
+        "id": "폼은-잘못된-필드를-보여-주고-제출을-막았어요",
+        "title": "폼은 잘못된 필드를 보여 주고 제출을 막았어요",
+        "level": 2
+      },
+      {
+        "id": "타입을-좁힐-때는-검증-결과를-썼어요",
+        "title": "타입을 좁힐 때는 검증 결과를 썼어요",
+        "level": 2
+      },
+      {
+        "id": "실패-정책은-경계의-사용자에-따라-달라졌어요",
+        "title": "실패 정책은 경계의 사용자에 따라 달라졌어요",
+        "level": 2
+      },
+      {
+        "id": "검증이-실패했을-때의-동작을-테스트했어요",
+        "title": "검증이 실패했을 때의 동작을 테스트했어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+      "en": "zod-assertion-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["zod", "typescript", "validation", "error-handling"],
+    "publishedAt": "2026-09-05T20:01:00+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/zod-assertion-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/32",
+    "title": "Runtime validation beyond type assertions",
+    "description": "Removing type assertions led me to separate failure handling for API responses, URLs, and forms. A narrower type does not necessarily mean a safer runtime value.",
+    "slug": "zod-assertion-boundaries",
+    "keywords": ["zod", "typescript", "validation", "error-handling"],
+    "id": "zod-assertion-boundaries",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "not-every-assertion-became-zod",
+        "title": "Not every assertion became Zod",
+        "level": 2
+      },
+      {
+        "id": "log-mismatched-fields-in-existing-api-responses-first",
+        "title": "Log mismatched fields in existing API responses first",
+        "level": 2
+      },
+      {
+        "id": "use-validation-logs-to-correct-schemas",
+        "title": "Use validation logs to correct schemas",
+        "level": 2
+      },
+      {
+        "id": "recover-only-invalid-url-fields",
+        "title": "Recover only invalid URL fields",
+        "level": 2
+      },
+      {
+        "id": "show-invalid-fields-and-block-form-submission",
+        "title": "Show invalid fields and block form submission",
+        "level": 2
+      },
+      {
+        "id": "derive-narrowing-from-validation-results",
+        "title": "Derive narrowing from validation results",
+        "level": 2
+      },
+      {
+        "id": "failure-policy-depends-on-the-boundarys-consumer",
+        "title": "Failure policy depends on the boundary's consumer",
+        "level": 2
+      },
+      {
+        "id": "test-what-happens-when-validation-fails",
+        "title": "Test what happens when validation fails",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+      "en": "zod-assertion-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["ai-workflow", "testing", "eslint", "worktree"],
+    "publishedAt": "2026-08-30T12:11:17+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/plan-gated-ai-workflow.png",
+    "sourceUrl": "https://jingeon27.tistory.com/31",
+    "title": "AI에 구현을 맡기며 다듬은 개발 workflow",
+    "description": "에이전트가 성공했다고 한 테스트에도 화면에 없는 문구를 기다리는 코드가 있었어요. 구현을 맡기면서도 plan과 diff를 직접 읽고, 반복된 지적은 다음 작업에 쓸 규칙으로 남기게 됐어요.",
+    "slug": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+    "keywords": ["ai-workflow", "testing", "eslint", "worktree"],
+    "id": "plan-gated-ai-workflow",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "티켓에-없는-동작은-구현-전에-맞춰요",
+        "title": "티켓에 없는 동작은 구현 전에 맞춰요",
+        "level": 2
+      },
+      {
+        "id": "방향이-틀렸다면-코드가-생기기-전에-바꿔요",
+        "title": "방향이 틀렸다면 코드가 생기기 전에 바꿔요",
+        "level": 2
+      },
+      {
+        "id": "같은-수정을-프롬프트마다-반복하지-않게-했어요",
+        "title": "같은 수정을 프롬프트마다 반복하지 않게 했어요",
+        "level": 2
+      },
+      {
+        "id": "화면과-서버에서-어긋나는-부분을-찾았어요",
+        "title": "화면과 서버에서 어긋나는 부분을 찾았어요",
+        "level": 2
+      },
+      {
+        "id": "테스트가-기다리는-대상을-읽어요",
+        "title": "테스트가 기다리는 대상을 읽어요",
+        "level": 2
+      },
+      {
+        "id": "따로-맡길-티켓과-함께-바꿀-코드를-나눠요",
+        "title": "따로 맡길 티켓과 함께 바꿀 코드를 나눠요",
+        "level": 2
+      },
+      {
+        "id": "세션을-늘리자-검사들이-겹쳤어요",
+        "title": "세션을 늘리자 검사들이 겹쳤어요",
+        "level": 2
+      },
+      {
+        "id": "push-전에-멈춰야-할-이유를-구분해요",
+        "title": "push 전에 멈춰야 할 이유를 구분해요",
+        "level": 2
+      },
+      {
+        "id": "배포할-때는-합쳐진-diff를-다시-봐요",
+        "title": "배포할 때는 합쳐진 diff를 다시 봐요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+      "en": "plan-gated-ai-workflow"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["ai-workflow", "testing", "eslint", "worktree"],
+    "publishedAt": "2026-08-30T12:11:17+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/plan-gated-ai-workflow.png",
+    "sourceUrl": "https://jingeon27.tistory.com/31",
+    "title": "The development workflow I refined with coding agents",
+    "description": "An agent reported a passing test that waited for text the screen never showed. Delegating implementation led me to read plans and diffs myself and turn recurring corrections into guidance for later work.",
+    "slug": "plan-gated-ai-workflow",
+    "keywords": ["ai-workflow", "testing", "eslint", "worktree"],
+    "id": "plan-gated-ai-workflow",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "resolve-missing-behavior-before-implementation",
+        "title": "Resolve missing behavior before implementation",
+        "level": 2
+      },
+      {
+        "id": "change-direction-before-there-is-code-to-discard",
+        "title": "Change direction before there is code to discard",
+        "level": 2
+      },
+      {
+        "id": "stop-repeating-corrections-in-every-prompt",
+        "title": "Stop repeating corrections in every prompt",
+        "level": 2
+      },
+      {
+        "id": "find-differences-in-the-screen-and-the-server",
+        "title": "Find differences in the screen and the server",
+        "level": 2
+      },
+      {
+        "id": "read-what-a-test-actually-waits-for",
+        "title": "Read what a test actually waits for",
+        "level": 2
+      },
+      {
+        "id": "separate-independent-tickets-from-shared-changes",
+        "title": "Separate independent tickets from shared changes",
+        "level": 2
+      },
+      {
+        "id": "more-sessions-made-checks-overlap",
+        "title": "More sessions made checks overlap",
+        "level": 2
+      },
+      {
+        "id": "distinguish-reasons-to-stop-before-pushing",
+        "title": "Distinguish reasons to stop before pushing",
+        "level": 2
+      },
+      {
+        "id": "read-the-combined-diff-before-deployment",
+        "title": "Read the combined diff before deployment",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+      "en": "plan-gated-ai-workflow"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
+    "publishedAt": "2026-08-25T21:10:15+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/sentry-observability.png",
+    "sourceUrl": "https://jingeon27.tistory.com/30",
+    "title": "Sentry로 에러 수집부터 Web Vitals, MCP, 릴리스까지 연결한 과정",
+    "description": "복지몰의 브라우저와 서버 오류를 Sentry로 모았어요. 전송 정책과 에러 레벨을 정하고, Web Vitals와 MCP, 릴리스 연결을 확인했어요.",
+    "slug": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+    "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"],
+    "id": "sentry-observability",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "세-런타임의-오류를-한곳으로-모았어요",
+        "title": "세 런타임의 오류를 한곳으로 모았어요",
+        "level": 2
+      },
+      {
+        "id": "요청-정보의-자동-수집-범위를-확인했어요",
+        "title": "요청 정보의 자동 수집 범위를 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "새-수집-키가-생기면-타입-검사가-깨지게-했어요",
+        "title": "새 수집 키가 생기면 타입 검사가 깨지게 했어요",
+        "level": 2
+      },
+      {
+        "id": "breadcrumb은-datacollection이-걸러-주지-않았어요",
+        "title": "breadcrumb은 dataCollection이 걸러 주지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "url과-본문은-읽는-단계와-전송-직전-두-곳에서-닫았어요",
+        "title": "URL과 본문은 읽는 단계와 전송 직전 두 곳에서 닫았어요",
+        "level": 2
+      },
+      {
+        "id": "정화-함수를-초기화에-연결했는지도-검사해요",
+        "title": "정화 함수를 초기화에 연결했는지도 검사해요",
+        "level": 2
+      },
+      {
+        "id": "web-vitals는-실제-sentry-envelope까지-확인했어요",
+        "title": "Web Vitals는 실제 Sentry envelope까지 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "inp는-앱이-보내도-서버가-저장하지-않았어요",
+        "title": "INP는 앱이 보내도 서버가 저장하지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "사내-sentry를-에이전트가-조회하도록-mcp를-붙였어요",
+        "title": "사내 Sentry를 에이전트가 조회하도록 MCP를 붙였어요",
+        "level": 2
+      },
+      {
+        "id": "릴리스와-소스맵은-빌드-결과로-확인했어요",
+        "title": "릴리스와 소스맵은 빌드 결과로 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "에러-레벨은-상태-코드가-아니라-사용자-영향으로-정했어요",
+        "title": "에러 레벨은 상태 코드가 아니라 사용자 영향으로 정했어요",
+        "level": 2
+      },
+      {
+        "id": "회원-id-하나만-붙였어요",
+        "title": "회원 id 하나만 붙였어요",
+        "level": 2
+      },
+      {
+        "id": "고칠-수-없는-잡음은-발생-지점에서-표본만-남겼어요",
+        "title": "고칠 수 없는 잡음은 발생 지점에서 표본만 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "전송-게이트로-의미-없는-트래픽을-줄였어요",
+        "title": "전송 게이트로 의미 없는 트래픽을 줄였어요",
+        "level": 2
+      },
+      {
+        "id": "이-체계가-먼저-알려-준-문제도-있었어요",
+        "title": "이 체계가 먼저 알려 준 문제도 있었어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 17,
+    "translations": {
+      "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+      "en": "sentry-observability"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
+    "publishedAt": "2026-08-25T21:10:15+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/sentry-observability.png",
+    "sourceUrl": "https://jingeon27.tistory.com/30",
+    "title": "Connecting Sentry errors, Web Vitals, MCP, and releases",
+    "description": "I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.",
+    "slug": "sentry-observability",
+    "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"],
+    "id": "sentry-observability",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "collect-errors-from-three-runtimes",
+        "title": "Collect errors from three runtimes",
+        "level": 2
+      },
+      {
+        "id": "check-the-scope-of-automatic-request-collection",
+        "title": "Check the scope of automatic request collection",
+        "level": 2
+      },
+      {
+        "id": "make-new-collection-keys-fail-type-checking",
+        "title": "Make new collection keys fail type checking",
+        "level": 2
+      },
+      {
+        "id": "datacollection-did-not-cover-breadcrumbs",
+        "title": "dataCollection did not cover breadcrumbs",
+        "level": 2
+      },
+      {
+        "id": "block-reading-and-sanitize-before-sending",
+        "title": "Block reading and sanitize before sending",
+        "level": 2
+      },
+      {
+        "id": "check-that-initialization-actually-receives-the-sanitizer",
+        "title": "Check that initialization actually receives the sanitizer",
+        "level": 2
+      },
+      {
+        "id": "verify-web-vitals-in-actual-envelopes",
+        "title": "Verify Web Vitals in actual envelopes",
+        "level": 2
+      },
+      {
+        "id": "inp-was-sent-but-not-stored",
+        "title": "INP was sent but not stored",
+        "level": 2
+      },
+      {
+        "id": "connect-agents-to-internal-sentry-through-mcp",
+        "title": "Connect agents to internal Sentry through MCP",
+        "level": 2
+      },
+      {
+        "id": "verify-releases-and-source-maps-in-build-artifacts",
+        "title": "Verify releases and source maps in build artifacts",
+        "level": 2
+      },
+      {
+        "id": "assign-severity-by-user-impact",
+        "title": "Assign severity by user impact",
+        "level": 2
+      },
+      {
+        "id": "attach-only-the-member-id",
+        "title": "Attach only the member ID",
+        "level": 2
+      },
+      {
+        "id": "sample-environmental-noise-at-its-source",
+        "title": "Sample environmental noise at its source",
+        "level": 2
+      },
+      {
+        "id": "gate-transmission-by-execution-purpose",
+        "title": "Gate transmission by execution purpose",
+        "level": 2
+      },
+      {
+        "id": "problems-this-setup-helped-uncover",
+        "title": "Problems this setup helped uncover",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 13,
+    "translations": {
+      "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+      "en": "sentry-observability"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["reflection", "ai-workflow", "productivity"],
+    "publishedAt": "2026-08-25T20:57:39+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/low-effort-success.png",
+    "sourceUrl": "https://jingeon27.tistory.com/29",
+    "title": "다음 성공에 드는 수고를 줄이기",
+    "description": "노력한 경험이 더 값지다고 답한 뒤에, 적게 애쓰고 해낸 일까지 그렇게 봐야 하나 싶었어요. AI에 구현을 맡겨 온 제 경험을 놓고 다시 생각해 봤어요.",
+    "slug": "가장-값진-성공은-노력이-적은-성공입니다",
+    "keywords": ["reflection", "ai-workflow", "productivity"],
+    "id": "low-effort-success",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "애썼는지보다-얼마나-애썼는지를-묻는다면",
+        "title": "애썼는지보다 얼마나 애썼는지를 묻는다면",
+        "level": 2
+      },
+      {
+        "id": "덜-애써도-되는-데에는-앞서-한-일이-있어요",
+        "title": "덜 애써도 되는 데에는 앞서 한 일이 있어요",
+        "level": 2
+      },
+      {
+        "id": "작게-실패했다면-그만큼-쉽게-바꿀-수-있어요",
+        "title": "작게 실패했다면 그만큼 쉽게 바꿀 수 있어요",
+        "level": 2
+      },
+      {
+        "id": "ai가-만든-코드를-고치는-일도-달라졌어요",
+        "title": "AI가 만든 코드를 고치는 일도 달라졌어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "가장-값진-성공은-노력이-적은-성공입니다",
+      "en": "low-effort-success"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["reflection", "ai-workflow", "productivity"],
+    "publishedAt": "2026-08-25T20:57:39+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/low-effort-success.png",
+    "sourceUrl": "https://jingeon27.tistory.com/29",
+    "title": "Making the next success take less effort",
+    "description": "After ranking effortful experiences first, I wondered whether that should include work completed with little effort. My experience with coding agents gave me another way to read the question.",
+    "slug": "low-effort-success",
+    "keywords": ["reflection", "ai-workflow", "productivity"],
+    "id": "low-effort-success",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "if-the-question-asks-how-much-effort-it-took",
+        "title": "If the question asks how much effort it took",
+        "level": 2
+      },
+      {
+        "id": "less-work-can-depend-on-work-done-earlier",
+        "title": "Less work can depend on work done earlier",
+        "level": 2
+      },
+      {
+        "id": "a-small-failure-can-be-easier-to-change",
+        "title": "A small failure can be easier to change",
+        "level": 2
+      },
+      {
+        "id": "correcting-ai-generated-code-changed-too",
+        "title": "Correcting AI-generated code changed too",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "가장-값진-성공은-노력이-적은-성공입니다",
+      "en": "low-effort-success"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "error-boundary", "zod", "observability"],
+    "publishedAt": "2026-08-17T07:46:22+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/error-boundary-recovery.png",
+    "sourceUrl": "https://jingeon27.tistory.com/28",
+    "title": "오류가 난 영역만 다시 시도하도록 Error Boundary 나누기",
+    "description": "목록 조회가 실패했는데 메뉴와 헤더까지 사라졌어요. 실패한 표나 필터만 다시 시도할 수 있도록 조회 위치와 Error Boundary를 함께 바꿨어요.",
+    "slug": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+    "keywords": ["react", "error-boundary", "zod", "observability"],
+    "id": "error-boundary-recovery",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "바운더리를-늘리려-해도-걸-자리가-없었어요",
+        "title": "바운더리를 늘리려 해도 걸 자리가 없었어요",
+        "level": 2
+      },
+      {
+        "id": "메뉴를-남기고-실패한-영역만-다시-불러왔어요",
+        "title": "메뉴를 남기고 실패한 영역만 다시 불러왔어요",
+        "level": 2
+      },
+      {
+        "id": "페이지는-조회하지-않고-url로-여는-상세는-라우트에-뒀어요",
+        "title": "페이지는 조회하지 않고, URL로 여는 상세는 라우트에 뒀어요",
+        "level": 2
+      },
+      {
+        "id": "검색-필터는-칸마다-바운더리를-걸-수-있게-다시-만들었어요",
+        "title": "검색 필터는 칸마다 바운더리를 걸 수 있게 다시 만들었어요",
+        "level": 2
+      },
+      {
+        "id": "오버레이는-닫은-다음-다시-열려야-했어요",
+        "title": "오버레이는 닫은 다음 다시 열려야 했어요",
+        "level": 2
+      },
+      {
+        "id": "응답-스키마가-어긋나도-화면은-막지-않았어요",
+        "title": "응답 스키마가 어긋나도 화면은 막지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "잘못된-url은-필드-단위로-복구했어요",
+        "title": "잘못된 URL은 필드 단위로 복구했어요",
+        "level": 2
+      },
+      {
+        "id": "저장-실패와-재조회-실패는-바운더리로-보내지-않았어요",
+        "title": "저장 실패와 재조회 실패는 바운더리로 보내지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "로그에는-재현할-위치를-남겼어요",
+        "title": "로그에는 재현할 위치를 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "직접-적던-바운더리-이름을-없앴어요",
+        "title": "직접 적던 바운더리 이름을 없앴어요",
+        "level": 3
+      },
+      {
+        "id": "테스트로는-오류-문구가-아니라-남는-화면을-확인했어요",
+        "title": "테스트로는 오류 문구가 아니라 남는 화면을 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "문서로-적어-둔-규칙은-lint로-옮겼어요",
+        "title": "문서로 적어 둔 규칙은 lint로 옮겼어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 13,
+    "translations": {
+      "ko": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+      "en": "error-boundary-recovery"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "error-boundary", "zod", "observability"],
+    "publishedAt": "2026-08-17T07:46:22+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/error-boundary-recovery.png",
+    "sourceUrl": "https://jingeon27.tistory.com/28",
+    "title": "Letting failed sections recover with Error Boundaries",
+    "description": "One failed list query removed the menu and header too. I changed query placement along with Error Boundaries so a failed table or filter could be retried in place.",
+    "slug": "error-boundary-recovery",
+    "keywords": ["react", "error-boundary", "zod", "observability"],
+    "id": "error-boundary-recovery",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "there-was-nowhere-consistent-to-place-boundaries",
+        "title": "There was nowhere consistent to place boundaries",
+        "level": 2
+      },
+      {
+        "id": "preserving-navigation-while-retrying-a-failed-region",
+        "title": "Preserving navigation while retrying a failed region",
+        "level": 2
+      },
+      {
+        "id": "keep-queries-out-of-page-composition-and-url-details-in-routes",
+        "title": "Keep queries out of page composition and URL details in routes",
+        "level": 2
+      },
+      {
+        "id": "rebuild-filters-to-permit-field-boundaries",
+        "title": "Rebuild filters to permit field boundaries",
+        "level": 2
+      },
+      {
+        "id": "an-overlay-must-reopen-after-failure",
+        "title": "An overlay must reopen after failure",
+        "level": 2
+      },
+      {
+        "id": "observe-response-mismatches-without-stopping-existing-screens",
+        "title": "Observe response mismatches without stopping existing screens",
+        "level": 2
+      },
+      {
+        "id": "recover-url-fields-individually",
+        "title": "Recover URL fields individually",
+        "level": 2
+      },
+      {
+        "id": "keep-mutation-and-background-refetch-failures-within-the-screen",
+        "title": "Keep mutation and background-refetch failures within the screen",
+        "level": 2
+      },
+      {
+        "id": "record-where-to-reproduce-the-error",
+        "title": "Record where to reproduce the error",
+        "level": 2
+      },
+      {
+        "id": "removing-handwritten-boundary-names",
+        "title": "Removing handwritten boundary names",
+        "level": 3
+      },
+      {
+        "id": "test-the-screen-that-survives",
+        "title": "Test the screen that survives",
+        "level": 2
+      },
+      {
+        "id": "turn-documented-rules-into-lint",
+        "title": "Turn documented rules into lint",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 11,
+    "translations": {
+      "ko": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+      "en": "error-boundary-recovery"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "react", "cache", "react-hook-form"],
+    "publishedAt": "2026-08-16T02:39:00+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-server-client-issues.png",
+    "sourceUrl": "https://jingeon27.tistory.com/27",
+    "title": "Next.js의 라우팅과 캐시 문제를 추적한 기록",
+    "description": "검색을 눌러도 주소가 그대로였고, 배포 뒤에는 열어 둔 탭의 공지가 닫히지 않았어요. 라우팅과 쿠키, 폼 초기화를 따라가며 서버가 다시 처리해야 할 일을 구분했어요.",
+    "slug": "nextjs를-사용하면서-겪었던-이슈들",
+    "keywords": ["nextjs", "react", "cache", "react-hook-form"],
+    "id": "nextjs-server-client-issues",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "이미-조건이-붙은-주소에서-검색이-멈췄어요",
+        "title": "이미 조건이 붙은 주소에서 검색이 멈췄어요",
+        "level": 2
+      },
+      {
+        "id": "목록을-다시-조회하는-쪽은-클라이언트였어요",
+        "title": "목록을 다시 조회하는 쪽은 클라이언트였어요",
+        "level": 3
+      },
+      {
+        "id": "캐시-버그가-고쳐져도-서버-왕복은-필요하지-않아요",
+        "title": "캐시 버그가 고쳐져도 서버 왕복은 필요하지 않아요",
+        "level": 3
+      },
+      {
+        "id": "검색-캐시를-고친-버전에는-다른-문제가-있었어요",
+        "title": "검색 캐시를 고친 버전에는 다른 문제가 있었어요",
+        "level": 2
+      },
+      {
+        "id": "오래-열어-둔-탭은-예전-서버-액션을-호출했어요",
+        "title": "오래 열어 둔 탭은 예전 서버 액션을 호출했어요",
+        "level": 2
+      },
+      {
+        "id": "배포-문제를-없애면서-토큰-노출은-늘었어요",
+        "title": "배포 문제를 없애면서 토큰 노출은 늘었어요",
+        "level": 3
+      },
+      {
+        "id": "뒤로가기는-목록만-되돌리고-검색창은-남겼어요",
+        "title": "뒤로가기는 목록만 되돌리고 검색창은 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "제출한-폼을-프레임워크가-보관하고-있었어요",
+        "title": "제출한 폼을 프레임워크가 보관하고 있었어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 12,
+    "translations": {
+      "ko": "nextjs를-사용하면서-겪었던-이슈들",
+      "en": "nextjs-server-client-issues"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "react", "cache", "react-hook-form"],
+    "publishedAt": "2026-08-16T02:39:00+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-server-client-issues.png",
+    "sourceUrl": "https://jingeon27.tistory.com/27",
+    "title": "Tracing Next.js routing and cache problems",
+    "description": "Searches left the URL unchanged, and a deployment stopped notices from closing in old tabs. Tracing routing, cookies, and form resets led me to reconsider which actions needed the server.",
+    "slug": "nextjs-server-client-issues",
+    "keywords": ["nextjs", "react", "cache", "react-hook-form"],
+    "id": "nextjs-server-client-issues",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "search-stopped-after-entering-with-query-conditions",
+        "title": "Search stopped after entering with query conditions",
+        "level": 2
+      },
+      {
+        "id": "the-client-was-responsible-for-fetching-the-list",
+        "title": "The client was responsible for fetching the list",
+        "level": 3
+      },
+      {
+        "id": "a-fixed-cache-does-not-make-the-round-trip-necessary",
+        "title": "A fixed cache does not make the round trip necessary",
+        "level": 3
+      },
+      {
+        "id": "the-cache-fix-came-in-a-version-with-another-problem",
+        "title": "The cache fix came in a version with another problem",
+        "level": 2
+      },
+      {
+        "id": "old-tabs-kept-calling-old-server-actions",
+        "title": "Old tabs kept calling old Server Actions",
+        "level": 2
+      },
+      {
+        "id": "removing-deployment-failures-increased-token-exposure",
+        "title": "Removing deployment failures increased token exposure",
+        "level": 3
+      },
+      {
+        "id": "back-navigation-restored-the-list-but-left-the-search-input",
+        "title": "Back navigation restored the list but left the search input",
+        "level": 2
+      },
+      {
+        "id": "the-framework-retained-forms-that-needed-resetting",
+        "title": "The framework retained forms that needed resetting",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "nextjs를-사용하면서-겪었던-이슈들",
+      "en": "nextjs-server-client-issues"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react", "refactoring", "declarative-programming"],
+    "publishedAt": "2026-08-12T00:42:29+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/declarative-code.png",
+    "sourceUrl": "https://jingeon27.tistory.com/26",
+    "title": "선언적으로 코드를 쓰는 기준",
+    "description": "화면을 보려는데 조회 순서와 계산부터 읽게 되는 코드가 불편했어요. 리뷰 상세와 검색 필터, 쿠폰 계산을 고치며 화면 구성과 세부 동작을 나눈 방법이에요.",
+    "slug": "선언적으로-코드를-쓰는-기준",
+    "keywords": ["typescript", "react", "refactoring", "declarative-programming"],
+    "id": "declarative-code",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "컴포넌트를-나눌-때",
+        "title": "컴포넌트를 나눌 때",
+        "level": 2
+      },
+      {
+        "id": "조회도-필요한-곳에서",
+        "title": "조회도 필요한 곳에서",
+        "level": 2
+      },
+      {
+        "id": "고정된-ui와-데이터-목록",
+        "title": "고정된 UI와 데이터 목록",
+        "level": 2
+      },
+      {
+        "id": "검색-필터를-공통으로-만들면서",
+        "title": "검색 필터를 공통으로 만들면서",
+        "level": 2
+      },
+      {
+        "id": "값을-만드는-코드",
+        "title": "값을 만드는 코드",
+        "level": 2
+      },
+      {
+        "id": "같은-값을-두-번-관리하지-않기",
+        "title": "같은 값을 두 번 관리하지 않기",
+        "level": 3
+      },
+      {
+        "id": "조회-조건을-적어-두기",
+        "title": "조회 조건을 적어 두기",
+        "level": 2
+      },
+      {
+        "id": "테스트를-읽을-때",
+        "title": "테스트를 읽을 때",
+        "level": 2
+      },
+      {
+        "id": "같은-리뷰를-반복하게-되면",
+        "title": "같은 리뷰를 반복하게 되면",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "선언적으로-코드를-쓰는-기준",
+      "en": "declarative-code"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react", "refactoring", "declarative-programming"],
+    "publishedAt": "2026-08-12T00:42:29+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/declarative-code.png",
+    "sourceUrl": "https://jingeon27.tistory.com/26",
+    "title": "How I write declarative code",
+    "description": "Some components made me read query sequencing and calculations before I could see the screen. These examples show how I separated composition from detail in review pages, filters, and coupon calculations.",
+    "slug": "declarative-code",
+    "keywords": ["typescript", "react", "refactoring", "declarative-programming"],
+    "id": "declarative-code",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "splitting-components",
+        "title": "Splitting components",
+        "level": 2
+      },
+      {
+        "id": "fetch-data-where-it-is-needed",
+        "title": "Fetch data where it is needed",
+        "level": 2
+      },
+      {
+        "id": "fixed-ui-and-data-driven-lists",
+        "title": "Fixed UI and data-driven lists",
+        "level": 2
+      },
+      {
+        "id": "sharing-search-filters",
+        "title": "Sharing search filters",
+        "level": 2
+      },
+      {
+        "id": "code-that-derives-values",
+        "title": "Code that derives values",
+        "level": 2
+      },
+      {
+        "id": "avoid-managing-the-same-value-twice",
+        "title": "Avoid managing the same value twice",
+        "level": 3
+      },
+      {
+        "id": "define-query-conditions-alongside-the-query",
+        "title": "Define query conditions alongside the query",
+        "level": 2
+      },
+      {
+        "id": "reading-tests",
+        "title": "Reading tests",
+        "level": 2
+      },
+      {
+        "id": "when-the-same-review-comment-returns",
+        "title": "When the same review comment returns",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "선언적으로-코드를-쓰는-기준",
+      "en": "declarative-code"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["testing", "vitest", "playwright", "react"],
+    "publishedAt": "2026-08-08T02:56:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/testing-standards.png",
+    "sourceUrl": "https://jingeon27.tistory.com/25",
+    "title": "테스트 코드를 도입하면서 세운 기준",
+    "description": "테스트를 도입한 뒤 실제 제출 경로와 서버 제약에 맞춰 기준을 보완했어요. 통과 여부뿐 아니라 어떤 동작을 확인하는지도 살펴봤어요.",
+    "slug": "테스트-코드를-도입하면서-세운-기준",
+    "keywords": ["testing", "vitest", "playwright", "react"],
+    "id": "testing-standards",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "테스트는-대상-파일-옆에-둬요",
+        "title": "테스트는 대상 파일 옆에 둬요",
+        "level": 2
+      },
+      {
+        "id": "통합-테스트는-실제-제출-코드를-거치게-해요",
+        "title": "통합 테스트는 실제 제출 코드를 거치게 해요",
+        "level": 2
+      },
+      {
+        "id": "무엇이든-받아-주는-mock을-서버-계약으로-착각했어요",
+        "title": "무엇이든 받아 주는 Mock을 서버 계약으로 착각했어요",
+        "level": 2
+      },
+      {
+        "id": "아무것도-확인하지-않는-단언이-통과하고-있었어요",
+        "title": "아무것도 확인하지 않는 단언이 통과하고 있었어요",
+        "level": 2
+      },
+      {
+        "id": "테스트-계층마다-확인할-범위를-나눴어요",
+        "title": "테스트 계층마다 확인할 범위를 나눴어요",
+        "level": 2
+      },
+      {
+        "id": "dev-api-서버를-우선하고-mock은-만들기-어려운-상태에-썼어요",
+        "title": "dev API 서버를 우선하고 Mock은 만들기 어려운 상태에 썼어요",
+        "level": 2
+      },
+      {
+        "id": "새-테스트가-실제로-실패하는지-확인했어요",
+        "title": "새 테스트가 실제로 실패하는지 확인했어요",
+        "level": 2
+      },
+      {
+        "id": "e2e는-브라우저에서만-보이는-경계에-뒀어요",
+        "title": "E2E는 브라우저에서만 보이는 경계에 뒀어요",
+        "level": 2
+      },
+      {
+        "id": "테스트에서는-핵심-행동이-보이도록-반복을-남겼어요",
+        "title": "테스트에서는 핵심 행동이 보이도록 반복을 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "기능-명세와-버그-재현을-구분해요",
+        "title": "기능 명세와 버그 재현을 구분해요",
+        "level": 2
+      },
+      {
+        "id": "병렬-작업에서는-전체-검증을-매번-돌리지-않았어요",
+        "title": "병렬 작업에서는 전체 검증을 매번 돌리지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "ci에서도-실행-범위를-따로-정했어요",
+        "title": "CI에서도 실행 범위를 따로 정했어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 11,
+    "translations": {
+      "ko": "테스트-코드를-도입하면서-세운-기준",
+      "en": "testing-standards"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["testing", "vitest", "playwright", "react"],
+    "publishedAt": "2026-08-08T02:56:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/testing-standards.png",
+    "sourceUrl": "https://jingeon27.tistory.com/25",
+    "title": "The standards I developed while introducing tests",
+    "description": "I reviewed which behaviors the tests checked and refined them against actual submission paths and server constraints.",
+    "slug": "testing-standards",
+    "keywords": ["testing", "vitest", "playwright", "react"],
+    "id": "testing-standards",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "keep-tests-beside-their-subject",
+        "title": "Keep tests beside their subject",
+        "level": 2
+      },
+      {
+        "id": "integration-tests-must-use-real-submission-code",
+        "title": "Integration tests must use real submission code",
+        "level": 2
+      },
+      {
+        "id": "a-permissive-mock-was-mistaken-for-the-server-contract",
+        "title": "A permissive mock was mistaken for the server contract",
+        "level": 2
+      },
+      {
+        "id": "some-passing-assertions-checked-nothing",
+        "title": "Some passing assertions checked nothing",
+        "level": 2
+      },
+      {
+        "id": "give-each-test-layer-a-scope",
+        "title": "Give each test layer a scope",
+        "level": 2
+      },
+      {
+        "id": "prefer-dev-apis-and-mock-difficult-states",
+        "title": "Prefer dev APIs and mock difficult states",
+        "level": 2
+      },
+      {
+        "id": "confirm-that-a-new-test-can-fail",
+        "title": "Confirm that a new test can fail",
+        "level": 2
+      },
+      {
+        "id": "put-browser-boundaries-in-e2e",
+        "title": "Put browser boundaries in E2E",
+        "level": 2
+      },
+      {
+        "id": "leave-repetition-when-it-exposes-the-important-behavior",
+        "title": "Leave repetition when it exposes the important behavior",
+        "level": 2
+      },
+      {
+        "id": "distinguish-specifications-from-bug-reproduction",
+        "title": "Distinguish specifications from bug reproduction",
+        "level": 2
+      },
+      {
+        "id": "avoid-repeating-full-verification-across-parallel-worktrees",
+        "title": "Avoid repeating full verification across parallel worktrees",
+        "level": 2
+      },
+      {
+        "id": "ci-scope-follows-its-environment",
+        "title": "CI scope follows its environment",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "테스트-코드를-도입하면서-세운-기준",
+      "en": "testing-standards"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "nextjs", "architecture", "ai-workflow"],
+    "publishedAt": "2026-07-12T00:11:35+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/prototype-working-rules.png",
+    "sourceUrl": "https://jingeon27.tistory.com/24",
+    "title": "프로토타입을 옮기며 반복되는 판단을 skills에 남긴 과정",
+    "description": "프로토타입을 서비스로 옮기는 동안 비슷한 구현을 여러 번 맡겼어요. 그때마다 고치던 내용을 skills에 적었지만, 짧고 강한 규칙이 오히려 잘못된 코드를 만들기도 했어요.",
+    "slug": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+    "keywords": ["react", "nextjs", "architecture", "ai-workflow"],
+    "id": "prototype-working-rules",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "코드를-만들기-전에-기존-화면을-찾게-했어요",
+        "title": "코드를 만들기 전에 기존 화면을 찾게 했어요",
+        "level": 2
+      },
+      {
+        "id": "props를-없애라는-규칙부터-고쳤어요",
+        "title": "props를 없애라는 규칙부터 고쳤어요",
+        "level": 2
+      },
+      {
+        "id": "usemounted로-옮겨도-빈-첫-화면은-그대로였어요",
+        "title": "useMounted로 옮겨도 빈 첫 화면은 그대로였어요",
+        "level": 2
+      },
+      {
+        "id": "제출-결과는-mutation에서-바로-읽을-수-있었어요",
+        "title": "제출 결과는 mutation에서 바로 읽을 수 있었어요",
+        "level": 2
+      },
+      {
+        "id": "반복되는-지적만-skill에-남겼어요",
+        "title": "반복되는 지적만 skill에 남겼어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+      "en": "prototype-working-rules"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "nextjs", "architecture", "ai-workflow"],
+    "publishedAt": "2026-07-12T00:11:35+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/prototype-working-rules.png",
+    "sourceUrl": "https://jingeon27.tistory.com/24",
+    "title": "Keeping working rules from a prototype migration",
+    "description": "A prototype migration involved asking an agent to build similar features repeatedly. I put recurring corrections into skills, then found that short, absolute rules could produce the wrong changes too.",
+    "slug": "prototype-working-rules",
+    "keywords": ["react", "nextjs", "architecture", "ai-workflow"],
+    "id": "prototype-working-rules",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "find-an-existing-screen-before-building-another",
+        "title": "Find an existing screen before building another",
+        "level": 2
+      },
+      {
+        "id": "narrow-the-rule-against-passing-props",
+        "title": "Narrow the rule against passing props",
+        "level": 2
+      },
+      {
+        "id": "moving-code-to-usemounted-left-the-first-paint-empty",
+        "title": "Moving code to useMounted left the first paint empty",
+        "level": 2
+      },
+      {
+        "id": "read-submission-results-from-the-mutation",
+        "title": "Read submission results from the mutation",
+        "level": 2
+      },
+      {
+        "id": "keep-recurring-corrections-in-the-skill",
+        "title": "Keep recurring corrections in the skill",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+      "en": "prototype-working-rules"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "refactoring", "react", "payment"],
+    "publishedAt": "2026-07-02T19:44:51+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/payment-coupon-branches.png",
+    "sourceUrl": "https://jingeon27.tistory.com/22",
+    "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
+    "description": "쿠폰 결제를 넣으니 결제수단만으로는 화면을 고를 수 없었어요. 저장 전에는 금액을 고치고 쿠폰을 풀어야 했고, 저장 뒤에는 현장 결제와 함께 보여줘야 했어요.",
+    "slug": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+    "keywords": ["typescript", "refactoring", "react", "payment"],
+    "id": "payment-coupon-branches",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "할인-미리보기는-응답-dto에-넣지-않았어요",
+        "title": "할인 미리보기는 응답 DTO에 넣지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "완료-상태여도-저장-전에는-입력칸이-필요했어요",
+        "title": "완료 상태여도 저장 전에는 입력칸이 필요했어요",
+        "level": 2
+      },
+      {
+        "id": "편집-중인-쿠폰-행만-타임라인에-보여줘요",
+        "title": "편집 중인 쿠폰 행만 타임라인에 보여줘요",
+        "level": 2
+      },
+      {
+        "id": "상세-컴포넌트도-저장-여부부터-골라요",
+        "title": "상세 컴포넌트도 저장 여부부터 골라요",
+        "level": 2
+      },
+      {
+        "id": "금액을-바꾸면-쿠폰을-풀고-이유를-보여줘요",
+        "title": "금액을 바꾸면 쿠폰을 풀고 이유를 보여줘요",
+        "level": 2
+      },
+      {
+        "id": "if를-match로-바꾸는-것만으로는-부족했어요",
+        "title": "if를 match로 바꾸는 것만으로는 부족했어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+      "en": "payment-coupon-branches"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "refactoring", "react", "payment"],
+    "publishedAt": "2026-07-02T19:44:51+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/payment-coupon-branches.png",
+    "sourceUrl": "https://jingeon27.tistory.com/22",
+    "title": "Handling coupon branches in payment history",
+    "description": "Coupons made payment method alone insufficient to choose a view. Unsaved rows needed editable amounts and coupon clearing; saved rows needed to show coupon usage alongside the on-site payment.",
+    "slug": "payment-coupon-branches",
+    "keywords": ["typescript", "refactoring", "react", "payment"],
+    "id": "payment-coupon-branches",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "keep-discount-previews-out-of-the-response-dto",
+        "title": "Keep discount previews out of the response DTO",
+        "level": 2
+      },
+      {
+        "id": "a-complete-status-can-still-need-editable-inputs",
+        "title": "A complete status can still need editable inputs",
+        "level": 2
+      },
+      {
+        "id": "show-coupon-rows-while-they-are-being-edited",
+        "title": "Show coupon rows while they are being edited",
+        "level": 2
+      },
+      {
+        "id": "choose-details-by-saved-state-first",
+        "title": "Choose details by saved state first",
+        "level": 2
+      },
+      {
+        "id": "clear-a-coupon-when-the-amount-changes",
+        "title": "Clear a coupon when the amount changes",
+        "level": 2
+      },
+      {
+        "id": "replacing-if-with-match-did-not-fix-the-order",
+        "title": "Replacing if with match did not fix the order",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+      "en": "payment-coupon-branches"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["fsd", "architecture", "refactoring", "nextjs"],
+    "publishedAt": "2026-07-01T19:35:43+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/fsd-layer-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/23",
+    "title": "FSD 레이어를 저장소에 맞게 다시 나눈 과정",
+    "description": "폴더는 FSD대로 나눴는데 새 파일을 어디에 둘지는 매번 달랐어요. 실제로 옮겨 보면서 도메인 코드와 화면 조합을 다시 나눴고, URL을 그대로 폴더로 쓰던 규칙도 바꿨어요.",
+    "slug": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+    "keywords": ["fsd", "architecture", "refactoring", "nextjs"],
+    "id": "fsd-layer-boundaries",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "처음-기준은-재사용될-것-같은-도메인-코드였어요",
+        "title": "처음 기준은 \"재사용될 것 같은 도메인 코드\"였어요",
+        "level": 2
+      },
+      {
+        "id": "그래서-entities를-빼고-pages를-widgets-위에-올렸어요",
+        "title": "그래서 entities를 빼고 pages를 widgets 위에 올렸어요",
+        "level": 2
+      },
+      {
+        "id": "옮기고-나니-page-간-import가-드러났어요",
+        "title": "옮기고 나니 page 간 import가 드러났어요",
+        "level": 2
+      },
+      {
+        "id": "url-모양을-따라가다가-빈-폴더가-늘었어요",
+        "title": "URL 모양을 따라가다가 빈 폴더가 늘었어요",
+        "level": 2
+      },
+      {
+        "id": "패키지를-합치자-테스트가-633초-걸렸어요",
+        "title": "패키지를 합치자 테스트가 633초 걸렸어요",
+        "level": 2
+      },
+      {
+        "id": "타입-검사는-지나가도-nextjs-화면은-깨졌어요",
+        "title": "타입 검사는 지나가도 Next.js 화면은 깨졌어요",
+        "level": 2
+      },
+      {
+        "id": "화면-내부와-하위-화면의-공유-코드를-구분했어요",
+        "title": "화면 내부와 하위 화면의 공유 코드를 구분했어요",
+        "level": 2
+      },
+      {
+        "id": "지금-파일을-찾는-곳",
+        "title": "지금 파일을 찾는 곳",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+      "en": "fsd-layer-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["fsd", "architecture", "refactoring", "nextjs"],
+    "publishedAt": "2026-07-01T19:35:43+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/fsd-layer-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/23",
+    "title": "Redrawing FSD boundaries for the codebase",
+    "description": "The folders followed FSD, yet placing a new file still prompted another discussion. Moving real code led me to regroup domain code and screen composition and abandon strict URL mirroring.",
+    "slug": "fsd-layer-boundaries",
+    "keywords": ["fsd", "architecture", "refactoring", "nextjs"],
+    "id": "fsd-layer-boundaries",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "the-initial-rule-was-domain-code-that-seemed-reusable",
+        "title": "The initial rule was domain code that seemed reusable",
+        "level": 2
+      },
+      {
+        "id": "remove-entities-and-put-pages-above-widgets",
+        "title": "Remove entities and put pages above widgets",
+        "level": 2
+      },
+      {
+        "id": "lint-exposed-cross-page-imports-after-the-move",
+        "title": "Lint exposed cross-page imports after the move",
+        "level": 2
+      },
+      {
+        "id": "mirroring-urls-created-empty-layers-of-folders",
+        "title": "Mirroring URLs created empty layers of folders",
+        "level": 2
+      },
+      {
+        "id": "combining-packages-made-tests-take-633-seconds",
+        "title": "Combining packages made tests take 633 seconds",
+        "level": 2
+      },
+      {
+        "id": "type-checks-passed-while-nextjs-screens-failed",
+        "title": "Type checks passed while Next.js screens failed",
+        "level": 2
+      },
+      {
+        "id": "distinguish-a-screens-internals-from-shared-child-screen-code",
+        "title": "Distinguish a screen's internals from shared child-screen code",
+        "level": 2
+      },
+      {
+        "id": "where-i-now-look-for-a-file",
+        "title": "Where I now look for a file",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+      "en": "fsd-layer-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "typescript", "sse", "chatbot"],
+    "publishedAt": "2026-06-25T19:58:03+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/chatbot-message-layer.png",
+    "sourceUrl": "https://jingeon27.tistory.com/20",
+    "title": "서로 다른 두 SSE를 하나의 상담 화면에 연결한 과정",
+    "description": "AI 답변과 상담사 메시지가 서로 다른 서비스에서 왔어요. 두 SSE를 한 대화창에 이어 붙이며, 메시지를 보내는 곳과 보여 주는 곳을 따로 정했어요.",
+    "slug": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+    "keywords": ["react", "typescript", "sse", "chatbot"],
+    "id": "chatbot-message-layer",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "처음에는-토큰을-받는-대로-보여-줬어요",
+        "title": "처음에는 토큰을 받는 대로 보여 줬어요",
+        "level": 2
+      },
+      {
+        "id": "상담사-연결-버튼을-추가했어요",
+        "title": "상담사 연결 버튼을 추가했어요",
+        "level": 2
+      },
+      {
+        "id": "연결-키워드로-바꾸고-패널을-하나로-합쳤어요",
+        "title": "연결 키워드로 바꾸고 패널을 하나로 합쳤어요",
+        "level": 2
+      },
+      {
+        "id": "ai-스트림은-연결만-유지하게-됐어요",
+        "title": "AI 스트림은 연결만 유지하게 됐어요",
+        "level": 3
+      },
+      {
+        "id": "인증-헤더-때문에-eventsource를-쓰지-못했어요",
+        "title": "인증 헤더 때문에 EventSource를 쓰지 못했어요",
+        "level": 2
+      },
+      {
+        "id": "흩어진-상태-전이를-usereducer로-모았어요",
+        "title": "흩어진 상태 전이를 useReducer로 모았어요",
+        "level": 2
+      },
+      {
+        "id": "store가-sse-연결을-관리하고-react는-스냅샷을-구독했어요",
+        "title": "store가 SSE 연결을 관리하고 React는 스냅샷을 구독했어요",
+        "level": 2
+      },
+      {
+        "id": "메시지-관리를-tanstackai로-옮겼어요",
+        "title": "메시지 관리를 @tanstack/ai로 옮겼어요",
+        "level": 2
+      },
+      {
+        "id": "usechat의-초기화와-구독-시점을-맞췄어요",
+        "title": "useChat의 초기화와 구독 시점을 맞췄어요",
+        "level": 3
+      },
+      {
+        "id": "클라이언트와-서버의-상태-타입을-나눴어요",
+        "title": "클라이언트와 서버의 상태 타입을 나눴어요",
+        "level": 3
+      },
+      {
+        "id": "메시지-중복-제거는-추가-검증이-필요했어요",
+        "title": "메시지 중복 제거는 추가 검증이 필요했어요",
+        "level": 3
+      },
+      {
+        "id": "전송-실패를-대화-내용처럼-남기지-않았어요",
+        "title": "전송 실패를 대화 내용처럼 남기지 않았어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 11,
+    "translations": {
+      "ko": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+      "en": "chatbot-message-layer"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react", "typescript", "sse", "chatbot"],
+    "publishedAt": "2026-06-25T19:58:03+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/chatbot-message-layer.png",
+    "sourceUrl": "https://jingeon27.tistory.com/20",
+    "title": "Connecting two SSE streams to one chat interface",
+    "description": "AI answers and counselor messages came from separate services. To put both in one conversation, I separated where messages were sent from where they were displayed.",
+    "slug": "chatbot-message-layer",
+    "keywords": ["react", "typescript", "sse", "chatbot"],
+    "id": "chatbot-message-layer",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "displaying-tokens-as-they-arrived",
+        "title": "Displaying tokens as they arrived",
+        "level": 2
+      },
+      {
+        "id": "adding-a-counselor-connection-button",
+        "title": "Adding a counselor connection button",
+        "level": 2
+      },
+      {
+        "id": "combining-the-panels-and-using-a-connection-keyword",
+        "title": "Combining the panels and using a connection keyword",
+        "level": 2
+      },
+      {
+        "id": "keep-the-ai-stream-connected-without-displaying-it",
+        "title": "Keep the AI stream connected without displaying it",
+        "level": 3
+      },
+      {
+        "id": "authentication-headers-ruled-out-eventsource",
+        "title": "Authentication headers ruled out EventSource",
+        "level": 2
+      },
+      {
+        "id": "gathering-transitions-in-usereducer",
+        "title": "Gathering transitions in useReducer",
+        "level": 2
+      },
+      {
+        "id": "letting-the-store-own-sse-while-react-subscribes-to-snapshots",
+        "title": "Letting the store own SSE while React subscribes to snapshots",
+        "level": 2
+      },
+      {
+        "id": "moving-message-management-to-tanstackai",
+        "title": "Moving message management to @tanstack/ai",
+        "level": 2
+      },
+      {
+        "id": "matching-usechat-initialization-and-subscription-timing",
+        "title": "Matching useChat initialization and subscription timing",
+        "level": 3
+      },
+      {
+        "id": "separating-client-and-server-status-types",
+        "title": "Separating client and server status types",
+        "level": 3
+      },
+      {
+        "id": "message-deduplication-still-needed-verification",
+        "title": "Message deduplication still needed verification",
+        "level": 3
+      },
+      {
+        "id": "keeping-send-failures-out-of-the-conversation",
+        "title": "Keeping send failures out of the conversation",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+      "en": "chatbot-message-layer"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "seo", "sitemap", "cache"],
+    "publishedAt": "2026-06-16T19:51:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/sitemap-api-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/21",
+    "title": "동적 사이트맵에서 공개 API와 인증 API의 경계를 나눈 과정",
+    "description": "사이트맵 캐시 안에서 인증 쿠키를 읽는 공용 interceptor가 문제가 됐어요. 공개 조회와 회원별 조회를 나누고 캐시할 범위를 정했어요.",
+    "slug": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+    "keywords": ["nextjs", "seo", "sitemap", "cache"],
+    "id": "sitemap-api-boundaries",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "사이트맵에-캐시-경계-두기",
+        "title": "사이트맵에 캐시 경계 두기",
+        "level": 2
+      },
+      {
+        "id": "공개-조회인데-인터셉터가-쿠키를-읽었어요",
+        "title": "공개 조회인데 인터셉터가 쿠키를 읽었어요",
+        "level": 2
+      },
+      {
+        "id": "정확하지-않은-사이트맵-메타데이터",
+        "title": "정확하지 않은 사이트맵 메타데이터",
+        "level": 2
+      },
+      {
+        "id": "전체-조회와-부분-실패-처리도-고칠-부분이-남았어요",
+        "title": "전체 조회와 부분 실패 처리도 고칠 부분이 남았어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+      "en": "sitemap-api-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "seo", "sitemap", "cache"],
+    "publishedAt": "2026-06-16T19:51:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/sitemap-api-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/21",
+    "title": "Separating public and authenticated reads in a sitemap",
+    "description": "A shared interceptor read authentication cookies inside the sitemap cache. I separated public reads from member-specific reads and chose the cache boundary.",
+    "slug": "sitemap-api-boundaries",
+    "keywords": ["nextjs", "seo", "sitemap", "cache"],
+    "id": "sitemap-api-boundaries",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "place-a-cache-boundary-around-the-sitemap",
+        "title": "Place a cache boundary around the sitemap",
+        "level": 2
+      },
+      {
+        "id": "the-public-query-still-read-a-cookie",
+        "title": "The public query still read a cookie",
+        "level": 2
+      },
+      {
+        "id": "inaccurate-sitemap-metadata",
+        "title": "Inaccurate sitemap metadata",
+        "level": 2
+      },
+      {
+        "id": "full-list-queries-and-partial-failures-remain-transitional",
+        "title": "Full-list queries and partial failures remain transitional",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+      "en": "sitemap-api-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "authentication", "bff", "security"],
+    "publishedAt": "2026-05-29T21:28:13+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/cross-domain-token-handoff.png",
+    "sourceUrl": "https://jingeon27.tistory.com/19",
+    "title": "정산 서비스를 별도 호스트로 분리하며 토큰 전달 방식을 바꾼 과정",
+    "description": "같은 로그인으로 다른 호스트의 정산 화면을 열어야 했어요. 토큰을 URL에서 POST 본문으로 옮겼지만, 두 호스트에 복제된 인증 상태까지 해결된 것은 아니었어요.",
+    "slug": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+    "keywords": ["nextjs", "authentication", "bff", "security"],
+    "id": "cross-domain-token-handoff",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "정산을-다른-호스트로-분리해야-했어요",
+        "title": "정산을 다른 호스트로 분리해야 했어요",
+        "level": 2
+      },
+      {
+        "id": "두-호스트의-쿠키를-직접-공유할-수-없었어요",
+        "title": "두 호스트의 쿠키를 직접 공유할 수 없었어요",
+        "level": 2
+      },
+      {
+        "id": "처음에는-url-쿼리로-토큰을-넘겼어요",
+        "title": "처음에는 URL 쿼리로 토큰을 넘겼어요",
+        "level": 2
+      },
+      {
+        "id": "토큰을-html-폼의-post-본문으로-옮겼어요",
+        "title": "토큰을 HTML 폼의 POST 본문으로 옮겼어요",
+        "level": 2
+      },
+      {
+        "id": "아무-곳에서나-토큰을-보내도-되는-문제가-남았어요",
+        "title": "아무 곳에서나 토큰을 보내도 되는 문제가 남았어요",
+        "level": 2
+      },
+      {
+        "id": "정산-메뉴가-전용-핸드오프-라우트를-열게-했어요",
+        "title": "정산 메뉴가 전용 핸드오프 라우트를 열게 했어요",
+        "level": 2
+      },
+      {
+        "id": "폼이-보낼-주소와-브라우저가-허용할-동작을-제한했어요",
+        "title": "폼이 보낼 주소와 브라우저가 허용할 동작을 제한했어요",
+        "level": 2
+      },
+      {
+        "id": "쿠키에-저장한-뒤에도-토큰은-다시-브라우저로-나왔어요",
+        "title": "쿠키에 저장한 뒤에도 토큰은 다시 브라우저로 나왔어요",
+        "level": 2
+      },
+      {
+        "id": "일회용-코드로-교환하려면-공유-상태가-필요했어요",
+        "title": "일회용 코드로 교환하려면 공유 상태가 필요했어요",
+        "level": 2
+      },
+      {
+        "id": "nextjs-163-업그레이드-후-matcher가-실패했어요",
+        "title": "Next.js 16.3 업그레이드 후 matcher가 실패했어요",
+        "level": 2
+      },
+      {
+        "id": "오류가-발생한-조건",
+        "title": "오류가 발생한 조건",
+        "level": 3
+      },
+      {
+        "id": "업스트림-회귀를-확인한-근거",
+        "title": "업스트림 회귀를 확인한 근거",
+        "level": 3
+      },
+      {
+        "id": "페이지-요청만-다른-호스트로-보냈어요",
+        "title": "페이지 요청만 다른 호스트로 보냈어요",
+        "level": 3
+      },
+      {
+        "id": "matcher-밖에-둬야-할-경로",
+        "title": "matcher 밖에 둬야 할 경로",
+        "level": 3
+      }
+    ],
+    "readingMinutes": 15,
+    "translations": {
+      "ko": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+      "en": "cross-domain-token-handoff"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "authentication", "bff", "security"],
+    "publishedAt": "2026-05-29T21:28:13+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/cross-domain-token-handoff.png",
+    "sourceUrl": "https://jingeon27.tistory.com/19",
+    "title": "Handing authentication between separate hosts",
+    "description": "The settlement screen needed to open on another host without a second login. I moved tokens from URLs to a form POST, while the duplicated authentication state still needed separate handling.",
+    "slug": "cross-domain-token-handoff",
+    "keywords": ["nextjs", "authentication", "bff", "security"],
+    "id": "cross-domain-token-handoff",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "settlement-needed-a-separate-host",
+        "title": "Settlement needed a separate host",
+        "level": 2
+      },
+      {
+        "id": "the-hosts-cannot-share-cookies",
+        "title": "The hosts cannot share cookies",
+        "level": 2
+      },
+      {
+        "id": "first-approach-tokens-in-url-parameters",
+        "title": "First approach: tokens in URL parameters",
+        "level": 2
+      },
+      {
+        "id": "moving-tokens-into-an-html-form-post",
+        "title": "Moving tokens into an HTML form POST",
+        "level": 2
+      },
+      {
+        "id": "the-receiver-still-accepted-tokens-from-other-origins",
+        "title": "The receiver still accepted tokens from other origins",
+        "level": 2
+      },
+      {
+        "id": "opening-a-dedicated-handoff-route-from-the-menu",
+        "title": "Opening a dedicated handoff route from the menu",
+        "level": 2
+      },
+      {
+        "id": "restricting-the-destination-and-browser-behavior",
+        "title": "Restricting the destination and browser behavior",
+        "level": 2
+      },
+      {
+        "id": "tokens-returned-to-javascript-after-cookie-storage",
+        "title": "Tokens returned to JavaScript after cookie storage",
+        "level": 2
+      },
+      {
+        "id": "a-one-time-code-exchange-needed-shared-state",
+        "title": "A one-time code exchange needed shared state",
+        "level": 2
+      },
+      {
+        "id": "a-nextjs-163-upgrade-exposed-the-matcher",
+        "title": "A Next.js 16.3 upgrade exposed the matcher",
+        "level": 2
+      },
+      {
+        "id": "conditions-behind-the-failure",
+        "title": "Conditions behind the failure",
+        "level": 3
+      },
+      {
+        "id": "evidence-of-an-upstream-regression",
+        "title": "Evidence of an upstream regression",
+        "level": 3
+      },
+      {
+        "id": "redirecting-pages-rather-than-static-assets",
+        "title": "Redirecting pages rather than static assets",
+        "level": 3
+      },
+      {
+        "id": "paths-that-should-stay-outside-the-matcher",
+        "title": "Paths that should stay outside the matcher",
+        "level": 3
+      }
+    ],
+    "readingMinutes": 13,
+    "translations": {
+      "ko": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+      "en": "cross-domain-token-handoff"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react-hook-form", "typescript", "zod", "architecture"],
+    "publishedAt": "2026-02-13T00:13:36+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/typed-program-form.png",
+    "sourceUrl": "https://jingeon27.tistory.com/18",
+    "title": "두 관리자 앱에서 프로그램 폼을 공유하는 방법",
+    "description": "두 관리자 앱에서 프로그램 입력을 공유하면서 필드 타입과 API 변환을 나눴어요. 공용으로 둘 부분과 앱마다 남길 부분을 정리했어요.",
+    "slug": "두-관리자-앱의-프로그램-폼을-만드는-과정",
+    "keywords": ["react-hook-form", "typescript", "zod", "architecture"],
+    "id": "typed-program-form",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "이름을-모으는-것에서-값의-타입까지",
+        "title": "이름을 모으는 것에서 값의 타입까지",
+        "level": 2
+      },
+      {
+        "id": "입력은-공유하고-조립은-쓰는-쪽에-남겼어요",
+        "title": "입력은 공유하고 조립은 쓰는 쪽에 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "서버의-모양을-입력칸까지-가져오지는-않았어요",
+        "title": "서버의 모양을 입력칸까지 가져오지는 않았어요",
+        "level": 2
+      },
+      {
+        "id": "처음-불러온-값과-카테고리를-바꾼-값을-구분했어요",
+        "title": "처음 불러온 값과 카테고리를 바꾼 값을 구분했어요",
+        "level": 2
+      },
+      {
+        "id": "변환-규칙은-테스트로-남겼어요",
+        "title": "변환 규칙은 테스트로 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "두-관리자-앱의-프로그램-폼을-만드는-과정",
+      "en": "typed-program-form"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react-hook-form", "typescript", "zod", "architecture"],
+    "publishedAt": "2026-02-13T00:13:36+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/typed-program-form.png",
+    "sourceUrl": "https://jingeon27.tistory.com/18",
+    "title": "Sharing a program form across two admin apps",
+    "description": "Two admin apps shared program inputs but had different submission flows. I separated field types and API transformations while deciding what to share.",
+    "slug": "typed-program-form",
+    "keywords": ["react-hook-form", "typescript", "zod", "architecture"],
+    "id": "typed-program-form",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "from-shared-field-names-to-typed-values",
+        "title": "From shared field names to typed values",
+        "level": 2
+      },
+      {
+        "id": "share-inputs-and-leave-assembly-with-the-caller",
+        "title": "Share inputs and leave assembly with the caller",
+        "level": 2
+      },
+      {
+        "id": "keep-the-servers-representation-out-of-inputs",
+        "title": "Keep the server's representation out of inputs",
+        "level": 2
+      },
+      {
+        "id": "separate-initial-loading-from-category-changes",
+        "title": "Separate initial loading from category changes",
+        "level": 2
+      },
+      {
+        "id": "preserve-conversion-rules-in-tests",
+        "title": "Preserve conversion rules in tests",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "두-관리자-앱의-프로그램-폼을-만드는-과정",
+      "en": "typed-program-form"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react-hook-form", "zod", "react", "state-management"],
+    "publishedAt": "2025-12-13T22:32:56+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/review-form-funnel.png",
+    "sourceUrl": "https://jingeon27.tistory.com/15",
+    "title": "3단계 리뷰 작성 폼의 역할을 RHF, Zod, 퍼널로 다시 나눈 과정",
+    "description": "리뷰 폼을 RHF와 Zod로 옮기면서 시술 선택 UI도 다시 붙였어요. 시트를 닫으면 선택을 취소하고, 확인할 때만 폼에 넣도록 바꾼 과정이에요.",
+    "slug": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+    "keywords": ["react-hook-form", "zod", "react", "state-management"],
+    "id": "review-form-funnel",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "작성값과-현재-단계가-앱-전역에-있었어요",
+        "title": "작성값과 현재 단계가 앱 전역에 있었어요",
+        "level": 2
+      },
+      {
+        "id": "단계마다-보이는-필드를-검증하게-했어요",
+        "title": "단계마다 보이는 필드를 검증하게 했어요",
+        "level": 2
+      },
+      {
+        "id": "전체-스키마에는-추가-검증이-따라가지-않았어요",
+        "title": "전체 스키마에는 추가 검증이 따라가지 않았어요",
+        "level": 2
+      },
+      {
+        "id": "금액-입력은-값과-변경-함수만-연결해요",
+        "title": "금액 입력은 값과 변경 함수만 연결해요",
+        "level": 2
+      },
+      {
+        "id": "모바일에서-여러-시술을-고르기-불편했어요",
+        "title": "모바일에서 여러 시술을 고르기 불편했어요",
+        "level": 2
+      },
+      {
+        "id": "시트에서-고른-값을-바로-폼에-쓰면-취소할-수-없었어요",
+        "title": "시트에서 고른 값을 바로 폼에 쓰면 취소할 수 없었어요",
+        "level": 2
+      },
+      {
+        "id": "개수-제한은-열-때의-값이-아니라-draft를-봐야-했어요",
+        "title": "개수 제한은 열 때의 값이 아니라 draft를 봐야 했어요",
+        "level": 2
+      },
+      {
+        "id": "검증한-값을-합치고-다음-단계로-가요",
+        "title": "검증한 값을 합치고 다음 단계로 가요",
+        "level": 2
+      },
+      {
+        "id": "수정용-응답을-받은-뒤-초기값을-만들어요",
+        "title": "수정용 응답을 받은 뒤 초기값을 만들어요",
+        "level": 2
+      },
+      {
+        "id": "이동-훅이-폼의-뜻까지-알려주지는-않아요",
+        "title": "이동 훅이 폼의 뜻까지 알려주지는 않아요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 11,
+    "translations": {
+      "ko": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+      "en": "review-form-funnel"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["react-hook-form", "zod", "react", "state-management"],
+    "publishedAt": "2025-12-13T22:32:56+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/review-form-funnel.png",
+    "sourceUrl": "https://jingeon27.tistory.com/15",
+    "title": "Separating state and steps in a review form",
+    "description": "Moving review writing to RHF and Zod also meant reconnecting treatment selection. I changed the sheet to cancel on close and write selections to the form only after confirmation.",
+    "slug": "review-form-funnel",
+    "keywords": ["react-hook-form", "zod", "react", "state-management"],
+    "id": "review-form-funnel",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "draft-values-and-the-current-step-were-global",
+        "title": "Draft values and the current step were global",
+        "level": 2
+      },
+      {
+        "id": "validate-the-fields-visible-in-each-step",
+        "title": "Validate the fields visible in each step",
+        "level": 2
+      },
+      {
+        "id": "step-refinements-did-not-reach-the-overall-schema",
+        "title": "Step refinements did not reach the overall schema",
+        "level": 2
+      },
+      {
+        "id": "connect-amount-inputs-through-values-and-changes",
+        "title": "Connect amount inputs through values and changes",
+        "level": 2
+      },
+      {
+        "id": "choosing-several-treatments-was-awkward-on-mobile",
+        "title": "Choosing several treatments was awkward on mobile",
+        "level": 2
+      },
+      {
+        "id": "immediate-form-edits-prevented-cancellation",
+        "title": "Immediate form edits prevented cancellation",
+        "level": 2
+      },
+      {
+        "id": "count-current-draft-choices-rather-than-opening-values",
+        "title": "Count current draft choices rather than opening values",
+        "level": 2
+      },
+      {
+        "id": "merge-validated-values-before-moving-forward",
+        "title": "Merge validated values before moving forward",
+        "level": 2
+      },
+      {
+        "id": "prepare-edit-data-before-building-defaults",
+        "title": "Prepare edit data before building defaults",
+        "level": 2
+      },
+      {
+        "id": "navigation-does-not-explain-every-form-value",
+        "title": "Navigation does not explain every form value",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+      "en": "review-form-funnel"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "tanstack-query", "seo", "ssr"],
+    "publishedAt": "2025-11-20T02:01:55+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-seo-prefetch.png",
+    "sourceUrl": "https://jingeon27.tistory.com/14",
+    "title": "Next.js App Router에서 prefetch를 기다려야 하는 경우",
+    "description": "예약 상세는 브라우저에서 멀쩡했지만 처음 받은 HTML에는 병원 정보가 없었어요. prefetch를 시작한 것과 서버가 데이터를 넘길 준비가 된 것은 달랐어요.",
+    "slug": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+    "keywords": ["nextjs", "tanstack-query", "seo", "ssr"],
+    "id": "nextjs-seo-prefetch",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "html에-넣을-데이터가-준비된-뒤-dehydrate했어요",
+        "title": "HTML에 넣을 데이터가 준비된 뒤 dehydrate했어요",
+        "level": 2
+      },
+      {
+        "id": "완료를-기다리지-않고-넘기는-조회도-있어요",
+        "title": "완료를 기다리지 않고 넘기는 조회도 있어요",
+        "level": 2
+      },
+      {
+        "id": "url이-등록된-것과-html에-내용이-있는-것은-달랐어요",
+        "title": "URL이 등록된 것과 HTML에 내용이 있는 것은 달랐어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+      "en": "nextjs-seo-prefetch"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["nextjs", "tanstack-query", "seo", "ssr"],
+    "publishedAt": "2025-11-20T02:01:55+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-seo-prefetch.png",
+    "sourceUrl": "https://jingeon27.tistory.com/14",
+    "title": "When to await prefetch in the Next.js App Router",
+    "description": "Reservation details looked fine in the browser, yet the first HTML lacked hospital information. Starting prefetch did not mean the server was ready to pass its data along.",
+    "slug": "nextjs-seo-prefetch",
+    "keywords": ["nextjs", "tanstack-query", "seo", "ssr"],
+    "id": "nextjs-seo-prefetch",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "dehydrating-after-the-required-data-is-ready",
+        "title": "Dehydrating after the required data is ready",
+        "level": 2
+      },
+      {
+        "id": "passing-queries-without-waiting-for-completion",
+        "title": "Passing queries without waiting for completion",
+        "level": 2
+      },
+      {
+        "id": "a-registered-url-did-not-guarantee-html-content",
+        "title": "A registered URL did not guarantee HTML content",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+      "en": "nextjs-seo-prefetch"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["tanstack-query", "optimistic-update", "react"],
+    "publishedAt": "2025-07-03T23:47:16+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/review-like-optimistic-update.png",
+    "sourceUrl": "https://jingeon27.tistory.com/12",
+    "title": "리뷰 좋아요의 목록과 상세 캐시를 함께 갱신하기",
+    "description": "리뷰 좋아요를 목록과 상세 캐시에 함께 반영하고, 요청이 실패하면 저장해 둔 스냅샷으로 되돌렸어요.",
+    "slug": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+    "keywords": ["tanstack-query", "optimistic-update", "react"],
+    "id": "review-like-optimistic-update",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "캐시를-직접-바꿨다면-롤백도-직접-해야-해요",
+        "title": "캐시를 직접 바꿨다면 롤백도 직접 해야 해요",
+        "level": 2
+      },
+      {
+        "id": "query-key의-범위를-먼저-정하기",
+        "title": "Query Key의 범위를 먼저 정하기",
+        "level": 2
+      },
+      {
+        "id": "리뷰-한-건을-바꾸는-순수-함수",
+        "title": "리뷰 한 건을 바꾸는 순수 함수",
+        "level": 2
+      },
+      {
+        "id": "목록과-상세-캐시를-snapshot으로-남기기",
+        "title": "목록과 상세 캐시를 snapshot으로 남기기",
+        "level": 2
+      },
+      {
+        "id": "getqueriesdata가-해주는-일과-해주지-않는-일",
+        "title": "getQueriesData가 해주는 일과 해주지 않는 일",
+        "level": 2
+      },
+      {
+        "id": "연속-클릭은-별도로-처리해야-해요",
+        "title": "연속 클릭은 별도로 처리해야 해요",
+        "level": 2
+      },
+      {
+        "id": "여러-캐시에-같은-리뷰가-있을-때",
+        "title": "여러 캐시에 같은 리뷰가 있을 때",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+      "en": "review-like-optimistic-update"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["tanstack-query", "optimistic-update", "react"],
+    "publishedAt": "2025-07-03T23:47:16+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/review-like-optimistic-update.png",
+    "sourceUrl": "https://jingeon27.tistory.com/12",
+    "title": "Updating review likes in list and detail caches",
+    "description": "A review like appears in both list and detail caches. I updated them together and restored saved snapshots when the request failed.",
+    "slug": "review-like-optimistic-update",
+    "keywords": ["tanstack-query", "optimistic-update", "react"],
+    "id": "review-like-optimistic-update",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "tanstack-query-does-not-roll-back-manual-cache-updates-automatically",
+        "title": "TanStack Query does not roll back manual cache updates automatically",
+        "level": 2
+      },
+      {
+        "id": "define-the-query-key-scope-first",
+        "title": "Define the query key scope first",
+        "level": 2
+      },
+      {
+        "id": "a-pure-function-for-updating-one-review",
+        "title": "A pure function for updating one review",
+        "level": 2
+      },
+      {
+        "id": "snapshot-both-list-and-detail-caches",
+        "title": "Snapshot both list and detail caches",
+        "level": 2
+      },
+      {
+        "id": "what-getqueriesdata-does",
+        "title": "What getQueriesData does",
+        "level": 2
+      },
+      {
+        "id": "repeated-clicks-are-a-separate-problem",
+        "title": "Repeated clicks are a separate problem",
+        "level": 2
+      },
+      {
+        "id": "when-several-caches-contain-the-same-review",
+        "title": "When several caches contain the same review",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+      "en": "review-like-optimistic-update"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
+    "publishedAt": "2025-06-30T23:14:01+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/reservation-form-state.png",
+    "sourceUrl": "https://jingeon27.tistory.com/11",
+    "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
+    "description": "예약할 가족을 추가했는데 날짜 선택은 이전 인원수대로 움직였어요. 서버의 가족 목록과 사용자가 고른 일시를 구분하고, 작성 중인 값은 React Hook Form에서 바꾸도록 고쳤어요.",
+    "slug": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+    "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
+    "id": "reservation-form-state",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "값을-바꾼-뒤-유효성도-따로-바꾸고-있었어요",
+        "title": "값을 바꾼 뒤 유효성도 따로 바꾸고 있었어요",
+        "level": 2
+      },
+      {
+        "id": "사람-목록은-서버에서-받고-선택은-폼에서-해요",
+        "title": "사람 목록은 서버에서 받고 선택은 폼에서 해요",
+        "level": 2
+      },
+      {
+        "id": "isvalid는-폼-값에서-읽되-계산-시점도-봐야-했어요",
+        "title": "isValid는 폼 값에서 읽되 계산 시점도 봐야 했어요",
+        "level": 2
+      },
+      {
+        "id": "가족이-늘거나-줄면-작성-중인-배열에-반영해요",
+        "title": "가족이 늘거나 줄면 작성 중인 배열에 반영해요",
+        "level": 2
+      },
+      {
+        "id": "공통-일시와-개인별-변경도-폼에-써요",
+        "title": "공통 일시와 개인별 변경도 폼에 써요",
+        "level": 2
+      },
+      {
+        "id": "폼으로-옮겨도-서버-목록과의-연결은-남아요",
+        "title": "폼으로 옮겨도 서버 목록과의 연결은 남아요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+      "en": "reservation-form-state"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
+    "publishedAt": "2025-06-30T23:14:01+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/reservation-form-state.png",
+    "sourceUrl": "https://jingeon27.tistory.com/11",
+    "title": "Moving reservation form state from Zustand to React Hook Form",
+    "description": "Adding a family member left reservation dates behaving as if the old participant count still applied. I separated the server's family list from user selections and moved ongoing edits into React Hook Form.",
+    "slug": "reservation-form-state",
+    "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
+    "id": "reservation-form-state",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "every-value-change-also-updated-stored-validity",
+        "title": "Every value change also updated stored validity",
+        "level": 2
+      },
+      {
+        "id": "read-people-from-the-server-and-edit-selections-in-the-form",
+        "title": "Read people from the server and edit selections in the form",
+        "level": 2
+      },
+      {
+        "id": "read-validity-from-the-form-but-inspect-when-it-recalculates",
+        "title": "Read validity from the form, but inspect when it recalculates",
+        "level": 2
+      },
+      {
+        "id": "reflect-family-changes-without-discarding-ongoing-edits",
+        "title": "Reflect family changes without discarding ongoing edits",
+        "level": 2
+      },
+      {
+        "id": "write-common-and-individual-schedules-into-the-form",
+        "title": "Write common and individual schedules into the form",
+        "level": 2
+      },
+      {
+        "id": "a-form-still-needs-a-connection-to-server-membership",
+        "title": "A form still needs a connection to server membership",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+      "en": "reservation-form-state"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
+    "publishedAt": "2025-01-22T17:27:17+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-tanstack-query-ssr.png",
+    "sourceUrl": "https://jingeon27.tistory.com/8",
+    "title": "Next.js App Router에서 서버와 브라우저의 QueryClient를 나눈 이유",
+    "description": "서버에서 미리 조회한 데이터를 브라우저에서도 이어서 쓰려고 했어요. QueryClient는 두 환경에서 다르게 만들고, 조회 옵션은 함께 쓰도록 연결했어요.",
+    "slug": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+    "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
+    "id": "nextjs-tanstack-query-ssr",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "서버-요청은-나누고-브라우저-캐시는-남겨요",
+        "title": "서버 요청은 나누고 브라우저 캐시는 남겨요",
+        "level": 2
+      },
+      {
+        "id": "provider에는-브라우저에서-쓸-인스턴스를-연결해요",
+        "title": "Provider에는 브라우저에서 쓸 인스턴스를 연결해요",
+        "level": 2
+      },
+      {
+        "id": "서버와-클라이언트가-같은-조회를-가리키게-해요",
+        "title": "서버와 클라이언트가 같은 조회를 가리키게 해요",
+        "level": 2
+      },
+      {
+        "id": "서로-기다릴-이유가-없는-조회는-함께-시작해요",
+        "title": "서로 기다릴 이유가 없는 조회는 함께 시작해요",
+        "level": 2
+      },
+      {
+        "id": "화면에서는-넘겨받은-캐시를-구독해요",
+        "title": "화면에서는 넘겨받은 캐시를 구독해요",
+        "level": 2
+      },
+      {
+        "id": "기다릴지-스트리밍할지는-조회마다-달라요",
+        "title": "기다릴지 스트리밍할지는 조회마다 달라요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+      "en": "nextjs-tanstack-query-ssr"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
+    "publishedAt": "2025-01-22T17:27:17+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/nextjs-tanstack-query-ssr.png",
+    "sourceUrl": "https://jingeon27.tistory.com/8",
+    "title": "Using TanStack Query with the Next.js App Router",
+    "description": "I wanted browser queries to pick up data fetched on the server. I used different QueryClient lifetimes in each environment and shared the query definitions between them.",
+    "slug": "nextjs-tanstack-query-ssr",
+    "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
+    "id": "nextjs-tanstack-query-ssr",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "separate-server-requests-and-retain-the-browser-cache",
+        "title": "Separate server requests and retain the browser cache",
+        "level": 2
+      },
+      {
+        "id": "connect-that-instance-to-the-provider",
+        "title": "Connect that instance to the provider",
+        "level": 2
+      },
+      {
+        "id": "point-both-environments-at-the-same-query",
+        "title": "Point both environments at the same query",
+        "level": 2
+      },
+      {
+        "id": "start-independent-queries-together",
+        "title": "Start independent queries together",
+        "level": 2
+      },
+      {
+        "id": "subscribe-to-the-transferred-cache-on-screen",
+        "title": "Subscribe to the transferred cache on screen",
+        "level": 2
+      },
+      {
+        "id": "decide-which-queries-to-await",
+        "title": "Decide which queries to await",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+      "en": "nextjs-tanstack-query-ssr"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react"],
+    "publishedAt": "2024-05-25T17:01:01+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/typescript-patterns.png",
+    "sourceUrl": "https://jingeon27.tistory.com/7",
+    "title": "TypeScript로 호출부의 실수를 줄이는 방법",
+    "description": "값의 추론을 유지하는 satisfies, optional property, 제네릭과 배타적인 props를 실무에서 어떻게 쓰는지 정리했어요.",
+    "slug": "실무에서-자주-쓰는-typescript-패턴-네-가지",
+    "keywords": ["typescript", "react"],
+    "id": "typescript-patterns",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "satisfies로-검사하면서-추론을-유지하기",
+        "title": "satisfies로 검사하면서 추론을 유지하기",
+        "level": 2
+      },
+      {
+        "id": "값이-undefined인-것과-키가-없는-것을-구분해요",
+        "title": "값이 undefined인 것과 키가 없는 것을 구분해요",
+        "level": 2
+      },
+      {
+        "id": "제네릭으로-value와-callback의-타입을-연결하기",
+        "title": "제네릭으로 value와 callback의 타입을 연결하기",
+        "level": 2
+      },
+      {
+        "id": "서로-배타적인-props를-union으로-표현하기",
+        "title": "서로 배타적인 props를 union으로 표현하기",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "실무에서-자주-쓰는-typescript-패턴-네-가지",
+      "en": "typescript-patterns"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["typescript", "react"],
+    "publishedAt": "2024-05-25T17:01:01+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/typescript-patterns.png",
+    "sourceUrl": "https://jingeon27.tistory.com/7",
+    "title": "Using TypeScript to catch mistakes at the call site",
+    "description": "These are the TypeScript patterns I use to preserve inference and express relationships between values: satisfies, optional properties, generics, and mutually exclusive props.",
+    "slug": "typescript-patterns",
+    "keywords": ["typescript", "react"],
+    "id": "typescript-patterns",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "checking-compatibility-with-satisfies-while-preserving-inference",
+        "title": "Checking compatibility with satisfies while preserving inference",
+        "level": 2
+      },
+      {
+        "id": "t--undefined-and-an-optional-property-mean-different-things",
+        "title": "T | undefined and an optional property mean different things",
+        "level": 2
+      },
+      {
+        "id": "connecting-a-value-and-its-callback-with-a-generic",
+        "title": "Connecting a value and its callback with a generic",
+        "level": 2
+      },
+      {
+        "id": "expressing-mutually-exclusive-props-with-a-union",
+        "title": "Expressing mutually exclusive props with a union",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "실무에서-자주-쓰는-typescript-패턴-네-가지",
+      "en": "typescript-patterns"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["tanstack-query", "typescript", "query-key"],
+    "publishedAt": "2024-04-10T03:32:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/query-key-factory.png",
+    "sourceUrl": "https://jingeon27.tistory.com/6",
+    "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
+    "description": "후보자 메모를 고치고도 어떤 캐시를 갱신할지 찾으려면 문자열부터 검색해야 했어요. query key와 조회 함수를 함께 정의하고, mutation 옆에서 무효화할 범위를 고르게 바꿨어요.",
+    "slug": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+    "keywords": ["tanstack-query", "typescript", "query-key"],
+    "id": "query-key-factory",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "enum-뒤의-배열을-만드는-곳을-모았어요",
+        "title": "enum 뒤의 배열을 만드는 곳을 모았어요",
+        "level": 2
+      },
+      {
+        "id": "목록-조회의-인자를-key와-queryfn에-함께-써요",
+        "title": "목록 조회의 인자를 key와 queryFn에 함께 써요",
+        "level": 2
+      },
+      {
+        "id": "같은-후보자-아래의-조회를-이어-붙여요",
+        "title": "같은 후보자 아래의 조회를 이어 붙여요",
+        "level": 2
+      },
+      {
+        "id": "함께-찾기-쉬워진-만큼-넓게-갱신할-수도-있어요",
+        "title": "함께 찾기 쉬워진 만큼 넓게 갱신할 수도 있어요",
+        "level": 2
+      },
+      {
+        "id": "mutation의-입력-타입은-api-함수에서-가져와요",
+        "title": "mutation의 입력 타입은 API 함수에서 가져와요",
+        "level": 2
+      },
+      {
+        "id": "타입이-있어도-key에-빠진-조건은-찾아야-해요",
+        "title": "타입이 있어도 key에 빠진 조건은 찾아야 해요",
+        "level": 2
+      },
+      {
+        "id": "v5의-queryoptions로도-정의를-함께-쓸-수-있어요",
+        "title": "v5의 queryOptions로도 정의를 함께 쓸 수 있어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+      "en": "query-key-factory"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["tanstack-query", "typescript", "query-key"],
+    "publishedAt": "2024-04-10T03:32:20+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/query-key-factory.png",
+    "sourceUrl": "https://jingeon27.tistory.com/6",
+    "title": "Keeping TanStack Query keys and query functions together",
+    "description": "After editing an applicant's memo, I had to search for strings to find the cache to refresh. I moved keys and query functions into shared definitions and kept invalidation choices beside each mutation.",
+    "slug": "query-key-factory",
+    "keywords": ["tanstack-query", "typescript", "query-key"],
+    "id": "query-key-factory",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "centralize-the-array-after-the-enum",
+        "title": "Centralize the array after the enum",
+        "level": 2
+      },
+      {
+        "id": "use-list-arguments-in-both-the-key-and-queryfn",
+        "title": "Use list arguments in both the key and queryFn",
+        "level": 2
+      },
+      {
+        "id": "extend-the-hierarchy-under-one-applicant",
+        "title": "Extend the hierarchy under one applicant",
+        "level": 2
+      },
+      {
+        "id": "related-queries-are-easier-to-invalidate-too-broadly",
+        "title": "Related queries are easier to invalidate too broadly",
+        "level": 2
+      },
+      {
+        "id": "let-the-api-function-supply-mutation-input-types",
+        "title": "Let the API function supply mutation input types",
+        "level": 2
+      },
+      {
+        "id": "types-cannot-find-every-condition-missing-from-a-key",
+        "title": "Types cannot find every condition missing from a key",
+        "level": 2
+      },
+      {
+        "id": "queryoptions-can-share-definitions-in-v5-too",
+        "title": "QueryOptions can share definitions in v5 too",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+      "en": "query-key-factory"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": [
+      "javascript",
+      "nextjs",
+      "react",
+      "tanstack-query",
+      "typescript",
+      "refactoring",
+      "electron",
+      "nestjs",
+      "architecture"
+    ],
+    "publishedAt": "2024-04-02T23:34:35+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/electron-module-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/5",
+    "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
+    "description": "채용 플랫폼을 추가할 때마다 수집 흐름도 복사하고 있었어요. NestJS를 넣었다가 걷어냈지만, 요청을 받는 코드와 수집 순서, 사이트별 처리는 나눠 남겼어요.",
+    "slug": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+    "keywords": [
+      "javascript",
+      "nextjs",
+      "react",
+      "tanstack-query",
+      "typescript",
+      "리펙토링",
+      "electron",
+      "nestjs",
+      "architecture"
+    ],
+    "id": "electron-module-boundaries",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "플랫폼-파일마다-같은-흐름이-한-벌씩-있었어요",
+        "title": "플랫폼 파일마다 같은 흐름이 한 벌씩 있었어요",
+        "level": 2
+      },
+      {
+        "id": "사이트가-바뀌어도-수집-순서는-그대로-두고-싶었어요",
+        "title": "사이트가 바뀌어도 수집 순서는 그대로 두고 싶었어요",
+        "level": 2
+      },
+      {
+        "id": "nestjs를-빼도-이-구분은-남았어요",
+        "title": "NestJS를 빼도 이 구분은 남았어요",
+        "level": 2
+      },
+      {
+        "id": "ipc-요청은-controller에서-받아요",
+        "title": "IPC 요청은 Controller에서 받아요",
+        "level": 2
+      },
+      {
+        "id": "service에는-처리-순서만-남겼어요",
+        "title": "Service에는 처리 순서만 남겼어요",
+        "level": 2
+      },
+      {
+        "id": "플랫폼마다-다른-부분은-추상-클래스와-설정으로-나눴어요",
+        "title": "플랫폼마다 다른 부분은 추상 클래스와 설정으로 나눴어요",
+        "level": 2
+      },
+      {
+        "id": "다음-플랫폼에는-로그인과-파싱을-새로-붙였어요",
+        "title": "다음 플랫폼에는 로그인과 파싱을 새로 붙였어요",
+        "level": 2
+      },
+      {
+        "id": "플랫폼-함수는-아직-설정에-묶여-있어요",
+        "title": "플랫폼 함수는 아직 설정에 묶여 있어요",
+        "level": 2
+      },
+      {
+        "id": "참고",
+        "title": "참고",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+      "en": "electron-module-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": [
+      "javascript",
+      "nextjs",
+      "react",
+      "tanstack-query",
+      "typescript",
+      "refactoring",
+      "electron",
+      "nestjs",
+      "architecture"
+    ],
+    "publishedAt": "2024-04-02T23:34:35+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/electron-module-boundaries.png",
+    "sourceUrl": "https://jingeon27.tistory.com/5",
+    "title": "Separating responsibilities in an Electron data-collection app",
+    "description": "Adding a recruiting platform also copied the collection workflow. I introduced and then removed NestJS, while keeping request handling, collection order, and site-specific processing separate.",
+    "slug": "electron-module-boundaries",
+    "keywords": [
+      "javascript",
+      "nextjs",
+      "react",
+      "tanstack-query",
+      "typescript",
+      "electron",
+      "nestjs",
+      "architecture"
+    ],
+    "id": "electron-module-boundaries",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "every-platform-file-repeated-the-same-workflow",
+        "title": "Every platform file repeated the same workflow",
+        "level": 2
+      },
+      {
+        "id": "keeping-collection-order-independent-of-site-changes",
+        "title": "Keeping collection order independent of site changes",
+        "level": 2
+      },
+      {
+        "id": "removing-nestjs-did-not-mean-combining-the-files-again",
+        "title": "Removing NestJS did not mean combining the files again",
+        "level": 2
+      },
+      {
+        "id": "the-controller-receives-ipc-requests",
+        "title": "The Controller receives IPC requests",
+        "level": 2
+      },
+      {
+        "id": "the-service-owns-the-processing-order",
+        "title": "The Service owns the processing order",
+        "level": 2
+      },
+      {
+        "id": "abstract-classes-and-configuration-hold-platform-differences",
+        "title": "Abstract classes and configuration hold platform differences",
+        "level": 2
+      },
+      {
+        "id": "adding-login-and-parsing-for-the-next-platforms",
+        "title": "Adding login and parsing for the next platforms",
+        "level": 2
+      },
+      {
+        "id": "platform-functions-still-come-from-static-configuration",
+        "title": "Platform functions still come from static configuration",
+        "level": 2
+      },
+      {
+        "id": "references",
+        "title": "References",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+      "en": "electron-module-boundaries"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["closure", "electron", "javascript", "puppeteer", "typescript"],
+    "publishedAt": "2024-03-29T00:04:51+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/puppeteer-event-lifecycle.png",
+    "sourceUrl": "https://jingeon27.tistory.com/4",
+    "title": "Puppeteer에서 요청과 응답을 함께 기다릴 때 놓쳤던 것",
+    "description": "Electron 수집 앱에서 요청 헤더와 파일 정보를 함께 기다려야 했어요. 값을 모으는 일은 closure에, 기다림을 끝내고 리스너를 정리하는 일은 Promise에 맡겼어요.",
+    "slug": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+    "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"],
+    "id": "puppeteer-event-lifecycle",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "이벤트가-오면-promise를-끝내요",
+        "title": "이벤트가 오면 Promise를 끝내요",
+        "level": 2
+      },
+      {
+        "id": "먼저-온-값을-closure-안에-보관해요",
+        "title": "먼저 온 값을 closure 안에 보관해요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+      "en": "puppeteer-event-lifecycle"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["closure", "electron", "javascript", "puppeteer", "typescript"],
+    "publishedAt": "2024-03-29T00:04:51+09:00",
+    "updatedAt": "2026-10-29",
+    "coverImage": "/images/covers/puppeteer-event-lifecycle.png",
+    "sourceUrl": "https://jingeon27.tistory.com/4",
+    "title": "Waiting for Puppeteer requests and responses without leaking listeners",
+    "description": "An Electron collector needed request headers and file information before it could continue. A closure collected the values, while a Promise ended the wait and cleaned up the listeners.",
+    "slug": "puppeteer-event-lifecycle",
+    "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"],
+    "id": "puppeteer-event-lifecycle",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "resolve-the-promise-when-an-event-supplies-a-result",
+        "title": "Resolve the Promise when an event supplies a result",
+        "level": 2
+      },
+      {
+        "id": "keep-the-first-value-inside-a-closure",
+        "title": "Keep the first value inside a closure",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 4,
+    "translations": {
+      "ko": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+      "en": "puppeteer-event-lifecycle"
+    }
+  }
+]

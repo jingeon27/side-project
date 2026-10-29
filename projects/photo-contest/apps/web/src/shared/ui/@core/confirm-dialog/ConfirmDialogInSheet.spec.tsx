@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
@@ -21,10 +21,10 @@ function ModerationBottomSheet({
         <button
           type="button"
           onClick={() =>
-            overlay.open(({ isOpen: isDialogOpen, close, unmount: unmountDialog }) => (
+            overlay.open(({ isOpen: isDialogOpen, close: onDialogClose, unmount: unmountDialog }) => (
               <ConfirmDialog
                 isOpen={isDialogOpen}
-                onClose={close}
+                onClose={onDialogClose}
                 unmount={unmountDialog}
                 title="사진을 삭제할까요?"
                 confirmLabel="사진 삭제하기"
@@ -54,8 +54,13 @@ describe('시트 위에 연 확인 대화상자', () => {
         <button
           type="button"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
-              <ModerationBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} onDelete={onDelete} />
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
+              <ModerationBottomSheet
+                isOpen={isOpen}
+                onClose={onClose}
+                unmount={unmount}
+                onDelete={onDelete}
+              />
             ))
           }
         >

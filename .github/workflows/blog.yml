@@ -1,0 +1,67 @@
+name: Blog
+
+on:
+  push:
+    paths:
+      - 'projects/blog/**'
+      - 'packages/config/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.github/workflows/blog.yml'
+  pull_request:
+    paths:
+      - 'projects/blog/**'
+      - 'packages/config/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.github/workflows/blog.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      SITE_URL: http://127.0.0.1:3101
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      # content:validate compares published URLs with the merge base of the PR base (or origin/develop).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      # Validate the committed registry before anything regenerates it; later steps run content:generate themselves.
+      - name: Validate committed content and SEO registry
+        run: yarn workspace @blog/web content:validate
+      - run: yarn workspace @blog/web typecheck
+      - run: yarn workspace @blog/web lint
+      - run: yarn workspace @blog/web test
+      - run: yarn workspace @blog/web test:e2e:dev
+      - run: yarn workspace @blog/web build
+      - run: yarn workspace @blog/web test:e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: blog-playwright
+          path: |
+            projects/blog/apps/web/playwright-report/
+            projects/blog/apps/web/test-results/
+          if-no-files-found: ignore

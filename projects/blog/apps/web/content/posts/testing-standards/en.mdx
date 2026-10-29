@@ -1,0 +1,201 @@
+<Summary>
+
+I reviewed which behaviors the tests checked and refined them against actual submission paths and server constraints.
+
+</Summary>
+
+![Check function inputs and outputs, submitted form requests, and browser navigation results separately.](/images/covers/testing-standards.png)
+
+*Check function inputs and outputs, submitted form requests, and browser navigation results separately.*
+
+Checking every existing behavior by hand became difficult as I added features and changed structure. That was why I introduced tests to the services I maintain. But passing tests still accompanied requests rejected by the server, and assertions kept succeeding after their subject had disappeared from the screen.
+
+Before adding more tests, I began rereading what they actually ran. I removed a Harness that stood in for submission, copied server constraints into mocks, and checked the destination screen as well as its URL. The criteria I use now came from repairing those gaps.
+
+## Keep tests beside their subject
+
+I keep tests beside the code so its behavior is available to read while changing it.
+
+```text
+program-form.tsx
+program-form.spec.tsx
+program-form.test.tsx
+```
+
+Feature requirements go in spec files; production and QA bugs go in test files. Moving or deleting a subject makes its tests visible in the same diff, and changing a feature exposes the behavior to check nearby.
+
+## Integration tests must use real submission code
+
+The first global CMS integration tests rendered form fields but let a Harness perform submission. This example is shortened and renamed for publication.
+
+```tsx
+function CreateHarness({ onCreated }: { onCreated: (id: number) => void }) {
+  // 등록 Drawer가 하는 변환·요청을 테스트가 다시 쓰고 있었다
+  const handleFinish = async (values: PartnerFormValues) => {
+    const { id } = await createPartner(toRequest(values));
+    onCreated(id);
+  };
+
+  return <PartnerFormFields initialValues={initialValues} onFinish={handleFinish} />;
+}
+```
+
+The successful submission belonged to the Harness, not the creation Drawer. Production conversion or request code could break while the copied test implementation stayed correct. I changed the test to render the real Drawer and follow the product’s path from input through submission.
+
+I shared setup such as providers and routers, but left submission decisions in the actual product code. If the test duplicates that logic, one implementation can change while the other still passes.
+
+## A permissive mock was mistaken for the server contract
+
+We built the global service with MSW before its backend was ready. Handlers returned 200 without inspecting the body. Once connected to the real API, requests that passed integration tests were rejected.
+
+Partner creation required an ordering value missing from the UI and business hours for all seven days. Program creation required a code the frontend thought the server generated, and the price-policy enum names differed too. A mock returning only success could not expose those differences.
+
+Mock seeds diverged from initial server data. In the global user-facing service, a separate repository from CMS, the All category existed only in mock seeds. E2E passed on the false assumption that the backend supplied it.
+
+I copied only constraints confirmed in backend DTOs and validation into mocks, making them reject with 400 what the server rejected. This reduced example uses `partnerId` as an alias.
+
+```typescript
+// 서버 DTO가 거절하는 조건만 옮긴다
+function programViolations(body: ProgramSaveRequest): Violation[] {
+  const violations: Violation[] = [];
+  const required = (field: keyof ProgramSaveRequest, isValid: boolean) => {
+    if (!isValid) violations.push({ field, code: 'VALIDATION.REQUIRED' });
+  };
+
+  required('partnerId', Boolean(body.partnerId));
+  required('programCode', Boolean(body.programCode?.trim()));
+
+  if (body.listPrice < body.salePrice) {
+    violations.push({ field: 'validPrice', code: 'VALIDATION.INVALID' });
+  }
+
+  return violations;
+}
+
+http.post('/programs', async ({ request }) => {
+  const body = (await request.json()) as ProgramSaveRequest;
+  const violations = programViolations(body);
+
+  if (violations.length > 0) {
+    return errorJson(400, 'COMMON.VALIDATION_FAILED', violations);
+  }
+
+  return ok({ id: programStore.create(body) });
+});
+```
+
+I also set `onUnhandledRequest: 'error'` so a request without a handler fails immediately. If a child component starts calling another API as the screen opens, the missing handler becomes visible instead of silently falling through.
+
+I removed the program code from a request after changing the mock, and the existing integration test failed. I also sent fully populated and minimal inputs to the dev API. Later I aligned department, category, language, and region seeds with the server’s initial data; the old medical-department codes had not matched any server code.
+
+Mocks are still not the authoritative contract. New constraints discovered on the dev server feed back into form validation, handlers, and integration tests so subsequent work fails locally first.
+
+## Some passing assertions checked nothing
+
+Colocation did not make tests follow a moved responsibility. Tabs, creation, and the Drawer moved from the global CMS list View to `page.tsx`, while the tests still rendered only the View. Tests expecting the old DOM broke, but “the Drawer is closed without an ID” kept passing. No Drawer existed, so the assertion was trivially true.
+
+I moved those behaviors into tests beside `page.tsx`. Moving code now also means checking that its tests render the actual component in its new location.
+
+A Back-Office banner E2E waited for “Uploading...” to disappear, but the text existed nowhere in the repository. Playwright passed immediately, potentially advancing before the image entered the form. Code review caught it, and I changed the wait to the actual upload-progress entry disappearing.
+
+## Give each test layer a scope
+
+Correct calculations do not establish that browser back navigation works, and a permissive mock cannot prove the server accepts a request. I divided the layers by what they actually execute.
+
+- Unit tests: pure functions, Zod schemas, state transitions, and boundary values.
+- Component/integration tests: connections among actual UI, Query, forms, and MSW contracts.
+- `.live.test.ts(x)`: request/response compatibility with dev API contracts.
+- Playwright E2E: browser-specific URL entry, refresh, back navigation, cookies, and server gates.
+
+I do not force Server Components or heavily provider-dependent screens into jsdom. I extract pure calculations for unit tests or use E2E when the browser is essential.
+
+## Prefer dev APIs and mock difficult states
+
+When a feature can be checked against dev APIs, I start there to see actual contracts and data connected. Mocks fix conditions that are difficult to create safely and repeatedly there, such as authentication stages, particular errors, and empty lists.
+
+The portal signup E2E does not mock everything. MSW controls user state and authentication requests that the test needs to own; other requests reach the dev server.
+
+The admin monorepo runs `*.live.test.ts(x)` through a separate configuration from ordinary Vitest. Running them with MSW enabled could masquerade as real-server verification. Dev accounts and data are shared, so files run serially and automation does not arbitrarily modify other people's data.
+
+A constraint found through the dev API goes back into local form validation, mocks, and integration tests. The next change can then catch the same invalid request before reaching the dev server.
+
+Global CMS is an exception. When its dev-API runner was removed later, I deleted live files that could no longer run. Leaving them would imply ongoing verification. It now checks server rules through the updated mocks only.
+
+## Confirm that a new test can fail
+
+For a new testing pattern, I deliberately broke the behavior it was intended to protect. A payment calculation might look like this.
+
+```typescript
+// 정상
+const finalAmount = paymentAmount - couponDiscount;
+
+// 테스트 확인을 위해 잠시 변경
+const finalAmount = paymentAmount + couponDiscount;
+```
+
+After observing the failure, I restored the product code. Removing the program code earlier was the same kind of check. I use this mutation check for a new pattern to avoid a test staying green when it shares the implementation’s mistake.
+
+Refactoring order matters too: preserve current behavior in tests before changing structure. Writing tests afterward can simply declare the new behavior correct.
+
+## Put browser boundaries in E2E
+
+The portal signup funnel combines direct URL entry, refresh, back navigation, and authentication. Function tests cannot easily cover that combination. Playwright checks ordinary progression, direct entry midway, returning after logout, and blocked popups.
+
+The right URL alone is insufficient. Logout can navigate to login while displaying an error page.
+
+```typescript
+await page.getByRole('button', { name: '로그아웃' }).click();
+
+await expect(page).toHaveURL(/\/sign(\?|$)/);
+await expect(page.getByRole('button', { name: '카카오로 계속하기' })).toBeVisible();
+```
+
+I check that the URL changes to login and that the Kakao button is visible. That distinguishes a successful redirect from one followed by a broken guard or screen render.
+
+Cross-app flows get cross-app E2E. Program registration/review requests in hospital admin and Back-Office review initially had no tests. After introducing the framework, I added registration through under-review status, rejection, and approval, running both apps against dev APIs. [The AI workflow article describes this work.](/en/blog/plan-gated-ai-workflow)
+
+I choose the environment around the problem. Storefront E2E defaults to the Next development server. A build-then-start path also exists, but concurrent requests to cookie-reading statically generated routes kept it from becoming the default. The Back-Office search error did not appear under dev and needed build followed by start to reproduce, as [described here](/en/blog/nextjs-server-client-issues).
+
+## Leave repetition when it exposes the important behavior
+
+I sometimes leave repeated clicks visible in a test. This part of the portal search E2E presses a filter and checks the URL. The helper is renamed here, and the real test also checks event delivery.
+
+```typescript
+await gotoSearchPage(page);
+
+await page.getByRole('button', { name: '특가전', exact: true }).click();
+
+await expect(page).toHaveURL(/hasEvent=true/);
+```
+
+Clicking filters and checking URLs repeats elsewhere, but I do not hide those core actions in a generic `expectFilterScenario()`. Only unrelated preparation such as navigation and login is hidden. Reading inputs, actions, and expected results directly helps me assess the meaning of an AI-reported success.
+
+## Distinguish specifications from bug reproduction
+
+New requirements use BDD-style `*.spec.ts` or `*.spec.tsx`, showing conditions, actions, and visible results. I check each component's requirements for omissions. Production/QA errors and console warnings are reproduced in `*.test.ts` or `*.test.tsx` to prevent recurrence.
+
+When an agent writes both product code and tests, I look again for setup that replaces submission and assertions that pass without their subject. Those are the two gaps I had already missed. I compare the actual code rather than accepting only the result, then recheck any conditions added to the specification.
+
+Custom lint rules also get RuleTester, `__fixture__`, and mock environments. A rule enforcing repository conventions can reject valid code or miss violations itself.
+
+## Avoid repeating full verification across parallel worktrees
+
+Running full lint, typecheck, and tests in several worktrees caused CPU contention. One admin lint run spans many packages, and each linked worktree creates its own Turbo and TypeScript caches. Overlapping runs were killed, leaving neither a pass nor a failure to interpret.
+
+During work, I check affected behavior first so agent implementation and review can continue. I read the diff and try the screen before moving to full CI and QA. That keeps several sessions from launching the same complete checks at every step.
+
+Local scope differs by tool. ESLint checks changed files, tests cover affected files, and Knip checks the full reference graph in both repositories. Typechecking covers the whole portal app, but changed packages in admin; changing a shared package API also checks consuming apps. Calling that “typecheck changed files” would miss dependencies.
+
+## CI scope follows its environment
+
+Admin PR Vitest initially ran all MSW tests, but the runner shared an instance with dev, and those runs stopped the dev environment too. MSW integration tests moved to affected pre-push checks.
+
+Admin CI now runs lint, type checking, Knip, and tests without MSW. Dev-API live tests run separately. Since server deployments or data changes can break them, they do not block the PR; I inspect their results for contract differences. Portal CI runs lint, type checking, and Knip. E2E for both repositories is checked outside CI.
+
+## References
+
+- [MSW: server.listen() and onUnhandledRequest](https://mswjs.io/docs/api/setup-server/listen)
+- [Playwright: Page assertions and toHaveURL](https://playwright.dev/docs/api/class-pageassertions)
+- Related: [Tracing Next.js routing and cache problems](/en/blog/nextjs-server-client-issues)
+- Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)
+- Related: [Runtime validation beyond type assertions](/en/blog/zod-assertion-boundaries)

@@ -1,14 +1,17 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Users } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { JoinGroupButton } from '@/features/invite';
-import { InvitePreviewDocument } from '@/shared/api/generated';
-import type { InvitePreviewQuery, InvitePreviewQueryVariables } from '@/shared/api/generated';
+import {
+  GroupVisibility,
+  InvitePreviewDocument,
+  type InvitePreviewQuery,
+  type InvitePreviewQueryVariables,
+} from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { getErrorMessage } from '@/shared/model/error';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -31,8 +34,12 @@ function InviteContent({
       <ErrorState
         title="초대 링크를 확인해 주세요"
         message={getErrorMessage(error)}
-        onRetry={() => {
-          void refetch().catch(() => undefined);
+        onRetry={async () => {
+          try {
+            await refetch();
+          } catch {
+            /* 실패하면 같은 안내가 남는다. */
+          }
         }}
       />
     );
@@ -43,8 +50,14 @@ function InviteContent({
         <Users aria-hidden className="size-10 text-brand" />
         <h2 className="break-words text-title-lg text-ink">{preview.groupName}</h2>
         <p className="text-body text-muted">
-          {preview.ownerNickname}님이 기다리고 있어요. 친구 {preview.memberCount}명과 사진 대회를 즐겨보세요.
+          {preview.ownerNickname}님이 기다리고 있어요. 친구 {preview.memberCount}명과 사진과 동영상을
+          나눠보세요.
         </p>
+        {preview.visibility === GroupVisibility.Private ? (
+          <p className="text-caption text-muted">
+            비공개 그룹이에요. 그룹장이 가입 신청을 수락해야 게시물을 볼 수 있어요.
+          </p>
+        ) : null}
       </section>
       {match(preview.joinedGroupId)
         .with(P.string, (groupId) => (
@@ -55,7 +68,13 @@ function InviteContent({
             guest={<LoginPanel nextPath={ROUTES.INVITE(token)} />}
             fallback={<Skeleton className="h-16 w-full" />}
           >
-            {() => <JoinGroupButton token={token} />}
+            {() =>
+              preview.joinRequestPending ? (
+                <p className="text-center text-body text-muted">가입 승인 대기 중이에요.</p>
+              ) : (
+                <JoinGroupButton token={token} visibility={preview.visibility} />
+              )
+            }
           </ViewerBoundary>
         ))
         .exhaustive()}

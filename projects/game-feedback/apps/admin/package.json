@@ -1,0 +1,45 @@
+{
+  "name": "@game-feedback/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc7 --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc7 --noEmit",
+    "lint": "eslint .",
+    "test": "node scripts/test.ts",
+    "test:e2e": "playwright test",
+    "test:browser": "playwright test --config playwright.ui.config.ts"
+  },
+  "dependencies": {
+    "@game-feedback/contracts": "workspace:*",
+    "@game-feedback/sdk": "workspace:*",
+    "@hookform/resolvers": "catalog:",
+    "@side/design-system": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "dayjs": "catalog:",
+    "es-toolkit": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "ts-pattern": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

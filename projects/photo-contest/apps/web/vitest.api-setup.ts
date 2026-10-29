@@ -1,5 +1,6 @@
-import { startIsolatedApi } from '@photo-contest/test-kit';
 import type { TestProject } from 'vitest/node';
+
+import { startIsolatedApi } from '@photo-contest/test-kit';
 
 declare module 'vitest' {
   export interface ProvidedContext {

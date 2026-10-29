@@ -1,5 +1,11 @@
 {
-  "extends": "@side/typescript-config/base",
-  "compilerOptions": { "module": "ESNext", "moduleResolution": "Bundler", "noEmit": true, "types": ["node"] },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"]
+  "extends": "@side/config/typescript",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "bin/**/*.ts"]
 }

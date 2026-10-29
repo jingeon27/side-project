@@ -1,0 +1,14 @@
+# 작업 디렉터리, state, plan, 실제 변수·backend 값은 커밋하지 않는다. .terraform.lock.hcl은 커밋한다.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+backend.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

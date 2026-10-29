@@ -1,9 +1,10 @@
 'use client';
 
-import { useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
 import { useTransition } from 'react';
 
-import { PhaseBadge, getPhaseDeadline, getPhaseGuide } from '@/features/contest';
+import { useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
+
+import { getPhaseDeadline, getPhaseGuide, PhaseBadge } from '@/features/contest';
 import { formatDateTime } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 

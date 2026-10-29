@@ -1,0 +1,74 @@
+{
+  "name": "@side/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts",
+    "./styles.css": "./src/styles.css",
+    "./theme.css": "./src/styles/theme.css",
+    "./lib/cn.helper": "./src/lib/cn.helper.ts",
+    "./ui/*": "./src/ui/*/index.ts",
+    "./ui": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc7 --noEmit",
+    "test": "node scripts/test.ts",
+    "check": "yarn lint && yarn typecheck && yarn test && yarn build-storybook",
+    "storybook": "storybook dev --port 6006 --no-open",
+    "build-storybook": "storybook build --output-dir dist/storybook"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "catalog:",
+    "sonner": "2.0.8",
+    "tailwind-merge": "^3.6.0"
+  },
+  "peerDependencies": {
+    "next": "^16.4.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@side/config": "workspace:*",
+    "@storybook/addon-a11y": "10.6.3",
+    "@storybook/addon-docs": "10.6.3",
+    "@storybook/addon-themes": "10.6.3",
+    "@storybook/react-vite": "10.6.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "axe-core": "^4.10.0",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "jsdom": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "storybook": "10.6.3",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

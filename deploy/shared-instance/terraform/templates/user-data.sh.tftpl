@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# cloud-init이 첫 부팅에 한 번 실행한다. Terraform이 렌더링하며 비밀을 담지 않는다.
+# 기록: /var/log/cloud-init-output.log, 완료 표시: /var/lib/side-project/host-bootstrap.done
+set -euo pipefail
+umask 022
+export DEBIAN_FRONTEND=noninteractive
+
+deploy_user='${deploy_user}'
+docker_key_fingerprint='9DC858229FC7DD38854AE2D88D81803C0EBFCD88'
+
+apt_get() {
+  apt-get -o DPkg::Lock::Timeout=600 -o Acquire::Retries=5 "$@"
+}
+
+# 공용 배포 스크립트의 호스트 요구사항: Bash, Python 3, curl, OpenSSL, tar, flock(util-linux).
+# git은 저장소 체크아웃, e2fsprogs·blkid는 PostgreSQL 볼륨 포맷·마운트에 쓴다. psql은 컨테이너 안의 것을 쓴다.
+apt_get update
+apt_get install -y --no-install-recommends \
+  ca-certificates curl e2fsprogs git gnupg openssl python3 tar util-linux
+
+# Docker Engine 25+와 Compose plugin 2.20.2+는 Docker 공식 apt 저장소에서 설치하고 서명 키 지문을 확인한다.
+install -m 0755 -d /etc/apt/keyrings
+key_file=$(mktemp)
+curl --fail --silent --show-error --location --retry 5 --proto '=https' --tlsv1.2 \
+  https://download.docker.com/linux/ubuntu/gpg -o "$key_file"
+gnupg_home=$(mktemp -d)
+fingerprint=$(GNUPGHOME="$gnupg_home" gpg --batch --show-keys --with-colons "$key_file" | awk -F: '$1 == "fpr" { print $10; exit }')
+rm -rf "$gnupg_home"
+if [[ "$fingerprint" != "$docker_key_fingerprint" ]]; then
+  echo "Unexpected Docker apt key fingerprint: $fingerprint" >&2
+  exit 1
+fi
+install -m 0644 "$key_file" /etc/apt/keyrings/docker.asc
+rm -f "$key_file"
+# shellcheck source=/dev/null
+. /etc/os-release
+cat >/etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $${UBUNTU_CODENAME:-$VERSION_CODENAME}
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+# Compose 파일이 지정하지 않은 일회성 컨테이너에도 로그 크기 제한을 둔다.
+# live-restore는 Docker 패키지 갱신으로 dockerd가 재시작돼도 실행 중인 컨테이너를 유지한다.
+install -m 0755 -d /etc/docker
+cat >/etc/docker/daemon.json <<'EOF'
+{
+  "live-restore": true,
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" }
+}
+EOF
+
+apt_get update
+apt_get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+
+docker_version=$(docker version --format '{{.Server.Version}}')
+compose_version=$(docker compose version --short)
+compose_version=$${compose_version#v}
+if (( $${docker_version%%.*} < 25 )); then
+  echo "Docker Engine 25+ is required, found $docker_version" >&2
+  exit 1
+fi
+if ! printf '%s\n' 2.20.2 "$compose_version" | sort --check=quiet --version-sort; then
+  echo "Docker Compose plugin 2.20.2+ is required, found $compose_version" >&2
+  exit 1
+fi
+for tool in bash python3 curl openssl tar flock git blkid mkfs.ext4; do
+  command -v "$tool" >/dev/null || { echo "Missing required tool: $tool" >&2; exit 1; }
+done
+
+# 배포 사용자는 /srv/side-project와 Docker에 접근한다. docker 그룹은 root와 같은 권한이다.
+usermod -aG docker "$deploy_user"
+install -d -m 0700 -o "$deploy_user" -g "$(id -gn "$deploy_user")" /srv/side-project
+
+%{ if swap_size_gib > 0 ~}
+if [[ ! -e /swapfile ]]; then
+  fallocate -l ${swap_size_gib}G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >>/etc/fstab
+  echo 'vm.swappiness=10' >/etc/sysctl.d/90-side-project-swap.conf
+  sysctl --quiet --load=/etc/sysctl.d/90-side-project-swap.conf
+fi
+%{ endif ~}
+
+# PostgreSQL 데이터 볼륨(database.tf). Terraform이 인스턴스를 만든 뒤 붙이므로 나타날 때까지 기다린다.
+# 이미 파일 시스템이 있으면(인스턴스 교체) 포맷하지 않고 그대로 마운트한다.
+postgres_root='${postgres_root}'
+postgres_volume='${postgres_volume_id}'
+postgres_device=''
+for _ in $(seq 1 120); do
+  for candidate in "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_$${postgres_volume//-/}" /dev/xvdf; do
+    if [[ -b "$candidate" ]]; then
+      postgres_device=$(readlink -f "$candidate")
+      break 2
+    fi
+  done
+  sleep 5
+done
+if [[ -z "$postgres_device" ]]; then
+  echo "PostgreSQL volume $postgres_volume was not attached within 10 minutes" >&2
+  exit 1
+fi
+if ! blkid "$postgres_device" >/dev/null; then
+  mkfs.ext4 -q -L side-postgres "$postgres_device"
+fi
+postgres_uuid=$(blkid -s UUID -o value "$postgres_device")
+install -d -m 0755 "$postgres_root"
+if ! grep -q "^UUID=$postgres_uuid " /etc/fstab; then
+  # nofail: 볼륨이 없어도 부팅은 계속한다. 그때는 표시 파일·data 디렉터리가 없어 database.sh와 컨테이너가 시작을 거부한다.
+  echo "UUID=$postgres_uuid $postgres_root ext4 defaults,nofail,x-systemd.before=docker.service 0 2" >>/etc/fstab
+  systemctl daemon-reload
+fi
+mountpoint -q "$postgres_root" || mount "$postgres_root"
+if [[ ! -f "$postgres_root/.side-postgres-volume" ]]; then
+  printf 'volume=%s\n' "$postgres_volume" >"$postgres_root/.side-postgres-volume"
+fi
+install -d -m 0755 "$postgres_root/data"
+install -d -m 0700 -o "$deploy_user" -g "$(id -gn "$deploy_user")" "$postgres_root/dumps"
+
+install -m 0755 -d /var/lib/side-project
+printf 'docker=%s\ncompose=%s\n' "$docker_version" "$compose_version" >/var/lib/side-project/host-bootstrap.done
+echo "Host bootstrap complete: Docker $docker_version, Compose $compose_version"

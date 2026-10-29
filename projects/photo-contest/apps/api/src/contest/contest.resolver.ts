@@ -1,11 +1,10 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
-import { GROUP_ROLE } from '../group/group-role';
+import type { IViewer } from '../auth/session/session.service';
+import { Viewer } from '../auth/session/viewer.decorator';
+import { isAdmin } from '../group/membership/group-role';
 import { phase } from './contest.policy';
-import { ContestService } from './contest.service';
-import type { IContestNode, ICreateContestInput } from './contest.service';
+import { ContestService, type IContestNode, type ICreateContestInput } from './contest.service';
 
 @Resolver('Contest')
 export class ContestResolver {
@@ -33,7 +32,7 @@ export class ContestResolver {
 
   @ResolveField()
   isAdmin(@Parent() contest: IContestNode) {
-    return contest.viewerRole === GROUP_ROLE.OWNER;
+    return isAdmin({ role: contest.viewerRole });
   }
 
   @ResolveField()

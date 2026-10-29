@@ -1,9 +1,13 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
-import { SubmissionService } from './submission.service';
-import type { ICreateSubmissionInput, ISubmissionListQuery } from './submission.service';
+import type { IViewer } from '../auth/session/session.service';
+import { Viewer } from '../auth/session/viewer.decorator';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
+import {
+  SubmissionService,
+  type ICreateSubmissionInput,
+  type ISubmissionListQuery,
+} from './submission.service';
 
 @Resolver('Submission')
 export class SubmissionResolver {
@@ -19,8 +23,19 @@ export class SubmissionResolver {
   }
 
   @Mutation()
-  requestUploadUrl(@Viewer() viewer: IViewer, @Args('contestId') contestId: string) {
-    return this.submissionService.requestUploadUrl(viewer, contestId);
+  requestUploadUrl(
+    @Viewer() viewer: IViewer,
+    @Args('contestId') contestId: string,
+    @Args('contentType') contentType: string,
+    @Args('byteSize') byteSize: number,
+    @ClientAddress() address: string | null,
+  ) {
+    return this.submissionService.requestUploadUrl(viewer, contestId, contentType, byteSize, address);
+  }
+
+  @Mutation()
+  completeSubmissionUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
+    return this.submissionService.completeUpload(viewer, uploadId);
   }
 
   @Mutation()

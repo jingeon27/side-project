@@ -1,13 +1,12 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { Trophy } from 'lucide-react';
 import { useId } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Trophy } from 'lucide-react';
 import { match } from 'ts-pattern';
 
-import { GroupLeaderboardDocument } from '@/shared/api/generated';
-import type { GroupLeaderboardQuery } from '@/shared/api/generated';
+import { GroupLeaderboardDocument, type GroupLeaderboardQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -15,13 +14,13 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-import { countByRank, getMedalTone, getRankLabel } from '../lib/ranking.helper';
+import { countByRank, getMedalTone, getRankLabel, type TMedalTone } from '../lib/ranking.helper';
 
 const MEDAL_CLASS_NAME = {
   gold: 'bg-gold text-ink',
   silver: 'bg-silver text-ink',
   bronze: 'bg-bronze text-ink',
-} as const;
+} as const satisfies Record<TMedalTone, string>;
 
 function LeaderboardContent({
   rankingRef,
@@ -67,9 +66,10 @@ function LeaderboardContent({
                   {entry.user.nickname}
                   {entry.user.id === viewerId ? <span className="text-muted"> (나)</span> : null}
                 </span>
-                <span className="text-caption text-muted">
-                  우승 {formatCount(entry.wins)}회 · 받은 표 {formatCount(entry.votesReceived)} · 좋아요{' '}
-                  {formatCount(entry.likesReceived)}
+                <span className="flex flex-wrap gap-x-2 text-caption text-muted">
+                  <span>우승 {formatCount(entry.wins)}회</span>
+                  <span>받은 표 {formatCount(entry.votesReceived)}표</span>
+                  <span>좋아요 {formatCount(entry.likesReceived)}개</span>
                 </span>
               </span>
             </li>

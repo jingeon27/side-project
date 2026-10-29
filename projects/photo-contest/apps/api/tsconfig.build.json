@@ -1,8 +1,8 @@
 {
-  "extends": "@side/typescript-config/base",
+  "extends": "@side/config/typescript",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
     "experimentalDecorators": true,

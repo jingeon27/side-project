@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 
-import { PhotoStorage } from './photo-storage.service';
+import { MediaStorage } from './media-storage.service';
 
 @Global()
-@Module({ providers: [PhotoStorage], exports: [PhotoStorage] })
+@Module({ providers: [MediaStorage], exports: [MediaStorage] })
 export class StorageModule {}

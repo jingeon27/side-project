@@ -1,35 +1,31 @@
+import { useState } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { SegmentedControl } from './SegmentedControl';
+import { SegmentedControl, SegmentedControlItem } from './SegmentedControl';
 
-const SORT_OPTIONS = [
-  { value: 'latest', label: '최신순' },
-  { value: 'popular', label: '좋아요순' },
-] as const;
-
-type TSort = (typeof SORT_OPTIONS)[number]['value'];
-
-function SortControl({ onChange }: { onChange: (value: TSort) => void }) {
-  const [sort, setSort] = useState<TSort>('latest');
+function SortControl({ onChange }: { onChange: (value: string) => void }) {
+  const [sort, setSort] = useState('latest');
   return (
     <SegmentedControl
       label="사진 정렬"
       value={sort}
-      options={SORT_OPTIONS}
       onValueChange={(value) => {
         setSort(value);
         onChange(value);
       }}
-    />
+    >
+      <SegmentedControlItem value="latest">최신순</SegmentedControlItem>
+      <SegmentedControlItem value="popular">좋아요순</SegmentedControlItem>
+    </SegmentedControl>
   );
 }
 
 describe('SegmentedControl', () => {
   it('이름 있는 묶음 안에서 지금 고른 칸만 눌린 상태여야 한다', () => {
-    render(<SortControl onChange={vi.fn()} />);
+    render(<SortControl onChange={() => undefined} />);
     expect(screen.getByRole('group', { name: '사진 정렬' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '최신순' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '좋아요순' })).toHaveAttribute('aria-pressed', 'false');

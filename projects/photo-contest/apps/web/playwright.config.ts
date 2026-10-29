@@ -1,6 +1,7 @@
+import { defineConfig, devices } from '@playwright/test';
+
 import { buildAppUserAgent } from '@photo-contest/bridge';
 import { apiWebServer, prepareE2eDatabase } from '@photo-contest/test-kit';
-import { defineConfig, devices } from '@playwright/test';
 
 import { API_PORT, WEB_ORIGIN, WEB_PORT } from './e2e/support/env';
 
@@ -23,7 +24,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'mobile-chrome', testIgnore: '**/webview.spec.ts', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'mobile-chrome',
+      testIgnore: ['**/webview.spec.ts', '**/desktop-*.spec.ts'],
+      use: { ...devices['Pixel 7'] },
+    },
     {
       name: 'mobile-safari',
       testIgnore: '**/webview.spec.ts',
@@ -50,20 +55,25 @@ export default defineConfig({
       port: API_PORT,
       webOrigin: WEB_ORIGIN,
       database,
-      env: { GOOGLE_CLIENT_ID: 'web-e2e-client', GOOGLE_CLIENT_SECRET: 'web-e2e-secret', SENTRY_DSN: '' },
+      env: {
+        SENTRY_DSN: '',
+      },
     }),
     {
-      command: `yarn workspace @photo-contest/web exec next dev -p ${WEB_PORT}`,
-      url: `${WEB_ORIGIN}/backend/health`,
+      command:
+        'yarn workspace @photo-contest/web build && yarn workspace @photo-contest/web exec node scripts/serve-cache-build.ts',
+      url: `${WEB_ORIGIN}/health-check/live`,
       reuseExistingServer: false,
       timeout: 180_000,
       gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
-        NEXT_DIST_DIR: '.next/e2e',
+        NODE_ENV: 'production',
+
         API_URL: `http://127.0.0.1:${API_PORT}`,
         WEB_ORIGIN,
+        PORT: String(WEB_PORT),
         NEXT_PUBLIC_SENTRY_DSN: '',
         SENTRY_DSN: '',
         NEXT_PUBLIC_AMPLITUDE_API_KEY: '',

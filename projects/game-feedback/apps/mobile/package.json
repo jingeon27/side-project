@@ -1,0 +1,63 @@
+{
+  "name": "@game-feedback/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
+  "scripts": {
+    "start": "expo start --dev-client --port 8082",
+    "android": "expo run:android --port 8082",
+    "ios": "expo run:ios --port 8082",
+    "typecheck": "tsc7 --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "bundle:check": "node scripts/bundle-check.ts"
+  },
+  "dependencies": {
+    "@game-feedback/bridge": "workspace:*",
+    "@react-native-async-storage/async-storage": "catalog:",
+    "es-toolkit": "catalog:",
+    "expo": "catalog:",
+    "expo-build-properties": "catalog:",
+    "expo-constants": "catalog:",
+    "expo-crypto": "catalog:",
+    "expo-dev-client": "catalog:",
+    "expo-device": "catalog:",
+    "expo-linking": "catalog:",
+    "expo-notifications": "catalog:",
+    "expo-status-bar": "catalog:",
+    "expo-system-ui": "catalog:",
+    "expo-web-browser": "catalog:",
+    "react": "catalog:",
+    "react-native": "catalog:",
+    "react-native-safe-area-context": "catalog:",
+    "react-native-webview": "patch:react-native-webview@npm%3A14.0.1#~/.yarn/patches/react-native-webview-npm-14.0.1-5188b52144.patch"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "jsdom": "catalog:",
+    "react-dom": "catalog:",
+    "react-native-web": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript",
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}

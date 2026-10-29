@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="42" y="146" width="124" height="66" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="104"
+    y="185"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    payment
+  </text>
+  <path
+    d="M170 179H226V91H280"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M226 179V268H280"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="292" y="58" width="154" height="66" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="369"
+    y="97"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    saved
+  </text>
+  <rect x="292" y="235" width="154" height="66" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="369"
+    y="274"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    draft
+  </text>
+  <path
+    d="M450 91H490"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M450 268H490"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="502" y="58" width="104" height="66" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="554"
+    y="97"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="16"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    detail
+  </text>
+  <rect x="502" y="235" width="104" height="66" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="554"
+    y="274"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="16"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    coupon
+  </text>
+</svg>

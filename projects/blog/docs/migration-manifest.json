@@ -1,0 +1,590 @@
+{
+  "source": "https://jingeon27.tistory.com",
+  "posts": [
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/4",
+      "contentId": "puppeteer-event-lifecycle",
+      "localCounterpart": "revised/post-04-puppeteer-closure.md",
+      "publishedAt": "2024-03-29T00:04:51+09:00",
+      "title": "Puppeteer의 request와 response를 함께 기다리기: closure보다 중요했던 수명 관리",
+      "images": [],
+      "codeSha256": [
+        "029121c1cc908116ea0a514b25d449247689c35570d7221ac4d557c4a4e11fce",
+        "d91c439f376046498473f497dbaec9d51d94a72807eebfc0e4b4ee2829730e66",
+        "388371c64bbaeb329ca0f22b75c3e0752a5f88fd25f22f8017c49eb6c8e3561c"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/5",
+      "contentId": "electron-module-boundaries",
+      "localCounterpart": "revised/post-05-electron-nestjs-inspired.md",
+      "publishedAt": "2024-04-02T23:34:35+09:00",
+      "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
+      "images": [],
+      "codeSha256": [
+        "89a2c36b0deea500b28cd1d1d9e6d69fc3403972c2931fe30ef13cbb5169ee12",
+        "56e99a9496d92b044a0cd5807da01c121ddb6dcb652856e52cbb3d8a2d83b005",
+        "3a20c75e367b6270f43774645932fe059a23972556602d5f82fd5fb0eee4c8de",
+        "6ef3abb59f2b3bd6c6bc610e7abc80912988a5a2eb484e05fb5346a28410ad2e"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/6",
+      "contentId": "query-key-factory",
+      "localCounterpart": "revised/post-06-query-key-factory.md",
+      "publishedAt": "2024-04-10T03:32:20+09:00",
+      "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
+      "images": [],
+      "codeSha256": [
+        "fb33c9dfbc33abb968916eaf54a272a8a013e104427a9f677f9aa1cb1ca178cf",
+        "b9d22a48ad2f6a304e4e825fde6dbd350cf2c019fabe6aa549d1bab07af0f847",
+        "706310ebeaa432ed01fcbe4519388dfeeea39cdb129f1165e1d4545f754b3484",
+        "25e766e1d02df60eaa14de4b8eba3bac691784e1d034cfe79dca9b35f76f7df3",
+        "db54a3b62eb7bc5a5f5ea330ad3598f4276582c248343c2d76c940adbc135adf",
+        "19a88f4f0b9ea80907761167ce18f77024c4c1c9f338f189e6e8ffde31b7ccb2",
+        "f6278f34133ff3bacc6d4b50254295e2249c58d61a13475649608cded350ded1",
+        "1cf3a55e11b685fe560b5d16b21aa24f17f11148607edf2cb1b2899df79e2406",
+        "4344b704840864ea3a77bfa1227e9c45903b81fac0a42e8e7ac708eda3f07f02"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/7",
+      "contentId": "typescript-patterns",
+      "localCounterpart": "revised/post-07-typescript-patterns.md",
+      "publishedAt": "2024-05-25T17:01:01+09:00",
+      "title": "실무에서 자주 쓰는 TypeScript 패턴 네 가지",
+      "images": [],
+      "codeSha256": [
+        "3066b1b5532d410b0847d6d65144b8fdff223be401089304663ded25ca4da36a",
+        "b3fdc953aaecc0ca078d76bd56506767b345d63dc768398803495368597270af",
+        "c46ebae3f0beba56335c604e4622336e82acccd1a36bcfb9292f5f23ceb69737",
+        "59cff426a457c1947da3b8b90544f6a07251a14a2ee7e5ebf5f7b90afa59ef5d",
+        "88b4ba1ab740358c6c547a2671ebbf60a47524aa245aa1dc14e96122122b366d",
+        "741adb7261965e8d799cae998aac29202215a79704ad024693ee7779752cafac",
+        "d8476b398433e73df8b399905b55f1d2a56b81e06cebf02928e417eeb7066026"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/8",
+      "contentId": "nextjs-tanstack-query-ssr",
+      "localCounterpart": "revised/post-08-next-tanstack-query.md",
+      "publishedAt": "2025-01-22T17:27:17+09:00",
+      "title": "Next.js App Router에서 TanStack Query를 SSR과 함께 쓰는 방법",
+      "images": [],
+      "codeSha256": [
+        "dd0179ddcd3fe3ef2b2b0c7eb9fa5f94b57545f7130fbdf539c37c83c11ef38f",
+        "ad8d60e8e4a78095cf7a5ec9069d0ef1130489550e248b24abd554ed15694c67",
+        "df4a861c572ce7f1cf9e3f4b7cb424a423f2f85bae3198cfe662116ca7a0dbc3",
+        "2be7a411acacff9b7ef4c6d016e115e43982e848b1c48121360ff387fd7acc88",
+        "7cbd57b49c1677f7e890de83f08410fa3aeca8f7eae3135d4b908da8a3615f3a"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/11",
+      "contentId": "reservation-form-state",
+      "localCounterpart": "revised/post-11-reservation-form.md",
+      "publishedAt": "2025-06-30T23:14:01+09:00",
+      "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
+      "images": [
+        {
+          "path": "/images/posts/reservation-form-state/01.png",
+          "sha256": "dc9b141b949c386028d0949347895fe78a0eadb0761ba14464dcdffc2f869bc3"
+        },
+        {
+          "path": "/images/posts/reservation-form-state/02.png",
+          "sha256": "354ec10ffc274781fcdc88246eac41f0ec8322641c3c298a5ce870622f0bbdfc"
+        },
+        {
+          "path": "/images/posts/reservation-form-state/03.png",
+          "sha256": "3e10514e205c249fc73f6e0751782741b6df72d4140b1ef0919e6419d1b8b5ba"
+        },
+        {
+          "path": "/images/posts/reservation-form-state/04.png",
+          "sha256": "f7731f3a53ac2c58b2e313785370728a02c5afde94f789229a1d4c3c7e7101ee"
+        }
+      ],
+      "codeSha256": [
+        "459452a616755b703a8eec28b0d192ea9a2ba4066efd48ee7b24cc3b83ac6cad",
+        "e7b4faaedfcace2aa3a181a0e3c2a663f74bb3deb0be31ec0ee2c8bced168d9f",
+        "9e063c0e1c235317f427f6e324eca52a7e27ab5ac8c5e8fdc8d18fe4799d3476",
+        "32c2a4ce5524a243106a34b1e18ff4b418fe5b6a8595a9e8dd0bf711e739122d",
+        "0e243d74d41a020b00e2da1f2b3504081dade5e3a4b530413f0736e8e7dbc48e",
+        "62d0808e57bb109656e28b74d44913154c2e65e2f11a17b2ce2ae9bef14441df"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/12",
+      "contentId": "review-like-optimistic-update",
+      "localCounterpart": "revised/post-12-review-like-optimistic-update.md",
+      "publishedAt": "2025-07-03T23:47:16+09:00",
+      "title": "리뷰 좋아요 Optimistic Update: 여러 캐시를 함께 갱신하고 실패 시 복구하기",
+      "images": [],
+      "codeSha256": [
+        "5831fef265eb1c74d18fb5a31d237fdc99251c9d59f9c1d03b95d7f9069372fa",
+        "54b98ca89a6f2b0d881bb4ea54f8eca51a34c51f20d87af2d1f28fd63e26e5bb",
+        "7bafb4243a668ec5b1716b1fb13b70448fd04b152e9ac9053b96e05f43611d99",
+        "2a7e493ca37c93c8b68e40ef822e0eda96feac0c469d67d08312a9ece749f5c2",
+        "31846f993fc97e98b11119f02d7301b23864506f1a0826e79eade0eb8e2993f1",
+        "05902a9f2da0ffeecf397064b0e12bbdf6e17725222a4feac6663ac4c04760ee",
+        "487ba245d91b2a0308fb47f4b4002df72b388aff4c26dcee8f28948541b565cb",
+        "d371746dd8b71e03cc6f10d75e0024372347cf1dfda94fa9c4d02200731ee926"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/14",
+      "contentId": "nextjs-seo-prefetch",
+      "localCounterpart": "revised/post-14-next-seo-prefetch.md",
+      "publishedAt": "2025-11-20T02:01:55+09:00",
+      "title": "Next.js App Router에서 prefetch를 기다려야 하는 경우",
+      "images": [],
+      "codeSha256": [
+        "8743c4a57a34b46d87b9d316ee8226e1be803b319690ccb466a1ccee71a5f741",
+        "ecb485911134d165027179f31374ea09778f0f23ff1c3a8eb4e5ea8834a1c313",
+        "729448a317479a43bd97f22a9b325bd601706192f20d271cc6c9978e07e0ad81",
+        "122edca79f091e896fd40cc90e4b8c88cbd4e2385c97a01a93c2056ebbde8159"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/15",
+      "contentId": "review-form-funnel",
+      "localCounterpart": "revised/post-15-review-form.md",
+      "publishedAt": "2025-12-13T22:32:56+09:00",
+      "title": "3단계 리뷰 작성 폼의 역할을 RHF·Zod·퍼널로 다시 나눈 과정",
+      "images": [
+        {
+          "path": "/images/posts/review-form-funnel/01.png",
+          "sha256": "4d6c2ef837d2232e95905aed2923be1c9422d8234f09509c3c60108975db9601"
+        },
+        {
+          "path": "/images/posts/review-form-funnel/02.png",
+          "sha256": "cd824b8e151991ef04974c5bf223ac7fc859640fc6ad79db859c6004ed6aaecf"
+        }
+      ],
+      "codeSha256": [
+        "5e6cb8593594cfb3f9b320c4a4f2f36f6f58720a728547c2a432c26b63b79985",
+        "dcf29562c8a0ab938696f659ce9137752fa67d6f42ccfa4c349a2400671b58bd",
+        "b954987d66ac0798b6931f997c736a590f891537b9e61ee90a0d9453e0c28d43",
+        "5098e24665b7c13dbeeef305283efe54a65f10e0ccf4d77a3fdcb140ca948590",
+        "d7ca4746fc1976dee13236f5ffab17f73dfc1ff8ceefe908b6e8b9b2a69ee25b",
+        "71b3b861044ea4ab0aa67d19736149593230f22a2c2fefc154f956cc5a27675f",
+        "2346d4a8ab7fc3393126b859663575e9dd9a79d1135482a1b4745bc1ecce1f4f",
+        "0facc8885a5b835e22d4b7de197ee43934d5deb7fd5dd604003fe01ebe66112e"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/18",
+      "contentId": "typed-program-form",
+      "localCounterpart": "revised/post-18-program-form.md",
+      "publishedAt": "2026-02-13T00:13:36+09:00",
+      "title": "두 관리자 앱의 프로그램 폼을 만드는 과정",
+      "images": [
+        {
+          "path": "/images/posts/typed-program-form/01.png",
+          "sha256": "a089c11b529c89142a7059745b9428b2678e7e59db725d07873fe0ccf3557a86"
+        },
+        {
+          "path": "/images/posts/typed-program-form/02.png",
+          "sha256": "4bbf94b7cb7fd56b37948153650671d91f14a062cac496e92fcf0e8e5081a1ea"
+        },
+        {
+          "path": "/images/posts/typed-program-form/03.png",
+          "sha256": "386b9eb64743c281b53380268bcbed2c8aa493606a394e6aea25c684b293cb51"
+        },
+        {
+          "path": "/images/posts/typed-program-form/04.png",
+          "sha256": "fac89061458e02618378258d9f34f17e238f0784b04419fc1f502607daa1a47a"
+        },
+        {
+          "path": "/images/posts/typed-program-form/05.png",
+          "sha256": "c2c3ccb176119b6face4546115a1a6df3fc7c056a38568f7f9824c388ccef590"
+        },
+        {
+          "path": "/images/posts/typed-program-form/06.png",
+          "sha256": "ce9f7cf74b4ea8b8891f351187cba379999d0ac777fc8a4ce736f845a0174442"
+        }
+      ],
+      "codeSha256": [
+        "61a180defcbc410640a64b515b44987d5650d169f53e700e6b72c3876089d748",
+        "2081dab15b1112d30805fc5a64891ca5c2c820ef9bb4a35b284f4a2f7542dd00",
+        "79774e384444854f4634072e48f118fd7593f073155a81b39904278cf849a61d",
+        "4e9ffebd519488f2bcd962a32dbfcb75b454dd08f1e60e3b9fc7ab369bc4d4ab",
+        "a78a1e5ea7f1ae1b50983e9066a05afd7abd7d76afdd9a155942ee34b20dc82e",
+        "106add7f3637fd7beb18bffc6842885708c8f4253202c35f36be373876a98e95",
+        "5b48cac31db0703d4e9f4d8454b9dc965c5b07c1775ea1f3d1b128f1e6865c94",
+        "a1420e523aee01a4bdc71561ae54b7e732b79fd8c6638b0349476626b297db18"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/19",
+      "contentId": "cross-domain-token-handoff",
+      "localCounterpart": "revised/post-19-cross-domain-token.md",
+      "publishedAt": "2026-05-29T21:28:13+09:00",
+      "title": "정산 서비스를 별도 호스트로 분리하며 도메인 간 토큰 전달을 설계한 과정",
+      "images": [],
+      "codeSha256": [
+        "568e6a40b5d99b44f9b1b73fb47a7ed036d0bec973c35feac9d9051090a63ee3",
+        "a7627e0a24de378247589ead8c57ab41dc784db2b36d42cda0f514cb19df31dd",
+        "7e934526a3e66e97080fe576a332fae4eedcfd1272521d0701f99837b545b26e",
+        "43fe523b2c0adb6174e2c05e6318db985eb52e1421605bacf05382616ba79d9a",
+        "5f86a3805aa1b149ea71cf7953866b7e9a6e8db6f529ecb75b66b613b9e340fb",
+        "d63297715f6816c90ee3af77dce120415d6864df7613c7b9f582642931ce45cd",
+        "6af84039c9f3adb5de5e1b1085997370b80139379c011c7ce3f47fa53a6393c3",
+        "1a1218c9cfa626d40aa19cc3e56ad543c192649f614a86294dd95ed9c892714a",
+        "d0d0f1dd55b7a198d609e6b579be6687cc55ccb3ca095009d678816171f0ab51",
+        "bb894d9b69d75e7a49fecc0a3987afce322ceac4aa1eb841c786cef031c13ea6",
+        "7ff8eee063e2db439269bab736367862ea57b63dffc73c28bb15dceea38c673a",
+        "3adad9c20786717d92aa51fff017497361f7ae82075a1010e9d4a2a69d463547",
+        "2e5e1c4b5950de10d230d0c5cf2ca6b39369573d3f1220f6ece232d2fa58b243",
+        "02bea8f3c5439888e9abe58dc0108625a297a82f074259b4e55cc836edfa6b8f",
+        "a4bb903cf08b6c7787e0de35f1f5a48d5f07bcd2ebb692653775f0e20fd40e3f",
+        "ff50eea559673a7fe6693f90625c2df8deb3e6b92443a70c123afda7a16171c5",
+        "b2a22fa5c1fe83904f62f7b7a2ed9bf60d0e20dc3ecd2315d07fc544bc96bdb8"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/20",
+      "contentId": "chatbot-message-layer",
+      "localCounterpart": "revised/post-20-chatbot-message-layer.md",
+      "publishedAt": "2026-06-25T19:58:03+09:00",
+      "title": "우리 백엔드가 못 건드리는 영역에서 AI 상담 챗봇 붙이기",
+      "images": [],
+      "codeSha256": [
+        "30dddbf6ea48616ebd584b17e56ce2e5984c234bca12d669507d449de0f9925d",
+        "2cb19bc8435a8c8ac86130d660ba255fd01f73ba985b57ca2c0a759e67e0b2e5",
+        "6b459a3e67d1c81c8d8e76d6d997157db1cee7fdd087e9aa56cd0dc8af1036cc",
+        "9ea5f09630bbe74ace1d67e394c8ee8586744c373c2032bba8fe8ca9ae80a75e",
+        "f2a77da116e7cad1cf17c4b44470ea98efe6edbd2398f422140b828fdf738d3d",
+        "a6510f23ddb970e60080e65cf6d7251fd4697535fccd4d5da0251b8507e418dc",
+        "475d524cfa4f351c70149860f6869ab9e7eb5da90bbee13f548153bb219a9e2a",
+        "9696a2380b8bd772669238f3d45131a0bcfbfefbfcd282fa077ba3017791f977",
+        "81f071860f135d06271dab7424e030fbe79816f54a068bfce53c66bfd3f6e39c"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/21",
+      "contentId": "sitemap-api-boundaries",
+      "localCounterpart": "revised/post-21-sitemap-cache.md",
+      "publishedAt": "2026-06-16T19:51:20+09:00",
+      "title": "동적 사이트맵을 만들며 공개 API와 인증 API의 경계를 나눈 과정",
+      "images": [],
+      "codeSha256": [
+        "60c7e434db3e79f9173a566769231b89dc0fb74ca761313a547793d8e053879e",
+        "81380753fd187a2017df15eb2c79e2a01e311ad94a5501243a8d4d2fd25c96d3",
+        "3670e0afc90d90ba6e171397a02f9a10de3f3d00ab1be1bf721a405472459c6c",
+        "3ef471b9df8bb63866319e7125221ee6f9557ce8e966022eb1c301f2b0fe453d",
+        "db185883107668564de03e6c987797db519096296bac4a8fdc18c1654eb8cb8b"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/22",
+      "contentId": "payment-coupon-branches",
+      "localCounterpart": "revised/post-22-payment-coupon.md",
+      "publishedAt": "2026-07-02T19:44:51+09:00",
+      "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
+      "images": [
+        {
+          "path": "/images/posts/payment-coupon-branches/01.png",
+          "sha256": "655d13036af490d7a18fbcbdeb3f0b93348628dda6e3926490f9fbde774afc17"
+        },
+        {
+          "path": "/images/posts/payment-coupon-branches/02.png",
+          "sha256": "42770a8300b66a06854c0b2318f8423b69b099a957494932cf4298bdebea2f5e"
+        },
+        {
+          "path": "/images/posts/payment-coupon-branches/03.png",
+          "sha256": "6667b162dea065b8653cc2b3768c56ae460b605e4892ee09889e453c80a527b5"
+        },
+        {
+          "path": "/images/posts/payment-coupon-branches/04.png",
+          "sha256": "35f243f3ab9671e5029fb1cef286e7794a2328c27a34e3a711db5784cc0ef02c"
+        }
+      ],
+      "codeSha256": [
+        "9fbe4a89386eb39a677a02614de48389eff70de0ebb29c2a12bb021cb2a6842a",
+        "9de890329b7a73ec920c39eb2471c149a6fc94b33f537e61d0d8fe91a5ae1742",
+        "6b90a48aa9a55a2f34ac761ceec5ba89e2c2cc4b2f650640ed89b2ec11f906de",
+        "87d3fb00cfd7bc62c4a2f79ae0015e8a63b299fe2d1ec6ebb492d6ea3651ed13",
+        "bef8fc976cadc582423b2b2477014b66136740a1a5ad33de372a4562c6d1f9cc",
+        "17a6460e65fe6dc8cb5bb7961b7fc307d5cb0984551ea5310d6b16aa90c1a039"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/23",
+      "contentId": "fsd-layer-boundaries",
+      "localCounterpart": "revised/post-23-fsd-2-1.md",
+      "publishedAt": "2026-07-01T19:35:43+09:00",
+      "title": "FSD 폴더는 다 있었는데 새 파일을 어디에 둘지 설명하기 어려웠어요",
+      "images": [],
+      "codeSha256": [
+        "5f39a359f50d6bf7e455a44b1387168b1ca030a1dea68436d125184b07f35863",
+        "cc0a42b55ec672bb4db0742b7720461f25b080d18ba2149bec7b143cf7c69c70",
+        "87988423d059ecd0a7060fc7c7f0f79ad24100d4c9e4b877949cb9557f9a4ab7",
+        "4edcdedcc97e3d5712a901d57aa9e878ae22dc8c9f16ccc0d83f41cdeed8a0cb"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/24",
+      "contentId": "prototype-working-rules",
+      "localCounterpart": "revised/post-24-prototype-rules.md",
+      "publishedAt": "2026-07-12T00:11:35+09:00",
+      "title": "프로토타입을 실사용 서비스로 옮기며 작업 규칙을 먼저 만든 이유",
+      "images": [],
+      "codeSha256": [
+        "9dbbcc546f8dcf1a303bffce8c41a59af387e8cd6810689eff34e3724a304ade",
+        "991fa9badfe6f41d3007f0b23fb3a66a989b794c11b36637ea2cff6de40c0160",
+        "be749f5231e90ba001e3cd50176c5fa549b800150a9c417f02147cdf8a920dca",
+        "b6c15905aa1c1a60f4855f9a506e86111535ae1e44346d1dda4b2c976f285576",
+        "a442f47c73d37343b3abe6b5c21f8ee730b715b12b0a884323034dbe1cc19390"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/25",
+      "contentId": "testing-standards",
+      "localCounterpart": "revised/post-25-test-suite-rebuild.md",
+      "publishedAt": "2026-08-08T02:56:20+09:00",
+      "title": "테스트 코드를 도입하면서 세운 기준",
+      "images": [
+        {
+          "path": "/images/posts/testing-standards/01.jpg",
+          "sha256": "daf16888490ad8e2469291009e543998a61611343cc27e1fcf18f1aedb3f8ac6"
+        }
+      ],
+      "codeSha256": [
+        "b350206ef136bc23e97aa2aebe8af5b3d3b916986e904e52d9662cad658f7d4e",
+        "6dd23e063e2210a4e35299b8b30d82ef9709c53c51650bc26069a993fc8d1fd9",
+        "ee27d68f301c42db134750e053f5ec67327024ea4220b310b9350c3185fff63b",
+        "d8430e27281e4c19890e56da75caa1ce4a3a3e598bc63ded06ccbbbf6e43c053",
+        "a80630a34e3e6226d405fd207e24b54cbeac84dcb0cb938defa08fa19a4d7657",
+        "36bfde259ae26f61df88d27500ffa64784bda557d2effb8c9d71f707d9673a47"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/26",
+      "contentId": "declarative-code",
+      "localCounterpart": "revised/post-26-declarative-code.md",
+      "publishedAt": "2026-08-12T00:42:29+09:00",
+      "title": "선언적으로 코드를 쓰는 기준",
+      "images": [],
+      "codeSha256": [
+        "45dcabdec22347b04a5851539b3961228420435a5b202d04a0b1a0e89fdf9535",
+        "84001f37d9c3e1afd8388375f00d4235695e641107b8b9336309d48293acda96",
+        "179cdb6a6602300293f0e62671c9254200c2d65704169d5a42dee98b28848fb3",
+        "7c571607c918c8f09cffc898f6d0764917243a3209e8a1ac4160c69a6a415ece",
+        "0a1c92f6bdafe51162ed117f2fd350145818eb9585ee36697e472b7de659a7d6",
+        "f97b23e2db1fa0330a1203ffb3b91f2c283c6b0fbe7b49fb7c44d44b655bb5b2",
+        "31d05c77d72644d155d554fbbb748e2de88bf8974e3e104e6d476f9c5ed3b90e",
+        "109a5f6db2cb40d0fc57a21ba5e81757a489f09c8116197a0e2467f616e0abf8",
+        "f42b1a3d5faabbedda7e49faedce810030f4cb243abacd38d7270a12ee6b31d1",
+        "0391eed0fb8e620dba8279bf3f5dff5d3a88afebf9b2d4d9fb0843fe5973bd0e",
+        "24d3fc2e813c84c395e5aea05cfcb5a8a0fcb7d63673990e36aa85bb5798f98b",
+        "7fd68ac7bec3b5e67ba595c7868d23153a1f91f946d4ac84b001b753c2a58dee",
+        "db92842e553f15a731d8fb52b294d401bb1f507eb14e6b60fe014ca5952a48b3",
+        "1a2515857b6d47b5293e43046cde944e193621469e742ceffcfdd2a029bf194b"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/27",
+      "contentId": "nextjs-server-client-issues",
+      "localCounterpart": "revised/post-27-next-server-to-client.md",
+      "publishedAt": "2026-08-16T02:39:00+09:00",
+      "title": "Nextjs를 사용하면서 겪었던 이슈들",
+      "images": [
+        {
+          "path": "/images/posts/nextjs-server-client-issues/01.jpg",
+          "sha256": "ea10c4d981a363c396b3dfd61ebb4785ac3436551648bb804e26a955e1db8e24"
+        }
+      ],
+      "codeSha256": [
+        "8fbf7cb8afdfa979f8014e11fac0227e0d260455a7278c62b72c5150d2134d1d",
+        "80b6facbd3855bfd9cbc0e167ad1e313cec5d7b2d2027fc95c1ea5faab7c4ddd",
+        "8cb3f4bb1a3f0eae2dd80504817c944f971d78b4aff20289f1102b0bdc340596",
+        "9484c28801b9020cda4f1a25e9cdf6aa7fb4e460175c1b16116711683013dca4",
+        "c6dadf5ed31759fa9b84cd2bbc69f6b212d5849519603528f247275ee2bdfd4a"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/28",
+      "contentId": "error-boundary-recovery",
+      "localCounterpart": "revised/post-28-error-boundary.md",
+      "publishedAt": "2026-08-17T07:46:22+09:00",
+      "title": "오류는 남기고 화면은 덜 잃게 만든 에러 처리 개편",
+      "images": [],
+      "codeSha256": [
+        "db0c253dd0bafa7e488c65d048fe004cb66fbeb1407492bbbad6027cee1b750d",
+        "d5ddada275fe21cc430f503bb428df8a9e8ca43ef2a92070e084bd1d893ffcfc",
+        "c45236334b9ec294b52f5acff547a5ad6ab3f3ae1cec1cc39e417bda6c89a975",
+        "8bf2ba4b13673b8c4f0716bdfc0acc831d14c0f528693cee2ca717a5cc76fe80",
+        "6a7d8e8538ee04ea03f94631a796c8bb9bd6c01d995e9c09b7962f9c6b9d3d11",
+        "0530f93d28d35f5d5d1d779ac58d63aca02f4f9a100dd88033ccf01232b66746",
+        "c66021f138ed64ef4413c1b3b9ab63e83b10bedcc21f3f857d9d1fc88bf13f43",
+        "48e68f017df4b5c5c3ae783eddb22d0d37ecef3ad66ac0cef0c8c8dde4cfe4d2",
+        "41e4f1dbc2c12c1dbcb44d1ee69abe3aecaaa5514d2c5542dedcd8eac47daa9f",
+        "e236430de75593eb99e1fcf61517971d1dbb9d0049419922456473456982e6b9",
+        "555e3c4b327ea52fb87f0d9228023b7982fab0317e821b386983cd2c0e19a550",
+        "59900b9c018cfaeebe4562c0e3e83fc7c91da692f982fd11a597f9baae8dd891",
+        "b73d9a5207b609f7950c835866e6d6c0680d3b9e9ba70f210b5f2b76b7db78ea",
+        "380b128705a5a43f96aae8b8c0f739925100369add9737b5b46013a4082d451d"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/29",
+      "contentId": "low-effort-success",
+      "localCounterpart": "revised/post-33-low-effort-success.md",
+      "publishedAt": "2026-08-25T20:57:39+09:00",
+      "title": "가장 값진 성공은 노력이 적은 성공입니다",
+      "images": [],
+      "codeSha256": []
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/30",
+      "contentId": "sentry-observability",
+      "localCounterpart": "revised/post-30-sentry-pii-hardening.md",
+      "publishedAt": "2026-08-25T21:10:15+09:00",
+      "title": "Sentry로 에러 수집부터 Web Vitals·MCP·릴리스까지 연결한 과정",
+      "images": [
+        {
+          "path": "/images/posts/sentry-observability/01.jpg",
+          "sha256": "94919aad5a428ac7127eed30a699046366bfdbb90de5a08772304d404d6306ec"
+        }
+      ],
+      "codeSha256": [
+        "d73e18951a2c4669f262be570f73949dbbfe32b6f8eb77dfe4a72fe4c09748a2",
+        "7b39de61b2f2bcc8e3b507ace4282847916bf401e8fa3822372624a585bdd7cf",
+        "79c6c96117493cfd38af1ffa87c0a973cb8bbe961a5f5e463df3fc01a68fc4b7",
+        "bac18f9c10d2cfa12934570eb7e71aa8c7b08089abe1deaaf0f7b75d72cfe200",
+        "ecec47271682e1b51b088ddd5b2176c62cd34949bced5ccd90a8f8830ec68880",
+        "2430cec831661fab6fd6640e18ccbf1a5fa97d992f9cfa5fc60e361d258893bd",
+        "d0c7d2176dc3ba23fd0e84e82af29e950f6360143920856fefd900c0f4defee6",
+        "3b53b18e4a395fc0913b280b2f3cf0f31249939085b0e1aaaf077ba83d49c4b2",
+        "399766a0bd348ddfba8d7ebb5c8bb8226c9e74190534d36e78394c71e7d2fb25",
+        "f7fc680ecd080b344478e6811272a6580bdf9d946ccb568edfc1ebd257ce75c0",
+        "68135f6db71bcc5b1fcce4173ded49b0a9604a9501f995120d17abb9b05cf4c8",
+        "9b41011ea7b644f0e927762afb394a864e69f89cb98d6833f11027afa5664c2c",
+        "fc0a84374c3b324578ab123c03482095eb7520dda3dddf2b15b5a197abf5d6e4"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/31",
+      "contentId": "plan-gated-ai-workflow",
+      "localCounterpart": "revised/post-34-plan-gated-ai-workflow.md",
+      "publishedAt": "2026-08-30T12:11:17+09:00",
+      "title": "AI가 코드를 잘 짜기 시작했는데 제가 덜 바빠지지는 않았어요",
+      "images": [
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/01.jpg",
+          "sha256": "cde5329a0b238aafb1d3a76e0768b5716954ad0ceee7c511d5cc59f6f0beb288"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/02.png",
+          "sha256": "8786bcc6be7b0b415d0964bd6fefac53855467a92c5d2624446fefec0fb7402b"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/03.png",
+          "sha256": "22c2385684b37466d3f1077c73e7de27838136a491773e114acbdb49e6d1fbf6"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/04.png",
+          "sha256": "1e13fb35bf808ef670c05df63d2ba38d5d62e41d8121acdf5ba78fa99ffb1cdd"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/05.png",
+          "sha256": "77f7498c70367fb523fdd1408b08c21cc7a50fa95ae1f0eb373d698a2fb1016c"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/06.png",
+          "sha256": "04428af42701b883a03885e725586c27a44bce2982e0063ed1c06b8785bffeac"
+        },
+        {
+          "path": "/images/posts/plan-gated-ai-workflow/07.png",
+          "sha256": "df3e2971283dc02c480eb51020c47ebd31fcf62c64e29b2e040821c81c50468d"
+        }
+      ],
+      "codeSha256": ["fda4fa5403e05534d5abd55d736fb1ebfde687d4ce9bde3f5430ca8e91dc2ca6"]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/32",
+      "contentId": "zod-assertion-boundaries",
+      "localCounterpart": "revised/post-35-zod-assertion-boundaries.md",
+      "publishedAt": "2026-09-05T20:01:00+09:00",
+      "title": "타입 단언을 걷어내며 Zod를 경계마다 다르게 배치한 기준",
+      "images": [],
+      "codeSha256": [
+        "60c4f853f76a409b2f68e4f5667f2ba5c9ea7d1ca743ff7da6f9248b970d3178",
+        "0201c08d49b243d1af27187108c9e53b4c54a47479a62b9a26512782eec97692",
+        "02a03c5f9c1a3ce4665e5c1d0e98d47dda0f9d5941823e40a579f2e48c6c8d8f",
+        "d0b5ce9f9f0a335986188d9a9071dc4878a0852b4cef535e2bedae0706e97bdc",
+        "2d9488c3b64877b7e0014f58d133e6867921372e40db990714acccc9e462e1c2",
+        "15849750b00a9bbb62e2ac15776e586f5674226380d7aabbd0eabf71fc7e91f3",
+        "1ca58df55c6a7fcf5885ec533661ca1f45ca5bda33ac8392fe85454b30591a14",
+        "70ec2495f0cac274b4fbc6cb69d1dbb280dc096f30eab14d34d87281b96eed2d",
+        "b337db2e44fd3cabc9da2968561c6e26377442298a8ba8a7292e7f5fe7ae2e5a"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/33",
+      "contentId": "bottom-sheet-drag-crash",
+      "localCounterpart": "revised/post-36-sentry-bottom-sheet-crash.md",
+      "publishedAt": "2026-09-28T22:24:36+09:00",
+      "title": "Sentry가 잡아 준 Bottom Sheet 드래그 크래시, 원인 경로가 사라진 버전으로 올리기까지",
+      "images": [],
+      "codeSha256": [
+        "67e71745c4f611ab3cc964ce5952659e5b84a719782aea8c1f0082cc3156865e",
+        "63117c9c8b9ebfa47c893ac9550ab5b2749c61925941c443219687281e9adf34",
+        "30c647da9d5909c6a8706a5a5871dba327d568e62859ca090babb0f1f21880a5",
+        "7306271f6da796922635a3c0a4ce565637f972d2144c3b99264a66604cae2898"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/34",
+      "contentId": "health-check-program",
+      "localCounterpart": "revised/post-new-health-check-program.md",
+      "publishedAt": "2026-09-30T21:27:20+09:00",
+      "title": "기존 프로그램 구조에 건강검진을 들이며 화면을 나눈 기준",
+      "images": [
+        {
+          "path": "/images/posts/health-check-program/01.png",
+          "sha256": "95102ad6d861d27c596abda3b848f9fcf6d30902017d58566e1c4837c50a8da9"
+        },
+        {
+          "path": "/images/posts/health-check-program/02.png",
+          "sha256": "5749bfa52a5419e63688eb5e4c0eb58615192ef1851da26e3167b4c9fc559baf"
+        },
+        {
+          "path": "/images/posts/health-check-program/03.png",
+          "sha256": "0979b79b21cd59ac9ae6140568ab0e00189ff4547a09469d492080ea3b19aed7"
+        },
+        {
+          "path": "/images/posts/health-check-program/04.png",
+          "sha256": "712167fb496294ea93e37a7bd07cd367b5152b4a853c09eb1499ddf6d163ffa9"
+        },
+        {
+          "path": "/images/posts/health-check-program/05.png",
+          "sha256": "67aecbd4d74410a65c6c2cb0c5c9e79e768d7cb3030aafd1bb69f99ed97fb7e7"
+        }
+      ],
+      "codeSha256": [
+        "43788a2049fb9fe2ddad38b873470f603e536f52e6e2c2cdf12eb51b761a43f3",
+        "9a839a4285b1160e64b0b27f4928a99686cf2cfb197e829674323828063fdd8d",
+        "117fed9b114665128d3e053d58097052abd45fc9b53db00837760cfe848e7314"
+      ]
+    },
+    {
+      "sourceUrl": "https://jingeon27.tistory.com/35",
+      "contentId": "reading-ai-code",
+      "localCounterpart": "revised/post-new-reading-ai-code.md",
+      "publishedAt": "2026-10-05T12:01:45+09:00",
+      "title": "저는 코드를 읽어요",
+      "images": [
+        {
+          "path": "/images/posts/reading-ai-code/01.png",
+          "sha256": "264289c696fa1252049480b06234157cd28e9e35cc06e2b1ef025a5390938fe7"
+        }
+      ],
+      "codeSha256": [
+        "537c1458803beb9adba3beea0c8f0d1c041dceb38f959c8a7fdae642ab9f8439",
+        "987c9c807ee70e890fe168df2a2b59cb4886d97138c193f577a72ea791e974fd",
+        "fa8916d27f385d3cafa8e35604b469b031ac817dcc0422930ccf1f8f3bda16d5"
+      ]
+    }
+  ]
+}

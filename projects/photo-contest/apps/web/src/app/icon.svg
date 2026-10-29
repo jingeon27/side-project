@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>별사대</title>
+  <rect width="64" height="64" rx="16" fill="#101010" />
+  <g
+    transform="translate(8 8) scale(1.5)"
+    fill="none"
+    stroke="#fff"
+    stroke-width="5.5"
+    stroke-linecap="round"
+  >
+    <path d="M16 3.5v25M5.2 9.75l21.6 12.5M5.2 22.25l21.6-12.5" />
+  </g>
+</svg>

@@ -1,66 +1,42 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { appVersions, developmentLoginEnabled, mobileAppScheme, webOrigin } from './env';
+import { apiHost, apiPort, assertProductionConfig, trustedProxyHops, webOrigin } from './env';
 
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
+afterEach(() => vi.unstubAllEnvs());
 
-describe('앱 버전 설정', () => {
-  it('설정이 없으면 1.0.0, 최신 버전이 없으면 최소 버전을 써야 한다', () => {
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '');
-    vi.stubEnv('MOBILE_LATEST_VERSION', '');
-    expect(appVersions()).toEqual({ minimumVersion: '1.0.0', latestVersion: '1.0.0' });
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '1.2.3');
-    expect(appVersions()).toEqual({ minimumVersion: '1.2.3', latestVersion: '1.2.3' });
-    vi.stubEnv('MOBILE_LATEST_VERSION', '1.10.0');
-    expect(appVersions()).toEqual({ minimumVersion: '1.2.3', latestVersion: '1.10.0' });
-  });
-
-  it('x.y.z 형식이 아니면 기본값으로 바꿔야 한다', () => {
-    for (const invalid of ['1.0', '1.0.0.0', 'v1.0.0', '1.0.0-beta', '01.0.0', 'abc', '1..0']) {
-      vi.stubEnv('MOBILE_MINIMUM_VERSION', invalid);
-      vi.stubEnv('MOBILE_LATEST_VERSION', invalid);
-      expect(appVersions()).toEqual({ minimumVersion: '1.0.0', latestVersion: '1.0.0' });
-    }
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '2.0.0');
-    vi.stubEnv('MOBILE_LATEST_VERSION', 'latest');
-    expect(appVersions()).toEqual({ minimumVersion: '2.0.0', latestVersion: '2.0.0' });
-  });
-
-  it('최신 버전이 최소 버전보다 낮으면 최소 버전을 최신으로 봐야 한다', () => {
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '2.0.0');
-    vi.stubEnv('MOBILE_LATEST_VERSION', '1.9.9');
-    expect(appVersions()).toEqual({ minimumVersion: '2.0.0', latestVersion: '2.0.0' });
-  });
-});
-
-describe('앱 scheme 설정', () => {
-  it('설정이 없거나 형식이 틀리거나 웹 scheme이면 photocontest를 써야 한다', () => {
-    vi.stubEnv('MOBILE_APP_SCHEME', '');
-    expect(mobileAppScheme()).toBe('photocontest');
-    for (const invalid of ['Photo', '1app', 'my app', 'app://', 'https', 'javascript']) {
-      vi.stubEnv('MOBILE_APP_SCHEME', invalid);
-      expect(mobileAppScheme()).toBe('photocontest');
-    }
-    vi.stubEnv('MOBILE_APP_SCHEME', 'photo-contest.dev+1');
-    expect(mobileAppScheme()).toBe('photo-contest.dev+1');
-  });
-});
-
-describe('실행 환경 설정', () => {
-  it('개발 로그인은 NODE_ENV=development와 ENABLE_DEV_LOGIN=true가 모두 있을 때만 열어야 한다', () => {
-    vi.stubEnv('NODE_ENV', 'development');
-    vi.stubEnv('ENABLE_DEV_LOGIN', 'true');
-    expect(developmentLoginEnabled()).toBe(true);
+describe('runtime settings from the project env', () => {
+  it('derives API binding from API_URL and the runtime mode', () => {
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('API_URL', 'http://127.0.0.1:4321');
+    expect(apiPort()).toBe(4321);
+    expect(apiHost()).toBe('127.0.0.1');
+    expect(trustedProxyHops()).toBe(0);
     vi.stubEnv('NODE_ENV', 'production');
-    expect(developmentLoginEnabled()).toBe(false);
-    vi.stubEnv('NODE_ENV', 'development');
-    vi.stubEnv('ENABLE_DEV_LOGIN', '1');
-    expect(developmentLoginEnabled()).toBe(false);
+    expect(apiHost()).toBe('0.0.0.0');
+    expect(trustedProxyHops()).toBe(1);
   });
-
-  it('WEB_ORIGIN은 경로를 뺀 origin으로 비교해야 한다', () => {
+  it('rejects unsafe S3 endpoints and path traversal before production starts', () => {
+    for (const [name, value] of Object.entries({
+      NODE_ENV: 'production',
+      WEB_ORIGIN: 'https://contest.example',
+      DATABASE_URL: 'postgresql://contest@db/contest',
+      S3_BUCKET: 'contest-media',
+      S3_ENDPOINT: '',
+      S3_KEY_PREFIX: '',
+    }))
+      vi.stubEnv(name, value);
+    expect(() => assertProductionConfig()).not.toThrow();
+    vi.stubEnv('S3_KEY_PREFIX', '../escape');
+    expect(() => assertProductionConfig()).toThrow('S3_KEY_PREFIX');
+    vi.stubEnv('S3_KEY_PREFIX', 'photo-contest/local');
+    for (const invalid of ['not a url', 'ftp://storage.example']) {
+      vi.stubEnv('S3_ENDPOINT', invalid);
+      expect(() => assertProductionConfig()).toThrow('S3_ENDPOINT');
+    }
+    vi.stubEnv('S3_ENDPOINT', 'https://storage.example');
+    expect(() => assertProductionConfig()).not.toThrow();
+  });
+  it('uses the configured web origin without a path', () => {
     vi.stubEnv('WEB_ORIGIN', 'https://contest.example/app/');
     expect(webOrigin()).toBe('https://contest.example');
   });

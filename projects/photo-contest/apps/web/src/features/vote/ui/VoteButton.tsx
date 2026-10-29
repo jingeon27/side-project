@@ -51,16 +51,19 @@ export function VoteButton({
     }
   };
 
-  const state: TVoteState =
-    votedSubmissionId === submissionId
-      ? 'selected'
-      : isMine
-        ? 'mine'
-        : votedSubmissionId
-          ? 'voted'
-          : isHidden
-            ? 'hidden'
-            : 'open';
+  const state = match({
+    selected: votedSubmissionId === submissionId,
+    isMine,
+    voted: Boolean(votedSubmissionId),
+    isHidden,
+  })
+    .returnType<TVoteState>()
+    .with({ selected: true }, () => 'selected')
+    .with({ isMine: true }, () => 'mine')
+    .with({ voted: true }, () => 'voted')
+    .with({ isHidden: true }, () => 'hidden')
+    .with({ isHidden: false }, () => 'open')
+    .exhaustive();
 
   return match(state)
     .with('selected', () => (

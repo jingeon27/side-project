@@ -1,20 +1,27 @@
-import { PROTOCOL_VERSION, buildAppUserAgent, originOf } from '@photo-contest/bridge';
-import { buildBootstrapScript } from '@photo-contest/bridge/native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
 import type { WebViewProps } from 'react-native-webview';
 
-import { applyAnalyticsAuth, trackEvent } from '@/features/analytics/model/analytics';
-import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
-import { createNativeCapabilities } from '@/features/bridge/model/native-capabilities';
-import { isRelativeWebPath } from '@/features/navigation/lib/deep-link';
-import { decideNavigation, decideOpenWindow } from '@/features/navigation/lib/navigation-policy';
-import { LINK_OPTIONS, toWebUrl } from '@/features/navigation/model/link-options';
-import { openExternalUrl } from '@/features/navigation/model/open-external';
-import { useDeepLinkEvents } from '@/features/navigation/model/use-deep-link-events';
+import { buildAppUserAgent, originOf, PROTOCOL_VERSION } from '@photo-contest/bridge';
+import { buildBootstrapScript } from '@photo-contest/bridge/native';
+
+import { applyAnalyticsAuth, trackEvent } from '@/features/analytics';
+import { createNativeCapabilities, type TCapabilityOutcome } from '@/features/bridge';
+import {
+  decideNavigation,
+  decideOpenWindow,
+  isRelativeWebPath,
+  LINK_OPTIONS,
+  openExternalUrl,
+  toWebUrl,
+  useDeepLinkEvents,
+} from '@/features/navigation';
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { captureWarning } from '@/shared/lib/monitoring/monitoring';
+import { PushInbox, usePushEvents } from '@/shared/lib/push';
 import { useLatest } from '@/shared/lib/use-latest';
+import { setAppearance } from '@/shared/model/appearance';
 
 import { startsNewDocument } from '../lib/document-load';
 import { isOfflineHttpError, isOfflineLoadError } from '../lib/load-error';
@@ -23,8 +30,8 @@ import {
   describeProcessTermination,
   toCapabilityEvent,
   toDeepLinkEvent,
+  type IShellFailureReport,
 } from '../lib/shell-events';
-import type { IShellFailureReport } from '../lib/shell-events';
 import { useAndroidBackPress } from './use-android-back-press';
 import { useAppStateEvents } from './use-app-state-events';
 import { useWebShellBridge } from './use-web-shell-bridge';
@@ -65,6 +72,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
   const [webViewKey, setWebViewKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
+  const [pushInbox] = useState(() => new PushInbox());
   const isWebReadyRef = useRef(false);
   const canGoBackRef = useRef(false);
   /** 다시 만들 때 열 주소. 사용자가 보던 웹 화면에 머물게 한다. */
@@ -94,12 +102,14 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
         isWebReadyRef.current = true;
         if (isRelativeWebPath(path)) currentUrlRef.current = toWebUrl(path);
         finishLoading();
+        pushInbox.flush();
       },
       onNavigationChanged: ({ path }) => {
         if (isRelativeWebPath(path)) currentUrlRef.current = toWebUrl(path);
       },
       // 세션은 WebView 쿠키가 맡는다. 앱은 분석 사용자 식별만 웹 로그인 상태에 맞춘다.
       onAuthChanged: applyAnalyticsAuth,
+      onAppearanceChanged: ({ preference }) => setAppearance(preference),
     },
   });
 
@@ -117,6 +127,18 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       setIsLoading(true);
     },
     [router],
+  );
+
+  usePushEvents(
+    pushInbox,
+    (path) => {
+      if (!isWebReadyRef.current) return false;
+      openPath(path);
+      return true;
+    },
+    () => {
+      if (isWebReadyRef.current) router.emit('notifications.received', {});
+    },
   );
 
   const recreateWebView = useCallback(() => {
@@ -164,7 +186,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       const decision = decideNavigation({ url, isTopFrame }, LINK_OPTIONS);
       if (decision.action === 'allow') return true;
       if (decision.action === 'open-in-web') openPath(decision.path);
-      else if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
+      if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
       return false;
     },
     [openPath],
@@ -174,7 +196,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     ({ nativeEvent }) => {
       const decision = decideOpenWindow(nativeEvent.targetUrl, LINK_OPTIONS);
       if (decision.action === 'open-in-web') openPath(decision.path);
-      else if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
+      if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
     },
     [openPath],
   );
@@ -208,8 +230,6 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     canGoBackRef.current = state.canGoBack;
     if (isWebOriginUrl(state.url)) currentUrlRef.current = state.url;
   }, []);
-
-  const handleLoadEnd = useCallback<TWebViewHandler<'onLoadEnd'>>(() => finishLoading(), [finishLoading]);
 
   const handleError = useCallback<TWebViewHandler<'onError'>>(
     (event) => {
@@ -261,7 +281,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       onOpenWindow: handleOpenWindow,
       onMessage: handleMessage,
       onLoadStart: handleLoadStart,
-      onLoadEnd: handleLoadEnd,
+      onLoadEnd: finishLoading,
       onNavigationStateChange: handleNavigationStateChange,
       onError: handleError,
       onHttpError: handleHttpError,

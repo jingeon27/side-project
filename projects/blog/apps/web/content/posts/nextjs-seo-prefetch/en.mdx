@@ -1,0 +1,103 @@
+<Summary>
+
+Reservation details looked fine in the browser, yet the first HTML lacked hospital information. Starting prefetch did not mean the server was ready to pass its data along.
+
+</Summary>
+
+![An illustration of fetching page content before navigating to the next screen.](/images/covers/nextjs-seo-prefetch.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+Hospital information appeared when I opened a reservation detail, so the query seemed to work. It was missing from the server's initial HTML, though. I checked when the Server Component called dehydrate after starting prefetchQuery.
+
+```tsx
+void queryClient.prefetchQuery(hospitalOptions(hospitalId));
+
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <ReservationPageView />
+  </HydrationBoundary>
+);
+```
+
+The query starts without being awaited. If dehydrate runs before completion, its default policy leaves the pending query out. A later browser fetch can make the screen look correct without having included that data in the initial HTML.
+
+## Dehydrating after the required data is ready
+
+I awaited the query needed in the initial HTML. In Next.js 15, searchParams is also a Promise and must be read before creating these query options.
+
+```tsx
+interface Props {
+  searchParams: Promise<{
+    hospitalId?: string;
+  }>;
+}
+
+export default async function ReservationPage({ searchParams }: Props) {
+  const { hospitalId } = await searchParams;
+
+  if (!hospitalId) notFound();
+
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(
+    hospitalOptions(Number(hospitalId)),
+  );
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ReservationPageView />
+    </HydrationBoundary>
+  );
+}
+```
+
+On success, dehydrate after await includes the result. prefetchQuery does not throw failures to its caller, however. When the server must decide notFound or an error, it needs fetchQuery and direct result/error handling. generateMetadata does not automatically share the page's QueryClient either; sharing those reads requires separate configuration.
+
+## Passing queries without waiting for completion
+
+Not every region needs data at the same point. Including pending queries in dehydration lets TanStack Query pass an in-progress query for streaming.
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    dehydrate: {
+      shouldDehydrateQuery: (query) =>
+        defaultShouldDehydrateQuery(query) ||
+        query.state.status === 'pending',
+    },
+  },
+});
+```
+
+The consuming screen then subscribes to that same query with useSuspenseQuery. Suspense handles the unfinished region, so the server does not need to wait for prefetch completion first.
+
+```tsx
+void queryClient.prefetchQuery(hospitalOptions(hospitalId));
+
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<ReservationSkeleton />}>
+      <ReservationPageView />
+    </Suspense>
+  </HydrationBoundary>
+);
+```
+
+void alone therefore does not establish that await was accidentally omitted. I read it alongside when the data is needed, dehydration settings, and the consuming component.
+
+| Situation | Choice |
+| --- | --- |
+| Essential data that must be in the initial HTML | await prefetchQuery |
+| Data used to decide not-found or an error on the server | Handle fetchQuery results and failures on the server |
+| Data that can appear later within Suspense | pending dehydration + streaming |
+| Data needed only after an interaction | client query |
+
+## A registered URL did not guarantee HTML content
+
+The sitemap tells search engines where a page is. Whether its HTML contains hospital information needed checking in the page. The change here belonged in server query and dehydrate ordering, rather than the sitemap.
+
+HydrationBoundaries also need not be merged automatically. Several Server Components can fetch their own data and pass it to nearby client screens. I check whether the same query and state are being passed repeatedly before combining them.
+
+References: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js searchParams](https://nextjs.org/docs/app/api-reference/file-conventions/page#searchparams-optional)
+
+- [TanStack Query v5 QueryClient implementation](https://github.com/TanStack/query/blob/v5.66.0/packages/query-core/src/queryClient.ts): prefetchQuery failure handling

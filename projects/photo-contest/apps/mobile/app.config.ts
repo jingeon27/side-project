@@ -1,40 +1,75 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const BACKGROUND_COLOR = '#fbfaf7';
-// 개발 빌드만 http://localhost 웹을 연다. 운영은 https 전제라 평문 통신을 허용하지 않는다.
-const IS_DEVELOPMENT = process.env.APP_VARIANT === 'development';
+const projectEnv = fileURLToPath(new URL('../../.env', import.meta.url));
+if (existsSync(projectEnv)) process.loadEnvFile(projectEnv);
+const APP_ID = 'dev.side.photocontest';
+
+export interface IBuildSettings {
+  isDevelopment: boolean;
+  webOrigin: string;
+}
+
+export function readBuildSettings(env: Record<string, string | undefined>): IBuildSettings {
+  const isDevelopment = ['development', 'test'].includes(env.NODE_ENV ?? 'production');
+  const origin = URL.parse(env.WEB_ORIGIN ?? (isDevelopment ? 'http://localhost:3200' : ''));
+  if (
+    !origin ||
+    !['http:', 'https:'].includes(origin.protocol) ||
+    origin.username ||
+    origin.password ||
+    origin.pathname !== '/' ||
+    origin.search ||
+    origin.hash ||
+    (!isDevelopment && origin.protocol !== 'https:')
+  )
+    throw new Error('WEB_ORIGIN must be an HTTPS origin for production builds.');
+  return { isDevelopment, webOrigin: origin.origin };
+}
 
 export default function appConfig({ config }: ConfigContext): ExpoConfig {
+  const settings = readBuildSettings(process.env);
+  const googleServicesFile = fileURLToPath(new URL('./google-services.json', import.meta.url));
   return {
     ...config,
-    name: '웃긴순간',
+    name: '별사대',
     slug: 'photo-contest',
     version: '1.0.0',
+    icon: './assets/icon.png',
     scheme: 'photocontest',
     orientation: 'portrait',
-    userInterfaceStyle: 'light',
-    backgroundColor: BACKGROUND_COLOR,
+    userInterfaceStyle: 'automatic',
+    backgroundColor: '#ffffff',
     ios: {
-      bundleIdentifier: 'dev.side.photocontest',
+      bundleIdentifier: APP_ID,
+      deploymentTarget: '17.4',
       infoPlist: {
-        NSCameraUsageDescription: '공모전에 제출할 사진을 찍기 위해 카메라를 사용합니다.',
-        NSPhotoLibraryUsageDescription: '공모전에 제출할 사진을 고르기 위해 사진 보관함에 접근합니다.',
-        NSAppTransportSecurity: { NSAllowsLocalNetworking: true },
+        NSCameraUsageDescription: '사진과 동영상을 촬영할 때 카메라를 사용합니다.',
+        NSPhotoLibraryUsageDescription: '사진과 동영상을 선택할 때 사진 보관함을 사용합니다.',
+        NSMicrophoneUsageDescription: '동영상을 촬영할 때 소리를 녹음합니다.',
+        ...(settings.isDevelopment ? { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } } : {}),
       },
     },
     android: {
-      package: 'dev.side.photocontest',
-      // 뒤로 가기를 BackHandler로 받아 웹에 먼저 물어봐야 한다.
+      package: APP_ID,
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#e85d4a' },
+      ...(existsSync(googleServicesFile) ? { googleServicesFile } : {}),
+      allowBackup: false,
       predictiveBackGestureEnabled: false,
     },
     plugins: [
-      ['expo-build-properties', { android: IS_DEVELOPMENT ? { usesCleartextTraffic: true } : {} }],
-      ['expo-splash-screen', { backgroundColor: BACKGROUND_COLOR }],
-      // 조직·프로젝트·토큰은 넣지 않는다. 소스맵 업로드는 빌드 환경의 SENTRY_ORG·SENTRY_PROJECT·SENTRY_AUTH_TOKEN으로만 한다.
+      ['expo-notifications', { defaultChannel: 'activity' }],
+      ['expo-build-properties', { android: settings.isDevelopment ? { usesCleartextTraffic: true } : {} }],
+      ['expo-splash-screen', { backgroundColor: '#ffffff', dark: { backgroundColor: '#141312' } }],
       '@sentry/react-native/expo',
     ],
     extra: {
-      webOrigin: process.env.EXPO_PUBLIC_WEB_ORIGIN ?? 'http://localhost:3200',
+      ...config.extra,
+      webOrigin: settings.webOrigin,
+      sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN || null,
+      amplitudeApiKey: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY || null,
     },
   };
 }

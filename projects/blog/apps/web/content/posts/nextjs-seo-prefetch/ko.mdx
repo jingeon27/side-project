@@ -1,0 +1,103 @@
+<Summary>
+
+예약 상세는 브라우저에서 멀쩡했지만 처음 받은 HTML에는 병원 정보가 없었어요. prefetch를 시작한 것과 서버가 데이터를 넘길 준비가 된 것은 달랐어요.
+
+</Summary>
+
+![다음 화면으로 이동하기 전에 본문을 미리 받아 두는 흐름을 그린 일러스트](/images/covers/nextjs-seo-prefetch.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+브라우저에서 예약 상세를 열면 병원 정보가 보여서 조회가 잘된 줄 알았어요. 그런데 서버가 보낸 초기 HTML에는 그 정보가 없었어요. 서버 컴포넌트가 prefetchQuery를 부른 다음 언제 dehydrate하는지 확인했어요.
+
+```tsx
+void queryClient.prefetchQuery(hospitalOptions(hospitalId));
+
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <ReservationPageView />
+  </HydrationBoundary>
+);
+```
+
+prefetchQuery는 시작했지만 그 결과를 기다리지는 않아요. 조회가 끝나기 전에 dehydrate하면 기본 설정상 아직 pending인 쿼리는 빠져요. 브라우저가 다시 조회한 덕분에 화면은 정상처럼 보여도, 처음 HTML에 데이터가 실린 것은 아니었어요.
+
+## HTML에 넣을 데이터가 준비된 뒤 dehydrate했어요
+
+초기 HTML에 필요한 조회는 await로 기다렸어요. Next.js 15에서는 searchParams도 Promise라 먼저 읽어 queryOptions를 만들어요.
+
+```tsx
+interface Props {
+  searchParams: Promise<{
+    hospitalId?: string;
+  }>;
+}
+
+export default async function ReservationPage({ searchParams }: Props) {
+  const { hospitalId } = await searchParams;
+
+  if (!hospitalId) notFound();
+
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(
+    hospitalOptions(Number(hospitalId)),
+  );
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ReservationPageView />
+    </HydrationBoundary>
+  );
+}
+```
+
+조회가 성공하면 await 뒤의 dehydrate가 결과를 포함해요. 여기서 prefetchQuery가 실패를 호출부로 던지지 않는다는 점은 구분해야 해요. 서버에서 notFound나 오류 응답을 결정할 조회라면 fetchQuery의 결과와 실패를 직접 처리해야 해요. 또 generateMetadata는 page의 QueryClient를 자동으로 공유하지 않아, 두 곳의 조회를 묶으려면 따로 구성해야 해요.
+
+## 완료를 기다리지 않고 넘기는 조회도 있어요
+
+모든 데이터를 같은 시점까지 기다릴 필요는 없어요. TanStack Query가 pending인 쿼리도 직렬화하게 하면, 조회가 진행 중인 상태를 넘기고 스트리밍할 수 있어요.
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    dehydrate: {
+      shouldDehydrateQuery: (query) =>
+        defaultShouldDehydrateQuery(query) ||
+        query.state.status === 'pending',
+    },
+  },
+});
+```
+
+이때는 화면에서도 같은 쿼리를 useSuspenseQuery로 구독해요. 아직 준비되지 않은 영역은 Suspense가 처리하므로 서버에서 prefetch 완료를 먼저 기다리지 않아도 돼요.
+
+```tsx
+void queryClient.prefetchQuery(hospitalOptions(hospitalId));
+
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <Suspense fallback={<ReservationSkeleton />}>
+      <ReservationPageView />
+    </Suspense>
+  </HydrationBoundary>
+);
+```
+
+따라서 void만 보고 await를 빠뜨렸다고 판단할 수는 없어요. 이 화면에서 데이터가 필요한 시점과 dehydration 설정, 소비하는 컴포넌트를 함께 봐요.
+
+| 상황 | 선택 |
+| --- | --- |
+| 초기 HTML에 반드시 필요한 핵심 데이터 | await prefetchQuery |
+| 서버에서 not-found나 오류를 결정해야 하는 데이터 | fetchQuery 결과와 실패를 서버에서 처리 |
+| 화면 일부를 Suspense로 늦게 보여줘도 되는 데이터 | pending dehydration + streaming |
+| interaction 뒤에만 필요한 데이터 | client query |
+
+## URL이 등록된 것과 HTML에 내용이 있는 것은 달랐어요
+
+sitemap은 검색엔진에 페이지 주소를 알려 줘요. 그 주소에서 받은 HTML에 병원 정보가 있는지는 페이지 쪽에서 확인해야 했어요. 이 문제에서 바꿀 곳도 sitemap이 아니라 서버의 조회와 dehydrate 순서였어요.
+
+캐시를 전달하는 HydrationBoundary도 무조건 한곳으로 모으지는 않아요. 여러 서버 컴포넌트가 각자 조회한 데이터를 가까운 클라이언트 화면에 넘길 수 있어요. 같은 쿼리와 state를 반복해서 전달하는 경우인지 보고 합칠지를 정해요.
+
+참고: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js searchParams](https://nextjs.org/docs/app/api-reference/file-conventions/page#searchparams-optional)
+
+- [TanStack Query v5 QueryClient 구현](https://github.com/TanStack/query/blob/v5.66.0/packages/query-core/src/queryClient.ts): prefetchQuery의 실패 처리

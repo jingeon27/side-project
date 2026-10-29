@@ -1,9 +1,10 @@
 import { track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { render, screen, waitFor } from '@testing-library/react';
 import { getInitialURL } from 'expo-linking';
 import { hideAsync } from 'expo-splash-screen';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { parseNativeAppInfo } from '@photo-contest/bridge';
 
 import { nativeEvent, navigationState } from '@/test/ui/bridge-messages';
 import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';
@@ -105,10 +106,10 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('새 버전으로 업데이트해 주세요')).toBeTruthy();
-    expect(screen.getByText('현재 버전 1.0.0 · 필요한 버전 1.1.0 이상')).toBeTruthy();
+    expect(screen.getByText('현재 1.0.0 버전을 사용 중이에요. 1.1.0 이상이 필요해요.')).toBeTruthy();
     expect(screen.getByRole('button', { name: '업데이트하기' })).toBeTruthy();
     expect(screen.queryByTestId('web-view')).toBeNull();
-    expect(hideAsync).toHaveBeenCalled();
+    await waitFor(() => expect(hideAsync).toHaveBeenCalled());
     await waitFor(() =>
       expect(trackedEvents()).toContainEqual({
         name: 'update_required_shown',

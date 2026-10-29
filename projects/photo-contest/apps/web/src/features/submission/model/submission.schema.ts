@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { isImageFile } from '../lib/image.helper';
+import { isImageFile } from '@/shared/lib/image.helper';
 
 /** 브라우저가 줄이기 전에 받는 원본 상한. 이보다 크면 휴대폰에서 다루기도 버겁다. */
 const MAX_ORIGINAL_BYTES = 50 * 1024 * 1024;

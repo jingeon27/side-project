@@ -3,28 +3,20 @@ export interface IGraphqlResponse<TData> {
   errors?: Array<{ message: string; extensions?: { code?: string } }>;
 }
 
-/** 개발 로그인으로 세션 Cookie(`name=value`)를 받는다. */
-export async function devLogin(apiUrl: string, { nickname, origin }: { nickname: string; origin: string }) {
-  const response = await fetch(`${apiUrl}/auth/dev`, {
-    method: 'POST',
-    headers: { Origin: origin, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname }),
-  });
-  if (!response.ok) throw new Error(`개발 로그인 실패 (${response.status})`);
-  const cookie = response.headers.getSetCookie().find((value) => value.startsWith('contest_session='));
-  if (!cookie) throw new Error('세션 Cookie가 없습니다.');
-  return cookie.split(';')[0] ?? '';
-}
-
 /** 개발 로그인과 구분해 테스트 전용 API에서 새 사용자·세션을 만든다. */
 export async function createTestUser(
   apiUrl: string,
-  { nickname, origin }: { nickname: string; origin: string },
+  {
+    nickname,
+    origin,
+    needsOnboarding,
+    avatar,
+  }: { nickname: string; origin: string; needsOnboarding?: boolean; avatar?: string },
 ) {
   const response = await fetch(`${apiUrl}/testing/users`, {
     method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname }),
+    body: JSON.stringify({ nickname, needsOnboarding, avatar }),
   });
   if (!response.ok) throw new Error(`테스트 사용자 생성 실패 (${response.status})`);
   const cookie = response.headers.getSetCookie().find((value) => value.startsWith('contest_session='));
@@ -48,24 +40,32 @@ export async function moveTestContest(
   if (!response.ok) throw new Error(`테스트 대회 단계 변경 실패 (${response.status})`);
 }
 
-export async function createTestAppLoginTicket(
-  apiUrl: string,
-  { nickname, challenge, origin }: { nickname: string; challenge: string; origin: string },
-): Promise<{ code: string; nickname: string }> {
-  const response = await fetch(`${apiUrl}/testing/app-login-tickets`, {
-    method: 'POST',
-    headers: { Origin: origin, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname, challenge }),
-  });
-  if (!response.ok) throw new Error(`테스트 앱 로그인 티켓 생성 실패 (${response.status})`);
-  return response.json();
-}
-
 interface IGraphqlRequest {
   query: string;
   variables?: Record<string, unknown>;
   cookie?: string;
   origin: string;
+}
+
+/** 생성이 종료된 구대회는 테스트 전용 API에서만 준비한다. 운영의 생성 mutation을 우회하지 않는다. */
+export async function createLegacyTestContest(
+  apiUrl: string,
+  { groupId, title, origin, cookie }: { groupId: string; title: string; origin: string; cookie?: string },
+): Promise<{ id: string }> {
+  const now = Date.now();
+  const response = await fetch(`${apiUrl}/testing/legacy-contests`, {
+    method: 'POST',
+    headers: { Origin: origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+    body: JSON.stringify({
+      groupId,
+      title,
+      startsAt: new Date(now),
+      submissionEndsAt: new Date(now + 3_600_000),
+      endsAt: new Date(now + 7_200_000),
+    }),
+  });
+  if (!response.ok) throw new Error(`구대회 fixture 생성 실패 (${response.status})`);
+  return response.json() as Promise<{ id: string }>;
 }
 
 export async function graphqlRequest<TData>(

@@ -1,17 +1,26 @@
-import { NATIVE_EVENT_NAME, PROTOCOL_VERSION, decodeNativeMessage } from '@photo-contest/bridge';
-import type { TNativeMessage, TWebEventPayload, TWebEventType, TWebRequestType } from '@photo-contest/bridge';
 import type { NativeSyntheticEvent } from 'react-native';
+
 import { vi } from 'vitest';
+
+import {
+  decodeNativeMessage,
+  NATIVE_EVENT_NAME,
+  PROTOCOL_VERSION,
+  type TNativeMessage,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebRequestType,
+} from '@photo-contest/bridge';
 
 import { fakeWebView } from './fake-web-view';
 
 /** 앱이 injectJavaScript로 보낸 스크립트를 jsdom window에서 실행해 웹이 받을 메시지를 꺼낸다. */
 export function dispatchedMessages(): TNativeMessage[] {
   const messages: TNativeMessage[] = [];
-  function handleNativeEvent(event: Event) {
+  const handleNativeEvent = (event: Event) => {
     const message = decodeNativeMessage((event as CustomEvent<unknown>).detail);
     if (message) messages.push(message);
-  }
+  };
   window.addEventListener(NATIVE_EVENT_NAME, handleNativeEvent);
   try {
     for (const [script] of fakeWebView.handle.injectJavaScript.mock.calls) new Function(script)();

@@ -1,0 +1,136 @@
+name: side-game-feedback
+x-api: &api
+  NODE_ENV: production
+  ENVIRONMENT: production
+  PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
+  EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+  GAME_FEEDBACK_API_URL: http://gf-api:4300
+  WEB_ORIGIN: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
+  GAME_FEEDBACK_CONTACT_EMAIL: ${GAME_FEEDBACK_CONTACT_EMAIL:?Set GAME_FEEDBACK_CONTACT_EMAIL}
+  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+  GF_S3_BUCKET: ${GF_S3_BUCKET:?Set GF_S3_BUCKET}
+  GF_S3_REGION: ${GF_S3_REGION:-ap-northeast-2}
+  GF_S3_KEY_PREFIX: ${GF_S3_KEY_PREFIX:-game-feedback/production}
+  GF_S3_ACCESS_KEY_ID: ${GF_S3_ACCESS_KEY_ID:?Set GF_S3_ACCESS_KEY_ID}
+  GF_S3_SECRET_ACCESS_KEY: ${GF_S3_SECRET_ACCESS_KEY:?Set GF_S3_SECRET_ACCESS_KEY}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+  KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
+  DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+  DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+  SUPERCELL_API_TOKEN: ${SUPERCELL_API_TOKEN:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_RELEASE: ${RELEASE_SHA:-}
+  NODE_OPTIONS: --max-old-space-size=256
+x-logging: &logging
+  driver: json-file
+  options: { max-size: 10m, max-file: '3' }
+services:
+  api:
+    image: ${API_IMAGE:?Set API_IMAGE digest}
+    stop_grace_period: 20s
+    restart: unless-stopped
+    init: true
+    environment: *api
+    volumes: [runtime:/app/projects/game-feedback/.data]
+    ports: ['127.0.0.1:${GF_API_BIND_PORT:-4300}:4300']
+    # The database alias shared-postgres resolves only on the service's internal db network; web never joins it.
+    networks: { edge: { aliases: [gf-api] }, db: {} }
+    read_only: true
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:4300/api/health/ready',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+      start_interval: 1s
+    mem_limit: 512m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+  web:
+    image: ${WEB_IMAGE:?Set WEB_IMAGE digest}
+    stop_grace_period: 30s
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      ENVIRONMENT: production
+      SENTRY_RELEASE: ${RELEASE_SHA:-}
+      PORT: '3300'
+      HOSTNAME: 0.0.0.0
+      NEXT_TELEMETRY_DISABLED: '1'
+      NODE_OPTIONS: --max-old-space-size=384
+      GAME_FEEDBACK_API_URL: http://gf-api:4300
+      WEB_ORIGIN: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
+      GAME_FEEDBACK_CONTACT_EMAIL: ${GAME_FEEDBACK_CONTACT_EMAIL:?Set GAME_FEEDBACK_CONTACT_EMAIL}
+    networks: { edge: { aliases: [gf-web] } }
+    volumes: [runtime:/app/projects/game-feedback/.data:ro]
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3300/health-check/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 4s
+      retries: 8
+      start_period: 20s
+      start_interval: 1s
+    # Next writes only its data/image cache and /tmp at runtime. ISR re-renders it cannot persist under
+    # .next/server stay in the in-memory cache (Next logs "Failed to update prerender cache").
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
+    mem_limit: 640m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+  ops:
+    profiles: [tools]
+    image: ${API_IMAGE:?Set API_IMAGE digest}
+    init: true
+    entrypoint: [node]
+    environment: *api
+    # Maintenance boots the API module, which reads the cache revalidation key the API created.
+    volumes: [runtime:/app/projects/game-feedback/.data:ro]
+    networks: [edge, db]
+    read_only: true
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+  migrate:
+    profiles: [tools]
+    image: ${API_IMAGE:?Set API_IMAGE digest}
+    init: true
+    command: [node, scripts/migrate.ts]
+    environment:
+      <<: *api
+      DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
+    networks: [edge, db]
+    read_only: true
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+networks:
+  edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-edge' }
+  db: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-db' }
+volumes:
+  runtime:
+    name: ${SIDE_NETWORK_PREFIX:-side}-game-feedback-runtime

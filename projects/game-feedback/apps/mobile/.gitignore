@@ -1,0 +1,17 @@
+.expo/
+.expo-export-check/
+# app.config.ts is the source for generated native projects.
+android/
+ios/
+playwright-report/
+test-results/
+# Store signing keys, push keys and EAS/Firebase credentials.
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.key
+credentials.json
+google-services.json
+GoogleService-Info.plist

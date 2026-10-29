@@ -1,68 +1,90 @@
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
-import { createIsolatedDatabase, dropIsolatedDatabase } from './database';
-import { loadProjectEnv } from './env';
-import { API_ROOT, PROJECT_ROOT, TSC } from './paths';
+import { once } from 'es-toolkit';
 
-/**
- * 격리 스키마를 만들고 API를 띄운다. SIGTERM/SIGINT를 받으면 API를 멈추고 스키마와 사진 폴더를 지운다.
- * 개발 서버가 보고 있는 dist 대신 .e2e-build로 빌드해 실행 중인 개발 서버를 건드리지 않는다.
- */
-async function main() {
-  loadProjectEnv();
-  const baseUrl = process.env.DATABASE_URL;
-  const schema = process.env.PC_E2E_SCHEMA;
-  if (!baseUrl || !schema) throw new Error('DATABASE_URL과 PC_E2E_SCHEMA가 필요합니다.');
-  const storageDir = process.env.STORAGE_DIR ?? resolve(PROJECT_ROOT, '.data', schema);
-  const outDir = resolve(API_ROOT, '.e2e-build');
-  const buildConfig = existsSync(resolve(API_ROOT, 'tsconfig.build.json'))
-    ? 'tsconfig.build.json'
-    : 'tsconfig.json';
-  if (process.env.PC_E2E_SKIP_API_BUILD !== 'true')
-    execFileSync(process.execPath, [TSC, '-p', resolve(API_ROOT, buildConfig), '--outDir', outDir], {
-      stdio: 'inherit',
-    });
-  const url = await createIsolatedDatabase(baseUrl, schema);
-  await mkdir(storageDir, { recursive: true });
-  const api = spawn(process.execPath, [resolve(outDir, 'main.js')], {
-    cwd: API_ROOT,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      ENABLE_DEV_LOGIN: 'false',
-      ENABLE_TEST_API: 'true',
-      API_HOST: '127.0.0.1',
-      DATABASE_URL: url,
-      STORAGE_BACKEND: 'local',
-      STORAGE_DIR: storageDir,
-    },
-  });
-  let cleaning: Promise<void> | undefined;
-  function cleanup(code: number) {
-    cleaning ??= (async () => {
-      if (api.exitCode === null) {
-        const exited = new Promise((done) => api.once('exit', done));
-        api.kill('SIGTERM');
-        const timer = setTimeout(() => api.kill('SIGKILL'), 10_000);
-        await exited;
-        clearTimeout(timer);
-      }
-      await dropIsolatedDatabase(baseUrl!, schema!);
-      await rm(storageDir, { recursive: true, force: true });
-      process.exit(code);
-    })();
-    return cleaning;
-  }
-  process.on('SIGTERM', () => void cleanup(0));
-  process.on('SIGINT', () => void cleanup(0));
-  api.on('exit', (code) => void cleanup(code ?? 1));
+import {
+  assertTestSchemaName,
+  createIsolatedDatabase,
+  dropIsolatedDatabase,
+  resolveTestDatabaseUrl,
+} from './database';
+import { loadProjectEnv } from './env';
+import { API_ROOT, PROJECT_ROOT } from './paths';
+import { cleanupS3TestObjects, s3TestEnvironment, verifyS3TestAccess } from './s3';
+
+interface IFixtureApp {
+  listen(port: number, host: string): Promise<unknown>;
+  close(): Promise<void>;
+  getHttpAdapter(): { getInstance(): { set(name: string, value: number): unknown } };
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+async function main() {
+  try {
+    loadProjectEnv();
+    const baseUrl = resolveTestDatabaseUrl();
+    const schema = assertTestSchemaName(new URL(baseUrl).searchParams.get('schema') ?? '');
+    const port = Number(new URL(process.env.API_URL ?? '').port);
+    if (!Number.isInteger(port) || port < 4300 || port > 4399) throw new Error('Invalid isolated API port.');
+    const s3Env = s3TestEnvironment(process.env, schema);
+    await verifyS3TestAccess(s3Env);
+    const outDir = resolve(API_ROOT, '.e2e-build');
+    execFileSync('yarn', ['workspace', '@photo-contest/api', 'build', '--outDir', outDir], {
+      cwd: PROJECT_ROOT,
+      stdio: 'inherit',
+    });
+    const url = await createIsolatedDatabase(baseUrl, schema);
+    const state: { app?: IFixtureApp } = {};
+    const cleanup = once(async () => {
+      try {
+        await state.app?.close();
+      } finally {
+        try {
+          await cleanupS3TestObjects(s3Env);
+        } finally {
+          await dropIsolatedDatabase(baseUrl, schema);
+        }
+      }
+    });
+    const stop = async () => {
+      try {
+        await cleanup();
+        process.exit(0);
+      } catch {
+        process.exit(1);
+      }
+    };
+    process.once('SIGTERM', stop);
+    process.once('SIGINT', stop);
+    try {
+      Object.assign(process.env, s3Env, {
+        NODE_ENV: 'test',
+        DATABASE_URL: url,
+        SENTRY_DSN: '',
+        NEXT_PUBLIC_SENTRY_DSN: '',
+        NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
+        PUSH_NOTIFICATIONS_ENABLED: 'false',
+        EXPO_ACCESS_TOKEN: '',
+      });
+      const require = createRequire(import.meta.url);
+      const { createApp } = require(resolve(outDir, 'bootstrap.js')) as {
+        createApp(options: { logger: false; testFixtures: true; shutdownHooks: false }): Promise<IFixtureApp>;
+      };
+      // Nest의 신호 재전송보다 스키마·저장소 정리가 먼저 끝나야 한다.
+      const app = await createApp({ logger: false, testFixtures: true, shutdownHooks: false });
+      state.app = app;
+      // 격리 브라우저 레인도 운영과 같은 웹 프록시 한 단계를 거친다.
+      app.getHttpAdapter().getInstance().set('trust proxy', 1);
+      await app.listen(port, '127.0.0.1');
+    } catch (error) {
+      await cleanup();
+      throw error;
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : 'Test API failed.');
+    process.exitCode = 1;
+  }
+}
+
+void main();

@@ -1,12 +1,15 @@
+import { AppState, BackHandler, Platform, Share } from 'react-native';
+
 import { getUserId, reset, setUserId, track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { captureMessage } from '@sentry/react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { setStringAsync } from 'expo-clipboard';
 import { addEventListener as addLinkingListener, openURL } from 'expo-linking';
-import { AppState, BackHandler, Platform, Share } from 'react-native';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { parseNativeAppInfo } from '@photo-contest/bridge';
+
+import { setAppearance } from '@/shared/model/appearance';
 import {
   dispatchedMessages,
   nativeEvent,
@@ -63,10 +66,22 @@ function readyWeb(path = '/') {
 }
 
 afterEach(() => {
+  act(() => setAppearance('system'));
   Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'web' });
 });
 
 describe('WebShellPageTemplate', () => {
+  it('웹에서 선택한 다크 모드를 반영하고 다른 출처의 화면 변경 요청은 거부해야 한다', () => {
+    renderShell();
+    postFromWeb(webEvent('appearance.changed', { preference: 'dark' }));
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe('rgb(20, 19, 18)');
+    postFromWeb(webEvent('appearance.changed', { preference: 'light' }), 'https://outside.example/');
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe('rgb(20, 19, 18)');
+    postFromWeb(webEvent('appearance.changed', { preference: 'light' }));
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe(
+      'rgb(255, 255, 255)',
+    );
+  });
   it('첫 경로를 웹 origin으로 열고 앱 User-Agent와 앱 정보를 넘겨야 한다', () => {
     renderShell('/invite/abc');
 
@@ -76,8 +91,9 @@ describe('WebShellPageTemplate', () => {
     expect(props.originWhitelist).toEqual(['*']);
     expect(props).toMatchObject({
       setSupportMultipleWindows: false,
-      sharedCookiesEnabled: true,
+      sharedCookiesEnabled: false,
       thirdPartyCookiesEnabled: true,
+      allowsInlineMediaPlayback: true,
       allowsBackForwardNavigationGestures: true,
       pullToRefreshEnabled: true,
       webviewDebuggingEnabled: true,
@@ -88,7 +104,7 @@ describe('WebShellPageTemplate', () => {
       platform: 'android',
       appVersion: '1.2.3',
       protocolVersion: 1,
-      capabilities: ['share.open', 'clipboard.copy', 'haptics.impact', 'link.open', 'auth.socialLogin'],
+      capabilities: ['share.open', 'clipboard.copy', 'haptics.impact', 'link.open'],
     });
   });
 
@@ -112,23 +128,18 @@ describe('WebShellPageTemplate', () => {
     expect(setUserId).toHaveBeenCalledTimes(1);
   });
 
-  it('공유·소셜 로그인 결과를 분석 이벤트로 남겨야 한다', async () => {
-    vi.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction' });
+  it('공유 결과를 분석 이벤트로 남겨야 한다', async () => {
+    vi.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction', activityType: undefined });
     renderShell();
 
     postFromWeb(webRequest('share-1', 'share.open', { url: `${WEB_ORIGIN}/invite/abc` }));
-    postFromWeb(webRequest('login-1', 'auth.socialLogin', { provider: 'kakao' }));
 
     await waitFor(() =>
       expect(trackedEvents()).toEqual(
-        expect.arrayContaining([
-          { name: 'native_share_dismissed', properties: undefined },
-          { name: 'social_login_started', properties: { provider: 'kakao' } },
-          { name: 'social_login_cancelled', properties: { provider: 'kakao' } },
-        ]),
+        expect.arrayContaining([{ name: 'native_share_dismissed', properties: undefined }]),
       ),
     );
-    expect(trackedEvents()).toHaveLength(3);
+    expect(trackedEvents()).toHaveLength(1);
   });
 
   it('웹 origin만 WebView에서 열고 다른 링크는 밖에서 열거나 막아야 한다', () => {
@@ -350,7 +361,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/token_1' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/unsupported/route` });
       handleUrl?.({ url: `${WEB_ORIGIN}/groups/2` });
     });
 
@@ -370,7 +381,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/secret_token' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/unsupported/route` });
       handleUrl?.({ url: `${WEB_ORIGIN}/contests/cm1contest01` });
     });
 
@@ -491,11 +502,17 @@ describe('WebShellPageTemplate', () => {
     }
 
     pressBack();
+    await waitFor(() =>
+      expect(dispatchedMessages().filter((message) => message.kind === 'request')).toHaveLength(1),
+    );
     answerBack(true);
     await act(async () => undefined);
     expect(fakeWebView.handle.goBack).not.toHaveBeenCalled();
 
     pressBack();
+    await waitFor(() =>
+      expect(dispatchedMessages().filter((message) => message.kind === 'request')).toHaveLength(2),
+    );
     answerBack(false);
     await waitFor(() => expect(fakeWebView.handle.goBack).toHaveBeenCalledTimes(1));
     expect(exitApp).toHaveBeenCalledTimes(1);

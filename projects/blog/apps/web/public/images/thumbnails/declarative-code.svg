@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    >
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#64748b" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="45" y="82" width="236" height="196" rx="8" fill="#ffffff" stroke="#334155" stroke-width="2.5" />
+  <text
+    x="69"
+    y="132"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    items.map(
+  </text>
+  <text
+    x="88"
+    y="176"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    renderItem
+  </text>
+  <text
+    x="69"
+    y="220"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    )
+  </text>
+  <path
+    d="M292 180H346"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="366" y="80" width="98" height="86" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5" />
+  <rect x="485" y="80" width="98" height="86" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5" />
+  <rect x="366" y="192" width="98" height="86" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2.5" />
+  <rect x="485" y="192" width="98" height="86" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2.5" />
+  <path
+    d="M387 113H443"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M387 135H426"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M506 113H562"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M506 135H545"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M387 225H443"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M387 247H426"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M506 225H562"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M506 247H545"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

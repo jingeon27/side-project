@@ -1,6 +1,6 @@
-import { useEffect, useImperativeHandle } from 'react';
-import type { Ref } from 'react';
+import { useEffect, useImperativeHandle, type Ref } from 'react';
 import { View } from 'react-native';
+
 import type { WebViewProps } from 'react-native-webview';
 import { vi } from 'vitest';
 

@@ -2,21 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Contest } from '../../generated/prisma';
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
-import type { IViewer } from '../auth/session.service';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
+import type { IViewer } from '../auth/session/session.service';
 import { siblingLoader } from '../common/batch';
-import { fail } from '../common/errors';
+import { ERROR_CODE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
-import { GROUP_ROLE, isOwner, toGroupRole } from '../group/group-role';
-import type { TGroupRole } from '../group/group-role';
-import { MembershipService } from '../group/membership.service';
-import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
-import type { ISubmissionView } from '../submission/submission.presenter';
+import { isAdmin, toGroupRole, type TGroupRole } from '../group/membership/group-role';
+import { MembershipService } from '../group/membership/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
+import {
+  presentSubmission,
+  submissionInclude,
+  type ISubmissionView,
+} from '../submission/submission.presenter';
 import { contestDates, phase, PHASE } from './contest.policy';
-import { rankResults } from './result-ranking';
+import { rankResults } from './ranking/result-ranking';
 
 /** 조회한 사용자 기준 값. 같은 목록의 대회들과 한 번에 불러온다. */
 export interface IContestViewerStats {
@@ -75,7 +78,7 @@ export class ContestService {
   /** 그룹 멤버로 확인된 Group 노드 아래에서만 부른다. 최근 50개, 최신순 */
   async contestsOfGroup(viewer: IViewer, group: { id: string; role: TGroupRole }): Promise<IContestNode[]> {
     const contests = await this.db.contest.findMany({
-      where: { groupId: group.id },
+      where: { groupId: group.id, format: 'LEGACY' },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: GROUP_CONTEST_HISTORY,
     });
@@ -84,27 +87,17 @@ export class ContestService {
 
   /** 관리자만. 권한을 먼저 확인한 뒤 입력을 검사한다. */
   async createContest(viewer: IViewer, input: ICreateContestInput): Promise<IContestNode> {
-    const member = await this.membership.requireOwner(viewer.id, input.groupId);
-    const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-    const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
-    const contest = await this.db.atomic(async (tx) => {
-      const created = await tx.contest.create({ data: { groupId: input.groupId, title, ...dates } });
-      await recordEvent(tx, {
-        id: `contest:${created.id}`,
-        type: ANALYTICS_EVENT.CONTEST_CREATED,
-        userId: viewer.id,
-        properties: { groupId: input.groupId, contestId: created.id },
-      });
-      return created;
-    });
-    return this.toNode(viewer.id, contest, member.role);
+    await this.membership.requireAdmin(viewer.id, input.groupId);
+    contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
+    textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
+    fail('기존 대회는 새로 만들 수 없습니다. 그룹 대회를 이용해 주세요.', ERROR_CODE.FORBIDDEN);
   }
 
   /** 종료된 대회만. 숨긴 사진은 빼고 득표순 경쟁 순위로 돌려준다. */
   async results(viewer: IViewer, contestId: string): Promise<IResultView[]> {
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.COMPLETED) fail('대회가 끝난 후 결과를 확인할 수 있습니다.');
-    const admin = isOwner(member);
+    const admin = isAdmin(member);
     const rows = await this.db.submission.findMany({
       where: { contestId, hidden: false },
       include: submissionInclude(viewer.id, admin),
@@ -153,7 +146,7 @@ export class ContestService {
   }
 
   private node(contest: Contest, viewerRole: TGroupRole, loaders: IContestLoaders): IContestNode {
-    const admin = viewerRole === GROUP_ROLE.OWNER;
+    const admin = isAdmin({ role: viewerRole });
     return {
       ...contest,
       viewerRole,
@@ -175,7 +168,7 @@ export class ContestService {
       }),
       this.db.submission.groupBy({
         by: ['contestId'],
-        where: { contestId: { in: ids }, hidden: false },
+        where: { contestId: { in: [...ids] }, hidden: false },
         _count: { _all: true },
       }),
     ]);

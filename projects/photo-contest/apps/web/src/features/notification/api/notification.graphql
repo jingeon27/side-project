@@ -1,0 +1,40 @@
+fragment NotificationCard on ActivityNotification {
+  id
+  type
+  groupId
+  groupName
+  postId
+  postTitle
+  commentId
+  parentCommentId
+  contestId
+  contestTitle
+  contestFormat
+  joinRequestId
+  actorNickname
+  readAt
+  createdAt
+}
+fragment NotificationReadState on ActivityNotification {
+  id
+  readAt
+}
+query MyNotifications($offset: Int!, $limit: Int!) {
+  myNotifications(offset: $offset, limit: $limit) {
+    items {
+      id
+      ...NotificationCard
+    }
+    unreadCount
+    hasMore
+  }
+}
+query NotificationUnreadCount {
+  notificationUnreadCount
+}
+mutation MarkNotificationRead($id: ID!) {
+  markNotificationRead(id: $id)
+}
+mutation MarkAllNotificationsRead {
+  markAllNotificationsRead
+}

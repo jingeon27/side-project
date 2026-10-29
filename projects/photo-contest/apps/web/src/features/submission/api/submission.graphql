@@ -29,10 +29,14 @@ query Submissions($contestId: ID!, $sort: SubmissionSort!, $offset: Int!, $limit
   }
 }
 
-mutation RequestUpload($contestId: ID!) {
-  requestUploadUrl(contestId: $contestId) {
+mutation RequestUpload($contestId: ID!, $contentType: String!, $byteSize: Int!) {
+  requestUploadUrl(contestId: $contestId, contentType: $contentType, byteSize: $byteSize) {
     id
     url
+    fields {
+      name
+      value
+    }
     expiresAt
   }
 }
@@ -46,4 +50,8 @@ mutation CreateSubmission($contestId: ID!, $uploadId: ID!, $caption: String!, $r
   ) {
     ...SubmissionCard
   }
+}
+
+mutation CompleteSubmissionUpload($uploadId: ID!) {
+  completeSubmissionUpload(uploadId: $uploadId)
 }

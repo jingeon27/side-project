@@ -1,0 +1,359 @@
+<Summary>
+
+목록 조회가 실패했는데 메뉴와 헤더까지 사라졌어요. 실패한 표나 필터만 다시 시도할 수 있도록 조회 위치와 Error Boundary를 함께 바꿨어요.
+
+</Summary>
+
+![정상인 메뉴와 두 영역을 유지하고 실패한 한 영역만 재시도하는 화면을 그린 일러스트](/images/covers/error-boundary-recovery.png)
+
+*오류 복구 범위를 설명하려고 만든 일러스트예요. 실제 관리자 화면은 아니에요.*
+
+병원 관리자에서 목록 API 하나가 실패하면 다른 메뉴로 갈 수도 없었어요. 앱 루트의 Error Boundary가 화면 전체를 오류 안내로 바꾸기 때문이에요. 실패한 표만 다시 불러오고 싶어도 화면에는 그 버튼을 둘 자리가 남지 않았어요.
+
+서버 응답도 선언한 타입과 항상 같지는 않았어요. 새로운 enum이나 null이 오면 타입 검사 때는 지나간 문제가 렌더링에서 드러났어요. 메시지와 stack만 있는 로그로는 어느 앱의 어떤 화면에서 난 일인지 다시 찾아야 했고요.
+
+Zod를 붙이고 바운더리를 더 두면 될 줄 알았는데, 표를 감싸려고 보니 조회가 표 바깥에서 실행되고 있었어요. 오류 처리 코드를 더하기 전에 화면을 조립하는 방식부터 바꿔야 했어요.
+
+## 바운더리를 늘리려 해도 걸 자리가 없었어요
+
+기존 구조는 단순했어요.
+
+```text
+App Root Error Boundary
+  Header
+  Side Menu
+  Page
+    List
+    Detail Drawer
+```
+
+루트 아래에 바운더리를 하나 더 놓는 것만으로는 원하는 부분을 살릴 수 없었어요. 오류가 어디서 시작되는지와 화면이 어떻게 나뉘는지가 맞아야 했어요.
+
+page.tsx에서 useQuery로 목록을 읽으면 조회 오류는 표를 그리기도 전에 페이지에서 나요. 표를 감싸는 자식 바운더리가 있어도 그 실패를 받을 수 없어요. 검색 필터와 탭은 남기고 표만 바꾸려면, 조회하는 컴포넌트가 따로 있어야 했어요.
+
+이 구조를 병원 관리자와 Back-Office, PoC로 배포한 글로벌 관리 화면에 맞춰야 했어요.
+
+그런데 어떤 화면은 라우트가 레이아웃을 그리고, 어떤 화면은 템플릿이나 ListView에 맡겼어요. 상세 Drawer도 라우트에 있기도 하고 목록 안에 있기도 했어요.
+
+같은 바운더리를 넣어도 감싸는 내용이 달라서, 먼저 무엇을 함께 다시 불러올지 정했어요.
+
+## 메뉴를 남기고 실패한 영역만 다시 불러왔어요
+
+목록 조회가 실패해도 헤더와 메뉴는 쓸 수 있어야 했어요. 상세만 실패하면 목록은 남고요. 함께 로딩되고 함께 다시 시도할 부분끼리 묶어 바운더리를 뒀어요.
+
+```text
+App Root Boundary        page, 마지막 그물
+  Header · Side Menu
+  Route Boundary         page
+    Search Filter        section, 옵션을 조회하는 칸은 field
+    List                 section
+    Detail Drawer        overlay
+```
+
+레이아웃이 &#123;children&#125;만 감싸는 라우트 바운더리가 page variant를 쓰고, 그 안에서 목록은 section, 상세는 overlay로 감싸요. 검색 필터의 한 칸을 맡는 field는 전용 바운더리가 쓰는 네 번째 variant라 아래에서 따로 다뤄요.
+
+```tsx
+// 레이아웃: {children}만 감싸서 Header와 Side Menu는 이 바운더리 밖에 남는다
+<RouteErrorBoundary>{children}</RouteErrorBoundary>
+
+// 라우트: 목록과 상세를 서로 다른 단위로 감싼다
+<QueryErrorBoundary variant="section">
+  <ReservationListView />
+</QueryErrorBoundary>
+
+<QueryErrorBoundary variant="overlay" onError={() => closeDetail('id')}>
+  <ReservationDetailDrawer />
+</QueryErrorBoundary>
+```
+
+- 라우트 바운더리의 page는 본문을 오류 화면으로 바꾸되, 이 바운더리 밖에 있는 Header와 Side Menu는 남겨요. 같은 page여도 앱 루트의 바운더리는 메뉴까지 덮어요.
+- section은 실패한 자리에 안내와 재시도 버튼을 보여 줘요.
+- overlay는 열리다 만 Drawer나 Modal을 닫고 toast로 알려요.
+
+라우트 본문 밖에 메뉴를 두고, 본문 안에서도 목록과 상세를 따로 감쌌어요. 바운더리 개수를 줄이는 것보다 실패했을 때 무엇이 남는지가 먼저였어요.
+
+## 페이지는 조회하지 않고, URL로 여는 상세는 라우트에 뒀어요
+
+목록을 그릴 ListView를 만들고, 라우트는 화면 배치만 하도록 바꿨어요.
+
+src/app에서 실행하던 클라이언트 조회를 section 바운더리 아래 XxxListView로 내렸어요. 그래야 목록 조회가 실패한 자리에서 폴백을 보여 줄 수 있어요. 서버 컴포넌트의 prefetch나 FSD pages 레이어 조회까지 막으려는 규칙은 아니에요.
+
+URL로 여는 상세는 목록 밖의 라우트에 뒀어요. 목록 안에 있으면 section이 실패할 때 상세도 사라져요. antd Tabs의 destroyOnHidden으로 목록이 언마운트될 때도 상세까지 닫히고요. URL의 ID로 독립해서 열리는 화면이니 선언도 따로 두었어요.
+
+적용 전후는 이렇게 달라졌어요.
+
+```tsx
+// 이전: 라우트가 조회하고, 표와 컬럼과 버튼까지 들고 있다
+function ReservationPage() {
+  const { data, isFetching } = useQuery(reservationListOptions(getReservationListParams(currentParams)));
+
+  return (
+    <Flex vertical gap={10}>
+      <BreadCrumb />
+      <SearchFilter onSubmit={handleSearch}>{/* ... */}</SearchFilter>
+      <ExcelExportButton onClick={() => handleExcelExport(data)}>엑셀 내보내기</ExcelExportButton>
+      <Table
+        loading={isFetching}
+        dataSource={data}
+        columns={
+          [
+            /* 인라인 컬럼 */
+          ]
+        }
+      />
+    </Flex>
+  );
+}
+```
+
+```tsx
+// 이후: 조회는 ListView 로 내려가고, 라우트에는 바운더리 두 개가 남는다
+function ReservationPage() {
+  const currentParams = useTypedQueryParams({ schema: reservationSearchParamsSchema });
+  const closeDetail = useCloseDetail();
+
+  return (
+    <>
+      <Flex vertical gap={10}>
+        <BreadCrumb />
+        <SearchFilter onSubmit={handleSearch}>{/* ... */}</SearchFilter>
+        <QueryErrorBoundary variant="section">
+          <ReservationListView />
+        </QueryErrorBoundary>
+      </Flex>
+
+      <QueryErrorBoundary variant="overlay" onError={() => closeDetail('id')}>
+        <ReservationDetailDrawer open={!!currentParams.id} onClose={() => closeDetail('id')} />
+      </QueryErrorBoundary>
+    </>
+  );
+}
+```
+
+조회와 표는 ListView로 내려가고, 라우트에서는 검색 조건과 목록, 상세를 어느 바운더리로 감싸는지 읽을 수 있어요.
+
+행 데이터를 바로 넘겨 여는 상세는 목록 옆에 남겼어요. 이 경우까지 위로 옮기면 라우트에서 목록을 다시 조회해야 해요. ID로 따로 여는 상세와 이미 가져온 행으로 여는 상세를 같은 방식으로 맞출 필요는 없었어요.
+
+## 검색 필터는 칸마다 바운더리를 걸 수 있게 다시 만들었어요
+
+검색 필터는 바운더리를 넣으려다 컴포넌트 자체를 바꾸게 됐어요. 기존에는 필터가 엘리먼트가 아니라 설정 배열의 데이터였어요.
+
+```tsx
+// 이전: 필터도 목록도 설정 배열 안에 들어 있다
+<SearchFilterLayout
+  tabs={[
+    {
+      key: 'reservations',
+      label: '예약 목록',
+      searchKeywordType: [{ label: '예약자명', value: 'name' }],
+      filters: [
+        { key: 'status', name: '예약 상태', type: 'select', options: STATUS_OPTIONS },
+        { key: 'department', name: '분류', type: 'select', options: departmentOptions },
+      ],
+      children: <ReservationList />,
+    },
+  ]}
+/>
+```
+
+filters 배열과 목록 children을 렌더러에 넘기는 모양이에요. 호출부에서는 필터 하나만 감쌀 수 없고, 레이아웃 전체를 감싸면 목록도 함께 사라졌어요. 렌더러를 확장하는 방법도 있었지만, 저는 필터를 JSX로 적고 그 안에 조회를 두는 쪽을 골랐어요.
+
+특히 options를 prop으로 받는 필터는 페이지가 옵션 조회를 하고 있었어요. 옵션 서버가 실패하면 필터에서 받기도 전에 페이지 폴백이 떠요.
+
+그래서 필터를 설정 배열이 아니라 JSX로 선언하는 컴파운드 구조로 바꿨어요. createSearchFilter는 URL 스키마를 받아 이 컴파운드 컴포넌트를 만드는 factory예요.
+
+```tsx
+const SearchFilter = createSearchFilter(reservationSearchParamsSchema);
+
+<SearchFilter onSubmit={handleSearch}>
+  <SearchFilter.Keyword name="keyword" typeName="keywordType" options={SEARCH_KEYWORD_TYPES} />
+  <SearchFilter.Fields>
+    <SearchFilter.Select name="status" label="예약 상태" options={STATUS_OPTIONS} />
+    <DepartmentFilter name="department" label="분류" />
+  </SearchFilter.Fields>
+</SearchFilter>
+```
+
+JSX 엘리먼트가 된 필터는 SearchFilter의 children 안에서 바운더리로 감쌀 수 있어요. 옵션 조회도 필터 안으로 옮겨, 검색바가 실패해도 목록은 남게 했어요.
+
+하지만 검색바 전체만 묶어서는 부족했어요. 진료과 옵션 하나가 실패해도 검색어 입력과 검색 버튼을 못 쓰게 됐거든요. 지금은 옵션을 조회하는 필터가 자신을 field로 감싸요. 실패한 칸만 라벨과 빈 컨트롤, 재시도 버튼을 보이고 다른 조건으로는 계속 검색해요. 자체 바운더리가 없는 커스텀 필터의 오류는 루트 section이 받아요.
+
+필터를 공통화하는 모양보다, 옵션 조회가 실패했을 때 어느 입력을 남길지가 이 구성을 정하는 데 더 직접적인 기준이 됐어요.
+
+## 오버레이는 닫은 다음 다시 열려야 했어요
+
+?id=1로 Drawer를 열었을 때 안쪽 조회가 실패하면 Drawer만 없애서는 안 됐어요. URL에 ID가 남으면 같은 행을 다시 눌러도 열리지 않아요. overlay variant는 오류를 받은 직후 onError로 그 URL 상태도 비워요.
+
+overlay-kit의 overlay.open처럼 명령형으로 여는 모달은 사정이 또 달랐어요. 화면 트리가 아니라 Provider 자리에서 그려져서 페이지와 구획 바운더리 밖에 놓이거든요. 그래서 공유 패키지의 overlay가 여는 순간 overlay 바운더리로 감싸고, 실패하면 모달을 언마운트해요. 뒤에서 다룰 lint 규칙으로 overlay 직접 import를 막은 것도 이 버전만 쓰게 하려는 거예요.
+
+Drawer를 닫았는데 폴백이 남는 경우도 있어서 reset 조건을 바꿨어요. pathname만 비교하면 ?id=가 지워진 것을 놓치니, pathname과 search를 함께 구독해 바뀔 때 reset해요.
+
+처음에는 바운더리마다 pushState와 replaceState를 감쌌어요. 언마운트할 때 예전 함수를 복구했는데, 그 뒤에 다른 바운더리나 Next 라우터가 덧댄 함수까지 지울 수 있었어요.
+
+모듈에서 history를 한 번만 감싸고 바운더리들은 listener만 붙이고 떼도록 바꿨어요. 중첩된 안쪽 바운더리가 사라져도 나머지 구독과 라우터 패치는 유지돼요.
+
+## 응답 스키마가 어긋나도 화면은 막지 않았어요
+
+응답 타입을 스키마에서 추론하게 바꾸면서, 실제 응답도 같은 스키마로 읽어 보기 시작했어요.
+
+```tsx
+export const reservationSchema = z.object({
+  id: z.number(),
+  status: z.enum(['WAIT', 'CONFIRMED', 'CANCELED']),
+  couponDiscountAmount: z.number().nullish(),
+});
+
+export type Reservation = z.infer<typeof reservationSchema>;
+```
+
+그렇다고 기존 응답을 바로 parse() 결과로 대체하지는 않았어요. 스키마에 빠진 필드는 Zod가 결과에서 지워요. 아직 화면이 쓰는 필드를 놓쳤다면 검증을 넣는 순간 화면이 깨질 수 있었어요. 선택 필드 하나의 불일치 때문에 정상인 목록까지 막고 싶지도 않았고요.
+
+처음에는 safeParse로 차이를 로그에 남기고, 호출부에는 원본 응답을 그대로 돌려줬어요.
+
+```tsx
+export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T>): T {
+  const result = schema.safeParse(response.data);
+
+  if (!result.success) {
+    reportOnce({
+      code: 'RESPONSE_SCHEMA_MISMATCH',
+      source: `${response.config.method?.toUpperCase()} ${response.config.url}`,
+      issues: result.error.issues,
+    });
+  }
+
+  return response.data;
+}
+```
+
+이때의 스키마는 선택 필드를 nullish로 열어 둔 검증용 근사치라 z.ZodType&lt;T>로 묶지 않았어요. 반환 타입은 Axios 제네릭에 기대고 있으므로, 전혀 다른 응답용 스키마를 넘겨도 컴파일러가 잡지는 못해요.
+
+잘못된 값을 차단하는 방식은 아니에요. 그 값은 호출부에 그대로 가요. 대신 배포된 앱에서 null이나 빠진 enum, 문자열로 오는 소수를 발견해 스키마를 실제 응답에 맞춰 갈 수 있었어요. 글로벌 관리 화면은 이때 PoC로 배포된 상태였어요.
+
+신규 기능이나 잘못된 값을 그대로 쓰면 안 되는 입력에는 차단형 검증을 써요. 모든 Zod 스키마가 실패했을 때 같은 동작을 할 필요는 없었어요. 값의 출처에 따라 관측, 복구, 차단을 나눈 기준은 [다른 글](/ko/blog/타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준)에 따로 정리했어요.
+
+## 잘못된 URL은 필드 단위로 복구했어요
+
+URL은 사용자가 바꿀 수도 있고 오래된 북마크에서 올 수도 있어요. 예전에는 searchParams 문자열을 원하는 타입이라고 단언해서 썼어요.
+
+```typescript
+export const reservationSearchParamsSchema = z.object({
+  pageNumber: z.coerce.number().int().positive().catch(1),
+  status: z.enum(['WAIT', 'CONFIRMED']).optional().catch(undefined),
+  id: z.coerce.number().int().positive().optional().catch(undefined),
+});
+```
+
+지금은 잘못된 필드를 그 필드의 .catch로 복구해요. 전체 구조가 맞지 않으면 기본 조회 조건으로 돌리고 차이를 한 번 기록해요. 다만 필드의 .catch로 복구한 값은 그 로그에 남지 않아요.
+
+읽는 쪽의 스키마는 그 URL에 넣을 수 있는 검색 조건도 표현해요. 경로와 스키마를 factory로 묶으면 링크를 만드는 쪽에서도 같은 입력 타입을 사용할 수 있어요.
+
+```tsx
+const reservationRoute = createRoute({
+  path: '/customer/reservations',
+  searchParamsSchema: reservationSearchParamsSchema,
+});
+
+<Link href={reservationRoute.href({ pageNumber: 2, status: 'WAIT' })}>대기 예약</Link>
+```
+
+아래 factory 형태는 아직 계획이에요. URL을 읽어 검증하는 처리만 적용돼 있어요.
+
+## 저장 실패와 재조회 실패는 바운더리로 보내지 않았어요
+
+화면을 그릴 데이터가 없는 첫 Query가 실패하면 해당 영역을 폴백으로 바꿔요. 반면 이미 화면에 데이터가 있다면 실패했다고 모두 지울 필요는 없었어요.
+
+저장 요청도 그래요. Mutation이 실패했다고 폼을 없애면 사용자가 입력을 고칠 수 없어요. field error와 toast, 재시도를 그 화면 안에 두었어요.
+
+탭을 오래 열었다 돌아올 때 전체 화면이 서비스 연결 실패로 바뀌던 문제도 있었어요. 헤더와 메뉴의 알림 건수는 60초마다 조회하는데 라우트 바운더리 밖에 있어요. 네트워크가 돌아오기 전에 재조회가 실패하면, 캐시가 남아 있어도 루트까지 던지고 있었어요. throw 조건을 보여 줄 데이터가 없는 경우로 좁혀, 재조회 실패가 기존 화면을 지우지 않게 했어요.
+
+헤더와 메뉴의 첫 조회 실패는 여전히 루트에서 받아요. 이때는 그 영역에 남길 데이터가 없으니 앱 루트 폴백이 떠요.
+
+```text
+첫 조회 실패     해당 복구 단위의 바운더리
+재조회 실패      받아 둔 데이터 유지, 다음 조회에서 회복
+Mutation 실패   입력 유지 + field error/toast + 다시 제출
+스키마 차이      신뢰 경계에서 기록, 데이터 성격에 따라 통과 또는 차단
+```
+
+## 로그에는 재현할 위치를 남겼어요
+
+화면을 남긴 뒤에는 로그에서 실패한 곳을 다시 찾기 쉬워야 했어요. API 오류와 렌더링 오류, 스키마 불일치는 같은 형태로 CloudWatch에 보내요. 글로벌 관리 화면은 API 오류를 따로 보내지 않아 바운더리가 받은 조회 실패만 남아요.
+
+```typescript
+type ErrorLog = {
+  type: 'API_ERROR' | 'GENERAL_ERROR' | 'SCHEMA_MISMATCH';
+  code: string;
+  message: string;
+  appName?: string;
+  path?: string; // pathname + search
+  boundaryVariant?: 'page' | 'section' | 'overlay' | 'field';
+  componentFrame?: string;
+  componentStack?: string;
+  method?: string;
+  url?: string;
+  status?: number;
+  issues?: Array<{ path: string; code: string; message: string }>;
+  stack?: string;
+};
+```
+
+API 응답의 method와 URL을 그대로 쓰고, 스키마 불일치에는 필드 경로와 오류 code를 붙여요. 같은 요청의 같은 불일치는 새로고침 전까지 한 번만 보내요. 목록 항목마다 같은 오류 로그가 쌓이지 않게 한 거예요.
+
+로그 전송 자체도 화면을 깨뜨리면 안 돼요. 직렬화할 수 없는 값과 바이너리는 빼고, 큰 응답 본문은 2,000자에서 잘라 보내요. 전송이 실패해도 사용자 흐름으로 다시 던지지 않고요.
+
+### 직접 적던 바운더리 이름을 없앴어요
+
+바운더리에 이름을 직접 적어 두면 코드를 옮길 때 이름도 고쳐야 해요.
+
+```tsx
+// 이름을 걷어내기 전까지의 호출부
+<QueryErrorBoundary name="customer/reservations:detail" variant="section">
+  <ReservationDetail />
+</QueryErrorBoundary>
+```
+
+React의 componentStack에서 얻는 이름으로 대신하려 했는데, 개발 빌드와 프로덕션이 달랐어요. Turbopack 프로덕션에서는 at o (chunks/...)처럼 이름이 축약됐어요.
+
+처음에는 소스맵을 공개하지 않고 수동 이름과 path, 오류 stack을 남기는 쪽을 골랐어요. 축약된 이름만으로는 로그를 읽기 어려웠기 때문이에요.
+
+그런데 상세를 라우트로 옮길 때마다 그 이름도 옮겨 적어야 했어요. 옛 이름이 남으면 로그가 엉뚱한 화면을 가리킬 수 있어서, 결국 productionBrowserSourceMaps를 켜고 호출부의 name을 지웠어요. 호출부는 variant만 정해요. 오류를 받으면 쿼리를 포함한 path와 boundaryVariant, componentFrame, componentStack을 바운더리가 채워요. 축약된 프레임도 배포한 소스맵으로 원본 파일과 줄을 찾을 수 있어요. 대신 주석을 포함한 소스가 공개돼요.
+
+## 테스트로는 오류 문구가 아니라 남는 화면을 확인했어요
+
+오류 안내가 보인다는 검사만으로는 예전과 같은 전체 화면 장애를 잡을 수 없어요. 실패한 옆에서 어떤 동작을 계속할 수 있는지도 테스트했어요.
+
+목록이 실패해도 형제 상세가 남고, 필터 하나가 실패해도 다른 조건으로 검색할 수 있는지 확인해요. 안쪽 section이 받은 오류가 바깥 page까지 바꾸지 않는지도 봐요. Drawer를 닫으면 search 변경으로 폴백이 사라지고, overlay 오류로 ID를 지운 뒤 같은 항목을 다시 열 수 있어야 해요.
+
+중첩 바운더리를 언마운트해도 다른 history listener와 라우터 패치가 남는지, 재시도는 실패한 영역만 다시 그리는지도 확인해요. 호출부의 이름 없이도 위치와 프레임이 로그에 남는지 함께 봐요.
+
+재조회 실패 수정에는 앱마다 회귀 테스트를 붙였어요. 받아 둔 값이 있는 상태에서 재조회가 실패해도 값이 남는지, 첫 조회가 실패하면 여전히 폴백을 보이는지를 확인해요.
+
+## 문서로 적어 둔 규칙은 lint로 옮겼어요
+
+문서에는 이미 라우트의 조회와 상세 선언 위치, useQuery 래퍼를 어떻게 다룰지 적혀 있었어요. 그래도 코드에서는 다른 모양이 쌓였어요. grep 점검도 누가 기억해 실행하지 않으면 지나갔어요.
+
+문서 중 기계가 판정할 수 있는 부분은 ESLint로 옮겼어요. 브랜치에서 만든 플러그인을 그대로 넣기보다는 develop에 규칙별로 나눠 적용했어요.
+
+| 규칙 | 검사 대상 | 심각도 |
+| --- | --- | --- |
+| app/no-query | src/app/\*\* 안의 useQuery 계열 호출(훅으로 한 겹 감싼 조회도 따라가서 잡음) | warning |
+| query/no-passthrough-hook | 아무것도 더하지 않고 useQuery를 그대로 감싼 훅 | error |
+| no-restricted-imports | 바운더리 없이 모달을 여는 overlay-kit의 overlay 직접 import | error |
+
+첫 번째는 라우트 구성 규칙이에요. src/app에서 클라이언트 조회 훅을 부르면 오류가 라우트 전체의 경계로 올라가요. 표만 실패 화면으로 바꾸려면 조회하는 컴포넌트가 section 경계 안에 있어야 해요.
+
+처음 규칙을 넣었을 때는 only-warn 플러그인이 error를 모두 warning으로 낮추고 있었어요. 그 설정을 걷어내고 규칙별 심각도를 적었어요. 래퍼 훅 규칙은 기존 코드를 정리한 뒤 error로 올렸지만, app/no-query는 아직 warning이라 CI를 막지는 않아요.
+
+상세를 라우트에 둘지, 어떤 라우트에 바운더리가 빠졌는지는 여전히 코드를 보고 판단해요. 이 lint 규칙은 컴포넌트가 어떻게 함께 살아 있어야 하는지까지 결정해 주지는 않아요.
+
+## 참고
+
+- [React: Error Boundary로 렌더링 오류 잡기](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+- [TanStack Query: QueryErrorResetBoundary](https://tanstack.com/query/latest/docs/framework/react/reference/QueryErrorResetBoundary)
+- [TanStack Query: useQuery의 throwOnError](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery)
+- [Zod: 오류 처리와 safeParse](https://zod.dev/basics?id=handling-errors)
+- [Zod: .catch()](https://zod.dev/api?id=catch)
+- [Next.js: productionBrowserSourceMaps](https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps)
+- 관련 글: [선언적으로 코드를 쓰는 기준](/ko/blog/선언적으로-코드를-쓰는-기준): 검색 필터를 컴파운드 구조로 바꾼 기준
+- 관련 글: [타입 단언을 줄이며 정리한 런타임 검증 기준](/ko/blog/타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준): 응답 관측 경계와 값의 출처별 검증 정책

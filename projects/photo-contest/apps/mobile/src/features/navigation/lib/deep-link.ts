@@ -48,7 +48,7 @@ export function isRelativeWebPath(path: string) {
 
 /**
  * `photocontest://groups/<id>` 같은 앱 링크나 같은 경로의 웹 origin 링크(유니버설 링크)를 웹 경로로 바꾼다.
- * 모르는 링크와 `photocontest://auth/callback`(소셜 로그인 세션이 직접 받는다)은 null. 쿼리와 해시는 버린다.
+ * 허용하지 않은 경로는 null. 쿼리와 해시는 버린다.
  */
 export function toWebPath(url: string, { webOrigin, appScheme }: ILinkOptions) {
   if (url.length > MAX_LINK_LENGTH) return null;

@@ -1,9 +1,11 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
-import { GroupService } from './group.service';
-import type { IGroupNode } from './group.service';
+import type { IViewer } from '../auth/session/session.service';
+import { OptionalViewer, Viewer } from '../auth/session/viewer.decorator';
+import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
+import { GroupService, type IGroupNode } from './group.service';
+import type { TGroupVisibility } from './membership/group-visibility';
 
 // Group.contests는 그룹이 대회 모듈에 의존하지 않도록 contest 모듈의 GroupContestsResolver가 해석한다.
 @Resolver('Group')
@@ -16,8 +18,21 @@ export class GroupResolver {
   }
 
   @Query()
-  group(@Viewer() viewer: IViewer, @Args('id') id: string) {
+  group(@OptionalViewer() viewer: IViewer | null, @Args('id') id: string) {
     return this.groups.group(viewer, id);
+  }
+
+  @Query()
+  discoverGroups(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<GroupService['discoverGroups']>[1],
+  ) {
+    return this.groups.discoverGroups(viewer, query);
+  }
+
+  @Query()
+  publicGroupCount() {
+    return this.groups.publicGroupCount();
   }
 
   @Query()
@@ -26,13 +41,32 @@ export class GroupResolver {
   }
 
   @Mutation()
-  createGroup(@Viewer() viewer: IViewer, @Args('name') name: string) {
-    return this.groups.createGroup(viewer, name);
+  createGroup(
+    @Viewer() viewer: IViewer,
+    @Args('name') name: string,
+    @Args('visibility') visibility: TGroupVisibility,
+    @ClientAddress() address: string | null,
+    @Args('description') description?: string | null,
+  ) {
+    return this.groups.createGroup(viewer, name, visibility, description, address);
   }
 
   @Mutation()
-  joinGroup(@Viewer() viewer: IViewer, @Args('token') token: string) {
-    return this.groups.joinGroup(viewer, token);
+  requestGroupMembership(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @ClientAddress() address: string | null,
+  ) {
+    return this.groups.requestMembership(viewer, groupId, address);
+  }
+
+  @Mutation()
+  joinGroup(
+    @Viewer() viewer: IViewer,
+    @Args('token') token: string,
+    @ClientAddress() address: string | null,
+  ) {
+    return this.groups.joinGroup(viewer, token, address);
   }
 
   @Mutation()
@@ -41,12 +75,17 @@ export class GroupResolver {
   }
 
   @ResolveField()
-  members(@Parent() group: IGroupNode) {
-    return group.loadMembers();
+  members(
+    @Parent() group: IGroupNode,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
+  ) {
+    return group.loadMembers(offset, limit);
   }
 
   @ResolveField()
   leaderboard(@Parent() group: IGroupNode) {
+    if (!group.role) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
     return this.groups.leaderboard(group.id);
   }
 }

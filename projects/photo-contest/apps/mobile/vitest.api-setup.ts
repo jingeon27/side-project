@@ -1,6 +1,6 @@
-import { startIsolatedApi } from '@photo-contest/test-kit';
-import type { IIsolatedApi } from '@photo-contest/test-kit';
 import type { TestProject } from 'vitest/node';
+
+import { startIsolatedApi, type IIsolatedApi } from '@photo-contest/test-kit';
 
 /** 모바일 api 레인 전용 포트. 개발 서버(4200)·다른 레인과 겹치지 않는다. */
 const API_PORT = 4331;
@@ -22,12 +22,6 @@ export async function setup(project: TestProject) {
     port: API_PORT,
     webOrigin: MOBILE_API_WEB_ORIGIN,
     prefix: 'mobile_api',
-    env: {
-      GOOGLE_CLIENT_ID: 'mobile-test-client',
-      GOOGLE_CLIENT_SECRET: 'mobile-test-secret',
-      MOBILE_MINIMUM_VERSION: '1.0.0',
-      MOBILE_LATEST_VERSION: '1.2.0',
-    },
   });
   project.provide('apiUrl', api.url);
   project.provide('webOrigin', MOBILE_API_WEB_ORIGIN);

@@ -23,14 +23,29 @@ export const ERROR_MESSAGE = {
   INVALID_INVITE: '유효하지 않은 초대 링크입니다.',
   NOT_SUBMISSION_PHASE: '사진 제출 기간이 아닙니다.',
   REQUEST_CONFLICT: '요청이 겹쳤습니다. 다시 시도해 주세요.',
-  ALREADY_DONE: '이미 제출하거나 투표했습니다.',
-  APP_LOGIN_REJECTED: '앱 로그인 요청을 확인할 수 없습니다.',
+  ALREADY_DONE: '이미 처리된 요청입니다.',
+  ALREADY_VOTED: '이미 이 대회에 투표했습니다.',
+  ANONYMOUS_VOTE_FORBIDDEN:
+    '익명 계정은 대회에 투표할 수 없어요. 회원으로 가입하거나 로그인한 뒤 투표해 주세요.',
+  ALREADY_SUBMITTED: '이미 이 대회에 사진을 제출했습니다.',
+  UPLOAD_ALREADY_USED: '이미 다른 곳에 사용한 업로드입니다. 파일을 다시 올려 주세요.',
   FORBIDDEN_ORIGIN: '허용되지 않은 요청 출처입니다.',
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
-} as const;
+} as const satisfies Record<string, string>;
+
+/** 기존 GraphQL 직렬화·REST 필터 계약을 유지하면서 업무 오류 code를 타입으로 제공한다. */
+export class DomainError extends GraphQLError {
+  constructor(
+    message: string,
+    readonly code: TErrorCode = ERROR_CODE.BAD_USER_INPUT,
+  ) {
+    super(message, { extensions: { code } });
+    this.name = 'DomainError';
+  }
+}
 
 export function fail(message: string, code: TErrorCode = ERROR_CODE.BAD_USER_INPUT): never {
-  throw new GraphQLError(message, { extensions: { code } });
+  throw new DomainError(message, code);
 }
 
 export function isErrorCode(code: unknown): code is TErrorCode {

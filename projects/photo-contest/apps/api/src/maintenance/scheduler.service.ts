@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 
-import { ContestCompletionService } from '../analytics/contest-completion.service';
+import { ContestCompletionService } from '../analytics/completion/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
+import { ContestNotificationService } from '../notification/contest-notification.service';
 import { MaintenanceService } from './maintenance.service';
 
 /** 정리 → 종료 기록을 주기마다 한 번씩, 앞선 실행과 겹치지 않게 돌린다. */
@@ -15,6 +15,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly maintenance: MaintenanceService,
     private readonly completion: ContestCompletionService,
+    private readonly notifications: ContestNotificationService,
   ) {}
 
   onModuleInit() {
@@ -23,12 +24,12 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     this.stop();
-    await this.running?.catch(() => undefined);
+    await this.running;
   }
 
   start() {
     if (this.timer) return;
-    this.timer = setInterval(() => this.handleTick(), MAINTENANCE_INTERVAL_MS);
+    this.timer = setInterval(this.handleTick, MAINTENANCE_INTERVAL_MS);
     // 대기 중인 타이머 때문에 프로세스가 끝나지 않는 일이 없게 한다.
     this.timer.unref();
   }
@@ -45,23 +46,44 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   runOnce(): Promise<void> {
     const previous = this.running ?? Promise.resolve();
-    const run = previous.catch(() => undefined).then(() => this.runSteps());
-    const settled: Promise<void> = run
-      .catch(() => undefined)
-      .finally(() => {
+    const runQueued = async () => {
+      try {
+        await previous;
+      } catch {
+        // 앞선 실패가 다음 실행을 막지 않게 한다.
+      }
+      await this.runSteps();
+    };
+    const run = runQueued();
+    const settle = async () => {
+      try {
+        await run;
+      } catch {
+        // 실패는 호출자에게 반환한 run으로 전달한다.
+      } finally {
         if (this.running === settled) this.running = undefined;
-      });
+      }
+    };
+    const settled = settle();
     this.running = settled;
     return run;
   }
 
-  private handleTick() {
+  private readonly handleTick = async () => {
     if (this.running) return;
-    this.runOnce().catch((error: unknown) => reportUnexpectedError(error, { job: 'maintenance' }));
-  }
+    try {
+      await this.runOnce();
+    } catch (error) {
+      reportUnexpectedError(error, { job: 'maintenance' });
+    }
+  };
 
   private async runSteps() {
-    const steps = [() => this.maintenance.cleanup(), () => this.completion.recordCompletedContests()];
+    const steps = [
+      () => this.maintenance.cleanup(),
+      () => this.completion.recordCompletedContests(),
+      () => this.notifications.sendDue(),
+    ];
     const failures: unknown[] = [];
     for (const step of steps) {
       try {

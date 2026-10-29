@@ -1,5 +1,4 @@
-import { ApolloDriver } from '@nestjs/apollo';
-import type { ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 
@@ -14,9 +13,13 @@ import { HealthModule } from './health/health.module';
 import { LikeModule } from './like/like.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { NotificationModule } from './notification/notification.module';
+import { PostModule } from './post/post.module';
+import { ProfileModule } from './profile/profile.module';
+import { PushModule } from './push/push.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
-import { TestingModule } from './testing/testing.module';
 import { VoteModule } from './vote/vote.module';
 
 @Module({
@@ -25,17 +28,21 @@ import { VoteModule } from './vote/vote.module';
     GraphQLModule.forRootAsync<ApolloDriverConfig>({ driver: ApolloDriver, useFactory: graphqlOptions }),
     DatabaseModule,
     StorageModule,
+    RateLimitModule,
     AuthModule,
+    PushModule,
+    ProfileModule,
     GroupModule,
     ContestModule,
     SubmissionModule,
     FeedModule,
+    PostModule,
+    NotificationModule,
     LikeModule,
     VoteModule,
     ModerationModule,
     MaintenanceModule,
     HealthModule,
-    TestingModule,
   ],
   providers: [DateTimeScalar],
 })

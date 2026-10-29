@@ -1,0 +1,244 @@
+name: Game Feedback
+
+on:
+  pull_request:
+    paths:
+      - 'projects/game-feedback/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
+      - '.github/workflows/game-feedback.yml'
+      - '.github/workflows/shared-instance.yml'
+      - 'deploy/shared-instance/**'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'projects/game-feedback/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
+      - '.github/workflows/game-feedback.yml'
+      - '.github/workflows/shared-instance.yml'
+      - 'deploy/shared-instance/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request replaces its older run. Push and manual runs (and their deployments) get their own
+# group, so they are never cancelled here; the deploy job serializes itself.
+concurrency:
+  group: game-feedback-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
+    # User 1001 is the image's pwuser, so the embedded test PostgreSQL does not start as root.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
+    timeout-minutes: 35
+    env:
+      GF_S3_BUCKET: ${{ vars.GAME_FEEDBACK_S3_BUCKET }}
+      GF_S3_REGION: ap-northeast-2
+      GF_S3_KEY_PREFIX: ${{ vars.GAME_FEEDBACK_S3_KEY_PREFIX || 'game-feedback/ci' }}
+      GF_S3_ACCESS_KEY_ID: ${{ secrets.GAME_FEEDBACK_S3_ACCESS_KEY_ID }}
+      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GAME_FEEDBACK_S3_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Reject incompatible new migrations
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
+        run: node scripts/check-migrations.ts
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - id: install
+        run: yarn install --immutable
+      - run: yarn format:check
+      - run: yarn typecheck:scripts
+      - run: yarn workspace @side/game-feedback codegen
+      - name: Check generated SDK
+        run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
+      - run: yarn workspace @side/design-system check
+      - run: yarn check:game-feedback
+      - run: yarn workspace @side/config check
+      - run: yarn workspace @side/toolkit check
+      - run: yarn test:game-feedback
+      - run: yarn build:game-feedback
+      - run: yarn workspace @side/game-feedback test:e2e
+      - name: Verify telemetry with intercepted SDK requests
+        if: always() && !cancelled() && steps.install.outcome == 'success'
+        env:
+          GF_OBSERVABILITY_PRODUCTION: 'true'
+        run: yarn workspace @game-feedback/web test:observability
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: game-feedback-playwright
+          path: |
+            projects/game-feedback/apps/web/test-results
+            projects/game-feedback/apps/web/.e2e-build/observability-results
+            projects/game-feedback/apps/web/.e2e-build/test-auth-results
+            projects/game-feedback/apps/web/.e2e-build/prefetch-results
+            projects/game-feedback/apps/admin/test-results
+            projects/game-feedback/apps/mobile/test-results
+          retention-days: 7
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - name: Stop owned test database
+        if: always() && steps.install.outcome == 'success'
+        run: yarn workspace @side/game-feedback db:test:stop
+
+  components:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 24 }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      - run: yarn workspace @game-feedback/contracts build
+      - run: yarn workspace @game-feedback/admin test:browser
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: game-feedback-admin-component-traces
+          path: projects/game-feedback/apps/admin/test-results/
+
+  shared-contract:
+    uses: ./.github/workflows/shared-instance.yml
+    secrets: inherit
+
+  # Publishes the exact image archive verified by the shared-instance contract.
+  publish:
+    needs: [verify, components, shared-contract]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_image: ${{ steps.push.outputs.api_image }}
+      web_image: ${{ steps.push.outputs.web_image }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/shared-images
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the exact verified images
+        id: push
+        env:
+          IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
+        run: |
+          gzip -dc "$RUNNER_TEMP/shared-images/game-feedback.tar.gz" | docker load
+          for app in api web; do
+            image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
+            docker tag "side-shared-gf-$app:$GITHUB_SHA" "$image"
+            docker push "$image"
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+  deploy:
+    needs: publish
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    # Covers waiting for the other service on the host lock plus one deployment and its rollback.
+    # The deployment itself runs detached on the host, so a timeout only stops following it.
+    timeout-minutes: 45
+    environment: game-feedback-production
+    concurrency:
+      # Per service: the host flock serializes the two services without cancelling each other's queued job.
+      group: shared-instance-deploy-game-feedback
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: Skip when a newer commit changed this service
+        id: latest
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: bash deploy/shared-instance/scripts/ci-superseded.sh game-feedback main
+      - name: Authenticate the SSM deployment with GitHub OIDC
+        if: steps.latest.outputs.deploy == 'true' && vars.SIDE_DEPLOY_SSM_INSTANCE_ID != ''
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.SIDE_DEPLOY_AWS_ROLE_ARN }}
+          role-session-name: side-cd-${{ github.run_id }}
+          role-duration-seconds: 3600
+          aws-region: ap-northeast-2
+          allowed-account-ids: ${{ vars.SIDE_DEPLOY_AWS_ACCOUNT_ID }}
+      - name: Install the pinned Session Manager plugin
+        if: steps.latest.outputs.deploy == 'true' && vars.SIDE_DEPLOY_SSM_INSTANCE_ID != ''
+        run: bash deploy/shared-instance/scripts/ci-session-manager.sh
+      - name: Deploy the tested image digests to the shared host
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          API_IMAGE: ${{ needs.publish.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          DEPLOY_SSM_INSTANCE_ID: ${{ vars.SIDE_DEPLOY_SSM_INSTANCE_ID }}
+          DEPLOY_AWS_REGION: ap-northeast-2
+          DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.SIDE_DEPLOY_SSH_USER }}
+          DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+          SERVICE_ENV: ${{ secrets.SERVICE_ENV }}
+          SERVICE_ENV_OVERRIDES: ${{ secrets.SERVICE_ENV_OVERRIDES }}
+          DEPLOY_WAIT_SECONDS: '2400'
+        run: bash deploy/shared-instance/scripts/ci-upload.sh game-feedback
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: '24' }
+      - name: Record web Sentry release through the project webhook
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          SENTRY_RELEASE_TOKEN: ${{ secrets.GAME_FEEDBACK_WEB_SENTRY_AUTH_TOKEN }}
+          SENTRY_PROJECT_ID: '4512287252611072'
+          SENTRY_PROJECT: game-feedback
+          SENTRY_RELEASE: ${{ github.sha }}
+        run: node deploy/shared-instance/scripts/sentry-release.ts
+      - name: Record server Sentry release through the project webhook
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          SENTRY_RELEASE_TOKEN: ${{ secrets.GAME_FEEDBACK_SERVER_SENTRY_AUTH_TOKEN }}
+          SENTRY_PROJECT_ID: '4512316316385280'
+          SENTRY_PROJECT: game-feedback-server
+          SENTRY_RELEASE: ${{ github.sha }}
+        run: node deploy/shared-instance/scripts/sentry-release.ts

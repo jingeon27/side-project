@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Game Mate</title>
+  <rect width="64" height="64" rx="17" fill="#147d64" />
+  <path d="M18 13h28a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H31L20 52v-9h-2a6 6 0 0 1-6-6V19a6 6 0 0 1 6-6Z" fill="#f4fff9" />
+  <path d="M41 23H27v12h14v-6h-6" fill="none" stroke="#147d64" stroke-width="4" stroke-linejoin="round" stroke-linecap="square" />
+</svg>

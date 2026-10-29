@@ -1,33 +1,31 @@
 import {
   APP_MARKER_KEY,
   BRIDGE_ERROR_CODE,
-  NATIVE_EVENT,
-  NATIVE_EVENT_NAME,
-  NATIVE_REQUEST,
-  PROTOCOL_VERSION,
-  WEB_EVENT,
-  WEB_REQUEST,
   createMessageId,
   decodeNativeMessage,
   encodeMessage,
   errorResponse,
+  NATIVE_EVENT,
+  NATIVE_EVENT_NAME,
+  NATIVE_REQUEST,
   parseNativeAppInfo,
+  PROTOCOL_VERSION,
   successResponse,
-} from './protocol';
-import type {
-  TBridgeErrorCode,
-  TNativeAppInfo,
-  TNativeEventPayload,
-  TNativeEventType,
-  TNativeRequestPayload,
-  TNativeRequestResult,
-  TNativeRequestType,
-  TWebEventPayload,
-  TWebEventType,
-  TWebMessage,
-  TWebRequestPayload,
-  TWebRequestResult,
-  TWebRequestType,
+  WEB_EVENT,
+  WEB_REQUEST,
+  type TBridgeErrorCode,
+  type TNativeAppInfo,
+  type TNativeEventPayload,
+  type TNativeEventType,
+  type TNativeRequestPayload,
+  type TNativeRequestResult,
+  type TNativeRequestType,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebMessage,
+  type TWebRequestPayload,
+  type TWebRequestResult,
+  type TWebRequestType,
 } from './protocol';
 
 interface IReactNativeWebView {
@@ -41,12 +39,12 @@ export type TBridgeWindow = Pick<Window, 'addEventListener' | 'removeEventListen
 };
 
 export class BridgeError extends Error {
-  readonly code: TBridgeErrorCode;
-
-  constructor(code: TBridgeErrorCode, message: string) {
+  constructor(
+    readonly code: TBridgeErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'BridgeError';
-    this.code = code;
   }
 }
 
@@ -58,11 +56,13 @@ export function readNativeAppInfo(win: TBridgeWindow | undefined): TNativeAppInf
 
 /** 사용자가 시스템 브라우저나 공유 시트에 머무는 시간이 길어 요청마다 기다리는 시간이 다르다. */
 const DEFAULT_TIMEOUT_MS: Record<TWebRequestType, number> = {
+  'notifications.registration': 2 * 60_000,
+  'notifications.badge': 10_000,
+  'notifications.settings': 10_000,
   'share.open': 5 * 60_000,
   'clipboard.copy': 10_000,
   'haptics.impact': 5_000,
   'link.open': 10_000,
-  'auth.socialLogin': 10 * 60_000,
 };
 
 interface IPendingRequest {
@@ -128,7 +128,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
     }
   }
 
-  function handleNativeEvent(event: Event) {
+  const handleNativeEvent = (event: Event) => {
     const message = decodeNativeMessage((event as CustomEvent<unknown>).detail);
     if (!message) return;
     if (message.kind === 'response') {
@@ -141,8 +141,11 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
         return;
       }
       const result = WEB_REQUEST[request.type].result.safeParse(message.result);
-      if (result.success) request.resolve(result.data);
-      else request.reject(new BridgeError(BRIDGE_ERROR_CODE.Invalid, '앱 응답 형식이 올바르지 않습니다.'));
+      if (result.success) {
+        request.resolve(result.data);
+        return;
+      }
+      request.reject(new BridgeError(BRIDGE_ERROR_CODE.Invalid, '앱 응답 형식이 올바르지 않습니다.'));
       return;
     }
     if (message.kind === 'event') {
@@ -151,7 +154,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
       return;
     }
     void answer(message.id, message.type, message.payload);
-  }
+  };
 
   win?.addEventListener(NATIVE_EVENT_NAME, handleNativeEvent);
 

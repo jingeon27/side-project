@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { API_BASE } from '@/shared/config/env';
 
-import { fetchAppConfig } from '../api/app-config.api';
-import type { TFetch } from '../api/app-config.api';
+import { fetchAppConfig, type TFetch } from '../api/app-config.api';
 import { isUpdateRequired } from '../lib/version.helper';
 
 const APP_CONFIG_TIMEOUT_MS = 5_000;
@@ -37,10 +36,11 @@ export function useVersionGate({
 
   useEffect(() => {
     if (!appVersion) return;
-    let isActive = true;
-    fetchAppConfig(API_BASE, fetchImpl, { timeoutMs: APP_CONFIG_TIMEOUT_MS }).then(
-      (config) => {
-        if (!isActive) return;
+    const lifetime = new AbortController();
+    const checkVersion = async () => {
+      try {
+        const config = await fetchAppConfig(API_BASE, fetchImpl, { timeoutMs: APP_CONFIG_TIMEOUT_MS });
+        if (lifetime.signal.aborted) return;
         setGate(
           isUpdateRequired(appVersion, config.minimumVersion)
             ? {
@@ -50,14 +50,12 @@ export function useVersionGate({
               }
             : { status: 'ok' },
         );
-      },
-      () => {
-        if (isActive) setGate({ status: 'ok' });
-      },
-    );
-    return () => {
-      isActive = false;
+      } catch {
+        if (!lifetime.signal.aborted) setGate({ status: 'ok' });
+      }
     };
+    void checkVersion();
+    return () => lifetime.abort();
   }, [appVersion, fetchImpl]);
 
   return gate;

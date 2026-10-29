@@ -32,6 +32,7 @@ type Submission {
 }
 
 type UploadTicket {
+  fields: [UploadFormField!]!
   id: ID!
   url: String!
   expiresAt: DateTime!
@@ -43,6 +44,7 @@ type Query {
 }
 
 type Mutation {
-  requestUploadUrl(contestId: ID!): UploadTicket!
+  completeSubmissionUpload(uploadId: ID!): Boolean!
+  requestUploadUrl(contestId: ID!, contentType: String!, byteSize: Int!): UploadTicket!
   createSubmission(contestId: ID!, uploadId: ID!, caption: String!, rightsConfirmed: Boolean!): Submission!
 }

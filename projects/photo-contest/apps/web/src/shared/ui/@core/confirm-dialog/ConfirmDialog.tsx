@@ -1,13 +1,16 @@
 'use client';
 
-import { AlertDialog } from '@base-ui/react/alert-dialog';
-import type { ReactNode } from 'react';
-import { useTransition } from 'react';
+import { useTransition, type ReactNode } from 'react';
 
-import { getOverlayContainer } from '../../../lib/overlay-container.helper';
+import { AlertDialog } from '@base-ui/react/alert-dialog';
+
+import { dialogStyles } from '@side/design-system';
+
+import { cn } from '../../../lib/cn.helper';
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { useOverlayHistory } from '../../../model/router';
 import { Button } from '../button';
+import { OverlayPortal } from '../overlay-portal';
 
 export interface IConfirmDialogProps extends IOverlayControlProps {
   title: string;
@@ -59,38 +62,48 @@ export function ConfirmDialog({
         if (!open) unmount?.();
       }}
     >
-      <AlertDialog.Portal container={getOverlayContainer()}>
-        <AlertDialog.Backdrop className="fixed inset-0 z-dialog bg-scrim transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <AlertDialog.Viewport className="fixed inset-0 z-dialog flex items-center justify-center px-6">
-          <AlertDialog.Popup className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-card bg-surface p-6 text-ink shadow-sheet outline-none transition-[opacity,scale] duration-200 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
-            <AlertDialog.Title className="text-title text-ink">{title}</AlertDialog.Title>
-            {description ? (
-              <AlertDialog.Description className="mt-2 text-body text-muted">
-                {description}
-              </AlertDialog.Description>
-            ) : null}
-            <div className="mt-6 flex gap-2">
-              <AlertDialog.Close
-                render={
-                  <Button variant="secondary" size="lg" fullWidth className="flex-1" disabled={isPending} />
-                }
-              >
-                {cancelLabel}
-              </AlertDialog.Close>
-              <Button
-                variant={tone === 'danger' ? 'danger' : 'primary'}
-                size="lg"
-                fullWidth
-                className="flex-1"
-                loading={isPending}
-                onClick={handleConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </div>
-          </AlertDialog.Popup>
-        </AlertDialog.Viewport>
-      </AlertDialog.Portal>
+      <OverlayPortal>
+        {(container) => (
+          <AlertDialog.Portal container={container}>
+            <AlertDialog.Backdrop className={dialogStyles.backdrop} />
+            <AlertDialog.Viewport className={dialogStyles.viewport}>
+              <AlertDialog.Popup className={cn(dialogStyles.popup, 'max-w-sm')}>
+                <AlertDialog.Title className={dialogStyles.title}>{title}</AlertDialog.Title>
+                {description ? (
+                  <AlertDialog.Description className={dialogStyles.description}>
+                    {description}
+                  </AlertDialog.Description>
+                ) : null}
+                <div className="mt-6 flex gap-2">
+                  <AlertDialog.Close
+                    render={
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        className="flex-1"
+                        disabled={isPending}
+                      />
+                    }
+                  >
+                    {cancelLabel}
+                  </AlertDialog.Close>
+                  <Button
+                    variant={tone === 'danger' ? 'danger' : 'primary'}
+                    size="lg"
+                    fullWidth
+                    className="flex-1"
+                    loading={isPending}
+                    onClick={handleConfirm}
+                  >
+                    {confirmLabel}
+                  </Button>
+                </div>
+              </AlertDialog.Popup>
+            </AlertDialog.Viewport>
+          </AlertDialog.Portal>
+        )}
+      </OverlayPortal>
     </AlertDialog.Root>
   );
 }

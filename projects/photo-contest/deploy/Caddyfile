@@ -1,0 +1,21 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 110MB
+	}
+	@graphql path_regexp graphql (?i)^/backend/graphql/?$
+	handle @graphql {
+		rewrite * /backend/graphql
+		reverse_proxy web:3200
+	}
+	handle_path /backend/* {
+		reverse_proxy api:4200
+	}
+	handle {
+		reverse_proxy web:3200
+	}
+}

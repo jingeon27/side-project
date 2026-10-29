@@ -1,4 +1,6 @@
 import type * as Amplitude from '@amplitude/analytics-react-native';
+import { memoize } from 'es-toolkit';
+
 import type { TWebEventPayload } from '@photo-contest/bridge';
 
 import type { TAnalyticsEvent } from '../config/events';
@@ -16,8 +18,8 @@ const MAX_DEVICE_ID_LENGTH = 128;
 const INIT_OPTIONS = {
   // 카탈로그의 이벤트만 보낸다. 세션·화면·앱 수명 주기 자동 수집은 끈다.
   autocapture: false,
-  // 광고·기기 식별자는 모으지 않는다. SDK가 만든 무작위 기기 ID만 웹과 함께 쓴다.
-  trackingOptions: { adid: false, appSetId: false, idfv: false },
+  // 광고·기기 식별자와 IP는 모으지 않는다(웹과 같다). SDK가 만든 무작위 기기 ID만 웹과 함께 쓴다.
+  trackingOptions: { adid: false, appSetId: false, idfv: false, ipAddress: false },
 } satisfies Amplitude.Types.ReactNativeOptions;
 
 export type TIdentityChange =
@@ -55,40 +57,44 @@ function safely(run: () => void) {
 
 /** Amplitude 연결. 판단만 하고 SDK는 주입받아 키가 없을 때 아무것도 하지 않는지 테스트한다. */
 export function createAnalytics({ apiKey, sdk, startTimeoutMs = START_TIMEOUT_MS }: ICreateAnalyticsOptions) {
-  let starting: Promise<string | null> | null = null;
-
-  async function initialize(key: string) {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<null>((resolve) => {
-      timer = setTimeout(() => resolve(null), startTimeoutMs);
-    });
-    // 앱 시작이 이 결과를 기다리므로 SDK가 거부하거나 던져도 null로 끝낸다.
-    const ready = Promise.resolve()
-      .then(() => sdk.init(key, undefined, INIT_OPTIONS).promise)
-      .then(() => {
-        const deviceId = sdk.getDeviceId();
-        return deviceId && deviceId.length <= MAX_DEVICE_ID_LENGTH ? deviceId : null;
-      })
-      .catch(() => null);
+  const initializeSdk = async (key: string) => {
     try {
-      return await Promise.race([ready, timeout]);
-    } finally {
-      clearTimeout(timer);
+      // SDK 호출을 다음 microtask로 미뤄 동시 start도 같은 초기화 Promise를 받게 한다.
+      await Promise.resolve();
+      await sdk.init(key, undefined, INIT_OPTIONS).promise;
+      const deviceId = sdk.getDeviceId();
+      return deviceId && deviceId.length <= MAX_DEVICE_ID_LENGTH ? deviceId : null;
+    } catch {
+      return null;
     }
-  }
+  };
+  const initialize = memoize(async (key: string) => {
+    const lifetime = new AbortController();
+    const timeout = new Promise<null>((resolve) => {
+      const timer = setTimeout(resolve, startTimeoutMs, null);
+      lifetime.signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
+    });
+    try {
+      return await Promise.race([initializeSdk(key), timeout]);
+    } finally {
+      lifetime.abort();
+    }
+  });
 
   return {
     /** 한 번만 초기화하고 웹에 넘길 기기 ID를 돌려준다. 키가 없거나 실패·시간 초과면 null. 거부하지 않는다. */
     start: (): Promise<string | null> => {
       if (!apiKey) return Promise.resolve(null);
-      starting ??= initialize(apiKey);
-      return starting;
+      return initialize(apiKey);
     },
     track: (event: TAnalyticsEvent) => {
       if (!apiKey) return;
       safely(() => {
-        if ('properties' in event) sdk.track(event.name, event.properties);
-        else sdk.track(event.name);
+        if ('properties' in event) {
+          sdk.track(event.name, event.properties);
+          return;
+        }
+        sdk.track(event.name);
       });
     },
     applyAuth: (payload: TWebEventPayload<'auth.changed'>) => {

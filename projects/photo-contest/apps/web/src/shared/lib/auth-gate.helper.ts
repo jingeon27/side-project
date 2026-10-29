@@ -1,8 +1,8 @@
-import { NEXT_PATH_PARAM, SESSION_COOKIE_NAME } from '../constants/auth';
-import { ROUTES } from '../constants/routes';
+import { NEXT_PATH_PARAM, SESSION_COOKIE_NAMES } from '../constants/auth';
+import { ROUTES, SESSION_PATH_PREFIXES, SESSION_PATHS } from '../constants/routes';
 
-/** API의 cookie-header 파서와 같은 상한. 넘으면 형식 오류로 보고 비로그인 취급한다. */
-const MAX_COOKIE_HEADER_LENGTH = 4096;
+/** API의 cookie-header 파서와 같은 상한(8KB). 넘으면 형식 오류로 보고 비로그인 취급한다. */
+const MAX_COOKIE_HEADER_LENGTH = 8 * 1024;
 const MAX_NEXT_PATH_LENGTH = 2048;
 // 줄바꿈 등 제어 문자로 헤더·로그를 오염시키는 값을 막는다.
 const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
@@ -31,26 +31,23 @@ export function readCookie(cookieHeader: string | null | undefined, name: string
 
 /** 세션 쿠키가 있는지만 본다. 만료 여부는 API가 판단한다. */
 export function hasSessionCookie(cookieHeader: string | null | undefined) {
-  return Boolean(readCookie(cookieHeader, SESSION_COOKIE_NAME));
+  return SESSION_COOKIE_NAMES.some((name) => Boolean(readCookie(cookieHeader, name)));
 }
 
-/** 로그인해야 볼 수 있는 화면인지. proxy.ts의 matcher와 같은 범위다. */
-export function isMemberOnlyPath(pathname: string) {
+/** 익명 또는 회원 세션이 필요한 화면인지. proxy.ts의 matcher와 같은 범위다. */
+export function isSessionRequiredPath(pathname: string) {
   return (
-    pathname === ROUTES.ME ||
-    pathname === '/groups' ||
-    pathname.startsWith('/groups/') ||
-    pathname === '/contests' ||
-    pathname.startsWith('/contests/')
+    SESSION_PATHS.some((path) => path === pathname) ||
+    SESSION_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   );
 }
 
-/** `/?next=<원래 경로+쿼리>` */
+/** `/sign?next=<원래 경로+쿼리>` */
 export function buildLoginRedirectPath(nextPath: string) {
-  return `${ROUTES.HOME}?${new URLSearchParams({ [NEXT_PATH_PARAM]: nextPath }).toString()}`;
+  return `${ROUTES.SIGN}?${new URLSearchParams({ [NEXT_PATH_PARAM]: getSafeNextPath(nextPath) }).toString()}`;
 }
 
-/** 멤버 전용 화면에 세션 쿠키 없이 들어오면 홈의 로그인 패널로 보낸다. */
+/** 세션 없이 콘텐츠 화면에 들어오면 인증 화면으로 보낸다. */
 export function decideAuthGate({
   pathname,
   search,
@@ -60,7 +57,7 @@ export function decideAuthGate({
   search: string;
   cookieHeader: string | null | undefined;
 }): TAuthGateDecision {
-  if (!isMemberOnlyPath(pathname) || hasSessionCookie(cookieHeader)) return { type: 'allow' };
+  if (!isSessionRequiredPath(pathname) || hasSessionCookie(cookieHeader)) return { type: 'allow' };
   return { type: 'redirect', location: buildLoginRedirectPath(`${pathname}${search}`) };
 }
 
@@ -71,6 +68,7 @@ export function getSafeNextPath(next: string | null | undefined) {
     next.length > MAX_NEXT_PATH_LENGTH ||
     !next.startsWith('/') ||
     next.startsWith('//') ||
+    /^\/(sign|login)(?:[/?#]|$)/.test(next) ||
     next.includes('\\') ||
     CONTROL_CHARACTER.test(next)
   )

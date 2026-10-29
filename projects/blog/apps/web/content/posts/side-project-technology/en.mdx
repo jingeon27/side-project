@@ -1,0 +1,128 @@
+<Summary>
+
+The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.
+
+</Summary>
+
+![An illustration of two application panels connected to API and database blocks, with a stack of test cards](/images/covers/side-project-technology.png)
+
+*An illustration made for this article, rather than a diagram of the deployed systems.*
+
+The photo community and Game Mate share a repository, but I did not give them identical APIs and caches. Both use Next.js and React for the web, NestJS for the server, and PostgreSQL. The photo service uses GraphQL and Apollo; Game Mate uses REST and TanStack Query.
+
+I wanted to work with Apollo’s normalized cache for a post appearing in several lists. In Game Mate, I wanted to use query keys to decide which lists and details to reread after an edit. I chose to work through both update models rather than reuse one configuration everywhere.
+
+The [product and screen article](/en/blog/what-i-kept-changing-while-planning-my-side-projects) covered anonymous history, voting, and message retries. Implementing those behaviors also brought decisions about API responses, database writes, and cache updates.
+
+## Build the web screens first, then share them with the app
+
+Both web applications use React and the Next.js App Router. Public posts and groups get server-rendered HTML for their initial content and search metadata. Interactive parts, such as comments and forms, use Client Components.
+
+I did not want a public post to wait for browser-side fetching before its content appeared. The server renders the initial body and search metadata. I separated public queries from personalized ones so a session or permission-dependent result would not enter the shared public cache.
+
+The mobile applications use Expo with a WebView to share the web screens. I wanted to refine writing posts and reading replies on the web before maintaining a second set of screens. Push notifications, opening the system browser, and sharing connect through a message contract between the web and the app.
+
+The WebView saves a second implementation of the screens, but back navigation, the keyboard, and safe areas still need app-specific handling. Social login opens the system browser and exchanges a one-time code. Store releases and final checks on real devices remain ahead.
+
+Forms use React Hook Form and Zod to keep field validation and submission state together. A shared design system owns the colors and spacing of buttons and inputs, while menus and dialogs build on Base UI. Returning focus, finishing exit animations, and connecting back navigation still require application-specific work and checks.
+
+## Use different browser caches
+
+One photo post can appear in the home feed, its group, and a popular-post list. I used Apollo Client to work with the same entity read and changed across those screens.
+
+Apollo does not automatically keep every list correct. Changing a post's title differs from removing it from a list. A pagination merge can even bring a deleted item back into the result. I put type policies and cache updates with their domains, and separated lists by their group, sort order, and parent comment ID. Some mutations also refetch active queries.
+
+For Game Mate, I chose REST and TanStack Query. I wanted to decide which queries to refresh after changing a post, its detail, or its replies. Query keys and `queryOptions` live together, and the feature making the change invalidates the related queries.
+
+In both applications, server state stays in the query library rather than being copied into another `useState`. The form owns the draft input; Apollo or TanStack Query owns the value returned by the server. When several places can change copies of the same value, finding the latest one becomes another job after every save.
+
+To change a photo-service list, I go to its Apollo domain update helper; in Game Mate, I go to query keys and invalidation options. I left those forms visible because a common API hook would make it harder to see what gets reread.
+
+## Let NestJS check permissions and save data
+
+Both servers use NestJS with Express, Prisma, and PostgreSQL. Next.js renders the screens and forwards API requests through the same origin. NestJS checks who can join a group, delete a post, or vote at a given time.
+
+Someone can call the API directly even when the screen hides a button. The API therefore checks whether that person may read a private group's posts or remove a member.
+
+Controllers receive requests, services check permissions and save data, and modules register the services and connections a feature needs. OAuth and game API calls live separately. Tests of server logic can connect prepared responses instead of waiting for real external providers.
+
+Modules follow features such as authentication, groups, posts, and chat. Data that needs to be saved together goes into a transaction. Each application has its own server, database, and accounts. Using NestJS for both did not mean their user models needed to be combined.
+
+Prisma’s query types do not make two concurrent requests save only once. I handled that with database constraints and locks, then checked it by overlapping requests against real PostgreSQL.
+
+## Generate API types from one source and check actual responses
+
+Game Mate's API contract starts with the Zod schemas used by the server. Those produce OpenAPI, which Orval uses to generate the SDK. This reduces the need to update separate server and frontend types whenever a response changes.
+
+```text
+Zod contracts
+  → OpenAPI
+  → generated SDK and response schemas
+  → web and admin consumers
+```
+
+The API and web can deploy at different times, and the server can return an unexpected value. Generated types can therefore disagree with the response. The SDK transport applies response schemas, with tests checking that generated requests keep that validation path.
+
+I avoided filling every unexpected response with defaults. A few display fields have an explicit fallback policy, but invalid IDs, permissions, sessions, bodies, and lists surface as errors. I did not want the screen to keep rendering by silently changing important data. That boundary lives in the [SDK response handling](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/packages/sdk/src/http.ts).
+
+The photo service generates types and Documents from the API's GraphQL schema and the web application's operations. CI regenerates them and checks for differences, including when someone changes a query but forgets its generated output. Input validation and permission checks still belong on the server. A GraphQL type does not check who may join a group or when voting is allowed.
+
+## Enforce duplicate-request rules in the database
+
+Disabling a voting button after a click reduces duplicate clicks. It cannot stop someone voting from another tab or sending two requests directly.
+
+The photo service has a unique constraint on the contest and voter pair. Two requests can both check that no vote exists before either writes one. The final write must still allow only one vote. The voting operation also checks the period, group membership, and whether the entry belongs to the voter within its transaction. The [group contest implementation](https://github.com/jingeon27/side-project/blob/96e33d77/projects/photo-contest/apps/api/src/contest/group-contest.service.ts) contains that flow.
+
+Game Mate sends a client-generated message ID with each chat message. If the same sender retries the same ID and content, the API returns the stored message. Reusing that ID with different content produces a conflict. A retry after a lost response should not create a second message.
+
+The send operation locks the conversation row and checks access and attachments again. It saves the message, notification, and pending push delivery in the same transaction, then publishes the live event after the commit. Serializing sends within one conversation limits parallelism there. For now, I chose to keep message order and read boundaries consistent. The order is visible in the [chat send implementation](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/apps/api/src/chat/chat-message.service.ts).
+
+A database stand-in cannot establish all of this. I needed tests that sent concurrent requests to real PostgreSQL and checked both the responses and the stored rows.
+
+## Separate a successful save from failed cache delivery
+
+After adding a public server cache to Game Mate, refreshing the browser cache was no longer enough. If Next.js returned an older post on the next request, a recent edit could appear to have reverted.
+
+The database transaction now also records the cache tags to invalidate. After committing, the API delivers them to a Next.js Route Handler. A failed delivery leaves a pending record for retry. Reporting a post creation as failed after the post was already saved could prompt the user to create it again.
+
+A newer change can also arrive for the same tag while an earlier delivery is in flight. The earlier response must not delete the newer pending record, so acknowledgement removes only records matching the delivered revision. The [integration tests](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/apps/api/src/cache-invalidation/cache-invalidation.integration.spec.ts) cover delivery after a restart and overlapping changes.
+
+A reader can still receive an older post before tag delivery completes. This setup keeps an already saved post from being reported as failed and allows retrying cache delivery; it does not make every read immediately current.
+
+## Let each app own tests for its boundaries
+
+Vitest checks sorting and validation rules quickly. Integration tests use actual PostgreSQL and the API for constraints, transactions, and HTTP behavior. Playwright exercises the web screens. The API does not need a browser test runner.
+
+Each app owns its test configuration and runner. The repository root delegates to the relevant checks. Test ports and temporary database schemas are separate from development, so running a check does not change the data in a server I am using.
+
+OAuth and game API tests substitute provider responses. Media integration tests use real S3 with a different object prefix for each run. Form behavior can pass while S3 permissions, signatures, or uploads fail, so they need separate checks.
+
+CI failures made browser waiting states more specific. A button can exist in server HTML before its handler is connected. Deletion can finish while the confirmation dialog is still animating closed. Increasing a timeout alone does not distinguish a clickable control from a finished transition.
+
+Duplicate votes and retried messages are easy to miss in a test of one successful request. So are attempts to read private posts and failed cache delivery after saving. Those cases are why I split tests across screens, the database, and external connections.
+
+## Turn recurring review comments into ESLint rules
+
+Splitting screens into folders did not help much when one feature reached straight into another feature's internals. Repeating the same import corrections in reviews became tedious. I moved the checks for folder and import boundaries into ESLint.
+
+The configuration lives in `packages/config/eslint`. It separates common TypeScript rules, React, DOM accessibility, Next.js, and Expo presets. A web label rule should not apply to React Native. Each app combines the presets it needs with its own paths.
+
+Rule implementations have their own folders under `rules/fsd`, `rules/web`, and `rules/common`, with tests and fixtures beside each rule. The [ESLint package](https://github.com/jingeon27/side-project/tree/96e33d77/packages/config/eslint/src) contains both the presets and their rules.
+
+The FSD checks use three rules:
+
+- `layer-imports` checks imports from a lower layer into a higher one.
+- `slice-public-api` checks imports into another slice's internals and imports through a slice's own barrel.
+- `no-cross-page` checks dependencies between page slices.
+
+They share path handling in `fsd.helper.ts`. It resolves the `@/` alias and relative paths, then compares the source and target layers and slices. It also identifies the allowed paths for types, mocks, schemas, and server files.
+
+A rule could pass simply because it found no files after receiving the wrong `srcDir`. I made a missing path or a path without recognized layer directories a configuration error, rather than treating an empty inspection as success.
+
+RuleTester fixtures include imports that should pass and imports that should fail. They check both alias and relative paths, so changing the spelling of an import does not bypass the boundary. Both forms appear in the [barrel-boundary tests](https://github.com/jingeon27/side-project/blob/96e33d77/packages/config/eslint/src/rules/fsd/slice-public-api/slice-public-api.spec.ts).
+
+Rules also check direct `fetch` calls in components and duplicated overlay-open state. Sharing presets exposed an ESLint flat-config constraint: one plugin name cannot refer to two different objects. Common and web rules therefore live on one `sidePlugin`, with each preset enabling the rules it needs.
+
+CI can catch these import and implementation patterns before review. I still read the code and tests to check where permissions are enforced and which writes belong in a transaction.
+
+For infrastructure, the initial cost led me to choose one EC2 instance for the two services and PostgreSQL. That gives failures a wider impact and leaves backups and recovery to manage. Files go directly to S3 to reduce the API paths that receive large uploads. The cost and operational choices are covered in the [infrastructure article](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).

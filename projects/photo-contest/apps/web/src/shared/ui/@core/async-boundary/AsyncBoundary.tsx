@@ -1,7 +1,7 @@
 'use client';
 
-import { Component, Suspense } from 'react';
-import type { ReactNode } from 'react';
+import { Component, Suspense, type ReactNode } from 'react';
+
 import { match } from 'ts-pattern';
 
 import { getErrorMessage } from '../../../model/error';
@@ -18,7 +18,7 @@ interface IAsyncBoundaryProps {
 type TErrorState = { status: 'ready' } | { status: 'failed' | 'retrying'; error: unknown };
 
 class QueryErrorBoundary extends Component<Omit<IAsyncBoundaryProps, 'fallback' | 'resetKey'>, TErrorState> {
-  state: TErrorState = { status: 'ready' };
+  override state: TErrorState = { status: 'ready' };
 
   static getDerivedStateFromError(error: unknown): TErrorState {
     return { status: 'failed', error };
@@ -36,7 +36,7 @@ class QueryErrorBoundary extends Component<Omit<IAsyncBoundaryProps, 'fallback' 
     }
   }
 
-  render() {
+  override render() {
     return match(this.state)
       .with({ status: 'ready' }, () => this.props.children)
       .with({ status: 'failed' }, { status: 'retrying' }, ({ status, error }) =>

@@ -1,0 +1,168 @@
+@layer components {
+  .ds-sheet-backdrop[data-resizable] {
+    opacity: calc(0.3 + 0.4 * (1 - var(--drawer-swipe-progress, 0)));
+  }
+  .ds-sheet-viewport {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--visual-viewport-top, 0px);
+    height: var(--visual-viewport-height, 100dvh);
+    z-index: var(--z-index-dialog);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    /* 포커스 이동이 viewport를 스크롤해 시트의 스냅 위치까지 바꾸지 않게 한다. */
+    overflow: clip;
+  }
+  .ds-sheet-popup {
+    /* Drawer의 고빈도 CSS 변수는 상속되지 않으므로 본문에는 계산된 별칭을 전달한다. */
+    --sheet-visible-offset: var(--drawer-snap-point-offset, 0px);
+    position: relative;
+    width: 100%;
+    max-width: var(--max-width-app);
+    height: calc(100% - 16px);
+    flex-shrink: 0;
+    border: 1px solid var(--color-line);
+    border-bottom: 0;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-sheet);
+    /* 포커스를 받는 컨테이너라 링은 숨기되 forced-colors에서는 Tailwind outline-hidden처럼 보이게 둔다. */
+    outline-style: none;
+    overflow: hidden;
+    transform: translateY(calc(var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)));
+    transition: transform 250ms var(--ease-sheet);
+  }
+  .ds-sheet-popup[data-starting-style],
+  .ds-sheet-popup[data-ending-style] {
+    transform: translateY(100%);
+  }
+  @media (forced-colors: active) {
+    .ds-sheet-popup {
+      outline: 2px solid transparent;
+    }
+  }
+  .ds-sheet-popup[data-swiping] {
+    transition: none;
+    user-select: none;
+  }
+  /* snapPoints가 없으면 내용 높이로 열고 화면을 넘으면 본문만 스크롤한다. */
+  .ds-sheet-popup[data-fit-content] {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100% - 16px);
+  }
+  .ds-sheet-frame {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - var(--sheet-visible-offset, 0px));
+  }
+  .ds-sheet-popup[data-fit-content] > .ds-sheet-frame {
+    flex: 0 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+  .ds-sheet-popup[data-fit-content] .ds-sheet-body {
+    flex: 1 1 auto;
+  }
+  .ds-sheet-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 0 24px 20px;
+  }
+  .ds-sheet-heading {
+    flex: 1;
+    min-width: 0;
+  }
+  .ds-sheet-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: var(--spacing-touch);
+    margin-inline: auto;
+    border-radius: var(--radius-control);
+    touch-action: none;
+    cursor: grab;
+  }
+  .ds-sheet-handle[data-decorative] {
+    height: 24px;
+  }
+  .ds-sheet-handle:active {
+    cursor: grabbing;
+  }
+  .ds-sheet-grip {
+    width: 40px;
+    height: 4px;
+    border-radius: var(--radius-control);
+    background: var(--color-subtle);
+  }
+  .ds-sheet-body {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 24px max(24px, env(safe-area-inset-bottom, 0px));
+    scroll-padding-block: 16px;
+  }
+  .ds-sheet-footer {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 12px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-line);
+    padding: 16px 24px max(24px, env(safe-area-inset-bottom, 0px));
+    background: var(--color-surface);
+  }
+
+  @media (min-width: 768px) {
+    .ds-sheet-backdrop[data-responsive] {
+      opacity: 1;
+    }
+    .ds-sheet-viewport[data-responsive] {
+      align-items: center;
+      padding: 24px;
+    }
+    .ds-sheet-popup[data-responsive] {
+      --sheet-visible-offset: 0px;
+      height: auto;
+      max-height: 100%;
+      border-bottom: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+      transform: none;
+      transition:
+        opacity 200ms,
+        scale 200ms;
+    }
+    .ds-sheet-popup[data-responsive][data-starting-style],
+    .ds-sheet-popup[data-responsive][data-ending-style] {
+      opacity: 0;
+      scale: 0.95;
+    }
+    .ds-sheet-popup[data-responsive] .ds-sheet-frame {
+      height: auto;
+      max-height: calc(var(--visual-viewport-height, 100dvh) - 48px);
+    }
+    .ds-sheet-popup[data-responsive] .ds-sheet-handle {
+      display: none;
+    }
+    .ds-sheet-popup[data-responsive] .ds-sheet-header {
+      padding-top: 24px;
+    }
+  }
+}
+
+@utility ds-sheet-footer {
+  & > [data-slot='button'] {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--spacing-cta);
+    height: auto;
+    white-space: normal;
+  }
+}

@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 
 // 날짜 포맷 결과가 기기 시간대에 따라 달라지지 않게 서비스 시간대로 고정한다.
@@ -20,8 +21,14 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts', 'eslint/**/*.{spec,test}.ts'],
-          exclude: ['src/**/*.api.spec.ts'],
+          // 루트의 *.test.ts는 next.config 같은 앱 설정 파일 옆에 둔 테스트다.
+          include: [
+            '*.{spec,test}.ts',
+            'src/**/*.{spec,test}.ts',
+            'test/deployment/*.{spec,test}.ts',
+            '../../../../deploy/shared-instance/scripts/sentry-release.spec.ts',
+          ],
+          exclude: ['src/**/*.api.{spec,test}.ts', 'src/**/*.browser.{spec,test}.ts'],
         },
       },
       {
@@ -38,7 +45,7 @@ export default defineConfig({
         test: {
           name: 'api',
           environment: 'node',
-          include: ['src/**/*.api.spec.ts'],
+          include: ['src/**/*.api.{spec,test}.ts'],
           globalSetup: ['./vitest.api-setup.ts'],
           fileParallelism: false,
           testTimeout: 60_000,

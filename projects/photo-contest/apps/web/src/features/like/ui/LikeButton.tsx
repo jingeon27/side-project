@@ -1,16 +1,18 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
-import { Heart } from 'lucide-react';
 import { useId } from 'react';
 
-import { LikeSubmissionDocument, UnlikeSubmissionDocument } from '@/shared/api/generated';
-import type { SubmissionLikeFragment } from '@/shared/api/generated';
-import { cn } from '@/shared/lib/cn.helper';
+import { useMutation } from '@apollo/client/react';
+
+import {
+  LikeSubmissionDocument,
+  UnlikeSubmissionDocument,
+  type SubmissionLikeFragment,
+} from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useHaptics } from '@/shared/model/bridge';
-import { Button } from '@/shared/ui/@core/button';
+import { LikeToggle } from '@/shared/ui/@core/like-toggle';
 
 interface ILikeButtonProps {
   submission: Omit<SubmissionLikeFragment, '__typename'> & { contestId: string };
@@ -62,22 +64,16 @@ export function LikeButton({ submission, isMine }: ILikeButtonProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-pressed={likedByMe}
-        aria-label={`좋아요 ${formatCount(likeCount)}개`}
+      <LikeToggle
+        density="chip"
+        liked={likedByMe}
+        label={`좋아요 ${formatCount(likeCount)}개`}
         aria-describedby={isMine ? hintId : undefined}
-        aria-busy={isPending || undefined}
         disabled={isMine}
         onClick={handleToggle}
-        className={cn('gap-1.5 rounded-full px-2.5', likedByMe ? 'text-danger' : 'text-ink')}
       >
-        <Heart aria-hidden className={cn('size-5', likedByMe && 'fill-current')} />
-        <span aria-hidden className="tabular-nums">
-          {formatCount(likeCount)}
-        </span>
-      </Button>
+        {formatCount(likeCount)}
+      </LikeToggle>
       {isMine ? (
         <span id={hintId} className="text-caption text-muted">
           내 사진에는 좋아요를 누를 수 없어요

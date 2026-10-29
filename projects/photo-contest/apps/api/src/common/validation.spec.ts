@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
+import { PAGE_OFFSET_MAX } from '../config/limits';
 import { pageRange, textValue } from './validation';
 
 function errorOf(run: () => unknown) {
@@ -30,11 +31,13 @@ describe('입력 검증', () => {
     expect(() => textValue({ toString: () => '이름' }, 24, '닉네임')).toThrow(GraphQLError);
   });
 
-  it('목록 범위는 offset 0 이상 정수, limit 1~48 정수만 받아야 한다', () => {
+  it('목록 범위는 offset 0~상한 정수, limit 1~48 정수만 받아야 한다', () => {
     expect(pageRange(0, 1)).toEqual({ offset: 0, limit: 1 });
     expect(pageRange(96, 48)).toEqual({ offset: 96, limit: 48 });
+    expect(pageRange(PAGE_OFFSET_MAX, 48)).toEqual({ offset: PAGE_OFFSET_MAX, limit: 48 });
     for (const [offset, limit] of [
       [-1, 24],
+      [PAGE_OFFSET_MAX + 1, 24],
       [0, 0],
       [0, 49],
       [1.5, 24],

@@ -1,0 +1,33 @@
+{
+  "name": "@side/toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    "./push-notifications": {
+      "types": "./dist/push-notifications/index.d.ts",
+      "default": "./dist/push-notifications/index.js"
+    },
+    "./migration-check": "./src/migration-check/check-migrations.ts",
+    "./sentry-check": "./src/sentry-check/check-sentry.ts"
+  },
+  "scripts": {
+    "build": "tsc7 -p tsconfig.build.json",
+    "typecheck": "tsc7 --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "yarn typecheck && yarn lint && yarn test"
+  },
+  "devDependencies": {
+    "@side/config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "es-toolkit": "catalog:",
+    "ts-pattern": "catalog:"
+  }
+}

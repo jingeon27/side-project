@@ -1,12 +1,11 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
 import type { ReactNode } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { match, P } from 'ts-pattern';
 
-import { MeDocument } from '@/shared/api/generated';
-import type { MeQuery } from '@/shared/api/generated';
+import { MeDocument, type MeQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 
 interface IViewerBoundaryProps {
@@ -19,10 +18,12 @@ function ViewerContent({
   viewerRef,
   children,
   guest,
-}: Omit<IViewerBoundaryProps, 'fallback'> & { viewerRef: QueryRef<MeQuery> }) {
+  fallback,
+}: IViewerBoundaryProps & { viewerRef: QueryRef<MeQuery> }) {
   const { data } = useReadQuery(viewerRef);
   return match(data.me)
     .with(null, () => guest)
+    .with({ needsOnboarding: true }, () => fallback)
     .with(P.nonNullable, (viewer) => children(viewer.id, viewerRef))
     .exhaustive();
 }
@@ -31,7 +32,7 @@ export function ViewerBoundary({ children, guest, fallback }: IViewerBoundaryPro
   const [viewerRef, { refetch }] = useBackgroundQuery(MeDocument);
   return (
     <AsyncBoundary fallback={fallback} onRetry={refetch}>
-      <ViewerContent viewerRef={viewerRef} guest={guest}>
+      <ViewerContent viewerRef={viewerRef} guest={guest} fallback={fallback}>
         {children}
       </ViewerContent>
     </AsyncBoundary>

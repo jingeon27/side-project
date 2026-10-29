@@ -1,9 +1,11 @@
-import { useApolloClient } from '@apollo/client/react';
-import type { IWebBridge } from '@photo-contest/bridge/web';
-import { setTags } from '@sentry/nextjs';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+
+import { useApolloClient } from '@apollo/client/react';
+import { setTags } from '@sentry/nextjs';
 import { match } from 'ts-pattern';
+
+import type { IWebBridge } from '@photo-contest/bridge/web';
 
 import { buildSentryClientTags } from '@/shared/lib/sentry.helper';
 import {
@@ -36,47 +38,55 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   useEffect(() => {
     if (!bridge) return;
     if (notifiedPathname.current === null) bridge.notify('app.ready', { path: currentPath() });
-    else if (notifiedPathname.current !== pathname)
+    if (notifiedPathname.current !== null && notifiedPathname.current !== pathname)
       bridge.notify('navigation.changed', { path: currentPath() });
     notifiedPathname.current = pathname;
   }, [bridge, pathname]);
 
+  const handleBack = useEffectEvent(() => {
+    const { pathname: path } = window.location;
+    const action = resolveBackAction({
+      hasOverlay: hasOpenOverlay(),
+      depth: routeHistoryStore.getDepth(),
+      pathname: path,
+      parentHref: getParentRoute(path),
+    });
+    return match(action)
+      .with({ type: 'close-overlay' }, () => ({ handled: closeTopOverlay() }))
+      .with({ type: 'history-back' }, () => {
+        router.back();
+        return { handled: true };
+      })
+      .with({ type: 'replace' }, ({ href }) => {
+        router.replace(href);
+        return { handled: true };
+      })
+      .with({ type: 'exit' }, () => ({ handled: false }))
+      .exhaustive();
+  });
   useEffect(() => {
     if (!bridge) return;
-    return bridge.handleRequest('navigation.back', () => {
-      const { pathname: path } = window.location;
-      const action = resolveBackAction({
-        hasOverlay: hasOpenOverlay(),
-        depth: routeHistoryStore.getDepth(),
-        pathname: path,
-        parentHref: getParentRoute(path),
-      });
-      return match(action)
-        .with({ type: 'close-overlay' }, () => ({ handled: closeTopOverlay() }))
-        .with({ type: 'history-back' }, () => {
-          router.back();
-          return { handled: true };
-        })
-        .with({ type: 'replace' }, ({ href }) => {
-          router.replace(href);
-          return { handled: true };
-        })
-        .with({ type: 'exit' }, () => ({ handled: false }))
-        .exhaustive();
-    });
-  }, [bridge, router]);
+    return bridge.handleRequest('navigation.back', handleBack);
+  }, [bridge]);
 
+  const handleOpenPath = useEffectEvent((path: string) => router.push(path));
+  const handleActiveState = useEffectEvent(async () => {
+    try {
+      await client.refetchQueries({ include: 'active' });
+    } catch {
+      // 각 쿼리의 실패는 그 화면이 보여 준다.
+    }
+  });
   useEffect(() => {
     if (!bridge) return;
     // 프로토콜이 같은 origin의 상대 경로만 통과시킨다.
-    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => router.push(path));
+    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => handleOpenPath(path));
     const stopState = bridge.onEvent('app.state', ({ state }) => {
-      // 각 쿼리의 실패는 그 화면이 보여 준다.
-      if (state === 'active') client.refetchQueries({ include: 'active' }).catch(() => undefined);
+      if (state === 'active') void handleActiveState();
     });
     return () => {
       stopOpen();
       stopState();
     };
-  }, [bridge, router, client]);
+  }, [bridge]);
 }

@@ -1,0 +1,44 @@
+{
+  "name": "@side/game-feedback",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "sentry:check": "yarn workspace @game-feedback/api sentry:check",
+    "dev": "node scripts/dev.ts",
+    "dev:demo": "node scripts/dev.ts --demo",
+    "dev:test": "node scripts/dev.ts --test-auth",
+    "setup": "node scripts/tasks.ts setup",
+    "db:start": "node scripts/db.ts start",
+    "db:stop": "node scripts/db.ts stop",
+    "db:status": "node scripts/db.ts status",
+    "db:test:start": "node scripts/db.ts start --test",
+    "db:test:stop": "node scripts/db.ts stop --test",
+    "check": "node scripts/tasks.ts check",
+    "lint": "eslint .",
+    "typecheck": "node scripts/tasks.ts check",
+    "test": "node scripts/tasks.ts test",
+    "test:e2e": "node scripts/tasks.ts test:e2e",
+    "codegen": "node scripts/tasks.ts codegen",
+    "build": "node scripts/tasks.ts build",
+    "test:mobile:e2e": "node scripts/tasks.ts test:mobile:e2e",
+    "mobile:start": "yarn workspace @game-feedback/mobile start",
+    "mobile:android": "yarn workspace @game-feedback/mobile android",
+    "mobile:ios": "yarn workspace @game-feedback/mobile ios",
+    "admin:dev": "yarn workspace @game-feedback/admin dev",
+    "db:sync": "node scripts/db.ts sync",
+    "db:test:sync": "node scripts/db.ts sync --test"
+  },
+  "devDependencies": {
+    "@side/config": "workspace:*",
+    "embedded-postgres": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "ts-pattern": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  }
+}

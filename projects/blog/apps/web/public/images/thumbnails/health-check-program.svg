@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="44" y="45" width="186" height="270" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="137"
+    y="80"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="19"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    program
+  </text>
+  <path
+    d="M44 98H230"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="137"
+    y="132"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="16"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    base tests
+  </text>
+  <path
+    d="M75 172l6 6 12-15"
+    fill="none"
+    stroke="#0f766e"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="109"
+    y="177"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="start"
+    fill="#334155"
+  >
+    A
+  </text>
+  <path
+    d="M75 217l6 6 12-15"
+    fill="none"
+    stroke="#0f766e"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="109"
+    y="222"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="start"
+    fill="#334155"
+  >
+    B
+  </text>
+  <path
+    d="M75 262l6 6 12-15"
+    fill="none"
+    stroke="#0f766e"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="109"
+    y="267"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="start"
+    fill="#334155"
+  >
+    C
+  </text>
+  <path
+    d="M234 181H274"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="286" y="82" width="310" height="196" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="441"
+    y="116"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="19"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    select 2 / 2
+  </text>
+  <rect x="307" y="142" width="120" height="48" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="367"
+    y="172"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    D ✓
+  </text>
+  <rect x="453" y="142" width="120" height="48" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="513"
+    y="172"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    E ✓
+  </text>
+  <rect x="307" y="207" width="120" height="48" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2" />
+  <text
+    x="367"
+    y="237"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#94a3b8"
+  >
+    F
+  </text>
+  <rect x="453" y="207" width="120" height="48" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2" />
+  <text
+    x="513"
+    y="237"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#94a3b8"
+  >
+    G
+  </text>
+</svg>

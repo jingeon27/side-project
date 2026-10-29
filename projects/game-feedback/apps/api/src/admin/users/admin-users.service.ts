@@ -1,0 +1,92 @@
+import { Inject, Injectable } from '@nestjs/common';
+
+import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
+
+import { clearBannedIdentities, recordBannedIdentities } from '../../auth/account/banned-identity';
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
+import { ChatEvents } from '../../chat/events/chat.events';
+import { ApiError } from '../../common/http/api-error';
+import { PrismaClient } from '../../generated/prisma';
+import { userDto } from '../../users/user.presenter';
+import { type TUserBanDto, type TVerificationDto } from './user-input.dto';
+
+@Injectable()
+export class AdminUsersService {
+  constructor(
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
+    @Inject(ChatEvents) private readonly events: ChatEvents,
+  ) {}
+  async user(req: SessionRequest, id: string) {
+    requireAdmin(req);
+    const user = await this.db.user.findUnique({ where: { id } });
+    if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+    return userDto(user);
+  }
+  async setVerification(req: SessionRequest, id: string, input: TVerificationDto) {
+    const admin = requireAdmin(req);
+    const user = await this.cache.change(
+      async (tx) => {
+        const target = await (tx ?? this.db).user.findUnique({ where: { id } });
+        if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+        const updated = await (tx ?? this.db).user.update({
+          where: { id },
+          data: {
+            isVerified: input.isVerified,
+            verifiedAt: input.isVerified ? (target.verifiedAt ?? new Date()) : null,
+          },
+        });
+        await (tx ?? this.db).auditLog.create({
+          data: {
+            actorId: admin.id,
+            action: input.isVerified ? 'VERIFY_USER' : 'UNVERIFY_USER',
+            targetType: 'USER',
+            targetId: id,
+            detail: '\uC11C\uBE44\uC2A4 \uC0AC\uC6A9\uC790 \uC778\uC99D \uC0C1\uD0DC \uBCC0\uACBD',
+          },
+        });
+        return updated;
+      },
+      [POSTS_CACHE_TAG],
+    );
+    return userDto(user);
+  }
+  async ban(req: SessionRequest, id: string, input: TUserBanDto) {
+    const admin = requireAdmin(req);
+    const user = await this.cache.change(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+        const target = await (tx ?? this.db).user.findUnique({ where: { id } });
+        if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+        if (target.withdrawnAt && input.banned)
+          throw new ApiError(409, 'USER_WITHDRAWN', '탈퇴한 사용자는 새로 제재할 수 없습니다.');
+        if (target.role === 'ADMIN')
+          throw new ApiError(400, 'ADMIN_PROTECTED', '관리자 계정은 제재할 수 없습니다.');
+        const updated = await (tx ?? this.db).user.update({
+          where: { id },
+          data: {
+            bannedAt: input.banned ? (target.bannedAt ?? new Date()) : null,
+            banReason: input.banned ? input.reason : null,
+          },
+        });
+        if (input.banned) await recordBannedIdentities(tx, id);
+        if (!input.banned) await clearBannedIdentities(tx, id);
+        await (tx ?? this.db).auditLog.create({
+          data: {
+            actorId: admin.id,
+            action: input.banned ? 'BAN_USER' : 'UNBAN_USER',
+            targetType: 'USER',
+            targetId: id,
+            detail: input.reason,
+          },
+        });
+        return updated;
+      },
+      [POSTS_CACHE_TAG],
+    );
+    this.events.closeUser(id);
+    return userDto(user);
+  }
+}

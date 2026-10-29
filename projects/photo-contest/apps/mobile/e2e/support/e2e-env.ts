@@ -5,4 +5,5 @@ export const E2E_WEB_ORIGIN = `http://localhost:${E2E_WEB_PORT}`;
 /** 테스트 데이터를 준비할 때 웹 프록시를 거치지 않고 API를 직접 부른다. */
 export const E2E_API_URL = `http://127.0.0.1:${E2E_API_PORT}`;
 export const E2E_APP_VERSION = '1.0.0';
+/** 로그인 밖의 딥링크 스킴 */
 export const E2E_APP_SCHEME = 'photocontest';

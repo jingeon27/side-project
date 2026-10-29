@@ -25,11 +25,6 @@ describe('toWebPath', () => {
     expect(toWebPath('https://contest.example', OPTIONS)).toBe('/');
   });
 
-  it('소셜 로그인 콜백은 세션이 직접 받으므로 무시해야 한다', () => {
-    expect(toWebPath('photocontest://auth/callback?code=abc', OPTIONS)).toBeNull();
-    expect(toWebPath('photocontest://auth/callback?error=login_failed', OPTIONS)).toBeNull();
-  });
-
   it('모르는 경로와 경로가 없는 링크는 무시해야 한다', () => {
     expect(toWebPath('photocontest://', OPTIONS)).toBeNull();
     expect(toWebPath('photocontest://me', OPTIONS)).toBeNull();

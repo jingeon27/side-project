@@ -1,22 +1,28 @@
 'use client';
 
+import { useId } from 'react';
+import Image from 'next/image';
+
 import { useMutation } from '@apollo/client/react';
 import { ImagePlus } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useId, useRef, useState } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 
-import { CreateSubmissionDocument, RequestUploadDocument, SubmissionsDocument } from '@/shared/api/generated';
+import {
+  CompleteSubmissionUploadDocument,
+  CreateSubmissionDocument,
+  RequestUploadDocument,
+  SubmissionsDocument,
+} from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/shared/lib/image.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
-import { RequestError, ensureOk, getErrorMessage } from '@/shared/model/error';
-import { useZodForm } from '@/shared/model/form';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
+import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { toast } from '@/shared/model/toast';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
-import { TextArea } from '@/shared/ui/@core/text-field';
+import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
-import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
 import { uploadPhotoSchema } from '../model/submission.schema';
 
@@ -40,12 +46,14 @@ export function UploadPhotoBottomSheet({
 }: IUploadPhotoBottomSheetProps) {
   const photoErrorId = useId();
   const rightsErrorId = useId();
-  const previewUrlRef = useRef<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const form = useZodForm(uploadPhotoSchema, {
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
-  const [requestUpload] = useMutation(RequestUploadDocument);
+  // 시트가 사라지거나 다른 사진을 고르면 이전 미리보기 주소를 풀어 준다.
+  const previewUrl = useObjectUrl(useWatch({ control: form.control, name: 'photo' }));
+  const [completeUpload] = useMutation(CompleteSubmissionUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestUploadDocument, { fetchPolicy: 'no-cache' });
   const [createSubmission] = useMutation(CreateSubmissionDocument, {
     update: (cache, { data }) => {
       if (data) markContestSubmitted(cache, contestId, data.createSubmission.id);
@@ -59,43 +67,7 @@ export function UploadPhotoBottomSheet({
       onClose();
     },
   });
-
-  useEffect(
-    () => () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    },
-    [],
-  );
-
-  const handlePhotoPicked = (file: File) => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    previewUrlRef.current = URL.createObjectURL(file);
-    setPreviewUrl(previewUrlRef.current);
-  };
-
-  const handleSubmit = form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
-    try {
-      const image = await prepareUploadImage(photo, browserImageCodec);
-      const { data } = await requestUpload({ variables: { contestId } });
-      if (!data) return;
-      await ensureOk(
-        await fetch(data.requestUploadUrl.url, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': image.contentType },
-          body: image.body,
-        }),
-      );
-      await createSubmission({
-        variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
-      });
-    } catch (error) {
-      // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
-      if (error instanceof ImagePrepareError)
-        form.setError('photo', { message: error.message }, { shouldFocus: true });
-      else if (error instanceof RequestError) toast.error(getErrorMessage(error));
-    }
-  });
+  const beginSubmit = useAbortOnClose(isOpen);
 
   const { errors, isSubmitting } = form.formState;
   return (
@@ -105,7 +77,37 @@ export function UploadPhotoBottomSheet({
         description="직접 찍은 사진도 합성도 환영해요. 한 대회에 한 장만 제출할 수 있어요."
       />
       <BottomSheet.Content>
-        <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
+            const signal = beginSubmit();
+            try {
+              const image = await prepareUploadImage(photo, browserImageCodec);
+              throwIfClosed(signal);
+              const { data } = await requestUpload({
+                variables: { contestId, contentType: image.body.type, byteSize: image.body.size },
+              });
+              if (!data) return;
+              await uploadToStorage(data.requestUploadUrl, image.body, { signal });
+              await completeUpload({ variables: { uploadId: data.requestUploadUrl.id } });
+              // 제출은 되돌릴 수 없으므로 닫힌 시트에서는 보내지 않는다.
+              throwIfClosed(signal);
+              await createSubmission({
+                variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
+              });
+            } catch (error) {
+              if (signal.aborted) {
+                notifyClosedSubmit('사진을 제출하지 않았어요');
+                return;
+              }
+              // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
+              if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
+                form.setError('photo', { message: error.message }, { shouldFocus: true });
+            }
+          })}
+          noValidate
+          className="flex flex-col gap-4"
+        >
           <Controller
             control={form.control}
             name="photo"
@@ -116,20 +118,20 @@ export function UploadPhotoBottomSheet({
                     ref={field.ref}
                     name={field.name}
                     type="file"
+                    aria-required="true"
                     accept={PHOTO_ACCEPT}
                     aria-label="사진 선택"
                     aria-invalid={Boolean(errors.photo)}
                     aria-describedby={errors.photo ? photoErrorId : undefined}
                     disabled={isSubmitting}
                     className="sr-only"
-                    onBlur={() => field.onBlur()}
+                    onBlur={field.onBlur}
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0] ?? null;
                       // 같은 사진을 다시 골라도 change가 일어나게 비운다.
                       event.currentTarget.value = '';
                       if (!file) return;
                       field.onChange(file);
-                      handlePhotoPicked(file);
                       void form.trigger('photo');
                     }}
                   />
@@ -146,8 +148,13 @@ export function UploadPhotoBottomSheet({
                   ) : (
                     <>
                       <ImagePlus aria-hidden className="size-8" />
-                      <span className="text-label text-ink">사진 선택</span>
-                      <span className="text-caption">JPEG, PNG, WebP, HEIC · 큰 사진은 줄여서 올려요</span>
+                      <span className="text-label text-ink">
+                        사진 선택
+                        <FieldRequirement required />
+                      </span>
+                      <span className="text-caption">
+                        JPEG, PNG, WebP, HEIC 파일을 올릴 수 있어요. 큰 사진은 크기를 줄여서 올려요.
+                      </span>
                     </>
                   )}
                   {previewUrl ? (
@@ -165,6 +172,7 @@ export function UploadPhotoBottomSheet({
             )}
           />
           <TextArea
+            required
             label="사진 설명"
             placeholder="이 사진의 웃음 포인트는…"
             rows={3}
@@ -176,13 +184,15 @@ export function UploadPhotoBottomSheet({
             <label className="flex min-h-touch cursor-pointer items-start gap-3 text-body text-ink">
               <input
                 type="checkbox"
+                required
                 aria-invalid={Boolean(errors.rightsConfirmed)}
                 aria-describedby={errors.rightsConfirmed ? rightsErrorId : undefined}
                 className="mt-0.5 size-5 shrink-0 accent-brand"
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다. 그룹 멤버에게만 공개됩니다.
+                <FieldRequirement required /> 이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다.
+                그룹 멤버에게만 공개됩니다.
               </span>
             </label>
             {errors.rightsConfirmed ? (

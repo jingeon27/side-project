@@ -9,9 +9,16 @@ yarn.lock
 **/*.tsbuildinfo
 **/next-env.d.ts
 **/AGENTS.md
-**/.claude
+**/.agents
 **/prisma/migrations
 **/src/shared/api/generated.ts
 **/.e2e-build
 **/.expo
 **/.expo-export-check
+projects/game-feedback/docs/mvp-plan-v4.md
+projects/game-feedback/apps/api/openapi.json
+# Preserve imported public article text and exact code examples.
+projects/blog/apps/web/content/posts/**/*.mdx
+
+# Terraform downloads provider binaries locally.
+**/.terraform/**

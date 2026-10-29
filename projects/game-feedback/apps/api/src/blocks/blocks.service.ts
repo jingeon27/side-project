@@ -1,0 +1,66 @@
+import { Inject, Injectable } from '@nestjs/common';
+
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
+import { ApiError } from '../common/http/api-error';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
+import { lockUserRelationship } from '../users/relationship-lock';
+import { authorDto, authorSelect } from '../users/user.presenter';
+import { type TBlockUserDto } from './block-input.dto';
+
+@Injectable()
+export class BlocksService {
+  constructor(
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+  ) {}
+  async blocks(req: SessionRequest) {
+    const u = requireUser(req);
+    return (
+      await this.db.block.findMany({
+        where: { userId: u.id },
+        include: { blockedUser: { select: authorSelect } },
+      })
+    ).map((b) => authorDto(b.blockedUser));
+  }
+  async block(req: SessionRequest, input: TBlockUserDto) {
+    const u = requireUser(req);
+    if (input.blockedUserId === u.id)
+      throw new ApiError(400, 'CANNOT_BLOCK_SELF', '자신은 차단할 수 없습니다.');
+    if (!(await this.db.user.findUnique({ where: { id: input.blockedUserId, withdrawnAt: null } })))
+      throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+    await this.transactions.run(async (tx) => {
+      await lockUserRelationship(tx, u.id, input.blockedUserId);
+      await lockActiveUser({ client: tx, userId: u.id });
+      await (tx ?? this.db).block.upsert({
+        where: { userId_blockedUserId: { userId: u.id, blockedUserId: input.blockedUserId } },
+        update: {},
+        create: { userId: u.id, ...input },
+      });
+      await (tx ?? this.db).userFollow.deleteMany({
+        where: {
+          OR: [
+            { followerId: u.id, followingId: input.blockedUserId },
+            { followerId: input.blockedUserId, followingId: u.id },
+          ],
+        },
+      });
+      await (tx ?? this.db).notification.deleteMany({
+        where: {
+          OR: [
+            { userId: u.id, actorId: input.blockedUserId },
+            { userId: input.blockedUserId, actorId: u.id },
+          ],
+        },
+      });
+    });
+    return { ok: true };
+  }
+  async unblock(req: SessionRequest, id: string) {
+    const u = requireUser(req);
+    await this.db.block.deleteMany({ where: { userId: u.id, blockedUserId: id } });
+    return { ok: true };
+  }
+}

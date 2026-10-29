@@ -1,9 +1,18 @@
 import { ContestPageTemplate } from '@/_pages/contest';
 import { contestSearchSchema } from '@/_pages/contest/@page/model/contest-search.schema';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
-import { ContestDocument, MeDocument, SubmissionsDocument } from '@/shared/api/generated';
+import {
+  ContestDocument,
+  MeDocument,
+  SubmissionsDocument,
+  type SubmissionSort,
+} from '@/shared/api/generated';
+import type { TPhotoSortValue } from '@/shared/model/analytics';
 
-const SORT = { latest: 'NEWEST', popular: 'MOST_LIKED' } as const;
+const SORT = { latest: 'NEWEST', popular: 'MOST_LIKED' } as const satisfies Record<
+  TPhotoSortValue,
+  SubmissionSort
+>;
 
 export default async function Page({
   params,

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    >
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#64748b" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="70" y="44" width="500" height="272" rx="12" fill="#ffffff" stroke="#334155" stroke-width="2.5" />
+  <path
+    d="M70 85H570"
+    fill="none"
+    stroke="#cbd5e1"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="91"
+    y="73"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    app
+  </text>
+  <rect x="92" y="106" width="90" height="186" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2.5" />
+  <path
+    d="M110 136H163"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M110 163H151"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M110 190H159"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <rect x="206" y="106" width="338" height="186" rx="8" fill="#fff1f2" stroke="#be123c" stroke-width="2.5" />
+  <text
+    x="232"
+    y="145"
+    fill="#be123c"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    boundary
+  </text>
+  <path
+    d="M247 173L265 191M265 173L247 191"
+    fill="none"
+    stroke="#be123c"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M292 182H446"
+    fill="none"
+    stroke="#fda4af"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <rect x="291" y="222" width="162" height="45" rx="8" fill="#ffffff" stroke="#334155" stroke-width="2.5" />
+  <text
+    x="372.0"
+    y="250.5"
+    fill="#334155"
+    font-size="18"
+    text-anchor="middle"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    retry()
+  </text>
+  <path
+    d="M491 248Q519 189 470 167"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+</svg>

@@ -1,10 +1,12 @@
-import { Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COLORS } from '@/shared/config/theme';
+import type { TNativeColors } from '@/shared/config/theme';
 import { captureError } from '@/shared/lib/monitoring/monitoring';
+import { useAppearance } from '@/shared/model/appearance';
 
 import { hideSplashScreen } from '../model/use-splash-screen';
 
@@ -13,8 +15,11 @@ interface IAppErrorFallbackProps {
 }
 
 function AppErrorFallback({ onRestart }: IAppErrorFallbackProps) {
+  const { colors, dark } = useAppearance();
+  const styles = createStyles(colors);
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
       <View style={styles.content}>
         <Text style={styles.title} accessibilityRole="header">
           문제가 생겼어요
@@ -64,43 +69,45 @@ export class AppErrorBoundary extends Component<IAppErrorBoundaryProps, IAppErro
   }
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  title: {
-    marginBottom: 8,
-    color: COLORS.ink,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  description: {
-    marginBottom: 24,
-    color: COLORS.muted,
-    fontSize: 15,
-  },
-  button: {
-    minWidth: 160,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.brand,
-  },
-  buttonPressed: {
-    backgroundColor: COLORS.brandPressed,
-  },
-  buttonLabel: {
-    color: COLORS.surface,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function createStyles(colors: TNativeColors) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+    },
+    title: {
+      marginBottom: 8,
+      color: colors.ink,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    description: {
+      marginBottom: 24,
+      color: colors.muted,
+      fontSize: 15,
+    },
+    button: {
+      minWidth: 160,
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      backgroundColor: colors.brand,
+    },
+    buttonPressed: {
+      backgroundColor: colors.brandPressed,
+    },
+    buttonLabel: {
+      color: colors.surface,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}

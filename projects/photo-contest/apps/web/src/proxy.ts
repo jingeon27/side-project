@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+
 import { match } from 'ts-pattern';
 
 import { decideAuthGate } from '@/shared/lib/auth-gate.helper';
 
 /**
- * 멤버 전용 화면에 세션 쿠키 없이 들어오면 `/?next=<원래 경로>`로 보낸다.
- * 쿠키는 있는지만 보고 값은 검증하거나 남기지 않는다(만료 여부는 API가 판단하고 화면이 로그인 패널로 안내한다).
+ * 익명·회원 세션이 없으면 `/sign?next=<원래 경로>`로 보낸다.
+ * 쿠키는 존재만 확인하고, API에서 만료로 판정한 세션은 AuthSessionSync가 인증 화면으로 안내한다.
  */
 export function proxy(request: NextRequest) {
   const decision = decideAuthGate({
@@ -20,7 +20,16 @@ export function proxy(request: NextRequest) {
     .exhaustive();
 }
 
-// 초대(/invite/*)·홈·/backend/*·정적 파일은 건드리지 않는다. auth-gate.helper의 isMemberOnlyPath와 같은 범위다.
+// 인증·약관·API·정적 파일을 제외한 콘텐츠 화면만 검사한다.
 export const config = {
-  matcher: ['/groups/:path*', '/contests/:path*', '/me'],
+  matcher: [
+    '/',
+    '/explore',
+    '/groups/:path*',
+    '/invite/:path*',
+    '/contests/:path*',
+    '/me',
+    '/notifications',
+    '/onboarding',
+  ],
 };

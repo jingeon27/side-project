@@ -1,0 +1,18 @@
+mutation CompleteOnboarding(
+  $nickname: String!
+  $avatarId: ID
+  $removeAvatar: Boolean
+  $acceptedTerms: Boolean!
+) {
+  completeOnboarding(
+    nickname: $nickname
+    avatarId: $avatarId
+    removeAvatar: $removeAvatar
+    acceptedTerms: $acceptedTerms
+  ) {
+    id
+    nickname
+    avatar
+    needsOnboarding
+  }
+}

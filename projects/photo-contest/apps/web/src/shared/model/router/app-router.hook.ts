@@ -1,5 +1,5 @@
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { isOverlayEntryCurrent, markOverlayNavigation } from './overlay-history.store';
 import { routeHistoryStore } from './route-history.store';

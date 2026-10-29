@@ -1,0 +1,42 @@
+import type { ReactElement } from 'react';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render as renderUI, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { LoginDialog } from './LoginDialog';
+
+function render(ui: ReactElement) {
+  return renderUI(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+}
+
+const auth = vi.hoisted(() => ({
+  session: { demoMode: false, googleConfigured: true, needsOnboarding: false },
+}));
+vi.mock('@/features/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/auth')>()),
+  useSession: () => ({ session: auth.session }),
+}));
+
+beforeEach(() => {
+  auth.session = { demoMode: false, googleConfigured: true, needsOnboarding: false };
+});
+
+describe('authentication dialog responsibilities', () => {
+  it('shows login methods without mounting onboarding or demo forms in production', () => {
+    render(<LoginDialog open onOpenChange={() => undefined} onSuccess={() => undefined} />);
+    expect(screen.getByRole('button', { name: /Google로 시작하기/ })).toBeTruthy();
+    expect(screen.queryByLabelText('서비스 닉네임')).toBeNull();
+  });
+
+  it('shows three social methods and keeps testing login outside the product UI', () => {
+    auth.session.demoMode = true;
+    render(<LoginDialog open onOpenChange={() => undefined} onSuccess={() => undefined} />);
+    for (const label of ['카카오 로그인', 'Discord로 시작하기', 'Google로 시작하기']) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    }
+    expect(screen.queryByLabelText('서비스 닉네임')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'X로 시작하기' })).toBeNull();
+    expect(screen.queryByText('테스트 계정 선택')).toBeNull();
+  });
+});

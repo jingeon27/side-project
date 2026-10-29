@@ -1,0 +1,155 @@
+<Summary>
+
+An Electron collector needed request headers and file information before it could continue. A closure collected the values, while a Promise ended the wait and cleaned up the listeners.
+
+</Summary>
+
+![An illustration of connecting request and response listeners before triggering browser work.](/images/covers/puppeteer-event-lifecycle.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+One task reloaded a page through Puppeteer and read information from its network events. A request supplied headers for the next API call; a response supplied a value needed to open a downloaded file. The next task could not start with only one of them.
+
+My first approach let a callback fill an outer variable, then polled that variable until a result appeared.
+
+```typescript
+let result: PreInfo | undefined;
+
+page.on('request', (request) => {
+  result = readRequest(request);
+});
+
+await page.reload();
+
+while (result === undefined) {
+  await delay(1_000);
+}
+```
+
+Receiving a value and ending the wait were separate pieces of code. If the expected event never arrived, the loop kept waiting. Calling the function again left the previous listeners attached. Sharing one variable between request and response callbacks could also let a later value overwrite an earlier one.
+
+A simple if (result) check was unsuitable too: 0, false, and an empty string could all be valid results. I used undefined for an unfinished result and registered listeners before reloading. Registering them afterward could miss an event that had already fired.
+
+## Resolve the Promise when an event supplies a result
+
+```tsx
+import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
+
+type MaybePromise<T> = T | Promise<T>;
+
+interface WaitForPreInfoOptions<T> {
+  page: Page;
+  timeoutMs?: number;
+  onRequest?: (request: HTTPRequest) => MaybePromise<T | undefined>;
+  onResponse?: (response: HTTPResponse) => MaybePromise<T | undefined>;
+}
+
+export function waitForPreInfo<T>({
+  page,
+  timeoutMs = 10_000,
+  onRequest,
+  onResponse,
+}: WaitForPreInfoOptions<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      page.off('request', handleRequest);
+      page.off('response', handleResponse);
+    };
+
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const consume = async (result: MaybePromise<T | undefined>) => {
+      try {
+        const value = await result;
+        if (value !== undefined) finish(value);
+      } catch (error) {
+        fail(error);
+      }
+    };
+
+    const handleRequest = (request: HTTPRequest) => {
+      if (onRequest) void consume(onRequest(request));
+    };
+
+    const handleResponse = (response: HTTPResponse) => {
+      if (onResponse) void consume(onResponse(response));
+    };
+
+    page.on('request', handleRequest);
+    page.on('response', handleResponse);
+
+    timer = setTimeout(() => {
+      fail(new Error(`필요한 네트워크 정보를 ${timeoutMs}ms 안에 찾지 못했습니다.`));
+    }, timeoutMs);
+
+    void page.reload({ waitUntil: 'networkidle2' }).catch(fail);
+  });
+}
+```
+
+A callback returning undefined means there is still something to wait for. Any other value reaches finish, which resolves the Promise and removes both listeners. If another asynchronous result arrives later, settled prevents it from processing the completed Promise again.
+
+The default wait is limited to ten seconds. A timeout or failed reload goes through fail. That path clears the timer and listeners just as completion does, so a failed attempt does not leave subscriptions behind for the next one.
+
+## Keep the first value inside a closure
+
+The function cannot choose which network event arrives first. I added a collector that retains the first value and returns a complete result when the other one arrives.
+
+```typescript
+interface SitePreInfo {
+  headers: Record<string, string>;
+  filePassword: string;
+}
+
+function createSitePreInfoCollector() {
+  let headers: Record<string, string> | undefined;
+  let filePassword: string | undefined;
+
+  const getResult = (): SitePreInfo | undefined => {
+    if (headers === undefined || filePassword === undefined) return undefined;
+    return { headers, filePassword };
+  };
+
+  return {
+    onRequest(request: HTTPRequest) {
+      if (!request.url().includes('/target-api')) return undefined;
+      headers = request.headers();
+      return getResult();
+    },
+
+    async onResponse(response: HTTPResponse) {
+      if (!response.url().includes('/file-info')) return undefined;
+      const body = (await response.json()) as { password?: string };
+      filePassword = body.password;
+      return getResult();
+    },
+  };
+}
+
+const collector = createSitePreInfoCollector();
+const preInfo = await waitForPreInfo({
+  page,
+  onRequest: collector.onRequest,
+  onResponse: collector.onResponse,
+});
+```
+
+Both callbacks share headers and filePassword inside createSitePreInfoCollector. Headers can arrive first, or the password can arrive first; getResult returns undefined until both exist. Only then does it return an object that lets waitForPreInfo resolve.
+
+Those variables belong to this collection attempt. Outside code receives the event handlers rather than direct access to the variables. The next attempt gets a fresh collector, while the previous attempt's listeners are removed when its Promise ends.

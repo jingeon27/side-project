@@ -3,12 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
-import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { APP_LOGIN_TICKET_TTL_MS } from '../config/limits';
-import { PHASE } from '../contest/contest.policy';
-import type { TPhase } from '../contest/contest.policy';
+import { PHASE, type TPhase } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
+import type { TCreateLegacyTestContestDto } from './testing.dto';
 
 const STEP_MS = 60 * 60 * 1000;
 
@@ -16,9 +14,19 @@ const STEP_MS = 60 * 60 * 1000;
 export class TestingService {
   constructor(private readonly db: Database) {}
 
-  createUser(nickname: string) {
+  createLegacyContest(input: TCreateLegacyTestContestDto) {
+    return this.db.contest.create({ data: { ...input, format: 'LEGACY' }, select: { id: true } });
+  }
+
+  createUser(nickname: string, options: { needsOnboarding?: boolean; avatar?: string } = {}) {
     return this.db.user.create({
-      data: { nickname, provider: 'testing', providerId: randomUUID() },
+      data: {
+        nickname,
+        provider: 'testing',
+        providerId: randomUUID(),
+        needsOnboarding: options.needsOnboarding ?? false,
+        avatar: options.avatar ?? null,
+      },
       select: { id: true, nickname: true, avatar: true },
     });
   }
@@ -41,20 +49,5 @@ export class TestingService {
     });
     if (!result.count) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return { contestId, phase };
-  }
-
-  /** 외부 provider의 성공 콜백만 대체한다. 웹의 PKCE 교환·세션 발급은 실제 인증 API가 처리한다. */
-  async issueAppLoginTicket(nickname: string, challenge: string) {
-    const user = await this.createUser(nickname);
-    const code = randomToken();
-    await this.db.appLoginTicket.create({
-      data: {
-        codeHash: sha256Hex(code),
-        userId: user.id,
-        challenge,
-        expiresAt: new Date(Date.now() + APP_LOGIN_TICKET_TTL_MS),
-      },
-    });
-    return { code, nickname: user.nickname };
   }
 }

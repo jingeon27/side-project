@@ -1,7 +1,8 @@
 import { contestTypePolicies } from '@/features/contest';
-import { feedTypePolicies } from '@/features/feed';
 import { groupTypePolicies } from '@/features/group';
 import { inviteTypePolicies } from '@/features/invite';
+import { notificationTypePolicies } from '@/features/notification';
+import { postTypePolicies } from '@/features/post';
 import { rankingTypePolicies } from '@/features/ranking';
 import { submissionTypePolicies } from '@/features/submission';
 import { mergeTypePolicies } from '@/shared/api/type-policies.helper';
@@ -13,5 +14,6 @@ export const APP_TYPE_POLICIES = mergeTypePolicies(
   submissionTypePolicies,
   inviteTypePolicies,
   rankingTypePolicies,
-  feedTypePolicies,
+  postTypePolicies,
+  notificationTypePolicies,
 );

@@ -13,21 +13,43 @@
     "packages/*"
   ],
   "scripts": {
+    "worktree:add": "node scripts/create-worktree.ts",
+    "postinstall": "node scripts/install-git-hooks.ts",
     "dev:photo-contest": "yarn workspace @side/photo-contest dev",
     "build": "yarn workspaces foreach -A --include \"@side/*\" run build",
     "build:photo-contest": "yarn workspace @side/photo-contest build",
-    "typecheck": "yarn workspaces foreach -A --include \"@side/*\" run typecheck",
+    "typecheck": "yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run typecheck",
     "test": "yarn workspaces foreach -A --include \"@side/*\" run test",
     "test:photo-contest": "yarn workspace @side/photo-contest test",
     "test:photo-contest:e2e": "yarn workspace @side/photo-contest test:e2e",
-    "check": "yarn workspaces foreach -A --include \"@side/*\" run check",
+    "check": "yarn knip && yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "storybook": "yarn workspace @side/design-system storybook",
+    "build:storybook": "yarn workspace @side/design-system build-storybook",
     "test:photo-contest:unit": "yarn workspace @side/photo-contest test:unit",
-    "test:photo-contest:api": "yarn workspace @side/photo-contest test:api"
+    "test:photo-contest:api": "yarn workspace @side/photo-contest test:api",
+    "dev:game-feedback": "yarn workspace @side/game-feedback dev",
+    "dev:game-feedback:demo": "yarn workspace @side/game-feedback dev:demo",
+    "setup:game-feedback": "yarn workspace @side/game-feedback setup",
+    "build:game-feedback": "yarn workspace @side/game-feedback build",
+    "test:game-feedback": "yarn workspace @side/game-feedback test",
+    "check:game-feedback": "yarn workspace @side/game-feedback check",
+    "typecheck:scripts": "tsc7 -p tsconfig.scripts.json",
+    "knip": "knip --preprocessor ./scripts/knip-baseline.ts",
+    "knip:report": "knip"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
-    "prettier": "^3.9.0"
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@side/config": "workspace:*",
+    "@types/node": "catalog:",
+    "husky": "^9.1.7",
+    "knip": "6.43.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "catalog:"
   },
   "dependenciesMeta": {
     "@embedded-postgres/darwin-arm64": {
@@ -45,5 +67,12 @@
     "@embedded-postgres/windows-x64": {
       "built": true
     }
+  },
+  "resolutions": {
+    "@apollo/client-react-streaming@npm:0.14.5": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch",
+    "@graphql-tools/utils@npm:12.0.1": "npm:12.0.3",
+    "zod@npm:^4.1.12": "patch:zod@npm%3A4.6.7#~/.yarn/patches/zod-npm-4.6.7-93f9f3c3ad.patch",
+    "zod@npm:^4.4.3": "patch:zod@npm%3A4.6.7#~/.yarn/patches/zod-npm-4.6.7-93f9f3c3ad.patch",
+    "@amplitude/analytics-react-native/@react-native-async-storage/async-storage": "2.2.0"
   }
 }

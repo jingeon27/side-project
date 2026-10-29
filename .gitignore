@@ -1,11 +1,13 @@
 **/node_modules/
-.yarn/
+.yarn/*
+!.yarn/patches/
 **/.next/
 **/dist/
 **/coverage/
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.production.example
 **/.data/
 **/playwright-report/
 **/test-results/
@@ -17,3 +19,13 @@
 **/next-env.d.ts
 **/.expo/
 **/.expo-export-check/
+# 서명 키·인증서·서비스 자격 증명은 Git에 올리지 않는다.
+**/*.pem
+**/*.key
+**/*.jks
+**/*.keystore
+**/*.p8
+**/*.p12
+**/credentials.json
+**/google-services.json
+**/GoogleService-Info.plist

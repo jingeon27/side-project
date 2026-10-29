@@ -1,7 +1,12 @@
-import type { TWebEventPayload } from '@photo-contest/bridge';
-import { buildNativeDispatchScript, createNativeRouter } from '@photo-contest/bridge/native';
-import type { INativeRouter, TNativeCapabilities } from '@photo-contest/bridge/native';
 import { useEffect, useState } from 'react';
+
+import type { TWebEventPayload } from '@photo-contest/bridge';
+import {
+  buildNativeDispatchScript,
+  createNativeRouter,
+  type INativeRouter,
+  type TNativeCapabilities,
+} from '@photo-contest/bridge/native';
 
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { useLatest } from '@/shared/lib/use-latest';
@@ -12,6 +17,7 @@ export interface IWebEventHandlers {
   onAppReady: (payload: TWebEventPayload<'app.ready'>) => void;
   onNavigationChanged: (payload: TWebEventPayload<'navigation.changed'>) => void;
   onAuthChanged: (payload: TWebEventPayload<'auth.changed'>) => void;
+  onAppearanceChanged?: (payload: TWebEventPayload<'appearance.changed'>) => void;
 }
 
 interface IUseWebShellBridgeOptions {
@@ -34,6 +40,7 @@ export function useWebShellBridge({ channel, capabilities, handlers }: IUseWebSh
         'app.ready': (payload) => handlersRef.current.onAppReady(payload),
         'navigation.changed': (payload) => handlersRef.current.onNavigationChanged(payload),
         'auth.changed': (payload) => handlersRef.current.onAuthChanged(payload),
+        'appearance.changed': (payload) => handlersRef.current.onAppearanceChanged?.(payload),
       },
     }),
   );

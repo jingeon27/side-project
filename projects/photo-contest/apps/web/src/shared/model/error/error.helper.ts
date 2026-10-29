@@ -1,4 +1,5 @@
 import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
+
 import { BridgeError } from '@photo-contest/bridge/web';
 
 /** API가 GraphQL extensions.code로 보내는 값 중 화면이 분기하는 것 */
@@ -11,7 +12,7 @@ export const ERROR_CODE = {
   RateLimited: 'RATE_LIMITED',
   Unavailable: 'UNAVAILABLE',
   Internal: 'INTERNAL_SERVER_ERROR',
-} as const;
+} as const satisfies Record<string, string>;
 export type TErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 export const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -33,12 +34,12 @@ const NETWORK_FAILURE = /failed to fetch|load failed|networkerror/i;
 
 /** `/backend/*` REST 호출이 실패했을 때. message는 서버가 보낸 한국어 안내문이다. */
 export class RequestError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
     this.name = 'RequestError';
-    this.status = status;
   }
 }
 
@@ -56,6 +57,14 @@ function parseBody(text: string): IErrorBody | null {
   }
 }
 
+async function readText(response: Response) {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
+
 function toErrorCode(value: unknown): TErrorCode | null {
   return typeof value === 'string' && ERROR_CODES.has(value) ? (value as TErrorCode) : null;
 }
@@ -63,7 +72,7 @@ function toErrorCode(value: unknown): TErrorCode | null {
 /** 실패한 REST 응답이면 서버 안내문으로 RequestError를 던진다. */
 export async function ensureOk(response: Response) {
   if (response.ok) return response;
-  const body = parseBody(await response.text().catch(() => ''));
+  const body = parseBody(await readText(response));
   const message =
     typeof body?.message === 'string' && response.status < 500 ? body.message : DEFAULT_ERROR_MESSAGE;
   throw new RequestError(message, response.status);

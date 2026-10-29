@@ -1,23 +1,24 @@
 'use client';
 
-import type { TGroupQueryRef } from '../model/group-query.type';
-
 import { useReadQuery } from '@apollo/client/react';
 
-import { MemberList } from '@/features/group';
-import { GroupLeaderboard } from '@/features/ranking';
+import { canLeaveGroup, LeaveGroupButton, MemberList } from '@/features/group';
+
+import type { TGroupQueryRef } from '../model/group-query.type';
 
 export function GroupCommunity({ groupRef, viewerId }: { groupRef: TGroupQueryRef; viewerId: string }) {
   const { data } = useReadQuery(groupRef);
   if (!data) return null;
   const { group } = data;
   return (
-    <>
-      <GroupLeaderboard groupId={group.id} viewerId={viewerId} />
-      <section>
-        <h2 className="mb-3 text-title text-ink">함께하는 친구 {group.members.length}명</h2>
-        <MemberList members={group.members} viewerId={viewerId} />
-      </section>
-    </>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-title text-ink">함께하는 친구 {group.memberCount}명</h2>
+      <MemberList groupId={group.id} viewerRole={group.role} members={group.members} viewerId={viewerId} />
+      {canLeaveGroup(group.role) ? (
+        <div className="flex justify-end">
+          <LeaveGroupButton groupId={group.id} groupName={group.name} visibility={group.visibility} />
+        </div>
+      ) : null}
+    </section>
   );
 }

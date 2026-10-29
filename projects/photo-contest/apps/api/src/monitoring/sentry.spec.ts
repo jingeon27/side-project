@@ -1,5 +1,4 @@
-import { captureException, init } from '@sentry/node';
-import type { ErrorEvent } from '@sentry/node';
+import { captureException, init, type ErrorEvent } from '@sentry/node';
 import { GraphQLError } from 'graphql';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,7 +8,7 @@ vi.mock('@sentry/node', () => ({ init: vi.fn(), captureException: vi.fn() }));
 
 class FakePrismaError extends Error {
   code = 'P2002';
-  name = 'PrismaClientKnownRequestError';
+  override name = 'PrismaClientKnownRequestError';
 }
 
 afterEach(() => {
@@ -28,31 +27,34 @@ describe('Sentry 초기화', () => {
   it('DSN이 있으면 개인정보 없이 환경·릴리스·추적 비율을 설정해야 한다', () => {
     vi.stubEnv('SENTRY_DSN', 'https://public@sentry.example/1');
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('SENTRY_RELEASE', 'api@1.2.3');
-    vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', '0.25');
+    vi.stubEnv('SENTRY_RELEASE', ' photo-release ');
     expect(initSentry()).toBe(true);
     expect(init).toHaveBeenCalledWith(
       expect.objectContaining({
         dsn: 'https://public@sentry.example/1',
         environment: 'production',
-        release: 'api@1.2.3',
-        tracesSampleRate: 0.25,
-        sendDefaultPii: false,
+        release: 'photo-release',
+        tracesSampleRate: 0.1,
+        dataCollection: {
+          userInfo: false,
+          cookies: false,
+          httpHeaders: false,
+          httpBodies: [],
+          urlQueryParams: false,
+          graphQL: { document: false, variables: false },
+        },
         defaultIntegrations: false,
         beforeSend: scrubEvent,
-        beforeSendTransaction: scrubEvent,
       }),
     );
   });
+});
 
-  it('추적 비율이 없거나 0~1 사이 숫자가 아니면 0이어야 한다', () => {
+describe('Sentry 릴리스', () => {
+  it.each(['', '  '])('빈 릴리스는 Sentry에 보내지 않아야 한다 (%j)', (release) => {
     vi.stubEnv('SENTRY_DSN', 'https://public@sentry.example/1');
-    for (const invalid of ['', 'abc', '-0.1', '1.5', 'Infinity']) {
-      vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', invalid);
-      expect(sentryOptions()?.tracesSampleRate, invalid).toBe(0);
-    }
-    vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', '1');
-    expect(sentryOptions()?.tracesSampleRate).toBe(1);
+    vi.stubEnv('SENTRY_RELEASE', release);
+    expect(sentryOptions()?.release).toBeUndefined();
   });
 });
 

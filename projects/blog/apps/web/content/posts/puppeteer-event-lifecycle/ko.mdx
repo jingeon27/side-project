@@ -1,0 +1,155 @@
+<Summary>
+
+Electron 수집 앱에서 요청 헤더와 파일 정보를 함께 기다려야 했어요. 값을 모으는 일은 closure에, 기다림을 끝내고 리스너를 정리하는 일은 Promise에 맡겼어요.
+
+</Summary>
+
+![요청과 응답을 기다리는 구독을 먼저 연결하는 브라우저 흐름을 그린 일러스트](/images/covers/puppeteer-event-lifecycle.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+Puppeteer로 페이지를 새로 불러온 뒤 네트워크 이벤트에서 정보를 꺼내는 작업이 있었어요. request에서는 다음 API 호출에 쓸 헤더를 얻고, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었어요. 어느 한쪽만 준비돼서는 다음 작업으로 넘어갈 수 없었어요.
+
+처음에는 콜백이 외부 변수에 값을 넣게 하고, 그 변수가 채워졌는지 주기적으로 확인했어요.
+
+```typescript
+let result: PreInfo | undefined;
+
+page.on('request', (request) => {
+  result = readRequest(request);
+});
+
+await page.reload();
+
+while (result === undefined) {
+  await delay(1_000);
+}
+```
+
+이 방식은 결과를 받는 것과 기다림을 끝내는 것이 떨어져 있었어요. 원하는 이벤트가 오지 않으면 while문에서 계속 기다렸고, 함수를 다시 부르면 이전에 등록한 리스너까지 남았어요. request와 response가 같은 변수를 쓰면 뒤에 도착한 값이 앞의 값을 덮을 수도 있었고요.
+
+완료 조건도 단순히 if (result)로 둘 수는 없었어요. 0이나 false, 빈 문자열도 유효한 결과일 수 있으니까요. 값을 받지 못한 상태는 undefined로 구분하고, 새로고침보다 리스너 등록이 먼저 끝나게 해야 했어요. 새로고침 뒤에 등록하면 빠르게 지나간 이벤트를 놓칠 수 있었어요.
+
+## 이벤트가 오면 Promise를 끝내요
+
+```tsx
+import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
+
+type MaybePromise<T> = T | Promise<T>;
+
+interface WaitForPreInfoOptions<T> {
+  page: Page;
+  timeoutMs?: number;
+  onRequest?: (request: HTTPRequest) => MaybePromise<T | undefined>;
+  onResponse?: (response: HTTPResponse) => MaybePromise<T | undefined>;
+}
+
+export function waitForPreInfo<T>({
+  page,
+  timeoutMs = 10_000,
+  onRequest,
+  onResponse,
+}: WaitForPreInfoOptions<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      page.off('request', handleRequest);
+      page.off('response', handleResponse);
+    };
+
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const consume = async (result: MaybePromise<T | undefined>) => {
+      try {
+        const value = await result;
+        if (value !== undefined) finish(value);
+      } catch (error) {
+        fail(error);
+      }
+    };
+
+    const handleRequest = (request: HTTPRequest) => {
+      if (onRequest) void consume(onRequest(request));
+    };
+
+    const handleResponse = (response: HTTPResponse) => {
+      if (onResponse) void consume(onResponse(response));
+    };
+
+    page.on('request', handleRequest);
+    page.on('response', handleResponse);
+
+    timer = setTimeout(() => {
+      fail(new Error(`필요한 네트워크 정보를 ${timeoutMs}ms 안에 찾지 못했습니다.`));
+    }, timeoutMs);
+
+    void page.reload({ waitUntil: 'networkidle2' }).catch(fail);
+  });
+}
+```
+
+콜백이 undefined를 돌려주면 아직 기다려야 한다는 뜻이에요. 다른 값을 받으면 finish가 Promise를 완료하고 request와 response 리스너를 함께 해제해요. 비동기 결과가 뒤늦게 더 도착해도 settled가 이미 끝난 Promise를 다시 처리하지 못하게 막아요.
+
+기다림에는 기본 10초의 제한을 뒀어요. 그 안에 결과가 없거나 reload가 실패하면 fail로 끝내요. 성공했을 때와 마찬가지로 타이머와 리스너를 정리하므로, 실패한 수집이 다음 수집에 리스너를 남기지 않아요.
+
+## 먼저 온 값을 closure 안에 보관해요
+
+request와 response를 받는 순서는 이 함수가 정할 수 없어요. 대신 먼저 도착한 값을 보관하고, 나머지 값이 들어왔을 때 완성된 결과를 돌려주는 collector를 만들었어요.
+
+```typescript
+interface SitePreInfo {
+  headers: Record<string, string>;
+  filePassword: string;
+}
+
+function createSitePreInfoCollector() {
+  let headers: Record<string, string> | undefined;
+  let filePassword: string | undefined;
+
+  const getResult = (): SitePreInfo | undefined => {
+    if (headers === undefined || filePassword === undefined) return undefined;
+    return { headers, filePassword };
+  };
+
+  return {
+    onRequest(request: HTTPRequest) {
+      if (!request.url().includes('/target-api')) return undefined;
+      headers = request.headers();
+      return getResult();
+    },
+
+    async onResponse(response: HTTPResponse) {
+      if (!response.url().includes('/file-info')) return undefined;
+      const body = (await response.json()) as { password?: string };
+      filePassword = body.password;
+      return getResult();
+    },
+  };
+}
+
+const collector = createSitePreInfoCollector();
+const preInfo = await waitForPreInfo({
+  page,
+  onRequest: collector.onRequest,
+  onResponse: collector.onResponse,
+});
+```
+
+두 콜백은 createSitePreInfoCollector 안의 headers와 filePassword를 공유해요. 헤더가 먼저 오면 비밀번호를 기다리고, 비밀번호가 먼저 와도 헤더가 없으면 getResult는 undefined를 돌려줘요. 둘 다 모였을 때만 객체를 반환하니 waitForPreInfo도 그때 끝나요.
+
+상태는 이 수집을 위해 만든 closure 안에만 있어요. 바깥에서 두 변수를 직접 고치지 않고 request와 response를 처리하는 함수만 넘겨요. 다음 수집에는 새 collector를 만들고, 이전 수집의 리스너는 Promise가 끝날 때 지우도록 나눴어요.

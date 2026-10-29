@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "about": "About",
+    "skip": "Skip to content",
+    "theme": "Switch color theme",
+    "language": "Change language",
+    "siteTitle": "Bambyul Blog"
+  },
+  "common": {
+    "all": "All",
+    "articles": "posts",
+    "readMore": "Read post",
+    "allArticles": "All posts",
+    "backToBlog": "Back to posts",
+    "minutes": "min read",
+    "published": "Published",
+    "updated": "Updated",
+    "search": "Search titles or tags",
+    "searchPlaceholder": "Search titles or tags",
+    "searchArticles": "Posts",
+    "searchTags": "Tags",
+    "searchSuggestions": "Search results",
+    "searchEmpty": "No results found.",
+    "searchHint": "Use arrow keys to move and Enter to select.",
+    "clear": "Clear search",
+    "category": "Category",
+    "tags": "Tags",
+    "clearFilters": "Reset filters",
+    "noResults": "No articles match your search.",
+    "noResultsDescription": "Try another title, tag or category.",
+    "empty": "No posts yet.",
+    "emptyDescription": "You can read the Korean posts.",
+    "koreanArticles": "Read Korean posts",
+    "translationMissing": "This post hasn't been translated yet.",
+    "translationList": "View posts in this language",
+    "close": "Close",
+    "rss": "Subscribe via RSS",
+    "email": "Email",
+    "github": "GitHub"
+  },
+  "home": {
+    "title": "Bambyul Blog",
+    "description": "I write about problems I encounter while developing software and what I learn along the way.",
+    "latest": "Recent posts",
+    "explore": "Categories"
+  },
+  "blog": {
+    "title": "Posts",
+    "categoryDescription": "Posts in this category.",
+    "tagDescription": "Posts with this tag.",
+    "results": "posts",
+    "filterLabel": "Filter posts"
+  },
+  "categories": {
+    "engineering": "Engineering",
+    "til": "TIL",
+    "perspectives": "Perspectives",
+    "misc": "Miscellaneous"
+  },
+  "categoryDescriptions": {
+    "engineering": "Problems solved while developing software",
+    "til": "Things I have learned",
+    "perspectives": "Thoughts on software and work",
+    "misc": "Other posts"
+  },
+  "article": {
+    "contents": "On this page",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "shareFailed": "Could not copy the link.",
+    "copyCode": "Copy code",
+    "related": "Related articles",
+    "previous": "Previous post",
+    "next": "Next post"
+  },
+  "about": {
+    "title": "Jingeon Kim",
+    "description": "I'm a software engineer. I use this blog to write about development problems and things I have learned.",
+    "contact": "Contact"
+  },
+  "notFound": {
+    "title": "This page could not be found.",
+    "description": "Check the address or return to the blog.",
+    "home": "Back to home"
+  },
+  "analytics": {
+    "on": "Visit statistics and heatmaps are being collected in this browser.",
+    "off": "Visit statistics and heatmaps are not collected in this browser.",
+    "disable": "Turn off",
+    "enable": "Turn back on"
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "updated": "Effective October 26, 2026",
+    "intro": "This blog is read without an account or comments, and collects visit statistics and heatmaps to improve its articles and usability. If you prefer not to be measured, turn collection off for this browser under ‘Turn off collection’ below.",
+    "sections": {
+      "analytics": {
+        "heading": "Visit statistics (Google Analytics)",
+        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga."
+      },
+      "heatmaps": {
+        "heading": "Heatmaps and session replay (Microsoft Clarity)",
+        "body": "The blog records click and scroll positions and page movement to build heatmaps and session replays. The search field is masked. Clarity stores cookies such as _clck and _clsk, and does not set cookies for visitors from the EEA, UK and Switzerland without a consent signal."
+      },
+      "processors": {
+        "heading": "Processors and international transfer",
+        "body": "Collected information is processed by Google LLC and Microsoft Corporation and may be stored on servers in other countries, including the United States. Advertising storage and ad personalization signals are not used."
+      },
+      "retention": {
+        "heading": "Retention",
+        "body": "Data is kept for the retention period configured in each service and is then deleted by that service."
+      }
+    },
+    "optOut": {
+      "heading": "Turn off collection",
+      "body": "Use the button below to turn visit statistics and heatmaps off or back on for this browser. Turning them off deletes the Google Analytics cookies, stops sending data and stops Clarity. Your choice is stored only in this browser."
+    },
+    "contact": {
+      "heading": "Contact",
+      "body": "Send questions about this notice to the email address below."
+    }
+  }
+}

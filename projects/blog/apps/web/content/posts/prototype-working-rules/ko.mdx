@@ -1,0 +1,119 @@
+<Summary>
+
+프로토타입을 서비스로 옮기는 동안 비슷한 구현을 여러 번 맡겼어요. 그때마다 고치던 내용을 skills에 적었지만, 짧고 강한 규칙이 오히려 잘못된 코드를 만들기도 했어요.
+
+</Summary>
+
+![프로토타입에서 반복한 판단을 공통 작업 규칙으로 옮기는 모습을 그린 일러스트](/images/covers/prototype-working-rules.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+검증용 SPA를 Next.js 서비스로 옮기려니 화면만 다시 만드는 것으로는 끝나지 않았어요. SSR과 SEO, 다국어, 폼 검증, 관리자 화면을 붙여야 했어요. 비슷한 페이지와 폼이 이어질 작업이라 Claude Code에 매번 같은 설명을 반복하고 싶지는 않았어요.
+
+그래서 구현 방법을 적기 전에, Jira task를 읽은 뒤 어떤 코드를 찾고 어디서 검토할지부터 skill에 넣었어요. 이후 작업에서 반복된 지적도 여기에 더했는데, 쓰다 보니 규칙을 짧게 적는 것만으로는 부족했어요. 언제 그 규칙을 쓰면 안 되는지도 필요했어요.
+
+## 코드를 만들기 전에 기존 화면을 찾게 했어요
+
+skill에는 계획부터 커밋까지의 순서를 이렇게 적었어요.
+
+```text
+Jira task와 acceptance criteria 확인
+  -> 관련 route, API, 기존 pattern 탐색
+  -> 변경 파일과 검증 방법을 plan으로 작성
+  -> 작은 단위로 구현
+  -> typecheck, lint, build, route smoke test
+  -> diff 기반 code review
+  -> 지적 반영 후 commit
+```
+
+plan에는 바꿀 route와 가까운 기존 구현을 적게 했어요. 로딩 중이거나 조회가 실패했을 때, 데이터가 없을 때 보여줄 화면도 여기서 정해요. 폼이나 drawer를 매번 다른 모양으로 만들지 않도록 구현 전에 참고할 코드를 찾게 한 거예요.
+
+리뷰에서는 task 밖의 변경이 섞였는지와 hydration, 접근성, 번역 누락을 봐요. 검증을 통과한 작업 단위로 커밋하도록 했고요. 폼과 query처럼 자주 만드는 코드는 별도 skill에 예제와 피해야 할 구현을 함께 뒀어요. 각 작업의 plan에는 그 예제와 달라지는 부분을 설명하게 했어요.
+
+## props를 없애라는 규칙부터 고쳤어요
+
+처음에는 반복되는 실수를 막으려고 “hook으로 얻을 수 있는 값은 prop으로 넘기지 않는다”고 적었어요. 이 규칙은 locale을 쓰지 않는 중간 컴포넌트가 값을 전달만 하는 경우를 줄여 줘요. 그런데 이대로라면 명시적인 입력을 받는 UI까지 context에 묶일 수 있어요.
+
+props는 부모가 계산한 값을 전달하고, 컴포넌트가 무엇을 필요로 하는지 드러내는 방법이기도 해요. 그래서 공통 provider의 값을 중간에서 전달만 하는 경우로 규칙을 좁혔어요.
+
+> router, locale, theme처럼 이미 공통 provider가 소유한 값을 관계없는 중간 component들이 전달만 하지 않는다. 반면 부모가 계산한 화면 데이터와 component의 명시적 입력은 props로 전달한다.
+
+```tsx
+// 관계없는 component 두 개가 locale을 전달만 한다.
+function Page() {
+  const locale = useLocale();
+  return <Section locale={locale} />;
+}
+
+function Section({ locale }: { locale: Locale }) {
+  return <ProductCard locale={locale} />;
+}
+
+// 실제 소비 지점에서 app context를 읽는다.
+function ProductCard() {
+  const locale = useLocale();
+  return <ProductName locale={locale} />;
+}
+
+// ProductName은 명시적인 입력을 받는 순수 UI로 남긴다.
+function ProductName({ locale }: { locale: Locale }) {
+  // ...
+}
+```
+
+이 예제에서는 ProductCard가 locale을 읽고 ProductName은 입력받은 locale로 그리기만 해요. Section이 대신 전달할 필요는 없지만, ProductName의 입력까지 없앨 필요도 없어요.
+
+화면 너비에 따라서도 비슷하게 구분했어요. 배치나 표시만 달라지면 CSS media query를 쓰고, 너비에 따라 조회나 행동이 달라질 때만 클라이언트 로직으로 표현해요.
+
+## useMounted로 옮겨도 빈 첫 화면은 그대로였어요
+
+기존 코드에는 마운트가 끝날 때까지 children을 숨기는 컴포넌트가 있었어요.
+
+```typescript
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? children : null;
+}
+```
+
+이 코드를 없애 달라고 했더니 같은 내용을 useMounted 훅으로 옮겼어요. 컴포넌트는 사라졌지만 첫 paint가 비어 있는 이유는 남았어요. 이름이나 파일 위치만 바꾸면 제가 원한 수정이 되지 않는다는 걸 보여 준 경우였어요.
+
+그렇다고 layout에 Suspense가 있다는 이유로 mount gate를 모두 없앨 수도 없어요. Suspense는 suspend한 작업의 fallback을 보여줄 뿐, window 접근이나 viewport에 따른 hydration mismatch를 해결해 주지는 않아요.
+
+이후에는 원인을 구분해서 적었어요. useSearchParams처럼 정적 렌더링을 클라이언트 렌더링으로 전환할 수 있는 훅은 필요한 작은 subtree를 Suspense로 감싸요. 브라우저 API는 이벤트 핸들러나 effect에서 읽어 첫 서버 렌더와 클라이언트 렌더가 같은 마크업을 만들게 해요. 표시 차이는 CSS로 처리하고, 외부 위젯처럼 SSR을 할 수 없는 경우에 client-only 경계를 남겨요.
+
+```tsx
+function SearchSection() {
+  return (
+    <Suspense fallback={<SearchSkeleton />}>
+      <SearchResults />
+    </Suspense>
+  );
+}
+```
+
+## 제출 결과는 mutation에서 바로 읽을 수 있었어요
+
+폼 제출을 useMutation으로 바꾸고도 성공 여부와 마지막 제출 값을 local state와 ref에 다시 저장한 코드가 있었어요. 화면에 필요한 값이 mutation에도 이미 있었어요.
+
+```typescript
+const mutation = useMutation({ mutationFn: submitForm });
+
+const submittedValues = mutation.variables;
+const isComplete = mutation.isSuccess;
+```
+
+한 번에 하나씩 제출하고 마지막 제출의 결과만 보여주는 화면이라면 variables와 isSuccess를 그대로 읽으면 돼요. 성공할 때 따로 상태를 쓰고 reset할 때 다시 맞출 필요가 없어요.
+
+반대로 동시에 여러 제출을 다루거나, mutation을 reset한 뒤에도 제출 당시 값을 보관해야 한다면 별도 상태가 필요해요. 성공 후 오래 남겨 둘 snapshot도 마찬가지예요. 그래서 “상태를 만들지 않는다”가 아니라, 화면에서 필요한 동안 mutation이 이미 보관하는 값만 중복 저장하지 않도록 했어요.
+
+## 반복되는 지적만 skill에 남겼어요
+
+route를 옮긴 뒤에는 변경 내용을 함께 읽었어요. async page props를 await하는 시점, SEO에 필요한 조회와 스트리밍할 조회를 나누는 방법, 늦게 도착한 폼 초기값을 처리하는 방식이 다시 나올 만한 내용이었어요. 아이콘 버튼의 접근 가능한 이름과 tooltip, 다국어 문구의 locale key 확인도 skill에 더했어요.
+
+한 화면에서만 필요한 수정은 그 코드에서 끝냈어요. 예외가 많은 문장을 모든 작업에 적용하면, 앞서 props 규칙에서 그랬듯 멀쩡한 입력까지 없애는 수정이 나올 수 있었어요.
+
+작업을 끝내는 조건도 코드 생성과 나눠 뒀어요. 바뀐 route의 typecheck와 lint, production build에 더해 desktop과 mobile 화면을 열고, 서버 HTML과 metadata, 번역 key를 확인하도록 했어요. 폼의 입력 검증과 제출 실패도 보고, 마지막 diff에서 task 밖의 변경을 걷어내게 했고요. skill을 보강하는 동안에도 이 확인을 대신하도록 맡기지는 않았어요.
+
+참고: [Next.js useSearchParams와 Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

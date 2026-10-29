@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Feedback Code Style"
+  short_description: "Apply Game Feedback Web and Admin code conventions"
+  default_prompt: "Use $game-feedback-code-style to review and implement this Game Feedback Web or Admin change."

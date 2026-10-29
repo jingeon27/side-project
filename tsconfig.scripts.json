@@ -1,0 +1,12 @@
+{
+  "extends": "@side/config/typescript",
+  "compilerOptions": {
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["scripts/**/*.ts", "knip.ts"],
+  "exclude": ["scripts/**/*.spec.ts", "scripts/**/*.test.ts"]
+}

@@ -1,0 +1,52 @@
+@layer components {
+  .guide-board-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .guide-board-list dt {
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: var(--text-body);
+  }
+  .guide-board-list dd {
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+  .contact-support {
+    margin-block: 24px;
+  }
+  .info-callout p {
+    font-size: var(--text-body);
+    line-height: 1.9;
+    color: var(--color-muted);
+  }
+  .info-callout {
+    padding: 19px;
+    background: var(--color-sunken);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    margin: 26px 0;
+  }
+  .info-callout > strong {
+    font-size: var(--text-body);
+    color: var(--color-muted);
+  }
+  .info-callout > p {
+    margin-top: 8px;
+    font-size: var(--text-caption);
+  }
+  .info-callout h2 {
+    margin: 0 0 12px;
+  }
+  .contact-link {
+    color: var(--color-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    overflow-wrap: anywhere;
+  }
+}

@@ -10,16 +10,16 @@
     "./test": "./src/test.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc7 --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "^4.4.0"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@side/typescript-config": "workspace:*",
-    "jsdom": "^29.0.0",
-    "typescript": "^5.9.0",
-    "vitest": "^4.1.0"
+    "@side/config": "workspace:*",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

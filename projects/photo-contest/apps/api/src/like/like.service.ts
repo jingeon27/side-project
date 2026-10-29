@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma';
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
-import type { IViewer } from '../auth/session.service';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { Database } from '../database/database.service';
-import { MembershipService } from '../group/membership.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { MembershipService } from '../group/membership/membership.service';
 import type { ISubmissionView } from '../submission/submission.presenter';
 import { SubmissionService } from '../submission/submission.service';
 
@@ -23,6 +25,7 @@ function isMissingSubmission(error: unknown) {
 export class LikeService {
   constructor(
     private readonly db: Database,
+    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly submissionService: SubmissionService,
   ) {}
@@ -33,14 +36,14 @@ export class LikeService {
     if (access.submission.authorId === viewer.id) fail('자신의 사진에는 좋아요를 누를 수 없습니다.');
     try {
       // 이미 있으면 아무것도 하지 않는다. Serializable이 아니어야 동시 요청이 재시도 없이 모두 성공한다.
-      await this.db.$transaction(async (tx) => {
-        const { count } = await tx.like.createMany({
+      await this.transactions.run(async (tx) => {
+        const { count } = await (tx ?? this.db).like.createMany({
           data: [{ submissionId, userId: viewer.id }],
           skipDuplicates: true,
         });
         if (count === 0) return;
         // 취소 후 다시 눌러도 같은 id라 이벤트는 처음 한 번만 남는다.
-        await recordEvent(tx, {
+        await recordEvent(tx ?? this.db, {
           id: `like:${submissionId}:${viewer.id}`,
           type: ANALYTICS_EVENT.SUBMISSION_LIKED,
           userId: viewer.id,

@@ -1,18 +1,24 @@
 import * as Sentry from '@sentry/nextjs';
 
-import { SENTRY_DATA_COLLECTION, resolveServerSentryDsn, scrubSentryEvent } from '@/shared/lib/sentry.helper';
+import { resolveServerSentryDsn, scrubSentryEvent, SENTRY_DATA_COLLECTION } from '@/shared/lib/sentry.helper';
 
 /** Next 서버가 뜰 때 한 번. 서버 렌더링·라우트 오류를 Sentry로 보낸다. DSN이 없으면 켜지 않는다. */
 export function register() {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+  if (process.env.NEXT_RUNTIME !== 'nodejs' || process.env.NEXT_PHASE === 'phase-production-build') return;
   const dsn = resolveServerSentryDsn(process.env);
   if (!dsn) return;
   Sentry.init({
     dsn,
+    defaultIntegrations: false,
+    enableOpenTelemetrySetup: false,
+    initialScope: { tags: { service: 'photo-contest', layer: 'next-server' } },
     environment: process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE?.trim() || undefined,
     dataCollection: SENTRY_DATA_COLLECTION,
     tracesSampleRate: 0,
+    traceLifecycle: 'static',
     beforeSend: scrubSentryEvent,
+    beforeSendTransaction: scrubSentryEvent,
   });
 }
 

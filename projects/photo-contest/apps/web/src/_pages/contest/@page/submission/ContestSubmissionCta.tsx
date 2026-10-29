@@ -16,8 +16,8 @@ export function ContestSubmissionCta({ contestRef }: { contestRef: TContestQuery
   if (!data) return null;
   const { contest } = data;
   const handleSubmitPhoto = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
-      <UploadPhotoBottomSheet contestId={contest.id} isOpen={isOpen} onClose={close} unmount={unmount} />
+    overlay.open(({ isOpen, close: onClose, unmount }) => (
+      <UploadPhotoBottomSheet contestId={contest.id} isOpen={isOpen} onClose={onClose} unmount={unmount} />
     ));
   return match(contest.phase)
     .with(Phase.Submission, () => (

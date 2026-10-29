@@ -1,6 +1,6 @@
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
-import { afterEach, expect, vi } from 'vitest';
+import { afterEach, beforeEach, expect, vi } from 'vitest';
 
 import type {} from '@testing-library/jest-dom/vitest';
 
@@ -32,21 +32,27 @@ class IntersectionObserverStub {
   }
 }
 
-vi.stubGlobal('ResizeObserver', ResizeObserverStub);
-vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
+const installBrowserApis = () => {
+  vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+  vi.stubGlobal('IntersectionObserver', IntersectionObserverStub);
 
-if (typeof window.matchMedia !== 'function') {
-  vi.stubGlobal('matchMedia', (query: string): MediaQueryList => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => undefined,
-    removeListener: () => undefined,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-    dispatchEvent: () => false,
-  }));
-}
+  if (typeof window.matchMedia !== 'function') {
+    vi.stubGlobal('matchMedia', (query: string): MediaQueryList => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }));
+  }
+};
+
+installBrowserApis();
+// 개별 테스트의 unstubAllGlobals가 브라우저 기본 대역까지 지우므로 매번 복구한다.
+beforeEach(installBrowserApis);
 
 window.scrollTo = () => undefined;
 Element.prototype.scrollIntoView = () => undefined;

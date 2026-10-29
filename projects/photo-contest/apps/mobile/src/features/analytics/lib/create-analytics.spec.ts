@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createAnalytics, resolveIdentityChange } from './create-analytics';
-import type { TAnalyticsSdk } from './create-analytics';
+import { createAnalytics, resolveIdentityChange, type TAnalyticsSdk } from './create-analytics';
 
 const API_KEY = 'amplitude-test-key';
 
@@ -46,7 +45,7 @@ describe('createAnalytics', () => {
     expect(sdk.init).toHaveBeenCalledTimes(1);
     expect(sdk.init).toHaveBeenCalledWith(API_KEY, undefined, {
       autocapture: false,
-      trackingOptions: { adid: false, appSetId: false, idfv: false },
+      trackingOptions: { adid: false, appSetId: false, idfv: false, ipAddress: false },
     });
   });
 
@@ -77,6 +76,23 @@ describe('createAnalytics', () => {
     await vi.advanceTimersByTimeAsync(1_500);
 
     await expect(started).resolves.toBeNull();
+  });
+
+  it('시간 초과 뒤 초기화가 거부되어도 같은 시작 결과를 유지하고 늦은 실패를 처리해야 한다', async () => {
+    vi.useFakeTimers();
+    const { sdk, typedSdk } = createFakeSdk();
+    const initialization = Promise.withResolvers<void>();
+    sdk.init.mockReturnValue({ promise: initialization.promise });
+    const analytics = createAnalytics({ apiKey: API_KEY, sdk: typedSdk, startTimeoutMs: 1_500 });
+    const started = analytics.start();
+    expect(analytics.start()).toBe(started);
+    await vi.advanceTimersByTimeAsync(1_500);
+    await expect(started).resolves.toBeNull();
+    initialization.reject(new Error('late initialization failure'));
+    await vi.runAllTimersAsync();
+    expect(analytics.start()).toBe(started);
+    expect(sdk.init).toHaveBeenCalledOnce();
+    expect(sdk.getDeviceId).not.toHaveBeenCalled();
   });
 
   it('웹 앱 정보 스키마(1~128자)를 벗어난 기기 ID는 넘기지 않아야 한다', async () => {

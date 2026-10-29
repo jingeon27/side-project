@@ -1,6 +1,11 @@
 enum GroupRole {
   OWNER
+  MODERATOR
   MEMBER
+}
+enum GroupVisibility {
+  PUBLIC
+  PRIVATE
 }
 
 type Member {
@@ -8,7 +13,7 @@ type Member {
   role: GroupRole!
 }
 
-"종료된 대회만 집계한다. 우승 횟수와 받은 표가 같으면 같은 순위"
+"최근 종료된 기존 대회 50개만 집계해 상위 100명까지 준다. 우승 횟수와 받은 표가 같으면 같은 순위"
 type LeaderboardEntry {
   rank: Int!
   user: User!
@@ -21,14 +26,29 @@ type LeaderboardEntry {
 type Group {
   id: ID!
   name: String!
+  description: String!
+  avatarUrl: String
+  coverUrl: String
   "조회한 사용자의 역할"
-  role: GroupRole!
+  role: GroupRole
+  visibility: GroupVisibility!
+  memberCount: Int!
+  canViewPosts: Boolean!
+  joinRequestPending: Boolean!
   "그룹 멤버 누구나 공유할 수 있는 초대 토큰"
-  inviteToken: String!
-  members: [Member!]!
+  inviteToken: String
+  "승인된 멤버에게만 준다. 그룹장·부관리자 먼저, 같은 역할은 가입 순. limit 1~48(기본 48). 전체 수는 memberCount"
+  members(offset: Int = 0, limit: Int = 48): [Member!]!
   "최근 대회 50개, 최신순"
   contests: [Contest!]!
   leaderboard: [LeaderboardEntry!]!
+}
+
+type GroupJoinRequest {
+  id: ID!
+  groupId: ID!
+  user: User!
+  createdAt: DateTime!
 }
 
 type InvitePreview {
@@ -37,18 +57,56 @@ type InvitePreview {
   ownerNickname: String!
   "로그인한 사용자가 이미 멤버이면 그룹 ID, 아니면 null"
   joinedGroupId: ID
+  visibility: GroupVisibility!
+  joinRequestPending: Boolean!
 }
 
 type Query {
   myGroups: [Group!]!
   group(id: ID!): Group!
+  "공개·비공개 그룹의 이름을 탐색한다. 비공개 게시물·초대 토큰·멤버 명단은 노출하지 않는다"
+  discoverGroups(search: String, visibility: GroupVisibility, offset: Int = 0, limit: Int = 24): [Group!]!
+  publicGroupCount: Int!
+  "그룹장·부관리자만 가입 신청을 조회한다"
+  groupJoinRequests(groupId: ID!, offset: Int = 0, limit: Int = 24): [GroupJoinRequest!]!
   "로그인하지 않아도 초대 토큰으로 그룹을 미리 본다"
   invitePreview(token: String!): InvitePreview!
 }
 
 type Mutation {
-  createGroup(name: String!): Group!
+  "그룹장만. 그룹장 역할은 바꾸지 않고 멤버를 부관리자로 임명하거나 해제한다"
+  setGroupModerator(groupId: ID!, userId: ID!, enabled: Boolean!): Group!
+  "그룹장만. 대상이 그룹장이 되고 이전 그룹장은 일반 멤버가 된다"
+  transferGroupOwnership(groupId: ID!, userId: ID!): Group!
+  "그룹장·부관리자만. 그룹장은 내보낼 수 없고 부관리자는 일반 멤버만, 그룹장은 부관리자도 내보낸다"
+  removeGroupMember(groupId: ID!, userId: ID!): Group!
+  "본인이 그룹을 나간다. 그룹장은 관리자를 양도한 뒤에만 나갈 수 있다"
+  leaveGroup(groupId: ID!): Group!
+  createGroup(name: String!, visibility: GroupVisibility! = PUBLIC, description: String = ""): Group!
+  updateGroupProfile(
+    groupId: ID!
+    name: String!
+    description: String!
+    avatarId: ID
+    removeAvatar: Boolean! = false
+    coverId: ID
+    removeCover: Boolean! = false
+  ): Group!
+  "공개 그룹은 즉시 가입하고 비공개 그룹은 승인 대기 신청을 만든다"
+  requestGroupMembership(groupId: ID!): Group!
+  "그룹장·부관리자만"
+  approveGroupJoinRequest(requestId: ID!): Boolean!
+  "그룹장·부관리자만"
+  rejectGroupJoinRequest(requestId: ID!): Boolean!
   joinGroup(token: String!): Group!
-  "관리자만. 이전 초대 링크는 더 이상 쓸 수 없다"
+  "그룹장만. 이전 초대 링크는 더 이상 쓸 수 없다"
   regenerateInviteLink(groupId: ID!): Group!
+}
+
+type GroupAvatarTicket {
+  id: ID!
+}
+extend type Mutation {
+  requestGroupAvatarUpload(groupId: ID!, contentType: String!, byteSize: Int!): UploadTicket!
+  completeGroupAvatarUpload(uploadId: ID!): GroupAvatarTicket!
 }

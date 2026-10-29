@@ -1,0 +1,152 @@
+<Summary>
+
+Adding a recruiting platform also copied the collection workflow. I introduced and then removed NestJS, while keeping request handling, collection order, and site-specific processing separate.
+
+</Summary>
+
+![An illustration separating a desktop application's main process, bridge, and renderer.](/images/covers/electron-module-boundaries.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+When I joined, an Electron app collected applicants from several recruiting platforms using data the company was authorized to access through its corporate accounts. Login and DOM structure differed, but the sequence was shared: log in, check duplicates, save applicants, and upload resumes. Each platform repeated that sequence, so a shared change required editing their files together.
+
+## Every platform file repeated the same workflow
+
+Each platform function contained the sequence from start to finish.
+
+```text
+로그인
+  -> 목록 수집
+  -> 중복 확인
+  -> 지원자 등록
+  -> 파일 다운로드 및 업로드
+```
+
+Adding a platform meant copying a file and changing selectors and exception handling. Site-specific behavior and the sequence common to every site remained in the same function.
+
+I first considered doing the same for my new platform. That would also add another copy of the post-login workflow.
+
+## Keeping collection order independent of site changes
+
+I was reading the backend team's NestJS code and examining what Controllers and Services did. I borrowed that separation: receive IPC requests in one place, run the collection sequence in another, and implement site differences separately.
+
+- Change the Controller when the IPC request changes.
+- Change CrawlingService when the overall processing order changes.
+- Change a platform's adapter when its DOM or login method changes.
+
+## Removing NestJS did not mean combining the files again
+
+I initially introduced NestJS itself. The CTO rejected the added framework weight in Electron's main process. Five days later I removed the dependency, leaving neither decorators nor a DI container.
+
+I kept the separation. Passing PuppeteerService through a constructor and assembling it in a Factory let request handling, collection order, and site processing stay apart without a container.
+
+## The Controller receives IPC requests
+
+An ipcMain handler receives the app request, acting as an entry point much like an HTTP Controller. The platform names and some identifiers below are illustrative replacements.
+
+```typescript
+const createCrawlingService =
+  (puppeteer: PuppeteerService) =>
+  (platform: Platform) =>
+    new CrawlingService(puppeteer, platform);
+
+export function createCrawlingController(puppeteer: PuppeteerService) {
+  const createService = createCrawlingService(puppeteer);
+
+  return {
+    collect({ platform }: { platform: Platform }) {
+      return createService(platform).collect();
+    },
+  };
+}
+
+const controller = createCrawlingController(puppeteer);
+ipcMain.handle('crawl', (_event, req) => controller.collect(req));
+```
+
+The Controller obtains the Service for the requested platform and runs it. It knows neither login functions nor DOM selectors, and the platform list lives elsewhere. Registering another platform does not require changing this Controller.
+
+## The Service owns the processing order
+
+```typescript
+export class CrawlingService {
+  constructor(
+    private readonly puppeteer: PuppeteerService,
+    private readonly platform: Platform,) {}
+
+  async collect() {
+    // 예외 처리와 page 정리는 생략
+    const config = CRAWLING_HANDLERS[this.platform];
+    const page = await this.puppeteer.open(config.pages.recruit);
+
+    await config.login(page);
+
+    const processor = new config.Processor({ page });
+    await processor.collectCandidates();
+    await processor.removeDuplicates();
+    await processor.saveCandidates();
+    await processor.uploadResumes();
+  }
+}
+```
+
+CrawlingService uses the PuppeteerService it receives to execute the shared order. NestJS inspired the constructor injection, but the Factory creates the actual instance. The platform functions come from CRAWLING_HANDLERS below.
+
+## Abstract classes and configuration hold platform differences
+
+```tsx
+abstract class CandidateProcessor {
+  abstract collectCandidates(): Promise<void>;
+  abstract removeDuplicates(): Promise<void>;
+  abstract saveCandidates(): Promise<void>;
+  abstract uploadResumes(): Promise<void>;
+}
+
+interface CrawlingHandler {
+  pages: { recruit: string };
+  login: (page: Page) => Promise<void>;
+  Processor: new (args: { page: Page }) => CandidateProcessor;
+}
+
+const CRAWLING_HANDLERS = {
+  platformA: {
+    pages: PLATFORM_A_PAGES,
+    login: loginPlatformA,
+    Processor: PlatformAProcessor,
+  },
+  platformB: {
+    pages: PLATFORM_B_PAGES,
+    login: loginPlatformB,
+    Processor: PlatformBProcessor,
+  },
+  platformC: {
+    pages: PLATFORM_C_PAGES,
+    login: loginPlatformC,
+    Processor: PlatformCProcessor,
+  },
+} as const satisfies Record<Platform, CrawlingHandler>;
+```
+
+Abstract classes define methods each platform must implement. CrawlingService decides when to invoke them, while the configuration connects each platform's class and helpers. It resembles a NestJS Module without runtime DI or decorators.
+
+The example gives Processor's constructor a specific type. That position used any in my original code.
+
+## Adding login and parsing for the next platforms
+
+For later platforms, I implemented their login and parsing and registered them in configuration. I no longer copied the collection function; CrawlingService retained the shared order.
+
+One platform delivered encrypted ZIP resumes. Another needed two-factor authentication, pagination, and its own handling for education, work history, and duplicate applicants. Those differences stayed in their platform implementations. Catching errors per applicant allowed collection to continue after one failure.
+
+IPC requests, collection-order changes, and DOM changes no longer start in the same file. NestJS was gone, but adding a platform no longer required copying the common sequence.
+
+## Platform functions still come from static configuration
+
+Puppeteer can be replaced through its constructor argument. CrawlingService still reads CRAWLING_HANDLERS directly from a module, though, so login functions and Processors cannot all be swapped externally.
+
+## References
+
+- [NestJS: Providers](https://docs.nestjs.com/providers): constructor injection and the container's role
+- [NestJS: Modules](https://docs.nestjs.com/modules)
+- [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc): receiving requests with ipcMain.handle
+- [TypeScript Handbook: abstract Classes and Members](https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members)
+- Related: [Waiting for Puppeteer requests and responses without leaking listeners](/en/blog/puppeteer-event-lifecycle): a problem downloading password-protected files in the same collection app

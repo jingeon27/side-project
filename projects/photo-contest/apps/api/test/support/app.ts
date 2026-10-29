@@ -1,34 +1,36 @@
-import { mkdir, mkdtemp } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import { join } from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
-import { createDatabaseClient } from '@photo-contest/test-kit';
+import type { Express } from 'express';
 import request from 'supertest';
 import { inject } from 'vitest';
 
+import { createDatabaseClient } from '@photo-contest/test-kit';
+
+import { sessionCookieName } from '../../src/auth/session/auth-cookie';
 import { createApp } from '../../src/bootstrap';
+import { randomToken, sha256Hex } from '../../src/common/crypto';
+import { SESSION_TTL_MS } from '../../src/config/limits';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';
+import { MediaStorage, mediaUrlTtlSeconds } from '../../src/storage/media-storage.service';
 
 /** 테스트 요청이 보내는 Origin. API는 listen하지 않으므로 실제 웹 서버와 겹치지 않는다. */
 export const TEST_WEB_ORIGIN = 'http://web.test';
 /** 한 테스트가 한꺼번에 보내는 요청 수의 상한 */
 const CONCURRENT_REQUESTS_MAX = 32;
 
-// 개발자 .env의 실제 키(OAuth·Sentry·S3)가 테스트 요청으로 새지 않도록 앱을 만들기 전에 지운다.
+// 개발자 관측 키를 지우고 S3·AWS 설정은 실행별 격리 설정으로 적용한다.
 const CLEARED_ENV = [
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'KAKAO_CLIENT_ID',
-  'KAKAO_CLIENT_SECRET',
-  'MOBILE_APP_SCHEME',
-  'MOBILE_MINIMUM_VERSION',
-  'MOBILE_LATEST_VERSION',
+  'PUSH_NOTIFICATIONS_ENABLED',
+  'EXPO_ACCESS_TOKEN',
   'SENTRY_DSN',
   'S3_BUCKET',
+  'S3_KEY_PREFIX',
   'S3_REGION',
   'S3_ENDPOINT',
   'S3_FORCE_PATH_STYLE',
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
 ] as const;
 
 export type TTestDatabase = ReturnType<typeof createDatabaseClient>;
@@ -48,6 +50,16 @@ export interface IGraphqlFailure {
   message: string;
 }
 
+export interface IStorageForm {
+  url: string;
+  fields: ReadonlyArray<{ name: string; value: string }>;
+}
+
+export interface IRedirectResponse {
+  status: number;
+  headers: Record<string, string>;
+}
+
 export interface ITestUser {
   id: string;
   nickname: string;
@@ -55,18 +67,23 @@ export interface ITestUser {
   cookie: string;
 }
 
+export interface ITestLoginOptions {
+  /** startAnonymousSession으로 만든 것과 같은 익명 계정. 가입 IP 한도를 쓰지 않도록 DB에 바로 만든다. */
+  anonymous?: boolean;
+}
+
 export interface ITestApi {
   app: INestApplication;
   /** 격리 스키마를 직접 준비·확인하는 클라이언트. 앱과 다른 연결이다. */
   db: TTestDatabase;
-  /** 이 앱이 사진을 저장하는 임시 폴더 */
-  storageDir: string;
+  /** 실제 S3의 격리 경로를 사용하는 앱의 저장소. 테스트에서 HEAD·DELETE로 객체를 확인한다. */
+  storage: MediaStorage;
   /** supertest 요청. 포트를 직접 열지 않고 Nest HTTP 서버에 보낸다. */
   http: () => ReturnType<typeof request>;
-  /** 개발 로그인으로 세션 Cookie 헤더 값을 받는다. */
-  login: (nickname: string) => Promise<string>;
-  /** 개발 로그인 후 사용자 ID까지 확인한다. */
-  signIn: (nickname: string) => Promise<ITestUser>;
+  /** 격리 DB에 사용자(같은 닉네임이면 같은 사용자)와 세션을 만들고 Cookie 헤더 값을 받는다. */
+  login: (nickname: string, options?: ITestLoginOptions) => Promise<string>;
+  /** login 후 사용자 ID까지 확인한다. */
+  signIn: (nickname: string, options?: ITestLoginOptions) => Promise<ITestUser>;
   /** 브라우저처럼 Origin과 CSRF preflight 헤더를 붙여 GraphQL을 호출한다. cookie가 없으면 비로그인 */
   gql: <TData>(
     cookie: string | undefined,
@@ -90,14 +107,15 @@ export interface ITestApi {
   close: () => Promise<void>;
 }
 
-let fileStorageDir: Promise<string> | undefined;
+// 브라우저 역할의 저장소 전송은 API의 외부 요청을 대체하는 stubExternalFetch와 섞이지 않게 원래 fetch를 쓴다.
+const browserFetch = globalThis.fetch;
 
-// 설정을 요청마다 읽으므로 한 파일의 앱들이 같은 폴더를 써야 먼저 만든 앱의 사진을 잃지 않는다.
-function storageDirOfFile() {
-  fileStorageDir ??= mkdir(inject('storageDir'), { recursive: true }).then(() =>
-    mkdtemp(join(inject('storageDir'), 'photos-')),
-  );
-  return fileStorageDir;
+/** 브라우저처럼 서명 POST 필드를 먼저, 파일을 마지막에 넣어 실제 S3에 직접 올린다(쿠키 없음). */
+export function uploadToStorage(form: IStorageForm, body: Buffer | Uint8Array, contentType: string) {
+  const multipart = new FormData();
+  for (const field of form.fields) multipart.append(field.name, field.value);
+  multipart.append('file', new Blob([new Uint8Array(body)], { type: contentType }), 'media');
+  return browserFetch(form.url, { method: 'POST', body: multipart });
 }
 
 /** 앱이 바꾼 환경변수를 만들기 전 값으로 되돌리는 함수를 돌려준다. */
@@ -109,9 +127,24 @@ function applyEnv(values: Record<string, string>) {
   return function restoreEnv() {
     for (const [name, value] of previous) {
       if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
+      if (value !== undefined) process.env[name] = value;
     }
   };
+}
+
+/**
+ * 고정 미디어 경로의 응답이 캐시 금지 307인지 확인하고 브라우저처럼 서명 GET을 따라간다.
+ * 서명 주소는 사진 1분·동영상 10분 안에 만료되므로 테스트 안에서 바로 연다.
+ */
+export async function openStorageRedirect(response: IRedirectResponse, headers: Record<string, string> = {}) {
+  if (response.status !== 307) throw new Error(`저장소로 보내는 307이어야 한다 (${response.status})`);
+  if (response.headers['cache-control'] !== 'private, no-store')
+    throw new Error(`서명 주소 이동은 캐시하면 안 된다 (${response.headers['cache-control']})`);
+  const location = new URL(response.headers.location ?? '');
+  const expected = String(mediaUrlTtlSeconds(decodeURIComponent(location.pathname).split('/').at(-1) ?? ''));
+  if (location.searchParams.get('X-Amz-Expires') !== expected)
+    throw new Error(`서명 GET은 ${expected}초여야 한다`);
+  return browserFetch(location, { headers });
 }
 
 /**
@@ -119,22 +152,30 @@ function applyEnv(values: Record<string, string>) {
  * 설정은 요청마다 다시 읽히므로 테스트 안에서 바꾸는 값은 vi.stubEnv로 바꾼다(테스트가 끝나면 setup.ts가 되돌린다).
  * env로 넘긴 값은 close()가 되돌린다.
  */
-export async function createTestApp(env: Record<string, string> = {}): Promise<ITestApi> {
-  const storageDir = await storageDirOfFile();
+export async function createTestApp(
+  env: Record<string, string> = {},
+  options: { testFixtures?: boolean; trustProxy?: number; shutdownHooks?: boolean } = {},
+): Promise<ITestApi> {
   const restoreEnv = applyEnv({
+    ...inject('s3Env'),
     DATABASE_URL: inject('databaseUrl'),
-    NODE_ENV: 'development',
-    ENABLE_DEV_LOGIN: 'true',
+    NODE_ENV: 'test',
     WEB_ORIGIN: TEST_WEB_ORIGIN,
-    STORAGE_BACKEND: 'local',
-    STORAGE_DIR: storageDir,
     ...env,
   });
-  const app = await createApp({ logger: false }).catch((error: unknown) => {
+  const app = await createApp({
+    logger: false,
+    testFixtures: options.testFixtures ?? process.env.NODE_ENV === 'test',
+    shutdownHooks: options.shutdownHooks,
+  }).catch((error: unknown) => {
     restoreEnv();
     throw error;
   });
   app.get(SchedulerService).stop();
+  if (options.trustProxy !== undefined) {
+    const server: Express = app.getHttpAdapter().getInstance();
+    server.set('trust proxy', options.trustProxy);
+  }
   const db = createDatabaseClient(inject('databaseUrl'));
 
   const server: Server = app.getHttpServer();
@@ -142,13 +183,18 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
   server.setMaxListeners(CONCURRENT_REQUESTS_MAX);
   const http = () => request(server);
 
-  async function login(nickname: string) {
-    const response = await http().post('/auth/dev').set('Origin', TEST_WEB_ORIGIN).send({ nickname });
-    if (response.status !== 200) throw new Error(`개발 로그인 실패 (${response.status}): ${response.text}`);
-    const cookies: string[] = [response.headers['set-cookie'] ?? []].flat();
-    const session = cookies.find((cookie) => cookie.startsWith('contest_session='));
-    if (!session) throw new Error('세션 Cookie가 없습니다.');
-    return session.split(';')[0] ?? '';
+  async function login(nickname: string, options: ITestLoginOptions = {}) {
+    const provider = options.anonymous ? 'anonymous' : 'testing';
+    const user = await db.user.upsert({
+      where: { provider_providerId: { provider, providerId: nickname } },
+      create: { provider, providerId: nickname, nickname },
+      update: {},
+    });
+    const raw = randomToken();
+    await db.session.create({
+      data: { userId: user.id, tokenHash: sha256Hex(raw), expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
+    });
+    return `${sessionCookieName()}=${raw}`;
   }
 
   async function gql<TData>(
@@ -187,8 +233,8 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
     return { code: error.extensions?.code, message: error.message };
   }
 
-  async function signIn(nickname: string): Promise<ITestUser> {
-    const cookie = await login(nickname);
+  async function signIn(nickname: string, options: ITestLoginOptions = {}): Promise<ITestUser> {
+    const cookie = await login(nickname, options);
     const { me } = await gqlOk<{ me: { id: string } }>(cookie, '{ me { id } }');
     return { id: me.id, nickname, cookie };
   }
@@ -196,7 +242,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
   return {
     app,
     db,
-    storageDir,
+    storage: app.get(MediaStorage),
     http,
     login,
     signIn,

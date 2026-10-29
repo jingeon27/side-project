@@ -1,0 +1,255 @@
+{
+  "issues": [
+    ["exports", "projects/blog/apps/web/src/entities/article/lib/get-articles.ts", "getArticleById"],
+    ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "defaultLocale"],
+    ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "isLocale"],
+    ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "locales"],
+    ["exports", "projects/blog/apps/web/src/shared/ui/icon.tsx", "ArrowIcon"],
+    ["exports", "projects/blog/apps/web/src/shared/ui/icon.tsx", "ExternalIcon"],
+    [
+      "exports",
+      "projects/game-feedback/apps/admin/src/features/moderation/index.ts",
+      "verifyMutationOptions"
+    ],
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "SupercellProfileProvider"],
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "cookies"],
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "setCookie"],
+    ["exports", "projects/game-feedback/apps/web/src/_app/index.server.ts", "ServiceProviders"],
+    ["exports", "projects/game-feedback/apps/web/src/_app/index.ts", "Providers"],
+    ["exports", "projects/game-feedback/apps/web/src/_app/seo/index.ts", "sitemap"],
+    ["exports", "projects/game-feedback/apps/web/src/_pages/messages/index.ts", "MessagesPage"],
+    ["exports", "projects/game-feedback/apps/web/src/features/auth/index.ts", "replaceSession"],
+    ["exports", "projects/game-feedback/apps/web/src/features/board/index.ts", "communityBoards"],
+    ["exports", "projects/game-feedback/apps/web/src/features/coaching/index.ts", "coachingRoles"],
+    [
+      "exports",
+      "projects/game-feedback/apps/web/src/features/follow/index.ts",
+      "updateFollowMutationOptions"
+    ],
+    [
+      "exports",
+      "projects/game-feedback/apps/web/src/features/post/index.ts",
+      "recordPostViewMutationOptions"
+    ],
+    ["exports", "projects/game-feedback/apps/web/src/shared/analytics/index.ts", "identifyUser"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/analytics/index.ts", "resetAnalytics"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.server.ts", "localePath"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "LANGUAGE_COOKIE"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "LOCALE_HEADER"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "detectLocale"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "isLocale"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "languagePreference"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "localePath"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "preferredLocale"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "setLanguagePreference"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/motion/index.ts", "interactionTransition"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/motion/index.ts", "useIsPresent"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/native/index.ts", "NativeBridgeChannel"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/navigation/index.ts", "getNavigationDirection"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "SITE_NAME"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "canonicalPath"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "excerpt"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "pageContent"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "publicPageStructuredData"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "resolveSeoConfig"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "serializeJsonLd"],
+    ["exports", "projects/game-feedback/apps/web/src/shared/theme/index.ts", "THEME_COOKIE"],
+    ["exports", "projects/game-feedback/apps/web/src/widgets/authentication/index.ts", "LoginDialog"],
+    ["exports", "projects/game-feedback/apps/web/src/widgets/authentication/index.ts", "openLoginDialog"],
+    ["exports", "projects/photo-contest/apps/api/src/config/paths.ts", "PROJECT_ROOT"],
+    ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "formBody"],
+    ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "jsonBody"],
+    ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "jsonResponse"],
+    ["exports", "projects/photo-contest/apps/mobile/e2e/support/e2e-env.ts", "E2E_AUTH_CALLBACK_URL"],
+    ["exports", "projects/photo-contest/apps/mobile/e2e/support/seed.ts", "seedContestWithMemberPhoto"],
+    ["exports", "projects/photo-contest/apps/mobile/src/features/navigation/index.ts", "toLinkTemplate"],
+    ["exports", "projects/photo-contest/apps/web/e2e/support/photos.ts", "seedPhoto"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "ContestListItem"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "CreateContestBottomSheet"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "getPhaseLabel"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "getPhaseTone"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "isContestLive"],
+    ["exports", "projects/photo-contest/apps/web/src/features/contest/index.ts", "prependGroupContest"],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/features/contest/ui/card/ContestListItem.tsx",
+      "ContestListItem"
+    ],
+    ["exports", "projects/photo-contest/apps/web/src/features/group/index.ts", "splitContests"],
+    ["exports", "projects/photo-contest/apps/web/src/features/moderation/index.ts", "ReportBottomSheet"],
+    ["exports", "projects/photo-contest/apps/web/src/features/moderation/index.ts", "evictSubmission"],
+    ["exports", "projects/photo-contest/apps/web/src/features/moderation/index.ts", "markSubmissionHidden"],
+    ["exports", "projects/photo-contest/apps/web/src/features/post/index.ts", "PostMedia"],
+    ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "GroupLeaderboard"],
+    ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getMedalTone"],
+    ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getRankLabel"],
+    ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getResultHeadline"],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/features/ranking/ui/GroupLeaderboard.tsx",
+      "GroupLeaderboard"
+    ],
+    ["exports", "projects/photo-contest/apps/web/src/features/share/index.ts", "SHARE_TEXT_MAX_LENGTH"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/analytics/index.ts", "flushAnalytics"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "copyText"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "openExternalLink"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "shareLink"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/error/index.ts", "DEFAULT_ERROR_MESSAGE"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/error/index.ts", "RequestError"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/router/index.ts", "useParentRoute"],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/router/index.ts", "useRouteHistoryDepth"],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/shared/model/router/route-history.store.ts",
+      "useRouteHistoryDepth"
+    ],
+    ["exports", "projects/photo-contest/apps/web/src/shared/model/theme/index.ts", "THEME_COOKIE"],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/like-toggle/index.ts",
+      "likeCountVariants"
+    ],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/like-toggle/index.ts",
+      "likeIconVariants"
+    ],
+    [
+      "exports",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/like-toggle/index.ts",
+      "likeToggleVariants"
+    ],
+    ["exports", "projects/photo-contest/packages/test-kit/src/paths.ts", "PRISMA_SCHEMA"],
+    [
+      "files",
+      "projects/blog/apps/web/src/i18n/navigation.ts",
+      "projects/blog/apps/web/src/i18n/navigation.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/mobile/e2e/teardown.ts",
+      "projects/game-feedback/apps/mobile/e2e/teardown.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/mobile/playwright.config.ts",
+      "projects/game-feedback/apps/mobile/playwright.config.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/boards/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/boards/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/feed/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/feed/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/login/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/login/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/onboarding/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/onboarding/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/post/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/post/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/profile/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/profile/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/_pages/search/index.ts",
+      "projects/game-feedback/apps/web/src/_pages/search/index.ts"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/shared/loading/PageLoadingScreen.tsx",
+      "projects/game-feedback/apps/web/src/shared/loading/PageLoadingScreen.tsx"
+    ],
+    [
+      "files",
+      "projects/game-feedback/apps/web/src/shared/loading/index.ts",
+      "projects/game-feedback/apps/web/src/shared/loading/index.ts"
+    ],
+    ["types", "packages/toolkit/src/push-notifications/index.ts", "IPushStore"],
+    ["types", "projects/game-feedback/apps/web/src/features/chat/index.ts", "IChatMessageInput"],
+    ["types", "projects/game-feedback/apps/web/src/features/game-profile/index.ts", "TGameProfile"],
+    [
+      "types",
+      "projects/game-feedback/apps/web/src/features/game-profile/types/game-profile.type.ts",
+      "TGameProfile"
+    ],
+    ["types", "projects/game-feedback/apps/web/src/shared/i18n/index.server.ts", "TLanguagePreference"],
+    ["types", "projects/game-feedback/apps/web/src/shared/i18n/index.ts", "TLanguagePreference"],
+    ["types", "projects/game-feedback/apps/web/src/shared/seo/index.ts", "TStaticPage"],
+    ["types", "projects/game-feedback/apps/web/src/shared/theme/index.ts", "TThemePreference"],
+    ["types", "projects/photo-contest/apps/mobile/src/features/analytics/index.ts", "TAnalyticsEvent"],
+    ["types", "projects/photo-contest/apps/mobile/src/features/analytics/index.ts", "TAnalyticsEventName"],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/features/group/model/group-profile.schema.ts",
+      "TGroupProfileInput"
+    ],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/features/moderation/model/moderation.schema.ts",
+      "TReportInput"
+    ],
+    ["types", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "TMedalTone"],
+    ["types", "projects/photo-contest/apps/web/src/features/share/index.ts", "IShareWinner"],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/features/submission/model/submission.schema.ts",
+      "TUploadPhotoInput"
+    ],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/features/submission/model/submission.schema.ts",
+      "TUploadPhotoValues"
+    ],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/analytics/index.ts", "TAnalyticsEventName"],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/shared/model/analytics/index.ts",
+      "TAnalyticsEventProperties"
+    ],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "IShareEnvironment"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "TCopyMethod"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "THapticStyle"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/bridge/index.ts", "TShareOutcome"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/error/index.ts", "TErrorCode"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/router/index.ts", "TBackAction"],
+    ["types", "projects/photo-contest/apps/web/src/shared/model/toast/index.ts", "TToastType"],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/badge/Badge.tsx", "TBadgeTone"],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/badge/index.ts", "TBadgeTone"],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/button/Button.tsx", "IButtonLinkProps"],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/button/index.ts", "IButtonLinkProps"],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/confirm-dialog/index.ts",
+      "IConfirmDialogProps"
+    ],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/icon-button/index.ts", "IIconButtonProps"],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/like-toggle/index.ts", "TLikeDensity"],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/like-toggle/index.ts",
+      "TLikeToggleVariants"
+    ],
+    [
+      "types",
+      "projects/photo-contest/apps/web/src/shared/ui/@core/text-field/index.ts",
+      "ITextAreaFieldProps"
+    ],
+    ["types", "projects/photo-contest/apps/web/src/shared/ui/@core/text-field/index.ts", "ITextFieldProps"]
+  ]
+}

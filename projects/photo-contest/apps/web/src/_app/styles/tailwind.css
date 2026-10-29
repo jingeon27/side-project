@@ -1,5 +1,5 @@
 @import 'tailwindcss' source(none);
-@import './theme.css';
+@import '@side/design-system/styles.css';
 @import './globals.css';
 
 @source '../../**/*.{ts,tsx}';
@@ -7,10 +7,11 @@
 /* 서버가 User-Agent로 붙인 <html data-app> 아래에서만 적용한다. 화면 모양에만 쓴다. */
 @custom-variant in-app (&:where([data-app], [data-app] *));
 
-/* 터치 기기에서 글자 입력 중(가상 키보드가 열린 상태)일 때 */
+/* 입력에서 제출 버튼으로 포커스가 넘어가도 하단 메뉴가 클릭을 가로채지 않게 한다. */
 @custom-variant keyboard-open {
   @media (pointer: coarse) {
     body:has(
+        form:focus-within,
         :is(
           input:not([type='checkbox'], [type='radio'], [type='file'], [type='button'], [type='submit']),
           textarea

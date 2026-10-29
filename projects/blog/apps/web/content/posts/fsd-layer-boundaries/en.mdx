@@ -1,0 +1,136 @@
+<Summary>
+
+The folders followed FSD, yet placing a new file still prompted another discussion. Moving real code led me to regroup domain code and screen composition and abandon strict URL mirroring.
+
+</Summary>
+
+![An illustration of import directions between frontend layers and feature modules.](/images/covers/fsd-layer-boundaries.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+Every new query hook reopened the entities-or-features discussion. The portal had entities, features, widgets, and pages; admin followed the same descriptions without pages. Familiar names did not give us the same answer for an actual file.
+
+Admin changes had merged into develop while the portal move was still on a separate branch.
+
+## The initial rule was domain code that seemed reusable
+
+I had described entities as code likely to be reused by several features. That required predicting callers that did not exist yet. API types landed in entities, query hooks in features, and display UI in entities or widgets.
+
+In admin screens, one save change also affected queries, forms, and buttons. Labeling code as a domain or a user action did not consistently separate those pieces.
+
+Composition exposed a practical conflict too. Self-fetching filter widgets needed to be arranged with lists above widgets, but features sat below them. That work moved into app page.tsx, including domain filter-options arrays.
+
+## Remove entities and put pages above widgets
+
+This was not simply a failure to understand the definitions. Both projects mostly fetched and displayed server-defined data. Finding one query's API, schema, Query Options, and UI across two layers was more cumbersome than useful.
+
+The official guidance does not require every layer and allows omitting entities when client business logic is thin. In late August, I chose the following arrangement.
+
+```text
+app → pages → widgets → features → shared
+```
+
+Server-domain APIs, schemas, Query Options, state, and UI moved together into features. Pages moved above widgets so self-fetching widgets and lists could be composed without borrowing route files.
+
+Pages contain a screen's JSX and interactions. Features retain call ordering and state transitions. Widgets hold independent UI blocks shared across screens, and shared holds domain-agnostic code. Routing, providers, and SDK initialization belong to app.
+
+I began on August 31, first clearing existing features into pages and then moving entities into features. The reverse order would collide on slice names. I combined overlapping barrel exports manually.
+
+```text
+before
+entities  도메인이라고 판단한 일부 API·모델·UI
+features  사용자 행동이라고 판단한 일부 훅·폼·UI
+
+after
+features  서버 도메인 단위의 API·모델·스키마·도메인 UI
+pages     화면 단위의 인터랙션과 조합
+```
+
+Searching aliased imports missed a relative import during the move. The final typecheck found that remaining reference.
+
+## Lint exposed cross-page imports after the move
+
+Old features could freely import each other on the same layer. Moving them into pages turned those references into direct screen dependencies. I enabled fsd/no-cross-page as a warning and raised it to error after reorganizing the references.
+
+For parent screens importing child screens, I changed folder nesting. Program, search, and review-writing screens under a detail page had been sibling slices; grouping them by composition made those imports internal to one slice.
+
+I initially planned to move the remaining UI to widgets. Review items and category lists, however, directly rendered server DTOs. Those belonged in each domain's `features/{domain}/ui`, along with shared maps, banners, and terms under the same criterion.
+
+Lint does not decide whether a component is a screen fragment or domain UI. I make that judgment from the code, then let rules enforce import directions and Public APIs. I did not want rules that merely encouraged reshaping folders to avoid classification.
+
+## Mirroring URLs created empty layers of folders
+
+Pages initially mirrored route paths. On September 2 I even defined when a dynamic segment should become detail. Just over an hour later, a counterexample appeared: adding a sibling screen could make the existing name violate that rule. I instead defined one folder as one screen, without copying route groups or version strings. A screen could serve multiple routes.
+
+Admin also tried one-to-one URLs for easy menu-based lookup, then kept creating thin folders solely to preserve URL shape. That day, matching URLs became a default rather than a requirement.
+
+I revisited widgets too. Global navigation and chatbot were independent cross-screen blocks. Single-screen pieces moved to pages, while chat and analytics SDK initialization moved to app. I briefly moved chatbot to pages, then returned it to widgets that day because it was not a URL-addressable screen.
+
+## Combining packages made tests take 633 seconds
+
+Admin had separate ui, hooks, utils, and types workspace packages. All were shared code, but depended on one another as ui → hooks → utils → types and required separate imports.
+
+On September 2, I combined them as segments inside one shared package. Cookies, environment values, and server-only code kept separate entrypoints so a general barrel would not pull browser or server dependencies into an Edge bundle.
+
+```text
+packages/shared/src/
+├── ui/
+├── hooks/
+├── utils/
+└── types/
+
+@app/shared          ← 패키지 이름은 공개용 가명이에요
+@app/shared/cookie
+@app/shared/env
+@app/shared/server
+```
+
+Combining Vitest configurations caused the regression. Utils tests previously running in node now ran in jsdom, taking 633 seconds locally. Tests expecting no document, including server authentication-header behavior, failed too. Separating node and jsdom projects returned the run to eight seconds and restored passing tests. This repaired the environment I had changed rather than creating a faster baseline.
+
+## Type checks passed while Next.js screens failed
+
+After moving folders and barrels, typecheck, lint, and Vitest could all pass while dev routes or builds failed. Their checks did not follow the same server graph Next.js built.
+
+On August 31, a domain barrel exported a hook without use client, breaking E2E. React Hook Form modules needed the directive too before routes stopped returning 500.
+
+On September 2, a review-options hook reached pages/index.ts through profile/index.ts. Server routes importing that barrel returned 500. Removing the hook from the barrel and adding use client restored 200 or 307 responses on reopened routes.
+
+Widget cleanup the next day exposed the same kind of issue. I added use client where needed and limited the login barrel to its screens.
+
+In admin, the combined shared barrel pulled the client UI graph into a route handler importing a single value. Production builds failed on modules without use client. I then documented running pnpm build after changing barrel exports or package structure.
+
+I separately built an E2E flow from hospital review submission to Back-Office rejection. It was a different task from testing this move; [another article](/en/blog/plan-gated-ai-workflow) covers it.
+
+## Distinguish a screen's internals from shared child-screen code
+
+Even screen-based folders did not distinguish the current screen's internals from code shared by child screens. On September 4, I added @page and @common.
+
+```text
+pages/catalog/search/
+├── @page/            ← 이 화면의 slice
+│   ├── ui/
+│   ├── model/
+│   └── lib/
+├── @common/          ← 하위 화면이 함께 쓰는 코드
+├── keyword/@page/
+│   ├── KeywordPage.tsx
+│   └── ui/ model/ lib/
+└── category/@page/
+    ├── CategoryPage.tsx
+    └── ui/
+```
+
+@page holds that screen's ui, model, and lib. @common holds code its child screens share. These are screen-grouping examples rather than copied URLs. More widely shared domain code moves to features or another suitable lower layer instead of accumulating in @common.
+
+## Where I now look for a file
+
+Portal lint treats layer direction, Public API, and cross-page violations as errors. Admin still warns on the first two and has no cross-page check. Folder changes and enforcement have not reached the same level in both projects.
+
+I look in features for server APIs, models, and domain UI, and in pages for what a screen composes. That groups code changed together instead of making me follow a URL-shaped folder tree or guess between entities and features.
+
+## References
+
+- [FSD Layers](https://feature-sliced.design/docs/reference/layers)
+- [Excessive Entities](https://feature-sliced.design/docs/guides/issues/excessive-entities)
+- [Public API](https://feature-sliced.design/docs/reference/public-api)
+- Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)

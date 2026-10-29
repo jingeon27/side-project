@@ -3,6 +3,9 @@
  * ID는 cuid라 넣어도 되고, 경로는 ID를 지운 path_template(`/groups/:id`)로 보낸다. 모두 서버 응답이 성공한 뒤에 보낸다.
  */
 export const ANALYTICS_EVENT = {
+  CategoryCreated: 'category_created',
+  CategoryFilterApplied: 'category_filter_applied',
+  PostCreated: 'post_created',
   PageViewed: 'page_viewed',
   LoginStarted: 'login_started',
   LoginSucceeded: 'login_succeeded',
@@ -21,7 +24,7 @@ export const ANALYTICS_EVENT = {
   ResultShared: 'result_shared',
   ContestShared: 'contest_shared',
   PhotoReported: 'photo_reported',
-} as const;
+} as const satisfies Record<string, string>;
 export type TAnalyticsEventName = (typeof ANALYTICS_EVENT)[keyof typeof ANALYTICS_EVENT];
 
 /** 공유·복사를 어떤 방법으로 했는지: 앱 기능, Web Share API, 클립보드 */
@@ -29,11 +32,11 @@ export const SHARE_METHOD = {
   Native: 'native',
   WebShare: 'web_share',
   Clipboard: 'clipboard',
-} as const;
+} as const satisfies Record<string, string>;
 export type TShareMethod = (typeof SHARE_METHOD)[keyof typeof SHARE_METHOD];
 
 /** dev는 개발 서버의 닉네임 로그인 */
-export type TLoginMethod = 'google' | 'kakao' | 'dev';
+export type TLoginMethod = 'password' | 'anonymous';
 
 /** 대회 사진 정렬(URL 값과 같다) */
 export type TPhotoSortValue = 'latest' | 'popular';
@@ -48,6 +51,13 @@ interface ISubmissionProperties extends IContestProperties {
 
 /** 이벤트마다 보낼 수 있는 속성. 카탈로그에 없는 이벤트·속성은 타입 오류가 난다. */
 export type TAnalyticsEventProperties = {
+  [ANALYTICS_EVENT.CategoryCreated]: { group_id: string };
+  [ANALYTICS_EVENT.CategoryFilterApplied]: { group_id: string; category_id: string };
+  [ANALYTICS_EVENT.PostCreated]: {
+    group_id: string;
+    category_id: string | null;
+    kind: 'PHOTO' | 'VIDEO' | 'LINK';
+  };
   [ANALYTICS_EVENT.PageViewed]: { path_template: string };
   [ANALYTICS_EVENT.LoginStarted]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };

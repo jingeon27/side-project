@@ -1,0 +1,129 @@
+<Summary>
+
+These are the TypeScript patterns I use to preserve inference and express relationships between values: satisfies, optional properties, generics, and mutually exclusive props.
+
+</Summary>
+
+![An illustration of type constraints distinguishing valid inputs at a call site.](/images/covers/typescript-patterns.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+Gathering field names in an enum did not guarantee the values attached to them. A caller could still pass a string as a price or combine incompatible props. I use `satisfies`, generics, and unions to catch those combinations where they are passed. With optional properties, I also look at which keys an object may omit, rather than only the type returned when reading them.
+
+## Checking compatibility with satisfies while preserving inference
+
+For a route map, I want to check the required names without losing each concrete path. Here `as const` keeps the literals, while `satisfies` checks the required keys and path format.
+
+```typescript
+type RouteName = 'home' | 'profile' | 'settings';
+
+const ROUTES = {
+  home: '/',
+  profile: '/profile',
+  settings: '/settings',
+} as const satisfies Record<RouteName, `/${string}`>;
+
+ROUTES.profile;
+// '/profile'로 추론된다.
+```
+
+Annotating the variable as `Record<RouteName, string>` can make `ROUTES.profile` read as the broader `string`. The combination keeps `'/profile'` while catching missing keys and invalid paths. I use it for exhaustive label maps too, such as payment-method labels.
+
+```typescript
+const LABELS = {
+  normal: '일반 결제',
+  coupon: '쿠폰 결제',
+  // cancel 누락 시 컴파일 오류
+} as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
+```
+
+## T | undefined and an optional property mean different things
+
+```typescript
+interface Example {
+  requiredKey: number | undefined;
+  optionalKey?: number;
+}
+
+const a: Example = {
+  requiredKey: undefined,
+};
+```
+
+Both properties can read as `number | undefined`, but constructing the object carries different requirements.
+
+- `requiredKey` must exist, and its value may be `undefined`.
+- `optionalKey` may be omitted entirely.
+
+`exactOptionalPropertyTypes` makes the distinction explicit. `optionalKey?: number` allows the key to be absent. Assigning `undefined` requires adding it to the value type as well.
+
+JSON introduces another distinction: `JSON.stringify` omits object properties whose values are `undefined`. Keeping a key in a JavaScript object does not mean it will appear in the request body.
+
+## Connecting a value and its callback with a generic
+
+```tsx
+interface SelectProps<T extends string> {
+  value: T;
+  onValueChange: (value: T) => void;
+}
+
+function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
+  return <button onClick={() => onValueChange(value)}>{value}</button>;
+}
+```
+
+This Select passes its value to the callback. Supplying `PaymentMethod` at the call site gives both props the same union and keeps that set of payment methods visible inside the callback.
+
+```tsx
+type PaymentMethod = 'normal' | 'coupon';
+
+<Select<PaymentMethod>
+  value="coupon"
+  onValueChange={(method) => {
+    // method: 'normal' | 'coupon'
+  }}
+/>;
+```
+
+A single generic expresses that relationship instead of declaring each prop independently as `string`.
+
+## Expressing mutually exclusive props with a union
+
+A component may support a value with a change callback, or just a label. Making every property optional would also permit a label and value together. I use `never` for the properties each mode must reject, so the union describes the allowed combinations.
+
+```tsx
+type ControlledProps<T extends string> = {
+  value: T;
+  onValueChange: (value: T) => void;
+  label?: never;
+};
+
+type LabelOnlyProps = {
+  label: string;
+  value?: never;
+  onValueChange?: never;
+};
+
+type Props<T extends string> = ControlledProps<T> | LabelOnlyProps;
+
+function Field<T extends string>(props: Props<T>) {
+  if ('label' in props) return <span>{props.label}</span>;
+  return <button onClick={() => props.onValueChange(props.value)}>{props.value}</button>;
+}
+```
+
+```tsx
+<Field label="읽기 전용" />;                         // 가능
+<Field value="active" onValueChange={() => {}} />; // 가능
+<Field label="잘못된 조합" value="active" />;      // 컴파일 오류
+```
+
+Function overloads are useful for describing call signatures. For modeling valid React props, a discriminated union or a `never`-based XOR also lets the implementation narrow the types safely.
+
+In this example, an invalid combination fails where the component is called. The implementation can inspect the props and then read only the fields available for that mode.
+
+## References
+
+- [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html)
+- [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
+- [MDN: undefined values in JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)

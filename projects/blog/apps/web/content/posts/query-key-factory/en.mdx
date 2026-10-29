@@ -1,0 +1,190 @@
+<Summary>
+
+After editing an applicant's memo, I had to search for strings to find the cache to refresh. I moved keys and query functions into shared definitions and kept invalidation choices beside each mutation.
+
+</Summary>
+
+![An illustration of related query keys produced from one shared structure.](/images/covers/query-key-factory.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
+While working on applicant memos, I found it hard to tell which query should refresh after saving. An enum supplied the first key element, but screens appended detail, the ID, and memos themselves. Matching a query with its invalidation meant searching the repository for those strings.
+
+```text
+enum CandidateQueryKey {
+  Detail = 'CandidateDetail',
+}
+
+useQuery([CandidateQueryKey.Detail, 'detail', candidateId, 'memos'], fetchMemos);
+```
+
+An API argument change also required finding both the key array and queryFn. Mutations added lambdas that forwarded arguments while redeclaring their types. I wanted the query definition to supply its key and request function together, and to show the invalidation scope from that same definition.
+
+> These examples use TanStack Query v4 and @lukemorales/query-key-factory 1.3.x, with names changed and unrelated code omitted. V5 removed positional overloads from APIs including useQuery, useMutation, and invalidateQueries. The invalidateQueries(queryKey) calls use v4 syntax; v5 requires `{ queryKey }`. Both mutation forms appear below.
+
+## Centralize the array after the enum
+
+The enum itself was useful. The problem was that each screen independently decided which hierarchy and arguments followed it. A custom function returning a key array and queryFn could centralize that too. The difference between the options was who would generate and maintain the hierarchy and types.
+
+| Approach | Defined together | Still maintained directly |
+| --- | --- | --- |
+| Enum and arrays at call sites | The first key element | Child strings, argument order, and invalidation scope across callers |
+| Custom key and query-options functions | The key array and queryFn | Shared prefixes, child hierarchy, and types |
+| Query Key Factory | Keys, queryFn, and hierarchy through _def and _ctx | Definition syntax and use of the library's return structure |
+
+I put Query Key Factory definitions in a shared package so several apps could use the same hierarchy. Custom options functions could be enough for a product with fewer queries and simpler invalidation needs.
+
+## Use list arguments in both the key and queryFn
+
+```typescript
+import { createQueryKeys } from '@lukemorales/query-key-factory';
+
+export const candidateCollectionKeys = createQueryKeys('CandidateCollection', {
+  list: (params?: CandidateListParams) => ({
+    queryKey: [params],
+    queryFn: () => candidateApi.getList(params),
+  }),
+  config: {
+    queryKey: null,
+    queryFn: candidateApi.getConfig,
+  },
+});
+```
+
+Passing params to list creates both the key array and request function from those params. A query argument change no longer requires finding a separate key definition. A parameterless query such as config can be defined directly as an object.
+
+Passing candidateApi.getConfig directly still requires checking the function. It must work without this binding and must not consume its first argument. A queryFn receives QueryFunctionContext there, so an API function with an optional argument may receive context instead of the input it expects.
+
+These are the generated arrays. The _def values are prefixes before concrete query arguments are added.
+
+```text
+candidateCollectionKeys._def;
+// ['CandidateCollection']
+
+candidateCollectionKeys.list._def;
+// ['CandidateCollection', 'list']
+
+candidateCollectionKeys.list({ page: 1 }).queryKey;
+// ['CandidateCollection', 'list', { page: 1 }]
+
+candidateCollectionKeys.config.queryKey;
+// ['CandidateCollection', 'config']
+```
+
+Lists for different pages have different full keys but share list._def. The same definition can therefore supply a subscription for one list and invalidation for the list hierarchy.
+
+## Extend the hierarchy under one applicant
+
+Memos, history, and messages share candidateId with applicant details. Defining them in contextQueries creates the child queries when the detail receives its ID.
+
+```typescript
+export const candidateDetailKeys = createQueryKeys('CandidateDetail', {
+  detail: (candidateId: number) => ({
+    queryKey: [candidateId],
+    queryFn: () => candidateApi.getDetail(candidateId),
+    contextQueries: {
+      memos: {
+        queryKey: null,
+        queryFn: () => candidateApi.getMemos(candidateId),
+      },
+      histories: {
+        queryKey: null,
+        queryFn: () => candidateApi.getHistories(candidateId),
+      },
+    },
+  }),
+});
+```
+
+I pass the result to useQuery for reads and take its key for invalidation after edits.
+
+```typescript
+const detail = candidateDetailKeys.detail(candidateId);
+
+useQuery(detail);
+useQuery(detail._ctx.memos);
+
+queryClient.invalidateQueries(detail.queryKey); // 상세·메모·이력 전부
+queryClient.invalidateQueries(detail._ctx.memos.queryKey); // 메모만
+```
+
+detail.queryKey is ['CandidateDetail', 'detail', candidateId]. The memo key appends 'memos', so it includes the detail key as a prefix. Default invalidateQueries matching includes child queries: the detail key targets memos and history too, while the memo key targets only memos.
+
+Lists work the same way. Passing _def before specific params are added invalidates the queries under list.
+
+```text
+queryClient.invalidateQueries(candidateCollectionKeys.list._def);
+```
+
+## Related queries are easier to invalidate too broadly
+
+The hierarchy makes it easy to refresh the whole detail after a memo edit, including unchanged history. Active queries refetch in the background by default; inactive queries are marked stale. Invalidation does not immediately send a request for every matching query. [TanStack Query invalidation behavior](https://tanstack.com/query/v4/docs/framework/react/guides/query-invalidation)
+
+An edit that changes the detail summary can use the detail scope. A memo-only change can use _ctx.memos.queryKey. To target the detail itself without its children, use exact.
+
+```text
+// TanStack Query v4에서도 객체 형식을 쓸 수 있어요.
+queryClient.invalidateQueries({
+  queryKey: detail.queryKey,
+  exact: true,
+});
+```
+
+The factory cannot know whether editing a memo also changes a list summary. Broad matching can add unnecessary refetches; narrow matching can omit affected data. I shared key construction but kept the choice of scope beside each mutation.
+
+## Let the API function supply mutation input types
+
+Previously, a forwarding lambda such as (body: CreateReviewBody) => candidateReviewApi.create(body) repeated the argument type. Where mutation input matched API input, I passed the API function directly.
+
+```typescript
+// TanStack Query v4
+const createReview = useMutation(candidateReviewApi.create, {
+  onSuccess: (_review, { candidateId }) => {
+    queryClient.invalidateQueries(
+      candidateDetailKeys.detail(candidateId).queryKey,
+    );
+  },
+});
+```
+
+V5 takes mutationFn and the invalidation queryKey as object properties.
+
+```typescript
+// TanStack Query v5
+const createReview = useMutation({
+  mutationFn: candidateReviewApi.create,
+  onSuccess: (_review, { candidateId }) => {
+    queryClient.invalidateQueries({
+      queryKey: candidateDetailKeys.detail(candidateId).queryKey,
+    });
+  },
+});
+```
+
+Mutation variables and candidateId in onSuccess are then inferred from the API function's arguments. When those arguments change, incompatible mutate() calls fail instead of following a stale lambda annotation. The API method must still work without this binding.
+
+I left mutations outside the factory. Query definitions are shared; each mutation still decides which data to refresh after its change.
+
+## Types cannot find every condition missing from a key
+
+Even code needing only a key takes queryKey or _def from the factory rather than assembling another array. Query arguments enter keys as serializable values, keeping each resource's key shape in its shared definition.
+
+Types still cannot catch a request condition omitted from the key. If queryFn starts using a sort condition that the key does not include, different results point to the same cache. [TanStack Query key guidelines](https://tanstack.com/query/v4/docs/framework/react/guides/query-keys)
+
+During migration I retained the old array values and order. Reordering strings can point to another cache, and changing a prefix changes invalidation scope. After a memo edit, I can now choose between refreshing the detail and refreshing only memos by reading the hierarchy rather than searching for strings.
+
+## QueryOptions can share definitions in v5 too
+
+For a new v5 implementation, queryOptions offers another option. It keeps the key, queryFn, and inferred types together for reuse without a separate factory dependency. It does not generate prefixes and child hierarchies such as _def and _ctx, so key arrays and invalidation prefixes still need manual definitions. [TanStack Query Query Options](https://tanstack.com/query/latest/docs/framework/react/guides/query-options)
+
+This project needed several apps to share a hierarchy and find refresh scopes through it. If sharing query options is all a project needs, the built-in helper can handle that part.
+
+## References
+
+- [Query Key Factory](https://github.com/lukemorales/query-key-factory): createQueryKeys, contextQueries, _def, and _ctx
+- [TanStack Query: Query Keys](https://tanstack.com/query/latest/docs/framework/react/guides/query-keys)
+- [TanStack Query: Query Invalidation](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation): prefix matching by default
+- [TanStack Query: Query Options](https://tanstack.com/query/latest/docs/framework/react/guides/query-options): sharing keys, functions, and options in v5
+- [TanStack Query: Migrating to TanStack Query v5](https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5): removing positional overloads
+- Related: [Separating responsibilities in an Electron data-collection app](/en/blog/electron-module-boundaries)
+- Related: [Using TanStack Query with the Next.js App Router](/en/blog/nextjs-tanstack-query-ssr): using v5 queryOptions at my next company

@@ -1,0 +1,154 @@
+<Summary>
+
+시트를 끌다 놓으면 화면이 멈추는 오류가 있었어요. 라이브러리를 올려 문제의 코드를 없앴지만, 제목까지 스크롤되는 문제는 그때도 놓쳤어요.
+
+</Summary>
+
+![고정된 헤더와 스크롤 본문을 나눈 Bottom Sheet와 드래그 동작을 그린 일러스트](/images/covers/bottom-sheet-drag-crash.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+개발 중에는 본 적 없는 오류가 운영 Sentry에 쌓였어요. 시트를 드래그하다 놓는 순간 화면이 멈췄고, 처음 확인한 오류 그룹 두 개에는 23건, 사용자 17명이 잡혀 있었어요. 스택은 모두 react-modal-sheet의 드래그 종료 처리로 이어졌어요.
+
+처음에는 앱에서 시트를 닫는 방법이 여럿이라, 그중 하나가 ref를 먼저 비웠을 거라고 생각했어요. 닫는 코드를 따라가다가 라이브러리의 onDragEnd까지 열어 봤어요.
+
+## 천천히 끌다 놓을 때만 ref를 읽었어요
+
+같은 스택이 반복되고 영향을 받은 사용자도 늘고 있어서, 제 기기에서 재현되지 않는다는 이유로 미뤄 둘 수는 없었어요. 우선 예외가 난 줄에서 무엇을 읽고 있는지 확인했어요.
+
+react-modal-sheet 2.2.1의 onDragEnd를 줄이면 아래와 같아요.
+
+```typescript
+// react-modal-sheet 2.2.1 sheet.tsx, 분기와 계산을 줄인 단순화 코드
+function onDragEnd(_event, { velocity }) {
+  if (velocity.y > 500) {
+    onClose(); // 빠르게 아래로 튕겨 닫는 경로는 ref를 읽지 않아요
+    return;
+  }
+
+  const sheetEl = sheetRef.current as HTMLDivElement;
+  const sheetHeight = sheetEl.getBoundingClientRect().height;
+
+  // 드래그가 끝난 위치에 맞는 snap point 계산
+}
+```
+
+sheetRef.current를 as HTMLDivElement로 단언한 뒤 바로 크기를 읽어요. 단언이니 null일 가능성을 타입 검사에서 걸러 주지는 않아요. 같은 파일의 snapTo에는 null 검사가 있었지만(sheet.tsx:186-191), 이 드래그 종료 처리에는 없었어요. 라이브러리 내부의 콜백이라 앱의 onClose에 검사를 넣어도 이 줄을 막을 수는 없었고요.
+
+빠르게 튕겨 닫는 분기에서는 ref를 읽지 않아요. 천천히 끌다가 손을 뗄 때 이 줄에 도달해요(sheet.tsx:128-133). 같은 닫기 동작처럼 보여도 실행되는 코드가 달랐어요.
+
+## 닫는 순간 언마운트되는 건 아니었어요
+
+시트가 닫히며 먼저 사라지고, 뒤늦게 실행된 콜백이 빈 ref를 읽는 상황을 떠올렸어요. 하지만 2.2.1의 종료 애니메이션을 보니, 닫기 상태가 바뀐다는 것만으로는 설명이 안 됐어요.
+
+sheet.tsx:249-258은 isOpen ? children : null을 AnimatePresence로 감싸고, SheetContainer는 exit=&#123;&#123; y: windowHeight &#125;&#125;로 0.2초짜리 트윈 종료 애니메이션을 가져요. isOpen이 false가 되어도 시트는 그 애니메이션이 끝날 때까지 DOM에 남아 있어요. 이 저장소의 닫기 경로도 마찬가지였어요. overlay.close, closeAll, Root의 popstate → onClose 전부 isOpen=false → 종료 애니메이션 → onCloseEnd → 언마운트 순서예요. 상태 전환 하나만으로는 다음 프레임의 post-render 전에 ref가 비지 않아요.
+
+드래그 종료 콜백은 framer-motion 11(현 Motion)의 VisualElementDragControls가 다음 프레임 post-render에 예약해요. 그때까지 시트 트리가 통째로 사라진다면 sheet.tsx:133에서 null을 읽을 수 있어요. 다만 어떤 앱 동작이 그사이에 트리를 없앴는지는 재현하지 못했어요.
+
+```text
+포인터 입력 종료
+  → 드래그 종료 콜백이 다음 프레임 post-render에 예약됨
+  → 그 사이 시트 트리 언마운트(트리거 미확인)
+  → sheetRef.current = null
+  → 예약된 onDragEnd 실행
+  → null에서 getBoundingClientRect 호출
+  → 화면 크래시
+```
+
+업스트림에도 같은 지점에서 죽는 보고가 있었어요. 2025년 1월 3일 등록된 #188은 확인 당시에도 열려 있었고, "시트를 닫는 버튼 위에서 드래그를 시작해 같은 버튼에서 손을 떼면 sheetRef.current.getBoundingClientRect가 null"이라고 설명했어요. 저희 앱과 같은 조작인지는 알 수 없지만, 실패한 DOM 접근은 같았어요.
+
+새 버전에서는 이 줄을 어떻게 처리하는지 찾아봤어요. 5.x는 드래그가 끝날 때 ref를 다시 읽지 않고, useMeasure(react-use-measure 2.1.7)로 측정해 둔 sheetHeight를 써요. AnimatePresence도 쓰지 않아요. null 검사 하나가 추가된 형태가 아니라 시트 구현이 바뀌면서 그 DOM 접근이 사라졌어요.
+
+## 닫기를 늦추는 대신 라이브러리를 올렸어요
+
+| 선택지 | 장점 | 비용과 위험 | 판단 |
+| --- | --- | --- | --- |
+| 호출부에서 닫힘을 지연 | 변경 범위가 작음 | 라이브러리 내부 콜백을 확실히 막지 못하고, 트리거를 재현하지 못한 상태라 지연 시간이 근거 없는 값이 됨 | 버림 |
+| 패키지에 null guard 패치 | 원인 지점을 직접 막음 | 설치할 때마다 사설 패치를 유지해야 하고, 업스트림이 고쳐도 따라가지 않음 | 버림 |
+| 5.6.0으로 업그레이드 | ref 접근 경로 자체가 사라짐 | snapPoints, detent 의미 변경, framer-motion → motion/react import 변경, 사용 규칙 문서(AGENTS, SKILL) 갱신 | 선택 |
+
+5.6.0으로 올리기로 했어요. 재현하지 못한 타이밍을 지연 값으로 덮기보다는, null을 읽는 코드가 없는 버전을 쓰는 쪽을 골랐어요. 공통 Root에서 새 API를 받아 주면 각 화면은 기존 방식으로 시트를 열 수 있었고요. 되돌려야 한다면 라이브러리와 Root, 나중에 지운 detent prop을 복구하면 됐어요. motion/react로 바꾼 import는 남겨도 괜찮았어요.
+
+## 화면이 넘기는 스냅 값은 그대로 뒀어요
+
+그대로 버전만 올릴 수는 없었어요. 2.x에서 뷰포트 높이의 비율이던 snapPoints가 5.x에서는 시트 높이의 비율이에요. 배열 순서와 시작 인덱스도 달라졌어요.
+
+| 구분 | 2.x | 5.x |
+| --- | --- | --- |
+| 0~1 비율의 기준 | 뷰포트 높이 | 시트 높이 |
+| 순서 | 내림차순 | 오름차순 |
+| 인덱스 0 | 가장 높이 열린 위치 | 닫힘, 마지막이 완전히 열린 위치 |
+| 경계 값 | 0, 1 강제 없음 | 0에서 시작해 1로 끝남(없으면 자동 삽입 후 console.error) |
+
+각 화면이 새 라이브러리의 계산법까지 알게 하고 싶지는 않았어요. BottomSheet.Root에 넘기던 값은 유지하고, Root 안에서만 새 좌표로 바꿨어요. IBottomSheetRootProps에도 어떤 기준의 값인지 적어 뒀어요.
+
+```typescript
+function toSheetSnapConfig(points: number[], initialSnap: number) {
+  const [tallest] = points;
+  const ascending = [...points].reverse().map((point) => point / tallest);
+
+  const needsClosedSnap = ascending[0] !== 0;
+  const snapPoints = needsClosedSnap ? [0, ...ascending] : ascending;
+  const closedSnapOffset = needsClosedSnap ? 1 : 0;
+  const height = Number((tallest * 100).toFixed(2));
+
+  return {
+    snapPoints,
+    initialSnap: points.length - 1 - initialSnap + closedSnapOffset,
+    contentHeight: `calc(${height}dvh - ${BOTTOM_SHEET_HEADER_HEIGHT}px)`,
+  };
+}
+```
+
+예를 들어 기존의 \[0.8, 0.5, 0.3, 0\]은 뷰포트의 80%, 50%, 30%, 닫힘이에요. 최대 높이 0.8을 기준으로 나누고 순서를 뒤집으면 새 라이브러리에 넘길 값은 \[0, 0.375, 0.625, 1\]이 돼요. 화면에서 보이는 위치를 유지하면서 입력 형식만 바꾼 거예요.
+
+시트의 실제 높이도 이 변환 계층에서 함께 계산했어요. 5.x는 detent가 컨테이너의 height를 나중에 결정해서 컨테이너 스타일만으로는 기존 높이를 지킬 수 없었는데요. 컨테이너 높이를 콘텐츠가 정하는 content 모드를 쓰고 Sheet.Content에 계산한 높이를 넘겼어요. 헤더 40px은 계산과 마크업이 어긋나지 않도록 BOTTOM\_SHEET\_HEADER\_HEIGHT 상수 하나로 묶었어요.
+
+snapPoints를 따로 주지 않는 화면도 실제 높이를 보고 옮겼어요. content-height는 content로, full-height는 기존 높이에 가까운 default로 연결했어요. 새 버전에 full이라는 값이 있어도 예전 full-height와 똑같이 그려지는 건 아니었어요.
+
+## export와 애니메이션 패키지도 바뀌었어요
+
+package.json은 ^2.2.0에서 ^5.6.0으로, lock 파일의 설치 버전은 2.2.1에서 5.6.0으로 바뀌었어요. 그 사이 릴리스에는 시트 높이 외에도 함께 옮겨야 할 변경이 있었어요.
+
+- v3.0.0(2024-05-11): Sheet가 기본 export에서 named export로 바뀜
+- v4.0.0(2024-12-27): peer dependency가 framer-motion에서 motion으로 바뀜
+- v5.0.0(2025-09-06): Sheet.Scroller 제거(Sheet.Content가 스크롤 영역까지 맡음), snapPoints 좌표계와 detent 값 변경
+
+peer가 motion이라 그 패키지(^11.18.2)를 설치했어요. 그런데 motion@11은 framer-motion 11을 자체 번들한 사본을 들고 있어서, 앱이 framer-motion을 직접 import하면 같은 라이브러리가 두 벌 실릴 수 있었는데요. 직접 import하던 코드를 motion/react로 옮겨 실행 경로를 한 벌로 맞췄어요. framer-motion(선언은 ^11.0.24 그대로, lock이 해석한 설치 버전은 11.18.2)을 의존성에 남긴 건 motion의 타입 진입점이 export \* from 'framer-motion'이기 때문이에요. 어차피 motion이 framer-motion을 dependency로 갖고 있어서 설치는 되고, 런타임에 그 경로를 import하는 코드만 없앤 셈이에요.
+
+detent prop도 정리했어요. 2.2.1에서는 snapPoints를 줘도 full-height가 height를, content-height가 maxHeight를 적용해요(SheetContainer.tsx:30-44). 새 Root가 snapPoints를 받으면 content로 고정한 뒤에야 호출부의 detent가 의미 없어졌어요. 값을 바꿔도 반영되지 않는 prop을 남기지 않도록 지우고 설명을 고쳤어요. 비율 계산에서 나온 55.00000000000001dvh 같은 값은 소수 둘째 자리로 정리했고, 다음 시트를 만들 때 참고하는 문서도 새 API에 맞췄어요.
+
+## 높이는 맞았는데 제목이 같이 올라갔어요
+
+크래시 수정과 별개로, 시트를 스크롤하면 제목도 본문과 함께 올라가는 문제가 있었어요. 이건 5.x에서 새로 생긴 버그가 아니에요. 4월에 Bottom Sheet를 compound 구조로 바꿀 때 공통 Root가 Header, Content, Footer를 통째로 Sheet.Scroller 안에 넣은 것이 시작이었어요. 버튼은 sticky라 제자리에 있는 것처럼 보였지만 제목은 스크롤 영역 안에 있었어요. 9월 업그레이드에서도 Root가 자식 전체를 새 Sheet.Content로 감싸는 구조를 그대로 가져갔고요.
+
+이 구조는 4월에 AI가 만든 코드를 검토할 때도, 9월 업그레이드를 검토할 때도 지나쳤어요. 높이와 스냅 위치는 봤지만 긴 본문을 스크롤하며 제목과 버튼을 따로 보지 않았어요. 좌표 변환 테스트와 AI 리뷰가 통과해도 이 동작은 그대로였어요. jsdom은 실제 레이아웃을 계산하지 않으니 테스트가 통과하는 데에도 이상이 없었고요.
+
+9월 21일에 스크롤하는 부분을 BottomSheet.Content로 좁혔어요. 이 컴포넌트만 라이브러리의 Sheet.Content를 쓰고 Header와 Footer는 밖에 두었어요. 스냅 높이는 셋을 묶은 영역에 적용해요. Browser Mode에서는 긴 본문을 스크롤해도 제목과 버튼이 남는지, 80% 스냅 높이와 짧은 본문의 버튼 위치가 유지되는지를 확인해요.
+
+## 배열보다 화면에 보일 위치를 비교했어요
+
+높이 계산을 확인하는 테스트와 스크롤을 확인하는 테스트는 따로 필요했어요. 좌표 변환 테스트에서는 시트 안의 비율을 다시 뷰포트 비율로 되돌려 비교했어요. 변환한 배열을 그대로 기대값에 옮기기보다는, 사용자가 보게 될 위치가 같은지를 보려는 방식이에요.
+
+아래의 toViewportRatio가 그 계산을 맡아요.
+
+```typescript
+it('두 번째로 높은 스냅에서 시작하면 그 자리를 가리켜야 한다', () => {
+  const { snapPoints, initialSnap } = toSheetSnapConfig([0.8, 0.5, 0.3, 0], 1);
+
+  expect(toViewportRatio(snapPoints[initialSnap], 0.8)).toBe(0.5);
+});
+```
+
+배열 순서와 가장 높은 스냅의 `1`, 닫힌 위치 삽입, 시작 인덱스 보정, 콘텐츠 높이도 확인해요. 인덱스 계산을 일부러 틀리게 바꿨을 때 테스트가 실패하는지도 봤어요.
+
+## 배포 뒤에는 같은 크래시가 잡히지 않았어요
+
+배포 전까지 같은 크래시는 75건, 57명 이상에게 발생했어요. 9월 10일 배포 뒤부터 9월 28일까지는 같은 오류 그룹에 이벤트가 없었어요. 직접 같은 조작으로 크래시를 재현한 것은 아니지만, null ref를 읽던 코드는 새 버전에서 사라졌어요. 기존 스냅 위치를 지킨 뒤에도 제목이 함께 스크롤되는 문제는 남아 있었고, 그건 9월 21일에 따로 고쳤어요.
+
+## 참고
+
+- [react-modal-sheet #188: 닫기 버튼 위에서 끝나는 드래그에서 getBoundingClientRect of null](https://github.com/Temzasse/react-modal-sheet/issues/188)
+- [react-modal-sheet v5.0.0 릴리스](https://github.com/Temzasse/react-modal-sheet/releases/tag/v5.0.0): README의 v4 → v5 마이그레이션 안내 포함
+- [framer/motion](https://github.com/framer/motion): 드래그 종료 콜백을 다음 프레임 post-render에 예약하는 VisualElementDragControls
+- 관련 글: [Sentry로 에러 수집부터 Web Vitals, MCP, 릴리스까지 연결한 과정](/ko/blog/sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정)

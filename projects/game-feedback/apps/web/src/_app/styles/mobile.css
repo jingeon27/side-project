@@ -1,0 +1,239 @@
+@layer components {
+  .header-account {
+    display: flex;
+  }
+  .notification-unread-indicator {
+    display: none;
+  }
+  .language-settings select {
+    width: 100%;
+    min-height: 44px;
+    margin-block: 12px;
+  }
+  .language-settings p + p {
+    margin-top: 8px;
+  }
+  .post-title-link,
+  .post-excerpt,
+  .prose-body,
+  .comment-content,
+  .settings-profile > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 760px) {
+    :root {
+      --mobile-page-inset: 16px;
+      --mobile-page-inset-start: max(var(--mobile-page-inset), env(safe-area-inset-left));
+      --mobile-page-inset-end: max(var(--mobile-page-inset), env(safe-area-inset-right));
+      --site-header-height: 60px;
+    }
+    .site-grid {
+      padding-bottom: 32px;
+    }
+    .site-grid,
+    .topbar-inner,
+    .site-footer-inner {
+      padding-inline: var(--mobile-page-inset-start) var(--mobile-page-inset-end);
+    }
+    .post-card,
+    .skeleton-card,
+    .empty-feed,
+    .settings-card {
+      padding-inline: var(--mobile-page-inset);
+    }
+    .game-board-chips {
+      flex-wrap: wrap;
+      overflow: visible;
+      padding-inline: 0;
+    }
+    .conversation-list-heading,
+    .conversation-row,
+    .chat-message-scroll,
+    .chat-compose-area {
+      padding-inline: var(--mobile-page-inset);
+    }
+    .conversation-row {
+      border-inline-start: 0;
+    }
+    .conversation-row[aria-current='page'] {
+      box-shadow: inset 3px 0 0 var(--color-accent);
+    }
+    .header-actions {
+      gap: 2px;
+    }
+    .topbar.feed-topbar .brand {
+      display: inline-flex;
+      flex-shrink: 0;
+      min-height: 44px;
+      font-size: var(--text-title-lg);
+      font-weight: 800;
+      letter-spacing: -0.055em;
+      line-height: 1;
+      color: var(--color-ink);
+    }
+    .feed-topbar .brand-mark,
+    .feed-topbar .feed-header-language {
+      display: none;
+    }
+    .feed-topbar .header-actions {
+      flex-shrink: 0;
+      gap: 6px;
+    }
+    .header-actions .header-notification-count,
+    .header-actions .header-account {
+      display: none;
+    }
+    .notification-unread-indicator {
+      display: block;
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid var(--color-surface);
+      border-radius: 50%;
+      background: var(--color-danger);
+    }
+    .mobile-nav {
+      padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
+      gap: 4px;
+    }
+    .mobile-nav > a {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 44px;
+      text-align: center;
+    }
+    .mobile-nav > a > span {
+      overflow-wrap: anywhere;
+    }
+    .mobile-nav-icon {
+      display: inline-flex;
+      position: relative;
+    }
+    .mobile-chat-count {
+      position: absolute;
+      top: -7px;
+      inset-inline-start: calc(100% - 5px);
+      min-width: 17px;
+      padding: 1px 4px;
+      border-radius: var(--radius-badge);
+      background: var(--color-ink);
+      color: var(--color-surface);
+      font-size: var(--text-micro);
+      font-weight: 700;
+      line-height: 15px;
+      white-space: nowrap;
+    }
+    .mobile-nav > a[aria-current='page'] {
+      color: var(--color-ink);
+      font-weight: 700;
+    }
+
+    .settings-profile,
+    .section-title-row {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .chat-compose textarea {
+      font-size: 16px;
+    }
+    .community-shell:has(> .shell-route[data-screen='conversation']) .topbar,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .mobile-nav,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .chat-page-heading {
+      display: none;
+    }
+    .chat-workspace[data-has-conversation] {
+      position: fixed;
+      top: var(--visual-viewport-top, 0px);
+      left: 0;
+      width: 100%;
+      height: var(--visual-viewport-height, 100dvh);
+      min-height: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+      border: 0;
+      border-radius: 0;
+      z-index: 20;
+    }
+    .conversation-pane,
+    .conversation-heading > div {
+      min-width: 0;
+      min-height: 0;
+    }
+    .conversation-heading h2 {
+      overflow-wrap: anywhere;
+    }
+    .chat-message-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  @media (max-width: 380px) {
+    .settings-card,
+    .detail-card {
+      padding: 16px;
+    }
+    .settings-profile > .status-pill {
+      margin-left: 0;
+    }
+  }
+}
+
+/* Visual viewport geometry overrides the shared Dialog layout utilities. */
+@media (max-width: 760px) {
+  .dialog-content {
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 24px);
+    max-width: calc(100vw - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .fixed:has(> .dialog-content) {
+    top: var(--visual-viewport-top, 0px);
+    bottom: auto;
+    height: var(--visual-viewport-height, 100dvh);
+    padding: 12px;
+  }
+}
+
+@layer components {
+  .preference-progress {
+    position: fixed;
+    top: calc(var(--site-header-height) + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-index-popover);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 10px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-caption);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
+  }
+  .preference-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .theme-settings .settings-help {
+    margin-top: 12px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    body,
+    .topbar,
+    .settings-card,
+    .info-card,
+    .guide-section,
+    .mobile-nav {
+      transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease;
+    }
+  }
+}

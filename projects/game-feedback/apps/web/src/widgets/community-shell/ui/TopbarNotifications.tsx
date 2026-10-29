@@ -1,0 +1,31 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { Bell } from 'lucide-react';
+
+import { iconButtonVariants } from '@side/design-system';
+
+import { useSession } from '@/features/auth';
+import { notificationSummaryOptions } from '@/features/notification';
+import { useI18n } from '@/shared/i18n';
+import { TabLink } from '@/shared/navigation';
+
+export function TopbarNotifications({ href }: { href: string }) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  const { data } = useQuery(notificationSummaryOptions(session.user?.id));
+  const unread = data?.unreadCount ?? 0;
+  return (
+    <TabLink className={iconButtonVariants()} aria-label={t('알림 {count}개', { count: unread })} href={href}>
+      <Bell className="size-5" aria-hidden />
+      {unread > 0 && (
+        <>
+          <span className="header-notification-count" aria-hidden="true">
+            {unread > 99 ? '99+' : unread}
+          </span>
+          <span className="notification-unread-indicator" aria-hidden="true" />
+        </>
+      )}
+    </TabLink>
+  );
+}

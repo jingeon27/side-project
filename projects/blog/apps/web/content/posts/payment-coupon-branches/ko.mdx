@@ -1,0 +1,208 @@
+<Summary>
+
+쿠폰 결제를 넣으니 결제수단만으로는 화면을 고를 수 없었어요. 저장 전에는 금액을 고치고 쿠폰을 풀어야 했고, 저장 뒤에는 현장 결제와 함께 보여줘야 했어요.
+
+</Summary>
+
+![일반 결제와 쿠폰 결제를 한 처리 지점에서 구분하는 모습을 그린 일러스트](/images/covers/payment-coupon-branches.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
+시술 결제 내역에 쿠폰을 추가할 때는 쿠폰 타입과 상세 화면을 넣으면 될 줄 알았어요. 그런데 총 결제 예정 금액이 바뀌면 이미 고른 쿠폰을 풀어야 했고, 저장하기 전과 저장한 뒤에 보여줄 정보도 달랐어요. 결제수단에 쿠폰이라는 값만 더해서는 구분할 수 없는 경우들이었어요.
+
+이 서비스는 취소도 별도 거래로 기록해요. 원래 결제를 고치는 대신 결제수단이 취소인 행을 더하는 구조예요. 여기에 쿠폰이 들어오면서 현장 결제 금액과 쿠폰 사용액을 같은 거래 안에서 보여줘야 했어요. 행의 결제수단뿐 아니라 상태, 저장 여부, 선택한 쿠폰과 할인 금액을 함께 보게 됐어요.
+
+처음에는 모든 경우를 discriminated union으로 표현하려 했어요. 하지만 서버 응답은 enum과 optional 필드를 가진 DTO였고 알 수 없는 값의 fallback도 필요했어요. 실제 응답을 다른 타입인 것처럼 단언하는 대신, 어떤 행을 보여주고 어느 상세 컴포넌트로 보낼지 정하는 코드를 모았어요. 예제에는 필요한 결제수단과 상태만 남겼고, 그림에는 실제 이름을 썼어요.
+
+## 할인 미리보기는 응답 DTO에 넣지 않았어요
+
+서버에서 받는 결제 내역은 다음과 같은 구조예요.
+
+```typescript
+interface PaymentHistoryResponse {
+  id?: number | null;
+  method: 'NORMAL' | 'CANCEL' | 'COUPON';
+  status: 'PROCESSING' | 'WAITING' | 'COMPLETED';
+  paymentAmount: number;
+  paymentDate?: string | null;
+  memberCouponId?: number | null;
+  couponName?: string | null;
+}
+```
+
+쿠폰을 고르는 동안에는 최종 금액을 미리 계산해야 해요. 이 계산에 쓰는 할인 금액은 서버의 결제 내역에 없어서 폼 전용 값으로 뒀어요.
+
+```typescript
+interface PaymentHistoryFormValue extends PaymentHistoryResponse {
+  couponDiscountAmount?: number | null;
+}
+```
+
+처음에는 couponDiscountAmount를 응답 DTO에 같이 선언했다가 폼 타입으로 옮겼어요. 서버가 보내는 필드와 화면에서 계산하려고 붙이는 필드를 구분한 거예요. 요청을 보낼 때도 폼 전체를 펼치지 않고 필요한 값을 골랐어요.
+
+```typescript
+// 확정 전 예약 상세의 결제 내역은 화면이 만든 쿠폰 행 하나뿐이다.
+const couponPayment = payments.find(({ method }) => method === 'COUPON');
+if (!couponPayment) return;
+
+confirmReservation({
+  reservationId,
+  paymentAmount: couponPayment.paymentAmount,
+  paymentDate: couponPayment.paymentDate,
+  memberCouponId: couponPayment.memberCouponId,
+  // 견적 금액·내원일·메모는 폼의 다른 칸에서 채운다.
+});
+```
+
+쿠폰 예약은 병원 관리자의 예약 상세에서 확정해요. 확정 전 결제 내역에는 화면이 만든 쿠폰 행만 있어서, 이 화면의 폼 타입은 원소 하나짜리 튜플로 좁혀 뒀어요. 그 행에서 결제 금액과 날짜, memberCouponId를 꺼내면 할인 미리보기 값과 쿠폰명은 요청에 따라가지 않아요.
+
+폼을 요청 DTO로 바꾸는 별도 함수까지 만들지는 않았어요. 편집용 필드가 많지 않고 요청을 만드는 코드가 보낼 값을 직접 고르고 있어서, 여기서 제외할 수 있었어요.
+
+![폼의 결제 내역 배열에는 서버가 저장한 행과 화면이 붙인 대기, 쿠폰 행이 함께 들어온다. 결제 내역 DTO에 없는 값은 쿠폰 할인 금액 하나이고, 확정 요청은 쿠폰 행에서 필요한 필드만 골라 만든다.](/images/posts/payment-coupon-branches/01.png)
+
+*폼의 결제 내역 배열에는 서버가 저장한 행과 화면이 붙인 대기, 쿠폰 행이 함께 들어온다. 결제 내역 DTO에 없는 값은 쿠폰 할인 금액 하나이고, 확정 요청은 쿠폰 행에서 필요한 필드만 골라 만든다.*
+
+저장된 쿠폰 결제는 타임라인에서 별도 행으로 보여주지 않아요. 같은 거래의 현장 결제 행이 연결된 쿠폰을 찾아 사용 금액을 함께 보여줘요.
+
+## 완료 상태여도 저장 전에는 입력칸이 필요했어요
+
+어느 상세 화면을 보여줄지 정하려고 먼저 경우를 표로 적었어요.
+
+| 저장 여부 | 결제수단 | 상태 | 화면 |
+| --- | --- | --- | --- |
+| 미저장 | 쿠폰 | 처리 중 | 쿠폰 선택과 예상 결제 금액 |
+| 미저장 | 그 외 | 처리 중 | 일반 결제 입력 |
+| 저장 | 현장 결제 | 완료 | 완료 정보와 연결된 쿠폰 |
+| 저장 | 취소 | 완료 | 취소 정보 |
+| 저장 | 그 외 | 대기/처리 중 | 일반 대기 정보 |
+
+결제일을 고르면 상태가 완료로 바뀌지만, 서버에 저장한 것은 아니에요. 상태만 보고 완료 상세를 보여주면 아직 편집할 입력칸이 사라져요. 그래서 상세 화면은 id가 있는지부터 보게 했어요. 헤더와 점 색은 상태를 바로 따라가므로, 저장 직전에는 '결제완료' 태그 옆에 입력칸이 함께 보일 수 있어요.
+
+노출 여부와 색상을 고르는 함수는 쿠폰을 넣기 전부터 있었어요. 병원 관리자와 Back-Office가 쓰던 UI를 공용 패키지로 옮길 때 모아 둔 코드예요. 쿠폰의 노출 조건은 그 함수에 더하고 상세 컴포넌트를 고르는 순서를 바꿨어요.
+
+![한 결제 내역 행을 두고 노출, 점 색, 헤더, 펼침, 상세 칸을 다섯 곳에서 따로 판단한다. 표는 행의 저장 여부, 결제수단, 상태에 따라 각 자리가 내는 결과다.](/images/posts/payment-coupon-branches/02.png)
+
+*한 결제 내역 행을 두고 노출, 점 색, 헤더, 펼침, 상세 칸을 다섯 곳에서 따로 판단한다. 표는 행의 저장 여부, 결제수단, 상태에 따라 각 자리가 내는 결과다.*
+
+## 편집 중인 쿠폰 행만 타임라인에 보여줘요
+
+```typescript
+const VISIBLE_STATUSES = ['COMPLETED', 'PROCESSING', 'WAITING'] as const;
+// as const만 쓰면 includes의 인자가 'NORMAL' | 'CANCEL'로 좁혀져
+// payment.method를 받지 못하므로, 원소 타입을 method 전체 union으로 선언한다.
+const VISIBLE_METHODS: readonly PaymentHistoryResponse['method'][] = [
+  'NORMAL',
+  'CANCEL',
+];
+
+function isVisiblePayment(payment: PaymentHistoryResponse | undefined) {
+  if (!payment) return false;
+
+  const isVisibleOnsitePayment =
+    VISIBLE_STATUSES.includes(payment.status) &&
+    VISIBLE_METHODS.includes(payment.method);
+
+  const isEditingCoupon =
+    payment.method === 'COUPON' && payment.id == null;
+
+  return isVisibleOnsitePayment || isEditingCoupon;
+}
+```
+
+완료된 현장 결제가 저장된 쿠폰 사용액을 보여주므로, 저장된 쿠폰 행까지 노출하면 같은 거래가 나뉘어 보여요. 반면 저장 전 쿠폰 행은 선택 UI가 필요해서 남겨야 해요. isEditingCoupon이 method와 id를 함께 보는 이유예요.
+
+처음 추가할 때는 쿠폰의 '처리 중' 상태를 봤어요. 이후 상세 렌더러를 저장 여부부터 나누면서, 노출 조건도 id가 없는 쿠폰 행으로 맞췄어요. 편집 중이라는 뜻을 상태와 저장 여부로 서로 다르게 해석하지 않게 한 거예요.
+
+## 상세 컴포넌트도 저장 여부부터 골라요
+
+```tsx
+import { P, match } from 'ts-pattern';
+
+const isCanceledPayment = (payment: PaymentHistoryResponse | undefined) =>
+  payment?.method === 'CANCEL' && payment.status === 'COMPLETED';
+
+const isCompletedNormalPayment = (payment: PaymentHistoryResponse | undefined) =>
+  payment?.method === 'NORMAL' && payment.status === 'COMPLETED';
+
+function PaymentHistoryDescriptions({ field }: { field: FormListFieldData }) {
+  const form = paymentForm.useFormInstance();
+  const payment = paymentForm.useWatch(['payments', field.name], form);
+
+  return (
+    match(payment)
+      // 미저장: 값이 없거나 id가 없다. 그 안에서 결제수단을 본다.
+      .with(P.union(P.nullish, { id: P.optional(P.nullish) }), (unsaved) =>
+        match(unsaved)
+          .with({ method: 'COUPON' }, () => <CouponDescriptions field={field} />)
+          .otherwise(() => <WaitingDescriptions field={field} />),
+      )
+      // 저장됨: 취소 → 완료 → 그 외
+      .when(isCanceledPayment, () => <CanceledDescriptions field={field} />)
+      .when(isCompletedNormalPayment, () => <CompletedDescriptions field={field} />)
+      .otherwise(() => <WaitingDescriptions field={field} />)
+  );
+}
+```
+
+paymentForm은 antd Form에 결제 필드 타입을 입힌 래퍼의 가명이에요. useFormInstance와 useWatch는 antd API이고, Form.List가 주는 field.name은 결제 배열의 인덱스예요.
+
+값이 없거나 id가 없으면 편집용 상세를 고르고, 그 안에서 쿠폰인지 구분해요. 저장된 행은 취소 완료, 현장 결제 완료를 차례로 보고 나머지는 대기 상세로 보내요. 예전에는 쿠폰 상태를 먼저 보다가 다른 분기에서 id와 상태를 섞어 봤는데, 이 순서로 바꾸니 행이 어느 컴포넌트에 도착하는지 따라갈 수 있었어요.
+
+여기서 ts-pattern이 새 결제수단의 누락까지 보장해 주지는 않아요. 입력이 완전한 판별 유니언이 아니고 .otherwise()가 있기 때문에 빠진 UI도 fallback으로 갈 수 있어요. API 응답을 클라이언트 유니언으로 파싱하고 .exhaustive()를 쓰는 변경까지 하지는 않았어요. 기존 서버 응답과 화면을 유지하면서 분기를 읽기 쉽게 모으는 데 그쳤어요.
+
+## 금액을 바꾸면 쿠폰을 풀고 이유를 보여줘요
+
+```tsx
+function CouponDescriptions({ field }: { field: FormListFieldData }) {
+  const { message } = App.useApp();
+  const form = paymentForm.useFormInstance();
+  const paymentAmount = paymentForm.useWatch(['payments', field.name, 'paymentAmount'], form);
+  const memberCouponId = paymentForm.useWatch(['payments', field.name, 'memberCouponId'], form);
+  const couponDiscountAmount =
+    paymentForm.useWatch(['payments', field.name, 'couponDiscountAmount'], form) ?? 0;
+
+  const finalAmount = (paymentAmount ?? 0) - couponDiscountAmount;
+
+  // 금액은 Form.Item이 폼에 쓰고, 여기서는 적용된 쿠폰만 푼다.
+  const handlePaymentAmountChange = () => {
+    if (memberCouponId == null) return;
+
+    form.setFields([
+      { name: ['payments', field.name, 'memberCouponId'], value: null },
+      { name: ['payments', field.name, 'couponName'], value: null },
+      { name: ['payments', field.name, 'couponDiscountAmount'], value: 0 },
+    ]);
+    message.info('총 결제 예정 금액이 변경되어 적용된 쿠폰이 초기화되었습니다.');
+  };
+
+  return (
+    <>
+      <CouponSelector field={field} />
+      <Form.Item name={[field.name, 'paymentAmount']} noStyle>
+        <InputNumber onChange={handlePaymentAmountChange} />
+      </Form.Item>
+      <FinalAmount value={finalAmount} />
+    </>
+  );
+}
+```
+
+상세 컴포넌트에는 payment 객체의 옛 값을 넘기지 않고 field를 넘겼어요. useWatch가 현재 폼 경로에서 금액과 쿠폰을 읽고, 금액이 바뀌면 setFields로 적용된 쿠폰을 풀어요. 일반 결제 상세나 타임라인이 이 계산을 알아야 할 이유는 없어요.
+
+![확정 전 쿠폰 행에서 총 결제 예정 금액을 바꾸면 적용된 쿠폰이 바로 풀리고 안내 메시지가 뜬다. 확정 뒤 저장된 행은 완료 상세가 연결된 쿠폰결제 행을 찾아 같은 칸 순서로 그린다.](/images/posts/payment-coupon-branches/03.png)
+
+*확정 전 쿠폰 행에서 총 결제 예정 금액을 바꾸면 적용된 쿠폰이 바로 풀리고 안내 메시지가 뜬다. 확정 뒤 저장된 행은 완료 상세가 연결된 쿠폰결제 행을 찾아 같은 칸 순서로 그린다.*
+
+행을 펼쳐 두면 금액 라벨의 툴팁이 쿠폰 초기화를 미리 알려줘요. 실제로 금액을 바꾸면 쿠폰이 풀리면서 안내 메시지도 나와요. 처음에는 해제와 툴팁을 넣었고 뒤이어 안내 메시지를 붙였어요. 라벨도 '현장 결제금액'에서 '총 결제 예정 금액'으로 바꿔, 쿠폰을 빼기 전의 금액이라는 뜻을 맞췄어요.
+
+다른 쿠폰을 자동으로 고르지는 않아요. 사용자가 다시 선택하거나 모달의 '쿠폰 미사용'을 고를 수 있어요.
+
+## if를 match로 바꾸는 것만으로는 부족했어요
+
+처음 쿠폰을 넣고 if를 match로 옮겼을 때는 예전 순서가 그대로 남았어요. 상세를 컴포넌트로 나눠도 id와 상태가 섞여 있어서, 다음 날 저장 여부를 먼저 보도록 다시 묶었어요. 문법을 바꾼 뒤에 어떤 순서로 판단할지도 바꿔야 했어요.
+
+![렌더러의 갈래는 쿠폰을 처음 넣은 날 다섯 개의 if에서, 다음 날 저장 여부로 먼저 묶은 match로 바뀌었다. 아래 표는 쿠폰을 넣으며 손댄 자리다.](/images/posts/payment-coupon-branches/04.png)
+
+*렌더러의 갈래는 쿠폰을 처음 넣은 날 다섯 개의 if에서, 다음 날 저장 여부로 먼저 묶은 match로 바뀌었다. 아래 표는 쿠폰을 넣으며 손댄 자리다.*
+
+쿠폰은 상세 화면에만 영향을 주지 않았어요. 결제 합계와 정산 상세, 예약 확정 요청도 같은 사용액을 다뤄야 했어요. 점 색과 헤더는 기존 fallback인 회색과 대기로 표시돼 따로 바꾸지 않았어요. 새 결제수단을 넣어도 이 출력이 맞는지는 렌더러와 별개로 봐야 하고, 결제수단과 상태, 저장 여부를 조합한 자동화 테스트는 아직 없어요.

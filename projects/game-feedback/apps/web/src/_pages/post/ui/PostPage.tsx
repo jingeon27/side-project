@@ -1,0 +1,127 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+import { useQuery } from '@tanstack/react-query';
+
+import { appRoutes } from '@game-feedback/bridge';
+
+import { useSession } from '@/features/auth';
+import { boardByKind } from '@/features/board';
+import { PostArticle, postDetailOptions, useRecordPostView } from '@/features/post';
+import { AuthorLink, UserBadges } from '@/features/user';
+import type { PostDetail } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { BackLink } from '@/shared/navigation';
+import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { StartChatLink } from '@/widgets/start-chat';
+import { VerificationPrompt } from '@/widgets/support';
+
+import { usePostRead } from '../model/use-post-read.hook';
+import { PostActions } from './PostActions';
+import { PostAnswersSection } from './PostAnswersSection';
+import { PostCommentsSection } from './PostCommentsSection';
+
+interface IPostPageProps {
+  id: string;
+  locale: string;
+  initialDetail?: PostDetail;
+  initialViewerId?: string;
+}
+export function PostPage(props: IPostPageProps) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  return (
+    <ServiceErrorBoundary
+      title={t('게시글')}
+      resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
+      recoveryAction={
+        <BackLink href={appRoutes.feed(props.locale)} className="text-action">
+          {t('피드로 돌아가기')}
+        </BackLink>
+      }
+    >
+      <PostContent {...props} />
+    </ServiceErrorBoundary>
+  );
+}
+function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
+  const { t } = useI18n();
+  const params = useSearchParams();
+  const { session } = useSession(),
+    detail = useQuery({
+      ...postDetailOptions(id),
+      refetchOnMount: 'always',
+      throwOnError: true,
+      initialData: session?.user?.id === initialViewerId ? initialDetail : undefined,
+    });
+  usePostRead(detail.data, session?.user?.id);
+  useRecordPostView(id, !!detail.data, session.user?.id);
+  const game = detail.data?.post.category.slug;
+  const boardContext = boardByKind(detail.data?.post.board);
+  useEffect(() => {
+    if (!boardContext || !game) return;
+    if (boardContext.kind === 'FEEDBACK' && game === 'clash-royale' && !params.get('board')) return;
+    if (
+      new URL(window.location.href).searchParams.get('board') === boardContext.slug &&
+      (params.get('game') ?? 'clash-royale') === game
+    )
+      return;
+    // 주소만 맞춘다. router.replace는 page 세그먼트를 새로 받아 열린 답글 입력과 #comment 위치를 잃는다.
+    window.history.replaceState(
+      null,
+      '',
+      `${appRoutes.post(locale, id, boardContext.kind, game)}${window.location.hash}`,
+    );
+  }, [boardContext, game, id, locale, params]);
+  if (!detail.data) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
+  const { post, answers, comments } = detail.data;
+  const board = boardByKind(post.board);
+  const isFeedback = board?.kind === 'FEEDBACK';
+  return (
+    <>
+      <ServiceErrorBoundary title={t('게시글')} resetKey={id}>
+        <PostArticle
+          post={post}
+          authorName={<AuthorLink author={post.author} locale={locale} />}
+          authorContent={<UserBadges author={post.author} />}
+          contactAction={
+            post.author.id !== session.user?.id && (
+              <StartChatLink
+                source="post"
+                userId={post.author.id}
+                nickname={post.author.nickname}
+                label={t('작성자와 1:1 채팅')}
+                variant="accent"
+                size="md"
+              />
+            )
+          }
+          actions={<PostActions post={post} />}
+        />
+      </ServiceErrorBoundary>
+      {post.author.id === session.user?.id && <VerificationPrompt />}
+      {isFeedback && (
+        <ServiceErrorBoundary title={t('답변')} resetKey={id}>
+          <PostAnswersSection
+            postId={post.id}
+            postAuthorId={post.author.id}
+            answers={answers}
+            cursor={detail.data.answersCursor}
+            locale={locale}
+          />
+        </ServiceErrorBoundary>
+      )}
+      <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
+        <PostCommentsSection
+          postId={post.id}
+          postAuthorId={post.author.id}
+          comments={comments}
+          cursor={detail.data.commentsCursor}
+          locale={locale}
+        />
+      </ServiceErrorBoundary>
+    </>
+  );
+}

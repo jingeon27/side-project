@@ -1,0 +1,25 @@
+{
+  "name": "@game-feedback/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc7 -p tsconfig.json",
+    "typecheck": "tsc7 --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@side/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

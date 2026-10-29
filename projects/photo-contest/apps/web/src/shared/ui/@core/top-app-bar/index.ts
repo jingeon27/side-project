@@ -1,1 +1,2 @@
-export { BrandAppBar, TopAppBar } from './TopAppBar';
+export { HomeAppBar, TopAppBar } from './TopAppBar';
+export { BrandIcon } from './BrandIcon';

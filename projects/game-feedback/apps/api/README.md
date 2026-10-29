@@ -1,0 +1,82 @@
+# Game Feedback API
+
+NestJS REST API이며 입력과 응답 계약은 `@game-feedback/contracts`의 Zod가 소유한다. API 테스트는 **Vitest + Supertest**로 실행한다. `vitest.config.mts`가 Node 환경과 API 소유 테스트 파일을 지정하고 통합 테스트는 `createApp()`의 HTTP 서버에 Supertest 요청을 보낸다.
+
+## 테스트
+
+저장소 루트에서 Node.js 24와 설치된 의존성을 사용한다.
+
+```sh
+yarn workspace @game-feedback/api test
+# DB 없이 순수 정책·검증 단위 테스트
+yarn workspace @game-feedback/api test:unit
+# S3를 사용하지 않는 사용자 경합·DB 제약 통합 테스트
+yarn workspace @game-feedback/api test:database
+# 격리 PostgreSQL + Supertest 통합 테스트
+yarn workspace @game-feedback/api test:integration
+# 특정 HTTP 통합 테스트만 실행
+yarn workspace @game-feedback/api test src/posts/posts.controller.integration.test.ts
+```
+
+모든 API 명령은 계약 빌드와 전용 Prisma 생성을 준비한다. `test:unit`은 DB를 시작하거나 연결하지 않는다. `test:integration`과 전체 `test`는 소유 테스트 PostgreSQL을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마를 만들고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. 통합 레인을 Vitest로 직접 호출할 때도 `TEST_DATABASE_URL` 검증을 통과해야 한다.
+
+단위·통합 테스트는 주 대상 구현 파일과 같은 디렉터리에 둔다. 단위 레인은 `*.spec.ts`와 `*.test.ts`에서 통합 파일을 제외하고 프로젝트의 `scripts/database-guard.test.ts`도 수집한다. 통합 레인은 `*.integration.spec.ts`·`*.integration.test.ts`를 수집한다. `app.integration.test.ts`는 전체 API 흐름을, `app.module.integration.test.ts`는 모듈 구성과 종료를 검증한다. `database/unit-of-work.integration.spec.ts`의 Repository 테스트는 실제 DB로 도메인 간 커밋·배열/콜백 롤백·단일 연결 가시성·동일 시각 페이지네이션을 검사한다. 관리자 숨김의 세 분기와 신고의 네 분기를 HTTP로 검증하고, 실제 감사 테이블 제약 위반으로 알림 삭제까지 롤백되는지 확인한다. 단위 테스트는 커서·채팅 삭제 경계·콘텐츠별 알림 정리 정책을 검증한다.
+
+개발 DB 55442는 사용하지 않는다. 외부 카카오·Discord·Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
+
+`test:database`는 탈퇴 경합과 `*.database.integration.*` 테스트만 실제 PostgreSQL에서 실행한다. S3에는 연결하지 않으며 파일 전송·삭제 검증은 전체 integration 레인에서 수행한다. 이 테스트들은 전체 integration 레인에도 포함된다.
+
+루트 `yarn workspace @side/game-feedback test`와 CI도 같은 API 명령을 호출한다. 테스트 DB는 재사용할 수 있도록 유지되며 작업 후 소유 DB만 종료한다.
+
+```sh
+yarn workspace @side/game-feedback db:test:stop
+```
+
+`openapi.json`은 Git에 포함하지 않는 중간 생성 파일이다. 프로젝트 개발/검사/테스트/빌드의 준비 단계 또는 `yarn workspace @side/game-feedback codegen`이 Zod/경로 정의에서 생성한다. Orval이 이 규격으로 REST SDK와 응답 검증 코드를 생성한다.
+
+## 본문 미디어와 운영 API
+
+- POST /api/post-media/uploads는 인증된 메타데이터로 S3 presigned POST를 발급하고, 브라우저 직접 전송 후 POST /api/post-media/:id/complete가 검증·확정한다. 파일 주소는 /api/post-media/:id다. GET은 본문 등록 전 업로더에게만 허용하고 등록 후 글의 공개/차단/숨김/삭제 정책을 적용한다. DELETE는 아직 글에 연결하지 않은 본인 파일만 삭제한다. 저장/수정과 파일 연결은 같은 DB 트랜잭션이다.
+- 코칭 pricing은 HOURLY/MONTHLY/GOAL과 amount로 저장한다. GOAL에는 targetScore가 필요하다. 배포 전에는 기존 hourlyRate 형식의 운영 데이터 변환을 제공하지 않으며 현재 pricing 계약을 사용한다.
+- POST /api/me/game-accounts는 사용자에게 계정을 등록한다. 글쓰기/PATCH에는 playerTag를 받지 않는다. 대표 태그가 바뀌면 사용자 인증을 해제한다.
+- POST /api/support/conversations는 GENERAL/VERIFICATION 문의를 실제 관리자와 기존 1:1 대화로 시작/재사용한다. 담당자가 없는 환경은 503이다. GET /api/admin/support와 PATCH /api/admin/support/:id는 담당 관리자 자신의 문의만 관리한다.
+- USER 신고는 기존 POST /api/reports를 사용한다. 관리자만 GET /api/admin/users/:id, PATCH /api/admin/users/:id/ban, PATCH /api/admin/reports/:id와 기존 인증/숨김 API를 사용할 수 있다. 밴은 기존 세션의 일반 활동에도 적용하되 관리자 문의는 유지한다. 변경 사유와 조치는 AuditLog에 기록한다.
+
+DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.ts의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [공통 EC2·RDS·S3 가이드](../../../../deploy/shared-instance/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
+
+서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
+
+관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. NestJS 12.2의 StandardSchemaValidationPipe가 요청에 지정한 Zod 스키마를 검증하고 Service에는 파싱된 입력을 전달한다. DTO 타입은 z.output으로 추론하며 데코레이터로 검증 규칙을 중복 선언하지 않는다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.
+
+### Prisma 7
+
+Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `migrate deploy`는 Client를 자동 생성하지 않는다.
+
+기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.
+
+게시글·채팅·프로필 파일은 로컬·통합 테스트까지 모두 실제 S3 직접 업로드를 사용한다. AWS 자격 증명, 테스트 객체 격리·정리와 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.
+
+## 책임별 소스 경계
+
+- `src/auth/{oauth,session,app-login,account}`: OAuth 전략·세션·앱 PKCE 티켓·계정 식별/탈퇴. root auth controller/service는 HTTP·가입 흐름을 조합한다.
+- `src/chat/{conversation,message,attachment,events}`: 대화 접근·전송/히스토리/읽음·첨부·SSE 수명. `src/posts/{media,views}`는 미디어와 조회수, `src/users/{profile,visibility}`는 프로필 수정/아바타와 조회 가시성을 묶는다. 여러 책임이 쓰는 DTO·presenter와 module 조합은 root에 유지한다.
+- AuthModule은 `IDENTITY_PROVIDERS` factory와 `IdentityProviderRegistry`, GameProfilesModule은 `PROFILE_PROVIDER` factory를 등록한다. AppOptions의 identityProvider/identityProviders/profileProvider fake 주입은 유지한다. APP_CONFIG에서 제공자 구현을 직접 생성하지 않는다.
+- `OAuthException`·`ProfileException`은 ApiError와 전역 필터의 `{ errorCode, message }` 형식을 유지한다. Guard·전역 입력 검증·세션 회전·PKCE·온보딩·레거시 Google 계정 판정은 그대로 둔다.
+
+`test:unit`의 `src/auth/oauth/identity-provider.registry.spec.ts`는 HTTP·Prisma 없이 Nest application context로 DI를 검사한다. 실제 HTTP 응답은 `src/auth/auth.module.integration.spec.ts`와 기존 auth integration 레인에서 검사한다. 이 모듈 HTTP fixture는 Prisma 외부 경계를 대체하며 실제 DB·S3 검증을 대체하지 않는다. integration 실행기는 실제 테스트 DB와 S3 설정이 필요하고 가짜 S3나 skip으로 우회하지 않는다.
+
+## DB 정합성과 보관 정책
+
+로컬 `db:sync`와 모든 통합 테스트는 `migrate deploy`를 사용한다. Prisma에 표현되지 않는 CHECK·GIN 인덱스도 운영과 함께 검사한다. 데이터가 있지만 migration 이력이 없는 개발 DB는 P3005로 중단한다. 자동 baseline·reset은 하지 않는다. 기존 DB를 백업한 뒤 별도 복제본에서 schema.prisma와 SQL 전용 제약을 대조하고 이력을 정리해야 한다.
+
+탈퇴와 사용자 쓰기는 User 행 잠금으로 순서를 정한다. 탈퇴보다 늦게 잠금을 얻은 요청은 활성 상태를 다시 확인해 401로 거절한다. 알림의 답변·댓글과 대화 첨부의 메시지는 같은 게시물·대화에 속해야 하며 복합 FK로 보장한다.
+
+배포 전 읽기 전용 점검으로 아래 값이 모두 0인지 확인한다. 어긋난 데이터는 임의 삭제하거나 재연결하지 않으며, 새 migration의 VALIDATE가 실패하면 데이터 정리 기준을 먼저 정한다.
+
+```sql
+SELECT count(*) FROM "Notification" n LEFT JOIN "Answer" a ON a.id = n."answerId" WHERE n."answerId" IS NOT NULL AND (a.id IS NULL OR n."postId" IS DISTINCT FROM a."postId");
+SELECT count(*) FROM "Notification" n JOIN "Comment" c ON c.id = n."commentId" WHERE n."postId" IS DISTINCT FROM c."postId";
+SELECT count(*) FROM "ChatAttachment" a JOIN "ChatMessage" m ON m.id = a."messageId" WHERE a."conversationId" <> m."conversationId";
+```
+
+운영 `maintenance` 명령은 미디어 정리 후 48시간 지난 PostView를 최대 1,000개 지운다. 24시간 중복 방지 창과 최근 방문은 유지하고 Post.viewCount는 바꾸지 않는다. `postViewsRemoved`가 1,000이면 남은 기록을 다음 실행에서 처리한다. 정기 운영 실행 주기를 잡아야 보관 기간에 가깝게 유지된다. 이 PR은 운영 DB 적용·유지보수 명령 실행을 포함하지 않는다.

@@ -1,14 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  NativeCapabilityError,
   buildBootstrapScript,
   buildNativeDispatchScript,
   createNativeRouter,
+  NativeCapabilityError,
+  type TNativeCapabilities,
 } from './native';
-import type { TNativeCapabilities } from './native';
-import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION } from './protocol';
-import type { TNativeMessage } from './protocol';
+import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION, type TNativeMessage } from './protocol';
 
 const ORIGIN = 'https://contest.example';
 
@@ -66,19 +65,19 @@ describe('createNativeRouter', () => {
 
   it('사용자가 취소하면 CANCELLED, 그 밖의 실패는 내부 메시지 없이 FAILED로 답해야 한다', async () => {
     const { router, sent } = setup({
-      'auth.socialLogin': async () => {
-        throw new NativeCapabilityError('CANCELLED', '로그인을 취소했습니다.');
+      'share.open': async () => {
+        throw new NativeCapabilityError('CANCELLED', '공유를 취소했습니다.');
       },
       'clipboard.copy': async () => {
         throw new Error('native module crashed: secret detail');
       },
     });
-    await router.handleMessage(request('5', 'auth.socialLogin', { provider: 'google' }), ORIGIN);
+    await router.handleMessage(request('5', 'share.open', { url: ORIGIN }), ORIGIN);
     await router.handleMessage(request('6', 'clipboard.copy', { text: '링크' }), ORIGIN);
     expect(sent[0]).toMatchObject({
       id: '5',
       ok: false,
-      error: { code: 'CANCELLED', message: '로그인을 취소했습니다.' },
+      error: { code: 'CANCELLED', message: '공유를 취소했습니다.' },
     });
     expect(sent[1]).toMatchObject({ id: '6', ok: false, error: { code: 'FAILED' } });
     expect(JSON.stringify(sent[1])).not.toContain('secret detail');
@@ -86,10 +85,16 @@ describe('createNativeRouter', () => {
 
   it('기능이 계약과 다른 결과를 돌려주면 FAILED로 답해야 한다', async () => {
     const { router, sent } = setup({
-      'auth.socialLogin': async () => ({ code: 'short', verifier: 'x' }),
+      'share.open': async () => ({ shared: 'invalid' }) as unknown as { shared: boolean },
     });
-    await router.handleMessage(request('7', 'auth.socialLogin', { provider: 'kakao' }), ORIGIN);
+    await router.handleMessage(request('7', 'share.open', { url: ORIGIN }), ORIGIN);
     expect(sent[0]).toMatchObject({ id: '7', ok: false, error: { code: 'FAILED' } });
+  });
+
+  it('제거한 인증 요청은 실행하지 않고 INVALID로 답해야 한다', async () => {
+    const { router, sent } = setup();
+    await router.handleMessage(request('retired', 'auth.socialLogin', { provider: 'google' }), ORIGIN);
+    expect(sent[0]).toMatchObject({ id: 'retired', ok: false, error: { code: 'INVALID' } });
   });
 
   it('웹 알림을 검증해 리스너로 전달해야 한다', async () => {

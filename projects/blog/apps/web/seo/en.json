@@ -1,0 +1,243 @@
+{
+  "site": {
+    "title": "Bambyul Blog",
+    "description": "I write about problems I encounter while developing software and what I learn along the way.",
+    "keywords": ["Software Engineering", "React", "Next.js", "TypeScript"]
+  },
+  "pages": {
+    "home": {
+      "title": "Home",
+      "description": "I write about problems I encounter while developing software and what I learn along the way."
+    },
+    "blog": {
+      "title": "Posts",
+      "description": "Notes on software development and things I have learned."
+    },
+    "about": {
+      "title": "About",
+      "description": "Email and GitHub for software engineer Jingeon Kim."
+    },
+    "privacy": {
+      "title": "Privacy notice",
+      "description": "What visit statistics this blog collects and how to turn them off."
+    }
+  },
+  "posts": {
+    "side-project-design": {
+      "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
+      "slug": "what-i-kept-changing-while-planning-my-side-projects",
+      "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
+      "keywords": [
+        "side projects",
+        "product planning",
+        "product design",
+        "UI",
+        "UX",
+        "design system",
+        "AI agents"
+      ]
+    },
+    "puppeteer-event-lifecycle": {
+      "title": "Waiting for Puppeteer requests and responses without leaking listeners",
+      "slug": "puppeteer-event-lifecycle",
+      "description": "An Electron collector needed request headers and file information before it could continue. A closure collected the values, while a Promise ended the wait and cleaned up the listeners.",
+      "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"]
+    },
+    "electron-module-boundaries": {
+      "title": "Separating responsibilities in an Electron data-collection app",
+      "slug": "electron-module-boundaries",
+      "description": "Adding a recruiting platform also copied the collection workflow. I introduced and then removed NestJS, while keeping request handling, collection order, and site-specific processing separate.",
+      "keywords": [
+        "javascript",
+        "nextjs",
+        "react",
+        "tanstack-query",
+        "typescript",
+        "electron",
+        "nestjs",
+        "architecture"
+      ]
+    },
+    "query-key-factory": {
+      "title": "Keeping TanStack Query keys and query functions together",
+      "slug": "query-key-factory",
+      "description": "After editing an applicant's memo, I had to search for strings to find the cache to refresh. I moved keys and query functions into shared definitions and kept invalidation choices beside each mutation.",
+      "keywords": ["tanstack-query", "typescript", "query-key"]
+    },
+    "typescript-patterns": {
+      "title": "Using TypeScript to catch mistakes at the call site",
+      "slug": "typescript-patterns",
+      "description": "These are the TypeScript patterns I use to preserve inference and express relationships between values: satisfies, optional properties, generics, and mutually exclusive props.",
+      "keywords": ["typescript", "react"]
+    },
+    "nextjs-tanstack-query-ssr": {
+      "title": "Using TanStack Query with the Next.js App Router",
+      "slug": "nextjs-tanstack-query-ssr",
+      "description": "I wanted browser queries to pick up data fetched on the server. I used different QueryClient lifetimes in each environment and shared the query definitions between them.",
+      "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"]
+    },
+    "reservation-form-state": {
+      "title": "Moving reservation form state from Zustand to React Hook Form",
+      "slug": "reservation-form-state",
+      "description": "Adding a family member left reservation dates behaving as if the old participant count still applied. I separated the server's family list from user selections and moved ongoing edits into React Hook Form.",
+      "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"]
+    },
+    "review-like-optimistic-update": {
+      "title": "Updating review likes in list and detail caches",
+      "slug": "review-like-optimistic-update",
+      "description": "A review like appears in both list and detail caches. I updated them together and restored saved snapshots when the request failed.",
+      "keywords": ["tanstack-query", "optimistic-update", "react"]
+    },
+    "nextjs-seo-prefetch": {
+      "title": "When to await prefetch in the Next.js App Router",
+      "slug": "nextjs-seo-prefetch",
+      "description": "Reservation details looked fine in the browser, yet the first HTML lacked hospital information. Starting prefetch did not mean the server was ready to pass its data along.",
+      "keywords": ["nextjs", "tanstack-query", "seo", "ssr"]
+    },
+    "review-form-funnel": {
+      "title": "Separating state and steps in a review form",
+      "slug": "review-form-funnel",
+      "description": "Moving review writing to RHF and Zod also meant reconnecting treatment selection. I changed the sheet to cancel on close and write selections to the form only after confirmation.",
+      "keywords": ["react-hook-form", "zod", "react", "state-management"]
+    },
+    "typed-program-form": {
+      "title": "Sharing a program form across two admin apps",
+      "slug": "typed-program-form",
+      "description": "Two admin apps shared program inputs but had different submission flows. I separated field types and API transformations while deciding what to share.",
+      "keywords": ["react-hook-form", "typescript", "zod", "architecture"]
+    },
+    "cross-domain-token-handoff": {
+      "title": "Handing authentication between separate hosts",
+      "slug": "cross-domain-token-handoff",
+      "description": "The settlement screen needed to open on another host without a second login. I moved tokens from URLs to a form POST, while the duplicated authentication state still needed separate handling.",
+      "keywords": ["nextjs", "authentication", "bff", "security"]
+    },
+    "chatbot-message-layer": {
+      "title": "Connecting two SSE streams to one chat interface",
+      "slug": "chatbot-message-layer",
+      "description": "AI answers and counselor messages came from separate services. To put both in one conversation, I separated where messages were sent from where they were displayed.",
+      "keywords": ["react", "typescript", "sse", "chatbot"]
+    },
+    "sitemap-api-boundaries": {
+      "title": "Separating public and authenticated reads in a sitemap",
+      "slug": "sitemap-api-boundaries",
+      "description": "A shared interceptor read authentication cookies inside the sitemap cache. I separated public reads from member-specific reads and chose the cache boundary.",
+      "keywords": ["nextjs", "seo", "sitemap", "cache"]
+    },
+    "payment-coupon-branches": {
+      "title": "Handling coupon branches in payment history",
+      "slug": "payment-coupon-branches",
+      "description": "Coupons made payment method alone insufficient to choose a view. Unsaved rows needed editable amounts and coupon clearing; saved rows needed to show coupon usage alongside the on-site payment.",
+      "keywords": ["typescript", "refactoring", "react", "payment"]
+    },
+    "fsd-layer-boundaries": {
+      "title": "Redrawing FSD boundaries for the codebase",
+      "slug": "fsd-layer-boundaries",
+      "description": "The folders followed FSD, yet placing a new file still prompted another discussion. Moving real code led me to regroup domain code and screen composition and abandon strict URL mirroring.",
+      "keywords": ["fsd", "architecture", "refactoring", "nextjs"]
+    },
+    "prototype-working-rules": {
+      "title": "Keeping working rules from a prototype migration",
+      "slug": "prototype-working-rules",
+      "description": "A prototype migration involved asking an agent to build similar features repeatedly. I put recurring corrections into skills, then found that short, absolute rules could produce the wrong changes too.",
+      "keywords": ["react", "nextjs", "architecture", "ai-workflow"]
+    },
+    "testing-standards": {
+      "title": "The standards I developed while introducing tests",
+      "slug": "testing-standards",
+      "description": "I reviewed which behaviors the tests checked and refined them against actual submission paths and server constraints.",
+      "keywords": ["testing", "vitest", "playwright", "react"]
+    },
+    "declarative-code": {
+      "title": "How I write declarative code",
+      "slug": "declarative-code",
+      "description": "Some components made me read query sequencing and calculations before I could see the screen. These examples show how I separated composition from detail in review pages, filters, and coupon calculations.",
+      "keywords": ["typescript", "react", "refactoring", "declarative-programming"]
+    },
+    "nextjs-server-client-issues": {
+      "title": "Tracing Next.js routing and cache problems",
+      "slug": "nextjs-server-client-issues",
+      "description": "Searches left the URL unchanged, and a deployment stopped notices from closing in old tabs. Tracing routing, cookies, and form resets led me to reconsider which actions needed the server.",
+      "keywords": ["nextjs", "react", "cache", "react-hook-form"]
+    },
+    "error-boundary-recovery": {
+      "title": "Letting failed sections recover with Error Boundaries",
+      "slug": "error-boundary-recovery",
+      "description": "One failed list query removed the menu and header too. I changed query placement along with Error Boundaries so a failed table or filter could be retried in place.",
+      "keywords": ["react", "error-boundary", "zod", "observability"]
+    },
+    "low-effort-success": {
+      "title": "Making the next success take less effort",
+      "slug": "low-effort-success",
+      "description": "After ranking effortful experiences first, I wondered whether that should include work completed with little effort. My experience with coding agents gave me another way to read the question.",
+      "keywords": ["reflection", "ai-workflow", "productivity"]
+    },
+    "sentry-observability": {
+      "title": "Connecting Sentry errors, Web Vitals, MCP, and releases",
+      "slug": "sentry-observability",
+      "description": "I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.",
+      "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"]
+    },
+    "plan-gated-ai-workflow": {
+      "title": "The development workflow I refined with coding agents",
+      "slug": "plan-gated-ai-workflow",
+      "description": "An agent reported a passing test that waited for text the screen never showed. Delegating implementation led me to read plans and diffs myself and turn recurring corrections into guidance for later work.",
+      "keywords": ["ai-workflow", "testing", "eslint", "worktree"]
+    },
+    "zod-assertion-boundaries": {
+      "title": "Runtime validation beyond type assertions",
+      "slug": "zod-assertion-boundaries",
+      "description": "Removing type assertions led me to separate failure handling for API responses, URLs, and forms. A narrower type does not necessarily mean a safer runtime value.",
+      "keywords": ["zod", "typescript", "validation", "error-handling"]
+    },
+    "bottom-sheet-drag-crash": {
+      "title": "Tracing a Bottom Sheet drag crash with Sentry",
+      "slug": "bottom-sheet-drag-crash",
+      "description": "A sheet crashed when users released a drag. Upgrading removed the failing code, but I still missed a title that scrolled away with the body.",
+      "keywords": ["sentry", "react", "debugging", "react-modal-sheet"]
+    },
+    "health-check-program": {
+      "title": "Bringing health-check reservations into the existing service",
+      "slug": "health-check-program",
+      "description": "I brought health checks from phone inquiries into portal selection and payment. Adding them to existing programs required separate decisions for registration rights, examination choices, and returning from payment.",
+      "keywords": ["react", "react-hook-form", "architecture", "payment"]
+    },
+    "reading-ai-code": {
+      "title": "Why I still read the code",
+      "slug": "reading-ai-code",
+      "description": "A sprint I considered finished after checking screens led to many hotfixes. I now read code to find paths to test, then check those paths and the actual UI separately.",
+      "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
+    },
+    "side-project-infrastructure": {
+      "title": "Starting with one EC2 instance",
+      "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
+      "description": "I dropped RDS while looking at deployment costs. I considered serverless options too, but decided to start with the web apps, APIs, and PostgreSQL on one small EC2 instance. That also meant working through storage, backups, and S3 permissions.",
+      "keywords": [
+        "side projects",
+        "AWS",
+        "EC2",
+        "PostgreSQL",
+        "S3",
+        "Terraform",
+        "infrastructure",
+        "backups"
+      ]
+    },
+    "side-project-technology": {
+      "title": "GraphQL for the photo service, REST for Game Mate",
+      "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
+      "description": "The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.",
+      "keywords": [
+        "side projects",
+        "Next.js",
+        "NestJS",
+        "GraphQL",
+        "TanStack Query",
+        "PostgreSQL",
+        "testing",
+        "architecture",
+        "ESLint"
+      ]
+    }
+  }
+}

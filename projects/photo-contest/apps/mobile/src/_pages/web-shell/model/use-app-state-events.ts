@@ -1,13 +1,11 @@
+import { useEffect, useEffectEvent } from 'react';
+
 import type { INativeRouter } from '@photo-contest/bridge/native';
-import { useEffect } from 'react';
-import { AppState } from 'react-native';
 
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import { trackEvent } from '@/features/analytics/model/analytics';
-import { useLatest } from '@/shared/lib/use-latest';
+import { ANALYTICS_EVENT, trackEvent } from '@/features/analytics';
 
-import { nextBridgeAppState } from '../lib/app-state';
 import type { TBridgeAppState } from '../lib/app-state';
+import { AppStateSubscription } from './app-state-subscription';
 
 interface IUseAppStateEventsOptions {
   router: INativeRouter;
@@ -19,18 +17,13 @@ interface IUseAppStateEventsOptions {
  * 돌아온 횟수(app_foregrounded)는 웹 준비와 상관없이 기록한다.
  */
 export function useAppStateEvents(options: IUseAppStateEventsOptions) {
-  const optionsRef = useLatest(options);
+  const handleAppState = useEffectEvent((state: TBridgeAppState) => {
+    if (state === 'active') trackEvent({ name: ANALYTICS_EVENT.AppForegrounded });
+    if (options.isWebReady()) options.router.emit('app.state', { state });
+  });
 
   useEffect(() => {
-    let previous: TBridgeAppState = AppState.currentState === 'background' ? 'background' : 'active';
-    const subscription = AppState.addEventListener('change', (next) => {
-      const state = nextBridgeAppState(previous, next);
-      if (!state) return;
-      previous = state;
-      if (state === 'active') trackEvent({ name: ANALYTICS_EVENT.AppForegrounded });
-      const { router, isWebReady } = optionsRef.current;
-      if (isWebReady()) router.emit('app.state', { state });
-    });
-    return () => subscription.remove();
-  }, [optionsRef]);
+    const subscription = new AppStateSubscription(handleAppState);
+    return () => subscription.dispose();
+  }, []);
 }

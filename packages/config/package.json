@@ -1,0 +1,45 @@
+{
+  "name": "@side/config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./eslint/base": "./eslint/src/base.ts",
+    "./eslint/react": "./eslint/src/react.ts",
+    "./eslint/react-dom": "./eslint/src/react-dom.ts",
+    "./eslint/next": "./eslint/src/next.ts",
+    "./eslint/expo": "./eslint/src/expo.ts",
+    "./eslint/fsd-boundaries": "./eslint/src/fsd-boundaries.ts",
+    "./typescript": "./typescript/tsconfig.base.json",
+    "./typescript/compiler": "./typescript/bin/tsc7.cjs"
+  },
+  "bin": {
+    "tsc7": "./typescript/bin/tsc7.cjs"
+  },
+  "scripts": {
+    "lint": "eslint eslint/src eslint.config.ts vitest.config.ts",
+    "typecheck": "node typescript/bin/tsc7.cjs --noEmit",
+    "test": "vitest run",
+    "check": "yarn lint && yarn typecheck && yarn test"
+  },
+  "dependencies": {
+    "@typescript/native": "npm:typescript@7.0.2",
+    "eslint": "catalog:",
+    "eslint-config-expo": "~58.0.4",
+    "eslint-config-next": "catalog:",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.5",
+    "typescript-eslint": "^8.50.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@typescript-eslint/rule-tester": "8.71.1",
+    "@typescript-eslint/utils": "8.71.1",
+    "jiti": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  }
+}
