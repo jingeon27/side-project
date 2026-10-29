@@ -60,6 +60,6 @@ Vitest와 RuleTester는 이 패키지가 소유합니다. 오류 메시지 ID와
 
 ### 핸들러 이름 옵션
 
-`handlerNamesConfig`는 기존 `react/jsx-handler-names`를 `eventHandlerPrefix: '(?:handle|on|fetchNext)'`, `eventHandlerPropPrefix: 'on'`, `checkLocalVariables: false`, `checkInlineFunction: false`로 설정합니다. `fetchNext`는 `pagination.fetchNextPage` 같은 기존 페이지네이션 API를 직접 전달하기 위한 허용 접두사입니다.
+`handlerNamesConfig`는 기존 `react/jsx-handler-names`를 `eventHandlerPrefix: '(?:handle|on|fetchNext|mutate)'`, `eventHandlerPropPrefix: 'on'`, `checkLocalVariables: false`, `checkInlineFunction: false`로 설정합니다. `fetchNext`·`mutate`는 `pagination.fetchNextPage`·`upload.mutateAsync` 같은 기존 API를 직접 전달하기 위한 허용 접두사입니다.
 
 이 규칙은 함수 출처를 구분하지 않습니다. 따라서 `refetch`뿐 아니라 직접 작성한 `submit` 같은 로컬 식별자도 검사에서 제외됩니다. JSX 밖의 이벤트 리스너·observer 역시 이 규칙의 검사 대상이 아닙니다. 내부 핸들러의 `const handle*` 관례는 리뷰로 유지하고, 명명 검사만을 위해 래퍼·별칭·별도 커스텀 규칙을 추가하지 않습니다. 멤버 핸들러와 `on*` prop 이름은 기존 규칙이 계속 검사합니다. 이 적용 범위와 Next 플러그인 조합은 설정 테스트로 확인합니다.

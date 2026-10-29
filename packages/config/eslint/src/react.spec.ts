@@ -24,6 +24,7 @@ describe('기존 핸들러 명명 규칙 옵션', () => {
     'export function Editor() { const { refetch } = useQuery(); return <Boundary onRetry={refetch} />; }',
     'export function Editor() { const [open, setOpen] = useState(false); return <Dialog onOpenChange={setOpen} />; }',
     'export function Editor() { return <FeedLoadMore onLoadMore={pagination.fetchNextPage} />; }',
+    'export function Editor() { return <MediaInput onUploadMedia={upload.mutateAsync} />; }',
     'export function Editor() { return <Button onClick={() => save()} />; }',
   ])('추가 래퍼 없이 기존 참조와 인라인 콜백을 전달할 수 있다: %s', (code) => {
     expect(handlerMessages(code)).toEqual([]);

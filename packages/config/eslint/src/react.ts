@@ -11,9 +11,9 @@ export const handlerNamesConfig: Linter.Config = {
     'react/jsx-handler-names': [
       'error',
       {
-        eventHandlerPrefix: '(?:handle|on|fetchNext)',
+        eventHandlerPrefix: '(?:handle|on|fetchNext|mutate)',
         eventHandlerPropPrefix: 'on',
-        // 함수의 출처를 구분하지 못하므로 로컬 함수와 인라인 콜백은 리뷰에서 이름을 확인한다.
+        // 로컬 식별자·인라인 콜백은 제외하고 직접 작성한 handle* 관례는 리뷰로 확인한다.
         checkLocalVariables: false,
         checkInlineFunction: false,
       },
