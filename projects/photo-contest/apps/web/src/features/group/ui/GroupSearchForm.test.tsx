@@ -1,7 +1,7 @@
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 
-import { act, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GroupSearchForm } from './GroupSearchForm';
@@ -34,4 +34,25 @@ describe('검색 폼 hydration', () => {
       container.remove();
     }
   });
+});
+
+describe('그룹 검색 URL 병합', () => {
+  it.each([' 새 검색 ', ''])(
+    '검색어(%s)만 바꾸고 다른 필터·상세 키·중복 키·hash를 보존해야 한다',
+    async (value) => {
+      navigation.replace.mockReset();
+      window.history.replaceState(null, '', '/explore?q=old&group=g1&detail=post-1&tag=a&tag=b#results');
+      render(<GroupSearchForm search="old" />);
+      fireEvent.change(screen.getByRole('textbox', { name: '그룹 검색' }), { target: { value } });
+      fireEvent.submit(screen.getByRole('search'));
+      await waitFor(() => expect(navigation.replace).toHaveBeenCalledOnce());
+      const url = new URL(navigation.replace.mock.calls[0]?.[0], window.location.origin);
+      expect(url.pathname).toBe('/explore');
+      expect(url.searchParams.get('q')).toBe(value.trim() || null);
+      expect(url.searchParams.get('group')).toBe('g1');
+      expect(url.searchParams.get('detail')).toBe('post-1');
+      expect(url.searchParams.getAll('tag')).toEqual(['a', 'b']);
+      expect(url.hash).toBe('#results');
+    },
+  );
 });
