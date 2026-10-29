@@ -39,12 +39,12 @@ export type TBridgeWindow = Pick<Window, 'addEventListener' | 'removeEventListen
 };
 
 export class BridgeError extends Error {
-  readonly code: TBridgeErrorCode;
-
-  constructor(code: TBridgeErrorCode, message: string) {
+  constructor(
+    readonly code: TBridgeErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'BridgeError';
-    this.code = code;
   }
 }
 

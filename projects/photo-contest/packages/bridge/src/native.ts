@@ -35,12 +35,12 @@ export type TNativeCapabilities = {
 
 /** 기능 구현이 던지면 이 코드로 웹에 전달한다. 그 밖의 오류는 FAILED. */
 export class NativeCapabilityError extends Error {
-  readonly code: TBridgeErrorCode;
-
-  constructor(code: TBridgeErrorCode, message: string) {
+  constructor(
+    readonly code: TBridgeErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'NativeCapabilityError';
-    this.code = code;
   }
 }
 
