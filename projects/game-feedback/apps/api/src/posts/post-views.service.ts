@@ -8,6 +8,7 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { type TPostViewDto } from './post-input.dto';
+import { prunePostViews } from './post-views.repository';
 
 /** 같은 IP에서 한 글에 24시간 동안 세는 익명 방문자 수의 상한. */
 export const ANONYMOUS_VIEWS_PER_NETWORK = 5;
@@ -19,6 +20,10 @@ export class PostViewsService {
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
   ) {}
+
+  prune() {
+    return prunePostViews({ client: this.db });
+  }
 
   /**
    * 조회수는 공개 상세 캐시 문서를 무효화하지 않는다. 캐시 문서의 viewCount는 마지막 내용 변경 때의 값이고,

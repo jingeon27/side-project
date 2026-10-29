@@ -180,6 +180,7 @@ model PostView {
   lastViewedAt DateTime @default(now())
   @@id([postId,visitorHash])
   @@index([postId,networkHash,lastViewedAt])
+  @@index([lastViewedAt,postId,visitorHash])
 }
 model Answer {
   id String @id @default(cuid())

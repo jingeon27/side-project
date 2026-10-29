@@ -50,8 +50,24 @@ DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 �
 
 ### Prisma 7
 
-Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `db push`는 Client를 자동 생성하지 않는다.
+Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `migrate deploy`는 Client를 자동 생성하지 않는다.
 
 기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.
 
 게시글·채팅·프로필 파일은 로컬·통합 테스트까지 모두 실제 S3 직접 업로드를 사용한다. AWS 자격 증명, 테스트 객체 격리·정리와 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.
+
+## DB 정합성과 보관 정책
+
+로컬 `db:sync`와 모든 통합 테스트는 `migrate deploy`를 사용한다. Prisma에 표현되지 않는 CHECK·GIN 인덱스도 운영과 함께 검사한다. 데이터가 있지만 migration 이력이 없는 개발 DB는 P3005로 중단한다. 자동 baseline·reset은 하지 않는다. 기존 DB를 백업한 뒤 별도 복제본에서 schema.prisma와 SQL 전용 제약을 대조하고 이력을 정리해야 한다.
+
+탈퇴와 사용자 쓰기는 User 행 잠금으로 순서를 정한다. 탈퇴보다 늦게 잠금을 얻은 요청은 활성 상태를 다시 확인해 401로 거절한다. 알림의 답변·댓글과 대화 첨부의 메시지는 같은 게시물·대화에 속해야 하며 복합 FK로 보장한다.
+
+배포 전 읽기 전용 점검으로 아래 값이 모두 0인지 확인한다. 어긋난 데이터는 임의 삭제하거나 재연결하지 않으며, 새 migration의 VALIDATE가 실패하면 데이터 정리 기준을 먼저 정한다.
+
+```sql
+SELECT count(*) FROM "Notification" n LEFT JOIN "Answer" a ON a.id = n."answerId" WHERE n."answerId" IS NOT NULL AND (a.id IS NULL OR n."postId" IS DISTINCT FROM a."postId");
+SELECT count(*) FROM "Notification" n JOIN "Comment" c ON c.id = n."commentId" WHERE n."postId" IS DISTINCT FROM c."postId";
+SELECT count(*) FROM "ChatAttachment" a JOIN "ChatMessage" m ON m.id = a."messageId" WHERE a."conversationId" <> m."conversationId";
+```
+
+운영 `maintenance` 명령은 미디어 정리 후 48시간 지난 PostView를 최대 1,000개 지운다. 24시간 중복 방지 창과 최근 방문은 유지하고 Post.viewCount는 바꾸지 않는다. `postViewsRemoved`가 1,000이면 남은 기록을 다음 실행에서 처리한다. 정기 운영 실행 주기를 잡아야 보관 기간에 가깝게 유지된다. 이 PR은 운영 DB 적용·유지보수 명령 실행을 포함하지 않는다.
