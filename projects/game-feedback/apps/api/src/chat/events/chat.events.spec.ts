@@ -1,9 +1,12 @@
 import type { MessageEvent } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import type { SessionRequest } from '../../auth/session/session.types';
 import type { AppConfig } from '../../config/app.config';
 import type { PrismaClient } from '../../generated/prisma';
+import { sentryOptions } from '../../monitoring/sentry';
 import {
   CHAT_EVENTS_HEARTBEAT_MS,
   ChatEvents,
@@ -37,13 +40,13 @@ function setup() {
     const received: MessageEvent[] = [];
     const state = { closed: false };
     const req = { gfSession: { tokenHash, user: { id: userId } } } as unknown as SessionRequest;
-    events.stream(req).subscribe({
+    const subscription = events.stream(req).subscribe({
       next: (event) => received.push(event),
       complete: () => {
         state.closed = true;
       },
     });
-    return { received, state };
+    return { received, state, subscription };
   }
   return { events, sessions, findMany, signIn, open };
 }
@@ -103,5 +106,99 @@ describe('chat event streams', () => {
     await vi.advanceTimersByTimeAsync(CHAT_EVENTS_HEARTBEAT_MS * 2);
     // No streams left, so the shared timer stopped querying.
     expect(findMany).not.toHaveBeenCalled();
+  });
+
+  describe('SSE 운영 메트릭', () => {
+    const samples: string[] = [];
+    const metricEnvelope = z.tuple([
+      z.unknown(),
+      z.array(z.tuple([z.object({ type: z.string() }), z.unknown()])),
+    ]);
+    const metricSchema = z.object({
+      name: z.string(),
+      value: z.number(),
+      attributes: z.record(z.string(), z.object({ value: z.unknown() })),
+    });
+    const captured = () =>
+      samples.flatMap((raw) =>
+        metricEnvelope
+          .parse(JSON.parse(raw))[1]
+          .flatMap(([header, payload]) =>
+            header.type === 'trace_metric'
+              ? z.object({ items: z.array(metricSchema) }).parse(payload).items
+              : [],
+          ),
+      );
+
+    beforeEach(() => {
+      samples.length = 0;
+      vi.stubEnv('SENTRY_DSN', 'https://test@sentry.invalid/1');
+      Sentry.init({
+        ...sentryOptions(),
+        tracesSampleRate: 0,
+        transport: () => ({
+          send: async (envelope) => {
+            samples.push(JSON.stringify(envelope));
+            return { statusCode: 200 };
+          },
+          flush: async () => true,
+        }),
+      });
+    });
+    afterEach(async () => {
+      vi.useRealTimers();
+      await Sentry.close(1000);
+      vi.unstubAllEnvs();
+    });
+
+    it('연결·브라우저 종료·세션 종료·사용자 종료·서버 종료를 한 번씩 세고 활성 수를 0으로 돌린다', async () => {
+      const { events, signIn, open } = setup();
+      signIn('private-session', 'private-user');
+      const first = open('private-session', 'private-user');
+      await vi.advanceTimersByTimeAsync(0);
+      first.subscription.unsubscribe();
+      open('private-session', 'private-user');
+      events.closeSession('private-session');
+      open('private-session', 'private-user');
+      events.closeUser('private-user');
+      open('private-session', 'private-user');
+      events.onModuleDestroy();
+      await vi.advanceTimersByTimeAsync(0);
+      vi.useRealTimers();
+      await Sentry.flush(1000);
+      const metrics = captured();
+      expect(metrics.filter((metric) => metric.name === 'chat.sse.opened')).toHaveLength(4);
+      expect(
+        metrics
+          .filter((metric) => metric.name === 'chat.sse.closed')
+          .map((metric) => metric.attributes.reason?.value),
+      ).toEqual(['client_disconnect', 'session_closed', 'user_closed', 'server_shutdown']);
+      expect(metrics.filter((metric) => metric.name === 'chat.sse.active').at(-1)?.value).toBe(0);
+      expect(samples.join('\n')).not.toContain('private');
+    });
+
+    it('heartbeat의 DB 장애를 배치 실패 1건과 연결별 종료로 구분하고 활성 연결을 남기지 않는다', async () => {
+      const { events, signIn, open, findMany } = setup();
+      signIn('private-session', 'private-user');
+      const streams = [open('private-session', 'private-user'), open('private-session', 'private-user')];
+      await vi.advanceTimersByTimeAsync(0);
+      findMany.mockRejectedValueOnce(new Error('private-query'));
+      await vi.advanceTimersByTimeAsync(CHAT_EVENTS_HEARTBEAT_MS);
+      expect(streams.every(({ state }) => state.closed)).toBe(true);
+      events.onModuleDestroy();
+      vi.useRealTimers();
+      await Sentry.flush(1000);
+      const metrics = captured();
+      expect(metrics.filter((metric) => metric.name === 'chat.operation.failures')).toMatchObject([
+        { value: 1, attributes: { operation: { value: 'chat.heartbeat' }, outcome: { value: 'failed' } } },
+      ]);
+      expect(
+        metrics
+          .filter((metric) => metric.name === 'chat.sse.closed')
+          .map((metric) => metric.attributes.reason?.value),
+      ).toEqual(['heartbeat_failed', 'heartbeat_failed']);
+      expect(metrics.filter((metric) => metric.name === 'chat.sse.active').at(-1)?.value).toBe(0);
+      expect(samples.join('\n')).not.toContain('private');
+    });
   });
 });

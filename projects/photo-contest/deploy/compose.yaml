@@ -2,6 +2,8 @@ name: photo-contest
 
 x-api-environment: &api-environment
   NODE_ENV: production
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_RELEASE: ${RELEASE_SHA:-}
   PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
   EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
   API_URL: http://api:4200

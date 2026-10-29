@@ -3,10 +3,13 @@ import type { NodeOptions } from '@sentry/node';
 type TPerformanceSpan = Parameters<NonNullable<NodeOptions['beforeSendSpan']>>[0];
 type TIntegration = Extract<NodeOptions['integrations'], unknown[]>[number];
 
-const CHAT_OPERATIONS = {
+export const CHAT_OPERATIONS = {
   'chat.persist': 'db.transaction',
+  'chat.lock': 'db.query',
   'chat.insert': 'db.query',
+  'chat.messages': 'db.query',
   'chat.publish': 'messaging.publish',
+  'chat.heartbeat': 'function',
 } satisfies Record<string, string>;
 const NUMERIC_ATTRIBUTES = new Set([
   'http.response.status_code',

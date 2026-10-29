@@ -19,13 +19,33 @@ API DSN이 있으면 HTTP 요청을 10% 샘플링하고, 선택한 요청의 자
 | `METHOD /api/.../:id/...` (`http.server`) | JSON 파싱·세션·권한·요청 제한·controller 처리부터 응답 쓰기 완료까지. 클라이언트 네트워크 시간과 웹 프록시 시간은 포함하지 않는다. 응답 전에 연결이 끊어지면 aborted로 종료한다. |
 | `chat.persist` (`db.transaction`)         | 대화 잠금·트랜잭션 안 권한 조회·멱등 확인·메시지/알림/푸시 큐 쓰기·커밋. 트랜잭션 앞의 접근 확인은 HTTP에만 포함된다.                                                            |
 | `chat.insert` (`db.query`)                | Prisma `chatMessage.create`와 반환 관계 조회. 단일 SQL INSERT 시간이나 전체 SQL 실행 횟수를 뜻하지 않는다. 멱등 재전송에는 새 INSERT span이 없다.                                |
+| `chat.lock` (`db.query`)                  | 전송 트랜잭션의 대화 행 `FOR UPDATE` 호출부터 반환까지. DB 왕복과 잠금 대기를 포함하며 순수 잠금 대기만의 시간은 아니다.                                                         |
+| `chat.messages` (`db.query`)              | 메시지 목록 Prisma 조회와 관계 데이터 반환. API 전체 조회 시간은 HTTP 지표에서 본다.                                                                                             |
 | `chat.publish` (`messaging.publish`)      | 커밋 뒤 수신 연결의 세션·접근 확인과 `subscriber.next()` 호출까지. 상대 브라우저 수신·REST 재조회·화면 반영은 포함하지 않는다.                                                   |
+| `chat.heartbeat` (`function`)             | 열린 연결의 세션 일괄 조회와 heartbeat 전달 한 주기.                                                                                                                             |
 
 Sentry의 Traces에서 `service=game-feedback`, `layer=api`를 선택하고 HTTP 라우트 패턴·span 이름별 duration의 p50/p95/p99와 HTTP 상태를 비교한다. 추적 ID로 같은 요청의 HTTP·persist·insert·publish를 연결한다. HTTP와 비동기 publish 시간은 겹칠 수 있고, 구간별 p95를 더해 전체 p95를 계산하지 않는다. 샘플링된 span 개수로 전체 메시지 수나 정확한 요청·SQL 실행 횟수를 주장하지 않는다.
 
 `chat.publish.recipients`는 대상 사용자 수가 아니라 확인한 열린 연결 수다. `sent`는 서버 구독자에 넘긴 연결, `unavailable`은 세션 만료·이미 닫힌 연결, `denied`는 접근 확인이 false를 반환한 연결, `failed`는 전달 과정에서 예외가 난 연결 수다. failed가 하나라도 있으면 publish span을 오류 상태로 표시한다. 접근 확인 자체가 false로 흡수한 오류와 실제 권한 거부는 이 수치만으로 구분하지 않는다. 이 값들도 샘플링된 publish 단위 측정이며 누적 운영 카운터가 아니다.
 
-오래 열린 `GET /api/chat/events`와 health probe는 HTTP span을 만들지 않는다. SSE의 연결 시간은 메시지 지연이 아니다. heartbeat는 기존처럼 5초마다 세션 일괄 조회 한 번으로 동작한다. 활성 연결 수·종료 사유별 재연결률·DB 쿼리 횟수는 아직 별도 운영 지표로 수집하지 않는다.
+오래 열린 `GET /api/chat/events`와 health probe는 HTTP span을 만들지 않는다. SSE의 연결 시간은 메시지 지연이 아니다. heartbeat는 기존처럼 5초마다 세션 일괄 조회 한 번으로 동작한다.
+
+### 샘플링과 독립인 채팅 메트릭
+
+Sentry Application Metrics는 추적 샘플링 10%와 별개로 모든 계측 호출을 기록한다. `game-feedback-server`의 Metrics에서 `service:game-feedback layer:api`와 대상 환경·release를 선택한다. 운영 지표는 `sentry.environment:production`으로 검증용 test 데이터를 제외한다.
+
+| 메트릭                                                | 용도·차원                                                                                                                                                                                                   |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat.http.duration` / `chat.http.requests`           | 목록·메시지 전송/조회·읽음·기록 삭제 HTTP의 지연(ms)과 요청 수. 라우트 템플릿·메서드·상태·`outcome=ok/client_error/server_error/aborted`로 구분한다. 인증·Origin·본문 파싱 전에 거절된 요청도 집계한다.     |
+| `chat.operation.duration` / `chat.operation.failures` | `operation=chat.persist/chat.lock/chat.insert/chat.messages/chat.publish/chat.heartbeat`별 지연과 예외 수. 실패는 `rejected`(4xx 업무 오류), `failed`(내부 실패)를 나눈다.                                  |
+| `chat.send.results`                                   | 커밋된 신규 메시지 `created`와 동일 요청의 멱등 반환 `duplicate`. 신규 메시지 수는 created만 센다.                                                                                                          |
+| `chat.publish.recipients` / `chat.publish.deliveries` | publish마다 열린 대상 연결 수와 `result=sent/unavailable/denied/failed` 연결별 결과. 수신 기기의 실제 표시 성공 수를 뜻하지 않는다.                                                                         |
+| `chat.sse.opened` / `chat.sse.closed`                 | 연결 생성과 종료 수. 종료 이유는 `client_disconnect/session_invalid/session_limit/user_limit/session_closed/user_closed/server_shutdown/heartbeat_failed/delivery_failed`.                                  |
+| `chat.sse.active` / `chat.sse.connection.duration`    | 프로세스의 현재 열린 연결 수와 종료 시 연결 수명(ms). 연결 변화와 5초 heartbeat에서 gauge를 갱신한다. 열림 빈도와 종료 이유를 함께 보고 재연결 이상을 진단하며 같은 사용자의 재연결 횟수로 단정하지 않는다. |
+
+전송 API p95: `metric.name:chat.http.duration http.route:/api/conversations/:id/messages http.request.method:POST outcome:ok`에 `p95(value)`를 조회한다. p99·요청 수와 함께 보고, 느린 구간은 `metric.name:chat.operation.duration`을 operation별로 나눠 찾는다. 5xx 비율은 `chat.http.requests`의 server_error 합계를 전체 합계와 비교한다. HTTP 200 뒤 비동기 전달 실패는 `chat.publish.deliveries result:failed`로 따로 확인한다.
+
+본문·파일명·원본 URL·사용자/대화/메시지 ID는 메트릭 차원에 없다. `beforeSendMetric`과 최종 envelope 정리를 함께 적용해 SDK가 나중에 합치는 scope·사용자·호스트 속성도 제거한다. DB/접근 조회 장애는 정상적인 권한 거부 denied로 숨기지 않고 failed와 정리한 오류 이벤트로 기록한다.
 
 성능 전송은 오류용 `beforeSend`와 별도로 `beforeSendSpan`에서 작업명·라우트 템플릿·상태·유한한 숫자 측정값·추적 ID·SDK/환경/release만 남긴다. 원본 URL·쿼리·메시지·대화/사용자 ID·세션·쿠키·헤더·SQL·span link는 제거한다. span 바깥 envelope의 sampling metadata에도 원래 작업명이 남지 않도록 `createDsc`에서 transaction 이름을 제거한다. 라우트가 결정되기 전 거부된 요청과 알 수 없는 경로는 `unmatched`로 집계한다.
 

@@ -1,6 +1,7 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
 import { sentryDsn, sentryEnvironment } from '../config/env';
+import { performancePrivacyIntegration, scrubPerformanceMetric, scrubPerformanceSpan } from './performance';
 
 const STACK_FRAME = /^\s+at /;
 
@@ -58,7 +59,8 @@ export function sentryOptions(): NodeOptions | undefined {
     dsn,
     initialScope: { tags: { service: 'photo-contest', layer: 'api' } },
     environment: sentryEnvironment(),
-    tracesSampleRate: 0,
+    release: process.env.SENTRY_RELEASE?.trim() || undefined,
+    tracesSampleRate: 0.1,
     dataCollection: {
       userInfo: false,
       cookies: false,
@@ -67,10 +69,14 @@ export function sentryOptions(): NodeOptions | undefined {
       urlQueryParams: false,
       graphQL: { document: false, variables: false },
     },
-    // 자동 계측은 요청 URL(업로드 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
+    // HTTP·GraphQL을 수동 계측해 업로드 토큰·문서·헤더의 자동 수집을 막는다.
     defaultIntegrations: false,
+    enableRuntimeChannelInjection: false,
+    integrations: [performancePrivacyIntegration],
     beforeSend: scrubEvent,
     beforeSendTransaction: scrubEvent,
+    beforeSendSpan: scrubPerformanceSpan,
+    beforeSendMetric: scrubPerformanceMetric,
   };
 }
 

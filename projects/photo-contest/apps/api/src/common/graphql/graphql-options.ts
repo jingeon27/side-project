@@ -5,6 +5,7 @@ import depthLimit from 'graphql-depth-limit';
 import { isProduction } from '../../config/env';
 import { GRAPHQL_MAX_ALIASES, GRAPHQL_MAX_DEPTH, GRAPHQL_MAX_FIELDS } from '../../config/limits';
 import { GRAPHQL_SCHEMA_GLOB } from '../../config/paths';
+import { graphqlPerformancePlugin } from '../../monitoring/graphql-performance.plugin';
 import { ERROR_CODE, ERROR_MESSAGE } from '../errors';
 import { createGraphqlContext } from './graphql-context';
 import { internalErrorReportPlugin } from './internal-error.plugin';
@@ -36,6 +37,7 @@ export async function graphqlOptions(): Promise<ApolloDriverConfig> {
       // 기본 cache control 플러그인이 no-store 미들웨어의 `private, no-store`를 `no-store`로 덮어쓴다.
       ApolloServerPluginCacheControlDisabled(),
       internalErrorReportPlugin(),
+      graphqlPerformancePlugin(),
       publicQueryCachePlugin(),
     ],
     validationRules: [
