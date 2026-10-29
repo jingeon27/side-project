@@ -1,9 +1,11 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
+import { performancePrivacyIntegration, scrubPerformanceSpan } from './performance';
+
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
 const sentryEnvironment = () => process.env.ENVIRONMENT || 'development';
 const sentryRelease = () => process.env.SENTRY_RELEASE;
-const sentryTracesSampleRate = () => 0;
+const sentryTracesSampleRate = () => 0.1;
 
 const STACK_FRAME = /^\s+at /;
 
@@ -71,9 +73,12 @@ export function sentryOptions(): NodeOptions | undefined {
       urlQueryParams: false,
       graphQL: { document: false, variables: false },
     },
-    // 자동 계측은 요청 URL(업로드·OAuth 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
+    // Only explicit HTTP/chat spans are collected; automatic URL/header/SQL instrumentation stays off.
     defaultIntegrations: false,
+    integrations: [performancePrivacyIntegration],
+    enableRuntimeChannelInjection: false,
     beforeSend: scrubEvent,
+    beforeSendSpan: scrubPerformanceSpan,
   };
 }
 
