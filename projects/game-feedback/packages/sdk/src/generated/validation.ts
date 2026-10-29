@@ -2388,6 +2388,8 @@ export const getPostResponseCommentsItemOneCreatedAtRegExp = new RegExp('^(?:(?:
 export const getPostResponseCommentsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const getPostResponseCommentsItemOneParentIdOneMax = 100;
 
+export const getPostResponseCommentsItemOneReplyToIdOneMax = 100;
+
 
 export const getPostResponseCommentsItemOneAuthorIdMax = 100;
 
@@ -2510,6 +2512,7 @@ export const GetPostResponse = zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(getPostResponseCommentsItemOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(getPostResponseCommentsItemOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(getPostResponseCommentsItemOneParentIdOneMax),zod.null()]),
+  "replyToId": zod.union([zod.string().min(1).max(getPostResponseCommentsItemOneReplyToIdOneMax),zod.null()]).optional(),
   "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
@@ -3022,6 +3025,8 @@ export const listPostCommentsResponseItemsItemOneCreatedAtRegExp = new RegExp('^
 export const listPostCommentsResponseItemsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listPostCommentsResponseItemsItemOneParentIdOneMax = 100;
 
+export const listPostCommentsResponseItemsItemOneReplyToIdOneMax = 100;
+
 
 export const listPostCommentsResponseItemsItemOneAuthorIdMax = 100;
 
@@ -3042,6 +3047,7 @@ export const ListPostCommentsResponse = zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(listPostCommentsResponseItemsItemOneParentIdOneMax),zod.null()]),
+  "replyToId": zod.union([zod.string().min(1).max(listPostCommentsResponseItemsItemOneReplyToIdOneMax),zod.null()]).optional(),
   "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
@@ -3089,6 +3095,8 @@ export const createCommentResponseOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d
 export const createCommentResponseOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const createCommentResponseOneParentIdOneMax = 100;
 
+export const createCommentResponseOneReplyToIdOneMax = 100;
+
 
 export const createCommentResponseOneAuthorIdMax = 100;
 
@@ -3107,6 +3115,7 @@ export const CreateCommentResponse = zod.union([zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(createCommentResponseOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(createCommentResponseOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(createCommentResponseOneParentIdOneMax),zod.null()]),
+  "replyToId": zod.union([zod.string().min(1).max(createCommentResponseOneReplyToIdOneMax),zod.null()]).optional(),
   "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
@@ -3149,6 +3158,8 @@ export const updateCommentResponseOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d
 export const updateCommentResponseOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const updateCommentResponseOneParentIdOneMax = 100;
 
+export const updateCommentResponseOneReplyToIdOneMax = 100;
+
 
 export const updateCommentResponseOneAuthorIdMax = 100;
 
@@ -3167,6 +3178,7 @@ export const UpdateCommentResponse = zod.union([zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(updateCommentResponseOneCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(updateCommentResponseOneUpdatedAtRegExp),
   "parentId": zod.union([zod.string().min(1).max(updateCommentResponseOneParentIdOneMax),zod.null()]),
+  "replyToId": zod.union([zod.string().min(1).max(updateCommentResponseOneReplyToIdOneMax),zod.null()]).optional(),
   "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({

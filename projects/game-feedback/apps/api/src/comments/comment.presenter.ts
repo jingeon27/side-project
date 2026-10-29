@@ -12,5 +12,12 @@ export const responseComment = (c: CommentRecord): Comment => {
     updatedAt: c.updatedAt.toISOString(),
   };
   if (c.deletedAt) return { ...shared, parentId: null, isDeleted: true, body: '', author: null };
-  return { ...shared, parentId: c.parentId, isDeleted: false, body: c.body, author: authorDto(c.author) };
+  return {
+    ...shared,
+    parentId: c.parentId,
+    replyToId: c.replyToId,
+    isDeleted: false,
+    body: c.body,
+    author: authorDto(c.author),
+  };
 };

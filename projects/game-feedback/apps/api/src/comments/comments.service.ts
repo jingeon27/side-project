@@ -40,20 +40,32 @@ export class CommentsService {
           select: { authorId: true },
         });
         if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
-        const parentId = input.parentId ?? null;
-        if (parentId) await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${parentId} FOR UPDATE`;
-        const parent = parentId
+        const targetId = input.parentId ?? null;
+        if (targetId) await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${targetId} FOR UPDATE`;
+        const parent = targetId
           ? await tx.comment.findFirst({
-              where: { id: parentId, postId, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-              select: { authorId: true, parentId: true },
+              where: { id: targetId, postId, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+              select: { id: true, authorId: true, parentId: true },
             })
           : null;
-        if (parentId && !parent)
+        if (targetId && !parent)
           throw new ApiError(404, 'COMMENT_NOT_FOUND', '답글을 남길 댓글을 찾을 수 없습니다.');
-        if (parent?.parentId)
-          throw new ApiError(400, 'INVALID_COMMENT_PARENT', '원댓글에 답글을 남겨주세요.');
+        const parentId = parent?.parentId ?? parent?.id ?? null;
+        if (parent?.parentId) {
+          const root = await tx.comment.findFirst({
+            where: {
+              id: parent.parentId,
+              postId,
+              parentId: null,
+              ...ACTIVE_CONTENT,
+              authorId: { notIn: excluded },
+            },
+            select: { id: true },
+          });
+          if (!root) throw new ApiError(404, 'COMMENT_NOT_FOUND', '답글을 남길 댓글을 찾을 수 없습니다.');
+        }
         const row = await tx.comment.create({
-          data: { postId, parentId, authorId: u.id, body: input.body },
+          data: { postId, parentId, replyToId: targetId, authorId: u.id, body: input.body },
           include: { author: { select: authorSelect } },
         });
         const recipients = uniq([post.authorId, ...(parent ? [parent.authorId] : [])]).filter(
