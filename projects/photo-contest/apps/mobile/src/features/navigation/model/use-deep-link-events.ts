@@ -10,12 +10,12 @@ import { LINK_OPTIONS } from './link-options';
  * 소셜 로그인 콜백과 모르는 링크는 toWebPath가 걸러 낸다.
  */
 export function useDeepLinkEvents(onOpenPath: (path: string) => void) {
-  const openPath = useEffectEvent(onOpenPath);
+  const handleOpenPath = useEffectEvent(onOpenPath);
 
   useEffect(() => {
     const subscription = addEventListener('url', ({ url }) => {
       const path = toWebPath(url, LINK_OPTIONS);
-      if (path) openPath(path);
+      if (path) handleOpenPath(path);
     });
     return () => subscription.remove();
   }, []);

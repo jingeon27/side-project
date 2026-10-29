@@ -18,7 +18,7 @@ describe('알림 탭 이동', () => {
     inbox.flush();
     expect(consumed).toHaveBeenCalledTimes(1);
     expect(open).toHaveBeenCalledTimes(2);
-    inbox.notify();
+    inbox.handleNotificationReceived();
     expect(received).toHaveBeenCalledOnce();
   });
   it('외부 주소·인증 콜백·쿼리·알 수 없는 화면을 거부하고 해제 후에는 이동하지 않아야 한다', () => {

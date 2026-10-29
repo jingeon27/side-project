@@ -38,9 +38,9 @@ export function UpdateRequiredPageTemplate({
     });
   }, [minimumVersion]);
 
-  function handleOpenStore() {
+  const handleOpenStore = () => {
     if (storeUrl) void openExternalUrl(storeUrl, null);
-  }
+  };
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
