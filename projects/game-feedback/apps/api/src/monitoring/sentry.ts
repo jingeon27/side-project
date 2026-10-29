@@ -1,5 +1,6 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
+import { chatMetricsPrivacyIntegration, scrubChatMetric } from './chat-metrics';
 import { performancePrivacyIntegration, scrubPerformanceSpan } from './performance';
 
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
@@ -75,10 +76,11 @@ export function sentryOptions(): NodeOptions | undefined {
     },
     // Only explicit HTTP/chat spans are collected; automatic URL/header/SQL instrumentation stays off.
     defaultIntegrations: false,
-    integrations: [performancePrivacyIntegration],
+    integrations: [performancePrivacyIntegration, chatMetricsPrivacyIntegration],
     enableRuntimeChannelInjection: false,
     beforeSend: scrubEvent,
     beforeSendSpan: scrubPerformanceSpan,
+    beforeSendMetric: scrubChatMetric,
   };
 }
 

@@ -55,6 +55,12 @@ const spanSchema = z.object({
   status: z.enum(['ok', 'error']),
   attributes: z.record(z.string(), z.object({ type: z.string(), value: z.unknown() })),
 });
+const metricSchema = z.object({
+  name: z.string(),
+  value: z.number().finite(),
+  unit: z.string().optional(),
+  attributes: z.record(z.string(), z.object({ value: z.unknown() })),
+});
 const invalidationSchema = z.object({ conversationId: z.string().nullable() }).strict();
 type TSpan = z.infer<typeof spanSchema>;
 type TActor = { id: string; cookie: string; token: string };
@@ -66,6 +72,15 @@ function capturedSpans(): TSpan[] {
       if (header.type !== 'span') return [];
       return z.object({ items: z.array(spanSchema) }).parse(payload).items;
     });
+  });
+}
+
+function capturedMetrics() {
+  return envelopes.flatMap((raw) => {
+    const [, items] = envelopeSchema.parse(JSON.parse(raw));
+    return items.flatMap(([header, payload]) =>
+      header.type === 'trace_metric' ? z.object({ items: z.array(metricSchema) }).parse(payload).items : [],
+    );
   });
 }
 
@@ -227,17 +242,13 @@ beforeAll(async () => {
   await seed(db, false);
 }, 30_000);
 
-beforeEach(() => {
-  vi.stubEnv('ENVIRONMENT', 'test');
-  vi.stubEnv('SENTRY_DSN', 'https://monitoring@sentry.invalid/1');
-  vi.stubEnv('SENTRY_RELEASE', 'monitoring-integration');
-  envelopes.length = 0;
+function initMonitoringSentry(tracesSampleRate = 1) {
   const options = sentryOptions();
   if (!options) throw new Error('Expected isolated Sentry options.');
   expect(options.defaultIntegrations).toBe(false);
   Sentry.init({
     ...options,
-    tracesSampleRate: 1,
+    tracesSampleRate,
     spotlight: false,
     transport: () => ({
       send: async (envelope) => {
@@ -247,6 +258,14 @@ beforeEach(() => {
       flush: async () => true,
     }),
   });
+}
+
+beforeEach(() => {
+  vi.stubEnv('ENVIRONMENT', 'test');
+  vi.stubEnv('SENTRY_DSN', 'https://monitoring@sentry.invalid/1');
+  vi.stubEnv('SENTRY_RELEASE', 'monitoring-integration');
+  envelopes.length = 0;
+  initMonitoringSentry();
 });
 
 afterEach(async () => {
@@ -267,6 +286,70 @@ afterAll(async () => {
 });
 
 describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
+  it('추적 샘플링이 0이어도 HTTP 지연·DB 구간·생성과 중복 재전송을 실제 요청별로 수집한다', async () => {
+    await Sentry.close(1000);
+    initMonitoringSentry(0);
+    const app = await createMonitoringApp();
+    try {
+      const sender = await login(app, '메트릭전송자');
+      const recipient = await login(app, '메트릭수신자');
+      const room = await conversation(app, sender, recipient);
+      await Sentry.flush(1000);
+      envelopes.length = 0;
+      const clientMessageId = randomUUID();
+      const send = () =>
+        supertest(app.getHttpServer())
+          .post(`/api/conversations/${room.id}/messages`)
+          .set('Origin', origin)
+          .set('Cookie', sender.cookie)
+          .send({ body: privateBody, clientMessageId })
+          .expect(200);
+      const original = ChatMessageSchema.parse((await send()).body);
+      expect(ChatMessageSchema.parse((await send()).body).id).toBe(original.id);
+      await supertest(app.getHttpServer())
+        .get(`/api/conversations/${room.id}/messages`)
+        .set('Cookie', sender.cookie)
+        .expect(200);
+      await expect
+        .poll(async () => {
+          await Sentry.flush(1000);
+          return capturedMetrics().filter(
+            (metric) =>
+              metric.name === 'chat.operation.duration' &&
+              metric.attributes.operation?.value === 'chat.publish',
+          ).length;
+        })
+        .toBe(2);
+      const metrics = capturedMetrics();
+      expect(capturedSpans()).toHaveLength(0);
+      expect(metrics.filter((metric) => metric.name === 'chat.http.requests')).toHaveLength(3);
+      expect(metrics.filter((metric) => metric.name === 'chat.http.duration')).toHaveLength(3);
+      expect(
+        metrics
+          .filter((metric) => metric.name === 'chat.send.results')
+          .map((metric) => metric.attributes.result?.value),
+      ).toEqual(['created', 'duplicate']);
+      expect(
+        metrics
+          .filter((metric) => metric.name === 'chat.operation.duration')
+          .map((metric) => metric.attributes.operation?.value),
+      ).toEqual(
+        expect.arrayContaining(['chat.persist', 'chat.lock', 'chat.insert', 'chat.messages', 'chat.publish']),
+      );
+      expect(await db.chatMessage.count({ where: { conversationId: room.id } })).toBe(1);
+      expectPrivateTelemetryAbsent([
+        sender.id,
+        recipient.id,
+        room.id,
+        original.id,
+        clientMessageId,
+        sender.cookie,
+      ]);
+    } finally {
+      await app.close();
+    }
+  });
+
   it('HTTP 아래 persist/insert와 커밋 후 publish를 같은 trace로 보내고 비공개 입력은 제거한다', async () => {
     const app = await createMonitoringApp();
     try {
@@ -295,10 +378,11 @@ describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
           senderId: sender.id,
         });
         expect(await stream.nextInvalidation()).toEqual({ conversationId: room.id });
-        const spans = await collectSpans(4);
+        const spans = await collectSpans(5);
         const http = spanNamed(spans, `POST ${messageRoute}`);
         const persist = spanNamed(spans, 'chat.persist');
         const insert = spanNamed(spans, 'chat.insert');
+        const lock = spanNamed(spans, 'chat.lock');
         const publish = spanNamed(spans, 'chat.publish');
         expect(http.attributes['sentry.op']?.value).toBe('http.server');
         expect(http.attributes['http.route']?.value).toBe(messageRoute);
@@ -311,6 +395,8 @@ describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
         expect(new Set(spans.map((span) => span.trace_id))).toEqual(new Set([http.trace_id]));
         expect(persist.parent_span_id).toBe(http.span_id);
         expect(insert.parent_span_id).toBe(persist.span_id);
+        expect(lock.parent_span_id).toBe(persist.span_id);
+        expect(lock.end_timestamp).toBeLessThanOrEqual(insert.start_timestamp);
         expect(publish.parent_span_id).toBe(http.span_id);
         expect(persist.start_timestamp).toBeGreaterThanOrEqual(http.start_timestamp);
         expect(insert.start_timestamp).toBeGreaterThanOrEqual(persist.start_timestamp);
@@ -370,7 +456,7 @@ describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
       envelopes.length = 0;
       const retry = ChatMessageSchema.parse((await send(privateBody).expect(200)).body);
       expect(retry.id).toBe(original.id);
-      const retrySpans = await collectSpans(3);
+      const retrySpans = await collectSpans(4);
       const retryHttp = spanNamed(retrySpans, `POST ${messageRoute}`);
       expect(retrySpans.some((span) => span.name === 'chat.insert')).toBe(false);
       expect(spanNamed(retrySpans, 'chat.persist').parent_span_id).toBe(retryHttp.span_id);
@@ -383,7 +469,7 @@ describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
       expectPrivateTelemetryAbsent([clientMessageId, original.id, room.id, sender.token]);
       envelopes.length = 0;
       await send(`${privateBody} changed`).expect(409);
-      const conflictSpans = await collectSpans(2);
+      const conflictSpans = await collectSpans(3);
       const conflictHttp = spanNamed(conflictSpans, `POST ${messageRoute}`);
       expect(conflictHttp.attributes['http.response.status_code']?.value).toBe(409);
       const persist = spanNamed(conflictSpans, 'chat.persist');
@@ -584,20 +670,21 @@ describe('실제 PostgreSQL·HTTP·SSE의 채팅 성능 계측', () => {
           })),
         ),
       );
-      const spans = await collectSpans(8);
+      const spans = await collectSpans(10);
       const httpSpans = spans.filter((span) => span.name === `POST ${messageRoute}`);
       expect(httpSpans).toHaveLength(2);
       expect(new Set(spans.map((span) => span.trace_id)).size).toBe(2);
       expect(new Set(httpSpans.map((span) => span.trace_id)).size).toBe(2);
       for (const http of httpSpans) {
         const trace = spans.filter((span) => span.trace_id === http.trace_id);
-        expect(trace).toHaveLength(4);
+        expect(trace).toHaveLength(5);
         expect(http.parent_span_id).toBeUndefined();
         expect(http.attributes['http.route']?.value).toBe(messageRoute);
         expect(http.attributes['http.response.status_code']?.value).toBe(200);
         const persist = spanNamed(trace, 'chat.persist');
         expect(persist.parent_span_id).toBe(http.span_id);
         expect(spanNamed(trace, 'chat.insert').parent_span_id).toBe(persist.span_id);
+        expect(spanNamed(trace, 'chat.lock').parent_span_id).toBe(persist.span_id);
         expect(spanNamed(trace, 'chat.publish').parent_span_id).toBe(http.span_id);
       }
       expectPrivateTelemetryAbsent([

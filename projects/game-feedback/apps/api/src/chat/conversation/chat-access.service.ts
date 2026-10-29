@@ -18,8 +18,9 @@ export class ChatAccessService {
       try {
         await this.visible(userId, id);
         return true;
-      } catch {
-        return false;
+      } catch (error) {
+        if (error instanceof ApiError && error.getStatus() < 500) return false;
+        throw error;
       }
     };
   }

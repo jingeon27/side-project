@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { startSpan } from '@sentry/node';
 
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
@@ -8,6 +7,7 @@ import { type TListQueryDto } from '../../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../../common/pagination';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { Prisma, PrismaClient } from '../../generated/prisma';
+import { measureChatOperation, recordChatSend } from '../../monitoring/chat-metrics';
 import { enqueuePush } from '../../push/push.writer';
 import { type TSendMessageDto } from '../chat-input.dto';
 import { messageDto, messageInclude } from '../chat.presenter';
@@ -30,23 +30,25 @@ export class ChatMessageService {
     const conversation = await this.access.visible(user.id, id);
 
     const cursor = decodeCursor(query.cursor);
-    const rows = await this.db.chatMessage.findMany({
-      where: {
-        conversationId: id,
-        AND: [historyWhere(conversation, user.id)],
-        ...(cursor
-          ? {
-              OR: [
-                { createdAt: { lt: cursor.createdAt } },
-                { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-              ],
-            }
-          : {}),
-      },
-      include: messageInclude,
-      take: query.limit + 1,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    });
+    const rows = await measureChatOperation('chat.messages', () =>
+      this.db.chatMessage.findMany({
+        where: {
+          conversationId: id,
+          AND: [historyWhere(conversation, user.id)],
+          ...(cursor
+            ? {
+                OR: [
+                  { createdAt: { lt: cursor.createdAt } },
+                  { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+                ],
+              }
+            : {}),
+        },
+        include: messageInclude,
+        take: query.limit + 1,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      }),
+    );
     return {
       conversation: await this.conversations.present(conversation, user.id),
       items: rows.slice(0, query.limit).map(messageDto),
@@ -58,10 +60,13 @@ export class ChatMessageService {
     const body = input;
     // Authorization precedes idempotency lookup so UUID reuse cannot reveal another conversation.
     await this.access.visible(user.id, id);
-    const result = await startSpan({ name: 'chat.persist', op: 'db.transaction' }, async () => {
+    const result = await measureChatOperation('chat.persist', async () => {
       try {
         return await this.transactions.run(async (tx) => {
-          await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
+          await measureChatOperation(
+            'chat.lock',
+            () => tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`,
+          );
           const conversation = await this.access.visible(user.id, id, tx);
           const previous = await (tx ?? this.db).chatMessage.findUnique({
             where: { senderId_clientMessageId: { senderId: user.id, clientMessageId: body.clientMessageId } },
@@ -85,6 +90,7 @@ export class ChatMessageService {
               throw new ApiError(409, 'MESSAGE_CONFLICT', '이 메시지 요청은 이미 사용되었습니다.');
             return {
               message: previous,
+              created: false,
               peerId:
                 conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,
             };
@@ -111,7 +117,7 @@ export class ChatMessageService {
           });
           // Serialize the pair and keep a strictly increasing timestamp for precise read boundaries.
           const createdAt = new Date(Math.max(Date.now(), (latest?.createdAt.getTime() ?? 0) + 1));
-          const message = await startSpan({ name: 'chat.insert', op: 'db.query' }, () =>
+          const message = await measureChatOperation('chat.insert', () =>
             tx.chatMessage.create({
               data: {
                 conversationId: id,
@@ -142,6 +148,7 @@ export class ChatMessageService {
           });
           return {
             message,
+            created: true,
             peerId,
           };
         });
@@ -152,6 +159,7 @@ export class ChatMessageService {
         throw error;
       }
     });
+    recordChatSend(result.created ? 'created' : 'duplicate');
     // Publish only after the transaction commits. The event contains no message body or sender data.
     void this.events.publish([user.id, result.peerId], id);
     return messageDto(result.message);
