@@ -1,14 +1,26 @@
+import { useSyncExternalStore } from 'react';
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Article } from '@/entities/article/model/types';
+import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
+  useSearchParams: () =>
+    new URLSearchParams(
+      useSyncExternalStore(
+        (callback) => {
+          window.addEventListener('popstate', callback);
+          return () => window.removeEventListener('popstate', callback);
+        },
+        () => window.location.search,
+      ),
+    ),
   usePathname: () => navigation.pathname,
   useRouter: () => ({ push: navigation.push }),
 }));
@@ -54,6 +66,14 @@ const nestedTag: Article = {
 };
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/ko/blog');
+  for (const method of ['replaceState', 'pushState'] as const) {
+    const original = window.history[method].bind(window.history);
+    vi.spyOn(window.history, method).mockImplementation((...args) => {
+      original(...args);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+  }
   localStorage.clear();
   document.documentElement.dataset.theme = 'light';
   document.documentElement.style.removeProperty('color-scheme');
@@ -61,6 +81,30 @@ beforeEach(() => {
 });
 
 describe('article discovery', () => {
+  it('reads URL filters and treats an unknown category as all', () => {
+    window.history.replaceState(null, '', '?q=react&category=unknown');
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    expect(screen.getByRole('combobox')).toHaveValue('react');
+    expect(screen.getByRole('link', { name: other.title })).toBeVisible();
+    expect(screen.queryByRole('link', { name: article.title })).not.toBeInTheDocument();
+  });
+
+  it('preserves unrelated params and hash when updating and clearing URL filters', async () => {
+    window.history.replaceState(null, '', '?ref=mail#archive');
+    const user = userEvent.setup();
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    await user.type(screen.getByRole('combobox'), 'react');
+    expect(new URLSearchParams(window.location.search).get('q')).toBe('react');
+    await user.click(
+      within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /TIL/ }),
+    );
+    expect(new URLSearchParams(window.location.search).get('category')).toBe('til');
+    await user.click(screen.getAllByRole('button', { name: /필터 초기화/ })[0]!);
+    expect(window.location.search).toBe('?ref=mail');
+    expect(window.location.hash).toBe('#archive');
+    expect(screen.getByRole('combobox')).toHaveValue('');
+  });
+
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',
@@ -216,6 +260,21 @@ describe('article discovery', () => {
       expect(search).toHaveAttribute('aria-expanded', 'true');
     },
   );
+
+  it('deduplicates tag suggestions using the same normalization as search', async () => {
+    const user = userEvent.setup();
+    render(
+      <BlogFeed
+        locale="ko"
+        articles={[
+          { ...article, tags: ['React'] },
+          { ...other, tags: ['react'] },
+        ]}
+      />,
+    );
+    await user.type(screen.getByRole('combobox'), 'react');
+    expect(screen.getAllByRole('option', { name: /^#react$/i })).toHaveLength(1);
+  });
 
   it('only suggests matching tags after typing and bounds the menu size', async () => {
     const user = userEvent.setup();

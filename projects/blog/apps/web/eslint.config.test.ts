@@ -15,8 +15,8 @@ describe('FSD layer boundaries', () => {
   it.each([
     ['src/shared/lib/sample.ts', "import { imported } from '@/features/article-search/lib/x';"],
     ['src/shared/lib/sample.ts', "import { imported } from '../../features/article-search/lib/x';"],
-    ['src/shared/ui/mdx/sample.tsx', "import { imported } from '../../../entities/article/lib/x';"],
-    ['src/entities/article/ui/sample.tsx', "import { imported } from '../../../widgets/footer/ui/x';"],
+    ['src/shared/ui/mdx/sample.tsx', "import { imported } from '../../../features/article/ui/x';"],
+    ['src/features/article/ui/sample.tsx', "import { imported } from '../../../widgets/footer/ui/x';"],
     ['src/features/article-search/ui/sample.tsx', "import { imported } from '../../../app/sitemap';"],
     ['src/widgets/footer/ui/sample.tsx', "import { imported } from '../../../app';"],
   ])('blocks %s from importing a higher layer: %s', async (filePath, source) => {
@@ -26,9 +26,9 @@ describe('FSD layer boundaries', () => {
   it.each([
     [
       'src/features/article-search/ui/sample.tsx',
-      "import { imported } from '../../../entities/article/lib/x';",
+      "import { imported } from '../../../shared/article/lib/x';",
     ],
-    ['src/entities/article/ui/sample.tsx', "import { imported } from '../lib/get-articles';"],
+    ['src/features/article/ui/sample.tsx', "import { imported } from '@/shared/article/lib/get-articles';"],
     ['src/widgets/footer/ui/sample.tsx', "import { imported } from '@/shared/config/labels';"],
   ])('allows %s to import the same or a lower layer: %s', async (filePath, source) => {
     expect(await boundaryErrors(filePath, source)).toBe(0);

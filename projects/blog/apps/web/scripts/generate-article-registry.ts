@@ -11,8 +11,8 @@ import { findMissingRedirects, readContent, type ContentArticle } from './conten
 const root = fileURLToPath(new URL('..', import.meta.url));
 const check = process.argv.includes('--check');
 const { articles, imports, redirects } = await readContent(root);
-const lib = path.join(root, 'src/entities/article/lib');
-const indexPath = 'src/entities/article/lib/index.json';
+const lib = path.join(root, 'src/shared/article/lib');
+const indexPath = 'src/shared/article/lib/index.json';
 
 function git(...args: string[]) {
   return execFileSync('git', args, {
@@ -37,7 +37,13 @@ async function readPublishedIndex(): Promise<{ label: string; articles: ContentA
   for (const ref of [...baseRefs.filter(Boolean), 'HEAD'] as string[]) {
     try {
       const base = ref === 'HEAD' ? 'HEAD' : git('merge-base', 'HEAD', ref).trim();
-      return { label: ref, articles: JSON.parse(git('show', `${base}:./${indexPath}`)) };
+      for (const candidate of [indexPath, 'src/entities/article/lib/index.json']) {
+        try {
+          return { label: ref, articles: JSON.parse(git('show', `${base}:./${candidate}`)) };
+        } catch {
+          /* Before the layer migration, published metadata lived under entities. */
+        }
+      }
     } catch {
       /* Shallow clones or missing refs fall through to the next candidate. */
     }

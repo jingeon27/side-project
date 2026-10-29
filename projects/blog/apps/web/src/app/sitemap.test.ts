@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getArticles, getPublishedCategories } from '@/entities/article/lib/get-articles';
-import { categories } from '@/entities/article/model/categories';
+import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-articles';
+import { categories } from '@/shared/article/model/categories';
 import { siteUrl } from '@/shared/config/site';
 
 import sitemap from './sitemap';

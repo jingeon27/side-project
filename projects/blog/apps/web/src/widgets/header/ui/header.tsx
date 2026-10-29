@@ -1,10 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
-import type { Locale } from '@/entities/article/model/types';
+import { uniq } from 'es-toolkit';
+
 import { LocaleSwitch } from '@/features/locale-switch/ui/locale-switch';
 import { ThemeSwitch } from '@/features/theme-switch/ui/theme-switch';
+import { getArticles } from '@/shared/article/lib/get-articles';
+import type { Locale } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 
 import { HeaderNav } from './header-nav';
@@ -14,9 +16,7 @@ export function Header({ locale }: { locale: Locale }) {
   const translations = Object.fromEntries(
     getArticles(locale).map((article) => [article.slug, article.translations]),
   );
-  const targetTags = [
-    ...new Set(getArticles(locale === 'ko' ? 'en' : 'ko').flatMap((article) => article.tags)),
-  ];
+  const targetTags = uniq(getArticles(locale === 'ko' ? 'en' : 'ko').flatMap((article) => article.tags));
   return (
     <>
       <a className="skip-link" href="#main-content">

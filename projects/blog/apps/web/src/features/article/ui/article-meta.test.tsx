@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { Article } from '@/entities/article/model/types';
+import type { Article } from '@/shared/article/model/types';
 
 import { ArticleMeta } from './article-meta';
 

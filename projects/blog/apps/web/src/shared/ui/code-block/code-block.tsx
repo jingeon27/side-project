@@ -31,22 +31,25 @@ export function CodeBlock({
   const [copied, setCopied] = useState(false);
   const locale = useLocale();
   const t = labels(locale === 'en' ? 'en' : 'ko');
-  async function copy() {
-    const lines = highlightedLines(children);
-    const source = lines.length ? `${lines.join('\n')}\n` : textContent(children);
-    try {
-      await navigator.clipboard.writeText(source);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* The code remains selectable when clipboard is unavailable. */
-    }
-  }
   return (
     <div className="code-block">
       <div className="code-toolbar">
         <span>{props['data-language'] ?? 'code'}</span>
-        <button type="button" onClick={copy} aria-label={copied ? t.article.copied : t.article.copyCode}>
+        <button
+          type="button"
+          onClick={async () => {
+            const lines = highlightedLines(children);
+            const source = lines.length ? `${lines.join('\n')}\n` : textContent(children);
+            try {
+              await navigator.clipboard.writeText(source);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            } catch {
+              /* The code remains selectable when clipboard is unavailable. */
+            }
+          }}
+          aria-label={copied ? t.article.copied : t.article.copyCode}
+        >
           <svg
             width="14"
             height="14"

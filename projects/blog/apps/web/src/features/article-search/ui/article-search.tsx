@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Command } from 'cmdk';
+import { uniqBy } from 'es-toolkit';
 
-import type { Article } from '@/entities/article/model/types';
+import type { Article } from '@/shared/article/model/types';
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 import { SearchIcon } from '@/shared/ui/icon';
@@ -32,37 +33,31 @@ export function ArticleSearch({
   const composing = useRef(false);
   const hintId = useId();
   const query = normalizeSearchText(value, locale);
-  const articleResults = useMemo(
-    () => articles.filter((article) => matchesArticleSearch(article, value, locale)).slice(0, query ? 6 : 4),
-    [articles, value, locale, query],
-  );
-  const tagResults = useMemo(() => {
-    const tagQuery = query.startsWith('#') ? query.slice(1).trim() : query;
-    if (!tagQuery) return [];
-    const matching = new Map<string, string>();
-    for (const article of articles) {
-      for (const tag of article.tags) {
-        const normalized = normalizeSearchText(tag, locale);
-        if (normalized.includes(tagQuery) && !matching.has(normalized)) matching.set(normalized, tag);
-      }
-    }
-    return [...matching.values()].slice(0, 5);
-  }, [articles, locale, query]);
+  const articleResults = articles
+    .filter((article) => matchesArticleSearch(article, value, locale))
+    .slice(0, query ? 6 : 4);
+  const tagQuery = query.replace(/^#/, '').trim();
+  const tagResults = tagQuery
+    ? uniqBy(
+        articles.flatMap((article) => article.tags),
+        (tag) => normalizeSearchText(tag, locale),
+      )
+        .filter((tag) => normalizeSearchText(tag, locale).includes(tagQuery))
+        .slice(0, 5)
+    : [];
 
   useEffect(() => {
-    // cmdk 1.1.1 can leave its active descendant stale after mounting or external filtering.
-    const input = inputRef.current;
-    const options = rootRef.current?.querySelectorAll<HTMLElement>('[cmdk-item]');
-    const active = options && [...options].find((option) => option.dataset.value === selection);
-    if (open && active) input?.setAttribute('aria-activedescendant', active.id);
-    else input?.removeAttribute('aria-activedescendant');
-  }, [open, selection, articleResults, tagResults]);
+    // cmdk 1.1.1 does not refresh this ARIA relation when an existing selection gains focus.
+    const active = rootRef.current?.querySelector<HTMLElement>('[cmdk-item][aria-selected="true"]');
+    if (open && active) inputRef.current?.setAttribute('aria-activedescendant', active.id);
+    else inputRef.current?.removeAttribute('aria-activedescendant');
+  }, [open, selection, value]);
 
   useEffect(() => {
-    function outside(event: PointerEvent) {
+    const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false);
-    }
-    function shortcut(event: KeyboardEvent) {
+    };
+    const shortcut = (event: KeyboardEvent) => {
       if (
         !event.isComposing &&
         !composing.current &&
@@ -74,7 +69,7 @@ export function ArticleSearch({
         inputRef.current?.focus();
         setOpen(true);
       }
-    }
+    };
     document.addEventListener('pointerdown', outside);
     document.addEventListener('keydown', shortcut);
     return () => {
@@ -92,10 +87,12 @@ export function ArticleSearch({
       value={selection}
       onValueChange={setSelection}
       loop
+      vimBindings={false}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
       onKeyDownCapture={(event) => {
+        if (!['Enter', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape'].includes(event.key)) return;
         if (composing.current || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
           event.stopPropagation();
           return;
@@ -105,8 +102,8 @@ export function ArticleSearch({
           event.stopPropagation();
           setOpen(false);
         } else if (event.target !== inputRef.current) {
-          if (['Enter', 'ArrowDown', 'ArrowUp'].includes(event.key)) event.stopPropagation();
-        } else if (event.key === 'Enter' && !open) {
+          event.stopPropagation();
+        } else if (!open && event.key === 'Enter') {
           event.preventDefault();
           event.stopPropagation();
         } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -135,7 +132,6 @@ export function ArticleSearch({
             aria-expanded={open}
             aria-keyshortcuts="Meta+K Control+K"
             aria-describedby={open ? hintId : undefined}
-            aria-activedescendant={undefined}
             placeholder={t.common.searchPlaceholder}
             autoComplete="off"
             onFocus={() => setOpen(true)}
@@ -167,7 +163,7 @@ export function ArticleSearch({
           ⌘K / Ctrl K
         </kbd>
       </div>
-      <div className="search-popover" hidden={!open} style={open ? undefined : { display: 'none' }}>
+      <div className="search-popover" hidden={!open}>
         <Command.List label={t.common.searchSuggestions} onMouseDown={(event) => event.preventDefault()}>
           <Command.Empty className="search-empty">{t.common.searchEmpty}</Command.Empty>
           {tagResults.length > 0 && (
@@ -179,7 +175,6 @@ export function ArticleSearch({
                   className="search-option search-option-tag"
                   aria-label={`#${tag}`}
                   onSelect={() => {
-                    if (composing.current) return;
                     onChange(`#${tag}`);
                     trackEvent('tag_selected', { tag_id: tag });
                     setOpen(false);
@@ -199,7 +194,6 @@ export function ArticleSearch({
                   className="search-option"
                   aria-label={article.title}
                   onSelect={() => {
-                    if (composing.current) return;
                     setOpen(false);
                     router.push(`/${locale}/blog/${encodeURIComponent(article.slug)}`);
                   }}

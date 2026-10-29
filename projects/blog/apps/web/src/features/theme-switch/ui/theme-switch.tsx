@@ -39,20 +39,19 @@ export function ThemeSwitch({ locale }: { locale: UiLocale }) {
     applyTheme(getPreferredTheme());
   }, [locale, pathname]);
 
-  function toggle() {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    try {
-      localStorage.setItem('blog-theme', next);
-    } catch {
-      /* Reading works without storage. */
-    }
-    applyTheme(next);
-  }
   return (
     <button
       type="button"
       className="icon-button theme-switch"
-      onClick={toggle}
+      onClick={() => {
+        const next = theme === 'dark' ? 'light' : 'dark';
+        try {
+          localStorage.setItem('blog-theme', next);
+        } catch {
+          /* Reading works without storage. */
+        }
+        applyTheme(next);
+      }}
       aria-label={labels(locale).nav.theme}
       aria-pressed={theme === 'dark'}
     >

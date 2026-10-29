@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import redirects from '../../content/generated-redirects.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
 import ko from '../../messages/ko.json' with { type: 'json' };
-import index from '../../src/entities/article/lib/index.json' with { type: 'json' };
+import index from '../../src/shared/article/lib/index.json' with { type: 'json' };
 
 const articles = index.filter((article) => article.locale === 'ko');
 const article = articles.find((entry) => entry.toc.length > 0) || articles[0]!;
@@ -61,7 +61,7 @@ test('privacy notice is linked from the footer in both locales', async ({ page }
     await expect(page).toHaveURL(new RegExp(`/${locale}/privacy$`));
     await expect(page.getByRole('heading', { level: 1, name: messages.privacy.title })).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(
-      messages.privacy.sections.length + 2,
+      Object.keys(messages.privacy.sections).length + 2,
     );
   }
 });
@@ -563,4 +563,37 @@ test('every published article serves its complete reading page', async ({ reques
     expect(response.status(), `${entry.id}/${entry.locale}`).toBe(200);
     expect(await response.text(), `${entry.id}/${entry.locale}`).toContain('<article class="article-prose">');
   }
+});
+
+test('URL filters survive reload and browser history navigation', async ({ page }) => {
+  await page.goto('/ko/blog?q=react&category=til&ref=mail#archive');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  const filters = page.getByRole('group', { name: ko.common.category });
+  const all = filters.getByRole('button', { name: new RegExp(ko.common.all) });
+  const til = filters.getByRole('button', { name: /TIL/ });
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await all.click();
+  await expect.poll(() => new URL(page.url()).searchParams.has('category')).toBe(false);
+  await page.goBack();
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.goForward();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await search.fill('캐시');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('캐시');
+  await expect(search).toHaveValue('캐시');
+  await search.press('Escape');
+  await page.getByRole('button', { name: ko.common.clearFilters }).first().click();
+  const url = new URL(page.url());
+  expect(url.searchParams.has('q')).toBe(false);
+  expect(url.searchParams.get('ref')).toBe('mail');
+  expect(url.hash).toBe('#archive');
+  await expect(search).toHaveValue('');
+
+  await page.goto('/ko/blog/category/engineering?category=til&q=react');
+  await expect(page.getByRole('group', { name: ko.common.category })).toHaveCount(0);
+  await expect(search).toHaveValue('react');
 });

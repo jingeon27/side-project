@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
 import { AnalyticsTracker } from '@/features/analytics-consent/ui/analytics-tracker';
-import { isLocale, locales } from '@/i18n/routing';
+import { isLocale } from '@/i18n/routing';
 import { siteUrl } from '@/shared/config/site';
 import { serializeJsonLd, websiteJsonLd } from '@/shared/lib/seo/structured-data';
 import { ThemeInitializer } from '@/shared/ui/theme-initializer';
@@ -16,7 +16,7 @@ import '../globals.css';
 
 export const metadata: Metadata = { metadataBase: siteUrl };
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
+  return [{ locale: 'ko' }, { locale: 'en' }];
 }
 export default async function LocaleLayout({
   children,

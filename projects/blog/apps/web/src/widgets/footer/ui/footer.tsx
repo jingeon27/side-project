@@ -1,4 +1,4 @@
-import type { Locale } from '@/entities/article/model/types';
+import type { Locale } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { author } from '@/shared/config/site';
 

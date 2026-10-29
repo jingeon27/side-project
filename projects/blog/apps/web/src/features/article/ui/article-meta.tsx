@@ -1,7 +1,6 @@
+import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { formatDate } from '@/shared/lib/date/format-date';
-
-import type { Article } from '../model/types';
 
 export function ArticleMeta({ article, showUpdated = false }: { article: Article; showUpdated?: boolean }) {
   const t = labels(article.locale);

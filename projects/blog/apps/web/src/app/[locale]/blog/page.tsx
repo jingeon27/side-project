@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';

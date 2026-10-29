@@ -7,8 +7,8 @@ import {
   articleThumbnails,
   defaultArticleThumbnail,
   getArticleThumbnail,
-} from '@/entities/article/lib/article-thumbnails';
-import articles from '@/entities/article/lib/index.json';
+} from '@/shared/article/lib/article-thumbnails';
+import articles from '@/shared/article/lib/index.json';
 
 const publicRoot = path.resolve(process.cwd(), 'public');
 

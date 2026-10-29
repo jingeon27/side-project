@@ -96,24 +96,24 @@
     "title": "Privacy notice",
     "updated": "Effective October 26, 2026",
     "intro": "This blog is read without an account or comments, and collects visit statistics and heatmaps to improve its articles and usability. If you prefer not to be measured, turn collection off for this browser under ‘Turn off collection’ below.",
-    "sections": [
-      {
+    "sections": {
+      "analytics": {
         "heading": "Visit statistics (Google Analytics)",
         "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga."
       },
-      {
+      "heatmaps": {
         "heading": "Heatmaps and session replay (Microsoft Clarity)",
         "body": "The blog records click and scroll positions and page movement to build heatmaps and session replays. The search field is masked. Clarity stores cookies such as _clck and _clsk, and does not set cookies for visitors from the EEA, UK and Switzerland without a consent signal."
       },
-      {
+      "processors": {
         "heading": "Processors and international transfer",
         "body": "Collected information is processed by Google LLC and Microsoft Corporation and may be stored on servers in other countries, including the United States. Advertising storage and ad personalization signals are not used."
       },
-      {
+      "retention": {
         "heading": "Retention",
         "body": "Data is kept for the retention period configured in each service and is then deleted by that service."
       }
-    ],
+    },
     "optOut": {
       "heading": "Turn off collection",
       "body": "Use the button below to turn visit statistics and heatmaps off or back on for this browser. Turning them off deletes the Google Analytics cookies, stops sending data and stops Clarity. Your choice is stored only in this browser."
