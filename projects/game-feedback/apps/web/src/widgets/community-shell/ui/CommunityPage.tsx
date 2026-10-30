@@ -11,8 +11,8 @@ import { RouteViewport } from '@/shared/navigation';
 import { ServiceErrorBoundary } from '@/shared/ui';
 
 import { ChatUnreadContext } from './CommunityShell';
-import { GameBoardNavigation } from './GameBoardNavigation';
-import { LeftSidebar } from './LeftSidebar';
+import { GameBoardNavigation } from './navigation/GameBoardNavigation';
+import { LeftSidebar } from './navigation/LeftSidebar';
 
 export function CommunityPage({
   children,

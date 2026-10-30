@@ -19,7 +19,7 @@ import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { NotificationsTopbar } from './NotificationsTopbar';
-import { PushNotificationSettings } from './PushNotificationSettings';
+import { PushNotificationSettings } from './push-settings/PushNotificationSettings';
 
 interface INotificationsPageProps {
   locale: string;

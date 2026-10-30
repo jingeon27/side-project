@@ -11,10 +11,10 @@ import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, LoadingState } from '@/shared/ui';
 
-import { ChatConnectionStatus } from './ChatConnectionStatus';
-import { ChatWelcome } from './ChatWelcome';
-import { ConversationPane } from './ConversationPane';
-import { ConversationSidebar } from './ConversationSidebar';
+import { ConversationPane } from './conversation/ConversationPane';
+import { ConversationSidebar } from './list/ConversationSidebar';
+import { ChatConnectionStatus } from './status/ChatConnectionStatus';
+import { ChatWelcome } from './status/ChatWelcome';
 
 interface IMessagesPageProps {
   locale: string;

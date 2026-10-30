@@ -7,14 +7,14 @@ const failures = vi.hoisted(() => ({ list: false, pane: false }));
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: { id: 'viewer' } } }),
 }));
-vi.mock('./ChatConnectionStatus', () => ({ ChatConnectionStatus: () => <p>연결 상태 유지</p> }));
-vi.mock('./ConversationSidebar', () => ({
+vi.mock('./status/ChatConnectionStatus', () => ({ ChatConnectionStatus: () => <p>연결 상태 유지</p> }));
+vi.mock('./list/ConversationSidebar', () => ({
   ConversationSidebar: () => {
     if (failures.list) throw new Error('list render failed');
     return <p>정상 대화 목록</p>;
   },
 }));
-vi.mock('./ConversationPane', () => ({
+vi.mock('./conversation/ConversationPane', () => ({
   ConversationPane: ({ conversationId }: { conversationId: string }) => {
     if (failures.pane) throw new Error('pane render failed');
     return <input aria-label={`대화 ${conversationId} 초안`} defaultValue="" />;

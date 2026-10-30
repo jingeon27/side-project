@@ -15,13 +15,13 @@ import { Avatar, ErrorNotice, openOverlay, useNotify } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 import { SupportChatButton } from '@/widgets/support';
 
-import { BlockedUsersSection } from './BlockedUsersSection';
-import { DeleteAccountDialog } from './DeleteAccountDialog';
-import { GameAccountsSection } from './GameAccountsSection';
-import { LanguageSettings } from './LanguageSettings';
-import { MyPosts } from './MyPosts';
+import { DeleteAccountDialog } from './account/DeleteAccountDialog';
+import { BlockedUsersSection } from './blocked-users/BlockedUsersSection';
+import { GameAccountsSection } from './game-accounts/GameAccountsSection';
+import { MyPosts } from './posts/MyPosts';
+import { LanguageSettings } from './preferences/LanguageSettings';
+import { ThemeSettings } from './preferences/ThemeSettings';
 import { SettingsTopbar } from './SettingsTopbar';
-import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
   locale: string;

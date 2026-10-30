@@ -14,7 +14,7 @@ import { LoadingState, useNotify } from '@/shared/ui';
 import { GameProfileLookup } from '@/widgets/game-profile';
 
 import type { TAccountSetupValues } from '../model/account-setup.schema';
-import { AccountSetupForm } from './AccountSetupForm';
+import { AccountSetupForm } from './account-setup/AccountSetupForm';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const client = useQueryClient();

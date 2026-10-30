@@ -13,7 +13,7 @@ description: Game Feedback 웹(apps/web)에서 페이지별 글쓰기·수정 �
 
 ## 편집기
 
-- 글쓰기 제출·이동은 `_pages/compose/ui/CreatePostForm.tsx`, 수정·닫기·새로고침은 `_pages/post/ui/EditPostSheet.tsx`가 소유한다. 두 흐름이 쓰는 `PostContentFields`, `postComposerSchema`, `postContentInput`만 `widgets/post-composer`의 공개 API로 공유한다.
+- 글쓰기 제출·이동은 `_pages/compose/ui/CreatePostForm.tsx`, 수정·닫기·새로고침은 `_pages/post/ui/editor/EditPostSheet.tsx`가 소유한다. 두 흐름이 쓰는 `PostContentFields`, `postComposerSchema`, `postContentInput`만 `widgets/post-composer`의 공개 API로 공유한다.
 
 - `RichTextEditor`(`@/shared/ui`) → `QuillController`(lazy `useState`로 수명 고정) → callback ref `attach`가 `QuillSession`을 만들고 반환한 `dispose`로 정리한다. Quill은 `start()`에서 `await import('quill')`·`./quill-media`로 지연 로드한다. 컴포넌트 상단에서 quill을 import하지 않는다(SSR·첫 번들). CSS는 `_app/styles/tailwind.css`의 `quill/dist/quill.snow.css`(components 레이어)와 `editor.css`다.
 - 로드 실패는 `useSyncExternalStore` 스냅샷을 통해 렌더 중 throw되고, 감싼 `ServiceErrorBoundary title="본문 편집기"`가 받는다. 폼의 다른 입력은 유지된다.

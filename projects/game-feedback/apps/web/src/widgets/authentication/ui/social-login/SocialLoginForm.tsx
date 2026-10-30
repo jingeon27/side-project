@@ -1,0 +1,62 @@
+'use client';
+
+import type { FormEvent } from 'react';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { TSocialProvider } from '@game-feedback/contracts';
+
+import { nativeLoginMutationOptions } from '@/features/auth';
+import { ANALYTICS_EVENT, savePendingLogin, trackEvent } from '@/shared/analytics';
+import { useI18n } from '@/shared/i18n';
+import { isNativeApp } from '@/shared/native';
+import { ErrorNotice } from '@/shared/ui';
+
+import { browserLoginMutationOptions } from '../../model/browser-login.mutation-options';
+import { SocialLoginButton } from './SocialLoginButton';
+
+interface ISocialLoginFormProps {
+  providers: Array<{ provider: TSocialProvider; configured: boolean }>;
+  returnTo: string;
+  onSuccess?: () => void;
+}
+
+export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLoginFormProps) {
+  const client = useQueryClient();
+  const { t } = useI18n();
+  const nativeLogin = useMutation(nativeLoginMutationOptions(client));
+  const browserLogin = useMutation(browserLoginMutationOptions());
+  const pending = nativeLogin.isPending || browserLogin.isPending;
+  const selected = nativeLogin.isPending ? nativeLogin.variables : browserLogin.variables?.provider;
+  const configured = (provider: TSocialProvider) =>
+    providers.some((item) => item.provider === provider && item.configured);
+  const handleSubmit = (event: FormEvent<HTMLFormElement>, provider: TSocialProvider) => {
+    event.preventDefault();
+    if (pending || !configured(provider)) return;
+    savePendingLogin(provider);
+    trackEvent(ANALYTICS_EVENT.LoginProviderSelected, { provider });
+    if (!isNativeApp()) {
+      browserLogin.mutate({ form: event.currentTarget, provider });
+      return;
+    }
+    nativeLogin.mutate(provider, {
+      onSuccess: (result) => {
+        if (result) onSuccess?.();
+      },
+    });
+  };
+  const common = { pending, selected, returnTo, onSubmit: handleSubmit };
+  if (isNativeApp()) return <p className="login-unavailable">로그인은 웹 브라우저에서 이용해 주세요.</p>;
+  const errorMessage = nativeLogin.error?.message ?? browserLogin.error?.message;
+  return (
+    <div className="social-login-methods">
+      <SocialLoginButton {...common} provider="google" configured={configured('google')} />
+      <SocialLoginButton {...common} provider="kakao" configured={configured('kakao')} />
+      <SocialLoginButton {...common} provider="discord" configured={configured('discord')} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
+      {!providers.some((item) => item.configured) && (
+        <p className="login-unavailable">{t('로그인 방법을 준비하고 있어요.')}</p>
+      )}
+    </div>
+  );
+}

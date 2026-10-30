@@ -18,6 +18,8 @@
 
 ## Web FSD 구성
 
+페이지 내부는 기능별 하위 폴더로 구분한다. 상세의 `ui/answers`·`ui/comments/thread`, 채팅의 `ui/list`·`ui/conversation`·`ui/composer`·`ui/history`가 각각 관련 UI와 테스트를 함께 소유한다. 모델은 `model/composer`·`model/history`로 대응하며 공개 진입점과 페이지 조립 파일은 상위에 유지한다.
+
 페이지 전용 조회와 폼·탐색 조립은 `_pages/<screen>`의 `ui`·`model`에 둔다. 프로필 편집과 알림 설정, 가입 폼, 글쓰기·수정의 제출 흐름이 해당한다. 서버 IO·query/mutation options와 재사용할 도메인 표시는 features에 유지하고, 작성·수정이 공유하는 입력·검증은 widgets에 둔다. 사용처가 하나라는 이유만으로 도메인 카드나 동작을 페이지로 옮기지 않는다.
 
 현재 저장소의 공통 ESLint preset에 따라 다음 5레이어를 사용한다. Next의 예약 디렉터리와 구분하기 위해 앱 조합과 화면에 `_app`·`_pages` 이름을 사용한다.

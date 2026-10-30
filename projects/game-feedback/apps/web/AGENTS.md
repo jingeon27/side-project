@@ -29,6 +29,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `lint`는 공유 Next·FSD preset과 앱의 query-key 규칙을 실제 검사한다. `@side/game-feedback check`에도 포함된다. Vitest와 Playwright는 Web이 소유한다.
 
 
+여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
+
 ## 앱 링크·로그인 콜백
 
 - 앱 소셜 로그인 콜백은 `/app-auth/callback`(`src/app/app-auth/callback/route.ts` → `_app/app-links/app-auth-callback.ts`)이다. 앱이 없거나 링크가 검증되지 않아 브라우저에서 열릴 때만 보이며, 요청을 읽지 않고 스크립트·분석·Sentry 없이 "앱에서 계속" 안내만 준다(no-store, `Referrer-Policy: no-referrer`, noindex, 주소창의 코드는 해시 허용 인라인 스크립트로 지운다). Next는 설정 헤더가 있으면 Route Handler의 같은 이름 헤더를 버리므로 `next.config.ts`의 공통 보안 헤더 source에서 이 경로만 뺀다(`next.config.spec.ts`).

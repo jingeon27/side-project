@@ -13,7 +13,7 @@ import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary } from '@/shared/ui';
 import { CommunityPage, Topbar } from '@/widgets/community-shell';
 
-import { ProfileEditForm } from './ProfileEditForm';
+import { ProfileEditForm } from './form/ProfileEditForm';
 
 function ProfileEditor({ userId, locale }: { userId: string; locale: string }) {
   const { data: profile } = useSuspenseQuery(profileOptions(userId));
