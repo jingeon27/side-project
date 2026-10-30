@@ -16,25 +16,48 @@ type MigratedPost = {
   codeSha256: string[];
   images: { path: string; sha256: string }[];
 };
+type CodeRedaction = { originalSha256: string; redactedSha256: string };
 
 describe('published Tistory migration artifacts', () => {
-  it('preserves published code apart from explicitly recorded comment punctuation edits', async () => {
+  it('preserves published code apart from explicitly recorded comment edits and identifier redactions', async () => {
     const manifest = JSON.parse(
       await readFile(path.join(root, '../../docs/migration-manifest.json'), 'utf8'),
     ) as { posts: MigratedPost[] };
     const commentEdits = JSON.parse(
       await readFile(path.join(root, 'content/code-comment-edits.json'), 'utf8'),
     ) as Record<string, { before: string; after: string }[]>;
+    const codeRedactions = JSON.parse(
+      await readFile(path.join(root, 'content/code-redactions.json'), 'utf8'),
+    ) as Record<string, CodeRedaction[]>;
     for (const contentId of Object.keys(commentEdits)) {
       expect(
         manifest.posts.some((post) => post.contentId === contentId),
         contentId,
       ).toBe(true);
     }
+    for (const [contentId, redactions] of Object.entries(codeRedactions)) {
+      const post = manifest.posts.find((entry) => entry.contentId === contentId);
+      expect(post, contentId).toBeDefined();
+      expect(redactions.length, contentId).toBeGreaterThan(0);
+      expect(new Set(redactions.map((entry) => entry.originalSha256)).size, contentId).toBe(
+        redactions.length,
+      );
+      expect(new Set(redactions.map((entry) => entry.redactedSha256)).size, contentId).toBe(
+        redactions.length,
+      );
+      for (const redaction of redactions) {
+        expect(Object.keys(redaction).sort()).toEqual(['originalSha256', 'redactedSha256']);
+        expect(redaction.originalSha256).toMatch(/^[a-f0-9]{64}$/);
+        expect(redaction.redactedSha256).toMatch(/^[a-f0-9]{64}$/);
+        expect(redaction.redactedSha256).not.toBe(redaction.originalSha256);
+        expect(post?.codeSha256, contentId).toContain(redaction.originalSha256);
+      }
+    }
     for (const post of manifest.posts) {
       const source = await readFile(path.join(root, 'content/posts', post.contentId, 'ko.mdx'), 'utf8');
       const { tree } = analyzeMdx(source);
       const edits = commentEdits[post.contentId] ?? [];
+      const redactions = codeRedactions[post.contentId] ?? [];
       const blocks: string[] = [];
       visit(tree, 'code', (node) => {
         blocks.push(node.value);
@@ -48,11 +71,22 @@ describe('published Tistory migration artifacts', () => {
           post.contentId,
         ).toBe(true);
       }
-      const hashes: string[] = [];
-      for (const block of blocks) {
+      const publishedHashes = blocks.map((block) => {
         const original = edits.reduce((value, { before, after }) => value.replaceAll(after, before), block);
-        hashes.push(createHash('sha256').update(original).digest('hex'));
+        return createHash('sha256').update(original).digest('hex');
+      });
+      for (const redaction of redactions) {
+        expect(
+          publishedHashes.filter((hash) => hash === redaction.redactedSha256),
+          post.contentId,
+        ).toHaveLength(1);
       }
+      const hashes = publishedHashes.map((hash, index) => {
+        const redaction = redactions.find((entry) => entry.redactedSha256 === hash);
+        if (!redaction) return hash;
+        expect(redaction.originalSha256, post.contentId).toBe(post.codeSha256[index]);
+        return redaction.originalSha256;
+      });
       expect(hashes, post.sourceUrl).toEqual(post.codeSha256);
     }
   });
