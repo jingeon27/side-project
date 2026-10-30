@@ -27,7 +27,7 @@ export default defineConfig({
             'src/**/*.{spec,test}.ts',
             'test/deployment/*.{spec,test}.ts',
             '../../../../deploy/shared-instance/scripts/sentry-release.spec.ts',
-            '../../../../deploy/shared-instance/scripts/service-ci.spec.ts',
+            '../../../../deploy/shared-instance/scripts/service-ci.{spec,test}.ts',
           ],
           exclude: ['src/**/*.api.{spec,test}.ts', 'src/**/*.browser.{spec,test}.ts'],
         },

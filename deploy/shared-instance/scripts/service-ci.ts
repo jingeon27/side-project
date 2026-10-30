@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
-import { matchesGlob, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 type TService = 'game-feedback' | 'photo-contest';
@@ -38,8 +38,14 @@ export function selectServices({
   files: string[];
   forceAll?: boolean;
 }): ISelection {
+  // 정책은 파일명 또는 디렉터리/**다. Git 경로 매칭처럼 숨김 파일·디렉터리도 포함한다.
   const changed = (service: TService) =>
-    forceAll || files.some((file) => servicePaths(service).some((pattern) => matchesGlob(file, pattern)));
+    forceAll ||
+    files.some((file) =>
+      servicePaths(service).some((pattern) =>
+        pattern.endsWith('/**') ? file.startsWith(pattern.slice(0, -2)) : file === pattern,
+      ),
+    );
   return { gameFeedback: changed('game-feedback'), photoContest: changed('photo-contest') };
 }
 
