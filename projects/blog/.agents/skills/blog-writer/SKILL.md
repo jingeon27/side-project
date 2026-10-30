@@ -1,6 +1,6 @@
 ---
 name: blog-writer
-description: Write and revise this repository's Korean and English blog articles with Diátaxis-informed reader goals, the author's editorial feedback, and verified project evidence. Use for article planning, structural revisions, and prose corrections; not for unrelated application changes.
+description: Write and revise this repository's Korean and English blog articles with reader goals, the author's editorial feedback, and verified project evidence. Use for article planning, structural revisions, and prose corrections; not for unrelated application changes.
 ---
 
 # Blog writer
@@ -17,7 +17,7 @@ description: Write and revise this repository's Korean and English blog articles
 
 새 글이나 큰 개정에서는 [독자 목적별 편집 기준](references/reader-needs.md)을 읽고, 대상 독자가 이미 아는 것과 지금 필요한 것, 글의 핵심 질문, 읽은 뒤 할 수 있거나 이해할 것을 짧게 정한다. 이 판단은 편집에 사용하고 본문에 기획 메모나 분류표를 삽입하지 않는다. 짧은 문장 교정에는 글 전체를 재분류하거나 재구성하지 않는다.
 
-Diátaxis의 튜토리얼, 문제 해결 안내, 참조, 설명 가운데 중심 역할을 고른다. 기술명이나 독자의 경력만으로 유형을 정하지 않는다. 같은 Sentry 주제도 첫 실습, 특정 오류 해결, 설정 조회, 선택 이유 이해에 따라 필요한 글이 달라진다. 개발 경험담과 회고는 독자가 판단의 맥락을 이해하도록 설명의 기준을 활용하되, 경험을 매뉴얼로 바꾸거나 개인적인 회고를 억지로 분류하지 않는다.
+튜토리얼, 문제 해결 안내, 참조, 설명 가운데 중심 역할을 고른다. 기술명이나 독자의 경력만으로 유형을 정하지 않는다. 같은 Sentry 주제도 첫 실습, 특정 오류 해결, 설정 조회, 선택 이유 이해에 따라 필요한 글이 달라진다. 개발 경험담과 회고는 독자가 판단의 맥락을 이해하도록 설명의 기준을 활용하되, 경험을 매뉴얼로 바꾸거나 개인적인 회고를 억지로 분류하지 않는다.
 
 네 유형을 모두 채우거나 사이트 분류와 메타데이터를 늘리는 작업으로 확대하지 않는다. 현재 글에서 독자가 막히는 부분부터 개선한다.
 
