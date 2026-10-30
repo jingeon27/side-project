@@ -31,6 +31,12 @@ yarn dev:photo-contest
 
 아이디·비밀번호로 가입하거나 익명으로 시작합니다. 소셜·개발 닉네임 로그인은 제공하지 않습니다. 다른 브라우저 프로필에서 친구 계정으로 초대 링크를 열어보세요.
 
+## 공개 소개와 디자인
+
+메인 피드는 `/`이고, `/about`와 `/about/how-it-works`는 별도로 제공하는 공개 소개 페이지입니다. 소개 페이지에서는 `AppProviders`의 `SessionSync`와 `DesktopNavigation`을 제외합니다. 시작 링크는 `/sign?next=%2F`를 사용하고 사전 로딩을 꺼서 클릭 전에 인증 API를 요청하지 않습니다. 홈, 탐색과 그룹 화면은 계속 익명 또는 회원 세션을 확인합니다.
+
+공통 디자인 기준은 저장소 루트의 [UI 디자인 스킬](../../../.agents/skills/ui-design/SKILL.md)에 있습니다. 콘텐츠 밀도, 문구, 정렬과 여백, 레퍼런스 선정 기준을 웹과 모바일에서 함께 적용합니다. 피식의 웹 favicon과 공유 이미지, 모바일 아이콘은 같은 오렌지색 얼굴 로고를 사용합니다. 이름 변경은 표시 영역에 적용하며 워크스페이스, 앱 ID와 배포 환경변수는 기술 식별자를 유지합니다.
+
 ## 서비스 정책
 
 이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 contact@bambyul.com은 `apps/web/src/_pages/legal/@page/model/policy.ts`에서 관리합니다.
@@ -58,7 +64,7 @@ yarn workspace @photo-contest/mobile bundle:check
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, private S3 호환 버킷(`S3_BUCKET`과 자격 증명)이 필요합니다. 버킷 CORS에 웹 origin의 POST를 허용합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 
-모든 사진·동영상은 S3 presigned URL로만 오갑니다. 웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost, 기존 대회 제출은 requestUploadUrl → POST → completeSubmissionUpload → createSubmission, 그룹 대표 사진은 requestGroupAvatarUpload → POST → completeGroupAvatarUpload → updateGroupProfile 순서이며 저장소에 세션 쿠키를 보내지 않습니다. POST 정책이 최종 키·형식·정확한 크기를 고정하고 완료는 HEAD로 확인합니다. API는 파일을 받거나 읽거나 변환·중계하지 않으며 메타데이터도 제거하지 않으므로 공개 전에 확인해야 합니다. 게시물·대회 사진·대표 사진의 고정 경로는 매 요청 권한을 확인하고 `private, no-store` 307로 60초 서명 GET에 보냅니다. 서버 HTML·공개 캐시에는 만료되는 주소 대신 고정 경로만 남습니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
+모든 사진·동영상은 S3 presigned URL로만 오갑니다. 웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost, 기존 대회 제출은 requestUploadUrl → POST → completeSubmissionUpload → createSubmission, 그룹 대표 사진은 requestGroupAvatarUpload → POST → completeGroupAvatarUpload → updateGroupProfile 순서이며 저장소에 세션 쿠키를 보내지 않습니다. POST 정책이 최종 키·형식·정확한 크기를 고정하고 완료는 HEAD로 확인합니다. API는 파일을 받거나 읽거나 변환·중계하지 않으며 메타데이터도 제거하지 않으므로 공개 전에 확인해야 합니다. 게시물·대회 사진·대표 사진의 고정 경로는 매 요청 권한을 확인하고 `private, no-store` 307로 서명 GET에 보냅니다(사진 60초, 동영상 10분). 서버 HTML·공개 캐시에는 만료되는 주소 대신 고정 경로만 남습니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
 
 로컬 개발과 통합·브라우저 테스트도 `.env`의 실제 AWS S3 버킷을 사용합니다. `S3_ENDPOINT`는 비우고 버킷·리전·자격 증명을 설정합니다. 별도 S3 서버나 테스트 버킷은 만들지 않습니다. 테스트는 `<S3_KEY_PREFIX>/tests/<실행 ID>/` 경로만 사용하고 종료 시 그 객체만 지웁니다. 단위 테스트는 AWS에 접속하지 않습니다. 필요한 권한·CORS·CI 설정은 [첨부·저장 안내](post-attachments.md#검증)를 따릅니다. 기존 `.data/s3` 파일과 실제 버킷의 기존 데이터는 자동 삭제하거나 이행하지 않습니다.
 
@@ -115,7 +121,7 @@ yarn format:check
 
 실제 네이티브 빌드·실기기의 키보드/그룹/시스템 공유 시트는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](product-plan.md), 코드와 검증 결과는 [구현 기록](implementation.md)을 참고하세요.
 
-새 기능 사양은 단위·통합 모두 `.spec.ts(x)`를 사용합니다. 기존 API `test:e2e` 명령은 `test:integration`에 위임하는 호환 이름입니다. 이번 변경은 `20261020010000_group_contests` 마이그레이션을 포함하며 기존 Contest는 LEGACY, 일반 Post는 contestId=null로 보존합니다.
+새 기능 사양은 단위·통합 모두 `.spec.ts(x)`를 사용합니다. 기존 API `test:e2e` 명령은 `test:integration`에 위임하는 호환 이름입니다. `20261020010000_group_contests`는 그룹 게시물 대회를 추가한 마이그레이션입니다. 기존 Contest는 LEGACY, 일반 Post는 contestId=null로 보존합니다.
 
 공개 SEO 콘텐츠는 Next Data Cache에서 30초, 사이트맵 데이터는 60초 주기로 재검증하며 웹의 쓰기 성공 뒤 즉시 만료시킵니다. 공개 여부·대회 일정과 로그인 사용자별 조회는 매번 확인합니다. 운영 Caddy의 GraphQL 경로도 Web을 거쳐야 하므로 [배포 안내](deployment.md)에 따라 프록시 설정을 함께 갱신합니다. 실제 standalone 캐시 검증은 앱의 test:cache가 소유합니다.
 

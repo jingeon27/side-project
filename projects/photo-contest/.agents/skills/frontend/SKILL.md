@@ -1,6 +1,6 @@
 ---
 name: frontend
-description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바일 레이아웃, Apollo 캐시, 오버레이·폼, 인증 게이트, 앱 브리지 연동을 추가하거나 고칠 때 사용한다.
+description: 피식 웹(apps/web)의 화면·기능 slice 배치, 모바일 레이아웃, Apollo 캐시, 오버레이·폼, 인증 게이트, 앱 브리지 연동을 추가하거나 고칠 때 사용한다.
 ---
 
 ## 레이어 (src 바로 아래, `modules` 단계 없음)
@@ -10,7 +10,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 | `src/app` | Next 라우트 파일만. 화면은 slice 배럴에서 가져온다 | — |
 | `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), shell(레이아웃이 감싸는 공통 틀), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
 | `src/_pages` | 화면 하나 = slice 하나 | `@/_pages/…` |
-| `src/widgets` | 모든 화면에 붙는 UI만(하단 탭·데스크톱 고정 메뉴) | `@/widgets/…` |
+| `src/widgets` | 여러 화면이 공유하는 UI(하단 탭·데스크톱 고정 메뉴·공개 소개 레이아웃) | `@/widgets/…` |
 | `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
 | `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
 
@@ -48,7 +48,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 ## 모바일 레이아웃
 
-- 화면은 `#pc-root` > `main#pc-main`의 화면 전체 폭을 사용하는 반응형 웹 영역에 그린다. 데스크톱 셸에 `max-w-web`을 적용하지 않으며 홈·탐색·MY 목록은 남은 콘텐츠 폭을 채운다. 상시 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 인기 목록을 쓴다. 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 이전 대회 피드의 격자는 유지한다. 오버레이 portal은 `#pc-main`에 둔다. 입력 오버레이는 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 그 이상에서는 중앙 모달로 표시한다. 헤더 X 대신 하단에 취소·제출 버튼을 같은 너비의 가로 행으로 둔다. 일반 화면의 로그인 폼은 `max-w-app`(540px)을 쓴다.
+- 화면은 `#pc-root` > `main#pc-main`의 화면 전체 폭을 사용하는 반응형 웹 영역에 그린다. 데스크톱 셸에 `max-w-web`을 적용하지 않으며 홈 제목·그룹 목록·피드는 남은 콘텐츠 영역의 최대 1152px 안에서 정렬하고 탐색·MY는 각 화면의 읽기 폭을 따른다. 상시 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 인기 목록을 쓴다. 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 이전 대회 피드의 격자는 유지한다. 오버레이 portal은 `#pc-main`에 둔다. 입력 오버레이는 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 그 이상에서는 중앙 모달로 표시한다. 헤더 X 대신 하단에 취소·제출 버튼을 같은 너비의 가로 행으로 둔다. 일반 화면의 로그인 폼은 `max-w-app`(540px)을 쓴다.
 - 높이는 dvh(100vh·min-h-screen 금지). 안전 영역은 브라우저에서 웹이 `env(safe-area-inset-*)`로, 앱 WebView에서는 네이티브가 맡는다(웹이 따로 하지 않는다).
 - 누를 영역 44px 이상(주 버튼 50px), 탭 피드백은 `active:`. 입력 글자 16px 이상(iOS 확대 방지). 확대(pinch)는 막지 않는다.
 - 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.
@@ -62,6 +62,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 ## 인증·이동
 
+- 메인 피드는 `ROUTES.HOME`(`/`)이다. 서비스 소개 `ROUTES.LANDING`(`/about`)와 이용 방법 `ROUTES.HOW_IT_WORKS`(`/about/how-it-works`)는 별도 공개 페이지다. `PUBLIC_LANDING_PATHS`에서 인증·푸시 동기화와 데스크톱 메뉴를 제외하고 공개 레이아웃을 쓴다. 시작 링크는 로그인 뒤 홈으로 돌아가며 `prefetch={false}`로 인증 화면의 사전 요청을 막는다.
 - `src/proxy.ts`가 콘텐츠 화면에서 세션 쿠키(운영 `__Host-contest_session`, 개발 `contest_session`)가 없으면 `/sign?next=<경로>`로 보낸다. AuthSessionSync는 만료된 세션도 같은 화면으로 보낸다. `/sign`은 첫 방문에 익명 시작·로그인·회원가입, 기존 익명 사용자에게는 세션을 유지해 홈으로 돌아가는 익명 계속하기를 제공한다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다.
 - 로그인·로그아웃 뒤에는 `navigateDocument`(문서 이동)로 Apollo 캐시를 버린다. `next`는 `getSafeNextPath`를 거친 같은 origin 상대 경로만 쓴다.
 - 서버 데이터는 라우트 RSC의 `PreloadQuery`(`shared/api/apollo-client.server.ts`, 요청 Cookie 헤더를 API로만 전달)로 받는다. Cookie 원문을 props·캐시·로그에 넣지 않는다.

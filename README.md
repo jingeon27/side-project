@@ -52,7 +52,7 @@ yarn install --immutable
 | 피식      | `yarn dev:photo-contest`                      | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
 | 블로그    | `yarn workspace @blog/web dev`                | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
 
-Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 피식는 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
+Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
 
 | 프로젝트      | 웹              | API  | 개발 / 테스트 DB |
 | ------------- | --------------- | ---- | ---------------- |
@@ -86,7 +86,7 @@ deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 1. `origin/develop`에서 기능 브랜치를 만들고 변경한 앱의 검사를 실행합니다.
 2. PR을 merge commit으로 `develop`에 반영합니다.
 3. 검증한 `develop`을 `main`에 병합합니다. 운영 배포 기준은 `main`입니다.
-4. Game Mate와 피식는 서비스별 GitHub Actions로, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
+4. Game Mate와 피식은 서비스별 GitHub Actions로, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
 
 두 서비스는 EC2의 Caddy와 PostgreSQL 18을 공유하되 DB role과 네트워크를 분리합니다. 미디어는 비공개 S3의 서비스별 prefix에, DB 백업은 별도 버킷에 저장합니다. 배포와 복구 절차는 [EC2 운영 안내](deploy/shared-instance/README.md)를 따릅니다.
 
