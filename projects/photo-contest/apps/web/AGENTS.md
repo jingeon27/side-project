@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 홈 피드는 기존 `/`(`ROUTES.HOME`)를 유지한다. `/about`(서비스 소개)와 `/about/how-it-works`(이용 방법)는 별도 공개 페이지다. 공개 소개는 AppProviders의 SessionSync와 DesktopNavigation을 제외하며 인증 API 없이 읽힌다. 인증 진입 링크에는 prefetch=false를 둔다. 피드·그룹의 기존 세션·권한 검사는 유지한다.
 
-화면·상태·레이어는 `../../.agents/skills/frontend/SKILL.md`, 테스트 격리는 `../../.agents/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
+화면·상태·레이어는 [architecture](../../.agents/skills/photo-contest-web/references/architecture.md), 테스트 격리는 [photo-contest-testing](../../.agents/skills/photo-contest-testing/SKILL.md)를 따른다. 위 Next.js 자동 안내는 유지한다.
 
 여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
 
@@ -52,14 +52,7 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 ## 앱 스킬
 
-| 작업 | 스킬 |
-| --- | --- |
-| 화면·라우트·SSR·로그인 게이트·앱 열 | `.agents/skills/page-structure/SKILL.md` |
-| 문서·정규화 캐시·offset·낙관적 응답 | `.agents/skills/apollo/SKILL.md` |
-| 실제 RHF·Zod 폼과 제출 상태 | `.agents/skills/form/SKILL.md` |
-| 시트·대화상자·뒤로 가기·포커스 | `.agents/skills/overlay/SKILL.md` |
-| Tailwind 토큰·모바일·안전 영역·사진 | `.agents/skills/styling/SKILL.md` |
-| Playwright·격리 서버·외부 경계 | `.agents/skills/e2e/SKILL.md` |
+[photo-contest-web](../../.agents/skills/photo-contest-web/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
 데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 중앙 피드와 오른쪽 인기 목록을 구분한다. 그룹 글쓰기는 상단바에, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 중앙 모달의 폭은 `max-w-6xl`로 확보한다. 댓글 시트는 768px 미만에서 높이 75%로 열리고 높이 조절 손잡이(`BottomSheet.Handle`)를 끌거나 방향키·Home·End로 키보드를 제외한 전체 높이까지 확장한다. 768px부터는 손잡이 없이 화면 높이의 중앙 모달(`tablet:h-full`)이다. 공통 BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하고, 시트 높이는 보이는 화면(visual viewport)을 따르며 스냅 오프셋만큼 안쪽 높이를 줄여 입력창을 화면 안에 둔다. 댓글 Footer에는 취소 대신 입력창만 두고 제목 옆에 "닫기" 버튼을 둔다.
 

@@ -18,11 +18,8 @@
 
 ## 공통 규칙
 
-- 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수의 반환값으로 전달해 재할당을 피한다.
-- else 문은 쓰지 않는다. 가드·조기 반환이나 ts-pattern으로 분기한다. ESLint 구현과 설정은 TypeScript로 작성한다. 공용 ESLint 규칙과 RuleTester fixture는 저장소의 `packages/config/eslint`가 소유한다.
-- named export, 명시적 re-export. `export *` 금지. Next 라우트·설정 파일만 default export.
+- TypeScript·React 구현은 루트 공통 스킬을 따른다. ESLint 설정·규칙과 RuleTester fixture는 packages/config/eslint가 소유한다.
 - 컴포넌트와 공개 함수는 function 선언, 내부 함수는 arrow. 한 곳에서만 쓰는 이벤트 핸들러는 JSX prop에 인라인으로 선언한다. 여러 곳에서 재사용할 때만 함수로 분리하며, 분리한 핸들러는 `handle*`, props 콜백은 `on*`로 이름 짓는다.
-- `interface I*`, `type T*`. enum 대신 `as const`. `any`와 non-null `!` 금지(테스트 제외).
 - 주석은 코드가 말하지 못하는 '왜'만 짧게 한국어로.
 - 생성 파일은 손으로 고치지 않는다: GraphQL 타입은 `codegen`, Prisma client는 `db:generate`.
 - 계약은 한 곳에서 바꾼다: GraphQL은 `apps/api/src/**/*.graphql`(web codegen의 입력), 웹 ↔ 앱 메시지는 `packages/bridge`, DB는 Prisma 마이그레이션.
@@ -45,15 +42,15 @@
 - 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 OWNER만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인·멤버 내보내기(MODERATOR는 MEMBER만)를 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. OWNER는 내보낼 수 없고 양도한 뒤에만 그룹을 나간다. 양도한 OWNER는 MEMBER가 된다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.
 
-## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)
+## 스킬 (진입점에서 필요한 참조만 읽는다)
 
-- 웹 구조·화면·폼·Apollo·오버레이: `.agents/skills/frontend/SKILL.md`
-- API 모듈·권한·대회 규칙·인증: `.agents/skills/contest-api/SKILL.md`
-- 모바일 앱(Expo WebView 셸): `.agents/skills/mobile/SKILL.md`
-- 웹 ↔ 앱 메시지 추가·변경: `.agents/skills/bridge/SKILL.md`
-- Sentry·Amplitude·이벤트 추가: `.agents/skills/monitoring/SKILL.md`
-- 테스트 레인·격리 DB·포트: `.agents/skills/testing/SKILL.md`
-- 커밋 단위·메시지: `.agents/skills/commit/SKILL.md`
+- 웹 구조·화면·폼·Apollo·오버레이: [architecture](.agents/skills/photo-contest-web/references/architecture.md)
+- API 모듈·권한·대회 규칙·인증: [domain](.agents/skills/photo-contest-api/references/domain.md)
+- 모바일 앱(Expo WebView 셸): [overview](.agents/skills/photo-contest-mobile/references/overview.md)
+- 웹 ↔ 앱 메시지 추가·변경: [photo-contest-bridge](.agents/skills/photo-contest-bridge/SKILL.md)
+- Sentry·Amplitude·이벤트 추가: [photo-contest-monitoring](.agents/skills/photo-contest-monitoring/SKILL.md)
+- 테스트 레인·격리 DB·포트: [photo-contest-testing](.agents/skills/photo-contest-testing/SKILL.md)
+- 커밋 단위·메시지·PR: [공통 절차](../../.agents/skills/commit/SKILL.md)
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55432) 프로세스를 끄거나 재시작하지 않는다.
 

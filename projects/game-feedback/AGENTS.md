@@ -26,13 +26,13 @@
 - DB 작업은 프로젝트의 `scripts/db.ts` URL 검증을 거친다. 테스트 정리는 생성한 `gf_test_` 스키마에만 허용한다.
 - `db:stop`은 이 프로젝트가 토큰으로 소유권을 확인한 로컬 DB만 종료한다. 포트 사용자를 임의로 kill하지 않는다.
 - 외부 OAuth·게임 API는 인터페이스 뒤에 둔다. 테스트는 가짜 제공자를 강제한다. 데모 모드는 명시적 실행에만 허용하고 production에서는 거부한다.
-- 앱 소셜 로그인은 시스템 브라우저 + PKCE + 일회용 코드 교환이고, 코드는 검증된 https App Link·Universal Link(`<WEB_ORIGIN>/app-auth/callback`)로만 받는다. 커스텀 스킴 `gamefeedback://`는 로그인 밖의 딥링크에만 쓴다(같은 스킴을 등록한 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다). 웹이 `/.well-known/apple-app-site-association`·`assetlinks.json`을 배포 환경변수로 제공하고, iOS 최소 버전은 17.4다.
+- 현재 모바일은 WebView 쿠키 세션만 사용하며 네이티브 소셜 로그인·App Link 배포 설정은 제거했다. 서버의 기존 app-auth 티켓/콜백 호환 계약을 다룰 때도 HTTPS origin·PKCE·일회 소비·코드 비노출 검증은 보존하되 이를 현재 앱이 지원하는 로그인으로 설명하지 않는다.
 - 인증 정보, 세션 쿠키, Player Tag 원본을 로그에 무분별하게 기록하지 않는다. OAuth는 제공자 식별자 확인에 필요한 최소 scope만 요청한다(Google `openid`, Discord `identify`, 카카오는 scope 없이 `property_keys=[]` 조회). 제공자 subject만 저장하고 이름·사진·이메일을 자동 수집하지 않는다.
 
 ## 검증 및 완료 기록
 
-- Web·Admin 코드 변경과 리뷰에는 `.agents/skills/game-feedback-code-style/SKILL.md`를 적용한다. 각 앱의 `AGENTS.md`와 lint 설정으로 구체적인 경계를 확인한다.
-- 그 스킬의 "satisfies와 ts-pattern" 절은 API·contracts·SDK·bridge를 포함한 Game Feedback TypeScript 전체에 적용한다. 설정·조회표 상수는 `satisfies`로 모양을 검사하고, 같은 판별 값에 대한 3갈래 이상 분기·중첩 삼항·exhaustiveness 없는 switch는 `match(…).exhaustive()`로 쓴다.
+- TypeScript·React는 루트 공통 스킬, Web·Admin의 REST/FSD/폼 조합은 [game-feedback-client](.agents/skills/game-feedback-client/SKILL.md)를 따른다. 각 앱 AGENTS.md의 진입점에서 필요한 참조만 읽는다.
+- 공통 TypeScript 규칙은 API·contracts·SDK·bridge까지 적용한다. 프로젝트별 상태·IO·계약 생성 방식을 공유 규칙 때문에 바꾸지 않는다.
 - 관련 검증 명령과 결과, 확인하지 못한 항목을 완료 기록에 남긴다.
 - 서버 성공 결과와 사용자의 `도움됨` 신호를 중심으로 제품 지표를 정의한다. 프런트 행동 이벤트와 실제 DB 성공 지표를 혼동하지 않는다.
 - API 계약은 서버 Zod 스키마 → OpenAPI → Orval 순서로 생성한다. `apps/api/openapi.json`은 Git에서 제외하고 프로젝트 준비 단계에서 생성한다. SDK 생성 코드는 Git에 포함하며 CI에서 재생성 diff를 검사한다. 생성 파일을 손으로 고치지 않는다. 모든 생성 JSON 요청은 Zod 응답 스키마를 transport에 전달하며 SDK 소유 Vitest로 누락을 검사한다. 응답 fallback은 SDK의 명시적 표시 필드에만 적용하고 원래 계약으로 재검증한다. ID·권한·세션·커서·날짜·본문·목록 오류를 fallback으로 감추지 않는다.
@@ -41,5 +41,5 @@
 - 테스트 파일·Vitest/Playwright 설정·러너 의존성은 API/Web/Mobile 또는 해당 패키지가 소유한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest unit/UI+Playwright native host로 검증한다. 루트·프로젝트 집계와 공통 e2e Workspace에 러너를 두지 않는다. DB URL 가드 테스트는 `scripts/database-guard.ts` 옆에 두고 API의 unit 레인이 수집한다.
 - 루트 Prettier 설정을 사용해 변경 파일의 format을 검사한다. 사용자 제공 원본 계획은 수정하지 않는다.
 - 이전 저장소에서 얻은 테스트 결과를 현재 저장소의 검증으로 기록하지 않는다. 환경과 실제 실행 결과를 구분한다.
-- 로컬 테스트 및 커밋 절차는 `.agents/skills/game-feedback-test/SKILL.md`, `.agents/skills/game-feedback-commit/SKILL.md`를 참고한다.
+- 로컬 테스트는 [game-feedback-testing](.agents/skills/game-feedback-testing/SKILL.md), 커밋·push·PR은 [공통 절차](../../.agents/skills/commit/SKILL.md)를 따른다.
 - 외부 공개·운영 데이터 삭제·다른 서비스 변경은 일반적인 로컬 구현 작업과 구분한다. 사용자 지시에 없는 배포를 완료로 주장하지 않는다.

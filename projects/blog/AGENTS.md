@@ -3,7 +3,7 @@
 - Scope: `projects/blog`; preserve other projects and shared packages.
 - Use the parent Yarn 4 workspace and Node.js 24. Commands delegate to `@blog/web`.
 - Follow FSD: app → widgets → features → shared. Do not create an entities layer; article data and types belong in shared/article, and article presentation belongs in features/article. Never add a `components/` directory.
-- For application code changes and reviews, apply [blog code feedback](.agents/skills/blog-code-feedback/SKILL.md). Keep reusable code feedback there; prose feedback belongs to blog-writer.
+- For application code changes and reviews, apply [blog code feedback](.agents/skills/blog-code-feedback/SKILL.md). Only blog-specific architecture and search rules belong there; shared TypeScript/React rules live at the repository root. Prose feedback belongs to blog-writer.
 - Content is Git-managed MDX. Public metadata lives in `content/posts/<id>/meta.json`; translated titles, slugs, and SEO live in `seo/<locale>.json`. Only publish locales with real MDX.
 - For article writing or prose edits, read [blog-writer](.agents/skills/blog-writer/SKILL.md). Personal prose feedback lives in the optional `~/.agents/skills/blog-writing` skill and applies only to blog writing. The dedicated `blog_writer` agent belongs to this service: [agent definition](.codex/agents/blog_writer.toml).
 - Generate and validate the static registry before building. Keep generated files deterministic; no runtime file-path imports.

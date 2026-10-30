@@ -1,6 +1,6 @@
 # API (NestJS 12 · schema-first GraphQL · Prisma 7)
 
-도메인 규칙과 인증 흐름은 `../../.agents/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.agents/skills/testing/SKILL.md`를 먼저 읽는다.
+도메인 규칙과 인증 흐름은 [domain](../../.agents/skills/photo-contest-api/references/domain.md), 테스트 레인은 [photo-contest-testing](../../.agents/skills/photo-contest-testing/SKILL.md)를 먼저 읽는다.
 
 ## 모듈 지도 (`src`)
 
@@ -62,10 +62,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 ## 앱 스킬
 
-- `.agents/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
-- `.agents/skills/auth/SKILL.md`: Cookie·Origin·익명 세션·아이디 로그인·로그아웃.
-- `.agents/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
-- `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest integration·하네스.
+[photo-contest-api](../../.agents/skills/photo-contest-api/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계를 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 

@@ -47,10 +47,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 앱 스킬
 
-| 작업 | 스킬 |
-| --- | --- |
-| 화면·라우트·페이지 Topbar·첫 문서 데이터·SEO·오류 경계 | `.agents/skills/game-feedback-web-page-structure/SKILL.md` |
-| 링크·뒤로 가기·게시판 문맥·URL 상태·locale·앱 WebView 연동 | `.agents/skills/game-feedback-web-navigation/SKILL.md` |
-| REST 조회·mutation·쿼리 키·계정 전환·채팅 SSE | `.agents/skills/game-feedback-web-server-state/SKILL.md` |
-| 글쓰기·Quill 본문·사진/동영상·채팅 첨부 업로드 | `.agents/skills/game-feedback-web-compose-media/SKILL.md` |
-| Playwright 설정·격리 서버·로그인·한 spec 실행 | `.agents/skills/game-feedback-web-e2e/SKILL.md` |
+[game-feedback-web](../../.agents/skills/game-feedback-web/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.

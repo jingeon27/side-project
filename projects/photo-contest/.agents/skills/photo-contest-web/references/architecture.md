@@ -1,0 +1,69 @@
+# 웹 구조와 상태
+
+## 레이어 (src 바로 아래, `modules` 단계 없음)
+
+| 폴더 | 역할 | import 별칭 |
+| --- | --- | --- |
+| `src/app` | Next 라우트 파일만. 화면은 slice 배럴에서 가져온다 | — |
+| `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), shell(레이아웃이 감싸는 공통 틀), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
+| `src/_pages` | 화면 하나 = slice 하나 | `@/_pages/…` |
+| `src/widgets` | 여러 화면이 공유하는 UI(하단 탭·데스크톱 고정 메뉴·공개 소개 레이아웃) | `@/widgets/…` |
+| `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
+| `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
+
+- 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. 저장소 루트의 `packages/config/eslint/src/fsd-boundaries.ts`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
+- `_app`·`_pages`의 밑줄은 Next `app`·`pages` 라우터와 겹치지 않게 하려는 것이다.
+- 서버 모델을 사용한다는 이유만으로 화면 UI를 features에 두지 않는다. 특정 페이지의 배치·안내·조회 구획을 소유한 섹션과 그 테스트는 `_pages/<screen>/@page/ui`에 두고, 페이지와 독립적인 도메인 표시·동작·계약은 features에 둔다.
+- 배치는 책임으로 결정한다. 화면 전용 조회·폼·탐색 조합과 하위 UI·검증·테스트는 `_pages/<screen>`, 재사용할 도메인 카드·동작과 IO·캐시는 `features/<domain>`, 여러 페이지의 공유 조합은 `widgets`, 도메인 비의존 코드는 `shared`다. 사용처 수는 점검의 단서로만 쓰고 미래의 재사용을 가정한 추상화는 추가하지 않는다.
+- 화면 slice: `@page/<Screen>PageTemplate.tsx`가 조립하고, 화면 전용 조각은 `@page/ui`, `@page/bottom-sheet`, `@page/model`, 섹션 폴더(`@page/results/` 등)에 둔다. 하위 화면이 같이 쓰는 것만 `@ui`·`@model`·`@lib`로 올린다.
+- 같은 `ui`·`model` 안에 독립적인 기능이 여럿 있으면 `ui/categories`, `ui/join-requests`, `model/categories`처럼 책임별 하위 폴더로 묶는다. 주 컴포넌트와 직접 사용하는 하위 UI·테스트를 같은 기능 폴더에 두고, 페이지 진입·조립 파일은 상위에 남긴다. 파일 수만으로 폴더를 만들거나 한 기능의 테스트를 별도 공용 폴더로 흩어 놓지 않는다.
+- feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
+- 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
+
+현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 가입 그룹 목록·생성이며 `/sign`에서 익명·회원 세션을 만든 뒤 `/explore`에서 그룹을 탐색·검색한다. 공개 그룹은 익명 감상, 비공개 그룹은 OWNER·MODERATOR 승인 후 감상이며 가입·글쓰기·반응 상태는 Apollo의 GroupAccess를 읽는다. post feature는 미디어 카드·편집·좋아요·삭제와 정렬별 캐시를 소유하고, 새 게시물의 입력·업로드·제출 흐름은 group-write 페이지가 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+
+## 상태
+
+- 서버 상태는 Apollo 정규화 캐시가 단일 출처다. 받은 데이터를 useState로 복제하지 않는다. 자식에는 DTO 대신 id를 넘기고 같은 Document/fragment로 다시 읽는다.
+- 쿼리 식별자는 codegen Document(+ variables)다. 문자열 `refetchQueries`, `cache.modify`의 필드명 문자열은 `model/*.cache.ts` helper 밖에서 쓰지 않는다(typed `cache.updateQuery`·`cache.evict`).
+- typePolicies는 도메인 파일에 두고 shared에서 Query 필드까지 깊게 합친다. 사진 목록은 `contestId`+`sort`별로 나누고 offset으로 이어 붙인다. 목록에서 빼려면 `cache.evict`(updateQuery는 merge가 되살린다).
+- 조건부 쿼리는 `skipToken`. 
+- **오버레이 열림·mutation 오류를 useState로 들지 않는다(ESLint가 막는다).** 시트·다이얼로그는 `overlay.open(({ isOpen, close, unmount }) => <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />)`로 열고, 진행·실패는 `useMutation`의 `loading`/`error`와 공통 ErrorLink 토스트로 보여 준다. `mutate()`는 try/catch로 감싸고 토스트가 이미 났으면 catch를 비운다.
+- 폼은 `useZodForm(schema)` + `model/*.schema.ts`. 렌더에서 값을 읽을 때는 `useWatch`, 핸들러에서는 `getValues`.
+- 단계(Phase)처럼 닫힌 집합 분기는 ts-pattern `match(...).exhaustive()`, nil 검사는 es-toolkit.
+
+## 모바일 레이아웃
+
+- 화면은 `#pc-root` > `main#pc-main`의 화면 전체 폭을 사용하는 반응형 웹 영역에 그린다. 데스크톱 셸에 `max-w-web`을 적용하지 않으며 홈 제목·그룹 목록·피드는 남은 콘텐츠 영역의 최대 1152px 안에서 정렬하고 탐색·MY는 각 화면의 읽기 폭을 따른다. 상시 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 인기 목록을 쓴다. 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 이전 대회 피드의 격자는 유지한다. 오버레이 portal은 `#pc-main`에 둔다. 입력 오버레이는 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 그 이상에서는 중앙 모달로 표시한다. 헤더 X 대신 하단에 취소·제출 버튼을 같은 너비의 가로 행으로 둔다. 일반 화면의 로그인 폼은 `max-w-app`(540px)을 쓴다.
+- 높이는 dvh(100vh·min-h-screen 금지). 안전 영역은 브라우저에서 웹이 `env(safe-area-inset-*)`로, 앱 WebView에서는 네이티브가 맡는다(웹이 따로 하지 않는다).
+- 누를 영역 44px 이상(주 버튼 50px), 탭 피드백은 `active:`. 입력 글자 16px 이상(iOS 확대 방지). 확대(pinch)는 막지 않는다.
+- 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.
+- 색·글자·그림자·z-index는 `theme.css` 토큰만 쓴다(임의 hex·`!` 유틸 금지).
+
+## 인증·이동
+
+- 메인 피드는 `ROUTES.HOME`(`/`)이다. 서비스 소개 `ROUTES.LANDING`(`/about`)와 이용 방법 `ROUTES.HOW_IT_WORKS`(`/about/how-it-works`)는 별도 공개 페이지다. `PUBLIC_LANDING_PATHS`에서 인증·푸시 동기화와 데스크톱 메뉴를 제외하고 공개 레이아웃을 쓴다. 시작 링크는 로그인 뒤 홈으로 돌아가며 `prefetch={false}`로 인증 화면의 사전 요청을 막는다.
+- `src/proxy.ts`가 콘텐츠 화면에서 세션 쿠키(운영 `__Host-contest_session`, 개발 `contest_session`)가 없으면 `/sign?next=<경로>`로 보낸다. AuthSessionSync는 만료된 세션도 같은 화면으로 보낸다. `/sign`은 첫 방문에 익명 시작·로그인·회원가입, 기존 익명 사용자에게는 세션을 유지해 홈으로 돌아가는 익명 계속하기를 제공한다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다.
+- 로그인·로그아웃 뒤에는 `navigateDocument`(문서 이동)로 Apollo 캐시를 버린다. `next`는 `getSafeNextPath`를 거친 같은 origin 상대 경로만 쓴다.
+- 서버 데이터는 라우트 RSC의 `PreloadQuery`(`shared/api/apollo-client.server.ts`, 요청 Cookie 헤더를 API로만 전달)로 받는다. Cookie 원문을 props·캐시·로그에 넣지 않는다.
+- 내부 경로는 `ROUTES`, 백엔드 경로는 `BACKEND_ROUTES`만 쓴다. 앱 안 기록이 없으면(카톡 링크로 바로 들어온 경우) 뒤로 가기는 상위 화면으로 간다.
+
+## 앱 WebView 연동
+
+- `useBridge()`·`useNativeApp()`(hydration 안전)·`useShareLink()`(앱 → Web Share → 복사)·`useHaptics()`·`useExternalLink()`를 쓴다. 앱이 지원하지 않는 기능(`supports` false)은 웹 기능으로 대신한다.
+- 앱 감지(`html[data-app]`, User-Agent `PhotoContestApp/x.y.z`)는 화면 모양에만 쓰고 권한 판단에 쓰지 않는다.
+- 메시지를 추가·변경할 때는 [bridge](../../photo-contest-bridge/SKILL.md) 스킬을 따른다.
+
+그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 `useIsSSR`·`skipToken`으로 브라우저에서 받는다.
+
+## 터치와 스크롤
+
+PullToRefresh의 거리·복귀 애니메이션은 Motion에 맡긴다. 전체 피드에 drag=y나 touch-action: none/pan-x를 적용해 기본 스크롤·핀치를 막지 않는다. passive:false·중첩 스크롤·핀치 취소를 위한 최소 중재는 유지하고 실제 브라우저 터치 입력으로 검증한다.
+
+## 화면·조회·입력 경계에 관한 사용자 피드백
+
+- 역할·모드별로 서로 다른 훅·조회·mutation이 실행되면 맥락별 로컬 컴포넌트로 나누고 부모는 선택한다. 같은 상태를 공유하며 모양만 다른 갈래, 로딩·오류·빈 상태를 억지로 분리하지 않는다.
+- 페이지는 섹션과 경계를 조립한다. 목록의 로딩·실패가 필터·탭·별도 상세를 가리지 않게 조회 구획별 `AsyncBoundary`를 두고, 조회 조건이 바뀌면 해당 경계만 초기화한다. Apollo의 `useBackgroundQuery` 부모·`QueryRef`·정규화 캐시·RSC `PreloadQuery` 계약은 유지하며 페이지의 조회를 일괄 금지하지 않는다.
+- URL 입력은 화면 경계에서 필드별 스키마·허용 목록으로 검증한다. 잘못된 필드 하나만 기본값으로 되돌리고, 갱신은 원본 URL에 소유한 키만 병합해 다른 필터·상세 키·중복 키·hash를 보존한다.
+- 사진 유지/삭제/교체처럼 의미 있는 DTO→폼 초기값·검증된 폼→요청 변환은 호출부 가까운 순수 helper로 검증한다. File·표시 URL을 JSON에 섞지 않고, 업로드·취소·mutation·캐시 갱신은 실행 흐름에 남긴다. 단순 일대일 복사를 전부 helper로 만들지 않는다.
+- 등록·수정처럼 요청과 초기값이 다른 맥락은 각자 폼을 소유하고 실제 공통 입력 primitive만 조합한다. 한 곳을 위한 범용 모드 prop·공통 훅·전역 추상화를 추가하지 않는다. 기존 RHF/Zod·Base UI를 유지한다.
