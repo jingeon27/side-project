@@ -49,6 +49,10 @@
 
   /* 크기·줄 높이·굵기·자간을 한 토큰으로 묶는다. */
   --text-*: initial;
+  --text-hero: clamp(2.75rem, 5.5vw, 5.5rem);
+  --text-hero--line-height: 1.08;
+  --text-hero--font-weight: 800;
+  --text-hero--letter-spacing: -0.065em;
   --text-display: 1.75rem;
   --text-display--line-height: 1.3;
   --text-display--font-weight: 800;
