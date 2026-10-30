@@ -86,26 +86,31 @@ beforeEach(() => {
 });
 
 describe('unified profile editing', () => {
-  it.each(['unmount', 'discard'])(
-    'stops the remaining save flow after %s during a request',
-    async (action) => {
-      const saved = Promise.withResolvers<PublicProfile>();
-      state.updateProfile.mockReturnValueOnce(saved.promise);
-      const onSaved = renderForm();
-      changeNickname();
-      choosePhoto();
-      save();
-      await waitFor(() => expect(state.updateProfile).toHaveBeenCalledOnce());
-      if (action === 'unmount') cleanup();
-      if (action === 'discard') {
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
-        await act(async () => expect(confirmNavigation()).toBe(true));
-      }
-      await act(async () => saved.resolve(profile));
-      expect(state.uploadAvatar).not.toHaveBeenCalled();
-      expect(onSaved).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    { action: 'unmount', phase: 'details' },
+    { action: 'discard', phase: 'details' },
+    { action: 'unmount', phase: 'photo' },
+    { action: 'discard', phase: 'photo' },
+  ])('stops the remaining save flow after $action during the $phase request', async ({ action, phase }) => {
+    const saved = Promise.withResolvers<PublicProfile>();
+    if (phase === 'details') state.updateProfile.mockReturnValueOnce(saved.promise);
+    if (phase === 'photo') state.uploadAvatar.mockReturnValueOnce(saved.promise);
+    const onSaved = renderForm();
+    changeNickname();
+    choosePhoto();
+    save();
+    await waitFor(() =>
+      expect(phase === 'details' ? state.updateProfile : state.uploadAvatar).toHaveBeenCalledOnce(),
+    );
+    if (action === 'unmount') cleanup();
+    if (action === 'discard') {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      await act(async () => expect(confirmNavigation()).toBe(true));
+    }
+    await act(async () => saved.resolve(profile));
+    expect(state.uploadAvatar).toHaveBeenCalledTimes(phase === 'photo' ? 1 : 0);
+    expect(onSaved).not.toHaveBeenCalled();
+  });
 
   it.each(['details', 'photo'])('confirms leaving with an unsaved %s draft', (section) => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);

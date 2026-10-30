@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useRef, type FormEvent } from 'react';
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button, FormActions } from '@side/design-system';
@@ -18,7 +16,7 @@ import { useZodForm } from '@/shared/model/form';
 import { useUnsavedChanges } from '@/shared/navigation';
 import { ErrorNotice, useNotify } from '@/shared/ui';
 
-import { profileEditSchema } from '../../model/profile-edit.schema';
+import { profileEditSchema, type TProfileEditInput } from '../../model/profile-edit.schema';
 import { ProfileDetailsEditor } from '../details/ProfileDetailsEditor';
 import { ProfilePhotoEditor } from '../photo/ProfilePhotoEditor';
 
@@ -31,8 +29,6 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const { t } = useI18n();
   const notify = useNotify();
   const client = useQueryClient();
-  const submission = useRef<AbortController | null>(null);
-  useEffect(() => () => submission.current?.abort(), []);
   const current = useQuery({ ...profileOptions(profile.author.id), initialData: profile });
   const update = useMutation(updateProfileMutationOptions(client));
   const upload = useMutation(uploadAvatarMutationOptions(client));
@@ -50,38 +46,49 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
     confirm: () =>
       window.confirm(t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?')),
     onDiscard: () => {
-      submission.current?.abort();
-      form.reset();
-    },
-  });
-  const pending = form.formState.isSubmitting;
-  const error = update.error ?? upload.error ?? remove.error;
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) =>
-    form.handleSubmit(async ({ nickname, bio, file, removePhoto }) => {
-      submission.current?.abort();
-      const controller = new AbortController();
-      submission.current = controller;
       update.reset();
       upload.reset();
       remove.reset();
-      try {
-        if (form.formState.dirtyFields.nickname || form.formState.dirtyFields.bio) {
-          const saved = await update.mutateAsync({ nickname, bio });
-          if (controller.signal.aborted) return;
-          form.resetField('nickname', { defaultValue: saved.author.nickname });
-          form.resetField('bio', { defaultValue: saved.bio ?? '' });
-        }
-        if (file) await upload.mutateAsync(file);
-        if (controller.signal.aborted) return;
-        if (removePhoto) await remove.mutateAsync();
-        if (controller.signal.aborted) return;
-        form.reset({ ...form.getValues(), file: undefined, removePhoto: false });
-        notify(t('프로필을 수정했어요.'));
-        onSaved();
-      } catch {
-        return;
-      }
-    })(event);
+      form.reset();
+    },
+  });
+  const pending = form.formState.isSubmitting || update.isPending || upload.isPending || remove.isPending;
+  const error = update.error ?? upload.error ?? remove.error;
+  const handleSaved = () => {
+    form.reset({ ...form.getValues(), file: undefined, removePhoto: false });
+    notify(t('프로필을 수정했어요.'));
+    onSaved();
+  };
+  const handleSaveAvatar = ({ file, removePhoto }: TProfileEditInput) => {
+    if (file) {
+      upload.mutate(file, { onSuccess: handleSaved });
+      return;
+    }
+    if (removePhoto) {
+      remove.mutate(undefined, { onSuccess: handleSaved });
+      return;
+    }
+    handleSaved();
+  };
+  const handleSubmit = form.handleSubmit((input) => {
+    update.reset();
+    upload.reset();
+    remove.reset();
+    if (form.formState.dirtyFields.nickname || form.formState.dirtyFields.bio) {
+      update.mutate(
+        { nickname: input.nickname, bio: input.bio },
+        {
+          onSuccess: (saved) => {
+            form.resetField('nickname', { defaultValue: saved.author.nickname });
+            form.resetField('bio', { defaultValue: saved.bio ?? '' });
+            handleSaveAvatar(input);
+          },
+        },
+      );
+      return;
+    }
+    handleSaveAvatar(input);
+  });
 
   return (
     <form

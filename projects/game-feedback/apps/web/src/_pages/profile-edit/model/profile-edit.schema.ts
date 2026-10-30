@@ -15,8 +15,5 @@ export const profileEditSchema = ProfileDetailsInputSchema.extend({
   removePhoto: z.boolean(),
 });
 
-export type TProfileEditForm = UseFormReturn<
-  z.input<typeof profileEditSchema>,
-  unknown,
-  z.output<typeof profileEditSchema>
->;
+export type TProfileEditInput = z.output<typeof profileEditSchema>;
+export type TProfileEditForm = UseFormReturn<z.input<typeof profileEditSchema>, unknown, TProfileEditInput>;
