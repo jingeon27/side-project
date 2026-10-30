@@ -10,7 +10,7 @@ describe('다운로드 파일명', () => {
   it('한글·이모지 파일명을 RFC 5987로 보내고 헤더에 원문 줄바꿈을 넣지 않아야 한다', () => {
     const name = mediaDownloadFilename('웃긴 순간 😀', 'uuid.webm');
     const disposition = mediaDownloadDisposition(name);
-    expect(disposition).toContain('filename="byeolsadae.webm"');
+    expect(disposition).toContain('filename="pisik.webm"');
     expect(decodeURIComponent(disposition.split("filename*=UTF-8''")[1] ?? '')).toBe(name);
     expect(disposition).not.toMatch(/[\r\n]/);
   });

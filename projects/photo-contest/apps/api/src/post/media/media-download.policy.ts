@@ -13,5 +13,5 @@ export function mediaDownloadDisposition(filename: string): string {
     /['()*]/g,
     (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  return `attachment; filename="byeolsadae.${extension}"; filename*=UTF-8''${encoded}`;
+  return `attachment; filename="pisik.${extension}"; filename*=UTF-8''${encoded}`;
 }
