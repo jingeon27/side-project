@@ -34,6 +34,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 - 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isSessionRequiredPath`, `src/shared/constants/routes.ts`의 `SESSION_PATH_PREFIXES`·`SESSION_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
 - proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). 홈·탐색·그룹·초대도 익명 또는 회원 세션이 필요하다. 세션이 없으면 `/sign?next=…`로 보내고 인증·정책·콜백·API·정적 파일은 제외한다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
 
+## 공개 소개
+
+- 메인은 `/`를 유지한다. `/about`와 `/about/how-it-works`는 각각 `landing`, `how-it-works` 화면 slice에서 조립하고 `widgets/public-layout`을 공유한다.
+- `PUBLIC_LANDING_PATHS`의 소개 페이지는 세션 경로 목록과 proxy matcher에 넣지 않는다. AppProviders는 인증·푸시 동기화를 시작하지 않고 데스크톱 메뉴도 제외한다. 시작 링크는 `/sign?next=%2F`를 가리키며 `prefetch={false}`를 둔다.
+- 이용 방법의 상위 화면은 `/about`다. 소개 화면을 앱에서 바로 열었을 때 뒤로 가기는 네이티브의 종료 확인으로 연결하고 메인 인증으로 강제 이동시키지 않는다.
+
 ## 뒤로 가기·이동·하단 탭
 
 - `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.

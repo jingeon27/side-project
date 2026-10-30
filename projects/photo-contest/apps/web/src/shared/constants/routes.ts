@@ -32,8 +32,6 @@ export const BACKEND_ROUTES = {
   GRAPHQL: '/backend/graphql',
   AUTH_CONFIG: '/backend/auth/config',
   AUTH_LOGOUT: '/backend/auth/logout',
-  AUTH_APP_EXCHANGE: '/backend/auth/app/exchange',
-  AUTH_PROVIDER: (provider: 'google' | 'kakao') => `/backend/auth/${provider}`,
   PUSH_DEVICE_REGISTER: '/backend/push/devices/register',
   PUSH_DEVICE_UNREGISTER: '/backend/push/devices/unregister',
 } as const satisfies Record<string, `/backend/${string}` | ((...args: never[]) => string)>;
