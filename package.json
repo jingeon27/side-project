@@ -70,6 +70,9 @@
   },
   "resolutions": {
     "body-parser": "2.4.0",
+    "multer@npm:2.4.0": "npm:2.5.0",
+    "undici@npm:7.29.1": "npm:7.30.1",
+    "@expo/cli/zod": "4.6.7",
     "@apollo/client-react-streaming@npm:0.14.5": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch",
     "@graphql-tools/utils@npm:12.0.1": "npm:12.0.3",
     "zod@npm:^4.1.12": "patch:zod@npm%3A4.6.7#~/.yarn/patches/zod-npm-4.6.7-93f9f3c3ad.patch",
