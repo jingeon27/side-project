@@ -11,6 +11,18 @@ import { isLocale, LANGUAGE_COOKIE, LOCALE_HEADER, preferredLocale } from '@/sha
 const LOOKUP_PAGE = /^\/(?:ko|en|ja)\/(?:posts|users)\/[^/]+$/;
 const lookupPages = new VisitorRateLimiter(PUBLIC_LOOKUP_PAGES_PER_MINUTE);
 
+function publicRequestUrl(request: NextRequest) {
+  const url = new URL(request.url);
+  const host = request.headers.get('host');
+  if (host) {
+    // URL.host는 포트 없는 호스트를 대입해도 기존 내부 포트를 유지한다.
+    // 먼저 지운 뒤 공개 Host에 명시된 포트만 반영한다.
+    url.port = '';
+    url.host = host;
+  }
+  return url;
+}
+
 function tooManyRequests(retryAfter: number) {
   return new NextResponse('Too Many Requests', {
     status: 429,
@@ -26,8 +38,7 @@ export async function proxy(request: NextRequest) {
     ? candidate
     : preferredLocale(request.cookies.get(LANGUAGE_COOKIE)?.value, request.headers.get('accept-language'));
   if (request.nextUrl.pathname === '/') {
-    const url = new URL(request.url);
-    url.host = request.headers.get('host') ?? url.host;
+    const url = publicRequestUrl(request);
     url.pathname = `/${locale}`;
     for (const key of [...url.searchParams.keys()])
       if (!['q', 'tab'].includes(key)) url.searchParams.delete(key);
@@ -50,8 +61,7 @@ export async function proxy(request: NextRequest) {
       visitor,
     ))
   ) {
-    const url = new URL(request.url);
-    url.host = request.headers.get('host') ?? url.host;
+    const url = publicRequestUrl(request);
     url.pathname = `/${locale}/unavailable`;
     url.search = '';
     const response = NextResponse.rewrite(url, { status: 404 });
