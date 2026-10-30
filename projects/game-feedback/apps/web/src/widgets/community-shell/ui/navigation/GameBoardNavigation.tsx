@@ -1,6 +1,6 @@
 'use client';
 
-import type { Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
 
@@ -19,22 +19,27 @@ import { GameIcon } from './GameIcon';
 interface IGameBoardNavigationProps {
   locale: string;
   path: string;
+  heading?: ReactNode;
 }
-export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps) {
+export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigationProps) {
   const { t } = useI18n();
   const currentChip = useCurrentChipScroll();
   const categories = useQuery(categoryOptions());
   const selected = activeGameBoard(path);
   const route = resolveAppRoute(path);
   const game = categories.data?.find((item) => item.active && item.slug === (route?.game ?? 'clash-royale'));
-  if (!game || !route || !['feed', 'boards'].includes(route.screen)) return null;
+  if (!route || !['feed', 'boards'].includes(route.screen)) return null;
+  if (!game) return <>{heading}</>;
   return (
-    <div className="game-board-navigation">
+    <div className="game-board-navigation" data-has-heading={Boolean(heading) || undefined}>
       <nav className="game-category-group" aria-label={t('{game} 게시판', { game: game.name })}>
-        <div className="game-board-title">
-          <GameIcon slug={game.slug} />
-          <strong>{game.name}</strong>
-          <span>{t('분류')}</span>
+        <div className="game-board-heading">
+          <div className="game-board-title">
+            <GameIcon slug={game.slug} />
+            <strong>{game.name}</strong>
+            {!heading && <span>{t('분류')}</span>}
+          </div>
+          {heading}
         </div>
         <div className="game-board-chips">
           <TabLink

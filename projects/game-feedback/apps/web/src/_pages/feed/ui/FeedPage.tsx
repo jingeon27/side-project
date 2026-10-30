@@ -26,24 +26,17 @@ import { FeedTopbar } from './FeedTopbar';
 function FeedContent({
   locale,
   initialFeed,
+  onCompose,
 }: {
   locale: string;
   initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
+  onCompose: () => void;
 }) {
   const { t } = useI18n();
-  const { session, requireLogin } = useSession();
-  const router = useRouter();
-  const handleCompose = () => {
-    if (!session?.user) {
-      requireLogin();
-      return;
-    }
-    router.push(appRoutes.compose(locale));
-  };
+  const { session } = useSession();
 
   return (
     <section className="feed-section">
-      <FeedFilters onCompose={handleCompose} />
       <AsyncBoundary
         title={t('최신 글')}
         resetKey={session.user?.id}
@@ -52,7 +45,7 @@ function FeedContent({
         pendingFallback={<PostListSkeleton />}
       >
         <Await value={initialFeed}>
-          {(initial) => <FeedResultsRegion locale={locale} onCompose={handleCompose} initialFeed={initial} />}
+          {(initial) => <FeedResultsRegion locale={locale} onCompose={onCompose} initialFeed={initial} />}
         </Await>
       </AsyncBoundary>
     </section>
@@ -156,7 +149,7 @@ function FeedResults({
               post={post}
               href={appRoutes.post(locale, post.id)}
               authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
+              authorContent={<UserBadges author={post.author} compact showTag={false} />}
             />
           </ServiceErrorBoundary>
         ))}
@@ -187,10 +180,23 @@ function FeedResults({
   );
 }
 
-export function FeedPage(props: Parameters<typeof FeedContent>[0]) {
+export function FeedPage(props: Omit<Parameters<typeof FeedContent>[0], 'onCompose'>) {
+  const { session, requireLogin } = useSession();
+  const router = useRouter();
+  const handleCompose = () => {
+    if (!session.user) {
+      requireLogin();
+      return;
+    }
+    router.push(appRoutes.compose(props.locale));
+  };
   return (
-    <CommunityPage locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
-      <FeedContent {...props} />
+    <CommunityPage
+      locale={props.locale}
+      topbar={<FeedTopbar locale={props.locale} />}
+      boardHeading={<FeedFilters onCompose={handleCompose} />}
+    >
+      <FeedContent {...props} onCompose={handleCompose} />
     </CommunityPage>
   );
 }
