@@ -47,6 +47,8 @@ yarn workspace @side/game-feedback dev:test
 
 운영은 EC2 공통 호스트에 배포하며 GitHub Environment `game-feedback-production`을 사용합니다. 테스트 로그인은 운영에서 활성화하지 않습니다. 배포 성공·외부 인증·관측 이벤트 수신은 각각 실제 결과를 확인해야 합니다.
 
+웹의 페이지 전용 폼·조회 조합은 `apps/web/src/_pages`에, 재사용할 도메인 UI·요청·캐시 정책은 features에 둡니다. 상태 모션은 [공통 디자인 시스템](../../packages/design-system/README.md#상태-모션)을 사용합니다.
+
 ## 문서
 
 - [제품과 범위](docs/product.md)

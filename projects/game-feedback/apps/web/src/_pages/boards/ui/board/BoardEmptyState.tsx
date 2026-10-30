@@ -3,6 +3,7 @@
 import { match } from 'ts-pattern';
 
 import type { TBoardKind, TFeedbackStatus } from '@game-feedback/contracts';
+import { StatusAnimation } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
 import { useI18n } from '@/shared/i18n';
@@ -26,6 +27,7 @@ export function BoardEmptyState(props: IBoardEmptyStateProps) {
   const { t } = useI18n();
   return (
     <div className="board-empty">
+      <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
       <p>{t(emptyMessage(props))}</p>
       {props.feedbackStatus && (
         <ButtonLink href={props.allFeedbackHref} variant="secondary" size="sm">

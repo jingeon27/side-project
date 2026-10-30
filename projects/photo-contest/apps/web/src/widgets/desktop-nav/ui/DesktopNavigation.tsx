@@ -6,13 +6,13 @@ import { usePathname } from 'next/navigation';
 
 import { Compass, Heart, House, UserRound } from 'lucide-react';
 
-import { ROUTES } from '@/shared/constants/routes';
+import { PUBLIC_LANDING_PATHS, ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { BrandIcon } from '@/shared/ui/@core/top-app-bar';
 
 /** 세션을 만드는 시작 화면은 메뉴 없이 보여 준다. */
-const PATHS_WITHOUT_NAVIGATION = new Set<string>([ROUTES.SIGN]);
+const PATHS_WITHOUT_NAVIGATION = new Set<string>([ROUTES.SIGN, ...PUBLIC_LANDING_PATHS]);
 
 function NavigationLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
   return (
@@ -49,11 +49,11 @@ export function DesktopNavigation() {
       >
         <Link
           href={ROUTES.HOME}
-          aria-label="별사대 홈"
+          aria-label="피식 홈"
           className="mb-8 flex min-h-touch items-center gap-2.5 px-3 text-title-lg font-extrabold tracking-tighter text-ink active:opacity-60"
         >
           <BrandIcon className="size-8" />
-          별사대
+          피식
         </Link>
         <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
           <House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />홈
@@ -71,10 +71,10 @@ export function DesktopNavigation() {
           알림
         </NavigationLink>
         <div className="mt-auto px-3 text-caption text-subtle">
-          <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
-          <p className="mt-2">웃긴 순간을 나누는 곳</p>
+          <p className="text-label text-muted">혼자 보기 아까운 순간.</p>
+          <p className="mt-2">우리끼리 모으면 더 피식.</p>
           <LegalLinks className="mt-3 gap-x-2" />
-          <p className="mt-6 text-micro">© 별사대</p>
+          <p className="mt-6 text-micro">© 피식</p>
         </div>
       </nav>
     </aside>

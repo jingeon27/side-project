@@ -11,6 +11,14 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('DesktopNavigation', () => {
+  it.each(['/about', '/about/how-it-works'])(
+    '공개 랜딩 %s에서는 앱 메뉴를 그리지 않아야 한다',
+    (pathname) => {
+      navigation.pathname = pathname;
+      const { container } = render(<DesktopNavigation />);
+      expect(container).toBeEmptyDOMElement();
+    },
+  );
   it('홈·탐색·MY·알림을 보여 주고 지금 화면만 aria-current="page"여야 한다', () => {
     navigation.pathname = '/explore';
     const { container } = render(<DesktopNavigation />);

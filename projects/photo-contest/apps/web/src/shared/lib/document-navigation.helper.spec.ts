@@ -22,7 +22,7 @@ describe('navigateDocument', () => {
 
   it('주어진 경로로 문서 전체를 이동해야 한다', () => {
     const location = { assign: vi.fn() };
-    navigateDocument('/backend/auth/google', location);
-    expect(location.assign).toHaveBeenCalledWith('/backend/auth/google');
+    navigateDocument('/sign?next=%2Fgroups%2Fgroup-1', location);
+    expect(location.assign).toHaveBeenCalledWith('/sign?next=%2Fgroups%2Fgroup-1');
   });
 });

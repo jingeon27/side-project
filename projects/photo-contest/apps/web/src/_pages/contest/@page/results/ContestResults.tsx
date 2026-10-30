@@ -8,7 +8,7 @@ import { match } from 'ts-pattern';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { countByRank, RankBadge, ResultBanner } from '@/features/ranking';
+import { countByRank, RankBadge } from '@/features/ranking';
 import { buildResultShareText, useShareActions } from '@/features/share';
 import { SubmissionCard } from '@/features/submission';
 import { ContestResultsDocument, type ContestResultsQuery } from '@/shared/api/generated';
@@ -21,6 +21,7 @@ import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import type { TContestQueryRef } from '../model/contest-query.type';
+import { ResultBanner } from './ResultBanner';
 
 function ResultsContent({
   resultsRef,
@@ -51,7 +52,7 @@ function ResultsContent({
     const method = await shareActions.share(
       window.location.origin + ROUTES.CONTEST(contest.id),
       {
-        title: '별사대 대회 결과',
+        title: '피식 대회 결과',
         text: buildResultShareText(
           contest.title,
           winners.map(({ submission, voteCount }) => ({

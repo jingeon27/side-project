@@ -12,6 +12,8 @@ export { Avatar } from './ui/avatar/Avatar';
 export type { IAvatarProps } from './ui/avatar/Avatar';
 export { Spinner } from './ui/spinner/Spinner';
 export type { ISpinnerProps } from './ui/spinner/Spinner';
+export { StatusAnimation } from './ui/status-animation/StatusAnimation';
+export type { IStatusAnimationProps } from './ui/status-animation/StatusAnimation';
 export { Dialog } from './ui/dialog/Dialog';
 export type { IDialogProps } from './ui/dialog/Dialog';
 export { BottomSheet } from './ui/bottom-sheet/BottomSheet';

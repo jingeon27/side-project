@@ -6,13 +6,7 @@ import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import {
-  FEED_PAGE_SIZE,
-  FeedLoadMore,
-  PHOTO_SORT,
-  SubmissionCard,
-  type TPhotoSort,
-} from '@/features/submission';
+import { FEED_PAGE_SIZE, PHOTO_SORT, SubmissionCard, type TPhotoSort } from '@/features/submission';
 import { VoteButton } from '@/features/vote';
 import { Phase, SubmissionsDocument, type SubmissionsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
@@ -22,6 +16,7 @@ import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import type { TContestQueryRef } from '../model/contest-query.type';
+import { FeedLoadMore } from './FeedLoadMore';
 
 interface IContestFeedProps {
   contestRef: TContestQueryRef;

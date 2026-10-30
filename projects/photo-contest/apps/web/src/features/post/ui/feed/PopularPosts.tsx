@@ -1,7 +1,6 @@
 'use client';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Sparkles } from 'lucide-react';
 
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
@@ -40,10 +39,10 @@ export function PopularPosts({ groupId, preloaded = true }: { groupId?: string; 
   const fallback = <Skeleton className="h-48 w-full" />;
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label="이달의 인기">
-      <h2 className="flex min-h-touch items-center gap-2 text-subtitle text-ink">
-        <Sparkles aria-hidden className="size-5 text-accent-ink" />
-        이달의 인기
-      </h2>
+      <h2 className="flex min-h-touch items-center text-subtitle text-ink">이달의 인기</h2>
+      <p className="-mt-2 mb-2 hidden text-caption text-muted desktop:block">
+        이번 달 좋아요를 많이 받은 순간
+      </p>
       <AsyncBoundary onRetry={refetch} fallback={fallback}>
         {postsRef ? <PopularPostList postsRef={postsRef} /> : fallback}
       </AsyncBoundary>

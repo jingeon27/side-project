@@ -151,7 +151,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!status) return null;
     return {
       to: device.token,
-      title: '웃긴순간',
+      title: '피식',
       body: '새로운 알림이 도착했어요.',
       data: { path: '/notifications', notificationId: job.eventId },
       badge: Math.min(9999, status.badge),

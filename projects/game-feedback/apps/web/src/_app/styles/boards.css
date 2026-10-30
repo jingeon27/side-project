@@ -5,13 +5,40 @@
     gap: 12px;
     margin-bottom: 16px;
   }
+  .game-board-navigation[data-has-heading] {
+    display: flex;
+    margin-bottom: 22px;
+  }
+  .game-board-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .game-board-heading > .feed-heading {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  @media (min-width: 761px) {
+    .game-board-navigation[data-has-heading] .game-board-title,
+    .game-board-navigation[data-has-heading] .game-board-chips {
+      display: none;
+    }
+  }
   @media (max-width: 760px) {
     .game-board-navigation {
       display: flex;
     }
+    .game-board-navigation[data-has-heading] {
+      margin-bottom: 16px;
+    }
+    .game-board-heading > .feed-heading {
+      flex: 0 0 auto;
+    }
   }
   .game-board-title {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: 8px;
     font-size: var(--text-caption);

@@ -34,7 +34,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
   const googleServicesFile = fileURLToPath(new URL('./google-services.json', import.meta.url));
   return {
     ...config,
-    name: '별사대',
+    name: '피식',
     slug: 'photo-contest',
     version: '1.0.0',
     icon: './assets/icon.png',
@@ -54,7 +54,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     },
     android: {
       package: APP_ID,
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#e85d4a' },
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ff9b42' },
       ...(existsSync(googleServicesFile) ? { googleServicesFile } : {}),
       allowBackup: false,
       predictiveBackGestureEnabled: false,

@@ -1,6 +1,6 @@
 ---
 name: game-feedback-web-server-state
-description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가하거나(features/<domain>/api·model 배치, *.options.ts·*.mutation-options.ts, SDK 응답 검증·오류 문구), 서버 초기 데이터를 React Query 캐시에 잇거나, 사용자별 쿼리 키·로그인/로그아웃/계정 전환 캐시 정리·채팅 SSE와 알림 주기 갱신·앱 lint의 queryKey 규칙 오류를 다룰 때 사용한다.
+description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가하거나(features의 도메인별 api·model 배치, *.options.ts·*.mutation-options.ts, SDK 응답 검증·오류 문구), 서버 초기 데이터를 React Query 캐시에 잇거나, 사용자별 쿼리 키·로그인/로그아웃/계정 전환 캐시 정리·채팅 SSE와 알림 주기 갱신·앱 lint의 queryKey 규칙 오류를 다룰 때 사용한다.
 ---
 
 조회 키·mutation options·폼의 일반 규칙은 프로젝트 `game-feedback-code-style`과 앱 `AGENTS.md`, 검증은 `game-feedback-test` 스킬을 따른다. 계약은 서버 Zod → OpenAPI → Orval 순서로 바뀌고(프로젝트 `AGENTS.md`) Web은 생성 SDK만 쓴다. 첫 문서 snapshot 흐름은 `game-feedback-web-page-structure` 스킬이다.
@@ -54,7 +54,7 @@ description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가�
 - 단순히 `useMutation`을 감싸 반환하는 전용 훅은 만들지 않는다. 도메인 정책은 options 팩토리에 두고 호출부가 직접 연결한다. 폼·외부 구독·재전송 같은 기능 흐름을 소유하는 훅도 같은 팩토리를 사용한다.
 
 - `onSuccess`에서 무효화 Promise를 반환해 캐시 갱신이 끝날 때까지 pending을 유지한다. 지운 데이터(대화 기록 삭제)는 `cancelQueries` → `resetQueries` → 목록 무효화 순서다.
-- 채팅 재전송은 직전 실패 `mutation.variables`(같은 본문·첨부)를 다시 보내 `clientMessageId`를 유지하고, 내용이 바뀌면 새 `crypto.randomUUID()`를 만든다(`_pages/messages/model/use-chat-composer.ts`). 읽음은 화면에 보인 마지막 메시지 경계만 보낸다(`use-visible-read.ts`).
+- 채팅 재전송은 직전 실패 `mutation.variables`(같은 본문·첨부)를 다시 보내 `clientMessageId`를 유지하고, 내용이 바뀌면 새 `crypto.randomUUID()`를 만든다(`_pages/messages/model/composer/use-chat-composer.ts`). 읽음은 화면에 보인 마지막 메시지 경계만 보낸다(`use-visible-read.ts`).
 - mutation 단위 테스트는 실제 `QueryClient`로 무효화 범위를 단언한다(`post.options.spec.ts`, `chat.mutation-options.spec.ts`).
 
 ## 확인 (side 루트)

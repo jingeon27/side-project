@@ -1,6 +1,6 @@
 ---
 name: mobile
-description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView 셸)의 WebView 설정, 탐색 정책, 딥링크, Android 뒤로 가기, 버전 확인, 네이티브 기능을 고치거나 실행할 때 사용한다.
+description: 피식 모바일 앱(apps/mobile, Expo React Native WebView 셸)의 WebView 설정, 탐색 정책, 딥링크, Android 뒤로 가기, 버전 확인, 네이티브 기능을 고치거나 실행할 때 사용한다.
 ---
 
 - 앱은 웹(`apps/web`)을 WebView 하나로 감싸는 얇은 셸이다. 화면·기능은 웹에 만들고, 앱에는 웹이 할 수 없는 네이티브 기능(공유 시트, 클립보드, 햅틱, 시스템 브라우저)만 둔다. overlay-kit·ts-pattern 같은 UI·분기 라이브러리를 앱에 넣지 않는다.

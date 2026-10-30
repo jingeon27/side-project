@@ -4,11 +4,11 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, MessageSquare, Plus } from 'lucide-react';
+import { ArrowUpRight, Plus } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Button, StatusAnimation } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
@@ -26,24 +26,17 @@ import { FeedTopbar } from './FeedTopbar';
 function FeedContent({
   locale,
   initialFeed,
+  onCompose,
 }: {
   locale: string;
   initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
+  onCompose: () => void;
 }) {
   const { t } = useI18n();
-  const { session, requireLogin } = useSession();
-  const router = useRouter();
-  const handleCompose = () => {
-    if (!session?.user) {
-      requireLogin();
-      return;
-    }
-    router.push(appRoutes.compose(locale));
-  };
+  const { session } = useSession();
 
   return (
     <section className="feed-section">
-      <FeedFilters onCompose={handleCompose} />
       <AsyncBoundary
         title={t('최신 글')}
         resetKey={session.user?.id}
@@ -52,7 +45,7 @@ function FeedContent({
         pendingFallback={<PostListSkeleton />}
       >
         <Await value={initialFeed}>
-          {(initial) => <FeedResultsRegion locale={locale} onCompose={handleCompose} initialFeed={initial} />}
+          {(initial) => <FeedResultsRegion locale={locale} onCompose={onCompose} initialFeed={initial} />}
         </Await>
       </AsyncBoundary>
     </section>
@@ -136,9 +129,7 @@ function FeedResults({
     <>
       {!posts.length && (
         <div className="empty-feed">
-          <span>
-            <MessageSquare size={30} />
-          </span>
+          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
           <h3>{emptyTitle}</h3>
           <p>
             {q
@@ -158,7 +149,7 @@ function FeedResults({
               post={post}
               href={appRoutes.post(locale, post.id)}
               authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
+              authorContent={<UserBadges author={post.author} compact showTag={false} />}
             />
           </ServiceErrorBoundary>
         ))}
@@ -189,10 +180,23 @@ function FeedResults({
   );
 }
 
-export function FeedPage(props: Parameters<typeof FeedContent>[0]) {
+export function FeedPage(props: Omit<Parameters<typeof FeedContent>[0], 'onCompose'>) {
+  const { session, requireLogin } = useSession();
+  const router = useRouter();
+  const handleCompose = () => {
+    if (!session.user) {
+      requireLogin();
+      return;
+    }
+    router.push(appRoutes.compose(props.locale));
+  };
   return (
-    <CommunityPage locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
-      <FeedContent {...props} />
+    <CommunityPage
+      locale={props.locale}
+      topbar={<FeedTopbar locale={props.locale} />}
+      feedHeading={<FeedFilters onCompose={handleCompose} />}
+    >
+      <FeedContent {...props} onCompose={handleCompose} />
     </CommunityPage>
   );
 }

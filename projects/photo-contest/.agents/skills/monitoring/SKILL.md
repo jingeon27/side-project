@@ -1,6 +1,6 @@
 ---
 name: monitoring
-description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude 제품 이벤트(웹·앱)를 설정하거나 이벤트를 추가할 때 사용한다.
+description: 피식의 Sentry 오류 수집(API·웹·앱)과 Amplitude 제품 이벤트(웹·앱)를 설정하거나 이벤트를 추가할 때 사용한다.
 ---
 
 ## 나눔 (사용자 결정)

@@ -1,6 +1,6 @@
 # 사이드 프로젝트
 
-게임 메이트 서비스 **Game Mate**와 사진 커뮤니티 **별사대**를 개발하는 모노레포입니다. 각 서비스의 웹, API, 모바일 앱을 함께 관리하고, 만들면서 겪은 문제와 기술 선택은 블로그에 기록합니다.
+게임 메이트 서비스 **Game Mate**와 사진 커뮤니티 **피식**를 개발하는 모노레포입니다. 각 서비스의 웹, API, 모바일 앱을 함께 관리하고, 만들면서 겪은 문제와 기술 선택은 블로그에 기록합니다.
 
 ## 서비스
 
@@ -15,7 +15,7 @@
 
 [서비스 열기](https://game.bambyul.com/ko) | [기능 안내](projects/game-feedback/docs/features.md) | [실행과 개발](projects/game-feedback/README.md)
 
-### 별사대
+### 피식
 
 사진과 영상, 링크를 그룹 안에서 나누는 커뮤니티입니다. 그룹은 계속 이용하는 공간으로 두고, 그 안에서 별도의 사진 대회를 열어 투표하고 결과를 돌아볼 수 있습니다.
 
@@ -24,7 +24,7 @@
 - 가입한 그룹의 통합 최신 피드와 이달의 인기 게시물
 - 그룹 대회, 투표와 종료 후 순위
 
-[서비스 열기](https://contest.bambyul.com) | [기능 안내](projects/photo-contest/docs/features.md) | [실행과 개발](projects/photo-contest/README.md)
+[서비스 열기](https://contest.bambyul.com) | [서비스 소개](https://contest.bambyul.com/about) | [기능 안내](projects/photo-contest/docs/features.md) | [실행과 개발](projects/photo-contest/README.md)
 
 두 서비스의 모바일 앱은 Expo WebView로 웹 화면을 공유합니다. 웹 배포와 앱스토어 배포는 각각 진행합니다.
 
@@ -49,10 +49,10 @@ yarn install --immutable
 | 프로젝트  | 개발 서버 실행                                | 로컬 주소                                     | 환경 준비                                               |
 | --------- | --------------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
 | Game Mate | `yarn workspace @side/game-feedback dev:test` | [localhost:3300/ko](http://localhost:3300/ko) | [설정 안내](projects/game-feedback/README.md#빠른-시작) |
-| 별사대    | `yarn dev:photo-contest`                      | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
+| 피식      | `yarn dev:photo-contest`                      | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
 | 블로그    | `yarn workspace @blog/web dev`                | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
 
-Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 별사대는 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
+Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
 
 | 프로젝트      | 웹              | API  | 개발 / 테스트 DB |
 | ------------- | --------------- | ---- | ---------------- |
@@ -67,7 +67,7 @@ Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 
 ```text
 projects/
   game-feedback/        # Game Mate: Next.js, NestJS REST, Expo
-  photo-contest/        # 별사대: Next.js, NestJS GraphQL, Expo
+  photo-contest/        # 피식: Next.js, NestJS GraphQL, Expo
   blog/                 # 개발 기록: Next.js, 다국어 MDX
 packages/
   design-system/        # 공통 UI, 토큰, Storybook
@@ -86,7 +86,7 @@ deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 1. `origin/develop`에서 기능 브랜치를 만들고 변경한 앱의 검사를 실행합니다.
 2. PR을 merge commit으로 `develop`에 반영합니다.
 3. 검증한 `develop`을 `main`에 병합합니다. 운영 배포 기준은 `main`입니다.
-4. Game Mate와 별사대는 Services Actions에서 검사하고 서비스별로 배포하며, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
+4. Game Mate와 피식은 Services Actions에서 검사하고 서비스별로 배포하며, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
 
 두 서비스는 EC2의 Caddy와 PostgreSQL 18을 공유하되 DB role과 네트워크를 분리합니다. 미디어는 비공개 S3의 서비스별 prefix에, DB 백업은 별도 버킷에 저장합니다. 배포와 복구 절차는 [EC2 운영 안내](deploy/shared-instance/README.md)를 따릅니다.
 
@@ -94,11 +94,11 @@ deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 
 - [공통 설치, 포맷, hook, worktree와 검사](docs/development.md)
 - [Game Mate 제품 범위](projects/game-feedback/docs/product.md)
-- [별사대 기능과 이용 흐름](projects/photo-contest/docs/features.md)
-- [공유 UI와 디자인 시스템](packages/design-system/README.md)
+- [피식 기능과 이용 흐름](projects/photo-contest/docs/features.md)
+- [공유 UI와 디자인 시스템](packages/design-system/README.md), [UI 디자인 기준](.agents/skills/ui-design/SKILL.md)
 - [블로그 콘텐츠 작성](projects/blog/README.md#콘텐츠-작성)과 [배포 설정](projects/blog/docs/deployment.md)
 - [EC2 운영과 복구](deploy/shared-instance/README.md), [Terraform](deploy/shared-instance/terraform/README.md)
 
-현재 실행과 배포 방법은 각 README와 배포 가이드에, 이전 결정과 검증 결과는 프로젝트의 `docs/implementation.md`와 legacy 기록에 남깁니다.
+현재 실행과 배포 방법은 각 README와 배포 가이드에, 이전 결정과 검증 결과는 프로젝트의 `docs/implementation.md`에 남깁니다.
 
 밤별(Bambyul)은 제 이름의 ‘별 진’과 ‘하늘 건’에서 따온 이름입니다.

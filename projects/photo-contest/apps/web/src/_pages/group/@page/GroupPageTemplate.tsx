@@ -18,12 +18,12 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { NotificationBell } from '@/widgets/notification-bell';
 
-import { parseGroupCategory } from './model/category-search.schema';
+import { parseGroupCategory } from './model/categories/category-search.schema';
 import type { TGroupQueryRef } from './model/group-query.type';
-import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
-import { GroupIdentity } from './ui/GroupIdentity';
+import { PrivateGroupNotice } from './ui/access/PrivateGroupNotice';
+import { GroupCategoryFilter } from './ui/categories/GroupCategoryFilter';
 import { GroupSidebar } from './ui/GroupSidebar';
-import { PrivateGroupNotice } from './ui/PrivateGroupNotice';
+import { GroupIdentity } from './ui/header/GroupIdentity';
 
 function GroupFrame({
   title = '그룹',

@@ -1,6 +1,6 @@
 ---
 name: game-feedback-web-compose-media
-description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/post-composer), Quill Delta 본문 편집기와 허용 서식, 공개 본문 렌더(RichTextBody), 게시글 사진·동영상 삽입과 채팅 첨부 업로드(S3 직접 전송), 실패 시 초안·첨부·재전송 보존, 채팅 입력 키 동작을 만들거나 고칠 때 사용한다.
+description: Game Feedback 웹(apps/web)에서 페이지별 글쓰기·수정 폼과 공유 입력(widgets/post-composer), Quill Delta 본문 편집기와 허용 서식, 공개 본문 렌더(RichTextBody), 게시글 사진·동영상 삽입과 채팅 첨부 업로드(S3 직접 전송), 실패 시 초안·첨부·재전송 보존, 채팅 입력 키 동작을 만들거나 고칠 때 사용한다.
 ---
 
 폼(RHF+Zod `useZodForm`)·mutation 일반 규칙은 프로젝트 `game-feedback-code-style`, 검증은 `game-feedback-test` 스킬을 따른다. 캐시·재전송 키는 `game-feedback-web-server-state` 스킬이다. 저장소 설정·S3 CORS는 `projects/game-feedback/docs/media-upload.md`.
@@ -12,6 +12,8 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 - 렌더는 `shared/ui/rich-text/RichTextBody.tsx`(서버에서도 동작, `dangerouslySetInnerHTML` 없음)가 Delta를 React 요소로 만든다. 링크는 `target="_blank" rel="nofollow ugc noopener noreferrer"`, 이미지는 `next/image` `unoptimized`(쿠키 인증 같은 origin), 동영상은 native `<video controls playsInline preload="metadata">`다. `document`가 없으면 평문으로 그린다.
 
 ## 편집기
+
+- 글쓰기 제출·이동은 `_pages/compose/ui/CreatePostForm.tsx`, 수정·닫기·새로고침은 `_pages/post/ui/editor/EditPostSheet.tsx`가 소유한다. 두 흐름이 쓰는 `PostContentFields`, `postComposerSchema`, `postContentInput`만 `widgets/post-composer`의 공개 API로 공유한다.
 
 - `RichTextEditor`(`@/shared/ui`) → `QuillController`(lazy `useState`로 수명 고정) → callback ref `attach`가 `QuillSession`을 만들고 반환한 `dispose`로 정리한다. Quill은 `start()`에서 `await import('quill')`·`./quill-media`로 지연 로드한다. 컴포넌트 상단에서 quill을 import하지 않는다(SSR·첫 번들). CSS는 `_app/styles/tailwind.css`의 `quill/dist/quill.snow.css`(components 레이어)와 `editor.css`다.
 - 로드 실패는 `useSyncExternalStore` 스냅샷을 통해 렌더 중 throw되고, 감싼 `ServiceErrorBoundary title="본문 편집기"`가 받는다. 폼의 다른 입력은 유지된다.

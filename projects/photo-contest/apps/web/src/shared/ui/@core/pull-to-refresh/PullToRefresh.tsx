@@ -14,7 +14,7 @@ import { Mutex } from 'es-toolkit';
 import { RefreshCw } from 'lucide-react';
 import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 
-import { cn } from '../../../lib/cn.helper';
+import { Spinner } from '../spinner/Spinner';
 
 const REFRESH_DISTANCE = 64;
 const MAX_PULL_DISTANCE = 96;
@@ -143,7 +143,7 @@ export function PullToRefresh({
       >
         {phase !== 'idle' ? (
           <>
-            <RefreshCw aria-hidden className={cn('size-4', pending && !reducedMotion && 'animate-spin')} />
+            {pending ? <Spinner className="size-4" /> : <RefreshCw aria-hidden className="size-4" />}
             {pending ? '새로고침 중' : phase === 'ready' ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
           </>
         ) : null}

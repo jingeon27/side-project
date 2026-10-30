@@ -7,7 +7,7 @@ import { useI18n } from '@/shared/i18n';
 import { BottomSheet, type IOverlayControlProps } from '@/shared/ui';
 
 import { LoginLegalLinks } from './LoginLegalLinks';
-import { SocialLoginForm } from './SocialLoginForm';
+import { SocialLoginForm } from './social-login/SocialLoginForm';
 
 interface ILoginDialogProps extends IOverlayControlProps {
   onSuccess: () => void;

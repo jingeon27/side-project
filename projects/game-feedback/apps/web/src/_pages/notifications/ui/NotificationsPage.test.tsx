@@ -13,7 +13,7 @@ vi.mock('@/features/auth', () => ({
 vi.mock('@/widgets/community-shell', () => ({
   CommunityPage: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock('@/features/push-notifications', () => ({
+vi.mock('./push-settings/PushNotificationSettings', () => ({
   PushNotificationSettings: () => <input aria-label="앱 알림 설정" defaultValue="" />,
 }));
 vi.mock('@tanstack/react-query', async () => ({

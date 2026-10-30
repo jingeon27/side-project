@@ -1,9 +1,10 @@
 'use client';
 
-import { CreateGroupForm } from '@/features/group';
 import { ROUTES } from '@/shared/constants/routes';
 import { useAppRouter } from '@/shared/model/router';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
+
+import { CreateGroupForm } from './ui/CreateGroupForm';
 
 export function GroupCreatePageTemplate() {
   const router = useAppRouter();

@@ -1,5 +1,7 @@
 /** 화면 경로. 내부 링크·이동은 이 값으로만 만든다. */
 export const ROUTES = {
+  LANDING: '/about',
+  HOW_IT_WORKS: '/about/how-it-works',
   HOME: '/',
   SIGN: '/sign',
   ME: '/me',
@@ -20,13 +22,16 @@ export const ROUTES = {
   INVITE: (token: string) => `/invite/${encodeURIComponent(token)}`,
 } as const satisfies Record<string, `/${string}` | ((...args: never[]) => string)>;
 
+export const PUBLIC_LANDING_PATHS = [
+  ROUTES.LANDING,
+  ROUTES.HOW_IT_WORKS,
+] as const satisfies readonly string[];
+
 /** 같은 origin의 `/backend/*` 프록시(next.config rewrites)로 부르는 API 경로 */
 export const BACKEND_ROUTES = {
   GRAPHQL: '/backend/graphql',
   AUTH_CONFIG: '/backend/auth/config',
   AUTH_LOGOUT: '/backend/auth/logout',
-  AUTH_APP_EXCHANGE: '/backend/auth/app/exchange',
-  AUTH_PROVIDER: (provider: 'google' | 'kakao') => `/backend/auth/${provider}`,
   PUSH_DEVICE_REGISTER: '/backend/push/devices/register',
   PUSH_DEVICE_UNREGISTER: '/backend/push/devices/unregister',
 } as const satisfies Record<string, `/backend/${string}` | ((...args: never[]) => string)>;

@@ -34,6 +34,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 - 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isSessionRequiredPath`, `src/shared/constants/routes.ts`의 `SESSION_PATH_PREFIXES`·`SESSION_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
 - proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). 홈·탐색·그룹·초대도 익명 또는 회원 세션이 필요하다. 세션이 없으면 `/sign?next=…`로 보내고 인증·정책·콜백·API·정적 파일은 제외한다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
 
+## 공개 소개
+
+- 메인은 `/`를 유지한다. `/about`와 `/about/how-it-works`는 각각 `landing`, `how-it-works` 화면 slice에서 조립하고 `widgets/public-layout`을 공유한다.
+- `PUBLIC_LANDING_PATHS`의 소개 페이지는 세션 경로 목록과 proxy matcher에 넣지 않는다. AppProviders는 인증·푸시 동기화를 시작하지 않고 데스크톱 메뉴도 제외한다. 시작 링크는 `/sign?next=%2F`를 가리키며 `prefetch={false}`를 둔다.
+- 이용 방법의 상위 화면은 `/about`다. 소개 화면을 앱에서 바로 열었을 때 뒤로 가기는 네이티브의 종료 확인으로 연결하고 메인 인증으로 강제 이동시키지 않는다.
+
 ## 뒤로 가기·이동·하단 탭
 
 - `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.
@@ -64,3 +70,9 @@ yarn workspace @photo-contest/web test
 그룹 만들기는 `/groups/new`의 별도 페이지다. `CreateGroupForm`에서 이름·공개 범위·소개와 프로필·배경 사진을 선택한다. 업로드 실패 후 재시도는 이미 생성한 그룹 ID를 재사용한다. 그룹 페이지 헤더의 알림 진입을 유지하고, 대회 상세는 `그룹명 > 대회명` 헤더와 대회 목록으로 돌아가는 경로를 사용한다. 게시물·대회·명예의 전당 탭은 그룹의 최상위 화면에서만 보여 준다. 홈은 가입한 그룹의 카드 목록과 통합 피드를 보여 주고 그룹명 옆 글쓰기 바로가기를 만들지 않는다.
 
 서버에서 아는 헤더 제목은 `initialTitle`로 전달해 첫 렌더링을 고정한다. hydration 중 Apollo fragment의 완전성으로 제목을 바꾸지 않고, 이후 갱신은 hydration이 끝난 뒤 반영한다.
+
+## 페이지 내부 폴더
+
+- 특정 페이지의 조회 구획·폼 제출·탐색 조합과 하위 UI·스키마·테스트는 `_pages/<screen>`이 소유한다. 재사용할 도메인 표시·동작·IO·캐시와 여러 페이지의 공유 조합은 frontend 스킬의 features·widgets 경계를 따른다.
+- 여러 기능을 `@page/ui`에 나열하지 않고 `ui/categories`, `ui/join-requests`, `ui/hidden-posts`처럼 기능별로 묶는다. 파일 입력과 미리보기는 `group-write/@page/ui/fields/media`에서 함께 관리한다. 대응하는 모델도 `model/categories`처럼 묶고 테스트는 대상 구현 옆에 둔다.
+- 페이지 진입·조립 파일과 기능별 하위 폴더의 import를 직접 연결한다. 이전 위치의 호환 re-export나 같은 slice 안의 중간 index를 만들지 않는다.

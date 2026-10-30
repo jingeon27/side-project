@@ -8,15 +8,15 @@ import { BackLink } from '@/shared/navigation';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { infoTitles, type TInfoKind } from '../model/info';
-import { ContactContent } from './ContactContent';
-import { ContactSupport } from './ContactSupport';
-import { ContactTopbar } from './ContactTopbar';
-import { GuideContent } from './GuideContent';
-import { GuideTopbar } from './GuideTopbar';
-import { PrivacyContent } from './PrivacyContent';
-import { PrivacyTopbar } from './PrivacyTopbar';
-import { TermsContent } from './TermsContent';
-import { TermsTopbar } from './TermsTopbar';
+import { ContactContent } from './contact/ContactContent';
+import { ContactSupport } from './contact/ContactSupport';
+import { ContactTopbar } from './contact/ContactTopbar';
+import { GuideContent } from './guide/GuideContent';
+import { GuideTopbar } from './guide/GuideTopbar';
+import { PrivacyContent } from './privacy/PrivacyContent';
+import { PrivacyTopbar } from './privacy/PrivacyTopbar';
+import { TermsContent } from './terms/TermsContent';
+import { TermsTopbar } from './terms/TermsTopbar';
 
 export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) {
   const language = isLocale(locale) ? locale : 'ko';

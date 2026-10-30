@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Button, StatusAnimation } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { ProfileEditForm, profileOptions } from '@/features/user';
+import { profileOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary } from '@/shared/ui';
 import { CommunityPage, Topbar } from '@/widgets/community-shell';
+
+import { ProfileEditForm } from './form/ProfileEditForm';
 
 function ProfileEditor({ userId, locale }: { userId: string; locale: string }) {
   const { data: profile } = useSuspenseQuery(profileOptions(userId));
@@ -50,6 +52,7 @@ export function ProfileEditPage({ locale }: { locale: string }) {
         </AsyncBoundary>
       ) : (
         <div className="empty-feed">
+          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
           <Button type="button" onClick={login}>
             {t('로그인 / 시작하기')}

@@ -1,6 +1,6 @@
 ---
 name: testing
-description: 웃긴순간의 앱별 테스트 레인(Vitest unit·ui·api·integration, Playwright e2e), 격리 DB 스키마, 테스트 포트, BDD 이름 규칙에 맞춰 테스트를 작성하거나 실행할 때 사용한다.
+description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration, Playwright e2e), 격리 DB 스키마, 테스트 포트, BDD 이름 규칙에 맞춰 테스트를 작성하거나 실행할 때 사용한다.
 ---
 
 ## 소유권

@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 
 type TRobots = Exclude<NonNullable<Metadata['robots']>, string>;
 
-export const SITE_NAME = '별사대';
+export const SITE_NAME = '피식';
 export const SITE_DESCRIPTION =
-  '사진과 동영상으로 웃긴 순간을 나누는 그룹 커뮤니티. 합성한 이미지도 함께 나눠보세요.';
+  '혼자 보기 아까운 순간, 피식에 모아요. 친구들과 사진, 동영상, 링크를 나누는 그룹 커뮤니티.';
 export const PUBLIC_ROBOTS = {
   index: true,
   follow: true,

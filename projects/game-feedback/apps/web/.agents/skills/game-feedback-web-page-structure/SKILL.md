@@ -23,6 +23,12 @@ description: Game Feedback 웹(apps/web)에 새 화면·라우트를 추가하�
 - 나머지 화면은 `async function RouteContent(…)`를 `<Suspense fallback={<LoadingState />}>`로 감싼 default export다. `searchParams`·`rootLocale()`을 Suspense 밖에서 기다리지 않는다.
 - 쿠키에 의존하고 서버 초기 데이터가 없는 영역(알림·채팅·내 글·팔로우·글쓰기 폼)은 `AsyncBoundary clientOnly`다. 로그인 여부는 화면에서 `useSession()`으로 분기한다. proxy에 로그인 게이트를 두지 않는다.
 
+## 페이지 내부 폴더
+
+- 특정 페이지의 조회 구획·폼 제출·탐색 조합과 그 하위 UI·스키마·테스트는 `_pages/<screen>`에 둔다. 서버 모델 사용 여부가 아니라 페이지의 흐름과 배치에 종속되는지로 소유권을 정한다. 도메인 요청·캐시 정책과 재사용할 표시는 features, 여러 페이지의 공유 조합은 widgets에 유지한다.
+- 페이지 진입·조립 파일은 `ui/<Screen>Page.tsx`에 두고 여러 기능은 하위 폴더로 묶는다. 게시글 상세는 `ui/answers`, `ui/comments/composer`, `ui/comments/thread`, `ui/content-actions`로, 채팅은 `ui/list`, `ui/conversation`, `ui/composer`, `ui/history`로 나눈다.
+- 주 컴포넌트와 직접 쓰는 하위 UI·테스트는 같은 기능 폴더에 둔다. 수명을 소유한 모델도 `model/composer`, `model/history`로 구분하고 테스트는 구현 옆에 유지한다. slice의 공개 진입점은 그대로 두고 이전 파일 경로의 호환 re-export나 slice 내부 중간 index는 추가하지 않는다.
+
 ## 새 화면 순서
 
 1. `packages/bridge/src/routes.ts`의 `appRoutes`·`resolveAppRoute`(경로 정규식·`TAppScreen`·parent)에 화면을 더하고 `routes.spec.ts`를 고친다. 등록하지 않은 경로는 셸 메뉴 활성, 뒤로 가기, 네이티브 `location` 보고에서 인식되지 않는다.
