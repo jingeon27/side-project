@@ -1,15 +1,15 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useWatch } from 'react-hook-form';
 
 import { Button, buttonVariants, cn } from '@side/design-system';
 
-import { avatarAccept, deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '@/features/user';
+import { avatarAccept } from '@/features/user';
+import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice } from '@/shared/ui';
+import { Avatar, ErrorNotice } from '@/shared/ui';
 
-import type { TProfilePhotoForm } from '../../model/profile-edit.schema';
+import type { TProfileEditForm } from '../../model/profile-edit.schema';
 
 function PhotoPreview({ file }: { file: File }) {
   const { t } = useI18n();
@@ -28,66 +28,84 @@ function PhotoPreview({ file }: { file: File }) {
     />
   );
 }
-export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm; hasPhoto: boolean }) {
+export function ProfilePhotoEditor({
+  form,
+  author,
+  disabled,
+}: {
+  form: TProfileEditForm;
+  author: PublicProfile['author'];
+  disabled: boolean;
+}) {
   const { t } = useI18n();
-  const client = useQueryClient();
-  const upload = useMutation(uploadAvatarMutationOptions(client));
-  const remove = useMutation(deleteAvatarMutationOptions(client));
   const file = useWatch({ control: form.control, name: 'file' });
-  const pending = upload.isPending || remove.isPending;
+  const removePhoto = useWatch({ control: form.control, name: 'removePhoto' });
   const fileError = form.formState.errors.file?.message;
-  const requestError = upload.error ?? remove.error;
   return (
-    <form
-      aria-label={t('프로필 사진 편집')}
-      onSubmit={form.handleSubmit((value) => upload.mutate(value.file, { onSuccess: () => form.reset() }))}
-    >
+    <section className="profile-photo-section" aria-label={t('프로필 사진')}>
+      <h2>{t('프로필 사진')}</h2>
       <Controller
         control={form.control}
         name="file"
         render={({ field }) => (
-          <label className="profile-photo-picker">
-            {file && <PhotoPreview file={file} />}
-            <input
-              ref={field.ref}
-              className="peer sr-only"
-              type="file"
-              accept={avatarAccept}
-              aria-label={t('프로필 사진 선택')}
-              disabled={pending}
-              onBlur={field.onBlur}
-              onChange={(event) => {
-                const selected = event.target.files?.[0];
-                if (selected) field.onChange(selected);
-                event.target.value = '';
-              }}
-            />
-            <span
-              className={cn(
-                buttonVariants({ variant: 'secondary' }),
-                'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current',
-              )}
-            >
-              {t(file ? '사진 다시 선택' : '프로필 사진 선택')}
-            </span>
-          </label>
+          <div className="profile-photo-picker">
+            {file ? (
+              <PhotoPreview file={file} />
+            ) : (
+              <Avatar src={removePhoto ? null : author.avatarUrl} name={author.nickname} size="large" />
+            )}
+            <label className="profile-photo-control">
+              <input
+                ref={field.ref}
+                className="peer sr-only"
+                type="file"
+                accept={avatarAccept}
+                aria-label={t('프로필 사진 선택')}
+                disabled={disabled}
+                onBlur={field.onBlur}
+                onChange={(event) => {
+                  const selected = event.target.files?.[0];
+                  if (selected) {
+                    field.onChange(selected);
+                    form.setValue('removePhoto', false, { shouldDirty: true });
+                  }
+                  event.target.value = '';
+                }}
+              />
+              <span
+                data-disabled={disabled || undefined}
+                className={cn(
+                  buttonVariants({ variant: 'secondary', size: 'md' }),
+                  'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current',
+                )}
+              >
+                {t(file ? '사진 다시 선택' : '프로필 사진 선택')}
+              </span>
+            </label>
+          </div>
         )}
       />
       <p className="small muted">{t('JPEG, PNG, WebP / 최대 5MB. 사진은 정사각형으로 잘립니다.')}</p>
       <ErrorNotice message={fileError && t(fileError)} />
-      <div className="profile-edit-actions">
-        {file && (
-          <Button type="submit" disabled={pending}>
-            {t('사진 저장')}
-          </Button>
-        )}
-        {hasPhoto && (
-          <Button type="button" variant="ghost" disabled={pending} onClick={() => remove.mutate()}>
-            {t('프로필 사진 삭제')}
-          </Button>
-        )}
-      </div>
-      <ErrorNotice message={requestError && t(requestError.message)} />
-    </form>
+      {(author.avatarUrl || file) && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={disabled}
+          onClick={() => {
+            form.setValue('file', undefined, { shouldDirty: true, shouldValidate: true });
+            form.setValue('removePhoto', !removePhoto && !!author.avatarUrl, { shouldDirty: true });
+          }}
+        >
+          {t(removePhoto ? '삭제 취소' : '프로필 사진 삭제')}
+        </Button>
+      )}
+      {removePhoto && (
+        <p className="small muted" role="status">
+          {t('저장하면 프로필 사진이 삭제돼요.')}
+        </p>
+      )}
+    </section>
   );
 }

@@ -1,43 +1,26 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
 
 import { PROFILE_BIO_MAX_LENGTH } from '@game-feedback/contracts';
-import { Button, Input, Textarea } from '@side/design-system';
+import { Input, Textarea } from '@side/design-system';
 
-import { nicknameLength, updateProfileMutationOptions } from '@/features/user';
+import { nicknameLength } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { Field } from '@/shared/ui';
 
-import type { TProfileDetailsForm } from '../../model/profile-edit.schema';
+import type { TProfileEditForm } from '../../model/profile-edit.schema';
 
 interface IProfileDetailsEditorProps {
-  form: TProfileDetailsForm;
-  onSaved: () => void;
+  form: TProfileEditForm;
+  disabled: boolean;
 }
 
-export function ProfileDetailsEditor({ form, onSaved }: IProfileDetailsEditorProps) {
+export function ProfileDetailsEditor({ form, disabled }: IProfileDetailsEditorProps) {
   const { t } = useI18n();
-  const notify = useNotify();
-  const mutation = useMutation(updateProfileMutationOptions(useQueryClient()));
   const bio = useWatch({ control: form.control, name: 'bio' });
   return (
-    <form
-      noValidate
-      className="form-stack"
-      aria-label={t('프로필 수정')}
-      onSubmit={form.handleSubmit((input) =>
-        mutation.mutate(input, {
-          onSuccess: (profile) => {
-            // 저장한 값을 새 기준으로 삼아 이 영역에 저장하지 않은 변경이 남지 않게 한다.
-            form.reset({ nickname: profile.author.nickname, bio: profile.bio ?? '' });
-            notify(t('프로필을 수정했어요.'));
-            onSaved();
-          },
-        }),
-      )}
-    >
+    <>
       <Field
         label={t('서비스 닉네임')}
         hint={t('{min}~{max}자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.', nicknameLength)}
@@ -53,7 +36,7 @@ export function ProfileDetailsEditor({ form, onSaved }: IProfileDetailsEditorPro
           maxLength={nicknameLength.max}
           required
           autoComplete="nickname"
-          disabled={mutation.isPending}
+          disabled={disabled}
         />
       </Field>
       <Field
@@ -65,20 +48,11 @@ export function ProfileDetailsEditor({ form, onSaved }: IProfileDetailsEditorPro
             : undefined
         }
       >
-        <Textarea
-          {...form.register('bio')}
-          rows={5}
-          maxLength={PROFILE_BIO_MAX_LENGTH}
-          disabled={mutation.isPending}
-        />
+        <Textarea {...form.register('bio')} rows={5} maxLength={PROFILE_BIO_MAX_LENGTH} disabled={disabled} />
       </Field>
       <p className="small muted profile-bio-count">
         {(bio ?? '').length}/{PROFILE_BIO_MAX_LENGTH}
       </p>
-      <Button type="submit" disabled={!form.formState.isDirty} loading={mutation.isPending}>
-        {t('프로필 저장')}
-      </Button>
-      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
-    </form>
+    </>
   );
 }

@@ -5,6 +5,8 @@ import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
 
+import { VisualViewport } from '@side/design-system';
+
 import { sessionOptions, SessionProvider, useSession } from '@/features/auth';
 import { categoryOptions } from '@/features/category';
 import { AnalyticsIdentity, InteractionTracker } from '@/shared/analytics';
@@ -16,7 +18,6 @@ import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui'
 import { AuthOnboarding, useLoginNavigation } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 
-import { MobileViewport } from './MobileViewport';
 import { NativeBridge } from './NativeBridge';
 import { NativePushSync } from './NativePushSync';
 
@@ -45,7 +46,7 @@ export function Providers({
       <ServiceErrorBoundary title={t('서비스 연결')}>
         <NavigationGuardProvider>
           <MotionProvider>
-            <MobileViewport />
+            <VisualViewport />
             <ToastProvider>
               <SessionProvider onLogin={handleLogin}>
                 <SessionContent>{children}</SessionContent>

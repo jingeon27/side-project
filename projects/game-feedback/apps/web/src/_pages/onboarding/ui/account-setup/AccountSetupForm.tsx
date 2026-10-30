@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button, Checkbox, Input } from '@side/design-system';
+import { Button, Checkbox, FormActions, Input } from '@side/design-system';
 
 import { nicknameLength } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
@@ -120,7 +120,7 @@ export function AccountSetupForm({
           <ErrorNotice message={agreementError ? t(agreementError) : error} />
         </form>
       </div>
-      <div className="account-setup-actions">
+      <FormActions className="account-setup-actions px-0" contentClassName="max-w-none">
         <Button
           variant="primary"
           size="lg"
@@ -133,7 +133,7 @@ export function AccountSetupForm({
         >
           {submitLabel}
         </Button>
-      </div>
+      </FormActions>
     </div>
   );
 }

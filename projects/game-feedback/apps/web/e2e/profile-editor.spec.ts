@@ -7,7 +7,9 @@ const png = Buffer.from(
   'base64',
 );
 for (const width of [390, 1440]) {
-  test(`프로필 수정 페이지에서 닉네임·소개·링크·사진을 관리한다 (${width}px)`, async ({ page }, testInfo) => {
+  test(`프로필 수정 페이지에서 닉네임·소개·사진을 한 번에 저장한다 (${width}px)`, async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     const login = await page.request.post('/api/auth/demo', {
       headers: { Origin: origin },
@@ -18,6 +20,9 @@ for (const width of [390, 1440]) {
     await page.goto(`/ko/users/${userId}`);
     await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
     const details = page.getByRole('form', { name: '프로필 수정', exact: true });
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
+    await expect(details.locator('button[type="submit"]')).toHaveCount(1);
+    await expect(page.getByText('프로필 링크', { exact: true })).toHaveCount(0);
     const nickname = `새프로필_${width}`;
     await details.getByRole('textbox', { name: '서비스 닉네임', exact: true }).fill(nickname);
     await details
@@ -36,6 +41,15 @@ for (const width of [390, 1440]) {
     await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
     await expect(page).toHaveURL(`/ko/users/${userId}`);
     await expect(page.getByRole('heading', { name: nickname, exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByRole('banner')).toBeInViewport({ ratio: 1 });
+    const identity = page.locator('.profile-identity-text');
+    await expect(identity.locator('.user-badges')).toHaveCount(0);
+    const nameBounds = await identity.getByRole('heading').boundingBox();
+    const dateBounds = await identity.locator('p').boundingBox();
+    expect(nameBounds).not.toBeNull();
+    expect(dateBounds).not.toBeNull();
+    expect((dateBounds?.y ?? 0) - (nameBounds?.y ?? 0) - (nameBounds?.height ?? 0)).toBeLessThanOrEqual(8);
     const bioLink = page.getByRole('link', { name: 'https://example.com/player', exact: true });
     await expect(bioLink).toHaveAttribute('href', 'https://example.com/player');
     await expect(bioLink).toHaveAttribute('target', '_blank');
@@ -49,21 +63,7 @@ for (const width of [390, 1440]) {
     await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
     await details.getByRole('textbox', { name: '서비스 닉네임', exact: true }).click();
     await page.screenshot({ path: testInfo.outputPath('profile-edit-page.png'), fullPage: true });
-    const links = page.getByRole('form', { name: '프로필 링크 편집' });
-    await links.getByRole('button', { name: '링크 추가' }).click();
-    await links.getByRole('textbox', { name: /이름/ }).fill('나의 방송');
-    await links.getByRole('textbox', { name: /주소/ }).fill('https://video.example/@player');
-    // 저장하지 않은 링크 초안이 있으면 정보를 저장해도 이 화면에 남아 초안을 지킨다.
-    await details.getByRole('textbox', { name: '자기소개', exact: true }).fill('링크를 정리하고 있어요.');
-    await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
-    await expect(page.getByRole('button', { name: '프로필 저장', exact: true })).toBeDisabled();
-    await expect(page).toHaveURL('/ko/settings/profile');
-    await expect(links.getByRole('textbox', { name: /이름/ })).toHaveValue('나의 방송');
-    await links.getByRole('button', { name: '링크 저장' }).click();
-    await expect
-      .poll(async () => (await (await page.request.get(`/api/users/${userId}`)).json()).links)
-      .toEqual([{ label: '나의 방송', url: 'https://video.example/@player' }]);
-    const photo = page.getByRole('form', { name: '프로필 사진 편집' });
+    const photo = details.getByRole('region', { name: '프로필 사진', exact: true });
     await photo
       .getByLabel('프로필 사진 선택', { exact: true })
       .setInputFiles({ name: 'profile.png', mimeType: 'image/png', buffer: png });
@@ -72,23 +72,25 @@ for (const width of [390, 1440]) {
     await expect
       .poll(() => preview.evaluate((image) => (image as HTMLImageElement).naturalWidth))
       .toBeGreaterThan(0);
+    await details.getByRole('textbox', { name: '자기소개', exact: true }).fill('사진과 소개를 함께 바꿔요.');
     const uploadResponse = page.waitForResponse(
       (response) =>
         response.url().includes('/api/profile/avatar/uploads/') && response.url().endsWith('/complete'),
     );
-    await photo.getByRole('button', { name: '사진 저장', exact: true }).click();
+    await details.getByRole('button', { name: '프로필 저장', exact: true }).click();
     expect((await uploadResponse).ok()).toBe(true);
-    await expect(preview).toBeHidden();
-    await expect(page.locator('.profile-editor-identity img')).toHaveCount(1);
+    await expect(page).toHaveURL(`/ko/users/${userId}`);
+    await expect(page.locator('.public-profile img')).toHaveCount(1);
+    await expect(page.getByText('사진과 소개를 함께 바꿔요.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toBeVisible();
     await page.reload();
+    await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
     await expect(details.getByRole('textbox', { name: '서비스 닉네임', exact: true })).toHaveValue(nickname);
-    await expect(links.getByRole('textbox', { name: /이름/ })).toHaveValue('나의 방송');
     await photo.getByRole('button', { name: '프로필 사진 삭제' }).click();
-    await expect(page.locator('.profile-editor-identity img')).toHaveCount(0);
-    await links.getByRole('button', { name: '링크 삭제' }).click();
-    await links.getByRole('button', { name: '링크 저장' }).click();
-    await page.goto(`/ko/users/${userId}`);
-    await expect(page.getByRole('link', { name: '나의 방송', exact: true })).toHaveCount(0);
+    expect((await (await page.request.get(`/api/users/${userId}`)).json()).author.avatarUrl).not.toBeNull();
+    await details.getByRole('button', { name: '프로필 저장', exact: true }).click();
+    await expect(page).toHaveURL(`/ko/users/${userId}`);
+    await expect(page.locator('.public-profile img')).toHaveCount(0);
     await expect(page.locator('main > .back-link')).toHaveCount(0);
     await page.goto('/ko/settings');
     await page.getByRole('link', { name: '공개 프로필 보기 →', exact: true }).click();

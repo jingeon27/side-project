@@ -61,13 +61,13 @@ function ProfileContent({
     initialData: sameViewer ? initialProfile : undefined,
   });
   if (!profile.data) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
-  const { links, bio, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
+  const { bio, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
           <Avatar src={author.avatarUrl} name={author.nickname} size="large" />
-          <div>
+          <div className="profile-identity-text">
             <h1>{author.nickname}</h1>
             <UserBadges author={author} />
             <p>
@@ -89,17 +89,6 @@ function ProfileContent({
           )}
         </div>
         {bio && <LinkifiedText text={bio} className="profile-bio" />}
-        {(links ?? []).length > 0 && (
-          <ul className="profile-links" aria-label={t('프로필 링크')}>
-            {(links ?? []).map((link) => (
-              <li key={`${link.url}:${link.label}`}>
-                <a href={link.url} target="_blank" rel="nofollow ugc noopener noreferrer">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
         {!bio && <p className="muted">{t('클래시 로얄 플레이 경험을 나누는 플레이어')}</p>}
         <dl className="public-profile-stats">
           <div>

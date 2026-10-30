@@ -1,83 +1,113 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, type FormEvent } from 'react';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { profileOptions } from '@/features/user';
+import { Button, FormActions } from '@side/design-system';
+
+import {
+  deleteAvatarMutationOptions,
+  profileOptions,
+  updateProfileMutationOptions,
+  uploadAvatarMutationOptions,
+} from '@/features/user';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { useUnsavedChanges } from '@/shared/navigation';
-import { Avatar } from '@/shared/ui';
+import { ErrorNotice, useNotify } from '@/shared/ui';
 
-import {
-  profileDetailsSchema,
-  profileLinksSchema,
-  profilePhotoSchema,
-} from '../../model/profile-edit.schema';
+import { profileEditSchema } from '../../model/profile-edit.schema';
 import { ProfileDetailsEditor } from '../details/ProfileDetailsEditor';
-import { ProfileLinksEditor } from '../links/ProfileLinksEditor';
 import { ProfilePhotoEditor } from '../photo/ProfilePhotoEditor';
 
 interface IProfileEditFormProps {
-  /** 정보를 저장했고 저장하지 않은 사진·링크 초안이 없을 때 부른다. */
   onSaved: () => void;
   profile: PublicProfile;
 }
 
-/**
- * 정보·사진·링크는 각자 저장한다. 이 폼이 세 영역의 초안을 소유해, 정보를 저장할 때
- * 저장하지 않은 사진·링크 초안이 있으면 화면을 떠나지 않고 초안을 남긴다.
- */
 export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const { t } = useI18n();
-  const router = useRouter();
+  const notify = useNotify();
+  const client = useQueryClient();
+  const submission = useRef<AbortController | null>(null);
+  useEffect(() => () => submission.current?.abort(), []);
   const current = useQuery({ ...profileOptions(profile.author.id), initialData: profile });
-  const details = useZodForm(profileDetailsSchema, {
-    defaultValues: { nickname: profile.author.nickname, bio: profile.bio ?? '' },
+  const update = useMutation(updateProfileMutationOptions(client));
+  const upload = useMutation(uploadAvatarMutationOptions(client));
+  const remove = useMutation(deleteAvatarMutationOptions(client));
+  const form = useZodForm(profileEditSchema, {
+    defaultValues: {
+      nickname: profile.author.nickname,
+      bio: profile.bio ?? '',
+      file: undefined,
+      removePhoto: false,
+    },
   });
-  const links = useZodForm(profileLinksSchema, { defaultValues: { links: current.data.links ?? [] } });
-  const photo = useZodForm(profilePhotoSchema, { defaultValues: { file: undefined } });
-  const hasOtherDrafts = links.formState.isDirty || photo.formState.isDirty;
   useUnsavedChanges({
-    hasChanges: details.formState.isDirty || hasOtherDrafts,
+    hasChanges: form.formState.isDirty,
     confirm: () =>
       window.confirm(t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?')),
     onDiscard: () => {
-      // Next가 떠난 화면의 폼 상태를 보관해도 버리기로 한 초안이 다시 나타나지 않게 한다.
-      details.reset();
-      links.reset();
-      photo.reset();
+      submission.current?.abort();
+      form.reset();
     },
   });
-
-  const handleDetailsSaved = () => {
-    // 저장 요청 뒤에 사진·링크 초안이 생길 수 있으므로 RHF의 최신 상태를 완료 시점에 읽는다.
-    const hasUnsavedDrafts = links.formState.isDirty || photo.formState.isDirty;
-    if (!hasUnsavedDrafts) {
-      onSaved();
-      return;
-    }
-    // 바뀐 닉네임이 서버가 그린 화면에도 보이도록 현재 경로만 다시 받는다.
-    router.refresh();
-  };
+  const pending = form.formState.isSubmitting;
+  const error = update.error ?? upload.error ?? remove.error;
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) =>
+    form.handleSubmit(async ({ nickname, bio, file, removePhoto }) => {
+      submission.current?.abort();
+      const controller = new AbortController();
+      submission.current = controller;
+      update.reset();
+      upload.reset();
+      remove.reset();
+      try {
+        if (form.formState.dirtyFields.nickname || form.formState.dirtyFields.bio) {
+          const saved = await update.mutateAsync({ nickname, bio });
+          if (controller.signal.aborted) return;
+          form.resetField('nickname', { defaultValue: saved.author.nickname });
+          form.resetField('bio', { defaultValue: saved.bio ?? '' });
+        }
+        if (file) await upload.mutateAsync(file);
+        if (controller.signal.aborted) return;
+        if (removePhoto) await remove.mutateAsync();
+        if (controller.signal.aborted) return;
+        form.reset({ ...form.getValues(), file: undefined, removePhoto: false });
+        notify(t('프로필을 수정했어요.'));
+        onSaved();
+      } catch {
+        return;
+      }
+    })(event);
 
   return (
-    <div className="settings-card profile-edit-page">
-      <div className="settings-profile profile-editor-identity">
-        <Avatar src={current.data.author.avatarUrl} name={current.data.author.nickname} size="large" />
-        <strong>{current.data.author.nickname}</strong>
+    <form
+      noValidate
+      className="page-form profile-edit-page"
+      aria-label={t('프로필 수정')}
+      onSubmit={handleSubmit}
+    >
+      <div data-form-scroll className="page-form-scroll">
+        <div className="form-stack">
+          <ProfilePhotoEditor form={form} author={current.data.author} disabled={pending} />
+          <ProfileDetailsEditor form={form} disabled={pending} />
+          <ErrorNotice message={error && t(error.message)} />
+        </div>
       </div>
-      <ProfileDetailsEditor form={details} onSaved={handleDetailsSaved} />
-      <section className="profile-edit-section">
-        <h3>{t('프로필 사진')}</h3>
-        <ProfilePhotoEditor form={photo} hasPhoto={!!current.data.author.avatarUrl} />
-      </section>
-      <section className="profile-edit-section">
-        <h3>{t('프로필 링크')}</h3>
-        <ProfileLinksEditor form={links} />
-      </section>
-    </div>
+      <FormActions className="px-0" contentClassName="max-w-none">
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={!form.formState.isDirty}
+          loading={pending}
+        >
+          {t('프로필 저장')}
+        </Button>
+      </FormActions>
+    </form>
   );
 }

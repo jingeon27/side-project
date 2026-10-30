@@ -10,7 +10,7 @@ import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
-import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
+import { Button, FormActions, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { createPostMutationOptions } from '@/features/post';
@@ -84,64 +84,70 @@ export function CreatePostForm({
     .with(P.union('FRIEND_SALE', 'FRIENDLY', 'FREE'), () => t('게시글 등록'))
     .exhaustive();
   return (
-    <form className="form-stack" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
-      <Field label={t('분류')}>
-        <NativeSelect
-          {...form.register('board', {
-            onChange: (event: ChangeEvent<HTMLSelectElement>) => {
-              if (event.target.value !== 'COACHING')
-                form.setValue(
-                  'coaching',
-                  { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
-                  { shouldValidate: true },
-                );
-              if (event.target.value !== 'FRIEND_SALE')
-                form.setValue('friendSale', { price: null }, { shouldValidate: true });
-            },
-          })}
+    <form className="page-form" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
+      <div data-form-scroll className="page-form-scroll">
+        <div className="form-stack">
+          <Field label={t('분류')}>
+            <NativeSelect
+              {...form.register('board', {
+                onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                  if (event.target.value !== 'COACHING')
+                    form.setValue(
+                      'coaching',
+                      { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
+                      { shouldValidate: true },
+                    );
+                  if (event.target.value !== 'FRIEND_SALE')
+                    form.setValue('friendSale', { price: null }, { shouldValidate: true });
+                },
+              })}
+            >
+              <NativeSelectOption value="FEEDBACK">{t('피드백')}</NativeSelectOption>
+              <NativeSelectOption value="FRIEND_SALE">{t('친추판매')}</NativeSelectOption>
+              <NativeSelectOption value="FRIENDLY">{t('전투 모집')}</NativeSelectOption>
+              <NativeSelectOption value="COACHING">{t('게임코치')}</NativeSelectOption>
+              <NativeSelectOption value="FREE">{t('자유게시판')}</NativeSelectOption>
+            </NativeSelect>
+          </Field>
+          <Field label={t('게임')}>
+            {initialCategoryId ? (
+              <>
+                <input type="hidden" {...form.register('categoryId')} />
+                <Input
+                  readOnly
+                  aria-label={t('선택한 게임')}
+                  value={categories.find((item) => item.id === initialCategoryId)?.name ?? ''}
+                />
+              </>
+            ) : (
+              <NativeSelect {...form.register('categoryId')}>
+                {categories
+                  .filter((category) => category.active)
+                  .map((category) => (
+                    <NativeSelectOption key={category.id} value={category.id}>
+                      {category.name}
+                    </NativeSelectOption>
+                  ))}
+              </NativeSelect>
+            )}
+          </Field>
+          <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
+          <ErrorNotice message={errorMessage && t(errorMessage)} />
+        </div>
+      </div>
+      <FormActions className="px-0" contentClassName="max-w-none">
+        <Button
+          variant="accent"
+          size="lg"
+          fullWidth
+          type="submit"
+          disabled={!categories.length}
+          loading={pending}
+          icon={<ArrowUpRight aria-hidden />}
         >
-          <NativeSelectOption value="FEEDBACK">{t('피드백')}</NativeSelectOption>
-          <NativeSelectOption value="FRIEND_SALE">{t('친추판매')}</NativeSelectOption>
-          <NativeSelectOption value="FRIENDLY">{t('전투 모집')}</NativeSelectOption>
-          <NativeSelectOption value="COACHING">{t('게임코치')}</NativeSelectOption>
-          <NativeSelectOption value="FREE">{t('자유게시판')}</NativeSelectOption>
-        </NativeSelect>
-      </Field>
-      <Field label={t('게임')}>
-        {initialCategoryId ? (
-          <>
-            <input type="hidden" {...form.register('categoryId')} />
-            <Input
-              readOnly
-              aria-label={t('선택한 게임')}
-              value={categories.find((item) => item.id === initialCategoryId)?.name ?? ''}
-            />
-          </>
-        ) : (
-          <NativeSelect {...form.register('categoryId')}>
-            {categories
-              .filter((category) => category.active)
-              .map((category) => (
-                <NativeSelectOption key={category.id} value={category.id}>
-                  {category.name}
-                </NativeSelectOption>
-              ))}
-          </NativeSelect>
-        )}
-      </Field>
-      <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
-      <ErrorNotice message={errorMessage && t(errorMessage)} />
-      <Button
-        variant="accent"
-        size="lg"
-        fullWidth
-        type="submit"
-        disabled={!categories.length}
-        loading={pending}
-        icon={<ArrowUpRight aria-hidden />}
-      >
-        {submitLabel}
-      </Button>
+          {submitLabel}
+        </Button>
+      </FormActions>
     </form>
   );
 }
