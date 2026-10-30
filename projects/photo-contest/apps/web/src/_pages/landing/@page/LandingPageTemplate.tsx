@@ -18,17 +18,17 @@ export function LandingPageTemplate() {
             <h1 className="text-hero text-ink">
               혼자 보기
               <br />
-              아까운 순간<span className="text-accent">.</span>
+              아까운 순간
             </h1>
             <p className="mt-6 max-w-app text-subtitle leading-relaxed text-muted">
               친구가 보낸 사진 한 장, 별거 아닌 이야기 하나. <br className="hidden tablet:block" />
               우리끼리 모으면 조금 더 웃긴 하루가 되니까.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href={ROUTES.HOME} prefetch={false}>
+            <div className="mt-8 grid max-w-sm gap-3 tablet:grid-cols-2">
+              <ButtonLink href={ROUTES.HOME} prefetch={false} size="lg">
                 피식 시작하기 <ArrowUpRight aria-hidden className="size-4" />
               </ButtonLink>
-              <ButtonLink href={ROUTES.HOW_IT_WORKS} variant="secondary">
+              <ButtonLink href={ROUTES.HOW_IT_WORKS} variant="secondary" size="lg">
                 어떻게 쓰나요?
               </ButtonLink>
             </div>

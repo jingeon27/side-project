@@ -1,6 +1,30 @@
 import { expect, test } from './support/test';
 import { landingScreens } from './support/web-screens';
 
+test('소개 화면의 주 버튼은 크기가 같고 상단 안내와 시작하기는 간격을 유지해야 한다 @desktop @ios', async ({
+  page,
+}) => {
+  await page.goto('/about');
+  await expect(landingScreens.hero(page)).toBeVisible();
+  const start = await landingScreens.startLink(page).evaluate((element) => {
+    const { width, height } = element.getBoundingClientRect();
+    return { width, height };
+  });
+  const guide = await landingScreens.howItWorksLink(page).evaluate((element) => {
+    const { width, height } = element.getBoundingClientRect();
+    return { width, height };
+  });
+  expect(start.width).toBeCloseTo(guide.width, 1);
+  expect(start.height).toBeCloseTo(guide.height, 1);
+  const guideRight = await landingScreens
+    .headerGuide(page)
+    .evaluate((element) => element.getBoundingClientRect().right);
+  const startLeft = await landingScreens
+    .headerStart(page)
+    .evaluate((element) => element.getBoundingClientRect().left);
+  expect(startLeft - guideRight).toBeGreaterThanOrEqual(16);
+});
+
 test('공개 랜딩과 이용 방법은 로그인·API 요청 없이 읽고 서로 이동할 수 있어야 한다 @desktop @ios', async ({
   page,
 }) => {

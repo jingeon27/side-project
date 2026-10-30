@@ -7,7 +7,8 @@ import type { Page } from '@playwright/test';
 export const webScreens = {
   homeLink: (page: Page) => page.getByRole('link', { name: '홈', exact: true }),
   homeHeading: (page: Page) => page.getByRole('heading', { name: '우리끼리 모은 순간.' }),
-  landingHero: (page: Page) => page.getByRole('heading', { level: 1, name: '혼자 보기 아까운 순간.' }),
+  landingHero: (page: Page) =>
+    page.getByRole('heading', { level: 1, name: '혼자 보기 아까운 순간', exact: true }),
   landingStart: (page: Page) => page.getByRole('link', { name: '피식 시작하기', exact: true }),
   postCard: (page: Page) =>
     page

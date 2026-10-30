@@ -21,7 +21,7 @@ export function PublicHeader() {
           <BrandIcon className="size-9 -rotate-6" />
           피식
         </Link>
-        <div className="flex items-center gap-2 tablet:gap-6">
+        <div className="flex items-center gap-4 tablet:gap-6">
           <Link
             href={ROUTES.HOW_IT_WORKS}
             className="inline-flex min-h-touch items-center text-label text-muted hover:text-ink active:opacity-60"
