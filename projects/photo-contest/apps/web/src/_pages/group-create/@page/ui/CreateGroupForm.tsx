@@ -15,7 +15,7 @@ import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-stor
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { Button } from '@/shared/ui/@core/button';
-import { TextArea, TextField } from '@/shared/ui/@core/text-field';
+import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { createGroupSchema } from '../model/group.schema';
 import { GroupVisibilityField } from './GroupVisibilityField';
@@ -94,19 +94,6 @@ export function CreateGroupForm({
         }
       })}
     >
-      <GroupImagePicker
-        label="그룹 배경 사진"
-        cover
-        disabled={form.formState.isSubmitting}
-        error={form.formState.errors.cover?.message}
-        onChange={(file) => form.setValue('cover', file, { shouldValidate: true })}
-      />
-      <GroupImagePicker
-        label="그룹 프로필 사진"
-        disabled={form.formState.isSubmitting}
-        error={form.formState.errors.avatar?.message}
-        onChange={(file) => form.setValue('avatar', file, { shouldValidate: true })}
-      />
       <TextField
         required
         label="그룹 이름"
@@ -116,6 +103,7 @@ export function CreateGroupForm({
         disabled={form.formState.isSubmitting}
         {...form.register('name')}
       />
+      <GroupVisibilityField form={form} disabled={form.formState.isSubmitting || Boolean(created)} />
       <TextArea
         label="그룹 소개"
         maxLength={500}
@@ -124,7 +112,30 @@ export function CreateGroupForm({
         disabled={form.formState.isSubmitting}
         {...form.register('description')}
       />
-      <GroupVisibilityField form={form} disabled={form.formState.isSubmitting || Boolean(created)} />
+      <details className="border-t border-line pt-3">
+        <summary className="min-h-touch cursor-pointer content-center text-label text-ink active:text-muted">
+          그룹 사진 추가
+          <FieldRequirement />
+          {form.formState.errors.cover || form.formState.errors.avatar ? (
+            <span className="ml-2 text-caption text-danger">선택한 사진을 확인해 주세요</span>
+          ) : null}
+        </summary>
+        <div className="flex flex-col gap-6 pt-4">
+          <GroupImagePicker
+            label="그룹 배경 사진"
+            cover
+            disabled={form.formState.isSubmitting}
+            error={form.formState.errors.cover?.message}
+            onChange={(file) => form.setValue('cover', file, { shouldValidate: true })}
+          />
+          <GroupImagePicker
+            label="그룹 프로필 사진"
+            disabled={form.formState.isSubmitting}
+            error={form.formState.errors.avatar?.message}
+            onChange={(file) => form.setValue('avatar', file, { shouldValidate: true })}
+          />
+        </div>
+      </details>
       {form.formState.errors.root?.message ? (
         <p role="alert" className="text-body text-danger">
           {form.formState.errors.root.message}

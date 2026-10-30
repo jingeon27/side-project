@@ -36,6 +36,23 @@ function renderForm(mocks: MockLink.MockedResponse[] = []) {
   return { client, onCreated, onCancel, user: userEvent.setup() };
 }
 describe('그룹 생성 페이지의 폼', () => {
+  it('이름과 공개 범위를 먼저 보여 주고 선택 사진은 펼쳤을 때만 보여야 한다', async () => {
+    const { user } = renderForm();
+    const name = screen.getByLabelText('그룹 이름');
+    const visibility = screen.getByRole('group', { name: '공개 범위' });
+    const description = screen.getByLabelText('그룹 소개');
+    const summary = screen.getByText('그룹 사진 추가');
+    expect(name.compareDocumentPosition(visibility) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(visibility.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+    expect(screen.getByLabelText('그룹 배경 사진 선택')).not.toBeVisible();
+    await user.click(summary);
+    expect(summary.closest('details')).toHaveAttribute('open');
+    expect(screen.getByText('그룹 배경 사진')).toBeVisible();
+    expect(screen.getByText('그룹 프로필 사진')).toBeVisible();
+    await user.click(summary);
+    expect(summary.closest('details')).not.toHaveAttribute('open');
+  });
   it('이름이 비어 있으면 요청하지 않고 이름 오류를 보여야 한다', async () => {
     const { user, onCreated } = renderForm();
     await user.click(screen.getByRole('button', { name: '그룹 만들기' }));
