@@ -347,7 +347,7 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다. 호스트가 멈추면 Sentry도 신호를 보내지 못하므로, Terraform은 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하는 CloudWatch 알람과 CPU 크레딧 부족 알람을 함께 만든다(`alarm_email`로 메일 알림). 수동으로 구성했다면 [EC2 알람 동작 안내](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/UsingAlarmActions.html)대로 같은 알람을 만든다.
 
-최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
+최초 배포 후 [Services workflow](https://github.com/jingeon27/side-project/actions/workflows/services.yml)의 GF deploy·PC deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 
 | 서비스 | 공개 readiness URL                                 | Web liveness URL                           |
 | ------ | -------------------------------------------------- | ------------------------------------------ |

@@ -14,6 +14,14 @@
 
 검증: Web 291개, 공통 UI 170개 단위/UI 테스트와 두 웹 앱의 타입·lint·운영 빌드, Storybook 빌드, 루트 knip를 통과했다. 공통 모션은 Photo Contest 웹이 소유하는 Chromium·Safari 브라우저 사양에서 실제 SVG 프레임 변화와 정지 그림 전환, 390/1440px 배치·키보드·버튼 진행 상태·unmount를 확인했다. DB·S3를 쓰는 전체 서비스 E2E는 이번 변경에서 실행하지 않았다.
 
+## 2026-10-30 CI 통합과 격리 복원 측정
+
+API·채팅·Web Vitals 계측은 최신 develop의 구현을 유지한다. 이번에는 두 서비스의 CI와 릴리스 개선 요청에 맞춰 공통 workflow·배포 판정·개발 가이드를 함께 바꿨다. Services가 변경된 서비스의 검사만 실행하고, 공용 이미지 네 개의 빌드·호스트 검증을 실행당 한 번 수행한다. 최종 Service verification은 선택된 검사의 실패·생략·취소·누락을 막는다. 운영 배포 조건과 Environment·잠금·검증한 digest 발행은 유지한다.
+
+GF는 S3 없이 실행하는 `test:unit`과 실제 API·DB 통합/브라우저 검사를 나눴다. 문의 주소 UI 테스트도 개발자의 `.env`에 영향을 받지 않도록 공개 테스트 주소를 지정한다. 공용 컨테이너 검증에서는 두 서비스 DB의 덤프를 별도 DB로 복원해 핵심 테이블 행 수·내용 지문을 비교하고, 복원 시간과 재배포 probe 분포만 artifact로 남긴다. Chat benchmark는 같은 격리 하네스로 수동 실행할 수 있게 했다.
+
+로컬에서 GF 단위·UI 726개, CI 경로·배포 생략·digest 회귀 33개, 스크립트/API 타입 검사, 변경 코드 lint, actionlint, CI 환경의 knip을 통과했다. 이 머신에는 Docker와 테스트 S3 설정이 없어 실제 컨테이너 복원·API 통합·브라우저 전체 검사는 PR CI에서 따로 확인한다. 수동 채팅 벤치마크와 운영 RTO·RPO·수용량 측정은 실행하지 않았다.
+
 ## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
 
 사용자 결정으로 외부 RDS를 만들지 않고 공통 EC2 안의 PostgreSQL 18 컨테이너 하나를 두 서비스가 함께 쓴다. RDS는 만든 적이 없어 옮길 데이터는 없다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이며 아래 2026-10-19 기록의 RDS·PITR 내용을 대신한다.
