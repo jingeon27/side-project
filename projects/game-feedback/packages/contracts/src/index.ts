@@ -8,7 +8,7 @@ import {
   MediaUploadPlanSchema,
 } from './media-upload';
 import { PostMediaSchema } from './post-media';
-import { NicknameSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { NicknameSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
 export {
@@ -16,8 +16,6 @@ export {
   PROFILE_BIO_MAX_LENGTH,
   ProfileBioSchema,
   ProfileDetailsInputSchema,
-  ProfileLinkSchema,
-  ProfileLinksSchema,
   UpdateProfileInputSchema,
 } from './profile';
 
@@ -162,7 +160,6 @@ export const PublicProfileSchema = z.object({
   author: AuthorSchema,
   gameAccounts: z.array(GameProfileSchema).optional(),
   bio: z.string().optional(),
-  links: ProfileLinksSchema.optional(),
   joinedAt: ResponseTimestampSchema,
   postCount: ResponseCountSchema,
   answerCount: ResponseCountSchema,

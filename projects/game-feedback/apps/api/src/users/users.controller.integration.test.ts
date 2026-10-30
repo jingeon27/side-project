@@ -128,7 +128,6 @@ describe.skipIf(!testDatabaseUrl)(
         'gameAccounts',
         'helpfulCount',
         'joinedAt',
-        'links',
         'postCount',
       ]);
       expect(Object.keys(profile.author).sort()).toEqual([

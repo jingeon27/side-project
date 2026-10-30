@@ -23,7 +23,7 @@ import { S3TestStorage } from '../../testing/s3';
 const require = createRequire(import.meta.url);
 const schema = `gf_test_profile_${randomBytes(8).toString('hex')}`;
 const origin = 'http://localhost:3300';
-describe('프로필 링크와 사진 HTTP 통합', () => {
+describe('프로필 정보와 사진 HTTP 통합', () => {
   const s3 = new S3TestStorage();
   const state = {} as {
     app: INestApplication;
@@ -104,7 +104,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
       .expect(status);
   }
   it('비로그인 변경·업로드와 잘못된 Origin을 차단한다', async () => {
-    await http().patch('/api/profile').set('Origin', origin).send({ links: [] }).expect(401);
+    await http().patch('/api/profile').set('Origin', origin).send({ bio: '소개' }).expect(401);
     await http()
       .post('/api/profile/avatar/uploads')
       .set('Origin', origin)
@@ -114,41 +114,26 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
       .patch('/api/profile')
       .set('Authorization', `Bearer ${state.accessToken}`)
       .set('Origin', 'https://evil.test')
-      .send({ links: [] })
+      .send({ bio: '소개' })
       .expect(403);
   });
-  it('내 링크만 변경하고 공개 프로필에 이름·주소를 제공한다', async () => {
-    const links = [{ label: '내 방송', url: 'https://video.example/@player' }];
-    await authenticated().send({ links }).expect(200);
+  it('링크 변경을 거부하고 기존 링크도 공개 응답에 노출하지 않는다', async () => {
+    await state.db.user.update({
+      where: { id: state.userId },
+      data: { profileLinks: [{ label: '이전 링크', url: 'https://video.example/@player' }] },
+    });
+    await authenticated().send({ links: [] }).expect(400);
+    await authenticated().send({ nickname: '프로필 작성자', links: [] }).expect(400);
     const result = await http().get(`/api/users/${state.userId}`).expect(200);
-    expect(result.body.links).toEqual(links);
-    await authenticated().send({ links: [], userId: state.otherId }).expect(400);
-    expect((await state.db.user.findUniqueOrThrow({ where: { id: state.otherId } })).profileLinks).toEqual(
-      [],
-    );
+    expect(result.body).not.toHaveProperty('links');
   });
-  it('스크립트·계정정보 URL, 잘못된 필드와 링크 상한을 거부한다', async () => {
-    for (const url of ['javascript:alert(1)', 'data:text/html,test', 'https://user:password@site.test'])
-      await authenticated()
-        .send({ links: [{ label: '링크', url }] })
-        .expect(400);
-    await authenticated()
-      .send({ links: Array.from({ length: 6 }, () => ({ label: '링크', url: 'https://site.test' })) })
-      .expect(400);
-    await authenticated()
-      .send({ links: [{ label: 'x'.repeat(41), url: 'https://site.test' }] })
-      .expect(400);
-  });
-  it('닉네임과 자기소개를 수정하고 기존 링크와 다른 사용자의 프로필을 보존한다', async () => {
-    const links = [{ label: '방송', url: 'https://video.example/player' }];
-    await authenticated().send({ links }).expect(200);
+  it('닉네임과 자기소개를 수정하고 다른 사용자의 프로필을 보존한다', async () => {
     const updated = await authenticated()
       .send({ nickname: '  새 닉네임  ', bio: '  소개\nhttps://royaleapi.com/player/QLLLPR89G  ' })
       .expect(200);
     expect(updated.body).toMatchObject({
       author: { nickname: '새 닉네임' },
       bio: '소개\nhttps://royaleapi.com/player/QLLLPR89G',
-      links,
     });
     const session = await http()
       .get('/api/session')
@@ -159,7 +144,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     expect(other.nickname).toBe('프로필 방문자');
     expect(other.bio).toBe('');
     const cleared = await authenticated().send({ bio: '' }).expect(200);
-    expect(cleared.body).toMatchObject({ author: { nickname: '새 닉네임' }, bio: '', links });
+    expect(cleared.body).toMatchObject({ author: { nickname: '새 닉네임' }, bio: '' });
   });
   it('닉네임 형식과 소개 길이를 검사하고 권한·다른 사용자 필드는 변경하지 못한다', async () => {
     for (const input of [

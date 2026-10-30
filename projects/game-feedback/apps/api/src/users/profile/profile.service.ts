@@ -34,14 +34,13 @@ export class ProfileService {
   ) {}
   async update(req: SessionRequest, input: TUpdateProfileDto) {
     const user = requireUser(req);
-    const { links, nickname, bio } = input;
+    const { nickname, bio } = input;
     await this.cache.change(
       async (tx) => {
         await lockActiveUser({ client: tx, userId: user.id });
         return tx.user.update({
           where: { id: user.id },
           data: {
-            ...(links !== undefined ? { profileLinks: links } : {}),
             ...(nickname !== undefined ? { nickname } : {}),
             ...(bio !== undefined ? { bio } : {}),
           },

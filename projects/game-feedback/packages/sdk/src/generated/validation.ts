@@ -653,14 +653,6 @@ export const getPublicProfileResponseGameAccountsItemDeckItemLevelMin = 0;
 export const getPublicProfileResponseGameAccountsItemDeckItemLevelMax = 9007199254740991;
 
 export const getPublicProfileResponseGameAccountsItemFetchedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const getPublicProfileResponseLinksItemLabelMax = 40;
-
-export const getPublicProfileResponseLinksItemUrlMax = 2048;
-
-
-export const getPublicProfileResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const getPublicProfileResponseLinksMax = 5;
-
 export const getPublicProfileResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const getPublicProfileResponsePostCountMin = 0;
 export const getPublicProfileResponsePostCountMax = 9007199254740991;
@@ -702,10 +694,6 @@ export const GetPublicProfileResponse = zod.object({
   "fetchedAt": zod.iso.datetime({"offset":true}).regex(getPublicProfileResponseGameAccountsItemFetchedAtRegExp)
 })).optional(),
   "bio": zod.string().optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(getPublicProfileResponseLinksItemLabelMax),
-  "url": zod.string().max(getPublicProfileResponseLinksItemUrlMax).regex(getPublicProfileResponseLinksItemUrlRegExp)
-})).max(getPublicProfileResponseLinksMax).optional(),
   "joinedAt": zod.iso.datetime({"offset":true}).regex(getPublicProfileResponseJoinedAtRegExp),
   "postCount": zod.int().min(getPublicProfileResponsePostCountMin).max(getPublicProfileResponsePostCountMax),
   "answerCount": zod.int().min(getPublicProfileResponseAnswerCountMin).max(getPublicProfileResponseAnswerCountMax),
@@ -720,23 +708,11 @@ export const updateProfileBodyNicknameMax = 24;
 export const updateProfileBodyNicknameRegExp = new RegExp('^[\\p{L}\\p{N}_ .-]+$', 'u');
 export const updateProfileBodyBioMax = 500;
 
-export const updateProfileBodyLinksItemLabelMax = 40;
-
-export const updateProfileBodyLinksItemUrlMax = 2048;
-
-
-export const updateProfileBodyLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const updateProfileBodyLinksMax = 5;
-
 
 
 export const UpdateProfileBody = zod.object({
   "nickname": zod.string().min(updateProfileBodyNicknameMin).max(updateProfileBodyNicknameMax).regex(updateProfileBodyNicknameRegExp).optional(),
-  "bio": zod.string().max(updateProfileBodyBioMax).optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(updateProfileBodyLinksItemLabelMax),
-  "url": zod.string().max(updateProfileBodyLinksItemUrlMax).regex(updateProfileBodyLinksItemUrlRegExp)
-})).max(updateProfileBodyLinksMax).optional()
+  "bio": zod.string().max(updateProfileBodyBioMax).optional()
 })
 
 export const updateProfileResponseAuthorIdMax = 100;
@@ -765,14 +741,6 @@ export const updateProfileResponseGameAccountsItemDeckItemLevelMin = 0;
 export const updateProfileResponseGameAccountsItemDeckItemLevelMax = 9007199254740991;
 
 export const updateProfileResponseGameAccountsItemFetchedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const updateProfileResponseLinksItemLabelMax = 40;
-
-export const updateProfileResponseLinksItemUrlMax = 2048;
-
-
-export const updateProfileResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const updateProfileResponseLinksMax = 5;
-
 export const updateProfileResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const updateProfileResponsePostCountMin = 0;
 export const updateProfileResponsePostCountMax = 9007199254740991;
@@ -814,10 +782,6 @@ export const UpdateProfileResponse = zod.object({
   "fetchedAt": zod.iso.datetime({"offset":true}).regex(updateProfileResponseGameAccountsItemFetchedAtRegExp)
 })).optional(),
   "bio": zod.string().optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(updateProfileResponseLinksItemLabelMax),
-  "url": zod.string().max(updateProfileResponseLinksItemUrlMax).regex(updateProfileResponseLinksItemUrlRegExp)
-})).max(updateProfileResponseLinksMax).optional(),
   "joinedAt": zod.iso.datetime({"offset":true}).regex(updateProfileResponseJoinedAtRegExp),
   "postCount": zod.int().min(updateProfileResponsePostCountMin).max(updateProfileResponsePostCountMax),
   "answerCount": zod.int().min(updateProfileResponseAnswerCountMin).max(updateProfileResponseAnswerCountMax),
@@ -890,14 +854,6 @@ export const completeProfileAvatarUploadResponseGameAccountsItemDeckItemLevelMin
 export const completeProfileAvatarUploadResponseGameAccountsItemDeckItemLevelMax = 9007199254740991;
 
 export const completeProfileAvatarUploadResponseGameAccountsItemFetchedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const completeProfileAvatarUploadResponseLinksItemLabelMax = 40;
-
-export const completeProfileAvatarUploadResponseLinksItemUrlMax = 2048;
-
-
-export const completeProfileAvatarUploadResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const completeProfileAvatarUploadResponseLinksMax = 5;
-
 export const completeProfileAvatarUploadResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const completeProfileAvatarUploadResponsePostCountMin = 0;
 export const completeProfileAvatarUploadResponsePostCountMax = 9007199254740991;
@@ -939,10 +895,6 @@ export const CompleteProfileAvatarUploadResponse = zod.object({
   "fetchedAt": zod.iso.datetime({"offset":true}).regex(completeProfileAvatarUploadResponseGameAccountsItemFetchedAtRegExp)
 })).optional(),
   "bio": zod.string().optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(completeProfileAvatarUploadResponseLinksItemLabelMax),
-  "url": zod.string().max(completeProfileAvatarUploadResponseLinksItemUrlMax).regex(completeProfileAvatarUploadResponseLinksItemUrlRegExp)
-})).max(completeProfileAvatarUploadResponseLinksMax).optional(),
   "joinedAt": zod.iso.datetime({"offset":true}).regex(completeProfileAvatarUploadResponseJoinedAtRegExp),
   "postCount": zod.int().min(completeProfileAvatarUploadResponsePostCountMin).max(completeProfileAvatarUploadResponsePostCountMax),
   "answerCount": zod.int().min(completeProfileAvatarUploadResponseAnswerCountMin).max(completeProfileAvatarUploadResponseAnswerCountMax),
@@ -976,14 +928,6 @@ export const deleteProfileAvatarResponseGameAccountsItemDeckItemLevelMin = 0;
 export const deleteProfileAvatarResponseGameAccountsItemDeckItemLevelMax = 9007199254740991;
 
 export const deleteProfileAvatarResponseGameAccountsItemFetchedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const deleteProfileAvatarResponseLinksItemLabelMax = 40;
-
-export const deleteProfileAvatarResponseLinksItemUrlMax = 2048;
-
-
-export const deleteProfileAvatarResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const deleteProfileAvatarResponseLinksMax = 5;
-
 export const deleteProfileAvatarResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const deleteProfileAvatarResponsePostCountMin = 0;
 export const deleteProfileAvatarResponsePostCountMax = 9007199254740991;
@@ -1025,10 +969,6 @@ export const DeleteProfileAvatarResponse = zod.object({
   "fetchedAt": zod.iso.datetime({"offset":true}).regex(deleteProfileAvatarResponseGameAccountsItemFetchedAtRegExp)
 })).optional(),
   "bio": zod.string().optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(deleteProfileAvatarResponseLinksItemLabelMax),
-  "url": zod.string().max(deleteProfileAvatarResponseLinksItemUrlMax).regex(deleteProfileAvatarResponseLinksItemUrlRegExp)
-})).max(deleteProfileAvatarResponseLinksMax).optional(),
   "joinedAt": zod.iso.datetime({"offset":true}).regex(deleteProfileAvatarResponseJoinedAtRegExp),
   "postCount": zod.int().min(deleteProfileAvatarResponsePostCountMin).max(deleteProfileAvatarResponsePostCountMax),
   "answerCount": zod.int().min(deleteProfileAvatarResponseAnswerCountMin).max(deleteProfileAvatarResponseAnswerCountMax),
