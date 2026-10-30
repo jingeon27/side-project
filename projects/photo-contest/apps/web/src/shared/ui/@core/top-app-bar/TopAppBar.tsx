@@ -47,7 +47,7 @@ export function TopAppBar({ title, backHref, actions, className, showBrand = fal
               className="flex items-center gap-2 text-title-lg font-extrabold tracking-tighter"
             >
               <BrandIcon className="size-7" />
-              별사대
+              피식
             </span>
           ) : (
             <span className="line-clamp-1">{title}</span>
