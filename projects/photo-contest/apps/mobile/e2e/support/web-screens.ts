@@ -5,6 +5,14 @@ import type { Page } from '@playwright/test';
  * 역할과 접근성 이름으로 찾는다.
  */
 export const webScreens = {
+  homeLink: (page: Page) => page.getByRole('link', { name: '홈', exact: true }),
+  homeHeading: (page: Page) => page.getByRole('heading', { name: '우리끼리 모은 순간.' }),
+  landingHero: (page: Page) => page.getByRole('heading', { level: 1, name: '혼자 보기 아까운 순간.' }),
+  landingStart: (page: Page) => page.getByRole('link', { name: '피식 시작하기', exact: true }),
+  postCard: (page: Page) =>
+    page
+      .getByRole('region', { name: '최신 게시물', exact: true })
+      .getByRole('article', { name: '모바일 피드 확인용 게시물' }),
   myPageLink: (page: Page) => page.getByRole('link', { name: 'MY', exact: true }),
   profileHeading: (page: Page, nickname: string) =>
     page.getByRole('heading', { name: nickname, exact: true }),

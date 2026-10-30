@@ -45,13 +45,22 @@ export async function signInBrowser(context: BrowserContext, cookie: string) {
   ]);
 }
 
-export async function seedGroup(ownerCookie: string, name = '별사대 모임') {
+export async function seedGroup(ownerCookie: string, name = '피식 모임') {
   const data = await gql<{ createGroup: { id: string; inviteToken: string } }>(
     ownerCookie,
     'mutation CreateGroup($name: String!) { createGroup(name: $name) { id inviteToken } }',
     { name },
   );
   return data.createGroup;
+}
+
+export async function seedLinkPost(cookie: string, groupId: string) {
+  const data = await gql<{ createPost: { id: string } }>(
+    cookie,
+    'mutation($groupId:ID!){createPost(groupId:$groupId,linkUrl:"https://example.com",title:"모바일 피드 확인용 게시물",body:"화면 확인을 위해 만든 예시 게시물입니다.",rightsConfirmed:true){id}}',
+    { groupId },
+  );
+  return data.createPost;
 }
 
 export async function joinGroup(memberCookie: string, inviteToken: string) {
