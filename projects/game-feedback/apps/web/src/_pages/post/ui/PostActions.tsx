@@ -11,11 +11,11 @@ import { deletePostMutationOptions } from '@/features/post';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { openOverlay } from '@/shared/ui';
-import { EditPostSheet } from '@/widgets/post-composer';
 
 import { BlockAuthorButton } from './BlockAuthorButton';
 import { ContentDeleteDialog } from './ContentDeleteDialog';
 import { ContentOwnerActions } from './ContentOwnerActions';
+import { EditPostSheet } from './EditPostSheet';
 import { ReportContentButton } from './ReportContentButton';
 
 export function PostActions({ post }: { post: Post }) {

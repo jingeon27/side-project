@@ -18,8 +18,9 @@ import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { BackLink } from '@/shared/navigation';
 import { Avatar, LinkifiedText, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
-import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
+
+import { ReportUserButton } from './ReportUserButton';
 
 interface IProfilePageProps {
   id: string;

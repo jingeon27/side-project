@@ -20,7 +20,7 @@ vi.mock('@game-feedback/sdk', async (importOriginal) => ({
 }));
 vi.mock('@/features/user/api/avatar.api', () => ({ uploadAvatar: state.uploadAvatar }));
 vi.mock('@/features/user/api/user.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/features/user/api/user.api')>()),
+  ...(await importOriginal<Record<string, unknown>>()),
   fetchPublicProfile: async () => profile,
 }));
 

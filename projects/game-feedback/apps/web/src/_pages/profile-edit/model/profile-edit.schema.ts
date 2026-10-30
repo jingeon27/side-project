@@ -3,7 +3,7 @@ import { z, type ZodObject } from 'zod';
 
 import { ProfileDetailsInputSchema, UpdateProfileInputSchema } from '@game-feedback/contracts';
 
-import { isAvatarFile } from '../lib/avatar-file';
+import { isAvatarFile } from '@/features/user';
 
 export const profileDetailsSchema = ProfileDetailsInputSchema;
 export const profileLinksSchema = UpdateProfileInputSchema;

@@ -6,11 +6,11 @@ import { useFieldArray } from 'react-hook-form';
 import { ProfileLinkSchema } from '@game-feedback/contracts';
 import { Button, Input } from '@side/design-system';
 
+import { updateProfileMutationOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
 
 import type { TProfileLinksForm } from '../model/profile-edit.schema';
-import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 
 const { label, url } = ProfileLinkSchema.shape;
 

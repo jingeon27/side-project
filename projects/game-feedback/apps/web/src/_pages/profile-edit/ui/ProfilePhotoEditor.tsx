@@ -5,12 +5,11 @@ import { Controller, useWatch } from 'react-hook-form';
 
 import { Button, buttonVariants, cn } from '@side/design-system';
 
+import { avatarAccept, deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
 
-import { avatarAccept } from '../lib/avatar-file';
 import type { TProfilePhotoForm } from '../model/profile-edit.schema';
-import { deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '../model/profile.mutation-options';
 
 function PhotoPreview({ file }: { file: File }) {
   const { t } = useI18n();

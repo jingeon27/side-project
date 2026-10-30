@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PushNotificationSettings } from './PushNotificationSettings';
 
 const device = vi.hoisted(() => ({ synchronize: vi.fn(), postToNative: vi.fn() }));
-vi.mock('../api/push-registration', () => ({ synchronizePush: device.synchronize }));
+vi.mock('@/features/push-notifications/api/push-registration', () => ({
+  synchronizePush: device.synchronize,
+}));
 vi.mock('@/shared/native', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   supportsNativePush: () => true,

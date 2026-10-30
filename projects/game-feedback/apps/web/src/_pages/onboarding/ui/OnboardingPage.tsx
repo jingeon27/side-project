@@ -11,8 +11,10 @@ import { appRoutes } from '@game-feedback/bridge';
 import { completeOnboardingMutationOptions, sessionOptions } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { LoadingState, useNotify } from '@/shared/ui';
-import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
 import { GameProfileLookup } from '@/widgets/game-profile';
+
+import type { TAccountSetupValues } from '../model/account-setup.schema';
+import { AccountSetupForm } from './AccountSetupForm';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const client = useQueryClient();

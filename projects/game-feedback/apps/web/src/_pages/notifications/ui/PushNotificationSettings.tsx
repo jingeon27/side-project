@@ -5,12 +5,13 @@ import { match, P } from 'ts-pattern';
 
 import { Button } from '@side/design-system';
 
+import {
+  enablePushMutationOptions,
+  pushStatusOptions,
+  useNativePushSupported,
+} from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
 import { postToNative } from '@/shared/native';
-
-import { enablePushMutationOptions } from '../model/push.mutation-options';
-import { pushStatusOptions } from '../model/push.options';
-import { useNativePushSupported } from '../model/use-native-push-supported';
 
 export function PushNotificationSettings({ userId }: { userId: string }) {
   const supported = useNativePushSupported();

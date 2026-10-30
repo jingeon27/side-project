@@ -20,10 +20,7 @@ import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
-
-import { postComposerSchema } from '../model/post-composer.schema';
-import { postContentInput } from '../model/post-content-input';
-import { PostContentFields } from './PostContentFields';
+import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
 
 interface ICreatePostFormProps {
   categories: Category[];

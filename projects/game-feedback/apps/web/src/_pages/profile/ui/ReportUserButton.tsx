@@ -6,8 +6,7 @@ import { IconButton } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-
-import { openUserReport } from './open-user-report';
+import { openUserReport } from '@/widgets/moderation';
 
 export function ReportUserButton({ userId }: { userId: string }) {
   const { t } = useI18n();

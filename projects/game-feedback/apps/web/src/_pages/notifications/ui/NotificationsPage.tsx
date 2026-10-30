@@ -14,12 +14,12 @@ import {
   notificationPath,
   readNotificationMutationOptions,
 } from '@/features/notification';
-import { PushNotificationSettings } from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { NotificationsTopbar } from './NotificationsTopbar';
+import { PushNotificationSettings } from './PushNotificationSettings';
 
 interface INotificationsPageProps {
   locale: string;

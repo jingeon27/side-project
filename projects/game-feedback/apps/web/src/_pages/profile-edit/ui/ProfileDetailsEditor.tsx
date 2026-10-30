@@ -6,12 +6,11 @@ import { useWatch } from 'react-hook-form';
 import { PROFILE_BIO_MAX_LENGTH } from '@game-feedback/contracts';
 import { Button, Input, Textarea } from '@side/design-system';
 
+import { nicknameLength, updateProfileMutationOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
 
-import { nicknameLength } from '../model/nickname-length';
 import type { TProfileDetailsForm } from '../model/profile-edit.schema';
-import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 
 interface IProfileDetailsEditorProps {
   form: TProfileDetailsForm;

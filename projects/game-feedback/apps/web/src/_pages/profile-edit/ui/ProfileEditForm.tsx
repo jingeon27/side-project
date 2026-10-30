@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
 
+import { profileOptions } from '@/features/user';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
@@ -11,7 +12,6 @@ import { useUnsavedChanges } from '@/shared/navigation';
 import { Avatar } from '@/shared/ui';
 
 import { profileDetailsSchema, profileLinksSchema, profilePhotoSchema } from '../model/profile-edit.schema';
-import { profileOptions } from '../model/user.options';
 import { ProfileDetailsEditor } from './ProfileDetailsEditor';
 import { ProfileLinksEditor } from './ProfileLinksEditor';
 import { ProfilePhotoEditor } from './ProfilePhotoEditor';

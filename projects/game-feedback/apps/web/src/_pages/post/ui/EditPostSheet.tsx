@@ -16,10 +16,7 @@ import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
-
-import { postComposerSchema } from '../model/post-composer.schema';
-import { postContentInput } from '../model/post-content-input';
-import { PostContentFields } from './PostContentFields';
+import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
 
 interface IEditPostSheetProps extends IOverlayControlProps {
   post: Post;

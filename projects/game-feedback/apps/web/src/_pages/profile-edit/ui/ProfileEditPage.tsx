@@ -8,10 +8,12 @@ import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { ProfileEditForm, profileOptions } from '@/features/user';
+import { profileOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary } from '@/shared/ui';
 import { CommunityPage, Topbar } from '@/widgets/community-shell';
+
+import { ProfileEditForm } from './ProfileEditForm';
 
 function ProfileEditor({ userId, locale }: { userId: string; locale: string }) {
   const { data: profile } = useSuspenseQuery(profileOptions(userId));
