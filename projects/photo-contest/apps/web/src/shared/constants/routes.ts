@@ -1,5 +1,7 @@
 /** 화면 경로. 내부 링크·이동은 이 값으로만 만든다. */
 export const ROUTES = {
+  LANDING: '/about',
+  HOW_IT_WORKS: '/about/how-it-works',
   HOME: '/',
   SIGN: '/sign',
   ME: '/me',
@@ -19,6 +21,11 @@ export const ROUTES = {
   CONTEST: (id: string) => `/contests/${encodeURIComponent(id)}`,
   INVITE: (token: string) => `/invite/${encodeURIComponent(token)}`,
 } as const satisfies Record<string, `/${string}` | ((...args: never[]) => string)>;
+
+export const PUBLIC_LANDING_PATHS = [
+  ROUTES.LANDING,
+  ROUTES.HOW_IT_WORKS,
+] as const satisfies readonly string[];
 
 /** 같은 origin의 `/backend/*` 프록시(next.config rewrites)로 부르는 API 경로 */
 export const BACKEND_ROUTES = {

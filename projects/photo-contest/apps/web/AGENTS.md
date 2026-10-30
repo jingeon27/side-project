@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Web (Next.js 16 · Apollo Client 4 · Base UI)
 
+홈 피드는 기존 `/`(`ROUTES.HOME`)를 유지한다. `/about`(서비스 소개)와 `/about/how-it-works`(이용 방법)는 별도 공개 페이지다. 공개 소개는 AppProviders의 SessionSync와 DesktopNavigation을 제외하며 인증 API 없이 읽힌다. 인증 진입 링크에는 prefetch=false를 둔다. 피드·그룹의 기존 세션·권한 검사는 유지한다.
+
 화면·상태·레이어는 `../../.agents/skills/frontend/SKILL.md`, 테스트 격리는 `../../.agents/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
 
 ## 구조
