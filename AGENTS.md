@@ -4,6 +4,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 
 - 각 프로젝트의 `AGENTS.md`와 `.agents/skills`를 따른다.
+- 웹·모바일 UI를 구성하거나 디자인을 변경할 때 저장소 공통 `.agents/skills/ui-design/SKILL.md`를 먼저 읽고 적용한다.
 - `packageManager`에 고정한 Yarn 4.17.0 CLI를 직접 설치하고 `yarn`으로 실행한다. 최초 설치는 `npm install --global @yarnpkg/cli-dist@4.17.0 --force`를 사용한다.
 - 여러 워크스페이스가 사용하는 외부 의존성은 루트 `.yarnrc.yml`의 `catalog`에 정확한 버전을 두고 각 `dependencies`·`devDependencies`에서 `catalog:`로 참조한다. React·React DOM도 웹·Expo 앱이 같은 catalog를 사용한다. Expo 권장 버전과 다른 패치는 React Native의 peer 범위를 확인하고 모바일 검사·두 플랫폼 번들을 검증한다. `peerDependencies`는 호환 범위를 유지한다. 버전을 바꾸면 catalog와 `yarn.lock`을 함께 갱신하고, 실행 중인 해당 개발 서버를 재시작한다.
 - 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수 반환값으로 전달한다.
