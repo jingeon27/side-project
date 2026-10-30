@@ -18,12 +18,12 @@ export function CommunityPage({
   children,
   locale,
   topbar,
-  boardHeading,
+  feedHeading,
 }: {
   children: ReactNode;
   locale: string;
   topbar: ReactNode;
-  boardHeading?: ReactNode;
+  feedHeading?: ReactNode;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
@@ -45,9 +45,13 @@ export function CommunityPage({
         </div>
         <RouteViewport>
           <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
-            <Suspense fallback={boardHeading ?? null}>
-              <BoardNavigationRoute locale={locale} heading={boardHeading} />
-            </Suspense>
+            {feedHeading ? (
+              <GameBoardNavigation locale={locale} path={home} heading={feedHeading} />
+            ) : (
+              <Suspense fallback={null}>
+                <BoardNavigationRoute locale={locale} />
+              </Suspense>
+            )}
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>
@@ -63,6 +67,6 @@ function usePagePath() {
 function SidebarRoute({ home, chatUnread }: { home: string; chatUnread: number }) {
   return <LeftSidebar home={home} path={usePagePath()} chatUnread={chatUnread} />;
 }
-function BoardNavigationRoute({ locale, heading }: { locale: string; heading?: ReactNode }) {
-  return <GameBoardNavigation locale={locale} path={usePagePath()} heading={heading} />;
+function BoardNavigationRoute({ locale }: { locale: string }) {
+  return <GameBoardNavigation locale={locale} path={usePagePath()} />;
 }

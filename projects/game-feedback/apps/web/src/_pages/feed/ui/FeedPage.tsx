@@ -194,7 +194,7 @@ export function FeedPage(props: Omit<Parameters<typeof FeedContent>[0], 'onCompo
     <CommunityPage
       locale={props.locale}
       topbar={<FeedTopbar locale={props.locale} />}
-      boardHeading={<FeedFilters onCompose={handleCompose} />}
+      feedHeading={<FeedFilters onCompose={handleCompose} />}
     >
       <FeedContent {...props} onCompose={handleCompose} />
     </CommunityPage>

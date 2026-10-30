@@ -29,67 +29,73 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
   const route = resolveAppRoute(path);
   const game = categories.data?.find((item) => item.active && item.slug === (route?.game ?? 'clash-royale'));
   if (!route || !['feed', 'boards'].includes(route.screen)) return null;
-  if (!game) return <>{heading}</>;
+  if (!game && !heading) return null;
   return (
     <div className="game-board-navigation" data-has-heading={Boolean(heading) || undefined}>
       <div className="game-category-group">
         <div className="game-board-heading">
           <div className="game-board-title">
-            <GameIcon slug={game.slug} />
-            <strong>{game.name}</strong>
-            {!heading && <span>{t('분류')}</span>}
+            {game && (
+              <>
+                <GameIcon slug={game.slug} />
+                <strong>{game.name}</strong>
+                {!heading && <span>{t('분류')}</span>}
+              </>
+            )}
           </div>
           {heading}
         </div>
-        <nav className="game-board-chips" aria-label={t('{game} 게시판', { game: game.name })}>
-          <TabLink
-            ref={!selected ? currentChip : undefined}
-            href={appRoutes.feed(locale)}
-            replace
-            aria-current={!selected ? 'page' : undefined}
-            className={cn(
-              buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
-              'rounded-full',
-            )}
-          >
-            {t('전체')}
-          </TabLink>
-          <GameBoardChip
-            kind="FEEDBACK"
-            locale={locale}
-            game={game.slug}
-            selected={selected}
-            currentChip={currentChip}
-          />
-          <GameBoardChip
-            kind="FRIEND_SALE"
-            locale={locale}
-            game={game.slug}
-            selected={selected}
-            currentChip={currentChip}
-          />
-          <GameBoardChip
-            kind="FRIENDLY"
-            locale={locale}
-            game={game.slug}
-            selected={selected}
-            currentChip={currentChip}
-          />
-          <GameBoardChip
-            kind="COACHING"
-            locale={locale}
-            game={game.slug}
-            selected={selected}
-            currentChip={currentChip}
-          />
-          <GameBoardChip
-            kind="FREE"
-            locale={locale}
-            game={game.slug}
-            selected={selected}
-            currentChip={currentChip}
-          />
-        </nav>
+        {game && (
+          <nav className="game-board-chips" aria-label={t('{game} 게시판', { game: game.name })}>
+            <TabLink
+              ref={!selected ? currentChip : undefined}
+              href={appRoutes.feed(locale)}
+              replace
+              aria-current={!selected ? 'page' : undefined}
+              className={cn(
+                buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
+                'rounded-full',
+              )}
+            >
+              {t('전체')}
+            </TabLink>
+            <GameBoardChip
+              kind="FEEDBACK"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+            <GameBoardChip
+              kind="FRIEND_SALE"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+            <GameBoardChip
+              kind="FRIENDLY"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+            <GameBoardChip
+              kind="COACHING"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+            <GameBoardChip
+              kind="FREE"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+          </nav>
+        )}
       </div>
     </div>
   );
