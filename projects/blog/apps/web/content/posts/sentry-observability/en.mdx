@@ -1,6 +1,6 @@
 <Summary>
 
-I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.
+I excluded credentials and user input from Sentry collection and prioritized errors by user impact. I compared SDK source with actual payloads, then checked metric emission, server storage, and source-map uploads separately.
 
 </Summary>
 
@@ -12,7 +12,7 @@ I added Sentry to inspect screen errors and Web Vitals in the benefits portal. I
 
 I moved between actual events and SDK source to trace those problems. I decided what must stay out of payloads, closed the gaps in each runtime, and then separated errors by their effect on users. The setup used Next.js 16 and @sentry/nextjs 10.70.
 
-## Collect errors from three runtimes
+## Keep errors from being reported again across three runtimes
 
 Initializing the browser SDK does not collect server errors. Next.js uses separate SDK implementations for the browser, Node, and Edge, so I connected initialization in each runtime.
 
@@ -52,13 +52,15 @@ The same error could now pass through several collection points. An object repor
 
 Filtered errors need that mark too. Otherwise, a boundary can send an error as fatal after the interceptor deliberately excluded it.
 
-## Check the scope of automatic request collection
+## Close the paths carrying credentials and user input
+
+### Check the scope of automatic request collection
 
 I first traced what `sendDefaultPii: false` actually removed. In 10.70 it did not exclude every header and cookie from `event.request`. Authentication cookies could be included too; I have renamed them `sessionToken` and `renewalToken` here.
 
 The option transformed header/cookie collection into a deny-list object rather than false. requestDataIntegration checked only for false; an object enabled collection without applying the deny list. The filtering existed on the span path only.
 
-Request context can help debugging, but this service handles medical information. I explicitly disabled headers, cookies, bodies, queries, and user input in `dataCollection` so credentials and entered content would stay out.
+Request context can help debugging, but this service handles medical information. I explicitly disabled automatic collection of headers, cookies, bodies, queries, and user input in `dataCollection`. Values attached outside that policy needed separate handling.
 
 ```typescript
 export const SENTRY_DATA_COLLECTION = {
@@ -81,7 +83,7 @@ stackFrameVariables matters too. Node's localVariablesIntegration adds exception
 
 I kept five `frameContextLines`. They expose source rather than user input, and the destination is our internal Sentry, so I kept them for debugging. Node events still contain minified lines because I do not upload server source maps; I explain that choice below.
 
-## Make new collection keys fail type checking
+### Make new collection keys fail type checking
 
 Supplying a `dataCollection` object does not disable entries I leave out. Omitted keys default to full collection. The first configuration missed `stackFrameVariables` and `graphQL`, which made another omission during an SDK upgrade easy to imagine.
 
@@ -101,7 +103,7 @@ Making the properties required causes type checking to fail on a new SDK field u
 
 Types still allow an existing value to change accidentally to `true`. A full-object `toEqual` test covers those values alongside missing keys. The type and test catch different ways collection could reopen.
 
-## dataCollection did not cover breadcrumbs
+### dataCollection did not cover breadcrumbs
 
 After headers and cookies were disabled, tokens still had a breadcrumb path.
 
@@ -141,7 +143,7 @@ Values the application adds to context sit outside those automatic collection se
 - Collapse numeric/UUID path segments to :id, reducing personal data and issue fragmentation.
 - Keep OAuth code/state, search conditions, and member identifiers out of URLs sent to Sentry.
 
-## Block reading and sanitize before sending
+### Block reading and sanitize before sending
 
 Code review and SDK inspection found more URL and body paths after the header and breadcrumb changes. An option that sounded like a restriction on the whole request could apply to just one field or integration.
 
@@ -176,6 +178,8 @@ Node now avoids reading bodies, while the final hooks remove request data and sp
 
 A URL placed under a new SDK key can still escape a sanitizer that does not know its name. Upgrades require inspecting the URL fields and span attributes again.
 
+I did not delete the entire headers object. I retained the browser-provided User-Agent for environment context while removing query strings and hashes from Referer.
+
 sanitizeEvent handles:
 
 - Removing query/hash from event.request.url
@@ -195,17 +199,19 @@ Plain url was the last one found. Fetch/XHR instrumentation put a cleaned URL in
 
 Standalone spans such as INP do not pass through beforeSendTransaction. The same attribute sanitizer therefore also runs in beforeSendSpan.
 
-## Check that initialization actually receives the sanitizer
+### Check that initialization actually receives the sanitizer
 
 A correct sanitizer still sends raw values if initialization never receives it. Alongside function tests, I check that client, server, and edge initialization receive `dataCollection` and every hook.
 
 The sanitizer cases include URLs, bodies, cookies, differently cased Referer headers, breadcrumbs, and span attributes. The policy test compares all keys and values together. These protect known fields and connections, while new SDK attribute names still need inspection.
 
-## Verify Web Vitals in actual envelopes
+## Verify metric emission, storage, and access separately
 
-Browser tracing sends LCP, CLS, TTFB, and FCP as pageload transaction measurements. Production tracing samples 20%; transmission-verification deployments collect all traces.
+### Verify Web Vitals in actual envelopes
 
-With the original one-second idleTimeout, pageloads missing LCP had a median duration of 728ms, while those with LCP lasted 2.3 seconds. I inferred that transactions sometimes ended before the metric and extended the waiting window to three seconds.
+In the SDK used here, browserTracingIntegration sends LCP, CLS, TTFB, and FCP as pageload transaction measurements. Production tracing samples 20%; transmission-verification deployments collect all traces. Sampling out a transaction also removes its measurements.
+
+With the original one-second idleTimeout, pageloads missing LCP had a median duration of 728ms, while those with LCP lasted 2.3 seconds. I inferred that transactions sometimes ended before the metric and extended the waiting window to three seconds. That distribution alone could not explain every missing LCP.
 
 ```typescript
 export const SENTRY_IDLE_TIMEOUT = 3_000;
@@ -233,17 +239,17 @@ The test follows the payload the browser actually builds:
   → measurement 포함 여부 확인
 ```
 
-The envelope contained the metrics, but some still did not appear in our Sentry dashboard.
+This verified the browser path that puts fcp, lcp, and ttfb into an envelope. Server storage and dashboard display were outside the test’s scope. Investigating INP exposed that distinction.
 
-## INP was sent but not stored
+### INP was sent but not stored
 
-The SDK sends INP as a standalone span rather than a pageload measurement. Our internal Sentry had span ingestion disabled and an empty spans dataset. INP was not stored, and Insights Web Vitals appeared empty.
+The SDK used here sent INP as a standalone span rather than a pageload measurement. The internal Sentry environment I inspected had span ingestion disabled and an empty spans dataset. INP was not stored, and Insights Web Vitals appeared empty.
 
-We inspect LCP, CLS, TTFB, and FCP in Discover’s transaction dataset with `transaction.op:pageload`. Product-specific improvement thresholds and alerts are separate from that collection setup.
+I inspected LCP, CLS, TTFB, and FCP in Discover’s transaction dataset with `transaction.op:pageload`. Product-specific improvement thresholds and alerts are separate from that collection setup.
 
-A client-side `beforeSendSpan` hook cannot enable ingestion on the server. The app emits INP spans; storing them requires changing the server configuration.
+A client-side `beforeSendSpan` hook cannot enable ingestion on the server. Storing the emitted INP spans requires changing the server configuration; that work remained separate.
 
-## Connect agents to internal Sentry through MCP
+### Connect agents to internal Sentry through MCP
 
 Investigating meant switching repeatedly between the dashboard and code. I connected Sentry MCP to the repository so agents could read issues, transactions, and project settings while tracing the implementation.
 
@@ -276,7 +282,7 @@ The MCP token lacked project:releases and could not be reused for upload. Tokens
 
 For INP, I used MCP to read the transaction dataset and issue payloads. Comparing them with browser emission pointed to disabled server span storage rather than an omitted client metric.
 
-## Verify releases and source maps in build artifacts
+## Distinguish a successful build from a successful source-map upload
 
 Mapping minified stacks requires artifacts actually present in Sentry. I connected internal host, organization, project, and build token through withSentryConfig.
 
@@ -310,7 +316,7 @@ I chose not to upload server source maps. Turbopack left more than 1,000 under .
 
 Connecting a deployed error back to source requires its debug ID to match the uploaded artifact. That match, rather than the build’s exit code, was what I checked at the end.
 
-## Assign severity by user impact
+## Choose errors by user impact and execution purpose
 
 Once I could inspect the issues, I needed to decide which ones to act on first. An unavailable screen and a request someone can retry are difficult to distinguish if they arrive at the same level.
 
@@ -333,17 +339,17 @@ This app uses the table as a default distinction between failed screen-loading q
 
 401 handling also varies. A 401 recovered through token refresh is not sent. Refresh failure receives a separate fingerprint: a normally expired refresh token is warning because returning users naturally reach session expiry; other refresh failures are error.
 
-## Attach only the member ID
+### Keep only the member ID to measure affected users
 
 Affected-user counts distinguish one unusual case from widespread failure. Browser issues receive only a member ID, without name, email, or phone. dataCollection.userInfo false prevents SDK IP collection.
 
 Server renders do not receive user identity because request scope and cached-render lifetimes could otherwise retain a previous user's ID.
 
-Components do not call SDK setUser directly. Shared setSentryUser controls both the transmission gate and permitted fields.
+Components do not call SDK setUser directly. Shared setSentryUser controls both the transmission gate and permitted fields. It clears the user with null on logout or when no member is signed in, preventing the previous member ID from remaining on the scope.
 
-## Sample environmental noise at its source
+### Sample location failures according to their cause
 
-Geolocation failures filled the issue list after privacy cleanup. Permission denial is a user choice and is not sent. Unavailable positions and timeouts depend strongly on device/environment, so I retain 10% to detect spikes.
+Geolocation failures filled the issue list after privacy cleanup. The app can show the screen using default coordinates when lookup fails, so these failures receive warning. Permission denial is a user choice and is not sent. Unavailable positions and timeouts depend strongly on device/environment, so I retain 10% to detect spikes.
 
 Failures without an error code are all retained; bridge rejection or missing navigator.geolocation may indicate broken application code.
 
@@ -351,11 +357,11 @@ ignoreErrors could only discard matching messages, not sample codes 2/3 while re
 
 GeolocationPositionError is neither Error nor Event, so the SDK produced a stackless synthetic exception titled unknown. I wrapped it in a named Error with the original as cause, retaining the fingerprint to avoid splitting existing groups.
 
-## Gate transmission by execution purpose
+### Separate local runs from transmission verification by default
 
 At the previous company, NODE_ENV excluded dev/test events. It was effective but could not precisely represent production-build E2E or local transmission verification.
 
-Errors already visible in a local console were mixing with real-user issues. This time I used an explicit transmission setting based on the run’s purpose rather than `NODE_ENV`.
+Errors already visible in a local console were mixing with real-user issues. This time I used an explicit transmission setting based on the run’s purpose rather than `NODE_ENV`. A false flag disables the SDK even with a DSN. If the flag is absent, the gate enables reporting whenever a DSN is present; execution scripts keep ordinary local runs disabled by default.
 
 ```typescript
 export const IS_SENTRY_ENABLED = Boolean(SENTRY_DSN) && SENTRY_ENABLED !== 'false';
@@ -365,13 +371,13 @@ Deployments collecting real-user errors and runs verifying Sentry transmission e
 
 I first put local disabling in `.env.local`. A new clone or worktree lacked that file and read the true value from `.env.development`. Moving the default into execution scripts made new workspaces start with reporting disabled too.
 
-## Problems this setup helped uncover
+## Use the collected data to investigate real failures
 
 The Bottom Sheet drag crash initially showed 23 events across 17 users, reaching at least 75 events and 57 users before deployment. Following the dependency source led to upgrading to a version without the failing path.
 
 While deriving types from Zod and narrowing nullability, I compared the change before merge against 33 existing production schema mismatches. A field populated in all 12 dev samples was null in 27 of 200 production responses. Restoring that nullability prevented new warnings on valid responses from obscuring real issues.
 
-A Sentry waterfall also showed main-banner links prefetching several routes merely by entering the viewport. I disabled their prefetch and checked that those unnecessary requests stopped.
+A Sentry waterfall also showed main-banner links prefetching several routes merely by entering the viewport. I disabled their prefetch and checked that those unnecessary requests stopped. I did not separately measure the change in Web Vitals.
 
 ## References
 

@@ -173,9 +173,9 @@
       "keywords": ["reflection", "ai-workflow", "productivity"]
     },
     "sentry-observability": {
-      "title": "Connecting Sentry errors, Web Vitals, MCP, and releases",
+      "title": "Defining Sentry collection policies and verifying delivery and source maps",
       "slug": "sentry-observability",
-      "description": "I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.",
+      "description": "I limited sensitive collection and prioritized errors by user impact, then checked SDK behavior, Web Vitals delivery and storage, MCP access, and source-map artifacts in our benefits portal.",
       "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"]
     },
     "plan-gated-ai-workflow": {
@@ -224,19 +224,26 @@
       ]
     },
     "side-project-technology": {
-      "title": "GraphQL for the photo service, REST for Game Mate",
+      "title": "Choosing the stack and refining the structure of two side projects",
       "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
-      "description": "The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.",
+      "description": "Why I shared web and app screens, chose API contracts and caches, and enforced database consistency. The decisions behind Sentry errors, traces and metrics, and the checks provided by tests and ESLint.",
       "keywords": [
         "side projects",
         "Next.js",
+        "WebView",
         "NestJS",
         "GraphQL",
+        "Apollo Client",
+        "REST",
         "TanStack Query",
         "PostgreSQL",
+        "data consistency",
         "testing",
         "architecture",
-        "ESLint"
+        "ESLint",
+        "Sentry",
+        "Amplitude",
+        "observability"
       ]
     }
   }

@@ -121,23 +121,30 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint", "sentry"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/side-project-technology.png",
-    "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
-    "description": "사진 서비스에는 GraphQL과 Apollo를, Game Mate에는 REST와 TanStack Query를 썼어요. 두 서비스를 만들면서 API 계약과 DB 정합성, 테스트를 정하고 ESLint로 코드의 경계를 검사한 과정을 적어 봤어요.",
+    "title": "두 사이드 프로젝트의 기술을 고르고 구조를 다듬은 과정",
+    "description": "웹과 앱에서 화면을 공유하고 API 계약, 캐시 갱신과 DB 정합성을 설계했어요. Sentry의 오류와 trace, 지표를 나눈 이유부터 테스트와 ESLint로 확인한 범위까지 두 서비스의 기술 판단을 정리했어요.",
     "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
     "keywords": [
       "사이드 프로젝트",
       "Next.js",
+      "WebView",
       "NestJS",
       "GraphQL",
+      "Apollo Client",
+      "REST",
       "TanStack Query",
       "PostgreSQL",
+      "데이터 정합성",
       "테스트",
       "아키텍처",
-      "ESLint"
+      "ESLint",
+      "Sentry",
+      "Amplitude",
+      "observability"
     ],
     "id": "side-project-technology",
     "locale": "ko",
@@ -173,6 +180,11 @@
         "level": 2
       },
       {
+        "id": "오류와-속도-이용-흐름은-다른-정보로-봐요",
+        "title": "오류와 속도, 이용 흐름은 다른 정보로 봐요",
+        "level": 2
+      },
+      {
         "id": "테스트는-각-앱에서-필요한-경계를-확인해요",
         "title": "테스트는 각 앱에서 필요한 경계를 확인해요",
         "level": 2
@@ -183,7 +195,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 17,
     "translations": {
       "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
       "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
@@ -191,23 +203,30 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint", "sentry"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/side-project-technology.png",
-    "title": "GraphQL for the photo service, REST for Game Mate",
-    "description": "The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.",
+    "title": "Choosing the stack and refining the structure of two side projects",
+    "description": "Why I shared web and app screens, chose API contracts and caches, and enforced database consistency. The decisions behind Sentry errors, traces and metrics, and the checks provided by tests and ESLint.",
     "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
     "keywords": [
       "side projects",
       "Next.js",
+      "WebView",
       "NestJS",
       "GraphQL",
+      "Apollo Client",
+      "REST",
       "TanStack Query",
       "PostgreSQL",
+      "data consistency",
       "testing",
       "architecture",
-      "ESLint"
+      "ESLint",
+      "Sentry",
+      "Amplitude",
+      "observability"
     ],
     "id": "side-project-technology",
     "locale": "en",
@@ -243,6 +262,11 @@
         "level": 2
       },
       {
+        "id": "separate-errors-performance-and-product-activity",
+        "title": "Separate errors, performance, and product activity",
+        "level": 2
+      },
+      {
         "id": "let-each-app-own-tests-for-its-boundaries",
         "title": "Let each app own tests for its boundaries",
         "level": 2
@@ -253,7 +277,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 10,
+    "readingMinutes": 15,
     "translations": {
       "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
       "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
@@ -1101,89 +1125,99 @@
     "category": "engineering",
     "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "publishedAt": "2026-08-25T21:10:15+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/sentry-observability.png",
     "sourceUrl": "https://jingeon27.tistory.com/30",
-    "title": "Sentry로 에러 수집부터 Web Vitals, MCP, 릴리스까지 연결한 과정",
-    "description": "복지몰의 브라우저와 서버 오류를 Sentry로 모았어요. 전송 정책과 에러 레벨을 정하고, Web Vitals와 MCP, 릴리스 연결을 확인했어요.",
+    "title": "Sentry 수집 정책을 정하고 전송부터 소스맵까지 검증한 과정",
+    "description": "복지몰의 Sentry에서 인증 정보와 사용자 입력은 제외하고, 오류는 사용자 영향에 따라 남겼어요. SDK 내부 동작, Web Vitals 전송과 서버 저장, MCP 조회, 소스맵 업로드를 대조하며 설정의 확인 범위를 정했어요.",
     "slug": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
     "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "id": "sentry-observability",
     "locale": "ko",
     "toc": [
       {
-        "id": "세-런타임의-오류를-한곳으로-모았어요",
-        "title": "세 런타임의 오류를 한곳으로 모았어요",
+        "id": "세-런타임에서-같은-오류가-다시-올라오지-않게-했어요",
+        "title": "세 런타임에서 같은 오류가 다시 올라오지 않게 했어요",
+        "level": 2
+      },
+      {
+        "id": "인증-정보와-사용자-입력이-나가는-경로를-막았어요",
+        "title": "인증 정보와 사용자 입력이 나가는 경로를 막았어요",
         "level": 2
       },
       {
         "id": "요청-정보의-자동-수집-범위를-확인했어요",
         "title": "요청 정보의 자동 수집 범위를 확인했어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "새-수집-키가-생기면-타입-검사가-깨지게-했어요",
         "title": "새 수집 키가 생기면 타입 검사가 깨지게 했어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "breadcrumb은-datacollection이-걸러-주지-않았어요",
         "title": "breadcrumb은 dataCollection이 걸러 주지 않았어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "url과-본문은-읽는-단계와-전송-직전-두-곳에서-닫았어요",
         "title": "URL과 본문은 읽는 단계와 전송 직전 두 곳에서 닫았어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "정화-함수를-초기화에-연결했는지도-검사해요",
         "title": "정화 함수를 초기화에 연결했는지도 검사해요",
+        "level": 3
+      },
+      {
+        "id": "지표는-전송과-저장-조회를-나눠-확인했어요",
+        "title": "지표는 전송과 저장, 조회를 나눠 확인했어요",
         "level": 2
       },
       {
         "id": "web-vitals는-실제-sentry-envelope까지-확인했어요",
         "title": "Web Vitals는 실제 Sentry envelope까지 확인했어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "inp는-앱이-보내도-서버가-저장하지-않았어요",
         "title": "INP는 앱이 보내도 서버가 저장하지 않았어요",
-        "level": 2
+        "level": 3
       },
       {
         "id": "사내-sentry를-에이전트가-조회하도록-mcp를-붙였어요",
         "title": "사내 Sentry를 에이전트가 조회하도록 MCP를 붙였어요",
+        "level": 3
+      },
+      {
+        "id": "소스맵은-빌드-성공과-업로드-성공을-구분했어요",
+        "title": "소스맵은 빌드 성공과 업로드 성공을 구분했어요",
         "level": 2
       },
       {
-        "id": "릴리스와-소스맵은-빌드-결과로-확인했어요",
-        "title": "릴리스와 소스맵은 빌드 결과로 확인했어요",
+        "id": "사용자-영향과-실행-목적에-따라-남길-오류를-골랐어요",
+        "title": "사용자 영향과 실행 목적에 따라 남길 오류를 골랐어요",
         "level": 2
       },
       {
-        "id": "에러-레벨은-상태-코드가-아니라-사용자-영향으로-정했어요",
-        "title": "에러 레벨은 상태 코드가 아니라 사용자 영향으로 정했어요",
-        "level": 2
+        "id": "영향받은-규모를-보려고-회원-id만-붙였어요",
+        "title": "영향받은 규모를 보려고 회원 ID만 붙였어요",
+        "level": 3
       },
       {
-        "id": "회원-id-하나만-붙였어요",
-        "title": "회원 id 하나만 붙였어요",
-        "level": 2
+        "id": "위치-조회-실패는-원인에-따라-표본을-남겼어요",
+        "title": "위치 조회 실패는 원인에 따라 표본을 남겼어요",
+        "level": 3
       },
       {
-        "id": "고칠-수-없는-잡음은-발생-지점에서-표본만-남겼어요",
-        "title": "고칠 수 없는 잡음은 발생 지점에서 표본만 남겼어요",
-        "level": 2
+        "id": "로컬-실행과-전송-검증은-기본값부터-나눴어요",
+        "title": "로컬 실행과 전송 검증은 기본값부터 나눴어요",
+        "level": 3
       },
       {
-        "id": "전송-게이트로-의미-없는-트래픽을-줄였어요",
-        "title": "전송 게이트로 의미 없는 트래픽을 줄였어요",
-        "level": 2
-      },
-      {
-        "id": "이-체계가-먼저-알려-준-문제도-있었어요",
-        "title": "이 체계가 먼저 알려 준 문제도 있었어요",
+        "id": "수집한-데이터로-실제-오류를-조사했어요",
+        "title": "수집한 데이터로 실제 오류를 조사했어요",
         "level": 2
       },
       {
@@ -1192,7 +1226,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 17,
+    "readingMinutes": 18,
     "translations": {
       "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
       "en": "sentry-observability"
@@ -1202,89 +1236,99 @@
     "category": "engineering",
     "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "publishedAt": "2026-08-25T21:10:15+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-30",
     "coverImage": "/images/covers/sentry-observability.png",
     "sourceUrl": "https://jingeon27.tistory.com/30",
-    "title": "Connecting Sentry errors, Web Vitals, MCP, and releases",
-    "description": "I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.",
+    "title": "Defining Sentry collection policies and verifying delivery and source maps",
+    "description": "I limited sensitive collection and prioritized errors by user impact, then checked SDK behavior, Web Vitals delivery and storage, MCP access, and source-map artifacts in our benefits portal.",
     "slug": "sentry-observability",
     "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "id": "sentry-observability",
     "locale": "en",
     "toc": [
       {
-        "id": "collect-errors-from-three-runtimes",
-        "title": "Collect errors from three runtimes",
+        "id": "keep-errors-from-being-reported-again-across-three-runtimes",
+        "title": "Keep errors from being reported again across three runtimes",
+        "level": 2
+      },
+      {
+        "id": "close-the-paths-carrying-credentials-and-user-input",
+        "title": "Close the paths carrying credentials and user input",
         "level": 2
       },
       {
         "id": "check-the-scope-of-automatic-request-collection",
         "title": "Check the scope of automatic request collection",
-        "level": 2
+        "level": 3
       },
       {
         "id": "make-new-collection-keys-fail-type-checking",
         "title": "Make new collection keys fail type checking",
-        "level": 2
+        "level": 3
       },
       {
         "id": "datacollection-did-not-cover-breadcrumbs",
         "title": "dataCollection did not cover breadcrumbs",
-        "level": 2
+        "level": 3
       },
       {
         "id": "block-reading-and-sanitize-before-sending",
         "title": "Block reading and sanitize before sending",
-        "level": 2
+        "level": 3
       },
       {
         "id": "check-that-initialization-actually-receives-the-sanitizer",
         "title": "Check that initialization actually receives the sanitizer",
+        "level": 3
+      },
+      {
+        "id": "verify-metric-emission-storage-and-access-separately",
+        "title": "Verify metric emission, storage, and access separately",
         "level": 2
       },
       {
         "id": "verify-web-vitals-in-actual-envelopes",
         "title": "Verify Web Vitals in actual envelopes",
-        "level": 2
+        "level": 3
       },
       {
         "id": "inp-was-sent-but-not-stored",
         "title": "INP was sent but not stored",
-        "level": 2
+        "level": 3
       },
       {
         "id": "connect-agents-to-internal-sentry-through-mcp",
         "title": "Connect agents to internal Sentry through MCP",
+        "level": 3
+      },
+      {
+        "id": "distinguish-a-successful-build-from-a-successful-source-map-upload",
+        "title": "Distinguish a successful build from a successful source-map upload",
         "level": 2
       },
       {
-        "id": "verify-releases-and-source-maps-in-build-artifacts",
-        "title": "Verify releases and source maps in build artifacts",
+        "id": "choose-errors-by-user-impact-and-execution-purpose",
+        "title": "Choose errors by user impact and execution purpose",
         "level": 2
       },
       {
-        "id": "assign-severity-by-user-impact",
-        "title": "Assign severity by user impact",
-        "level": 2
+        "id": "keep-only-the-member-id-to-measure-affected-users",
+        "title": "Keep only the member ID to measure affected users",
+        "level": 3
       },
       {
-        "id": "attach-only-the-member-id",
-        "title": "Attach only the member ID",
-        "level": 2
+        "id": "sample-location-failures-according-to-their-cause",
+        "title": "Sample location failures according to their cause",
+        "level": 3
       },
       {
-        "id": "sample-environmental-noise-at-its-source",
-        "title": "Sample environmental noise at its source",
-        "level": 2
+        "id": "separate-local-runs-from-transmission-verification-by-default",
+        "title": "Separate local runs from transmission verification by default",
+        "level": 3
       },
       {
-        "id": "gate-transmission-by-execution-purpose",
-        "title": "Gate transmission by execution purpose",
-        "level": 2
-      },
-      {
-        "id": "problems-this-setup-helped-uncover",
-        "title": "Problems this setup helped uncover",
+        "id": "use-the-collected-data-to-investigate-real-failures",
+        "title": "Use the collected data to investigate real failures",
         "level": 2
       },
       {
@@ -1293,7 +1337,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 14,
     "translations": {
       "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
       "en": "sentry-observability"
