@@ -86,7 +86,7 @@ deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 1. `origin/develop`에서 기능 브랜치를 만들고 변경한 앱의 검사를 실행합니다.
 2. PR을 merge commit으로 `develop`에 반영합니다.
 3. 검증한 `develop`을 `main`에 병합합니다. 운영 배포 기준은 `main`입니다.
-4. Game Mate와 별사대는 서비스별 GitHub Actions로, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
+4. Game Mate와 별사대는 Services Actions에서 검사하고 서비스별로 배포하며, 블로그는 Vercel Git 연동으로 배포합니다. 운영 반영 여부는 해당 배포 결과에서 확인합니다.
 
 두 서비스는 EC2의 Caddy와 PostgreSQL 18을 공유하되 DB role과 네트워크를 분리합니다. 미디어는 비공개 S3의 서비스별 prefix에, DB 백업은 별도 버킷에 저장합니다. 배포와 복구 절차는 [EC2 운영 안내](deploy/shared-instance/README.md)를 따릅니다.
 
