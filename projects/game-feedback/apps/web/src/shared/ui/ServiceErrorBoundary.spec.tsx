@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { QueryClient, QueryClientProvider, queryOptions, useQuery } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 
@@ -12,9 +12,11 @@ function UnstableRegion({ failed }: { failed: boolean }) {
 }
 
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
+afterEach(() => vi.unstubAllEnvs());
 
 describe('ServiceErrorBoundary', () => {
   it('shows a public contact address and blocks repeated recovery while its mutation is pending without a query provider', async () => {
+    vi.stubEnv('GAME_FEEDBACK_CONTACT_EMAIL', 'support@example.test');
     const recovery = Promise.withResolvers<void>();
     const onReset = vi.fn(() => recovery.promise);
     render(
@@ -22,8 +24,8 @@ describe('ServiceErrorBoundary', () => {
         <UnstableRegion failed />
       </ServiceErrorBoundary>,
     );
-    const contact = screen.getByRole('link', { name: 'contact@bambyul.com' });
-    expect(contact.getAttribute('href')).toBe('mailto:contact@bambyul.com');
+    const contact = screen.getByRole('link', { name: 'support@example.test' });
+    expect(contact.getAttribute('href')).toBe('mailto:support@example.test');
     fireEvent.click(screen.getByRole('button', { name: '다시 시도하기' }));
     const pending = await screen.findByRole<HTMLButtonElement>('button', { name: '다시 불러오는 중…' });
     expect(pending.disabled).toBe(true);
