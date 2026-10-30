@@ -234,7 +234,7 @@ This is a shortened version of an actual conversion test. `createClientForm` fil
 ```typescript
 it('빈 제목을 거른 뒤 남은 순서대로 순번을 매긴다', () => {
   const form = createClientForm({
-    isRecommended: SAFEDOC_PROVIDED_TYPE.SafedocProvided,
+    isRecommended: PROGRAM_PROVIDED_TYPE.PlatformProvided,
     recommendedTarget: [
       { title: '' },
       { title: '30대' },
@@ -243,7 +243,7 @@ it('빈 제목을 거른 뒤 남은 순서대로 순번을 매긴다', () => {
   });
 
   const result = getDetailImageInspection(form);
-  const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.SafedocTemplate].templates;
+  const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.PlatformTemplate].templates;
 
   expect(templates.RECOMMENDED_TARGET).toEqual([
     { type: 'RECOMMENDED_TARGET', orderNo: 0, title: '30대' },
