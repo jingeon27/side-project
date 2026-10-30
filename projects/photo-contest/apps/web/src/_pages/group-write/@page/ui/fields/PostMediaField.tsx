@@ -9,7 +9,7 @@ import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { postSchema, type TPostInput, type TPostValues } from '../../../model/post.schema';
+import { postSchema, type TPostInput, type TPostValues } from '../../model/post.schema';
 import { PostMediaPreview } from './PostMediaPreview';
 
 interface IPostMediaFieldProps {

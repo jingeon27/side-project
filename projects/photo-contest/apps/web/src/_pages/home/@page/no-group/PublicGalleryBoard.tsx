@@ -2,15 +2,12 @@
 
 import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
+import { PostCardList, PostPreviewCard, PostsEmptyState } from '@/features/post';
 import { PostSort, PublicGalleryPostsDocument, type PublicGalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-
-import { PostPreviewCard } from '../card/PostPreviewCard';
-import { PostCardList } from './PostCardList';
-import { PostsEmptyState } from './PostsEmptyState';
 
 function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery> }) {
   const pagination = useInfiniteQuery(queryRef, {

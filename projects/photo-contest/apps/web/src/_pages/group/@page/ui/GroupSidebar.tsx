@@ -2,14 +2,16 @@
 
 import { useQuery, useReadQuery } from '@apollo/client/react';
 
-import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } from '@/features/group';
+import { isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
-import { HiddenPostManager } from '@/features/post';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
+import { GroupCategoryManager } from './GroupCategoryManager';
+import { GroupJoinRequests } from './GroupJoinRequests';
+import { HiddenPostManager } from './HiddenPostManager';
 
 export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
   const isSSR = useIsSSR();

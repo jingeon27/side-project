@@ -1,9 +1,10 @@
 'use client';
 
-import { CreatePostForm } from '@/features/post';
 import { ROUTES } from '@/shared/constants/routes';
 import { useAppRouter } from '@/shared/model/router';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
+
+import { CreatePostForm } from './ui/CreatePostForm';
 
 export function GroupWritePageTemplate({
   groupId,

@@ -16,12 +16,13 @@ description: 피식 웹(apps/web)의 화면·기능 slice 배치, 모바일 레�
 
 - 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. 저장소 루트의 `packages/config/eslint/src/fsd-boundaries.ts`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
 - `_app`·`_pages`의 밑줄은 Next `app`·`pages` 라우터와 겹치지 않게 하려는 것이다.
-- 배치: 한 화면에서만 → `_pages/<screen>`, 도메인 + 두 화면 이상 → `features/<domain>`, 도메인 없음 → `shared`. 두 번째 사용처가 생기기 전에 미리 내리지 않는다.
+- 서버 모델을 사용한다는 이유만으로 화면 UI를 features에 두지 않는다. 특정 페이지의 배치·안내·조회 구획을 소유한 섹션과 그 테스트는 `_pages/<screen>/@page/ui`에 두고, 페이지와 독립적인 도메인 표시·동작·계약은 features에 둔다.
+- 배치는 책임으로 결정한다. 화면 전용 조회·폼·탐색 조합과 하위 UI·검증·테스트는 `_pages/<screen>`, 재사용할 도메인 카드·동작과 IO·캐시는 `features/<domain>`, 여러 페이지의 공유 조합은 `widgets`, 도메인 비의존 코드는 `shared`다. 사용처 수는 점검의 단서로만 쓰고 미래의 재사용을 가정한 추상화는 추가하지 않는다.
 - 화면 slice: `@page/<Screen>PageTemplate.tsx`가 조립하고, 화면 전용 조각은 `@page/ui`, `@page/bottom-sheet`, `@page/model`, 섹션 폴더(`@page/results/` 등)에 둔다. 하위 화면이 같이 쓰는 것만 `@ui`·`@model`·`@lib`로 올린다.
 - feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 
-현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 가입 그룹 목록·생성이며 `/sign`에서 익명·회원 세션을 만든 뒤 `/explore`에서 그룹을 탐색·검색한다. 공개 그룹은 익명 감상, 비공개 그룹은 OWNER·MODERATOR 승인 후 감상이며 가입·글쓰기·반응 상태는 Apollo의 GroupAccess를 읽는다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 가입 그룹 목록·생성이며 `/sign`에서 익명·회원 세션을 만든 뒤 `/explore`에서 그룹을 탐색·검색한다. 공개 그룹은 익명 감상, 비공개 그룹은 OWNER·MODERATOR 승인 후 감상이며 가입·글쓰기·반응 상태는 Apollo의 GroupAccess를 읽는다. post feature는 미디어 카드·편집·좋아요·삭제와 정렬별 캐시를 소유하고, 새 게시물의 입력·업로드·제출 흐름은 group-write 페이지가 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
 
 ## 이벤트 핸들러
 

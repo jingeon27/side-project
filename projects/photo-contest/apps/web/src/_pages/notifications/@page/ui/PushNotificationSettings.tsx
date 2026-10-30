@@ -6,11 +6,9 @@ import { match } from 'ts-pattern';
 
 import type { IWebBridge } from '@photo-contest/bridge/web';
 
+import { synchronizePush, type TPushStatus } from '@/features/push-notifications';
 import { useBridge, useNativeApp } from '@/shared/model/bridge';
 import { Button } from '@/shared/ui/@core/button';
-
-import { synchronizePush } from '../lib/push-registration.helper';
-import type { TPushStatus } from '../model/push-status.type';
 
 type TPushAction = 'check' | 'enable' | 'openSettings';
 

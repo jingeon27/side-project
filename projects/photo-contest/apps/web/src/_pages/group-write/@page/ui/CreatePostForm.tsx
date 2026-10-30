@@ -4,6 +4,7 @@ import { useId } from 'react';
 
 import { useMutation } from '@apollo/client/react';
 
+import { POST_FEED_QUERIES, resetGalleryPosts } from '@/features/post';
 import {
   CompletePostUploadDocument,
   CreatePostDocument,
@@ -20,9 +21,8 @@ import { Button } from '@/shared/ui/@core/button';
 import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
-import { isTooLongVideo, readVideoDuration } from '../../lib/video-duration.helper';
-import { POST_FEED_QUERIES, resetGalleryPosts } from '../../model/post.cache';
-import { postSchema } from '../../model/post.schema';
+import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
+import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './fields/PostCategoryField';
 import { PostContestField } from './fields/PostContestField';
 import { PostLinkField } from './fields/PostLinkField';

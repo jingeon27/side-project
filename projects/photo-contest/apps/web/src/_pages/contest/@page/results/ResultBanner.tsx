@@ -1,6 +1,6 @@
 import { Trophy } from 'lucide-react';
 
-import { getResultHeadline } from '../lib/ranking.helper';
+import { getResultHeadline } from '@/features/ranking';
 
 /** 종료된 대회 위쪽 결과 배너. 공동 우승·무투표 문구를 구분한다. */
 export function ResultBanner({ winnerCount }: { winnerCount: number }) {

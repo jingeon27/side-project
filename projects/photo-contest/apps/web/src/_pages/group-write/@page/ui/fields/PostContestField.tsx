@@ -14,7 +14,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import type { TPostInput, TPostValues } from '../../../model/post.schema';
+import type { TPostInput, TPostValues } from '../../model/post.schema';
 
 type TPostForm = UseFormReturn<TPostInput, unknown, TPostValues>;
 function ContestSelection({

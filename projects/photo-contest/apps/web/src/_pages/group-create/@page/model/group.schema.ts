@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
+import { groupProfileSchema } from '@/features/group';
 import { GroupVisibility } from '@/shared/api/generated';
-
-import { groupProfileSchema } from './group-profile.schema';
 
 export const createGroupSchema = z.object({
   avatar: groupProfileSchema.shape.avatar.default(null),

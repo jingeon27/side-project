@@ -4,7 +4,7 @@ import type { UseFormReturn } from 'react-hook-form';
 
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import type { TPostInput, TPostValues } from '../../../model/post.schema';
+import type { TPostInput, TPostValues } from '../../model/post.schema';
 
 export function PostLinkField({ form }: { form: UseFormReturn<TPostInput, unknown, TPostValues> }) {
   return (

@@ -3,13 +3,13 @@
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import type { UseFormReturn } from 'react-hook-form';
 
+import { PostCategorySelect } from '@/features/post';
 import { PostCategoryOptionsDocument, type PostCategoryOptionsQuery } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-import type { TPostInput, TPostValues } from '../../../model/post.schema';
-import { PostCategorySelect } from './PostCategorySelect';
+import type { TPostInput, TPostValues } from '../../model/post.schema';
 
 type TPostForm = UseFormReturn<TPostInput, unknown, TPostValues>;
 function CategoryFieldContent({

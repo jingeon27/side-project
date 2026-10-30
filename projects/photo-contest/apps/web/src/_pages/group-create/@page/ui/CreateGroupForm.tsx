@@ -2,6 +2,7 @@
 
 import { useMutation } from '@apollo/client/react';
 
+import { GroupImagePicker, prependMyGroup } from '@/features/group';
 import {
   CompleteGroupAvatarUploadDocument,
   CreateGroupDocument,
@@ -16,9 +17,7 @@ import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '
 import { Button } from '@/shared/ui/@core/button';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
-import { prependMyGroup } from '../../model/group.cache';
-import { createGroupSchema } from '../../model/group.schema';
-import { GroupImagePicker } from '../profile/GroupImagePicker';
+import { createGroupSchema } from '../model/group.schema';
 import { GroupVisibilityField } from './GroupVisibilityField';
 
 export function CreateGroupForm({

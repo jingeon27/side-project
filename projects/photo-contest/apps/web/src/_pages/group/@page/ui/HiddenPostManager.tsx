@@ -2,6 +2,7 @@
 
 import { skipToken, useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
 
+import { POST_FEED_QUERIES } from '@/features/post';
 import {
   HiddenGalleryPostsDocument,
   SetPostHiddenDocument,
@@ -12,8 +13,6 @@ import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-
-import { POST_FEED_QUERIES } from '../../model/post.cache';
 
 function HiddenPosts({ queryRef }: { queryRef: QueryRef<HiddenGalleryPostsQuery> }) {
   const [restore, { loading }] = useMutation(SetPostHiddenDocument, {

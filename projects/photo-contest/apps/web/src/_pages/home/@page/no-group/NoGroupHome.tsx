@@ -3,12 +3,13 @@
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { CreateGroupButton, DiscoverGroupCard, GroupSearchForm } from '@/features/group';
-import { PublicGalleryBoard } from '@/features/post';
 import { DiscoverGroupsDocument, GroupVisibility, type DiscoverGroupsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ButtonLink } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+
+import { PublicGalleryBoard } from './PublicGalleryBoard';
 
 function PublicGroups({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);

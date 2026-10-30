@@ -3,7 +3,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { GroupVisibility } from '@/shared/api/generated';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import type { TCreateGroupInput } from '../../model/group.schema';
+import type { TCreateGroupInput } from '../model/group.schema';
 
 export function GroupVisibilityField({
   form,

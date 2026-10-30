@@ -11,7 +11,6 @@ import {
   NotificationItem,
 } from '@/features/notification';
 import { PostCommentsBottomSheet } from '@/features/post';
-import { PushNotificationSettings } from '@/features/push-notifications';
 import {
   MarkAllNotificationsReadDocument,
   MarkNotificationReadDocument,
@@ -27,6 +26,8 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
+
+import { PushNotificationSettings } from './ui/PushNotificationSettings';
 
 const PAGE_SIZE = 20;
 

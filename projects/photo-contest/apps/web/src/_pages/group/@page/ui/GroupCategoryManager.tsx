@@ -9,6 +9,7 @@ import {
 } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 
+import { isGroupAdmin } from '@/features/group';
 import {
   ArchiveGroupCategoryDocument,
   CreateGroupCategoryDocument,
@@ -30,8 +31,7 @@ import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import { isGroupAdmin } from '../../lib/group.helper';
-import { groupCategorySchema, moveGroupCategory } from '../../model/group-category.schema';
+import { groupCategorySchema, moveGroupCategory } from '../model/group-category.schema';
 
 const REFRESH = [GroupCategoriesDocument, GalleryDocument, PostCategoryOptionsDocument];
 function CategoryRow({
