@@ -82,6 +82,18 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 바텀시트는 이 패키지의 조합 부품을 `responsive`로 쓰고 앱의 Root가 history·portal·overlay unmount를, Footer가 하단 취소 버튼을 연결한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
 
+## 상태 모션
+
+`StatusAnimation`은 직접 작성한 벡터 Lottie 7종(`loading`, `success`, `error`, `empty`, `offline`, `game`, `cat`)을 제공한다. `className`, 의미 있는 그림의 `label`, 반복 여부 `loop`, 정지 대체 그림 `fallback`을 받는다. 주변 글자와 같은 의미면 label을 생략해 장식으로 둔다.
+
+```tsx
+<StatusAnimation variant="empty" className="size-16" />
+```
+
+첫 HTML에는 정지 그림을 렌더하고 브라우저에서 SVG 전용 `lottie-web` light 플레이어를 지연 로드한다. 모션 감소 설정에서는 정지 그림을 유지하고, 화면 밖이나 숨긴 탭에서는 재생을 멈추며 unmount 때 플레이어와 observer·listener를 정리한다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
+
+공통 Spinner와 버튼 진행 표시, Toaster 성공·실패가 이 컴포넌트를 쓴다. 앱은 빈 목록·연결 상태·대표 그림에 필요할 때 연결하고, 피드 카드나 레이아웃을 유지하는 skeleton을 전부 애니메이션으로 바꾸지 않는다. jsdom은 외부 SVG 플레이어만 대체하고 실제 렌더·모션 설정 전환은 Photo Contest 웹이 소유하는 Chromium·Safari 브라우저 검사에서 확인한다.
+
 ## Storybook
 
 저장소 루트에서 실행한다.

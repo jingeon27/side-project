@@ -3,10 +3,11 @@
 
 import type { CSSProperties } from 'react';
 
-import { CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert } from 'lucide-react';
+import { Info, TriangleAlert } from 'lucide-react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 import { cn } from '../../lib/cn.helper';
+import { StatusAnimation } from '../status-animation/StatusAnimation';
 
 const defaultStyles = {
   fontFamily: 'var(--font-sans)',
@@ -25,11 +26,11 @@ export function Toaster({ theme = 'system', className, style, toastOptions, icon
       theme={theme}
       className={cn('toaster group', className)}
       icons={{
-        success: <CircleCheck className="size-4" />,
+        success: <StatusAnimation variant="success" className="size-5" />,
         info: <Info className="size-4" />,
         warning: <TriangleAlert className="size-4" />,
-        error: <OctagonX className="size-4" />,
-        loading: <LoaderCircle className="size-4 animate-spin" />,
+        error: <StatusAnimation variant="error" className="size-5 text-danger" />,
+        loading: <StatusAnimation variant="loading" className="size-4 text-current" />,
         ...icons,
       }}
       style={{ ...defaultStyles, ...style }}
