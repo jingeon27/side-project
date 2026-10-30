@@ -4,7 +4,7 @@ import { sha256Hex } from '../common/crypto';
 import { ERROR_CODE, fail } from '../common/errors';
 import { isProduction } from '../config/env';
 import { UPLOAD_ADDRESS_BUDGET, WRITE_RATE_LIMIT } from '../config/limits';
-import { Database } from '../database/database.service';
+import { Database, type TDatabaseClient } from '../database/database.service';
 
 export type TWriteAction = keyof typeof WRITE_RATE_LIMIT;
 
@@ -52,18 +52,14 @@ export class RateLimitService {
 
   /**
    * 운영에서 주소마다 하루 동안 발급한 업로드 크기의 합을 센다. 익명 계정을 바꿔 가며 계정별 한도를 피하지 못하게 한다.
-   * 넘으면 이번 요청분을 되돌려 더 작은 파일은 계속 올릴 수 있게 한다.
+   * 티켓 생성과 같은 트랜잭션으로 세어 발급 실패·재시도·예산 초과는 증가분도 함께 롤백한다.
    */
-  async consumeUploadBytes(address: string | null, byteSize: number) {
+  async consumeUploadBytes(address: string | null, byteSize: number, client: TDatabaseClient) {
     if (!isProduction() || !address) return;
     const units = uploadBudgetUnits(byteSize);
     const bucket = rateLimitBucket(`UPLOAD_BYTES:address:${address}`, UPLOAD_ADDRESS_BUDGET.windowMs);
-    const used = await this.add(bucket, units);
+    const used = await this.add(bucket, units, client);
     if (used <= uploadBudgetUnits(UPLOAD_ADDRESS_BUDGET.bytes)) return;
-    await this.db.rateLimitBucket.updateMany({
-      where: { keyHash: bucket.keyHash },
-      data: { count: { decrement: units } },
-    });
     fail(UPLOAD_BUDGET_EXCEEDED, ERROR_CODE.RATE_LIMITED);
   }
 
@@ -71,8 +67,12 @@ export class RateLimitService {
     return this.add(rateLimitBucket(key, windowMs), 1);
   }
 
-  private async add(bucket: { keyHash: string; expiresAt: Date }, amount: number) {
-    const row = await this.db.rateLimitBucket.upsert({
+  private async add(
+    bucket: { keyHash: string; expiresAt: Date },
+    amount: number,
+    client: TDatabaseClient = this.db,
+  ) {
+    const row = await client.rateLimitBucket.upsert({
       where: { keyHash: bucket.keyHash },
       create: { ...bucket, count: amount },
       update: { count: { increment: amount } },

@@ -30,7 +30,7 @@ export class SupportService {
         : {}),
     };
     const thread = await this.transactions.run(async (tx) => {
-      await lockActiveUser({ client: tx, userId: user.id });
+      await lockActiveUser({ client: tx, userId: user.id, allowBanned: true });
       const existing = await (tx ?? this.db).supportConversation.findFirst({
         where: { requesterId: user.id, admin: availableAdmin },
       });

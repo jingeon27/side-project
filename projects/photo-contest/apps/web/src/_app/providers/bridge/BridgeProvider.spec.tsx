@@ -8,6 +8,7 @@ import { decodeWebMessage } from '@photo-contest/bridge';
 import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
 import { createWebBridge, type IWebBridge, type TBridgeWindow } from '@photo-contest/bridge/web';
 
+import { MeDocument } from '@/shared/api/generated';
 import { routeHistoryStore } from '@/shared/model/router';
 import { hasOpenOverlay, pushOverlayEntry } from '@/shared/model/router/overlay-history.store';
 import { registerParentRoute } from '@/shared/model/router/parent-route.store';
@@ -134,7 +135,12 @@ describe('BridgeProvider', () => {
   });
 
   it('딥링크(navigation.open)로 이동하고 앱이 다시 활성화되면 보이는 쿼리를 다시 불러와야 한다', async () => {
-    const { client } = renderProvider();
+    const { client } = renderProvider(
+      new ApolloClient({
+        cache: new InMemoryCache(),
+        link: new MockLink([{ request: { query: MeDocument }, result: { data: { me: null } } }]),
+      }),
+    );
     const refetchQueries = vi.spyOn(client, 'refetchQueries');
 
     fake.router.emit('navigation.open', { path: '/invite/abc' });

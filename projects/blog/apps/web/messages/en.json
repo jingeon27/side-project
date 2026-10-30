@@ -78,7 +78,15 @@
   },
   "about": {
     "title": "Jingeon Kim",
-    "description": "I'm a software engineer. I use this blog to write about development problems and things I have learned.",
+    "role": "Software Engineer",
+    "description": "Hi, I'm Jingeon, a software engineer. I write about problems I run into while building services and what I learn along the way.",
+    "perspective": "Mostly, I write about why I chose an approach and what I changed after trying it.",
+    "readArticles": "Read the blog",
+    "projects": {
+      "title": "Side projects",
+      "gameMate": "Game Mate",
+      "contest": "Byeolsadae"
+    },
     "contact": "Contact"
   },
   "notFound": {

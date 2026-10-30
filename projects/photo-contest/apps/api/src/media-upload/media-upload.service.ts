@@ -18,6 +18,7 @@ import { MembershipService } from '../group/membership/membership.service';
 import { postUploadPolicy } from '../post/media/post-upload.policy';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { uploadedObjectMetadata } from '../storage/uploaded-object';
 import { assertStorageQuota } from './storage-quota';
 
 type TUploadPurpose = { kind: 'POST' } | { kind: 'SUBMISSION'; contestId: string } | { kind: 'GROUP_AVATAR' };
@@ -72,8 +73,13 @@ export class MediaUploadService {
     const policy = postUploadPolicy(contentType, byteSize);
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
-    await this.limits.consumeUploadBytes(address, byteSize);
-    const { upload, id, expiresAt } = await this.transactions.atomic(async (tx) => {
+    const key = createMediaKey(policy.extension);
+    const expiresAt = new Date(
+      Date.now() + (contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000),
+    );
+    // 서명 준비에는 자격 증명 조회가 포함될 수 있어 트랜잭션 밖에서 하고, 발급 커밋 뒤에만 응답에 싣는다.
+    const form = await this.storage.presignUpload(key, contentType, byteSize, expiresAt);
+    const id = await this.transactions.atomic(async (tx) => {
       if (avatar) await this.membership.requireAdmin(viewer.id, groupId, tx);
       if (!avatar) await this.membership.requireMember(viewer.id, groupId, tx);
       if (contestId) {
@@ -82,6 +88,7 @@ export class MediaUploadService {
           fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
       }
       const now = new Date();
+      if (expiresAt <= now) fail('업로드 요청이 만료되었습니다. 다시 시도해 주세요.', ERROR_CODE.CONFLICT);
       await assertStorageQuota(tx, viewer, byteSize);
       const pending = contestId
         ? await tx.upload.count({
@@ -100,11 +107,8 @@ export class MediaUploadService {
           });
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
+      await this.limits.consumeUploadBytes(address, byteSize, tx);
       // 브라우저는 공개될 최종 키에 바로 올린다. 완료 전까지는 stagingKey에만 두어 게시에 쓰지 못한다.
-      const key = createMediaKey(policy.extension);
-      const expiresAt = new Date(
-        now.getTime() + (contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000),
-      );
       const upload = await tx.postUpload.create({
         data: {
           userId: viewer.id,
@@ -135,9 +139,8 @@ export class MediaUploadService {
             data: { groupId, mediaUploadId: upload.id, storageKey: key, expiresAt },
           })
         : null;
-      return { upload, id: submission?.id ?? groupAvatar?.id ?? upload.id, expiresAt };
+      return submission?.id ?? groupAvatar?.id ?? upload.id;
     });
-    const form = await this.storage.presignUpload(upload.stagingKey ?? '', contentType, byteSize, expiresAt);
     return {
       id,
       expiresAt,
@@ -228,9 +231,7 @@ export class MediaUploadService {
 
   /** 정책이 막지만 저장소가 다른 크기·형식을 받아도 확정하지 않는다. */
   private async assertUploadedObject(key: string, expected: { byteSize: number; contentType: string }) {
-    const actual = await this.storage
-      .head(key)
-      .catch(() => fail('파일 전송을 완료한 뒤 다시 시도해 주세요.'));
+    const actual = await uploadedObjectMetadata(this.storage, key);
     if (actual.byteSize !== expected.byteSize || actual.contentType !== expected.contentType)
       fail('업로드한 파일의 크기와 형식을 확인해 주세요.');
   }

@@ -8,3 +8,9 @@ export function navigateDocument(path: string, location: Pick<Location, 'assign'
   if (typeof window !== 'undefined' && isOverlayEntryCurrent()) markOverlayNavigation();
   location.assign(path);
 }
+
+/** 같은 URL의 hash 이동으로 끝나지 않도록 계정 전환은 새 문서를 강제로 받는다. */
+export function reloadDocument(location: Pick<Location, 'reload'> = window.location) {
+  if (typeof window !== 'undefined' && isOverlayEntryCurrent()) markOverlayNavigation();
+  location.reload();
+}

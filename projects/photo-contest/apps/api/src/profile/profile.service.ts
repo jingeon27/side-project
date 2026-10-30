@@ -8,6 +8,7 @@ import { Database } from '../database/database.service';
 import { assertStorageQuota } from '../media-upload/storage-quota';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage, type TMediaExtension } from '../storage/media-storage.service';
+import { uploadedObjectMetadata } from '../storage/uploaded-object';
 import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
 const EXTENSION = {
@@ -28,20 +29,23 @@ export class ProfileService {
   async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto, address: string | null = null) {
     const extension = EXTENSION[input.contentType];
     if (!extension) fail('JPEG, PNG, WebP 형식의 사진을 선택해 주세요.');
-    await this.limits.consumeUploadBytes(address, input.byteSize);
+    const expiresAt = new Date(Date.now() + UPLOAD_TICKET_TTL_MS);
+    const storageKey = createMediaKey(extension);
+    const form = await this.storage.presignUpload(storageKey, input.contentType, input.byteSize, expiresAt);
     const upload = await this.db.atomic(async (tx) => {
       const now = new Date();
+      if (expiresAt <= now) fail('업로드 요청이 만료되었습니다. 다시 시도해 주세요.', ERROR_CODE.CONFLICT);
       const pending = await tx.profileUpload.count({
         where: { userId: viewer.id, expiresAt: { gt: now }, currentUsers: { none: {} } },
       });
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
       await assertStorageQuota(tx, viewer, input.byteSize);
-      const expiresAt = new Date(now.getTime() + UPLOAD_TICKET_TTL_MS);
+      await this.limits.consumeUploadBytes(address, input.byteSize, tx);
       return tx.profileUpload.create({
         data: {
           userId: viewer.id,
-          storageKey: createMediaKey(extension),
+          storageKey,
           contentType: input.contentType,
           byteSize: input.byteSize,
           expiresAt,
@@ -49,12 +53,6 @@ export class ProfileService {
         },
       });
     });
-    const form = await this.storage.presignUpload(
-      upload.storageKey,
-      upload.contentType,
-      upload.byteSize,
-      upload.expiresAt,
-    );
     return {
       id: upload.id,
       expiresAt: upload.expiresAt,
@@ -68,9 +66,7 @@ export class ProfileService {
     if (!upload || upload.userId !== viewer.id || upload.expiresAt <= new Date())
       fail(REJECTED, ERROR_CODE.FORBIDDEN);
     if (upload.completedAt) return { id: upload.id };
-    const actual = await this.storage
-      .head(upload.storageKey)
-      .catch(() => fail('파일 전송을 완료한 뒤 다시 시도해 주세요.'));
+    const actual = await uploadedObjectMetadata(this.storage, upload.storageKey);
     if (actual.byteSize !== upload.byteSize || actual.contentType !== upload.contentType)
       fail('업로드한 파일의 크기와 형식을 확인해 주세요.');
     const now = new Date();

@@ -1,4 +1,4 @@
-# Game Feedback Mobile
+# Game Mate Mobile
 
 기존 웹을 여는 Expo 58 + React Native 0.88 WebView 앱이다. 게시글·댓글·1:1 채팅·소셜 로그인·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
 
@@ -31,12 +31,12 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 웹
 - SafeAreaView가 위·아래 여백을 관리한다. 웹은 기존 `@side/design-system` 스타일을 렌더링하고 네이티브 로딩·오류 화면은 같은 흰색·검정 팔레트를 따른다.
 - 같은 Web origin만 내부에서 연다. 다른 HTTP(S)·전화·이메일 링크는 OS로 보내고 실행 가능한 URL·로컬 파일 URL은 거부한다. 새 창에도 동일한 정책을 적용한다.
 - Android 뒤로 가기는 웹 모달 → 상세 진입 이력 → 논리적 상위 화면 순서로 처리한다. 홈에서는 앱을 종료한다. 800ms 안에 웹 응답이 없으면 WebView history/종료로 복구하며 응답 대기 중 중복 누름을 막는다. iOS 스와이프는 WebView 기록을 사용하고 웹 모달이 열린 동안 비활성화한다.
-- `gamefeedback://ko/posts/<id>`, `gamefeedback://ko/messages/<conversationId>`, `gamefeedback://ko/users/<id>?cursor=...`처럼 알려진 경로를 받는다. 기존 `messages?conversation=<id>` 링크는 중첩 경로로 변환한다. `en`·`ja`도 같은 화면 경로를 허용한다. HTTPS universal/app link는 소셜 로그인 콜백 `<WEB_ORIGIN>/app-auth/callback` 하나만 등록한다(게시글 등 https 링크는 아직 앱으로 열지 않는다).
+- `gamefeedback://ko/posts/<id>`, `gamefeedback://ko/messages/<conversationId>`, `gamefeedback://ko/users/<id>?cursor=...`처럼 알려진 경로를 받는다. 기존 `messages?conversation=<id>` 링크는 중첩 경로로 변환한다. `en`·`ja`도 같은 화면 경로를 허용한다. HTTPS universal/app link와 소셜 로그인 복귀 콜백은 현재 앱에 등록하지 않는다.
 - 셸 렌더 오류는 서비스 경계에서 복구 화면을 표시한다. 재시도는 기존 OS listener·host를 정리한 새 WebView로 초기 화면을 열고 HttpOnly 쿠키 저장소를 유지한다. 웹의 기능 오류는 웹 내부 경계에서 처리한다.
 - 메인 문서 연결 실패·5xx는 다시 시도 화면을 연다. 4xx는 웹이 표시한다. 다시 시도·Android renderer 종료는 마지막 주소로 WebView를 재생성하고 iOS content 종료는 reload한다.
 - 웹 준비 메시지 이전에는 딥링크를 문서 주소로, 이후에는 Next router 이동으로 전달한다. background에서 active로 돌아오면 세션을 먼저 확인하고 필요한 캐시를 갱신한다.
 
-카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. iOS는 `ASWebAuthenticationSession`의 https 콜백(17.4+), Android는 `autoVerify` App Link로 돌아온다. 앱이 없거나 링크 검증 전이면 브라우저가 코드를 다시 보여 주지 않는 웹 안내 페이지를 연다. 커스텀 스킴으로는 코드를 보내지 않는다(같은 스킴의 다른 앱이 가로챌 수 있다). 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
+현재 네이티브 앱은 시스템 브라우저 OAuth와 App Link 복귀를 제공하지 않는다. 앱의 로그인 안내에 따라 웹 브라우저를 사용한다. 이전 PKCE·일회용 코드 복귀 절차를 신규 앱 설정에 적용하지 않는다. 로컬 검토용 테스트 계정은 [서버 토큰 API](../../docs/development.md#서버에서-테스트-토큰-발급하기)를 사용하며 화면에 계정 선택기를 두지 않는다.
 
 ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초기 링크는 이미 받은 후속 링크를 덮어쓰지 않으며 해제 후 async 응답을 무시한다. lifecycle 훅은 let/ref 플래그 없이 구독하고 useCallback으로 안정화한 콜백별 의존성을 사용한다. WebView props는 satisfies로 검증해 추론을 유지한다.
 
@@ -71,9 +71,9 @@ yarn workspace @side/game-feedback test:mobile:e2e
 yarn workspace @game-feedback/mobile bundle:check
 ```
 
-Vitest는 순수 URL·프로토콜·PKCE 판단과 RN Web으로 그린 실제 셸 이벤트를 검증한다. Playwright의 `android-webview`·`ios-webview`는 Chromium/WebKit 모바일 환경에 실제 앱 host·URL 정책·인증 로직을 붙이고 OS 인증창만 대역으로 바꾼다. Google 버튼 취소 테스트에서는 실제 session 응답의 제공자 사용 가능 여부만 켜며 나머지 API·DB는 격리된 실제 서버를 사용한다. API의 일회용 코드 교환·쿠키·재사용·만료·경쟁·Origin·가입 동의는 API 소유 Vitest+Supertest로 검사한다.
+Vitest는 URL·브리지 메시지 정책과 RN Web으로 그린 셸 이벤트를 확인한다. Playwright의 `android-webview`·`ios-webview`는 Chromium/WebKit 모바일 환경에서 브리지·탐색·복구를 검증한다. 이는 실제 OS WebView와 기기 권한 검증을 대신하지 않는다. API 인증·세션·가입 동의 검사는 API 소유 Vitest+Supertest에서 수행한다.
 
-실기기에서 별도 확인할 항목은 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 후 앱 복귀, 비행기 모드와 연결 복구다. Metro export와 브라우저 검증은 서명된 네이티브 빌드·실기기 확인을 대신하지 않는다.
+실기기에서 별도 확인할 항목은 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 비행기 모드와 연결 복구다. Metro export와 브라우저 검증은 서명된 네이티브 빌드·실기기 확인을 대신하지 않는다.
 
 게임 메뉴는 모든 활성 게임이 피드백, 친추판매, 전투 모집, 게임코치, 자유게시판 5개를 공유한다. 홈은 전체 피드이고 기본 게임 외 경로에는 `game=<category-slug>`를 유지한다. 게시판/상세의 warm 딥링크와 native back도 같은 game/board 문맥을 사용한다. 게임코치는 수강생 모집과 코치 구함, 시간당/월 단위/목표 달성 총수강료와 협의 표시와 기존 비공개 채팅 상담을 Web에서 제공한다.
 

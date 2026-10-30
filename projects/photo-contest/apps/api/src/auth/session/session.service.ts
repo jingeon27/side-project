@@ -37,7 +37,7 @@ export class SessionService {
   viewer(req: Request): Promise<IViewer | null> {
     const cached = this.viewers.get(req);
     if (cached) return cached;
-    const pending = this.findViewer(sessionToken(req));
+    const pending = this.findViewer(sessionToken(req), req.headers['x-expected-viewer-id']);
     this.viewers.set(req, pending);
     return pending;
   }
@@ -74,12 +74,23 @@ export class SessionService {
     res.clearCookie(sessionCookieName(), authCookieOptions());
   }
 
-  private async findViewer(token: string | undefined): Promise<IViewer | null> {
-    if (!token) return null;
-    const session = await this.db.session.findUnique({
-      where: { tokenHash: sha256Hex(token) },
-      select: { expiresAt: true, user: { select: USER_VIEW_SELECT } },
-    });
-    return session && session.expiresAt > new Date() ? session.user : null;
+  private async findViewer(
+    token: string | undefined,
+    expectedViewer: string | string[] | undefined,
+  ): Promise<IViewer | null> {
+    const session = token
+      ? await this.db.session.findUnique({
+          where: { tokenHash: sha256Hex(token) },
+          select: { expiresAt: true, user: { select: USER_VIEW_SELECT } },
+        })
+      : null;
+    const viewer = session && session.expiresAt > new Date() ? session.user : null;
+    // 다른 탭에서 계정이 바뀌어도 오래된 화면이 새 계정의 권한으로 쓰기를 보내지 않게 한다.
+    if (expectedViewer !== undefined && expectedViewer !== (viewer?.id ?? 'anonymous'))
+      fail(
+        '로그인한 계정이 변경됐습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.',
+        ERROR_CODE.UNAUTHENTICATED,
+      );
+    return viewer;
   }
 }

@@ -262,7 +262,11 @@ jobs:
             image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
             docker tag "photo-contest-$app:$GITHUB_SHA" "$image"
             docker push "$image"
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            # 로컬 아카이브 이름이 먼저 남을 수 있으므로 방금 push한 저장소의 digest만 선택한다.
+            digest=$(docker image inspect --format '{{json .RepoDigests}}' "$image" |
+              jq -er --arg repository "${image%:*}" '
+                map(select(startswith($repository + "@sha256:"))) | unique |
+                if length == 1 then .[0] else error("Expected one digest for the pushed GHCR repository") end')
             echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
           done
 

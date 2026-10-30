@@ -5,7 +5,6 @@ import { useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import {
-  discardChatAttachment,
   removeChatAttachmentMutationOptions,
   sendChatMessageMutationOptions,
   uploadChatAttachmentMutationOptions,
@@ -15,6 +14,7 @@ import { ApiError } from '@/shared/api';
 import { isUploadableMediaSize, isUploadableMediaType } from '@/shared/lib/media-types';
 import { useZodForm } from '@/shared/model/form';
 
+import { cleanupChatAttachment } from './chat-attachment-cleanup';
 import { useDesktopKeyboard } from './use-desktop-keyboard';
 
 const messageSchema = z.object({ body: z.string().trim().max(2000) });
@@ -45,10 +45,10 @@ export function useChatComposer({
   const fileError = form.formState.errors.root?.attachment?.message ?? null;
   const desktopKeyboard = useDesktopKeyboard();
   const busy = mutation.isPending || upload.isPending || remove.isPending;
-  // 보냈거나 지운 첨부는 upload.reset()으로 비운다. 대화를 떠날 때 아직 남은 미전송 첨부만 정리한다.
+  // 전송 중 이탈은 mutation이 끝난 뒤 정리한다. 실패해도 화면에 남아 있으면 초안·첨부를 보존한다.
   const handleLeave = useEffectEvent((leftConversationId: string) => {
     const attachment = upload.data;
-    if (attachment) void discardChatAttachment(leftConversationId, attachment.id).catch(() => {});
+    if (attachment) cleanupChatAttachment(client, options.mutationKey, leftConversationId, attachment.id);
   });
   useEffect(() => () => handleLeave(conversationId), [conversationId]);
 

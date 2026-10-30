@@ -18,6 +18,7 @@ import { GameProfilesModule } from './game-profiles/game-profiles.module';
 import { HealthModule } from './health/health.module';
 import { MediaStorageModule } from './media-storage/media-storage.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { SentryShutdownService } from './monitoring/sentry-shutdown.service';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { PushModule } from './push/push.module';
@@ -45,7 +46,11 @@ import { UsersModule } from './users/users.module';
     SupportModule,
     FollowsModule,
   ],
-  providers: [ApiAccessMiddleware, { provide: APP_FILTER, useClass: ApiExceptionFilter }],
+  providers: [
+    ApiAccessMiddleware,
+    SentryShutdownService,
+    { provide: APP_FILTER, useClass: ApiExceptionFilter },
+  ],
 })
 export class AppModule {
   static register(options: AppOptions): DynamicModule {
