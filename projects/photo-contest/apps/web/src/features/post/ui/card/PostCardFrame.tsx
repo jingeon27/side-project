@@ -33,19 +33,27 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
   return (
     <article
       id={`post-${id}`}
-      className="min-w-0 overflow-hidden rounded-sheet border border-line bg-surface py-4 shadow-card desktop:py-5"
+      className="min-w-0 overflow-hidden rounded-sheet border border-line bg-surface py-4 desktop:py-5"
       aria-label={post.title}
     >
       <div className={cn('flex items-center gap-3 pb-4', CARD_INSET)}>
-        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" />
+        <Avatar
+          name={post.author.nickname}
+          src={post.author.avatar}
+          size="sm"
+          className="bg-accent-soft text-accent-ink"
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <Link
             href={ROUTES.GROUP(post.groupId)}
-            className="relative w-fit max-w-full truncate text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-muted active:opacity-60"
+            className="relative w-fit max-w-full truncate text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
           >
             {post.groupName}
           </Link>
-          <p className="truncate text-caption text-muted">{post.author.nickname}</p>
+          <p className="flex min-w-0 flex-wrap items-center gap-x-3 text-caption text-muted">
+            <span className="max-w-full truncate">{post.author.nickname}</span>
+            <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
+          </p>
         </div>
         {post.kind === PostKind.Video ? (
           <Video aria-label="동영상" className="size-4 shrink-0 text-muted" />
@@ -64,14 +72,12 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
           </Link>
         ) : null}
         {post.category ? (
-          <p className="mb-2 text-caption text-accent-ink">
+          <p className="mb-3 w-fit rounded-badge bg-accent-soft px-2 py-1 text-micro text-accent-ink">
             {post.category.name}
             {post.category.archivedAt ? ' (보관됨)' : ''}
           </p>
         ) : null}
-        <h3 className="mb-4 wrap-break-word text-title leading-snug text-ink desktop:text-title-lg">
-          {post.title}
-        </h3>
+        <h3 className="mb-4 wrap-break-word text-title-lg leading-snug text-ink">{post.title}</h3>
       </div>
       <PostMedia postId={id} className="rounded-none" />
       <div className={CARD_INSET}>
@@ -79,16 +85,11 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
         {post.body ? (
           <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
         ) : null}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line pt-2">
-          <div className="flex flex-wrap items-center gap-1">
-            {actions}
-            {post.mediaUrl ? (
-              <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />
-            ) : null}
-          </div>
-          <p className="text-caption text-muted">
-            <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
-          </p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-line pt-3">
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          {post.mediaUrl ? (
+            <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />
+          ) : null}
         </div>
       </div>
     </article>

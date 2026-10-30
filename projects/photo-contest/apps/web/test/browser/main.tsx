@@ -2,6 +2,7 @@ import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { PullToRefresh } from '../../src/shared/ui/@core/pull-to-refresh/PullToRefresh';
+import { PostFeedExample } from './PostFeedExample';
 
 import '../../src/_app/styles/tailwind.css';
 
@@ -37,6 +38,10 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Component test root is missing.');
 createRoot(root).render(
   <StrictMode>
-    <PullToRefreshExample />
+    {new URLSearchParams(window.location.search).get('example') === 'feed' ? (
+      <PostFeedExample />
+    ) : (
+      <PullToRefreshExample />
+    )}
   </StrictMode>,
 );

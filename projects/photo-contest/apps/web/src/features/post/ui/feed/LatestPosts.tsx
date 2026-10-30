@@ -96,7 +96,9 @@ export function LatestPosts({
   const fallback = <Skeleton className="h-48 w-full" />;
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label={title}>
-      <h2 className="flex min-h-touch items-center gap-2 text-title-lg text-ink">{title}</h2>
+      <div className="mb-1 flex min-h-touch items-center justify-between gap-3 border-b border-line pb-3">
+        <h2 className="text-title-lg text-ink">{title}</h2>
+      </div>
       <AsyncBoundary
         resetKey={`${groupId ?? ''}:${contestId ?? ''}:${categoryId ?? ''}`}
         onRetry={refetch}
