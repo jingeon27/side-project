@@ -12,7 +12,7 @@
 | --------------- | ------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------- |
 | **밤별 블로그** | 한국어·영어로 기록하는 개발 경험, Git 기반 MDX          | [blog](projects/blog/README.md)                   | [blog.bambyul.com](https://blog.bambyul.com/ko)    |
 | **Game Mate**   | 친추판매·코칭에서 시작한 게임 메이트, 게시판과 1:1 채팅 | [game-feedback](projects/game-feedback/README.md) | [game.bambyul.com](https://game.bambyul.com/ko)    |
-| **별사대**      | 사진·영상·링크를 그룹에서 나누는 커뮤니티               | [photo-contest](projects/photo-contest/README.md) | [contest.bambyul.com](https://contest.bambyul.com) |
+| **피식**        | 사진·영상·링크를 그룹에서 나누는 커뮤니티               | [photo-contest](projects/photo-contest/README.md) | [contest.bambyul.com](https://contest.bambyul.com) |
 
 공개 주소는 서비스의 연결 대상입니다. 실제 배포 성공 여부는 각 배포 가이드와 Actions/Vercel 결과로 확인합니다. 모바일은 두 커뮤니티의 웹을 여는 Expo WebView 앱이며 스토어 배포와 웹 배포는 별개입니다.
 
@@ -68,7 +68,7 @@ deploy/shared-instance/ # 두 커뮤니티의 EC2 · 프록시 · DB · Terrafor
 ## 필요한 문서만 찾기
 
 - [설치·포맷·hook·worktree·검사 규칙](docs/development.md)
-- [Game Mate 실행과 개발](projects/game-feedback/README.md) · [별사대 실행과 개발](projects/photo-contest/README.md)
+- [Game Mate 실행과 개발](projects/game-feedback/README.md) · [피식 실행과 개발](projects/photo-contest/README.md)
 - [블로그 콘텐츠 작성](projects/blog/README.md#콘텐츠-작성) · [이관 기록](projects/blog/docs/migration.md)
 - [EC2 배포·로그·롤백·복구](deploy/shared-instance/README.md) · [Terraform](deploy/shared-instance/terraform/README.md)
 
