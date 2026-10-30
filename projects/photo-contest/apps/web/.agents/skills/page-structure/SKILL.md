@@ -70,3 +70,9 @@ yarn workspace @photo-contest/web test
 그룹 만들기는 `/groups/new`의 별도 페이지다. `CreateGroupForm`에서 이름·공개 범위·소개와 프로필·배경 사진을 선택한다. 업로드 실패 후 재시도는 이미 생성한 그룹 ID를 재사용한다. 그룹 페이지 헤더의 알림 진입을 유지하고, 대회 상세는 `그룹명 > 대회명` 헤더와 대회 목록으로 돌아가는 경로를 사용한다. 게시물·대회·명예의 전당 탭은 그룹의 최상위 화면에서만 보여 준다. 홈은 가입한 그룹의 카드 목록과 통합 피드를 보여 주고 그룹명 옆 글쓰기 바로가기를 만들지 않는다.
 
 서버에서 아는 헤더 제목은 `initialTitle`로 전달해 첫 렌더링을 고정한다. hydration 중 Apollo fragment의 완전성으로 제목을 바꾸지 않고, 이후 갱신은 hydration이 끝난 뒤 반영한다.
+
+## 페이지 내부 폴더
+
+- 특정 페이지의 조회 구획·폼 제출·탐색 조합과 하위 UI·스키마·테스트는 `_pages/<screen>`이 소유한다. 재사용할 도메인 표시·동작·IO·캐시와 여러 페이지의 공유 조합은 frontend 스킬의 features·widgets 경계를 따른다.
+- 여러 기능을 `@page/ui`에 나열하지 않고 `ui/categories`, `ui/join-requests`, `ui/hidden-posts`처럼 기능별로 묶는다. 파일 입력과 미리보기는 `group-write/@page/ui/fields/media`에서 함께 관리한다. 대응하는 모델도 `model/categories`처럼 묶고 테스트는 대상 구현 옆에 둔다.
+- 페이지 진입·조립 파일과 기능별 하위 폴더의 import를 직접 연결한다. 이전 위치의 호환 re-export나 같은 slice 안의 중간 index를 만들지 않는다.

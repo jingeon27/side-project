@@ -23,10 +23,10 @@ import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-fi
 
 import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
 import { postSchema } from '../model/post.schema';
+import { PostMediaField } from './fields/media/PostMediaField';
 import { PostCategoryField } from './fields/PostCategoryField';
 import { PostContestField } from './fields/PostContestField';
 import { PostLinkField } from './fields/PostLinkField';
-import { PostMediaField } from './fields/PostMediaField';
 
 export function CreatePostForm({
   groupId,

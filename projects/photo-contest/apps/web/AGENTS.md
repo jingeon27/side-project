@@ -14,6 +14,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 화면·상태·레이어는 `../../.agents/skills/frontend/SKILL.md`, 테스트 격리는 `../../.agents/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
 
+여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
+
 ## 구조
 
 - `app`: 라우트·레이아웃·로딩/오류·proxy. 화면은 `@/_pages/<화면>` 배럴로만 가져온다.

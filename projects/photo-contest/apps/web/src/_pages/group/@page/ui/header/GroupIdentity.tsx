@@ -7,7 +7,7 @@ import { useReadQuery } from '@apollo/client/react';
 import { EditGroupProfileButton, GroupVisibilityBadge } from '@/features/group';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
-import type { TGroupQueryRef } from '../model/group-query.type';
+import type { TGroupQueryRef } from '../../model/group-query.type';
 
 export function GroupIdentity({ groupRef }: { groupRef: TGroupQueryRef }) {
   const { data } = useReadQuery(groupRef);

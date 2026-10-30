@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
 import { expect, it, vi } from 'vitest';
 
-import type { TPostInput, TPostValues } from '../../model/post.schema';
+import type { TPostInput, TPostValues } from '../../../model/post.schema';
 import { PostMediaField } from './PostMediaField';
 
 function MediaField({ fieldKey }: { fieldKey?: string }) {

@@ -19,6 +19,7 @@ description: 피식 웹(apps/web)의 화면·기능 slice 배치, 모바일 레�
 - 서버 모델을 사용한다는 이유만으로 화면 UI를 features에 두지 않는다. 특정 페이지의 배치·안내·조회 구획을 소유한 섹션과 그 테스트는 `_pages/<screen>/@page/ui`에 두고, 페이지와 독립적인 도메인 표시·동작·계약은 features에 둔다.
 - 배치는 책임으로 결정한다. 화면 전용 조회·폼·탐색 조합과 하위 UI·검증·테스트는 `_pages/<screen>`, 재사용할 도메인 카드·동작과 IO·캐시는 `features/<domain>`, 여러 페이지의 공유 조합은 `widgets`, 도메인 비의존 코드는 `shared`다. 사용처 수는 점검의 단서로만 쓰고 미래의 재사용을 가정한 추상화는 추가하지 않는다.
 - 화면 slice: `@page/<Screen>PageTemplate.tsx`가 조립하고, 화면 전용 조각은 `@page/ui`, `@page/bottom-sheet`, `@page/model`, 섹션 폴더(`@page/results/` 등)에 둔다. 하위 화면이 같이 쓰는 것만 `@ui`·`@model`·`@lib`로 올린다.
+- 같은 `ui`·`model` 안에 독립적인 기능이 여럿 있으면 `ui/categories`, `ui/join-requests`, `model/categories`처럼 책임별 하위 폴더로 묶는다. 주 컴포넌트와 직접 사용하는 하위 UI·테스트를 같은 기능 폴더에 두고, 페이지 진입·조립 파일은 상위에 남긴다. 파일 수만으로 폴더를 만들거나 한 기능의 테스트를 별도 공용 폴더로 흩어 놓지 않는다.
 - feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 

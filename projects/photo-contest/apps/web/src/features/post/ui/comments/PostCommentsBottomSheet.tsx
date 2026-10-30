@@ -7,10 +7,10 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
+import { PostCommentComposer } from './composer/PostCommentComposer';
+import { PostCommentsHeader } from './header/PostCommentsHeader';
 import { PostCommentList } from './list/PostCommentList';
-import { PostCommentComposer } from './PostCommentComposer';
 import { PostCommentContext } from './PostCommentContext';
-import { PostCommentsHeader } from './PostCommentsHeader';
 
 const PAGE_SIZE = 24;
 const SNAP_POINTS = [0.75, 1];

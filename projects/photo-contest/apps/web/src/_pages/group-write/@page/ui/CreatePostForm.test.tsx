@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '@/shared/model/toast';
 
 import { CreatePostForm } from './CreatePostForm';
-import { PostMediaPreview } from './fields/PostMediaPreview';
+import { PostMediaPreview } from './fields/media/PostMediaPreview';
 
 const TICKET = {
   __typename: 'PostUploadTicket',

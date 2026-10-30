@@ -9,7 +9,7 @@ import { PostCommentCardFragmentDoc } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 
-import { PostCommentComposer } from '../PostCommentComposer';
+import { PostCommentComposer } from '../composer/PostCommentComposer';
 import { PostCommentReplies } from './PostCommentReplies';
 
 export function PostCommentReplySection({ parentId }: { parentId: string }) {

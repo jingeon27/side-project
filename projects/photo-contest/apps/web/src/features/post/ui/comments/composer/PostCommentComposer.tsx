@@ -18,7 +18,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { commentSchema } from '../../model/comment.schema';
+import { commentSchema } from '../../../model/comment.schema';
 
 export function PostCommentComposer({
   postId,

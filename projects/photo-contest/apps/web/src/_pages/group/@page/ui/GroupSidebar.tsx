@@ -9,9 +9,9 @@ import { useIsSSR } from '@/shared/model/is-ssr.hook';
 
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
-import { GroupCategoryManager } from './GroupCategoryManager';
-import { GroupJoinRequests } from './GroupJoinRequests';
-import { HiddenPostManager } from './HiddenPostManager';
+import { GroupCategoryManager } from './categories/GroupCategoryManager';
+import { HiddenPostManager } from './hidden-posts/HiddenPostManager';
+import { GroupJoinRequests } from './join-requests/GroupJoinRequests';
 
 export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
   const isSSR = useIsSSR();

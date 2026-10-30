@@ -19,7 +19,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
-import { PostCommentLikeButton } from '../PostCommentLikeButton';
+import { PostCommentLikeButton } from '../actions/PostCommentLikeButton';
 
 export function PostCommentRow({ id, replyToName }: { id: string; replyToName?: string }) {
   const { data: comment, complete } = useFragment({

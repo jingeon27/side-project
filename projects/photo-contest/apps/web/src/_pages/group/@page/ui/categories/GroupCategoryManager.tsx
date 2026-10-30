@@ -31,7 +31,7 @@ import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import { groupCategorySchema, moveGroupCategory } from '../model/group-category.schema';
+import { groupCategorySchema, moveGroupCategory } from '../../model/categories/group-category.schema';
 
 const REFRESH = [GroupCategoriesDocument, GalleryDocument, PostCategoryOptionsDocument];
 function CategoryRow({

@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { GroupVisibility } from '@/shared/api/generated';
 
-import { GroupPageTemplate } from '../GroupPageTemplate';
+import { GroupPageTemplate } from '../../GroupPageTemplate';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/groups/group-1',
