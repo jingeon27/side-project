@@ -14,7 +14,7 @@ import { PublicGalleryBoard } from './PublicGalleryBoard';
 function PublicGroups({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);
   if (!data.discoverGroups.length)
-    return <p className="py-6 text-body text-muted">첫 공개 그룹을 만들어 웃긴 순간을 나눠보세요.</p>;
+    return <p className="py-6 text-body text-muted">참여할 그룹을 검색하거나 직접 만들어보세요.</p>;
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 tablet:grid-cols-2 wide:grid-cols-3">
       {data.discoverGroups.map(({ id }) => (
@@ -34,7 +34,7 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
         <div className="flex items-center justify-between">
           <h2 className="text-title-lg text-ink">공개 그룹</h2>
           <ButtonLink href={ROUTES.EXPLORE} variant="ghost" size="md">
-            더보기
+            그룹 찾아보기
           </ButtonLink>
         </div>
         <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>

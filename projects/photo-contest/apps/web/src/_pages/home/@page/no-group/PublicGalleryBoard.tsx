@@ -2,7 +2,7 @@
 
 import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
-import { PostCardList, PostPreviewCard, PostsEmptyState } from '@/features/post';
+import { PostCardList, PostPreviewCard } from '@/features/post';
 import { PostSort, PublicGalleryPostsDocument, type PublicGalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -15,17 +15,15 @@ function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery>
     pageSize: 24,
   });
   const posts = pagination.items;
+  if (!posts.length) return null;
   return (
-    <>
-      {posts.length ? (
-        <PostCardList>
-          {posts.map(({ id }) => (
-            <PostPreviewCard key={id} id={id} />
-          ))}
-        </PostCardList>
-      ) : (
-        <PostsEmptyState />
-      )}
+    <section className="mx-auto flex w-full max-w-feed flex-col gap-5" aria-label="공개 그룹의 최신 사진">
+      <h2 className="border-b border-line pb-3 text-subtitle text-ink">공개 그룹의 최신 사진</h2>
+      <PostCardList>
+        {posts.map(({ id }) => (
+          <PostPreviewCard key={id} id={id} />
+        ))}
+      </PostCardList>
       {pagination.hasNextPage ? (
         <Button
           variant="secondary"
@@ -35,7 +33,7 @@ function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery>
           게시물 더 보기
         </Button>
       ) : null}
-    </>
+    </section>
   );
 }
 export function PublicGalleryBoard() {
@@ -44,11 +42,8 @@ export function PublicGalleryBoard() {
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <section className="mx-auto flex w-full max-w-feed flex-col gap-5" aria-label="공개 그룹의 최신 사진">
-      <h2 className="border-b border-line pb-3 text-subtitle text-ink">공개 그룹의 최신 사진</h2>
-      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-60 w-full" />}>
-        <PublicPosts queryRef={queryRef} />
-      </AsyncBoundary>
-    </section>
+    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-auto h-60 w-full max-w-feed" />}>
+      <PublicPosts queryRef={queryRef} />
+    </AsyncBoundary>
   );
 }
