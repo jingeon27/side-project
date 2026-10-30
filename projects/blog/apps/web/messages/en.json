@@ -6,7 +6,9 @@
     "skip": "Skip to content",
     "theme": "Switch color theme",
     "language": "Change language",
-    "siteTitle": "Bambyul Blog"
+    "siteTitle": "Bambyul Blog",
+    "brandName": "Bambyul",
+    "brandType": "blog"
   },
   "common": {
     "all": "All",

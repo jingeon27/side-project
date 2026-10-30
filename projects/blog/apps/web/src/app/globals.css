@@ -11,6 +11,7 @@
   --line-strong: #cbd1d9;
   --accent: #2859a3;
   --accent-soft: #eaf0f9;
+  --brand-ink: #21354d;
   --sage: #526c50;
   --sage-soft: #f3f6f0;
   --warning: #a64b34;
@@ -29,6 +30,7 @@ html[data-theme='dark'] {
   --line-strong: #424d5b;
   --accent: #8eaff0;
   --accent-soft: #202d43;
+  --brand-ink: #e5e9ee;
   --sage: #b0c7a9;
   --sage-soft: #202a21;
   --warning: #dfa28b;
@@ -211,11 +213,31 @@ svg {
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  gap: 10px;
+  flex-shrink: 0;
+  color: var(--brand-ink);
   white-space: nowrap;
+}
+.wordmark-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.wordmark-name {
+  font-size: 22px;
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+.wordmark-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+.wordmark:hover {
+  color: var(--accent);
 }
 .header-right {
   display: flex;
@@ -1394,7 +1416,13 @@ html:not([data-theme='dark']) .code-block span {
   }
   .wordmark {
     gap: 8px;
-    font-size: 15px;
+  }
+  .wordmark-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .wordmark-name {
+    font-size: 20px;
   }
   .header-right {
     gap: 25px;
@@ -1676,6 +1704,9 @@ html:not([data-theme='dark']) .code-block span {
   }
   .header-inner {
     padding: 0 18px;
+  }
+  .wordmark-label {
+    display: none;
   }
   .header-right {
     gap: 17px;

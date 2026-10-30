@@ -1,6 +1,6 @@
 <Summary>
 
-The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.
+How I chose shared screens, API contracts, caches, database safeguards, Sentry, tests, and ESLint for a photo community and Game Mate. I also cover the work each tool left to me and what the implementation can establish.
 
 </Summary>
 
@@ -12,6 +12,10 @@ The photo community and Game Mate share a repository, but I did not give them id
 
 I wanted to work with Apollo’s normalized cache for a post appearing in several lists. In Game Mate, I wanted to use query keys to decide which lists and details to reread after an edit. I chose to work through both update models rather than reuse one configuration everywhere.
 
+Even saving one post involved more than choosing a library. I had to decide whether the web and app would share its form, where to stop an unexpected API response, and what should happen when the same request arrived twice. Updating the browser cache and the server cache after a save were separate jobs too.
+
+Throughout this work, I wanted to be able to find the code to change and explain how far a failed request had progressed. Draft input belongs to the form, data returned by the server belongs to the query cache, and the database decides what was saved. Tests and ESLint help check that those decisions remain visible in the implementation.
+
 The [product and screen article](/en/blog/what-i-kept-changing-while-planning-my-side-projects) covered anonymous history, voting, and message retries. Implementing those behaviors also brought decisions about API responses, database writes, and cache updates.
 
 ## Build the web screens first, then share them with the app
@@ -20,9 +24,13 @@ Both web applications use React and the Next.js App Router. Public posts and gro
 
 I did not want a public post to wait for browser-side fetching before its content appeared. The server renders the initial body and search metadata. I separated public queries from personalized ones so a session or permission-dependent result would not enter the shared public cache.
 
+Public queries in the photo service omit cookies. Server queries requiring a session use an Apollo Client created for the request and bypass the shared HTTP cache. Game Mate also separates fetching public post details from fetching a signed-in user's excluded authors. Caching the public body should not mean treating every reader's access and filtering as identical.
+
 The mobile applications use Expo with a WebView to share the web screens. I wanted to refine writing posts and reading replies on the web before maintaining a second set of screens. Push notifications, opening the system browser, and sharing connect through a message contract between the web and the app.
 
-The WebView saves a second implementation of the screens, but back navigation, the keyboard, and safe areas still need app-specific handling. Social login opens the system browser and exchanges a one-time code. Store releases and final checks on real devices remain ahead.
+The WebView saves a second implementation of the screens, but back navigation, the keyboard, and safe areas still need app-specific handling. The photo service supports username and password accounts or anonymous sessions. Its WebView uses the same HttpOnly session cookie as the web without extracting a login token for the native shell. Store releases and final checks on real devices remain ahead.
+
+Game Mate's push permission requests also need to handle delayed responses. If the web page reloads during a request, the bridge distinguishes page generations so a result meant for the previous page is not sent to the new one. Checking the message's web origin and whether its request belongs to the current page is part of the work that sharing screens adds.
 
 Forms use React Hook Form and Zod to keep field validation and submission state together. A shared design system owns the colors and spacing of buttons and inputs, while menus and dialogs build on Base UI. Returning focus, finishing exit animations, and connecting back navigation still require application-specific work and checks.
 
@@ -32,7 +40,13 @@ One photo post can appear in the home feed, its group, and a popular-post list. 
 
 Apollo does not automatically keep every list correct. Changing a post's title differs from removing it from a list. A pagination merge can even bring a deleted item back into the result. I put type policies and cache updates with their domains, and separated lists by their group, sort order, and parent comment ID. Some mutations also refetch active queries.
 
+Post lists are separated by group, contest, category, and sort order; comments are separated by post and parent comment ID. Changes to list membership clear the feed caches before refetching. Popular posts have a separate refresh that fetches the server's ranking while preserving loaded pages in the latest-post feed. The [post cache tests](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/web/src/features/post/model/post.cache.spec.ts) cover independent filters and preventing old pages from returning after a reset.
+
 For Game Mate, I chose REST and TanStack Query. I wanted to decide which queries to refresh after changing a post, its detail, or its replies. Query keys and `queryOptions` live together, and the feature making the change invalidates the related queries.
+
+An answer can affect more than its post detail: the list's answer count and notifications may change too. Answer mutations invalidate all three queries. List keys place filter parameters below a common prefix, while detail queries use a separate key. The [query key tests](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/web/src/features/post/model/post.options.spec.ts) check that invalidating the list prefix invalidates multiple feed filters while leaving the detail cache intact. A mutation that also affects the detail must name that query separately.
+
+This does not establish a rule that GraphQL requires normalized caching or REST requires query-key caching. These are the combinations I chose and the update behavior I implemented around them. Apollo still needs list policies and refetch decisions; TanStack Query still needs the relationships between mutations and queries to be maintained.
 
 In both applications, server state stays in the query library rather than being copied into another `useState`. The form owns the draft input; Apollo or TanStack Query owns the value returned by the server. When several places can change copies of the same value, finding the latest one becomes another job after every save.
 
@@ -44,11 +58,11 @@ Both servers use NestJS with Express, Prisma, and PostgreSQL. Next.js renders th
 
 Someone can call the API directly even when the screen hides a button. The API therefore checks whether that person may read a private group's posts or remove a member.
 
-Controllers receive requests, services check permissions and save data, and modules register the services and connections a feature needs. OAuth and game API calls live separately. Tests of server logic can connect prepared responses instead of waiting for real external providers.
+REST controllers or GraphQL resolvers receive requests, services check permissions and save data, and modules register the services and connections a feature needs. OAuth and game API calls live separately. Tests of server logic can connect prepared responses instead of waiting for real external providers.
 
 Modules follow features such as authentication, groups, posts, and chat. Data that needs to be saved together goes into a transaction. Each application has its own server, database, and accounts. Using NestJS for both did not mean their user models needed to be combined.
 
-Prisma’s query types do not make two concurrent requests save only once. I handled that with database constraints and locks, then checked it by overlapping requests against real PostgreSQL.
+Prisma’s query types do not make two concurrent requests save only once. I handle that with database constraints and locks, with tests that overlap requests against real PostgreSQL.
 
 ## Generate API types from one source and check actual responses
 
@@ -63,21 +77,29 @@ Zod contracts
 
 The API and web can deploy at different times, and the server can return an unexpected value. Generated types can therefore disagree with the response. The SDK transport applies response schemas, with tests checking that generated requests keep that validation path.
 
-I avoided filling every unexpected response with defaults. A few display fields have an explicit fallback policy, but invalid IDs, permissions, sessions, bodies, and lists surface as errors. I did not want the screen to keep rendering by silently changing important data. That boundary lives in the [SDK response handling](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/packages/sdk/src/http.ts).
+The shared SDK transport refuses requests without a response schema and returns a successful response only after validation. A contract change also requires regenerating the SDK, and CI checks the generated output against the committed code. This reduces duplicate handwritten types while adding a generation process to maintain.
 
-The photo service generates types and Documents from the API's GraphQL schema and the web application's operations. CI regenerates them and checks for differences, including when someone changes a query but forgets its generated output. Input validation and permission checks still belong on the server. A GraphQL type does not check who may join a group or when voting is allowed.
+I avoided filling every unexpected response with defaults. A few display fields have an explicit fallback policy, but invalid IDs, permissions, sessions, bodies, and lists surface as errors. I did not want the screen to keep rendering by silently changing important data. That boundary lives in the [SDK response handling](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/packages/sdk/src/http.ts).
+
+The photo service generates types and Documents from its GraphQL schema and the web application's queries and mutations. CI also runs code generation. Connecting the schema and operation documents this way differs from the Zod response validation in Game Mate's SDK; it does not establish that the photo service's browser performs that same validation.
+
+A correctly typed request still does not establish whether someone may join a group or vote now. Valid input and an authorized action are separate concerns, so input validation and permission checks remain on the server.
 
 ## Enforce duplicate-request rules in the database
 
 Disabling a voting button after a click reduces duplicate clicks. It cannot stop someone voting from another tab or sending two requests directly.
 
-The photo service has a unique constraint on the contest and voter pair. Two requests can both check that no vote exists before either writes one. The final write must still allow only one vote. The voting operation also checks the period, group membership, and whether the entry belongs to the voter within its transaction. The [group contest implementation](https://github.com/jingeon27/side-project/blob/96e33d77/projects/photo-contest/apps/api/src/contest/group-contest.service.ts) contains that flow.
+The photo service has a unique constraint on the contest and voter pair. Two requests can both check that no vote exists before either writes one. The final write must still allow only one vote. The voting operation also checks the period, group membership, and whether the entry belongs to the voter within its transaction. The [group contest implementation](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/contest/group-contest/group-contest.service.ts) contains that flow.
 
-Game Mate sends a client-generated message ID with each chat message. If the same sender retries the same ID and content, the API returns the stored message. Reusing that ID with different content produces a conflict. A retry after a lost response should not create a second message.
+Game Mate sends a client-generated message ID with each chat message. In the same accessible conversation, a retry with the same sender, ID, body, and attachments returns the stored message. Reusing the ID with different content or another conversation produces a conflict. Retries cannot restore messages from cleared history. Losing the first response should not create a second message on retry.
 
-The send operation locks the conversation row and checks access and attachments again. It saves the message, notification, and pending push delivery in the same transaction, then publishes the live event after the commit. Serializing sends within one conversation limits parallelism there. For now, I chose to keep message order and read boundaries consistent. The order is visible in the [chat send implementation](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/apps/api/src/chat/chat-message.service.ts).
+The send operation locks the conversation row and checks access and attachments again. It saves the message, notification, and pending push delivery in the same transaction, then publishes the live event after the commit. Serializing sends within one conversation limits parallelism there. For now, I chose to keep message order and read boundaries consistent. The order is visible in the [chat send implementation](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/src/chat/message/chat-message.service.ts).
 
-A database stand-in cannot establish all of this. I needed tests that sent concurrent requests to real PostgreSQL and checked both the responses and the stored rows.
+Both features handle duplicate requests, but their results differ. Voting permits one vote; a matching chat retry returns the same message. Before choosing a constraint or lock, I needed to decide what response overlapping requests should receive. The conversation lock can also introduce waiting when sends concentrate in one conversation.
+
+Preventing duplicates does not establish that related data belongs together. Composite foreign keys also require a photo post and its contest to belong to the same group, and a Game Mate notification's answer or comment to belong to its referenced post. Individual IDs can exist while pointing to different groups or posts. The [group integrity constraints](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/prisma/migrations/20261030000000_group_integrity/migration.sql) and [resource relationship constraints](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/prisma/migrations/20261030000000_resource_relations/migration.sql) enforce those relationships even for writes that bypass the API checks.
+
+A database stand-in cannot establish all of this. It requires concurrent requests to real PostgreSQL, inspecting responses and stored rows, and attempting writes whose relationships the database should reject.
 
 ## Separate a successful save from failed cache delivery
 
@@ -85,19 +107,37 @@ After adding a public server cache to Game Mate, refreshing the browser cache wa
 
 The database transaction now also records the cache tags to invalidate. After committing, the API delivers them to a Next.js Route Handler. A failed delivery leaves a pending record for retry. Reporting a post creation as failed after the post was already saved could prompt the user to create it again.
 
-A newer change can also arrive for the same tag while an earlier delivery is in flight. The earlier response must not delete the newer pending record, so acknowledgement removes only records matching the delivered revision. The [integration tests](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/apps/api/src/cache-invalidation/cache-invalidation.integration.spec.ts) cover delivery after a restart and overlapping changes.
+A second change can arrive for the same tag while the first delivery is in flight. If the first request eventually succeeds and deletes the pending record by tag alone, it would also acknowledge the second change. Each tag therefore has a revision, and acknowledgement deletes only a record matching the delivered revision. The [integration tests](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/src/cache-invalidation/cache-invalidation.integration.spec.ts) include delivery after a restart and an earlier callback finishing late.
 
 A reader can still receive an older post before tag delivery completes. This setup keeps an already saved post from being reported as failed and allows retrying cache delivery; it does not make every read immediately current.
+
+## Separate errors, performance, and product activity
+
+Testing a condition differs from knowing what happens while a service is running. Both services use Sentry in the API, Next server, and browser. Permission denials and requests outside the voting period should not become a stream of error alerts; unexpected internal failures are reported. An original error message can contain Prisma arguments or input values, so reporting retains its type, code, and stack locations while removing the original message, request, user, and cookies.
+
+Error events alone do not explain slow requests, so I also added performance tracing. Both APIs sample traces at 10%. Instead of enabling automatic HTTP and SQL instrumentation, the photo service has manual spans for HTTP and top-level GraphQL fields; Game Mate has spans for HTTP and chat locking, persistence, and delivery after commit. `chat.lock` includes the database round trip around the row-lock call, and `chat.publish` covers handing events to server subscribers. Neither measures pure lock-wait time or when a message appears on the recipient's device.
+
+Sampled trace counts are not total request counts. Sentry Application Metrics records counts and latency distributions for instrumented calls independently of trace sampling. Game Mate distinguishes newly stored messages from matching retries as `created` and `duplicate`. The photo service distinguishes successful GraphQL fields, business rejections, and internal failures even when the HTTP response is 200. Traces follow an individual request's path; metrics aggregate outcomes across the instrumented calls.
+
+Browser Web Vitals, such as LCP, CLS, and INP, go to Sentry to describe loading and interaction. Amplitude receives page visits, and Game Mate also sends product events such as a successful post submission. The photo service keeps API domain events, such as votes, in its database. Tags distinguish services and `api`, `next-server`, and `browser`, with web and WebView clients separated too. Production builds use the commit SHA as their release so a record can be tied to its code. Missing SDK keys disable delivery.
+
+Removing data from errors does not remove it from performance payloads. In addition to `beforeSend`, `beforeSendSpan` and `beforeSendMetric` retain bounded operation names, route templates, allowed measurements, and outcomes. Raw URLs, queries, GraphQL documents and variables, message bodies, and user IDs do not become collection dimensions. Because the SDK can merge scope attributes after metric processing, the final envelope is scrubbed again. The photo service's [performance transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/monitoring/performance.ts) and Game Mate's [chat metric transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/src/monitoring/chat-metrics.ts) contain that handling.
+
+Tests inspect the final payload received by the SDK's in-memory transport. They check that metrics remain when trace sampling is zero, that test input added to the scope is removed, and that spans around real database and HTTP calls share a trace. That differs from confirming receipt in Sentry, so separate verification runners inspect collector responses and event IDs. The two projects' collection policies and verification scopes are documented in their [observability guide](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/docs/observability.md).
 
 ## Let each app own tests for its boundaries
 
 Vitest checks sorting and validation rules quickly. Integration tests use actual PostgreSQL and the API for constraints, transactions, and HTTP behavior. Playwright exercises the web screens. The API does not need a browser test runner.
 
+For voting, one successful API response is insufficient. The test checks both the number of successful concurrent requests and the number of votes left in the database. Chat retry tests compare the two response IDs and reload the conversation to check that it contains one message. A database substitute that processes calls sequentially might never expose real lock behavior or unique conflicts, so those checks use PostgreSQL.
+
+Both APIs also have a `database` lane collecting `*.database.integration.spec.ts` and `*.database.integration.test.ts`. It runs checks that need a real database, such as relationship constraints and instrumentation, without requiring S3 or a browser. Integration tests are excluded from the unit lane and run with their required environment, including a migrated database for testing constraints.
+
 Each app owns its test configuration and runner. The repository root delegates to the relevant checks. Test ports and temporary database schemas are separate from development, so running a check does not change the data in a server I am using.
 
 OAuth and game API tests substitute provider responses. Media integration tests use real S3 with a different object prefix for each run. Form behavior can pass while S3 permissions, signatures, or uploads fail, so they need separate checks.
 
-CI failures made browser waiting states more specific. A button can exist in server HTML before its handler is connected. Deletion can finish while the confirmation dialog is still animating closed. Increasing a timeout alone does not distinguish a clickable control from a finished transition.
+Browser tests also need specific waiting states. A button can exist in server HTML before its handler is connected. Deletion can finish while the confirmation dialog is still animating closed. Increasing a timeout alone does not distinguish a clickable control from a finished transition.
 
 Duplicate votes and retried messages are easy to miss in a test of one successful request. So are attempts to read private posts and failed cache delivery after saving. Those cases are why I split tests across screens, the database, and external connections.
 
@@ -107,7 +147,7 @@ Splitting screens into folders did not help much when one feature reached straig
 
 The configuration lives in `packages/config/eslint`. It separates common TypeScript rules, React, DOM accessibility, Next.js, and Expo presets. A web label rule should not apply to React Native. Each app combines the presets it needs with its own paths.
 
-Rule implementations have their own folders under `rules/fsd`, `rules/web`, and `rules/common`, with tests and fixtures beside each rule. The [ESLint package](https://github.com/jingeon27/side-project/tree/96e33d77/packages/config/eslint/src) contains both the presets and their rules.
+Rule implementations have their own folders under `rules/fsd`, `rules/web`, and `rules/common`, with tests and fixtures beside each rule. The [ESLint package](https://github.com/jingeon27/side-project/tree/225edfe3c1f564d55b69373906d1a29561b8ef6e/packages/config/eslint/src) contains both the presets and their rules.
 
 The FSD checks use three rules:
 
@@ -119,7 +159,7 @@ They share path handling in `fsd.helper.ts`. It resolves the `@/` alias and rela
 
 A rule could pass simply because it found no files after receiving the wrong `srcDir`. I made a missing path or a path without recognized layer directories a configuration error, rather than treating an empty inspection as success.
 
-RuleTester fixtures include imports that should pass and imports that should fail. They check both alias and relative paths, so changing the spelling of an import does not bypass the boundary. Both forms appear in the [barrel-boundary tests](https://github.com/jingeon27/side-project/blob/96e33d77/packages/config/eslint/src/rules/fsd/slice-public-api/slice-public-api.spec.ts).
+RuleTester fixtures include imports that should pass and imports that should fail. They check both alias and relative paths, so changing the spelling of an import does not bypass the boundary. Both forms appear in the [barrel-boundary tests](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/packages/config/eslint/src/rules/fsd/slice-public-api/slice-public-api.spec.ts).
 
 Rules also check direct `fetch` calls in components and duplicated overlay-open state. Sharing presets exposed an ESLint flat-config constraint: one plugin name cannot refer to two different objects. Common and web rules therefore live on one `sidePlugin`, with each preset enabling the rules it needs.
 
