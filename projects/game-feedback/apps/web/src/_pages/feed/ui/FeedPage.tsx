@@ -4,11 +4,11 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, MessageSquare, Plus } from 'lucide-react';
+import { ArrowUpRight, Plus } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Button, StatusAnimation } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
@@ -136,9 +136,7 @@ function FeedResults({
     <>
       {!posts.length && (
         <div className="empty-feed">
-          <span>
-            <MessageSquare size={30} />
-          </span>
+          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
           <h3>{emptyTitle}</h3>
           <p>
             {q

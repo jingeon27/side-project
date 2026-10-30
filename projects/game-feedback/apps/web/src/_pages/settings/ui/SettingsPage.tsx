@@ -1,10 +1,10 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Gamepad2, LogOut, Trash2 } from 'lucide-react';
+import { ArrowUpRight, LogOut, Trash2 } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Button, StatusAnimation } from '@side/design-system';
 
 import { logoutMutationOptions, useSession } from '@/features/auth';
 import { UserBadges } from '@/features/user';
@@ -43,9 +43,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
         <LanguageSettings />
         <ThemeSettings />
         <div className="empty-feed">
-          <span>
-            <Gamepad2 size={30} />
-          </span>
+          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
           <h1>{t('나의 플레이 공간')}</h1>
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
           <Button variant="primary" size="md" type="button" className="button" onClick={login}>

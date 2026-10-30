@@ -3,9 +3,10 @@
 import Link from 'next/link';
 
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, MessageCircle } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
+import { StatusAnimation } from '@side/design-system';
 
 import { conversationListOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
@@ -52,7 +53,7 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
       </div>
       {items.length === 0 && (
         <div className="chat-empty-list">
-          <MessageCircle size={27} />
+          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
           <strong>{t('아직 시작한 대화가 없어요')}</strong>
           <p>
             {t('피드의 요청이나 답변에서')}

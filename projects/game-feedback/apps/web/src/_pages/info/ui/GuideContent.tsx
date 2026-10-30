@@ -1,4 +1,5 @@
 import type { TBoardKind } from '@game-feedback/contracts';
+import { StatusAnimation } from '@side/design-system';
 
 import { boardByKind } from '@/features/board';
 import { translate, type TLocale } from '@/shared/i18n/index.server';
@@ -7,6 +8,7 @@ export function GuideContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (
     <>
+      <StatusAnimation variant="game" className="mb-4 size-20" />
       <p className="info-lead">{t('게시글부터 채팅까지, 필요한 기능을 빠르게 찾아보세요.')}</p>
       <div className="guide-sections">
         <section className="guide-section" id="browse">
