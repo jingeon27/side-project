@@ -32,7 +32,7 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
   if (!game) return <>{heading}</>;
   return (
     <div className="game-board-navigation" data-has-heading={Boolean(heading) || undefined}>
-      <nav className="game-category-group" aria-label={t('{game} 게시판', { game: game.name })}>
+      <div className="game-category-group">
         <div className="game-board-heading">
           <div className="game-board-title">
             <GameIcon slug={game.slug} />
@@ -41,7 +41,7 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
           </div>
           {heading}
         </div>
-        <div className="game-board-chips">
+        <nav className="game-board-chips" aria-label={t('{game} 게시판', { game: game.name })}>
           <TabLink
             ref={!selected ? currentChip : undefined}
             href={appRoutes.feed(locale)}
@@ -89,8 +89,8 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
             selected={selected}
             currentChip={currentChip}
           />
-        </div>
-      </nav>
+        </nav>
+      </div>
     </div>
   );
 }

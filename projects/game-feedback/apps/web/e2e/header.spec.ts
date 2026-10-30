@@ -14,8 +14,8 @@ test('mobile titles follow the screen and game classifications stay inside their
   await expect(header.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('main').getByRole('search')).toHaveCount(0);
   const game = page.getByRole('navigation', { name: '클래시로얄 게시판', exact: true });
-  await expect(game.locator('.game-board-title')).toContainText('클래시로얄');
-  await expect(game.locator('.game-board-chips').getByRole('link')).toHaveText([
+  await expect(page.locator('.game-board-navigation .game-board-title')).toContainText('클래시로얄');
+  await expect(game.getByRole('link')).toHaveText([
     '전체',
     '피드백',
     '친추판매',
