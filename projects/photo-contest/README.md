@@ -52,6 +52,8 @@ yarn dev:photo-contest
 
 앱별 테스트 레인, 테스트 DB·포트와 정리 정책은 [개발 가이드](docs/development.md#앱별-테스트)에 있습니다. 실행 중인 다른 서버나 개발 DB를 테스트용으로 사용하지 않습니다.
 
+웹의 페이지 전용 폼·관리 섹션·조회 조합은 `apps/web/src/_pages`에 둡니다. 도메인 카드·동작은 features에 유지하고, 상태 모션은 [공통 디자인 시스템](../../packages/design-system/README.md#상태-모션)을 사용합니다.
+
 ## 구조와 운영
 
 | 경로                | 책임                                            |

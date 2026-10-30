@@ -1,4 +1,6 @@
-import { CircleAlert, RotateCw } from 'lucide-react';
+import { RotateCw } from 'lucide-react';
+
+import { StatusAnimation } from '@side/design-system';
 
 import { cn } from '../../../lib/cn.helper';
 import { Button } from '../button';
@@ -22,12 +24,7 @@ export function ErrorState({
 }: IErrorStateProps) {
   return (
     <div role="alert" className={cn('flex flex-col items-center gap-2 px-6 py-12 text-center', className)}>
-      <span
-        aria-hidden
-        className="mb-1 flex size-14 items-center justify-center rounded-full bg-danger-soft text-danger"
-      >
-        <CircleAlert className="size-6" />
-      </span>
+      <StatusAnimation variant="error" className="mb-2 size-16 text-danger" />
       <p className="text-subtitle text-ink">{title}</p>
       {message ? <p className="text-body text-muted">{message}</p> : null}
       {onRetry ? (

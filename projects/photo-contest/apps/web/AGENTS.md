@@ -17,13 +17,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## 구조
 
 - `app`: 라우트·레이아웃·로딩/오류·proxy. 화면은 `@/_pages/<화면>` 배럴로만 가져온다.
-- `_pages`: sign·home·explore·me·group·group-write·group-contests·group-contest·invite·contest·legal·landing·how-it-works. `@page`가 feature를 조립하고 화면 전용 feed/results/model은 그 아래에 둔다.
+- `_pages`: sign·home·explore·me·group·group-create·group-write·group-contests·group-contest·invite·contest·legal·landing·how-it-works. `@page`가 feature를 조립하고 화면 전용 ui/feed/results/model과 테스트는 그 아래에 둔다. 가입 신청·카테고리·숨긴 글 관리와 작성 폼·알림 설정은 해당 페이지가 소유하며, 서버 모델을 사용한다는 이유로 features에 두지 않는다.
 - `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 루트 레이아웃이 감싸는 `shell`(데스크톱 고정 메뉴), 전역 스타일.
 - `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. `widgets/desktop-nav`: 데스크톱 왼쪽 고정 메뉴로, `_app/shell`이 레이아웃에서 한 번만 그려 화면 전환·로딩 중에도 남는다(`/sign`과 공개 소개 제외). `widgets/public-layout`은 공개 소개 두 화면의 머리글과 바닥글을 공유한다. `TopAppBar`는 화면 머리만 그린다.
 - `features`: 인증·그룹·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
 - `shared`: 생성 GraphQL 문서·API 링크·router/error/form/bridge 기반·UI.
 
-두 웹 서비스가 공유하는 색·글자·간격 토큰과 UI primitive·`cn`은 루트 `packages/design-system`(`@side/design-system`)이 소유한다. `shared/ui/@core`는 기존 import 경로에서 공통 primitive를 사용한다. Button·IconButton은 자신의 hydration이 끝나기 전에는 비활성화해 이벤트 연결 전 조작을 막으며 모양은 공통 primitive에 맡긴다. TextField·TextArea·Badge·Avatar·Spinner와 `shared/lib/cn.helper.ts`는 명시적 re-export다. Next 링크는 공통 패키지의 `/next`, 스타일은 `/styles.css` 공개 경로를 사용한다. 이 앱의 `_app/styles/tailwind.css`는 공통 스타일과 앱 소스를 연결하고 `globals.css`에는 `#pc-main` 토스트 위치만 둔다. ConfirmDialog·BottomSheet의 뒤로 가기, 포털 위치, 비동기 동작은 앱에 남기고 공통 토큰·스타일·버튼을 조합한다.
+두 웹 서비스가 공유하는 색·글자·간격 토큰과 UI primitive·`cn`은 루트 `packages/design-system`(`@side/design-system`)이 소유한다. `shared/ui/@core`는 기존 import 경로에서 공통 primitive를 사용한다. Button·IconButton은 자신의 hydration이 끝나기 전에는 비활성화해 이벤트 연결 전 조작을 막으며 모양은 공통 primitive에 맡긴다. 상태 모션은 공통 `StatusAnimation`의 SVG Lottie와 정지 fallback을 사용하며 모션 감소 설정을 따른다. TextField·TextArea·Badge·Avatar·Spinner와 `shared/lib/cn.helper.ts`는 명시적 re-export다. Next 링크는 공통 패키지의 `/next`, 스타일은 `/styles.css` 공개 경로를 사용한다. 이 앱의 `_app/styles/tailwind.css`는 공통 스타일과 앱 소스를 연결하고 `globals.css`에는 `#pc-main` 토스트 위치만 둔다. ConfirmDialog·BottomSheet의 뒤로 가기, 포털 위치, 비동기 동작은 앱에 남기고 공통 토큰·스타일·버튼을 조합한다.
 
 아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓴다. 가입 설정 화면에서는 기존 닉네임·사진을 수정하고 약관 동의를 완료한다. MY에서도 프로필을 편집한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 게시물 업로드는 requestPostUpload → shared/api의 uploadToStorage helper(FormData POST, 세션 쿠키 제외) → completePostUpload → createPost를 쓰고 컴포넌트에서 fetch를 호출하지 않는다. 저장소 전송 실패는 RHF 미디어 오류로 표시한다. 업로드 티켓 mutation은 `fetchPolicy: 'no-cache'`로 정규화 캐시에 남기지 않고, 저장소 전송은 티켓 만료(1~15분)까지만 기다린다. 업로드하는 시트는 `useAbortOnClose`로 닫히면 전송을 끊고 게시·저장 직전에 `throwIfClosed`로 멈추며 `notifyClosedSubmit` 토스트로 알린다. 기존 대회 제출도 requestUploadUrl(contentType, byteSize) → 같은 helper → completeSubmissionUpload → createSubmission으로 전송한다. Apollo HttpLink는 JSON 메타데이터만 보내며 GraphQL Upload는 제공하지 않는다.
 

@@ -2,6 +2,8 @@ import Image from 'next/image';
 
 import { Heart, MessageCircle, MoreHorizontal } from 'lucide-react';
 
+import { StatusAnimation } from '@side/design-system';
+
 import { BrandIcon } from '@/shared/ui/@core/top-app-bar';
 
 /** 서비스 소개용 화면 예시. 실제 회원이나 반응 수로 보이지 않게 별도로 표시한다. */
@@ -27,13 +29,20 @@ export function FeedPreview() {
           <MoreHorizontal aria-hidden className="size-5 text-muted" />
         </div>
         <p className="px-5 pt-4 pb-4 text-title text-ink">집에 오자마자 내 자리가 없어졌다</p>
-        <Image
-          src="/brand/afternoon-cat.svg"
-          alt="노트북 옆 소파에 길게 누운 고양이 일러스트"
-          width={1000}
-          height={800}
-          loading="eager"
-          className="aspect-5/4 w-full object-cover"
+        <StatusAnimation
+          variant="cat"
+          label="소파에 누운 고양이 일러스트"
+          className="aspect-5/4 h-auto w-full"
+          fallback={
+            <Image
+              src="/brand/afternoon-cat.svg"
+              alt="노트북 옆 소파에 길게 누운 고양이 일러스트"
+              width={1000}
+              height={800}
+              loading="eager"
+              className="aspect-5/4 w-full object-cover"
+            />
+          }
         />
         <div className="flex gap-5 px-5 py-4 text-caption text-muted">
           <span className="flex items-center gap-2">
