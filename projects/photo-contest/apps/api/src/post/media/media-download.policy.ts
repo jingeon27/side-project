@@ -4,7 +4,7 @@ export function mediaDownloadFilename(title: string, key: string): string {
     .replace(/[\u0000-\u001f\u007f/\\<>:"|?*]/g, '')
     .replace(/^\.+|\.+$/g, '')
     .trim();
-  return `${[...name].slice(0, 80).join('') || '별사대'}.${extension}`;
+  return `${[...name].slice(0, 80).join('') || '피식'}.${extension}`;
 }
 
 export function mediaDownloadDisposition(filename: string): string {
