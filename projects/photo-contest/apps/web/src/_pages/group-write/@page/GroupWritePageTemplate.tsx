@@ -18,7 +18,7 @@ export function GroupWritePageTemplate({
   const router = useAppRouter();
   const returnPath = contestId ? ROUTES.GROUP_CONTEST(groupId, contestId) : ROUTES.GROUP(groupId);
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
+    <div data-page-form className="flex min-h-0 min-w-0 flex-col">
       <TopAppBar title="그룹에 글쓰기" backHref={returnPath} />
       <div className="mx-auto w-full max-w-5xl px-4 pt-6 tablet:px-8">
         <p className="wrap-anywhere text-subtitle text-ink">{groupName}</p>

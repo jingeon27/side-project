@@ -38,6 +38,10 @@ function NavigationLink({ href, active, children }: { href: string; active: bool
 export function DesktopNavigation() {
   const pathname = usePathname();
   if (PATHS_WITHOUT_NAVIGATION.has(pathname)) return null;
+  const isFormPage =
+    pathname === ROUTES.GROUP_CREATE ||
+    pathname === ROUTES.ONBOARDING ||
+    /^\/groups\/[^/]+\/(?:edit|write)$/.test(pathname);
   return (
     <aside
       data-desktop-nav
@@ -70,12 +74,14 @@ export function DesktopNavigation() {
           <Heart aria-hidden className="size-6" strokeWidth={1.7} />
           알림
         </NavigationLink>
-        <div className="mt-auto px-3 text-caption text-subtle">
-          <p className="text-label text-muted">혼자 보기 아까운 순간.</p>
-          <p className="mt-2">우리끼리 모으면 더 피식.</p>
-          <LegalLinks className="mt-3 gap-x-2" />
-          <p className="mt-6 text-micro">© 피식</p>
-        </div>
+        {!isFormPage && (
+          <div className="mt-auto px-3 text-caption text-subtle">
+            <p className="text-label text-muted">혼자 보기 아까운 순간.</p>
+            <p className="mt-2">우리끼리 모으면 더 피식.</p>
+            <LegalLinks className="mt-3 gap-x-2" />
+            <p className="mt-6 text-micro">© 피식</p>
+          </div>
+        )}
       </nav>
     </aside>
   );

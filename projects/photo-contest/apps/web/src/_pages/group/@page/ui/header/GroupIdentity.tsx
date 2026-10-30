@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 import { useReadQuery } from '@apollo/client/react';
 
-import { EditGroupProfileButton, GroupVisibilityBadge } from '@/features/group';
+import { EditGroupProfileLink, GroupVisibilityBadge } from '@/features/group';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
 import type { TGroupQueryRef } from '../../model/group-query.type';
@@ -43,7 +43,7 @@ export function GroupIdentity({ groupRef }: { groupRef: TGroupQueryRef }) {
           {group.description || '사진과 동영상으로 웃긴 순간을 나눠보세요.'}
         </p>
       </div>
-      <EditGroupProfileButton groupId={group.id} className="col-span-2 w-fit desktop:col-span-1" />
+      <EditGroupProfileLink groupId={group.id} className="col-span-2 w-fit desktop:col-span-1" />
     </section>
   );
 }

@@ -11,6 +11,16 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('DesktopNavigation', () => {
+  it.each(['/groups/new', '/groups/example/edit', '/groups/example/write', '/onboarding'])(
+    '전용 폼 %s에서는 탐색을 유지하고 푸터는 표시하지 않아야 한다',
+    (pathname) => {
+      navigation.pathname = pathname;
+      render(<DesktopNavigation />);
+      expect(screen.getByRole('navigation', { name: '주요 메뉴' })).toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: '서비스 정책' })).not.toBeInTheDocument();
+      expect(screen.queryByText('© 피식')).not.toBeInTheDocument();
+    },
+  );
   it.each(['/about', '/about/how-it-works'])(
     '공개 랜딩 %s에서는 앱 메뉴를 그리지 않아야 한다',
     (pathname) => {
@@ -28,6 +38,7 @@ describe('DesktopNavigation', () => {
     expect(screen.getByRole('link', { name: '홈' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'MY' })).toHaveAttribute('href', '/me');
     expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
+    expect(screen.getByRole('navigation', { name: '서비스 정책' })).toBeInTheDocument();
   });
 
   it('세션을 시작하는 화면에서는 메뉴를 그리지 않아야 한다', () => {

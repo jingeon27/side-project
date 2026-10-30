@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Camera } from 'lucide-react';
+import { Images } from 'lucide-react';
 
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 
@@ -15,7 +15,7 @@ export function PostsEmptyState({
   return (
     <div className="flex flex-col items-center gap-3">
       <EmptyState
-        icon={<Camera className="size-6" />}
+        icon={<Images />}
         title={title}
         description="사진이나 동영상, 링크로 웃긴 순간을 나눠보세요. 합성한 이미지도 올릴 수 있어요."
       />

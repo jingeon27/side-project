@@ -1,8 +1,7 @@
 import type { z } from 'zod';
 
+import type { groupProfileSchema, TGroupProfileInput } from '@/features/group';
 import type { GroupProfileQuery, UpdateGroupProfileMutationVariables } from '@/shared/api/generated';
-
-import type { groupProfileSchema, TGroupProfileInput } from './group-profile.schema';
 
 export function getGroupProfileDefaults(
   group: Pick<GroupProfileQuery['group'], 'name' | 'description'>,

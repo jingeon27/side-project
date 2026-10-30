@@ -1,6 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
+import { Medal, Trophy } from 'lucide-react';
 
 import { CreateGroupContestButton, GroupContestCard } from '@/features/contest';
 import { GroupContentFrame } from '@/features/group';
@@ -26,6 +27,7 @@ function ContestList({
   if (!data.groupContests.length)
     return (
       <EmptyState
+        icon={hallOfFame ? <Medal /> : <Trophy />}
         title={hallOfFame ? '아직 지난 대회가 없어요' : '아직 진행 중인 대회가 없어요'}
         description={
           hallOfFame

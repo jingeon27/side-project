@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { groupProfileSchema } from '@/features/group';
+
 import { getGroupProfileDefaults, toGroupProfileVariables } from './group-profile-form.helper';
-import { groupProfileSchema } from './group-profile.schema';
 
 describe('그룹 프로필 폼 변환', () => {
   it('서버 이름·소개만 초기값으로 옮기고 사진 두 칸과 삭제 의사는 명시적으로 초기화해야 한다', () => {

@@ -12,6 +12,7 @@ export const ROUTES = {
   TERMS: '/terms',
   PRIVACY: '/privacy',
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
+  GROUP_EDIT: (id: string) => `/groups/${encodeURIComponent(id)}/edit`,
   GROUP_WRITE: (id: string, contestId?: string) =>
     `/groups/${encodeURIComponent(id)}/write${contestId ? `?${new URLSearchParams({ contestId })}` : ''}`,
   GROUP_CONTESTS: (id: string) => `/groups/${encodeURIComponent(id)}/contests`,
