@@ -7,6 +7,7 @@ export function getGroupProfileDefaults(
   group: Pick<GroupProfileQuery['group'], 'name' | 'description'>,
 ): TGroupProfileInput {
   return {
+    completedImages: {},
     name: group.name,
     description: group.description,
     avatar: null,

@@ -17,3 +17,4 @@ export { EditGroupProfileLink } from './ui/profile/EditGroupProfileLink';
 
 export { GroupImagePicker } from './ui/profile/GroupImagePicker';
 export { groupProfileSchema, type TGroupProfileInput } from './model/group-profile.schema';
+export { uploadGroupImages } from './api/upload-group-images';
