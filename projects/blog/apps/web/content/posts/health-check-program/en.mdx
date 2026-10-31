@@ -20,7 +20,7 @@ Health checks also use corporate codes, may require deposits, and combine basic 
 
 The diagrams were redrawn from screens I checked directly. Code includes only the relevant parts.
 
-![Treatment and health-check programs differ in who registers them and what happens after an application.](/images/posts/health-check-program/01.png)
+![Treatment and health-check programs differ in who registers them and what happens after an application.](/images/posts/health-check-program/01-en.png)
 
 *Treatment and health-check programs differ in who registers them and what happens after an application.*
 
@@ -42,14 +42,14 @@ Health-check detection changed from department names to IDs. I gathered those co
 
 A configuration contains basic examinations and optional groups with a name, pickCount, and choices. Back-Office stores it; hospital admin displays it locked; the portal uses it for the detail summary and application choices.
 
-![Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.](/images/posts/health-check-program/02.png)
+![Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.](/images/posts/health-check-program/02-en.png)
 
 *Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.*
 
 Putting an examination in multiple groups can duplicate it in a reservation. Registration disables items already used by another group.
 
 ```typescript
-/** owner 를 뺀 나머지 그룹이 이미 가져간 검사항목 id. 다른 그룹의 선택지는 잠근다. */
+/** Item IDs already claimed by groups other than owner. Disable them in other groups. */
 export function getItemIdsTakenByOtherGroups(values: CompositionValues, owner: 'included' | number): number[] {
   const fromIncluded = owner === 'included' ? [] : (values.includedItemIds ?? []);
   const fromGroups = (values.selectableGroups ?? []).flatMap((group, index) =>
@@ -71,14 +71,14 @@ I could have added healthCheck branches to the treatment-detail screen a colleag
 
 Health checks have no coupon query or adjusted price and show examination configuration without phone consultation. Separate Views keep changes to either screen from requiring a tour through both sets of branches.
 
-![The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.](/images/posts/health-check-program/03.png)
+![The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.](/images/posts/health-check-program/03-en.png)
 
 *The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.*
 
 programInfo.healthCheck chooses the View, using the same value that chooses the application form.
 
 ```tsx
-// 설명을 위해 줄이고 이름을 바꾼 코드예요. 페이지는 조회·최근 본 시술 저장·화면 선택만 해요.
+// Names and code are simplified. The page queries, records recent treatments, and chooses a view.
 function ProgramPage({ programId }: Props) {
   const { data: program } = useQuery(programDetailOptions(programId));
   useSaveRecentProgram(program);
@@ -105,18 +105,18 @@ Each optional group has a fixed count, such as two imaging tests. The initial re
 
 Replacing an earlier choice would also fill the group and trigger that move. The implementation additionally removed the oldest choice when selection exceeded the limit. A chosen examination could disappear without notice, so I discussed that behavior and automatic advancement with the person responsible.
 
-![Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.](/images/posts/health-check-program/04.png)
+![Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.](/images/posts/health-check-program/04-en.png)
 
 *Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.*
 
 We chose to lock unselected chips when a group is full. Changing choices requires deselecting first. The sheet neither advances itself nor displaces earlier choices, leaving selection logic to add and remove entries.
 
 ```tsx
-// 선택 로직은 넣고 빼기만 해요. 밀어내기와 pickCount 인자를 걷어냈어요.
+// Selection now only adds and removes; eviction and the pickCount argument were removed.
 export const toggleHealthCheckItem = (selected: number[], itemId: number) =>
   selected.includes(itemId) ? selected.filter((id) => id !== itemId) : [...selected, itemId];
 
-// 넘치는 선택은 화면이 막아요(설명을 위해 줄인 코드예요).
+// The UI blocks selections beyond the limit. Simplified for explanation.
 const isFull = selected.length >= group.pickCount;
 <Chip pressed={isSelected} disabled={isFull && !isSelected} onClick={() => onToggle(item.id)} />;
 ```
@@ -127,7 +127,7 @@ The design lacked a disabled style, so I requested one for shared Chip and used 
 
 Completing the application and amount-confirmation sheet leads to payment. During development, creation order changed too. Previously a reservation came first; checkout now decides whether payment is needed. Corporate-funded and zero-cost applications finish there, while deposit applications receive an order for payment. Routes, mocks, and E2E changed with this flow that no longer leaves unpaid reservations.
 
-![Each payment outcome has an explicit destination for the user.](/images/posts/health-check-program/05.png)
+![Each payment outcome has an explicit destination for the user.](/images/posts/health-check-program/05-en.png)
 
 *Each payment outcome has an explicit destination for the user.*
 

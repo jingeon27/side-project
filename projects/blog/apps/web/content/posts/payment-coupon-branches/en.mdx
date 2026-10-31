@@ -41,7 +41,7 @@ interface PaymentHistoryFormValue extends PaymentHistoryResponse {
 I initially declared couponDiscountAmount on the response DTO, then moved it to the form type. This separates fields sent by the server from a value added for a screen calculation. Submission also selects fields explicitly instead of spreading the whole form.
 
 ```typescript
-// 확정 전 예약 상세의 결제 내역은 화면이 만든 쿠폰 행 하나뿐이다.
+// Before confirmation, reservation details contain only the coupon row created by the UI.
 const couponPayment = payments.find(({ method }) => method === 'COUPON');
 if (!couponPayment) return;
 
@@ -50,7 +50,7 @@ confirmReservation({
   paymentAmount: couponPayment.paymentAmount,
   paymentDate: couponPayment.paymentDate,
   memberCouponId: couponPayment.memberCouponId,
-  // 견적 금액·내원일·메모는 폼의 다른 칸에서 채운다.
+  // Other form fields supply the quote, visit date, and memo.
 });
 ```
 
@@ -58,7 +58,7 @@ Coupon reservations are confirmed from reservation details in hospital admin. Be
 
 I did not introduce a separate form-to-request mapper. There were few editing-only fields, and the request builder already selected the values to send, so it could exclude them there.
 
-![The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.](/images/posts/payment-coupon-branches/01.png)
+![The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.](/images/posts/payment-coupon-branches/01-en.png)
 
 *The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.*
 
@@ -80,7 +80,7 @@ Selecting a payment date changes status to complete before the row is saved. Cho
 
 Visibility and color helpers already existed from moving hospital admin and Back-Office UI into a shared package. I added coupon visibility there and changed the order used to select detail components.
 
-![Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.](/images/posts/payment-coupon-branches/02.png)
+![Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.](/images/posts/payment-coupon-branches/02-en.png)
 
 *Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.*
 
@@ -88,8 +88,8 @@ Visibility and color helpers already existed from moving hospital admin and Back
 
 ```typescript
 const VISIBLE_STATUSES = ['COMPLETED', 'PROCESSING', 'WAITING'] as const;
-// as const만 쓰면 includes의 인자가 'NORMAL' | 'CANCEL'로 좁혀져
-// payment.method를 받지 못하므로, 원소 타입을 method 전체 union으로 선언한다.
+// With only as const, includes accepts just 'NORMAL' | 'CANCEL',
+// not payment.method. Give the elements the full method union type instead.
 const VISIBLE_METHODS: readonly PaymentHistoryResponse['method'][] = [
   'NORMAL',
   'CANCEL',
@@ -130,13 +130,13 @@ function PaymentHistoryDescriptions({ field }: { field: FormListFieldData }) {
 
   return (
     match(payment)
-      // 미저장: 값이 없거나 id가 없다. 그 안에서 결제수단을 본다.
+      // Unsaved: no value or no ID. Then inspect the payment method.
       .with(P.union(P.nullish, { id: P.optional(P.nullish) }), (unsaved) =>
         match(unsaved)
           .with({ method: 'COUPON' }, () => <CouponDescriptions field={field} />)
           .otherwise(() => <WaitingDescriptions field={field} />),
       )
-      // 저장됨: 취소 → 완료 → 그 외
+      // Saved: cancellation, then completed, then the remaining cases
       .when(isCanceledPayment, () => <CanceledDescriptions field={field} />)
       .when(isCompletedNormalPayment, () => <CompletedDescriptions field={field} />)
       .otherwise(() => <WaitingDescriptions field={field} />)
@@ -163,7 +163,7 @@ function CouponDescriptions({ field }: { field: FormListFieldData }) {
 
   const finalAmount = (paymentAmount ?? 0) - couponDiscountAmount;
 
-  // 금액은 Form.Item이 폼에 쓰고, 여기서는 적용된 쿠폰만 푼다.
+  // Form.Item writes the amount; this handler only clears the applied coupon.
   const handlePaymentAmountChange = () => {
     if (memberCouponId == null) return;
 
@@ -172,7 +172,7 @@ function CouponDescriptions({ field }: { field: FormListFieldData }) {
       { name: ['payments', field.name, 'couponName'], value: null },
       { name: ['payments', field.name, 'couponDiscountAmount'], value: 0 },
     ]);
-    message.info('총 결제 예정 금액이 변경되어 적용된 쿠폰이 초기화되었습니다.');
+    message.info('The expected total changed, so the applied coupon was cleared.');
   };
 
   return (
@@ -189,7 +189,7 @@ function CouponDescriptions({ field }: { field: FormListFieldData }) {
 
 Details receive field rather than an old payment snapshot. useWatch reads the current amount and coupon from the form path, and setFields clears the coupon after an amount change. The ordinary payment details and timeline do not need to know that calculation.
 
-![Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.](/images/posts/payment-coupon-branches/03.png)
+![Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.](/images/posts/payment-coupon-branches/03-en.png)
 
 *Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.*
 
@@ -201,7 +201,7 @@ The form does not automatically choose a replacement. Users can select another c
 
 The first move from if to match preserved the old condition order. Splitting details into components still left id and status mixed, so the following day I grouped by saved state first. The decision order needed to change after the syntax did.
 
-![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04.png)
+![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04-en.png)
 
 *Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.*
 

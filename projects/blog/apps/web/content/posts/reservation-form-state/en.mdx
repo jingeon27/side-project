@@ -34,14 +34,14 @@ Actions changing participants or dates ended with validateDraft.
 ```typescript
 updateParticipant: (memberId, values) =>
   set((state) => {
-    // 값 수정
+    // Edit the value
     state.isValid = validateDraft(state.form);
   });
 ```
 
 Existing actions called it, but a new action could omit it and leave the button reading old validity for new values. Family additions and removals also required aligning people in the cache with the store array.
 
-![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01.png)
+![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01-en.png)
 
 *Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.*
 
@@ -53,7 +53,7 @@ Zustand itself was not the cause. Server membership data had been mixed with ong
 
 React Query now supplies names and family membership. React Hook Form holds selected people and preferred dates; Zod derives validity from them. Only the picker's display and unconfirmed sheet choices remain local.
 
-![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02.png)
+![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02-en.png)
 
 *After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.*
 
@@ -70,7 +70,7 @@ function BookingPage() {
     },
   });
 
-  // handleScheduleSelect는 아래 '날짜 일괄 적용' 절에서 다룬다.
+  // handleScheduleSelect is covered below under applying a common date and time.
 
   return (
     <FormProvider {...methods}>
@@ -84,7 +84,7 @@ function BookingPage() {
 }
 ```
 
-![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03.png)
+![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03-en.png)
 
 *After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.*
 
@@ -101,16 +101,16 @@ const ParticipantSchema = z.object({
   memberId: z.number(),
   selected: z.boolean(),
   name: z.string(),
-  preferredDate: z.string({ message: '희망 날짜를 입력해 주세요.' }),
-  preferredTime: z.string({ message: '희망 시간을 입력해 주세요.' }),
+  preferredDate: z.string({ message: 'Enter a preferred date.' }),
+  preferredTime: z.string({ message: 'Enter a preferred time.' }),
 });
 
 export const BookingFormSchema = z
   .object({
-    requestNote: z.string().max(200, '최대 200자까지 입력할 수 있어요.').optional(),
+    requestNote: z.string().max(200, 'Enter no more than 200 characters.').optional(),
     participants: z
       .array(ParticipantSchema)
-      .min(1, '가족 예약이 최소 한 명 이상 있어야 합니다.')
+      .min(1, 'Include at least one family member.')
       .default([]),
     preferredDate: z.string(),
     preferredTime: z.string(),
@@ -121,7 +121,7 @@ export const BookingFormSchema = z
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['participants'],
-      message: '최소 한 명은 예약 대상이어야 합니다.',
+      message: 'Select at least one reservation participant.',
     });
   });
 ```
@@ -141,7 +141,7 @@ Changing only date fields without touching that array could bypass this behavior
 Refetching family membership must not erase chosen dates. useBookingParticipants combines member information and the family query with the member first. The synchronization hook aligns the form to that list and leaves it alone while member information is null.
 
 ```tsx
-// 새 칸을 만드는 함수: 서버 값에 폼의 공통 희망 일시를 붙인다.
+// Create an entry by combining server values with the form's common preferred date and time.
 function useParticipantInitializer(control: Control<BookingFormValues>) {
   const preferredDate = useWatch({ control, name: 'preferredDate' }) ?? '';
   const preferredTime = useWatch({ control, name: 'preferredTime' }) ?? '';
@@ -169,12 +169,12 @@ function useSyncParticipants() {
   useEffect(() => {
     if (serverParticipants === null) return;
 
-    // 처음: 서버 목록 전체로 채운다.
+    // Initial population: copy the entire server list.
     if (current.length === 0) {
       setValue('participants', serverParticipants.map(initParticipant()));
       return;
     }
-    // 서버 목록이 짧아졌다: 서버에 남은 사람만 남긴다.
+    // The server list shrank: retain only people still on the server.
     if (current.length > serverParticipants.length) {
       setValue(
         'participants',
@@ -182,7 +182,7 @@ function useSyncParticipants() {
       );
       return;
     }
-    // 서버 목록이 길어졌다: 폼에 없는 사람을 선택한 채로 뒤에 붙인다.
+    // The server list grew: append missing people with selected set to true.
     if (current.length < serverParticipants.length) {
       setValue('participants', [
         ...current,
@@ -199,7 +199,7 @@ Initial population uses server defaults: the member starts selected and existing
 
 InitParticipant reads the common preferredDate and preferredTime from the form for each new person. Adding someone after choosing a date supplies that date to the new row. Existing people retain their current form values, preserving individual selections and schedules.
 
-![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04.png)
+![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04-en.png)
 
 *Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.*
 
@@ -214,7 +214,7 @@ const handleScheduleSelect = useCallback(
   ({ date, time }: { date: string; time: string }) => {
     const participants = methods.getValues('participants');
 
-    // 날짜·시간 형식 변환은 생략
+    // Date and time formatting omitted
     methods.setValue(
       'participants',
       participants.map(initParticipant({ preferredDate: date, preferredTime: time })),

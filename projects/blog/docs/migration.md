@@ -8,7 +8,7 @@
 
 - `apps/web/content/posts/{contentId}/meta.json`: 공개 발행 시각, 수정 시각, 분류, 태그와 원문 URL.
 - `apps/web/content/posts/{contentId}/ko.mdx`: 공개된 본문 전체. 원문의 코드, 표, 목록, 인용과 그림 설명을 유지했다.
-- `apps/web/content/posts/{contentId}/en.mdx`: 같은 글의 영문 번역. 코드 예제·이미지 경로·제목 구조·표 크기를 유지하고 본문과 이미지 대체 텍스트·캡션을 번역했다. 코드 내부의 한국어 주석·문자열과 도표 내부 글자는 원본을 재사용한다.
+- `apps/web/content/posts/{contentId}/en.mdx`: 같은 글의 영문 번역. 코드 예제와 제목 구조, 표 크기를 유지하면서 본문과 이미지 설명을 번역한다. 사용자 요청으로 코드 주석과 화면에 표시하는 문자열도 영어로 옮겼다. 실행 조건과 식별자는 유지하고, 변경한 코드 블록의 원본·번역본 해시와 이미지 교체 경로는 `english-localizations.json`에 기록한다.
 - `apps/web/seo/ko.json`: 공개 제목과 제목에서 만든 한국어 URL, 설명, 검색어.
 - `apps/web/seo/en.json`: 영어 UI와 영문 글 27편의 제목·설명·고정 영문 slug·검색어.
 - `apps/web/public/images/posts/{contentId}/`: 처음 가져온 공개 이미지 32장의 원본 보관본. 원격 이미지의 만료되는 서명 URL을 런타임에 사용하지 않는다.
@@ -17,6 +17,7 @@
 - `apps/web/content/image-replacements.json`: 기존 이미지 경로와 교체한 커버 경로의 대응표.
 - `apps/web/content/code-comment-edits.json`: 사용자 요청으로 바꾼 코드 주석 구두점의 원문과 편집문. 실행 코드는 수정하지 않는다.
 - `apps/web/content/code-redactions.json`: 공개 예제에서 조직 식별자를 익명화한 코드 블록의 원본·편집본 SHA-256 대응표. 식별자 원문은 기록하지 않는다.
+- `apps/web/content/english-localizations.json`: 영문판의 이미지 경로와 코드 블록 번역 SHA-256 대응표. 한글 도해는 별도의 `-en.svg`와 `-en.png`로 재구성하며, 원본 이미지와 한국어 예제는 보존한다. 실제 화면을 바탕으로 다시 그린 영문 이미지는 새 캡처가 아니라 영문 재구성본이라고 표시한다.
 - [migration-manifest.json](migration-manifest.json): 원문 URL, 콘텐츠 ID, 대응 파일명, 공개 발행 시각, 코드 블록과 이미지의 SHA-256.
 
 최초 이관에서는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 보존했다. 이후 편집한 글은 발행일을 유지하고 `updatedAt`에 편집 시각을 기록한다. 화면의 날짜는 한국 시간을 기준으로 표시한다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 발행일을 마이그레이션 날짜로 바꾸지 않았다.
