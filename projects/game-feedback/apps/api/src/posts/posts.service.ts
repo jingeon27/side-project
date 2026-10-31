@@ -79,6 +79,11 @@ export class PostsService {
       commentsCursor: comments.nextCursor,
     };
   }
+  async visibleAnswerCounts(req: SessionRequest, id: string) {
+    await this.visiblePost(req, id);
+    const excluded = await this.visibility.excluded(req);
+    return (await answerCounts(this.db, [id], excluded)).get(id) ?? NO_ANSWERS;
+  }
   async createPost(req: SessionRequest, input: TCreatePostDto) {
     const u = requireUser(req);
     if (input.document && richTextToPlainText(input.document) !== input.body)
