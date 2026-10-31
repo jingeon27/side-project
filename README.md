@@ -93,6 +93,7 @@ deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 ## 관련 문서
 
 - [공통 설치, 포맷, hook, worktree와 검사](docs/development.md)
+- [코드 감사 후속 과제와 완료 기준](docs/code-quality-followups.md)
 - [Game Mate 제품 범위](projects/game-feedback/docs/product.md)
 - [피식 기능과 이용 흐름](projects/photo-contest/docs/features.md)
 - [공유 UI와 디자인 시스템](packages/design-system/README.md), [UI 디자인 기준](.agents/skills/ui-design/SKILL.md)

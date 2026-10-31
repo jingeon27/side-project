@@ -4,6 +4,8 @@
 
 일상적인 실행은 각 프로젝트 README에서 시작합니다. 이 문서는 공통 도구·Git·테스트 규칙을 다룹니다. 버전의 기준은 `.nvmrc`, `package.json`, `.yarnrc.yml`이며 변경 이력과 현재 운영 상태를 혼동하지 않습니다.
 
+전체 코드 감사에서 확인한 완료 항목·남은 개선 작업·검증 기준은 [코드 품질 후속 과제](code-quality-followups.md)에서 관리합니다.
+
 ## 공통 디자인 시스템
 
 [설계와 사용법](../packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.
