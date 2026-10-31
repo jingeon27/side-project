@@ -6256,6 +6256,7 @@ __metadata:
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     class-variance-authority: "catalog:"
+    dayjs: "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
     graphql: "catalog:"

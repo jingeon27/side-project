@@ -2,7 +2,7 @@
 
 import { useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { GroupImagePicker, groupProfileSchema } from '@/features/group';
+import { GroupImagePicker, groupProfileSchema, uploadGroupImages } from '@/features/group';
 import {
   CompleteGroupAvatarUploadDocument,
   DiscoverGroupsDocument,
@@ -12,7 +12,7 @@ import {
   UpdateGroupProfileDocument,
   type GroupProfileQuery,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError } from '@/shared/api/upload-to-storage.helper';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
@@ -55,21 +55,21 @@ export function EditGroupProfileForm({
         const { avatar, cover } = values;
         const signal = beginSubmit();
         try {
-          const uploadImage = (image: File | null) =>
-            image
-              ? uploadWithTicket(image, {
-                  signal,
-                  request: async () =>
-                    (
-                      await requestUpload({
-                        variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
-                      })
-                    ).data?.requestGroupAvatarUpload,
-                  complete: async (uploadId) =>
-                    (await completeUpload({ variables: { uploadId } })).data?.completeGroupAvatarUpload.id,
+          const { avatarId, coverId } = await uploadGroupImages({
+            groupId: group.id,
+            images: { avatar, cover },
+            completedImages: form.getValues('completedImages') ?? {},
+            onCompleted: (kind, image) => form.setValue(`completedImages.${kind}`, image),
+            request: async (image) =>
+              (
+                await requestUpload({
+                  variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
                 })
-              : Promise.resolve(undefined);
-          const [avatarId, coverId] = await Promise.all([uploadImage(avatar), uploadImage(cover)]);
+              ).data?.requestGroupAvatarUpload,
+            complete: async (uploadId) =>
+              (await completeUpload({ variables: { uploadId } })).data?.completeGroupAvatarUpload.id,
+            signal,
+          });
           throwIfClosed(signal);
           await save({ variables: toGroupProfileVariables(group.id, values, { avatarId, coverId }) });
           toast.success('그룹 프로필을 수정했어요');

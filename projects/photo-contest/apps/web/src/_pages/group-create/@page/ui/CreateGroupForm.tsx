@@ -2,7 +2,7 @@
 
 import { useMutation } from '@apollo/client/react';
 
-import { GroupImagePicker, prependMyGroup } from '@/features/group';
+import { GroupImagePicker, prependMyGroup, uploadGroupImages } from '@/features/group';
 import {
   CompleteGroupAvatarUploadDocument,
   CreateGroupDocument,
@@ -11,7 +11,7 @@ import {
   RequestGroupAvatarUploadDocument,
   UpdateGroupProfileDocument,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { Button } from '@/shared/ui/@core/button';
@@ -35,6 +35,7 @@ export function CreateGroupForm({
       visibility: GroupVisibility.Public,
       avatar: null,
       cover: null,
+      completedImages: {},
     },
   });
   // 사진 업로드를 재시도할 때 이미 만든 그룹을 다시 만들지 않는다.
@@ -50,19 +51,6 @@ export function CreateGroupForm({
     awaitRefetchQueries: true,
   });
   const beginSubmit = useAbortOnClose(true);
-  const uploadImage = async (groupId: string, image: File | null | undefined, signal: AbortSignal) => {
-    if (!image) return undefined;
-    const { data: ticket } = await requestUpload({
-      variables: { groupId, contentType: image.type, byteSize: image.size },
-    });
-    if (!ticket) throw new Error('사진 업로드를 시작하지 못했어요.');
-    throwIfClosed(signal);
-    await uploadToStorage(ticket.requestGroupAvatarUpload, image, { signal });
-    throwIfClosed(signal);
-    const { data } = await completeUpload({ variables: { uploadId: ticket.requestGroupAvatarUpload.id } });
-    if (!data) throw new Error('사진 업로드를 마치지 못했어요.');
-    return data.completeGroupAvatarUpload.id;
-  };
   return (
     <form
       aria-label="그룹 만들기"
@@ -76,10 +64,21 @@ export function CreateGroupForm({
             (await create({ variables: { name, description, visibility } })).data?.createGroup;
           if (!group) return;
           throwIfClosed(signal);
-          const [avatarId, coverId] = await Promise.all([
-            uploadImage(group.id, avatar, signal),
-            uploadImage(group.id, cover, signal),
-          ]);
+          const { avatarId, coverId } = await uploadGroupImages({
+            groupId: group.id,
+            images: { avatar, cover },
+            completedImages: form.getValues('completedImages') ?? {},
+            onCompleted: (kind, image) => form.setValue(`completedImages.${kind}`, image),
+            request: async (image) =>
+              (
+                await requestUpload({
+                  variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
+                })
+              ).data?.requestGroupAvatarUpload,
+            complete: async (uploadId) =>
+              (await completeUpload({ variables: { uploadId } })).data?.completeGroupAvatarUpload.id,
+            signal,
+          });
           throwIfClosed(signal);
           if (avatarId || coverId || created?.createGroup)
             await saveProfile({ variables: { groupId: group.id, name, description, avatarId, coverId } });
