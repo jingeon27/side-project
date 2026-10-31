@@ -1,0 +1,63 @@
+<Summary>
+
+For a live service, I knew the codebase and used diffs to judge whether an implementation was sound. In side projects, the agent handled implementation and detailed testing while I tried the results, gave feedback, and skimmed the code’s structure. I also gave it broad access to configure tools, while editing the writing and screens people would see myself.
+
+</Summary>
+
+![A diagram showing code and prose drafts being marked up in review before reaching readers and users.](/images/covers/reviewing-ai-output.png)
+
+_An illustration of drafting and reviewing, rather than a screenshot of a service._
+
+At work, I read the agent’s changes as diffs and judged how they fit the existing behavior. For side projects, I specified the features and architecture, then delegated implementation and tests to the agent. I tried the resulting services, explained what I wanted changed, and checked the revisions.
+
+## Reviewing diffs in a codebase I knew
+
+For a live service, I first checked whether a change could interrupt something users were trying to do. Unexpected changes to familiar features and repeated bugs could damage their trust in the service and its developers, so I wanted to understand and verify the implementation.
+
+I knew the full codebase I worked with and its existing behavior. Reading the agent’s diff showed me what behavior had changed and how the implementation connected to the existing code. I used that knowledge to judge whether the implementation was sound or had problems.
+
+The agent handled implementation and tests, while I read the diff and gave feedback on what needed changing and which additional conditions to check. I then reviewed its verification results and checked behavior on the actual screen. I described that process in [“Why I still read the code.”](/en/blog/reading-ai-code)
+
+## Trying side projects and giving feedback
+
+For Pisik and Game Mate, I let the agent choose screen layouts and the implementation sequence. I tried the finished screens to check whether the requested features were there, whether I could find the next action, and what felt awkward to use. Most of my review was this kind of black-box feedback on the result.
+
+Pisik’s first home screen showed a group list. I wanted to see photos from my groups as soon as I entered, so I asked for the list to move to My Page and for photos to appear on the home screen. I asked for long explanations covering photos to be shortened and for a story-style border to be removed when there was no story feature.
+
+I also requested behavior I had not specified at the start. I asked for anonymous posts to remain accessible after signup and for an explanation of what would happen if someone logged out before registering. On screens where a request failed, I asked for the input to remain available for a retry. I tried the revisions and explained any missing behavior.
+
+I skimmed the code to see how folders and modules were divided and where responsibilities sat. The agent handled implementation details, test writing, and execution. I received its verification reports, tried the results, and requested changes.
+
+When I had to request the same structural correction several times, I asked for that feedback to be reflected in skills or lint rules. I wanted to spend less time repeating the same explanation on later tasks.
+
+## Delegating infrastructure and tool setup
+
+I also delegated infrastructure configuration, AWS CLI setup, and connections to observability tools. I gave the agent as much access as I could to the accounts and tools it needed and let it configure them directly.
+
+The infrastructure uses Terraform for infrastructure as code (IaC). I delegated creating and configuring AWS resources in code, as well as applying that configuration, to the agent to minimize the work I had to carry out manually in the console.
+
+After setup, I had the agent inspect the deployment instance through the AWS CLI. I asked it to connect Amplitude and Sentry through MCP and query the actual accounts for recorded actions and errors. I received its setup and query results, then requested further checks or changes.
+
+## Reading the writing and interface copy myself
+
+For a blog post, I explain what happened and what I want to convey, then ask AI for a draft. Once it arrives, I reorder it, add missing details, and ask for sentences that do not match what I meant to be rewritten.
+
+I first correct passages claiming that I did something I did not do. A draft of this article described my side-project work as though I had personally reviewed the detailed logic and tests. I corrected it to say that I tried the results, skimmed the structure, and gave feedback, while the agent handled implementation and detailed testing.
+
+An account of a change I requested can also turn into a passage about the attitude a good developer should have. When that happens, I ask for the inconvenient behavior and my reason for requesting the change to be put back into the writing.
+
+I also ask for repeated phrases, explanations appended with em dashes, and strings of words joined by list separators to be revised. I ask for long sentences to be split and lists to be written with ordinary grammatical links. If a sentence combines unrelated ideas, I ask for it to be removed or for the ideas to be written separately.
+
+[Caperton Gillett](https://capertongillett.com/blog/its-not-a-surefire-hint-for-spotting-ai-writing-its-annoying/) also criticized repetitive wording, writing that “human- or AI-generated, repetitive phrasing and contorted language are bad writing.”
+
+![Korean prose before and after replacing an em dash and middle-dot lists with a sentence connecting the reason and action](/images/posts/reviewing-ai-output/01-prose-feedback.png)
+
+_Reconstructed Korean examples illustrating feedback on punctuation and sentence flow._
+
+I read interface copy on the actual screen. On My Page in Pisik, an explanation about a browser session did not make it clear whether someone could return to their activity after signing out. I asked for the copy to explain that signing out would make the anonymous profile and its history inaccessible, and that registering first would let them keep using it. I also checked whether the text covered other content and whether its meaning was clear beside the buttons.
+
+![Korean interface copy before and after replacing symbol-separated feature names with a sentence describing what the user can do](/images/posts/reviewing-ai-output/02-interface-copy-feedback.png)
+
+_An example of replacing list separators with grammatical links in interface copy. This is an explanatory diagram, not a screenshot of the service._
+
+When I receive a revision, I read it again from the beginning, sentence by sentence. If something I meant to say is missing or the same point appears repeatedly, I give more feedback. If an unnecessary paragraph follows the end of the experience I wanted to describe, I ask for it to be removed.

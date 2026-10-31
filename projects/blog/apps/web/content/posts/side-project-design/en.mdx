@@ -1,104 +1,88 @@
 <Summary>
 
-I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.
+I chose the features and architecture for Pisik, Game Mate, and this blog, then delegated implementation and detailed tests to an AI agent. I tried the screens and skimmed the code structure, giving feedback on photo layouts, anonymous history, group permissions, and chat retries.
 
 </Summary>
 
-![An illustration of revising wireframes, a photo feed, and a game conversation screen](/images/covers/side-project-design.png)
+![An illustration of marking revisions on a photo feed and a game conversation screen](/images/covers/side-project-design.png)
 
 _An illustration of revising the screens._
 
-I wanted to see what an AI agent would produce if I gave it as much autonomy as possible. I specified the features and the overall architecture, then left the remaining decisions and implementation to the agent.
+When building Pisik, Game Mate, and this blog, I chose the features and architecture and delegated implementation to an AI agent. I let it decide screen layouts and the implementation sequence. I tried the results and explained what I wanted changed. I skimmed the overall code structure, while the agent handled implementation details, test writing, and execution.
 
-That is how I started building the photo community, Game Mate, and my personal blog. Instead of prescribing each layout and interaction, I let the agent choose, then tried the result and read the code. When something felt wrong or was missing, I described the behavior I wanted and asked it to revise the implementation.
+The first project was Pisik, a photo community whose directory is `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” I thought it would be fun for close friends to share funny photos and vote within their own groups.
 
-Having the requested features did not always produce a service I wanted to use. A screen meant for viewing photos opened with a group list, or long explanations covered the photos. Reading the code also meant revisiting mixed responsibilities and places where the same state had more than one owner.
+I initially requested group invitations, photo submissions, and voting. The resulting screen showed group lists before photos, with long explanations over the images. I asked for those parts to change and specified behavior I had left open, including anonymous history and membership approval.
 
-I had left many product decisions unspecified too. How would someone return to anonymous posts after logging out? What if they opened a submission form before the deadline but sent it afterward? Reviewing the screens and code gave me concrete cases to decide, and the implementation changed with those decisions.
+![The Game Mate feed and group discovery in Pisik](/images/posts/side-project-design/01-service-screens-pisik.png)
 
-The first project was `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” It made me think it would be fun to have a service where close friends could share funny photos within their own group.
+_The Game Mate feed and Pisik group discovery, running with test accounts._
 
-I started with inviting friends to a group, submitting photos, and voting. It had separate submission and voting periods, with rules for ties and contests without votes.
+## I wanted photos before the group list on Pisik's home screen
 
-![The Game Mate feed and group discovery in the photo community](/images/posts/side-project-design/01-service-screens-revised.jpg)
+The first home screen was mostly about choosing a group. I wanted the latest photos from my groups as soon as I entered. I asked for the group list to move to My Page and for photos to appear on the home screen.
 
-_The Game Mate feed and photo community group discovery, running with test accounts._
+It also felt limiting to stop posting when a contest ended. I requested ongoing posts without a submission period, support for videos and edited images, administrator deletion, and the month's popular posts.
 
-## I came to see photos and got a group list
+I asked for guidance covering photos to be shortened and for a story-style border to be removed when there was no story feature. I also opened the desktop layout and requested changes to photo sizes, spacing, and placement.
 
-The first home screen was mostly about choosing a group. I wanted the latest photos from my groups instead. I moved the group list to My Page and made photos the first thing on the home screen.
+On a public group's contest page, joining did not immediately show the button for publishing a post. Leaving the page and returning made it appear. I asked for posting to be available on the same screen after joining, and the membership update was changed to refresh posting permissions too.
 
-Once the home screen centered on photos, it felt limiting to stop posting when a contest ended. I added ongoing posts with no submission period and supported videos and edited images too. Administrator deletion and the month’s popular posts followed.
+The entry screen brings login, signup, and “Start anonymously” together. I left social login out so people could use the service without linking an external account. Anonymous visitors can browse public groups; private groups require an account and membership approval.
 
-Running the screens brought up design changes. I changed layouts that covered photos and removed a story-style border when there was no story feature. I checked spacing and layout on desktop separately.
+## Keeping anonymous activity after signup
 
-Joining a group needed more than a working Join button. On a public group's contest page, joining did not immediately show the button for publishing a post. I had to leave the page and return to see it. I changed the membership flow to refresh contest posting permissions as well. A feature could exist while still leaving the next action unavailable on the current screen.
+I asked for someone who had posted and joined groups anonymously to keep that activity after signing up. Signup converts the existing anonymous profile into an account, preserving public-group memberships and authored content.
 
-The entry screen brings login, signup, and “Start anonymously” together. Anonymous sessions can browse public groups. Private groups require login and membership approval.
+Logging out before signup makes that profile and its history inaccessible. Saying the history is deleted could imply that posts visible to others disappear too. I asked for the copy to explain that the author would lose access to the profile.
 
-Anonymous access also shaped login. I left social login out so people could use the service without linking an external account.
+I also requested changes to the My Page explanation about a browser session. The logout confirmation now explains the loss of access first and asks people to sign up if they want to keep using their profile.
 
-## What happens to activity after an anonymous start?
+## Requiring approval even through a private-group invitation
 
-Once people could enter anonymously, I had to consider what came afterward. Someone who had posted and joined groups would need a way back to that profile, whether on another device or after logging out.
+Pisik has invitation links for bringing friends into groups. Forwarding a link should not expose private posts. I made public groups browsable before joining, while private groups require login and membership approval. I asked for those conditions to be checked on the server too.
 
-Signing up while using an anonymous profile now converts that profile into an account, preserving public-group memberships and authored content. Creating an unrelated account would defeat the purpose for someone signing up to keep their activity.
+I split management permissions between owners and moderators. Moderators can remove ordinary members; an owner must transfer ownership before leaving. I did not want to leave a group without anyone able to manage it.
 
-Logging out before signing up means losing access to that anonymous profile and its history. Saying “your history will be deleted” would also be inaccurate. Removing posts that others can see and losing the ability to return as their author are different things.
+Leaving or being removed does not automatically delete the member's posts and comments. I did not want conversations involving other members to disappear with them. Returning to a private group requires approval again.
 
-I also replaced the My Page explanation about a “browser session.” A confirmation at logout explains the consequence first: the anonymous profile will no longer be accessible, and signing up is the way to keep using it. People should not need to know what a session is to understand why signup matters.
+## Defining contest submission and voting deadlines
 
-## An invitation must not bypass a private group's approval
+Contests have upcoming, submission, voting, and completed phases. I asked for “Enter the contest” to appear only during submissions, but a form already open could still be sent after the deadline. Submissions could also close during an upload, so the server checks the time when saving.
 
-Groups started with a link for inviting friends. Once I introduced public and private groups, knowing the link and having permission to read the posts had to become separate things.
+A request arriving at the submission deadline belongs to voting, and one arriving at the voting deadline belongs to the completed phase. I chose the server clock for that decision.
 
-Public groups can be browsed before joining. Private groups require an account and membership approval, including when someone arrives through an invitation. Forwarding a link should not expose private posts. I made the server check access as well as hiding content on the screen.
+Contest voting is limited to one vote per registered account. People cannot vote for their own or hidden entries. I delegated implementation and verification that simultaneous requests could not store two votes. I excluded anonymous profiles because they are easy to recreate; registered accounts alone do not prevent one person from creating several accounts.
 
-Inviting friends grew into managing members, which needed more than one administrator role. Moderators can remove ordinary members. An owner must transfer ownership before leaving, so the group is not left without someone able to manage it.
+I kept likes separate from contest votes and set a per-person limit on how many contest entries could receive a like. Results distinguish a tie for first place from a contest with no votes. Calling every zero-vote entry a joint winner seemed wrong, so winners only appear when the highest vote count is greater than zero.
 
-Removing a member also raised a question about their posts and comments. I kept leaving a group separate from erasing its past conversations. Leaving or being removed does not automatically delete that content, and returning to a private group requires approval again.
+When the guidance became long enough to cover photos, I asked for it to be shortened. The screen keeps the actions available now and the limits people need, while the server continues checking the agreed conditions.
 
-## When should the contest entry button disappear?
+## Handling cancelled photo selections and failed uploads
 
-A contest has upcoming, submission, voting, and completed phases. I made “Enter the contest” appear only during submissions, but hiding a button was not enough. Someone could leave the form open and publish after the deadline. Submissions could also close during an upload, so the server needed to check the time again when saving the entry.
+I asked for cancelling the file picker to preserve the existing selection. I also delegated checks for selecting the same file again and for a failed preview. Video support needed limits on file types, sizes, and duration too.
 
-The exact deadline needed a definition too. A request arriving at the submission deadline belongs to voting, and one arriving at the voting deadline belongs to the completed phase. The server clock makes that decision rather than each device’s clock.
+Someone could publish before an upload finished, use an expired upload, or leave the group in the meantime. I requested checks of file readiness and posting permissions when saving the post.
 
-Being allowed to publish several entries does not mean being allowed several votes. Contest voting is limited to one vote per account, with no votes for one's own or hidden entries. The database also prevents duplicate votes when requests arrive together or someone presses the button twice. Anonymous profiles are easy to recreate, so contest voting requires a registered account. That alone does not solve the problem of one person creating several accounts.
-
-I kept likes separate from contest votes and set a per-person limit on how many contest entries could receive a like. Results also needed to distinguish a tie for first place from a contest with no votes. Calling every zero-vote entry a joint winner was not what I wanted. A contest only has winners when its highest vote count is greater than zero.
-
-As the rules accumulated, explanations began filling a screen meant for photos. I kept the server restrictions and shortened the visible guidance to the actions available now and the limits people need to know.
-
-## What if someone cancels a selection or the upload fails?
-
-Selecting and uploading a photo has intermediate states too. I checked whether cancelling the file picker preserves the existing selection, whether the same file can be selected again, and what appears when a preview fails. Supporting video also brought decisions about file types, sizes, and duration limits.
-
-Storing a file and publishing a post are separate steps. Someone might submit before the upload finishes, the upload could expire, or the author could leave the group in the meantime. Publishing also needs checks that the file is ready and the author still has permission.
-
-The screen after a failure is part of uploading too. If only the photo needs a retry, losing the written post would make the person start over. The form needs to explain which step failed and let the existing input carry on.
+I did not want an upload failure to erase a post someone had already written. I asked for the screen to explain which step failed, preserve the input, and let that step be retried.
 
 ## Game Mate began with friend-add sales and coaching
 
-My original idea for Game Mate was to connect people through friend-add sales and coaching. In the Clash Royale communities I followed, overseas players used Twitter, while Korean players used KakaoTalk, DC Inside, and Naver Cafe.
+In the Clash Royale communities I followed, overseas players used Twitter, while Korean players used KakaoTalk, DC Inside, and Naver Cafe. Getting added by top-ranked overseas players was difficult, and I often saw posts looking for someone to teach the game.
 
-Getting added by top-ranked overseas players was difficult, and I often saw posts looking for someone to teach the game. People posted across several platforms and checked each one separately. I wanted a place to find friend-add sales and coaching posts, compare their terms, and start a conversation.
+I wanted a place to find friend-add sales and coaching posts, compare their terms, and start a conversation. The Clash Royale communities I knew were also where I could reach initial users, so I chose to start with that game. I considered Brawl Stars and League of Legends but decided against supporting several games at the beginning.
 
-The Clash Royale communities I knew were also where I could reach initial users, so I chose to start there rather than launch for several games at once.
+Under Clash Royale, I added boards for friend-add sales and coaching alongside feedback, friendly matches, and general discussion. More games could use the same categories later. I left account trading out because of the risk.
 
-I considered Brawl Stars and League of Legends too, but decided against supporting several games at the start. Under Clash Royale, I made boards for friend-add sales and coaching, alongside feedback, friendly matches, and general discussion. More games could use those same categories later. I left account trading out because of the risk.
+Friend-add sales have a price field. Coaching posts can list an hourly fee, a fee for a fixed period, or a total fee until a goal is reached. Either students or coaches can post. The service provides listings and chat; I did not add payments.
 
-Friend-add sales have a price field. Coaching posts can list an hourly fee, a fee for a fixed period, or a total fee until a goal is reached. Either students or coaches can post. People can read the terms and talk through chat. I decided not to add payments inside the service.
+I asked for an empty fee to appear as “Fee negotiable” instead of zero. Goal-based coaching asks for the target rating and the total fee until it is reached. I requested “Fixed period” instead of “Monthly,” and “Until the goal is reached” instead of “Target rating achieved,” so readers could distinguish a fixed duration from coaching through a target.
 
-A missing price needed a meaning too. Displaying an empty field as zero could imply that coaching was free, so it appears as “Fee negotiable.” Goal-based coaching asks for the target rating and the total fee until it is reached. “Fixed period” expresses the option better than “Monthly,” and “Until the goal is reached” makes the coaching arrangement clearer than “Target rating achieved.”
+Payment and refunds remain between the users. I kept the screens from suggesting that the service processes payments. Pisik and Game Mate also have separate accounts and data: I did not see a need for people sharing photos and people seeking friend-add sales or coaching to use the same account.
 
-Even after people agree on terms in chat, payment and refunds remain between them. Suggesting that the service handles payments would promise something I had not built, so I kept it to finding people and talking.
+## Adding reply notifications and Helpful to the feedback board
 
-I kept the photo service and Game Mate's accounts and data separate. People sharing photos and people looking for friend-add sales or coaching have different goals and need different information. Building the services in one repository did not give them a reason to share an account.
-
-## Who would answer questions on the feedback board?
-
-Alongside friend-add sales and coaching, I also built a feedback board. That meant thinking about who would answer its questions. Game profiles and multiple languages would not give someone a reason to return if their question went unanswered.
+The feedback board needed people to answer questions. Game profiles and translated posts would not give someone a reason to return if their question went unanswered.
 
 ```text
 Someone posts a question
@@ -107,116 +91,96 @@ Someone posts a question
   → The requester reads it and marks whether it helped
 ```
 
-Saving a reply does not continue the conversation if its requester never sees it. Reply notifications bring them back, and the `Helpful` action lets them respond after reading.
+I added reply notifications and the `Helpful` action after reading. I want to see how many requests receive at least one reply marked helpful. Several helpful replies on one request still count as one request. I also want to look at time to the first reply and the proportion answered within 24 hours.
 
-First, I want to see how many requests receive at least one reply marked helpful. Several helpful replies on one request still count as one request. I also want to look at time to the first reply and the proportion answered within 24 hours.
+I have not recruited people to answer yet. I am considering starting with five to ten people and manually connecting them to questions in the communities I know.
 
-I have not recruited people to answer yet. My plan is to start with five to ten people and manually connect them to questions in the communities I know.
+## Returning the stored message on a chat retry
 
-## A failed send could still have reached the other person
+A connection can drop after the server saves a message but before its response reaches the sender. The screen may show a failure. I asked for retrying to avoid storing a second copy.
 
-Chat seemed complete once a message was saved and displayed to its recipient. But a connection could drop after saving, before the sender received a response. Their screen could show a failure even though the message had arrived. Retrying could then deliver it twice.
+Retries of the same message use the same request identifier. If the server has already saved it, it returns that result. Reusing the identifier for another conversation or different content is rejected.
 
-Retries of the same message now use the same request identifier. If the server has already saved it, it returns that result. Reusing the identifier for another conversation or different content is rejected. “Try again” should not quietly create another copy of the message.
+I asked for read receipts to advance only through messages the client had confirmed. New messages can arrive after someone enters a conversation, so entering alone does not mark everything read. Clearing history affects the range removed from my view and leaves the other person's record intact.
 
-Saving a message once and marking it read needed separate rules. More messages can arrive while someone is in a conversation, so entering it does not mark everything as read. The receipt advances only through the message the client has confirmed. Clearing history likewise affects my view while leaving the other person’s record intact.
+When signing out and entering with another account, I asked for previous lists and late responses to stay off the screen. Account changes cancel active queries and clear the previous results.
 
-I checked logging out and entering with another account as well. Changing the server's login state could still leave the previous account's fetched lists or a late response on screen. Switching accounts also needed to cancel active queries and clear their previous results.
+## Choosing what remains after deletion or blocking
 
-## Deleting and blocking affect other people's screens
+I did not want deleting a comment to erase someone else's reply. In Game Mate, replies by other people remain after the original comment is deleted. Account withdrawal separates clearing the departing author's content and personal information from preserving other people's answers and comments. Authors can also delete their own content after a moderator has hidden it.
 
-Deleting a post looks simple if I only consider its author. If other people have replied or commented, should their contributions disappear too? I did not want deleting a comment to erase someone else's reply.
+Blocking prevents starting a new conversation and sending messages in an existing one. I delegated implementation and verification that those restrictions also apply when the other person initiates the request or calls the API directly.
 
-In Game Mate, replies by other people remain when the original comment is deleted. Account withdrawal also separates clearing the departing author's content and personal information from preserving other people's answers and comments. Another case was allowing authors to delete their own content even after a moderator had hidden it.
+I added reporting, but someone still needs to review submissions and act on them. The operational criteria for handling reports remain to be decided.
 
-Blocking started with a button on a profile, but it also needed to govern starting a new conversation and sending messages in an existing one. Chat restrictions apply when the other participant sends the request too, including direct API calls. Adding a report button was also separate from deciding who reviews reports and what action follows.
+## Separating game profile lookup from ownership verification
 
-The API can enforce a block immediately. A report still needs someone to review its content and decide what to do. Adding the button leaves that operational work to handle.
+Game profiles load from a Player Tag. Someone can enter another player's tag, so I asked for a successful lookup to carry no ownership verification. Connected profiles start unverified, and an administrator-verified user status is separate from game-account ownership.
 
-## Looking up a game profile did not prove ownership
+I originally intended to save a deck and game-information snapshot with each post. I later chose to register game profiles on the user account and asked for deck attachments to be removed from the writing screen. Profile verification requests start a one-to-one chat with an administrator.
 
-Connecting a game account starts with entering a Player Tag and loading the profile. But someone can enter another player's tag. A successful lookup should not produce an ownership verification label.
+Changing the primary game tag clears the existing verification and requires another review. A status checked for the old tag must not carry over to a new one. I also asked for unavailable game APIs and tags that cannot be looked up to be handled separately.
 
-Connected profiles therefore start with ownership unverified. Administrator-managed user verification is separate from game-account ownership too. A successful tag lookup alone must not attach a verification badge.
+Connecting a game profile is optional at signup. People can look up their tag immediately or join with a nickname and the required agreements, then connect later.
 
-The early plan included saving a snapshot of the deck and game information with each post. During implementation, I moved game profiles to the user account and removed deck attachments from the writing screen. Profile verification requests now start a one-to-one chat with an administrator.
+As the form grew, I asked for a scrolling body with the completion button at the bottom. I checked short viewports to make sure inputs and buttons did not overlap.
 
-Changing the primary game tag after verification was another case. A status checked for the previous tag should not automatically carry over to a new one, so changing the primary tag clears the existing verification and requires another review. An unavailable game API or a tag that cannot be looked up also needs handling separately from signup with a nickname alone.
+Profile editing moved from an expandable section to a Bottom Sheet, then to a separate page in Game Mate. I asked for the fields to be editable in one place with a save action at the end. Web addresses in the bio also became clickable on the profile.
 
-## Things people do not have to do during signup
-
-Connecting a game profile is optional at signup. People who want to connect immediately can look up their tag. Others can join with a nickname and the required agreements, then connect later.
-
-As the form grew, I made the body scroll while keeping the completion button at the bottom. I checked short viewports to make sure the inputs and button did not overlap.
-
-I also disliked editing a profile through an expandable section. I first changed it to an Edit Profile button that opened a Bottom Sheet. Later, I moved Game Mate's profile editor to a separate page so editing could happen in one place. Web addresses in the bio became clickable on the profile too.
-
-Someone who stops editing needs to find that action in the editor too. For mobile sheets, I put Cancel beside Save rather than using an X. The body scrolls while the last field and buttons remain reachable on a small screen.
+For mobile sheets, I requested Cancel beside Save instead of an X. The final field and buttons needed to remain reachable after scrolling.
 
 ![A Game Mate public profile with its game account and the separate profile editing page](/images/posts/side-project-design/09-profile-pages.jpg)
 
 _The public profile shows the connected game account, while editing has its own page. These screens use a test account and a fake game API response._
 
-Buttons, inputs, and dialogs come from a shared [design system](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system). The photo service needed room for the photos. Game Mate needed the game and the author's situation to be easy to read. I still adjusted layout and spacing separately for each screen.
+Buttons, inputs, and dialogs use a shared [design system](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system). I requested separate layout and spacing adjustments so Pisik gave photos room and Game Mate made the game and author's situation easy to read.
 
-## Where should Back take someone?
+## Showing a way back from directly opened links
 
-Back navigation seems straightforward when I only consider clicking through screens in order. Someone opening a post directly or arriving from a shared link might have no previous screen inside the service. Following browser history alone could take them away from it.
+Someone opening a post directly or arriving from another site may have no previous screen inside the service. I asked for a destination that would keep Back from simply taking them out of the service.
 
-For a contest opened inside a group, I asked for the header to show the group and contest names, with Back returning to the group. Keeping the group's Posts, Contests, and Hall of Fame tabs on the detail screen made the current location confusing. Public profiles also moved navigation into the header, leaving the body for the profile itself.
+Contest details show the group and contest names in the header, with Back returning to the group. I asked for the group's Posts, Contests, and Hall of Fame tabs to be removed from that detail screen. Public profiles also show navigation in the header and keep the body for the profile.
 
-An action requiring login is another interruption. I made it explain why login is needed before leaving the screen. Cancelling keeps the current page, and completing login should return to what the person was viewing.
+For an action requiring login, I requested an explanation before leaving the screen, with cancellation keeping the current page. Completing login returns to the page the person was viewing.
 
-## If the post is translated, what about the reply?
+## Making replies readable when posts are translated
 
-I started Game Mate with Korean, English, and Japanese in mind. At first, translating menus and posts seemed enough.
+I planned Game Mate for Korean, English, and Japanese. I initially requested translated menus and posts, but someone could answer a translated Korean question in Japanese, leaving the requester unable to read it. I requested reply translation too.
 
-But a Japanese-speaking player could read a translated Korean question and answer in Japanese. The person who asked might then be unable to read the reply. Replies needed translation too.
+Language routes are in place, while translation features and running the service for each language still need work. The mobile app shares web screens through a WebView. I want to refine asking and reading replies on the web before handling app distribution and the stores.
 
-Language routes are in place, but translation features and running the service for each language still need work. The mobile app uses the web screens through a WebView. I want to refine asking and reading replies on the web first, then deal with app distribution and the stores.
+## Asking for the resume to be removed from the blog
 
-## The blog's about page did not need my resume too
+I originally kept my posts in a separate repository. Moving them over to Tistory to publish was cumbersome, and building a blog of my own had become less expensive, so I decided to make this one.
 
-I originally kept my blog posts in a separate repository. Moving them over to Tistory to publish was cumbersome. Building a blog of my own had also become less expensive, so I decided to make one.
+The agent also built a resume I had not requested. I asked for it to be removed and for the about page to keep only contact information. Korean and English editions appear only when an actual translation exists.
 
-During implementation, the AI agent went beyond what I had asked for and built a resume too. I removed it and kept only contact information on the about page.
+Switching languages in dark mode exposed a warning from rendering the theme initialization script. I compared direct URL entry with navigation inside the site and requested a fix.
 
-Korean and English editions only appear where an actual translation exists.
+## Skimming the code structure and giving feedback
 
-Switching languages exposed a warning from rendering the theme initialization script again. Merely checking the translated text would have missed it. I fixed it while trying language changes with dark mode selected and comparing direct URL entry with navigation inside the site.
+While looking through folders and modules, I asked for imports into another feature's internal files to be corrected. I requested public entry points and gave feedback on where screen composition and data queries should belong.
 
-## Specifying the architecture still left code to review
+Apollo or TanStack Query would own fetched values, while forms would own input in progress. I asked for wrappers that only called and returned a library query hook to be reduced, while keeping options that defined a request and its cache updates together. The agent implemented this feedback and checked the detailed logic and tests.
 
-I reviewed the implementation alongside trying the screens. Organizing code into feature folders did not help much when one feature imported another's internal files directly. I still had to trace how far a change might reach. I routed those imports through each feature's public entry point and revisited where screen composition and data queries belonged.
+In Pisik, I requested a fix for a list error that remained after switching categories. The filter stayed usable, while changing the group, contest, or category reset that list's error.
 
-I also looked at places where the same server data was managed separately. Apollo or TanStack Query would own fetched values, while forms would own input in progress. Copying query results into another state variable made it easy for a save to update the cache while the screen kept showing an older value.
+I asked for recurring feedback to be reflected in `AGENTS.md` and task-specific skills. ESLint checks cover import boundaries and duplicated state, and I looked again at the revised structure and screens.
 
-Wrapping code did not always make it easier to read either. I reconsidered hooks that only called and returned a library query hook, and callbacks that only forwarded their arguments. I kept options that defined a request and its cache updates together, but reduced wrappers that added another call to follow without doing anything else.
+The API and cache choices, along with the server and database structure, are covered in [How I chose the technology for two side projects](/en/blog/choosing-the-stack-and-boundaries-for-two-side-projects).
 
-An error boundary also needed more than a place in the component tree. In the photo service, a failed post-list query could leave its error visible after selecting another category. I kept the filter usable and reset the list's error when its group, contest, or category changed. Only checking a successfully loaded list would have missed that behavior.
+## Delegating checks for search entry points and shared links
 
-Repeating the same review feedback in every request was tedious. I put recurring code conventions in `AGENTS.md` and task-specific skills, and used ESLint for checks such as import boundaries and duplicated state. Describing where code should belong still left me with the work of checking what had actually been written.
+I asked for Game Mate's public posts to have titles, descriptions, canonical URLs, share images, and structured data. I delegated verification that posts and comments remained readable without JavaScript. The sitemap includes public posts and profiles, while chat and settings pages are excluded from indexing.
 
-I wrote more about API and cache choices, server checks, and database behavior in [How I chose the technology for two side projects](/en/blog/choosing-the-stack-and-boundaries-for-two-side-projects).
+Public posts cache responses fetched without a login cookie. A signed-in reader's blocked authors are filtered separately so personalized results do not enter the shared cache.
 
-## I checked search entry points and cache behavior too
+I requested cache updates after post edits and comments. If the API saves successfully but cache invalidation fails, a pending record stays in the database for a retry. I delegated implementation and verification of the browser query updates too.
 
-I also looked at how someone would find a post through search or open a shared link. Game Mate's public posts have titles, descriptions, canonical URLs, share images, and structured data. I checked that a reader without JavaScript could still read the post and its comments. The sitemap includes public posts and profiles, while chat and settings pages are excluded from indexing.
+## Choosing what to send to Sentry
 
-Caching needed decisions about what to share and when to discard it. Game Mate caches public post responses fetched without a login cookie. A signed-in reader's blocked authors are handled separately, so a result filtered for one person does not end up in the shared cache.
+I had Sentry connected to the web apps and APIs to investigate errors after deployment. Reports distinguish services and releases, and separate expected input failures from unexpected server errors.
 
-Editing a post or leaving a comment expires the relevant cache entries. Saving in the API can succeed while the request to invalidate the cache fails, so pending invalidations stay in the database for retries. The browser's query results need updating too. I reviewed when changed content would appear again alongside how quickly the initial screen would load.
+I did not want someone's posts or chat messages sent along with an error. I asked for request bodies, cookies, and headers to be excluded. Prisma error messages can contain query arguments, so reports retain the error kind, code, and stack locations. I also had the agent check payloads and receipt and report the results.
 
-## I chose what to keep in error logs
-
-I can see an error while testing locally. After deployment, I need a record of where it happened to investigate it. I connected Sentry to the web apps and APIs, with service and release identifiers, and separated expected input failures from unexpected server errors.
-
-I did not want collecting an error to send someone's post or chat message along with it. API reports exclude request bodies, cookies, and headers. Prisma error messages can contain query arguments, so I changed those reports to retain the error kind, code, and stack locations. I checked what the reports contained as well as whether they were sent.
-
-## Many decisions came after I had built the feature
-
-The agent filled in things I had not specified. Showing a group list on the home screen and adding a resume to the blog were choices it made along the way. Trying the services helped me decide which of those choices to keep and which to change.
-
-Some details, such as anonymous account recovery and what happens when a group owner leaves, were mine to define more clearly at the start. Other problems only became apparent on screen, or while reading code that already ran. Reviewing what had been built and deciding what to change became as much a part of the work as asking for another feature.
-
-I wrote about deployment in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
+Deployment is covered in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).

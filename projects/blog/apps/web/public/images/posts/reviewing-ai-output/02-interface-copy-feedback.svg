@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1210" viewBox="0 0 1080 1210">
+<title>사용자가 할 행동을 이어 쓰기</title><desc>화면 문구 수정 예시. 기호가 반복되는 문장과 자연스럽게 풀어 쓴 문장을 비교한 설명용 도해입니다.</desc>
+<rect width="1080" height="1210" fill="#f4f2eb"/>
+<g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+<text x="68" y="64" fill="#65766e" font-size="25" letter-spacing="2">02 / 화면 문구 수정 예시</text>
+<text x="68" y="130" fill="#243b34" font-size="44" font-weight="700">사용자가 할 행동을 이어 쓰기</text>
+<rect x="68" y="180" width="944" height="290" rx="20" fill="#fffdf8" stroke="#d5bbb0" stroke-width="2"/>
+<rect x="100" y="210" width="130" height="45" rx="10" fill="#f5e6de"/>
+<text x="119" y="241" fill="#9c553d" font-size="27" font-weight="700">수정 전</text>
+<text x="112" y="318" font-size="38" fill="#76594d">게시글ㆍ프로필에서 채팅을 시작하세요</text><text x="112" y="376" font-size="38" fill="#76594d">— 사진ㆍ동영상도 보낼 수 있어요.</text>
+<path d="M540 486 V520 M526 507 L540 521 L554 507" fill="none" stroke="#7b8c80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="68" y="542" width="944" height="316" rx="20" fill="#fcfdf7" stroke="#98b39e" stroke-width="2"/>
+<rect x="100" y="572" width="170" height="45" rx="10" fill="#e4eddf"/>
+<text x="119" y="603" fill="#356349" font-size="27" font-weight="700">피드백 후</text>
+<text x="112" y="680" font-size="38" fill="#294d38">게시글이나 프로필에서</text><text x="112" y="738" font-size="38" fill="#294d38">채팅을 시작하고,</text><text x="112" y="796" font-size="38" fill="#294d38">사진이나 동영상도 보내 보세요.</text>
+<path d="M68 902 H1012" stroke="#c6ccc1" stroke-width="2"/>
+<text x="112" y="966" font-size="27" fill="#55705e" font-weight="700">피드백</text>
+<text x="112" y="1026" font-size="31" fill="#4f6256">나열된 기능을 사용자가 할 행동으로 이어요.</text><text x="112" y="1074" font-size="31" fill="#4f6256">어울리는 조사와 문장 길이를 다시 봐요.</text>
+<text x="68" y="1162" fill="#7a8278" font-size="23">문구를 비교하기 위한 설명용 예시예요. 실제 화면 캡처는 아니에요.</text>
+</g></svg>

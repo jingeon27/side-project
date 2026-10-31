@@ -95,6 +95,14 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/reviewing-ai-output.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/reviewing-ai-output.svg": {
+    "width": 1280,
+    "height": 720
+  },
   "/images/covers/sentry-observability.png": {
     "width": 1280,
     "height": 720
@@ -227,9 +235,29 @@
     "width": 1520,
     "height": 2282
   },
+  "/images/posts/reviewing-ai-output/01-prose-feedback.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/01-prose-feedback.svg": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback.svg": {
+    "width": 1080,
+    "height": 1210
+  },
   "/images/posts/sentry-observability/01.jpg": {
     "width": 1440,
     "height": 960
+  },
+  "/images/posts/side-project-design/01-service-screens-pisik.png": {
+    "width": 952,
+    "height": 1139
   },
   "/images/posts/side-project-design/01-service-screens-revised.jpg": {
     "width": 952,

@@ -23,10 +23,16 @@
     }
   },
   "posts": {
+    "reviewing-ai-output": {
+      "title": "The criteria I developed while reviewing AI-generated code and writing",
+      "slug": "reviewing-ai-output",
+      "description": "In side projects, I delegated implementation, detailed tests, and AWS CLI and MCP setup. I tried the results, gave feedback, skimmed the code structure, and edited the writing and screens people would see.",
+      "keywords": ["AI workflow", "code review", "side projects", "writing", "MCP", "Amplitude", "Sentry"]
+    },
     "side-project-design": {
       "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
+      "description": "I delegated implementation and detailed tests for Pisik, Game Mate, and this blog, then tried the screens and skimmed their structure to give feedback on layouts, anonymous history, group permissions, and chat retries.",
       "keywords": [
         "side projects",
         "product planning",
@@ -211,7 +217,7 @@
     "side-project-infrastructure": {
       "title": "Starting with one EC2 instance",
       "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
-      "description": "I dropped RDS while looking at deployment costs. I considered serverless options too, but decided to start with the web apps, APIs, and PostgreSQL on one small EC2 instance. That also meant working through storage, backups, and S3 permissions.",
+      "description": "Why I chose one EC2 instance for two services and PostgreSQL, delegated Terraform setup to an agent, and worked through backups, S3 permissions, and deployment over SSM.",
       "keywords": [
         "side projects",
         "AWS",
@@ -226,7 +232,7 @@
     "side-project-technology": {
       "title": "Choosing the stack and refining the structure of two side projects",
       "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
-      "description": "Why I shared web and app screens, chose API contracts and caches, and enforced database consistency. The decisions behind Sentry errors, traces and metrics, and the checks provided by tests and ESLint.",
+      "description": "Why I chose the APIs, caches, database safeguards, and observability tools for two side projects, and how I set the direction while delegating implementation and detailed verification to an agent.",
       "keywords": [
         "side projects",
         "Next.js",
