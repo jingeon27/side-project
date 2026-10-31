@@ -21,6 +21,7 @@ import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
 import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
+import { VerificationPrompt } from '@/widgets/support';
 
 interface ICreatePostFormProps {
   categories: Category[];
@@ -86,6 +87,7 @@ export function CreatePostForm({
   return (
     <form className="page-form" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
       <div data-form-scroll className="page-form-scroll">
+        <VerificationPrompt />
         <div className="form-stack">
           <Field label={t('분류')}>
             <NativeSelect
