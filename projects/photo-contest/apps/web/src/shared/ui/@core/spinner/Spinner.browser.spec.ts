@@ -38,7 +38,7 @@ test('모션 감소 설정에서는 정지 그림을 유지하고 설정을 바�
   await expect(loading.locator('[data-motion-player]')).toBeHidden();
 });
 
-test('플레이어가 준비되어도 부모의 숨김 스타일을 덮어쓰지 않아야 한다', async ({ page }) => {
+test('모션 감소 전환 후에도 플레이어가 부모의 숨김 스타일을 덮어쓰지 않아야 한다', async ({ page }) => {
   await page.goto('/?example=motion');
   const loading = page.getByRole('img', { name: '불러오는 중', includeHidden: true });
   const svg = loading.locator('[data-motion-player] svg');
@@ -46,6 +46,14 @@ test('플레이어가 준비되어도 부모의 숨김 스타일을 덮어쓰지
   const hidden = await page.addStyleTag({ content: '[data-motion="loading"] { visibility: hidden; }' });
   await expect(svg).toHaveCount(1);
   await expect(svg).toBeHidden();
-  await hidden.evaluate((element) => element.remove());
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(svg).toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(svg).toHaveCount(1);
+  await expect(loading.locator('[data-motion-player]')).toHaveAttribute('data-motion-ready', '');
+  await expect(svg).toBeHidden();
+  await hidden.evaluate((element) => {
+    element.parentNode?.removeChild(element);
+  });
   await expect(svg).toBeVisible();
 });
