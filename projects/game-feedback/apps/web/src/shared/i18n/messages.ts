@@ -51,6 +51,10 @@ const messages: Record<string, readonly [string, string]> = {
     'Sign in with your social account.',
     'ソーシャルアカウントでログインしてください。',
   ],
+  '로그인은 웹 브라우저에서 이용해 주세요.': [
+    'Please sign in using a web browser.',
+    'ログインはウェブブラウザーで行ってください。',
+  ],
   '로그인이 취소됐어요. 다시 선택해주세요.': [
     'Sign-in was cancelled. Choose a method to try again.',
     'ログインがキャンセルされました。もう一度選択してください。',

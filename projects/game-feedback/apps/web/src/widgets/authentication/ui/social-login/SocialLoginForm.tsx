@@ -46,7 +46,8 @@ export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLogin
     });
   };
   const common = { pending, selected, returnTo, onSubmit: handleSubmit };
-  if (isNativeApp()) return <p className="login-unavailable">로그인은 웹 브라우저에서 이용해 주세요.</p>;
+  if (isNativeApp())
+    return <p className="login-unavailable">{t('로그인은 웹 브라우저에서 이용해 주세요.')}</p>;
   const errorMessage = nativeLogin.error?.message ?? browserLogin.error?.message;
   return (
     <div className="social-login-methods">
