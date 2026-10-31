@@ -343,6 +343,12 @@ CI의 실제 Nest 통합 검사에서 인증 거절이 `ok`로 기록되는 경�
 - Expo CLI의 전이 의존성 node-forge는 허용 범위에서 1.4.2로 갱신했다. 남은 보안 권고와 수정 버전/메이저 호환성/24시간 격리로 보류한 항목은 [감사 후속 과제](../../../docs/code-quality-followups.md)에 구분했다. 버전 격리와 자동 업데이트 정책은 유지한다.
 - 검증: 프로젝트 check의 API unit 221개·Web unit/UI 627개·Mobile 141개·bridge 37개·test-kit 46개, 실제 DB/S3 API integration 398개가 통과했다. 실제 운영 빌드의 그룹 사진 재시도·대회/투표/권한/SEO 브라우저는 모바일 Chromium/WebKit·데스크톱을 합쳐 15개 통과했고 테스트 스키마 잔여는 0개였다. Android와 별도 iOS Metro export도 통과했다. 기기·운영 배포 검증과는 구분한다.
 
+## 2026-10-31 게시물 재시도와 검사 위임 수정
+
+- PR #178 병합 뒤 develop `0deb9209`에서 게시 요청의 응답 유실·목록 재조회 실패·완료 파일 재전송을 구분했다. 클라이언트는 RHF 초안에 UUID 요청 키와 완료된 File/uploadId를 보존한다. 서버는 사용자·요청 키 unique와 기존 uploadId 중복 보호로 첫 게시물을 반환하며 성공 이벤트를 중복 기록하지 않는다. 저장 성공 후 목록 재조회는 별도로 오류 처리한다.
+- `Post.clientRequestId` nullable 열과 복합 unique는 새 additive migration으로 추가했다. 기존 행·키 없는 클라이언트와 데이터는 보존한다. 개발 DB 적용은 하지 않았고 개발 서버와 Prisma client가 분리된 worktree에서 테스트했다.
+- e2e의 미사용 import를 제거하고 프로젝트 lint에 Web·Mobile lint 위임을 추가했다. 실제 DB의 링크 동시 재시도·키 분리·입력 거절·호환 요청과 실제 S3/브라우저의 파일 재사용·응답 유실·저장 후 목록 실패를 회귀 검사한다. 전체 검증 결과는 후속 PR 본문과 [감사 후속 과제](../../../docs/code-quality-followups.md)에 기록한다.
+
 ## 제목에 날짜 없는 기록
 
 ### 제품과 구조
