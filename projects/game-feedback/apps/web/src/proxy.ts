@@ -52,28 +52,23 @@ export async function proxy(request: NextRequest) {
   const invalidBoardContext =
     /^\/(?:ko|en|ja)\/(?:boards(?:\/[^/]+)?|write|search)\/?$/.test(request.nextUrl.pathname) &&
     !resolveAppRoute(request.nextUrl.pathname + request.nextUrl.search);
-  if (request.method === 'GET' && invalidBoardContext) {
-    return new NextResponse('Not Found', {
-      status: 404,
-      headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'private, no-store' },
-    });
-  }
   if (visitor && LOOKUP_PAGE.test(request.nextUrl.pathname)) {
     const retryAfter = lookupPages.consume(visitor);
     if (retryAfter) return tooManyRequests(retryAfter);
   }
   if (
     request.method === 'GET' &&
-    request.headers.get('rsc') !== '1' &&
-    (await documentUnavailable(
-      request.nextUrl.pathname,
-      request.cookies.get('gamefeedback_session')?.value,
-      request.nextUrl.searchParams.getAll('game'),
-      visitor,
-    ))
+    (invalidBoardContext ||
+      (request.headers.get('rsc') !== '1' &&
+        (await documentUnavailable(
+          request.nextUrl.pathname,
+          request.cookies.get('gamefeedback_session')?.value,
+          request.nextUrl.searchParams.getAll('game'),
+          visitor,
+        ))))
   ) {
     const url = publicRequestUrl(request);
-    url.pathname = `/${locale}/unavailable`;
+    url.pathname = '/unavailable';
     url.search = '';
     const response = NextResponse.rewrite(url, { status: 404 });
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');

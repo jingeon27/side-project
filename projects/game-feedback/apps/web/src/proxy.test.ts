@@ -47,7 +47,7 @@ describe('proxy URLs behind the production reverse proxy', () => {
     );
 
     expect(response.status).toBe(404);
-    expect(response.headers.get('x-middleware-rewrite')).toBe('https://game.bambyul.com/ko/unavailable');
+    expect(response.headers.get('x-middleware-rewrite')).toBe('https://game.bambyul.com/unavailable');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
