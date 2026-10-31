@@ -22,6 +22,8 @@ jobs:
         with: { persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
       - name: Validate Game Feedback public build settings
         env:
           SITE_URL: ${{ vars.GAME_FEEDBACK_SITE_URL }}

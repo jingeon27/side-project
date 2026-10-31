@@ -3,7 +3,6 @@ import {
   createTestImage,
   graphqlRequest,
   uploadTestPostMedia,
-  uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './env';
