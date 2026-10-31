@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useState, useSyncExternalStore, type ComponentType, type ReactNode } from 'react';
+import { useCallback, useSyncExternalStore, type ComponentType, type ReactNode } from 'react';
 
 import { Cat, CircleAlert, CircleCheck, Gamepad2, Inbox, LoaderCircle, WifiOff } from 'lucide-react';
 
 import { cn } from '../../lib/cn.helper';
 import type { TMotionVariant } from './motion-assets';
-import { StatusAnimationPlayer } from './motion-player';
+import { attachMotionPlayer } from './motion-player';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -54,7 +54,12 @@ export function StatusAnimation({
 }: IStatusAnimationProps) {
   const enabled = useSyncExternalStore(subscribeMotionPreference, motionEnabled, serverMotionEnabled);
   const Glyph = GLYPHS[variant];
-  const content = fallback ?? <Glyph className="size-full" />;
+  const attachPlayer = useCallback(
+    (node: HTMLSpanElement | null) => {
+      if (node) return attachMotionPlayer(node, { variant, loop });
+    },
+    [variant, loop],
+  );
 
   return (
     <span
@@ -65,52 +70,23 @@ export function StatusAnimation({
       className={cn('relative inline-grid size-16 shrink-0 place-items-center text-accent', className)}
     >
       {enabled ? (
-        <MotionPlayer key={`${variant}:${loop}`} variant={variant} loop={loop} fallback={content} />
-      ) : (
-        <span data-motion-fallback className="flex size-full items-center justify-center">
-          {content}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function MotionPlayer({
-  variant,
-  loop,
-  fallback,
-}: Required<Pick<IStatusAnimationProps, 'variant' | 'loop' | 'fallback'>>) {
-  const [ready, setReady] = useState(false);
-  const attachPlayer = useCallback(
-    (node: HTMLSpanElement | null) => {
-      if (!node) return;
-      const player = new StatusAnimationPlayer(node, { variant, loop, onReady: setReady });
-      player.start();
-      return () => player.destroy();
-    },
-    [variant, loop],
-  );
-  return (
-    <>
+        <span
+          key={`${variant}:${loop}`}
+          ref={attachPlayer}
+          data-motion-player
+          className={cn(
+            'pointer-events-none absolute inset-0 [&_svg]:size-full',
+            (variant === 'loading' || variant === 'success' || variant === 'error') &&
+              '[&_path]:stroke-current',
+          )}
+        />
+      ) : null}
       <span
         data-motion-fallback
-        className={cn(
-          'col-start-1 row-start-1 flex size-full items-center justify-center',
-          ready && 'invisible',
-        )}
+        className="col-start-1 row-start-1 flex size-full items-center justify-center"
       >
-        {fallback}
+        {fallback ?? <Glyph className="size-full" />}
       </span>
-      <span
-        ref={attachPlayer}
-        data-motion-player
-        className={cn(
-          'pointer-events-none absolute inset-0 [&_svg]:size-full',
-          !ready && 'invisible',
-          (variant === 'loading' || variant === 'success' || variant === 'error') &&
-            '[&_path]:stroke-current',
-        )}
-      />
-    </>
+    </span>
   );
 }

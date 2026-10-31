@@ -96,7 +96,9 @@ Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.bac
 <StatusAnimation variant="empty" className="size-16" />
 ```
 
-첫 HTML에는 정지 그림을 렌더한다. 모션 설정은 `useSyncExternalStore`의 서버 snapshot과 브라우저 구독으로 연결하며, 모션 감소 설정에서는 플레이어·애니메이션 자산을 로드하지 않는다. 설정을 바꾸면 플레이어를 정리하거나 새로 연결한다. `StatusAnimation`은 접근성과 표시를, `motion-player.ts`의 `StatusAnimationPlayer` 인스턴스는 SVG 전용 `lottie-web` light 플레이어·observer·이벤트 구독의 지연 로드·재생·정리를 맡는다. `start()`·`destroy()`는 반복 호출해도 한 번만 실행되며, React callback ref가 DOM 연결 시 인스턴스를 만들고 해제 시 종료한다. 화면 밖이나 숨긴 탭에서는 재생을 멈추며, observer의 교차 결과를 사용해 불필요한 레이아웃 조회를 줄인다. 노드 교체·unmount 때 observer·listener·플레이어를 정리하고 뒤늦은 로드·이벤트를 무시한다. 초기화 도중 일부 자원만 만들어진 실패도 정리하고 정지 그림으로 돌아간다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
+첫 HTML에는 정지 그림을 렌더한다. 모션 설정은 `useSyncExternalStore`의 서버 snapshot과 브라우저 구독으로 연결하며, 모션 감소 설정에서는 플레이어·애니메이션 자산을 로드하지 않는다. `useCallback`으로 연결한 DOM ref는 `motion-player.ts`의 얇은 Lottie 어댑터를 붙이고 반환된 cleanup으로 해제한다. 컴포넌트는 접근성·정지 fallback·플레이어 호스트만 선언하며, 별도의 class나 `ready` React state로 재생 상태를 중계하지 않는다. 어댑터만 호스트의 `data-motion-ready`와 그 안의 Lottie SVG를 관리하고 CSS가 준비 여부에 따라 인접 fallback을 전환한다. React는 이 속성을 작성하지 않으므로 소유권이 겹치지 않으며, 준비 이벤트는 React 재렌더를 발생시키지 않는다.
+
+설정을 바꾸거나 노드를 교체·unmount하면 observer·listener·플레이어를 정리하고 늦은 로드·이벤트를 무시한다. 초기화 도중 일부 자원만 만들어진 실패도 정리하고 정지 그림으로 돌아간다. 화면 밖이나 숨긴 탭에서는 재생을 멈추며, observer의 교차 결과를 사용해 불필요한 레이아웃 조회를 줄인다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
 
 공통 Spinner와 버튼 진행 표시, Toaster 성공·실패가 이 컴포넌트를 쓴다. 앱은 빈 목록·연결 상태·대표 그림에 필요할 때 연결하고, 피드 카드나 레이아웃을 유지하는 skeleton을 전부 애니메이션으로 바꾸지 않는다. jsdom은 외부 SVG 플레이어만 대체하고 실제 렌더·모션 설정 전환은 Photo Contest 웹이 소유하는 Chromium·Safari 브라우저 검사에서 확인한다.
 

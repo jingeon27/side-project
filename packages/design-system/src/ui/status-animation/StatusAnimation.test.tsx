@@ -1,11 +1,11 @@
-import { StrictMode } from 'react';
+import { Profiler, StrictMode } from 'react';
 
 import 'lottie-web/build/player/lottie_light';
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { StatusAnimationPlayer } from './motion-player';
+import { attachMotionPlayer } from './motion-player';
 import { StatusAnimation } from './StatusAnimation';
 
 const { loadAnimation } = vi.hoisted(() => ({ loadAnimation: vi.fn() }));
@@ -48,20 +48,36 @@ afterEach(() => {
 });
 
 describe('상태 모션의 브라우저 수명', () => {
-  it('인스턴스의 반복 시작과 종료는 플레이어를 중복 생성하거나 정리하지 않아야 한다', async () => {
+  it('플레이어 준비 표시는 React를 다시 렌더링하지 않고 어댑터의 DOM에만 반영해야 한다', async () => {
+    const pending = player();
+    pending.isLoaded = false;
+    loadAnimation.mockReturnValueOnce(pending);
+    const commits = vi.fn();
+    const view = render(
+      <Profiler id="status-motion" onRender={commits}>
+        <StatusAnimation variant="empty" />
+      </Profiler>,
+    );
+    await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
+    const beforeReady = commits.mock.calls.length;
+    const host = view.container.querySelector('[data-motion-player]');
+    expect(host).not.toHaveAttribute('data-motion-ready');
+    pending.isLoaded = true;
+    act(() => pending.addEventListener.mock.calls.find(([name]) => name === 'DOMLoaded')?.[1]());
+    expect(host).toHaveAttribute('data-motion-ready');
+    expect(commits).toHaveBeenCalledTimes(beforeReady);
+  });
+
+  it('어댑터의 정리를 반복 호출해도 플레이어와 구독을 한 번만 해제해야 한다', async () => {
     const view = render(<span data-testid="motion-host" />);
-    const controller = new StatusAnimationPlayer(screen.getByTestId('motion-host'), {
+    const detach = attachMotionPlayer(screen.getByTestId('motion-host'), {
       variant: 'loading',
       loop: true,
-      onReady: vi.fn(),
     });
-    controller.start();
-    controller.start();
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
     const current = loadAnimation.mock.results[0]?.value;
-    controller.destroy();
-    controller.destroy();
-    controller.start();
+    detach();
+    detach();
     await act(async () => {});
     expect(current.destroy).toHaveBeenCalledOnce();
     expect(loadAnimation).toHaveBeenCalledOnce();
@@ -79,7 +95,7 @@ describe('상태 모션의 브라우저 수명', () => {
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
     const current = loadAnimation.mock.results[0]?.value;
     await waitFor(() => expect(current.destroy).toHaveBeenCalledOnce());
-    expect(view.container.querySelector('[data-motion-fallback]')).not.toHaveClass('invisible');
+    expect(view.container.querySelector('[data-motion-player]')).not.toHaveAttribute('data-motion-ready');
     expect(current.removeEventListener).toHaveBeenCalledTimes(3);
     fireEvent(document, new Event('visibilitychange'));
     expect(current.play).not.toHaveBeenCalled();
@@ -155,8 +171,7 @@ describe('상태 모션의 브라우저 수명', () => {
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledTimes(2));
     pending.isLoaded = true;
     act(() => pending.addEventListener.mock.calls.find(([name]) => name === 'DOMLoaded')?.[1]());
-    expect(view.container.querySelector('[data-motion-fallback]')).toHaveClass('invisible');
-    expect(view.container.querySelector('[data-motion-player]')).not.toHaveClass('invisible');
+    expect(view.container.querySelector('[data-motion-player]')).toHaveAttribute('data-motion-ready');
   });
 
   it('로딩 실패는 정지 그림으로 돌아가고 정리 뒤 늦은 이벤트를 무시해야 한다', async () => {
@@ -166,6 +181,7 @@ describe('상태 모션의 브라우저 수명', () => {
     const fail = current.addEventListener.mock.calls.find(([name]: [string]) => name === 'data_failed')?.[1];
     act(() => fail?.());
     expect(screen.getByText('정지 그림')).toBeVisible();
+    expect(view.container.querySelector('[data-motion-player]')).not.toHaveAttribute('data-motion-ready');
     expect(current.destroy).toHaveBeenCalledOnce();
     view.unmount();
     act(() => fail?.());
