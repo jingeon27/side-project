@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
+import { z } from 'zod';
 
 import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
@@ -21,6 +22,7 @@ import { presentPost } from './post.presenter';
 import { postInclude } from './post.query';
 
 interface IPostInput {
+  clientRequestId?: string | null;
   categoryId?: string | null;
   groupId: string;
   uploadId?: string | null;
@@ -114,13 +116,14 @@ export class PostService {
     const body = input.body?.trim() ?? '';
     if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
     const linkUrl = postLink(input.linkUrl);
+    const requestId = z.uuid().nullish().safeParse(input.clientRequestId);
+    if (!requestId.success) fail('게시 요청 식별자를 확인해 주세요.');
     if (!input.uploadId && !linkUrl) fail('사진이나 동영상, 링크를 하나 이상 첨부해 주세요.');
     await this.limits.consume('POST_CREATE', { userId: viewer.id, address });
     const row = await this.transactions
       .atomic(async (tx) => {
         await this.membership.requireMember(viewer.id, input.groupId, tx);
-        // 응답을 받지 못해 다시 보낸 게시 요청은 새 글 없이 처음 만든 글을 돌려준다.
-        const existing = await this.postOfUpload(viewer, input, tx);
+        const existing = await this.existingPost(viewer, input, tx);
         if (existing) return existing;
         const upload = await this.files.requireCompletedUpload(viewer, input.groupId, input.uploadId, tx);
         if (input.contestId) {
@@ -134,6 +137,7 @@ export class PostService {
             groupId: input.groupId,
             categoryId: input.categoryId ?? null,
             authorId: viewer.id,
+            clientRequestId: requestId.data ?? null,
             uploadId: upload?.id ?? null,
             linkUrl,
             title,
@@ -157,17 +161,23 @@ export class PostService {
         return created;
       })
       .catch(async (error: unknown) => {
-        // 같은 업로드로 동시에 보낸 요청이 unique에 걸리면 먼저 커밋한 글을 돌려준다.
         const conflict = error instanceof GraphQLError && error.extensions.code === ERROR_CODE.CONFLICT;
-        const existing = conflict ? await this.postOfUpload(viewer, input, this.db) : null;
+        const existing = conflict ? await this.existingPost(viewer, input, this.db) : null;
         if (!existing) throw error;
         return existing;
       });
     return presentPost(row, viewer.id);
   }
 
-  /** 같은 사용자가 같은 그룹에 같은 업로드로 이미 만든 글 */
-  private async postOfUpload(viewer: IViewer, input: IPostInput, client: TDatabaseClient) {
+  private async existingPost(viewer: IViewer, input: IPostInput, client: TDatabaseClient) {
+    if (input.clientRequestId) {
+      const post = await client.post.findUnique({
+        where: { authorId_clientRequestId: { authorId: viewer.id, clientRequestId: input.clientRequestId } },
+        include: postInclude(viewer.id),
+      });
+      if (post && post.groupId !== input.groupId) fail('이미 사용한 게시 요청입니다.', ERROR_CODE.CONFLICT);
+      if (post) return post;
+    }
     if (!input.uploadId) return null;
     const post = await client.post.findUnique({
       where: { uploadId: input.uploadId },

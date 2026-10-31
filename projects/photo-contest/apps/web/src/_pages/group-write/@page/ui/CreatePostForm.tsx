@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 
 import { POST_FEED_QUERIES, resetGalleryPosts } from '@/features/post';
 import {
@@ -39,8 +39,11 @@ export function CreatePostForm({
 }) {
   const formId = useId();
   const rightsErrorId = useId();
+  const client = useApolloClient();
   const form = useZodForm(postSchema, {
     defaultValues: {
+      clientRequestId: crypto.randomUUID(),
+      completedMedia: null,
       participateInContest: Boolean(defaultContestId),
       categoryId: '',
       contestId: defaultContestId ?? '',
@@ -56,12 +59,12 @@ export function CreatePostForm({
   const [requestUpload] = useMutation(RequestPostUploadDocument, { fetchPolicy: 'no-cache' });
   const [createPost] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [...POST_FEED_QUERIES, GroupContestDocument, GroupContestsDocument],
-    awaitRefetchQueries: true,
   });
   const beginSubmit = useAbortOnClose(true);
 
   const uploadMedia = async (file: File, signal: AbortSignal) => {
+    const completedMedia = form.getValues('completedMedia');
+    if (completedMedia?.file === file) return completedMedia.uploadId;
     if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
       form.setError('media', { message: '5분 이하의 동영상을 선택해 주세요.' }, { shouldFocus: true });
       return;
@@ -79,6 +82,7 @@ export function CreatePostForm({
       variables: { uploadId: data.requestPostUpload.id },
     });
     if (!completed) return;
+    form.setValue('completedMedia', { file, uploadId: data.requestPostUpload.id });
     return data.requestPostUpload.id;
   };
 
@@ -90,6 +94,7 @@ export function CreatePostForm({
       noValidate
       onSubmit={form.handleSubmit(
         async ({
+          clientRequestId,
           title,
           body,
           media: file,
@@ -107,6 +112,7 @@ export function CreatePostForm({
             throwIfClosed(signal);
             const { data: posted } = await createPost({
               variables: {
+                clientRequestId,
                 groupId,
                 categoryId: categoryId || null,
                 uploadId,
@@ -118,6 +124,11 @@ export function CreatePostForm({
               },
             });
             if (!posted) return;
+            void client
+              .refetchQueries({
+                include: [...POST_FEED_QUERIES, GroupContestDocument, GroupContestsDocument],
+              })
+              .catch(() => toast.error('게시물은 저장됐지만 목록을 불러오지 못했어요. 새로고침해 주세요.'));
             trackEvent(ANALYTICS_EVENT.PostCreated, {
               group_id: groupId,
               category_id: categoryId || null,
