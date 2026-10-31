@@ -11,5 +11,6 @@
 - UI translations are in messages; article prose is in MDX; SEO translations are in seo JSON.
 - Every blog article needs an image made for its subject. When writing a new article or revising one without a dedicated cover, create the image, save it under `apps/web/public/images`, set `coverImage`, and include it in the article body with meaningful localized alt text. Use the same image in Korean and English, check the thumbnail and body rendering, and preserve existing screenshots and image archives. Make illustrations clearly distinguishable from actual product screenshots.
 - Tests and runner configs belong to `apps/web`; use its isolated port 3100 (E2E 3101).
-- Run content validation, typecheck, lint, unit/component tests, production build and E2E for release changes. Record actual results; external account/domain setup is not completed by code alone.
+- For article, metadata, SEO, image and documentation edits, run content validation and blog formatting checks. Their generated registries belong to the same content-only change. CI skips the application build, browser tests and global Knip setup for these edits.
+- For application code, scripts, dependencies, configuration or CI changes, run the relevant typecheck, lint and tests; preserve production build and E2E coverage for application behavior. Record actual results; external account/domain setup is not completed by code alone.
 - Never commit credentials. DSNs, analytics, and source-map upload remain optional and isolated.
