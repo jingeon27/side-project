@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { documentUnavailable } from '@/_app/seo/index.server';
 import { visitorAddress } from '@/shared/api/server';
 import { PUBLIC_LOOKUP_PAGES_PER_MINUTE, VisitorRateLimiter } from '@/shared/api/visitor-rate-limit';
@@ -47,6 +49,15 @@ export async function proxy(request: NextRequest) {
   if (/^\/(ko|en|ja)\/admin(?:\/|$)/.test(request.nextUrl.pathname))
     return new NextResponse('Not Found', { status: 404 });
   const visitor = visitorAddress(request.headers.get('x-forwarded-for'));
+  const invalidBoardContext =
+    /^\/(?:ko|en|ja)\/(?:boards(?:\/[^/]+)?|write|search)\/?$/.test(request.nextUrl.pathname) &&
+    !resolveAppRoute(request.nextUrl.pathname + request.nextUrl.search);
+  if (request.method === 'GET' && invalidBoardContext) {
+    return new NextResponse('Not Found', {
+      status: 404,
+      headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'private, no-store' },
+    });
+  }
   if (visitor && LOOKUP_PAGE.test(request.nextUrl.pathname)) {
     const retryAfter = lookupPages.consume(visitor);
     if (retryAfter) return tooManyRequests(retryAfter);

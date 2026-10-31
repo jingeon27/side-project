@@ -1,9 +1,8 @@
 import 'server-only';
 
-import { GameSlugSchema } from '@game-feedback/bridge';
+import { BoardQuerySchema } from '@game-feedback/bridge';
 import { ApiError, getPublicProfile, listCategories } from '@game-feedback/sdk';
 
-import { boardBySlug } from '@/features/board';
 // index.server는 'use cache' 조회를 함께 공개한다. Proxy 번들에는 접근 판정 모듈만 가져온다.
 import { isPostDocumentUnavailable } from '@/features/post/api/post-access.server';
 import { visitorLookupOptions } from '@/shared/api/server';
@@ -19,12 +18,12 @@ export async function documentUnavailable(
 ) {
   const board = /^\/(?:ko|en|ja)\/boards\/([^/]+)$/.exec(path);
   if (board) {
-    if (!board[1] || !boardBySlug(board[1]) || games.length > 1) return true;
-    const game = GameSlugSchema.safeParse(games[0] ?? 'clash-royale');
-    if (!game.success) return true;
+    if (games.length > 1) return true;
+    const parsed = BoardQuerySchema.safeParse({ board: board[1], game: games[0] });
+    if (!parsed.success) return true;
     try {
       return !(await listCategories(visitorLookupOptions(visitor))).some(
-        (category) => category.active && category.slug === game.data,
+        (category) => category.active && category.slug === parsed.data.game,
       );
     } catch {
       return false;
