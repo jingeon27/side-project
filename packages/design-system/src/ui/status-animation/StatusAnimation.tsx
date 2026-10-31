@@ -6,7 +6,7 @@ import { Cat, CircleAlert, CircleCheck, Gamepad2, Inbox, LoaderCircle, WifiOff }
 
 import { cn } from '../../lib/cn.helper';
 import type { TMotionVariant } from './motion-assets';
-import { attachMotionPlayer } from './motion-player';
+import { StatusAnimationPlayer } from './motion-player';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -83,7 +83,10 @@ function MotionPlayer({
   const [ready, setReady] = useState(false);
   const attachPlayer = useCallback(
     (node: HTMLSpanElement | null) => {
-      if (node) return attachMotionPlayer(node, { variant, loop, onReady: setReady });
+      if (!node) return;
+      const player = new StatusAnimationPlayer(node, { variant, loop, onReady: setReady });
+      player.start();
+      return () => player.destroy();
     },
     [variant, loop],
   );

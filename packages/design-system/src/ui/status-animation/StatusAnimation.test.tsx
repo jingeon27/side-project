@@ -5,6 +5,7 @@ import 'lottie-web/build/player/lottie_light';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { StatusAnimationPlayer } from './motion-player';
 import { StatusAnimation } from './StatusAnimation';
 
 const { loadAnimation } = vi.hoisted(() => ({ loadAnimation: vi.fn() }));
@@ -47,6 +48,44 @@ afterEach(() => {
 });
 
 describe('상태 모션의 브라우저 수명', () => {
+  it('인스턴스의 반복 시작과 종료는 플레이어를 중복 생성하거나 정리하지 않아야 한다', async () => {
+    const view = render(<span data-testid="motion-host" />);
+    const controller = new StatusAnimationPlayer(screen.getByTestId('motion-host'), {
+      variant: 'loading',
+      loop: true,
+      onReady: vi.fn(),
+    });
+    controller.start();
+    controller.start();
+    await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
+    const current = loadAnimation.mock.results[0]?.value;
+    controller.destroy();
+    controller.destroy();
+    controller.start();
+    await act(async () => {});
+    expect(current.destroy).toHaveBeenCalledOnce();
+    expect(loadAnimation).toHaveBeenCalledOnce();
+    view.unmount();
+  });
+
+  it('초기화 도중 실패해도 이미 연결한 플레이어와 이벤트를 정리해야 한다', async () => {
+    vi.stubGlobal(
+      'IntersectionObserver',
+      vi.fn(function () {
+        throw new Error('observer failed');
+      }),
+    );
+    const view = render(<StatusAnimation variant="error" />);
+    await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
+    const current = loadAnimation.mock.results[0]?.value;
+    await waitFor(() => expect(current.destroy).toHaveBeenCalledOnce());
+    expect(view.container.querySelector('[data-motion-fallback]')).not.toHaveClass('invisible');
+    expect(current.removeEventListener).toHaveBeenCalledTimes(3);
+    fireEvent(document, new Event('visibilitychange'));
+    expect(current.play).not.toHaveBeenCalled();
+    view.unmount();
+    expect(current.destroy).toHaveBeenCalledOnce();
+  });
   it('모션 감소 설정에서는 플레이어를 만들지 않고 설정이 바뀌면 다시 연결해야 한다', async () => {
     preference.matches = true;
     const view = render(<StatusAnimation variant="empty" label="비어 있어요" />);
