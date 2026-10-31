@@ -38,6 +38,7 @@ vi.mock('lottie-web/build/player/lottie_light', () => ({
       pause: vi.fn(),
       destroy: vi.fn(),
       addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     })),
   },
 }));

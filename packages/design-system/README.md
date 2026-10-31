@@ -96,7 +96,7 @@ Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.bac
 <StatusAnimation variant="empty" className="size-16" />
 ```
 
-첫 HTML에는 정지 그림을 렌더하고 브라우저에서 SVG 전용 `lottie-web` light 플레이어를 지연 로드한다. 모션 감소 설정에서는 정지 그림을 유지하고, 화면 밖이나 숨긴 탭에서는 재생을 멈추며 unmount 때 플레이어와 observer·listener를 정리한다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
+첫 HTML에는 정지 그림을 렌더한다. 모션 설정은 `useSyncExternalStore`의 서버 snapshot과 브라우저 구독으로 연결하며, 모션 감소 설정에서는 플레이어·애니메이션 자산을 로드하지 않는다. 설정을 바꾸면 플레이어를 정리하거나 새로 연결한다. `StatusAnimation`은 접근성과 표시를, `motion-player.ts`는 SVG 전용 `lottie-web` light 플레이어의 지연 로드·재생·정리를 맡는다. 화면 밖이나 숨긴 탭에서는 재생을 멈추며, observer의 교차 결과를 사용해 불필요한 레이아웃 조회를 줄인다. 노드 교체·unmount 때 observer·listener·플레이어를 정리하고 뒤늦은 로드·이벤트를 무시한다. 자산·플레이어 오류는 정지 그림으로 돌아간다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
 
 공통 Spinner와 버튼 진행 표시, Toaster 성공·실패가 이 컴포넌트를 쓴다. 앱은 빈 목록·연결 상태·대표 그림에 필요할 때 연결하고, 피드 카드나 레이아웃을 유지하는 skeleton을 전부 애니메이션으로 바꾸지 않는다. jsdom은 외부 SVG 플레이어만 대체하고 실제 렌더·모션 설정 전환은 Photo Contest 웹이 소유하는 Chromium·Safari 브라우저 검사에서 확인한다.
 
