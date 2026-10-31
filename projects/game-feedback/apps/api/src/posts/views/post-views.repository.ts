@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { PrismaClient } from '../../generated/prisma';
 
 /** 24시간 중복 방지 창보다 긴 48시간을 보관한다. 누적 조회수는 Post에 따로 남는다. */
@@ -6,14 +8,14 @@ export const POST_VIEW_PRUNE_BATCH_SIZE = 1000;
 
 export async function prunePostViews({
   client,
-  now = new Date(),
+  now = dayjs().toDate(),
   batchSize = POST_VIEW_PRUNE_BATCH_SIZE,
 }: {
   client: PrismaClient;
   now?: Date;
   batchSize?: number;
 }) {
-  const cutoff = new Date(now.getTime() - POST_VIEW_RETENTION_MS);
+  const cutoff = dayjs(now.getTime() - POST_VIEW_RETENTION_MS).toDate();
   return client.$executeRaw`
     WITH expired AS (
       SELECT "postId", "visitorHash" FROM "PostView"

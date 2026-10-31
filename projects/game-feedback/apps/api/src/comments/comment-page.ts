@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { Comment } from '@game-feedback/contracts';
 
 import { decodeCursor, encodeCursor, nextCursor } from '../common/pagination';
@@ -94,7 +96,7 @@ export async function commentThreadPage(
   return {
     items: [...rootsWithReplies, ...replies.map((reply) => responseComment(reply))].sort(
       (left, right) =>
-        Date.parse(left.createdAt) - Date.parse(right.createdAt) || (left.id < right.id ? -1 : 1),
+        dayjs(left.createdAt).valueOf() - dayjs(right.createdAt).valueOf() || (left.id < right.id ? -1 : 1),
     ),
     nextCursor: roots.length > options.limit && oldest ? encodeCursor(oldest) : null,
   };

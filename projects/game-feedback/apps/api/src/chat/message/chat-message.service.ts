@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
@@ -104,7 +105,7 @@ export class ChatMessageService {
                 uploaderId: user.id,
                 messageId: null,
                 uploadedAt: { not: null },
-                createdAt: { gte: new Date(Date.now() - 86400000) },
+                createdAt: { gte: dayjs().subtract(86400000, 'millisecond').toDate() },
               },
             });
             if (eligible !== attachmentIds.length)
@@ -116,7 +117,9 @@ export class ChatMessageService {
             select: { createdAt: true },
           });
           // Serialize the pair and keep a strictly increasing timestamp for precise read boundaries.
-          const createdAt = new Date(Math.max(Date.now(), (latest?.createdAt.getTime() ?? 0) + 1));
+          const createdAt = dayjs(
+            Math.max(dayjs().valueOf(), (latest?.createdAt.getTime() ?? 0) + 1),
+          ).toDate();
           const message = await measureChatOperation('chat.insert', () =>
             tx.chatMessage.create({
               data: {

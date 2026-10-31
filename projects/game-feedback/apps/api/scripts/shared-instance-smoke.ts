@@ -19,6 +19,8 @@ import { dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
+import dayjs from 'dayjs';
+
 import {
   adminResponse,
   completedUploadResponse,
@@ -291,9 +293,9 @@ function measureDatabaseRestore({ service }: { service: 'game-feedback' | 'photo
   const fingerprint = (table: string) =>
     `SELECT count(*)::text || ':' || md5(COALESCE(string_agg(t::text, chr(10) ORDER BY t."id"), '')) FROM "${table}" t`;
   const expected = tables.map((table) => ({ table, value: sql(database, fingerprint(table)) }));
-  const backupStartedAt = new Date().toISOString();
+  const backupStartedAt = dayjs().toISOString();
   databaseCompose(['exec', '-T', 'postgres', 'pg_dump', '-U', 'postgres', '-d', database, '-Fc', '-f', dump]);
-  const backupCompletedAt = new Date().toISOString();
+  const backupCompletedAt = dayjs().toISOString();
   const started = performance.now();
   try {
     databaseCompose(['exec', '-T', 'postgres', 'createdb', '-U', 'postgres', '-T', 'template0', restored]);
