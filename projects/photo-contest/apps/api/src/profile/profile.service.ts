@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { IViewer } from '../auth/session/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
@@ -29,11 +30,11 @@ export class ProfileService {
   async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto, address: string | null = null) {
     const extension = EXTENSION[input.contentType];
     if (!extension) fail('JPEG, PNG, WebP 형식의 사진을 선택해 주세요.');
-    const expiresAt = new Date(Date.now() + UPLOAD_TICKET_TTL_MS);
+    const expiresAt = dayjs().add(UPLOAD_TICKET_TTL_MS, 'millisecond').toDate();
     const storageKey = createMediaKey(extension);
     const form = await this.storage.presignUpload(storageKey, input.contentType, input.byteSize, expiresAt);
     const upload = await this.db.atomic(async (tx) => {
-      const now = new Date();
+      const now = dayjs().toDate();
       if (expiresAt <= now) fail('업로드 요청이 만료되었습니다. 다시 시도해 주세요.', ERROR_CODE.CONFLICT);
       const pending = await tx.profileUpload.count({
         where: { userId: viewer.id, expiresAt: { gt: now }, currentUsers: { none: {} } },
@@ -63,16 +64,16 @@ export class ProfileService {
 
   async completeUpload(viewer: IViewer, uploadId: string) {
     const upload = await this.db.profileUpload.findUnique({ where: { id: uploadId } });
-    if (!upload || upload.userId !== viewer.id || upload.expiresAt <= new Date())
+    if (!upload || upload.userId !== viewer.id || upload.expiresAt <= dayjs().toDate())
       fail(REJECTED, ERROR_CODE.FORBIDDEN);
     if (upload.completedAt) return { id: upload.id };
     const actual = await uploadedObjectMetadata(this.storage, upload.storageKey);
     if (actual.byteSize !== upload.byteSize || actual.contentType !== upload.contentType)
       fail('업로드한 파일의 크기와 형식을 확인해 주세요.');
-    const now = new Date();
+    const now = dayjs().toDate();
     const completed = await this.db.profileUpload.updateMany({
       where: { id: uploadId, userId: viewer.id, expiresAt: { gt: now }, completedAt: null },
-      data: { completedAt: now, expiresAt: new Date(now.getTime() + COMPLETED_POST_UPLOAD_TTL_MS) },
+      data: { completedAt: now, expiresAt: dayjs(now.getTime() + COMPLETED_POST_UPLOAD_TTL_MS).toDate() },
     });
     if (!completed.count) {
       const current = await this.db.profileUpload.findUnique({ where: { id: uploadId } });
@@ -86,7 +87,12 @@ export class ProfileService {
     return this.db.atomic(async (tx) => {
       if (input.avatarId) {
         const upload = await tx.profileUpload.findUnique({ where: { id: input.avatarId } });
-        if (!upload || upload.userId !== viewer.id || !upload.completedAt || upload.expiresAt <= new Date())
+        if (
+          !upload ||
+          upload.userId !== viewer.id ||
+          !upload.completedAt ||
+          upload.expiresAt <= dayjs().toDate()
+        )
           fail(REJECTED, ERROR_CODE.FORBIDDEN);
       }
       return tx.user.update({
@@ -94,7 +100,7 @@ export class ProfileService {
         data: {
           nickname: input.nickname,
           ...(completeOnboarding
-            ? { needsOnboarding: false, termsAcceptedAt: new Date(), termsVersion: '2026-10-22' }
+            ? { needsOnboarding: false, termsAcceptedAt: dayjs().toDate(), termsVersion: '2026-10-22' }
             : {}),
           ...(input.removeAvatar ? { avatarUploadId: null, avatar: null } : {}),
           ...(input.avatarId ? { avatarUploadId: input.avatarId, avatar: null } : {}),

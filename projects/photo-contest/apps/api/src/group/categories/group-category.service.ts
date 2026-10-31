@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import { Prisma, type GroupCategory } from '../../../generated/prisma';
@@ -89,7 +90,7 @@ export class GroupCategoryService {
     return this.db.atomic(async (tx) => {
       const category = await this.editable(viewer, categoryId, tx);
       if (category.archivedAt) return category;
-      return tx.groupCategory.update({ where: { id: categoryId }, data: { archivedAt: new Date() } });
+      return tx.groupCategory.update({ where: { id: categoryId }, data: { archivedAt: dayjs().toDate() } });
     });
   }
   async reorder(viewer: IViewer, groupId: string, categoryIds: string[]) {

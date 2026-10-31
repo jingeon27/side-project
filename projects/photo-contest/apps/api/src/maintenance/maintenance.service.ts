@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { Prisma } from '../../generated/prisma';
 import { archiveAnalyticsEvents } from '../analytics/analytics-retention.repository';
@@ -14,9 +15,9 @@ export class MaintenanceService {
     private readonly media: MediaStorage,
   ) {}
 
-  async cleanup(now = new Date()) {
+  async cleanup(now = dayjs().toDate()) {
     // 만료 직전에 시작한 완료 확정과 겹치지 않도록 모든 업로드 정리는 만료 뒤 유예 시간이 지나야 한다.
-    const cutoff = new Date(now.getTime() - UPLOAD_TICKET_TTL_MS);
+    const cutoff = dayjs(now.getTime() - UPLOAD_TICKET_TTL_MS).toDate();
     // 저장소는 POST 정책이 끝날 때까지 같은 키에 다시 쓰기를 받으므로 그 뒤에 지워야 다시 올린 파일까지 정리된다.
     const policyClosed = [
       { policyExpiresAt: null },
@@ -92,7 +93,7 @@ export class MaintenanceService {
   }
   private async removeAbandonedUploads(now: Date) {
     const abandoned = await this.db.upload.findMany({
-      where: { expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) }, submission: null },
+      where: { expiresAt: { lt: dayjs(now.getTime() - UPLOAD_TICKET_TTL_MS).toDate() }, submission: null },
       select: { id: true, imageKey: true, mediaUploadId: true },
       take: CLEANUP_BATCH_SIZE,
     });
@@ -115,7 +116,7 @@ export class MaintenanceService {
     if (!mediaUploadId) return;
     await tx.postUpload.updateMany({
       where: { id: mediaUploadId, post: null, submissionUpload: null, groupAvatar: null },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate() },
     });
   }
 }
