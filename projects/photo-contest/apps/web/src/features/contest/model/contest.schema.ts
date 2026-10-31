@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { fromDateTimeLocalValue, toDateTimeLocalValue } from '@/shared/lib/format.helper';
@@ -24,9 +25,9 @@ export const createContestSchema = z
     const startsAt = fromDateTimeLocalValue(value.startsAt) ?? '';
     const submissionEndsAt = fromDateTimeLocalValue(value.submissionEndsAt) ?? '';
     const endsAt = fromDateTimeLocalValue(value.endsAt) ?? '';
-    const start = Date.parse(startsAt);
-    const submissionEnd = Date.parse(submissionEndsAt);
-    const end = Date.parse(endsAt);
+    const start = dayjs(startsAt).valueOf();
+    const submissionEnd = dayjs(submissionEndsAt).valueOf();
+    const end = dayjs(endsAt).valueOf();
     if (!(submissionEnd > start))
       context.addIssue({
         code: 'custom',
@@ -55,8 +56,8 @@ export function buildContestDefaults(now: Date): TCreateContestInput {
   return {
     title: '',
     startsAt: toDateTimeLocalValue(now),
-    submissionEndsAt: toDateTimeLocalValue(new Date(now.getTime() + 3 * DAY)),
-    endsAt: toDateTimeLocalValue(new Date(now.getTime() + 7 * DAY)),
+    submissionEndsAt: toDateTimeLocalValue(dayjs(now.getTime() + 3 * DAY).toDate()),
+    endsAt: toDateTimeLocalValue(dayjs(now.getTime() + 7 * DAY).toDate()),
   };
 }
 

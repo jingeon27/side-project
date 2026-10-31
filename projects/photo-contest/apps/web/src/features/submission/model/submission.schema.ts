@@ -22,6 +22,3 @@ export const uploadPhotoSchema = z.object({
     .boolean()
     .refine((confirmed) => confirmed, '사진을 공유할 권리와 촬영된 사람의 동의를 확인해 주세요.'),
 });
-
-export type TUploadPhotoInput = z.input<typeof uploadPhotoSchema>;
-export type TUploadPhotoValues = z.output<typeof uploadPhotoSchema>;

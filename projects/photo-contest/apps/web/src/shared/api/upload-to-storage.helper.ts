@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { throwIfClosed } from '../model/form';
 
 export class StorageUploadError extends Error {}
@@ -8,8 +10,8 @@ const MAX_UPLOAD_TIMEOUT_MS = 15 * 60_000;
 /**
  * 티켓이 만료되면 완료가 거절되므로 그때까지만 기다린다. 기기 시계가 서버와 어긋나도 1분~15분 안에서 끊는다.
  */
-export function getUploadTimeoutMs(expiresAt: string, now = Date.now()) {
-  const remaining = Date.parse(expiresAt) - now;
+export function getUploadTimeoutMs(expiresAt: string, now = dayjs().valueOf()) {
+  const remaining = dayjs(expiresAt).valueOf() - now;
   if (Number.isNaN(remaining)) return MAX_UPLOAD_TIMEOUT_MS;
   return Math.min(Math.max(remaining, MIN_UPLOAD_TIMEOUT_MS), MAX_UPLOAD_TIMEOUT_MS);
 }

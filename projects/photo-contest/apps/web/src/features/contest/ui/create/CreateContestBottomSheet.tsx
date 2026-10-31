@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { useMutation } from '@apollo/client/react';
+import dayjs from 'dayjs';
 
 import { CreateContestDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -36,7 +37,7 @@ export function CreateContestBottomSheet({
 }: ICreateContestBottomSheetProps) {
   const router = useAppRouter();
   // 시트를 열 때마다 새로 그려지므로 그때 시각으로 기본값을 한 번 정한다.
-  const [defaultValues] = useState(() => buildContestDefaults(new Date()));
+  const [defaultValues] = useState(() => buildContestDefaults(dayjs().toDate()));
   const form = useZodForm(createContestSchema, { defaultValues });
   const [createContest, { loading }] = useMutation(CreateContestDocument, {
     update: (cache, { data }) => {

@@ -1,4 +1,4 @@
-export { canLeaveGroup, isGroupAdmin, isGroupOwner, splitContests } from './lib/group.helper';
+export { canLeaveGroup, isGroupAdmin, isGroupOwner } from './lib/group.helper';
 export { prependMyGroup } from './model/group.cache';
 export { groupTypePolicies } from './model/group.type-policies';
 export { CreateGroupButton } from './ui/create/CreateGroupButton';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
+import dayjs from 'dayjs';
 import { Heart } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
@@ -46,12 +47,12 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
   const [readAll, { loading }] = useMutation(MarkAllNotificationsReadDocument, {
     optimisticResponse: { markAllNotificationsRead: true },
     update: (cache, { data }) => {
-      if (data?.markAllNotificationsRead) markAllNotificationsReadInCache(cache, new Date().toISOString());
+      if (data?.markAllNotificationsRead) markAllNotificationsReadInCache(cache, dayjs().toISOString());
     },
   });
   const handleOpen = (notice: NotificationCardFragment) => {
     if (!notice.readAt) {
-      const readAt = new Date().toISOString();
+      const readAt = dayjs().toISOString();
       // 읽음 저장을 기다리지 않고 바로 연다. 실패해도 알림 내용 열기는 막지 않는다.
       void read({
         variables: { id: notice.id },

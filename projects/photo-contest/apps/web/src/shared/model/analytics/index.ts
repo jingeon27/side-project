@@ -1,13 +1,6 @@
 export { ANALYTICS_EVENT, SHARE_METHOD } from './analytics.catalog';
-export type {
-  TAnalyticsEventName,
-  TAnalyticsEventProperties,
-  TLoginMethod,
-  TPhotoSortValue,
-  TShareMethod,
-} from './analytics.catalog';
+export type { TLoginMethod, TPhotoSortValue, TShareMethod } from './analytics.catalog';
 export {
-  flushAnalytics,
   forgetAnalyticsUser,
   identifyUser,
   initAnalytics,
