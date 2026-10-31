@@ -68,6 +68,7 @@
     "misc": "그 밖의 글"
   },
   "article": {
+    "summary": "요약",
     "contents": "이 글의 목차",
     "share": "공유",
     "copyLink": "링크 복사",

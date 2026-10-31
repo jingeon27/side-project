@@ -68,6 +68,7 @@
     "misc": "Other posts"
   },
   "article": {
+    "summary": "Summary",
     "contents": "On this page",
     "share": "Share",
     "copyLink": "Copy link",
