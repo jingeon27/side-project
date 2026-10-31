@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 for (const { height, largeText } of [
@@ -9,7 +11,7 @@ for (const { height, largeText } of [
   }, testInfo) => {
     const login = await page.request.post('/api/auth/demo', {
       headers: { Origin: 'http://127.0.0.1:3301' },
-      data: { nickname: `폼배치_${height}_${Date.now().toString(36)}` },
+      data: { nickname: `폼배치_${height}_${dayjs().valueOf().toString(36)}` },
     });
     expect(login.ok()).toBe(true);
     await page.setViewportSize({ width: 320, height });

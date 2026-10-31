@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -103,7 +104,7 @@ describe.each([1, 3])('업로드 예약 원자성 (연결 %i개)', (connectionLi
     });
     const accessToken = token();
     await state.db.session.create({
-      data: { userId: user.id, tokenHash: hash(accessToken), expiresAt: new Date(Date.now() + 900_000) },
+      data: { userId: user.id, tokenHash: hash(accessToken), expiresAt: dayjs().add(15, 'minute').toDate() },
     });
     const [firstUserId, secondUserId] = [user.id, state.peerId].sort();
     const conversation = await state.db.chatConversation.create({

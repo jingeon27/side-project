@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
@@ -33,7 +34,7 @@ export class ChatAttachmentUploadService {
     });
     if (!file) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '업로드 요청을 찾을 수 없습니다.');
     if (file.uploadedAt) return attachmentDto(file);
-    if (completionDeadline(presignExpiry(file.createdAt)).getTime() <= Date.now())
+    if (!dayjs(completionDeadline(presignExpiry(file.createdAt))).isAfter(dayjs()))
       throw new ApiError(409, 'UPLOAD_EXPIRED', '업로드 요청이 만료되었습니다. 파일을 다시 선택해주세요.');
     const stored = await this.storage.completeUpload(file);
     await this.db.chatAttachment.updateMany({
@@ -45,7 +46,7 @@ export class ChatAttachmentUploadService {
         uploadedAt: null,
         objectId: file.objectId,
       },
-      data: { ...stored, uploadedAt: new Date() },
+      data: { ...stored, uploadedAt: dayjs().toDate() },
     });
     const completed = await this.db.chatAttachment.findFirst({
       where: { id, conversationId, uploaderId: user.id, uploadedAt: { not: null } },

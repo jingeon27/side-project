@@ -1,5 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '../common/http/api-error';
@@ -51,7 +52,7 @@ describe('S3 업로드 서명 준비', () => {
     const policy = JSON.parse(Buffer.from(upload.form.fields.Policy ?? '', 'base64').toString());
     expect(policy.conditions).toContainEqual(['content-length-range', file.size, file.size]);
     expect(policy.conditions).toContainEqual(['eq', '$Content-Type', 'image/png']);
-    expect(Date.parse(upload.expiresAt) - Date.now()).toBeGreaterThan(290_000);
+    expect(dayjs(upload.expiresAt).diff(dayjs())).toBeGreaterThan(290_000);
   });
 
   it('서명 실패에도 DB를 쓰지 않고 원인을 보존한 저장소 오류를 반환해야 한다', async () => {

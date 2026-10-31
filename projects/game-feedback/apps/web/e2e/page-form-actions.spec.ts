@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 test('글쓰기의 제출 버튼은 긴 본문과 줄어든 화면에서도 하단에 보여야 한다', async ({ page }, testInfo) => {
@@ -52,7 +54,7 @@ test('프로필 수정은 푸터 없이 하나의 저장 버튼과 스크롤 가
 }, testInfo) => {
   const login = await page.request.post('/api/auth/demo', {
     headers: { Origin: 'http://127.0.0.1:3301' },
-    data: { nickname: `하단폼_${Date.now().toString(36)}` },
+    data: { nickname: `하단폼_${dayjs().valueOf().toString(36)}` },
   });
   expect(login.ok()).toBe(true);
   await page.goto('/ko/settings/profile');

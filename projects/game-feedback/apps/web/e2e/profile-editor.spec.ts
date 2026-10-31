@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -13,7 +15,7 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const login = await page.request.post('/api/auth/demo', {
       headers: { Origin: origin },
-      data: { nickname: `프로필_${width}_${Date.now().toString(36)}` },
+      data: { nickname: `프로필_${width}_${dayjs().valueOf().toString(36)}` },
     });
     expect(login.ok()).toBe(true);
     const userId = (await login.json()).user.id as string;
@@ -114,7 +116,7 @@ test('게임 계정의 이전 스냅샷도 최신 순위와 RoyaleAPI 링크를 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.request.post('/api/auth/demo', {
     headers: { Origin: origin },
-    data: { nickname: `게임카드_${Date.now().toString(36)}` },
+    data: { nickname: `게임카드_${dayjs().valueOf().toString(36)}` },
   });
   for (const playerTag of ['#P0LYQ829', '#9QY82JGY']) {
     expect(
@@ -156,7 +158,7 @@ test('공개 프로필은 비로그인 방문자에게 등록한 게임 계정 �
 }, testInfo) => {
   const login = await page.request.post('/api/auth/demo', {
     headers: { Origin: origin },
-    data: { nickname: `공개계정_${Date.now().toString(36)}` },
+    data: { nickname: `공개계정_${dayjs().valueOf().toString(36)}` },
   });
   const { user } = await login.json();
   for (const playerTag of ['#P0LYQ829', '#9QY82JGY']) {

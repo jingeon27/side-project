@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
@@ -28,7 +29,7 @@ export class PostMediaService {
     return this.transactions.run(async (tx) => {
       await lockActiveUser({ client: tx, userId: uploaderId });
       await tx.postMedia.deleteMany({
-        where: { uploaderId, postId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+        where: { uploaderId, postId: null, createdAt: { lt: dayjs().subtract(24, 'hour').toDate() } },
       });
       if ((await tx.postMedia.count({ where: { uploaderId, postId: null } })) >= 20)
         throw new ApiError(

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Response } from 'express';
 
 import { lockActiveUser } from '../../auth/account/user-write';
@@ -32,7 +33,11 @@ export class ChatAttachmentService {
       });
       await lockActiveUser({ client: tx, userId, allowBanned: !!support });
       await tx.chatAttachment.deleteMany({
-        where: { uploaderId: userId, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+        where: {
+          uploaderId: userId,
+          messageId: null,
+          createdAt: { lt: dayjs().subtract(24, 'hour').toDate() },
+        },
       });
       const pending = await tx.chatAttachment.count({
         where: { uploaderId: userId, messageId: null },

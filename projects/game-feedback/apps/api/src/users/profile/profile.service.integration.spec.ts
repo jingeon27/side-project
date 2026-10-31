@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import sharp from 'sharp';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -67,7 +68,7 @@ describe('프로필 정보와 사진 HTTP 통합', () => {
       [other.id, state.otherToken],
     ] as const)
       await state.db.session.create({
-        data: { userId, tokenHash: hash(value), expiresAt: new Date(Date.now() + 3_600_000) },
+        data: { userId, tokenHash: hash(value), expiresAt: dayjs().add(1, 'hour').toDate() },
       });
     state.photo = await sharp({ create: { width: 900, height: 600, channels: 3, background: '#2255cc' } })
       .jpeg()
@@ -220,7 +221,7 @@ describe('프로필 정보와 사진 HTTP 통합', () => {
     expect((await transferMedia(late, state.photo, 'image/jpeg')).status).toBe(204);
     await state.db.avatarUpload.update({
       where: { id: late.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: dayjs().subtract(1, 'second').toDate() },
     });
     await http()
       .post(`/api/profile/avatar/uploads/${late.id}/complete`)
@@ -230,7 +231,11 @@ describe('프로필 정보와 사진 HTTP 통합', () => {
     const expired = await reserve();
     await state.db.avatarUpload.update({
       where: { id: expired.id },
-      data: { expiresAt: new Date(Date.now() - (MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000) },
+      data: {
+        expiresAt: dayjs()
+          .subtract(MEDIA_COMPLETE_GRACE_SECONDS + 1, 'second')
+          .toDate(),
+      },
     });
     await http()
       .post(`/api/profile/avatar/uploads/${expired.id}/complete`)
@@ -249,8 +254,12 @@ describe('프로필 정보와 사진 HTTP 통합', () => {
     await state.db.mediaObject.updateMany({
       where: { id: live.objectId ?? '' },
       data: {
-        createdAt: new Date(Date.now() - 30 * 86400000),
-        retiredAt: new Date(Date.now() - 20 * 86400000),
+        createdAt: dayjs()
+          .subtract(30 * 24, 'hour')
+          .toDate(),
+        retiredAt: dayjs()
+          .subtract(20 * 24, 'hour')
+          .toDate(),
       },
     });
     await state.app.get(MediaStorage).prune();
