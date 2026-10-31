@@ -25,7 +25,7 @@ The client had to make these streams look like one conversation. I moved from ac
 
 ```text
 src/modules/entities/chat/chatbot/
-├─ api/chatbot.api.ts        # AI 챗 서비스 /chat/stream 호출 + SSE 파싱
+├─ api/chatbot.api.ts        # Calls the AI chat service /chat/stream and parses SSE
 ├─ model/use-chat-stream.hook.ts
 ├─ model/use-chat-session.hook.ts
 └─ ui/ (MessageBubble, TypingIndicator, MarkdownContent ...)
@@ -34,7 +34,7 @@ src/modules/entities/chat/chatbot/
 The first screen sent a question to POST /chat/stream and rendered its SSE response. I parsed the response and appended each token to the current message. The API was already defined, so the frontend worked with the format it received.
 
 ```tsx
-// 초기: AI 응답 스트림을 직접 파싱해 화면에 흘림
+// Initially: parse the AI response stream and render it directly
 async function* parseSSEStream(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -52,7 +52,7 @@ async function* parseSSEStream(stream: ReadableStream<Uint8Array>) {
   }
 }
 
-// 토큰이 올 때마다 메시지 text 에 이어붙임 (= 진짜 스트리밍 UI)
+// Append each token to the message text for a streaming UI
 onData: (data) =>
   setMessages((prev) => updateMessage(prev, botMessageId, { text: current.text + data.content })),
 ```
@@ -74,7 +74,7 @@ Counselor messages arrived through the session backend's SSE. Its start, subscri
 I initially divided the UI like the backends: AiChatPanel handled the AI stream, CounselingPanel handled session SSE, and a button switched between them.
 
 ```typescript
-// 상담사 연결이 '버튼'이던 시절: EventSource 로 세션 SSE 구독
+// When connecting to an agent was a button: subscribe to session SSE with EventSource
 const subscribeSse = useCallback((sid: string) => {
   const es = fetchCounselingSubscribe(sid);
   es.addEventListener('status', (e) => {
@@ -108,16 +108,16 @@ Session SSE carried both AI and counselor answers; the AI service carried only A
 The AI stream stayed open and was read to completion without rendering its response. This drain-only arrangement kept the request that caused generation separate from the subscription delivering the finished answer.
 
 ```tsx
-// 한때 화면에 흘리던 AI 스트림이 → drain-only(읽고 버림) 로 강등됨
+// The AI stream that once reached the UI becomes drain-only
 const response = await chatClient.post('/chat/stream', body, {
   adapter: 'fetch',
   responseType: 'stream',
-  timeout: 30_000, // 30s 상한: 생성이 오래 걸릴 수 있어 넉넉히
+  timeout: 30_000, // Allow up to 30 seconds for generation
 });
 const reader = (response.data as ReadableStream<Uint8Array>).getReader();
 try {
   while (!(await reader.read()).done) {
-    // 읽기만 하고 버린다. 표시는 세션 SSE 가 담당.
+    // Read and discard. Session SSE owns display.
   }
 } finally {
   reader.releaseLock();
@@ -137,10 +137,10 @@ export async function openSessionStream(sessionId, init) {
   const accessToken = await getCookie('accessToken');
   return fetchEventSource(`${SESSION_API_URL}/chat/sessions/${sessionId}/stream`, {
     signal: init.signal,
-    openWhenHidden: true, // 백그라운드 탭에서도 상담 메시지 유지
+    openWhenHidden: true, // Keep receiving chat messages in background tabs
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     onmessage: (e) => init.onMessage(e.event, e.data),
-    onerror: init.onError, // 지연(ms) 반환 시 재연결, throw 시 중단
+    onerror: init.onError, // Return a delay in milliseconds to reconnect; throw to stop
   });
 }
 ```
@@ -152,7 +152,7 @@ export async function openSessionStream(sessionId, init) {
 Conversation state determined where to send and whether to subscribe. That state mixed values created by the client with values supplied by the server.
 
 ```text
-ai ──"상담원 연결"→ connecting ──(SSE: live)→ live ──(SSE: done)→ done
+ai ──"Connect to an agent"→ connecting ──(SSE: live)→ live ──(SSE: done)→ done
                                        └─(SSE: hold)→ hold
 ```
 
@@ -176,14 +176,14 @@ syncConnection() reconciles the connection when subscribers, session, or complet
 export class ChatStore {
   private snapshot = ChatStore.initialSnapshot();
   private readonly listeners = new Set<Listener>();
-  private readonly seen = new Set<number>(); // 메시지 id 로 history+SSE 이중표시 제거
+  private readonly seen = new Set<number>(); // Deduplicate message IDs across history and SSE
 
   readonly subscribe = (listener: Listener) => {
     this.listeners.add(listener);
-    this.syncConnection(); // 구독 시작 → 필요하면 연결
+    this.syncConnection(); // Start subscribing; connect if needed
     return () => {
       this.listeners.delete(listener);
-      this.syncConnection(); // 구독 종료 → 필요하면 해제
+      this.syncConnection(); // End the subscription; disconnect if needed
     };
   };
   readonly getSnapshot = () => this.snapshot;
@@ -220,25 +220,25 @@ export function makeSessionConnection({ sessionId, onStatus }): SubscribeConnect
         onmessage: ({ event, data }) => {
           if (event === SseEvent.StatusChange) {
             const status = parseStatusEvent(safeParse(data));
-            if (status) onStatus(status); // 서버 상태 → 비즈니스 레이어 (ServerStatus 타입)
+            if (status) onStatus(status); // Server status to the business layer (ServerStatus)
           } else {
-            queue.push(...itemsToChunks(safeParse(data))); // 메시지 → 표준 StreamChunk
+            queue.push(...itemsToChunks(safeParse(data))); // Messages to standard StreamChunk values
           }
           notify();
         },
-        onerror: () => 3000, // 3s 후 재연결
+        onerror: () => 3000, // Reconnect after three seconds
       }).catch(() => {});
 
       try {
         while (true) {
           if (queue.length === 0) await new Promise<void>((r) => (notify = r));
-          yield* queue.splice(0); // 콜백(push) → async generator(pull) 브리지
+          yield* queue.splice(0); // Bridge callback pushes to async-generator pulls
         }
       } finally {
-        controller.abort(); // 소비 종료 시 SSE 닫기
+        controller.abort(); // Close SSE when consumption ends
       }
     },
-    send: asyncNoop, // ← 전송은 이 채널이 아니다
+    send: asyncNoop, // Sending is not this channel's responsibility
   };
 }
 ```
@@ -258,11 +258,11 @@ Matching the connection format was not enough. History could be missing or live 
 I first used serverStatus and isConnecting to distinguish the client's connecting state. Later I kept one state value and narrowed values accepted from the server with ServerStatus.
 
 ```tsx
-type ServerStatus = 'ai' | 'live' | 'hold' | 'done';   // SSE/히스토리가 주는 권위 상태
-type ChatStatus = ServerStatus | 'connecting';          // + 클라 전용 전이 상태
+type ServerStatus = 'ai' | 'live' | 'hold' | 'done';   // Authoritative state from SSE and history
+type ChatStatus = ServerStatus | 'connecting';          // Adds a client-only transition state
 
-const [status, setStatus] = useState<ChatStatus>(/* 히스토리 마지막 status ?? 'ai' */);
-// onStatus 가 ServerStatus 타입이라, SSE 는 connecting 을 타입상 절대 못 덮는다
+const [status, setStatus] = useState<ChatStatus>(/* Last history status ?? 'ai' */);
+// onStatus accepts ServerStatus, so SSE cannot set connecting
 const connection = useMemo(() => makeSessionConnection({ sessionId, onStatus: setStatus }), [sessionId]);
 ```
 

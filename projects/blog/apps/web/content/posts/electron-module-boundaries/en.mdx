@@ -15,11 +15,11 @@ When I joined, an Electron app collected applicants from several recruiting plat
 Each platform function contained the sequence from start to finish.
 
 ```text
-로그인
-  -> 목록 수집
-  -> 중복 확인
-  -> 지원자 등록
-  -> 파일 다운로드 및 업로드
+Login
+  -> Collect the list
+  -> Check for duplicates
+  -> Register applicants
+  -> Download and upload files
 ```
 
 Adding a platform meant copying a file and changing selectors and exception handling. Site-specific behavior and the sequence common to every site remained in the same function.
@@ -75,7 +75,7 @@ export class CrawlingService {
     private readonly platform: Platform,) {}
 
   async collect() {
-    // 예외 처리와 page 정리는 생략
+    // Exception handling and page cleanup omitted
     const config = CRAWLING_HANDLERS[this.platform];
     const page = await this.puppeteer.open(config.pages.recruit);
 

@@ -6,6 +6,7 @@
     "skip": "본문으로 건너뛰기",
     "theme": "화면 테마 바꾸기",
     "language": "언어 변경",
+    "languages": { "ko": "한국어", "en": "영어" },
     "siteTitle": "밤별 블로그",
     "brandName": "밤별",
     "brandType": "blog"
@@ -68,6 +69,8 @@
     "misc": "그 밖의 글"
   },
   "article": {
+    "summary": "요약",
+    "decision": "선택의 이유",
     "contents": "이 글의 목차",
     "share": "공유",
     "copyLink": "링크 복사",

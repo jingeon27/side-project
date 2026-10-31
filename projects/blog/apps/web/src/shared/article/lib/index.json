@@ -1,12 +1,90 @@
 [
   {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "code-review", "side-project", "writing", "reflection"],
+    "publishedAt": "2026-10-31",
+    "coverImage": "/images/covers/reviewing-ai-output.png",
+    "title": "AI가 만든 코드와 글을 검토하며 쌓은 기준",
+    "description": "사이드프로젝트에서는 구현과 세부 테스트, AWS CLI와 MCP 설정까지 에이전트에게 맡겼어요. 결과물을 써 보며 피드백하고 코드 구조를 훑어본 과정과, 글과 화면의 표현을 직접 다듬은 경험을 적었어요.",
+    "slug": "ai가-만든-코드와-글을-검토하며-쌓은-기준",
+    "keywords": ["AI 활용", "코드 리뷰", "사이드프로젝트", "블로그 글쓰기", "MCP", "Amplitude", "Sentry"],
+    "id": "reviewing-ai-output",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "실서비스에서는-diff로-변경을-검토했어요",
+        "title": "실서비스에서는 diff로 변경을 검토했어요",
+        "level": 2
+      },
+      {
+        "id": "사이드프로젝트에서는-써-보면서-피드백했어요",
+        "title": "사이드프로젝트에서는 써 보면서 피드백했어요",
+        "level": 2
+      },
+      {
+        "id": "인프라와-도구-설정도-에이전트에게-맡겼어요",
+        "title": "인프라와 도구 설정도 에이전트에게 맡겼어요",
+        "level": 2
+      },
+      {
+        "id": "글과-화면의-문구는-마지막까지-직접-읽어요",
+        "title": "글과 화면의 문구는 마지막까지 직접 읽어요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "ai가-만든-코드와-글을-검토하며-쌓은-기준",
+      "en": "reviewing-ai-output"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "code-review", "side-project", "writing", "reflection"],
+    "publishedAt": "2026-10-31",
+    "coverImage": "/images/covers/reviewing-ai-output.png",
+    "title": "The criteria I developed while reviewing AI-generated code and writing",
+    "description": "In side projects, I delegated implementation, detailed tests, and AWS CLI and MCP setup. I tried the results, gave feedback, skimmed the code structure, and edited the writing and screens people would see.",
+    "slug": "reviewing-ai-output",
+    "keywords": ["AI workflow", "code review", "side projects", "writing", "MCP", "Amplitude", "Sentry"],
+    "id": "reviewing-ai-output",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "reviewing-diffs-in-a-codebase-i-knew",
+        "title": "Reviewing diffs in a codebase I knew",
+        "level": 2
+      },
+      {
+        "id": "trying-side-projects-and-giving-feedback",
+        "title": "Trying side projects and giving feedback",
+        "level": 2
+      },
+      {
+        "id": "delegating-infrastructure-and-tool-setup",
+        "title": "Delegating infrastructure and tool setup",
+        "level": 2
+      },
+      {
+        "id": "reading-the-writing-and-interface-copy-myself",
+        "title": "Reading the writing and interface copy myself",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "ai가-만든-코드와-글을-검토하며-쌓은-기준",
+      "en": "reviewing-ai-output"
+    }
+  },
+  {
     "category": "engineering",
     "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-31",
     "coverImage": "/images/covers/side-project-infrastructure.png",
     "title": "일단 EC2 한 대에 올려보기로 했어요",
-    "description": "배포 비용을 보다가 RDS를 빼기로 했어요. 서버리스도 알아봤지만, 일단 EC2 small 한 대에 웹과 API, PostgreSQL을 같이 올려보기로 했어요. 그 과정에서 스토리지와 백업, S3 권한도 하나씩 고쳤어요.",
+    "description": "고정 비용을 줄이려고 EC2 한 대에 두 서비스와 PostgreSQL을 함께 두기로 했어요. 에이전트에게 Terraform 설정을 맡기고 백업, S3 권한과 SSM 배포 경로를 정한 과정을 적었어요.",
     "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
     "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"],
     "id": "side-project-infrastructure",
@@ -33,8 +111,8 @@
         "level": 2
       },
       {
-        "id": "r2도-알아봤어요",
-        "title": "R2도 알아봤어요",
+        "id": "미디어-저장소를-옮길-때-바꿔야-할-것도-봤어요",
+        "title": "미디어 저장소를 옮길 때 바꿔야 할 것도 봤어요",
         "level": 2
       },
       {
@@ -63,10 +141,10 @@
     "category": "engineering",
     "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-10-31",
     "coverImage": "/images/covers/side-project-infrastructure.png",
     "title": "Starting with one EC2 instance",
-    "description": "I dropped RDS while looking at deployment costs. I considered serverless options too, but decided to start with the web apps, APIs, and PostgreSQL on one small EC2 instance. That also meant working through storage, backups, and S3 permissions.",
+    "description": "Why I chose one EC2 instance for two services and PostgreSQL, delegated Terraform setup to an agent, and worked through backups, S3 permissions, and deployment over SSM.",
     "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
     "keywords": ["side projects", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "infrastructure", "backups"],
     "id": "side-project-infrastructure",
@@ -93,8 +171,8 @@
         "level": 2
       },
       {
-        "id": "i-looked-into-r2-too",
-        "title": "I looked into R2 too",
+        "id": "what-moving-media-storage-would-require",
+        "title": "What moving media storage would require",
         "level": 2
       },
       {
@@ -123,10 +201,10 @@
     "category": "engineering",
     "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint", "sentry"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-10-31",
     "coverImage": "/images/covers/side-project-technology.png",
     "title": "두 사이드 프로젝트의 기술을 고르고 구조를 다듬은 과정",
-    "description": "웹과 앱에서 화면을 공유하고 API 계약, 캐시 갱신과 DB 정합성을 설계했어요. Sentry의 오류와 trace, 지표를 나눈 이유부터 테스트와 ESLint로 확인한 범위까지 두 서비스의 기술 판단을 정리했어요.",
+    "description": "두 사이드프로젝트의 API와 캐시, DB, 관측 도구를 고른 이유를 적었어요. 기술과 구조의 방향을 정하고 구현과 세부 검증을 에이전트에게 맡기며 피드백한 과정도 함께 정리했어요.",
     "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
     "keywords": [
       "사이드 프로젝트",
@@ -205,10 +283,10 @@
     "category": "engineering",
     "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint", "sentry"],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-10-31",
     "coverImage": "/images/covers/side-project-technology.png",
     "title": "Choosing the stack and refining the structure of two side projects",
-    "description": "Why I shared web and app screens, chose API contracts and caches, and enforced database consistency. The decisions behind Sentry errors, traces and metrics, and the checks provided by tests and ESLint.",
+    "description": "Why I chose the APIs, caches, database safeguards, and observability tools for two side projects, and how I set the direction while delegating implementation and detailed verification to an agent.",
     "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
     "keywords": [
       "side projects",
@@ -287,38 +365,38 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "AI 에이전트에게 자율적으로 맡겨 보고, 결과물을 검토하며 고친 과정",
-    "description": "기능과 아키텍처만 정해 주고 AI 에이전트에게 구현을 최대한 자율적으로 맡겨 봤어요. 나온 서비스를 직접 써 보고 코드를 읽으면서 화면 구성, 익명 기록, 그룹 권한과 채팅 재전송처럼 부족하거나 빠진 부분을 채워 나갔어요.",
+    "description": "피식과 Game Mate, 이 블로그의 구현과 세부 테스트는 에이전트에게 맡겼어요. 화면을 직접 써 보고 코드 구조를 훑으며 사진 배치, 익명 기록, 그룹 권한과 채팅 재전송에서 고칠 부분을 피드백했어요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
     "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템", "AI 에이전트"],
     "id": "side-project-design",
     "locale": "ko",
     "toc": [
       {
-        "id": "사진을-보러-왔는데-그룹-목록부터-나왔어요",
-        "title": "사진을 보러 왔는데 그룹 목록부터 나왔어요",
+        "id": "피식-홈에서는-그룹-목록보다-사진을-먼저-보여-주고-싶었어요",
+        "title": "피식 홈에서는 그룹 목록보다 사진을 먼저 보여 주고 싶었어요",
         "level": 2
       },
       {
-        "id": "익명으로-시작한-뒤의-기록도-생각해야-했어요",
-        "title": "익명으로 시작한 뒤의 기록도 생각해야 했어요",
+        "id": "익명으로-쓴-기록을-회원가입-뒤에도-이어가게-했어요",
+        "title": "익명으로 쓴 기록을 회원가입 뒤에도 이어가게 했어요",
         "level": 2
       },
       {
-        "id": "초대받았다고-비공개-그룹에-바로-들어가면-안-됐어요",
-        "title": "초대받았다고 비공개 그룹에 바로 들어가면 안 됐어요",
+        "id": "초대-링크로-들어와도-비공개-그룹은-승인을-받게-했어요",
+        "title": "초대 링크로 들어와도 비공개 그룹은 승인을 받게 했어요",
         "level": 2
       },
       {
-        "id": "대회-참여-버튼은-언제-사라져야-할까",
-        "title": "대회 참여 버튼은 언제 사라져야 할까",
+        "id": "대회-접수와-투표의-마감-시각을-정했어요",
+        "title": "대회 접수와 투표의 마감 시각을 정했어요",
         "level": 2
       },
       {
-        "id": "사진을-고른-뒤-취소하거나-업로드가-실패한다면",
-        "title": "사진을 고른 뒤 취소하거나 업로드가 실패한다면",
+        "id": "사진-선택-취소와-업로드-실패도-따로-다뤘어요",
+        "title": "사진 선택 취소와 업로드 실패도 따로 다뤘어요",
         "level": 2
       },
       {
@@ -327,67 +405,57 @@
         "level": 2
       },
       {
-        "id": "피드백-게시판에서는-누가-답해줄까",
-        "title": "피드백 게시판에서는 누가 답해줄까",
+        "id": "피드백-게시판에는-답변-알림과-도움됨-표시를-넣었어요",
+        "title": "피드백 게시판에는 답변 알림과 도움됨 표시를 넣었어요",
         "level": 2
       },
       {
-        "id": "전송-실패라고-떠도-메시지는-도착했을-수-있었어요",
-        "title": "전송 실패라고 떠도 메시지는 도착했을 수 있었어요",
+        "id": "채팅-재전송은-이미-저장한-메시지를-돌려주게-했어요",
+        "title": "채팅 재전송은 이미 저장한 메시지를 돌려주게 했어요",
         "level": 2
       },
       {
-        "id": "삭제와-차단은-다른-사람의-화면에도-영향을-줬어요",
-        "title": "삭제와 차단은 다른 사람의 화면에도 영향을 줬어요",
+        "id": "삭제와-차단-뒤에-남길-내용도-정했어요",
+        "title": "삭제와 차단 뒤에 남길 내용도 정했어요",
         "level": 2
       },
       {
-        "id": "게임-프로필을-불러왔다고-본인-계정은-아니었어요",
-        "title": "게임 프로필을 불러왔다고 본인 계정은 아니었어요",
+        "id": "게임-프로필-조회와-소유권-확인을-구분했어요",
+        "title": "게임 프로필 조회와 소유권 확인을 구분했어요",
         "level": 2
       },
       {
-        "id": "가입할-때-안-해도-되는-것들",
-        "title": "가입할 때 안 해도 되는 것들",
+        "id": "직접-연-링크에서도-돌아갈-곳을-보여-주게-했어요",
+        "title": "직접 연 링크에서도 돌아갈 곳을 보여 주게 했어요",
         "level": 2
       },
       {
-        "id": "뒤로-가면-어디로-돌아가야-할까",
-        "title": "뒤로 가면 어디로 돌아가야 할까",
+        "id": "게시글을-번역하면-답변도-읽을-수-있어야-했어요",
+        "title": "게시글을 번역하면 답변도 읽을 수 있어야 했어요",
         "level": 2
       },
       {
-        "id": "게시글만-번역하면-답변은",
-        "title": "게시글만 번역하면 답변은?",
+        "id": "블로그-소개에서는-이력서를-빼-달라고-했어요",
+        "title": "블로그 소개에서는 이력서를 빼 달라고 했어요",
         "level": 2
       },
       {
-        "id": "블로그-소개에-이력서까지-넣을-필요는-없었어요",
-        "title": "블로그 소개에 이력서까지 넣을 필요는 없었어요",
+        "id": "코드에서는-구조를-훑고-피드백했어요",
+        "title": "코드에서는 구조를 훑고 피드백했어요",
         "level": 2
       },
       {
-        "id": "아키텍처를-정해-둬도-코드는-다시-읽어야-했어요",
-        "title": "아키텍처를 정해 둬도 코드는 다시 읽어야 했어요",
+        "id": "검색과-공유-링크로-들어오는-경우도-확인하게-했어요",
+        "title": "검색과 공유 링크로 들어오는 경우도 확인하게 했어요",
         "level": 2
       },
       {
-        "id": "검색으로-들어오는-화면과-캐시도-확인했어요",
-        "title": "검색으로 들어오는 화면과 캐시도 확인했어요",
-        "level": 2
-      },
-      {
-        "id": "오류가-났을-때-남길-로그도-골랐어요",
-        "title": "오류가 났을 때 남길 로그도 골랐어요",
-        "level": 2
-      },
-      {
-        "id": "만들고-나서-다시-정한-게-많았어요",
-        "title": "만들고 나서 다시 정한 게 많았어요",
+        "id": "sentry에-남길-정보도-정했어요",
+        "title": "Sentry에 남길 정보도 정했어요",
         "level": 2
       }
     ],
-    "readingMinutes": 19,
+    "readingMinutes": 14,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -397,10 +465,10 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "Giving an AI agent autonomy, then reviewing and revising what it built",
-    "description": "I specified the features and architecture, then gave an AI agent as much freedom as possible to implement them. Trying the services and reading the code led me back to screen layouts, anonymous account recovery, group permissions, message retries, and other missing details.",
+    "description": "I delegated implementation and detailed tests for Pisik, Game Mate, and this blog, then tried the screens and skimmed their structure to give feedback on layouts, anonymous history, group permissions, and chat retries.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
     "keywords": [
       "side projects",
@@ -415,28 +483,28 @@
     "locale": "en",
     "toc": [
       {
-        "id": "i-came-to-see-photos-and-got-a-group-list",
-        "title": "I came to see photos and got a group list",
+        "id": "i-wanted-photos-before-the-group-list-on-pisiks-home-screen",
+        "title": "I wanted photos before the group list on Pisik's home screen",
         "level": 2
       },
       {
-        "id": "what-happens-to-activity-after-an-anonymous-start",
-        "title": "What happens to activity after an anonymous start?",
+        "id": "keeping-anonymous-activity-after-signup",
+        "title": "Keeping anonymous activity after signup",
         "level": 2
       },
       {
-        "id": "an-invitation-must-not-bypass-a-private-groups-approval",
-        "title": "An invitation must not bypass a private group's approval",
+        "id": "requiring-approval-even-through-a-private-group-invitation",
+        "title": "Requiring approval even through a private-group invitation",
         "level": 2
       },
       {
-        "id": "when-should-the-contest-entry-button-disappear",
-        "title": "When should the contest entry button disappear?",
+        "id": "defining-contest-submission-and-voting-deadlines",
+        "title": "Defining contest submission and voting deadlines",
         "level": 2
       },
       {
-        "id": "what-if-someone-cancels-a-selection-or-the-upload-fails",
-        "title": "What if someone cancels a selection or the upload fails?",
+        "id": "handling-cancelled-photo-selections-and-failed-uploads",
+        "title": "Handling cancelled photo selections and failed uploads",
         "level": 2
       },
       {
@@ -445,67 +513,57 @@
         "level": 2
       },
       {
-        "id": "who-would-answer-questions-on-the-feedback-board",
-        "title": "Who would answer questions on the feedback board?",
+        "id": "adding-reply-notifications-and-helpful-to-the-feedback-board",
+        "title": "Adding reply notifications and Helpful to the feedback board",
         "level": 2
       },
       {
-        "id": "a-failed-send-could-still-have-reached-the-other-person",
-        "title": "A failed send could still have reached the other person",
+        "id": "returning-the-stored-message-on-a-chat-retry",
+        "title": "Returning the stored message on a chat retry",
         "level": 2
       },
       {
-        "id": "deleting-and-blocking-affect-other-peoples-screens",
-        "title": "Deleting and blocking affect other people's screens",
+        "id": "choosing-what-remains-after-deletion-or-blocking",
+        "title": "Choosing what remains after deletion or blocking",
         "level": 2
       },
       {
-        "id": "looking-up-a-game-profile-did-not-prove-ownership",
-        "title": "Looking up a game profile did not prove ownership",
+        "id": "separating-game-profile-lookup-from-ownership-verification",
+        "title": "Separating game profile lookup from ownership verification",
         "level": 2
       },
       {
-        "id": "things-people-do-not-have-to-do-during-signup",
-        "title": "Things people do not have to do during signup",
+        "id": "showing-a-way-back-from-directly-opened-links",
+        "title": "Showing a way back from directly opened links",
         "level": 2
       },
       {
-        "id": "where-should-back-take-someone",
-        "title": "Where should Back take someone?",
+        "id": "making-replies-readable-when-posts-are-translated",
+        "title": "Making replies readable when posts are translated",
         "level": 2
       },
       {
-        "id": "if-the-post-is-translated-what-about-the-reply",
-        "title": "If the post is translated, what about the reply?",
+        "id": "asking-for-the-resume-to-be-removed-from-the-blog",
+        "title": "Asking for the resume to be removed from the blog",
         "level": 2
       },
       {
-        "id": "the-blogs-about-page-did-not-need-my-resume-too",
-        "title": "The blog's about page did not need my resume too",
+        "id": "skimming-the-code-structure-and-giving-feedback",
+        "title": "Skimming the code structure and giving feedback",
         "level": 2
       },
       {
-        "id": "specifying-the-architecture-still-left-code-to-review",
-        "title": "Specifying the architecture still left code to review",
+        "id": "delegating-checks-for-search-entry-points-and-shared-links",
+        "title": "Delegating checks for search entry points and shared links",
         "level": 2
       },
       {
-        "id": "i-checked-search-entry-points-and-cache-behavior-too",
-        "title": "I checked search entry points and cache behavior too",
-        "level": 2
-      },
-      {
-        "id": "i-chose-what-to-keep-in-error-logs",
-        "title": "I chose what to keep in error logs",
-        "level": 2
-      },
-      {
-        "id": "many-decisions-came-after-i-had-built-the-feature",
-        "title": "Many decisions came after I had built the feature",
+        "id": "choosing-what-to-send-to-sentry",
+        "title": "Choosing what to send to Sentry",
         "level": 2
       }
     ],
-    "readingMinutes": 17,
+    "readingMinutes": 13,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -515,7 +573,7 @@
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "testing", "reflection"],
     "publishedAt": "2026-10-05T12:01:45+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/reading-ai-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/35",
     "title": "저는 코드를 읽어요",
@@ -566,7 +624,7 @@
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "testing", "reflection"],
     "publishedAt": "2026-10-05T12:01:45+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/reading-ai-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/35",
     "title": "Why I still read the code",
@@ -617,7 +675,7 @@
     "category": "engineering",
     "tags": ["react", "react-hook-form", "architecture", "payment"],
     "publishedAt": "2026-09-30T21:27:20+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/health-check-program.png",
     "sourceUrl": "https://jingeon27.tistory.com/34",
     "title": "건강검진 예약을 기존 서비스에 연결한 과정",
@@ -673,7 +731,7 @@
     "category": "engineering",
     "tags": ["react", "react-hook-form", "architecture", "payment"],
     "publishedAt": "2026-09-30T21:27:20+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/health-check-program.png",
     "sourceUrl": "https://jingeon27.tistory.com/34",
     "title": "Bringing health-check reservations into the existing service",
@@ -729,7 +787,7 @@
     "category": "engineering",
     "tags": ["sentry", "react", "debugging", "react-modal-sheet"],
     "publishedAt": "2026-09-28T22:24:36+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/bottom-sheet-drag-crash.png",
     "sourceUrl": "https://jingeon27.tistory.com/33",
     "title": "Sentry로 추적한 Bottom Sheet 드래그 크래시",
@@ -795,7 +853,7 @@
     "category": "engineering",
     "tags": ["sentry", "react", "debugging", "react-modal-sheet"],
     "publishedAt": "2026-09-28T22:24:36+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/bottom-sheet-drag-crash.png",
     "sourceUrl": "https://jingeon27.tistory.com/33",
     "title": "Tracing a Bottom Sheet drag crash with Sentry",
@@ -861,7 +919,7 @@
     "category": "engineering",
     "tags": ["zod", "typescript", "validation", "error-handling"],
     "publishedAt": "2026-09-05T20:01:00+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/zod-assertion-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/32",
     "title": "타입 단언을 줄이며 정리한 런타임 검증 기준",
@@ -922,7 +980,7 @@
     "category": "engineering",
     "tags": ["zod", "typescript", "validation", "error-handling"],
     "publishedAt": "2026-09-05T20:01:00+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/zod-assertion-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/32",
     "title": "Runtime validation beyond type assertions",
@@ -983,7 +1041,7 @@
     "category": "engineering",
     "tags": ["ai-workflow", "testing", "eslint", "worktree"],
     "publishedAt": "2026-08-30T12:11:17+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/plan-gated-ai-workflow.png",
     "sourceUrl": "https://jingeon27.tistory.com/31",
     "title": "AI에 구현을 맡기며 다듬은 개발 workflow",
@@ -1054,7 +1112,7 @@
     "category": "engineering",
     "tags": ["ai-workflow", "testing", "eslint", "worktree"],
     "publishedAt": "2026-08-30T12:11:17+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/plan-gated-ai-workflow.png",
     "sourceUrl": "https://jingeon27.tistory.com/31",
     "title": "The development workflow I refined with coding agents",
@@ -1125,7 +1183,7 @@
     "category": "engineering",
     "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "publishedAt": "2026-08-25T21:10:15+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/sentry-observability.png",
     "sourceUrl": "https://jingeon27.tistory.com/30",
     "title": "Sentry 수집 정책을 정하고 전송부터 소스맵까지 검증한 과정",
@@ -1236,7 +1294,7 @@
     "category": "engineering",
     "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
     "publishedAt": "2026-08-25T21:10:15+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/sentry-observability.png",
     "sourceUrl": "https://jingeon27.tistory.com/30",
     "title": "Defining Sentry collection policies and verifying delivery and source maps",
@@ -1429,7 +1487,7 @@
     "category": "engineering",
     "tags": ["react", "error-boundary", "zod", "observability"],
     "publishedAt": "2026-08-17T07:46:22+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/error-boundary-recovery.png",
     "sourceUrl": "https://jingeon27.tistory.com/28",
     "title": "오류가 난 영역만 다시 시도하도록 Error Boundary 나누기",
@@ -1515,7 +1573,7 @@
     "category": "engineering",
     "tags": ["react", "error-boundary", "zod", "observability"],
     "publishedAt": "2026-08-17T07:46:22+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/error-boundary-recovery.png",
     "sourceUrl": "https://jingeon27.tistory.com/28",
     "title": "Letting failed sections recover with Error Boundaries",
@@ -1601,7 +1659,7 @@
     "category": "engineering",
     "tags": ["nextjs", "react", "cache", "react-hook-form"],
     "publishedAt": "2026-08-16T02:39:00+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/nextjs-server-client-issues.png",
     "sourceUrl": "https://jingeon27.tistory.com/27",
     "title": "Next.js의 라우팅과 캐시 문제를 추적한 기록",
@@ -1667,7 +1725,7 @@
     "category": "engineering",
     "tags": ["nextjs", "react", "cache", "react-hook-form"],
     "publishedAt": "2026-08-16T02:39:00+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/nextjs-server-client-issues.png",
     "sourceUrl": "https://jingeon27.tistory.com/27",
     "title": "Tracing Next.js routing and cache problems",
@@ -1733,7 +1791,7 @@
     "category": "engineering",
     "tags": ["typescript", "react", "refactoring", "declarative-programming"],
     "publishedAt": "2026-08-12T00:42:29+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/declarative-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/26",
     "title": "선언적으로 코드를 쓰는 기준",
@@ -1804,7 +1862,7 @@
     "category": "engineering",
     "tags": ["typescript", "react", "refactoring", "declarative-programming"],
     "publishedAt": "2026-08-12T00:42:29+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/declarative-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/26",
     "title": "How I write declarative code",
@@ -1875,7 +1933,7 @@
     "category": "engineering",
     "tags": ["testing", "vitest", "playwright", "react"],
     "publishedAt": "2026-08-08T02:56:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/testing-standards.png",
     "sourceUrl": "https://jingeon27.tistory.com/25",
     "title": "테스트 코드를 도입하면서 세운 기준",
@@ -1961,7 +2019,7 @@
     "category": "engineering",
     "tags": ["testing", "vitest", "playwright", "react"],
     "publishedAt": "2026-08-08T02:56:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/testing-standards.png",
     "sourceUrl": "https://jingeon27.tistory.com/25",
     "title": "The standards I developed while introducing tests",
@@ -2047,7 +2105,7 @@
     "category": "engineering",
     "tags": ["react", "nextjs", "architecture", "ai-workflow"],
     "publishedAt": "2026-07-12T00:11:35+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/prototype-working-rules.png",
     "sourceUrl": "https://jingeon27.tistory.com/24",
     "title": "프로토타입을 옮기며 반복되는 판단을 skills에 남긴 과정",
@@ -2093,7 +2151,7 @@
     "category": "engineering",
     "tags": ["react", "nextjs", "architecture", "ai-workflow"],
     "publishedAt": "2026-07-12T00:11:35+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/prototype-working-rules.png",
     "sourceUrl": "https://jingeon27.tistory.com/24",
     "title": "Keeping working rules from a prototype migration",
@@ -2139,7 +2197,7 @@
     "category": "engineering",
     "tags": ["typescript", "refactoring", "react", "payment"],
     "publishedAt": "2026-07-02T19:44:51+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/payment-coupon-branches.png",
     "sourceUrl": "https://jingeon27.tistory.com/22",
     "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
@@ -2190,7 +2248,7 @@
     "category": "engineering",
     "tags": ["typescript", "refactoring", "react", "payment"],
     "publishedAt": "2026-07-02T19:44:51+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/payment-coupon-branches.png",
     "sourceUrl": "https://jingeon27.tistory.com/22",
     "title": "Handling coupon branches in payment history",
@@ -2241,7 +2299,7 @@
     "category": "engineering",
     "tags": ["fsd", "architecture", "refactoring", "nextjs"],
     "publishedAt": "2026-07-01T19:35:43+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/fsd-layer-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/23",
     "title": "FSD 레이어를 저장소에 맞게 다시 나눈 과정",
@@ -2307,7 +2365,7 @@
     "category": "engineering",
     "tags": ["fsd", "architecture", "refactoring", "nextjs"],
     "publishedAt": "2026-07-01T19:35:43+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/fsd-layer-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/23",
     "title": "Redrawing FSD boundaries for the codebase",
@@ -2373,7 +2431,7 @@
     "category": "engineering",
     "tags": ["react", "typescript", "sse", "chatbot"],
     "publishedAt": "2026-06-25T19:58:03+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/chatbot-message-layer.png",
     "sourceUrl": "https://jingeon27.tistory.com/20",
     "title": "서로 다른 두 SSE를 하나의 상담 화면에 연결한 과정",
@@ -2454,7 +2512,7 @@
     "category": "engineering",
     "tags": ["react", "typescript", "sse", "chatbot"],
     "publishedAt": "2026-06-25T19:58:03+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/chatbot-message-layer.png",
     "sourceUrl": "https://jingeon27.tistory.com/20",
     "title": "Connecting two SSE streams to one chat interface",
@@ -2535,7 +2593,7 @@
     "category": "engineering",
     "tags": ["nextjs", "seo", "sitemap", "cache"],
     "publishedAt": "2026-06-16T19:51:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/sitemap-api-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/21",
     "title": "동적 사이트맵에서 공개 API와 인증 API의 경계를 나눈 과정",
@@ -2576,7 +2634,7 @@
     "category": "engineering",
     "tags": ["nextjs", "seo", "sitemap", "cache"],
     "publishedAt": "2026-06-16T19:51:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/sitemap-api-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/21",
     "title": "Separating public and authenticated reads in a sitemap",
@@ -2617,7 +2675,7 @@
     "category": "engineering",
     "tags": ["nextjs", "authentication", "bff", "security"],
     "publishedAt": "2026-05-29T21:28:13+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/cross-domain-token-handoff.png",
     "sourceUrl": "https://jingeon27.tistory.com/19",
     "title": "정산 서비스를 별도 호스트로 분리하며 토큰 전달 방식을 바꾼 과정",
@@ -2708,7 +2766,7 @@
     "category": "engineering",
     "tags": ["nextjs", "authentication", "bff", "security"],
     "publishedAt": "2026-05-29T21:28:13+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/cross-domain-token-handoff.png",
     "sourceUrl": "https://jingeon27.tistory.com/19",
     "title": "Handing authentication between separate hosts",
@@ -2799,7 +2857,7 @@
     "category": "engineering",
     "tags": ["react-hook-form", "typescript", "zod", "architecture"],
     "publishedAt": "2026-02-13T00:13:36+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/typed-program-form.png",
     "sourceUrl": "https://jingeon27.tistory.com/18",
     "title": "두 관리자 앱에서 프로그램 폼을 공유하는 방법",
@@ -2850,7 +2908,7 @@
     "category": "engineering",
     "tags": ["react-hook-form", "typescript", "zod", "architecture"],
     "publishedAt": "2026-02-13T00:13:36+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/typed-program-form.png",
     "sourceUrl": "https://jingeon27.tistory.com/18",
     "title": "Sharing a program form across two admin apps",
@@ -2901,7 +2959,7 @@
     "category": "engineering",
     "tags": ["react-hook-form", "zod", "react", "state-management"],
     "publishedAt": "2025-12-13T22:32:56+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/review-form-funnel.png",
     "sourceUrl": "https://jingeon27.tistory.com/15",
     "title": "3단계 리뷰 작성 폼의 역할을 RHF, Zod, 퍼널로 다시 나눈 과정",
@@ -2972,7 +3030,7 @@
     "category": "engineering",
     "tags": ["react-hook-form", "zod", "react", "state-management"],
     "publishedAt": "2025-12-13T22:32:56+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/review-form-funnel.png",
     "sourceUrl": "https://jingeon27.tistory.com/15",
     "title": "Separating state and steps in a review form",
@@ -3115,7 +3173,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "optimistic-update", "react"],
     "publishedAt": "2025-07-03T23:47:16+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/review-like-optimistic-update.png",
     "sourceUrl": "https://jingeon27.tistory.com/12",
     "title": "리뷰 좋아요의 목록과 상세 캐시를 함께 갱신하기",
@@ -3171,7 +3229,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "optimistic-update", "react"],
     "publishedAt": "2025-07-03T23:47:16+09:00",
-    "updatedAt": "2026-10-30",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/review-like-optimistic-update.png",
     "sourceUrl": "https://jingeon27.tistory.com/12",
     "title": "Updating review likes in list and detail caches",
@@ -3227,7 +3285,7 @@
     "category": "engineering",
     "tags": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
     "publishedAt": "2025-06-30T23:14:01+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/reservation-form-state.png",
     "sourceUrl": "https://jingeon27.tistory.com/11",
     "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
@@ -3283,7 +3341,7 @@
     "category": "engineering",
     "tags": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
     "publishedAt": "2025-06-30T23:14:01+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/reservation-form-state.png",
     "sourceUrl": "https://jingeon27.tistory.com/11",
     "title": "Moving reservation form state from Zustand to React Hook Form",
@@ -3339,7 +3397,7 @@
     "category": "engineering",
     "tags": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
     "publishedAt": "2025-01-22T17:27:17+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/nextjs-tanstack-query-ssr.png",
     "sourceUrl": "https://jingeon27.tistory.com/8",
     "title": "Next.js App Router에서 서버와 브라우저의 QueryClient를 나눈 이유",
@@ -3390,7 +3448,7 @@
     "category": "engineering",
     "tags": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
     "publishedAt": "2025-01-22T17:27:17+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/nextjs-tanstack-query-ssr.png",
     "sourceUrl": "https://jingeon27.tistory.com/8",
     "title": "Using TanStack Query with the Next.js App Router",
@@ -3441,7 +3499,7 @@
     "category": "engineering",
     "tags": ["typescript", "react"],
     "publishedAt": "2024-05-25T17:01:01+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/typescript-patterns.png",
     "sourceUrl": "https://jingeon27.tistory.com/7",
     "title": "TypeScript로 호출부의 실수를 줄이는 방법",
@@ -3487,7 +3545,7 @@
     "category": "engineering",
     "tags": ["typescript", "react"],
     "publishedAt": "2024-05-25T17:01:01+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/typescript-patterns.png",
     "sourceUrl": "https://jingeon27.tistory.com/7",
     "title": "Using TypeScript to catch mistakes at the call site",
@@ -3533,7 +3591,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "typescript", "query-key"],
     "publishedAt": "2024-04-10T03:32:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/query-key-factory.png",
     "sourceUrl": "https://jingeon27.tistory.com/6",
     "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
@@ -3594,7 +3652,7 @@
     "category": "engineering",
     "tags": ["tanstack-query", "typescript", "query-key"],
     "publishedAt": "2024-04-10T03:32:20+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/query-key-factory.png",
     "sourceUrl": "https://jingeon27.tistory.com/6",
     "title": "Keeping TanStack Query keys and query functions together",
@@ -3665,7 +3723,7 @@
       "architecture"
     ],
     "publishedAt": "2024-04-02T23:34:35+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/electron-module-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/5",
     "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
@@ -3751,7 +3809,7 @@
       "architecture"
     ],
     "publishedAt": "2024-04-02T23:34:35+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/electron-module-boundaries.png",
     "sourceUrl": "https://jingeon27.tistory.com/5",
     "title": "Separating responsibilities in an Electron data-collection app",
@@ -3826,7 +3884,7 @@
     "category": "engineering",
     "tags": ["closure", "electron", "javascript", "puppeteer", "typescript"],
     "publishedAt": "2024-03-29T00:04:51+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/puppeteer-event-lifecycle.png",
     "sourceUrl": "https://jingeon27.tistory.com/4",
     "title": "Puppeteer에서 요청과 응답을 함께 기다릴 때 놓쳤던 것",
@@ -3857,7 +3915,7 @@
     "category": "engineering",
     "tags": ["closure", "electron", "javascript", "puppeteer", "typescript"],
     "publishedAt": "2024-03-29T00:04:51+09:00",
-    "updatedAt": "2026-10-29",
+    "updatedAt": "2026-11-01",
     "coverImage": "/images/covers/puppeteer-event-lifecycle.png",
     "sourceUrl": "https://jingeon27.tistory.com/4",
     "title": "Waiting for Puppeteer requests and responses without leaking listeners",

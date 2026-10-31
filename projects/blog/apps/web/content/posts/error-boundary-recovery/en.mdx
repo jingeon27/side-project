@@ -42,10 +42,10 @@ I first decided what should reload together, because wrapping each existing stru
 A failed list should leave the header and menu available. A failed detail should leave the list. I wrapped UI according to what loads and retries together.
 
 ```text
-App Root Boundary        page, 마지막 그물
+App Root Boundary        page, final fallback
   Header · Side Menu
   Route Boundary         page
-    Search Filter        section, 옵션을 조회하는 칸은 field
+    Search Filter        section, or field for an input that fetches options
     List                 section
     Detail Drawer        overlay
 ```
@@ -53,10 +53,10 @@ App Root Boundary        page, 마지막 그물
 A route boundary wraps only the layout's children with the page variant. Lists inside use section; details use overlay. A fourth variant, field, is used by dedicated search-filter boundaries below.
 
 ```tsx
-// 레이아웃: {children}만 감싸서 Header와 Side Menu는 이 바운더리 밖에 남는다
+// Layout: wrap only {children}; Header and Side Menu stay outside this boundary
 <RouteErrorBoundary>{children}</RouteErrorBoundary>
 
-// 라우트: 목록과 상세를 서로 다른 단위로 감싼다
+// Route: wrap the list and detail in separate recovery units
 <QueryErrorBoundary variant="section">
   <ReservationListView />
 </QueryErrorBoundary>
@@ -83,7 +83,7 @@ URL-opened details moved outside the list and into the route. Inside a list, the
 Before and after:
 
 ```tsx
-// 이전: 라우트가 조회하고, 표와 컬럼과 버튼까지 들고 있다
+// Before: the route fetches data and owns the table, columns, and buttons
 function ReservationPage() {
   const { data, isFetching } = useQuery(reservationListOptions(getReservationListParams(currentParams)));
 
@@ -91,13 +91,13 @@ function ReservationPage() {
     <Flex vertical gap={10}>
       <BreadCrumb />
       <SearchFilter onSubmit={handleSearch}>{/* ... */}</SearchFilter>
-      <ExcelExportButton onClick={() => handleExcelExport(data)}>엑셀 내보내기</ExcelExportButton>
+      <ExcelExportButton onClick={() => handleExcelExport(data)}>Export Excel</ExcelExportButton>
       <Table
         loading={isFetching}
         dataSource={data}
         columns={
           [
-            /* 인라인 컬럼 */
+            /* Inline columns */
           ]
         }
       />
@@ -107,7 +107,7 @@ function ReservationPage() {
 ```
 
 ```tsx
-// 이후: 조회는 ListView 로 내려가고, 라우트에는 바운더리 두 개가 남는다
+// After: ListView owns fetching; the route retains two boundaries
 function ReservationPage() {
   const currentParams = useTypedQueryParams({ schema: reservationSearchParamsSchema });
   const closeDetail = useCloseDetail();
@@ -139,16 +139,16 @@ Details opened directly from row data stayed beside the list. Moving those too w
 Adding boundaries to search filters led to rebuilding the components. Previously, a filter was data in a configuration array rather than an element.
 
 ```tsx
-// 이전: 필터도 목록도 설정 배열 안에 들어 있다
+// Before: filters and the list both live in a configuration array
 <SearchFilterLayout
   tabs={[
     {
       key: 'reservations',
-      label: '예약 목록',
-      searchKeywordType: [{ label: '예약자명', value: 'name' }],
+      label: 'Reservations',
+      searchKeywordType: [{ label: 'Reservation holder', value: 'name' }],
       filters: [
-        { key: 'status', name: '예약 상태', type: 'select', options: STATUS_OPTIONS },
-        { key: 'department', name: '분류', type: 'select', options: departmentOptions },
+        { key: 'status', name: 'Reservation status', type: 'select', options: STATUS_OPTIONS },
+        { key: 'department', name: 'Category', type: 'select', options: departmentOptions },
       ],
       children: <ReservationList />,
     },
@@ -168,8 +168,8 @@ const SearchFilter = createSearchFilter(reservationSearchParamsSchema);
 <SearchFilter onSubmit={handleSearch}>
   <SearchFilter.Keyword name="keyword" typeName="keywordType" options={SEARCH_KEYWORD_TYPES} />
   <SearchFilter.Fields>
-    <SearchFilter.Select name="status" label="예약 상태" options={STATUS_OPTIONS} />
-    <DepartmentFilter name="department" label="분류" />
+    <SearchFilter.Select name="status" label="Reservation status" options={STATUS_OPTIONS} />
+    <DepartmentFilter name="department" label="Category" />
   </SearchFilter.Fields>
 </SearchFilter>
 ```
@@ -252,7 +252,7 @@ const reservationRoute = createRoute({
   searchParamsSchema: reservationSearchParamsSchema,
 });
 
-<Link href={reservationRoute.href({ pageNumber: 2, status: 'WAIT' })}>대기 예약</Link>
+<Link href={reservationRoute.href({ pageNumber: 2, status: 'WAIT' })}>Pending reservations</Link>
 ```
 
 That factory remains proposed. Read-side URL validation is the part already applied.
@@ -268,10 +268,10 @@ A long-open tab could replace the whole app with a connection error on return. H
 Initial header and menu failures still reach the root. There is no data to retain there, so the app-root fallback appears.
 
 ```text
-첫 조회 실패     해당 복구 단위의 바운더리
-재조회 실패      받아 둔 데이터 유지, 다음 조회에서 회복
-Mutation 실패   입력 유지 + field error/toast + 다시 제출
-스키마 차이      신뢰 경계에서 기록, 데이터 성격에 따라 통과 또는 차단
+Initial fetch fails    Boundary for that recovery unit
+Refetch fails          Keep existing data; recover on a later fetch
+Mutation fails         Keep input, show a field error or toast, allow resubmission
+Schema mismatch        Log at the trust boundary; pass through or reject according to the data
 ```
 
 ## Record where to reproduce the error
@@ -305,7 +305,7 @@ Logging must not break the screen. Nonserializable values and binary data are om
 A handwritten boundary name also needs updating when its component moves.
 
 ```tsx
-// 이름을 걷어내기 전까지의 호출부
+// Call site before removing the wrapper name
 <QueryErrorBoundary name="customer/reservations:detail" variant="section">
   <ReservationDetail />
 </QueryErrorBoundary>

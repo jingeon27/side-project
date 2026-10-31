@@ -24,16 +24,16 @@ const ROUTES = {
 } as const satisfies Record<RouteName, `/${string}`>;
 
 ROUTES.profile;
-// '/profile'로 추론된다.
+// Inferred as '/profile'.
 ```
 
 Annotating the variable as `Record<RouteName, string>` can make `ROUTES.profile` read as the broader `string`. The combination keeps `'/profile'` while catching missing keys and invalid paths. I use it for exhaustive label maps too, such as payment-method labels.
 
 ```typescript
 const LABELS = {
-  normal: '일반 결제',
-  coupon: '쿠폰 결제',
-  // cancel 누락 시 컴파일 오류
+  normal: 'Standard payment',
+  coupon: 'Coupon payment',
+  // A missing cancel entry causes a compile error
 } as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
 ```
 
@@ -113,9 +113,9 @@ function Field<T extends string>(props: Props<T>) {
 ```
 
 ```tsx
-<Field label="읽기 전용" />;                         // 가능
-<Field value="active" onValueChange={() => {}} />; // 가능
-<Field label="잘못된 조합" value="active" />;      // 컴파일 오류
+<Field label="Read only" />;                         // Valid
+<Field value="active" onValueChange={() => {}} />; // Valid
+<Field label="Invalid combination" value="active" />;      // Compile error
 ```
 
 Function overloads are useful for describing call signatures. For modeling valid React props, a discriminated union or a `never`-based XOR also lets the implementation narrow the types safely.

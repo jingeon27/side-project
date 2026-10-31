@@ -38,12 +38,12 @@ I began on August 31, first clearing existing features into pages and then movin
 
 ```text
 before
-entities  도메인이라고 판단한 일부 API·모델·UI
-features  사용자 행동이라고 판단한 일부 훅·폼·UI
+entities  Some APIs, models, and UI classified as domains
+features  Some hooks, forms, and UI classified as user actions
 
 after
-features  서버 도메인 단위의 API·모델·스키마·도메인 UI
-pages     화면 단위의 인터랙션과 조합
+features  APIs, models, schemas, and domain UI grouped by server domain
+pages     Screen interactions and composition
 ```
 
 Searching aliased imports missed a relative import during the move. The final typecheck found that remaining reference.
@@ -79,7 +79,7 @@ packages/shared/src/
 ├── utils/
 └── types/
 
-@app/shared          ← 패키지 이름은 공개용 가명이에요
+@app/shared          ← Public alias for the package name
 @app/shared/cookie
 @app/shared/env
 @app/shared/server
@@ -107,11 +107,11 @@ Even screen-based folders did not distinguish the current screen's internals fro
 
 ```text
 pages/catalog/search/
-├── @page/            ← 이 화면의 slice
+├── @page/            ← This screen's slice
 │   ├── ui/
 │   ├── model/
 │   └── lib/
-├── @common/          ← 하위 화면이 함께 쓰는 코드
+├── @common/          ← Code shared by child screens
 ├── keyword/@page/
 │   ├── KeywordPage.tsx
 │   └── ui/ model/ lib/
