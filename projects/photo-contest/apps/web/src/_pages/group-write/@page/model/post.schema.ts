@@ -5,6 +5,11 @@ import { isImageFile } from '@/shared/lib/image.helper';
 
 export const postSchema = z
   .object({
+    clientRequestId: z.uuid().default(() => crypto.randomUUID()),
+    completedMedia: z
+      .object({ file: z.instanceof(File), uploadId: z.string() })
+      .nullable()
+      .default(null),
     categoryId: z.string().default(''),
     participateInContest: z.boolean().default(false),
     contestId: z.string().default(''),

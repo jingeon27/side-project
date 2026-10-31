@@ -32,6 +32,7 @@ describe('public lookup pages in the proxy', () => {
       expect(response.status).toBe(404);
       expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
       expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('x-middleware-rewrite')).toBe('https://game.example/unavailable');
     }
     expect(documentUnavailable).not.toHaveBeenCalled();
   });
