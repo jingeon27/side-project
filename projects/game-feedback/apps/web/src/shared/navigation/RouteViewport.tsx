@@ -69,6 +69,8 @@ function RouteMotion({
         'messages',
         'notifications',
         'settings',
+        'profile',
+        'profile-edit',
         'guide',
         'login',
         'onboarding',

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Share2 } from 'lucide-react';
+import { Medal, Share2 } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { LikeButton } from '@/features/like';
@@ -77,7 +77,11 @@ function ResultsContent({
       </Button>
       {match(results)
         .with([], () => (
-          <EmptyState title="제출된 사진이 없어요" description="다음 대회에서 첫 사진을 만나보세요." />
+          <EmptyState
+            icon={<Medal />}
+            title="제출된 사진이 없어요"
+            description="다음 대회에서 첫 사진을 만나보세요."
+          />
         ))
         .otherwise((rows) =>
           rows.map(({ submission, rank, voteCount, winner }, index) => (

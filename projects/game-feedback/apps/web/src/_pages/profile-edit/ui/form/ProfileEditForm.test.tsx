@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError, type PublicProfile } from '@/shared/api';
@@ -10,18 +10,19 @@ import { ProfileEditForm } from './ProfileEditForm';
 const state = vi.hoisted(() => ({
   updateProfile: vi.fn(),
   uploadAvatar: vi.fn(),
-  refresh: vi.fn(),
+  deleteAvatar: vi.fn(),
+  fetchProfile: vi.fn(),
 }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: state.refresh }) }));
 vi.mock('@game-feedback/sdk', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@game-feedback/sdk')>()),
   updateProfile: state.updateProfile,
+  deleteProfileAvatar: state.deleteAvatar,
 }));
 vi.mock('@/features/user/api/avatar.api', () => ({ uploadAvatar: state.uploadAvatar }));
 vi.mock('@/features/user/api/user.api', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  fetchPublicProfile: async () => profile,
+  fetchPublicProfile: state.fetchProfile,
 }));
 
 const profile: PublicProfile = {
@@ -34,14 +35,14 @@ const profile: PublicProfile = {
     avatarUrl: null,
   },
   bio: '',
-  links: [],
   joinedAt: '2026-10-20T00:00:00Z',
   postCount: 0,
   answerCount: 0,
   helpfulCount: 0,
 };
 
-function renderForm() {
+function renderForm(initialProfile = profile) {
+  state.fetchProfile.mockResolvedValue(initialProfile);
   const onSaved = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } },
@@ -49,7 +50,7 @@ function renderForm() {
   render(
     <QueryClientProvider client={client}>
       <NavigationGuardProvider>
-        <ProfileEditForm onSaved={onSaved} profile={profile} />
+        <ProfileEditForm onSaved={onSaved} profile={initialProfile} />
       </NavigationGuardProvider>
     </QueryClientProvider>,
   );
@@ -57,26 +58,19 @@ function renderForm() {
 }
 
 function choosePhoto() {
-  const photo = screen.getByRole('form', { name: '프로필 사진 편집' });
-  fireEvent.change(within(photo).getByLabelText('프로필 사진 선택'), {
-    target: { files: [new File(['photo'], 'me.png', { type: 'image/png' })] },
-  });
-  return photo;
+  const file = new File(['photo'], 'me.png', { type: 'image/png' });
+  fireEvent.change(screen.getByLabelText('프로필 사진 선택'), { target: { files: [file] } });
+  return file;
 }
 
-function addLinkDraft() {
-  const links = screen.getByRole('form', { name: '프로필 링크 편집' });
-  fireEvent.click(within(links).getByRole('button', { name: '링크 추가' }));
-  fireEvent.change(within(links).getByRole('textbox', { name: /이름/ }), { target: { value: '나의 방송' } });
-  return links;
+function changeNickname() {
+  fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
+    target: { value: '새닉네임' },
+  });
 }
 
-function saveNickname(nickname: string) {
-  const details = screen.getByRole('form', { name: '프로필 수정' });
-  fireEvent.change(within(details).getByRole('textbox', { name: '서비스 닉네임' }), {
-    target: { value: nickname },
-  });
-  fireEvent.click(within(details).getByRole('button', { name: '프로필 저장' }));
+function save() {
+  fireEvent.click(screen.getByRole('button', { name: '프로필 저장' }));
 }
 
 beforeEach(() => {
@@ -85,132 +79,158 @@ beforeEach(() => {
     author: { ...profile.author, nickname: input.nickname },
     bio: input.bio,
   }));
-  state.uploadAvatar.mockReset();
-  state.refresh.mockReset();
+  state.uploadAvatar.mockReset().mockResolvedValue(profile);
+  state.deleteAvatar.mockReset().mockResolvedValue(profile);
   URL.createObjectURL = vi.fn(() => 'blob:preview');
   URL.revokeObjectURL = vi.fn();
 });
 
-describe('profile edit form', () => {
-  it.each(['details', 'photo', 'links'])('confirms leaving with an unsaved %s draft', (section) => {
+describe('unified profile editing', () => {
+  it.each([
+    { action: 'unmount', phase: 'details' },
+    { action: 'discard', phase: 'details' },
+    { action: 'unmount', phase: 'photo' },
+    { action: 'discard', phase: 'photo' },
+  ])('stops the remaining save flow after $action during the $phase request', async ({ action, phase }) => {
+    const saved = Promise.withResolvers<PublicProfile>();
+    if (phase === 'details') state.updateProfile.mockReturnValueOnce(saved.promise);
+    if (phase === 'photo') state.uploadAvatar.mockReturnValueOnce(saved.promise);
+    const onSaved = renderForm();
+    changeNickname();
+    choosePhoto();
+    save();
+    await waitFor(() =>
+      expect(phase === 'details' ? state.updateProfile : state.uploadAvatar).toHaveBeenCalledOnce(),
+    );
+    if (action === 'unmount') cleanup();
+    if (action === 'discard') {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      await act(async () => expect(confirmNavigation()).toBe(true));
+    }
+    await act(async () => saved.resolve(profile));
+    expect(state.uploadAvatar).toHaveBeenCalledTimes(phase === 'photo' ? 1 : 0);
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it.each(['details', 'photo'])('confirms leaving with an unsaved %s draft', (section) => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderForm();
     expect(confirmNavigation()).toBe(true);
-    if (section === 'details') {
-      fireEvent.change(screen.getByRole('textbox', { name: '자기소개' }), {
-        target: { value: '저장하지 않은 소개' },
-      });
-    }
+    if (section === 'details') changeNickname();
     if (section === 'photo') choosePhoto();
-    if (section === 'links') addLinkDraft();
     expect(confirmNavigation()).toBe(false);
     expect(confirm).toHaveBeenCalledOnce();
   });
 
-  it('discards all drafts only after confirming departure even if Next retains the form', async () => {
+  it('discards every draft only after confirming departure', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderForm();
-    const bio = screen.getByRole('textbox', { name: '자기소개' });
-    fireEvent.change(bio, { target: { value: '버릴 소개' } });
-    const photo = choosePhoto();
-    const links = addLinkDraft();
-
+    changeNickname();
+    choosePhoto();
     await act(async () => expect(confirmNavigation()).toBe(false));
-    expect(bio).toHaveProperty('value', '버릴 소개');
-    expect(within(photo).getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
-    expect(within(links).getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
-
+    expect(screen.getByRole('textbox', { name: '서비스 닉네임' })).toHaveProperty('value', '새닉네임');
+    expect(screen.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
     confirm.mockReturnValue(true);
     await act(async () => expect(confirmNavigation()).toBe(true));
-    expect(bio).toHaveProperty('value', '');
-    expect(within(photo).queryByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeNull();
-    expect(within(links).queryByRole('textbox', { name: /이름/ })).toBeNull();
+    expect(screen.getByRole('textbox', { name: '서비스 닉네임' })).toHaveProperty('value', '원래닉네임');
+    expect(screen.queryByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeNull();
     expect(confirmNavigation()).toBe(true);
-    expect(confirm).toHaveBeenCalledTimes(2);
   });
 
-  // 정보 저장이 곧바로 화면을 떠나(예전에는 시트를 닫아) 고르던 사진·링크 초안이 말없이 사라졌다.
-  it('saves the profile details without leaving or dropping photo and link drafts', async () => {
-    const onSaved = renderForm();
-    const photo = choosePhoto();
-    const links = addLinkDraft();
-
-    saveNickname('새닉네임');
-
-    await waitFor(() => expect(state.updateProfile).toHaveBeenCalledWith({ nickname: '새닉네임', bio: '' }));
-    await waitFor(() => expect(state.refresh).toHaveBeenCalledOnce());
-    expect(onSaved).not.toHaveBeenCalled();
-    expect(within(photo).getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
-    expect(within(links).getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
-  });
-
-  it('finishes editing after saving the details when nothing else is unsaved', async () => {
-    const confirm = vi.spyOn(window, 'confirm');
-    const onSaved = renderForm();
-    saveNickname('새닉네임');
-    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
-    expect(state.refresh).not.toHaveBeenCalled();
-    expect(confirmNavigation()).toBe(true);
-    expect(confirm).not.toHaveBeenCalled();
-  });
-
-  it('locks link inputs until the saved response has reset their baseline', async () => {
-    const saved = Promise.withResolvers<PublicProfile>();
-    state.updateProfile.mockReturnValueOnce(saved.promise);
-    renderForm();
-    const links = addLinkDraft();
-    fireEvent.change(within(links).getByRole('textbox', { name: /주소/ }), {
-      target: { value: 'https://example.com/' },
-    });
-    fireEvent.click(within(links).getByRole('button', { name: '링크 저장' }));
-    await waitFor(() => expect(state.updateProfile).toHaveBeenCalledOnce());
-
-    expect(within(links).getByRole('textbox', { name: /이름/ }).matches(':disabled')).toBe(true);
-    expect(within(links).getByRole('textbox', { name: /주소/ }).matches(':disabled')).toBe(true);
-    await act(async () =>
-      saved.resolve({ ...profile, links: [{ label: '나의 방송', url: 'https://example.com/' }] }),
-    );
-
-    expect(within(links).getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
-    expect(within(links).getByRole('textbox', { name: /이름/ }).matches(':disabled')).toBe(false);
-    expect(within(links).getByRole('textbox', { name: /주소/ }).matches(':disabled')).toBe(false);
-  });
-
-  it.each(['photo', 'links'])('keeps a new %s draft created while details were saving', async (section) => {
-    const saved = Promise.withResolvers<PublicProfile>();
-    state.updateProfile.mockReturnValueOnce(saved.promise);
-    const onSaved = renderForm();
-    saveNickname('새닉네임');
-    await waitFor(() => expect(state.updateProfile).toHaveBeenCalledOnce());
-
-    if (section === 'photo') choosePhoto();
-    if (section === 'links') addLinkDraft();
-    await act(async () => saved.resolve({ ...profile, author: { ...profile.author, nickname: '새닉네임' } }));
-
-    expect(onSaved).not.toHaveBeenCalled();
-    expect(state.refresh).toHaveBeenCalledOnce();
-    if (section === 'photo')
-      expect(screen.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
-    if (section === 'links')
-      expect(screen.getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
-  });
-
-  it('shows a failed photo upload as a translated error notice and keeps the selected photo', async () => {
+  it('saves details and the photo with one action, locks inputs and only leaves after both succeed', async () => {
     const upload = Promise.withResolvers<PublicProfile>();
     state.uploadAvatar.mockReturnValueOnce(upload.promise);
-    renderForm();
-    const photo = choosePhoto();
-    fireEvent.click(within(photo).getByRole('button', { name: '사진 저장' }));
-    await waitFor(() => expect(state.uploadAvatar).toHaveBeenCalledOnce());
+    const onSaved = renderForm();
+    changeNickname();
+    const file = choosePhoto();
+    expect(document.querySelectorAll('form')).toHaveLength(1);
+    expect(document.querySelectorAll('button[type="submit"]')).toHaveLength(1);
+    expect(screen.queryByText('프로필 링크')).toBeNull();
+    save();
+    await waitFor(() => expect(state.uploadAvatar).toHaveBeenCalledWith(file, expect.any(Object)));
+    expect(state.updateProfile).toHaveBeenCalledWith({ nickname: '새닉네임', bio: '' });
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: '서비스 닉네임' }).matches(':disabled')).toBe(true);
+    expect(screen.getByLabelText('프로필 사진 선택').matches(':disabled')).toBe(true);
+    await act(async () => upload.resolve(profile));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(confirmNavigation()).toBe(true);
+  });
 
-    await act(async () =>
-      upload.reject(
-        new ApiError(400, 'INVALID_AVATAR', '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.'),
-      ),
+  it('saves details without requiring a photo', async () => {
+    const onSaved = renderForm();
+    changeNickname();
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(state.uploadAvatar).not.toHaveBeenCalled();
+    expect(state.deleteAvatar).not.toHaveBeenCalled();
+  });
+
+  it('does not upload when details fail and preserves all drafts for retry', async () => {
+    state.updateProfile.mockRejectedValueOnce(new ApiError(503, 'UNAVAILABLE', '프로필 저장 재시도'));
+    const onSaved = renderForm();
+    changeNickname();
+    choosePhoto();
+    save();
+    expect((await screen.findByRole('alert')).textContent).toBe('프로필 저장 재시도');
+    expect(state.uploadAvatar).not.toHaveBeenCalled();
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: '서비스 닉네임' })).toHaveProperty('value', '새닉네임');
+    expect(screen.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+  });
+
+  it('retries only the failed photo after details have already saved', async () => {
+    state.uploadAvatar.mockRejectedValueOnce(
+      new ApiError(400, 'INVALID_AVATAR', '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.'),
     );
-    const notice = await within(photo).findByRole('alert');
-    expect(notice.className).toBe('error-notice');
-    expect(notice.textContent).toBe('사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.');
-    expect(within(photo).getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    const onSaved = renderForm();
+    changeNickname();
+    choosePhoto();
+    save();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.',
+    );
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(state.updateProfile).toHaveBeenCalledOnce();
+    expect(state.uploadAvatar).toHaveBeenCalledTimes(2);
+  });
+
+  it('defers photo removal until the same save action and supports undo', async () => {
+    const onSaved = renderForm({
+      ...profile,
+      author: { ...profile.author, avatarUrl: '/api/users/me/avatar' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '프로필 사진 삭제' }));
+    expect(state.deleteAvatar).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '삭제 취소' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '프로필 저장' }).matches(':disabled')).toBe(true),
+    );
+    fireEvent.click(screen.getByRole('button', { name: '프로필 사진 삭제' }));
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(state.deleteAvatar).toHaveBeenCalledOnce();
+    expect(state.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed photo removal pending until retry succeeds', async () => {
+    state.deleteAvatar.mockRejectedValueOnce(new ApiError(503, 'UNAVAILABLE', '프로필 저장 재시도'));
+    const onSaved = renderForm({
+      ...profile,
+      author: { ...profile.author, avatarUrl: '/api/users/me/avatar' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '프로필 사진 삭제' }));
+    save();
+    await screen.findByRole('alert');
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '삭제 취소' })).toBeTruthy();
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(state.deleteAvatar).toHaveBeenCalledTimes(2);
   });
 });

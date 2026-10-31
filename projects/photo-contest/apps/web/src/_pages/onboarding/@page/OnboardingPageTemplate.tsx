@@ -24,6 +24,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { ImageFileField } from '@/shared/ui/@core/image-file-field';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { TextField } from '@/shared/ui/@core/text-field';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
@@ -54,7 +55,7 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
   return (
     <form
       noValidate
-      className="flex flex-col gap-6"
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={form.handleSubmit(async ({ avatar, ...values }) => {
         try {
           const avatarId = avatar
@@ -73,57 +74,68 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
         }
       })}
     >
-      <div>
-        <h2 className="text-title-lg text-ink">반가워요! 프로필을 확인해 주세요.</h2>
-        <p className="mt-2 text-body text-muted">가입을 마치기 전에 닉네임과 프로필 사진을 확인해 주세요.</p>
-      </div>
-      <ImageFileField
-        control={form.control}
-        trigger={form.trigger}
-        name="avatar"
-        removeName="removeAvatar"
-        label="프로필 사진"
-        currentUrl={data.me.avatar}
-        fileSchema={profileSchema.shape.avatar}
-      />
-      <TextField
-        label="닉네임"
-        required
-        maxLength={24}
-        autoComplete="nickname"
-        disabled={form.formState.isSubmitting}
-        error={form.formState.errors.nickname?.message}
-        {...form.register('nickname')}
-      />
-      <div>
-        <label className="flex min-h-touch items-center gap-3 text-body text-ink">
-          <input
-            type="checkbox"
-            required
-            disabled={form.formState.isSubmitting}
-            aria-invalid={Boolean(form.formState.errors.acceptedTerms)}
-            aria-describedby={form.formState.errors.acceptedTerms ? errorId : undefined}
-            {...form.register('acceptedTerms')}
+      <div
+        data-form-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-8 scroll-py-6 tablet:px-8"
+      >
+        <div className="mx-auto flex w-full max-w-app flex-col gap-6">
+          <div>
+            <h2 className="text-title-lg text-ink">반가워요! 프로필을 확인해 주세요.</h2>
+            <p className="mt-2 text-body text-muted">
+              가입을 마치기 전에 닉네임과 프로필 사진을 확인해 주세요.
+            </p>
+          </div>
+          <ImageFileField
+            control={form.control}
+            trigger={form.trigger}
+            name="avatar"
+            removeName="removeAvatar"
+            label="프로필 사진"
+            currentUrl={data.me.avatar}
+            fileSchema={profileSchema.shape.avatar}
           />
-          이용약관과 개인정보 처리방침에 동의합니다. (필수)
-        </label>
-        <div className="ml-7 flex gap-4 text-caption text-muted">
-          <Link href={ROUTES.TERMS} target="_blank" className="min-h-touch content-center underline">
-            이용약관 보기
-          </Link>
-          <Link href={ROUTES.PRIVACY} target="_blank" className="min-h-touch content-center underline">
-            개인정보 처리방침 보기
-          </Link>
+          <TextField
+            label="닉네임"
+            required
+            maxLength={24}
+            autoComplete="nickname"
+            disabled={form.formState.isSubmitting}
+            error={form.formState.errors.nickname?.message}
+            {...form.register('nickname')}
+          />
+          <div>
+            <label className="flex min-h-touch items-center gap-3 text-body text-ink">
+              <input
+                type="checkbox"
+                required
+                disabled={form.formState.isSubmitting}
+                aria-invalid={Boolean(form.formState.errors.acceptedTerms)}
+                aria-describedby={form.formState.errors.acceptedTerms ? errorId : undefined}
+                {...form.register('acceptedTerms')}
+              />
+              이용약관과 개인정보 처리방침에 동의합니다. (필수)
+            </label>
+            <div className="ml-7 flex gap-4 text-caption text-muted">
+              <Link href={ROUTES.TERMS} target="_blank" className="min-h-touch content-center underline">
+                이용약관 보기
+              </Link>
+              <Link href={ROUTES.PRIVACY} target="_blank" className="min-h-touch content-center underline">
+                개인정보 처리방침 보기
+              </Link>
+            </div>
+            {form.formState.errors.acceptedTerms ? (
+              <p id={errorId} role="alert" className="text-caption text-danger">
+                {form.formState.errors.acceptedTerms.message}
+              </p>
+            ) : null}
+          </div>
         </div>
-        {form.formState.errors.acceptedTerms ? (
-          <p id={errorId} role="alert" className="text-caption text-danger">
-            {form.formState.errors.acceptedTerms.message}
-          </p>
-        ) : null}
       </div>
-      <Button type="submit" fullWidth loading={form.formState.isSubmitting}>
-        동의하고 가입 완료
-      </Button>
+      <StickyCta className="tablet:px-8">
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
+          동의하고 가입 완료
+        </Button>
+      </StickyCta>
     </form>
   );
 }
@@ -131,13 +143,11 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
 export function OnboardingPageTemplate() {
   const [queryRef, { refetch }] = useBackgroundQuery(MeDocument, { fetchPolicy: 'network-only' });
   return (
-    <div className="flex flex-1 flex-col">
+    <div data-page-form className="flex min-h-0 flex-col">
       <TopAppBar title="가입 설정" />
-      <div className="mx-auto w-full max-w-app px-4 py-8 tablet:px-8">
-        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-96 w-full" />}>
-          <OnboardingForm queryRef={queryRef} />
-        </AsyncBoundary>
-      </div>
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-96 w-full" />}>
+        <OnboardingForm queryRef={queryRef} />
+      </AsyncBoundary>
     </div>
   );
 }

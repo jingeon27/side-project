@@ -13,7 +13,7 @@ export { GroupVisibilityBadge } from './ui/discovery/GroupVisibilityBadge';
 export { LeaveGroupButton } from './ui/membership/LeaveGroupButton';
 export { MemberList } from './ui/members/MemberList';
 
-export { EditGroupProfileButton } from './ui/profile/EditGroupProfileButton';
+export { EditGroupProfileLink } from './ui/profile/EditGroupProfileLink';
 
 export { GroupImagePicker } from './ui/profile/GroupImagePicker';
-export { groupProfileSchema } from './model/group-profile.schema';
+export { groupProfileSchema, type TGroupProfileInput } from './model/group-profile.schema';

@@ -82,6 +82,12 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 바텀시트는 이 패키지의 조합 부품을 `responsive`로 쓰고 앱의 Root가 history·portal·overlay unmount를, Footer가 하단 취소 버튼을 연결한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
 
+## 페이지 폼의 하단 행동
+
+`FormActions`는 피식과 Game Mate가 함께 쓰는 저장·제출 영역이다. `children`, native div props, 바깥 `className`과 읽기 폭을 조절하는 `contentClassName`을 받는다. 안전 영역과 구분선·배경·간격을 공유하며, 앱은 화면 높이 안에서 본문만 스크롤하고 이 영역을 마지막 자식으로 배치한다. 외부 폼의 제출 버튼은 native `form` 속성으로 연결한다. 피식의 기존 `StickyCta` 진입점도 같은 컴포넌트를 사용한다.
+
+앱 Provider의 `VisualViewport`는 `--visual-viewport-height`와 `--visual-viewport-top`을 갱신한다. 전용 폼 프레임은 이 값을 사용해 키보드로 줄어든 화면을 따르고 사이트 푸터와 겹치는 하단 탐색은 숨긴다. 정보와 사진처럼 같은 편집 목적의 변경은 하단 저장 버튼 하나로 제출한다.
+
 ## 상태 모션
 
 `StatusAnimation`은 직접 작성한 벡터 Lottie 7종(`loading`, `success`, `error`, `empty`, `offline`, `game`, `cat`)을 제공한다. `className`, 의미 있는 그림의 `label`, 반복 여부 `loop`, 정지 대체 그림 `fallback`을 받는다. 주변 글자와 같은 의미면 label을 생략해 장식으로 둔다.

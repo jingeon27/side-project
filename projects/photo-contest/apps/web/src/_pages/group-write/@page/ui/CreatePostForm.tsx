@@ -135,9 +135,12 @@ export function CreatePostForm({
           }
         },
       )}
-      className="flex min-w-0 flex-1 flex-col [&_input]:scroll-mt-24 [&_input]:scroll-mb-48 [&_select]:scroll-mt-24 [&_select]:scroll-mb-48 [&_textarea]:scroll-mt-24 [&_textarea]:scroll-mb-48"
+      className="flex min-h-0 min-w-0 flex-1 flex-col [&_input]:scroll-mt-6 [&_input]:scroll-mb-6 [&_select]:scroll-mt-6 [&_select]:scroll-mb-6 [&_textarea]:scroll-mt-6 [&_textarea]:scroll-mb-6"
     >
-      <div className="flex-1 px-4 pt-6 pb-24 tablet:px-8">
+      <div
+        data-form-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 scroll-py-6 tablet:px-8"
+      >
         <div className="mx-auto grid w-full min-w-0 max-w-5xl grid-cols-1 gap-4 desktop:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] desktop:grid-rows-[auto_auto_1fr] desktop:items-start desktop:gap-x-10 desktop:gap-y-5">
           <TextField
             label="제목"
@@ -185,7 +188,7 @@ export function CreatePostForm({
           </div>
         </div>
       </div>
-      <StickyCta>
+      <StickyCta className="tablet:px-8" contentClassName="max-w-5xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <p className="hidden text-caption text-muted desktop:block">그룹의 공개 범위에 따라 게시돼요.</p>
           <Button

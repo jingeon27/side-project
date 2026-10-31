@@ -3071,6 +3071,7 @@ __metadata:
     "@types/express": "catalog:"
     "@types/node": "catalog:"
     "@types/supertest": "catalog:"
+    dayjs: "catalog:"
     es-toolkit: "catalog:"
     express: "catalog:"
     prisma: "catalog:"

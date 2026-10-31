@@ -14,3 +14,22 @@
     }
   }
 }
+
+@layer components {
+  [data-page-form] {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--visual-viewport-top, 0px);
+    height: var(--visual-viewport-height, 100dvh);
+  }
+  @media (width >= 1024px) {
+    #pc-main:has([data-desktop-nav]) [data-page-form] {
+      left: calc(var(--spacing) * 48);
+    }
+  }
+  @media (width >= 1280px) {
+    #pc-main:has([data-desktop-nav]) [data-page-form] {
+      left: calc(var(--spacing) * 56);
+    }
+  }
+}

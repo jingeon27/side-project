@@ -12,9 +12,6 @@
     margin-inline: auto;
   }
 
-  .profile-editor-identity {
-    margin-bottom: 24px;
-  }
   .support-action {
     display: grid;
     gap: 8px;
@@ -148,13 +145,26 @@
   .public-profile .settings-profile {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+  }
+  .profile-identity-text {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .public-profile .profile-identity-text :is(.user-badges, p) {
+    margin: 0;
+  }
+  .profile-identity-text h1 {
+    overflow-wrap: anywhere;
+    line-height: 1.35;
   }
   .profile-edit-trigger {
     grid-column: 1 / -1;
-    justify-self: end;
+    justify-self: start;
   }
   .profile-bio {
-    margin-block: 20px;
+    margin-block: 16px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     line-height: 1.8;
@@ -163,16 +173,14 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .profile-edit-section {
+  .profile-photo-section {
     display: grid;
-    gap: 16px;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid var(--color-line);
+    justify-items: start;
+    gap: 12px;
   }
-  .profile-edit-section > form {
-    display: grid;
-    gap: 16px;
+  .profile-photo-section > h2 {
+    font-size: var(--text-label);
+    font-weight: 600;
   }
   .profile-bio-count {
     margin: 0;
@@ -528,8 +536,11 @@
   .public-profile-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 32px;
-    margin: 24px 0;
+    gap: 24px;
+    margin: 20px 0 0;
+  }
+  .public-profile-actions {
+    margin-top: 20px;
   }
   .public-profile-stats dt {
     color: var(--color-muted);

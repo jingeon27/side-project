@@ -3,6 +3,7 @@
 import { useEffect, useRef, useTransition } from 'react';
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Images } from 'lucide-react';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
@@ -69,7 +70,11 @@ function FeedContent({
     });
   if (!photos.length && !hasMore)
     return (
-      <EmptyState title="아직 사진이 없어요" description="사진을 제출하면 친구들과 함께 볼 수 있어요." />
+      <EmptyState
+        icon={<Images />}
+        title="아직 사진이 없어요"
+        description="사진을 제출하면 친구들과 함께 볼 수 있어요."
+      />
     );
   return (
     <div className="grid items-start gap-4 tablet:grid-cols-2 desktop:grid-cols-3">

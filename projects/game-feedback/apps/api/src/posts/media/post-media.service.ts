@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
@@ -8,7 +9,7 @@ import type { SessionRequest } from '../../auth/session/session.types';
 import { ACTIVE_POST } from '../../common/content';
 import { ApiError } from '../../common/http/api-error';
 import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../../generated/prisma';
+import { PrismaClient, type MediaObject, type Prisma } from '../../generated/prisma';
 import { MediaStorage } from '../../media-storage/media-storage.service';
 import { UserVisibilityService } from '../../users/visibility/user-visibility.service';
 
@@ -23,21 +24,22 @@ export class PostMediaService {
   async register(
     uploaderId: string,
     metadata: { name: string; mimeType: string; size: number },
-    stored: { bytes: null; objectId: string },
+    stored: Pick<MediaObject, 'backend' | 'key'>,
   ) {
     return this.transactions.run(async (tx) => {
       await lockActiveUser({ client: tx, userId: uploaderId });
-      await (tx ?? this.db).postMedia.deleteMany({
-        where: { uploaderId, postId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+      await tx.postMedia.deleteMany({
+        where: { uploaderId, postId: null, createdAt: { lt: dayjs().subtract(24, 'hour').toDate() } },
       });
-      if ((await (tx ?? this.db).postMedia.count({ where: { uploaderId, postId: null } })) >= 20)
+      if ((await tx.postMedia.count({ where: { uploaderId, postId: null } })) >= 20)
         throw new ApiError(
           409,
           'MEDIA_LIMIT',
           '작성 대기 중인 파일이 많습니다. 기존 초안을 먼저 등록해주세요.',
         );
-      return (tx ?? this.db).postMedia.create({
-        data: { ...metadata, ...stored, uploaderId, uploadedAt: null },
+      const object = await tx.mediaObject.create({ data: stored, select: { id: true } });
+      return tx.postMedia.create({
+        data: { ...metadata, bytes: null, objectId: object.id, uploaderId, uploadedAt: null },
         select: { id: true, name: true, mimeType: true, size: true },
       });
     });

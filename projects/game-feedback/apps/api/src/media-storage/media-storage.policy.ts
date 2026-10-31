@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 /** Lifetime of a presigned upload form. S3 refuses a POST that starts after it. */
 export const MEDIA_UPLOAD_TTL_SECONDS = 300;
 /**
@@ -10,9 +12,9 @@ export const MEDIA_READ_TTL_SECONDS = 60;
 
 /** When the presigned form for a reservation made at `reservedAt` expires. */
 export function presignExpiry(reservedAt: Date) {
-  return new Date(reservedAt.getTime() + MEDIA_UPLOAD_TTL_SECONDS * 1000);
+  return dayjs(reservedAt).add(MEDIA_UPLOAD_TTL_SECONDS, 'second').toDate();
 }
 /** The last moment an upload whose form expires at `formExpiresAt` may be completed. */
 export function completionDeadline(formExpiresAt: Date) {
-  return new Date(formExpiresAt.getTime() + MEDIA_COMPLETE_GRACE_SECONDS * 1000);
+  return dayjs(formExpiresAt).add(MEDIA_COMPLETE_GRACE_SECONDS, 'second').toDate();
 }

@@ -1,6 +1,5 @@
 {
   "issues": [
-    ["exports", "projects/blog/apps/web/src/entities/article/lib/get-articles.ts", "getArticleById"],
     ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "defaultLocale"],
     ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "isLocale"],
     ["exports", "projects/blog/apps/web/src/shared/config/site.ts", "locales"],
@@ -60,7 +59,6 @@
     ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "formBody"],
     ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "jsonBody"],
     ["exports", "projects/photo-contest/apps/api/test/support/external-fetch.ts", "jsonResponse"],
-    ["exports", "projects/photo-contest/apps/mobile/e2e/support/e2e-env.ts", "E2E_AUTH_CALLBACK_URL"],
     ["exports", "projects/photo-contest/apps/mobile/e2e/support/seed.ts", "seedContestWithMemberPhoto"],
     ["exports", "projects/photo-contest/apps/mobile/src/features/navigation/index.ts", "toLinkTemplate"],
     ["exports", "projects/photo-contest/apps/web/e2e/support/photos.ts", "seedPhoto"],
@@ -83,7 +81,6 @@
     ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "GroupLeaderboard"],
     ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getMedalTone"],
     ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getRankLabel"],
-    ["exports", "projects/photo-contest/apps/web/src/features/ranking/index.ts", "getResultHeadline"],
     [
       "exports",
       "projects/photo-contest/apps/web/src/features/ranking/ui/GroupLeaderboard.tsx",
@@ -194,11 +191,6 @@
     ["types", "projects/game-feedback/apps/web/src/shared/theme/index.ts", "TThemePreference"],
     ["types", "projects/photo-contest/apps/mobile/src/features/analytics/index.ts", "TAnalyticsEvent"],
     ["types", "projects/photo-contest/apps/mobile/src/features/analytics/index.ts", "TAnalyticsEventName"],
-    [
-      "types",
-      "projects/photo-contest/apps/web/src/features/group/model/group-profile.schema.ts",
-      "TGroupProfileInput"
-    ],
     [
       "types",
       "projects/photo-contest/apps/web/src/features/moderation/model/moderation.schema.ts",

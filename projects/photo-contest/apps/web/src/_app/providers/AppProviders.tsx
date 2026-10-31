@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 
 import { OverlayProvider } from 'overlay-kit';
 
+import { VisualViewport } from '@side/design-system';
+
 import { AuthSessionSync } from '@/features/auth';
 import { PUBLIC_LANDING_PATHS } from '@/shared/constants/routes';
 import { NativeThemeSync, ThemeProvider, type TThemePreference } from '@/shared/model/theme';
@@ -44,6 +46,7 @@ export function AppProviders({
           <ToastProvider>
             <OverlayProvider>
               <HydrationMarker />
+              <VisualViewport />
               <RouteHistoryTracker />
               {/* 분석 초기화가 로그인 사용자 설정(AuthSessionSync)보다 먼저 돌도록 앞에 둔다. */}
               <AnalyticsTracker />

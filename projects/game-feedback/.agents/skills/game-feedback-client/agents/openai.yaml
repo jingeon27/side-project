@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Mate Client Architecture"
+  short_description: "Compose Game Mate Web and Admin state and UI boundaries"
+  default_prompt: "Use $game-feedback-client to implement this Game Mate Web or Admin flow."

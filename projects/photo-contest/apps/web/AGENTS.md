@@ -12,14 +12,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 홈 피드는 기존 `/`(`ROUTES.HOME`)를 유지한다. `/about`(서비스 소개)와 `/about/how-it-works`(이용 방법)는 별도 공개 페이지다. 공개 소개는 AppProviders의 SessionSync와 DesktopNavigation을 제외하며 인증 API 없이 읽힌다. 인증 진입 링크에는 prefetch=false를 둔다. 피드·그룹의 기존 세션·권한 검사는 유지한다.
 
-화면·상태·레이어는 `../../.agents/skills/frontend/SKILL.md`, 테스트 격리는 `../../.agents/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
+화면·상태·레이어는 [architecture](../../.agents/skills/photo-contest-web/references/architecture.md), 테스트 격리는 [photo-contest-testing](../../.agents/skills/photo-contest-testing/SKILL.md)를 따른다. 위 Next.js 자동 안내는 유지한다.
 
 여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
 
 ## 구조
 
 - `app`: 라우트·레이아웃·로딩/오류·proxy. 화면은 `@/_pages/<화면>` 배럴로만 가져온다.
-- `_pages`: sign·home·explore·me·group·group-create·group-write·group-contests·group-contest·invite·contest·legal·landing·how-it-works. `@page`가 feature를 조립하고 화면 전용 ui/feed/results/model과 테스트는 그 아래에 둔다. 가입 신청·카테고리·숨긴 글 관리와 작성 폼·알림 설정은 해당 페이지가 소유하며, 서버 모델을 사용한다는 이유로 features에 두지 않는다.
+- `_pages`: sign·home·explore·me·group·group-create·group-edit·group-write·group-contests·group-contest·invite·contest·legal·landing·how-it-works. `@page`가 feature를 조립하고 화면 전용 ui/feed/results/model과 테스트는 그 아래에 둔다. 가입 신청·카테고리·숨긴 글 관리와 작성 폼·알림 설정은 해당 페이지가 소유하며, 서버 모델을 사용한다는 이유로 features에 두지 않는다.
 - `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 루트 레이아웃이 감싸는 `shell`(데스크톱 고정 메뉴), 전역 스타일.
 - `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. `widgets/desktop-nav`: 데스크톱 왼쪽 고정 메뉴로, `_app/shell`이 레이아웃에서 한 번만 그려 화면 전환·로딩 중에도 남는다(`/sign`과 공개 소개 제외). `widgets/public-layout`은 공개 소개 두 화면의 머리글과 바닥글을 공유한다. `TopAppBar`는 화면 머리만 그린다.
 - `features`: 인증·그룹·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
@@ -52,14 +52,7 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 ## 앱 스킬
 
-| 작업 | 스킬 |
-| --- | --- |
-| 화면·라우트·SSR·로그인 게이트·앱 열 | `.agents/skills/page-structure/SKILL.md` |
-| 문서·정규화 캐시·offset·낙관적 응답 | `.agents/skills/apollo/SKILL.md` |
-| 실제 RHF·Zod 폼과 제출 상태 | `.agents/skills/form/SKILL.md` |
-| 시트·대화상자·뒤로 가기·포커스 | `.agents/skills/overlay/SKILL.md` |
-| Tailwind 토큰·모바일·안전 영역·사진 | `.agents/skills/styling/SKILL.md` |
-| Playwright·격리 서버·외부 경계 | `.agents/skills/e2e/SKILL.md` |
+[photo-contest-web](../../.agents/skills/photo-contest-web/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
 데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 중앙 피드와 오른쪽 인기 목록을 구분한다. 그룹 글쓰기는 상단바에, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 중앙 모달의 폭은 `max-w-6xl`로 확보한다. 댓글 시트는 768px 미만에서 높이 75%로 열리고 높이 조절 손잡이(`BottomSheet.Handle`)를 끌거나 방향키·Home·End로 키보드를 제외한 전체 높이까지 확장한다. 768px부터는 손잡이 없이 화면 높이의 중앙 모달(`tablet:h-full`)이다. 공통 BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하고, 시트 높이는 보이는 화면(visual viewport)을 따르며 스냅 오프셋만큼 안쪽 높이를 줄여 입력창을 화면 안에 둔다. 댓글 Footer에는 취소 대신 입력창만 두고 제목 옆에 "닫기" 버튼을 둔다.
 
@@ -71,6 +64,6 @@ PostMediaField와 PostLinkField는 파일 또는 링크 하나 이상을 RHF/Zod
 
 게시물의 수정·숨기기·삭제는 PostActionsMenu의 Base UI Menu에서 JSX로 직접 선언한다. 작성자·관리자에게만 메뉴를 보이고 숨기기는 관리자 전용이다. EditPostBottomSheet가 RHF/Zod와 카테고리 QueryRef·AsyncBoundary를 소유하며 제목·내용·분류를 함께 저장한다. 댓글은 PostCommentRow·ReplySection·Replies·Composer로 맥락을 나눈다. 원댓글과 한 단계 답글은 PostCommentsDocument의 parentId로 나누고 postCommentCount로 각 목록의 끝을 판단한다. replyCount는 펼침 버튼에, GalleryPost.commentCount는 답글 포함 전체 개수에 쓴다. 답글은 오래된 순이며 캐시 keyArgs에 postId·parentId를 포함한다. 원댓글 삭제 확인창은 답글도 함께 삭제됨을 알린다.
 
-그룹 프로필 편집은 EditGroupProfileBottomSheet의 QueryRef·AsyncBoundary·RHF가 소유하고 대표 사진은 프로필 사진과 함께 쓰는 `shared/ui/@core/image-file-field`의 ImageFileField(control·필드 이름을 받는다), 배경 사진은 GroupImagePicker가 선택·미리보기·교체·삭제를 맡는다. 대표 사진은 원본 그대로 RequestGroupAvatarUpload → uploadToStorage → CompleteGroupAvatarUpload로 준비하고(그룹 대표·배경 사진과 프로필·가입 사진은 이 세 단계를 `shared/api`의 `uploadWithTicket`으로 묶어 완료된 id를 받는다), 그 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.
+그룹 프로필 편집은 `/groups/[id]/edit` 전용 페이지의 QueryRef·AsyncBoundary·RHF가 소유하고 대표 사진은 프로필 사진과 함께 쓰는 `shared/ui/@core/image-file-field`의 ImageFileField(control·필드 이름을 받는다), 배경 사진은 GroupImagePicker가 선택·미리보기·교체·삭제를 맡는다. 대표 사진은 원본 그대로 RequestGroupAvatarUpload → uploadToStorage → CompleteGroupAvatarUpload로 준비하고(그룹 대표·배경 사진과 프로필·가입 사진은 이 세 단계를 `shared/api`의 `uploadWithTicket`으로 묶어 완료된 id를 받는다), 그 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.
 
 UI 폴더에 서로 다른 역할의 컴포넌트가 쌓이면 card·feed·compose·comments처럼 기능 안의 책임별 하위 폴더로 나눈다. 관련 테스트는 컴포넌트 옆에 두고 public index의 명시적 export를 유지한다. 파일 하나마다 기계적으로 폴더를 만들지 않는다.
