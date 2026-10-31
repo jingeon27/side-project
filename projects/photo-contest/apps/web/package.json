@@ -31,6 +31,7 @@
     "@sentry/nextjs": "catalog:",
     "@side/design-system": "workspace:*",
     "class-variance-authority": "catalog:",
+    "dayjs": "catalog:",
     "es-toolkit": "catalog:",
     "graphql": "catalog:",
     "lucide-react": "catalog:",
