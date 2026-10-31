@@ -69,6 +69,8 @@ describe('상태 모션의 브라우저 수명', () => {
   });
 
   it('어댑터의 정리를 반복 호출해도 플레이어와 구독을 한 번만 해제해야 한다', async () => {
+    const subscribe = vi.spyOn(preference, 'addEventListener');
+    const unsubscribe = vi.spyOn(preference, 'removeEventListener');
     const view = render(<span data-testid="motion-host" />);
     const detach = attachMotionPlayer(screen.getByTestId('motion-host'), {
       variant: 'loading',
@@ -81,6 +83,7 @@ describe('상태 모션의 브라우저 수명', () => {
     await act(async () => {});
     expect(current.destroy).toHaveBeenCalledOnce();
     expect(loadAnimation).toHaveBeenCalledOnce();
+    expect(unsubscribe).toHaveBeenCalledExactlyOnceWith('change', subscribe.mock.calls[0]?.[1]);
     view.unmount();
   });
 
@@ -106,7 +109,7 @@ describe('상태 모션의 브라우저 수명', () => {
     preference.matches = true;
     const view = render(<StatusAnimation variant="empty" label="비어 있어요" />);
     expect(loadAnimation).not.toHaveBeenCalled();
-    expect(view.container.querySelector('[data-motion-player]')).toBeNull();
+    expect(view.container.querySelector('[data-motion-player]')).not.toHaveAttribute('data-motion-ready');
     act(() => preference.change(false));
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
     const current = loadAnimation.mock.results[0]?.value;
@@ -117,6 +120,62 @@ describe('상태 모션의 브라우저 수명', () => {
     expect(screen.getByRole('img', { name: '비어 있어요' })).toBeVisible();
     act(() => preference.change(false));
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledTimes(2));
+  });
+
+  it('모션 설정 구독과 전환은 React를 다시 렌더링하지 않아야 한다', async () => {
+    preference.matches = true;
+    const commits = vi.fn();
+    const view = render(
+      <Profiler id="motion-preference" onRender={commits}>
+        <StatusAnimation variant="empty" />
+      </Profiler>,
+    );
+    const host = view.container.querySelector('[data-motion-player]');
+    const initialCommits = commits.mock.calls.length;
+    act(() => preference.change(false));
+    await waitFor(() => expect(host).toHaveAttribute('data-motion-ready'));
+    const current = loadAnimation.mock.results[0]?.value;
+    act(() => preference.change(true));
+    expect(current.destroy).toHaveBeenCalledOnce();
+    expect(host).not.toHaveAttribute('data-motion-ready');
+    await act(async () => {});
+    act(() => preference.change(false));
+    await waitFor(() => expect(loadAnimation).toHaveBeenCalledTimes(2));
+    expect(view.container.querySelector('[data-motion-player]')).toBe(host);
+    expect(commits).toHaveBeenCalledTimes(initialCommits);
+  });
+
+  it('빠른 모션 설정 전환 뒤 해제하면 늦은 생성이나 구독이 남지 않아야 한다', async () => {
+    const view = render(<StatusAnimation variant="loading" />);
+    await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
+    const current = loadAnimation.mock.results[0]?.value;
+    act(() => {
+      preference.change(true);
+      preference.change(false);
+      preference.change(true);
+    });
+    await act(async () => {});
+    expect(current.destroy).toHaveBeenCalledOnce();
+    expect(loadAnimation).toHaveBeenCalledOnce();
+    act(() => preference.change(false));
+    view.unmount();
+    await act(async () => {});
+    act(() => {
+      preference.change(true);
+      preference.change(false);
+    });
+    await act(async () => {});
+    expect(loadAnimation).toHaveBeenCalledOnce();
+    expect(current.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('모션 설정 API가 없는 브라우저에서는 정지 그림을 유지해야 한다', async () => {
+    vi.stubGlobal('matchMedia', undefined);
+    const view = render(<StatusAnimation variant="empty" label="비어 있어요" />);
+    await act(async () => {});
+    expect(loadAnimation).not.toHaveBeenCalled();
+    expect(screen.getByRole('img', { name: '비어 있어요' })).toBeVisible();
+    expect(view.container.querySelector('[data-motion-player]')).not.toHaveAttribute('data-motion-ready');
   });
 
   it('화면 밖과 숨겨진 탭에서는 멈추고 돌아오면 재개해야 한다', async () => {

@@ -1,29 +1,12 @@
 'use client';
 
-import { useCallback, useSyncExternalStore, type ComponentType, type ReactNode } from 'react';
+import { useCallback, type ComponentType, type ReactNode } from 'react';
 
 import { Cat, CircleAlert, CircleCheck, Gamepad2, Inbox, LoaderCircle, WifiOff } from 'lucide-react';
 
 import { cn } from '../../lib/cn.helper';
 import type { TMotionVariant } from './motion-assets';
 import { attachMotionPlayer } from './motion-player';
-
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-
-function subscribeMotionPreference(onChange: () => void) {
-  if (typeof window.matchMedia !== 'function') return () => {};
-  const preference = window.matchMedia(REDUCED_MOTION_QUERY);
-  preference.addEventListener('change', onChange);
-  return () => preference.removeEventListener('change', onChange);
-}
-
-function motionEnabled() {
-  return typeof window.matchMedia === 'function' && !window.matchMedia(REDUCED_MOTION_QUERY).matches;
-}
-
-function serverMotionEnabled() {
-  return false;
-}
 
 const GLYPHS = {
   loading: LoaderCircle,
@@ -52,7 +35,6 @@ export function StatusAnimation({
   fallback,
   loop = variant === 'loading' || variant === 'cat',
 }: IStatusAnimationProps) {
-  const enabled = useSyncExternalStore(subscribeMotionPreference, motionEnabled, serverMotionEnabled);
   const Glyph = GLYPHS[variant];
   const attachPlayer = useCallback(
     (node: HTMLSpanElement | null) => {
@@ -69,18 +51,16 @@ export function StatusAnimation({
       aria-hidden={label ? undefined : true}
       className={cn('relative inline-grid size-16 shrink-0 place-items-center text-accent', className)}
     >
-      {enabled ? (
-        <span
-          key={`${variant}:${loop}`}
-          ref={attachPlayer}
-          data-motion-player
-          className={cn(
-            'pointer-events-none absolute inset-0 [&_svg]:size-full',
-            (variant === 'loading' || variant === 'success' || variant === 'error') &&
-              '[&_path]:stroke-current',
-          )}
-        />
-      ) : null}
+      <span
+        key={`${variant}:${loop}`}
+        ref={attachPlayer}
+        data-motion-player
+        className={cn(
+          'pointer-events-none absolute inset-0 [&_svg]:size-full',
+          (variant === 'loading' || variant === 'success' || variant === 'error') &&
+            '[&_path]:stroke-current',
+        )}
+      />
       <span
         data-motion-fallback
         className="col-start-1 row-start-1 flex size-full items-center justify-center"
