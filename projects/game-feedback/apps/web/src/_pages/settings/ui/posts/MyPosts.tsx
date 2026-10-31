@@ -6,7 +6,17 @@ import { appRoutes } from '@game-feedback/bridge';
 import { Button, StatusAnimation } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
-import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  postListOptions,
+  PostListSkeleton,
+} from '@/features/post';
 import { UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary } from '@/shared/ui';
@@ -51,12 +61,20 @@ function MyPostList({ locale, userId }: IMyPostsProps) {
     <>
       <div className="post-list settings-post-list">
         {items.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
-            authorContent={<UserBadges author={post.author} compact />}
-          />
+          <PostCard key={post.id} board={post.board}>
+            <PostCardHeader post={post}>
+              <PostCardBoard post={post} />
+            </PostCardHeader>
+            <PostCardContent
+              post={post}
+              href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
+            >
+              <PostCardDetails post={post} />
+            </PostCardContent>
+            <PostCardFooter post={post} authorContent={<UserBadges author={post.author} compact />}>
+              <PostCardActivity post={post} />
+            </PostCardFooter>
+          </PostCard>
         ))}
       </div>
       {posts.hasNextPage && (

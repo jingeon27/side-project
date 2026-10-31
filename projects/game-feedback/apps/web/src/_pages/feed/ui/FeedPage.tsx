@@ -11,7 +11,17 @@ import { appRoutes } from '@game-feedback/bridge';
 import { Button, StatusAnimation } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  postListOptions,
+  PostListSkeleton,
+} from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
@@ -145,12 +155,21 @@ function FeedResults({
       <div className="post-list">
         {posts.map((post) => (
           <ServiceErrorBoundary key={post.id} title={t('게시글')} resetKey={post.id}>
-            <PostCard
-              post={post}
-              href={appRoutes.post(locale, post.id)}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact showTag={false} />}
-            />
+            <PostCard board={post.board}>
+              <PostCardHeader post={post}>
+                <PostCardBoard post={post} />
+              </PostCardHeader>
+              <PostCardContent post={post} href={appRoutes.post(locale, post.id)}>
+                <PostCardDetails post={post} />
+              </PostCardContent>
+              <PostCardFooter
+                post={post}
+                authorName={<AuthorLink author={post.author} locale={locale} />}
+                authorContent={<UserBadges author={post.author} compact showTag={false} />}
+              >
+                <PostCardActivity post={post} />
+              </PostCardFooter>
+            </PostCard>
           </ServiceErrorBoundary>
         ))}
       </div>

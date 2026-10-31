@@ -7,7 +7,17 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import { Button, IconButton, iconButtonVariants, Input } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  postListOptions,
+  PostListSkeleton,
+} from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
@@ -113,14 +123,24 @@ function SearchResults({
       {!posts.length && <p className="search-empty">{t('일치하는 게시글이 없어요')}</p>}
       <div className="post-list">
         {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            showBoardLabel={board?.kind !== 'FEEDBACK'}
-            href={appRoutes.post(locale, post.id, board?.kind, request.category)}
-            authorName={<AuthorLink author={post.author} locale={locale} />}
-            authorContent={<UserBadges author={post.author} compact />}
-          />
+          <PostCard key={post.id} board={post.board}>
+            <PostCardHeader post={post}>
+              <PostCardBoard post={post} showLabel={board?.kind !== 'FEEDBACK'} />
+            </PostCardHeader>
+            <PostCardContent
+              post={post}
+              href={appRoutes.post(locale, post.id, board?.kind, request.category)}
+            >
+              <PostCardDetails post={post} />
+            </PostCardContent>
+            <PostCardFooter
+              post={post}
+              authorName={<AuthorLink author={post.author} locale={locale} />}
+              authorContent={<UserBadges author={post.author} compact />}
+            >
+              <PostCardActivity post={post} />
+            </PostCardFooter>
+          </PostCard>
         ))}
       </div>
       {results.hasNextPage && (

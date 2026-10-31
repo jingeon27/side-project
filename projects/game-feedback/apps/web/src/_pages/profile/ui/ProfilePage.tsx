@@ -11,7 +11,16 @@ import { ButtonLink } from '@side/design-system/next';
 import { useSession } from '@/features/auth';
 import { FollowControls } from '@/features/follow';
 import { ProfileSnapshot } from '@/features/game-profile';
-import { PostCard, userPostListOptions } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  userPostListOptions,
+} from '@/features/post';
 import { AuthorLink, profileOptions, UserBadges } from '@/features/user';
 import type { PostList, PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -167,13 +176,24 @@ function ProfilePosts({
       {posts.data.items.length === 0 && <p className="muted">{t('공개한 게시글이 없어요.')}</p>}
       <div className="post-list">
         {posts.data.items.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
-            authorName={<AuthorLink author={post.author} locale={locale} />}
-            authorContent={<UserBadges author={post.author} compact />}
-          />
+          <PostCard key={post.id} board={post.board}>
+            <PostCardHeader post={post}>
+              <PostCardBoard post={post} />
+            </PostCardHeader>
+            <PostCardContent
+              post={post}
+              href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
+            >
+              <PostCardDetails post={post} />
+            </PostCardContent>
+            <PostCardFooter
+              post={post}
+              authorName={<AuthorLink author={post.author} locale={locale} />}
+              authorContent={<UserBadges author={post.author} compact />}
+            >
+              <PostCardActivity post={post} />
+            </PostCardFooter>
+          </PostCard>
         ))}
       </div>
       <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
