@@ -25,6 +25,7 @@
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "catalog:",
     "@sentry/nextjs": "catalog:",
+    "dayjs": "catalog:",
     "es-toolkit": "catalog:",
     "github-slugger": "^2.0.0",
     "image-size": "^2.0.2",

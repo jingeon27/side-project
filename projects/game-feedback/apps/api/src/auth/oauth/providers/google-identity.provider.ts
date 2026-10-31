@@ -1,5 +1,7 @@
 import { createPublicKey, verify, type JsonWebKey } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { OAuthException } from '../oauth.exception';
 import type { IdentityProvider } from './identity-provider';
 
@@ -77,7 +79,7 @@ export class GoogleIdentityProvider implements IdentityProvider {
         iat?: number;
         nonce?: string;
       };
-      const now = Date.now() / 1000;
+      const now = dayjs().valueOf() / 1000;
       const audience = Array.isArray(claims.aud)
         ? claims.aud.includes(this.clientId) && claims.azp === this.clientId
         : claims.aud === this.clientId;

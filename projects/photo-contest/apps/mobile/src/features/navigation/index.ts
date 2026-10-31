@@ -1,5 +1,5 @@
 export { resolveBackPress } from './lib/back-press';
-export { isRelativeWebPath, toLinkTemplate } from './lib/deep-link';
+export { isRelativeWebPath } from './lib/deep-link';
 export { decideNavigation, decideOpenWindow } from './lib/navigation-policy';
 export { LINK_OPTIONS, toWebUrl } from './model/link-options';
 export { openExternalUrl } from './model/open-external';

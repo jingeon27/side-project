@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { match, P } from 'ts-pattern';
 
 import { ExpoPushTransport, PushProviderError, type IPushMessage } from './index';
@@ -38,12 +39,12 @@ export class PushDispatcher {
     private readonly transport: ExpoPushTransport,
   ) {}
 
-  async run(now = new Date()): Promise<void> {
+  async run(now = dayjs().toDate()): Promise<void> {
     const jobs = await this.store.due(now);
     const claimed: { job: IPushJob; lease: string }[] = [];
     for (const job of jobs) {
       const lease = randomUUID();
-      if (await this.store.claim(job.id, lease, now, new Date(now.getTime() + 120_000)))
+      if (await this.store.claim(job.id, lease, now, dayjs(now.getTime() + 120_000).toDate()))
         claimed.push({ job, lease });
     }
     const pending: { job: IPushJob; lease: string; message: IPushMessage }[] = [];
@@ -73,7 +74,7 @@ export class PushDispatcher {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
               ticketId: ticket.id,
-              nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
+              nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
             });
             continue;
           }
@@ -99,7 +100,7 @@ export class PushDispatcher {
           if (!result) {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
-              nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
+              nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
             });
             continue;
           }
@@ -117,7 +118,7 @@ export class PushDispatcher {
         for (const item of receipts)
           await this.store.finish(item.job.id, item.lease, {
             status: 'TICKET',
-            nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
+            nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
           });
       }
     }
@@ -129,9 +130,9 @@ export class PushDispatcher {
       status: retryable && attempts < MAX_ATTEMPTS ? 'PENDING' : 'FAILED',
       attempts,
       ticketId: null,
-      nextAttemptAt: new Date(
+      nextAttemptAt: dayjs(
         now.getTime() + Math.max(delay ?? 0, 30_000 * 2 ** Math.min(attempts - 1, MAX_ATTEMPTS - 1)),
-      ),
+      ).toDate(),
     });
   }
 }

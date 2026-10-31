@@ -58,6 +58,12 @@ Clarity에는 처음에 동의 신호를 보내지 않는다. Clarity가 EEA·�
 
 콘텐츠 검증, TypeScript, ESLint, Vitest **100개**, Production build(정적 페이지 **177개**), 데스크톱·모바일 Playwright **40개**를 통과했다. 분석 ID를 비운 CI와 같은 조건이다. 별도로 가짜 측정 ID로 빌드하고 외부 요청을 모두 차단한 Chromium에서 서울·베를린 시간대 모두 배너·떠 있는 버튼 없이 GA·Clarity를 로드하고 Clarity에 초기 동의 신호를 보내지 않음, 안내 페이지의 ‘수집 끄기’ 뒤 `denied` 저장·GA 비활성화와 다음 페이지의 외부 요청 0건, ‘다시 켜기’ 뒤 저장 값 제거를 확인했다. 실제 GA4·Clarity 대시보드 수신은 확인하지 않았다.
 
+## 2026-10-31 날짜 처리와 미사용 공개 코드 정리
+
+- develop 기준 유지보수 후속으로 기존 catalog의 dayjs를 명시적으로 연결했다. 콘텐츠의 날짜 전용 값은 KST 자정, 푸터 연도는 UTC, RSS는 기존 RFC 문자열 형식을 유지하며 생성·파싱·비교 경계만 옮겼다. 발행 콘텐츠·언어별 slug·SEO 경로는 변경하지 않았다.
+- 소비자가 없는 i18n navigation 파일과 site/icon의 미사용 export만 제거했다. 새 공통 UI나 상태 store를 추가하지 않았다. 전역 보안 권고·미사용 기준선의 처리 범위는 [감사 후속 과제](../../../docs/code-quality-followups.md)에 기록했다.
+- content validation(60개 언어별 글·27개 redirect), 타입·lint·unit/UI 122개, production build가 통과했다. 실제 운영 빌드의 데스크톱/모바일 Chromium E2E 48개가 통과해 글·검색·시간대·테마·RSS/OG·공개 경로를 확인했다. 실제 배포·DNS·분석 수신을 검증한 결과로 해석하지 않는다.
+
 ## 제목에 날짜 없는 기록
 
 ### 범위와 결정

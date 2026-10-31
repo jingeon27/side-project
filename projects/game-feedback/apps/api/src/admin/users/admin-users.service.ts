@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
@@ -35,7 +36,7 @@ export class AdminUsersService {
           where: { id },
           data: {
             isVerified: input.isVerified,
-            verifiedAt: input.isVerified ? (target.verifiedAt ?? new Date()) : null,
+            verifiedAt: input.isVerified ? (target.verifiedAt ?? dayjs().toDate()) : null,
           },
         });
         await (tx ?? this.db).auditLog.create({
@@ -67,7 +68,7 @@ export class AdminUsersService {
         const updated = await (tx ?? this.db).user.update({
           where: { id },
           data: {
-            bannedAt: input.banned ? (target.bannedAt ?? new Date()) : null,
+            bannedAt: input.banned ? (target.bannedAt ?? dayjs().toDate()) : null,
             banReason: input.banned ? input.reason : null,
           },
         });

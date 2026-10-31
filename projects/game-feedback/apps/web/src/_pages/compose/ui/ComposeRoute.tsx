@@ -2,8 +2,7 @@ import 'server-only';
 
 import { notFound } from 'next/navigation';
 
-import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
-import { BattleModeSchema, CoachingRoleSchema } from '@game-feedback/contracts';
+import { appRoutes, BoardQuerySchema } from '@game-feedback/bridge';
 
 import { boardBySlug } from '@/features/board';
 import { getPublicCategories } from '@/features/category/index.server';
@@ -24,15 +23,13 @@ export async function ComposeRoute({
   battleMode?: unknown;
   coachingRole?: unknown;
 }) {
-  const selected = typeof board === 'string' ? boardBySlug(board) : undefined;
-  const parsedGame = GameSlugSchema.safeParse(game ?? 'clash-royale');
-  if ((board !== undefined && !selected) || !parsedGame.success) notFound();
-  const battle = BattleModeSchema.optional().safeParse(battleMode);
-  if (!battle.success || (battle.data && selected?.kind !== 'FRIENDLY')) notFound();
-  const coaching = CoachingRoleSchema.optional().safeParse(coachingRole);
-  if (!coaching.success || (coaching.data && selected?.kind !== 'COACHING')) notFound();
+  const hasCategoryContext = board !== undefined || (game !== undefined && game !== null);
+  const parsed = BoardQuerySchema.safeParse({ board, game: game ?? undefined, battleMode, coachingRole });
+  if (!parsed.success) notFound();
+  const context = parsed.data;
+  const selected = context.board ? boardBySlug(context.board) : undefined;
   const categories = (await getPublicCategories()).filter((item) => item.active);
-  const category = categories.find((item) => item.slug === parsedGame.data);
+  const category = categories.find((item) => item.slug === context.game);
   if (!category) notFound();
   return (
     <CommunityPage locale={locale} topbar={null}>
@@ -40,14 +37,14 @@ export async function ComposeRoute({
         locale={locale}
         categories={categories}
         board={selected?.kind ?? 'FEEDBACK'}
-        categoryId={selected || game ? category.id : undefined}
-        battleMode={battle.data}
-        coachingRole={coaching.data}
+        categoryId={hasCategoryContext ? category.id : undefined}
+        battleMode={context.battleMode}
+        coachingRole={context.coachingRole}
         parent={
           selected
             ? appRoutes.boards(locale, selected.slug, undefined, category.slug, {
-                battleMode: battle.data,
-                coachingRole: coaching.data,
+                battleMode: context.battleMode,
+                coachingRole: context.coachingRole,
               })
             : appRoutes.feed(locale)
         }

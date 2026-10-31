@@ -3,12 +3,10 @@ import { randomBytes } from 'node:crypto';
 import type { BrowserContext } from '@playwright/test';
 
 import {
-  createLegacyTestContest,
   createTestImage,
   createTestUser,
   graphqlRequest,
   uploadTestPostMedia,
-  uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
 
 import { E2E_API_URL, E2E_WEB_ORIGIN } from './e2e-env';
@@ -67,46 +65,6 @@ export async function joinGroup(memberCookie: string, inviteToken: string) {
   await gql(memberCookie, 'mutation JoinGroup($token: String!) { joinGroup(token: $token) { id } }', {
     token: inviteToken,
   });
-}
-
-/** 지금 제출을 받는 대회 */
-export async function seedOpenContest(ownerCookie: string, groupId: string, title = '가을 사진전') {
-  return createLegacyTestContest(E2E_API_URL, {
-    cookie: ownerCookie,
-    groupId,
-    title,
-    origin: E2E_WEB_ORIGIN,
-  });
-}
-
-/** 업로드 티켓으로 실제 이미지를 올리고 제출한다. */
-export async function seedSubmission(cookie: string, contestId: string, caption = '고양이가 놀란 순간') {
-  const uploadId = await uploadTestSubmissionMedia(E2E_API_URL, {
-    cookie,
-    origin: E2E_WEB_ORIGIN,
-    contestId,
-    body: await createTestImage(),
-    contentType: 'image/png',
-  });
-  const data = await gql<{ createSubmission: { id: string } }>(
-    cookie,
-    `mutation CreateSubmission($contestId: ID!, $uploadId: ID!, $caption: String!) {
-      createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: true) { id }
-    }`,
-    { contestId, uploadId, caption },
-  );
-  return data.createSubmission;
-}
-
-/** 방장과 멤버가 있는 그룹, 진행 중인 대회, 멤버가 낸 사진 한 장 */
-export async function seedContestWithMemberPhoto() {
-  const ownerCookie = await signUp(uniqueNickname('방장'));
-  const memberCookie = await signUp(uniqueNickname('멤버'));
-  const group = await seedGroup(ownerCookie);
-  await joinGroup(memberCookie, group.inviteToken);
-  const contest = await seedOpenContest(ownerCookie, group.id);
-  const submission = await seedSubmission(memberCookie, contest.id);
-  return { ownerCookie, memberCookie, group, contest, submission };
 }
 
 /** 기간 없는 그룹과 회원의 게시물을 실제 업로드 API로 만든다. */

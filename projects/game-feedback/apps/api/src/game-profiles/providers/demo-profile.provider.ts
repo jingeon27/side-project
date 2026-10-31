@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { GameProfile } from '@game-feedback/contracts';
 
 import type { ProfileProvider } from './profile-provider';
@@ -25,7 +27,7 @@ export class DemoProfileProvider implements ProfileProvider {
       ].map((name, index) => ({ id: 26000000 + index, name, level: 14, iconUrl: null })),
       verification: 'UNVERIFIED',
       source: 'DEMO',
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: dayjs().toISOString(),
     };
   }
 }

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
 import { isProduction } from '../../config/env';
@@ -32,7 +33,7 @@ export function mediaRateLimit(): RequestHandler {
       next();
       return;
     }
-    res.setHeader('Retry-After', String(Math.max(Math.ceil((resetAt - Date.now()) / 1000), 1)));
+    res.setHeader('Retry-After', String(Math.max(Math.ceil((resetAt - dayjs().valueOf()) / 1000), 1)));
     res.status(429).json({ message: MEDIA_RATE_LIMITED });
   };
 }

@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { IncomingHttpHeaders } from 'node:http';
 import { isIP } from 'node:net';
 
+import dayjs from 'dayjs';
+
 /**
  * The Next.js server calls the API over the private network, so the socket address is always the web
  * container. It forwards the visitor address (or `internal` for cookie-free cached reads) with an HMAC
@@ -30,7 +32,7 @@ export function signForwardedClient(key: Buffer, client: string, timestamp: numb
 export function verifiedForwardedClient(
   headers: IncomingHttpHeaders,
   key: Buffer | undefined,
-  now = Date.now(),
+  now = dayjs().valueOf(),
 ): string | null {
   if (!key) return null;
   const client = headers[FORWARDED_CLIENT_HEADERS.client];

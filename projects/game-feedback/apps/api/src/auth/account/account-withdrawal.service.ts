@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { DISCOVERY_CACHE_TAG, POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
@@ -25,7 +26,7 @@ export class AccountWithdrawalService {
         if (user.bannedAt) await recordBannedIdentities(tx, userId);
         if (!user.bannedAt) await clearBannedIdentities(tx, userId);
 
-        const withdrawnAt = new Date();
+        const withdrawnAt = dayjs().toDate();
         await tx.post.updateMany({
           where: { authorId: userId },
           data: {

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
 
 type AnalyticsEventMap = {
@@ -116,7 +118,7 @@ export function initializeAnalytics(): void {
       ad_user_data: 'denied',
       ad_personalization: 'denied',
     });
-    window.gtag('js', new Date());
+    window.gtag('js', dayjs().toDate());
     window.gtag('config', measurementId, {
       send_page_view: false,
       allow_google_signals: false,

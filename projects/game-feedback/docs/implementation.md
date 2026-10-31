@@ -930,6 +930,18 @@ Services CI에서 Web E2E 164개 중 데스크톱 탐색 1개가 실패했다. �
 - API는 웹과 같은 catalog의 dayjs를 명시적으로 선언했다. 새 버전은 추가하지 않았으며 API manifest와 루트 lockfile을 함께 갱신했다. TTL과 보존 기간은 초·시간 단위의 경과 시간으로 유지해 달력 날짜나 DST 정책을 바꾸지 않았다.
 - API 단위·통합 515개, Web 단위·UI 305개, 폼 배치·프로필 관련 E2E 8개, 프로젝트 check·루트 Knip·immutable install을 통과했다. DST 전환 오프셋을 포함한 만료 helper의 추가 2개 검사에서 원본 불변성, Date 계약과 정확한 밀리초 TTL을 확인했다. 공개 계약·생성 SDK diff는 없으며 최신 HEAD CI는 해당 실행 결과로 따로 확인한다.
 
+## 2026-10-31 보안 후속과 화면별 조립·검증 계약 정리
+
+- 기준은 PR #177 병합 뒤 `origin/develop`의 `34c96c03`이다. `BoardsPage`의 공통 탐색 셸과 5개 게시판의 작성·필터·카드 조립을 분리했다. 목록의 snapshot/QueryClient/페이지 추가/오류 경계만 공유하며, 각 게시판이 도메인 요약을 직접 선택한다. 홈·검색·공개 프로필·내 작성글의 카드도 메타·본문·작성자·활동 영역을 직접 조립한다.
+- 글쓰기·게시판·공개 문서 판정과 bridge의 경로 해석기가 같은 `BoardQuerySchema`를 사용한다. 게임 기본값과 미선택 분류는 보존하고, 잘못된 필터 조합·배열 입력은 조회 전에 거부한다. 브라우저에서 확인한 스트리밍 이후의 200 응답은 Proxy의 선검증 404/noindex/no-store로 차단했다. 클라이언트 필터 fallback과 권한 검사는 느슨하게 만들지 않았다.
+- `Providers`와 `ServiceProviders`의 공개 진입점을 하나로 정리했다. 서버 전용 `serviceContext`, 테마·언어의 기존 `useSyncExternalStore` SSR snapshot, 인스턴스별 QueryClient와 사용자별 Overlay 수명은 유지한다. 부모 재렌더와 두 인스턴스의 캐시 독립성을 실제 Provider 테스트로 확인했다.
+- API·웹의 날짜 생성·TTL·비교는 dayjs로 옮겼다. 밀리초 경과 시간과 KST/UTC 정책, 외부 Date 계약을 유지한다. 커서의 native 파싱 호환 경계는 보존하며, 캐시 재시도 테스트는 Date.now spy 대신 Date만 가짜 시계로 제어한다. 단조 시계와 생성 코드를 치환하지 않았다.
+- 참조 없는 export/파일만 제거했다. Expo 모바일의 실제 Playwright CLI 진입점은 Knip에 등록하고 API의 기존 security 호환 export는 보존했다. 공통 의존성 패치·기준선 변경 사유와 남은 보안 권고는 [감사 후속 과제](../../../docs/code-quality-followups.md)에 기록했다. 루트 규칙을 앱에 중복 복사하지 않았다.
+- 검증: 프로젝트 check, API unit 256개·실제 DB/S3 integration 261개, SDK 78개·bridge 38개·Mobile 63개·Admin 25개가 통과했다. Web은 Provider·게시판별 SSR/페이지 추가·Proxy·작성 경계 회귀를 포함해 다시 검사했다. 실제 운영 빌드의 관련 브라우저 25개가 모바일·데스크톱, JavaScript 없는 본문, 필터·작성·초안·상위 경로·언어·테마·hydration을 확인했다. Metro Android/iOS export도 통과했다. 실제 OAuth/Supercell·서명된 기기 앱·운영 배포는 이번 결과에 포함하지 않는다.
+- 검증 중 발견한 생성 경합은 분리했다. Prisma generate를 포함한 프로젝트 검사와 API 통합을 동시에 실행했을 때 모듈 import가 실패해 해당 실행은 통과로 세지 않았다. 생성이 끝난 뒤 브라우저→API integration을 순서대로 실행해 위 결과를 얻었다. 날짜 시계와 URL 응답의 실제 실패도 수정 후 전체 관련 묶음을 다시 실행했다.
+
+- 최종 Web Vitest는 작성 경계 회귀까지 포함해 **334개 전체 통과**했다.
+
 ## 제목에 날짜 없는 기록
 
 ### 구현 범위

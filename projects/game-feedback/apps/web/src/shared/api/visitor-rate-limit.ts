@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 /** 방문자 주소마다 분당 받는 게시글·프로필 상세 문서·RSC 요청 수. API의 익명 조회 예산(분당 240)과 같다. */
 export const PUBLIC_LOOKUP_PAGES_PER_MINUTE = 240;
 
@@ -16,7 +18,7 @@ export class VisitorRateLimiter {
   ) {}
 
   /** Returns zero when allowed, otherwise the Retry-After value in seconds. */
-  consume(visitor: string, now = Date.now()) {
+  consume(visitor: string, now = dayjs().valueOf()) {
     const current = this.windows.get(visitor);
     const window = current && now - current.start < this.windowMs ? current : { start: now, count: 0 };
     window.count += 1;

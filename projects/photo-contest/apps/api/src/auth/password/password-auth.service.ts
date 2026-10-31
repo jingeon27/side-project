@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request, Response } from 'express';
 import { match } from 'ts-pattern';
 
@@ -27,10 +28,10 @@ function clientAddress(req: Request) {
 }
 
 function bucketOf(key: string) {
-  const bucket = Math.floor(Date.now() / AUTH_ATTEMPT_WINDOW_MS);
+  const bucket = Math.floor(dayjs().valueOf() / AUTH_ATTEMPT_WINDOW_MS);
   return {
     keyHash: sha256Hex(`${key}:${bucket}`),
-    expiresAt: new Date((bucket + 1) * AUTH_ATTEMPT_WINDOW_MS),
+    expiresAt: dayjs((bucket + 1) * AUTH_ATTEMPT_WINDOW_MS).toDate(),
   };
 }
 

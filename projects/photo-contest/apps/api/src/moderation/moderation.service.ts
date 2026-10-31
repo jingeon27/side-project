@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -67,12 +68,15 @@ export class ModerationService {
       });
       // 이관된 게시물은 사진과 함께 cascade로 지워진다. 그 원본 업로드를 정리 대상으로 돌린다.
       if (migrated?.uploadId)
-        await tx.postUpload.update({ where: { id: migrated.uploadId }, data: { expiresAt: new Date(0) } });
+        await tx.postUpload.update({
+          where: { id: migrated.uploadId },
+          data: { expiresAt: dayjs(0).toDate() },
+        });
       await (tx ?? this.db).submission.delete({ where: { id: submission.id } });
       // 업로드 행은 정리 작업이 지우도록 만료시켜 둔다.
       await (tx ?? this.db).upload.update({
         where: { id: submission.uploadId },
-        data: { expiresAt: new Date() },
+        data: { expiresAt: dayjs().toDate() },
       });
       return upload?.imageKey ?? null;
     });
