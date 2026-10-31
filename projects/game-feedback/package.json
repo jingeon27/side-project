@@ -21,6 +21,7 @@
     "lint": "eslint .",
     "typecheck": "node scripts/tasks.ts check",
     "test": "node scripts/tasks.ts test",
+    "test:unit": "node scripts/tasks.ts test:unit",
     "test:e2e": "node scripts/tasks.ts test:e2e",
     "codegen": "node scripts/tasks.ts codegen",
     "build": "node scripts/tasks.ts build",

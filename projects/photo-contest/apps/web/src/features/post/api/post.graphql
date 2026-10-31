@@ -69,6 +69,7 @@ mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!
   }
 }
 mutation CreatePost(
+  $clientRequestId: String
   $categoryId: ID
   $contestId: ID
   $groupId: ID!
@@ -79,6 +80,7 @@ mutation CreatePost(
   $rightsConfirmed: Boolean!
 ) {
   createPost(
+    clientRequestId: $clientRequestId
     categoryId: $categoryId
     contestId: $contestId
     groupId: $groupId

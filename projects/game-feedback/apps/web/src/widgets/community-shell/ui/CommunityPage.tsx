@@ -11,17 +11,19 @@ import { RouteViewport } from '@/shared/navigation';
 import { ServiceErrorBoundary } from '@/shared/ui';
 
 import { ChatUnreadContext } from './CommunityShell';
-import { GameBoardNavigation } from './GameBoardNavigation';
-import { LeftSidebar } from './LeftSidebar';
+import { GameBoardNavigation } from './navigation/GameBoardNavigation';
+import { LeftSidebar } from './navigation/LeftSidebar';
 
 export function CommunityPage({
   children,
   locale,
   topbar,
+  feedHeading,
 }: {
   children: ReactNode;
   locale: string;
   topbar: ReactNode;
+  feedHeading?: ReactNode;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
@@ -43,9 +45,13 @@ export function CommunityPage({
         </div>
         <RouteViewport>
           <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
-            <Suspense fallback={null}>
-              <BoardNavigationRoute locale={locale} />
-            </Suspense>
+            {feedHeading ? (
+              <GameBoardNavigation locale={locale} path={home} heading={feedHeading} />
+            ) : (
+              <Suspense fallback={null}>
+                <BoardNavigationRoute locale={locale} />
+              </Suspense>
+            )}
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>

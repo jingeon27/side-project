@@ -50,9 +50,9 @@ async function check() {
   await workspace('admin', 'lint');
 }
 
-async function test() {
+async function test({ unitOnly = false } = {}) {
   await prerequisites();
-  await workspace('api', 'test', { ENVIRONMENT: 'test' });
+  await workspace('api', unitOnly ? 'test:unit' : 'test', { ENVIRONMENT: 'test' });
   await workspace('sdk', 'test');
   await workspace('bridge', 'test');
   await workspace('web', 'test');
@@ -90,12 +90,13 @@ export async function runTask(task: string | undefined) {
     .with('setup', () => setup())
     .with('codegen', prerequisites)
     .with('check', check)
-    .with('test', test)
+    .with('test', () => test())
+    .with('test:unit', () => test({ unitOnly: true }))
     .with('test:e2e', endToEnd)
     .with('test:mobile:e2e', mobileEndToEnd)
     .with('build', build)
     .otherwise(() => {
-      throw new Error('Usage: tasks.ts setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
+      throw new Error('Usage: tasks.ts setup|codegen|check|test|test:unit|test:e2e|test:mobile:e2e|build');
     });
 }
 

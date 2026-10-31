@@ -1,0 +1,169 @@
+'use client';
+
+import { useMutation } from '@apollo/client/react';
+
+import { GroupImagePicker, prependMyGroup, uploadGroupImages } from '@/features/group';
+import {
+  CompleteGroupAvatarUploadDocument,
+  CreateGroupDocument,
+  GroupVisibility,
+  MyGroupsDocument,
+  RequestGroupAvatarUploadDocument,
+  UpdateGroupProfileDocument,
+} from '@/shared/api/generated';
+import { StorageUploadError } from '@/shared/api/upload-to-storage.helper';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
+import { Button } from '@/shared/ui/@core/button';
+import { StickyCta } from '@/shared/ui/@core/sticky-cta';
+import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
+
+import { createGroupSchema } from '../model/group.schema';
+import { GroupVisibilityField } from './GroupVisibilityField';
+
+export function CreateGroupForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: (id: string) => void;
+  onCancel: () => void;
+}) {
+  const form = useZodForm(createGroupSchema, {
+    defaultValues: {
+      name: '',
+      description: '',
+      visibility: GroupVisibility.Public,
+      avatar: null,
+      cover: null,
+      completedImages: {},
+    },
+  });
+  // 사진 업로드를 재시도할 때 이미 만든 그룹을 다시 만들지 않는다.
+  const [create, { data: created }] = useMutation(CreateGroupDocument, {
+    update: (cache, { data }) => {
+      if (data) prependMyGroup(cache, data.createGroup);
+    },
+  });
+  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument, { fetchPolicy: 'no-cache' });
+  const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
+  const [saveProfile] = useMutation(UpdateGroupProfileDocument, {
+    refetchQueries: [MyGroupsDocument],
+    awaitRefetchQueries: true,
+  });
+  const beginSubmit = useAbortOnClose(true);
+  return (
+    <form
+      aria-label="그룹 만들기"
+      noValidate
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      onSubmit={form.handleSubmit(async ({ name, description, visibility, avatar, cover }) => {
+        const signal = beginSubmit();
+        try {
+          const group =
+            created?.createGroup ??
+            (await create({ variables: { name, description, visibility } })).data?.createGroup;
+          if (!group) return;
+          throwIfClosed(signal);
+          const { avatarId, coverId } = await uploadGroupImages({
+            groupId: group.id,
+            images: { avatar, cover },
+            completedImages: form.getValues('completedImages') ?? {},
+            onCompleted: (kind, image) => form.setValue(`completedImages.${kind}`, image),
+            request: async (image) =>
+              (
+                await requestUpload({
+                  variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
+                })
+              ).data?.requestGroupAvatarUpload,
+            complete: async (uploadId) =>
+              (await completeUpload({ variables: { uploadId } })).data?.completeGroupAvatarUpload.id,
+            signal,
+          });
+          throwIfClosed(signal);
+          if (avatarId || coverId || created?.createGroup)
+            await saveProfile({ variables: { groupId: group.id, name, description, avatarId, coverId } });
+          trackEvent(ANALYTICS_EVENT.GroupCreated, { group_id: group.id });
+          if (!signal.aborted) onCreated(group.id);
+        } catch (error) {
+          if (signal.aborted) {
+            notifyClosedSubmit('그룹 사진을 저장하지 않았어요');
+            return;
+          }
+          if (error instanceof StorageUploadError)
+            form.setError('root', { message: '사진을 올리지 못했어요. 다시 시도해 주세요.' });
+        }
+      })}
+    >
+      <div
+        data-form-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 scroll-py-6 tablet:px-8"
+      >
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+          <TextField
+            required
+            label="그룹 이름"
+            maxLength={40}
+            placeholder="예: 웃음 참기 연구소"
+            error={form.formState.errors.name?.message}
+            disabled={form.formState.isSubmitting}
+            {...form.register('name')}
+          />
+          <GroupVisibilityField form={form} disabled={form.formState.isSubmitting || Boolean(created)} />
+          <TextArea
+            label="그룹 소개"
+            maxLength={500}
+            rows={3}
+            error={form.formState.errors.description?.message}
+            disabled={form.formState.isSubmitting}
+            {...form.register('description')}
+          />
+          <details className="border-t border-line pt-3">
+            <summary className="min-h-touch cursor-pointer content-center text-label text-ink active:text-muted">
+              그룹 사진 추가
+              <FieldRequirement />
+              {form.formState.errors.cover || form.formState.errors.avatar ? (
+                <span className="ml-2 text-caption text-danger">선택한 사진을 확인해 주세요</span>
+              ) : null}
+            </summary>
+            <div className="flex flex-col gap-6 pt-4">
+              <GroupImagePicker
+                label="그룹 배경 사진"
+                cover
+                disabled={form.formState.isSubmitting}
+                error={form.formState.errors.cover?.message}
+                onChange={(file) => form.setValue('cover', file, { shouldValidate: true })}
+              />
+              <GroupImagePicker
+                label="그룹 프로필 사진"
+                disabled={form.formState.isSubmitting}
+                error={form.formState.errors.avatar?.message}
+                onChange={(file) => form.setValue('avatar', file, { shouldValidate: true })}
+              />
+            </div>
+          </details>
+          {form.formState.errors.root?.message ? (
+            <p role="alert" className="text-body text-danger">
+              {form.formState.errors.root.message}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <StickyCta className="px-5 tablet:px-8" contentClassName="max-w-3xl">
+        <div className="flex flex-row gap-3 [&>*]:min-w-0 [&>*]:flex-1">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            disabled={form.formState.isSubmitting}
+            onClick={onCancel}
+          >
+            취소
+          </Button>
+          <Button type="submit" loading={form.formState.isSubmitting}>
+            그룹 만들기
+          </Button>
+        </div>
+      </StickyCta>
+    </form>
+  );
+}

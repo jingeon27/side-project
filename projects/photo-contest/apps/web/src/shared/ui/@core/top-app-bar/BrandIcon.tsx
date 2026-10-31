@@ -5,14 +5,15 @@ export function BrandIcon({ className }: { className?: string }) {
     <svg
       aria-hidden
       focusable="false"
-      viewBox="0 0 32 32"
+      viewBox="0 0 64 64"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="5.5"
-      strokeLinecap="round"
       className={cn('size-6 shrink-0', className)}
     >
-      <path d="M16 3.5v25M5.2 9.75l21.6 12.5M5.2 22.25l21.6-12.5" />
+      <rect width="64" height="64" rx="23" className="fill-accent" />
+      <g className="stroke-on-accent" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m16 25 5-3 5 3M38 25l5-3 5 3" />
+        <path d="M20 37c7 10 20 10 27-2" />
+      </g>
     </svg>
   );
 }

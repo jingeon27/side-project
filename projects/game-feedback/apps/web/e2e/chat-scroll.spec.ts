@@ -51,11 +51,12 @@ for (const width of [400, 1440]) {
       }
       await page.setViewportSize({ width, height: 844 });
       await page.goto('/ko/messages');
-      const workspace = page.locator('.chat-workspace');
+      const workspace = page.locator('.chat-workspace:visible');
+      await expect(workspace).toHaveCount(1);
       await expect(workspace).toBeVisible();
       await expect(page.locator('main').getByRole('heading', { name: '채팅', exact: true })).toHaveCount(0);
       expect((await workspace.boundingBox())?.height).toBeLessThanOrEqual(480);
-      const snippet = page.getByTestId(`conversation-${room.id}`).locator('.conversation-preview p');
+      const snippet = workspace.getByTestId(`conversation-${room.id}`).locator('.conversation-preview p');
       await expect(snippet).toHaveCSS('text-overflow', 'ellipsis');
       await expect(snippet).toHaveCSS('white-space', 'nowrap');
       const size = await snippet.evaluate((node) => ({
@@ -67,8 +68,8 @@ for (const width of [400, 1440]) {
       expect(size.clipped).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.goto(`/ko/messages/${room.id}`);
-      const log = page.getByRole('log', { name: '대화 메시지' });
-      const input = page.getByRole('textbox', { name: '메시지 내용' });
+      const log = workspace.getByRole('log', { name: '대화 메시지' });
+      const input = workspace.getByRole('textbox', { name: '메시지 내용' });
       await expect(log).toBeVisible();
       await expect.poll(() => bottomGap(log)).toBeLessThanOrEqual(2);
       const body = Array.from({ length: 10 }, (_, index) => `여러 줄로 작성하는 답장 ${index}`).join('\n');
@@ -115,12 +116,11 @@ for (const width of [400, 1440]) {
       await page.getByRole('button', { name: '새 메시지가 도착했어요' }).click();
       await expect.poll(() => bottomGap(log)).toBeLessThanOrEqual(2);
 
-      const header = await page.locator('.conversation-heading').boundingBox();
-      const composer = await page.locator('.chat-compose-area').boundingBox();
+      const header = await workspace.locator('.conversation-heading').boundingBox();
+      const composer = await workspace.locator('.chat-compose-area').boundingBox();
       expect(header?.height).toBeLessThanOrEqual(68);
       expect(composer?.height).toBeLessThanOrEqual(80);
-      if (width > 760)
-        expect((await page.locator('.chat-workspace').boundingBox())?.height).toBeLessThanOrEqual(520);
+      if (width > 760) expect((await workspace.boundingBox())?.height).toBeLessThanOrEqual(520);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     } finally {
       await peer.close();

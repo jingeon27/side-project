@@ -18,6 +18,7 @@
     "@aws-sdk/client-s3": "catalog:",
     "@photo-contest/api": "workspace:*",
     "@side/config": "workspace:*",
+    "dayjs": "catalog:",
     "es-toolkit": "catalog:",
     "prisma": "catalog:",
     "sharp": "catalog:",

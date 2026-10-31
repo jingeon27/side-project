@@ -4,6 +4,8 @@
 
 일상적인 실행은 각 프로젝트 README에서 시작합니다. 이 문서는 공통 도구·Git·테스트 규칙을 다룹니다. 버전의 기준은 `.nvmrc`, `package.json`, `.yarnrc.yml`이며 변경 이력과 현재 운영 상태를 혼동하지 않습니다.
 
+전체 코드 감사에서 확인한 완료 항목·남은 개선 작업·검증 기준은 [코드 품질 후속 과제](code-quality-followups.md)에서 관리합니다.
+
 ## 공통 디자인 시스템
 
 [설계와 사용법](../packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.
@@ -60,6 +62,16 @@ git commit --no-verify          # 비상시에만 사용한다
 기존 미사용 항목은 `knip-baseline.json`에 종류, 파일, 이름별로 기록했습니다. `yarn knip:report`로 기존 항목까지 포함한 전체 결과를 확인합니다. 새 문제를 기준선에 추가해 통과시키지 말고 원인을 수정하며, 기존 코드를 정리하면 해당 기준선 항목도 삭제합니다. ESLint의 `side/no-wildcard-exports`는 값, 타입, namespace의 `export *`를 모든 앱과 패키지에서 막습니다. 필요한 이름을 명시해서 내보내세요.
 
 ## 검증
+
+Services workflow는 변경된 서비스의 검사만 선택하고 공용 호스트의 이미지 네 개는 실행당 한 번 빌드·검증합니다. 공통 패키지·배포 설정 변경과 수동 실행은 두 서비스를 모두 선택합니다. 모든 PR에서 변경 범위와 최종 판정은 실행하며 서비스와 무관한 변경은 서비스 검사 없이 통과합니다. PR은 대상 브랜치와 합친 결과를 검사하므로 develop push와 릴리즈 PR 검증은 각각 유지합니다.
+
+GF의 정적·단위 검사(`yarn workspace @side/game-feedback test:unit`)는 S3 없이 실행합니다. 실제 API·DB 통합, 운영 빌드, 브라우저 E2E는 별도 작업에서 실제 테스트 S3와 격리 DB를 사용합니다. 기존 `test:game-feedback` 명령은 API 통합 검사를 포함하는 동작을 유지합니다.
+
+`Service verification`은 선택한 검사가 모두 성공해야 통과합니다. 선택한 작업의 생략·취소·누락도 실패이며 두 서비스의 이미지 발행은 이 결과를 기다립니다. 서비스별 배포 활성화 값·main/배포 브랜치 조건·Environment·배포 잠금과 검증한 이미지 digest 사용은 유지합니다. 필수 상태 검사를 설정한다면 `Service verification`을 선택합니다.
+
+실패 시 이 작업의 Summary에서 실패 영역과 재현 명령을 확인합니다. 브라우저 trace는 GF/PC Playwright artifact, 컨테이너 trace는 PC deployment artifact에 있습니다. 컨테이너 재현에는 검증 대상 SHA로 빌드한 이미지·Docker·두 서비스의 테스트 S3 설정이 필요합니다.
+
+공용 호스트 검증은 두 서비스의 실제 덤프를 그 실행이 소유한 PostgreSQL의 별도 DB로 복원하고 핵심 테이블의 행 수와 내용 지문을 비교합니다. `shared-instance-verification-<sha>` artifact는 복원·데이터 확인 시간, 재배포 중 probe의 p50/p95·실패 수를 기록합니다. CI 컨테이너의 DB 복원 시간이며 운영 서버 전체의 RTO나 RPO 측정값은 아닙니다. 운영 백업·스냅샷·S3 시점 복구 연습은 [배포 가이드](../deploy/shared-instance/README.md)를 따릅니다.
 
 별도 터미널에서 `yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
 

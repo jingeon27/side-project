@@ -60,6 +60,8 @@ describe('isSessionRequiredPath', () => {
     expect(isSessionRequiredPath('/me')).toBe(true);
     expect(isSessionRequiredPath('/notifications')).toBe(true);
     expect(isSessionRequiredPath('/')).toBe(true);
+    expect(isSessionRequiredPath('/about')).toBe(false);
+    expect(isSessionRequiredPath('/about/how-it-works')).toBe(false);
     expect(isSessionRequiredPath('/invite/token')).toBe(true);
     expect(isSessionRequiredPath('/groupsX')).toBe(false);
     expect(isSessionRequiredPath('/member')).toBe(false);

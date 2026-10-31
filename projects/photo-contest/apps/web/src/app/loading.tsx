@@ -1,4 +1,5 @@
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { Spinner } from '@/shared/ui/@core/spinner';
 
 export default function Loading() {
   return (
@@ -7,6 +8,7 @@ export default function Loading() {
         <Skeleton className="h-6 w-40" />
       </div>
       <div className="flex flex-col gap-3 p-4">
+        <Spinner className="mx-auto my-4 size-8 text-accent" />
         <Skeleton className="h-28 w-full rounded-card" />
         <Skeleton className="h-20 w-full rounded-card" />
         <Skeleton className="h-20 w-full rounded-card" />

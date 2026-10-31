@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
@@ -89,7 +90,7 @@ export class ChatHistoryService {
             ],
           },
         },
-        data: { readAt: new Date() },
+        data: { readAt: dayjs().toDate() },
       });
       const advances =
         !current.at ||

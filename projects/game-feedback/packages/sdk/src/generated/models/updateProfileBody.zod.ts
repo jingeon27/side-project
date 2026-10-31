@@ -13,22 +13,10 @@ export const updateProfileBodyNicknameMax = 24;
 export const updateProfileBodyNicknameRegExp = new RegExp('^[\\p{L}\\p{N}_ .-]+$', 'u');
 export const updateProfileBodyBioMax = 500;
 
-export const updateProfileBodyLinksItemLabelMax = 40;
-
-export const updateProfileBodyLinksItemUrlMax = 2048;
-
-
-export const updateProfileBodyLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const updateProfileBodyLinksMax = 5;
-
 
 export const UpdateProfileBody = zod.object({
   "nickname": zod.string().min(updateProfileBodyNicknameMin).max(updateProfileBodyNicknameMax).regex(updateProfileBodyNicknameRegExp).optional(),
-  "bio": zod.string().max(updateProfileBodyBioMax).optional(),
-  "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(updateProfileBodyLinksItemLabelMax),
-  "url": zod.string().max(updateProfileBodyLinksItemUrlMax).regex(updateProfileBodyLinksItemUrlRegExp)
-})).max(updateProfileBodyLinksMax).optional()
+  "bio": zod.string().max(updateProfileBodyBioMax).optional()
 })
 
 export type UpdateProfileBody = zod.input<typeof UpdateProfileBody>;

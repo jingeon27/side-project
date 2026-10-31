@@ -8,6 +8,12 @@ const request = (path: string, cookie?: string) =>
   new NextRequest(new URL(path, 'http://localhost:3200'), { headers: cookie ? { cookie } : {} });
 
 describe('proxy', () => {
+  it('서비스 소개와 이용 방법은 세션 없이 열고 피드는 인증 화면으로 보내야 한다', () => {
+    for (const path of ['/about', '/about/how-it-works']) {
+      expect(proxy(request(path)).headers.get('location')).toBeNull();
+    }
+    expect(proxy(request('/')).headers.get('location')).toBe('http://localhost:3200/sign?next=%2F');
+  });
   it('세션 쿠키 없이 멤버 전용 화면에 오면 원래 경로를 next에 담아 인증 화면으로 보내야 한다', () => {
     const response = proxy(request('/contests/c1?sort=popular'));
     expect(response.status).toBe(307);

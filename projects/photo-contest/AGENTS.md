@@ -1,4 +1,4 @@
-# Photo Contest (웃긴순간)
+# Photo Contest (피식)
 
 사용자 지정(2026-10-25): 앱 설정은 프로젝트 루트 `.env`에 정의한 키만 사용한다. 모바일도 루트 설정을 읽고, 별도 앱 링크 인증서·모바일 env 템플릿은 제거했다. 테스트 설정은 루트 URL과 격리 실행기의 명시적 옵션을 사용한다. 스킬의 이전 env 키를 다시 도입하지 않는다. 저장소 공용 배포 도구의 이미지·네트워크·마이그레이션 계정 입력은 앱에 그대로 전달하지 않는다.
 
@@ -18,11 +18,8 @@
 
 ## 공통 규칙
 
-- 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수의 반환값으로 전달해 재할당을 피한다.
-- else 문은 쓰지 않는다. 가드·조기 반환이나 ts-pattern으로 분기한다. ESLint 구현과 설정은 TypeScript로 작성한다. 공용 ESLint 규칙과 RuleTester fixture는 저장소의 `packages/config/eslint`가 소유한다.
-- named export, 명시적 re-export. `export *` 금지. Next 라우트·설정 파일만 default export.
+- TypeScript·React 구현은 루트 공통 스킬을 따른다. ESLint 설정·규칙과 RuleTester fixture는 packages/config/eslint가 소유한다.
 - 컴포넌트와 공개 함수는 function 선언, 내부 함수는 arrow. 한 곳에서만 쓰는 이벤트 핸들러는 JSX prop에 인라인으로 선언한다. 여러 곳에서 재사용할 때만 함수로 분리하며, 분리한 핸들러는 `handle*`, props 콜백은 `on*`로 이름 짓는다.
-- `interface I*`, `type T*`. enum 대신 `as const`. `any`와 non-null `!` 금지(테스트 제외).
 - 주석은 코드가 말하지 못하는 '왜'만 짧게 한국어로.
 - 생성 파일은 손으로 고치지 않는다: GraphQL 타입은 `codegen`, Prisma client는 `db:generate`.
 - 계약은 한 곳에서 바꾼다: GraphQL은 `apps/api/src/**/*.graphql`(web codegen의 입력), 웹 ↔ 앱 메시지는 `packages/bridge`, DB는 Prisma 마이그레이션.
@@ -30,6 +27,8 @@
 - Next.js API는 설치된 `node_modules/next/dist/docs`에서 확인한다. Expo·React Native 라이브러리는 설치된 타입 정의를 기준으로 한다.
 
 ## 제품 방향
+
+홈 피드는 기존 `/`(`ROUTES.HOME`)를 유지한다. 서비스 소개 `/about`와 이용 방법 `/about/how-it-works`는 메인과 별도로 만든 공개 페이지다. 공개 소개에서는 인증·푸시 동기화를 시작하지 않고 ‘시작하기’에서 기존 익명·회원 인증으로 이어진다.
 
 상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 프로필 편집·참여 그룹 목록·그룹 생성과 내가 올린 게시물의 그룹별 필터를 제공한다. `/sign`에서 익명 또는 회원 세션을 만든 뒤 `/explore`에서 공개·비공개 그룹의 이름·멤버 수를 탐색한다. 세션 없는 콘텐츠 화면은 `/sign`으로 보낸다. 익명 세션도 공개 그룹을 조회하고 즉시 가입할 수 있다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다. 그룹 글쓰기는 `/groups/[id]/write` 전용 페이지에서 한다. 비공개 그룹의 내용은 승인된 멤버만 보고 OWNER·MODERATOR가 신청을 수락·거절한다. 초대 링크도 같은 승인 규칙을 적용한다. 기존 그룹은 PRIVATE를 유지한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest는 format=POST인 그룹 대회와 format=LEGACY인 이전 대회를 구분하며 Submission은 이전 링크·데이터 호환용이다. 새 그룹 대회는 Post.contestId로 참여하며 사진·동영상·여러 게시물을 허용한다.
 
@@ -43,15 +42,15 @@
 - 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 OWNER만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인·멤버 내보내기(MODERATOR는 MEMBER만)를 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. OWNER는 내보낼 수 없고 양도한 뒤에만 그룹을 나간다. 양도한 OWNER는 MEMBER가 된다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.
 
-## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)
+## 스킬 (진입점에서 필요한 참조만 읽는다)
 
-- 웹 구조·화면·폼·Apollo·오버레이: `.agents/skills/frontend/SKILL.md`
-- API 모듈·권한·대회 규칙·인증: `.agents/skills/contest-api/SKILL.md`
-- 모바일 앱(Expo WebView 셸): `.agents/skills/mobile/SKILL.md`
-- 웹 ↔ 앱 메시지 추가·변경: `.agents/skills/bridge/SKILL.md`
-- Sentry·Amplitude·이벤트 추가: `.agents/skills/monitoring/SKILL.md`
-- 테스트 레인·격리 DB·포트: `.agents/skills/testing/SKILL.md`
-- 커밋 단위·메시지: `.agents/skills/commit/SKILL.md`
+- 웹 구조·화면·폼·Apollo·오버레이: [architecture](.agents/skills/photo-contest-web/references/architecture.md)
+- API 모듈·권한·대회 규칙·인증: [domain](.agents/skills/photo-contest-api/references/domain.md)
+- 모바일 앱(Expo WebView 셸): [overview](.agents/skills/photo-contest-mobile/references/overview.md)
+- 웹 ↔ 앱 메시지 추가·변경: [photo-contest-bridge](.agents/skills/photo-contest-bridge/SKILL.md)
+- Sentry·Amplitude·이벤트 추가: [photo-contest-monitoring](.agents/skills/photo-contest-monitoring/SKILL.md)
+- 테스트 레인·격리 DB·포트: [photo-contest-testing](.agents/skills/photo-contest-testing/SKILL.md)
+- 커밋 단위·메시지·PR: [공통 절차](../../.agents/skills/commit/SKILL.md)
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55432) 프로세스를 끄거나 재시작하지 않는다.
 

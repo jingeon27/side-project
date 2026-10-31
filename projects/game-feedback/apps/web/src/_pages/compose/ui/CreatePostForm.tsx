@@ -1,0 +1,155 @@
+'use client';
+
+import type { ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight } from 'lucide-react';
+import { useWatch } from 'react-hook-form';
+import { match, P } from 'ts-pattern';
+
+import { appRoutes } from '@game-feedback/bridge';
+import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
+import { Button, FormActions, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
+
+import { useSession } from '@/features/auth';
+import { createPostMutationOptions } from '@/features/post';
+import { uploadPostMediaMutationOptions } from '@/features/post-media';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
+import type { Category } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { useZodForm } from '@/shared/model/form';
+import { ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
+import { VerificationPrompt } from '@/widgets/support';
+
+interface ICreatePostFormProps {
+  categories: Category[];
+  locale: string;
+  board: TBoardKind;
+  initialCategoryId?: string;
+  initialBattleMode?: TBattleMode;
+  initialCoachingRole?: TCoachingRole;
+}
+export function CreatePostForm({
+  categories,
+  locale,
+  board: initialBoard,
+  initialCategoryId,
+  initialBattleMode,
+  initialCoachingRole,
+}: ICreatePostFormProps) {
+  const client = useQueryClient();
+  const { t } = useI18n();
+  const router = useRouter();
+  const notify = useNotify();
+  const create = useMutation(createPostMutationOptions(client));
+  const { session } = useSession();
+  const upload = useMutation(uploadPostMediaMutationOptions(session.user?.id));
+  const form = useZodForm(postComposerSchema, {
+    defaultValues: {
+      title: '',
+      body: '',
+      editorValid: true,
+      board: initialBoard,
+      coaching: { role: initialCoachingRole ?? 'COACH', pricing: { type: 'HOURLY', amount: null } },
+      friendSale: { price: null },
+      battle: { mode: initialBattleMode ?? 'DUEL' },
+      categoryId: initialCategoryId ?? categories[0]?.id ?? '',
+    },
+  });
+  const board = useWatch({ control: form.control, name: 'board' }) ?? initialBoard;
+  const pending = create.isPending || upload.isPending;
+  const handleSubmit = form.handleSubmit(async (values) => {
+    try {
+      const result = await create.mutateAsync({
+        body: { ...postContentInput(values), categoryId: values.categoryId, board: values.board },
+      });
+      trackEvent(ANALYTICS_EVENT.PostCreated, {
+        board: result.board ?? values.board ?? 'FEEDBACK',
+        game: result.category.slug,
+      });
+      form.reset();
+      notify(t('게시글을 등록했어요.'));
+      router.replace(
+        appRoutes.post(locale, result.id, initialCategoryId ? result.board : undefined, result.category.slug),
+      );
+    } catch {
+      /* Keep the draft and mutation errors. */
+    }
+  });
+  const errorMessage = create.error?.message ?? upload.error?.message;
+  const submitLabel = match(board)
+    .with('COACHING', () => t('코칭 등록'))
+    .with('FEEDBACK', () => t('피드백 요청 올리기'))
+    .with(P.union('FRIEND_SALE', 'FRIENDLY', 'FREE'), () => t('게시글 등록'))
+    .exhaustive();
+  return (
+    <form className="page-form" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
+      <div data-form-scroll className="page-form-scroll">
+        <VerificationPrompt />
+        <div className="form-stack">
+          <Field label={t('분류')}>
+            <NativeSelect
+              {...form.register('board', {
+                onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                  if (event.target.value !== 'COACHING')
+                    form.setValue(
+                      'coaching',
+                      { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
+                      { shouldValidate: true },
+                    );
+                  if (event.target.value !== 'FRIEND_SALE')
+                    form.setValue('friendSale', { price: null }, { shouldValidate: true });
+                },
+              })}
+            >
+              <NativeSelectOption value="FEEDBACK">{t('피드백')}</NativeSelectOption>
+              <NativeSelectOption value="FRIEND_SALE">{t('친추판매')}</NativeSelectOption>
+              <NativeSelectOption value="FRIENDLY">{t('전투 모집')}</NativeSelectOption>
+              <NativeSelectOption value="COACHING">{t('게임코치')}</NativeSelectOption>
+              <NativeSelectOption value="FREE">{t('자유게시판')}</NativeSelectOption>
+            </NativeSelect>
+          </Field>
+          <Field label={t('게임')}>
+            {initialCategoryId ? (
+              <>
+                <input type="hidden" {...form.register('categoryId')} />
+                <Input
+                  readOnly
+                  aria-label={t('선택한 게임')}
+                  value={categories.find((item) => item.id === initialCategoryId)?.name ?? ''}
+                />
+              </>
+            ) : (
+              <NativeSelect {...form.register('categoryId')}>
+                {categories
+                  .filter((category) => category.active)
+                  .map((category) => (
+                    <NativeSelectOption key={category.id} value={category.id}>
+                      {category.name}
+                    </NativeSelectOption>
+                  ))}
+              </NativeSelect>
+            )}
+          </Field>
+          <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
+          <ErrorNotice message={errorMessage && t(errorMessage)} />
+        </div>
+      </div>
+      <FormActions className="px-0" contentClassName="max-w-none">
+        <Button
+          variant="accent"
+          size="lg"
+          fullWidth
+          type="submit"
+          disabled={!categories.length}
+          loading={pending}
+          icon={<ArrowUpRight aria-hidden />}
+        >
+          {submitLabel}
+        </Button>
+      </FormActions>
+    </form>
+  );
+}

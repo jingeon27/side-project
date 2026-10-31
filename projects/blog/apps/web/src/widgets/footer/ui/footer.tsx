@@ -1,6 +1,11 @@
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
 import type { Locale } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { author } from '@/shared/config/site';
+
+dayjs.extend(utc);
 
 export function Footer({ locale }: { locale: Locale }) {
   const t = labels(locale);
@@ -8,7 +13,7 @@ export function Footer({ locale }: { locale: Locale }) {
     <footer className="site-footer">
       <div className="footer-bottom">
         <span>
-          © {new Date().getUTCFullYear()} {t.nav.siteTitle}
+          © {dayjs().utc().year()} {t.nav.siteTitle}
         </span>
         <div className="footer-links">
           <a href="https://github.com/jingeon27" target="_blank" rel="noopener noreferrer">

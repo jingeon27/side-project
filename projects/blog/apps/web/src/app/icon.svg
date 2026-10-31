@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <title>밤별 블로그</title>
-  <rect width="64" height="64" rx="17" fill="#21354d"/>
-  <g transform="translate(0 -3)">
-    <g fill="none" stroke="#f7f3eb" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M13 20c7-1.5 13 .4 19 4.5 6-4.1 12-6 19-4.5v26c-7-1.5-13 .4-19 4.5-6-4.1-12-6-19-4.5Z"/>
-      <path d="M32 24.5v26M20 29l5 1.6M20 36l5 1.6"/>
+  <rect width="64" height="64" rx="16" fill="#21354d"/>
+  <g transform="translate(4 4) scale(1.166667)">
+    <g fill="#f7f3eb">
+      <path d="M4 17.5c7-.8 13.2 1.5 18 5.2v21.5c-4.8-3.7-11-6-18-5.2Z"/>
+      <path d="M26 22.7c4.8-3.7 11-6 18-5.2V39c-7-.8-13.2 1.5-18 5.2Z"/>
     </g>
-    <path d="m42 27 2 4 4 2-4 2-2 4-2-4-4-2 4-2Z" fill="#f7f3eb"/>
+    <path d="m34.5 1 2.2 4.3L41 7.5l-4.3 2.2-2.2 4.3-2.2-4.3L28 7.5l4.3-2.2Z" fill="#e8bd7c"/>
   </g>
 </svg>

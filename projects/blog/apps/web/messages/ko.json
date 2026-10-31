@@ -6,7 +6,9 @@
     "skip": "본문으로 건너뛰기",
     "theme": "화면 테마 바꾸기",
     "language": "언어 변경",
-    "siteTitle": "밤별 블로그"
+    "siteTitle": "밤별 블로그",
+    "brandName": "밤별",
+    "brandType": "blog"
   },
   "common": {
     "all": "전체",
@@ -85,7 +87,7 @@
     "projects": {
       "title": "사이드 프로젝트",
       "gameMate": "Game Mate",
-      "contest": "별사대"
+      "contest": "피식"
     },
     "contact": "연락처"
   },

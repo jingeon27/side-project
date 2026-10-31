@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 const OVERLAY_STATE_KEY = '__photoContestOverlay';
 
 interface IOverlayEntry {
@@ -38,7 +40,7 @@ export function pushOverlayEntry(onBack: () => void) {
     listening = true;
   }
   sequence += 1;
-  const key = `${Date.now().toString(36)}-${sequence}`;
+  const key = `${dayjs().valueOf().toString(36)}-${sequence}`;
   // Next는 pushState를 감싸 자기 라우터 상태를 이 항목에 복사한다. URL은 그대로 둔다.
   window.history.pushState({ [OVERLAY_STATE_KEY]: key }, '');
   stack.push({ key, onBack });

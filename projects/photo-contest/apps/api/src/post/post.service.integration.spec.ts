@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -248,5 +250,30 @@ describe('상시 그룹 게시물', () => {
       where: { id: `comment-created:${comment.id}` },
     });
     expect(event.properties).toEqual({ postId: post.id, commentId: comment.id });
+  });
+
+  it('응답을 잃은 링크 게시물의 동시 재시도는 글과 성공 이벤트를 한 번만 만들어야 한다', async () => {
+    const requestId = randomUUID();
+    const mutation = `mutation($groupId:ID!,$clientRequestId:String){createPost(groupId:$groupId,clientRequestId:$clientRequestId,linkUrl:"https://example.com/retry",title:"응답 재시도",rightsConfirmed:true){id}}`;
+    const variables = { groupId, clientRequestId: requestId };
+    const send = (user: ITestUser) =>
+      api.gqlOk<{ createPost: { id: string } }>(user.cookie, mutation, variables);
+    const replies = await Promise.all(Array.from({ length: 3 }, () => send(member)));
+    const id = replies[0]?.createPost.id;
+    expect(new Set(replies.map((reply) => reply.createPost.id)).size).toBe(1);
+    expect((await send(member)).createPost.id).toBe(id);
+    expect(await api.db.post.count({ where: { authorId: member.id, clientRequestId: requestId } })).toBe(1);
+    expect(await api.db.analyticsEvent.count({ where: { id: `post:${id}` } })).toBe(1);
+    expect((await send(owner)).createPost.id).not.toBe(id);
+    const anotherGroup = await createGroup(api, member, '다른 요청 그룹');
+    expect(
+      (await api.gqlFail(member.cookie, mutation, { ...variables, groupId: anotherGroup.id })).code,
+    ).toBe('CONFLICT');
+    expect((await api.gqlFail(member.cookie, mutation, { ...variables, clientRequestId: '' })).code).toBe(
+      'BAD_USER_INPUT',
+    );
+    const first = await api.gqlOk<{ createPost: { id: string } }>(member.cookie, mutation, { groupId });
+    const second = await api.gqlOk<{ createPost: { id: string } }>(member.cookie, mutation, { groupId });
+    expect(first.createPost.id).not.toBe(second.createPost.id);
   });
 });

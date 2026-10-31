@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { FileImage } from 'lucide-react';
 
 import { PostCard, PostCardList } from '@/features/post';
 import {
@@ -49,6 +50,7 @@ function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQ
   if (!items.length)
     return (
       <EmptyState
+        icon={<FileImage />}
         title={filtered ? '이 그룹에 올린 게시물이 없어요' : '아직 올린 게시물이 없어요'}
         description="가입한 그룹에 사진이나 동영상, 링크를 올려보세요."
       />

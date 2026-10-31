@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Share2 } from 'lucide-react';
+import { Medal, Share2 } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { countByRank, RankBadge, ResultBanner } from '@/features/ranking';
+import { countByRank, RankBadge } from '@/features/ranking';
 import { buildResultShareText, useShareActions } from '@/features/share';
 import { SubmissionCard } from '@/features/submission';
 import { ContestResultsDocument, type ContestResultsQuery } from '@/shared/api/generated';
@@ -21,6 +21,7 @@ import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import type { TContestQueryRef } from '../model/contest-query.type';
+import { ResultBanner } from './ResultBanner';
 
 function ResultsContent({
   resultsRef,
@@ -51,7 +52,7 @@ function ResultsContent({
     const method = await shareActions.share(
       window.location.origin + ROUTES.CONTEST(contest.id),
       {
-        title: '별사대 대회 결과',
+        title: '피식 대회 결과',
         text: buildResultShareText(
           contest.title,
           winners.map(({ submission, voteCount }) => ({
@@ -76,7 +77,11 @@ function ResultsContent({
       </Button>
       {match(results)
         .with([], () => (
-          <EmptyState title="제출된 사진이 없어요" description="다음 대회에서 첫 사진을 만나보세요." />
+          <EmptyState
+            icon={<Medal />}
+            title="제출된 사진이 없어요"
+            description="다음 대회에서 첫 사진을 만나보세요."
+          />
         ))
         .otherwise((rows) =>
           rows.map(({ submission, rank, voteCount, winner }, index) => (

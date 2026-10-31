@@ -3,7 +3,6 @@ import {
   createTestImage,
   graphqlRequest,
   uploadTestPostMedia,
-  uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './env';
@@ -37,23 +36,6 @@ export async function productRequest<T>(
 
 export async function seedContest(cookie: string, groupId: string, title: string): Promise<string> {
   return (await createLegacyTestContest(API_URL, { cookie, groupId, title, origin: WEB_ORIGIN })).id;
-}
-
-export async function seedPhoto(cookie: string, contestId: string, caption: string): Promise<string> {
-  const uploadId = await uploadTestSubmissionMedia(API_URL, {
-    cookie,
-    origin: WEB_ORIGIN,
-    contestId,
-    body: await createTestImage(),
-    contentType: 'image/png',
-  });
-  return (
-    await productRequest<{ createSubmission: { id: string } }>(
-      cookie,
-      'mutation($contestId: ID!, $uploadId: ID!, $caption: String!) { createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: true) { id } }',
-      { contestId, uploadId, caption },
-    )
-  ).createSubmission.id;
 }
 
 export async function seedPost(

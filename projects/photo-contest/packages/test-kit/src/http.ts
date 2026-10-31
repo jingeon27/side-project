@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export interface IGraphqlResponse<TData> {
   data?: TData;
   errors?: Array<{ message: string; extensions?: { code?: string } }>;
@@ -52,16 +54,16 @@ export async function createLegacyTestContest(
   apiUrl: string,
   { groupId, title, origin, cookie }: { groupId: string; title: string; origin: string; cookie?: string },
 ): Promise<{ id: string }> {
-  const now = Date.now();
+  const now = dayjs().valueOf();
   const response = await fetch(`${apiUrl}/testing/legacy-contests`, {
     method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
     body: JSON.stringify({
       groupId,
       title,
-      startsAt: new Date(now),
-      submissionEndsAt: new Date(now + 3_600_000),
-      endsAt: new Date(now + 7_200_000),
+      startsAt: dayjs(now).toDate(),
+      submissionEndsAt: dayjs(now + 3_600_000).toDate(),
+      endsAt: dayjs(now + 7_200_000).toDate(),
     }),
   });
   if (!response.ok) throw new Error(`구대회 fixture 생성 실패 (${response.status})`);

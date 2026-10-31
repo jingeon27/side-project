@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from 'react';
-
 const STORAGE_KEY = 'photo-contest:route-depth';
 
 type TExpectedNavigation = 'push' | 'replace';
@@ -67,12 +65,3 @@ export const routeHistoryStore = {
     emit();
   },
 };
-
-/** 앱 안 기록 깊이. 서버 렌더링과 첫 hydration에서는 0이다. */
-export function useRouteHistoryDepth() {
-  return useSyncExternalStore(
-    routeHistoryStore.subscribe,
-    routeHistoryStore.getDepth,
-    routeHistoryStore.getServerDepth,
-  );
-}

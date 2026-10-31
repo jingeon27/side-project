@@ -4,9 +4,11 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { ANSWER_PAGE } from '../answers/answer-page';
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
@@ -69,6 +71,60 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .send({ title: '제'.repeat(31) })
       .expect(400);
     expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.title).toBe(input.title);
+  });
+  it('내부 SSR 집계는 첫 페이지 밖 답변까지 세고 차단·숨김·삭제를 제외해야 한다', async () => {
+    const post = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({
+          categoryId,
+          board: 'FEEDBACK',
+          title: '서버 집계 확인',
+          body: '첫 페이지 밖의 답변도 집계합니다.',
+        })
+        .expect(200)
+    ).body;
+    const reviewer = supertest.agent(app.getHttpServer());
+    await reviewer.post('/api/auth/demo').set('Origin', origin).send({ nickname: '집계답변자' }).expect(200);
+    const reviewerId = (await reviewer.get('/api/session').expect(200)).body.user.id;
+    const writerId = (await author.get('/api/session').expect(200)).body.user.id;
+    const visibleCount = ANSWER_PAGE + 2;
+    await db.answer.createMany({
+      data: [
+        ...Array.from({ length: visibleCount }, () => ({
+          postId: post.id,
+          authorId: writerId,
+          body: '보이는 답변',
+          helpful: false,
+        })),
+        { postId: post.id, authorId: reviewerId, body: '도움된 답변', helpful: true },
+        { postId: post.id, authorId: writerId, body: '숨긴 답변', helpful: true, hidden: true },
+        {
+          postId: post.id,
+          authorId: writerId,
+          body: '삭제된 답변',
+          helpful: true,
+          deletedAt: dayjs().toDate(),
+        },
+      ],
+    });
+    const path = `/internal/posts/${post.id}/answer-counts`;
+    expect((await supertest(app.getHttpServer()).get(path).expect(200)).body).toEqual({
+      answerCount: visibleCount + 1,
+      helpfulCount: 1,
+    });
+    await author.post('/api/blocks').set('Origin', origin).send({ blockedUserId: reviewerId }).expect(200);
+    expect((await author.get(path).expect(200).expect('Cache-Control', 'no-store')).body).toEqual({
+      answerCount: visibleCount,
+      helpfulCount: 0,
+    });
+    expect((await author.get(`/api/posts/${post.id}`).expect(200)).body.answers).toHaveLength(ANSWER_PAGE);
+    await reviewer.get(path).expect(404);
+    await author.delete(`/api/blocks/${reviewerId}`).set('Origin', origin).expect(200);
+    await db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    await author.get(path).expect(404);
+    await author.get('/internal/posts/missing/answer-counts').expect(404);
   });
   it('creates and edits a one-character post while rejecting empty, oversized and mismatched content', async () => {
     const input = {

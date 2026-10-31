@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { ANALYTICS_EVENT } from '../../analytics/analytics-event';
 import { recordEvent } from '../../analytics/analytics-event.writer';
@@ -49,7 +50,7 @@ export class GroupProfileService {
         if (
           !avatar ||
           avatar.groupId !== input.groupId ||
-          avatar.expiresAt <= new Date() ||
+          avatar.expiresAt <= dayjs().toDate() ||
           (avatar.mediaUploadId && avatar.mediaUpload?.storageKey !== avatar.storageKey)
         )
           fail('그룹 사진 업로드가 만료되었거나 사용할 수 없습니다.');

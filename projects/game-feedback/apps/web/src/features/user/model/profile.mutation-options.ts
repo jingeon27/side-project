@@ -12,7 +12,7 @@ import { withApiError, type PublicProfile } from '@/shared/api';
 import { uploadAvatar } from '../api/avatar.api';
 import { profileOptions } from './user.options';
 
-/** 프로필 수정의 모든 저장(정보·링크·사진)이 공유하는 key 접두사. */
+/** 프로필 정보와 사진 저장이 공유하는 key 접두사. */
 const profileMutationKey = ['user', 'profile'] as const;
 
 async function saveProfile(client: QueryClient, profile: PublicProfile) {

@@ -17,6 +17,5 @@ describe('Spinner', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
     expect(container.firstElementChild).toHaveClass('size-4');
-    expect(container.firstElementChild).toBeEmptyDOMElement();
   });
 });

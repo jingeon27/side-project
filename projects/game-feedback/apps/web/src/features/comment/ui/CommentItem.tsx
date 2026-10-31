@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 
+import dayjs from 'dayjs';
+
 import { Mention } from '@side/design-system';
 
 import type { Comment } from '@/shared/api';
@@ -60,7 +62,7 @@ export function CommentItem({
         <div className="comment-meta">
           <time dateTime={comment.createdAt}>
             {isSSR
-              ? new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
+              ? dayjs(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
               : timeAgo(comment.createdAt, textLocale)}
           </time>
           {comment.updatedAt !== comment.createdAt && <span>{t(' (수정됨)')}</span>}

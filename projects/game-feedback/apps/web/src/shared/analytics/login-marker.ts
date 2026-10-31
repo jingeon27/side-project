@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
 const KEY = 'gf:pending-login';
@@ -7,7 +9,7 @@ interface ILoginMarker {
   at: number;
   onboarding: boolean;
 }
-function read(now = Date.now()): ILoginMarker | null {
+function read(now = dayjs().valueOf()): ILoginMarker | null {
   try {
     const value: unknown = JSON.parse(sessionStorage.getItem(KEY) ?? 'null');
     if (!value || typeof value !== 'object' || !('provider' in value) || !('at' in value)) return null;
@@ -31,7 +33,7 @@ function read(now = Date.now()): ILoginMarker | null {
     return null;
   }
 }
-export function savePendingLogin(provider: TSocialProvider, now = Date.now()) {
+export function savePendingLogin(provider: TSocialProvider, now = dayjs().valueOf()) {
   try {
     sessionStorage.setItem(KEY, JSON.stringify({ provider, at: now, onboarding: false }));
   } catch {
@@ -47,7 +49,7 @@ export function markPendingOnboarding() {
     /* 분석 없이 가입을 계속한다. */
   }
 }
-export function consumePendingLogin(now = Date.now()) {
+export function consumePendingLogin(now = dayjs().valueOf()) {
   const marker = read(now);
   try {
     sessionStorage.removeItem(KEY);

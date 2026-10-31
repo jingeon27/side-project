@@ -160,7 +160,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 
 ### 9. GitHub Environment 변수·비밀
 
-`game-feedback-production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [`.github/workflows/game-feedback.yml`](../../../.github/workflows/game-feedback.yml)·[`photo-contest.yml`](../../../.github/workflows/photo-contest.yml)의 `vars.*`·`secrets.*`다.
+`game-feedback-production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [Services workflow](../../../.github/workflows/services.yml)의 GF deploy·PC deploy 작업에서 사용하는 `vars.*`·`secrets.*`다.
 
 | 종류     | 이름                          | 값                                                                                  |
 | -------- | ----------------------------- | ----------------------------------------------------------------------------------- |

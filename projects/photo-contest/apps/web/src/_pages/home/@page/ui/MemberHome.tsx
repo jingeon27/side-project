@@ -26,7 +26,7 @@ function MemberHomeContent({
   // 라우트는 가입 그룹이 있다고 판단했을 때만 최신·인기 피드를 사전 조회한다.
   const preloaded = initialHasGroups === true;
   return (
-    <div className="flex min-w-0 flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
       <section aria-label="참여한 그룹" className="flex flex-col gap-3">
         <h2 className="text-title text-ink">참여한 그룹</h2>
         <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 wide:grid-cols-3">

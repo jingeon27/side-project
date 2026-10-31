@@ -1,10 +1,21 @@
-# 별사대 · 별난 사진 대회
+# 피식
 
 **사진과 영상, 웃긴 순간을 함께 나누는 그룹 커뮤니티.**
 
 종료일 없이 유지되는 그룹에서 사진·영상·합성·유튜브와 일반 링크를 공유합니다. 공개 피드를 둘러보고 그룹에 참여하거나, 그룹 안에서 대회를 열어 투표하고 지난 결과를 돌아볼 수 있습니다.
 
-[웹 연결 주소](https://contest.bambyul.com) · [기능 안내](docs/features.md) · [개발 가이드](docs/development.md) · [배포 안내](docs/deployment.md)
+[웹 연결 주소](https://contest.bambyul.com) · [서비스 소개](https://contest.bambyul.com/about) · [이용 방법](https://contest.bambyul.com/about/how-it-works) · [기능 안내](docs/features.md) · [개발 가이드](docs/development.md) · [배포 안내](docs/deployment.md)
+
+## 화면 진입
+
+| 경로                  | 역할                        | 세션                     |
+| --------------------- | --------------------------- | ------------------------ |
+| `/`                   | 메인 게시물 피드            | 익명 또는 회원 세션 필요 |
+| `/about`              | 서비스 소개                 | 로그인 없이 열림         |
+| `/about/how-it-works` | 이용 방법                   | 로그인 없이 열림         |
+| `/sign`               | 익명 시작, 로그인, 회원가입 | 로그인 없이 열림         |
+
+소개 페이지의 ‘시작하기’는 `/sign?next=%2F`를 거쳐 메인 피드로 이어집니다. 공개 소개는 인증과 푸시 API를 호출하지 않습니다. 그룹의 공개 범위와 가입 승인 규칙은 [기능 안내](docs/features.md)를 따릅니다.
 
 ## 빠른 시작
 
@@ -41,6 +52,8 @@ yarn dev:photo-contest
 
 앱별 테스트 레인, 테스트 DB·포트와 정리 정책은 [개발 가이드](docs/development.md#앱별-테스트)에 있습니다. 실행 중인 다른 서버나 개발 DB를 테스트용으로 사용하지 않습니다.
 
+웹의 페이지 전용 폼·관리 섹션·조회 조합은 `apps/web/src/_pages`에 둡니다. 도메인 카드·동작은 features에 유지하고, 상태 모션은 [공통 디자인 시스템](../../packages/design-system/README.md#상태-모션)을 사용합니다.
+
 ## 구조와 운영
 
 | 경로                | 책임                                            |
@@ -53,12 +66,16 @@ yarn dev:photo-contest
 
 EC2의 공통 Caddy·PostgreSQL을 Game Mate와 공유하지만 DB role·네트워크·환경변수는 분리합니다. 비공개 S3의 서비스별 prefix를 사용하며 API가 파일을 중계하지 않습니다. 운영 배포는 GitHub Environment `photo-contest-production`의 설정을 사용합니다.
 
+서비스 이름과 웹, 모바일 앱의 표시 이름은 피식입니다. 로고는 오렌지색 바탕의 웃는 얼굴이며 웹 favicon, 공유 이미지와 모바일 아이콘에 적용합니다. 워크스페이스 `@photo-contest/*`, 앱 ID, 딥링크 스킴과 배포 키는 기존 설치와 데이터 연결에 쓰이는 기술 식별자입니다.
+
+웹과 모바일 UI의 공통 기준은 저장소의 [UI 디자인 스킬](../../.agents/skills/ui-design/SKILL.md)에서 관리합니다. 화면별 구조와 스타일 규칙은 각 앱의 `AGENTS.md`와 스킬을 함께 따릅니다.
+
 ## 문서 길잡이
 
 - [화면·그룹·게시물·대회 기능](docs/features.md)
 - [인증·스토리지·모바일·테스트](docs/development.md)
 - [배포·마이그레이션·호환성](docs/deployment.md) · [공통 운영·롤백](../../deploy/shared-instance/README.md)
 - [첨부와 다운로드](docs/post-attachments.md) · [SEO](docs/seo.md)
-- [구현·검증 기록](docs/implementation.md) · [이전 단독 배포 기록](docs/deployment-legacy.md)
+- [제품 방향](docs/product-plan.md) · [구현과 검증 기록](docs/implementation.md)
 
-이용약관과 개인정보 처리방침은 검토용 초안입니다. 외부 서비스 설정·실제 보관 정책·법률 검토까지 완료된 것으로 보지 않습니다. 과거 배포 문서는 호환성 확인용 기록이며 현재 운영 순서는 공통 EC2 가이드를 따릅니다.
+이용약관과 개인정보 처리방침은 검토용 초안입니다. 외부 서비스 설정·실제 보관 정책·법률 검토까지 완료된 것으로 보지 않습니다. 현재 운영 절차는 공통 EC2 가이드를 따릅니다.

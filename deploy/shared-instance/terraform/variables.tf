@@ -137,7 +137,7 @@ variable "game_feedback_domain" {
 }
 
 variable "photo_contest_domain" {
-  description = "Photo Contest(별사대) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). DNS 레코드와 host_env 출력에 쓴다."
+  description = "Photo Contest(피식) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). DNS 레코드와 host_env 출력에 쓴다."
   type        = string
   default     = "contest.bambyul.com"
 

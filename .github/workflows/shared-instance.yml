@@ -22,6 +22,8 @@ jobs:
         with: { persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
       - name: Validate Game Feedback public build settings
         env:
           SITE_URL: ${{ vars.GAME_FEEDBACK_SITE_URL }}
@@ -119,6 +121,15 @@ jobs:
           cache-to: type=gha,mode=max,scope=photo-contest-web-amd64
       - name: Verify both services behind one HTTPS proxy with external database and object storage boundaries
         run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts "$GITHUB_SHA"
+      - name: Keep numeric replacement and database recovery evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shared-instance-verification-${{ github.sha }}
+          path: projects/game-feedback/.data/shared-instance-verification.json
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Archive the exact images verified together
         run: |
           docker save "side-shared-gf-api:$GITHUB_SHA" "side-shared-gf-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/game-feedback.tar.gz"

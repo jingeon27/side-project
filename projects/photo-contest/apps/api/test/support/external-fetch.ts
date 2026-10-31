@@ -23,19 +23,3 @@ export function stubExternalFetch(routes: Record<string, TFetchHandler>): IExter
   });
   return calls;
 }
-
-export function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-}
-
-/** fetch에 넘긴 x-www-form-urlencoded 본문 */
-export function formBody(init: RequestInit | undefined): URLSearchParams {
-  const body = init?.body;
-  if (body instanceof URLSearchParams) return body;
-  return new URLSearchParams(typeof body === 'string' ? body : '');
-}
-
-/** fetch에 넘긴 JSON 본문 */
-export function jsonBody<TBody>(init: RequestInit | undefined): TBody {
-  return JSON.parse(String(init?.body)) as TBody;
-}

@@ -7,9 +7,9 @@ import { RouteIdSchema } from '@game-feedback/bridge';
 
 import { CommunityPage } from '@/widgets/community-shell';
 
-import { ConversationTopbar } from './ConversationTopbar';
+import { ConversationTopbar } from './conversation/ConversationTopbar';
+import { MessagesTopbar } from './list/MessagesTopbar';
 import { MessagesPage } from './MessagesPage';
-import { MessagesTopbar } from './MessagesTopbar';
 
 export function MessagesLayout({ locale, children }: { locale: string; children: ReactNode }) {
   const { conversationId } = useParams<{ conversationId?: string }>();

@@ -80,7 +80,7 @@ export function createPageMetadata({
 export const pageContent = {
   profileEdit: {
     title: '프로필 수정',
-    description: '닉네임, 자기소개, 프로필 사진과 링크를 수정하세요.',
+    description: '닉네임, 자기소개와 프로필 사진을 수정하세요.',
     keywords: ['프로필 수정'],
     privatePage: true,
   },

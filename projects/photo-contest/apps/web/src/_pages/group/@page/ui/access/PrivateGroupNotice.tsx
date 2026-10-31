@@ -1,0 +1,53 @@
+'use client';
+
+import { useTransition } from 'react';
+
+import { useReadQuery } from '@apollo/client/react';
+import { LockKeyhole } from 'lucide-react';
+
+import { GroupMembershipButton } from '@/features/group';
+import { Button } from '@/shared/ui/@core/button';
+
+import type { TGroupQueryRef } from '../../model/group-query.type';
+
+export function PrivateGroupNotice({
+  groupRef,
+  onRefresh,
+}: {
+  groupRef: TGroupQueryRef;
+  onRefresh: () => Promise<unknown>;
+}) {
+  const { data } = useReadQuery(groupRef);
+  // 부모가 조회 참조를 갱신해야 안내 밖의 피드·글쓰기·멤버 수도 같은 승인 결과를 읽는다.
+  const [checking, startTransition] = useTransition();
+  if (!data) return null;
+  const { group } = data;
+  return (
+    <section
+      className="mx-auto flex w-full max-w-app flex-col items-center gap-4 rounded-card border border-line bg-surface px-5 py-12 text-center"
+      aria-label="비공개 그룹 안내"
+    >
+      <LockKeyhole aria-hidden className="size-8 text-muted" />
+      <h2 className="text-title text-ink">비공개 그룹이에요</h2>
+      <p className="text-body text-muted">그룹장이 가입 신청을 수락하면 게시물과 댓글을 볼 수 있어요.</p>
+      <GroupMembershipButton groupId={group.id} />
+      {group.joinRequestPending ? (
+        <Button
+          variant="ghost"
+          loading={checking}
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                await onRefresh();
+              } catch {
+                /* 조회 경계가 실패를 보여 준다. */
+              }
+            })
+          }
+        >
+          승인 상태 확인
+        </Button>
+      ) : null}
+    </section>
+  );
+}

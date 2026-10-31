@@ -1,17 +1,19 @@
+import dayjs from 'dayjs';
+
 import { ANALYTICS_ARCHIVE_BATCH_SIZE, ANALYTICS_RETENTION_MS } from '../config/limits';
 import type { TDatabaseClient } from '../database/database.service';
 
 /** 집계와 삭제를 한 SQL로 커밋한다. 겹친 정리 작업은 잠긴 원본을 건너뛴다. */
 export async function archiveAnalyticsEvents({
   client,
-  now = new Date(),
+  now = dayjs().toDate(),
   batchSize = ANALYTICS_ARCHIVE_BATCH_SIZE,
 }: {
   client: TDatabaseClient;
   now?: Date;
   batchSize?: number;
 }) {
-  const cutoff = new Date(now.getTime() - ANALYTICS_RETENTION_MS);
+  const cutoff = dayjs(now.getTime() - ANALYTICS_RETENTION_MS).toDate();
   return client.$executeRaw`
     WITH expired AS (
       SELECT "id", "type", "createdAt"::date AS "day"

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { Button, cn } from '@side/design-system';
+import { Button, cn, StatusAnimation } from '@side/design-system';
 
 import { getContactEmail } from '@/shared/config';
 import { useI18n } from '@/shared/i18n';
@@ -34,6 +34,7 @@ export function ErrorRecovery({
       aria-label={`${title} ${t('오류')}`}
       aria-busy={pending}
     >
+      <StatusAnimation variant="error" className="mx-auto mb-3 size-14 text-danger" />
       <h2>
         {title}
         {t('에 문제가 생겼어요')}

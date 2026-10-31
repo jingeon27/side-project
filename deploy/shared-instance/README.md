@@ -10,15 +10,15 @@ contest.bambyul.com      ─┤              ├─ PC Web
 api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB / PC S3
 ```
 
-제품명은 Game Mate와 별사대(별난 사진 대회)다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
+제품명은 Game Mate와 피식이다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
 
-웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 별사대 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
+웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 피식 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. PostgreSQL은 같은 EC2의 컨테이너로 실행하고, 데이터는 루트 볼륨과 분리한 EBS 볼륨(`/srv/side-postgres`)에 둔다. 각 서비스의 API·ops·migrate만 서비스별 내부(`--internal`) DB 네트워크에 연결하며 Web과 Caddy는 DB에 닿지 않는다. 원본 미디어는 EC2에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스와 DB가 함께 중단되는 구조다.
 
 ## 현재 운영 경로
 
-- Game Mate와 별사대: **main → GitHub Actions → 검증 이미지 GHCR 게시 → SSM/SSH → EC2**.
+- Game Mate와 피식: **main → GitHub Actions → 검증 이미지 GHCR 게시 → SSM/SSH → EC2**.
 - 운영 Environment는 `game-feedback-production`, `photo-contest-production`이다. 배포 활성화·대상 브랜치와 필수 변수가 맞아야 deploy가 실행된다.
 - [블로그](../../projects/blog/docs/deployment.md)는 이 호스트가 아니라 Vercel로 배포한다.
 - 앱 검증, 이미지 게시, 원격 배포, 공개 URL의 정상 응답을 각각 확인한다. 단순 push 성공이나 GHCR 게시 성공은 운영 완료가 아니다.
@@ -347,7 +347,7 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다. 호스트가 멈추면 Sentry도 신호를 보내지 못하므로, Terraform은 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하는 CloudWatch 알람과 CPU 크레딧 부족 알람을 함께 만든다(`alarm_email`로 메일 알림). 수동으로 구성했다면 [EC2 알람 동작 안내](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/UsingAlarmActions.html)대로 같은 알람을 만든다.
 
-최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
+최초 배포 후 [Services workflow](https://github.com/jingeon27/side-project/actions/workflows/services.yml)의 GF deploy·PC deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 
 | 서비스 | 공개 readiness URL                                 | Web liveness URL                           |
 | ------ | -------------------------------------------------- | ------------------------------------------ |
@@ -378,7 +378,7 @@ DB 백업은 두 겹이다.
 
 ## 로컬 검증과 과거 기록
 
-현재 앱별 실행·검사는 [Game Mate 개발 가이드](../../projects/game-feedback/docs/development.md)와 [별사대 개발 가이드](../../projects/photo-contest/docs/development.md)를 따른다. 과거 단독 구성·컨테이너 검증과 날짜별 결과는 [검증 이력](docs/validation-history.md)으로 분리했다. 과거 테스트 성공은 현재 운영 배포 성공을 의미하지 않는다.
+현재 앱별 실행·검사는 [Game Mate 개발 가이드](../../projects/game-feedback/docs/development.md)와 [피식 개발 가이드](../../projects/photo-contest/docs/development.md)를 따른다. 과거 단독 구성·컨테이너 검증과 날짜별 결과는 [검증 이력](docs/validation-history.md)으로 분리했다. 과거 테스트 성공은 현재 운영 배포 성공을 의미하지 않는다.
 
 ## 재생성 동안의 요청과 호환성
 

@@ -7,6 +7,7 @@ import {
   type OnApplicationBootstrap,
   type OnModuleDestroy,
 } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { CacheTagSchema } from '@game-feedback/contracts';
 
@@ -72,7 +73,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnModul
   }
 
   async flushPending(): Promise<void> {
-    if (!this.config.cacheRevalidation || this.retryAfter > Date.now()) return;
+    if (!this.config.cacheRevalidation || this.retryAfter > dayjs().valueOf()) return;
     if (this.draining) return this.draining;
     this.draining = this.drain()
       .catch(() => {
@@ -94,7 +95,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnModul
   }
 
   private failed() {
-    this.retryAfter = Date.now() + 5_000;
+    this.retryAfter = dayjs().valueOf() + 5_000;
     this.logger.warn('Next.js cache invalidation failed; pending tags will be retried.');
     reportUnexpectedError(new Error('Next.js cache invalidation callback failed.'), {
       operation: 'cache-invalidation',
@@ -103,7 +104,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnModul
 
   private async deliver(pending: IPendingInvalidation[]) {
     const target = this.config.cacheRevalidation;
-    if (!target || !pending.length || this.retryAfter > Date.now()) return;
+    if (!target || !pending.length || this.retryAfter > dayjs().valueOf()) return;
     try {
       for (let offset = 0; offset < pending.length; offset += 64) {
         const batch = pending.slice(offset, offset + 64);

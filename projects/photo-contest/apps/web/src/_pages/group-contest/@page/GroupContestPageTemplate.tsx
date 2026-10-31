@@ -93,7 +93,11 @@ function Results({ queryRef }: { queryRef: QueryRef<GroupContestResultsQuery> })
   const { data } = useReadQuery(queryRef);
   if (!data.groupContestResults.length)
     return (
-      <EmptyState title="참여작이 없는 대회예요" description="다음 대회에서 함께 웃긴 순간을 나눠보세요." />
+      <EmptyState
+        icon={<Trophy />}
+        title="참여작이 없는 대회예요"
+        description="다음 대회에서 함께 웃긴 순간을 나눠보세요."
+      />
     );
   return (
     <section aria-label="대회 최종 결과" className="mx-auto flex w-full max-w-feed flex-col gap-6">
