@@ -50,7 +50,7 @@ yarn workspace @game-feedback/api db:generate
 - `run(async (tx) => …)`은 Prisma interactive `$transaction`이다(재시도·Serializable 없음). `run([q1, q2])`는 `this.db`로 만든 lazy PrismaPromise 배열을 한 번에 커밋·롤백한다. Repository 계층은 없다 — 서비스가 `PrismaClient`와 `UnitOfWork`를 직접 주입한다.
 - 콜백 안에서는 `tx`만 쓴다(기존 코드는 `(tx ?? this.db)` 형태). 같은 연결이 필요한 helper에는 client를 넘긴다: `UserVisibilityService.excluded(req, tx)`, `ChatAccessService.visible(userId, id, tx)`·`blocked(…, tx)`, `PostMediaService.sync(tx, …)`. 콜백에서 `this.db`를 쓰면 다른 연결을 기다려 `connection_limit=1`에서 막힌다 — 이를 검사하는 테스트가 있다.
 - 동시성은 잠금으로 직렬화한다. 기존 행은 `` tx.$queryRaw`SELECT "id" FROM "<Table>" WHERE "id" = ${id} FOR UPDATE` ``(글 수정·조회수, 채팅 전송·읽음·기록 삭제, 밴, 업로드 등록의 사용자 행), 아직 없는 키는 `pg_advisory_xact_lock(hashtextextended(key, 0))`(`SocialIdentityService.onboard`).
-- 파일 저장·S3·SSE publish는 트랜잭션 밖이다: 저장 먼저 → `register` 트랜잭션(`PostMediaService.upload`), publish는 `run`이 끝난 뒤 `void this.events.publish(…)`.
+- 파일 저장·S3·SSE publish는 트랜잭션 밖이다. 업로드 예약은 DB 쓰기 없는 `MediaStorage.prepareUpload`로 서명을 준비하고, `register` 트랜잭션의 잠금·제한 검사 후 같은 client로 MediaObject와 티켓을 함께 생성한다. 실제 완료 검증·S3 복사는 트랜잭션 밖이며, publish는 `run`이 끝난 뒤 `void this.events.publish(…)`.
 - 트랜잭션 안의 P2002는 전역 필터가 409 `CONFLICT`로 바꾼다. 다른 코드가 필요하면 `.catch`로 바꾼다(`ChatMessageService.send`).
 
 ## 검증

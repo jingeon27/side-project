@@ -23,7 +23,7 @@ describe('Game Feedback S3 lifecycle', () => {
   });
 
   it('expires abandoned production staging uploads after the daily prune would have removed them', () => {
-    // MediaStorage.reserveUpload writes `<GF_S3_KEY_PREFIX>/staging/<uuid>` and prune drops drafts after 24h.
+    // MediaStorage.prepareUpload signs `<GF_S3_KEY_PREFIX>/staging/<uuid>` and prune drops drafts after 24h.
     const staging = service.Rules.find((rule) => rule.Filter.Prefix === 'game-feedback/production/staging/');
     expect(staging?.Expiration?.Days).toBeGreaterThanOrEqual(2);
     // Current objects outside staging must never expire.

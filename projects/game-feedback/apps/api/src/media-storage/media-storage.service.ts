@@ -44,11 +44,9 @@ export class MediaStorage implements OnModuleDestroy {
     return prefix ? `${prefix}/${path}` : path;
   }
 
-  async reserveUpload(mimeType: string, size: number) {
+  async prepareUpload(mimeType: string, size: number) {
     const storage = this.config.mediaStorage;
-    const object = await this.db.mediaObject.create({
-      data: { backend: 'S3', key: this.key(`staging/${randomUUID()}`) },
-    });
+    const object = { backend: 'S3', key: this.key(`staging/${randomUUID()}`) };
     const expiresAt = new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000).toISOString();
     try {
       const form = await createPresignedPost(this.s3, {
@@ -61,12 +59,13 @@ export class MediaStorage implements OnModuleDestroy {
           ['eq', '$Content-Type', mimeType],
         ],
       });
-      return { objectId: object.id, form, expiresAt };
-    } catch {
+      return { object, form, expiresAt };
+    } catch (cause) {
       throw new ApiError(
         503,
         'STORAGE_UNAVAILABLE',
         '업로드 주소를 만들지 못했습니다. 잠시 후 다시 시도해주세요.',
+        { cause },
       );
     }
   }

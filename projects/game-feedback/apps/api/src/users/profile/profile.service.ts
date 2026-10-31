@@ -52,7 +52,7 @@ export class ProfileService {
   }
   async requestUpload(req: SessionRequest, data: TAvatarUploadDto) {
     const user = requireUser(req);
-    const upload = await this.storage.reserveUpload(data.mimeType, data.size);
+    const upload = await this.storage.prepareUpload(data.mimeType, data.size);
     const ticket = await this.transactions.run(async (tx) => {
       await lockActiveUser({ client: tx, userId: user.id });
       if (
@@ -65,11 +65,12 @@ export class ProfileService {
           'UPLOAD_LIMIT',
           '프로필 사진 업로드 요청이 많습니다. 잠시 후 다시 시도해주세요.',
         );
+      const object = await tx.mediaObject.create({ data: upload.object, select: { id: true } });
       return tx.avatarUpload.create({
         data: {
           ...data,
           userId: user.id,
-          objectId: upload.objectId,
+          objectId: object.id,
           expiresAt: presignExpiry(new Date()),
         },
       });

@@ -20,8 +20,8 @@ export class PostMediaUploadService {
 
   async request(req: SessionRequest, input: TMediaUploadDto) {
     const user = requireUser(req);
-    const upload = await this.storage.reserveUpload(input.mimeType, input.size);
-    const row = await this.media.register(user.id, input, { bytes: null, objectId: upload.objectId });
+    const upload = await this.storage.prepareUpload(input.mimeType, input.size);
+    const row = await this.media.register(user.id, input, upload.object);
     return {
       id: row.id,
       ...upload.form,

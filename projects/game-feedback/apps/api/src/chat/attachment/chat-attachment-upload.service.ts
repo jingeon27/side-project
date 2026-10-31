@@ -20,11 +20,8 @@ export class ChatAttachmentUploadService {
 
   async request(req: SessionRequest, conversationId: string, input: TMediaUploadDto) {
     const user = requireUser(req);
-    const upload = await this.storage.reserveUpload(input.mimeType, input.size);
-    const row = await this.attachments.register(user.id, conversationId, input, {
-      bytes: null,
-      objectId: upload.objectId,
-    });
+    const upload = await this.storage.prepareUpload(input.mimeType, input.size);
+    const row = await this.attachments.register(user.id, conversationId, input, upload.object);
     return { id: row.id, ...upload.form, expiresAt: upload.expiresAt };
   }
 

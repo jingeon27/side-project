@@ -5,7 +5,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 ## 저장소 (`src/media-storage/`)
 
 - 모든 파일은 `GF_S3_*`로 설정한 비공개 S3에 저장한다. `GF_S3_KEY_PREFIX`는 공유 테스트 버킷의 서비스/개발 경로를 제한한다. 자격 증명 쌍이 없으면 SDK의 기본 체인(AWS_PROFILE·EC2 역할)을 사용한다. DATABASE·FILESYSTEM 드라이버와 API multipart 수신 경로는 없다.
-- `MediaStorage.reserveUpload`는 서버가 생성한 staging 키에 크기·타입을 고정한 5분 presigned POST를 발급한다. `completeUpload`는 HEAD → 동일 ETag로 앞 4KB Range 서명 검사 → 동일 ETag 조건 CopyObject로 새 최종 키에 복사한다. 검증 뒤 변경은 409 `UPLOAD_CHANGED`다. API가 전체 파일을 읽지 않는다.
+- `MediaStorage.prepareUpload`는 DB를 쓰지 않고 서버가 생성한 staging 키에 크기·타입을 고정한 5분 presigned POST를 준비한다. 사용자 잠금·대기 개수 검사가 끝난 뒤 같은 트랜잭션의 client로 MediaObject와 도메인 티켓을 생성한다. 서명·제한 거절·티켓 INSERT 실패가 예약 메타데이터를 남기지 않아야 한다. `completeUpload`는 HEAD → 동일 ETag로 앞 4KB Range 서명 검사 → 동일 ETag 조건 CopyObject로 새 최종 키에 복사한다. 검증 뒤 변경은 409 `UPLOAD_CHANGED`다. API가 전체 파일을 읽지 않는다.
 - 게시글·채팅 예약은 사용자 행 `FOR UPDATE` 아래 초안 개수 제한을 적용하고 `uploadedAt:null`로 만든다. 완료는 소유권·만료를 확인하고 조건부 갱신해 멱등성을 지킨다. 만료는 서명 5분이 아니라 그 뒤 30분 유예(`MEDIA_COMPLETE_GRACE_SECONDS`, `completionDeadline`)까지다. 느린 링크의 25MB 전송이 서명 직전에 시작해도 확정되며, HEAD·ETag·조건부 복사가 무결성을 지킨다. 미완료 파일의 글/메시지 연결은 서비스와 DB CHECK가 함께 막는다.
 - 프로필은 `AvatarUpload` 예약 테이블과 `/api/profile/avatar/uploads`, `/:id/complete`, DELETE `/:id`를 사용한다. 5MB JPEG·PNG·WebP만 허용하며 웹에서 512px JPEG로 변환한다. 서버는 헤더를 검사하고 전체 이미지 디코딩·메타데이터 제거를 보장하지 않는다. 교체와 캐시 무효화는 같은 트랜잭션이다.
 - 조회는 공개 범위·소유권·차단·대화 참여/기록 경계를 확인한 뒤 private/no-store, no-referrer 307로 60초 S3 GET 주소를 발급한다. 유효한 Range는 S3가 처리하며 범위 초과는 API 416이다. HEAD는 DB 메타데이터만 반환한다.
@@ -29,6 +29,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 
 - unit: `src/chat/message/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
 - integration: `src/posts/media/post-media-upload.service.integration.spec.ts`·`src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
+- DB 회귀: `src/media-storage/upload-reservation.database.integration.test.ts`는 연결 1개/3개에서 세 업로드의 제한 반복 거절·동시 발급·DB 제약 오류 롤백을 검사한다. 서명만 준비하므로 이 레인은 실제 S3 전송 검증이 아니다.
 - 로컬 fixture 성공을 실제 AWS 버킷·CORS·브라우저 업로드 확인으로 기록하지 않는다.
 
 ## 명령 (side 루트)
