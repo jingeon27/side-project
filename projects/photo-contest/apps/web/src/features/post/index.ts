@@ -1,13 +1,11 @@
-export { GalleryFeed } from './ui/feed/GalleryFeed';
-export { LatestPosts } from './ui/feed/LatestPosts';
-export { PopularPosts } from './ui/feed/PopularPosts';
-export { PostCardList } from './ui/feed/PostCardList';
-export { PostsEmptyState } from './ui/feed/PostsEmptyState';
+export { PostCardList } from './ui/list/PostCardList';
+export { PostsEmptyState } from './ui/list/PostsEmptyState';
 export { CreatePostButton } from './ui/compose/CreatePostButton';
 
 export { postTypePolicies } from './model/post.type-policies';
 export { resetGalleryPosts } from './model/post.cache';
 export { PostCard } from './ui/card/PostCard';
+export { PopularPostCard } from './ui/card/PopularPostCard';
 
 export { postAttachmentJsonLd, postImageUrls } from './model/post-seo.helper';
 

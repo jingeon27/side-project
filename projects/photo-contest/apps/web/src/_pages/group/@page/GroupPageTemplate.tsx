@@ -8,7 +8,6 @@ import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
 import { GroupNavigation } from '@/features/group';
-import { GalleryFeed, LatestPosts, PopularPosts } from '@/features/post';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
@@ -20,6 +19,7 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { FloatingComposeButton } from '@/widgets/compose-entry';
 import { NotificationBell } from '@/widgets/notification-bell';
+import { GalleryFeed, LatestPosts, PopularPosts } from '@/widgets/post-feed';
 
 import { parseGroupCategory } from './model/categories/category-search.schema';
 import type { TGroupQueryRef } from './model/group-query.type';

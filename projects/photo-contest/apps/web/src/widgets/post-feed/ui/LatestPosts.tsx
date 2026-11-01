@@ -4,15 +4,13 @@ import type { ReactNode } from 'react';
 
 import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
+import { PostCard, PostCardList } from '@/features/post';
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-
-import { PostCard } from '../card/PostCard';
-import { PostCardList } from './PostCardList';
 
 const PAGE_SIZE = 24;
 

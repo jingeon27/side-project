@@ -13,7 +13,7 @@ import { match } from 'ts-pattern';
 
 import { GroupContestVoteButton, PhaseBadge } from '@/features/contest';
 import { GroupContentFrame, GroupMembershipButton } from '@/features/group';
-import { CreatePostButton, LatestPosts, PostCard, PostsEmptyState } from '@/features/post';
+import { CreatePostButton, PostCard, PostsEmptyState } from '@/features/post';
 import {
   GroupContestDocument,
   GroupContestResultsDocument,
@@ -29,6 +29,7 @@ import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { NotificationBell } from '@/widgets/notification-bell';
+import { LatestPosts } from '@/widgets/post-feed';
 
 function ContestPhaseSync({ id, phase }: { id: string; phase: Phase }) {
   useQuery(

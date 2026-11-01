@@ -3,12 +3,13 @@
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { GroupCard } from '@/features/group';
-import { GalleryFeed, LatestPosts, PopularPosts, PostsEmptyState } from '@/features/post';
+import { PostsEmptyState } from '@/features/post';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { ComposeEntryButton } from '@/widgets/compose-entry';
+import { GalleryFeed, LatestPosts, PopularPosts } from '@/widgets/post-feed';
 
 import { NoGroupHome } from '../no-group/NoGroupHome';
 

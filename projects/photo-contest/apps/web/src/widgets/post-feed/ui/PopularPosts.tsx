@@ -4,13 +4,11 @@ import type { ReactNode } from 'react';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
+import { PopularPostCard, PostsEmptyState } from '@/features/post';
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-
-import { PopularPostCard } from '../card/PopularPostCard';
-import { PostsEmptyState } from './PostsEmptyState';
 
 const LIMIT = 3;
 

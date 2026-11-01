@@ -10,7 +10,7 @@ import { HomeAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 import { NotificationBell } from '@/widgets/notification-bell';
 
-import { MemberHome } from './ui/MemberHome';
+import { MemberHome } from './member/MemberHome';
 
 export function HomePageTemplate({ initialHasGroups }: { initialHasGroups?: boolean }) {
   return (
