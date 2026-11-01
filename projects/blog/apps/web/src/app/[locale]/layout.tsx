@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
+import { MotionProvider } from '@side/design-system/ui/motion-provider';
+
 import { AnalyticsTracker } from '@/features/analytics-consent/ui/analytics-tracker';
 import { isLocale } from '@/i18n/routing';
 import { siteUrl } from '@/shared/config/site';
@@ -34,10 +36,12 @@ export default async function LocaleLayout({
       <body id="top">
         <ThemeInitializer />
         <NextIntlClientProvider messages={messages}>
-          <Header locale={locale} />
-          {children}
-          <Footer locale={locale} />
-          <AnalyticsTracker />
+          <MotionProvider>
+            <Header locale={locale} />
+            {children}
+            <Footer locale={locale} />
+            <AnalyticsTracker />
+          </MotionProvider>
         </NextIntlClientProvider>
         <script
           type="application/ld+json"

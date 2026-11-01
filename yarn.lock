@@ -1703,6 +1703,7 @@ __metadata:
     "@playwright/test": "catalog:"
     "@sentry/nextjs": "catalog:"
     "@side/config": "workspace:*"
+    "@side/design-system": "workspace:*"
     "@tailwindcss/postcss": "catalog:"
     "@testing-library/dom": "catalog:"
     "@testing-library/jest-dom": "catalog:"

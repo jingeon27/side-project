@@ -10,6 +10,7 @@ import { labels } from '@/shared/config/labels';
 import { BrandMark } from '@/shared/ui/brand-mark';
 
 import { HeaderNav } from './header-nav';
+import { ScrollHeader } from './ScrollHeader';
 
 export function Header({ locale }: { locale: Locale }) {
   const t = labels(locale);
@@ -22,7 +23,7 @@ export function Header({ locale }: { locale: Locale }) {
       <a className="skip-link" href="#main-content">
         {t.nav.skip}
       </a>
-      <header className="site-header">
+      <ScrollHeader>
         <div className="header-inner">
           <Link href={`/${locale}`} className="wordmark" aria-label={t.nav.siteTitle}>
             <BrandMark className="wordmark-icon" />
@@ -39,7 +40,7 @@ export function Header({ locale }: { locale: Locale }) {
             </div>
           </div>
         </div>
-      </header>
+      </ScrollHeader>
     </>
   );
 }

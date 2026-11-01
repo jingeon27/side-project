@@ -135,3 +135,17 @@ Vercel 프로젝트 생성·도메인 연결·Git 연동 배포와 GA4 속성·S
 챗봇, 도메인 간 토큰 전달, TypeScript 패턴 세 글의 한국어와 영어 소제목에서 `0.`, `1.`, `9-1.` 같은 번호를 제거하고 번호로 다른 문단을 가리키던 본문도 고쳤다. 수정한 글의 `updatedAt`만 실제 편집 시각으로 갱신했다. 코드 예제와 원본 이미지의 무결성 검사는 유지한다.
 
 전체 검증을 다시 통과했고, 추가 브라우저 확인에서 이관 글 54개 상세의 원문 발행 시각, 발행과 수정 표시, 번호 없는 소제목과 실제 목차 anchor를 확인했다. 1440px, 390px, 320px에서 기존 글의 날짜가 함께 표시되고 가로 넘침이 없었다. 이관 글 전체 확인 중 브라우저 오류도 없었다.
+
+## 스크롤 방향에 따른 헤더 표시 (2026-11-01)
+
+블로그 헤더는 아래로 12px 이동하면 숨고 위로 8px 이동하면 다시 나타난다. 방향이 바뀌는 기준점을 누적해 작은 흔들림에는 표시 상태가 바뀌지 않으며, 문서 맨 위 8px 안에서는 항상 표시한다. 스크롤 위치를 실제 문서 범위로 제한해 탄성 스크롤의 복귀를 방향 전환으로 처리하지 않는다. 헤더 안의 포커스나 열린 언어 안내도 같은 방향 규칙을 따른다.
+
+서버 `Header`의 글·번역 데이터 구성을 유지하고 `ScrollHeader`는 `@side/design-system/lib/use-scroll-visibility`의 공통 훅을 연결한다. 방향 임계치와 스크롤 범위 제한, 안정된 callback ref의 구독과 StrictMode·Activity 정리는 공통 훅이 소유하며 블로그의 중복 상태 계산은 제거했다. 헤더는 기존 sticky 공간을 유지한 채 transform으로 이동하므로 본문 위치가 바뀌지 않는다. 숨김 중에는 `inert`와 `visibility`로 컨트롤을 탐색 대상에서 제외하고, 기존 모션 줄이기 설정에서는 전환을 생략한다. JavaScript가 없으면 서버 렌더링 헤더와 탐색 링크를 그대로 사용할 수 있다.
+
+최초 구현에서는 Node.js 24.19.0, Yarn 4.17.0으로 콘텐츠 검증(62개 언어별 본문·62개 정적 import·27개 리다이렉트), TypeScript, ESLint, Prettier, Vitest **40개 파일·150개 테스트**, production build **203개 정적 경로**, Playwright **60개 테스트**를 통과했다. Playwright는 앱 소유 격리 포트 3101에서 Chromium 데스크톱과 모바일 뷰포트로 실행했다. 새 6개 브라우저 검사는 실제 wheel 아래·위·맨 위 이동, 본문 문서 좌표와 헤더 높이 유지, 포커스 중 동일한 숨김 동작, 숨김 컨트롤의 Tab 제외, 모션 줄이기와 JavaScript 없는 탐색을 확인한다. 아래·위 스크롤 캡처 4장을 직접 검토했으며, 이는 실제 휴대전화 검증을 뜻하지 않는다.
+
+공통 훅으로 전환한 뒤에는 헤더의 기존 4개 단위 검사를 포함한 관련 **3개 파일·9개 테스트**, TypeScript, ESLint, Prettier, 콘텐츠 검증과 production build **203개 정적 경로**를 다시 통과했다. 같은 격리 production 환경에서 헤더 Playwright **6개 테스트**도 통과했다. 앱과 workspace 패키지가 단일 React를 사용하도록 블로그 Vitest의 React 해석을 dedupe로 맞췄다. Next 기본 Turbopack의 workspace 변환을 사용하므로 별도 transpile 설정은 추가하지 않았다.
+
+Motion 전환에서는 `@side/design-system`이 단일 `motion` 14.9.0 의존성을 소유하고 블로그는 공개 훅과 `MotionProvider`만 사용한다. locale root layout에서 Header·본문·Footer·Analytics를 같은 provider로 감싸고 서버 컴포넌트와 테마 초기화·구조화 데이터의 기존 경계는 유지했다. 공통 provider가 LazyMotion의 DOM 기능과 strict 모드, 사용자 모션 감소 설정, 기본 전환을 제공한다. SSR와 첫 hydration 및 모션 감소 설정에서는 공통 전환 시간이 0이다. 헤더의 기존 CSS 모션 감소 규칙도 유지한다. 방향 계산 정책은 공통 훅에 남기고 실제 스크롤 감지는 Motion의 `scroll` API에 맡긴다. 단위 테스트는 문서 root의 `scrollTop`·`scrollHeight`·`clientHeight`와 두 프레임의 비동기 관측을 사용해 기존 행동·수명 단언을 그대로 확인한다. 이 전환 뒤 관련 **3개 파일·9개 단위 테스트**, TypeScript, 전체 ESLint, Prettier, 콘텐츠 검증(62·62·27), production build **203개 정적 경로**, 격리된 헤더 Playwright **6개 테스트**를 통과했다.
+
+본문·메타데이터·이미지·기존 제품 캡처 출처 manifest는 이번 헤더 변경에서 수정하지 않았다.
