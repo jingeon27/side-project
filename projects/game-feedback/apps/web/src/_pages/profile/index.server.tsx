@@ -55,7 +55,7 @@ export async function ProfileRoute({ params, searchParams }: IProfileRouteProps)
 
 export function ProfileDocument({ locale, children }: { locale: string; children: ReactNode }) {
   return (
-    <CommunityPage locale={locale} topbar={<ProfileTopbar locale={locale} />}>
+    <CommunityPage screenKey="profile" locale={locale} topbar={<ProfileTopbar locale={locale} />}>
       {children}
     </CommunityPage>
   );

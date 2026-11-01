@@ -9,9 +9,7 @@ test('mobile header and three tabs navigate in place and report their paths to t
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await expect(
-    page.getByRole('banner').getByRole('link', { name: 'Game Mate 홈', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('heading', { name: '전체', exact: true })).toBeVisible();
   await expect(page.getByRole('banner').getByRole('combobox')).toHaveCount(0);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await expect(tabs.getByRole('link')).toHaveText(['홈', '채팅', '프로필']);
@@ -230,7 +228,7 @@ test('native back leaves the full-page editor without a dialog and restores filt
   });
   await page.goto('/ko?q=hog&tab=unanswered');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/write');
   await expect(page.getByRole('form', { name: '글쓰기', exact: true })).toBeVisible();
   await expect(page.getByRole('banner')).toBeHidden();

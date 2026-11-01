@@ -15,7 +15,7 @@ import { AuthorLink, UserBadges } from '@/features/user';
 
 import { boardSnapshotSearch } from '../../model/board-filters';
 import type { IBoardPageProps } from '../../model/board-page.type';
-import { BoardHeading } from '../board/BoardHeading';
+import { BoardComposeEntry } from '../board/BoardComposeEntry';
 import { BoardPostList } from '../board/BoardPostList';
 import { CoachingFilters } from './CoachingFilters';
 
@@ -23,7 +23,7 @@ export function CoachingBoard({ locale, initialBoard }: IBoardPageProps) {
   const initialSearch = 'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard);
   return (
     <section className="board-page">
-      <BoardHeading locale={locale} board="COACHING" title="게임코치" action="코칭 등록" />
+      <BoardComposeEntry locale={locale} board="COACHING" />
       <CoachingFilters locale={locale} slug="coaching" initialSearch={initialSearch} />
       <BoardPostList locale={locale} initialBoard={initialBoard} board="COACHING" slug="coaching">
         {(post, game) => (

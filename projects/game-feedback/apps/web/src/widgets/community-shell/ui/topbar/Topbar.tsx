@@ -1,14 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 
 import { ArrowLeft } from 'lucide-react';
 
 import { cn, iconButtonVariants } from '@side/design-system';
 
 import { LanguageSelect, useI18n } from '@/shared/i18n';
-import { BackLink, TabLink } from '@/shared/navigation';
+import { BackLink } from '@/shared/navigation';
 
 import { TopbarAccount } from './TopbarAccount';
 import { TopbarActions } from './TopbarActions';
@@ -22,21 +21,11 @@ function TopbarRoot({ children, className }: { children: ReactNode; className?: 
     </header>
   );
 }
-function TopbarBrand({ home }: { home: string }) {
-  const { t } = useI18n();
+function TopbarTitle({ children, heading = false }: { children: ReactNode; heading?: boolean }) {
+  const Title = heading ? 'h1' : 'p';
   return (
-    <TabLink href={home} className="brand" aria-label={t('Game Mate 홈')}>
-      <span className="brand-mark">
-        <Image src="/icon.svg" alt="" aria-hidden width={35} height={35} unoptimized />
-      </span>
-      <span>{t('Game Mate')}</span>
-    </TabLink>
-  );
-}
-function TopbarTitle({ children }: { children: ReactNode }) {
-  return (
-    <div className="mobile-page-title">
-      <p>{children}</p>
+    <div className="topbar-title">
+      <Title>{children}</Title>
     </div>
   );
 }
@@ -58,7 +47,6 @@ function TopbarLanguage() {
 }
 export const Topbar = {
   Root: TopbarRoot,
-  Brand: TopbarBrand,
   Title: TopbarTitle,
   Back: TopbarBack,
   Actions: TopbarActions,

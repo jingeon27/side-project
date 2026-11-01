@@ -1,5 +1,5 @@
 @layer components {
-  .profile-topbar .mobile-page-title {
+  .profile-topbar .topbar-title {
     display: block;
     min-width: 0;
     font-size: var(--text-title);
@@ -507,7 +507,7 @@
   }
   .public-profile-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: start;
     gap: 8px;
   }
@@ -524,7 +524,9 @@
   .public-profile-actions .chat-author-link {
     grid-column: 2;
   }
-  .public-profile-actions .profile-report-action {
+  .public-profile-actions .profile-safety-actions {
+    display: flex;
+    gap: 8px;
     grid-column: 3;
     grid-row: 1;
   }

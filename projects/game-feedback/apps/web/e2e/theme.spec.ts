@@ -34,7 +34,7 @@ for (const width of [400, 1440]) {
     await page.goto('/ko');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('.topbar').getByRole('combobox', { name: '화면 모드' })).toHaveCount(0);
-    const write = page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true });
+    const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await write.click();
     const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
     await expect(required).toHaveCSS('background-color', 'rgb(28, 27, 26)');

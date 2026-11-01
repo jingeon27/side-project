@@ -2,6 +2,8 @@ export { Button, buttonVariants } from './ui/button/Button';
 export type { IButtonProps } from './ui/button/Button';
 export { IconButton, iconButtonVariants } from './ui/icon-button/IconButton';
 export type { IIconButtonProps } from './ui/icon-button/IconButton';
+export { FloatingActionButton } from './ui/floating-action-button/FloatingActionButton';
+export type { IFloatingActionButtonProps } from './ui/floating-action-button/FloatingActionButton';
 export { TextField, TextAreaField } from './ui/text-field/TextField';
 export type { ITextFieldProps, ITextAreaFieldProps } from './ui/text-field/TextField';
 export { FormField } from './ui/form-field/FormField';
@@ -29,6 +31,11 @@ export type {
 } from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
+export { useScrollVisibility } from './lib/use-scroll-visibility';
+export { useMotionPreference } from './lib/use-motion-preference';
+export { MotionProvider } from './ui/motion-provider/MotionProvider';
+export type { IMotionProviderProps } from './ui/motion-provider/MotionProvider';
+export { m, AnimatePresence, useAnimate, useMotionValue, useSpring } from './lib/motion';
 export { Mention } from './ui/mention/Mention';
 export type { IMentionProps } from './ui/mention/Mention';
 

@@ -27,7 +27,7 @@ test('mobile login opens its page with branded buttons and returns to the origin
   await configureProviders(page);
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto(destination);
-  await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
   await expect(required).toBeVisible();
   await expect(page).toHaveURL(destination);
@@ -86,7 +86,7 @@ test('desktop login stays in a centered dialog with focus recovery', async ({ pa
   await configureProviders(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/ko');
-  const write = page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true });
+  const write = page.getByRole('button', { name: '글쓰기', exact: true });
   await write.click();
   await page
     .getByRole('dialog', { name: '로그인이 필요해요', exact: true })

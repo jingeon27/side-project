@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { uniqBy } from 'es-toolkit';
@@ -40,6 +40,12 @@ function ThreadComment({
   const { t } = useI18n();
   const { session, requireLogin } = useSession();
   const [replying, setReplying] = useState(false);
+  const restoreReplyFocus = useRef(false);
+  const handleReplyButton = useCallback((button: HTMLButtonElement | null) => {
+    if (!button || !restoreReplyFocus.current) return;
+    restoreReplyFocus.current = false;
+    button.focus();
+  }, []);
   const author = comment.author;
   const handleReply = () => {
     if (!session.user) {
@@ -48,7 +54,10 @@ function ThreadComment({
     }
     setReplying(true);
   };
-  const handleCloseReply = () => setReplying(false);
+  const handleCloseReply = () => {
+    restoreReplyFocus.current = true;
+    setReplying(false);
+  };
   return (
     <>
       <CommentItem
@@ -63,7 +72,7 @@ function ThreadComment({
           !comment.isDeleted &&
           canReply &&
           !replying && (
-            <Button variant="ghost" size="sm" type="button" onClick={handleReply}>
+            <Button ref={handleReplyButton} variant="ghost" size="sm" type="button" onClick={handleReply}>
               <Reply size={14} aria-hidden="true" />
               {t('답글')}
             </Button>

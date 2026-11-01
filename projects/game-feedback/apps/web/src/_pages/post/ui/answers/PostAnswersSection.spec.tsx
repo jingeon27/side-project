@@ -19,7 +19,9 @@ vi.mock('@/features/user', () => ({
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
   UserBadges: () => null,
 }));
-vi.mock('./AnswerComposer', () => ({ AnswerComposer: () => null }));
+vi.mock('./AnswerComposer', () => ({
+  AnswerComposer: () => <textarea aria-label="피드백 내용" />,
+}));
 vi.mock('./AnswerActions', () => ({ AnswerActions: () => null }));
 vi.mock('@/features/auth', () => ({ useSession: () => ({ session: { user: { id: 'viewer' } } }) }));
 vi.mock('./HelpfulAnswerButton', () => ({ HelpfulAnswerButton: () => null }));
@@ -61,6 +63,15 @@ function renderAnswers(answers: Answer[], cursor: string | null) {
 beforeEach(() => state.later.mockReset());
 
 describe('later answer pages', () => {
+  it('keeps one composer before the existing feedback so reading more never moves the entry below it', () => {
+    renderAnswers([answer('first')], 'cursor-1');
+    const composer = screen.getByRole('textbox', { name: '피드백 내용' });
+    expect(screen.getAllByRole('textbox', { name: '피드백 내용' })).toHaveLength(1);
+    expect(
+      composer.compareDocumentPosition(screen.getByText('first 본문')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('appends later answers page by page until the last one and then shows the exact count', async () => {
     state.later.mockImplementation(async (cursor: string) =>
       cursor === 'cursor-1'

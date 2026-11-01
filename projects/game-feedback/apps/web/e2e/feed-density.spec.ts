@@ -1,19 +1,35 @@
 import { expect, test } from './support/test';
 
 for (const width of [320, 390, 430]) {
-  test(`${width}px 홈은 글쓰기를 분류 제목 옆에 두고 작성자와 인증을 한 줄로 보여야 한다`, async ({
-    page,
-  }) => {
+  test(`${width}px 홈은 글쓰기를 고정하고 작성자와 인증을 한 줄로 보여야 한다`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/ko');
     const navigation = page.locator('.game-board-navigation:visible');
-    const heading = navigation.locator('.game-board-heading');
-    const compose = heading.getByRole('button', { name: '글쓰기', exact: true });
+    const compose = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(compose).toBeVisible();
+    await expect(compose).toHaveCSS('position', 'fixed');
     await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(1);
-    await expect(navigation.locator('.game-board-chips').getByRole('link')).toHaveCount(6);
-    for (const chip of await navigation.locator('.game-board-chips').getByRole('link').all())
-      await expect(chip).toBeInViewport({ ratio: 1 });
+    const chips = navigation.locator('.game-board-chips');
+    const chipLinks = chips.getByRole('link');
+    await expect(chipLinks).toHaveText(['전체', '친추판매', '전투 모집', '게임코치', '자유게시판', '피드백']);
+    await expect(chips).toHaveCSS('flex-wrap', 'nowrap');
+    const chipRows = await chipLinks.evaluateAll((links) =>
+      links.map((link) => Math.round(link.getBoundingClientRect().top)),
+    );
+    expect(new Set(chipRows).size).toBe(1);
+    await expect(chipLinks.first()).toBeInViewport({ ratio: 1 });
+    await chipLinks.last().focus();
+    await expect(chipLinks.last()).toBeInViewport({ ratio: 1 });
+    expect(await chips.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await chipLinks.last().press('Enter');
+    await expect(page).toHaveURL('/ko/boards/feedback');
+    const currentChip = navigation.locator('[aria-current="page"]');
+    await expect(currentChip).toHaveText('피드백');
+    await expect(currentChip).toBeInViewport({ ratio: 1 });
+    await page.goto('/ko');
+    await expect(navigation.locator('[aria-current="page"]')).toHaveText('전체');
+    await expect(chipLinks.first()).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const cards = page.locator('.post-card');
     await expect(cards.first()).toBeVisible();
     const navigationBounds = await navigation.boundingBox();
@@ -44,7 +60,7 @@ test('데스크톱도 글쓰기 진입을 하나만 유지하고 상세와 프�
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/ko');
-  await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '전체', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(1);
   const verified = page
     .locator('.post-card')

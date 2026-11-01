@@ -14,13 +14,13 @@ import {
 import { AuthorLink, UserBadges } from '@/features/user';
 
 import type { IBoardPageProps } from '../../model/board-page.type';
-import { BoardHeading } from '../board/BoardHeading';
+import { BoardComposeEntry } from '../board/BoardComposeEntry';
 import { BoardPostList } from '../board/BoardPostList';
 
 export function FriendSaleBoard({ locale, initialBoard }: IBoardPageProps) {
   return (
     <section className="board-page">
-      <BoardHeading locale={locale} board="FRIEND_SALE" title="친추판매" />
+      <BoardComposeEntry locale={locale} board="FRIEND_SALE" />
 
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FRIEND_SALE" slug="friend-sale">
         {(post, game) => (

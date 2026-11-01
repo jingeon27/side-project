@@ -9,7 +9,6 @@ export function SearchTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('검색')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

@@ -1,12 +1,13 @@
 'use client';
 
-import type { ReactNode, Ref } from 'react';
+import type { Ref } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
 
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
 import { buttonVariants, cn } from '@side/design-system';
+import { useScrollVisibility } from '@side/design-system/lib/use-scroll-visibility';
 
 import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
@@ -19,19 +20,24 @@ import { GameIcon } from './GameIcon';
 interface IGameBoardNavigationProps {
   locale: string;
   path: string;
-  heading?: ReactNode;
 }
-export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigationProps) {
+export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps) {
   const { t } = useI18n();
-  const currentChip = useCurrentChipScroll();
+  const { ref: navigationRef, hidden } = useScrollVisibility<HTMLDivElement>();
   const categories = useQuery(categoryOptions());
   const selected = activeGameBoard(path);
   const route = resolveAppRoute(path);
   const game = categories.data?.find((item) => item.active && item.slug === (route?.game ?? 'clash-royale'));
+  const currentChip = useCurrentChipScroll(`${locale}:${game?.slug ?? ''}`);
   if (!route || !['feed', 'boards'].includes(route.screen)) return null;
-  if (!game && !heading) return null;
+  if (!game) return null;
   return (
-    <div className="game-board-navigation" data-has-heading={Boolean(heading) || undefined}>
+    <div
+      ref={navigationRef}
+      className="game-board-navigation"
+      data-scroll-hidden={hidden || undefined}
+      inert={hidden}
+    >
       <div className="game-category-group">
         <div className="game-board-heading">
           <div className="game-board-title">
@@ -39,11 +45,10 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
               <>
                 <GameIcon slug={game.slug} />
                 <strong>{game.name}</strong>
-                {!heading && <span>{t('분류')}</span>}
+                <span>{t('분류')}</span>
               </>
             )}
           </div>
-          {heading}
         </div>
         {game && (
           <nav className="game-board-chips" aria-label={t('{game} 게시판', { game: game.name })}>
@@ -59,13 +64,6 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
             >
               {t('전체')}
             </TabLink>
-            <GameBoardChip
-              kind="FEEDBACK"
-              locale={locale}
-              game={game.slug}
-              selected={selected}
-              currentChip={currentChip}
-            />
             <GameBoardChip
               kind="FRIEND_SALE"
               locale={locale}
@@ -89,6 +87,13 @@ export function GameBoardNavigation({ locale, path, heading }: IGameBoardNavigat
             />
             <GameBoardChip
               kind="FREE"
+              locale={locale}
+              game={game.slug}
+              selected={selected}
+              currentChip={currentChip}
+            />
+            <GameBoardChip
+              kind="FEEDBACK"
               locale={locale}
               game={game.slug}
               selected={selected}

@@ -103,6 +103,19 @@ beforeEach(() => {
 });
 
 describe('comment replies', () => {
+  it('shows one labelled comment entry with persistent guidance before the threads', () => {
+    renderComments([comment('first')]);
+    const input = screen.getByRole('textbox', { name: '댓글 내용' });
+    const label = input.closest('label');
+    expect(label?.textContent).toContain('댓글 내용');
+    expect(label?.textContent).toContain('1~2,000자로 작성해주세요.');
+    expect(input.getAttribute('aria-describedby')).toBeTruthy();
+    expect(screen.getAllByRole('textbox', { name: '댓글 내용' })).toHaveLength(1);
+    expect(
+      input.compareDocumentPosition(screen.getByText('first 본문')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('keeps the displayed count as a lower bound when earlier replies or filtered authors remain', () => {
     renderComments([
       { ...comment('first'), replyCount: 205, repliesCursor: 'earlier-replies' },
@@ -172,6 +185,7 @@ describe('comment replies', () => {
       ),
     );
     await waitFor(() => expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull());
+    expect(document.activeElement).toBe(within(secondThread).getByRole('button', { name: '답글' }));
     expect(state.notify).toHaveBeenCalledWith('답글을 남겼어요.');
   });
 
@@ -185,13 +199,18 @@ describe('comment replies', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
     await waitFor(() => expect(state.create).toHaveBeenCalledOnce());
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).disabled).toBe(true);
+    const input = screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' });
+    expect(input.readOnly).toBe(true);
+    expect(input.disabled).toBe(false);
+    expect(document.activeElement).toBe(input);
     expect(screen.getByRole<HTMLButtonElement>('button', { name: '취소' }).disabled).toBe(true);
     expect(screen.getByRole('button', { name: '답글 등록' }).getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
     expect(state.create).toHaveBeenCalledOnce();
     await act(async () => pending.reject(new Error('잠시 후 다시 시도해주세요.')));
     await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('잠시 후 다시 시도해주세요.'));
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(screen.getByRole('alert').id);
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).value).toBe(
       '실패해도 남아야 하는 답글',
     );
@@ -209,6 +228,7 @@ describe('comment replies', () => {
     fireEvent.click(screen.getByRole('button', { name: '취소' }));
     expect(state.create).not.toHaveBeenCalled();
     expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '답글' }));
     fireEvent.click(screen.getByRole('button', { name: '답글' }));
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).value).toBe('');
   });

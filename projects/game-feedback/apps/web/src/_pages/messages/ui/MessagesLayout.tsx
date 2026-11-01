@@ -17,6 +17,7 @@ export function MessagesLayout({ locale, children }: { locale: string; children:
   return (
     <CommunityPage
       locale={locale}
+      screenKey={conversationId ? `conversation:${conversationId}` : 'messages'}
       topbar={conversationId ? <ConversationTopbar locale={locale} /> : <MessagesTopbar locale={locale} />}
     >
       <MessagesPage locale={locale} conversationId={conversationId} />

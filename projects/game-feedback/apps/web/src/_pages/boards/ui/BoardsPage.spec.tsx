@@ -115,8 +115,8 @@ it.each([
     const { client, element } = mountBoard(Board, fixture(kind));
     try {
       const html = renderToString(element);
-      expect(html).toContain(`<h1>${title}</h1>`);
-      expect(html).toContain(kind === 'COACHING' ? '코칭 등록' : '글쓰기');
+      expect(html).not.toContain(`<h1>${title}</h1>`);
+      expect(html).toContain('aria-label="글쓰기"');
       expect(html).toContain('게시판 본문 확인');
       expect(html).toContain('서버에서 받은 게시물 내용입니다.');
       expect(html).toContain('작성자');

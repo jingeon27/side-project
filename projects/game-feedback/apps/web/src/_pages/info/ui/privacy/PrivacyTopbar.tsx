@@ -9,7 +9,6 @@ export function PrivacyTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('개인정보 처리방침')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

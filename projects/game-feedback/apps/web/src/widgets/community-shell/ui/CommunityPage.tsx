@@ -18,12 +18,12 @@ export function CommunityPage({
   children,
   locale,
   topbar,
-  feedHeading,
+  screenKey,
 }: {
   children: ReactNode;
   locale: string;
   topbar: ReactNode;
-  feedHeading?: ReactNode;
+  screenKey: string;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
@@ -32,7 +32,12 @@ export function CommunityPage({
   const home = appRoutes.feed(locale);
   return (
     <>
-      <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
+      <ServiceErrorBoundary
+        title={t('상단 메뉴')}
+        resetKey={`${userKey}:${locale}:${screenKey}`}
+        compact
+        fallbackClassName="topbar"
+      >
         {topbar}
       </ServiceErrorBoundary>
       <div className="site-grid">
@@ -45,13 +50,9 @@ export function CommunityPage({
         </div>
         <RouteViewport>
           <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
-            {feedHeading ? (
-              <GameBoardNavigation locale={locale} path={home} heading={feedHeading} />
-            ) : (
-              <Suspense fallback={null}>
-                <BoardNavigationRoute locale={locale} />
-              </Suspense>
-            )}
+            <Suspense fallback={null}>
+              <BoardNavigationRoute locale={locale} />
+            </Suspense>
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>

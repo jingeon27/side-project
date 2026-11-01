@@ -7,6 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  LEGAL_POLICY_VERSION,
   NotificationListSchema,
   SocialProviderSchema,
   SupportThreadListSchema,
@@ -482,7 +483,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
   });
 
   it('separates the same external subject across all three social providers and preserves repeat logins', async () => {
-    const { app } = fixture();
+    const { app, db } = fixture();
     const ids = new Set<string>();
     for (const provider of SocialProviderSchema.options) {
       const agent = supertest.agent(app.getHttpServer());
@@ -501,6 +502,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
           .expect(200)
       ).body.user;
       ids.add(user.id);
+      const consent = await db.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { termsVersion: true, termsAcceptedAt: true },
+      });
+      expect(consent.termsVersion).toBe(LEGAL_POLICY_VERSION);
+      expect(consent.termsAcceptedAt).toBeInstanceOf(Date);
       const again = await agent.get(`/api/auth/social/${provider}`).expect(302);
       await agent
         .get(`/api/auth/social/${provider}/callback`)
@@ -510,6 +517,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         })
         .expect(302);
       expect((await agent.get('/api/session')).body.user.id).toBe(user.id);
+      expect(
+        await db.user.findUniqueOrThrow({
+          where: { id: user.id },
+          select: { termsVersion: true, termsAcceptedAt: true },
+        }),
+      ).toEqual(consent);
     }
     expect(ids.size).toBe(3);
   });

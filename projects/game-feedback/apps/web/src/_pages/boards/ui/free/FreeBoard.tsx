@@ -13,13 +13,13 @@ import {
 import { AuthorLink, UserBadges } from '@/features/user';
 
 import type { IBoardPageProps } from '../../model/board-page.type';
-import { BoardHeading } from '../board/BoardHeading';
+import { BoardComposeEntry } from '../board/BoardComposeEntry';
 import { BoardPostList } from '../board/BoardPostList';
 
 export function FreeBoard({ locale, initialBoard }: IBoardPageProps) {
   return (
     <section className="board-page">
-      <BoardHeading locale={locale} board="FREE" title="자유게시판" />
+      <BoardComposeEntry locale={locale} board="FREE" />
 
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FREE" slug="free">
         {(post, game) => (

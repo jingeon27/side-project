@@ -1,10 +1,11 @@
+import Link from 'next/link';
+
 import { ArrowLeft } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 
 import { isLocale, translate } from '@/shared/i18n/index.server';
-import { BackLink } from '@/shared/navigation';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { infoTitles, type TInfoKind } from '../model/info';
@@ -23,6 +24,7 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
   return (
     <CommunityPage
       locale={locale}
+      screenKey={kind}
       topbar={match(kind)
         .with('guide', () => <GuideTopbar locale={locale} />)
         .with('terms', () => <TermsTopbar locale={locale} />)
@@ -30,12 +32,10 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
         .with('contact', () => <ContactTopbar locale={locale} />)
         .exhaustive()}
     >
-      {kind !== 'guide' && (
-        <BackLink className="back-link" href={appRoutes.feed(locale)}>
-          <ArrowLeft size={16} />
-          {translate(language, '홈')}
-        </BackLink>
-      )}
+      <Link className="back-link" href={appRoutes.feed(locale)}>
+        <ArrowLeft size={16} aria-hidden />
+        {translate(language, '홈')}
+      </Link>
       <article className="info-card" lang={language}>
         <h1>{translate(language, infoTitles[kind])}</h1>
         {match(kind)
