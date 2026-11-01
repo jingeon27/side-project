@@ -9,7 +9,6 @@ export function ContactTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('문의하기')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />
