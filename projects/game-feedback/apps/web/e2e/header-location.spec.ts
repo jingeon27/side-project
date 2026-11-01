@@ -1,4 +1,5 @@
 import { expect, test } from './support/test';
+import { touchScroll } from './support/touch-scroll';
 
 const sections = [
   { path: '', labels: ['전체', 'All', 'すべて'] },
@@ -58,6 +59,7 @@ for (const width of [360, 390]) {
     const chips = page.locator('main:visible .game-board-navigation');
     const header = page.getByRole('banner');
     await expect(chips).toBeVisible();
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeEnabled();
     await expect(chips).toHaveCSS('position', 'sticky');
     const initialHeader = await header.boundingBox();
     const initialTitle = await chips.locator('.game-board-title').boundingBox();
@@ -69,12 +71,10 @@ for (const width of [360, 390]) {
     const cdp = await page.context().newCDPSession(page);
     try {
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true });
-      const gesture = cdp.send('Input.synthesizeScrollGesture', {
+      const gesture = touchScroll(page, cdp, {
         x: Math.floor(width / 2),
-        y: 650,
-        yDistance: -500,
-        speed: 500,
-        gestureSourceType: 'touch',
+        fromY: 650,
+        toY: 150,
       });
       await expect(chips).toHaveAttribute('data-scroll-hidden', 'true');
       await expect(chips).toBeHidden();
@@ -84,12 +84,10 @@ for (const width of [360, 390]) {
         'true',
       );
       await expect(chips).toBeHidden();
-      await cdp.send('Input.synthesizeScrollGesture', {
+      await touchScroll(page, cdp, {
         x: Math.floor(width / 2),
-        y: 500,
-        yDistance: 160,
-        speed: 500,
-        gestureSourceType: 'touch',
+        fromY: 500,
+        toY: 660,
       });
       await expect(chips).not.toHaveAttribute('data-scroll-hidden');
       await expect(chips).toBeVisible();

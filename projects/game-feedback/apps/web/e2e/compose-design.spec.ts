@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { PostSchema, SessionSchema } from '@game-feedback/contracts';
 
 import { expect, test } from './support/test';
+import { touchScroll } from './support/touch-scroll';
 
 const origin = 'http://127.0.0.1:3301';
 const stage = process.env.GF_COMPOSE_AUDIT_STAGE ?? 'after';
@@ -473,18 +474,17 @@ test.describe('touch compose entry', () => {
     await page.goto('/ko');
     const entry = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(entry).toBeInViewport({ ratio: 1 });
+    await expect(entry).toBeEnabled();
     // 서버 셸 뒤에 피드가 스트리밍되므로 실제로 당길 본문이 붙은 뒤 터치를 보낸다.
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
       .toBeGreaterThan(400);
     const session = await page.context().newCDPSession(page);
     try {
-      await session.send('Input.synthesizeScrollGesture', {
+      await touchScroll(page, session, {
         x: 180,
-        y: 600,
-        yDistance: -400,
-        speed: 500,
-        gestureSourceType: 'touch',
+        fromY: 600,
+        toY: 200,
       });
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
       await expect(entry).not.toHaveAttribute('data-scrolling', 'true');
