@@ -1,3 +1,5 @@
+import { connection } from 'next/server';
+
 import { ContestPage, contestSearchSchema } from '@/_pages/contest';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
@@ -20,6 +22,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { id } = await params;
   const { sort } = contestSearchSchema.parse(await searchParams);
   return (

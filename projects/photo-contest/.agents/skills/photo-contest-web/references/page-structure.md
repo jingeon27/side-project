@@ -83,3 +83,11 @@ yarn workspace @photo-contest/web test
 - Game Feedback처럼 `_pages/<screen>/ui/<Screen>Page.tsx`가 화면을 조립한다. 하위 UI와 모델은 같은 책임 이름으로 묶고, 테스트는 구현 옆에 둔다.
 - 그룹 조회·생성·수정·글쓰기는 각각의 화면 slice가 소유한다. 진행·완료 대회 목록은 `group-contests`, 개별 그룹 대회는 `group-contest`, 기존 Submission 대회는 `contest`가 맡는다.
 - 루트 `index.ts`는 UI·입력의 공개 API, `index.server.ts`는 서버 조회·메타데이터의 공개 API다. 페이지끼리 import하거나 서버 코드를 클라이언트 배럴에 섞지 않는다.
+
+## 즉시 탐색
+
+- Next의 `cacheComponents`·`partialPrefetching`을 사용한다. `instant`는 전환 속도를 켜는 스위치가 아니라 준비된 UI를 검증하는 설정이다. 그룹·대회와 홈·탐색·MY는 `instant = true`로 검증한다.
+- 요청별 Apollo `PreloadQuery`·인증 조회를 시작하는 라우트는 먼저 `await connection()`으로 요청 시점에 렌더한다. 서버의 QueryRef·개인화 데이터를 공유 캐시에 넣지 않는다.
+- 각 화면의 `loading.tsx`는 해당 `_pages`의 `ui/<Screen>PendingPage.tsx`를 쓴다. 홈은 `(home)` 라우트 그룹으로 로딩 경계를 한정해 작성·수정 화면에 하단 메뉴가 나타나지 않게 한다. 루트 레이아웃은 최초 테마·앱 환경을 먼저 결정하기 위해 `instant = false`를 유지한다.
+- 그룹 로딩 UI는 Apollo 캐시에 접근 권한이 확인된 경우만 그룹 메뉴를 표시하며 새 요청을 시작하지 않는다. 실제 페이지의 권한 확인과 비공개 게시물의 클라이언트 조회 경계는 유지한다.
+- `e2e/instant-navigation.spec.ts`는 production 빌드에서 Chrome은 `@next/playwright`의 `instant()`, Safari는 실제 RSC 요청 보류로 헤더·메뉴·선택 상태와 응답 재개를 검증한다. 테스트 API는 기존 loopback 격리 포트 빌드에서만 노출한다.

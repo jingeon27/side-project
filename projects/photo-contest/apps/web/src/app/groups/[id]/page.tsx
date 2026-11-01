@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
 import { GroupPage, parseGroupCategory } from '@/_pages/group';
 import { getGroupMetadata, getGroupSeoData, groupJsonLd } from '@/_pages/group/index.server';
@@ -27,6 +28,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { id } = await params;
   const seo = await getGroupSeoData(id);
   if (!seo) notFound();
@@ -65,3 +67,5 @@ export default async function Page({
     </>
   );
 }
+
+export const instant = true;

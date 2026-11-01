@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 
 import { ExplorePage, exploreSearchSchema } from '@/_pages/explore';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
@@ -23,6 +24,7 @@ export async function generateMetadata({
 }
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
+  await connection();
   const { q: search } = exploreSearchSchema.parse(await searchParams);
   return (
     <PreloadQuery query={MeDocument}>
@@ -34,3 +36,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
     </PreloadQuery>
   );
 }
+
+export const instant = true;

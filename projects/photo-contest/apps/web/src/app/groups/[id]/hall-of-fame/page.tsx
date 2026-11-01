@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
 import { GroupContestsPage } from '@/_pages/group-contests';
 import {
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const seo = await getGroupContestsSeoData(id, true);
   if (!seo) notFound();
@@ -51,3 +53,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     </>
   );
 }
+
+export const instant = true;

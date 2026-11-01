@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 
 import { HomePage } from '@/_pages/home';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
@@ -28,6 +29,7 @@ export function generateMetadata(): Metadata {
 }
 
 export default async function Page() {
+  await connection();
   const { data: viewer } = await query({ query: MeDocument });
   const groups = viewer?.me ? await query({ query: MyGroupsDocument }) : null;
   const showPublic = !groups?.data?.myGroups.length;
@@ -82,3 +84,5 @@ export default async function Page() {
     </>
   );
 }
+
+export const instant = true;

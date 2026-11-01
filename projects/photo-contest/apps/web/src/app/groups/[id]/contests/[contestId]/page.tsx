@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
 import { match } from 'ts-pattern';
 
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: IPageProps): Promise<Metadata
 }
 
 export default async function Page({ params }: IPageProps) {
+  await connection();
   const { id, contestId } = await params;
   const seo = await getGroupContestSeoData(id, contestId);
   if (!seo) notFound();
@@ -85,3 +87,5 @@ export default async function Page({ params }: IPageProps) {
     </>
   );
 }
+
+export const instant = true;

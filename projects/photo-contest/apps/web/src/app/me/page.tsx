@@ -1,3 +1,5 @@
+import { connection } from 'next/server';
+
 import { MePage } from '@/_pages/me';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
@@ -7,7 +9,8 @@ import {
   NotificationUnreadCountDocument,
 } from '@/shared/api/generated';
 
-export default function Page() {
+export default async function Page() {
+  await connection();
   return (
     <PreloadQuery query={MeDocument}>
       <PreloadQuery query={MyGroupsDocument}>
@@ -20,3 +23,5 @@ export default function Page() {
     </PreloadQuery>
   );
 }
+
+export const instant = true;

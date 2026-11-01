@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 
 import { GroupWritePage } from '@/_pages/group-write';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
@@ -16,6 +17,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ contestId?: string }>;
 }) {
+  await connection();
   const { id } = await params;
   const { data } = await query({ query: GalleryDocument, variables: { id }, errorPolicy: 'all' });
   if (!data?.group.role) redirect(ROUTES.GROUP(id));

@@ -1,8 +1,11 @@
+import { connection } from 'next/server';
+
 import { NotificationsPage } from '@/_pages/notifications';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
 import { MeDocument, MyNotificationsDocument } from '@/shared/api/generated';
 
 export default async function Page() {
+  await connection();
   const { data } = await query({ query: MeDocument });
   return (
     <PreloadQuery query={MeDocument}>
