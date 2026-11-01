@@ -129,7 +129,10 @@ test('comment drafts support line breaks and author chat opens the correct conve
     const peerBox = await theirs.boundingBox();
     if (!ownBox || !peerBox) throw new Error('Both comment bubbles must be visible.');
     expect(Math.abs(ownBox.x - peerBox.x)).toBeLessThanOrEqual(1);
-    expect((await page.locator('.comment-compose').boundingBox())?.height).toBeLessThanOrEqual(64);
+    const inputBox = await input.boundingBox();
+    expect(inputBox?.height).toBeGreaterThanOrEqual(44);
+    expect(inputBox?.y).toBeLessThan(peerBox.y);
+    await expect(input).toHaveAttribute('aria-describedby', /\S+/);
   }
   await page.setViewportSize({ width: 393, height: 852 });
   await comments.evaluate((node) => node.scrollIntoView({ block: 'start' }));

@@ -9,7 +9,7 @@ import { createAnswerMutationOptions } from '@/features/answer';
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+import { Avatar, Field, useNotify } from '@/shared/ui';
 
 import { answerFormSchema } from '../../model/content.schema';
 
@@ -45,15 +45,22 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
             }
           })}
         >
-          <Textarea
-            aria-label={t('피드백 내용')}
-            {...form.register('body')}
-            placeholder={t('어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)')}
-            minLength={10}
-            maxLength={10000}
-            rows={5}
-            required
-          />
+          <Field
+            label={t('피드백 내용')}
+            hint={t('어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)')}
+            error={errorMessage && t(errorMessage)}
+          >
+            <Textarea
+              className="min-h-32 max-h-80"
+              aria-label={t('피드백 내용')}
+              {...form.register('body')}
+              minLength={10}
+              maxLength={10000}
+              rows={5}
+              readOnly={mutation.isPending}
+              required
+            />
+          </Field>
           <div className="compose-bottom">
             <Button
               variant="primary"
@@ -66,7 +73,6 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
               {t('피드백 남기기')}
             </Button>
           </div>
-          <ErrorNotice message={errorMessage && t(errorMessage)} />
         </form>
       ) : (
         <div className="login-prompt">

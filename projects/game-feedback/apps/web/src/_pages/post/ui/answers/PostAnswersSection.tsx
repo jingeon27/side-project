@@ -4,8 +4,9 @@ import { useState } from 'react';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { uniqBy } from 'es-toolkit';
+import { MessageSquarePlus } from 'lucide-react';
 
-import { Button, StatusAnimation } from '@side/design-system';
+import { Button } from '@side/design-system';
 
 import { AnswerCard, laterAnswerOptions } from '@/features/answer';
 import { useSession } from '@/features/auth';
@@ -64,9 +65,15 @@ export function PostAnswersSection({
         </h2>
         <span className="small muted">{t('플레이를 이야기하고, 서로를 존중해요')}</span>
       </div>
+      <AnswerComposer postId={postId} />
       {loaded.length === 0 && !hasLater && (
         <div className="empty-answers">
-          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
+          <span
+            aria-hidden
+            className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+          >
+            <MessageSquarePlus className="size-full" />
+          </span>
           <strong>{t('첫 번째 피드백을 기다리고 있어요')}</strong>
           <p>{t('비슷한 경험이나 작은 팁부터 나눠주세요.')}</p>
         </div>
@@ -101,7 +108,6 @@ export function PostAnswersSection({
           )}
         </div>
       )}
-      <AnswerComposer postId={postId} />
     </section>
   );
 }
