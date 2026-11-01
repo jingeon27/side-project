@@ -1,4 +1,4 @@
-import { expect, test } from './support/test';
+import { expect, seedGroup, test } from './support/test';
 import { landingScreens } from './support/web-screens';
 
 test('소개 화면의 주 버튼은 크기가 같고 상단 안내와 시작하기는 간격을 유지해야 한다 @desktop @ios', async ({
@@ -52,4 +52,35 @@ test('랜딩의 시작하기는 피드 인증으로 이어지고 익명 시작 �
   await landingScreens.anonymousStart(page).click();
   await expect(page).toHaveURL('/');
   await expect(landingScreens.feedHeading(page)).toBeVisible();
+});
+
+for (const placement of ['header', 'hero'] as const) {
+  test(`${placement} 시작하기는 redirect의 그룹을 로그인 후에도 유지한다 @desktop @ios`, async ({
+    page,
+    context,
+    signIn,
+  }) => {
+    const owner = await signIn(`landing-${placement}`);
+    const group = await seedGroup(owner, `랜딩에서 만난 그룹 ${placement}`);
+    await context.clearCookies();
+    const destination = `/groups/${group.id}`;
+    await page.goto(`/about?${new URLSearchParams({ redirect: destination })}`);
+    const start = placement === 'header' ? landingScreens.headerStart(page) : landingScreens.startLink(page);
+    await expect(start).toHaveAttribute('href', destination);
+    await start.click();
+    await expect(page).toHaveURL(`/sign?${new URLSearchParams({ next: destination })}`);
+    await landingScreens.anonymousStart(page).click();
+    await expect(page).toHaveURL(destination);
+    await expect(landingScreens.groupHeading(page)).toHaveText(`랜딩에서 만난 그룹 ${placement}`);
+  });
+}
+
+test('외부 redirect는 홈으로 되돌리고 이용 방법도 같은 시작 경로를 사용한다 @desktop @ios', async ({
+  page,
+}) => {
+  await page.goto(`/about?${new URLSearchParams({ redirect: '//outside.example/path' })}`);
+  await expect(landingScreens.startLink(page)).toHaveAttribute('href', '/');
+  await expect(landingScreens.headerStart(page)).toHaveAttribute('href', '/');
+  await page.goto(`/about/how-it-works?${new URLSearchParams({ redirect: '/groups/target-group' })}`);
+  await expect(landingScreens.startLink(page)).toHaveAttribute('href', '/groups/target-group');
 });

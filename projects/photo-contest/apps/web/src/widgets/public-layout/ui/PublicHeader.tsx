@@ -6,6 +6,8 @@ import { ROUTES } from '@/shared/constants/routes';
 import { ButtonLink } from '@/shared/ui/@core/button';
 import { BrandIcon } from '@/shared/ui/@core/top-app-bar';
 
+import { PublicStartLink } from './PublicStartLink';
+
 export function PublicHeader() {
   return (
     <header className="sticky top-0 z-app-bar border-b border-line bg-surface/95 px-4 pt-(--safe-top) backdrop-blur-lg tablet:px-8">
@@ -37,9 +39,9 @@ export function PublicHeader() {
           >
             로그인
           </ButtonLink>
-          <ButtonLink href={ROUTES.HOME} prefetch={false} size="md">
+          <PublicStartLink placement="header" size="md">
             시작하기 <ArrowUpRight aria-hidden className="size-4" />
-          </ButtonLink>
+          </PublicStartLink>
         </div>
       </nav>
     </header>

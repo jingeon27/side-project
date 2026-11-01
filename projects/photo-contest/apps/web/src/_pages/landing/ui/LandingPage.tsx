@@ -4,7 +4,7 @@ import { ArrowUpRight, ImagePlus, MessageCircle, Users } from 'lucide-react';
 
 import { ROUTES } from '@/shared/constants/routes';
 import { ButtonLink } from '@/shared/ui/@core/button';
-import { PublicFooter, PublicHeader } from '@/widgets/public-layout';
+import { PublicFooter, PublicHeader, PublicStartLink } from '@/widgets/public-layout';
 
 import { FeedPreview } from './FeedPreview';
 
@@ -25,9 +25,9 @@ export function LandingPage() {
               우리끼리 모으면 조금 더 웃긴 하루가 되니까.
             </p>
             <div className="mt-8 grid max-w-sm gap-3 tablet:grid-cols-2">
-              <ButtonLink href={ROUTES.HOME} prefetch={false} size="lg">
+              <PublicStartLink placement="hero" size="lg">
                 피식 시작하기 <ArrowUpRight aria-hidden className="size-4" />
-              </ButtonLink>
+              </PublicStartLink>
               <ButtonLink href={ROUTES.HOW_IT_WORKS} variant="secondary" size="lg">
                 어떻게 쓰나요?
               </ButtonLink>

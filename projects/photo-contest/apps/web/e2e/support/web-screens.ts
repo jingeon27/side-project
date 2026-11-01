@@ -17,6 +17,7 @@ export const landingScreens = {
   startLink: (page: Page) => page.getByRole('link', { name: '피식 시작하기', exact: true }),
   anonymousStart: (page: Page) => page.getByRole('button', { name: '익명으로 시작하기', exact: true }),
   feedHeading: (page: Page) => page.getByRole('heading', { name: '우리끼리 모은 순간.' }),
+  groupHeading: (page: Page) => page.getByRole('heading', { level: 1 }),
 } satisfies Record<string, (page: Page) => Locator>;
 
 export const groupScreens = {
