@@ -72,49 +72,15 @@ Game Mate와 피식의 API·웹, 블로그 웹을 함께 시작합니다. 서비
 
 ```text
 projects/
-  game-feedback/             # Game Mate
-    apps/
-      api/                   # NestJS REST API, 인증·게시글·채팅, Prisma
-      web/                   # Next.js 커뮤니티 웹
-      admin/                 # 운영자용 웹
-      mobile/                # Expo WebView 앱
-    packages/
-      contracts/             # Zod 요청·응답 스키마와 도메인 계약
-      sdk/                   # OpenAPI 기반 REST 클라이언트와 응답 검증
-      bridge/                # 웹과 모바일 사이의 메시지 계약
-    deploy/
-      shared-instance/       # 공유 EC2에서 실행할 이미지와 서비스 Compose
-    scripts/                 # 로컬 실행, DB·계약 생성과 검사 명령
-    docs/                    # 제품 결정, 구현·검증·운영 기록
-  photo-contest/             # 피식
-    apps/
-      api/                   # NestJS GraphQL·REST API, Prisma
-      web/                   # Next.js 그룹 커뮤니티 웹
-      mobile/                # Expo WebView 앱
-    packages/
-      bridge/                # 웹과 모바일 사이의 메시지 계약
-      test-kit/              # 격리 DB·API 실행과 테스트 미디어 준비·정리
-    deploy/
-      shared-instance/       # 공유 EC2용 서비스 Compose와 S3 CORS
-      scripts/               # 이전 단독 배포 구성의 호환 검증 도구
-    scripts/                 # 앱 실행 위임과 개발·테스트 PostgreSQL
-    docs/                    # 서비스 기능, 개발·배포와 검증 기록
-  blog/                      # 개발 기록
-    apps/
-      web/                   # Next.js 다국어 MDX 블로그와 콘텐츠 생성·검증
-    docs/                    # 글 작성, SEO·캐시·배포와 구현 기록
+  game-feedback/        # Game Mate: Next.js, NestJS REST, Expo
+  photo-contest/        # 피식: Next.js, NestJS GraphQL, Expo
+  blog/                 # 개발 기록: Next.js, 다국어 MDX
 packages/
-  design-system/             # 여러 서비스가 공유하는 UI
-    src/                     # 컴포넌트, 디자인 토큰, Motion과 공통 훅
-    .storybook/              # Storybook 설정과 미리보기
-    scripts/                 # 패키지 테스트 실행
-  config/                    # 공통 개발 설정
-    eslint/                  # TypeScript·React·FSD 규칙과 프리셋
-    typescript/              # TypeScript 설정과 tsc7 실행 진입점
-  toolkit/                   # 서비스와 독립적인 공통 도구
-    src/                     # 푸시 전송, migration 호환성·Sentry 설정 검사
-scripts/                     # Git hook, worktree, 저장소 검사
-deploy/shared-instance/      # 두 서비스의 EC2, 프록시, DB, Terraform
+  design-system/        # 공통 UI, 토큰, Storybook
+  config/               # ESLint, TypeScript, tsc7
+  toolkit/              # 공통 푸시 전송과 migration/Sentry 검사
+scripts/                # Git hook, worktree, 저장소 검사
+deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
 ```
 
 프로젝트의 앱은 `projects/<name>/apps/*`, 해당 프로젝트 안에서 공유하는 코드는 `projects/<name>/packages/*`에 둡니다. 여러 프로젝트가 실제로 함께 쓰는 코드만 루트 `packages/*`로 올립니다.
