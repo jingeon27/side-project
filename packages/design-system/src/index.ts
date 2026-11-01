@@ -2,6 +2,8 @@ export { Button, buttonVariants } from './ui/button/Button';
 export type { IButtonProps } from './ui/button/Button';
 export { IconButton, iconButtonVariants } from './ui/icon-button/IconButton';
 export type { IIconButtonProps } from './ui/icon-button/IconButton';
+export { FloatingActionButton } from './ui/floating-action-button/FloatingActionButton';
+export type { IFloatingActionButtonProps } from './ui/floating-action-button/FloatingActionButton';
 export { TextField, TextAreaField } from './ui/text-field/TextField';
 export type { ITextFieldProps, ITextAreaFieldProps } from './ui/text-field/TextField';
 export { FormField } from './ui/form-field/FormField';
