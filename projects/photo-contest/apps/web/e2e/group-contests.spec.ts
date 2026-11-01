@@ -53,7 +53,7 @@ test(
     await expect(page.getByRole('article', { name: '우승할 웃긴 순간', exact: true })).toBeVisible();
 
     await page.goto(groupPath);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).not.toBeChecked();
     await sheet.getByRole('checkbox', { name: /대회에 참여하기/ }).check();
     await sheet.getByLabel('참여할 대회').selectOption(contestId);

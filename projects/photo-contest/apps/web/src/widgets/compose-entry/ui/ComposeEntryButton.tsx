@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import { overlay } from 'overlay-kit';
 
 import { ROUTES } from '@/shared/constants/routes';
@@ -11,6 +13,9 @@ import { FloatingComposeButton } from './FloatingComposeButton';
 export function ComposeEntryButton({ hasGroups }: { hasGroups: boolean }) {
   const router = useAppRouter();
   const label = hasGroups ? '글쓰기' : '그룹 만들기';
+  useEffect(() => {
+    if (!hasGroups) router.prefetch(ROUTES.GROUP_CREATE);
+  }, [hasGroups, router]);
 
   return (
     <FloatingComposeButton

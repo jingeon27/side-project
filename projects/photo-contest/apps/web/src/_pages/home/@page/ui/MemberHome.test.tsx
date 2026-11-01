@@ -21,7 +21,7 @@ import { MemberHome } from './MemberHome';
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
 }));
 
 it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration 오류 없이 내 피드로 전환해야 한다', async () => {

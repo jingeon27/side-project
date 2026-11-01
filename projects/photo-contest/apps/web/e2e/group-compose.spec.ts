@@ -21,12 +21,13 @@ test(
     await page.goto('/');
     await page.getByRole('link').filter({ hasText: '함께 나누는 순간' }).first().click();
     await expect(page).toHaveURL(`/groups/${group.id}`);
-    const write = page.getByRole('link', { name: '글쓰기', exact: true });
+    const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(write).toHaveAttribute('data-compose-entry', 'true');
-    await expect(write).toHaveAttribute('href', `/groups/${group.id}/write`);
+    await expect(write).toHaveAttribute('type', 'button');
+    await expect(write).toBeEnabled();
     await expect(write).not.toHaveAttribute('aria-haspopup');
     await expect(page.getByRole('button', { name: '초대와 멤버 보기', exact: true })).toBeEnabled();
-    await expect(page.locator('header').getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
+    await expect(page.locator('header').getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(0);
     await expect(page.locator('[data-bottom-nav]:visible')).toHaveCount(0);
     await mkdir('.data/screens', { recursive: true });
     for (const width of [320, 390, 1440]) {
@@ -119,9 +120,9 @@ test(
     const group = await seedGroup(owner, '익명도 함께 나누는 그룹');
     await startAnonymousSession(context);
     await page.goto(`/groups/${group.id}`);
-    await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '그룹 가입하기', exact: true }).click();
-    const write = page.getByRole('link', { name: '글쓰기', exact: true });
+    const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(write).toHaveAttribute('data-compose-entry', 'true');
     await expect(page.getByRole('button', { name: '그룹 가입하기', exact: true })).toHaveCount(0);
     await write.click();
@@ -139,7 +140,7 @@ test(
     await signIn('그룹 승인 신청자');
     await page.goto(`/groups/${group.id}`);
     await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
-    await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '가입 신청하기', exact: true }).click();
     await expect(page.getByRole('button', { name: '가입 승인 대기 중', exact: true })).toBeDisabled();
     await expect(page.locator('[data-compose-entry]:visible')).toHaveCount(0);
@@ -162,7 +163,7 @@ test(
       id: request.id,
     });
     await page.getByRole('button', { name: '승인 상태 확인', exact: true }).click();
-    const write = page.getByRole('link', { name: '글쓰기', exact: true });
+    const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(write).toHaveAttribute('data-compose-entry', 'true');
     await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: '최신 게시물', exact: true })).toBeVisible();

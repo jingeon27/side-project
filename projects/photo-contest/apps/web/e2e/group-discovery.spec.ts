@@ -213,7 +213,7 @@ test(
           .getByRole('region', { name: '최신 게시물', exact: true })
           .getByRole('article', { name: '승인한 멤버에게만 보이는 순간', exact: true }),
       ).toBeVisible();
-      await expect(applicantPage.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
+      await expect(applicantPage.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
       expect((await applicantPage.request.get(`/backend/media/${postId}`)).status()).toBe(200);
       await applicantPage.goto('/me');
       await expect(

@@ -91,7 +91,7 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
   await setUser(member);
   await page.goto(`/groups/${group.id}`);
   await expect(page.getByText('카테고리 관리', { exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
   await editor.getByRole('textbox', { name: /제목/ }).fill('분류를 고른 게시물');
   await editor.getByRole('textbox', { name: /링크/ }).fill('https://example.com/category');
@@ -140,7 +140,7 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByText('편집 (보관됨)', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await expect(
     page
       .getByRole('form', { name: '그룹에 글쓰기' })

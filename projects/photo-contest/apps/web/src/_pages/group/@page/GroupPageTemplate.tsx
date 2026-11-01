@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
@@ -13,6 +13,7 @@ import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
+import { useAppRouter } from '@/shared/model/router';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -67,8 +68,20 @@ function GroupContent({
   id: string;
   onRefresh: () => Promise<unknown>;
 }) {
+  const router = useAppRouter();
   const communityRef = useRef<HTMLDetailsElement>(null);
+  const handleCommunityRef = useCallback((details: HTMLDetailsElement | null) => {
+    communityRef.current = details;
+    if (!details) return;
+    return () => {
+      communityRef.current = null;
+    };
+  }, []);
   const { data, error } = useReadQuery(groupRef);
+  const writePath = data?.group.role ? ROUTES.GROUP_WRITE(data.group.id) : null;
+  useEffect(() => {
+    if (writePath) router.prefetch(writePath);
+  }, [router, writePath]);
   const handleOpenCommunity = () => {
     const details = communityRef.current;
     if (!details) return;
@@ -103,13 +116,13 @@ function GroupContent({
       {group.canViewPosts ? (
         <GroupFeed
           groupRef={groupRef}
-          sidebar={<GroupSidebar groupRef={groupRef} communityRef={communityRef} />}
+          sidebar={<GroupSidebar groupRef={groupRef} communityRef={handleCommunityRef} />}
         />
       ) : (
         <PrivateGroupNotice groupRef={groupRef} onRefresh={onRefresh} />
       )}
       {group.role !== null ? (
-        <FloatingComposeButton label="글쓰기" href={ROUTES.GROUP_WRITE(group.id)} />
+        <FloatingComposeButton label="글쓰기" onClick={() => router.push(ROUTES.GROUP_WRITE(group.id))} />
       ) : null}
     </GroupFrame>
   );

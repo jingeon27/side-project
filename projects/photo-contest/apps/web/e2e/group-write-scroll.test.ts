@@ -15,7 +15,7 @@ test(
       .click();
     await expect(page).toHaveURL(`/groups/${group.id}`);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(page).toHaveURL(`/groups/${group.id}/write`);
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('viewport missing');

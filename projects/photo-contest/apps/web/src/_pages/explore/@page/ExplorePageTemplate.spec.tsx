@@ -15,7 +15,7 @@ import {
 
 import { ExplorePageTemplate } from './ExplorePageTemplate';
 
-const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/explore',
   useSearchParams: () => new URLSearchParams(),
@@ -25,6 +25,7 @@ vi.mock('next/navigation', () => ({
 beforeEach(() => {
   navigation.push.mockReset();
   navigation.replace.mockReset();
+  navigation.prefetch.mockReset();
 });
 
 afterEach(() => {
@@ -88,6 +89,7 @@ describe('그룹 탐색의 공통 작성 진입', () => {
     expect(screen.getByRole('heading', { name: '검색 결과' })).toBeVisible();
     expect(screen.getByText('“산책”')).toBeVisible();
     await user.click(create);
+    expect(navigation.prefetch).toHaveBeenCalledWith('/groups/new');
     expect(navigation.push).toHaveBeenCalledWith('/groups/new', undefined);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });

@@ -64,7 +64,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
 
   const groupPath = new URL(page.url()).pathname;
   const createMediaPost = async (title: string, video = false) => {
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await form.getByLabel('제목', { exact: true }).fill(title);
     await form.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
