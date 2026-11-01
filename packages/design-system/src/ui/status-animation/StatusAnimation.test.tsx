@@ -5,7 +5,6 @@ import 'lottie-web/build/player/lottie_light';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { attachMotionPlayer } from './motion-player';
 import { StatusAnimation } from './StatusAnimation';
 
 const { loadAnimation } = vi.hoisted(() => ({ loadAnimation: vi.fn() }));
@@ -48,7 +47,7 @@ afterEach(() => {
 });
 
 describe('상태 모션의 브라우저 수명', () => {
-  it('플레이어 준비 표시는 React를 다시 렌더링하지 않고 어댑터의 DOM에만 반영해야 한다', async () => {
+  it('플레이어 준비 표시는 React를 다시 렌더링하지 않고 호스트 DOM에만 반영해야 한다', async () => {
     const pending = player();
     pending.isLoaded = false;
     loadAnimation.mockReturnValueOnce(pending);
@@ -68,23 +67,21 @@ describe('상태 모션의 브라우저 수명', () => {
     expect(commits).toHaveBeenCalledTimes(beforeReady);
   });
 
-  it('어댑터의 정리를 반복 호출해도 플레이어와 구독을 한 번만 해제해야 한다', async () => {
+  it('노드 제거 뒤 설정이 바뀌어도 플레이어와 구독을 한 번만 해제해야 한다', async () => {
     const subscribe = vi.spyOn(preference, 'addEventListener');
     const unsubscribe = vi.spyOn(preference, 'removeEventListener');
-    const view = render(<span data-testid="motion-host" />);
-    const detach = attachMotionPlayer(screen.getByTestId('motion-host'), {
-      variant: 'loading',
-      loop: true,
-    });
+    const view = render(<StatusAnimation variant="loading" />);
     await waitFor(() => expect(loadAnimation).toHaveBeenCalledOnce());
     const current = loadAnimation.mock.results[0]?.value;
-    detach();
-    detach();
+    view.unmount();
+    act(() => {
+      preference.change(true);
+      preference.change(false);
+    });
     await act(async () => {});
     expect(current.destroy).toHaveBeenCalledOnce();
     expect(loadAnimation).toHaveBeenCalledOnce();
     expect(unsubscribe).toHaveBeenCalledExactlyOnceWith('change', subscribe.mock.calls[0]?.[1]);
-    view.unmount();
   });
 
   it('초기화 도중 실패해도 이미 연결한 플레이어와 이벤트를 정리해야 한다', async () => {
