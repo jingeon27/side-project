@@ -2,12 +2,14 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { imageSize } from 'image-size';
 import { visit } from 'unist-util-visit';
 import { describe, expect, it } from 'vitest';
 
 import { getArticles } from '@/shared/article/lib/get-articles';
 
 import manifest from '../../../docs/migration-manifest.json';
+import screenCaptures from '../../../docs/screen-captures.json';
 import localizations from '../content/english-localizations.json';
 import imageReplacements from '../content/image-replacements.json';
 import { analyzeMdx } from './content';
@@ -81,7 +83,7 @@ describe('English editions of migrated posts', () => {
     }
   });
 
-  it('provides English-only diagram sources and preserves the originals', async () => {
+  it('provides localized diagrams or recorded actual captures and preserves the originals', async () => {
     const web = process.cwd();
     const images = new Set<string>();
     for (const article of getArticles('en')) {
@@ -98,13 +100,28 @@ describe('English editions of migrated posts', () => {
       const files = await Promise.all([
         readFile(path.join(web, 'public', original)),
         readFile(path.join(web, 'public', localized)),
-        readFile(path.join(web, 'public', localized.replace(/\.png$/, '.svg')), 'utf8'),
       ]);
       expect(files[0].length, original).toBeGreaterThan(0);
       expect(files[1].subarray(0, 8), localized).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      expect(files[2], localized).not.toMatch(/[가-힣ㄱ-ㅎㅏ-ㅣ]/);
       expect(images.has(localized), localized).toBe(true);
       expect(images.has(original), original).toBe(false);
+      const capture = screenCaptures.localizedCaptures.find(
+        (entry) => entry.original === original && entry.replacement === localized,
+      );
+      if (capture) {
+        expect(createHash('sha256').update(files[0]).digest('hex')).toBe(capture.originalSha256);
+        expect(createHash('sha256').update(files[1]).digest('hex')).toBe(capture.replacementSha256);
+        expect(imageSize(files[1])).toMatchObject({ width: capture.width, height: capture.height });
+        for (const screen of capture.screens) {
+          const source = await readFile(path.join(web, 'public', screen.sourceImage));
+          expect(createHash('sha256').update(source).digest('hex')).toBe(screen.sourceSha256);
+          expect(imageSize(source)).toMatchObject({ width: screen.sourceWidth, height: screen.sourceHeight });
+          expect(screen.interfaceLocale).toBe(screen.service === 'photo-contest' ? 'ko' : 'en');
+        }
+        continue;
+      }
+      const diagram = await readFile(path.join(web, 'public', localized.replace(/\.png$/, '.svg')), 'utf8');
+      expect(diagram, localized).not.toMatch(/[가-힣ㄱ-ㅎㅏ-ㅣ]/);
     }
   });
 
