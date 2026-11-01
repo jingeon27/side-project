@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test, type Page } from '@playwright/test';
 
+import localizations from '../../content/english-localizations.json' with { type: 'json' };
 import redirects from '../../content/generated-redirects.json' with { type: 'json' };
 import imageReplacements from '../../content/image-replacements.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
@@ -138,7 +139,7 @@ test('edited article covers load in the body and match the social preview image'
   }
 });
 
-test('product screenshots load and the separate infrastructure article opens in both languages', async ({
+test('localized product images load and the infrastructure article opens in both languages', async ({
   page,
 }) => {
   for (const locale of ['ko', 'en'] as const) {
@@ -151,8 +152,12 @@ test('product screenshots load and the separate infrastructure article opens in 
     for (const name of ['01-service-screens', '09-product-interactions']) {
       const archived = `/images/posts/side-project-design/${name}.png`;
       const replacement = Object.entries(imageReplacements).find(([original]) => original === archived)?.[1];
-      const expected = replacement ?? archived;
+      const original = replacement ?? archived;
+      const expected =
+        locale === 'ko' ? original : localizations.images[original as keyof typeof localizations.images];
+      if (!expected) throw new Error(`Missing English image for ${original}`);
       const image = page.locator(`.article-prose img[src*="${expected.split('/').at(-1)}"]`);
+      await expect(image).toHaveCount(1);
       await image.scrollIntoViewIfNeeded();
       await expect(image).toBeVisible();
       await expect(image).toHaveAttribute('alt', /\S/);
