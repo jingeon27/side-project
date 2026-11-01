@@ -12,12 +12,13 @@ import { hasOpenOverlay } from '@/shared/model/router';
 
 import { ComposeEntryButton } from './ComposeEntryButton';
 
-const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => navigation }));
 
 beforeEach(() => {
   navigation.push.mockReset();
   navigation.replace.mockReset();
+  navigation.prefetch.mockReset();
 });
 
 afterEach(() => {
@@ -58,6 +59,7 @@ function renderCompose(groupNames: string[]) {
 describe('홈과 탐색의 공통 작성 행동', () => {
   it('참여한 그룹이 없으면 그룹 만들기로 바로 이동해야 한다', async () => {
     const user = renderCompose([]);
+    expect(navigation.prefetch).toHaveBeenCalledWith('/groups/new');
     await user.click(screen.getByRole('button', { name: '그룹 만들기' }));
     expect(navigation.push).toHaveBeenCalledWith('/groups/new', undefined);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -78,6 +80,7 @@ describe('홈과 탐색의 공통 작성 행동', () => {
   it('가입한 그룹이 하나면 게시글 작성 선택 즉시 그 그룹 작성 화면으로 이동해야 한다', async () => {
     const user = renderCompose(['우리 웃음']);
     await user.click(screen.getByRole('button', { name: '글쓰기' }));
+    await waitFor(() => expect(navigation.prefetch).toHaveBeenCalledWith('/groups/group-1/write'));
     await user.click(await screen.findByRole('button', { name: '게시글 작성' }));
     expect(navigation.replace).toHaveBeenCalledWith('/groups/group-1/write', undefined);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -87,9 +90,14 @@ describe('홈과 탐색의 공통 작성 행동', () => {
   it('그룹이 여러 개면 그룹을 선택하는 즉시 해당 작성 화면으로 이동해야 한다', async () => {
     const user = renderCompose(['우리 웃음', '주말 산책']);
     await user.click(screen.getByRole('button', { name: '글쓰기' }));
+    const choices = await screen.findByRole('dialog', { name: '글쓰기' });
     await user.click(await screen.findByRole('button', { name: '게시글 작성' }));
     const sheet = await screen.findByRole('dialog', { name: '게시글을 올릴 그룹' });
+    expect(sheet).not.toBe(choices);
+    expect(choices).toBeInTheDocument();
     await waitFor(() => expect(within(sheet).getByRole('button', { name: '우리 웃음' })).toHaveFocus());
+    expect(navigation.prefetch).not.toHaveBeenCalledWith('/groups/group-1/write');
+    expect(navigation.prefetch).not.toHaveBeenCalledWith('/groups/group-2/write');
     expect(navigation.replace).not.toHaveBeenCalled();
     await user.click(within(sheet).getByRole('button', { name: '주말 산책' }));
     expect(navigation.replace).toHaveBeenCalledWith('/groups/group-2/write', undefined);
@@ -97,16 +105,47 @@ describe('홈과 탐색의 공통 작성 행동', () => {
     expect(hasOpenOverlay()).toBe(false);
   });
 
-  it('그룹 선택 중 Esc를 누르면 닫히고 글쓰기 버튼으로 포커스를 돌려야 한다', async () => {
+  it('그룹 선택 중 Esc는 첫 작성 시트로 돌아가고 한 번 더 누르면 글쓰기 버튼으로 포커스를 돌려야 한다', async () => {
     const user = renderCompose(['우리 웃음', '주말 산책']);
     const opener = screen.getByRole('button', { name: '글쓰기' });
     await user.click(opener);
-    await user.click(await screen.findByRole('button', { name: '게시글 작성' }));
+    const choices = await screen.findByRole('dialog', { name: '글쓰기' });
+    const postChoice = within(choices).getByRole('button', { name: '게시글 작성' });
+    await user.click(postChoice);
     await screen.findByRole('dialog', { name: '게시글을 올릴 그룹' });
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시글을 올릴 그룹' })).toBeNull());
+    expect(screen.getByRole('dialog', { name: '글쓰기' })).toBe(choices);
+    await waitFor(() => expect(postChoice).toHaveFocus());
+    expect(hasOpenOverlay()).toBe(true);
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(opener).toHaveFocus());
     expect(hasOpenOverlay()).toBe(false);
+  });
+
+  it('두 시트의 뒤로 가기는 그룹 선택부터 닫고 첫 시트와 버튼 포커스를 복원해야 한다', async () => {
+    const user = renderCompose(['우리 웃음', '주말 산책']);
+    const opener = screen.getByRole('button', { name: '글쓰기' });
+    await user.click(opener);
+    const choices = await screen.findByRole('dialog', { name: '글쓰기' });
+    await waitFor(() => expect(hasOpenOverlay()).toBe(true));
+    const beforeSelection = window.history.length;
+    const postChoice = within(choices).getByRole('button', { name: '게시글 작성' });
+    await user.click(postChoice);
+    await screen.findByRole('dialog', { name: '게시글을 올릴 그룹' });
+    await waitFor(() => expect(window.history.length).toBe(beforeSelection + 1));
+    act(() => window.history.back());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '게시글을 올릴 그룹' })).toBeNull());
+    expect(screen.getByRole('dialog', { name: '글쓰기' })).toBe(choices);
+    await waitFor(() => expect(postChoice).toHaveFocus());
+    expect(hasOpenOverlay()).toBe(true);
+    act(() => window.history.back());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(opener).toHaveFocus());
+    expect(hasOpenOverlay()).toBe(false);
+    expect(navigation.push).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
   it('뒤로 가기는 페이지 이동 없이 시트를 먼저 닫아야 한다', async () => {

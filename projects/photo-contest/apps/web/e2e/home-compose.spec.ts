@@ -138,17 +138,33 @@ test(
     await seedGroup(outsider, '가입하지 않은 그룹');
     await page.goto('/');
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-    await page
-      .getByRole('dialog', { name: '글쓰기', exact: true })
-      .getByRole('button', { name: '게시글 작성', exact: true })
-      .click();
+    const choices = page.getByRole('dialog', { name: '글쓰기', exact: true });
+    const postChoice = choices.getByRole('button', { name: '게시글 작성', exact: true });
+    await postChoice.click();
     const sheet = page.getByRole('dialog', { name: '게시글을 올릴 그룹', exact: true });
+    const firstGroupAction = sheet.getByRole('list').getByRole('button').first();
     await expect(sheet).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(1);
     await expect(sheet.getByRole('button', { name: '선택할 첫 그룹', exact: true })).toBeVisible();
     await expect(sheet.getByRole('button', { name: '선택할 비공개 그룹', exact: true })).toBeVisible();
     await expect(sheet.getByRole('button', { name: '가입하지 않은 그룹', exact: true })).toHaveCount(0);
     await expect(sheet.getByRole('button', { name: '확인', exact: true })).toHaveCount(0);
     await expect(sheet.getByRole('button', { name: '게시글 작성', exact: true })).toHaveCount(0);
+    await expect(firstGroupAction).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(choices).toBeVisible();
+    await expect(postChoice).toBeFocused();
+    await expect(page).toHaveURL('/');
+    await page.keyboard.press('Enter');
+    await expect(firstGroupAction).toBeFocused();
+    await page.goBack();
+    await expect(sheet).toHaveCount(0);
+    await expect(choices).toBeVisible();
+    await expect(postChoice).toBeFocused();
+    await expect(page).toHaveURL('/');
+    await page.keyboard.press('Enter');
+    await expect(sheet).toBeVisible();
     await mkdir('.data/screens', { recursive: true });
     await page.screenshot({
       path: `.data/screens/home-compose-${testInfo.project.name}-groups.png`,
@@ -157,6 +173,14 @@ test(
     await sheet.getByRole('button', { name: '선택할 비공개 그룹', exact: true }).click();
     await expect(page).toHaveURL(`/groups/${second.id}/write`);
     await expect(page).not.toHaveURL(`/groups/${first.id}/write`);
+    await expect(page.getByRole('form', { name: '그룹에 글쓰기', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.goBack();
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.goForward();
+    await expect(page).toHaveURL(`/groups/${second.id}/write`);
     await expect(page.getByRole('form', { name: '그룹에 글쓰기', exact: true })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   },
