@@ -22,12 +22,16 @@ const options = z
   .object({
     'game-feedback-url': z.url(),
     'photo-contest-url': z.url(),
-    'photo-contest-state': z.string().min(1),
+    'photo-contest-state': z.string().min(1).optional(),
     'photo-contest-search': z.string().max(40),
     'captured-on': z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     'output-dir': z.string().min(1),
     'reuse-photo-capture': z.boolean(),
     'reuse-game-captures': z.boolean(),
+  })
+  .refine((input) => input['reuse-photo-capture'] || input['photo-contest-state'], {
+    message: 'A local storage state is required when capturing Pisik again.',
+    path: ['photo-contest-state'],
   })
   .parse(values);
 
@@ -115,8 +119,10 @@ async function capture(
     for (const selector of ready) await page.locator(selector).first().waitFor({ state: 'visible' });
     for (const name of readyButtons)
       await expect(page.getByRole('button', { name, exact: true })).toBeEnabled({ timeout: 30_000 });
-    if (route === '/ko' || route === '/en')
+    if (route === '/ko' || route === '/en') {
       await page.getByRole('heading', { name: route === '/ko' ? '전체' : 'All', exact: true }).waitFor();
+      await expect(page.locator('.game-board-navigation:visible')).toHaveCSS('opacity', '1');
+    }
     await page.keyboard.press('Home');
     await page.waitForFunction(() => window.scrollY === 0);
     await page.evaluate(async () => document.fonts.ready);
@@ -124,7 +130,7 @@ async function capture(
       [...document.images].every((image) => {
         const bounds = image.getBoundingClientRect();
         if (bounds.bottom <= 0 || bounds.top >= window.innerHeight || bounds.width === 0) return true;
-        return image.complete;
+        return image.complete && image.naturalWidth > 0;
       }),
     );
     await page.evaluate(
@@ -186,10 +192,13 @@ async function captureGame(browser: Browser, locale: 'ko' | 'en') {
       data: { accountId: 'sample-user-0' },
     });
     if (!login.ok()) throw new Error('The isolated Game Mate fixture login failed.');
-    const feed = await capture(context, `/${locale}`, `game-feed-${locale}.png`, [
-      '.game-board-navigation:visible .game-board-title strong:visible',
-      'article:visible',
-    ]);
+    const feed = await capture(
+      context,
+      `/${locale}`,
+      `game-feed-${locale}.png`,
+      ['.game-board-chips:visible [aria-current="page"]', 'article:visible'],
+      [locale === 'ko' ? '글쓰기' : 'Write a post'],
+    );
     const profile = await capture(context, `/${locale}/users/sample-user-0`, `game-profile-${locale}.png`, [
       '.profile-identity-text:visible',
     ]);
