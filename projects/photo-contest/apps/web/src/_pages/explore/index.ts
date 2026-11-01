@@ -1,2 +1,2 @@
-export { ExplorePageTemplate } from './@page/ExplorePageTemplate';
-export { exploreSearchSchema } from './@page/model/explore-search.schema';
+export { ExplorePage } from './ui/ExplorePage';
+export { exploreSearchSchema } from './model/explore-search.schema';

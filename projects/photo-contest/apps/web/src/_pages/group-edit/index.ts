@@ -1,1 +1,1 @@
-export { GroupEditPageTemplate } from './@page/GroupEditPageTemplate';
+export { GroupEditPage } from './ui/GroupEditPage';

@@ -1,4 +1,4 @@
-import { MePageTemplate } from '@/_pages/me';
+import { MePage } from '@/_pages/me';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   MeDocument,
@@ -13,7 +13,7 @@ export default function Page() {
       <PreloadQuery query={MyGroupsDocument}>
         <PreloadQuery query={MyGalleryPostsDocument} variables={{ groupId: null, offset: 0, limit: 24 }}>
           <PreloadQuery query={NotificationUnreadCountDocument}>
-            <MePageTemplate />
+            <MePage />
           </PreloadQuery>
         </PreloadQuery>
       </PreloadQuery>

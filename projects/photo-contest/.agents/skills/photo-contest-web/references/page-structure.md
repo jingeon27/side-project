@@ -1,15 +1,17 @@
 # page-structure
 
+폴더·이름·공개 진입점은 [Game Feedback의 _pages](../../../../../game-feedback/apps/web/src/_pages)를 기준으로 맞춘다. 조회·폼·권한 동작은 피식의 Apollo 계약을 유지한다.
+
 레이어·배치·파일 이름은 [frontend](architecture.md) 문서을 따른다. Next API는 side 루트 `node_modules/next/dist/docs`에서 확인한다(Next 16: `params`는 Promise, middleware 대신 `src/proxy.ts`, error 경계는 `reset`이 아니라 `retry` prop).
 
 ## 새 화면 순서
 
 1. `src/shared/constants/routes.ts`의 `ROUTES`에 경로를 더한다(파라미터는 `encodeURIComponent`하는 함수). 링크·이동·`backHref`는 모두 `ROUTES`로 만든다.
-2. `src/_pages/<screen>/` 루트에는 `index.ts`(화면 컴포넌트 `<Screen>PageTemplate`와 라우트에 필요한 서버 SEO 진입점만 export)와 `@` 폴더만 둔다. `@page/<Screen>PageTemplate.tsx`('use client')가 조립하고, 화면 전용 조각은 `@page/ui/`·`@page/bottom-sheet/`·`@page/model/`(주소 쿼리 zod `*.schema.ts`)·`@page/<섹션>/`에 둔다.
-3. 라우트 `src/app/<경로>/page.tsx`는 `await params` → (첫 화면 데이터가 있으면) `PreloadQuery` → 템플릿만 한다. 화면은 배럴에서만 가져온다(`@/_pages/<screen>/@page/…`는 `fsd/slice-public-api` 오류). 아래 이름은 예시다.
+2. `src/_pages/<screen>/` 루트에는 `index.ts`·`index.server.ts`와 필요한 `ui`·`model`·`lib`만 둔다. `ui/<Screen>Page.tsx`가 화면을 조립하며, 클라이언트 훅이 필요한 경계만 `'use client'`로 표시한다. 화면 전용 조각은 `ui/<책임>`, 주소 쿼리 검증·타입은 `model`, 순수 보조 함수는 `lib`, 서버 SEO 조회·변환은 `model/seo`에 둔다.
+3. 라우트 `src/app/<경로>/page.tsx`는 `await params` → (첫 화면 데이터가 있으면) `PreloadQuery` → 템플릿만 한다. 화면·입력 스키마는 slice의 `index.ts`, 서버 조회·메타데이터는 `index.server.ts`로만 가져온다. `index.server.ts`에는 `import 'server-only'`를 두고 `index.ts`에서 서버 코드를 재수출하지 않는다(`@/_pages/<screen>/ui/…`는 `fsd/slice-public-api` 오류). 아래 이름은 예시다.
 
 ```tsx
-import { ContestPageTemplate } from '@/_pages/contest';
+import { ContestPage } from '@/_pages/contest';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import { ContestDocument } from '@/shared/api/generated';
 
@@ -17,7 +19,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   return (
     <PreloadQuery query={ContestDocument} variables={{ id }}>
-      <ContestPageTemplate id={id} />
+      <ContestPage id={id} />
     </PreloadQuery>
   );
 }
@@ -41,7 +43,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
 - `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.
 - 코드로 이동할 때는 `useAppRouter()`(`@/shared/model/router`)만 쓴다. `next/navigation`의 `useRouter`로 replace하면 push로 세어져 뒤로 가기가 앱 밖으로 나갈 수 있고, 열린 시트의 history 항목도 어긋난다. 단순 링크는 `<Link>`·`ButtonLink`.
-- 정렬 같은 화면 상태는 `replaceSearchParams({ sort })`로 주소에 남긴다(기록을 쌓지 않고 열린 시트 표시를 지킨다). 읽을 때는 `useSearchParams` 값을 `@page/model/*.schema.ts`로 파싱해 잘못된 값은 기본값으로 바꾼다.
+- 정렬 같은 화면 상태는 `replaceSearchParams({ sort })`로 주소에 남긴다(기록을 쌓지 않고 열린 시트 표시를 지킨다). 읽을 때는 `useSearchParams` 값을 `model/*.schema.ts`로 파싱해 잘못된 값은 기본값으로 바꾼다.
 - 기록 깊이는 `RouteHistoryTracker`(`src/_app/providers/navigation`)만 센다. 화면에서 `routeHistoryStore`를 바꾸지 않는다.
 - `BottomNav`(`@/widgets/bottom-nav`)는 홈·탐색·MY 템플릿에만 마지막 자식으로 둔다(레이아웃에 두지 않는다). 키보드가 열리면 스스로 숨는다. 한 화면에 `StickyCta`와 함께 두지 않는다.
 - 데스크톱 고정 메뉴(`@/widgets/desktop-nav`)는 루트 레이아웃의 `_app/shell` `AppShell`이 한 번만 그린다. 화면·`loading.tsx`·`TopAppBar`에 다시 두지 않아야 로딩 중에도 메뉴와 본문 위치가 유지된다.
@@ -71,5 +73,13 @@ yarn workspace @photo-contest/web test
 ## 페이지 내부 폴더
 
 - 특정 페이지의 조회 구획·폼 제출·탐색 조합과 하위 UI·스키마·테스트는 `_pages/<screen>`이 소유한다. 재사용할 도메인 표시·동작·IO·캐시와 여러 페이지의 공유 조합은 [웹 구조](architecture.md) 문서의 features·widgets 경계를 따른다.
-- 여러 기능을 `@page/ui`에 나열하지 않고 `ui/categories`, `ui/join-requests`, `ui/hidden-posts`처럼 기능별로 묶는다. 파일 입력과 미리보기는 `group-write/@page/ui/fields/media`에서 함께 관리한다. 대응하는 모델도 `model/categories`처럼 묶고 테스트는 대상 구현 옆에 둔다.
+- 모든 화면에서 `ui/<책임>` 기준을 쓴다. 예를 들어 홈은 `ui/member`·`ui/no-group`, MY는 `ui/profile`·`ui/groups`·`ui/posts`, 그룹은 `ui/categories`·`ui/join-requests`, 기존 대회는 `ui/feed`·`ui/results`다. 화면마다 `@page/feed`, `@page/ui/feed`, `@page/posts`처럼 같은 책임의 깊이를 달리하지 않는다.
+- 파일 입력과 미리보기는 `group-write/ui/fields/media`에서 함께 관리한다. 대응하는 모델은 `model/categories`처럼 같은 책임 이름으로 묶고 테스트는 대상 구현 옆에 둔다. 파일 하나마다 폴더를 만들거나 이름만 다른 중계 컴포넌트를 추가하지 않는다.
+- 그룹 대회 개최 흐름은 `group-contests/ui/create`, 기존 대회의 사진 제출 폼은 `contest/ui/submission`이 소유한다. 대회 일정 규칙과 Submission 캐시 갱신은 도메인 로직이므로 features에 남기고 공개 API로 가져온다. 홈과 탐색이 함께 쓰는 그룹 검색 폼·카드는 한 페이지로 옮기지 않는다.
 - 페이지 진입·조립 파일과 기능별 하위 폴더의 import를 직접 연결한다. 이전 위치의 호환 re-export나 같은 slice 안의 중간 index를 만들지 않는다.
+
+## 화면 slice
+
+- Game Feedback처럼 `_pages/<screen>/ui/<Screen>Page.tsx`가 화면을 조립한다. 하위 UI와 모델은 같은 책임 이름으로 묶고, 테스트는 구현 옆에 둔다.
+- 그룹 조회·생성·수정·글쓰기는 각각의 화면 slice가 소유한다. 진행·완료 대회 목록은 `group-contests`, 개별 그룹 대회는 `group-contest`, 기존 Submission 대회는 `contest`가 맡는다.
+- 루트 `index.ts`는 UI·입력의 공개 API, `index.server.ts`는 서버 조회·메타데이터의 공개 API다. 페이지끼리 import하거나 서버 코드를 클라이언트 배럴에 섞지 않는다.

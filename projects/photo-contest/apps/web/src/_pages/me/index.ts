@@ -1,1 +1,1 @@
-export { MePageTemplate } from './@page/MePageTemplate';
+export { MePage } from './ui/MePage';

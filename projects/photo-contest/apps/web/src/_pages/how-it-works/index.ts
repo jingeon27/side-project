@@ -1,1 +1,1 @@
-export { HowItWorksPageTemplate } from './@page/HowItWorksPageTemplate';
+export { HowItWorksPage } from './ui/HowItWorksPage';

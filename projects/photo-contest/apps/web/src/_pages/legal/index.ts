@@ -1,2 +1,2 @@
-export { TermsPageTemplate } from './@page/TermsPageTemplate';
-export { PrivacyPageTemplate } from './@page/PrivacyPageTemplate';
+export { TermsPage } from './ui/TermsPage';
+export { PrivacyPage } from './ui/PrivacyPage';

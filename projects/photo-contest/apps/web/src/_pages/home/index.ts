@@ -1,1 +1,1 @@
-export { HomePageTemplate } from './@page/HomePageTemplate';
+export { HomePage } from './ui/HomePage';

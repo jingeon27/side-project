@@ -4,7 +4,7 @@
 
 ## 스키마
 
-- `src/features/<domain>/model/<domain>.schema.ts`에 둔다(화면 전용이면 `src/_pages/<screen>/@page/model/*.schema.ts`). `*.schema` 파일은 다른 slice에서 깊게 import해도 된다.
+- `src/features/<domain>/model/<domain>.schema.ts`에 둔다(화면 전용이면 `src/_pages/<screen>/model/*.schema.ts`). 라우트가 쓰는 화면 입력 스키마는 해당 페이지의 `index.ts`로 공개한다.
 - zod 4 `z.object`로, 문자열은 `.trim()` 뒤 `.min()`·`.max()`에 한국어 안내문을 단다. 길이·형식은 API 제한과 같은 값으로 맞춘다(최종 판단은 서버). 입력에도 같은 `maxLength`를 건다.
 - `type="datetime-local"` 값은 `toDateTimeLocalValue`·`fromDateTimeLocalValue`(`src/shared/lib/format.helper.ts`)로만 바꾼다(기기 시간대 ↔ ISO, 형식이 틀리면 null). 여러 필드에 걸친 검사(시작 < 제출 마감 < 종료)는 `refine`·`superRefine`에 `path`를 달아 해당 입력에 붙인다.
 

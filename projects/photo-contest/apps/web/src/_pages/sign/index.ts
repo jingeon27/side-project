@@ -1,1 +1,1 @@
-export { SignPageTemplate } from './@page/SignPageTemplate';
+export { SignPage } from './ui/SignPage';

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { LandingPageTemplate } from '@/_pages/landing';
+import { LandingPage } from '@/_pages/landing';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
@@ -28,7 +28,7 @@ export default function Page() {
           inLanguage: 'ko-KR',
         }}
       />
-      <LandingPageTemplate />
+      <LandingPage />
     </>
   );
 }

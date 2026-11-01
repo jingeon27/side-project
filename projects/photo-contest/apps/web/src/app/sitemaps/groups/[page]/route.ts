@@ -1,6 +1,10 @@
 import { connection } from 'next/server';
 
-import { getPublicGroupCount, getPublicGroupSitemapPage, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group';
+import {
+  getPublicGroupCount,
+  getPublicGroupSitemapPage,
+  PUBLIC_GROUP_SITEMAP_SIZE,
+} from '@/_pages/group/index.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { siteUrl } from '@/shared/lib/seo.helper';

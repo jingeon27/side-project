@@ -3,12 +3,12 @@ import { notFound } from 'next/navigation';
 
 import { match } from 'ts-pattern';
 
+import { GroupContestPage } from '@/_pages/group-contest';
 import {
   getGroupContestMetadata,
   getGroupContestSeoData,
   groupContestJsonLd,
-  GroupContestPageTemplate,
-} from '@/_pages/group-contest';
+} from '@/_pages/group-contest/index.server';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   GalleryDocument,
@@ -57,7 +57,7 @@ export default async function Page({ params }: IPageProps) {
                         variables={{ contestId }}
                         errorPolicy="all"
                       >
-                        <GroupContestPageTemplate
+                        <GroupContestPage
                           id={contestId}
                           groupId={id}
                           initialTitle={contest.title}
@@ -71,14 +71,14 @@ export default async function Page({ params }: IPageProps) {
                         variables={{ groupId: id, contestId, sort: PostSort.Newest, offset: 0, limit: 24 }}
                         errorPolicy="all"
                       >
-                        <GroupContestPageTemplate id={contestId} groupId={id} initialTitle={contest.title} />
+                        <GroupContestPage id={contestId} groupId={id} initialTitle={contest.title} />
                       </PreloadQuery>
                     ))
                     .exhaustive()}
                 </PreloadQuery>
               );
             })
-            .with(GroupVisibility.Private, () => <GroupContestPageTemplate id={contestId} groupId={id} />)
+            .with(GroupVisibility.Private, () => <GroupContestPage id={contestId} groupId={id} />)
             .exhaustive()}
         </PreloadQuery>
       </PreloadQuery>

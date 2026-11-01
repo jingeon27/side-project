@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { GroupWritePageTemplate } from '@/_pages/group-write';
+import { GroupWritePage } from '@/_pages/group-write';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
 import { GalleryDocument, MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -22,7 +22,7 @@ export default async function Page({
   const contestId = (await searchParams).contestId;
   return (
     <PreloadQuery query={MeDocument}>
-      <GroupWritePageTemplate groupId={id} groupName={data.group.name} contestId={contestId} />
+      <GroupWritePage groupId={id} groupName={data.group.name} contestId={contestId} />
     </PreloadQuery>
   );
 }

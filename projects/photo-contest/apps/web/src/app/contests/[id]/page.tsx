@@ -1,5 +1,4 @@
-import { ContestPageTemplate } from '@/_pages/contest';
-import { contestSearchSchema } from '@/_pages/contest/@page/model/contest-search.schema';
+import { ContestPage, contestSearchSchema } from '@/_pages/contest';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   ContestDocument,
@@ -30,7 +29,7 @@ export default async function Page({
           query={SubmissionsDocument}
           variables={{ contestId: id, sort: SORT[sort], offset: 0, limit: 24 }}
         >
-          <ContestPageTemplate id={id} />
+          <ContestPage id={id} />
         </PreloadQuery>
       </PreloadQuery>
     </PreloadQuery>

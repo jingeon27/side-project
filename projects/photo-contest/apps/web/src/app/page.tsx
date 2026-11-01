@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { HomePageTemplate } from '@/_pages/home';
+import { HomePage } from '@/_pages/home';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
 import {
   DiscoverGroupsDocument,
@@ -42,7 +42,7 @@ export default async function Page() {
         variables={{ sort: PostSort.Newest, offset: 0, limit: 24 }}
         context={publicPreloadContext(PublicGalleryPostsDocument)}
       >
-        <HomePageTemplate initialHasGroups={false} />
+        <HomePage initialHasGroups={false} />
       </PreloadQuery>
     </PreloadQuery>
   ) : (
@@ -54,7 +54,7 @@ export default async function Page() {
         query={GalleryPostsDocument}
         variables={{ groupId: null, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 }}
       >
-        <HomePageTemplate initialHasGroups />
+        <HomePage initialHasGroups />
       </PreloadQuery>
     </PreloadQuery>
   );
