@@ -32,7 +32,7 @@ yarn workspace @side/photo-contest db:local
 
 ```sh
 yarn workspace @side/photo-contest db:migrate
-yarn dev:photo-contest
+yarn workspace @side/photo-contest dev
 ```
 
 - 웹 [localhost:3200](http://localhost:3200), API [127.0.0.1:4200](http://127.0.0.1:4200)

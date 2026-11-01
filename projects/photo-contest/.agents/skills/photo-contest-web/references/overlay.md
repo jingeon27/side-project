@@ -22,7 +22,7 @@
 
 ## 시트 만들기
 
-- 두 화면 이상에서 쓰면 `src/features/<domain>/ui/XxxBottomSheet.tsx`, 한 화면이면 `src/_pages/<screen>/@page/bottom-sheet/XxxBottomSheet.tsx`. props는 `IBottomSheetControlProps`(`@/shared/ui/@core/bottom-sheet`)에 id 같은 원시값만 더한다.
+- 페이지와 독립적인 도메인 동작이면 `src/features/<domain>/ui/XxxBottomSheet.tsx`, 한 화면 전용이면 `src/_pages/<screen>/ui/<책임>/XxxBottomSheet.tsx`. 여러 페이지의 기능을 조합하는 시트는 widgets가 소유한다. props는 `IBottomSheetControlProps`(`@/shared/ui/@core/bottom-sheet`)에 id 같은 원시값만 더한다.
 
 ```tsx
 <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>

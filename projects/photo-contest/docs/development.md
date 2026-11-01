@@ -21,7 +21,7 @@ yarn workspace @side/photo-contest db:local
 
 ```sh
 yarn workspace @side/photo-contest db:migrate
-yarn dev:photo-contest
+yarn workspace @side/photo-contest dev
 ```
 
 - 웹: http://localhost:3200
@@ -39,7 +39,7 @@ yarn dev:photo-contest
 
 ## 서비스 정책
 
-이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 contact@bambyul.com은 `apps/web/src/_pages/legal/@page/model/policy.ts`에서 관리합니다.
+이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 contact@bambyul.com은 `apps/web/src/_pages/legal/model/policy.ts`에서 관리합니다.
 
 두 문서는 검토용 초안입니다. 계정·미디어·인증 정보의 처리는 현재 구현을 기준으로 설명합니다. 정식 공개 전 실제 호스팅·저장소·분석 서비스의 위탁·국외 이전, 문의·운영 이력·백업 보관 기간과 아동 개인정보 처리 기준을 확인해 확정해야 합니다. 작성 시 [개인정보보호위원회의 2026년 개인정보 처리방침 작성지침](https://pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS074&nttId=12021)을 참고했습니다.
 

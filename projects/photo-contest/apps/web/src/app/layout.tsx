@@ -23,6 +23,9 @@ export function generateMetadata(): Metadata {
   };
 }
 
+// 첫 문서는 저장된 테마와 앱 환경을 기다리고, 하위 화면 이동은 각 loading 경계가 맡는다.
+export const instant = false;
+
 // 사진을 확대해 봐야 하므로 확대는 막지 않는다. 노치·홈 인디케이터 영역까지 그리고 안전 영역은 CSS env()로 비킨다.
 export const viewport: Viewport = {
   width: 'device-width',

@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getPublicGroupContestCount, getPublicGroupContestSitemapPage } from '@/_pages/group-contests';
+import {
+  getPublicGroupContestCount,
+  getPublicGroupContestSitemapPage,
+} from '@/_pages/group-contests/index.server';
 
 import { GET } from './route';
 
 // 공개 API 조회만 대신한다. 라우트의 범위 판단과 응답은 실제 코드로 확인한다.
 vi.mock('next/server', () => ({ connection: async () => undefined }));
-vi.mock('@/_pages/group-contests', () => ({
+vi.mock('@/_pages/group-contests/index.server', () => ({
   PUBLIC_CONTEST_SITEMAP_SIZE: 48,
   getPublicGroupContestCount: vi.fn(),
   getPublicGroupContestSitemapPage: vi.fn(),

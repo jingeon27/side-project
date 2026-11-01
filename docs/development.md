@@ -6,6 +6,20 @@
 
 전체 코드 감사에서 확인한 완료 항목·남은 개선 작업·검증 기준은 [코드 품질 후속 과제](code-quality-followups.md)에서 관리합니다.
 
+## 개발 서버 실행
+
+각 프로젝트 README에 따라 환경 파일과 개발 DB를 준비한 뒤, 저장소 루트에서 `yarn dev`로 Game Mate·피식·블로그를 함께 실행합니다. 개별 실행은 모두 `yarn workspace @side/<프로젝트> dev` 형식입니다.
+
+```sh
+yarn dev
+# 서비스 하나만 실행할 때
+yarn workspace @side/game-feedback dev
+yarn workspace @side/photo-contest dev
+yarn workspace @side/blog dev
+```
+
+전체 실행 중 Ctrl+C를 누르거나 서비스 프로세스가 종료되면 함께 시작한 서버도 종료합니다. DB는 각 프로젝트의 시작·중지 명령을 따릅니다. Game Mate의 테스트 인증·예시 콘텐츠 모드는 별도로 `yarn workspace @side/game-feedback dev:test`를 사용합니다.
+
 ## 공통 디자인 시스템
 
 [설계와 사용법](../packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.

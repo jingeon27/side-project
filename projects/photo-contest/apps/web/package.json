@@ -49,6 +49,7 @@
     "@graphql-codegen/cli": "^7.4.6",
     "@graphql-codegen/typed-document-node": "^7.2.0",
     "@graphql-codegen/typescript-operations": "^6.1.10",
+    "@next/playwright": "catalog:",
     "@photo-contest/test-kit": "workspace:*",
     "@playwright/test": "catalog:",
     "@side/config": "workspace:*",

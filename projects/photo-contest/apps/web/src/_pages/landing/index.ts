@@ -1,1 +1,1 @@
-export { LandingPageTemplate } from './@page/LandingPageTemplate';
+export { LandingPage } from './ui/LandingPage';

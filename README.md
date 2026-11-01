@@ -44,15 +44,21 @@ npm install --global @yarnpkg/cli-dist@4.17.0 --force
 yarn install --immutable
 ```
 
-실행할 프로젝트의 README에 따라 환경 파일과 DB를 준비한 뒤 개발 서버를 시작합니다.
+각 프로젝트 README에 따라 환경 파일과 DB를 준비한 뒤, 세 서비스를 함께 실행합니다.
 
-| 프로젝트  | 개발 서버 실행                                | 로컬 주소                                     | 환경 준비                                               |
-| --------- | --------------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
-| Game Mate | `yarn workspace @side/game-feedback dev:test` | [localhost:3300/ko](http://localhost:3300/ko) | [설정 안내](projects/game-feedback/README.md#빠른-시작) |
-| 피식      | `yarn dev:photo-contest`                      | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
-| 블로그    | `yarn workspace @blog/web dev`                | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
+```sh
+yarn dev
+```
 
-Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
+Game Mate와 피식의 API·웹, 블로그 웹을 함께 시작합니다. 서비스 하나만 실행할 때는 같은 형식의 workspace 명령을 사용합니다.
+
+| 프로젝트  | 개발 서버 실행                           | 로컬 주소                                     | 환경 준비                                               |
+| --------- | ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
+| Game Mate | `yarn workspace @side/game-feedback dev` | [localhost:3300/ko](http://localhost:3300/ko) | [설정 안내](projects/game-feedback/README.md#빠른-시작) |
+| 피식      | `yarn workspace @side/photo-contest dev` | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
+| 블로그    | `yarn workspace @side/blog dev`          | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
+
+전체 실행은 일반 개발 모드를 사용합니다. Game Mate의 테스트 인증과 예시 콘텐츠가 필요하면 별도로 `yarn workspace @side/game-feedback dev:test`를 실행합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다. Ctrl+C 또는 서비스 프로세스의 종료는 전체 실행이 시작한 서버를 함께 정리하며, DB 중지는 각 프로젝트 명령을 따릅니다.
 
 | 프로젝트      | 웹              | API  | 개발 / 테스트 DB |
 | ------------- | --------------- | ---- | ---------------- |

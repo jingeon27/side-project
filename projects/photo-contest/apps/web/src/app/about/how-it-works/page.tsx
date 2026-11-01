@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { HowItWorksPageTemplate } from '@/_pages/how-it-works';
+import { HowItWorksPage } from '@/_pages/how-it-works';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata } from '@/shared/lib/seo.helper';
@@ -15,5 +15,5 @@ export function generateMetadata(): Metadata {
 }
 
 export default function Page() {
-  return <HowItWorksPageTemplate />;
+  return <HowItWorksPage />;
 }

@@ -4,7 +4,6 @@ import { MockLink } from '@apollo/client/testing';
 
 import { PopularPostCard } from '../../src/features/post/ui/card/PopularPostCard';
 import { PostCard } from '../../src/features/post/ui/card/PostCard';
-import { GalleryFeed } from '../../src/features/post/ui/feed/GalleryFeed';
 import {
   GalleryPostCardFragmentDoc,
   LikePostDocument,
@@ -12,6 +11,7 @@ import {
   UnlikePostDocument,
   type GalleryPostCardFragment,
 } from '../../src/shared/api/generated';
+import { GalleryFeed } from '../../src/widgets/post-feed';
 
 const POST = {
   __typename: 'GalleryPost',

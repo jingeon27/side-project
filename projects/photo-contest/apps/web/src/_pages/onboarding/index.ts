@@ -1,1 +1,1 @@
-export { OnboardingPageTemplate } from './@page/OnboardingPageTemplate';
+export { OnboardingPage } from './ui/OnboardingPage';
