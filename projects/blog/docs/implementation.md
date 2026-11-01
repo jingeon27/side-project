@@ -140,8 +140,10 @@ Vercel 프로젝트 생성·도메인 연결·Git 연동 배포와 GA4 속성·S
 
 블로그 헤더는 아래로 12px 이동하면 숨고 위로 8px 이동하면 다시 나타난다. 방향이 바뀌는 기준점을 누적해 작은 흔들림에는 표시 상태가 바뀌지 않으며, 문서 맨 위 8px 안에서는 항상 표시한다. 스크롤 위치를 실제 문서 범위로 제한해 탄성 스크롤의 복귀를 방향 전환으로 처리하지 않는다. 헤더 안의 포커스나 열린 언어 안내도 같은 방향 규칙을 따른다.
 
-서버 `Header`의 글·번역 데이터 구성을 유지하고 `ScrollHeader`가 수동적 스크롤 구독을 소유한다. 안정된 callback ref가 StrictMode와 Activity 전환 시 구독을 정리한다. 헤더는 기존 sticky 공간을 유지한 채 transform으로 이동하므로 본문 위치가 바뀌지 않는다. 숨김 중에는 `inert`와 `visibility`로 컨트롤을 탐색 대상에서 제외하고, 기존 모션 줄이기 설정에서는 전환을 생략한다. JavaScript가 없으면 서버 렌더링 헤더와 탐색 링크를 그대로 사용할 수 있다.
+서버 `Header`의 글·번역 데이터 구성을 유지하고 `ScrollHeader`는 `@side/design-system/lib/use-scroll-visibility`의 공통 훅을 연결한다. 방향 임계치와 스크롤 범위 제한, 안정된 callback ref의 구독과 StrictMode·Activity 정리는 공통 훅이 소유하며 블로그의 중복 상태 계산은 제거했다. 헤더는 기존 sticky 공간을 유지한 채 transform으로 이동하므로 본문 위치가 바뀌지 않는다. 숨김 중에는 `inert`와 `visibility`로 컨트롤을 탐색 대상에서 제외하고, 기존 모션 줄이기 설정에서는 전환을 생략한다. JavaScript가 없으면 서버 렌더링 헤더와 탐색 링크를 그대로 사용할 수 있다.
 
-Node.js 24.19.0, Yarn 4.17.0으로 콘텐츠 검증(62개 언어별 본문·62개 정적 import·27개 리다이렉트), TypeScript, ESLint, Prettier, Vitest **40개 파일·150개 테스트**, production build **203개 정적 경로**, Playwright **60개 테스트**를 통과했다. Playwright는 앱 소유 격리 포트 3101에서 Chromium 데스크톱과 모바일 뷰포트로 실행했다. 새 6개 브라우저 검사는 실제 wheel 아래·위·맨 위 이동, 본문 문서 좌표와 헤더 높이 유지, 포커스 중 동일한 숨김 동작, 숨김 컨트롤의 Tab 제외, 모션 줄이기와 JavaScript 없는 탐색을 확인한다. 아래·위 스크롤 캡처 4장을 직접 검토했으며, 이는 실제 휴대전화 검증을 뜻하지 않는다.
+최초 구현에서는 Node.js 24.19.0, Yarn 4.17.0으로 콘텐츠 검증(62개 언어별 본문·62개 정적 import·27개 리다이렉트), TypeScript, ESLint, Prettier, Vitest **40개 파일·150개 테스트**, production build **203개 정적 경로**, Playwright **60개 테스트**를 통과했다. Playwright는 앱 소유 격리 포트 3101에서 Chromium 데스크톱과 모바일 뷰포트로 실행했다. 새 6개 브라우저 검사는 실제 wheel 아래·위·맨 위 이동, 본문 문서 좌표와 헤더 높이 유지, 포커스 중 동일한 숨김 동작, 숨김 컨트롤의 Tab 제외, 모션 줄이기와 JavaScript 없는 탐색을 확인한다. 아래·위 스크롤 캡처 4장을 직접 검토했으며, 이는 실제 휴대전화 검증을 뜻하지 않는다.
+
+공통 훅으로 전환한 뒤에는 헤더의 기존 4개 단위 검사를 포함한 관련 **3개 파일·9개 테스트**, TypeScript, ESLint, Prettier, 콘텐츠 검증과 production build **203개 정적 경로**를 다시 통과했다. 같은 격리 production 환경에서 헤더 Playwright **6개 테스트**도 통과했다. 앱과 workspace 패키지가 단일 React를 사용하도록 블로그 Vitest의 React 해석을 dedupe로 맞췄다. Next 기본 Turbopack의 workspace 변환을 사용하므로 별도 transpile 설정은 추가하지 않았다.
 
 본문·메타데이터·이미지·기존 제품 캡처 출처 manifest는 이번 헤더 변경에서 수정하지 않았다.

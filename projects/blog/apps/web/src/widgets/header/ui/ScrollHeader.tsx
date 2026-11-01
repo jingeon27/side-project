@@ -1,33 +1,14 @@
 'use client';
 
-import { useCallback, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-import { nextHeaderScrollState, type IHeaderScrollState } from '../model/header-scroll-state';
-
-function scrollPosition() {
-  return Math.max(0, Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight));
-}
+import { useScrollVisibility } from '@side/design-system/lib/use-scroll-visibility';
 
 export function ScrollHeader({ children }: { children: ReactNode }) {
-  const [scrollState, setScrollState] = useState<IHeaderScrollState>({ hidden: false, edgeY: 0 });
-  const attachHeader = useCallback((node: HTMLElement | null) => {
-    if (!node) return;
-    setScrollState({ hidden: false, edgeY: scrollPosition() });
-    const handleScroll = () => {
-      const y = scrollPosition();
-      setScrollState((previous) => nextHeaderScrollState(previous, y));
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const { ref, hidden } = useScrollVisibility<HTMLElement>();
 
   return (
-    <header
-      ref={attachHeader}
-      className="site-header"
-      data-scroll-hidden={scrollState.hidden || undefined}
-      inert={scrollState.hidden}
-    >
+    <header ref={ref} className="site-header" data-scroll-hidden={hidden || undefined} inert={hidden}>
       {children}
     </header>
   );
