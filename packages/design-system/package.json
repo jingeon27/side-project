@@ -13,6 +13,8 @@
     "./theme.css": "./src/styles/theme.css",
     "./lib/cn.helper": "./src/lib/cn.helper.ts",
     "./lib/use-scroll-visibility": "./src/lib/use-scroll-visibility.ts",
+    "./lib/use-motion-preference": "./src/lib/use-motion-preference.ts",
+    "./lib/motion": "./src/lib/motion.ts",
     "./ui/*": "./src/ui/*/index.ts",
     "./ui": "./src/index.ts"
   },
@@ -30,6 +32,7 @@
     "clsx": "^2.1.1",
     "lottie-web": "catalog:",
     "lucide-react": "catalog:",
+    "motion": "catalog:",
     "sonner": "2.0.8",
     "tailwind-merge": "^3.6.0"
   },

@@ -83,6 +83,12 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 바텀시트는 이 패키지의 조합 부품을 `responsive`로 쓰고 앱의 Root가 history·portal·overlay unmount를, Footer가 하단 취소 버튼을 연결한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
 
+## Motion과 스크롤
+
+`MotionProvider`는 추가 DOM 없이 `LazyMotion(domAnimation, strict)`와 `MotionConfig` 정책을 공유한다. 기본 전환은 0.2초와 `[0.22, 1, 0.36, 1]` easing이며, 사용자 모션 감소 설정에서는 duration을 0으로 바꾼다. `useMotionPreference`는 서버와 첫 hydration에서 true를 반환하고 브라우저의 `prefers-reduced-motion` 변경을 구독한다. 앱의 최상위에 Provider를 한 번 두고, `@side/design-system/lib/motion`에서 공식 lazy `m`, `AnimatePresence`, `useAnimate`, `useMotionValue`, `useSpring`을 가져온다. 공통 패키지가 catalog의 Motion 14.9.0을 소유하므로 Provider와 소비자가 같은 라이브러리 인스턴스를 사용한다. 이 진입점은 공식 API를 명시적으로 재수출하며 별도 동작을 덧붙이지 않는다.
+
+`MotionProvider`는 `@side/design-system/ui/motion-provider`, `useMotionPreference`는 `@side/design-system/lib/use-motion-preference`와 루트 named export로 제공한다. `useScrollVisibility`는 UI와 무관한 Motion `scroll()` 구독으로 viewport 위치를 읽으며, DOM ref의 연결 수명으로 구독을 정리한다. 아래 12px·위 8px·상단 8px과 탄성 스크롤 clamp 정책은 훅 한 곳에 둔다. 화면 배치와 숨김 표현은 소비 앱이 소유한다.
+
 ## 페이지 폼의 하단 행동
 
 `FormActions`는 피식과 Game Mate가 함께 쓰는 저장·제출 영역이다. `children`, native div props, 바깥 `className`과 읽기 폭을 조절하는 `contentClassName`을 받는다. 안전 영역과 구분선·배경·간격을 공유하며, 앱은 화면 높이 안에서 본문만 스크롤하고 이 영역을 마지막 자식으로 배치한다. 외부 폼의 제출 버튼은 native `form` 속성으로 연결한다. 피식의 기존 `StickyCta` 진입점도 같은 컴포넌트를 사용한다.
