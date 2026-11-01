@@ -199,6 +199,18 @@ svg {
   z-index: 30;
   background: var(--background);
   border-bottom: 1px solid var(--line);
+  transform: translateY(0);
+  transition:
+    transform 180ms ease,
+    visibility 0s;
+}
+.site-header[data-scroll-hidden='true'] {
+  transform: translateY(-100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 180ms ease,
+    visibility 0s 180ms;
 }
 .header-inner {
   max-width: 960px;
