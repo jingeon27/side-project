@@ -10,12 +10,16 @@ test(
       await page.goto(path);
       await expect(page.getByRole('contentinfo')).toHaveCount(0);
       await expect(page.getByRole('navigation', { name: '서비스 정책', exact: true })).toHaveCount(0);
-      const footer = page.locator('[data-sticky-cta]');
-      const scroll = page.locator('[data-form-scroll]');
+      const footer = page.locator('[data-sticky-cta]:visible');
+      const scroll = page.locator('[data-form-scroll]:visible');
       await expect(
         footer.getByRole('button', { name: /그룹 만들기|프로필 저장하기|게시물 올리기/ }),
       ).toBeEnabled();
-      if (path !== `/groups/${group.id}/write`) await page.locator('summary').click();
+      if (path !== `/groups/${group.id}/write`)
+        await page
+          .getByRole('form', { name: /그룹 만들기|그룹 프로필 수정/ })
+          .locator('summary')
+          .click();
       for (const height of [844, 420, 900]) {
         await page.setViewportSize({
           width: testInfo.project.name === 'desktop-chrome' ? 1440 : 390,
