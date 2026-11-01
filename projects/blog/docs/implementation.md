@@ -146,4 +146,6 @@ Vercel 프로젝트 생성·도메인 연결·Git 연동 배포와 GA4 속성·S
 
 공통 훅으로 전환한 뒤에는 헤더의 기존 4개 단위 검사를 포함한 관련 **3개 파일·9개 테스트**, TypeScript, ESLint, Prettier, 콘텐츠 검증과 production build **203개 정적 경로**를 다시 통과했다. 같은 격리 production 환경에서 헤더 Playwright **6개 테스트**도 통과했다. 앱과 workspace 패키지가 단일 React를 사용하도록 블로그 Vitest의 React 해석을 dedupe로 맞췄다. Next 기본 Turbopack의 workspace 변환을 사용하므로 별도 transpile 설정은 추가하지 않았다.
 
+Motion 전환에서는 `@side/design-system`이 단일 `motion` 14.9.0 의존성을 소유하고 블로그는 공개 훅과 `MotionProvider`만 사용한다. locale root layout에서 Header·본문·Footer·Analytics를 같은 provider로 감싸고 서버 컴포넌트와 테마 초기화·구조화 데이터의 기존 경계는 유지했다. 공통 provider가 LazyMotion의 DOM 기능과 strict 모드, 사용자 모션 감소 설정, 기본 전환을 제공한다. SSR와 첫 hydration 및 모션 감소 설정에서는 공통 전환 시간이 0이다. 헤더의 기존 CSS 모션 감소 규칙도 유지한다. 방향 계산 정책은 공통 훅에 남기고 실제 스크롤 감지는 Motion의 `scroll` API에 맡긴다. 단위 테스트는 문서 root의 `scrollTop`·`scrollHeight`·`clientHeight`와 두 프레임의 비동기 관측을 사용해 기존 행동·수명 단언을 그대로 확인한다. 이 전환 뒤 관련 **3개 파일·9개 단위 테스트**, TypeScript, 전체 ESLint, Prettier, 콘텐츠 검증(62·62·27), production build **203개 정적 경로**, 격리된 헤더 Playwright **6개 테스트**를 통과했다.
+
 본문·메타데이터·이미지·기존 제품 캡처 출처 manifest는 이번 헤더 변경에서 수정하지 않았다.

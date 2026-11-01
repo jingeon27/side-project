@@ -14,47 +14,48 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-const scrollDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollY');
-const heightDescriptor = Object.getOwnPropertyDescriptor(window, 'innerHeight');
-
-function scroll(y: number) {
-  Object.defineProperty(window, 'scrollY', { configurable: true, value: y });
-  act(() => fireEvent.scroll(window));
+async function scroll(y: number) {
+  await act(async () => {
+    document.documentElement.scrollTop = y;
+    fireEvent.scroll(
+      document.scrollingElement === document.documentElement ? window : document.documentElement,
+    );
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
 }
 
 beforeEach(() => {
+  document.documentElement.scrollTop = 0;
   vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(4_000);
-  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
-  scroll(0);
+  vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(800);
 });
 
 afterEach(() => {
-  if (scrollDescriptor) Object.defineProperty(window, 'scrollY', scrollDescriptor);
-  if (heightDescriptor) Object.defineProperty(window, 'innerHeight', heightDescriptor);
+  document.documentElement.scrollTop = 0;
 });
 
 describe('directional site header', () => {
-  it('accumulates movement without toggling for small reversals and always returns at the top', () => {
+  it('accumulates movement without toggling for small reversals and always returns at the top', async () => {
     render(
       <ScrollHeader>
         <Link href="/ko">Home</Link>
       </ScrollHeader>,
     );
     const header = screen.getByRole('banner');
-    scroll(100);
+    await scroll(100);
     expect(header).toHaveAttribute('data-scroll-hidden', 'true');
     expect(header).toHaveAttribute('inert');
-    scroll(96);
-    scroll(102);
-    scroll(95);
+    await scroll(96);
+    await scroll(102);
+    await scroll(95);
     expect(header).toHaveAttribute('data-scroll-hidden', 'true');
-    scroll(94);
+    await scroll(94);
     expect(header).not.toHaveAttribute('inert');
-    scroll(105);
+    await scroll(105);
     expect(header).not.toHaveAttribute('data-scroll-hidden');
-    scroll(106);
+    await scroll(106);
     expect(header).toHaveAttribute('inert');
-    scroll(8);
+    await scroll(8);
     expect(header).not.toHaveAttribute('data-scroll-hidden');
   });
 
@@ -69,30 +70,32 @@ describe('directional site header', () => {
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     const header = screen.getByRole('banner');
-    scroll(100);
+    await scroll(100);
     expect(header).toHaveAttribute('inert');
-    scroll(92);
+    await scroll(92);
     expect(header).not.toHaveAttribute('inert');
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('status')).toBeVisible();
   });
 
-  it('clamps elastic overscroll instead of treating its return as a direction change', () => {
+  it('clamps elastic overscroll instead of treating its return as a direction change', async () => {
     render(<ScrollHeader>Navigation</ScrollHeader>);
     const header = screen.getByRole('banner');
-    scroll(3_200);
-    scroll(4_000);
-    scroll(3_200);
+    await scroll(3_200);
+    await scroll(4_000);
+    await scroll(3_200);
     expect(header).toHaveAttribute('inert');
-    scroll(-40);
+    await scroll(-40);
     expect(header).not.toHaveAttribute('inert');
-    scroll(0);
+    await scroll(0);
     expect(header).not.toHaveAttribute('data-scroll-hidden');
   });
 
-  it('cleans up StrictMode and Activity subscriptions and reattaches with a visible header', () => {
+  it('cleans up StrictMode and Activity subscriptions and reattaches with a visible header', async () => {
     const add = vi.spyOn(window, 'addEventListener');
     const remove = vi.spyOn(window, 'removeEventListener');
+    const addRoot = vi.spyOn(document.documentElement, 'addEventListener');
+    const removeRoot = vi.spyOn(document.documentElement, 'removeEventListener');
     const tree = (mode: 'visible' | 'hidden') => (
       <StrictMode>
         <Activity mode={mode}>
@@ -103,20 +106,26 @@ describe('directional site header', () => {
       </StrictMode>
     );
     const view = render(tree('visible'));
-    scroll(100);
-    expect(screen.getByRole('banner')).toHaveAttribute('inert');
+    await scroll(100);
+    const header = screen.getByRole('banner');
+    expect(header).toHaveAttribute('inert');
     view.rerender(tree('hidden'));
-    expect(remove.mock.calls.filter(([event]) => event === 'scroll')).toHaveLength(
-      add.mock.calls.filter(([event]) => event === 'scroll').length,
-    );
-    scroll(200);
+    expect(
+      [...remove.mock.calls, ...removeRoot.mock.calls].filter(([event]) => event === 'scroll'),
+    ).toHaveLength([...add.mock.calls, ...addRoot.mock.calls].filter(([event]) => event === 'scroll').length);
+    await scroll(200);
+    expect(header).toHaveAttribute('inert');
     view.rerender(tree('visible'));
     expect(screen.getByRole('banner')).not.toHaveAttribute('inert');
-    scroll(212);
+    await scroll(212);
     expect(screen.getByRole('banner')).toHaveAttribute('inert');
     view.unmount();
-    expect(remove.mock.calls.filter(([event]) => event === 'scroll')).toHaveLength(
-      add.mock.calls.filter(([event]) => event === 'scroll').length,
-    );
+    await scroll(0);
+    expect(header).toHaveAttribute('inert');
+    const subscriptions = [...add.mock.calls, ...addRoot.mock.calls].filter(([event]) => event === 'scroll');
+    expect(subscriptions.length).toBeGreaterThan(0);
+    expect(
+      [...remove.mock.calls, ...removeRoot.mock.calls].filter(([event]) => event === 'scroll'),
+    ).toHaveLength(subscriptions.length);
   });
 });
