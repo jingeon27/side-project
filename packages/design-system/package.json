@@ -12,6 +12,7 @@
     "./styles.css": "./src/styles.css",
     "./theme.css": "./src/styles/theme.css",
     "./lib/cn.helper": "./src/lib/cn.helper.ts",
+    "./lib/use-scroll-visibility": "./src/lib/use-scroll-visibility.ts",
     "./ui/*": "./src/ui/*/index.ts",
     "./ui": "./src/index.ts"
   },
