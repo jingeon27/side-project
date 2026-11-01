@@ -25,7 +25,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `features`: 인증·그룹·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
 - `shared`: 생성 GraphQL 문서·API 링크·router/error/form/bridge 기반·UI.
 
-두 웹 서비스가 공유하는 색·글자·간격 토큰과 UI primitive·`cn`은 루트 `packages/design-system`(`@side/design-system`)이 소유한다. `shared/ui/@core`는 기존 import 경로에서 공통 primitive를 사용한다. Button·IconButton은 자신의 hydration이 끝나기 전에는 비활성화해 이벤트 연결 전 조작을 막으며 모양은 공통 primitive에 맡긴다. 상태 모션은 공통 `StatusAnimation`의 SVG Lottie와 정지 fallback을 사용하며 모션 감소 설정을 따른다. TextField·TextArea·Badge·Avatar·Spinner와 `shared/lib/cn.helper.ts`는 명시적 re-export다. Next 링크는 공통 패키지의 `/next`, 스타일은 `/styles.css` 공개 경로를 사용한다. 이 앱의 `_app/styles/tailwind.css`는 공통 스타일과 앱 소스를 연결하고 `globals.css`에는 `#pc-main` 토스트 위치만 둔다. ConfirmDialog·BottomSheet의 뒤로 가기, 포털 위치, 비동기 동작은 앱에 남기고 공통 토큰·스타일·버튼을 조합한다.
+두 웹 서비스가 공유하는 색·글자·간격 토큰과 UI primitive·`cn`은 루트 `packages/design-system`(`@side/design-system`)이 소유한다. `shared/ui/@core`는 기존 import 경로에서 공통 primitive를 사용한다. Button·IconButton·FloatingComposeButton은 자신의 hydration이 끝나기 전에는 비활성화해 이벤트 연결 전 조작을 막으며 모양은 공통 primitive에 맡긴다. 상태 모션은 공통 `StatusAnimation`의 SVG Lottie와 정지 fallback을 사용하며 모션 감소 설정을 따른다. TextField·TextArea·Badge·Avatar·Spinner와 `shared/lib/cn.helper.ts`는 명시적 re-export다. Next 링크는 공통 패키지의 `/next`, 스타일은 `/styles.css` 공개 경로를 사용한다. 이 앱의 `_app/styles/tailwind.css`는 공통 스타일과 앱 소스를 연결하고 `globals.css`에는 `#pc-main` 토스트 위치만 둔다. ConfirmDialog·BottomSheet의 뒤로 가기, 포털 위치, 비동기 동작은 앱에 남기고 공통 토큰·스타일·버튼을 조합한다.
 
 아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓴다. 가입 설정 화면에서는 기존 닉네임·사진을 수정하고 약관 동의를 완료한다. MY에서도 프로필을 편집한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 게시물 업로드는 requestPostUpload → shared/api의 uploadToStorage helper(FormData POST, 세션 쿠키 제외) → completePostUpload → createPost를 쓰고 컴포넌트에서 fetch를 호출하지 않는다. 저장소 전송 실패는 RHF 미디어 오류로 표시한다. 업로드 티켓 mutation은 `fetchPolicy: 'no-cache'`로 정규화 캐시에 남기지 않고, 저장소 전송은 티켓 만료(1~15분)까지만 기다린다. 업로드하는 시트는 `useAbortOnClose`로 닫히면 전송을 끊고 게시·저장 직전에 `throwIfClosed`로 멈추며 `notifyClosedSubmit` 토스트로 알린다. 기존 대회 제출도 requestUploadUrl(contentType, byteSize) → 같은 helper → completeSubmissionUpload → createSubmission으로 전송한다. Apollo HttpLink는 JSON 메타데이터만 보내며 GraphQL Upload는 제공하지 않는다.
 
@@ -52,9 +52,9 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 ## 앱 스킬
 
-홈과 그룹 탐색의 생성/작성 진입은 `widgets/compose-entry`의 고정 버튼을 공유한다. 스크롤 중에는 `+`, 180ms 정지 후 문구를 표시한다. 가입 그룹이 없으면 `그룹 만들기`로 바로 이동하고, 있으면 `글쓰기` 바텀시트에서 그룹 만들기/게시글 작성을 고른다. 게시글 작성은 한 그룹이면 바로 이동하며 여러 그룹이면 선택 즉시 이동한다. 별도 확인 버튼과 헤더의 중복 생성 버튼은 두지 않는다. 화면이 Activity로 숨겨졌다 돌아와도 문구를 복원한다.
+홈과 그룹 탐색의 생성/작성 진입은 `widgets/compose-entry`의 고정 버튼을 공유한다. 스크롤 중에는 `+`, 180ms 정지 후 문구를 표시한다. 가입 그룹이 없으면 `그룹 만들기`로 바로 이동하고, 있으면 `글쓰기` 바텀시트에서 그룹 만들기/게시글 작성을 고른다. 게시글 작성은 한 그룹이면 바로 이동한다. 여러 그룹이면 별도 `ComposeGroupSelectionBottomSheet`를 열고 선택 즉시 이동한다. 첫 행동 시트는 유지하며 선택 시트의 Escape·뒤로 가기는 첫 시트와 게시글 작성 버튼의 포커스로 복귀한다. 작성 화면으로 이동할 때는 현재 선택 시트와 첫 행동 시트를 함께 닫는다. 별도 확인 버튼과 헤더의 중복 생성 버튼은 두지 않는다. 화면이 Activity로 숨겨졌다 돌아와도 문구를 복원한다.
 
-그룹 상세도 같은 `FloatingComposeButton` 표시·스크롤 수명을 사용하되 멤버에게만 현재 그룹 작성 화면으로 바로 가는 링크를 제공한다. 헤더에는 중복 글쓰기를 두지 않는다. 하단 메뉴가 없는 상세에서는 안전 영역 위 24px(데스크톱 32px)에 배치하고 본문·토스트 간격을 확보한다. 미가입자의 가입 행동과 비공개 그룹의 승인 경계는 유지한다.
+그룹 상세도 같은 `FloatingComposeButton`의 스크롤 수명을 사용하되 멤버에게만 현재 그룹 작성 화면으로 바로 가는 버튼을 제공한다. 모양·라벨 전환·키보드 포커스·모션 감소는 공통 DS의 `FloatingActionButton`이 소유하고, 앱 어댑터는 hydration guard·180ms 스크롤 상태·배치·data marker만 소유한다. 이동은 앱의 `useAppRouter().push`로 처리하며 홈·탐색의 바텀시트 흐름을 유지한다. 인증된 사용자의 단일 목적지(현재 그룹 작성·참여 그룹 없는 사용자의 그룹 생성)는 앱 소비자가 prefetch한다. 열린 시트는 그룹 생성과 단일 참여 그룹의 작성 경로만 준비하며 여러 그룹 전체를 미리 요청하지 않는다. 선택 시 준비 완료를 기다리지 않는다. 헤더에는 중복 글쓰기를 두지 않는다. 하단 메뉴가 없는 상세에서는 안전 영역 위 24px(데스크톱 32px)에 배치하고 본문·토스트 간격을 확보한다. 미가입자의 가입 행동과 비공개 그룹의 승인 경계는 유지한다.
 
 그룹 소개의 `초대와 멤버 보기`는 기존 커뮤니티 details를 열고 summary에 포커스를 옮긴다. 관리 내용을 복제하거나 새 조회 상태를 만들지 않는다. 긴 소개는 아바타 아래의 전체 폭을 쓰고 카테고리·초대 버튼은 확대된 글자에서도 줄바꿈한다. 빈 카테고리는 category만 지우는 복구 행동, 멤버의 빈 피드는 현재 그룹의 첫 글 작성 행동을 제공한다. 비공개 승인 재조회 실패는 QueryRef의 오류를 안내 안에서 표시하고 기존 대기 상태를 유지한다.
 
@@ -62,7 +62,7 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 [photo-contest-web](../../.agents/skills/photo-contest-web/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
-데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 중앙 피드와 오른쪽 인기 목록을 구분한다. 그룹 글쓰기는 멤버용 플로팅 링크로, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 중앙 모달의 폭은 `max-w-6xl`로 확보한다. 댓글 시트는 768px 미만에서 높이 75%로 열리고 높이 조절 손잡이(`BottomSheet.Handle`)를 끌거나 방향키·Home·End로 키보드를 제외한 전체 높이까지 확장한다. 768px부터는 손잡이 없이 화면 높이의 중앙 모달(`tablet:h-full`)이다. 공통 BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하고, 시트 높이는 보이는 화면(visual viewport)을 따르며 스냅 오프셋만큼 안쪽 높이를 줄여 입력창을 화면 안에 둔다. 댓글 Footer에는 취소 대신 입력창만 두고 제목 옆에 "닫기" 버튼을 둔다.
+데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 중앙 피드와 오른쪽 인기 목록을 구분한다. 그룹 글쓰기는 멤버용 플로팅 버튼으로, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 중앙 모달의 폭은 `max-w-6xl`로 확보한다. 댓글 시트는 768px 미만에서 높이 75%로 열리고 높이 조절 손잡이(`BottomSheet.Handle`)를 끌거나 방향키·Home·End로 키보드를 제외한 전체 높이까지 확장한다. 768px부터는 손잡이 없이 화면 높이의 중앙 모달(`tablet:h-full`)이다. 공통 BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하고, 시트 높이는 보이는 화면(visual viewport)을 따르며 스냅 오프셋만큼 안쪽 높이를 줄여 입력창을 화면 안에 둔다. 댓글 Footer에는 취소 대신 입력창만 두고 제목 옆에 "닫기" 버튼을 둔다.
 
 그룹 메뉴는 게시물·대회·명예의 전당을 JSX로 직접 선언한다. 대회 목록·상세·결과는 각각 QueryRef·AsyncBoundary를 갖고 공개 데이터는 RSC PreloadQuery로 HTML을 만든다. 비공개 내용은 GroupContentFrame이 canViewPosts로 막고 ClientOnly로 조회한다. 작성 폼의 PostContestField는 대회 선택 쿼리·필수값을 소유한다. 일반 좋아요와 대회 투표를 구분하고 종료 후만 결과를 조회한다. 역할 변경은 GraphQL mutation 결과와 활성 쿼리 재조회로 반영한다. 멤버 목록의 내보내기(그룹장은 부관리자·멤버, 부관리자는 멤버만)와 그룹장이 아닌 멤버의 그룹 나가기는 ConfirmDialog로 한 번 더 묻고, 나가면 홈 그룹 목록에서 바로 뺀다. 새 기능의 단위·실제 API·브라우저 테스트는 `.spec`으로 둔다.
 
