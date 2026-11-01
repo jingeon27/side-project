@@ -6,17 +6,19 @@
 
 | 스크립트 | 설정 파일 | 대상 | Web/API | Web 서버 |
 | --- | --- | --- | --- | --- |
-| `test:e2e` | `playwright.config.ts` | `e2e/**`(test-token-chat·observability 제외) | 3301/4301 | `next build` + `next start`, `.next/e2e`, demo 켬 |
+| `test:e2e` | `playwright.config.ts` | `e2e/**`(test-token-chat·observability 제외) | 3301/4301 | `next build` + `next start`, `.next/test`, demo 켬 |
+| `test:editor` | `playwright.editor.config.ts` | 기존 글 편집·한글 조합·작은 화면 | 3301/4301 | 기본과 같은 운영 빌드, Desktop/Android Chromium·iOS WebKit |
 | `test:test-auth` | `playwright.test-auth.config.ts` | `e2e/test-token-chat.spec.ts` | 3301/4301 | 기본과 같고 `GF_DEMO_MODE=false` |
-| `test:prefetch` | `playwright.prefetch.config.ts` | `e2e-production/**` | 3353/4353 | production build, `GF_PREFETCH_TESTING=true`, `.next/prefetch-e2e` |
+| `test:prefetch` | `playwright.prefetch.config.ts` | `e2e-production/**` | 3353/4353 | production build, `ENVIRONMENT=test`, `.next/test` |
 | `test:observability` | `playwright.observability.config.ts` | `e2e/observability.spec.ts` | 3301/4301 | `next dev --webpack`(`.next/observability`), `GF_OBSERVABILITY_PRODUCTION=true`면 production |
 
 - 공통: chromium(Desktop Chrome) 프로젝트 하나, workers 1, timeout 45초, `trace: 'retain-on-failure'`, `reuseExistingServer: false`. 결과는 `test-results/`(기본) 또는 `.e2e-build/<이름>-results/`다.
 - API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353·4354와 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
 - DB URL은 `TEST_DATABASE_URL`(기본 `postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test`)만 허용하며 실행마다 `gf_test_web_<uuid>` 스키마를 만든다(`GF_E2E_SCHEMA`로 지정 가능, `gf_test_` 접두 필수). `e2e/teardown.ts`가 그 스키마만 DROP한다.
 - 기본 설정은 Sentry·Amplitude 키를 빈 값으로 덮는다(`telemetry-disabled.spec.ts`). observability 설정만 가짜 키(`observability-test-key`, `https://test@sentry.invalid/1`)를 넣고 `context.route`로 가로챈다. `GAME_FEEDBACK_SITE_URL=https://feedback.example`, `ENVIRONMENT=test`.
-- `GF_PREFETCH_TESTING=true`는 `next.config.ts`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 build에 넣지 않는다.
+- `ENVIRONMENT=test`인 격리 빌드에서만 `next.config.ts`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 운영 환경에는 노출하지 않는다.
 - 모든 설정이 실행마다 web production build를 한다(observability dev 모드 제외). 개발 오버레이 같은 dev 동작은 기본 e2e에 없다.
+- 기본 E2E와 prefetch 레인은 `.next/test`를 공유하므로 동시에 build/start하지 않는다. 기존 production artifact를 재검증할 때는 BUILD_ID·runtime hash를 확인하고 전용 포트·새 실행 스키마만 사용한다.
 
 ## 실행 전
 
@@ -29,12 +31,15 @@
 - 로그인: `page.request.post('/api/auth/test-login', { headers: { Origin: 'http://127.0.0.1:3301' }, data: { accountId } })`(쿠키 전환) 또는 `/api/auth/test-token`(Bearer 토큰 + 쿠키). 새 닉네임 사용자는 `/api/auth/demo`(`{ nickname }`)이며 demo가 켜진 기본 설정에서만 된다. 쓰기 요청에는 Origin 헤더를 붙인다(`playwright.request.newContext({ extraHTTPHeaders: { Origin } })`).
 - 시드(`apps/api/src/seed.ts`): `sample-user-0`(새벽의호그), `sample-user-3`(덱연구소, 인증), `sample-test-admin`(운영테스터), 게시글 `sample-post-0`, 대화 `sample-conversation-0-3`. 다른 계정은 `browser.newContext({ baseURL })`로 나눈다. 한 실행의 spec이 같은 스키마를 공유하므로 만든 데이터 이름에 `dayjs().valueOf().toString(36)` 같은 접미사를 붙인다.
 - 경로는 `/ko/...`처럼 locale을 명시한다. `/`는 Accept-Language로 리다이렉트된다(`language.spec.ts`는 `locale: 'ja-JP'` 컨텍스트). 프로젝트가 Desktop Chrome 하나이므로 모바일 배치는 `page.setViewportSize({ width: 400, height: 844 })`나 컨텍스트 `viewport`로 본다(`compose.spec.ts`, `test-token-chat.spec.ts`).
-- 선택자는 역할·한국어 접근성 이름 + `exact: true`가 기본이다(`getByRole('button', { name: '보내기', exact: true })`, `getByRole('form', { name: '글쓰기', exact: true })`, `getByRole('status', { name: '게시글 불러오는 중' })`). 기존 spec은 표시 확인에 앱 클래스(`.post-card`, `.ql-editor img`)도 쓴다. `waitForTimeout` 대신 기다리는 단언과 `page.waitForResponse`를 쓴다.
+- 선택자는 역할·한국어 접근성 이름 + `exact: true`가 기본이다(`getByRole('button', { name: '보내기', exact: true })`, `getByRole('form', { name: '글쓰기', exact: true })`, `getByRole('status', { name: '게시글 불러오는 중' })`). 기존 spec은 표시 확인에 앱 클래스(`.post-card`, `.tiptap-editor-content img`)도 쓴다. `waitForTimeout` 대신 기다리는 단언과 `page.waitForResponse`를 쓴다.
 - Cache Components의 Activity와 Suspense는 숨긴 DOM을 문서에 보관할 수 있다. 역할 기반 선택자를 우선하고, 클래스·test id로 작업 영역을 잡으면 `:visible`로 현재 영역을 고른 뒤 하나인지 검증한다. 대화 목록·메시지·입력 같은 후속 선택자도 그 영역에 제한한다.
 - SSE는 `/api/chat/events`가 `text/event-stream`으로 열린 것을 `waitForResponse`로 확인한 뒤 진행한다(`chat.spec.ts`의 `openRealtime`).
 - 응답 조작은 `page.route('**/api/...')` + `route.fetch()`/`route.fulfill()`이고 `test.afterEach`에서 `page.unrouteAll({ behavior: 'wait' })`한다. 렌더 실패는 `page.addInitScript`로 브라우저에서 주입한다. 앱에 테스트 전용 스위치를 넣지 않는다(`error-boundary.spec.ts`).
 - 계약 확인은 `../../../packages/sdk/src/generated/validation`의 응답 스키마나 `@game-feedback/contracts` 스키마로 파싱한다(`feedback.spec.ts`, `test-token-chat.spec.ts`).
 - `e2e-production`은 `instant(page, async () => …)`(`@next/playwright`) 안에서 클릭 뒤 제목·검색·글쓰기·스켈레톤 같은 이동 셸이 바로 보이는지 단언한다.
+- `prefetch.spec.ts`는 400px의 게시판 칩과 1440px의 사이드 메뉴에서 친구전투(`friendly`, `battleMode=DUEL`) → 자유게시판 → 피드백 → 전체 피드로 연속 이동한다. 목적지 App Shell의 prefetch가 완료된 뒤 동적 응답을 `instant()`로 보류하고, 선택한 탭·제목·검색·글쓰기와 목록 스켈레톤이 함께 표시되며 `replace` 이동이 history 길이를 늘리지 않는지 확인한다.
+- 이 보장은 production의 준비된 App Shell에 대한 것이다. Next의 자동 prefetch는 `next dev`에서 실행되지 않으며, 캐시가 차갑거나 prefetch가 끝나지 않은 이동의 무대기 응답을 보장하지 않는다. 별도 no-JS 테스트는 최초 공개 문서에 피드·게시판 본문이 포함되고 접근 불가 상세가 404를 반환하는지 확인한다.
+- 로그인한 피드·친구전투 FAB의 추가 `instant()` 검사는 공개 `router.prefetch()`로 준비된 글쓰기 제목/로딩 status가 먼저 보이고, 실제 form은 아직 없음을 확인한다. 스트리밍 뒤에는 분류·팀전 초기값·게임 ID·복귀 경로와 제목 입력을 별도로 검사한다. 익명 작성 진입의 단위 테스트는 로그인 대화상자만 열고 prefetch·push를 호출하지 않는지 확인한다.
 - 접미사: 새 사양 `*.spec.ts`, 확인한 버그 회귀 `*.test.ts`(`block-user.test.ts`). Playwright는 둘 다 수집한다.
 - 웹 접근성 이름을 바꾸면 `apps/mobile/e2e/*.spec.ts`도 고친다(모바일 e2e가 3302에서 같은 웹 화면을 연다). 커밋은 앱별로 나눈다([commit](../../../../../../.agents/skills/commit/SKILL.md) 스킬).
 
