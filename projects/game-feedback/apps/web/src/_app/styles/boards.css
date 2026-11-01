@@ -1,4 +1,15 @@
 @layer components {
+  @media (min-width: 1024px) {
+    .board-page {
+      width: 100%;
+      max-width: 680px;
+      margin-inline: auto;
+    }
+    .board-empty {
+      min-height: 320px;
+      justify-content: center;
+    }
+  }
   .game-board-navigation {
     display: none;
     position: sticky;

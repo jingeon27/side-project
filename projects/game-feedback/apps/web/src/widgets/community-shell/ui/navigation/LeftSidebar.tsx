@@ -10,6 +10,7 @@ import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
+import { GameMateLogo } from '@/shared/ui';
 
 import { GameIcon } from './GameIcon';
 
@@ -27,7 +28,9 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
   const locale = home.slice(1);
   return (
     <aside className="left-sidebar">
-      <div className="sidebar-label">{t('둘러보기')}</div>
+      <Link className="sidebar-brand" href={home} replace aria-label={t('Game Mate 홈')}>
+        <GameMateLogo />
+      </Link>
       <nav aria-label={t('주 메뉴')}>
         <Link className="side-link" href={home} replace aria-current={tab === 'feed' ? 'page' : undefined}>
           <Home size={19} />
