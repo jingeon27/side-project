@@ -25,19 +25,35 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+      - name: Select content-only verification
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node projects/blog/apps/web/scripts/ci-scope.ts
       - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn install --immutable
+        if: steps.scope.outputs.content-only != 'true'
       # DB와 앱 서버를 띄우지 않고 import 대상만 준비한다.
       - run: yarn workspace @side/toolkit build
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @photo-contest/api db:generate
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @game-feedback/api db:generate
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @photo-contest/web codegen
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @blog/web content:generate
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @side/config check
+        if: steps.scope.outputs.content-only != 'true'
       - run: yarn typecheck:scripts
+        if: steps.scope.outputs.content-only != 'true'
       - name: Reject new unused files, dependencies and exports
+        if: steps.scope.outputs.content-only != 'true'
         run: yarn knip

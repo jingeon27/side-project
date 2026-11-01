@@ -12,7 +12,7 @@ Changing a program input meant finding its FormItem in both hospital admin and B
 
 Submission was different in each app. Hospital administrators register programs and request review; Back-Office approves or rejects those requests. Operational notes and visibility settings belong to Back-Office, while requester and review-request details belong to hospital admin. Combining both forms wholesale would bring those differences into shared code too.
 
-![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01.png)
+![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01-en.png)
 
 *The two apps need slightly different values for the same program. Input values in this diagram are examples.*
 
@@ -27,15 +27,15 @@ I first gathered field names in an enum. That helped with typos but did not stop
 The shared program form and each app's form now use `createTypedForm<T>()`. This wrapper accepts a value type once and applies it to Item, List, useForm, useFormInstance, and useWatch.
 
 ```tsx
-// 공유 패키지
+// Shared package
 export const ProgramForm = createTypedForm<IProgramFormCommon>();
 
-// Back-Office 앱: 공통 값에 운영·검수 전용 값을 더해요.
+// Back-Office app: add operations and inspection fields to the shared values.
 export interface IProgramInspectionClient extends IProgramFormCommon {
   memo?: string;
   hidePrice?: boolean | null;
   rejectReason?: string;
-  // 나머지 앱 전용 필드 생략
+  // Remaining app-specific fields omitted
 }
 
 export const ProgramInspectionForm =
@@ -51,9 +51,9 @@ const name = form.getFieldValue('programName'); // string
 const price = form.getFieldValue('price');     // number
 
 form.setFieldValue('price', 100000);
-form.setFieldsValue({ programName: '프로그램명', price: 100000 });
+form.setFieldsValue({ programName: 'Program name', price: 100000 });
 
-// 아래 두 호출은 타입 검사에서 걸려요.
+// The following two calls fail type checking.
 form.getFieldValue('programNmae');
 form.setFieldValue('price', '100000');
 ```
@@ -61,7 +61,7 @@ form.setFieldValue('price', '100000');
 I wanted `getFieldValue('price')` to return a number and `setFieldValue('price', ...)` to accept the same type. `TFieldNamePath<T>` limits names and nested paths, while `TPathValue<T, P>` finds the type at the chosen path.
 
 ```tsx
-// TFieldNamePath<T>와 TDeepPartial<T>의 구현은 생략했어요.
+// TFieldNamePath<T> and TDeepPartial<T> implementations omitted.
 type TPathValue<T, P> =
   P extends keyof T
     ? T[P]
@@ -73,7 +73,7 @@ type TPathValue<T, P> =
         : never
       : never;
 
-// 인스턴스에서 제공하는 메서드의 타입
+// Types of the methods provided by the instance
 interface ITypedFieldAccess<T> {
   getFieldValue: <P extends TFieldNamePath<T>>(
     name: P,) => TPathValue<T, P>;
@@ -88,7 +88,7 @@ interface ITypedFieldAccess<T> {
 
 Assertions needed to connect Ant Design remain inside the wrapper. Callers use an API linking field names to value types instead of asserting return values again.
 
-![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02.png)
+![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02-en.png)
 
 *Shared and app-specific types also govern the methods that read and write their fields.*
 
@@ -99,7 +99,7 @@ The template editor and program form share inputs for recommended patients, trea
 Treatment highlights exposed a difference. The template editor registers an icon and text, but the program keeps the imported icon and changes only the text. Instead of adding another option to the shared component, I separated FormList from the inputs placed inside it.
 
 ```typescript
-// 하위 시술 템플릿 편집: 아이콘과 문구를 함께 입력해요.
+// Sub-treatment template editor: edit the icon and copy together.
 <ProcedureHighlight.FormList>
   {({ field, index }) => (
     <>
@@ -109,7 +109,7 @@ Treatment highlights exposed a difference. The template editor registers an icon
   )}
 </ProcedureHighlight.FormList>
 
-// 프로그램 폼: 문구만 수정해요.
+// Program form: edit only the copy.
 <ProcedureHighlight.FormList>
   {({ field, index }) => (
     <ProcedureHighlight.Input field={field} index={index} />
@@ -121,7 +121,7 @@ FormList owns the toggle and list. The caller chooses each row's inputs. Recomme
 
 Some template inputs still use the original Ant Design Form. Compound composition does not itself make an input typed. The typed API limits fields the code can read and write; composition decides whether a screen shows the icon, text, or both.
 
-![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03.png)
+![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03-en.png)
 
 *Only inputs with different behavior are assembled differently; the others share one implementation.*
 
@@ -134,9 +134,9 @@ The server groups template items by type and adds `orderNo`, which was awkward t
 I therefore separated response-to-form and form-to-request functions. Input components handle only the shape needed for editing.
 
 ```text
-API 응답 → 응답 변환 함수 → 폼 값 → 요청 변환 함수 → API 요청
+API response → response adapter → form values → request adapter → API request
                             ↑
-                   FormItem은 이 모양만 다뤄요.
+                   FormItem only handles this editing shape.
 ```
 
 The input components no longer need to interpret response and request formats individually. Values stay in the form’s editing shape and are converted where they meet the API.
@@ -148,7 +148,7 @@ Thumbnails and custom images currently use `UploadFile<TCommonAsset>`. The uploa
 ```tsx
 type TProgramClientImage = UploadFile<TCommonAsset>;
 
-// 저장된 이미지도 업로드 컴포넌트가 사용하는 형태로 바꿔요.
+// Convert saved images to the shape expected by the upload component too.
 function convertCommonAssetToUploadFile<T extends TImageFileInfo>(
   asset: T,
 ): UploadFile & { response: T } {
@@ -172,7 +172,7 @@ Template conversions follow several rules.
 - Distinguish `null` or `undefined` from an empty array. An absent section disables its toggle; an empty array keeps the toggle on and displays an initial row.
 - Draft and final requests treat empty sections differently. Drafts may retain empty arrays; review and registration requests omit empty sections.
 
-![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04.png)
+![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04-en.png)
 
 *The shared editing shape is separated from the shape required by each request.*
 
@@ -206,7 +206,7 @@ const isTouchedTreatmentSubId = form.isFieldsTouched(['treatmentSubId']);
 useEffect(() => {
   if (!data || !(isTouchedTreatmentId || isTouchedTreatmentSubId)) return;
 
-  // 실제 구현은 추천 대상·특장점·장비·과정·주의사항을 갱신해요.
+  // The implementation updates recommended audiences, highlights, equipment, process, and precautions.
   const { recommendedTargets } = data.data;
   form.setFieldValue(
     'recommendedTarget',
@@ -219,7 +219,7 @@ useEffect(() => {
 
 Synchronization is limited to five template sections. It leaves manually entered extra benefits and before-and-after photos alone. This component also converts the query response to form values, avoiding repeated fetching and updates in each input component.
 
-![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05.png)
+![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05-en.png)
 
 *Query conditions, application conditions, and updated fields can be inspected in one place.*
 
@@ -232,13 +232,13 @@ These go beyond checking that a converted value exists. They verify that unorder
 This is a shortened version of an actual conversion test. `createClientForm` fills the remaining defaults.
 
 ```typescript
-it('빈 제목을 거른 뒤 남은 순서대로 순번을 매긴다', () => {
+it('removes empty titles and assigns order numbers to the remaining items', () => {
   const form = createClientForm({
     isRecommended: PROGRAM_PROVIDED_TYPE.PlatformProvided,
     recommendedTarget: [
       { title: '' },
-      { title: '30대' },
-      { title: '40대' },
+      { title: 'People in their 30s' },
+      { title: 'People in their 40s' },
     ],
   });
 
@@ -246,8 +246,8 @@ it('빈 제목을 거른 뒤 남은 순서대로 순번을 매긴다', () => {
   const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.PlatformTemplate].templates;
 
   expect(templates.RECOMMENDED_TARGET).toEqual([
-    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: '30대' },
-    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: '40대' },
+    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: 'People in their 30s' },
+    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: 'People in their 40s' },
   ]);
 });
 ```
@@ -256,7 +256,7 @@ Image-bearing highlights must not be removed merely because their title is empty
 
 Type checking validates names and values accessed through the typed API. Conversion tests validate the request shape. A correct type and a correct payload are different checks.
 
-![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06.png)
+![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06-en.png)
 
 *Inputs share one instance. Field access and submitted data are checked in different places.*
 

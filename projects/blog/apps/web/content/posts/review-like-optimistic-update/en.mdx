@@ -104,7 +104,7 @@ function updateReviewLike<T extends Review>(
 
   const nextLike = feedbackType === 'LIKE';
 
-  // 같은 상태를 다시 반영할 때 숫자가 중복으로 변하지 않게 한다.
+  // Reapplying the same state must not change the count twice.
   if (review.like === nextLike) return review;
 
   return {
@@ -167,7 +167,7 @@ export function useReviewLike() {
     onMutate: async (variables) => {
       const detailKey = reviewKeys.detail(variables.reviewId);
 
-      // 이미 진행 중인 refetch가 낙관적 값을 덮지 않게 한다.
+      // Prevent an in-flight refetch from overwriting the optimistic value.
       await Promise.all([
         queryClient.cancelQueries({ queryKey: reviewKeys.infinite }),
         queryClient.cancelQueries({ queryKey: detailKey }),
@@ -271,12 +271,12 @@ An ongoing refetch must not overwrite that change midway. Applying the same like
 Moving the value out of local state also changed the scope of a like action. The handler now updates the lists and detail showing that review in the same sequence.
 
 ```text
-사용자 입력
-  -> 관련 refetch 취소
-  -> 목록과 상세 cache snapshot 저장
-  -> 목록과 상세 cache 즉시 변경
-  -> 요청 실패 시 snapshot 직접 복구
-  -> 성공/실패 후 서버 데이터 재검증
+User input
+  -> Cancel related refetches
+  -> Save list and detail cache snapshots
+  -> Update list and detail caches immediately
+  -> Restore snapshots directly on request failure
+  -> Revalidate server data after success or failure
 ```
 
 Reference: [TanStack Query Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)

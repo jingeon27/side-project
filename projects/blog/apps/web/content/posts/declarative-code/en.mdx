@@ -25,14 +25,14 @@ Review details include review information, payment information, visit evidence, 
   <ReviewInfoDescriptions review={review} />
   <ReviewPaymentDescriptions review={review} />
 
-  <Divider>방문 인증 자료</Divider>
+  <Divider>Visit verification</Divider>
   <Image.PreviewGroup>
     {review.receipts.map((receipt) => (
       <Image key={receipt.fileId} src={receipt.url} />
     ))}
   </Image.PreviewGroup>
 
-  <Divider>히스토리</Divider>
+  <Divider>History</Divider>
   <Timeline items={historyItems} />
 </>
 ```
@@ -179,12 +179,12 @@ const SearchFilter = createSearchFilter(
   />
   <SearchFilter.Fields>
     <SearchFilter.DateRange
-      label="상담일"
+      label="Consultation date"
       startName="consultationStartDt"
       endName="consultationEndDt"
     />
     <SearchFilter.DateRange
-      label="예약일"
+      label="Reservation date"
       startName="reservationStartDt"
       endName="reservationEndDt"
       typeName="reservationDateSearchType"
@@ -294,15 +294,15 @@ Tests can hide missing conditions when too much goes into helpers. I group repea
 This test removes a selected search benefit.
 
 ```typescript
-it('켜져 있던 혜택 칩을 다시 누르면 그 파라미터만 빼야 한다', () => {
+it('removes only that parameter when an active benefit chip is clicked again', () => {
   const result = renderSearchFilter(
-    'q=검색어&tab=partner&todayDiscount=true&hasEvent=true',
+    'q=keyword&tab=partner&todayDiscount=true&hasEvent=true',
   );
 
   result.current.toggleBenefit('todayDiscount');
 
   expect(writtenParams()).toEqual({
-    q: '검색어',
+    q: 'keyword',
     tab: 'partner',
     hasEvent: 'true',
   });

@@ -28,16 +28,16 @@ I moved search submission, reset, and detail closing to native History API.
 
 ```typescript
 /**
- * 쿼리 파라미터만 바뀐 주소로 바꾼다.
+ * Change the address by updating only its query parameters.
  *
- * `router.replace` 를 쓰면 안 된다. 이 화면들은 서버 렌더에서 searchParams 를 읽지 않아
- * 라우터 캐시가 검색 문자열과 무관하게 재사용되고, 그 과정에서 캐시에 담긴 주소가 그대로 커밋된다.
+ * Do not use `router.replace` here. These pages do not read searchParams during server rendering,
+ * so the router cache is reused across search strings and commits its cached address.
  */
 export function replaceUrl(url: string) {
   window.history.replaceState(null, '', url);
 }
 
-/** 뒤로가기로 되돌아갈 조건 변경(검색 등)은 엔트리를 남긴다. */
+/** Keep a history entry for changes, such as search, that Back should restore. */
 export function pushUrl(url: string) {
   window.history.pushState(null, '', url);
 }
@@ -122,14 +122,14 @@ HttpOnly keeps JavaScript from directly reading renewalToken; it does not preven
 Once conditions lived in the URL, the form needed to follow it. Initially it used only the address at entry.
 
 ```typescript
-// 진입 시점의 주소가 폼의 초기값이다. 이후 주소 변경은 폼을 건드리지 않는다.
+// The entry URL supplies initial form values. Later URL changes do not update the form.
 const [initialValues] = useState(() => ({ ...defaultValues, ...currentParams }));
 ```
 
 The list fetched from the current address, while the search form stopped reading it after initialization. Going back restored old results but left the latest text in the input. I reset the form after address changes because changing initialValues alone does not update values stored by rc-field-form.
 
 ```typescript
-// currentParams 는 매 렌더 새 객체라, 내용이 달라졌을 때만 초기값을 다시 만든다.
+// currentParams is a new object on each render; rebuild initial values only when its contents change.
 const paramsKey = JSON.stringify(currentParams);
 const initialValues = useMemo(() => ({ ...defaultValues, ...currentParams }), [paramsKey]);
 
@@ -155,8 +155,8 @@ export function useSchemaForm({ schema, ...props }) {
   const form = useForm({ ...props, resolver: zodResolver(schema) });
   const { reset } = form;
 
-  // Cache Components 는 떠난 라우트를 언마운트하지 않고 <Activity> 로 숨겨 입력값을 그대로 보존한다.
-  // 폼은 들어올 때마다 새로 시작해야 하므로 화면이 숨겨질 때 초기값으로 되돌린다.
+  // Cache Components hides departed routes with <Activity> instead of unmounting, preserving input.
+  // This form must start fresh on every entry, so restore initial values when the screen is hidden.
   useIsomorphicLayoutEffect(() => reset, [reset]);
 
   return form;

@@ -1,6 +1,6 @@
 <Summary>
 
-How I chose shared screens, API contracts, caches, database safeguards, Sentry, tests, and ESLint for a photo community and Game Mate. I also cover the work each tool left to me and what the implementation can establish.
+How I chose shared screens, API contracts, caches, database safeguards, Sentry, tests, and ESLint for Pisik and Game Mate. I set the technical and structural direction, delegated implementation and detailed verification to the agent, and gave feedback on the results.
 
 </Summary>
 
@@ -8,15 +8,15 @@ How I chose shared screens, API contracts, caches, database safeguards, Sentry, 
 
 *An illustration made for this article, rather than a diagram of the deployed systems.*
 
-The photo community and Game Mate share a repository, but I did not give them identical APIs and caches. Both use Next.js and React for the web, NestJS for the server, and PostgreSQL. The photo service uses GraphQL and Apollo; Game Mate uses REST and TanStack Query.
+Pisik and Game Mate share a repository, but I did not give them identical APIs and caches. Both use Next.js and React for the web, NestJS for the server, and PostgreSQL. Pisik uses GraphQL and Apollo; Game Mate uses REST and TanStack Query.
 
 I wanted to work with Apollo’s normalized cache for a post appearing in several lists. In Game Mate, I wanted to use query keys to decide which lists and details to reread after an edit. I chose to work through both update models rather than reuse one configuration everywhere.
 
-Even saving one post involved more than choosing a library. I had to decide whether the web and app would share its form, where to stop an unexpected API response, and what should happen when the same request arrived twice. Updating the browser cache and the server cache after a save were separate jobs too.
+Building the post-saving flow with those combinations left behavior that choosing a library did not settle. I had to decide whether the web and app would share its form, where to stop an unexpected API response, and what should happen when the same request arrived twice. That also meant deciding when a save should appear in the browser and server caches.
 
-Throughout this work, I wanted to be able to find the code to change and explain how far a failed request had progressed. Draft input belongs to the form, data returned by the server belongs to the query cache, and the database decides what was saved. Tests and ESLint help check that those decisions remain visible in the implementation.
+I set the technology choices, structure, and behavior I wanted from the result. The agent handled implementation details, test writing, and execution, while I tried the services, skimmed their structure, and gave feedback. I asked for draft input to stay with the form, server data with the query cache, and persistence decisions with the database, along with tests and ESLint checks for those boundaries.
 
-The [product and screen article](/en/blog/what-i-kept-changing-while-planning-my-side-projects) covered anonymous history, voting, and message retries. Implementing those behaviors also brought decisions about API responses, database writes, and cache updates.
+Anonymous history, voting, and message retries from the [product and screen article](/en/blog/what-i-kept-changing-while-planning-my-side-projects) led to requests like these. This article describes the technology choices and implementation structure supporting that behavior.
 
 ## Build the web screens first, then share them with the app
 
@@ -24,11 +24,11 @@ Both web applications use React and the Next.js App Router. Public posts and gro
 
 I did not want a public post to wait for browser-side fetching before its content appeared. The server renders the initial body and search metadata. I separated public queries from personalized ones so a session or permission-dependent result would not enter the shared public cache.
 
-Public queries in the photo service omit cookies. Server queries requiring a session use an Apollo Client created for the request and bypass the shared HTTP cache. Game Mate also separates fetching public post details from fetching a signed-in user's excluded authors. Caching the public body should not mean treating every reader's access and filtering as identical.
+Public queries in Pisik omit cookies. Server queries requiring a session use an Apollo Client created for the request and bypass the shared HTTP cache. Game Mate also separates fetching public post details from fetching a signed-in user's excluded authors. Caching the public body should not mean treating every reader's access and filtering as identical.
 
 The mobile applications use Expo with a WebView to share the web screens. I wanted to refine writing posts and reading replies on the web before maintaining a second set of screens. Push notifications, opening the system browser, and sharing connect through a message contract between the web and the app.
 
-The WebView saves a second implementation of the screens, but back navigation, the keyboard, and safe areas still need app-specific handling. The photo service supports username and password accounts or anonymous sessions. Its WebView uses the same HttpOnly session cookie as the web without extracting a login token for the native shell. Store releases and final checks on real devices remain ahead.
+The WebView saves a second implementation of the screens, but back navigation, the keyboard, and safe areas still need app-specific handling. Pisik supports username and password accounts or anonymous sessions. Its WebView uses the same HttpOnly session cookie as the web without extracting a login token for the native shell. Store releases and final checks on real devices remain ahead.
 
 Game Mate's push permission requests also need to handle delayed responses. If the web page reloads during a request, the bridge distinguishes page generations so a result meant for the previous page is not sent to the new one. Checking the message's web origin and whether its request belongs to the current page is part of the work that sharing screens adds.
 
@@ -81,7 +81,7 @@ The shared SDK transport refuses requests without a response schema and returns 
 
 I avoided filling every unexpected response with defaults. A few display fields have an explicit fallback policy, but invalid IDs, permissions, sessions, bodies, and lists surface as errors. I did not want the screen to keep rendering by silently changing important data. That boundary lives in the [SDK response handling](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/packages/sdk/src/http.ts).
 
-The photo service generates types and Documents from its GraphQL schema and the web application's queries and mutations. CI also runs code generation. Connecting the schema and operation documents this way differs from the Zod response validation in Game Mate's SDK; it does not establish that the photo service's browser performs that same validation.
+Pisik generates types and Documents from its GraphQL schema and the web application's queries and mutations. CI also runs code generation. Connecting the schema and operation documents this way differs from the Zod response validation in Game Mate's SDK; it does not establish that Pisik's browser performs that same validation.
 
 A correctly typed request still does not establish whether someone may join a group or vote now. Valid input and an authorized action are separate concerns, so input validation and permission checks remain on the server.
 
@@ -89,7 +89,7 @@ A correctly typed request still does not establish whether someone may join a gr
 
 Disabling a voting button after a click reduces duplicate clicks. It cannot stop someone voting from another tab or sending two requests directly.
 
-The photo service has a unique constraint on the contest and voter pair. Two requests can both check that no vote exists before either writes one. The final write must still allow only one vote. The voting operation also checks the period, group membership, and whether the entry belongs to the voter within its transaction. The [group contest implementation](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/contest/group-contest/group-contest.service.ts) contains that flow.
+Pisik has a unique constraint on the contest and voter pair. Two requests can both check that no vote exists before either writes one. The final write must still allow only one vote. The voting operation also checks the period, group membership, and whether the entry belongs to the voter within its transaction. The [group contest implementation](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/contest/group-contest/group-contest.service.ts) contains that flow.
 
 Game Mate sends a client-generated message ID with each chat message. In the same accessible conversation, a retry with the same sender, ID, body, and attachments returns the stored message. Reusing the ID with different content or another conversation produces a conflict. Retries cannot restore messages from cleared history. Losing the first response should not create a second message on retry.
 
@@ -115,19 +115,19 @@ A reader can still receive an older post before tag delivery completes. This set
 
 Testing a condition differs from knowing what happens while a service is running. Both services use Sentry in the API, Next server, and browser. Permission denials and requests outside the voting period should not become a stream of error alerts; unexpected internal failures are reported. An original error message can contain Prisma arguments or input values, so reporting retains its type, code, and stack locations while removing the original message, request, user, and cookies.
 
-Error events alone do not explain slow requests, so I also added performance tracing. Both APIs sample traces at 10%. Instead of enabling automatic HTTP and SQL instrumentation, the photo service has manual spans for HTTP and top-level GraphQL fields; Game Mate has spans for HTTP and chat locking, persistence, and delivery after commit. `chat.lock` includes the database round trip around the row-lock call, and `chat.publish` covers handing events to server subscribers. Neither measures pure lock-wait time or when a message appears on the recipient's device.
+Error events alone do not explain slow requests, so I also added performance tracing. Both APIs sample traces at 10%. Instead of enabling automatic HTTP and SQL instrumentation, Pisik has manual spans for HTTP and top-level GraphQL fields; Game Mate has spans for HTTP and chat locking, persistence, and delivery after commit. `chat.lock` includes the database round trip around the row-lock call, and `chat.publish` covers handing events to server subscribers. Neither measures pure lock-wait time or when a message appears on the recipient's device.
 
-Sampled trace counts are not total request counts. Sentry Application Metrics records counts and latency distributions for instrumented calls independently of trace sampling. Game Mate distinguishes newly stored messages from matching retries as `created` and `duplicate`. The photo service distinguishes successful GraphQL fields, business rejections, and internal failures even when the HTTP response is 200. Traces follow an individual request's path; metrics aggregate outcomes across the instrumented calls.
+Sampled trace counts are not total request counts. Sentry Application Metrics records counts and latency distributions for instrumented calls independently of trace sampling. Game Mate distinguishes newly stored messages from matching retries as `created` and `duplicate`. Pisik distinguishes successful GraphQL fields, business rejections, and internal failures even when the HTTP response is 200. Traces follow an individual request's path; metrics aggregate outcomes across the instrumented calls.
 
-Browser Web Vitals, such as LCP, CLS, and INP, go to Sentry to describe loading and interaction. Amplitude receives page visits, and Game Mate also sends product events such as a successful post submission. The photo service keeps API domain events, such as votes, in its database. Tags distinguish services and `api`, `next-server`, and `browser`, with web and WebView clients separated too. Production builds use the commit SHA as their release so a record can be tied to its code. Missing SDK keys disable delivery.
+Browser Web Vitals, such as LCP, CLS, and INP, go to Sentry to describe loading and interaction. Amplitude receives page visits, and Game Mate also sends product events such as a successful post submission. Pisik keeps API domain events, such as votes, in its database. Tags distinguish services and `api`, `next-server`, and `browser`, with web and WebView clients separated too. Production builds use the commit SHA as their release so a record can be tied to its code. Missing SDK keys disable delivery.
 
-Removing data from errors does not remove it from performance payloads. In addition to `beforeSend`, `beforeSendSpan` and `beforeSendMetric` retain bounded operation names, route templates, allowed measurements, and outcomes. Raw URLs, queries, GraphQL documents and variables, message bodies, and user IDs do not become collection dimensions. Because the SDK can merge scope attributes after metric processing, the final envelope is scrubbed again. The photo service's [performance transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/monitoring/performance.ts) and Game Mate's [chat metric transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/src/monitoring/chat-metrics.ts) contain that handling.
+Removing data from errors does not remove it from performance payloads. In addition to `beforeSend`, `beforeSendSpan` and `beforeSendMetric` retain bounded operation names, route templates, allowed measurements, and outcomes. Raw URLs, queries, GraphQL documents and variables, message bodies, and user IDs do not become collection dimensions. Because the SDK can merge scope attributes after metric processing, the final envelope is scrubbed again. Pisik's [performance transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/photo-contest/apps/api/src/monitoring/performance.ts) and Game Mate's [chat metric transport policy](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/apps/api/src/monitoring/chat-metrics.ts) contain that handling.
 
 Tests inspect the final payload received by the SDK's in-memory transport. They check that metrics remain when trace sampling is zero, that test input added to the scope is removed, and that spans around real database and HTTP calls share a trace. That differs from confirming receipt in Sentry, so separate verification runners inspect collector responses and event IDs. The two projects' collection policies and verification scopes are documented in their [observability guide](https://github.com/jingeon27/side-project/blob/225edfe3c1f564d55b69373906d1a29561b8ef6e/projects/game-feedback/docs/observability.md).
 
 ## Let each app own tests for its boundaries
 
-Vitest checks sorting and validation rules quickly. Integration tests use actual PostgreSQL and the API for constraints, transactions, and HTTP behavior. Playwright exercises the web screens. The API does not need a browser test runner.
+The agent wrote and ran the detailed tests. I explained the behavior I wanted and which failures needed distinguishing, then used its verification reports and the actual screens to give further feedback. Sorting and validation use Vitest; constraints, transactions, and HTTP behavior use integration tests with actual PostgreSQL and the API. Playwright exercises the web screens, while API checks run without a browser.
 
 For voting, one successful API response is insufficient. The test checks both the number of successful concurrent requests and the number of votes left in the database. Chat retry tests compare the two response IDs and reload the conversation to check that it contains one message. A database substitute that processes calls sequentially might never expose real lock behavior or unique conflicts, so those checks use PostgreSQL.
 
@@ -143,7 +143,7 @@ Duplicate votes and retried messages are easy to miss in a test of one successfu
 
 ## Turn recurring review comments into ESLint rules
 
-Splitting screens into folders did not help much when one feature reached straight into another feature's internals. Repeating the same import corrections in reviews became tedious. I moved the checks for folder and import boundaries into ESLint.
+I also asked for recurring structural feedback to become checks. Even with feature folders, imports reaching into another feature's internals made the scope of a change hard to see. I asked for folder and import boundaries to be checked by ESLint so I would have less of the same feedback to repeat.
 
 The configuration lives in `packages/config/eslint`. It separates common TypeScript rules, React, DOM accessibility, Next.js, and Expo presets. A web label rule should not apply to React Native. Each app combines the presets it needs with its own paths.
 
@@ -163,6 +163,6 @@ RuleTester fixtures include imports that should pass and imports that should fai
 
 Rules also check direct `fetch` calls in components and duplicated overlay-open state. Sharing presets exposed an ESLint flat-config constraint: one plugin name cannot refer to two different objects. Common and web rules therefore live on one `sidePlugin`, with each preset enabling the rules it needs.
 
-CI can catch these import and implementation patterns before review. I still read the code and tests to check where permissions are enforced and which writes belong in a transaction.
+CI can catch the recurring feedback that can be expressed as rules. I delegated behavior-specific checks, such as permissions and transactions, to the agent's tests and used its reports and the finished result to decide what to request next.
 
 For infrastructure, the initial cost led me to choose one EC2 instance for the two services and PostgreSQL. That gives failures a wider impact and leaves backups and recovery to manage. Files go directly to S3 to reduce the API paths that receive large uploads. The cost and operational choices are covered in the [infrastructure article](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).

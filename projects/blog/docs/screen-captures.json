@@ -11,9 +11,9 @@
   "captures": [
     {
       "original": "/images/posts/side-project-design/01-service-screens.png",
-      "replacement": "/images/posts/side-project-design/01-service-screens-revised.jpg",
+      "replacement": "/images/posts/side-project-design/01-service-screens-pisik.png",
       "originalSha256": "ad9c83f07b2c727e31d4d5a864e23ee221de3937f851fd0ac552c765aa0ca899",
-      "replacementSha256": "362f5d53bb79e1d4d92770e5b72f9118dc94fed84f15364475f45464c8e3c74b",
+      "replacementSha256": "843f3a76276793b223c18513d2e917e3aa573c593155f9e2b36aa5b98ce972b7",
       "width": 952,
       "height": 1139,
       "screens": [
@@ -27,7 +27,13 @@
           "revision": "50900ae818121aaf85256211f861724347baf2c9",
           "route": "/explore"
         }
-      ]
+      ],
+      "recomposedOn": "2026-10-31",
+      "compositionSource": {
+        "image": "/images/posts/side-project-design/01-service-screens-revised.jpg",
+        "sha256": "362f5d53bb79e1d4d92770e5b72f9118dc94fed84f15364475f45464c8e3c74b",
+        "method": "The two existing 390x844 product captures were placed in a new HTML composition. Only the surrounding heading changed to Pisik; the product captures and original capture date were retained."
+      }
     },
     {
       "original": "/images/posts/side-project-design/09-product-interactions.png",

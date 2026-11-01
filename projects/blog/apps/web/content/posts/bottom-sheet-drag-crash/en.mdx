@@ -19,17 +19,17 @@ The repeated stack and affected users made this worth investigating even without
 Here is a shortened version of onDragEnd in react-modal-sheet 2.2.1.
 
 ```typescript
-// react-modal-sheet 2.2.1 sheet.tsx, 분기와 계산을 줄인 단순화 코드
+// Simplified from react-modal-sheet 2.2.1 sheet.tsx, with fewer branches and calculations
 function onDragEnd(_event, { velocity }) {
   if (velocity.y > 500) {
-    onClose(); // 빠르게 아래로 튕겨 닫는 경로는 ref를 읽지 않아요
+    onClose(); // A fast downward flick closes without reading the ref
     return;
   }
 
   const sheetEl = sheetRef.current as HTMLDivElement;
   const sheetHeight = sheetEl.getBoundingClientRect().height;
 
-  // 드래그가 끝난 위치에 맞는 snap point 계산
+  // Find the snap point for the position where the drag ended
 }
 ```
 
@@ -46,13 +46,13 @@ At sheet.tsx:249–258, AnimatePresence wraps `isOpen ? children : null`. SheetC
 VisualElementDragControls in framer-motion 11, now Motion, schedules the drag-end callback for the next frame's post-render. Removing the entire sheet tree before then could leave null at sheet.tsx:133. I could not reproduce the app action that removed it in that interval.
 
 ```text
-포인터 입력 종료
-  → 드래그 종료 콜백이 다음 프레임 post-render에 예약됨
-  → 그 사이 시트 트리 언마운트(트리거 미확인)
+Pointer input ends
+  → The drag-end callback is scheduled for the next frame's post-render phase
+  → The sheet tree unmounts in between (trigger unconfirmed)
   → sheetRef.current = null
-  → 예약된 onDragEnd 실행
-  → null에서 getBoundingClientRect 호출
-  → 화면 크래시
+  → The scheduled onDragEnd runs
+  → getBoundingClientRect is called on null
+  → The screen crashes
 ```
 
 Upstream issue #188, opened January 3, 2025 and still open when I checked, described the same failing read after a drag started and ended over a close button. I could not establish that our trigger was identical, but the DOM access that failed matched.
@@ -133,7 +133,7 @@ Height calculations and scrolling needed different tests. For coordinate convers
 The toViewportRatio helper performs that conversion.
 
 ```typescript
-it('두 번째로 높은 스냅에서 시작하면 그 자리를 가리켜야 한다', () => {
+it('points to the second-highest snap when starting there', () => {
   const { snapPoints, initialSnap } = toSheetSnapConfig([0.8, 0.5, 0.3, 0], 1);
 
   expect(toViewportRatio(snapPoints[initialSnap], 0.8)).toBe(0.5);

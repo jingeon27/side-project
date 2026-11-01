@@ -95,7 +95,7 @@ export function waitForPreInfo<T>({
     page.on('response', handleResponse);
 
     timer = setTimeout(() => {
-      fail(new Error(`필요한 네트워크 정보를 ${timeoutMs}ms 안에 찾지 못했습니다.`));
+      fail(new Error(`Required network information was not found within ${timeoutMs}ms.`));
     }, timeoutMs);
 
     void page.reload({ waitUntil: 'networkidle2' }).catch(fail);

@@ -1,7 +1,27 @@
 {
+  "/images/brand/bambyul-mascot.png": {
+    "width": 256,
+    "height": 256
+  },
+  "/images/covers/ai-workflow-parallel-en.png": {
+    "width": 1080,
+    "height": 1276
+  },
+  "/images/covers/ai-workflow-parallel-en.svg": {
+    "width": 1080,
+    "height": 1276
+  },
   "/images/covers/ai-workflow-parallel.png": {
     "width": 1520,
     "height": 1312
+  },
+  "/images/covers/ai-workflow-push-gate-en.png": {
+    "width": 1080,
+    "height": 1508
+  },
+  "/images/covers/ai-workflow-push-gate-en.svg": {
+    "width": 1080,
+    "height": 1508
   },
   "/images/covers/ai-workflow-push-gate.png": {
     "width": 1520,
@@ -91,6 +111,14 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/reviewing-ai-output.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/reviewing-ai-output.svg": {
+    "width": 1280,
+    "height": 720
+  },
   "/images/covers/sentry-observability.png": {
     "width": 1280,
     "height": 720
@@ -127,21 +155,61 @@
     "width": 1672,
     "height": 941
   },
+  "/images/posts/health-check-program/01-en.png": {
+    "width": 1080,
+    "height": 1920
+  },
+  "/images/posts/health-check-program/01-en.svg": {
+    "width": 1080,
+    "height": 1920
+  },
   "/images/posts/health-check-program/01.png": {
     "width": 1520,
     "height": 2206
+  },
+  "/images/posts/health-check-program/02-en.png": {
+    "width": 1080,
+    "height": 1276
+  },
+  "/images/posts/health-check-program/02-en.svg": {
+    "width": 1080,
+    "height": 1276
   },
   "/images/posts/health-check-program/02.png": {
     "width": 1520,
     "height": 1896
   },
+  "/images/posts/health-check-program/03-en.png": {
+    "width": 1080,
+    "height": 998
+  },
+  "/images/posts/health-check-program/03-en.svg": {
+    "width": 1080,
+    "height": 998
+  },
   "/images/posts/health-check-program/03.png": {
     "width": 1520,
     "height": 1294
   },
+  "/images/posts/health-check-program/04-en.png": {
+    "width": 1080,
+    "height": 1276
+  },
+  "/images/posts/health-check-program/04-en.svg": {
+    "width": 1080,
+    "height": 1276
+  },
   "/images/posts/health-check-program/04.png": {
     "width": 1520,
     "height": 1200
+  },
+  "/images/posts/health-check-program/05-en.png": {
+    "width": 1080,
+    "height": 1631
+  },
+  "/images/posts/health-check-program/05-en.svg": {
+    "width": 1080,
+    "height": 1631
   },
   "/images/posts/health-check-program/05.png": {
     "width": 1520,
@@ -151,17 +219,49 @@
     "width": 1440,
     "height": 960
   },
+  "/images/posts/payment-coupon-branches/01-en.png": {
+    "width": 1080,
+    "height": 1434
+  },
+  "/images/posts/payment-coupon-branches/01-en.svg": {
+    "width": 1080,
+    "height": 1434
+  },
   "/images/posts/payment-coupon-branches/01.png": {
     "width": 1520,
     "height": 1828
+  },
+  "/images/posts/payment-coupon-branches/02-en.png": {
+    "width": 1080,
+    "height": 1904
+  },
+  "/images/posts/payment-coupon-branches/02-en.svg": {
+    "width": 1080,
+    "height": 1904
   },
   "/images/posts/payment-coupon-branches/02.png": {
     "width": 1520,
     "height": 2276
   },
+  "/images/posts/payment-coupon-branches/03-en.png": {
+    "width": 1080,
+    "height": 1434
+  },
+  "/images/posts/payment-coupon-branches/03-en.svg": {
+    "width": 1080,
+    "height": 1434
+  },
   "/images/posts/payment-coupon-branches/03.png": {
     "width": 1520,
     "height": 2018
+  },
+  "/images/posts/payment-coupon-branches/04-en.png": {
+    "width": 1080,
+    "height": 1346
+  },
+  "/images/posts/payment-coupon-branches/04-en.svg": {
+    "width": 1080,
+    "height": 1346
   },
   "/images/posts/payment-coupon-branches/04.png": {
     "width": 1520,
@@ -171,17 +271,49 @@
     "width": 1440,
     "height": 823
   },
+  "/images/posts/plan-gated-ai-workflow/02-en.png": {
+    "width": 1080,
+    "height": 1781
+  },
+  "/images/posts/plan-gated-ai-workflow/02-en.svg": {
+    "width": 1080,
+    "height": 1781
+  },
   "/images/posts/plan-gated-ai-workflow/02.png": {
     "width": 1520,
     "height": 1650
+  },
+  "/images/posts/plan-gated-ai-workflow/03-en.png": {
+    "width": 1080,
+    "height": 1364
+  },
+  "/images/posts/plan-gated-ai-workflow/03-en.svg": {
+    "width": 1080,
+    "height": 1364
   },
   "/images/posts/plan-gated-ai-workflow/03.png": {
     "width": 1520,
     "height": 1990
   },
+  "/images/posts/plan-gated-ai-workflow/04-en.png": {
+    "width": 1080,
+    "height": 1478
+  },
+  "/images/posts/plan-gated-ai-workflow/04-en.svg": {
+    "width": 1080,
+    "height": 1478
+  },
   "/images/posts/plan-gated-ai-workflow/04.png": {
     "width": 1520,
     "height": 2388
+  },
+  "/images/posts/plan-gated-ai-workflow/05-en.png": {
+    "width": 1080,
+    "height": 1590
+  },
+  "/images/posts/plan-gated-ai-workflow/05-en.svg": {
+    "width": 1080,
+    "height": 1590
   },
   "/images/posts/plan-gated-ai-workflow/05.png": {
     "width": 1520,
@@ -199,33 +331,125 @@
     "width": 1672,
     "height": 941
   },
+  "/images/posts/reservation-form-state/01-en.png": {
+    "width": 1080,
+    "height": 1308
+  },
+  "/images/posts/reservation-form-state/01-en.svg": {
+    "width": 1080,
+    "height": 1308
+  },
   "/images/posts/reservation-form-state/01.png": {
     "width": 1520,
     "height": 2092
+  },
+  "/images/posts/reservation-form-state/02-en.png": {
+    "width": 1080,
+    "height": 1276
+  },
+  "/images/posts/reservation-form-state/02-en.svg": {
+    "width": 1080,
+    "height": 1276
   },
   "/images/posts/reservation-form-state/02.png": {
     "width": 1520,
     "height": 2068
   },
+  "/images/posts/reservation-form-state/03-en.png": {
+    "width": 1080,
+    "height": 1549
+  },
+  "/images/posts/reservation-form-state/03-en.svg": {
+    "width": 1080,
+    "height": 1549
+  },
   "/images/posts/reservation-form-state/03.png": {
     "width": 1520,
     "height": 1818
+  },
+  "/images/posts/reservation-form-state/04-en.png": {
+    "width": 1080,
+    "height": 1358
+  },
+  "/images/posts/reservation-form-state/04-en.svg": {
+    "width": 1080,
+    "height": 1358
   },
   "/images/posts/reservation-form-state/04.png": {
     "width": 1520,
     "height": 1464
   },
+  "/images/posts/review-form-funnel/01-en.png": {
+    "width": 1080,
+    "height": 1590
+  },
+  "/images/posts/review-form-funnel/01-en.svg": {
+    "width": 1080,
+    "height": 1590
+  },
   "/images/posts/review-form-funnel/01.png": {
     "width": 1520,
     "height": 1908
+  },
+  "/images/posts/review-form-funnel/02-en.png": {
+    "width": 1080,
+    "height": 1156
+  },
+  "/images/posts/review-form-funnel/02-en.svg": {
+    "width": 1080,
+    "height": 1156
   },
   "/images/posts/review-form-funnel/02.png": {
     "width": 1520,
     "height": 2282
   },
+  "/images/posts/reviewing-ai-output/01-prose-feedback-en.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/01-prose-feedback-en.svg": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/01-prose-feedback.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/01-prose-feedback.svg": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback-en.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback-en.svg": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback.png": {
+    "width": 1080,
+    "height": 1210
+  },
+  "/images/posts/reviewing-ai-output/02-interface-copy-feedback.svg": {
+    "width": 1080,
+    "height": 1210
+  },
   "/images/posts/sentry-observability/01.jpg": {
     "width": 1440,
     "height": 960
+  },
+  "/images/posts/side-project-design/01-service-screens-pisik-en.png": {
+    "width": 1080,
+    "height": 1230
+  },
+  "/images/posts/side-project-design/01-service-screens-pisik-en.svg": {
+    "width": 1080,
+    "height": 1230
+  },
+  "/images/posts/side-project-design/01-service-screens-pisik.png": {
+    "width": 952,
+    "height": 1139
   },
   "/images/posts/side-project-design/01-service-screens-revised.jpg": {
     "width": 952,
@@ -243,6 +467,14 @@
     "width": 2880,
     "height": 2640
   },
+  "/images/posts/side-project-design/09-profile-pages-en.png": {
+    "width": 1080,
+    "height": 1230
+  },
+  "/images/posts/side-project-design/09-profile-pages-en.svg": {
+    "width": 1080,
+    "height": 1230
+  },
   "/images/posts/side-project-design/09-profile-pages.jpg": {
     "width": 952,
     "height": 1139
@@ -251,25 +483,73 @@
     "width": 1440,
     "height": 751
   },
+  "/images/posts/typed-program-form/01-en.png": {
+    "width": 1080,
+    "height": 1364
+  },
+  "/images/posts/typed-program-form/01-en.svg": {
+    "width": 1080,
+    "height": 1364
+  },
   "/images/posts/typed-program-form/01.png": {
     "width": 1468,
     "height": 3000
+  },
+  "/images/posts/typed-program-form/02-en.png": {
+    "width": 1080,
+    "height": 1358
+  },
+  "/images/posts/typed-program-form/02-en.svg": {
+    "width": 1080,
+    "height": 1358
   },
   "/images/posts/typed-program-form/02.png": {
     "width": 1520,
     "height": 2140
   },
+  "/images/posts/typed-program-form/03-en.png": {
+    "width": 1080,
+    "height": 1320
+  },
+  "/images/posts/typed-program-form/03-en.svg": {
+    "width": 1080,
+    "height": 1320
+  },
   "/images/posts/typed-program-form/03.png": {
     "width": 1459,
     "height": 3000
+  },
+  "/images/posts/typed-program-form/04-en.png": {
+    "width": 1080,
+    "height": 1965
+  },
+  "/images/posts/typed-program-form/04-en.svg": {
+    "width": 1080,
+    "height": 1965
   },
   "/images/posts/typed-program-form/04.png": {
     "width": 1122,
     "height": 3000
   },
+  "/images/posts/typed-program-form/05-en.png": {
+    "width": 1080,
+    "height": 1478
+  },
+  "/images/posts/typed-program-form/05-en.svg": {
+    "width": 1080,
+    "height": 1478
+  },
   "/images/posts/typed-program-form/05.png": {
     "width": 1520,
     "height": 2530
+  },
+  "/images/posts/typed-program-form/06-en.png": {
+    "width": 1080,
+    "height": 1631
+  },
+  "/images/posts/typed-program-form/06-en.svg": {
+    "width": 1080,
+    "height": 1631
   },
   "/images/posts/typed-program-form/06.png": {
     "width": 1520,

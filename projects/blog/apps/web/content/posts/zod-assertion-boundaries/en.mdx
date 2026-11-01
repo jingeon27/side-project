@@ -17,7 +17,7 @@ I initially planned to put Zod wherever an assertion was needed. The first group
 A data-table callback was one such case. Its first argument was broadly typed, but the second, `record`, retained the data source’s row type.
 
 ```typescript
-// 느슨한 셀 값을 다시 단언하지 않습니다.
+// Do not assert the loose cell value again.
 render: (_, record) => STATUS_LABEL[record.status]
 ```
 
@@ -89,13 +89,13 @@ This detects invalid responses without blocking them, and the return type still 
 When SCHEMA_MISMATCH appeared, I used the request path and app to find the schema, then compared OpenAPI with the actual response. I first needed to distinguish a server contract violation from an incorrect frontend schema to know which side to change.
 
 ```text
-SCHEMA_MISMATCH 로그
-  → 요청 경로와 앱으로 호출부·스키마 특정
-  → OpenAPI 계약과 실제 응답 대조
-  → 프론트 스키마 오류 / 서버 스펙 위반 / 판단 불가로 분류
-  → 프론트 오류만 스키마와 파생 타입 수정
-  → 계약 테스트와 뮤테이션 체크
-  → 리뷰·검증 후 PR 반영
+SCHEMA_MISMATCH log
+  → Locate the call site and schema using the request path and app
+  → Compare the OpenAPI contract with the actual response
+  → Classify as a frontend schema error, server contract violation, or inconclusive
+  → Fix the schema and derived types only for frontend errors
+  → Run contract tests and mutation checks
+  → Review, verify, and submit the PR
 ```
 
 The goal is not merely to remove a warning. If the actual response violates OpenAPI, I do not silently add `.nullish()` to the frontend schema. I classify a server-contract violation and stop the frontend fix. If an anyOf response union was modeled with only one member, I model both and add contract tests for both.

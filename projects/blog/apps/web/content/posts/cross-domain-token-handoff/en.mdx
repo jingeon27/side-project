@@ -23,17 +23,17 @@ Instead of copying the app, I split layouts with Next.js route groups and used m
 
 ```text
 app/
-├── (auth)/login/*              # 로그인
-├── (main)/                     # 메인 기능
+├── (auth)/login/*              # Login
+├── (main)/                     # Main features
 ├── finance/
-│   └── (secondaryLayout)/*     # 정산: 별도 레이아웃, 같은 코드베이스
+│   └── (secondaryLayout)/*     # Finance: a separate layout in the same codebase
 └── api/                        # API Routes (BFF)
 ```
 
 The (secondaryLayout) route group under finance gives settlement its own layout. middleware.ts sends main-host /finance/* requests to settlement and sends other settlement-host paths back to main.
 
 ```typescript
-// middleware.ts (분리 8일 차 버전: 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
+// middleware.ts on day eight of the split: no matcher on day one. Now proxy.ts; revisited in section 9.
 function routeToRequiredHost(request: NextRequest, domain: string | undefined) {
   if (!domain) return NextResponse.next();
   const host = domain.replace(/^https?:\/\//, '');
@@ -63,7 +63,7 @@ I returned to this setup during a later Next.js upgrade. A matcher redirecting s
 Access and refresh tokens were stored in HttpOnly cookies. An Axios interceptor read the access token and added it to Authorization for authenticated requests.
 
 ```typescript
-// 공용 쿠키 설정
+// Shared cookie settings
 export const BASE_AUTH_COOKIE_SETTINGS: AuthCookieSettings = {
   secure: process.env.NODE_ENV === 'production',
   httpOnly: true,
@@ -84,11 +84,11 @@ The first proposal used two middleware redirects.
 2. Store those tokens in settlement cookies and redirect again to remove the parameters.
 
 ```typescript
-// middleware.ts (1단계: 지금은 제거된 버전)
+// middleware.ts (step 1, since removed)
 if (request.nextUrl.pathname.startsWith('/finance')) {
   const secondaryHost = secondaryOrigin?.replace(/^https?:\/\//, '');
 
-  // 1단계: 메인 호스트 → 정산 호스트, 토큰을 쿼리에 실어 보냄
+  // Step 1: send tokens in the query from the main host to the finance host
   if (!secondaryHost || request.headers.get('host') !== secondaryHost) {
     const sessionToken = request.cookies.get(authCookieKey('sessionToken'))?.value;
     const renewalToken = request.cookies.get(authCookieKey('renewalToken'))?.value;
@@ -100,7 +100,7 @@ if (request.nextUrl.pathname.startsWith('/finance')) {
     return NextResponse.redirect(url);
   }
 
-  // 2단계: 정산 호스트에서 쿼리의 토큰을 쿠키로 옮기고 깨끗한 URL로 리다이렉트
+  // Step 2: move query tokens into cookies on the finance host, then redirect to a clean URL
   const sessionToken = request.nextUrl.searchParams.get('sessionToken');
   const renewalToken = request.nextUrl.searchParams.get('renewalToken');
   if (sessionToken && renewalToken) {
@@ -134,7 +134,7 @@ A GET redirect could not carry the body, so I created an automatically submitted
 That removes tokens from query strings and ordinary URL access logs. It does not hide the request body from WAF, APM, or debug middleware. Body collection and retention settings on this route still matter.
 
 ```typescript
-// 토큰 수신 BFF
+// Token-receiving BFF
 export async function POST(req: NextRequest) {
   const secondaryOrigin = process.env.SECONDARY_ORIGIN;
   if (!secondaryOrigin) {
@@ -173,7 +173,7 @@ A token-receiving POST endpoint also needs to establish who submitted it. An att
 The receiving BFF still has no Origin allowlist. The following code was a proposed change to accept only main-host submissions; it is not the applied implementation.
 
 ```typescript
-// Origin 검증 보강안
+// Proposed Origin validation
 const mainOrigin = process.env.MAIN_ORIGIN
   ? new URL(process.env.MAIN_ORIGIN).origin
   : null;
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
   if (!mainOrigin || origin !== mainOrigin) {
     return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
   }
-  // ... 이하 토큰 처리 (2단계 코드와 동일)
+  // ... Remaining token handling is the same as step 2
 }
 ```
 
@@ -207,7 +207,7 @@ I moved the handoff HTML to /api/finance/bridge. The settlement menu opens that 
 - The settlement menu opens the handoff endpoint in a new window rather than relying on middleware redirects.
 
 ```typescript
-// 정산 메뉴 클릭 핸들러
+// Finance menu click handler
 const openFinanceApp = (args: { key: string }) => {
   window.open(`/api/finance/bridge?destination=${encodeURIComponent(args.key)}`, '_blank');
 };
@@ -224,7 +224,7 @@ The dedicated bridge also gained destination parsing and response headers. It st
 I parse the destination with new URL rather than concatenating an untrusted value, then keep only pathname to avoid open redirects and control-character injection. Paths not starting with /finance fall back to the default settlement path. Bridge and receiver share this function.
 
 ```typescript
-// 정산 경로 유틸리티
+// Finance route utility
 export function resolveDestination(destination: string | null) {
   try {
     const { pathname } = new URL(destination ?? '', '<http://x>');
@@ -240,7 +240,7 @@ http://x supplies a base for relative-path parsing. An external URL loses its ho
 The response headers restrict caching, framing, and submitting the form elsewhere.
 
 ```tsx
-// 핸드오프 BFF
+// Handoff BFF
 const action = new URL('/api/finance', secondaryOrigin).toString();
 const submissionOrigin = new URL(action).origin;
 const html = `<!doctype html><html><body>
@@ -277,24 +277,24 @@ The remaining proposals include a per-request nonce with nonce script-src, frame
 The handoff now follows this sequence.
 
 ```text
-[메인 호스트]
-  정산관리 메뉴 클릭
+[Main host]
+  Click the finance menu
         │  window.open('/api/finance/bridge?destination=/finance/overview')
         ▼
-  GET /api/finance/bridge               ← 메인 호스트의 BFF
-   - HttpOnly 쿠키에서 access/refresh 토큰 읽기
-   - 토큰을 hidden input에 담은 auto-submit form HTML 반환
-   - no-store / referrer=no-referrer / DENY / CSP(unsafe-inline, form-action=정산도메인)
-        │  document.forms[0].submit()  (POST, 토큰은 body)
+  GET /api/finance/bridge               ← BFF on the main host
+   - Read access and refresh tokens from HttpOnly cookies
+   - Return an auto-submitting form with tokens in hidden inputs
+   - no-store / referrer=no-referrer / DENY / CSP(unsafe-inline, form-action=finance-host)
+        │  document.forms[0].submit()  (POST, tokens in the body)
         ▼
-[정산 호스트]
-  POST /api/finance                     ← 정산 호스트의 BFF
-   - 현재 Origin 화이트리스트 없음 (login-CSRF 보강 필요)
-   - formData에서 토큰 꺼내 HttpOnly 쿠키로 set
-   - resolveDestination(destination)으로 pathname만 추출 (prefix 경계 보강 필요)
+[Finance host]
+  POST /api/finance                     ← BFF on the finance host
+   - No Origin allowlist yet (login-CSRF hardening needed)
+   - Read tokens from formData and set HttpOnly cookies
+   - Extract the pathname with resolveDestination(destination) (prefix-boundary hardening needed)
         │  303 redirect → destination
         ▼
-  /finance/overview  (정산 호스트에 토큰 쿠키 보유 → 로그인된 상태)
+  /finance/overview  (token cookies on the finance host → signed in)
 ```
 
 The form still uses no-referrer and unsafe-inline. The missing nonce and Origin check shown in the diagram remain unresolved.
@@ -304,7 +304,7 @@ After transfer, settlement's Axios interceptor prepares authenticated requests. 
 The aliased readServerCookie reads a cookie on the server and returns its value to browser JavaScript. That adds a network call and makes the returned token readable by XSS. Since it accepts a cookie name, the server also needs an allowed-name list. Keeping tokens out of browser JavaScript would require the BFF to make backend API calls itself.
 
 ```typescript
-// 공용 Axios 인스턴스
+// Shared Axios instance
 instance.interceptors.request.use(async (config) => {
   if (requiresAuth) {
     const sessionToken = await readServerCookie(authCookieKey('sessionToken'));
@@ -339,7 +339,7 @@ const notifyRefreshFailure = (error: unknown) => {
   requests.forEach(({ rejectWithError }) => rejectWithError(error));
 };
 
-// 401 처리: 갱신 중이면 새 토큰을 구독하며 대기
+// On 401: wait for the new token if a refresh is already in progress
 if (refreshInProgress) {
   return new Promise((resolve, reject) => {
     pendingAuthRequests.push({
@@ -391,10 +391,10 @@ GET <https://finance.example.net/_next/static/chunks/main.js>
 I compared old and new SSR HTML for the same screen.
 
 ```tsx
-<!-- 14.2.33, webpack: script 20개 중 crossorigin 0개 -->
+<!-- 14.2.33, webpack: 0 of 20 scripts have crossorigin -->
 <script src="/_next/static/chunks/main-app.js" async=""></script>
 
-<!-- 16.3.0, Turbopack: script 18개 중 crossorigin="" 11개 -->
+<!-- 16.3.0, Turbopack: 11 of 18 scripts have crossorigin="" -->
 <script src="/_next/static/chunks/client.js" async="" crossorigin=""></script>
 ```
 

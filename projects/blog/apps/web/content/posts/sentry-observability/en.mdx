@@ -232,11 +232,11 @@ Service workers are blocked in that context because MSW would otherwise receive 
 The test follows the payload the browser actually builds:
 
 ```text
-브라우저 진입
+Browser entry
   → browserTracingIntegration
-  → pageload transaction 종료
-  → Sentry envelope 생성
-  → measurement 포함 여부 확인
+  → Pageload transaction ends
+  → Sentry envelope is created
+  → Check whether measurements are included
 ```
 
 This verified the browser path that puts fcp, lcp, and ttfb into an envelope. Server storage and dashboard display were outside the test’s scope. Investigating INP exposed that distinction.
@@ -299,7 +299,7 @@ withSentryConfig(nextConfig, {
     deleteSourcemapsAfterUpload: true,
   },
   errorHandler: (error) => {
-    console.warn('[sentry] 소스맵 업로드 실패:', error.message);
+    console.warn('[sentry] Source map upload failed:', error.message);
   },
 });
 ```

@@ -6,6 +6,7 @@
     "skip": "Skip to content",
     "theme": "Switch color theme",
     "language": "Change language",
+    "languages": { "ko": "Korean", "en": "English" },
     "siteTitle": "Bambyul Blog",
     "brandName": "Bambyul",
     "brandType": "blog"
@@ -68,6 +69,8 @@
     "misc": "Other posts"
   },
   "article": {
+    "summary": "Summary",
+    "decision": "Why I chose this",
     "contents": "On this page",
     "share": "Share",
     "copyLink": "Copy link",

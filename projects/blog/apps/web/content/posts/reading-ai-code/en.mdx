@@ -27,13 +27,13 @@ White-box testing chooses paths from the internals. I inspect condition order an
 Both are part of my workflow.
 
 ```text
-티켓·plan 검토
-→ 테스트 작성
-→ 에이전트 구현·에이전트 코드 리뷰
-→ 변경분 테스트·lint·typecheck
-→ 제 diff 리뷰·dev 화면에서 동작 확인
-→ 전체 CI(테스트·knip·lint)
-→ QA 더블 체크 요청
+Review the ticket and plan
+→ Write tests
+→ Agent implementation and agent code review
+→ Test the changes, lint, and typecheck
+→ My diff review and behavior checks on the dev screen
+→ Full CI (tests, knip, lint)
+→ Request a second check from QA
 ```
 
 Diff review is not itself white-box testing. Finding a path in review, then writing and running a test for its conditions, is the white-box approach. Dev screens and QA also check whether behavior matches the requirements.
