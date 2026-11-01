@@ -11,6 +11,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Web FSD와 코드 규칙
 
+- `/about`은 `(entry)` 루트 레이아웃의 공개 서비스 소개다. 한국어로 제공하고 커뮤니티 홈은 기존 `/:locale`을 유지한다. 랜딩에서 세션·게임 카테고리·채팅 API를 불러오거나 서비스 링크를 자동 prefetch하지 않는다. `redirect`는 bridge의 검증된 앱 경로만 받고 기본 목적지는 `/ko`다. UI와 시작 진입 흐름은 `_pages/landing`이 소유한다.
+
 - `src/app`은 Next 라우트 어댑터만 둔다. 화면은 `_pages`, 앱 조합·Provider·전역 스타일은 `_app`, 여러 화면의 조합 UI는 `widgets`, 서버 도메인은 `features`, 도메인 비의존 코드는 `shared`가 소유한다. `entities` 레이어를 별도로 만들지 않는다.
 - 페이지 전용 폼·조회 조합·탐색 흐름과 그 하위 UI·스키마·테스트는 `_pages/<screen>`에 둔다. 서버 모델을 쓴다는 이유로 features에 두지 않는다. 재사용하는 도메인 카드·동작·IO는 features, 여러 페이지의 공유 조합은 widgets가 소유한다.
 - features의 `api`는 REST SDK와 요청·응답 IO, `model`은 query options와 mutation options를 소유한다. 페이지의 폼·흐름·URL 상태를 features의 서버 상태와 분리한다. GraphQL을 추가하지 않는다.

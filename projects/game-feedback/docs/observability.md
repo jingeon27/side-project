@@ -88,6 +88,8 @@ Amplitude는 IP·페이지 제목·검색어·fragment를 보내지 않고 화�
 
 ## MCP로 수신 재확인
 
+공개 랜딩 `/about`은 `screen=landing`으로 구분한다. 시작 버튼의 `landing_start_clicked`는 `placement`(header/hero/footer), `destination_screen`, `redirect_applied`를 보낸다. 클릭 이벤트를 실제 가입·게시글 작성 성공으로 집계하지 않는다. `redirect`의 원본 URL과 게시글 ID, 검색어는 이벤트 속성에 넣지 않으며 자동 페이지뷰도 기존 enrichment에서 쿼리를 제거한다. 게시판 바로가기와 가이드·정책 링크는 기존 `ui_interaction`으로 구분한다.
+
 ```sh
 codex mcp add sentry --url https://mcp.sentry.dev/mcp
 codex mcp add amplitude --url https://mcp.amplitude.com/mcp

@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import dayjs from 'dayjs';
 
 import { appRoutes } from '@game-feedback/bridge';
@@ -17,6 +19,9 @@ export function CommunityFooter({ home }: { home: string }) {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <nav className="site-footer-links" aria-label={t('서비스 안내')}>
+          <Link href="/about" prefetch={false} data-analytics-action="service-about">
+            {t('서비스 소개')}
+          </Link>
           <ChildLink href={appRoutes.guide(locale)} prefetch>
             {t('이용 가이드')}
           </ChildLink>
