@@ -2,9 +2,7 @@
 
 import { ArrowUpRight } from 'lucide-react';
 
-import { ROUTES } from '@/shared/constants/routes';
-import { ButtonLink } from '@/shared/ui/@core/button';
-import { PublicFooter, PublicHeader } from '@/widgets/public-layout';
+import { PublicFooter, PublicHeader, PublicStartLink } from '@/widgets/public-layout';
 
 export function HowItWorksPage() {
   return (
@@ -101,9 +99,9 @@ export function HowItWorksPage() {
           </section>
           <div className="mt-16 flex flex-wrap items-center justify-between gap-6 border-t border-line pt-8">
             <p className="text-body text-muted">공개 그룹은 익명으로 시작할 수 있어요.</p>
-            <ButtonLink href={ROUTES.HOME} prefetch={false}>
+            <PublicStartLink placement="guide">
               피식 시작하기 <ArrowUpRight aria-hidden className="size-4" />
-            </ButtonLink>
+            </PublicStartLink>
           </div>
         </div>
       </div>

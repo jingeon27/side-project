@@ -1,5 +1,7 @@
 # Side projects monorepo
 
+- 사용자 행동이나 진입·이동 흐름을 추가하거나 변경할 때는 Amplitude 이벤트와 속성을 항상 함께 설계·구현·검증한다. 기존 이벤트 카탈로그를 사용하고 클릭과 서버 성공을 구분하며, 키가 없는 환경의 전송 생략과 개인정보·검색어·초대 토큰 수집 금지를 유지한다. 적용한 이벤트·속성과 검증 결과를 PR에 기록한다.
+
 Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 필수. 프로젝트는 `projects/<name>` 아래에서 독립적으로 관리한다.
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 

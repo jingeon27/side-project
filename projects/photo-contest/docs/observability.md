@@ -50,6 +50,10 @@ Sentry의 Insights → Frontend → Web Vitals에서 `photo-contest-web` 프로�
 
 ## 데이터와 구분
 
+공개 소개의 시작 버튼은 `landing_start_clicked`를 보낸다. `placement`는 header/hero/guide, `source_path_template`와 `destination_path_template`는 ID·쿼리·해시를 제거한 경로, `redirect_applied`는 지정한 내부 목적지가 적용됐는지 나타낸다. 그룹 상세로 가는 경우 유효한 cuid만 `group_id`로 추가한다. 원본 redirect URL과 검색어, 초대 토큰은 보내지 않는다.
+
+`/about?redirect=%2Fgroups%2F<groupId>`에서 시작하면 기존 인증 게이트의 `next`를 거쳐 해당 그룹으로 돌아간다. `redirect`가 없거나 외부 주소·인증 화면을 지정하면 기본 홈으로 이동한다. `/about/how-it-works`의 시작 버튼도 같은 쿼리를 지원한다.
+
 Sentry는 API·Next 서버·브라우저에 각각 layer=api/next-server/browser와 service=photo-contest를 붙인다. 브라우저는 기존 client=web/app도 유지한다. 웹 오류의 메시지·extra·request·user·breadcrumbs·문맥과 스택 쿼리·지역 변수·소스 문맥은 제거한다. Next SDK의 contexts.nextjs.request_path도 제거 대상이다. 오류 종류, React 오류 번호와 호출 위치는 유지한다. 수집 서비스 자체의 IP/지역 보관 설정은 별도로 관리한다.
 
 Amplitude는 SDK 원격 설정·자동 URL 보강을 끈다. 자동 페이지뷰를 끄는 것만으로는 URL 보강이 꺼지지 않는다. 페이지뷰는 경로 템플릿으로 직접 보내고 StrictMode의 effect 재실행에서는 중복 집계하지 않는다. 원본 ID가 다른 그룹으로 이동하면 같은 템플릿이어도 새 방문을 기록한다.

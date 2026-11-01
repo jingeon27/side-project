@@ -1,12 +1,13 @@
 /**
  * 웹이 보내는 분석 이벤트(contract §6). 이름은 snake_case이고, 속성에 닉네임·캡션·초대 토큰·이메일을 넣지 않는다.
- * ID는 cuid라 넣어도 되고, 경로는 ID를 지운 path_template(`/groups/:id`)로 보낸다. 모두 서버 응답이 성공한 뒤에 보낸다.
+ * ID는 cuid라 넣어도 되고, 경로는 ID를 지운 path_template(`/groups/:id`)로 보낸다. mutation은 서버 성공 후, 클릭은 해당 동작 시점에 보낸다.
  */
 export const ANALYTICS_EVENT = {
   CategoryCreated: 'category_created',
   CategoryFilterApplied: 'category_filter_applied',
   PostCreated: 'post_created',
   PageViewed: 'page_viewed',
+  LandingStartClicked: 'landing_start_clicked',
   LoginStarted: 'login_started',
   LoginSucceeded: 'login_succeeded',
   GroupCreated: 'group_created',
@@ -59,6 +60,13 @@ export type TAnalyticsEventProperties = {
     kind: 'PHOTO' | 'VIDEO' | 'LINK';
   };
   [ANALYTICS_EVENT.PageViewed]: { path_template: string };
+  [ANALYTICS_EVENT.LandingStartClicked]: {
+    placement: 'header' | 'hero' | 'guide';
+    source_path_template: string;
+    destination_path_template: string;
+    redirect_applied: boolean;
+    group_id?: string;
+  };
   [ANALYTICS_EVENT.LoginStarted]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.GroupCreated]: { group_id: string };
