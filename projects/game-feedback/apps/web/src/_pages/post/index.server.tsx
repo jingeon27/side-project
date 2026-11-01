@@ -60,6 +60,7 @@ export function PostDocument({
   return (
     <CommunityPage
       locale={locale}
+      screenKey="post"
       topbar={
         streamHeader ? (
           <Suspense fallback={<PostTopbarPlaceholder locale={locale} />}>{header}</Suspense>

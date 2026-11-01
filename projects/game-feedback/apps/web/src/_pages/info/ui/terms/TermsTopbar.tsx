@@ -9,7 +9,6 @@ export function TermsTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('이용약관')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

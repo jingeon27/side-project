@@ -24,7 +24,11 @@ export function BoardsPage({ slug, ...props }: IBoardPageProps & { slug: string 
     .with(undefined, () => null)
     .exhaustive();
   return (
-    <CommunityPage locale={props.locale} topbar={<BoardsTopbar locale={props.locale} slug={slug} />}>
+    <CommunityPage
+      screenKey={`boards:${slug}`}
+      locale={props.locale}
+      topbar={<BoardsTopbar locale={props.locale} slug={slug} />}
+    >
       {content}
     </CommunityPage>
   );

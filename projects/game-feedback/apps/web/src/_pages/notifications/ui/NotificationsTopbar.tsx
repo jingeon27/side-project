@@ -9,7 +9,6 @@ export function NotificationsTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('알림')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

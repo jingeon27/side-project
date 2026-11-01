@@ -160,7 +160,7 @@ function SearchResults({
 
 export function SearchPage(props: Parameters<typeof SearchContent>[0]) {
   return (
-    <CommunityPage locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
+    <CommunityPage screenKey="search" locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
       <SearchContent {...props} />
     </CommunityPage>
   );

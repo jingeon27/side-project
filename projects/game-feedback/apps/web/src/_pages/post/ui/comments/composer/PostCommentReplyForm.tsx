@@ -8,7 +8,7 @@ import { Button, Textarea } from '@side/design-system';
 import { createCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { ErrorNotice, useNotify } from '@/shared/ui';
+import { Field, useNotify } from '@/shared/ui';
 
 import { commentFormSchema } from '../../../model/content.schema';
 
@@ -50,26 +50,29 @@ export function PostCommentReplyForm({
       })}
     >
       <p className="comment-reply-target">{t('{name}님에게 답글 남기기', { name: nickname })}</p>
-      <Textarea
-        // eslint-disable-next-line jsx-a11y/no-autofocus -- 답글 버튼을 눌러 연 입력창으로 포커스를 옮긴다(e2e comment-replies가 확인).
-        autoFocus
-        aria-label={t('답글 내용')}
-        aria-invalid={!!form.formState.errors.body}
-        {...form.register('body')}
-        rows={2}
-        maxLength={2000}
-        placeholder={t('답글을 남겨주세요')}
-        disabled={mutation.isPending}
-        required
-      />
-      <ErrorNotice message={errorMessage && t(errorMessage)} />
+      <Field
+        label={t('답글 내용')}
+        hint={t('1~2,000자로 작성해주세요.')}
+        error={errorMessage && t(errorMessage)}
+      >
+        <Textarea
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- 답글 버튼을 눌러 연 입력창으로 포커스를 옮긴다(e2e comment-replies가 확인).
+          autoFocus
+          aria-label={t('답글 내용')}
+          {...form.register('body')}
+          rows={3}
+          maxLength={2000}
+          readOnly={mutation.isPending}
+          required
+        />
+      </Field>
       <div className="comment-reply-controls">
-        <Button variant="ghost" size="sm" type="button" disabled={mutation.isPending} onClick={onCancel}>
+        <Button variant="secondary" size="md" type="button" disabled={mutation.isPending} onClick={onCancel}>
           {t('취소')}
         </Button>
         <Button
           variant="primary"
-          size="sm"
+          size="md"
           type="submit"
           loading={mutation.isPending}
           icon={<Send aria-hidden />}

@@ -39,7 +39,7 @@ test('composer examples follow the classification, battle type, coaching role an
   );
   await classification.selectOption('COACHING');
   await expect(title).toHaveAttribute('placeholder', '예: 수비와 운영을 함께 연습할 수강생 모집');
-  await form.getByLabel('모집 유형', { exact: true }).selectOption('STUDENT');
+  await form.getByRole('radio', { name: '코치 구함', exact: true }).check();
   await expect(title).toHaveAttribute('placeholder', '예: 목표 달성까지 도와줄 코치 구해요');
   await expect(body).toHaveAttribute(
     'data-placeholder',
@@ -49,12 +49,12 @@ test('composer examples follow the classification, battle type, coaching role an
     'placeholder',
     '예: 30000',
   );
-  await form.getByLabel('수강료 기준', { exact: true }).selectOption('MONTHLY');
+  await form.getByRole('radio', { name: '기간 단위', exact: true }).check();
   await expect(form.getByLabel('기간 희망 수강료 (원)', { exact: true })).toHaveAttribute(
     'placeholder',
     '예: 200000',
   );
-  await form.getByLabel('수강료 기준', { exact: true }).selectOption('GOAL');
+  await form.getByRole('radio', { name: '목표 달성까지', exact: true }).check();
   await expect(form.getByLabel('목표 달성 희망 총 수강료 (원)', { exact: true })).toHaveAttribute(
     'placeholder',
     '예: 150000',
@@ -79,7 +79,7 @@ for (const width of [320, 1440]) {
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko?q=hog&tab=unanswered');
-    await page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(page).toHaveURL('/ko/write');
     await expect(page.getByRole('banner')).toBeHidden();
     await expect(page.getByRole('dialog')).toHaveCount(0);

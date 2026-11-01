@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { GameProfile, TSocialProvider } from '@game-feedback/contracts';
+import { LEGAL_POLICY_VERSION, type GameProfile, type TSocialProvider } from '@game-feedback/contracts';
 
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../../generated/prisma';
@@ -50,7 +50,7 @@ export class SocialIdentityService {
       return (tx ?? this.db).user.create({
         data: {
           nickname,
-          termsVersion: '2026-10-16',
+          termsVersion: LEGAL_POLICY_VERSION,
           ageConfirmed: true,
           ...(provider === 'google' ? { googleSubject: subject } : {}),
           role: 'USER',

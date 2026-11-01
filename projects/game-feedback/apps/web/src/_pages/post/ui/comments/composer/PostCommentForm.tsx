@@ -3,13 +3,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 
-import { Button, IconButton, Textarea } from '@side/design-system';
+import { Button, Textarea } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { createCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { ErrorNotice, useNotify } from '@/shared/ui';
+import { Field, useNotify } from '@/shared/ui';
 
 import { commentFormSchema } from '../../../model/content.schema';
 
@@ -44,23 +44,32 @@ export function PostCommentForm({ postId }: { postId: string }) {
         }
       })}
     >
-      <div className="comment-compose">
+      <Field
+        label={t('댓글 내용')}
+        hint={t('1~2,000자로 작성해주세요.')}
+        error={errorMessage && t(errorMessage)}
+      >
         <Textarea
-          className="min-h-touch max-h-28 min-w-0 flex-1 resize-none rounded-none border-0 px-0 py-2 leading-6 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+          className="max-h-48 min-h-24"
           aria-label={t('댓글 내용')}
-          aria-invalid={!!form.formState.errors.body}
           {...form.register('body')}
-          rows={1}
+          rows={3}
           maxLength={2000}
-          placeholder={t('댓글을 남겨주세요')}
-          disabled={mutation.isPending}
+          readOnly={mutation.isPending}
           required
         />
-        <IconButton variant="primary" type="submit" loading={mutation.isPending} label={t('댓글 등록')}>
-          <Send aria-hidden />
-        </IconButton>
+      </Field>
+      <div className="comment-form-actions">
+        <Button
+          variant="primary"
+          size="md"
+          type="submit"
+          loading={mutation.isPending}
+          icon={<Send aria-hidden />}
+        >
+          {t('댓글 등록')}
+        </Button>
       </div>
-      <ErrorNotice message={errorMessage && t(errorMessage)} />
     </form>
   );
 }

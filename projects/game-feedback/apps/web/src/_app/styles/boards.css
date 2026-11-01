@@ -1,13 +1,17 @@
 @layer components {
   .game-board-navigation {
     display: none;
+    position: sticky;
+    top: var(--site-header-height);
+    z-index: var(--z-index-sticky-cta);
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 16px;
+    background: var(--color-canvas);
+    padding-block: 8px 24px;
   }
-  .game-board-navigation[data-has-heading] {
-    display: flex;
-    margin-bottom: 22px;
+  .game-board-navigation[data-scroll-hidden='true'] {
+    visibility: hidden;
+    pointer-events: none;
   }
   .game-board-heading {
     display: flex;
@@ -15,25 +19,9 @@
     justify-content: space-between;
     gap: 12px;
   }
-  .game-board-heading > .feed-heading {
-    flex: 1;
-    margin-bottom: 0;
-  }
-  @media (min-width: 761px) {
-    .game-board-navigation[data-has-heading] .game-board-title,
-    .game-board-navigation[data-has-heading] .game-board-chips {
-      display: none;
-    }
-  }
   @media (max-width: 760px) {
     .game-board-navigation {
       display: flex;
-    }
-    .game-board-navigation[data-has-heading] {
-      margin-bottom: 16px;
-    }
-    .game-board-heading > .feed-heading {
-      flex: 0 0 auto;
     }
   }
   .game-board-title {
@@ -100,20 +88,6 @@
   .coaching-summary > span {
     min-width: 0;
     overflow-wrap: anywhere;
-  }
-  .board-heading {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 16px;
-    align-items: center;
-  }
-  .board-heading h1 {
-    min-width: 0;
-    margin-top: 0;
-    text-wrap: balance;
-  }
-  .board-heading > button {
-    flex-shrink: 0;
   }
   .board-post-list {
     margin-bottom: 20px;

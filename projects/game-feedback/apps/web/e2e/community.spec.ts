@@ -1,6 +1,6 @@
 import { expect, test } from './support/test';
 
-test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
+test('community boards publish and edit formatting, stay separate from feedback and render without JavaScript', async ({
   page,
   browser,
   baseURL,
@@ -52,7 +52,9 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(page.locator('.deck, .deck-card')).toHaveCount(0);
     await page.locator('.detail-card').getByRole('button', { name: '수정', exact: true }).click();
     const edit = page.getByRole('dialog', { name: '게시글 수정', exact: true });
-    await expect(edit.locator('.ql-editor strong')).toContainText(body);
+    await expect(edit.getByRole('textbox', { name: '내용', exact: true }).locator('strong')).toContainText(
+      body,
+    );
     if (slug === 'friend-sale') {
       await expect(edit.getByLabel('판매 금액 (원)', { exact: true })).toHaveValue('12000');
       await edit.getByLabel('판매 금액 (원)', { exact: true }).fill('18000');
@@ -137,7 +139,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   }
 });
-test('category chips wrap without horizontal scrolling and support keyboard navigation, short viewports and Quill context', async ({
+test('category chips wrap without horizontal scrolling and support keyboard navigation, short viewports and editor context', async ({
   page,
   baseURL,
 }) => {
@@ -188,7 +190,7 @@ test('category chips wrap without horizontal scrolling and support keyboard navi
   await friendly.click();
   await expect(page).toHaveURL('/ja/boards/friendly');
   await page.locator('.board-heading:visible button').click();
-  await expect(page.locator('.ql-editor')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '本文', exact: true })).toBeVisible();
   await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   const dialog = await page.getByRole('form', { name: '投稿する', exact: true }).boundingBox();

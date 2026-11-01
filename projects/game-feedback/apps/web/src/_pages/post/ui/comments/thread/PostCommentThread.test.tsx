@@ -100,6 +100,8 @@ describe('답글 버튼 접근성', () => {
     expect(screen.getByRole('form', { name: '먼저쓴사람님에게 답글 남기기' })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: '답글 내용' }));
     expectControlledElementsExist(container);
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '답글' }));
   });
 });
 

@@ -9,7 +9,7 @@ for (const width of [390, 1280]) {
     const boards = [
       { slug: 'feedback', title: '피드백', filter: '답변 상태', action: '글쓰기' },
       { slug: 'friendly', title: '전투 모집', filter: '전투 유형', action: '글쓰기' },
-      { slug: 'coaching', title: '게임코치', filter: '모집 유형', action: '코칭 등록' },
+      { slug: 'coaching', title: '게임코치', filter: '모집 유형', action: '글쓰기' },
       { slug: 'friend-sale', title: '친추판매', filter: null, action: '글쓰기' },
       { slug: 'free', title: '자유게시판', filter: null, action: '글쓰기' },
     ];

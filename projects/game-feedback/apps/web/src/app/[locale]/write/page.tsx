@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
+import { locale as rootLocale } from 'next/root-params';
 
+import { PostComposePendingPage } from '@/_pages/compose';
 import { ComposeRoute } from '@/_pages/compose/index.server';
 import { staticPageMetadata } from '@/shared/seo';
-import { LoadingState } from '@/shared/ui';
 
 interface IPageProps {
   params: Promise<{ locale: string }>;
@@ -32,9 +33,9 @@ export async function generateMetadata({ params }: IPageProps) {
   return staticPageMetadata('write', (await params).locale);
 }
 
-export default function Page(props: Parameters<typeof RouteContent>[0]) {
+export default async function Page(props: Parameters<typeof RouteContent>[0]) {
   return (
-    <Suspense fallback={<LoadingState />}>
+    <Suspense fallback={<PostComposePendingPage locale={await rootLocale()} />}>
       <RouteContent {...props} />
     </Suspense>
   );

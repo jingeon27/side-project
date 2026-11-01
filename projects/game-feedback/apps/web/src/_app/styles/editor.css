@@ -14,88 +14,96 @@
     min-width: 0;
     position: relative;
   }
-  .rich-text-editor .ql-toolbar.ql-snow {
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-control) var(--radius-control) 0 0;
-    background: var(--color-surface);
-    padding: 6px;
+  .rich-text-editor-loading {
+    min-height: 240px;
+    padding: 14px;
+    border: 1px solid var(--color-muted);
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+  }
+  .rich-text-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--color-muted);
+    border-radius: var(--radius-control) var(--radius-control) 0 0;
+    background: var(--color-surface);
   }
-  .rich-text-editor .ql-toolbar.ql-snow .ql-formats {
-    margin: 0 8px 0 0;
+  .rich-text-toolbar-group {
+    display: flex;
+    gap: 0;
+    min-width: 0;
   }
-  .rich-text-editor .ql-toolbar.ql-snow button {
-    width: 36px;
-    height: 36px;
-    padding: 8px;
-  }
-  .rich-text-editor .ql-toolbar.ql-snow button:focus-visible {
-    outline: 2px solid var(--color-ink);
+  .rich-text-toolbar button:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
     outline-offset: -2px;
   }
-  .rich-text-editor .ql-container.ql-snow {
-    border-color: var(--color-line);
-    border-radius: 0 0 var(--radius-control) var(--radius-control);
-    background: var(--color-surface);
-    font: inherit;
+  .rich-text-editor > div:has(> .tiptap-editor-content) {
+    min-width: 0;
   }
-  .rich-text-editor .ql-editor {
+  .tiptap-editor-content {
+    position: relative;
     min-height: 210px;
     max-height: 45dvh;
     overflow-y: auto;
     padding: 14px;
+    border: 1px solid var(--color-muted);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-control) var(--radius-control);
+    background: var(--color-surface);
     font-size: var(--text-input);
     line-height: 1.8;
     overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    caret-color: var(--color-ink);
+    scrollbar-color: var(--color-muted) var(--color-surface);
+    outline: none;
+    scroll-margin-block: 12px;
   }
-  .rich-text-editor .ql-editor.ql-blank::before {
+  .tiptap-editor-content[data-empty='true']::before {
+    content: attr(data-placeholder);
+    position: absolute;
+    inset-block-start: 14px;
+    inset-inline: 14px;
     color: var(--color-muted);
-    font-style: normal;
+    pointer-events: none;
   }
-  .rich-text-editor .ql-editor[data-composing='true']::before {
+  .tiptap-editor-content[data-composing='true']::before {
     content: none;
   }
-  .rich-text-editor:focus-within .ql-container {
-    border-color: var(--color-ink);
+  .tiptap-editor-content:focus {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: -2px;
   }
-  .rich-text-editor .ql-snow .ql-tooltip {
-    max-width: 100%;
-    white-space: normal;
-    z-index: 2;
-    background: var(--color-surface);
-    color: var(--color-ink);
-    border-color: var(--color-line-strong);
+  .rich-text-editor[data-invalid='true'] .rich-text-toolbar,
+  .rich-text-editor[data-invalid='true'] .tiptap-editor-content {
+    border-color: var(--color-danger);
   }
-  .rich-text-editor .ql-snow .ql-tooltip::before,
-  .rich-text-editor .ql-snow .ql-tooltip.ql-editing::before {
-    content: attr(data-tip-label);
+  .tiptap-editor-content::selection,
+  .tiptap-editor-content ::selection {
+    color: var(--color-on-accent);
+    background: var(--color-accent);
   }
-  .rich-text-editor .ql-snow .ql-tooltip a.ql-action::after,
-  .rich-text-editor .ql-snow .ql-tooltip.ql-editing a.ql-action::after,
-  .rich-text-editor .ql-snow .ql-tooltip a.ql-remove::before {
-    content: attr(data-label);
+  .tiptap-editor-content .ProseMirror-selectednode {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
   }
-  .rich-text-editor .ql-snow .ql-tooltip input[type='text'] {
-    width: min(180px, 48vw);
-    font-size: var(--text-input);
+  .rich-text-link-form {
+    display: grid;
+    gap: 20px;
   }
-  .rich-text-editor .ql-snow .ql-stroke {
-    stroke: var(--color-ink);
-  }
-  .rich-text-editor .ql-snow .ql-fill {
-    fill: var(--color-ink);
-  }
-  .rich-text-editor .ql-snow button.ql-active .ql-stroke {
-    stroke: var(--color-accent-ink);
+  .rich-text-link-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
   .rich-text-body {
     white-space: normal;
   }
   .post-body-media,
-  .rich-text-editor .ql-editor img,
-  .rich-text-editor .ql-editor video {
+  .tiptap-editor-content img[data-post-media],
+  .tiptap-editor-content video[data-post-media] {
     display: block;
     max-width: 100%;
     max-height: 60dvh;
@@ -104,51 +112,57 @@
     object-fit: contain;
     border-radius: var(--radius-control);
   }
+  .tiptap-editor-content p,
+  .tiptap-editor-content li,
+  .tiptap-editor-content blockquote,
   .rich-text-body p,
   .rich-text-body li,
   .rich-text-body blockquote {
     white-space: pre-wrap;
   }
+  .tiptap-editor-content p,
   .rich-text-body p {
     margin-block: 0 0.75em;
   }
+  .tiptap-editor-content h2,
   .rich-text-body h2 {
     font-size: var(--text-title);
     margin-block: 1em 0.5em;
     font-weight: 700;
   }
+  .tiptap-editor-content h3,
   .rich-text-body h3 {
     font-size: var(--text-subtitle);
     margin-block: 1em 0.5em;
     font-weight: 700;
   }
+  .tiptap-editor-content ul,
   .rich-text-body ul {
     list-style: disc;
     padding-inline-start: 1.5em;
     margin-block: 0.75em;
   }
+  .tiptap-editor-content ol,
   .rich-text-body ol {
     list-style: decimal;
     padding-inline-start: 1.5em;
     margin-block: 0.75em;
   }
+  .tiptap-editor-content blockquote,
   .rich-text-body blockquote {
     border-inline-start: 3px solid var(--color-line-strong);
     padding-inline-start: 14px;
     margin-block: 0.75em;
     color: var(--color-muted);
   }
+  .tiptap-editor-content a,
   .rich-text-body a {
     text-decoration: underline;
+    text-underline-offset: 0.16em;
     overflow-wrap: anywhere;
   }
   @media (max-width: 760px) {
-    .rich-text-editor .ql-toolbar.ql-snow button {
-      width: 44px;
-      height: 44px;
-      padding: 11px;
-    }
-    .rich-text-editor .ql-editor {
+    .tiptap-editor-content {
       min-height: 170px;
       max-height: 35dvh;
     }

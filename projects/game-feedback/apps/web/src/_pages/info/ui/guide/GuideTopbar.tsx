@@ -9,7 +9,6 @@ export function GuideTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
       <Topbar.Title>{t('가이드')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

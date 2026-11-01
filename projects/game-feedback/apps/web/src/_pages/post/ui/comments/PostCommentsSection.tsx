@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { uniqBy } from 'es-toolkit';
@@ -32,6 +32,16 @@ export function PostCommentsSection({
 }: IPostCommentsSectionProps) {
   const { t } = useI18n();
   const headingId = useId();
+  const handleSection = useCallback((section: HTMLElement | null) => {
+    if (!section) return;
+    // 입력 폼이 먼저 자리 잡은 뒤 알림에서 연 댓글의 위치를 맞춘다.
+    const frame = requestAnimationFrame(() => {
+      const targetId = window.location.hash.slice(1);
+      if (!/^comment-[A-Za-z0-9_-]+$/.test(targetId)) return;
+      section.querySelector<HTMLElement>(`#${targetId}`)?.scrollIntoView({ block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const [showOlder, setShowOlder] = useState(false);
   const older = useInfiniteQuery({ ...olderCommentOptions(postId, cursor), enabled: showOlder && !!cursor });
   // 페이지는 최근 스레드부터 이어 받으므로 뒤 페이지일수록 오래된 댓글이다.
@@ -56,11 +66,12 @@ export function PostCommentsSection({
   };
 
   return (
-    <section className="comments-section" aria-labelledby={headingId}>
+    <section ref={handleSection} className="comments-section" aria-labelledby={headingId}>
       <h2 id={headingId}>
         {t('댓글')}
         <span>{hasOlder || hasOlderReplies ? t('{count}개 이상', { count }) : count}</span>
       </h2>
+      <PostCommentForm postId={postId} />
       {hasOlder && (
         <div className="comments-older">
           <Button
@@ -88,7 +99,6 @@ export function PostCommentsSection({
           />
         ))}
       </ol>
-      <PostCommentForm postId={postId} />
     </section>
   );
 }

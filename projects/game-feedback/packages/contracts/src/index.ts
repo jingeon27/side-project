@@ -11,6 +11,8 @@ import { PostMediaSchema } from './post-media';
 import { NicknameSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
+export { LEGAL_POLICY_VERSION } from './legal-policy';
+
 export {
   NicknameSchema,
   PROFILE_BIO_MAX_LENGTH,

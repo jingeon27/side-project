@@ -131,11 +131,12 @@ export const pageContent = {
   },
   terms: {
     title: '이용약관',
-    description: 'Game Mate 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.',
+    description:
+      'Game Mate의 가입과 이용 조건, 게시물 권리, 거래 유의 사항과 커뮤니티 운영 원칙을 확인하세요.',
     keywords: ['서비스 이용약관'],
   },
   privacy: {
-    title: '개인정보 처리 안내',
+    title: '개인정보 처리방침',
     description: 'Game Mate의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.',
     keywords: ['개인정보 처리', '계정 삭제'],
   },

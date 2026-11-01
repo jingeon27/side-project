@@ -24,7 +24,7 @@ async function readRoute({ params, searchParams }: ILoginRouteProps) {
 export async function LoginRoute(props: ILoginRouteProps) {
   const route = await readRoute(props);
   return (
-    <CommunityPage locale={route.locale} topbar={<LoginTopbar returnTo={route.returnTo} />}>
+    <CommunityPage screenKey="login" locale={route.locale} topbar={<LoginTopbar returnTo={route.returnTo} />}>
       <LoginPage {...route} />
     </CommunityPage>
   );

@@ -5,6 +5,7 @@ import { profileMessages } from './profile-messages';
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
   '{name}님의 댓글 메뉴': ['Comment menu for {name}', '{name}さんのコメントメニュー'],
+  '{name}님의 프로필 메뉴': ['Profile menu for {name}', '{name}さんのプロフィールメニュー'],
   '{name}님과 채팅하기': ['Chat with {name}', '{name}さんとチャット'],
   '앱 알림을 준비하고 있어요. 잠시 후 다시 확인해 주세요.': [
     'App notifications are being set up. Please check again later.',
@@ -352,6 +353,7 @@ const messages: Record<string, readonly [string, string]> = {
   '글머리 목록': ['Bullet list', '箇条書き'],
   인용: ['Quote', '引用'],
   링크: ['Link', 'リンク'],
+  '서식 더보기': ['More formatting', 'その他の書式'],
   '서식 지우기': ['Clear formatting', '書式をクリア'],
   '서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.': [
     'This formatting is too complex or unsupported. Simplify the formatting.',
@@ -386,6 +388,10 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '게시글 보기': ['View post', '投稿を見る'],
   '제목을 입력해주세요.': ['Enter a title.', 'タイトルを入力してください。'],
+  '제목은 4~30자로 입력해주세요.': [
+    'Use 4–30 characters for the title.',
+    'タイトルは4〜30文字で入力してください。',
+  ],
   검색: ['Search', '検索'],
   '더 보기': ['Load more', 'もっと見る'],
   '읽지 않음': ['Unread', '未読'],
@@ -625,6 +631,7 @@ const messages: Record<string, readonly [string, string]> = {
   '로그인하고 댓글 남기기': ['Sign in to comment', 'ログインしてコメント'],
   '댓글을 남겼어요.': ['Comment posted.', 'コメントを投稿しました。'],
   '댓글 내용': ['Your comment', 'コメント内容'],
+  '1~2,000자로 작성해주세요.': ['Use 1–2,000 characters.', '1〜2,000文字で入力してください。'],
   '댓글 등록': ['Post comment', 'コメントを投稿'],
   답글: ['Reply', '返信'],
   취소: ['Cancel', 'キャンセル'],
@@ -928,6 +935,7 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '지금은 함께 만들어가는 알파 기간': ['Help us shape this alpha', '一緒につくるアルファ版です'],
   'Game Mate 홈': ['Game Mate home', 'Game Mateホーム'],
+  '사용자 차단': ['Block user', 'ユーザーをブロック'],
   'Game Mate': ['Game Mate', 'Game Mate'],
   '주 메뉴': ['Main menu', 'メインメニュー'],
   '이용 가이드': ['How to use', '使い方'],

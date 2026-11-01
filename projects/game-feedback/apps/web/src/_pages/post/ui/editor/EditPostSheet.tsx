@@ -16,7 +16,12 @@ import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
-import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
+import {
+  focusInvalidPostContent,
+  postComposerSchema,
+  PostContentFields,
+  postContentInput,
+} from '@/widgets/post-composer';
 
 interface IEditPostSheetProps extends IOverlayControlProps {
   post: Post;
@@ -53,7 +58,7 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
     } catch {
       /* Keep the edited draft and errors. */
     }
-  });
+  }, focusInvalidPostContent);
   const errorMessage = update.error?.message ?? upload.error?.message;
   return (
     <BottomSheet
@@ -86,9 +91,6 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
         <input type="hidden" {...form.register('categoryId')} />
         <Field label={t('분류')}>
           <Input readOnly value={t(boardByKind(post.board)?.name ?? '게시글')} />
-        </Field>
-        <Field label={t('게임')}>
-          <Input readOnly value={post.category.name} aria-label={t('선택한 게임')} />
         </Field>
         <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
         <ErrorNotice message={errorMessage && t(errorMessage)} />

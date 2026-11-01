@@ -220,6 +220,7 @@
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
     margin-top: 20px;
+    margin-bottom: 20px;
   }
   .answer-compose h3 {
     display: flex;
@@ -234,7 +235,6 @@
   .answer-compose textarea {
     font-size: var(--text-input);
     background: var(--color-surface);
-    min-height: 130px;
   }
   .compose-bottom {
     display: flex;
@@ -314,6 +314,9 @@
     justify-content: flex-end;
     gap: 8px;
   }
+  .comment-reply-controls > button {
+    flex: 1;
+  }
   .comment {
     scroll-margin-block-start: calc(var(--spacing-app-bar) + 24px);
     display: flex;
@@ -389,31 +392,30 @@
   .comment-form {
     display: grid;
     gap: 12px;
-    border-top: 1px solid var(--color-line);
-    padding-top: 20px;
+    margin-block: 16px 20px;
   }
-  .comment-compose {
+  .comment-form-actions {
     display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    min-width: 0;
-    padding: 8px 8px 8px 12px;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-control);
-    background: var(--color-sunken);
-  }
-  .comment-compose:focus-within {
-    outline: 2px solid var(--color-brand);
-    outline-offset: 2px;
+    justify-content: flex-end;
   }
   .comment-login {
-    border-top: 1px solid var(--color-line);
-    padding-top: 20px;
+    margin-block: 16px 20px;
   }
   .comment-login > button {
     width: 100%;
   }
   @media (max-width: 760px) {
+    .community-shell:has(
+        .answer-compose:focus-within,
+        .comment-form:focus-within,
+        .comment-reply-form:focus-within
+      )
+      .mobile-nav {
+      display: none;
+    }
+    .comment-reply-form {
+      margin-inline-start: 0;
+    }
     .comments-section {
       padding: 20px;
     }
