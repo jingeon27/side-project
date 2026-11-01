@@ -124,3 +124,27 @@ python3 apps/web/scripts/migrate-tistory.py --resume-blog /path/to/resume/blog
 ### 화면 캡처 갱신
 
 2026-10-29에 side-project-design의 예전 모바일 화면 모음을 다시 촬영한 화면으로 교체했다. 이전 이미지는 삭제하거나 덮어쓰지 않았다. 제거된 전체 목록 답변 대기 버튼과 그룹 탐색 안내, 바텀시트 프로필 편집이 현재 화면으로 오해되지 않도록 Game Mate 피드, 피식 그룹 탐색, 공개 프로필과 별도 편집 페이지를 실었다. 캡처에는 격리된 테스트 계정과 가짜 게임 API를 사용했으며 촬영한 코드 revision, 경로, 크기와 이미지 해시는 [screen-captures.json](screen-captures.json)에 기록했다. 실제 화면 픽셀은 수정하지 않고 HTML과 CSS로 두 화면씩 배치해 브라우저에서 저장했다. 교체 경로는 image-replacements.json에 남겼다.
+
+### 2026-11-01 실제 제품 화면 갱신
+
+side-project-design의 피드·그룹 탐색과 공개 프로필·수정 화면을 다시 촬영했다. 한국어 합성물 2개와 영문 합성물 2개를 날짜가 붙은 새 PNG로 추가했고 이전 PNG, JPG, SVG는 그대로 보존했다. 영문판도 재구성 그림 대신 실제 Game Mate 영어 UI를 담았다. 피식은 한국어 UI이고, Game Mate의 게시글은 한국어 테스트 내용이라는 점을 영문 캡션에 명시했다.
+
+캡처는 격리된 테스트 계정, 자체 테스트 스키마와 가짜 게임 프로필 제공자를 사용했다. Game Mate는 수정 중인 UI를 실행한 개발 서버, 피식은 수정 중인 소스로 만든 독립 프로덕션 빌드를 사용했다. 촬영 때의 base revision과 변경 파일의 해시 목록을 함께 남겼으며, 실제 운영 배포 화면으로 설명하지 않았다. 피식은 그룹 빈 상태 CTA 보완까지 들어간 빌드를 사용했다. 검색과 그룹 만들기 버튼이 실제로 활성화된 상태를 기다렸고, 그때의 native disabled, aria-disabled, data-disabled와 opacity 값을 캡처 기록에 남겼다. 탐색에서는 “함께”를 검색해 기존 테스트 그룹을 보여 줬다.
+
+[캡처 기록](screen-captures.json)에 원본 화면 7장과 합성물 4장의 경로·SHA-256·실제 UI 언어·viewport를 기록했다. 원본 화면 픽셀은 수정하지 않고 HTML/CSS로 배치했다. 콘텐츠 검증은 영문 도해의 SVG 검사와 실제 캡처의 해시·크기 검사를 구분한다. 로그인 리다이렉트와 로딩 상태는 결과로 채택하지 않고 최종 경로와 필요한 실제 UI가 나타난 뒤 촬영한다.
+
+재촬영 도구는 블로그 앱의 `scripts/capture-product-screens.ts`다. 먼저 각 제품의 기존 격리 테스트 실행기로 서버와 테스트 데이터를 준비한다. 피식 storageState 파일은 쿠키와 일치하는 hostname의 서버에서만 사용하며 로컬에만 둔다. 아래 명령의 상태 파일 환경변수는 그 로컬 파일 경로를 가리킨다.
+
+```bash
+yarn workspace @blog/web exec tsx scripts/capture-product-screens.ts \
+  --game-feedback-url http://127.0.0.1:3301 \
+  --photo-contest-url http://localhost:3320 \
+  --photo-contest-state "$PHOTO_CONTEST_CAPTURE_STATE" \
+  --photo-contest-search 함께 \
+  --captured-on 2026-11-01 \
+  --output-dir ../../.data/product-captures-2026-11-01
+```
+
+각 앱의 개발 서버와 DB는 사용하지 않는다. 도구는 위 격리 포트만 허용하며 새 브라우저를 닫는 일만 맡는다. 제품의 테스트 서버와 자체 테스트 스키마 정리는 해당 실행기가 맡는다. 이미 같은 날 촬영한 피식 원본을 그대로 쓸 때는 `--reuse-photo-capture`를 붙일 수 있다. 이때 저장된 원본 해시가 맞는지 확인하고 피식 서버에 다시 접근하지 않는다.
+
+Game Mate 원본을 그대로 두고 피식만 다시 촬영할 때는 `--reuse-game-captures`를 사용할 수 있다. 같은 날짜의 기존 원본 해시를 검증하며 Game Mate 서버에는 접근하지 않는다.

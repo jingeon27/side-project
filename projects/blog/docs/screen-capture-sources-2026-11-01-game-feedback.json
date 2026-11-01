@@ -1,0 +1,462 @@
+{
+  "baseRevision": "9576836125cfd91e977b417b50dd9b049e649cff",
+  "scope": "Files changed from the base revision, including untracked UI sources. Credentials and local runtime files are excluded.",
+  "files": [
+    {
+      "path": "projects/game-feedback/.agents/skills/game-feedback-web/SKILL.md",
+      "sha256": "b8cd8b3d3d69a73642cbe51efaeb2161b728816fe26f1b6a922f1808a1bd1847"
+    },
+    {
+      "path": "projects/game-feedback/.agents/skills/game-feedback-web/references/compose-media.md",
+      "sha256": "884ca444b90780947e90897c330a3578bf62a566dade956ee62db5e3400446de"
+    },
+    {
+      "path": "projects/game-feedback/.agents/skills/game-feedback-web/references/e2e.md",
+      "sha256": "9a7a3b29d6324dd1865294d4efcc673aba51254173ab023527cf43716f4a5cf2"
+    },
+    {
+      "path": "projects/game-feedback/.agents/skills/game-feedback-web/references/page-structure.md",
+      "sha256": "31da640dc1568f5d3ff53cd4e52afda527a79ad214989ed3d492aa0d8d923d43"
+    },
+    {
+      "path": "projects/game-feedback/apps/mobile/e2e/navigation.spec.ts",
+      "sha256": "196357826d6b36abb5e69a1ba9ed74f4ddf532ab7cab523d1813540574c067ba"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/AGENTS.md",
+      "sha256": "8f11fa900033784b6055cff43a795cf6252ec1467e6b45b0565bb0c9df3d581c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e-production/prefetch.spec.ts",
+      "sha256": "13d87b0662f77ab1d4379ebb38620dc53e0cf4be08cfe68ab6862c4002f4aa6d"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/board-composition.spec.ts",
+      "sha256": "e564812cfbfcceff8afc22645c64fa3f16d14e91849dec7b26939e3f5c3475b1"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/community-enhancements.spec.ts",
+      "sha256": "7e2ef4559df155c2d28b0d8077d026508426048e0aafafbfb3e577a71ddda88c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/community.spec.ts",
+      "sha256": "8a8ef6b61fe224de1d8e06326833d9b89744c82ab1dd67c9c2538fef267d1ff7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/compose-design.spec.ts",
+      "sha256": "ae7b3958ce1e6f06589668fba374510a7bde9cf5448a10e196e1822b8dfe5531"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/compose.spec.ts",
+      "sha256": "31a6839bb3c6193ac872fa4849f67615ff2c6bb1380459212c624a6fd5779eb7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/detail-profile.spec.ts",
+      "sha256": "e222676a3c946ad1c8d626c9b82ea9662064a885c586674599cb3c4cb9bac733"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/editor-media.spec.ts",
+      "sha256": "43e93a242155b737a8f77466e36ce06ebe522794659d4ea24f54ef572970aec2"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/editor-placeholder.test.ts",
+      "sha256": "095c56a61b9feb19dc46df167ae551222987fba5fb9b787aed1658aa18753f4f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/feed-coaching.spec.ts",
+      "sha256": "8023af310d3f914736a15d48dcc09634d31d79fb38361722180184600bad99e0"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/feed-density.spec.ts",
+      "sha256": "ae90bb3476000f4dfffd91528223e7d5b5695aaf96ec34433a2b79ff66773844"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/fixtures/editor-clip.mp4",
+      "sha256": "7b2f668579182120cf13dd3ac8e6e917e408817d71652e3455fb58e839282989"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/header-location.spec.ts",
+      "sha256": "19336c16531efac5a2a9edcc13d347196b1073489922699119ea60a75b557d19"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/header.spec.ts",
+      "sha256": "45a12b655fdb61a056f21c324a9d569feae2661b37763622e642e082e1a20a26"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/language.spec.ts",
+      "sha256": "75afaa5044ff1b0b913848345a1dd694f48e499de769db6a384c42bd4aea1831"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/login.spec.ts",
+      "sha256": "263b42ceb37e8589ff6fb0b57f4ebe1c34eade3aaf14914ca7a6c5b37d14e0dd"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/mobile-shell.spec.ts",
+      "sha256": "e1f07004b3b77e3b507874be6e47f5bf37c64dfaf22e0a593df554d258fe7393"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/onboarding.spec.ts",
+      "sha256": "25f9844b81ee756e1ddba1e341a001dbb13cd77030d45e507e4684f90c77ef9c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/profile-actions.test.ts",
+      "sha256": "59920d4bd67afb62719f492ea8406903e7a75b8fc38809c197f0f78dba53d8f2"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/theme.spec.ts",
+      "sha256": "2912e8a36cebbbf9a786c65bc6f13b2120b57e0d0093e605e9f622aa72b98e01"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/e2e/tiptap-compatibility.spec.ts",
+      "sha256": "a2f057133847db02e230e9968177f83162243e01e571d492a14d7ec21bbf30ad"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/package.json",
+      "sha256": "c45740625d760fb987af8e0efd83c89c38a40e77cc4467bd1f904e0495f9debe"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/playwright.editor.config.ts",
+      "sha256": "ccfd74035e591709050ce8f99ec39df51600958aaf2070c4e62615203cc5edf4"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/boards.css",
+      "sha256": "16b284b358b011b13eb9ed14bffcfbf7389d77f1dfcf78ccf74311695d1eb009"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/compose-entry.css",
+      "sha256": "b3b716ce374468181bbb9c6887de71024b461e7164d30a502d142298e0b334af"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/compose.css",
+      "sha256": "d25d3c6513549e62b68803472b497ece182bf6ae3ed0ee231f86bfdcd97468d7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/editor.css",
+      "sha256": "f28f7881d9dddd51bfd510ce4c2574b12a96a2d9bdb3b46df62567e1fc9b4867"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/feed.css",
+      "sha256": "1ad36fa4c4d3fadd385a93cb104c2f1402b3a2c37cad901f5140a7de334ea4c0"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/layout.css",
+      "sha256": "74e5bec21804361f734120c369a8791e0ad7370c409cfb31fa9635873154c2f4"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/mobile.css",
+      "sha256": "5b89c45148a014013549af5653123adc654c0d23c50784905ac2f360e416d078"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/profile.css",
+      "sha256": "e62cc2ae4b2ba690598598d593368ef3b43a716941ad09e72ac60f086746c99e"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_app/styles/tailwind.css",
+      "sha256": "de52d6b20313ab808ec351f3f8aa76d100f3e734c66fb10f9422273e495211d6"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/BoardsPage.spec.tsx",
+      "sha256": "9d32d775ac96be9d30d5715580d8f537b38e34fa2b95487e516a0f3d7a80fb80"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/BoardsPage.tsx",
+      "sha256": "9fac24191845b657581c19c6329917240c96ddc06e9ec349dfd54d107279f4f4"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/BoardsTopbar.spec.tsx",
+      "sha256": "39644903f2662d8413a29d1c514e7fd92a606640eeb86f9f59e5fbc2be5d2c18"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/BoardsTopbar.tsx",
+      "sha256": "b29dc55ed7caedd37f4db39564d8acc39c982533ef92182ce2babe00284f3f4a"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/battle/BattleBoard.tsx",
+      "sha256": "52ddee6f81cc031e8e0127d304668c8989003f574593bf5b0a878b19252b0f0f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/board/BoardComposeEntry.spec.tsx",
+      "sha256": "8242c498c540574591b0175aa0824170f4e55294adf4b6c4054a1ce583c545f9"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/board/BoardComposeEntry.tsx",
+      "sha256": "382982cddd3e7eaada433d48c8dbe216b2b00a22665ea391d43b92612eb0b091"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/board/BoardHeading.tsx",
+      "sha256": null
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/coaching/CoachingBoard.tsx",
+      "sha256": "6eaaf5710bd9966f110b592c1b2dfe58cdf5fb22f5118e75c2890e3f71ccc118"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/feedback/FeedbackBoard.tsx",
+      "sha256": "81cb33cf81c3487089f95e2ac497722d7264f419fe03b5c07fdc70a1ba8e37de"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/free/FreeBoard.tsx",
+      "sha256": "04bda36eec315ff0760ea953a8df93c9e07a102514ff9bd368f5445087420e78"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/boards/ui/friend-sale/FriendSaleBoard.tsx",
+      "sha256": "ef04242c8fa0750b7bd8b60805670f299e4c344843ccac4bc4cd0673cd8a4101"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/compose/ui/ComposeRoute.tsx",
+      "sha256": "2c0102a8b0ee4885087b5baf3658c24eb2d1c5d76f7d0106b0b42ae8c356c7a8"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/compose/ui/CreatePostForm.tsx",
+      "sha256": "89e31ad0596de204ede7682284680e0cdb2a85060dea649bec086defea591013"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/feed/ui/FeedFilters.tsx",
+      "sha256": null
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/feed/ui/FeedPage.tsx",
+      "sha256": "d58e461b4b5247258ba435be50d245d46771571db1cac6834811d70b2b91f63e"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/feed/ui/FeedTopbar.spec.tsx",
+      "sha256": "70bd738043bb37943192ab4b3959da102d1f7b547599a1513219b6ccd7c96afe"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/feed/ui/FeedTopbar.tsx",
+      "sha256": "6cbcd8b7587221d2ba85ffae1ad83598a34b358de9be55a755945a590d082a94"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/info/ui/InfoPage.tsx",
+      "sha256": "cdb5310a0286bd26fd10de2776df55982327b4c3584af446fbff2ff3638b0af1"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/info/ui/contact/ContactTopbar.tsx",
+      "sha256": "5b63b913d25acc8d05ec519ba2f26e64452a64df8b56a5a78f33b6f502fb0bba"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/info/ui/guide/GuideTopbar.tsx",
+      "sha256": "c07b68c2508c4f6b259c83a45007f2d850c8ae9e1ccf202642315acd3884d1a8"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/info/ui/privacy/PrivacyTopbar.tsx",
+      "sha256": "8797fd69b2402a1956ce682128f10e18dfef7056e3371af9b2c7b2a8880b3098"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/info/ui/terms/TermsTopbar.tsx",
+      "sha256": "1c70000167c921b6bcee47f0ab00ca0278586faceda8b0718fe493e35e1b7019"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/login/index.server.tsx",
+      "sha256": "20457aa00a28d1f75f5809459d5ef3643b339266711b863927f14a7553806eb0"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/messages/ui/MessagesLayout.tsx",
+      "sha256": "1588cb249201f315f9241552d0f5dc2ce8a76363803cb495fce0d197bd5a8f23"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/messages/ui/MessagesPage.tsx",
+      "sha256": "194da7729204f824c06d4ae1d8380563054c3c65dcc1b42eaad59259aa32688b"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/messages/ui/conversation/ConversationTopbar.tsx",
+      "sha256": "3c19640a393c89ca94b5a8afc8ecbb42ed94e32f2abfc3d1c3a732a38400c68c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/messages/ui/list/MessagesTopbar.tsx",
+      "sha256": "85afe3d2cfdd2a8cd3a24bf939a5d13f199896121e5bec53f84f55b7b63848e7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/notifications/ui/NotificationsPage.tsx",
+      "sha256": "bd5af3d9eb9996598098b8bc3f8ae1687d013eeefb7ed076f5f43524c66e3397"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/notifications/ui/NotificationsTopbar.tsx",
+      "sha256": "50010cb41af16792460726a861a1c8f56f38672de747338d5f7e7dc16c85284e"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/onboarding/index.server.tsx",
+      "sha256": "88875cdbbce5812cc6411d2efecf646700fc68a20b2324e2b17939b70ac9880f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/post/index.server.tsx",
+      "sha256": "059b78c45836feabb08a5c4d46ea16fc203d1896e66b5e70c7acf458fec3f006"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/post/ui/editor/EditPostSheet.tsx",
+      "sha256": "0351a2ead23b22b2afd343ff2164994378d0af1169828fadcbb75422df2ff207"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/profile-edit/ui/ProfileEditPage.tsx",
+      "sha256": "f171c6eab5a7a47fc21992c637e9430bda2a79a92bc10fce67e6068a450c1f8c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/profile/index.server.tsx",
+      "sha256": "9b4d215a4d0afb57c2f63b361a29faca3fb532d3ce5f41057171eef0032b245b"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/profile/ui/BlockProfileButton.tsx",
+      "sha256": "ff537b7070af09945dcaa69f0c8f0f18c3a8ccf5ba82526a03e81793cee3c024"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/profile/ui/ProfilePage.tsx",
+      "sha256": "9cc4e1a1b2c4a977b380258539acd1cd32341628f4b884b2c7d1fdd8d5210fe7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/search/ui/SearchPage.tsx",
+      "sha256": "dad2b574e903f9971a9df316877c13984afc34535ddf77e0e52b457f55ca3aa4"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/search/ui/SearchTopbar.tsx",
+      "sha256": "48f69e0a766ed88215f544bc6860d93c19c466cf0eb884347886000367f3ece6"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/settings/ui/SettingsPage.tsx",
+      "sha256": "aa0b6b594820e286755e521e4f2d4cbab2ab9651301d64c436718f48b11e4247"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/settings/ui/SettingsTopbar.tsx",
+      "sha256": "21d7193967707ebae287163eb75295464430edd7940cb7caf5084905b3e179b9"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/settings/ui/posts/MyPosts.spec.tsx",
+      "sha256": "fdb5c19b7c4476a4dd957c351a4b8e71f49fae687780af6d60bd18fe5e44b18a"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/_pages/settings/ui/posts/MyPosts.tsx",
+      "sha256": "32d29142d5d73de72d651a7b5d8998e858e93bfffb1586a619ee3cfb5298250d"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/i18n/messages.ts",
+      "sha256": "9a96226ff211e20fbdedbd91336d12af30463d20b9e159afa2cad1acd684daa3"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/lib/use-is-scrolling.ts",
+      "sha256": "775d3a1b8c1a30cc89a13cefcf08ab87319cd1b0ece5893cc41ef82e00495b62"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/ErrorRecovery.tsx",
+      "sha256": "554f8693cf46bfa9b0545a405b00aa2a33782939860f622f481a1abb644c3ae2"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/Field.tsx",
+      "sha256": "58345b425d08f37ad3ff6a495c9415b4583a0c9a11ea0a94c84e41c53dec1f3f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/ServiceErrorBoundary.spec.tsx",
+      "sha256": "b4f8af27e02329424273e570a3b12360c9d02f4ba8b13232385fceedd8ec8f58"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/ServiceErrorBoundary.tsx",
+      "sha256": "a4803a2271cdcf372a776c3d3cf10c2377ab6c58bfe1cc599517db44566b5834"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/RichTextEditor.tsx",
+      "sha256": "3aef3cbc388b9a7cbdb7e2a13148d1dcdf68e1541dc5b726dc773de83d1e7907"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/TiptapEditor.spec.tsx",
+      "sha256": "53067c2b84de23e115fffeeca7766cb58d755be74749975983ad9de8527aac86"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/TiptapEditor.tsx",
+      "sha256": "adf1396e47a6ab726b9850516674ca455392b5ec06dba5ad1f9ef8a113e9b36d"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/TiptapLinkDialog.tsx",
+      "sha256": "d74c923c8ca793e544d22bcccbe6f8c017d82f009c03982f1ac884bc4b3981a7"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/TiptapToolbar.spec.tsx",
+      "sha256": "baf1864c0f2cb69ac8d0dd59dd9fda4057f178e5026f83d9c6af192ab9caa125"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/TiptapToolbar.tsx",
+      "sha256": "004c42894d7ccbf9e78dc3cb4b619f2f276d700d2265727da580f8cb727b8f4e"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/quill-media.ts",
+      "sha256": null
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/quill-session.ts",
+      "sha256": null
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/rich-text-editor.types.ts",
+      "sha256": "30eab8efd1a98c684197ef76c842a9c9fc52b79e1df2aab1a4d94b4047e45e4c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/tiptap-document.spec.ts",
+      "sha256": "4e2d03c378527d777e23e5fd71aa2e5b01e135d138bf6c477c759359c93d6e82"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/tiptap-document.ts",
+      "sha256": "176b14fd8c96a63842d0c213cf494adf90b995d2c0cbd1ea990859bdca5f41bd"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/shared/ui/rich-text/tiptap-extensions.ts",
+      "sha256": "02f8d4ea4b939c4f29e9f6609e1f40cc0a204db34bbd7c14ce1f2683b4903b4c"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/community-shell/ui/CommunityPage.test.tsx",
+      "sha256": "d795dfa7f6093391360d60f256e66acf34dbbe42a9dd5a3db61f030c807b0cc5"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/community-shell/ui/CommunityPage.tsx",
+      "sha256": "0aabca0b0522e3144014435852620163090d6c5391410e52b135ff45155efa3f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/community-shell/ui/navigation/GameBoardNavigation.tsx",
+      "sha256": "d87f5f3757eb5ae754d5b5f68e640608a30b61b3660ddf0a52afe3fb66570dd9"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/community-shell/ui/topbar/Topbar.tsx",
+      "sha256": "66e4ad0eb0a51b0eff58dd8ac49c542ef2a7ec4e7e6966f8a43d31e2f2b74883"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/compose-entry/index.ts",
+      "sha256": "5e76babd82c8dc68910c2284ff210ffdc9e98a9380eb0b1b77a067070a4c5802"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/compose-entry/ui/FloatingComposeButton.spec.tsx",
+      "sha256": "89845fc78f8f2236cf31bc965e87abd3305d4d2cf58af38b743a80df12447f7f"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/compose-entry/ui/FloatingComposeButton.tsx",
+      "sha256": "b3045533b2390459ac9f850088a1806ff7d2c9fd5ef6b5ccba4f8c170845772b"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/post-composer/index.ts",
+      "sha256": "da0bc7c2f905113fd961045bca553fcd16c6cd7d0f0bb725299c99bb624df38d"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/post-composer/ui/CoachingFields.spec.tsx",
+      "sha256": "d634acb566f8464a40a727b11e6fd61de6ff71560379de7b9a3000141aeb8f01"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/post-composer/ui/CoachingFields.tsx",
+      "sha256": "af4204b6e083c9de783ae8b34f58979b580f68e4fc360d180249378225e70b8e"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/post-composer/ui/PostContentFields.tsx",
+      "sha256": "f2ee880948431a6a8bc92e2de3db6aeb9a92aea497e30fa4e173d85b296a9e5b"
+    },
+    {
+      "path": "projects/game-feedback/apps/web/src/widgets/post-composer/ui/focus-invalid-post-content.ts",
+      "sha256": "ffc81b6542e72f55c2870412b44feaf8676ff839c43fcc71fb35ebe573081403"
+    },
+    {
+      "path": "projects/game-feedback/docs/features.md",
+      "sha256": "8fd3d0b210a248edc0d9cc4f8d070be442422c7d20b2a987cd6e4a3215861c47"
+    },
+    {
+      "path": "projects/game-feedback/docs/implementation.md",
+      "sha256": "105ef6becf0d83d40d46259876737e160dc5b1e75a9b4bfad3c7a88efec3003b"
+    },
+    {
+      "path": "yarn.lock",
+      "sha256": "92dc752b399a3704a80ab531b27d2499366f378215338bbfad62166ccce9fbdf"
+    }
+  ]
+}
