@@ -7,13 +7,13 @@ import { useQuery } from '@tanstack/react-query';
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
 import { buttonVariants, cn } from '@side/design-system';
+import { useScrollVisibility } from '@side/design-system/lib/use-scroll-visibility';
 
 import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
 
-import { useBoardNavigationVisibility } from '../../model/use-board-navigation-visibility';
 import { useCurrentChipScroll } from '../../model/use-current-chip-scroll';
 import { GameIcon } from './GameIcon';
 
@@ -23,7 +23,7 @@ interface IGameBoardNavigationProps {
 }
 export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps) {
   const { t } = useI18n();
-  const { ref: navigationRef, hidden } = useBoardNavigationVisibility();
+  const { ref: navigationRef, hidden } = useScrollVisibility<HTMLDivElement>();
   const categories = useQuery(categoryOptions());
   const selected = activeGameBoard(path);
   const route = resolveAppRoute(path);

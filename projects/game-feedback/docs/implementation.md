@@ -1764,3 +1764,11 @@ Next의 `cacheComponents`·`partialPrefetching`과 기존 첫 문서/클라이�
 새 production 빌드 한 번에서 프로필 3개, 360·390px 칩 방향 2개, 두 motion 조건의 게시판 전환 2개가 통과했다(7/7). 프로필 검사는 키보드 메뉴 이동과 Escape, 신고/로그인/차단 대화상자 종료 후 포커스, 실제 신고 접수, 자기 프로필의 메뉴 부재, 실제 차단 후 안내·피드 이동·공개 조회 404를 확인한다. 이후 칩 훅 반환값을 바로 분해하는 문법 정리로 refs lint의 객체 오인을 해소했으며, 정리 후 타입·lint·전체 단위 검증이 통과했다. 7개 브라우저 결과는 문법 정리 전의 소스 manifest로 보존한다.
 
 메뉴 캡처가 열림 전환보다 먼저 기록되지 않도록 가시성·opacity 1을 기다린 뒤, 같은 production artifact로 프로필 3개만 재검증해 통과했다. 비회원·회원의 열린 메뉴와 비회원의 닫힌 동작 영역 등 대표 PNG 3장을 시각 확인했다. 첫 7개 결과와 후속 3개 결과는 `.data/design-review/profile-actions-menu/combined-7`과 `results`에 구분하며, 후속 실행은 재빌드하지 않았고 BUILD_ID도 같았다. 생성한 스키마 2개와 전용 서버·임시 앱 설정을 정리했으며 기존 개발 서버와 DB 프로세스는 유지했다.
+
+### 공통 Motion과 스크롤 표시 수명 (2026-11-01)
+
+Motion 14.9.0의 의존성과 전역 정책은 공통 DS가 소유한다. Game Mate의 `shared/motion`은 공통 `MotionProvider`, `useMotionPreference`, 공식 `m`·`AnimatePresence`·`useAnimate`의 명시적 재수출만 남기고 앱의 중복 provider·hook·전환 상수와 직접 framer-motion 의존성을 제거했다. 기존 ServiceProviders의 위치를 유지해 페이지와 overlay 모두 같은 context를 사용한다. 기본 0.2초 전환과 easing, 서버 첫 렌더의 모션 감소, 사용자 설정 구독, LazyMotion의 strict 정책도 유지한다. 게시판 칩은 동일한 방향 규칙과 callback ref 수명을 가진 공통 `useScrollVisibility`를 사용한다.
+
+최종 앱 전체 단위 검증은 99파일 386개이며 타입·관련 lint·format, Node 24/Yarn 4.17의 설치와 immutable 검사가 통과했다. 이전 100파일 389개에서 빠진 한 파일의 3개는 공통 패키지로 이동한 스크롤 방향 테스트다. Root는 결합된 GF worktree에서 공통 DS 37파일 210개와 루트 Knip의 통과를 별도로 확인했다. 앱이 사용하는 공개 Motion 진입점과 DS 내부의 Motion·framer-motion 14.9.0 정합을 확인했으며 앱 소스에 직접 Motion 패키지 import는 남기지 않았다.
+
+같은 새 production 빌드에서 기존 모션 상호작용 2개와 360·390px 칩 방향 2개가 통과했다(4/4). 키보드·Escape·포커스 복귀, 실제 도움됨 변경과 토스트, 런타임 모션 감소 전환, 칩의 숨김·복원을 기존 단언으로 확인했다. 모션 조건별 PNG 2장은 정상 내용과 하단 메뉴 위 토스트를 시각 확인했다. 소스 manifest와 결과는 `.data/design-review/common-motion-consumers`에 보존했으며 실행 중 소스 hash 변경은 없었다. 생성한 테스트 스키마와 3353·4353 전용 서버·임시 앱 설정을 정리했다. 이 4개는 이전 단계의 7개·9개·instant 결과와 구분한다.

@@ -36,7 +36,6 @@
     "@tiptap/starter-kit": "3.32.2",
     "dayjs": "catalog:",
     "es-toolkit": "catalog:",
-    "framer-motion": "14.3.0",
     "linkify-react": "4.3.3",
     "linkifyjs": "4.3.3",
     "lucide-react": "catalog:",

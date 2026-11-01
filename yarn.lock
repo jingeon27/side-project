@@ -3193,7 +3193,6 @@ __metadata:
     dayjs: "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
-    framer-motion: "npm:14.3.0"
     jiti: "catalog:"
     jsdom: "catalog:"
     linkify-react: "npm:4.3.3"
@@ -14550,25 +14549,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"framer-motion@npm:14.3.0":
-  version: 14.3.0
-  resolution: "framer-motion@npm:14.3.0"
-  dependencies:
-    motion-dom: "npm:14.3.0"
-    motion-utils: "npm:14.1.1"
-    tslib: "npm:^2.4.0"
-  peerDependencies:
-    react: ^18.0.0 || ^19.0.0
-    react-dom: ^18.0.0 || ^19.0.0
-  peerDependenciesMeta:
-    react:
-      optional: true
-    react-dom:
-      optional: true
-  checksum: 10c0/66fc2c8dbe68e9ff3241440969e02dd22c8c96bac1a380987510b77e8e25d6bbd05f8192e9b5a74cd32790719c7971d31cea8c9156fb58538d0885c9fbf7b28e
-  languageName: node
-  linkType: hard
-
 "framer-motion@npm:14.7.1":
   version: 14.7.1
   resolution: "framer-motion@npm:14.7.1"
@@ -17946,15 +17926,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"motion-dom@npm:14.3.0":
-  version: 14.3.0
-  resolution: "motion-dom@npm:14.3.0"
-  dependencies:
-    motion-utils: "npm:14.1.1"
-  checksum: 10c0/0675ecf947f675acf7710b64a3ddece2fbc0bb490130333e7c695967eee55ea8cba52c1eb15df9277eda6766f029b63785c658ea869e5f14ffb3d33fdc731947
-  languageName: node
-  linkType: hard
-
 "motion-dom@npm:14.7.1":
   version: 14.7.1
   resolution: "motion-dom@npm:14.7.1"
@@ -17970,13 +17941,6 @@ __metadata:
   dependencies:
     motion-utils: "npm:14.7.0"
   checksum: 10c0/457195a40365be1311ecad6dd07b88e6da6b3c1f332747932a9ec7dda1b3828a5a20754349e2ce477083d60bef6138d60fab8f7c8ee6a590f2794cc8946b6f85
-  languageName: node
-  linkType: hard
-
-"motion-utils@npm:14.1.1":
-  version: 14.1.1
-  resolution: "motion-utils@npm:14.1.1"
-  checksum: 10c0/ee89684857aae2b02897d7297568e1e6dc6c1eec08c61533fbc0a9650de5d5c454aa888532b825baabac92defddecd364cbb8cd7fa63b2171152edf8f9f819f0
   languageName: node
   linkType: hard
 
