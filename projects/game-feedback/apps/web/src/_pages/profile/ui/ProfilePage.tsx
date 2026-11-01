@@ -29,7 +29,7 @@ import { BackLink } from '@/shared/navigation';
 import { Avatar, LinkifiedText, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { StartChatLink } from '@/widgets/start-chat';
 
-import { ReportUserButton } from './ReportUserButton';
+import { ProfileActionsMenu } from './ProfileActionsMenu';
 
 interface IProfilePageProps {
   id: string;
@@ -123,7 +123,9 @@ function ProfileContent({
               variant="accent"
               size="md"
             />
-            <ReportUserButton userId={author.id} />
+            <div className="profile-safety-actions">
+              <ProfileActionsMenu author={author} locale={locale} />
+            </div>
           </div>
         )}
       </section>

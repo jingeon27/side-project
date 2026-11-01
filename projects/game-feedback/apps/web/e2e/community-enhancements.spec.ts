@@ -257,7 +257,8 @@ test('verification opens a private admin chat and an administrator reviews user 
     });
     const reporter = await reporterContext.newPage();
     await reporter.goto(`/ko/users/${userId}`);
-    await reporter.getByRole('button', { name: '사용자 신고', exact: true }).click();
+    await reporter.getByRole('button', { name: `문의_${suffix}님의 프로필 메뉴`, exact: true }).click();
+    await reporter.getByRole('menuitem', { name: '사용자 신고', exact: true }).click();
     const dialog = reporter.getByRole('dialog');
     await dialog.getByLabel('신고 사유', { exact: true }).selectOption('HARASSMENT');
     await dialog.getByLabel('추가 설명 (선택)', { exact: true }).fill(`사용자 신고 ${suffix}`);
