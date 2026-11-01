@@ -1,6 +1,8 @@
 import { StrictMode, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { MotionProvider } from '@side/design-system/ui/motion-provider';
+
 import { PullToRefresh } from '../../src/shared/ui/@core/pull-to-refresh/PullToRefresh';
 import { PostFeedExample } from './PostFeedExample';
 import { StatusAnimationsExample } from './StatusAnimationsExample';
@@ -44,6 +46,12 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Component test root is missing.');
 createRoot(root).render(
   <StrictMode>
-    {Object.hasOwn(examples, example) ? examples[example as keyof typeof examples] : <PullToRefreshExample />}
+    <MotionProvider>
+      {Object.hasOwn(examples, example) ? (
+        examples[example as keyof typeof examples]
+      ) : (
+        <PullToRefreshExample />
+      )}
+    </MotionProvider>
   </StrictMode>,
 );

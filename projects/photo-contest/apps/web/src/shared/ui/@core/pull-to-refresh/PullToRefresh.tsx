@@ -12,7 +12,9 @@ import {
 
 import { Mutex } from 'es-toolkit';
 import { RefreshCw } from 'lucide-react';
-import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
+
+import { m, useMotionValue, useSpring } from '@side/design-system/lib/motion';
+import { useMotionPreference } from '@side/design-system/lib/use-motion-preference';
 
 import { Spinner } from '../spinner/Spinner';
 
@@ -30,7 +32,7 @@ export function PullToRefresh({
   const [refreshMutex] = useState(() => new Mutex());
   const pullDistance = useMotionValue(0);
   const springDistance = useSpring(pullDistance, { stiffness: 400, damping: 40 });
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useMotionPreference();
   const subscribeToDistance = useCallback(
     (onChange: () => void) => pullDistance.on('change', onChange),
     [pullDistance],
@@ -135,7 +137,7 @@ export function PullToRefresh({
       >
         피드 새로고침
       </button>
-      <motion.div
+      <m.div
         role="status"
         aria-live="polite"
         className="flex items-center justify-center gap-2 overflow-hidden text-caption text-muted"
@@ -147,7 +149,7 @@ export function PullToRefresh({
             {pending ? '새로고침 중' : phase === 'ready' ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
           </>
         ) : null}
-      </motion.div>
+      </m.div>
       {children}
     </div>
   );

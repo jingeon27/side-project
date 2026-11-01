@@ -524,3 +524,9 @@ Link의 사전 로딩이 사라지지 않도록 인증된 사용자의 단일 �
 최종 관련 단위/UI 9파일 44개, typecheck·변경 TypeScript lint·format 검사가 통과했다. production의 홈·탐색 복수 그룹 흐름 6개가 Pixel 7 Chrome, iPhone 15 Safari, 데스크톱 Chrome에서 통과했다(브라우저 프로젝트 3개, Chromium·WebKit 2엔진). 첫 시트와 선택 시트의 포커스, 접근성 트리의 최상위 대화상자 1개, Escape·뒤로 가기, 그룹 선택 뒤 두 시트 제거, 작성 화면에서 Back→홈→Forward→작성 화면까지 검증했다. 첫 생성 그룹이 목록 첫 항목일 것이라는 초기 E2E 가정은 실제 목록 첫 행동을 검사하도록 바로잡았으며, 이를 제품 포커스 결함으로 보았던 판정도 정정했다. 단위 검사에서 확인한 포커스 복귀·초기 Escape 문제와 브라우저에서 재현한 Forward 문제, 수정 전 실패 로그와 최종 통과 로그는 `.data/design-review/shared-fab/`에 구분해 보존했다.
 
 최종 push 전 전체 unit/UI를 다시 실행해 155파일 652개가 통과했다. 첫 실행의 4개 실패는 홈 테스트 두 파일의 라우터 mock에 prefetch가 없어서 발생했으며, mock에 해당 공개 메서드만 추가하고 기존 검증과 제품 코드는 유지했다. 관련 6개와 전체 652개를 다시 확인했고, 전체 웹 lint 및 변경 mock의 형식 검사도 통과했다. 앞선 production 33개·prefetch 12개·별도 시트 및 앞뒤 이동 6개는 각 단계의 실행으로 구분한다.
+
+### 페이지와 오버레이의 공통 Motion (2026-11-01)
+
+AppProviders는 공통 DS의 `MotionProvider`를 OverlayProvider 바깥에 두어 페이지와 열린 시트가 같은 전역 설정을 사용한다. Motion 14.9.0은 DS만 직접 의존하고 앱의 기존 motion 의존성은 제거했다. 당겨서 새로고침도 DS가 공개하는 공식 `m`·`useMotionValue`·`useSpring`과 `useMotionPreference`를 사용한다. `m.div`로 LazyMotion strict 정책에 맞추며 기존 스프링 값과 터치·핀치·키보드·요청 수명은 유지한다. 기본 0.2초 전환과 사용자 모션 감소 정책은 공통 provider가 소유한다.
+
+관련 단위/UI는 AppApolloProvider·BridgeProvider·루트 레이아웃·작성 진입·당겨서 새로고침의 5파일 39개가 통과했다. 타입·관련 lint·format, Node 24/Yarn 4.17의 설치와 immutable 검사도 통과했다. 실제 컴포넌트 브라우저 fixture에도 같은 공통 provider를 적용하고 기존 당겨서 새로고침 8개를 검증했다. Chromium 6개에서 실제 브라우저의 합성 터치 스크롤·중첩 목록·임계값·핀치 취소·키보드·모션 감소를, WebKit 2개에서 키보드와 모션 감소를 확인했다. 실기기 제스처 검증은 아니다. 최종 형식 정리 뒤 8개가 다시 통과했고 실행 중 소스 hash 변경은 없었다. 결과와 소스 manifest는 `.data/design-review/common-motion-consumers`에 보존하고 전용 fixture 서버 3349를 정리했다. 앞선 전체 652개와 production 33개·12개·6개를 이번 소스로 다시 실행했다고 주장하지 않는다.
