@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { Contest } from '../../generated/prisma';
 import { CLEANUP_BATCH_SIZE, NOTIFICATION_FANOUT_BATCH_SIZE } from '../config/limits';
@@ -25,7 +26,7 @@ export class ContestNotificationService {
   ) {}
 
   /** @returns 이번 주기에 처리를 시도한 대회 수 */
-  async sendDue(now = new Date()) {
+  async sendDue(now = dayjs().toDate()) {
     const waiting = [...this.failures].filter(([, failure]) => failure.retryAt > now.getTime());
     const contests = await this.db.contest.findMany({
       where: {

@@ -8,5 +8,12 @@ import { sitemapDocument, sitemapResponse } from '@/shared/lib/sitemap.helper';
 export async function GET() {
   await connection();
   const origin = getWebOrigin();
-  return sitemapResponse(sitemapDocument([siteUrl(ROUTES.HOME, origin), siteUrl(ROUTES.EXPLORE, origin)]));
+  return sitemapResponse(
+    sitemapDocument([
+      siteUrl(ROUTES.HOME, origin),
+      siteUrl(ROUTES.LANDING, origin),
+      siteUrl(ROUTES.HOW_IT_WORKS, origin),
+      siteUrl(ROUTES.EXPLORE, origin),
+    ]),
+  );
 }

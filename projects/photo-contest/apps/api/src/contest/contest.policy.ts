@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { fail } from '../common/errors';
@@ -25,7 +26,7 @@ const scheduleSchema = z.object({
 });
 
 /** 단계는 저장하지 않고 서버 시각으로 계산한다. 마감 시각 자체는 다음 단계에 속한다. */
-export function phase(contest: IContestSchedule, now = new Date()): TPhase {
+export function phase(contest: IContestSchedule, now = dayjs().toDate()): TPhase {
   if (now < contest.startsAt) return PHASE.UPCOMING;
   if (now < contest.submissionEndsAt) return PHASE.SUBMISSION;
   if (now < contest.endsAt) return PHASE.VOTING;
@@ -37,7 +38,7 @@ export function contestDates(
   startsAt: unknown,
   submissionEndsAt: unknown,
   endsAt: unknown,
-  now = new Date(),
+  now = dayjs().toDate(),
 ): IContestSchedule {
   const parsed = scheduleSchema.safeParse({ startsAt, submissionEndsAt, endsAt });
   if (!parsed.success) fail('올바른 대회 시각을 입력해 주세요.');

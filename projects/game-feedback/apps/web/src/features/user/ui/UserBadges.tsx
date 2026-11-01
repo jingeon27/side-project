@@ -14,6 +14,7 @@ interface IUserBadgesProps {
 }
 export function UserBadges({ author, compact = false, showTag = true }: IUserBadgesProps) {
   const { t } = useI18n();
+  if (!author.isVerified && !(showTag && author.supercellTag)) return null;
   return (
     <span className="user-badges" data-compact={compact || undefined}>
       {author.isVerified && (

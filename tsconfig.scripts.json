@@ -7,6 +7,6 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts", "knip.ts"],
+  "include": ["scripts/**/*.ts", "deploy/shared-instance/scripts/service-ci.ts", "knip.ts"],
   "exclude": ["scripts/**/*.spec.ts", "scripts/**/*.test.ts"]
 }

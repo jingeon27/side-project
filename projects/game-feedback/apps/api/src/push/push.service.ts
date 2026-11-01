@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { match } from 'ts-pattern';
 
 import {
@@ -90,7 +91,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
 
   async runOnce(
     transport = new ExpoPushTransport({ accessToken: this.config.mobilePush.accessToken }),
-    now = new Date(),
+    now = dayjs().toDate(),
   ) {
     const dispatcher = new PushDispatcher(
       {
@@ -126,7 +127,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     );
     await dispatcher.run(now);
     await this.db.pushDelivery.deleteMany({
-      where: { createdAt: { lt: new Date(now.getTime() - 2 * 86_400_000) } },
+      where: { createdAt: { lt: dayjs(now.getTime() - 2 * 86_400_000).toDate() } },
     });
     await this.db.pushDevice.deleteMany({ where: { session: { expiresAt: { lte: now } } } });
   }
@@ -144,7 +145,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
         id: job.deviceId,
         enabled: true,
         user: { bannedAt: null, withdrawnAt: null },
-        session: { expiresAt: { gt: new Date() } },
+        session: { expiresAt: { gt: dayjs().toDate() } },
       },
       include: { session: { select: { userId: true } } },
     });

@@ -53,7 +53,7 @@ test(
     await expect(page.getByRole('article', { name: '우승할 웃긴 순간', exact: true })).toBeVisible();
 
     await page.goto(groupPath);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).not.toBeChecked();
     await sheet.getByRole('checkbox', { name: /대회에 참여하기/ }).check();
     await sheet.getByLabel('참여할 대회').selectOption(contestId);
@@ -167,8 +167,8 @@ test(
       groupId: group.id,
     });
     await page.goto(`/groups/${group.id}`);
-    await expect(page.getByText('카테고리 관리', { exact: true })).toBeVisible();
-    await page.getByText('초대와 그룹 멤버', { exact: true }).click();
+    await expect(page.getByText('카테고리 관리', { exact: true }).filter({ visible: true })).toBeVisible();
+    await page.getByText('초대와 그룹 멤버', { exact: true }).filter({ visible: true }).click();
     await page.getByRole('button', { name: `${nickname} 부관리자 임명`, exact: true }).click();
     await expect(page.getByRole('button', { name: `${nickname} 부관리자 해제`, exact: true })).toBeVisible();
     await page.getByRole('button', { name: `${nickname} 부관리자 해제`, exact: true }).click();

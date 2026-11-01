@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { conversationPair } from './chat/conversation/conversation-pair';
 import { createPrismaAdapter } from './database/prisma-adapter';
 import { Prisma, PrismaClient } from './generated/prisma';
@@ -58,7 +60,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
           termsVersion: 'demo',
           ageConfirmed: true,
           isVerified: fixture?.isVerified ?? false,
-          verifiedAt: fixture?.isVerified ? new Date() : null,
+          verifiedAt: fixture?.isVerified ? dayjs().toDate() : null,
           supercellTag: fixture?.supercellTag ?? null,
         },
       }),
@@ -132,7 +134,9 @@ export async function seed(db: PrismaClient, demoMode = false) {
         categoryId: category.id,
         title,
         body,
-        createdAt: new Date(Date.now() - (i + 1) * 1000 * 60 * 37),
+        createdAt: dayjs()
+          .subtract((i + 1) * 1000 * 60 * 37, 'millisecond')
+          .toDate(),
       },
     });
   }
@@ -190,7 +194,9 @@ export async function seed(db: PrismaClient, demoMode = false) {
       id: 'sample-conversation-0-3',
       firstUserId,
       secondUserId,
-      updatedAt: new Date(Date.now() - 1000 * 60 * 19),
+      updatedAt: dayjs()
+        .subtract(1000 * 60 * 19, 'millisecond')
+        .toDate(),
     },
   });
   const sampleMessages = [
@@ -216,7 +222,9 @@ export async function seed(db: PrismaClient, demoMode = false) {
       create: {
         ...message,
         conversationId: conversation.id,
-        createdAt: new Date(Date.now() - 1000 * 60 * (20 - i)),
+        createdAt: dayjs()
+          .subtract(1000 * 60 * (20 - i), 'millisecond')
+          .toDate(),
       },
     });
   }

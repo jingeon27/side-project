@@ -12,6 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Web FSD와 코드 규칙
 
 - `src/app`은 Next 라우트 어댑터만 둔다. 화면은 `_pages`, 앱 조합·Provider·전역 스타일은 `_app`, 여러 화면의 조합 UI는 `widgets`, 서버 도메인은 `features`, 도메인 비의존 코드는 `shared`가 소유한다. `entities` 레이어를 별도로 만들지 않는다.
+- 페이지 전용 폼·조회 조합·탐색 흐름과 그 하위 UI·스키마·테스트는 `_pages/<screen>`에 둔다. 서버 모델을 쓴다는 이유로 features에 두지 않는다. 재사용하는 도메인 카드·동작·IO는 features, 여러 페이지의 공유 조합은 widgets가 소유한다.
 - features의 `api`는 REST SDK와 요청·응답 IO, `model`은 query options와 mutation options를 소유한다. 페이지의 폼·흐름·URL 상태를 features의 서버 상태와 분리한다. GraphQL을 추가하지 않는다.
 - 다른 slice는 명시적인 named export `index.ts`를 통한다. server-only REST·메타데이터 진입점은 공통 FSD lint가 허용하는 `index.server.ts`/`index.server.tsx`에서 공개하며 client barrel에 재수출하지 않는다. 상위 레이어 import·자기 barrel import·페이지 간 직접 import는 금지한다.
 - `*.options.ts`의 `queryOptions`/`infiniteQueryOptions`가 쿼리 키의 단일 출처다. 조회·무효화·캐시 쓰기는 같은 factory를 재사용한다. 인자가 없으면 prefix, 조회에 필요한 인자가 없으면 `skipToken`을 사용한다. 서버 조회를 감싼 전용 useQuery 훅은 만들지 않는다.
@@ -28,6 +29,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `lint`는 공유 Next·FSD preset과 앱의 query-key 규칙을 실제 검사한다. `@side/game-feedback check`에도 포함된다. Vitest와 Playwright는 Web이 소유한다.
 
 
+여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
+
 ## 앱 링크·로그인 콜백
 
 - 앱 소셜 로그인 콜백은 `/app-auth/callback`(`src/app/app-auth/callback/route.ts` → `_app/app-links/app-auth-callback.ts`)이다. 앱이 없거나 링크가 검증되지 않아 브라우저에서 열릴 때만 보이며, 요청을 읽지 않고 스크립트·분석·Sentry 없이 "앱에서 계속" 안내만 준다(no-store, `Referrer-Policy: no-referrer`, noindex, 주소창의 코드는 해시 허용 인라인 스크립트로 지운다). Next는 설정 헤더가 있으면 Route Handler의 같은 이름 헤더를 버리므로 `next.config.ts`의 공통 보안 헤더 source에서 이 경로만 뺀다(`next.config.spec.ts`).
@@ -35,7 +38,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 공통 디자인 시스템
 
-- Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공식 shadcn/ui Base UI/base-nova 소스와 components.json 설정은 공통 패키지가 소유하며 웹 설정의 ui/utils alias도 그 패키지를 가리킨다. 보이는 폼 컨트롤은 Input/Textarea/NativeSelect/Checkbox를 사용하고 hidden/file 입력과 Quill 전용 DOM만 해당 구현을 유지한다. Checkbox는 RHF Controller로 연결하고 피드 Tabs는 URL을 제어값으로 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
+- Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공식 shadcn/ui Base UI/base-nova 소스와 components.json 설정은 공통 패키지가 소유하며 웹 설정의 ui/utils alias도 그 패키지를 가리킨다. 보이는 폼 컨트롤은 Input/Textarea/NativeSelect/Checkbox를 사용하고 hidden/file 입력과 Tiptap contenteditable DOM만 해당 구현을 유지한다. Checkbox는 RHF Controller로 연결하고 피드 Tabs는 URL을 제어값으로 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
 - CSS 진입점은 `_app/styles/tailwind.css`이며 공통 styles를 가져온 뒤 앱 도메인별 CSS를 components 레이어로 구성한다. 공통 토큰과 버튼·입력·모달 표현을 앱에서 중복 정의하지 않는다.
 - 앱 고유 게임 카드 표현과 화면 레이아웃은 앱에 둔다. Next ButtonLink는 `@side/design-system/next`를 사용하고, 폼 제출 버튼은 type="submit"을 명시한다.
 - 실제 데이터에 근거하지 않는 LIVE/ACTIVE 상태, 장식용 점과 가운데 점, 불필요한 영문 대문자 라벨과 별/궤도/떠 있는 카드 장식을 추가하지 않는다. 읽지 않은 항목은 숫자나 문구로 표시하고 실제 SSE 상태는 텍스트로 전달한다. 사용자 콘텐츠 원문은 바꾸지 않는다.
@@ -44,10 +47,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 앱 스킬
 
-| 작업 | 스킬 |
-| --- | --- |
-| 화면·라우트·페이지 Topbar·첫 문서 데이터·SEO·오류 경계 | `.agents/skills/game-feedback-web-page-structure/SKILL.md` |
-| 링크·뒤로 가기·게시판 문맥·URL 상태·locale·앱 WebView 연동 | `.agents/skills/game-feedback-web-navigation/SKILL.md` |
-| REST 조회·mutation·쿼리 키·계정 전환·채팅 SSE | `.agents/skills/game-feedback-web-server-state/SKILL.md` |
-| 글쓰기·Quill 본문·사진/동영상·채팅 첨부 업로드 | `.agents/skills/game-feedback-web-compose-media/SKILL.md` |
-| Playwright 설정·격리 서버·로그인·한 spec 실행 | `.agents/skills/game-feedback-web-e2e/SKILL.md` |
+[game-feedback-web](../../.agents/skills/game-feedback-web/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.

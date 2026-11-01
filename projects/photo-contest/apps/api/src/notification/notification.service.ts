@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
@@ -114,7 +115,7 @@ export class NotificationService {
     return this.db.atomic(async (tx) => {
       const updated = await tx.notification.updateMany({
         where: { userId: viewer.id, ...(id ? { id } : {}), readAt: null },
-        data: { readAt: new Date() },
+        data: { readAt: dayjs().toDate() },
       });
       if (
         id &&

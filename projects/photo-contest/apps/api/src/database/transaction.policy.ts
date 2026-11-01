@@ -16,6 +16,7 @@ const UNIQUE_CONFLICT_MESSAGE: Readonly<Record<string, string>> = {
   Submission_contestId_authorId_key: ERROR_MESSAGE.ALREADY_SUBMITTED,
   Submission_uploadId_key: ERROR_MESSAGE.UPLOAD_ALREADY_USED,
   Post_uploadId_key: ERROR_MESSAGE.UPLOAD_ALREADY_USED,
+  Post_authorId_clientRequestId_key: ERROR_MESSAGE.ALREADY_DONE,
 };
 
 function serializationFailure(attempt: number): TTransactionFailure {

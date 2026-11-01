@@ -17,12 +17,14 @@ test(
     await expect(page.getByRole('button', { name: '익명으로 시작하기', exact: true })).toHaveCount(0);
     await page.goto(`/groups/${publicGroup.id}`);
     await page.getByRole('button', { name: '그룹 가입하기', exact: true }).click();
-    await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
     await page.goto('/me');
     const nickname = await page.getByRole('heading', { level: 2 }).first().innerText();
     await expect(page.getByRole('link', { name: '로그인 · 회원가입', exact: true })).toHaveCount(0);
     await expect(
-      page.getByText('다른 기기에서도 프로필과 기록을 이어가고 싶다면', { exact: false }),
+      page
+        .getByText('다른 기기에서도 프로필과 기록을 이어가고 싶다면', { exact: false })
+        .filter({ visible: true }),
     ).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     const logout = page.getByRole('alertdialog', { name: '익명 프로필에서 로그아웃할까요?' });
@@ -79,7 +81,7 @@ test(
     await expect(page.getByRole('button', { name: '익명으로 시작하기', exact: true })).toHaveCount(0);
     await page.goto(`/groups/${group.id}`);
     await page.getByRole('button', { name: '그룹 가입하기', exact: true }).click();
-    await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
     await page.goto('/me');
     await page.getByRole('link', { name: '회원가입', exact: true }).click();
     const signup = page.getByRole('tabpanel', { name: '회원가입', exact: true });

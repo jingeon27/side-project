@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Gamepad2, LogOut, Trash2 } from 'lucide-react';
+import { ArrowUpRight, LogOut, Trash2, UserRound } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -15,13 +15,13 @@ import { Avatar, ErrorNotice, openOverlay, useNotify } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 import { SupportChatButton } from '@/widgets/support';
 
-import { BlockedUsersSection } from './BlockedUsersSection';
-import { DeleteAccountDialog } from './DeleteAccountDialog';
-import { GameAccountsSection } from './GameAccountsSection';
-import { LanguageSettings } from './LanguageSettings';
-import { MyPosts } from './MyPosts';
+import { DeleteAccountDialog } from './account/DeleteAccountDialog';
+import { BlockedUsersSection } from './blocked-users/BlockedUsersSection';
+import { GameAccountsSection } from './game-accounts/GameAccountsSection';
+import { MyPosts } from './posts/MyPosts';
+import { LanguageSettings } from './preferences/LanguageSettings';
+import { ThemeSettings } from './preferences/ThemeSettings';
 import { SettingsTopbar } from './SettingsTopbar';
-import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
   locale: string;
@@ -43,10 +43,12 @@ function SettingsContent({ locale }: ISettingsPageProps) {
         <LanguageSettings />
         <ThemeSettings />
         <div className="empty-feed">
-          <span>
-            <Gamepad2 size={30} />
+          <span
+            aria-hidden
+            className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+          >
+            <UserRound className="size-full" />
           </span>
-          <h1>{t('나의 플레이 공간')}</h1>
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
           <Button variant="primary" size="md" type="button" className="button" onClick={login}>
             {t('로그인 / 시작하기')}
@@ -57,10 +59,6 @@ function SettingsContent({ locale }: ISettingsPageProps) {
     );
   return (
     <>
-      <div className="page-heading">
-        <h1>{t('나의 플레이 공간')}</h1>
-        <p>{t('프로필부터 계정까지, 필요한 설정을 한곳에서.')}</p>
-      </div>
       <section className="settings-card">
         <div className="settings-profile">
           <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="large" />
@@ -117,7 +115,11 @@ function SettingsContent({ locale }: ISettingsPageProps) {
 export function SettingsPage(props: Parameters<typeof SettingsContent>[0]) {
   const { t } = useI18n();
   return (
-    <CommunityPage locale={props.locale} topbar={<SettingsTopbar locale={props.locale} />}>
+    <CommunityPage
+      screenKey="settings"
+      locale={props.locale}
+      topbar={<SettingsTopbar locale={props.locale} />}
+    >
       <SettingsContent {...props} />
       <section className="settings-card">
         <h2>{t('서비스 안내')}</h2>

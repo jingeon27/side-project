@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { AnswerPage } from '@game-feedback/contracts';
 
 import { ACTIVE_CONTENT } from '../common/content';
@@ -30,11 +32,12 @@ export function decodeAnswerCursor(value?: string): IAnswerPosition | null {
       typeof parsed[0] !== 'boolean' ||
       typeof parsed[1] !== 'string' ||
       typeof parsed[2] !== 'string' ||
-      !parsed[2] ||
-      Number.isNaN(Date.parse(parsed[1]))
+      !parsed[2]
     )
       throw new Error();
-    return { helpful: parsed[0], createdAt: new Date(parsed[1]), id: parsed[2] };
+    const timestamp = Date.parse(parsed[1]);
+    if (Number.isNaN(timestamp)) throw new Error();
+    return { helpful: parsed[0], createdAt: dayjs(timestamp).toDate(), id: parsed[2] };
   } catch {
     throw new ApiError(400, 'INVALID_CURSOR', '목록 위치가 올바르지 않습니다.');
   }

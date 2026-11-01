@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
@@ -166,7 +167,7 @@ export class NotificationsService {
   async readNotification(req: SessionRequest, id?: string) {
     const u = requireUser(req);
     const where = { userId: u.id, ...(id ? { id } : {}), readAt: null };
-    const data = { readAt: new Date() };
+    const data = { readAt: dayjs().toDate() };
     const results = await this.db.$transaction([
       this.db.notification.updateMany({ where, data }),
       this.db.chatNotification.updateMany({ where, data }),

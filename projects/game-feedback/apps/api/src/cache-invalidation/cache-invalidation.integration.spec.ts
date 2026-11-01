@@ -4,6 +4,7 @@ import { createServer, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,7 +40,6 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
   let coach: TAgent;
   let admin: TAgent;
   let status = 200;
-  let now = Date.now();
   let pauseNext = false;
   let notifyPaused = () => {};
   let resumePaused = () => {};
@@ -122,13 +122,15 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
     admin = await account('sample-test-admin');
   }, 30_000);
   beforeEach(async () => {
-    now += 10_000;
-    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const now = dayjs().add(10, 'second').toDate();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now);
     await db.cacheInvalidation.deleteMany();
     callbacks.length = 0;
     status = 200;
   });
   afterAll(async () => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     resumePaused();
     await app?.close();
@@ -265,7 +267,7 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
       pending.revision,
     );
     status = 200;
-    vi.spyOn(Date, 'now').mockReturnValue(now + 6_000);
+    vi.setSystemTime(dayjs().add(6, 'second').toDate());
     await cache.flushPending();
     expect(await db.cacheInvalidation.count()).toBe(0);
   });

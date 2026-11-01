@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { cacheLife, cacheTag } from 'next/cache';
 import { notFound } from 'next/navigation';
 
-import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
+import { POSTS_CACHE_TAG, PostSchema } from '@game-feedback/contracts';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
 
 import type { PostDetail } from '@/shared/api';
@@ -43,11 +43,24 @@ function withoutAuthors(detail: PostDetail, excluded: ReadonlySet<string>): Post
     comments: filterCommentThreads(detail.comments, excluded),
   };
 }
+async function getPrivateAnswerCounts(id: string) {
+  const { baseUrl, headers, signal } = await serverRequestOptions();
+  const response = await fetch(`${baseUrl}/internal/posts/${encodeURIComponent(id)}/answer-counts`, {
+    headers,
+    signal,
+    cache: 'no-store',
+  });
+  if (response.status === 404) notFound();
+  if (!response.ok) throw new Error(`Answer counts request failed with ${response.status}.`);
+  return PostSchema.pick({ answerCount: true, helpfulCount: true }).parse(await response.json());
+}
 export const getServerPost = cache(async (id: string) => {
   if (!POST_ID_PATTERN.test(id)) notFound();
   const [detail, excluded] = await Promise.all([getPublicPost(id), getServerExcludedAuthors()]);
   if (!detail || excluded.has(detail.post.author.id)) notFound();
-  return excluded.size ? withoutAuthors(detail, excluded) : detail;
+  if (!excluded.size) return detail;
+  const counts = await getPrivateAnswerCounts(id);
+  return { ...withoutAuthors(detail, excluded), post: { ...detail.post, ...counts } };
 });
 export const getServerUserPosts = cache(async (authorId: string, cursor = '') => {
   try {

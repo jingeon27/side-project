@@ -1,6 +1,7 @@
 import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 
 import { expect, test } from '../../e2e/support/test';
+import { groupScreens } from '../../e2e/support/web-screens';
 import { CACHE_API_URL, CACHE_WEB_ORIGIN } from './env';
 
 test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리자 수정·보관을 사용할 수 있어야 한다', async ({
@@ -51,12 +52,12 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
     g: group.id,
     u: await userId(moderator),
   });
-  const manager = page.locator('details').filter({ has: page.getByText('카테고리 관리', { exact: true }) });
+  const manager = groupScreens.categoryManager(page);
   // 서버 HTML의 details는 hydration 전에도 열 수 있다. 스트리밍·hydration과 겹친 토글이 닫힌 채 남지 않도록
   // 브라우저에서만 그리는 카테고리 폼이 붙은 뒤(hydration 완료) 연다.
   const openManager = async () => {
     await expect(manager.getByRole('textbox', { name: /새 카테고리/, includeHidden: true })).toBeAttached();
-    await page.getByText('카테고리 관리', { exact: true }).click();
+    await manager.getByText('카테고리 관리', { exact: true }).click();
   };
   await setUser(owner);
   await page.goto(`/groups/${group.id}`);
@@ -91,7 +92,7 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
   await setUser(member);
   await page.goto(`/groups/${group.id}`);
   await expect(page.getByText('카테고리 관리', { exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
   await editor.getByRole('textbox', { name: /제목/ }).fill('분류를 고른 게시물');
   await editor.getByRole('textbox', { name: /링크/ }).fill('https://example.com/category');
@@ -140,7 +141,7 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByText('편집 (보관됨)', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await expect(
     page
       .getByRole('form', { name: '그룹에 글쓰기' })

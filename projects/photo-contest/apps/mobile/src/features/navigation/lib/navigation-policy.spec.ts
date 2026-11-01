@@ -12,7 +12,7 @@ describe('decideNavigation', () => {
   it('웹 origin과 빈 문서는 WebView에서 열어야 한다', () => {
     expect(decide('https://contest.example/')).toEqual({ action: 'allow' });
     expect(decide('https://contest.example/groups/1?tab=ranking#top')).toEqual({ action: 'allow' });
-    expect(decide('HTTPS://Contest.Example/backend/auth/google')).toEqual({ action: 'allow' });
+    expect(decide('HTTPS://Contest.Example/backend/auth/config')).toEqual({ action: 'allow' });
     expect(decide('about:blank')).toEqual({ action: 'allow' });
     expect(decide('about:srcdoc')).toEqual({ action: 'allow' });
   });

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
@@ -112,7 +113,7 @@ export class SubmissionService {
         upload.userId !== viewer.id ||
         upload.contestId !== contest.id ||
         !upload.imageKey ||
-        upload.expiresAt < new Date()
+        upload.expiresAt < dayjs().toDate()
       )
         fail(MESSAGE.UPLOAD_INCOMPLETE);
       const created = await (tx ?? this.db).submission.create({

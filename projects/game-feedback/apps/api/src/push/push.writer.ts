@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { chunk } from 'es-toolkit';
 
 import type { Prisma } from '../generated/prisma';
@@ -13,7 +14,7 @@ export async function enqueuePush(
     where: {
       userId: { in: rows.map((row) => row.userId) },
       enabled: true,
-      session: { expiresAt: { gt: new Date() } },
+      session: { expiresAt: { gt: dayjs().toDate() } },
     },
     select: { id: true, userId: true },
   });

@@ -82,9 +82,6 @@
 
 ## 앱 스킬
 
-- `.agents/skills/webview-shell/SKILL.md`: WebView·탐색·딥링크·뒤로 가기·복구.
-- `.agents/skills/native-capability/SKILL.md`: 공유·복사·햅틱·시스템 브라우저.
-- `.agents/skills/mobile-test/SKILL.md`: unit/UI/API·실제 웹과 가짜 OS 경계.
-- `.agents/skills/release/SKILL.md`: dev client·빌드·환경변수·버전·Sentry 설정.
+[photo-contest-mobile](../../.agents/skills/photo-contest-mobile/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
 e2e의 사용자·세션은 테스트 API로 준비하고 DB를 직접 수정하지 않는다. 웹/앱 Sentry·Amplitude 키를 비우며 pageerror를 검사한다. iOS에서는 Android 하드웨어 뒤로 가기 케이스만 실행하지 않는다.

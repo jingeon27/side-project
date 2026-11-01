@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 /** 웹과 앱이 서로 다른 버전으로 배포돼도 메시지 해석이 어긋나지 않게 봉투에 싣는다. */
@@ -363,5 +364,5 @@ let sequence = 0;
 /** http로 연 WebView는 보안 컨텍스트가 아니라 crypto.randomUUID가 없을 수 있다. 응답 짝 맞추기용이라 예측 가능해도 된다. */
 export function createMessageId() {
   sequence = (sequence + 1) % Number.MAX_SAFE_INTEGER;
-  return `${Date.now().toString(36)}-${sequence.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${dayjs().valueOf().toString(36)}-${sequence.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

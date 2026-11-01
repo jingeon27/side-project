@@ -3,7 +3,31 @@
 Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 필수. 프로젝트는 `projects/<name>` 아래에서 독립적으로 관리한다.
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 
-- 각 프로젝트의 `AGENTS.md`와 `.agents/skills`를 따른다.
+## 작업 전 설계와 범위
+
+- 구현 전에 목적, 이번 변경 범위와 제외 범위, 완료 조건과 검증 방법을 짧게 정한다. 단순 수정은 한두 문장이면 충분하며, 안전하게 판단할 수 있는 사항까지 매번 승인받지 않는다. 요구가 불명확해 동작·데이터·권한에 영향을 주는 경우에만 필요한 질문을 한다.
+- 기존 구현과 사용처를 확인하고 상태·데이터·IO·구독 수명의 소유자를 정한다. 보존해야 할 공개 계약과 사용자 동작, 실패·재시도·정리 경로를 설계 기준에 포함한다.
+- 인라인·파일 분리·훅·class 자체를 품질 목표로 삼지 않는다. 실제 재사용, 책임과 변경 주기, 읽기 비용, 테스트 가능성을 근거로 가장 단순한 구조를 선택한다. 불필요한 추상화와 한 함수·컴포넌트에 책임을 몰아넣는 구현 모두 피한다.
+- 작업 중 새 근거로 설계나 범위를 바꾸면 변경 이유와 검증 영향을 짧게 알린다. 발견한 개선점을 모두 즉시 구현하지 말고 이번 필수 작업과 후속 작업을 구분한다.
+
+## 우선순위
+
+- 기본 순서는 보안·권한 및 데이터 유실·정합성 문제 → 핵심 기능 오류와 실패 후 복구 → 사용자 흐름·접근성·측정된 성능 문제 → 유지보수성과 스타일 정리다. 실제 사용자 영향, 발생 가능성, 의존 관계에 따라 순서를 조정하고 이유를 남긴다.
+- 이번 작업에서 반드시 해결할 문제와 이번에는 하지 않을 개선을 명시한다. 요청 범위 밖의 문제는 근거와 함께 후속 항목으로 보고하고, 관련 없는 수정으로 작업 범위를 넓히지 않는다.
+
+## 품질과 완료 보고
+
+- 품질은 임의의 종합 점수 대신 검증 근거로 보고한다. 점수를 요청받으면 평가 범위·기준·측정 여부와 한계를 명시하고, 주관적 추정치를 객관적 측정값처럼 표현하지 않는다.
+- 문제는 코드 위치·재현 조건·기대 동작과 실제 결과·사용자 영향으로 설명한다. 확인한 결함, 코드에서 추론한 위험, 단순한 구조·스타일 선호를 구분한다.
+- 실행한 검사의 명령·대상·결과와 실패·건너뜀·미검증 범위, 남은 위험을 기록한다. 테스트 개수나 CI 성공만으로 전체 품질을 보장하지 않으며 핵심 흐름과 실패·재시도·회귀 조건이 검증됐는지 설명한다. 확인하지 않은 구현 능력·성능·운영 안정성을 단정하지 않는다.
+- 로컬 수정, 커밋, 원격 push, PR 반영, CI 완료, 배포를 서로 다른 상태로 보고한다. GitHub 작업은 요청 대상 PR의 head/base와 최신 SHA를 확인하고, 이전 SHA의 성공을 최신 코드의 성공으로 보고하지 않는다. 재실행이 필요했다면 첫 실행 결과와 구분한다.
+
+## 저장소 규칙
+
+- 각 프로젝트의 `AGENTS.md`와 `.agents/skills`를 따른다. TypeScript·React 공통 구현은 [typescript-code-style](.agents/skills/typescript-code-style/SKILL.md)을 적용한다.
+- 웹·모바일 UI를 구성하거나 디자인을 변경할 때 저장소 공통 `.agents/skills/ui-design/SKILL.md`를 먼저 읽고 적용한다.
+- 여러 필드·미디어·반복 입력이 있는 긴 폼은 바텀시트가 아니라 별도 페이지로 만든다. 페이지 폼의 주 행동은 하단에 고정하고 입력 본문만 스크롤한다. 짧은 입력·선택·확인만 시트로 제공한다.
+- 전용 폼 페이지에는 사이트 푸터를 표시하지 않는다. 같은 편집 목적의 정보·사진 변경은 하단 저장 버튼 하나로 처리하고, 저장 실패 시 초안을 보존한다.
 - `packageManager`에 고정한 Yarn 4.17.0 CLI를 직접 설치하고 `yarn`으로 실행한다. 최초 설치는 `npm install --global @yarnpkg/cli-dist@4.17.0 --force`를 사용한다.
 - 여러 워크스페이스가 사용하는 외부 의존성은 루트 `.yarnrc.yml`의 `catalog`에 정확한 버전을 두고 각 `dependencies`·`devDependencies`에서 `catalog:`로 참조한다. React·React DOM도 웹·Expo 앱이 같은 catalog를 사용한다. Expo 권장 버전과 다른 패치는 React Native의 peer 범위를 확인하고 모바일 검사·두 플랫폼 번들을 검증한다. `peerDependencies`는 호환 범위를 유지한다. 버전을 바꾸면 catalog와 `yarn.lock`을 함께 갱신하고, 실행 중인 해당 개발 서버를 재시작한다.
 - 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수 반환값으로 전달한다.
@@ -16,12 +40,19 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 - 다른 프로젝트(또는 사용자의 개발 서버)의 실행 중인 프로세스와 데이터를 바꾸지 않는다. 테스트는 개발 서버와 다른 포트, 격리된 DB 스키마를 쓴다.
 - Yarn 4.17은 24시간이 지나지 않은 패키지 버전을 격리한다(`All versions satisfying … are quarantined`). 게이트를 통과한 직전 버전을 고르고 `npmMinimalAgeGate`를 끄지 않는다.
 - 공통 미사용 검사는 `yarn knip`, 전체 현황은 `yarn knip:report`다. 새 문제를 `knip-baseline.json`에 추가해 숨기지 않는다. 기존 항목을 정리하면 기준선에서도 지운다. 값·타입·namespace의 `export *` 대신 필요한 이름을 명시하며 공통 ESLint 규칙이 검사한다.
-- 커밋은 작게 나눈다. 프로젝트의 `commit` 스킬을 따른다.
+- 커밋·push·PR은 공통 [commit](.agents/skills/commit/SKILL.md) 스킬을 따른다. 서비스·앱·패키지 단위로 작게 나누고 관련 테스트·계약 생성 결과를 함께 둔다.
 - husky hook: `pre-commit`은 스테이징된 파일만 Prettier로 정리하고 `commit-msg`는 `<type>(<scope>): <내용>` 형식과 `Co-Authored-By` trailer 금지를 검사한다. 새 worktree는 `yarn install` 후 hook이 생긴다. 실패하면 고쳐서 다시 커밋한다. hook이 필요 없는 자동화는 `HUSKY=0`을 쓰고 `--no-verify`는 비상시에만 쓴다.
 - 모든 변경은 기능 브랜치 → develop → main 순서로 반영한다. 기능·수정 PR의 base는 develop이며 main에는 develop에서만 PR을 올린다. 배포 장애 수정도 같은 경로를 따른다.
+- 일반 PR 제목은 `<type>(<scope>): <내용>` 형식을 쓴다. `develop → main` 릴리스 PR 제목은 `Release v<SemVer>` 형식으로 정한다(예: `Release v0.1.1-beta.2`). 릴리스 PR에서도 개별 커밋 메시지는 기존 커밋 컨벤션을 따른다.
 - PR은 squash가 아니라 merge commit으로 합친다(#94까지는 squash였으므로 그 이전 이력은 `gh pr view <번호> --json commits`로 본다). 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Commits` 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.
 
 - TypeScript CLI는 공통 `@side/config`의 `tsc7`(7.0.2)을 사용한다. JavaScript compiler API 의존 도구는 `typescript` 6.0.2를 사용하며, `typescript/bin/tsc` 경로를 직접 가정하지 않는다.
 - 설정 파일도 도구가 지원하면 `.ts`를 우선한다. 설치된 로더가 TypeScript 설정을 지원하지 않는 경우에만 `.mjs` 등 지원 형식을 유지한다.
 - 테스트 접미사는 새 기능 사양 `*.spec.ts(x)`, 확인한 버그 회귀 `*.test.ts(x)`로 쓴다. 기존 혼합 파일은 보존하고 Vitest는 둘 다 수집한다. 러너는 파일 위치와 앱 설정이 결정하며 API는 Vitest+Supertest다.
 - unit·integration 테스트는 대상 구현 파일과 같은 디렉터리에 둔다. DB·HTTP 통합 테스트는 `*.integration.spec.ts` 또는 `*.integration.test.ts`로 구분하고 앱의 unit 레인에서 제외한다. 공통 하네스·fixture와 브라우저 E2E는 앱의 별도 테스트 디렉터리에 둘 수 있다.
+
+## 지침과 스킬의 소유권
+
+- AGENTS.md는 해당 경로의 구조·제품 결정·안전 경계와 스킬 진입점을 둔다. 공통 규칙은 루트 스킬 한 곳에, 앱별 실행·테스트 절차는 프로젝트 스킬의 references에 둔다.
+- 프로젝트 진입점에서 필요한 주제만 선택한다. 모든 앱 스킬·참조를 미리 전부 읽거나 같은 규칙을 여러 프로젝트에 복제하지 않는다.
+- 공통 코드 규칙을 공유해도 Apollo/REST, 쿠키/관리자 세션, DB·포트·S3 격리와 네이티브 기능 차이는 각 서비스가 소유한다. 블로그 문체는 blog-writer와 개인 blog-writing에만 둔다.

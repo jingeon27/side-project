@@ -29,7 +29,7 @@ test(
     await login.getByLabel('비밀번호', { exact: true }).fill(password);
     await page.getByRole('button', { name: '아이디로 로그인' }).click();
     await expect(page.getByRole('tabpanel', { name: '로그인', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '공개 그룹 목록' })).toBeVisible();
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '직접 가입 회원' })).toBeVisible();
   },

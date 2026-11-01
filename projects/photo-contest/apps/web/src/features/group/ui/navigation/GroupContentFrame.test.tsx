@@ -4,7 +4,7 @@ import { MockLink } from '@apollo/client/testing';
 import { act, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { GraphQLError } from 'graphql';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { GalleryDocument, GroupVisibility, type GalleryQuery } from '@/shared/api/generated';
 
@@ -61,16 +61,6 @@ async function renderFrame(mocks: MockLink.MockedResponse[]) {
     );
   });
 }
-
-beforeEach(() => {
-  // 로그인 패널의 인증 화면 의존성을 격리한다.
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => new Response(JSON.stringify({ google: false, kakao: false }), { status: 200 })),
-  );
-});
-
-afterEach(() => vi.unstubAllGlobals());
 
 describe('GroupContentFrame', () => {
   it('그룹을 못 불러오면 빈 화면 대신 이유와 재시도를 보여 주고 다시 받으면 내용을 그려야 한다', async () => {

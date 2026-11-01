@@ -30,7 +30,7 @@ The first global CMS integration tests rendered form fields but let a Harness pe
 
 ```tsx
 function CreateHarness({ onCreated }: { onCreated: (id: number) => void }) {
-  // 등록 Drawer가 하는 변환·요청을 테스트가 다시 쓰고 있었다
+  // The test duplicated the registration drawer's conversion and request logic
   const handleFinish = async (values: PartnerFormValues) => {
     const { id } = await createPartner(toRequest(values));
     onCreated(id);
@@ -55,7 +55,7 @@ Mock seeds diverged from initial server data. In the global user-facing service,
 I copied only constraints confirmed in backend DTOs and validation into mocks, making them reject with 400 what the server rejected. This reduced example uses `partnerId` as an alias.
 
 ```typescript
-// 서버 DTO가 거절하는 조건만 옮긴다
+// Include only the conditions rejected by the server DTO
 function programViolations(body: ProgramSaveRequest): Violation[] {
   const violations: Violation[] = [];
   const required = (field: keyof ProgramSaveRequest, isValid: boolean) => {
@@ -126,10 +126,10 @@ Global CMS is an exception. When its dev-API runner was removed later, I deleted
 For a new testing pattern, I deliberately broke the behavior it was intended to protect. A payment calculation might look like this.
 
 ```typescript
-// 정상
+// Original behavior
 const finalAmount = paymentAmount - couponDiscount;
 
-// 테스트 확인을 위해 잠시 변경
+// Temporary change used to verify the test
 const finalAmount = paymentAmount + couponDiscount;
 ```
 
@@ -144,10 +144,10 @@ The portal signup funnel combines direct URL entry, refresh, back navigation, an
 The right URL alone is insufficient. Logout can navigate to login while displaying an error page.
 
 ```typescript
-await page.getByRole('button', { name: '로그아웃' }).click();
+await page.getByRole('button', { name: 'Sign out' }).click();
 
 await expect(page).toHaveURL(/\/sign(\?|$)/);
-await expect(page.getByRole('button', { name: '카카오로 계속하기' })).toBeVisible();
+await expect(page.getByRole('button', { name: 'Continue with Kakao' })).toBeVisible();
 ```
 
 I check that the URL changes to login and that the Kakao button is visible. That distinguishes a successful redirect from one followed by a broken guard or screen render.
@@ -163,7 +163,7 @@ I sometimes leave repeated clicks visible in a test. This part of the portal sea
 ```typescript
 await gotoSearchPage(page);
 
-await page.getByRole('button', { name: '특가전', exact: true }).click();
+await page.getByRole('button', { name: 'Special offers', exact: true }).click();
 
 await expect(page).toHaveURL(/hasEvent=true/);
 ```

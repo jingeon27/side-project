@@ -1,5 +1,6 @@
-import { ContestPageTemplate } from '@/_pages/contest';
-import { contestSearchSchema } from '@/_pages/contest/@page/model/contest-search.schema';
+import { connection } from 'next/server';
+
+import { ContestPage, contestSearchSchema } from '@/_pages/contest';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   ContestDocument,
@@ -21,6 +22,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { id } = await params;
   const { sort } = contestSearchSchema.parse(await searchParams);
   return (
@@ -30,7 +32,7 @@ export default async function Page({
           query={SubmissionsDocument}
           variables={{ contestId: id, sort: SORT[sort], offset: 0, limit: 24 }}
         >
-          <ContestPageTemplate id={id} />
+          <ContestPage id={id} />
         </PreloadQuery>
       </PreloadQuery>
     </PreloadQuery>

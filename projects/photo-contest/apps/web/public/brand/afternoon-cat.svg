@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="800" viewBox="0 0 1000 800">
+  <title>햇살이 드는 소파를 차지하고 누운 고양이 일러스트</title>
+  <rect width="1000" height="800" fill="#f1e8db"/>
+  <path d="M0 0h1000v480H0z" fill="#e9dfd0"/>
+  <rect x="80" y="60" width="360" height="330" rx="180" fill="#dcebf0"/>
+  <circle cx="340" cy="165" r="55" fill="#ffc976"/>
+  <path d="M80 255h360M260 62v325" fill="none" stroke="#f1e8db" stroke-width="16"/>
+  <path d="m62 590 725-220 213 255v175H0z" fill="#dfcfb9"/>
+  <path d="M110 410q0-60 60-60h660q60 0 60 60v200H110Z" fill="#b66a4a"/>
+  <rect x="91" y="490" width="810" height="181" rx="52" fill="#cf8159"/>
+  <rect x="75" y="480" width="100" height="200" rx="48" fill="#a95c42"/>
+  <rect x="825" y="480" width="100" height="200" rx="48" fill="#a95c42"/>
+  <path d="M135 675v54M865 675v54" stroke="#3b3029" stroke-width="22" stroke-linecap="round"/>
+  <ellipse cx="506" cy="582" rx="301" ry="34" fill="#9f593d" opacity=".45"/>
+  <g stroke="#40342c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M690 499q137-101 144-3 3 68-71 55" fill="none" stroke="#f5be68" stroke-width="38"/>
+    <path d="M343 432q76-79 225-23 133 48 168 120-106 86-300 13-80-31-93-110Z" fill="#f5be68"/>
+    <path d="M493 412q-18 21-12 57M540 424q-12 25-4 53M584 443q-8 24 4 45" fill="none" stroke="#d78c40" stroke-width="13"/>
+    <path d="M468 507q-87 7-111 78-3 25 33 21l115-49M594 533q44 48 118 38 39-6 24-26" fill="#f5be68"/>
+    <path d="m234 424-8-102 81 48q45-8 77 20l80-4-34 84q-18 90-109 80-97-13-87-126Z" fill="#f5be68"/>
+    <path d="m242 345 11 56 29-20M422 402l-43 6 29 31" fill="#e99b7c" stroke="none"/>
+    <path d="m264 442 14-9 15 9m54 13 15-7 13 10" fill="none" stroke-width="7"/>
+    <path d="m305 466 15 4-10 11Z" fill="#40342c" stroke="none"/>
+    <path d="m310 480-2 11q-16 7-23-5m23 5q11 12 22 2" fill="none"/>
+    <path d="m260 467-43-5m43 20-42 7m144-2 39 6m-44 9 32 18" stroke-width="3"/>
+  </g>
+  <path d="m530 572 167 21-35 114-168-23Z" fill="#e8e9e4" stroke="#40342c" stroke-width="5" stroke-linejoin="round"/>
+  <path d="m494 684 168 23 72-22-169-24Z" fill="#bec6c4" stroke="#40342c" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="600" cy="641" r="12" fill="#ff9b42"/>
+  <path d="M934 355v132" stroke="#5c785a" stroke-width="8"/>
+  <path d="M934 409q-85-79-11-94 43 35 11 94m0-20q15-103 62-60 0 57-62 60" fill="#6f8e66"/>
+  <path d="m906 466 55 0-10 68h-35Z" fill="#c3a082"/>
+</svg>

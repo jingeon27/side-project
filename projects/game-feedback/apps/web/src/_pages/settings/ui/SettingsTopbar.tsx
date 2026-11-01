@@ -9,8 +9,7 @@ export function SettingsTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
-      <Topbar.Title>{t('프로필')}</Topbar.Title>
+      <Topbar.Title heading>{t('프로필')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />
         <Topbar.Notifications href={appRoutes.notifications(locale)} />

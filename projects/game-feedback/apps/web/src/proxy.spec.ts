@@ -20,6 +20,31 @@ function request(path: string, visitor?: string, rsc = false) {
 afterEach(() => vi.mocked(documentUnavailable).mockClear());
 
 describe('public lookup pages in the proxy', () => {
+  it.each([
+    '/ko/boards/free?battleMode=TEAM',
+    '/ko/boards/coaching?feedbackStatus=WAITING',
+    '/ko/write?board=free&coachingRole=COACH',
+    '/ko/search?board=feedback&battleMode=TEAM',
+    '/ko/boards/friendly?battleMode=DUEL&battleMode=TEAM',
+  ])('잘못된 게시판 문맥 %s는 문서·RSC 조회 전에 404로 차단해야 한다', async (path) => {
+    for (const rsc of [false, true]) {
+      const response = await proxy(request(path, undefined, rsc));
+      expect(response.status).toBe(404);
+      expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('x-middleware-rewrite')).toBe('https://game.example/unavailable');
+    }
+    expect(documentUnavailable).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '/ko/boards/friendly?battleMode=TEAM&game=brawl-stars',
+    '/en/write?board=coaching&coachingRole=STUDENT',
+    '/ja/search?board=feedback&feedbackStatus=WAITING&q=test',
+  ])('유효한 게시판 문맥 %s는 그대로 통과시켜야 한다', async (path) => {
+    expect((await proxy(request(path))).status).toBe(200);
+  });
+
   it('limits post and profile documents and RSC requests per visitor before the shared cache', async () => {
     const visitor = '203.0.113.71';
     for (const index of Array.from({ length: PUBLIC_LOOKUP_PAGES_PER_MINUTE }, (_, offset) => offset))

@@ -255,6 +255,7 @@ model Post {
   groupId String
   authorId String
   uploadId String? @unique
+  clientRequestId String?
   linkUrl String?
   title String
   body String @default("")
@@ -271,6 +272,7 @@ model Post {
   contestVotes PostContestVote[]
   notifications Notification[]
   @@unique([id, contestId])
+  @@unique([authorId, clientRequestId])
   @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
   @@index([authorId, createdAt, id])

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { GameProfile } from '@game-feedback/contracts';
 
 interface IEntry {
@@ -18,7 +20,7 @@ export class ProfileLookupCache {
     private readonly maxEntries = 500,
   ) {}
 
-  get(playerTag: string, load: () => Promise<GameProfile>, now = Date.now()): Promise<GameProfile> {
+  get(playerTag: string, load: () => Promise<GameProfile>, now = dayjs().valueOf()): Promise<GameProfile> {
     const cached = this.entries.get(playerTag);
     if (cached && cached.expiresAt > now) return cached.profile;
     const entry = { expiresAt: now + this.ttlMs, profile: load() };

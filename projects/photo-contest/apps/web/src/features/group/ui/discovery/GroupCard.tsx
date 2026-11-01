@@ -19,28 +19,32 @@ export function GroupCard({ group }: IGroupCardProps) {
   return (
     <Link
       href={ROUTES.GROUP(group.id)}
-      className="flex items-center gap-4 rounded-control border border-line bg-surface p-5 transition-colors hover:bg-sunken active:bg-neutral-soft"
+      className="group flex items-center gap-3 rounded-card border border-line bg-surface p-4 transition-colors hover:border-line-strong hover:bg-sunken active:bg-neutral-soft"
     >
       <Avatar
         name={group.name}
         src={group.avatarUrl}
         size="lg"
-        className="size-14 border border-line bg-sunken text-ink"
+        className="size-12 rounded-card border border-line bg-accent-soft text-accent-ink"
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="flex items-center gap-2">
-          <span className="line-clamp-1 text-subtitle text-ink">{group.name}</span>
-          {isGroupOwner(group.role) ? <Badge tone="brand">관리자</Badge> : null}
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-subtitle text-ink">{group.name}</span>
+          {isGroupOwner(group.role) ? (
+            <Badge tone="brand" className="shrink-0">
+              관리자
+            </Badge>
+          ) : null}
         </span>
         <span className="flex items-center gap-1 text-caption text-muted">
           <Users aria-hidden className="size-3.5" />
-          {formatCount(group.memberCount)}명의 친구
+          멤버 {formatCount(group.memberCount)}명
         </span>
-        <span className="line-clamp-2 text-caption text-muted">
-          {group.description || '사진과 동영상으로 웃긴 순간을 나눠요.'}
-        </span>
+        {group.description ? (
+          <span className="line-clamp-1 text-caption text-muted">{group.description}</span>
+        ) : null}
       </span>
-      <ArrowUpRight aria-hidden className="size-5 shrink-0 text-subtle" />
+      <ArrowUpRight aria-hidden className="size-4 shrink-0 text-subtle group-hover:text-accent-ink" />
     </Link>
   );
 }

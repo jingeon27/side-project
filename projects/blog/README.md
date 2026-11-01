@@ -12,7 +12,7 @@
 
 ```sh
 cp projects/blog/apps/web/.env.example projects/blog/apps/web/.env.local
-yarn workspace @blog/web dev
+yarn workspace @side/blog dev
 ```
 
 로컬 주소는 [localhost:3100/ko](http://localhost:3100/ko)입니다. 홈·글 목록·소개는 `/ko`와 `/en`, RSS는 `/rss/ko`·`/rss/en`에 있습니다. 사이트맵·robots는 언어 경로 밖의 `/sitemap.xml`·`/robots.txt`입니다.

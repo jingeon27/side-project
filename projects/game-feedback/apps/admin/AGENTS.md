@@ -1,6 +1,6 @@
 # Game Feedback Admin
 
-공개 Web과 분리된 React + Vite 로컬 관리자 서비스다. 코드 변경·리뷰에는 [game-feedback-code-style](../../.agents/skills/game-feedback-code-style/SKILL.md)을 적용한다.
+공개 Web과 분리된 React + Vite 로컬 관리자 서비스다. 코드 변경·리뷰에는 [game-feedback-code-style](../../.agents/skills/game-feedback-client/SKILL.md)을 적용한다.
 
 - `_app/AdminRouter.tsx`가 인증과 hash 경로를 조합한다. 로그인·문의·신고·사용자 관리는 각 `_pages` slice가 소유한다. 공통 셸·문의 대화·사용자 패널은 `widgets`, REST·query·mutation 정책은 각 `features`가 소유한다.
 - mutation은 features의 `*.mutation-options.ts`를 public export하고 화면·기능 흐름의 호출부에서 `useMutation(xMutationOptions(client))`로 직접 조립한다. 단순히 감싸 반환하는 전용 훅은 만들지 않는다.
@@ -11,6 +11,4 @@
 
 ## 앱 스킬
 
-- `.agents/skills/game-feedback-admin-screen/SKILL.md`: hash 경로·관리자 화면/탭 추가·관리자 API와 SDK 연결.
-- `.agents/skills/game-feedback-admin-session/SKILL.md`: Vite 프록시·Origin 가드·운영 토큰 경계·계정 전환·로컬 실행.
-- `.agents/skills/game-feedback-admin-test/SKILL.md`: Vitest 단위·Playwright E2E·격리 스키마 정리.
+[game-feedback-admin](../../.agents/skills/game-feedback-admin/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.

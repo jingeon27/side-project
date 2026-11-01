@@ -18,10 +18,10 @@ import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { StartChatLink } from '@/widgets/start-chat';
 import { VerificationPrompt } from '@/widgets/support';
 
-import { usePostRead } from '../model/use-post-read.hook';
-import { PostActions } from './PostActions';
-import { PostAnswersSection } from './PostAnswersSection';
-import { PostCommentsSection } from './PostCommentsSection';
+import { usePostRead } from '../model/read/use-post-read.hook';
+import { PostActions } from './actions/PostActions';
+import { PostAnswersSection } from './answers/PostAnswersSection';
+import { PostCommentsSection } from './comments/PostCommentsSection';
 
 interface IPostPageProps {
   id: string;

@@ -1,1 +1,1 @@
-export { GroupWritePageTemplate } from './@page/GroupWritePageTemplate';
+export { GroupWritePage } from './ui/GroupWritePage';

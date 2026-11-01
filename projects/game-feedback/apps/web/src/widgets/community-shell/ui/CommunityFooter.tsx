@@ -1,5 +1,7 @@
 'use client';
 
+import dayjs from 'dayjs';
+
 import { appRoutes } from '@game-feedback/bridge';
 
 import { getContactEmail } from '@/shared/config';
@@ -9,7 +11,7 @@ import { ChildLink, TabLink } from '@/shared/navigation';
 
 export function CommunityFooter({ home }: { home: string }) {
   const { t, locale } = useI18n();
-  const year = dateKey(new Date().toISOString()).slice(0, 4);
+  const year = dateKey(dayjs().toISOString()).slice(0, 4);
   const contact = getContactEmail();
   return (
     <footer className="site-footer">

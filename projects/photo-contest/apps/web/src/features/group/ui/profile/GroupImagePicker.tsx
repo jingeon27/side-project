@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId } from 'react';
 import Image from 'next/image';
 
 import { Camera } from 'lucide-react';
 
+import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { Button } from '@/shared/ui/@core/button';
 
 import { groupProfileSchema } from '../../model/group-profile.schema';
 
 export function GroupImagePicker({
   label,
+  value,
   cover = false,
   currentUrl,
   disabled,
@@ -18,6 +20,7 @@ export function GroupImagePicker({
   onChange,
 }: {
   label: string;
+  value: File | null | undefined;
   cover?: boolean;
   currentUrl?: string | null;
   disabled?: boolean;
@@ -25,23 +28,10 @@ export function GroupImagePicker({
   onChange: (file: File | null) => void;
 }) {
   const id = useId();
-  const objectUrl = useRef<string | null>(null);
-  const [preview, setPreview] = useState<string | null | undefined>(undefined);
-  useEffect(
-    () => () => {
-      if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-    },
-    [],
+  const preview = useObjectUrl(
+    value && groupProfileSchema.shape.avatar.safeParse(value).success ? value : null,
   );
-  const choose = (file: File | null) => {
-    if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-    const url =
-      file && groupProfileSchema.shape.avatar.safeParse(file).success ? URL.createObjectURL(file) : null;
-    objectUrl.current = url;
-    setPreview(url);
-    onChange(file);
-  };
-  const src = preview === undefined ? currentUrl : preview;
+  const src = preview ?? currentUrl;
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <label htmlFor={id} className="text-label text-ink">
@@ -63,7 +53,7 @@ export function GroupImagePicker({
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = '';
-            if (file) choose(file);
+            if (file) onChange(file);
           }}
         />
         {src ? (
@@ -75,7 +65,7 @@ export function GroupImagePicker({
       <div className="flex min-h-touch items-center justify-between gap-3">
         <p className="text-caption text-muted">JPEG, PNG, WebP 형식의 사진을 최대 10MB까지 올릴 수 있어요.</p>
         {src ? (
-          <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => choose(null)}>
+          <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => onChange(null)}>
             {label} 삭제
           </Button>
         ) : null}

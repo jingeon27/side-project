@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Response } from 'express';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
@@ -24,14 +25,14 @@ export class AppAuthService {
   ) {}
   async issueTicket(subject: string, challenge: string, provider: TSocialProvider = 'google') {
     const code = token();
-    await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lte: new Date() } } });
+    await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lte: dayjs().toDate() } } });
     await this.db.appLoginTicket.create({
       data: {
         codeHash: hash(code),
         challenge,
         subject,
         provider,
-        expiresAt: new Date(Date.now() + 120000),
+        expiresAt: dayjs().add(120000, 'millisecond').toDate(),
       },
     });
     return code;
@@ -41,13 +42,13 @@ export class AppAuthService {
     const codeHash = hash(code);
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const ticket = await this.db.appLoginTicket.findUnique({ where: { codeHash } });
-    if (!ticket || ticket.challenge !== challenge || ticket.expiresAt <= new Date())
+    if (!ticket || ticket.challenge !== challenge || ticket.expiresAt <= dayjs().toDate())
       throw new ApiError(400, 'APP_LOGIN_INVALID', '로그인 요청이 만료되었거나 올바르지 않습니다.');
     const consumed = await this.db.appLoginTicket.deleteMany({
       where: {
         codeHash,
         challenge,
-        expiresAt: { gt: new Date() },
+        expiresAt: { gt: dayjs().toDate() },
       },
     });
     if (consumed.count !== 1) throw new ApiError(400, 'APP_LOGIN_INVALID', '이미 사용된 로그인 요청입니다.');

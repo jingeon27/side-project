@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
 
+import dayjs from 'dayjs';
+
 import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl, type TTestSchemaPrefix } from './database';
 import { loadProjectEnv } from './env';
 import { SERVE_TEST_API_BIN } from './paths';
@@ -22,8 +24,8 @@ export interface IIsolatedApi {
 }
 
 async function waitForHealth(url: string, isAlive: () => boolean, timeoutMs: number) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
+  const deadline = dayjs().valueOf() + timeoutMs;
+  while (dayjs().valueOf() < deadline) {
     if (!isAlive()) throw new Error('격리 API가 시작하기 전에 종료됐습니다.');
     try {
       const response = await fetch(url);

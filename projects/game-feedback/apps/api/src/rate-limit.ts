@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export type RequestIdentity = {
   ip: string;
   /** A signed web-server call without a visitor address (cookie-free cached reads, sitemap). */
@@ -90,7 +92,7 @@ export class RequestRateLimiter {
   constructor(private readonly windowMs = 60000) {}
 
   /** Returns zero when allowed, otherwise the Retry-After value in seconds. */
-  consume(key: string, limit: number, now = Date.now()): number {
+  consume(key: string, limit: number, now = dayjs().valueOf()): number {
     let window = this.windows.get(key);
     if (!window || now - window.start >= this.windowMs) {
       window = { start: now, count: 0 };

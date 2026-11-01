@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request } from 'express';
 
 import {
@@ -85,7 +86,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
 
   async runOnce(
     transport = new ExpoPushTransport({ accessToken: mobilePushSettings().accessToken }),
-    now = new Date(),
+    now = dayjs().toDate(),
   ) {
     const dispatcher = new PushDispatcher(
       {
@@ -121,7 +122,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     );
     await dispatcher.run(now);
     await this.db.pushDelivery.deleteMany({
-      where: { createdAt: { lt: new Date(now.getTime() - 2 * 86_400_000) } },
+      where: { createdAt: { lt: dayjs(now.getTime() - 2 * 86_400_000).toDate() } },
     });
     await this.db.pushDevice.deleteMany({ where: { session: { expiresAt: { lte: now } } } });
   }
@@ -139,7 +140,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
         id: job.deviceId,
         enabled: true,
         user: { needsOnboarding: false },
-        session: { expiresAt: { gt: new Date() } },
+        session: { expiresAt: { gt: dayjs().toDate() } },
       },
       include: { session: { select: { userId: true } } },
     });
@@ -151,7 +152,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!status) return null;
     return {
       to: device.token,
-      title: '웃긴순간',
+      title: '피식',
       body: '새로운 알림이 도착했어요.',
       data: { path: '/notifications', notificationId: job.eventId },
       badge: Math.min(9999, status.badge),

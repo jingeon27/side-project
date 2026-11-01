@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { sha256Hex } from '../common/crypto';
 import { ERROR_CODE, fail } from '../common/errors';
@@ -24,9 +25,9 @@ export function uploadBudgetUnits(byteSize: number) {
 }
 
 /** 고정 창 버킷 키. 창이 바뀌면 새 키가 되고 지난 창의 행은 maintenance가 지운다. */
-export function rateLimitBucket(key: string, windowMs: number, now = Date.now()) {
+export function rateLimitBucket(key: string, windowMs: number, now = dayjs().valueOf()) {
   const window = Math.floor(now / windowMs);
-  return { keyHash: sha256Hex(`${key}:${window}`), expiresAt: new Date((window + 1) * windowMs) };
+  return { keyHash: sha256Hex(`${key}:${window}`), expiresAt: dayjs((window + 1) * windowMs).toDate() };
 }
 
 /**

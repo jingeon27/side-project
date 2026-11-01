@@ -52,6 +52,8 @@ const loaders = {
     import('../../../../content/posts/review-like-optimistic-update/ko.mdx'),
   'review-like-optimistic-update/en': () =>
     import('../../../../content/posts/review-like-optimistic-update/en.mdx'),
+  'reviewing-ai-output/ko': () => import('../../../../content/posts/reviewing-ai-output/ko.mdx'),
+  'reviewing-ai-output/en': () => import('../../../../content/posts/reviewing-ai-output/en.mdx'),
   'sentry-observability/ko': () => import('../../../../content/posts/sentry-observability/ko.mdx'),
   'sentry-observability/en': () => import('../../../../content/posts/sentry-observability/en.mdx'),
   'side-project-design/ko': () => import('../../../../content/posts/side-project-design/ko.mdx'),

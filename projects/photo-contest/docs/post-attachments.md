@@ -34,7 +34,7 @@ API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S
 
 `/backend/media/:id`, `/backend/media/:id/download`, 대회 사진 `/backend/photos/:id`, 그룹 대표 사진 `/backend/groups/:groupId/avatar/:avatarId`는 바뀌지 않는 고정 경로다. 서버 HTML·Apollo·공개 캐시에는 이 경로만 남긴다. 요청마다 기존과 같은 읽기 권한을 확인한 뒤 `Cache-Control: private, no-store`인 307로 서명 GET에 보낸다. 서명 수명은 사진(JPEG·PNG·WebP) 60초, 동영상(MP4·WebM, 최대 100MB) 10분이며 키의 확장자로 정한다(`MEDIA_URL_TTL_SECONDS`). 서명에는 응답 형식(키의 확장자로 정한 허용 형식), `private, no-store`, 다운로드 경로의 Content-Disposition attachment·한글 파일명을 넣는다. 재생·탐색의 Range는 저장소가 처리한다.
 
-웹의 PostDownloadButton은 클릭할 때마다 PostDownload query를 no-cache로 실행한다. `postDownload(postId)`는 readablePost로 공개 범위·멤버십·숨김·파일 존재 여부를 먼저 검사한 뒤 같은 수명(사진 60초, 동영상 10분)의 서명 URL·filename·expiresAt을 반환한다. 링크만 있는 글에는 저장 버튼을 표시하지 않으며 파일 조회도 NOT_FOUND다.
+웹의 PostDownloadButton은 클릭할 때마다 PostDownload query를 no-cache로 실행한다. `postDownload(postId)`는 readablePost로 공개 범위·멤버십·숨김·파일 존재 여부를 먼저 검사한 뒤 같은 수명(사진 60초, 동영상 10분)의 서명 URL·filename·expiresAt을 반환한다. 링크만 있는 글에는 저장 버튼을 표시하지 않으며 파일 조회도 NOT_FOUND다. 제목을 파일명으로 쓸 수 없으면 `피식.<확장자>`를 사용하고 Content-Disposition의 ASCII 대체 이름은 `pisik.<확장자>`다.
 
 - 서명 URL은 발급 시점의 짧은 읽기 권한이다. 멤버십 철회·숨김 뒤 이미 발급한 URL도 만료 전까지(사진 최대 60초, 동영상 최대 10분) 쓸 수 있다. URL을 DB·Apollo 정규화 캐시·분석 이벤트에 저장하지 않는다.
 - 브라우저는 리다이렉트된 서명 주소로 이어서 Range 요청을 보낸다. 동영상 서명은 10분이라 느린 연결에서도 보통 끝까지 재생·탐색하지만, 그보다 오래 멈춘 뒤 다시 탐색하면 고정 경로를 다시 열어야 할 수 있다.
@@ -47,7 +47,7 @@ API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S
 
 2026-10-20에 사용자가 제공한 [크리에이터 후원 페이지](https://toon.at/donate/sugirit?viewMode)와 이 페이지가 로드하는 공개 프런트엔드의 영상 주소 처리 코드를 확인했다. 해당 구현은 영상 주소를 유튜브·트위치로 나누며 일반 서비스 주소를 그대로 받는 분기는 확인되지 않았다. [공식 영상 후원 안내](https://help.toon.at/hc/ko/articles/360009275214)는 유튜브 영상 주소를 안내한다. 방송 플랫폼과 후원할 영상의 출처는 별개다.
 
-이번 변경은 유튜브·일반 링크 첨부와 업로드 파일 저장을 제공한다. 웃긴순간 자체 주소가 투네이션에서 영상 후원으로 재생된다는 뜻은 아니다. 외부 영상 제공자 지원과 연동 규격은 투네이션 측 확인이 필요하며 실제 결제·영상 후원은 실행하지 않았다.
+피식은 유튜브·일반 링크 첨부와 업로드 파일 저장을 제공한다. 피식 자체 주소가 투네이션에서 영상 후원으로 재생된다는 뜻은 아니다. 외부 영상 제공자 지원과 연동 규격은 투네이션 측 확인이 필요하며 실제 결제·영상 후원은 실행하지 않았다.
 
 ## 검증
 

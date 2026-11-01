@@ -1,7 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { ProfileLinksSchema } from '@game-feedback/contracts';
-
 import type { SessionRequest } from '../auth/session/session.types';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
@@ -22,7 +20,6 @@ export class UsersService {
       select: {
         ...authorSelect,
         createdAt: true,
-        profileLinks: true,
         bio: true,
         gameAccounts: { select: { profile: true }, orderBy: { updatedAt: 'desc' } },
       },
@@ -39,7 +36,6 @@ export class UsersService {
       author: authorDto(user),
       bio: user.bio,
       gameAccounts: user.gameAccounts.map((account) => account.profile),
-      links: ProfileLinksSchema.parse(user.profileLinks),
       joinedAt: user.createdAt.toISOString(),
       postCount,
       answerCount,

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <title>Reviewing code and writing</title>
+  <desc>Code and prose drafts are annotated at a review desk before reaching a reader. An editorial diagram, not a product screenshot.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 H 0 V 32" fill="none" stroke="#dddcd4" stroke-width="1" opacity=".45"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6a7873" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="720" fill="#f3f1e9"/>
+  <rect width="1280" height="720" fill="url(#grid)"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#273b36">
+    <text x="90" y="105" font-size="15" font-weight="700" letter-spacing="3">DRAFTS</text>
+    <text x="500" y="105" font-size="15" font-weight="700" letter-spacing="3">REVIEW</text>
+    <text x="971" y="105" font-size="15" font-weight="700" letter-spacing="3">READERS</text>
+  </g>
+  <g stroke="#b6c0b9" stroke-width="2" fill="#fffef9">
+    <rect x="85" y="154" width="300" height="183" rx="12"/>
+    <rect x="85" y="372" width="300" height="184" rx="12"/>
+    <rect x="495" y="153" width="345" height="403" rx="12"/>
+    <rect x="957" y="219" width="237" height="282" rx="12"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#5a7067" font-size="13" font-weight="700" letter-spacing="2">
+    <text x="112" y="188">CODE</text>
+    <text x="112" y="407">COPY</text>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="7">
+    <path d="M 130 222 L 116 239 L 130 256 M 162 222 L 176 239 L 162 256" stroke="#4f786a" stroke-width="4"/>
+    <path d="M 200 230 H 328 M 200 252 H 291 M 116 287 H 263" stroke="#c8d1c8"/>
+    <path d="M 116 444 H 341 M 116 469 H 318 M 116 494 H 340 M 116 519 H 236" stroke="#c8d1c8"/>
+    <path d="M 528 205 H 756" stroke="#d0d5cb"/>
+    <path d="M 528 235 H 792" stroke="#d0d5cb"/>
+    <path d="M 528 265 H 727" stroke="#d0d5cb"/>
+    <path d="M 528 337 H 792 M 528 367 H 757 M 528 397 H 790 M 528 427 H 732" stroke="#d0d5cb"/>
+    <path d="M 528 486 H 682" stroke="#4f786a"/>
+    <path d="M 984 307 H 1116 M 984 340 H 1165 M 984 364 H 1135 M 984 388 H 1154 M 984 412 H 1104" stroke="#bacbc0"/>
+  </g>
+  <g stroke="#a85f43" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 586 235 H 768"/>
+    <path d="M 588 220 Q 676 209 769 219"/>
+    <path d="M 743 275 L 758 285 L 784 254"/>
+    <path d="M 518 331 Q 507 381 518 432"/>
+    <path d="M 740 441 Q 780 448 802 428"/>
+    <path d="M 699 484 L 710 494 L 731 470"/>
+  </g>
+  <g fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M 403 256 C 444 256 445 280 477 280"/>
+    <path d="M 403 464 C 444 464 445 433 477 433"/>
+    <path d="M 861 354 H 936"/>
+  </g>
+  <g transform="translate(822 456) rotate(31)">
+    <path d="M 0 0 H 19 V 152 L 10 174 L 0 152 Z" fill="#c48a60" stroke="#765d47" stroke-width="2"/>
+    <path d="M 0 149 H 19 L 10 174 Z" fill="#ead6b8"/>
+    <path d="M 6 165 L 10 174 L 14 165 Z" fill="#36463d"/>
+    <path d="M 7 6 V 142" stroke="#ead6b8" stroke-width="3"/>
+  </g>
+  <g fill="#4f786a">
+    <rect x="984" y="256" width="47" height="14" rx="3"/>
+    <circle cx="1153" cy="452" r="15"/>
+  </g>
+  <path d="M 1146 452 L 1151 457 L 1161 447" fill="none" stroke="#fffef9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 85 625 H 1195" stroke="#b6c0b9" stroke-width="1"/>
+</svg>

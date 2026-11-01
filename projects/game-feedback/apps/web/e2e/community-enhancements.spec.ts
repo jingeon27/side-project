@@ -11,7 +11,9 @@ for (const scenario of [
   {
     width: 1440,
     type: 'MONTHLY',
+    pricingLabel: '기간 단위',
     role: 'COACH',
+    roleLabel: '수강생 모집',
     label: '기간 수강료 (원)',
     amount: '250000',
     summary: '기간 총 ₩250,000',
@@ -19,7 +21,9 @@ for (const scenario of [
   {
     width: 320,
     type: 'GOAL',
+    pricingLabel: '목표 달성까지',
     role: 'STUDENT',
+    roleLabel: '코치 구함',
     label: '목표 달성 희망 총 수강료 (원)',
     amount: '500000',
     summary: '목표 달성까지 총 ₩500,000',
@@ -35,11 +39,11 @@ for (const scenario of [
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko/boards/coaching');
-    await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
     const title = `${scenario.type} 코칭 모집 ${Date.now().toString(36)}`;
-    await editor.getByLabel('모집 유형', { exact: true }).selectOption(scenario.role);
-    await editor.getByLabel('수강료 기준', { exact: true }).selectOption(scenario.type);
+    await editor.getByRole('radio', { name: scenario.roleLabel, exact: true }).check();
+    await editor.getByRole('radio', { name: scenario.pricingLabel, exact: true }).check();
     if (scenario.type === 'GOAL') {
       await expect(editor.getByText('목표 점수를 1~100자로 입력해주세요.', { exact: true })).toHaveCount(0);
       await editor.getByLabel('제목', { exact: true }).fill(title);
@@ -72,9 +76,9 @@ for (const scenario of [
       await crawler.close();
     }
     await page.locator('.detail-card').getByRole('button', { name: '수정', exact: true }).click();
-    await expect(editor.getByLabel('수강료 기준', { exact: true })).toHaveValue(scenario.type);
+    await expect(editor.getByRole('radio', { name: scenario.pricingLabel, exact: true })).toBeChecked();
     await expect(editor.getByLabel(scenario.label, { exact: true })).toHaveValue(scenario.amount);
-    await editor.getByLabel('수강료 기준', { exact: true }).selectOption('HOURLY');
+    await editor.getByRole('radio', { name: '시간당', exact: true }).check();
     await expect(editor.getByLabel('목표 점수', { exact: true })).toHaveCount(0);
     await editor
       .getByLabel(scenario.role === 'STUDENT' ? '시간당 희망 수강료 (원)' : '시간당 수강료 (원)', {
@@ -132,7 +136,9 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   const imageChooser = page.waitForEvent('filechooser');
   await editor.getByRole('button', { name: '사진 삽입', exact: true }).click();
   await (await imageChooser).setFiles({ name: 'photo.jpg', mimeType: 'image/jpeg', buffer: image });
-  await expect(editor.locator('.ql-editor img')).toBeVisible();
+  await expect(
+    editor.getByRole('textbox', { name: '내용', exact: true }).locator('img[data-post-media]'),
+  ).toBeVisible();
   const bytes = await page.evaluate(async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 160;
@@ -158,7 +164,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   await (
     await videoChooser
   ).setFiles({ name: 'clip.webm', mimeType: 'video/webm', buffer: Buffer.from(bytes) });
-  await expect(editor.locator('.ql-editor video')).toBeVisible();
+  await expect(editor.getByRole('textbox', { name: '내용', exact: true }).locator('video')).toBeVisible();
   await editor.getByRole('button', { name: '게시글 등록', exact: true }).click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   const video = page.locator('.prose-body video');
@@ -167,8 +173,10 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   const url = page.url();
   await page.reload();
   await page.locator('.detail-card').getByRole('button', { name: '수정', exact: true }).click();
-  await expect(editor.locator('.ql-editor img')).toBeVisible();
-  await expect(editor.locator('.ql-editor video')).toBeVisible();
+  await expect(
+    editor.getByRole('textbox', { name: '내용', exact: true }).locator('img[data-post-media]'),
+  ).toBeVisible();
+  await expect(editor.getByRole('textbox', { name: '내용', exact: true }).locator('video')).toBeVisible();
   await editor.getByLabel('제목', { exact: true }).fill(title + ' 수정');
   await page.getByRole('dialog').getByRole('button', { name: '수정 완료', exact: true }).click();
   await expect(editor).toHaveCount(0);
@@ -249,7 +257,8 @@ test('verification opens a private admin chat and an administrator reviews user 
     });
     const reporter = await reporterContext.newPage();
     await reporter.goto(`/ko/users/${userId}`);
-    await reporter.getByRole('button', { name: '사용자 신고', exact: true }).click();
+    await reporter.getByRole('button', { name: `문의_${suffix}님의 프로필 메뉴`, exact: true }).click();
+    await reporter.getByRole('menuitem', { name: '사용자 신고', exact: true }).click();
     const dialog = reporter.getByRole('dialog');
     await dialog.getByLabel('신고 사유', { exact: true }).selectOption('HARASSMENT');
     await dialog.getByLabel('추가 설명 (선택)', { exact: true }).fill(`사용자 신고 ${suffix}`);

@@ -50,7 +50,7 @@ export function UpdateRequiredPageTemplate({
           새 버전으로 업데이트해 주세요
         </Text>
         <Text style={styles.description}>
-          지금 버전에서는 더 이상 별사대를 이용할 수 없어요. 스토어에서 최신 버전으로 업데이트해 주세요.
+          지금 버전에서는 더 이상 피식을 이용할 수 없어요. 스토어에서 최신 버전으로 업데이트해 주세요.
         </Text>
         <Text style={styles.version}>
           현재 {currentVersion} 버전을 사용 중이에요. {minimumVersion} 이상이 필요해요.

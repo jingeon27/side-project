@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import manifest from '../../../docs/migration-manifest.json';
+import localizations from '../content/english-localizations.json';
 import imageReplacements from '../content/image-replacements.json';
 import enSeo from '../seo/en.json';
 import koSeo from '../seo/ko.json';
@@ -45,7 +46,7 @@ describe('edited article contracts', () => {
   );
 
   it.each(editions)(
-    'keeps product screenshots and a separate infrastructure article link in $locale',
+    'keeps product visuals in the article language and a separate infrastructure link in $locale',
     async ({ locale }) => {
       const source = await readFile(path.join(contentRoot, 'side-project-design', `${locale}.mdx`), 'utf8');
 
@@ -54,7 +55,9 @@ describe('edited article contracts', () => {
         const replacement = Object.entries(imageReplacements).find(
           ([original]) => original === archived,
         )?.[1];
-        expect(source).toContain(replacement ?? archived);
+        const original = replacement ?? archived;
+        const localized = localizations.images[original as keyof typeof localizations.images];
+        expect(source).toContain(locale === 'en' ? (localized ?? original) : original);
       }
       const seo = locale === 'ko' ? koSeo : enSeo;
       expect(source).toContain(`](/${locale}/blog/${seo.posts['side-project-infrastructure'].slug})`);

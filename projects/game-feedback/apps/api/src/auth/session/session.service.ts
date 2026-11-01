@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Response } from 'express';
 
 import { type TSocialProvider } from '@game-feedback/contracts';
@@ -34,7 +35,7 @@ export class SessionService {
         : null;
       req.gfSession =
         session &&
-        session.expiresAt.getTime() > Date.now() &&
+        session.expiresAt.getTime() > dayjs().valueOf() &&
         !session.account.disabledAt &&
         !session.account.user.bannedAt &&
         !session.account.user.withdrawnAt &&
@@ -64,7 +65,7 @@ export class SessionService {
       req.gfSession = null;
     if (
       req.gfSession &&
-      (req.gfSession.expiresAt.getTime() <= Date.now() ||
+      (req.gfSession.expiresAt.getTime() <= dayjs().valueOf() ||
         req.gfSession.user?.withdrawnAt ||
         (!this.config.demoMode && !this.config.testAuthEnabled && req.gfSession.user?.demoKey))
     )
@@ -90,7 +91,7 @@ export class SessionService {
   ) {
     const raw = token(),
       maxAge = options.durationMs ?? (userId ? 1000 * 60 * 60 * 24 * 14 : 1000 * 60 * 15);
-    const expiresAt = new Date(Date.now() + maxAge);
+    const expiresAt = dayjs().add(maxAge, 'millisecond').toDate();
     const current = sessionToken(req);
     await this.transactions.run(async (tx) => {
       if (userId) {
@@ -101,7 +102,7 @@ export class SessionService {
           throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
       }
       // Expired rows are never read again (loadSession treats them as signed out); prune them on issuance.
-      await tx.session.deleteMany({ where: { expiresAt: { lte: new Date() } } });
+      await tx.session.deleteMany({ where: { expiresAt: { lte: dayjs().toDate() } } });
       if (current) await (tx ?? this.db).session.deleteMany({ where: { tokenHash: hash(current) } });
       await (tx ?? this.db).session.create({
         data: {

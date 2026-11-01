@@ -8,7 +8,7 @@
 
 - `apps/web/content/posts/{contentId}/meta.json`: 공개 발행 시각, 수정 시각, 분류, 태그와 원문 URL.
 - `apps/web/content/posts/{contentId}/ko.mdx`: 공개된 본문 전체. 원문의 코드, 표, 목록, 인용과 그림 설명을 유지했다.
-- `apps/web/content/posts/{contentId}/en.mdx`: 같은 글의 영문 번역. 코드 예제·이미지 경로·제목 구조·표 크기를 유지하고 본문과 이미지 대체 텍스트·캡션을 번역했다. 코드 내부의 한국어 주석·문자열과 도표 내부 글자는 원본을 재사용한다.
+- `apps/web/content/posts/{contentId}/en.mdx`: 같은 글의 영문 번역. 코드 예제와 제목 구조, 표 크기를 유지하면서 본문과 이미지 설명을 번역한다. 사용자 요청으로 코드 주석과 화면에 표시하는 문자열도 영어로 옮겼다. 실행 조건과 식별자는 유지하고, 변경한 코드 블록의 원본·번역본 해시와 이미지 교체 경로는 `english-localizations.json`에 기록한다.
 - `apps/web/seo/ko.json`: 공개 제목과 제목에서 만든 한국어 URL, 설명, 검색어.
 - `apps/web/seo/en.json`: 영어 UI와 영문 글 27편의 제목·설명·고정 영문 slug·검색어.
 - `apps/web/public/images/posts/{contentId}/`: 처음 가져온 공개 이미지 32장의 원본 보관본. 원격 이미지의 만료되는 서명 URL을 런타임에 사용하지 않는다.
@@ -16,6 +16,8 @@
 - `apps/web/public/images/covers/`: 본문·메타데이터에서 사용하는 새 커버 PNG 5장. 해당 SVG를 1280×720으로 렌더링했다.
 - `apps/web/content/image-replacements.json`: 기존 이미지 경로와 교체한 커버 경로의 대응표.
 - `apps/web/content/code-comment-edits.json`: 사용자 요청으로 바꾼 코드 주석 구두점의 원문과 편집문. 실행 코드는 수정하지 않는다.
+- `apps/web/content/code-redactions.json`: 공개 예제에서 조직 식별자를 익명화한 코드 블록의 원본·편집본 SHA-256 대응표. 식별자 원문은 기록하지 않는다.
+- `apps/web/content/english-localizations.json`: 영문판의 이미지 경로와 코드 블록 번역 SHA-256 대응표. 한글 도해는 별도의 `-en.svg`와 `-en.png`로 재구성하며, 원본 이미지와 한국어 예제는 보존한다. 실제 화면을 바탕으로 다시 그린 영문 이미지는 새 캡처가 아니라 영문 재구성본이라고 표시한다.
 - [migration-manifest.json](migration-manifest.json): 원문 URL, 콘텐츠 ID, 대응 파일명, 공개 발행 시각, 코드 블록과 이미지의 SHA-256.
 
 최초 이관에서는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 보존했다. 이후 편집한 글은 발행일을 유지하고 `updatedAt`에 편집 시각을 기록한다. 화면의 날짜는 한국 시간을 기준으로 표시한다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 발행일을 마이그레이션 날짜로 바꾸지 않았다.
@@ -103,6 +105,10 @@ AI 활용 포트폴리오에 사용한 최근 화면 모음 두 장과 모니터
 
 사용자 요청으로 한영 본문의 앰대시를 문장이나 콜론으로 정리했다. 코드 예제 안에서도 주석의 구두점 6종만 바꾸고 대응표에 기록했다. 최초 이관한 코드의 SHA-256은 변경하지 않았다. 검증에서는 기록된 주석 구두점만 원문으로 되돌린 뒤 해시를 비교하므로 실행 내용이나 기록되지 않은 부분이 바뀌면 실패한다.
 
+## 2026-10-30 조직 식별자 익명화
+
+공개 본문의 조직 이름을 일반적인 서비스 설명으로 바꾸고, 코드 예제의 조직 식별자는 동작을 유지하는 일반 이름으로 한영판에 함께 반영했다. 최초 이관 기록의 코드 해시는 보존하며, 익명화한 블록 두 개만 `code-redactions.json`의 원본·편집본 해시로 연결한다. 무결성 테스트는 편집본 해시의 실제 사용과 원본 블록의 위치를 확인해 기록하지 않은 코드 변경이나 사용되지 않는 예외가 있으면 실패한다. 원본 이미지와 기존 주석 편집 검증도 유지한다.
+
 ## 재실행
 
 아래 스크립트는 최초 가져오기용이다. 재실행하면 이후 수정한 문장, 표 헤더, 이미지 경로와 메타데이터를 덮어쓰므로 편집본 위에서 바로 실행하지 않는다. 별도 임시 경로에서 가져온 뒤 변경 내용을 검토해 필요한 부분만 반영한다.
@@ -117,4 +123,28 @@ python3 apps/web/scripts/migrate-tistory.py --resume-blog /path/to/resume/blog
 
 ### 화면 캡처 갱신
 
-2026-10-29에 side-project-design의 예전 모바일 화면 모음을 다시 촬영한 화면으로 교체했다. 이전 이미지는 삭제하거나 덮어쓰지 않았다. 제거된 전체 목록 답변 대기 버튼과 그룹 탐색 안내, 바텀시트 프로필 편집이 현재 화면으로 오해되지 않도록 Game Mate 피드, 별사대 그룹 탐색, 공개 프로필과 별도 편집 페이지를 실었다. 캡처에는 격리된 테스트 계정과 가짜 게임 API를 사용했으며 촬영한 코드 revision, 경로, 크기와 이미지 해시는 [screen-captures.json](screen-captures.json)에 기록했다. 실제 화면 픽셀은 수정하지 않고 HTML과 CSS로 두 화면씩 배치해 브라우저에서 저장했다. 교체 경로는 image-replacements.json에 남겼다.
+2026-10-29에 side-project-design의 예전 모바일 화면 모음을 다시 촬영한 화면으로 교체했다. 이전 이미지는 삭제하거나 덮어쓰지 않았다. 제거된 전체 목록 답변 대기 버튼과 그룹 탐색 안내, 바텀시트 프로필 편집이 현재 화면으로 오해되지 않도록 Game Mate 피드, 피식 그룹 탐색, 공개 프로필과 별도 편집 페이지를 실었다. 캡처에는 격리된 테스트 계정과 가짜 게임 API를 사용했으며 촬영한 코드 revision, 경로, 크기와 이미지 해시는 [screen-captures.json](screen-captures.json)에 기록했다. 실제 화면 픽셀은 수정하지 않고 HTML과 CSS로 두 화면씩 배치해 브라우저에서 저장했다. 교체 경로는 image-replacements.json에 남겼다.
+
+### 2026-11-01 실제 제품 화면 갱신
+
+side-project-design의 피드·그룹 탐색과 공개 프로필·수정 화면을 다시 촬영했다. 한국어 합성물 2개와 영문 합성물 2개를 날짜가 붙은 새 PNG로 추가했고 이전 PNG, JPG, SVG는 그대로 보존했다. 영문판도 재구성 그림 대신 실제 Game Mate 영어 UI를 담았다. 피식은 한국어 UI이고, Game Mate의 게시글은 한국어 테스트 내용이라는 점을 영문 캡션에 명시했다.
+
+캡처는 격리된 테스트 계정, 자체 테스트 스키마와 가짜 게임 프로필 제공자를 사용했다. 같은 날 Game Mate 화면 6장을 현재 UI로 다시 촬영하면서 합동 브라우저 검사 24개가 통과한 프로덕션 빌드를 새 서버 프로세스로 실행했다. 한 줄 분류 칩과 현재 공개 프로필·수정 화면을 담았으며, 피식 원본은 앞서 촬영한 픽셀과 날짜, 출처 정보를 그대로 재사용했다. 촬영 때의 base revision, 빌드 식별자와 전체 런타임 소스 해시 목록을 남겼다. 이는 로컬 테스트 화면이며 실제 운영 배포를 뜻하지 않는다. 피식은 그룹 빈 상태 CTA 보완까지 들어간 당시 빌드에서 검색과 그룹 만들기 버튼이 실제로 활성화된 상태를 기다려 촬영했다. 그때의 native disabled, aria-disabled, data-disabled와 opacity 값을 캡처 기록에 유지했다. 탐색에서는 “함께”를 검색해 기존 테스트 그룹을 보여 줬다.
+
+[캡처 기록](screen-captures.json)에 원본 화면 7장과 합성물 4장의 경로·SHA-256·실제 UI 언어·viewport를 기록했다. 원본 화면 픽셀은 수정하지 않고 HTML/CSS로 배치했다. 콘텐츠 검증은 영문 도해의 SVG 검사와 실제 캡처의 해시·크기 검사를 구분한다. 로그인 리다이렉트와 로딩 상태는 결과로 채택하지 않고 최종 경로와 필요한 실제 UI가 나타난 뒤 촬영한다.
+
+재촬영 도구는 블로그 앱의 `scripts/capture-product-screens.ts`다. 먼저 각 제품의 기존 격리 테스트 실행기로 서버와 테스트 데이터를 준비한다. 피식 storageState 파일은 쿠키와 일치하는 hostname의 서버에서만 사용하며 로컬에만 둔다. 아래 명령의 상태 파일 환경변수는 그 로컬 파일 경로를 가리킨다.
+
+```bash
+yarn workspace @blog/web exec tsx scripts/capture-product-screens.ts \
+  --game-feedback-url http://127.0.0.1:3301 \
+  --photo-contest-url http://localhost:3320 \
+  --photo-contest-state "$PHOTO_CONTEST_CAPTURE_STATE" \
+  --photo-contest-search 함께 \
+  --captured-on 2026-11-01 \
+  --output-dir ../../.data/product-captures-2026-11-01
+```
+
+각 앱의 개발 서버와 DB는 사용하지 않는다. 도구는 위 격리 포트만 허용하며 새 브라우저를 닫는 일만 맡는다. 제품의 테스트 서버와 자체 테스트 스키마 정리는 해당 실행기가 맡는다. 이미 같은 날 촬영한 피식 원본을 그대로 쓸 때는 기존 `capture-result.json`과 피식 원본을 둔 출력 폴더에서 `--reuse-photo-capture`를 붙일 수 있다. 이때 storageState 인자는 필요하지 않고, 저장된 원본 해시가 맞는지 확인한 뒤 피식 서버에 다시 접근하지 않는다. Game Mate 피드는 현재 경로와 제목, 활성화된 글쓰기 버튼 및 분류 영역 opacity 1을 확인하고, 화면에 보이는 이미지는 로딩 완료와 실제 크기를 확인한다. 수정하지 않은 프로필의 저장 버튼은 비활성 상태가 정상이다.
+
+Game Mate 원본을 그대로 두고 피식만 다시 촬영할 때는 `--reuse-game-captures`를 사용할 수 있다. 같은 날짜의 기존 원본 해시를 검증하며 Game Mate 서버에는 접근하지 않는다.

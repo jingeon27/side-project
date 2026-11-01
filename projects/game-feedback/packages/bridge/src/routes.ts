@@ -2,12 +2,17 @@ import { compact } from 'es-toolkit';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
+import {
+  BattleModeSchema as battleModeSchema,
+  BoardQuerySchema,
+  BoardSlugSchema as boardSlugSchema,
+  CoachingRoleSchema as coachingRoleSchema,
+  FeedbackStatusSchema as feedbackStatusSchema,
+  GameSlugSchema,
+} from './board-query';
+
 export const RouteIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const localeSchema = z.enum(['ko', 'en', 'ja']);
-export const GameSlugSchema = z
-  .string()
-  .regex(/^[a-z0-9-]+$/)
-  .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings';
 export type TAppScreen =
   | TAppTab
@@ -35,10 +40,6 @@ export interface IAppRoute {
 function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
-const boardSlugSchema = z.enum(['feedback', 'friend-sale', 'friendly', 'coaching', 'free']);
-const battleModeSchema = z.enum(['DUEL', 'TEAM']);
-const coachingRoleSchema = z.enum(['COACH', 'STUDENT']);
-const feedbackStatusSchema = z.enum(['WAITING', 'ANSWERED']);
 interface IRecruitmentFilters {
   battleMode?: z.infer<typeof battleModeSchema>;
   coachingRole?: z.infer<typeof coachingRoleSchema>;
@@ -221,59 +222,48 @@ function resolveAuthRoute(
 }
 
 function resolveSearchRoute({ pathname, locale, query, game, feedback }: IRouteContext): IAppRoute | null {
-  const board = boardSlugSchema.optional().safeParse(query.board);
-  if (feedback && query.board !== 'feedback') return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!board.success || !battle.success || !coaching.success || (query.q?.length ?? 0) > 100) return null;
-  if ((battle.data && board.data !== 'friendly') || (coaching.data && board.data !== 'coaching')) return null;
+  const parsed = BoardQuerySchema.safeParse(query);
+  if (!parsed.success || (query.q?.length ?? 0) > 100) return null;
+  const { board, battleMode, coachingRole } = parsed.data;
   const filters = {
-    board: board.data,
+    board,
     feedbackStatus: feedback,
     game: query.game,
     q: query.q,
     tab: query.tab,
-    battleMode: battle.data,
-    coachingRole: coaching.data,
+    battleMode,
+    coachingRole,
   };
   return {
     path: appRoutes.search(locale, filters),
     pathname,
     locale,
     screen: 'search',
-    tab: board.data ? 'boards' : 'feed',
-    game: board.data || query.game ? game : undefined,
-    parent: board.data
-      ? appRoutes.boards(locale, board.data, query.q, game, filters)
+    tab: board ? 'boards' : 'feed',
+    game: board || query.game ? game : undefined,
+    parent: board
+      ? appRoutes.boards(locale, board, query.q, game, filters)
       : appRoutes.feed(locale, { q: query.q, tab: query.tab }),
   };
 }
 
 function resolveComposeRoute({ pathname, locale, home, query, game }: IRouteContext): IAppRoute | null {
-  const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
-  if (board && !board.success) return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  if (!battle.success || (battle.data && query.board !== 'friendly')) return null;
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!coaching.success || (coaching.data && query.board !== 'coaching')) return null;
+  const parsed = BoardQuerySchema.safeParse(query);
+  if (!parsed.success) return null;
+  const { board, battleMode, coachingRole } = parsed.data;
   return {
     path: queryPath(pathname, {
-      board: board?.success ? board.data : undefined,
+      board,
       game: game !== 'clash-royale' ? game : undefined,
-      battleMode: battle.data,
-      coachingRole: coaching.data,
+      battleMode,
+      coachingRole,
     }),
-    game: game,
+    game,
     pathname,
     locale,
     screen: 'compose',
     tab: board ? 'boards' : 'feed',
-    parent: board?.success
-      ? appRoutes.boards(locale, board.data, undefined, game, {
-          battleMode: battle.data,
-          coachingRole: coaching.data,
-        })
-      : home,
+    parent: board ? appRoutes.boards(locale, board, undefined, game, { battleMode, coachingRole }) : home,
   };
 }
 
@@ -295,29 +285,13 @@ function resolvePostRoute({ pathname, locale, home, query, game, id }: IRouteCon
   };
 }
 
-function resolveBoardRoute({
-  pathname,
-  locale,
-  home,
-  query,
-  game,
-  id,
-  feedback,
-}: IRouteContext): IAppRoute | null {
-  const slug = boardSlugSchema.safeParse(id ?? 'feedback');
-  if (!slug.success || (query.q?.length ?? 0) > 100) return null;
-  if (feedback && slug.data !== 'feedback') return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  if (!battle.success || (battle.data && slug.data !== 'friendly')) return null;
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!coaching.success || (coaching.data && slug.data !== 'coaching')) return null;
+function resolveBoardRoute({ pathname, locale, home, query, game, id }: IRouteContext): IAppRoute | null {
+  const parsed = BoardQuerySchema.safeParse({ ...query, board: id ?? 'feedback' });
+  if (!parsed.success || !parsed.data.board || (query.q?.length ?? 0) > 100) return null;
+  const { board, feedbackStatus, battleMode, coachingRole } = parsed.data;
   return {
-    path: appRoutes.boards(locale, slug.data, query.q, game, {
-      feedbackStatus: feedback,
-      battleMode: battle.data,
-      coachingRole: coaching.data,
-    }),
-    game: game,
+    path: appRoutes.boards(locale, board, query.q, game, { feedbackStatus, battleMode, coachingRole }),
+    game,
     pathname,
     locale,
     screen: 'boards',

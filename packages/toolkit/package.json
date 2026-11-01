@@ -27,6 +27,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "dayjs": "catalog:",
     "es-toolkit": "catalog:",
     "ts-pattern": "catalog:"
   }

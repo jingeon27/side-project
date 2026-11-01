@@ -15,7 +15,7 @@ import { ServiceErrorBoundary } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
 
 import { CommunityFooter } from './CommunityFooter';
-import { MobileNav } from './MobileNav';
+import { MobileNav } from './navigation/MobileNav';
 
 interface ICommunityShellProps {
   children: ReactNode;

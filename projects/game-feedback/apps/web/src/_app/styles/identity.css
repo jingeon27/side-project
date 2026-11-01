@@ -318,6 +318,18 @@
     .post-author > .user-badges:empty {
       display: none;
     }
+    .feed-section .post-author {
+      flex: 1;
+      flex-wrap: nowrap;
+      max-width: none;
+    }
+    .feed-section .post-author > strong {
+      min-width: 0;
+    }
+    .feed-section .post-author > .user-badges {
+      width: auto;
+      margin: 0;
+    }
     .test-account-option {
       padding: 11px;
     }

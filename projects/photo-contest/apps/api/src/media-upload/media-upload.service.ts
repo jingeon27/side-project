@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { match } from 'ts-pattern';
 
 import type { IViewer } from '../auth/session/session.service';
@@ -74,9 +75,9 @@ export class MediaUploadService {
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
     const key = createMediaKey(policy.extension);
-    const expiresAt = new Date(
-      Date.now() + (contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000),
-    );
+    const expiresAt = dayjs()
+      .add(contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000, 'millisecond')
+      .toDate();
     // 서명 준비에는 자격 증명 조회가 포함될 수 있어 트랜잭션 밖에서 하고, 발급 커밋 뒤에만 응답에 싣는다.
     const form = await this.storage.presignUpload(key, contentType, byteSize, expiresAt);
     const id = await this.transactions.atomic(async (tx) => {
@@ -87,7 +88,7 @@ export class MediaUploadService {
         if (contest.groupId !== groupId || phase(contest) !== PHASE.SUBMISSION)
           fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
       }
-      const now = new Date();
+      const now = dayjs().toDate();
       if (expiresAt <= now) fail('업로드 요청이 만료되었습니다. 다시 시도해 주세요.', ERROR_CODE.CONFLICT);
       await assertStorageQuota(tx, viewer, byteSize);
       const pending = contestId
@@ -163,7 +164,7 @@ export class MediaUploadService {
       if (current.storageKey) return current;
       if (current.stagingKey !== key) fail(USED, ERROR_CODE.CONFLICT);
       // 대회 사진·대표 사진은 각자의 기한으로 사용과 정리를 판단하므로 게시 기한과 함께 늘린다.
-      const expiresAt = new Date(Date.now() + COMPLETED_POST_UPLOAD_TTL_MS);
+      const expiresAt = dayjs().add(COMPLETED_POST_UPLOAD_TTL_MS, 'millisecond').toDate();
       if (current.submissionUpload)
         await tx.upload.update({
           where: { id: current.submissionUpload.id },
@@ -206,13 +207,13 @@ export class MediaUploadService {
     if (
       !ticket ||
       ticket.userId !== viewer.id ||
-      (ticket.expiresAt && ticket.expiresAt <= new Date()) ||
+      (ticket.expiresAt && ticket.expiresAt <= dayjs().toDate()) ||
       ticket.submissionUpload?.id !== submissionId ||
       ticket.groupAvatar?.id !== avatarId
     )
       fail(REJECTED, ERROR_CODE.FORBIDDEN);
-    if (ticket.groupAvatar && ticket.groupAvatar.expiresAt <= new Date()) fail(USED);
-    if (ticket.submissionUpload && ticket.submissionUpload.expiresAt <= new Date()) fail(USED);
+    if (ticket.groupAvatar && ticket.groupAvatar.expiresAt <= dayjs().toDate()) fail(USED);
+    if (ticket.submissionUpload && ticket.submissionUpload.expiresAt <= dayjs().toDate()) fail(USED);
   }
 
   private async assertAccess(viewer: IViewer, ticket: IUploadTicket, tx: TDatabaseClient) {

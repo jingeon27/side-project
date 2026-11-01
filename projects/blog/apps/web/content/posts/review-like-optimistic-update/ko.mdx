@@ -217,7 +217,7 @@ export function useReviewLike() {
         );
       }
 
-      toast.warning(SafedocError.getMessage(error));
+      toast.warning(ServiceError.getMessage(error));
     },
 
     onSettled: () =>

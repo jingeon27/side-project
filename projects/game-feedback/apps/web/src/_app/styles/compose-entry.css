@@ -1,0 +1,36 @@
+@layer components {
+  .floating-compose-button {
+    position: fixed;
+    z-index: calc(var(--z-index-sticky-cta) - 1);
+    right: max(40px, calc((100vw - 1160px) / 2 + 40px));
+    bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  body:has(:is([data-slot='dialog-content'], [data-slot='bottom-sheet-content'])[data-open])
+    .floating-compose-button {
+    visibility: hidden;
+  }
+  .community-shell:has(> .shell-route:is([data-screen='feed'], [data-screen='boards'])):has(
+      .floating-compose-button
+    )
+    .site-footer-inner {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  body:has(.shell-route:is([data-screen='feed'], [data-screen='boards'])):has(.floating-compose-button) {
+    --service-toast-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+  @media (max-width: 760px) {
+    .floating-compose-button {
+      right: max(var(--mobile-page-inset-end), calc((100vw - 650px) / 2 + 16px));
+      bottom: calc(var(--spacing-bottom-nav) + 16px + env(safe-area-inset-bottom));
+    }
+    .community-shell:has(> .shell-route:is([data-screen='feed'], [data-screen='boards'])):has(
+        .floating-compose-button
+      )
+      .site-footer-inner {
+      padding-bottom: calc(88px + var(--spacing-bottom-nav) + env(safe-area-inset-bottom));
+    }
+    body:has(.shell-route:is([data-screen='feed'], [data-screen='boards'])):has(.floating-compose-button) {
+      --service-toast-bottom: calc(84px + var(--spacing-bottom-nav) + env(safe-area-inset-bottom));
+    }
+  }
+}

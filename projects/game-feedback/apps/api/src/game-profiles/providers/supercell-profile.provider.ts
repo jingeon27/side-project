@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { GameProfile } from '@game-feedback/contracts';
 
 import { ApiError } from '../../common/http/api-error';
@@ -50,7 +52,7 @@ export class SupercellProfileProvider implements ProfileProvider {
         })),
         verification: 'UNVERIFIED',
         source: 'SUPERCELL',
-        fetchedAt: new Date().toISOString(),
+        fetchedAt: dayjs().toISOString(),
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;

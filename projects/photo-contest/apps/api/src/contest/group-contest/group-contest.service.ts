@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { groupBy, maxBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
@@ -69,7 +70,7 @@ export class GroupContestService {
   ) {
     const { member } = await this.membership.readableGroup(viewer?.id ?? null, input.groupId);
     const range = pageRange(input.offset ?? 0, input.limit ?? PAGE_SIZE_DEFAULT);
-    const now = new Date();
+    const now = dayjs().toDate();
     const schedule = match(input.filter ?? GROUP_CONTEST_FILTER.ACTIVE)
       .with(GROUP_CONTEST_FILTER.ACTIVE, () => ({ endsAt: { gt: now } }))
       .with(GROUP_CONTEST_FILTER.OPEN, () => ({ startsAt: { lte: now }, submissionEndsAt: { gt: now } }))

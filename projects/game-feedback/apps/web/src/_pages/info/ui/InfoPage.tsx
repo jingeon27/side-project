@@ -1,28 +1,30 @@
+import Link from 'next/link';
+
 import { ArrowLeft } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 
 import { isLocale, translate } from '@/shared/i18n/index.server';
-import { BackLink } from '@/shared/navigation';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { infoTitles, type TInfoKind } from '../model/info';
-import { ContactContent } from './ContactContent';
-import { ContactSupport } from './ContactSupport';
-import { ContactTopbar } from './ContactTopbar';
-import { GuideContent } from './GuideContent';
-import { GuideTopbar } from './GuideTopbar';
-import { PrivacyContent } from './PrivacyContent';
-import { PrivacyTopbar } from './PrivacyTopbar';
-import { TermsContent } from './TermsContent';
-import { TermsTopbar } from './TermsTopbar';
+import { ContactContent } from './contact/ContactContent';
+import { ContactSupport } from './contact/ContactSupport';
+import { ContactTopbar } from './contact/ContactTopbar';
+import { GuideContent } from './guide/GuideContent';
+import { GuideTopbar } from './guide/GuideTopbar';
+import { PrivacyContent } from './privacy/PrivacyContent';
+import { PrivacyTopbar } from './privacy/PrivacyTopbar';
+import { TermsContent } from './terms/TermsContent';
+import { TermsTopbar } from './terms/TermsTopbar';
 
 export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) {
   const language = isLocale(locale) ? locale : 'ko';
   return (
     <CommunityPage
       locale={locale}
+      screenKey={kind}
       topbar={match(kind)
         .with('guide', () => <GuideTopbar locale={locale} />)
         .with('terms', () => <TermsTopbar locale={locale} />)
@@ -30,12 +32,10 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
         .with('contact', () => <ContactTopbar locale={locale} />)
         .exhaustive()}
     >
-      {kind !== 'guide' && (
-        <BackLink className="back-link" href={appRoutes.feed(locale)}>
-          <ArrowLeft size={16} />
-          {translate(language, '홈')}
-        </BackLink>
-      )}
+      <Link className="back-link" href={appRoutes.feed(locale)}>
+        <ArrowLeft size={16} aria-hidden />
+        {translate(language, '홈')}
+      </Link>
       <article className="info-card" lang={language}>
         <h1>{translate(language, infoTitles[kind])}</h1>
         {match(kind)

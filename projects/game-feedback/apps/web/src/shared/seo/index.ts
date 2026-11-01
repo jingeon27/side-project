@@ -1,12 +1,6 @@
-export { getSeoConfig, resolveSeoConfig, canonicalPath, pageUrl, excerpt } from './config';
-export { createPageMetadata, staticPageMetadata, pageContent, SITE_NAME } from './metadata';
-export type { TStaticPage } from './metadata';
-export {
-  postStructuredData,
-  publicPageStructuredData,
-  profileStructuredData,
-  profileDescription,
-  serializeJsonLd,
-} from './structured-data';
+export { getSeoConfig, pageUrl } from './config';
+export { createPageMetadata, staticPageMetadata } from './metadata';
+
+export { postStructuredData, profileStructuredData, profileDescription } from './structured-data';
 export { JsonLd } from './JsonLd';
 export { PublicPageJsonLd } from './PublicPageJsonLd';

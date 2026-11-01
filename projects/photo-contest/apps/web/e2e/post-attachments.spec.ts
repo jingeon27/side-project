@@ -12,7 +12,7 @@ test(
     const cookie = await signIn('업로드 재시도 작성자');
     const group = await seedGroup(cookie, '전송 재시도');
     await page.goto(`/groups/${group.id}`);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     const chooser = page.waitForEvent('filechooser');
     await form.getByRole('button', { name: '파일 선택', exact: true }).click();
@@ -54,7 +54,7 @@ test(
       ['함께 볼 유튜브', 'https://youtu.be/abcdefghijk'],
       ['읽어볼 링크', 'https://example.com/funny'],
     ]) {
-      await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
       await form.getByLabel('제목', { exact: true }).fill(title ?? '');
       await form.getByLabel('첨부 링크', { exact: true }).fill(link ?? '');
@@ -125,7 +125,7 @@ for (const video of [false, true]) {
       const group = await seedGroup(cookie, '편하게 파일 저장');
       const title = video ? '동영상으로 남긴 순간' : '사진으로 남긴 순간';
       await page.goto(`/groups/${group.id}`);
-      await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
       const chooser = page.waitForEvent('filechooser');
       await form.getByRole('button', { name: '파일 선택', exact: true }).click();

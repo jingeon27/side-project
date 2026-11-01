@@ -4,6 +4,7 @@ import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, S3Client } fr
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { s3KeyPrefix, s3Settings } from '../config/env';
@@ -50,7 +51,7 @@ export class MediaStorage {
   presignUpload(key: string, contentType: string, byteSize: number, expiresAt: Date) {
     const { client, bucket } = this.connection();
     // 정책은 티켓보다 먼저 끝나야 정리 작업이 지운 키에 늦은 전송이 다시 쓰지 못한다.
-    const expires = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+    const expires = Math.floor((expiresAt.getTime() - dayjs().valueOf()) / 1000);
     if (expires <= 0) throw new Error('Upload ticket already expired');
     return createPresignedPost(client, {
       Bucket: bucket,

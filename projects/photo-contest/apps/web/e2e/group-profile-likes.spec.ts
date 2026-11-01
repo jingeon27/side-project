@@ -16,8 +16,11 @@ test(
     // 변경 전 공개 캐시도 채워 새 프로필이 JSON mutation 뒤 바로 갱신되는지 확인한다.
     await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } });
     await page.goto(path);
-    await page.getByRole('button', { name: '그룹 프로필 수정' }).click();
-    const editor = page.getByRole('dialog', { name: '그룹 프로필 수정', exact: true });
+    await page.getByRole('link', { name: '그룹 프로필 수정' }).click();
+    await expect(page).toHaveURL(`${path}/edit`);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const editor = page.getByRole('form', { name: '그룹 프로필 수정', exact: true });
+    await editor.locator('summary').click();
     await editor.getByLabel('그룹 사진 선택').setInputFiles({
       name: 'group.png',
       mimeType: 'image/png',
@@ -54,31 +57,37 @@ test(
       }
     });
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
-    await expect(editor).toHaveCount(0);
+    await expect(page).toHaveURL(path);
     expect(mutations.some((body) => body.includes('completeGroupAvatarUpload'))).toBe(true);
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    await expect(page.getByText(description, { exact: true }).filter({ visible: true })).toBeVisible();
     const { group: profile } = await productRequest<{ group: { avatarUrl: string } }>(
       owner,
       'query($id:ID!){group(id:$id){avatarUrl}}',
       { id: group.id },
     );
-    await expect(page.locator(`img[src="${profile.avatarUrl}"]`)).toBeVisible();
+    await expect(page.locator(`img[src="${profile.avatarUrl}"]:visible`)).toBeVisible();
     const html = await (await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } })).text();
     expect(html).toContain(description);
     expect(html).toContain(WEB_ORIGIN + profile.avatarUrl);
     await page.goto(`/explore?q=${encodeURIComponent(name)}`);
     await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name, exact: true }).getByText(description, { exact: true }),
+    ).toBeVisible();
     await page.goto('/me');
     await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: new RegExp(name) }).getByText(description, { exact: true }),
+    ).toBeVisible();
     await page.goto(path);
-    await page.getByRole('button', { name: '그룹 프로필 수정' }).click();
+    await page.getByRole('link', { name: '그룹 프로필 수정' }).click();
+    await expect(page).toHaveURL(`${path}/edit`);
+    await editor.locator('summary').click();
     await editor.getByRole('button', { name: '사진 삭제', exact: true }).click();
     await expect(preview).toHaveCount(0);
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
-    await expect(editor).toHaveCount(0);
-    await expect(page.locator(`img[src="${profile.avatarUrl}"]`)).toHaveCount(0);
+    await expect(page).toHaveURL(path);
+    await expect(page.locator(`img[src="${profile.avatarUrl}"]:visible`)).toHaveCount(0);
   },
 );
 

@@ -38,7 +38,10 @@ function useBottomSheet(part: string) {
   return sheet;
 }
 
-export interface IBottomSheetRootProps {
+export interface IBottomSheetRootProps extends Pick<
+  ComponentProps<typeof Drawer.Popup>,
+  'initialFocus' | 'finalFocus'
+> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** 닫힘 전환이 끝난 뒤 false로 부른다. overlay를 unmount하거나 history를 정리하는 곳이다. */
@@ -74,6 +77,8 @@ function BottomSheetRoot({
   responsive = false,
   container,
   className,
+  initialFocus,
+  finalFocus,
 }: IBottomSheetRootProps) {
   const points = snapPoints ?? [];
   const [ownSnapPoint, setOwnSnapPoint] = useState<TBottomSheetSnapPoint | undefined>(points[0]);
@@ -126,6 +131,8 @@ function BottomSheetRoot({
           />
           <Drawer.Viewport className="ds-sheet-viewport" data-responsive={responsive || undefined}>
             <Drawer.Popup
+              initialFocus={initialFocus}
+              finalFocus={finalFocus}
               className={cn('ds-sheet-popup', className)}
               data-slot="bottom-sheet-content"
               data-responsive={responsive || undefined}

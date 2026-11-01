@@ -1,11 +1,28 @@
 'use client';
 
+import {
+  Coffee,
+  GraduationCap,
+  Handshake,
+  MessageSquareText,
+  SearchX,
+  Swords,
+  type LucideIcon,
+} from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import type { TBoardKind, TFeedbackStatus } from '@game-feedback/contracts';
 import { ButtonLink } from '@side/design-system/next';
 
 import { useI18n } from '@/shared/i18n';
+
+const BOARD_EMPTY_ICONS = {
+  FEEDBACK: MessageSquareText,
+  FRIEND_SALE: Handshake,
+  FRIENDLY: Swords,
+  COACHING: GraduationCap,
+  FREE: Coffee,
+} satisfies Record<TBoardKind, LucideIcon>;
 
 interface IBoardEmptyStateProps {
   board?: TBoardKind;
@@ -24,8 +41,15 @@ function emptyMessage({ board, feedbackStatus, q }: IBoardEmptyStateProps) {
 }
 export function BoardEmptyState(props: IBoardEmptyStateProps) {
   const { t } = useI18n();
+  const EmptyIcon = props.q ? SearchX : BOARD_EMPTY_ICONS[props.board ?? 'FEEDBACK'];
   return (
     <div className="board-empty">
+      <span
+        aria-hidden
+        className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+      >
+        <EmptyIcon className="size-full" />
+      </span>
       <p>{t(emptyMessage(props))}</p>
       {props.feedbackStatus && (
         <ButtonLink href={props.allFeedbackHref} variant="secondary" size="sm">

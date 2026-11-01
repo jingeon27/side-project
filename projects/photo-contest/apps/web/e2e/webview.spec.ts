@@ -61,7 +61,7 @@ test('가짜 앱 WebView에서도 비밀번호 가입·초대 공유·뒤로 가
     await registration.getByLabel('비밀번호', { exact: true }).fill('webview password 2026');
     await page.getByRole('button', { name: '가입하고 시작하기', exact: true }).click();
     await expect(page.getByRole('button', { name: /구글|Google/ })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '공개 그룹 목록' })).toBeVisible();
     expect((await context.cookies()).find(({ name }) => name === 'contest_session')?.httpOnly).toBe(true);
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page).toHaveURL('/me');

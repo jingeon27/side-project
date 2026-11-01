@@ -11,10 +11,10 @@ import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, LoadingState } from '@/shared/ui';
 
-import { ChatConnectionStatus } from './ChatConnectionStatus';
-import { ChatWelcome } from './ChatWelcome';
-import { ConversationPane } from './ConversationPane';
-import { ConversationSidebar } from './ConversationSidebar';
+import { ConversationPane } from './conversation/ConversationPane';
+import { ConversationSidebar } from './list/ConversationSidebar';
+import { ChatConnectionStatus } from './status/ChatConnectionStatus';
+import { ChatWelcome } from './status/ChatWelcome';
 
 interface IMessagesPageProps {
   locale: string;
@@ -28,10 +28,13 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   if (!userId)
     return (
       <div className="empty-feed">
-        <span>
-          <MessageCircle size={30} />
+        <span
+          aria-hidden
+          className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+        >
+          <MessageCircle className="size-full" />
         </span>
-        <h1>{t('플레이 이야기를, 조금 더 가까이')}</h1>
+        <h2>{t('플레이 이야기를, 조금 더 가까이')}</h2>
         <p>{t('로그인하면 다른 플레이어와 1:1 메시지를 나눌 수 있어요.')}</p>
         <Button variant="primary" size="md" type="button" className="button" onClick={login}>
           {t('로그인하고 대화하기')}

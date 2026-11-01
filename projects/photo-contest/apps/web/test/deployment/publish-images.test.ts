@@ -11,12 +11,15 @@ const repo = fileURLToPath(new URL('../../../../../../', import.meta.url));
 const sha = 'a'.repeat(40);
 
 function publishStep(service: string) {
-  const workflow = readFileSync(join(repo, '.github/workflows', `${service}.yml`), 'utf8');
-  const publish = workflow.split('\n  publish:\n')[1]?.split('\n  deploy:\n')[0];
+  const workflow = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8');
+  const prefix = service === 'game-feedback' ? 'gf' : 'pc';
+  const publish = workflow.split(`\n  ${prefix}-publish:\n`)[1]?.split(`\n  ${prefix}-deploy:\n`)[0];
   const script = publish?.split('        run: |\n').at(-1);
   if (!script) throw new Error('Image publication step not found.');
-  return script
-    .split('\n')
+  const lines = script.split('\n');
+  const end = lines.findIndex((line) => line !== '' && !line.startsWith('          '));
+  return lines
+    .slice(0, end < 0 ? lines.length : end)
     .map((line) => line.slice(10))
     .join('\n');
 }

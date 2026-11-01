@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { PostUpload } from '../../../generated/prisma';
 import type { IViewer } from '../../auth/session/session.service';
@@ -37,7 +38,7 @@ export class PostFileService {
       upload.groupId !== groupId ||
       !upload.storageKey ||
       !upload.expiresAt ||
-      upload.expiresAt <= new Date()
+      upload.expiresAt <= dayjs().toDate()
     )
       fail('업로드가 완료되지 않았거나 만료되었습니다.');
     return upload;
@@ -50,7 +51,7 @@ export class PostFileService {
 
   releaseUpload(uploadId: string, client: TDatabaseClient) {
     // 글 삭제와 같은 트랜잭션에서 정리 대상으로 바꿔야 파일 삭제 실패 뒤에도 재시도할 수 있다.
-    return client.postUpload.update({ where: { id: uploadId }, data: { expiresAt: new Date(0) } });
+    return client.postUpload.update({ where: { id: uploadId }, data: { expiresAt: dayjs(0).toDate() } });
   }
 
   async cleanup(upload: PostUpload | null) {
@@ -59,7 +60,7 @@ export class PostFileService {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
       if (upload.stagingKey) await this.storage.delete(upload.stagingKey);
       // POST 정책이 유효하면 같은 키로 재업로드할 수 있어, 만료 뒤 다시 지울 티켓을 남긴다.
-      if (upload.policyExpiresAt && upload.policyExpiresAt > new Date()) return;
+      if (upload.policyExpiresAt && upload.policyExpiresAt > dayjs().toDate()) return;
       await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
     } catch (error) {
       reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });
@@ -74,7 +75,9 @@ export class PostFileService {
   async download(viewer: IViewer | null, postId: string) {
     const file = await this.file(viewer, postId);
     const url = await this.storage.presignRead(file.key, mediaDownloadDisposition(file.filename));
-    const expiresAt = new Date(Date.now() + mediaUrlTtlSeconds(file.key) * 1000);
+    const expiresAt = dayjs()
+      .add(mediaUrlTtlSeconds(file.key) * 1000, 'millisecond')
+      .toDate();
     return { url, filename: file.filename, expiresAt };
   }
 

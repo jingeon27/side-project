@@ -12,13 +12,12 @@
 
 ```sh
 cp projects/game-feedback/.env.example projects/game-feedback/.env
-yarn workspace @side/game-feedback dev:test
+yarn workspace @side/game-feedback dev
 ```
 
 - 웹 [localhost:3300/ko](http://localhost:3300/ko), API [localhost:4300](http://localhost:4300)
 - 개발 DB 55442 · 테스트 DB 55444 · 모바일 Metro 8082
-- `dev:test`는 예시 콘텐츠와 서버 테스트 토큰을 사용하는 로컬 검토용입니다. 운영 인증과 혼동하지 않습니다.
-- 실제 제공자 연동은 프로젝트 `.env`를 설정한 뒤 `yarn workspace @side/game-feedback dev`로 시작합니다.
+- 실제 제공자 연동은 프로젝트 `.env`에 설정합니다. 테스트 인증과 예시 콘텐츠가 필요한 로컬 검토는 `yarn workspace @side/game-feedback dev:test`를 사용합니다.
 - Ctrl+C는 이 명령이 시작한 Web/API만 종료합니다. 개발 DB 중지는 `yarn workspace @side/game-feedback db:stop`입니다.
 
 ## 자주 쓰는 명령
@@ -46,6 +45,8 @@ yarn workspace @side/game-feedback dev:test
 환경 파일은 `projects/game-feedback/.env` 하나에서 앱별로 전달합니다. 서버 키를 `NEXT_PUBLIC_*`에 넣지 않습니다. S3는 개발·통합 테스트도 실제 버킷을 사용하되 실행별 테스트 prefix만 정리합니다. [첨부 설정](docs/media-upload.md), [관측 설정](docs/observability.md), [환경변수 반영과 데이터 격리](docs/development.md)를 참고하세요.
 
 운영은 EC2 공통 호스트에 배포하며 GitHub Environment `game-feedback-production`을 사용합니다. 테스트 로그인은 운영에서 활성화하지 않습니다. 배포 성공·외부 인증·관측 이벤트 수신은 각각 실제 결과를 확인해야 합니다.
+
+웹의 페이지 전용 폼·조회 조합은 `apps/web/src/_pages`에, 재사용할 도메인 UI·요청·캐시 정책은 features에 둡니다. 상태 모션은 [공통 디자인 시스템](../../packages/design-system/README.md#상태-모션)을 사용합니다.
 
 ## 문서
 

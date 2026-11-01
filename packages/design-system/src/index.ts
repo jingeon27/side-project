@@ -2,16 +2,22 @@ export { Button, buttonVariants } from './ui/button/Button';
 export type { IButtonProps } from './ui/button/Button';
 export { IconButton, iconButtonVariants } from './ui/icon-button/IconButton';
 export type { IIconButtonProps } from './ui/icon-button/IconButton';
+export { FloatingActionButton } from './ui/floating-action-button/FloatingActionButton';
+export type { IFloatingActionButtonProps } from './ui/floating-action-button/FloatingActionButton';
 export { TextField, TextAreaField } from './ui/text-field/TextField';
 export type { ITextFieldProps, ITextAreaFieldProps } from './ui/text-field/TextField';
 export { FormField } from './ui/form-field/FormField';
 export type { IFormFieldProps } from './ui/form-field/FormField';
+export { FormActions } from './ui/form-actions/FormActions';
+export type { IFormActionsProps } from './ui/form-actions/FormActions';
 export { Badge } from './ui/badge/Badge';
 export type { IBadgeProps, TBadgeTone } from './ui/badge/Badge';
 export { Avatar } from './ui/avatar/Avatar';
 export type { IAvatarProps } from './ui/avatar/Avatar';
 export { Spinner } from './ui/spinner/Spinner';
 export type { ISpinnerProps } from './ui/spinner/Spinner';
+export { StatusAnimation } from './ui/status-animation/StatusAnimation';
+export type { IStatusAnimationProps } from './ui/status-animation/StatusAnimation';
 export { Dialog } from './ui/dialog/Dialog';
 export type { IDialogProps } from './ui/dialog/Dialog';
 export { BottomSheet } from './ui/bottom-sheet/BottomSheet';
@@ -25,6 +31,11 @@ export type {
 } from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
+export { useScrollVisibility } from './lib/use-scroll-visibility';
+export { useMotionPreference } from './lib/use-motion-preference';
+export { MotionProvider } from './ui/motion-provider/MotionProvider';
+export type { IMotionProviderProps } from './ui/motion-provider/MotionProvider';
+export { m, AnimatePresence, useAnimate, useMotionValue, useSpring } from './lib/motion';
 export { Mention } from './ui/mention/Mention';
 export type { IMentionProps } from './ui/mention/Mention';
 
@@ -59,4 +70,5 @@ export {
 
 export { Toaster } from './ui/sonner/Toaster';
 export { toast } from 'sonner';
+export { VisualViewport } from './ui/visual-viewport/VisualViewport';
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';

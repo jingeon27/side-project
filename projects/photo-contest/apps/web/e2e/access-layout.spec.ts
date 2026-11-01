@@ -53,7 +53,6 @@ test(
     };
     const home = await readServerText('/');
     expect(home.text).toContain('공개 그룹');
-    expect(home.text).toContain('공개 그룹의 최신 사진');
     expect(home.errors).toBe(0);
     const group = await seedGroup(cookie, 'SSR 가입 그룹');
     await seedPost(cookie, group.id, 'SSR 개인 피드 사진');
@@ -117,17 +116,17 @@ test(
   async ({ page, signIn }, testInfo) => {
     await signIn('레이아웃-사용자');
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '공개 그룹 목록' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const main = await page.locator('#pc-main').boundingBox();
     expect(main?.width).toBeLessThanOrEqual(1440);
     const viewport = page.viewportSize();
     if (viewport && viewport.width >= 1024) {
       expect(main?.width).toBeGreaterThan(1000);
-      await expect(page.locator('[data-bottom-nav]')).toBeHidden();
+      await expect(page.locator('[data-bottom-nav]:visible')).toHaveCount(0);
     }
     if (!viewport || viewport.width < 1024) {
-      await expect(page.locator('[data-bottom-nav]')).toBeVisible();
+      await expect(page.locator('[data-bottom-nav]:visible')).toHaveCount(1);
     }
     if (viewport && main) expect(Math.abs(main.x - (viewport.width - main.width) / 2)).toBeLessThan(2);
     await mkdir('.data/screens', { recursive: true });

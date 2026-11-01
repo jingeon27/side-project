@@ -48,6 +48,7 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   await thread.getByRole('button', { name: '답글', exact: true }).click();
   const input = page.getByRole('textbox', { name: '답글 내용', exact: true });
   await expect(input).toBeFocused();
+  await expect(input).toHaveAttribute('aria-describedby', /\S+/);
   await input.fill('첫 줄 답글');
   await input.press('Enter');
   await input.pressSequentially('두 번째 줄');
@@ -60,6 +61,7 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   await page.getByRole('button', { name: '답글 등록', exact: true }).click();
   const replies = thread.getByRole('list', { name: '답글', exact: true });
   await expect(replies.locator('.comment-bubble')).toHaveText(`@${parentName} 첫 줄 답글\n두 번째 줄`);
+  await expect(thread.getByRole('button', { name: '답글', exact: true }).first()).toBeFocused();
   await expect(replies.locator('[data-slot="mention"]')).toHaveText(`@${parentName}`);
   await expect(replies.locator('[data-slot="mention"]')).toHaveCSS('border-top-width', '1px');
   await expect(input).toHaveCount(0);

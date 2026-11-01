@@ -104,8 +104,8 @@ const detail = candidateDetailKeys.detail(candidateId);
 useQuery(detail);
 useQuery(detail._ctx.memos);
 
-queryClient.invalidateQueries(detail.queryKey); // 상세·메모·이력 전부
-queryClient.invalidateQueries(detail._ctx.memos.queryKey); // 메모만
+queryClient.invalidateQueries(detail.queryKey); // Detail, memos, and history
+queryClient.invalidateQueries(detail._ctx.memos.queryKey); // Memos only
 ```
 
 detail.queryKey is ['CandidateDetail', 'detail', candidateId]. The memo key appends 'memos', so it includes the detail key as a prefix. Default invalidateQueries matching includes child queries: the detail key targets memos and history too, while the memo key targets only memos.
@@ -123,7 +123,7 @@ The hierarchy makes it easy to refresh the whole detail after a memo edit, inclu
 An edit that changes the detail summary can use the detail scope. A memo-only change can use _ctx.memos.queryKey. To target the detail itself without its children, use exact.
 
 ```text
-// TanStack Query v4에서도 객체 형식을 쓸 수 있어요.
+// The object syntax also works in TanStack Query v4.
 queryClient.invalidateQueries({
   queryKey: detail.queryKey,
   exact: true,

@@ -27,6 +27,7 @@ export default defineConfig({
     // k6의 내장 모듈은 npm 의존성이 아니다.
     'projects/*/apps/*/scripts': { entry: ['*.{ts,js}'], ignoreDependencies: ['k6'] },
     'projects/game-feedback/apps/mobile': {
+      entry: appEntries,
       // Knip의 Expo 플러그인은 OTA를 쓰지 않아도 expo-updates를 기본 의존성으로 가정한다.
       ignoreDependencies: ['expo-updates'],
     },

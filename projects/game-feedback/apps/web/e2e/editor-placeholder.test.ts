@@ -1,7 +1,7 @@
 import { expect, test } from './support/test';
 
-for (const width of [320, 1440]) {
-  test(`the first Korean character hides the placeholder during IME composition at ${width}px`, async ({
+for (const width of [360, 1440]) {
+  test(`Korean composition hides the hint, commits once and preserves the draft at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -13,29 +13,43 @@ for (const width of [320, 1440]) {
     const body = page.getByRole('textbox', { name: '내용', exact: true });
     const placeholder = () => body.evaluate((node) => getComputedStyle(node, '::before').content);
     await expect(body).toBeVisible();
-    expect(await placeholder()).not.toBe('none');
+    await expect.poll(placeholder).not.toBe('none');
     await body.focus();
+    // These events exercise the browser editor's composition path. A physical
+    // Korean keyboard and the operating system candidate UI need device testing.
     await body.dispatchEvent('compositionstart', { data: '' });
+    await body.dispatchEvent('compositionupdate', { data: 'ㅎ' });
     await page.keyboard.insertText('ㅎ');
-    await expect(body).toContainText('ㅎ');
-    // Quill deliberately keeps its empty model until compositionend.
-    await expect(body).toHaveClass(/ql-blank/);
+    await expect(body).toHaveText('ㅎ');
     await expect.poll(placeholder).toBe('none');
     await body.dispatchEvent('compositionend', { data: 'ㅎ' });
-    await expect(body).not.toHaveClass(/ql-blank/);
-    await expect.poll(placeholder).toBe('none');
-    await body.fill('');
-    await expect(body).toHaveClass(/ql-blank/);
+    await expect(body).toHaveText('ㅎ');
+    await body.press('Backspace');
+    await expect(body).toHaveText('');
     await expect.poll(placeholder).not.toBe('none');
-    // Cancelling a composition in an empty editor restores the hint.
     await body.dispatchEvent('compositionstart', { data: '' });
-    await body.dispatchEvent('compositionend', { data: '' });
-    await expect.poll(placeholder).not.toBe('none');
-    await body.fill('안');
+    await body.dispatchEvent('compositionupdate', { data: '한글' });
+    await page.keyboard.insertText('한글');
+    await body.dispatchEvent('compositionend', { data: '한글' });
+    await expect(body).toHaveText('한글');
     await expect.poll(placeholder).toBe('none');
+    await body.press('Enter');
+    await page.keyboard.insertText('다음 줄');
+    await expect(page).toHaveURL('/ko/write?board=free');
+    await expect(body).toContainText('다음 줄');
     await page.getByLabel('분류', { exact: true }).selectOption('FEEDBACK');
     const feedbackBody = page.getByRole('textbox', { name: '플레이와 고민', exact: true });
-    await expect(feedbackBody).toHaveText('안');
-    expect(await feedbackBody.evaluate((node) => getComputedStyle(node, '::before').content)).toBe('none');
+    await expect(feedbackBody.locator('p')).toHaveText(['한글', '다음 줄']);
+    await feedbackBody.fill('');
+    await expect
+      .poll(() => feedbackBody.evaluate((node) => getComputedStyle(node, '::before').content))
+      .not.toBe('none');
+    // Cancelling an empty composition restores the hint without adding text.
+    await feedbackBody.dispatchEvent('compositionstart', { data: '' });
+    await feedbackBody.dispatchEvent('compositionend', { data: '' });
+    await expect(feedbackBody).toHaveText('');
+    await expect
+      .poll(() => feedbackBody.evaluate((node) => getComputedStyle(node, '::before').content))
+      .not.toBe('none');
   });
 }

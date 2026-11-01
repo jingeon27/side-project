@@ -4,7 +4,7 @@
 
 - [운영 블로그](https://blog.bambyul.com/ko) · [Vercel 프로젝트](https://vercel.com/jingeon27s-projects/side-project-vttu)
 - 개발·검증: [프로젝트 README](../README.md)
-- EC2의 Game Mate·별사대와는 별도 배포입니다. 이 블로그에 EC2·PostgreSQL·S3 환경변수는 필요하지 않습니다.
+- EC2의 Game Mate, 피식과는 별도 배포입니다. 이 블로그에 EC2·PostgreSQL·S3 환경변수는 필요하지 않습니다.
 
 ## 환경변수
 

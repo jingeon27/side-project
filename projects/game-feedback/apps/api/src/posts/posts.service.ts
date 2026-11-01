@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { match } from 'ts-pattern';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
@@ -77,6 +78,11 @@ export class PostsService {
       comments: comments.items,
       commentsCursor: comments.nextCursor,
     };
+  }
+  async visibleAnswerCounts(req: SessionRequest, id: string) {
+    await this.visiblePost(req, id);
+    const excluded = await this.visibility.excluded(req);
+    return (await answerCounts(this.db, [id], excluded)).get(id) ?? NO_ANSWERS;
   }
   async createPost(req: SessionRequest, input: TCreatePostDto) {
     const u = requireUser(req);
@@ -203,7 +209,7 @@ export class PostsService {
         await tx.post.update({
           where: { id },
           data: {
-            deletedAt: new Date(),
+            deletedAt: dayjs().toDate(),
             title: '\uC0AD\uC81C\uB41C \uC694\uCCAD',
             body: '',
             gameProfile: Prisma.DbNull,
@@ -240,11 +246,11 @@ export class PostsService {
         await lockActiveUser({ client: tx, userId: u.id });
         const changed = await tx.answer.updateMany({
           where: { postId: id, readAt: null, ...ACTIVE_CONTENT },
-          data: { readAt: new Date() },
+          data: { readAt: dayjs().toDate() },
         });
         await tx.notification.updateMany({
           where: { userId: u.id, postId: id, readAt: null },
-          data: { readAt: new Date() },
+          data: { readAt: dayjs().toDate() },
         });
         return changed.count;
       },

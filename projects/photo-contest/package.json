@@ -12,7 +12,7 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/task.ts @photo-contest/api db:migrate",
     "codegen": "yarn workspace @photo-contest/web codegen",
     "build": "node --env-file-if-exists=.env scripts/task.ts @photo-contest/api build && node --env-file-if-exists=.env scripts/task.ts @photo-contest/web build",
-    "lint": "eslint .",
+    "lint": "eslint . && yarn workspaces foreach -A --include '@photo-contest/*' run lint",
     "typecheck": "tsc7 --project tsconfig.lint.json && yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run typecheck",
     "test": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test",
     "test:unit": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test:unit",

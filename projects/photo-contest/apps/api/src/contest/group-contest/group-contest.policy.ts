@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { ERROR_CODE, fail } from '../../common/errors';
 import { phase, PHASE, type IContestSchedule } from '../contest.policy';
 
@@ -8,7 +10,7 @@ export type TGroupContestFilter = (typeof GROUP_CONTEST_FILTER)[keyof typeof GRO
 export function assertContestParticipation(
   contest: IContestSchedule & { groupId: string; format: string },
   groupId: string,
-  now = new Date(),
+  now = dayjs().toDate(),
 ) {
   if (contest.format !== CONTEST_FORMAT.POST || contest.groupId !== groupId)
     fail('이 그룹에서 참여할 수 있는 대회를 선택해 주세요.', ERROR_CODE.BAD_USER_INPUT);

@@ -12,7 +12,7 @@ test('the feed combines general posts and paid coaching and connects a student t
     data: { accountId: 'sample-user-3' },
   });
   await page.goto('/ko');
-  await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '전체', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '글쓰기', exact: true });
   await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
@@ -28,7 +28,7 @@ test('the feed combines general posts and paid coaching and connects a student t
   await page.goto('/ko');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
-  await editor.getByLabel('모집 유형').selectOption('COACH');
+  await editor.getByRole('radio', { name: '수강생 모집', exact: true }).check();
   await editor.getByLabel('시간당 수강료 (원)', { exact: true }).fill('35000');
   const coachingTitle = `수비 타이밍 유료 레슨 ${suffix}`;
   await editor.getByLabel('제목', { exact: true }).fill(coachingTitle);
@@ -63,7 +63,9 @@ test('the feed combines general posts and paid coaching and connects a student t
   await expect(page.getByRole('log').getByText(message, { exact: true })).toBeVisible();
 });
 
-test('students can recruit a paid coach and a new game receives the same five boards', async ({ page }) => {
+test('a new game receives five boards while coaching posts remain fixed to Clash Royale', async ({
+  page,
+}) => {
   const suffix = Date.now().toString(36);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
@@ -90,15 +92,17 @@ test('students can recruit a paid coach and a new game receives the same five bo
   );
   const sidebar = page.locator('.left-sidebar nav').filter({ hasText: gameName });
   await expect(sidebar.locator('.game-submenu a')).toHaveText([
-    '피드백',
     '친추판매',
     '전투 모집',
     '게임코치',
     '자유게시판',
+    '피드백',
   ]);
-  await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  await page.goto('/ko/boards/coaching');
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '글쓰기', exact: true });
-  await expect(editor.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveValue(gameName);
+  await expect(editor.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveCount(0);
+  await expect(editor.locator('input[name="categoryId"]')).not.toHaveValue('');
   const classification = editor.getByRole('combobox', { name: '분류', exact: true });
   await expect(classification).toHaveValue('COACHING');
   await classification.selectOption('FRIEND_SALE');
@@ -106,7 +110,7 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await classification.selectOption('COACHING');
   await expect(editor.getByLabel('판매 금액 (원)', { exact: true })).toHaveCount(0);
   await expect(editor.getByText('내 게임 프로필', { exact: true })).toHaveCount(0);
-  await editor.getByLabel('모집 유형').selectOption('STUDENT');
+  await editor.getByRole('radio', { name: '코치 구함', exact: true }).check();
   const title = `운영을 가르쳐줄 코치 구해요 ${suffix}`;
   await editor.getByLabel('제목', { exact: true }).fill(title);
   await editor
@@ -116,18 +120,25 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.locator('.coaching-summary:visible')).toContainText('코치 구함');
   await expect(page.locator('.coaching-summary:visible')).toContainText('수강료 협의');
-  await expect(page).toHaveURL(new RegExp(`board=coaching&game=${slug}$`));
+  await expect(page).toHaveURL(
+    (url) => url.searchParams.get('board') === 'coaching' && !url.searchParams.has('game'),
+  );
+  await expect(
+    page
+      .getByRole('navigation', { name: '게시글 경로', exact: true })
+      .getByRole('link', { name: '클래시로얄', exact: true }),
+  ).toBeVisible();
   await page.locator('.back-link').click();
-  await expect(page).toHaveURL(new RegExp(`/ko/boards/coaching\\?game=${slug}$`));
+  await expect(page).toHaveURL('/ko/boards/coaching');
   await expect(page.locator('.board-post-list')).toContainText(title);
   const roles = page.getByRole('navigation', { name: '모집 유형', exact: true });
   await expect(roles.getByRole('link')).toHaveText(['전체', '수강생 모집', '코치 구함']);
   await roles.getByRole('link', { name: '수강생 모집', exact: true }).click();
-  await expect(page.locator('.board-post-list .post-card')).toHaveCount(0);
+  await expect(page.locator('.board-post-list')).not.toContainText(title);
   await roles.getByRole('link', { name: '코치 구함', exact: true }).click();
   await expect(page.locator('.board-post-list')).toContainText(title);
   await expect(page).toHaveURL(
-    (url) => url.searchParams.get('game') === slug && url.searchParams.get('coachingRole') === 'STUDENT',
+    (url) => !url.searchParams.has('game') && url.searchParams.get('coachingRole') === 'STUDENT',
   );
   await page.reload();
   await expect(roles.getByRole('link', { name: '코치 구함', exact: true })).toHaveAttribute(
@@ -141,19 +152,21 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === '/ko/search' &&
-      url.searchParams.get('game') === slug &&
+      !url.searchParams.has('game') &&
       url.searchParams.get('coachingRole') === 'STUDENT',
   );
   await page.getByRole('link', { name: '돌아가기', exact: true }).click();
-  await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
-  await expect(editor.getByLabel('모집 유형')).toHaveValue('STUDENT');
-  await page.goto(`/ko/boards/coaching?q=${suffix}`);
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await expect(editor.getByRole('radio', { name: '코치 구함', exact: true })).toBeChecked();
+  await page.goto(`/ko/boards/coaching?game=${slug}&q=${suffix}`);
   await expect(page.locator('.post-card:visible')).toHaveCount(0);
   await page.goto(`/ko?q=${suffix}`);
   await expect(page.locator('.post-card:visible')).toContainText(title);
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/ko/boards/coaching?game=${slug}`);
+    await expect(page.locator('.post-card:visible')).toHaveCount(0);
+    await page.goto(`/ko/boards/coaching?coachingRole=STUDENT&q=${suffix}`);
     await expect(page.locator('.post-card:visible')).toContainText(title);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `/tmp/game-feedback-coaching-${width}.png`, fullPage: true });

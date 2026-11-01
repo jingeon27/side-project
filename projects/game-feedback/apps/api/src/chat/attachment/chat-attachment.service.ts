@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Response } from 'express';
 
 import { lockActiveUser } from '../../auth/account/user-write';
@@ -7,7 +8,7 @@ import type { SessionRequest } from '../../auth/session/session.types';
 import { ApiError } from '../../common/http/api-error';
 import { mediaRange } from '../../common/media-file';
 import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
+import { PrismaClient, type MediaObject } from '../../generated/prisma';
 import { MediaStorage } from '../../media-storage/media-storage.service';
 import { historyWhere } from '../message/chat-history';
 import { attachmentSelect } from './chat-attachment.presenter';
@@ -23,7 +24,7 @@ export class ChatAttachmentService {
     userId: string,
     conversationId: string,
     metadata: { name: string; mimeType: string; size: number },
-    stored: { bytes: null; objectId: string },
+    stored: Pick<MediaObject, 'backend' | 'key'>,
   ) {
     return this.transactions.run(async (tx) => {
       const support = await tx.supportConversation.findUnique({
@@ -31,20 +32,26 @@ export class ChatAttachmentService {
         select: { id: true },
       });
       await lockActiveUser({ client: tx, userId, allowBanned: !!support });
-      await (tx ?? this.db).chatAttachment.deleteMany({
-        where: { uploaderId: userId, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+      await tx.chatAttachment.deleteMany({
+        where: {
+          uploaderId: userId,
+          messageId: null,
+          createdAt: { lt: dayjs().subtract(24, 'hour').toDate() },
+        },
       });
-      const pending = await (tx ?? this.db).chatAttachment.count({
+      const pending = await tx.chatAttachment.count({
         where: { uploaderId: userId, messageId: null },
       });
       if (pending >= 4)
         throw new ApiError(409, 'ATTACHMENT_LIMIT', '전송 대기 중인 첨부파일을 먼저 정리해주세요.');
-      return (tx ?? this.db).chatAttachment.create({
+      const object = await tx.mediaObject.create({ data: stored, select: { id: true } });
+      return tx.chatAttachment.create({
         data: {
           conversationId,
           uploaderId: userId,
           ...metadata,
-          ...stored,
+          bytes: null,
+          objectId: object.id,
           uploadedAt: null,
         },
         select: attachmentSelect,

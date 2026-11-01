@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request, Response } from 'express';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
@@ -135,7 +136,7 @@ export class AuthService {
     const nonce = token();
     const verifier = token();
     // Abandoned attempts are only removed here; the table stays bounded by the auth rate limit × 10 minutes.
-    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: new Date() } } });
+    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: dayjs().toDate() } } });
     await this.db.oAuthAttempt.create({
       data: {
         provider,
@@ -143,7 +144,9 @@ export class AuthService {
         nonce,
         verifier,
         appChallenge,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        expiresAt: dayjs()
+          .add(10 * 60 * 1000, 'millisecond')
+          .toDate(),
       },
     });
     setCookie(res, 'gamefeedback_oauth', state, 10 * 60 * 1000, this.config.production);
@@ -166,10 +169,10 @@ export class AuthService {
     if (!state || cookies(req).gamefeedback_oauth !== state)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청을 확인할 수 없습니다.');
     const attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: hash(state) } });
-    if (!attempt || attempt.provider !== provider || attempt.expiresAt <= new Date())
+    if (!attempt || attempt.provider !== provider || attempt.expiresAt <= dayjs().toDate())
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 만료되었거나 올바르지 않습니다.');
     const consumed = await this.db.oAuthAttempt.deleteMany({
-      where: { stateHash: hash(state), provider, expiresAt: { gt: new Date() } },
+      where: { stateHash: hash(state), provider, expiresAt: { gt: dayjs().toDate() } },
     });
     if (consumed.count !== 1)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 이미 사용되었습니다.');

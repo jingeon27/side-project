@@ -1,4 +1,4 @@
-export { locales, defaultLocale, isLocale, type Locale } from '@/i18n/routing';
+export { type Locale } from '@/i18n/routing';
 
 export function resolveSiteUrl(value: string | undefined): URL {
   const url = new URL(value || 'http://localhost:3100');

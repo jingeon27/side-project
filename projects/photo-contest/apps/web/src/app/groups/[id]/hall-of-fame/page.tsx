@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
+import { GroupContestsPage } from '@/_pages/group-contests';
 import {
   getGroupContestsMetadata,
   getGroupContestsSeoData,
   groupContestsJsonLd,
-  GroupContestsPageTemplate,
-} from '@/_pages/group-contests';
+} from '@/_pages/group-contests/index.server';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   GalleryDocument,
@@ -25,11 +26,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const seo = await getGroupContestsSeoData(id, true);
   if (!seo) notFound();
   const jsonLd = groupContestsJsonLd(seo, true, getWebOrigin());
-  const content = <GroupContestsPageTemplate groupId={id} hallOfFame={true} />;
+  const content = <GroupContestsPage groupId={id} hallOfFame={true} />;
   return (
     <>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
@@ -51,3 +53,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     </>
   );
 }
+
+export const instant = true;

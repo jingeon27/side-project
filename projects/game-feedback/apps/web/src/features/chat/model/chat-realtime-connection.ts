@@ -4,6 +4,7 @@ import {
   type EventSourceMessage,
 } from '@microsoft/fetch-event-source';
 import type { QueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { notificationListOptions } from '@/features/notification';
@@ -109,7 +110,7 @@ export class ChatRealtimeConnection {
         if (!this.active(stream)) return;
         this.publish(navigator.onLine ? 'retrying' : 'offline');
         this.refresh();
-        const now = Date.now();
+        const now = dayjs().valueOf();
         if (error instanceof ChatStreamAccessError || now - this.lastSessionCheck >= 5_000) {
           this.lastSessionCheck = now;
           this.options.onSessionStale();

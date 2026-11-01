@@ -6,7 +6,7 @@ for (const { width, locale } of [
   { width: 393, locale: 'ja' },
   { width: 1440, locale: 'ko' },
 ]) {
-  test(`${locale} ${width}px 가이드는 화살표나 바로가기 없이 문단으로 읽을 수 있어야 한다`, async ({
+  test(`${locale} ${width}px 가이드는 대표 그림과 문단으로 읽고 본문에 화살표나 바로가기를 넣지 않아야 한다`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
@@ -20,7 +20,10 @@ for (const { width, locale } of [
     await expect(guide.getByRole('heading', { level: 2 })).toHaveCount(9);
     await expect(guide.getByRole('term')).toHaveCount(5);
     await expect(guide.getByRole('link')).toHaveCount(0);
-    await expect(guide.locator('svg')).toHaveCount(0);
+    const illustration = guide.locator('[data-motion="game"]');
+    await expect(illustration).toHaveCount(1);
+    await expect(illustration).toHaveAttribute('aria-hidden', 'true');
+    await expect(guide.locator('.guide-sections svg')).toHaveCount(0);
     if (locale !== 'ko') expect(await guide.innerText()).not.toMatch(/[가-힣]/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { groupBy, keyBy, mapValues, uniq } from 'es-toolkit';
 
 import { Prisma, type Group, type GroupCategory } from '../../generated/prisma';
@@ -305,7 +306,7 @@ export class GroupService {
    * 최근 종료된(endsAt <= now) 기존 대회 50개의 숨기지 않은 사진만 집계해 상위 100명을 돌려준다.
    * 표·좋아요 수는 DB가 사진마다 세고, 작성자 공개 정보는 한 번에 따로 읽는다.
    */
-  async leaderboard(groupId: string, now = new Date()): Promise<ILeaderboardEntry<IUserView>[]> {
+  async leaderboard(groupId: string, now = dayjs().toDate()): Promise<ILeaderboardEntry<IUserView>[]> {
     const contests = await this.db.contest.findMany({
       where: { groupId, format: CONTEST_FORMAT.LEGACY, endsAt: { lte: now } },
       select: { id: true },

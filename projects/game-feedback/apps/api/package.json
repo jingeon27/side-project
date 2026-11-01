@@ -33,6 +33,7 @@
     "@prisma/client": "catalog:",
     "@sentry/node": "catalog:",
     "@side/toolkit": "workspace:*",
+    "dayjs": "catalog:",
     "es-toolkit": "catalog:",
     "express": "catalog:",
     "prisma": "catalog:",

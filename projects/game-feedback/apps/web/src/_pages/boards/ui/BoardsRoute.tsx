@@ -3,8 +3,7 @@ import 'server-only';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 
-import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
-import { BattleModeSchema, CoachingRoleSchema, FeedbackStatusSchema } from '@game-feedback/contracts';
+import { appRoutes, BoardQuerySchema } from '@game-feedback/bridge';
 
 import { getServerSession } from '@/features/auth/index.server';
 import { boardBySlug } from '@/features/board';
@@ -16,11 +15,10 @@ import { createPageMetadata, JsonLd, pageUrl } from '@/shared/seo';
 import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { BoardsPage } from './BoardsPage';
 
-async function resolveBoard(slug: string, game: unknown) {
+async function resolveBoard(slug: string, game: string) {
   const board = boardBySlug(slug);
-  const parsed = GameSlugSchema.safeParse(game ?? 'clash-royale');
-  if (!board || !parsed.success) notFound();
-  const category = (await getPublicCategories()).find((item) => item.active && item.slug === parsed.data);
+  if (!board) notFound();
+  const category = (await getPublicCategories()).find((item) => item.active && item.slug === game);
   if (!category) notFound();
   return { board, category };
 }
@@ -35,22 +33,19 @@ async function snapshot(
   searchParams: IBoardsRouteProps['searchParams'],
 ): Promise<IBoardSnapshot> {
   const params = await searchParams;
-  const { board, category } = await resolveBoard(slug, params.game);
-  const battle = BattleModeSchema.optional().safeParse(params.battleMode);
-  if (!battle.success || (battle.data && board.kind !== 'FRIENDLY')) notFound();
-  const coaching = CoachingRoleSchema.optional().safeParse(params.coachingRole);
-  if (!coaching.success || (coaching.data && board.kind !== 'COACHING')) notFound();
-  const feedback = FeedbackStatusSchema.optional().safeParse(params.feedbackStatus);
-  if (!feedback.success || (feedback.data && board.kind !== 'FEEDBACK')) notFound();
+  const parsed = BoardQuerySchema.safeParse({ ...params, board: slug, game: params.game ?? undefined });
+  if (!parsed.success) notFound();
+  const { battleMode, coachingRole, feedbackStatus } = parsed.data;
+  const { board, category } = await resolveBoard(slug, parsed.data.game);
   const q = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim().slice(0, 100) ?? '';
   const [posts, session] = await Promise.all([
     getServerPostList({
       category: category.slug,
       board: board.kind,
       q,
-      battleMode: battle.data,
-      coachingRole: coaching.data,
-      feedbackStatus: feedback.data,
+      battleMode,
+      coachingRole,
+      feedbackStatus,
       limit: 12,
     }),
     getServerSession(),
@@ -59,9 +54,9 @@ async function snapshot(
     game: category,
     posts,
     q,
-    battleMode: battle.data,
-    coachingRole: coaching.data,
-    feedbackStatus: feedback.data,
+    battleMode,
+    coachingRole,
+    feedbackStatus,
     viewerId: session.user?.id,
   };
 }
@@ -121,7 +116,9 @@ function BoardJsonLd({
   );
 }
 export async function boardMetadata(locale: string, slug: string, game?: unknown) {
-  const { board, category } = await resolveBoard(slug, game);
+  const parsed = BoardQuerySchema.safeParse({ board: slug, game: game ?? undefined });
+  if (!parsed.success) notFound();
+  const { board, category } = await resolveBoard(slug, parsed.data.game);
   return createPageMetadata({
     title: `${category.name} ${board.name}`,
     description: board.description,

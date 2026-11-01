@@ -81,6 +81,7 @@ extend type Mutation {
   requestPostUpload(groupId: ID!, contentType: String!, byteSize: Int!): PostUploadTicket!
   completePostUpload(uploadId: ID!): PostUploadResult!
   createPost(
+    clientRequestId: String
     categoryId: ID
     contestId: ID
     groupId: ID!

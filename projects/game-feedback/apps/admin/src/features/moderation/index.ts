@@ -1,6 +1,5 @@
 export { reportOptions, userOptions } from './model/moderation.options';
 export {
-  verifyMutationOptions,
   banMutationOptions,
   reviewMutationOptions,
   visibilityMutationOptions,

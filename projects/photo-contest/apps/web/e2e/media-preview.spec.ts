@@ -5,7 +5,7 @@ import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { expect, seedGroup, test } from './support/test';
 
 test(
-  '파일 미리보기는 사진·영상 재선택과 제거·재열기 뒤 실제 업로드까지 이어져야 한다',
+  '파일 미리보기는 사진·영상 재선택과 제거·기록 복원 뒤 실제 업로드까지 이어져야 한다',
   { tag: ['@ios', '@desktop'] },
   async ({ page, signIn }, testInfo) => {
     const cookie = await signIn('미리보기 회원');
@@ -21,7 +21,7 @@ test(
       buffer: await createTestImage({ width: 80, height: 120 }),
     };
     await page.goto(`/groups/${group.id}`);
-    const opener = page.getByRole('link', { name: '글쓰기', exact: true });
+    const opener = page.getByRole('button', { name: '글쓰기', exact: true });
     await opener.click();
     const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
     const picker = sheet.getByLabel('사진 또는 동영상 선택', { exact: true });
@@ -81,8 +81,11 @@ test(
     await expect(image).toBeVisible();
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
     await expect(sheet).toHaveCount(0);
-    await opener.click();
-    await expect(sheet.getByRole('figure', { name: '선택한 파일 미리보기' })).toHaveCount(0);
+    // 새 탐색의 캐시 사용 여부 대신 기록 복원으로 보존된 파일의 미리보기를 검증한다.
+    await page.goForward();
+    await expect(sheet).toBeVisible();
+    await expect.poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(120);
+    await expect(sheet.getByText(/미리보기를 열 수 없어요/)).toHaveCount(0);
     await picker.setInputFiles(second);
     await expect
       .poll(() => image.evaluate((el: HTMLImageElement) => [el.naturalWidth, el.naturalHeight]))

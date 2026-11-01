@@ -1,1 +1,1 @@
-export { InvitePageTemplate } from './@page/InvitePageTemplate';
+export { InvitePage } from './ui/InvitePage';

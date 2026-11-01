@@ -23,7 +23,7 @@ export default function GlobalError({
   return (
     <html lang="ko">
       <body>
-        <title>별사대</title>
+        <title>피식</title>
         <div className="flex min-h-dvh justify-center bg-canvas">
           <main className="flex min-h-dvh w-full flex-col justify-center bg-surface shadow-app">
             <ErrorState

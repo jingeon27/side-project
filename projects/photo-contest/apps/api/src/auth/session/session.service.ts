@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request, Response } from 'express';
 
 import { randomToken, sha256Hex } from '../../common/crypto';
@@ -62,7 +63,7 @@ export class SessionService {
       data: {
         tokenHash: sha256Hex(token),
         userId,
-        expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+        expiresAt: dayjs().add(SESSION_TTL_MS, 'millisecond').toDate(),
       },
     });
     res.cookie(sessionCookieName(), token, authCookieOptions(SESSION_TTL_MS));
@@ -84,7 +85,7 @@ export class SessionService {
           select: { expiresAt: true, user: { select: USER_VIEW_SELECT } },
         })
       : null;
-    const viewer = session && session.expiresAt > new Date() ? session.user : null;
+    const viewer = session && session.expiresAt > dayjs().toDate() ? session.user : null;
     // 다른 탭에서 계정이 바뀌어도 오래된 화면이 새 계정의 권한으로 쓰기를 보내지 않게 한다.
     if (expectedViewer !== undefined && expectedViewer !== (viewer?.id ?? 'anonymous'))
       fail(

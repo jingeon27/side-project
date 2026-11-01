@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
@@ -18,10 +18,26 @@ import { useAnimate, useMotionPreference } from '@/shared/motion';
 import { getNavigationDirection } from './browser-navigation';
 
 const RoutePathContext = createContext<RefObject<string | null> | null>(null);
+interface IHorizontalScrollPosition {
+  scopeKey: string;
+  left: number;
+}
+const HorizontalScrollContext = createContext<RefObject<IHorizontalScrollPosition | null> | null>(null);
 
 export function RouteViewportProvider({ children }: { children: ReactNode }) {
   const previous = useRef<string | null>(null);
-  return <RoutePathContext value={previous}>{children}</RoutePathContext>;
+  const horizontal = useRef<IHorizontalScrollPosition | null>(null);
+  return (
+    <RoutePathContext value={previous}>
+      <HorizontalScrollContext value={horizontal}>{children}</HorizontalScrollContext>
+    </RoutePathContext>
+  );
+}
+
+export function useRouteViewportHorizontalScroll() {
+  const shared = useContext(HorizontalScrollContext);
+  const local = useRef<IHorizontalScrollPosition | null>(null);
+  return shared ?? local;
 }
 
 export function RouteViewport({ children }: { children: ReactNode }) {
@@ -43,6 +59,7 @@ function RouteMotion({
   animate: ReturnType<typeof useAnimate<HTMLElement>>[1];
 }) {
   const pathname = usePathname();
+  const search = useSearchParams();
   const reducedMotion = useMotionPreference();
   const localPrevious = useRef<string | null>(null);
   const previous = useContext(RoutePathContext) ?? localPrevious;
@@ -52,8 +69,8 @@ function RouteMotion({
     // 캐시된 화면이 다시 보여도 이전 애니메이션 값으로 본문이 밀리지 않게 한다.
     target.style.removeProperty('transform');
     target.style.removeProperty('opacity');
-    const route = resolveAppRoute(pathname);
-    const key = route?.tab === 'messages' ? appRoutes.messages(route.locale) : pathname;
+    const route = resolveAppRoute(`${pathname}${search.size ? `?${search}` : ''}`);
+    const key = routeMotionKey(pathname, route);
     const before = previous.current;
     previous.current = key;
     const beforeRoute = before ? resolveAppRoute(before) : null;
@@ -69,6 +86,8 @@ function RouteMotion({
         'messages',
         'notifications',
         'settings',
+        'profile',
+        'profile-edit',
         'guide',
         'login',
         'onboarding',
@@ -77,7 +96,15 @@ function RouteMotion({
       !window.location.hash
     )
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    if (!before || before === key || reducedMotion) return;
+    const boardScope = boardNavigationScope(route);
+    // 같은 게임의 게시판 전환은 공통 칩을 흐리지 않고 목록만 바꾼다.
+    if (
+      !before ||
+      before === key ||
+      reducedMotion ||
+      (boardScope !== null && boardScope === boardNavigationScope(beforeRoute))
+    )
+      return;
     if (route?.screen === 'conversation' && window.matchMedia('(max-width: 760px)').matches) return;
     const controls = animate(
       target,
@@ -90,6 +117,19 @@ function RouteMotion({
       controls.stop();
       target.style.removeProperty('opacity');
     };
-  }, [pathname, reducedMotion, animate, scope, previous]);
+  }, [pathname, search, reducedMotion, animate, scope, previous]);
   return null;
+}
+
+function routeMotionKey(pathname: string, route: ReturnType<typeof resolveAppRoute>) {
+  if (route?.tab === 'messages') return appRoutes.messages(route.locale);
+  if (route?.screen === 'boards' && route.game)
+    return `${pathname}?${new URLSearchParams({ game: route.game })}`;
+  return pathname;
+}
+
+function boardNavigationScope(route: ReturnType<typeof resolveAppRoute>) {
+  if (!route || !['feed', 'boards'].includes(route.screen)) return null;
+  const game = route.game ?? resolveAppRoute(appRoutes.boards(route.locale))?.game;
+  return `${route.locale}:${game ?? ''}`;
 }

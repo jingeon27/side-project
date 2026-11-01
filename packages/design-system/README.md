@@ -43,6 +43,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.
 - `IconButton`: `label`이 필수이며 `variant="ghost|soft|primary|accent"`와 `loading`을 지원한다. 진행 중에는 아이콘 자리를 진행 표시가 대신하고 포커스를 유지한다. 링크 등 다른 요소에 같은 모양을 입힐 때는 `iconButtonVariants({ variant })`를 쓴다.
 - `IconButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다(`label` 필수).
+- `FloatingActionButton`: `label`과 `onClick`이 필수인 button 전용 주 행동이다. 기본 Plus 또는 `icon`을 표시하며 `compact`이면 56×56px 원형으로 줄어든다. 확장 시에는 번역된 글자의 자연스러운 너비를 사용하고 키보드 포커스 중에는 compact여도 글자를 보여 준다. 모션 감소 설정에서는 전환을 생략한다. `disabled`, ref, 팝업 ARIA와 `data-*`를 전달하며 `data-compact`는 항상 `"true"` 또는 `"false"`다. 위치·z-index·반응형 분기·스크롤 상태·토스트 간격·라우터·인증·overlay 흐름은 앱이 소유하며 `className`으로 배치한다. `href`와 Link 변형은 제공하지 않는다.
 - `TextField`, `TextAreaField`: `FormField`에 `Input`·`Textarea`를 넣은 조합이다. `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받고 `className`은 필드 전체에 붙는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시이며 접근성 이름에서 빠진다. `TextAreaField`는 내용에 따라 늘지 않고 `rows`(기본 4줄) 높이를 유지한다. RHF의 `{...register('name')}`를 그대로 전달한다.
 - `FormField`: native `<label>` 폼용 `label`, `children`, `description`, `error`, `labelSuffix`. 도움말 prop은 TextField와 같은 `description` 하나다. `Input`·`Textarea`·`NativeSelect`는 context로 연결하므로 memo·래퍼·서버 컴포넌트를 거쳐도 레이블·도움말·오류가 붙는다. native `input`·`textarea`·`select`는 직접 자식일 때만 연결한다. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 유지하고 `aria-describedby`에는 도움말·오류를 덧붙이며 ref는 그대로 전달한다. label 안에 들어가므로 NativeSelect 래퍼는 `span`이다. 직접 자식인 native 요소에는 스타일을 입히지 않으므로 공통 모양은 Input·Textarea·NativeSelect로 얻는다.
 - `Badge`, `Avatar`, `Spinner`, `Mention`: 상태 글자·이름 fallback·진행 표시·@멘션을 제공한다. 각 요소의 native props(`id`·`title`·`aria-*`·`data-*`)와 ref를 그대로 전달한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 `role="status"` 안의 숨긴 글자로 넣어 live region이 진행 상태를 읽는다(aria-label만으로는 읽히지 않는다).
@@ -81,6 +82,32 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다. 루트 진입점의 값은 `@side/design-system/ui/<폴더>` 하위 경로에서도 같은 객체로 가져올 수 있으며 모든 `src/ui/*` 폴더는 `index.ts`를 둔다(`package-exports.spec.ts`).
 
 Photo Contest의 `AlertDialog`는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 바텀시트는 이 패키지의 조합 부품을 `responsive`로 쓰고 앱의 Root가 history·portal·overlay unmount를, Footer가 하단 취소 버튼을 연결한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
+
+## Motion과 스크롤
+
+`MotionProvider`는 추가 DOM 없이 `LazyMotion(domAnimation, strict)`와 `MotionConfig` 정책을 공유한다. 기본 전환은 0.2초와 `[0.22, 1, 0.36, 1]` easing이며, 사용자 모션 감소 설정에서는 duration을 0으로 바꾼다. `useMotionPreference`는 서버와 첫 hydration에서 true를 반환하고 브라우저의 `prefers-reduced-motion` 변경을 구독한다. 앱의 최상위에 Provider를 한 번 두고, `@side/design-system/lib/motion`에서 공식 lazy `m`, `AnimatePresence`, `useAnimate`, `useMotionValue`, `useSpring`을 가져온다. 공통 패키지가 catalog의 Motion 14.9.0을 소유하므로 Provider와 소비자가 같은 라이브러리 인스턴스를 사용한다. 이 진입점은 공식 API를 명시적으로 재수출하며 별도 동작을 덧붙이지 않는다.
+
+`MotionProvider`는 `@side/design-system/ui/motion-provider`, `useMotionPreference`는 `@side/design-system/lib/use-motion-preference`와 루트 named export로 제공한다. `useScrollVisibility`는 UI와 무관한 Motion `scroll()` 구독으로 viewport 위치를 읽으며, DOM ref의 연결 수명으로 구독을 정리한다. 아래 12px·위 8px·상단 8px과 탄성 스크롤 clamp 정책은 훅 한 곳에 둔다. 화면 배치와 숨김 표현은 소비 앱이 소유한다.
+
+## 페이지 폼의 하단 행동
+
+`FormActions`는 피식과 Game Mate가 함께 쓰는 저장·제출 영역이다. `children`, native div props, 바깥 `className`과 읽기 폭을 조절하는 `contentClassName`을 받는다. 안전 영역과 구분선·배경·간격을 공유하며, 앱은 화면 높이 안에서 본문만 스크롤하고 이 영역을 마지막 자식으로 배치한다. 외부 폼의 제출 버튼은 native `form` 속성으로 연결한다. 피식의 기존 `StickyCta` 진입점도 같은 컴포넌트를 사용한다.
+
+앱 Provider의 `VisualViewport`는 `--visual-viewport-height`와 `--visual-viewport-top`을 갱신한다. 전용 폼 프레임은 이 값을 사용해 키보드로 줄어든 화면을 따르고 사이트 푸터와 겹치는 하단 탐색은 숨긴다. 정보와 사진처럼 같은 편집 목적의 변경은 하단 저장 버튼 하나로 제출한다.
+
+## 상태 모션
+
+`StatusAnimation`은 직접 작성한 벡터 Lottie 7종(`loading`, `success`, `error`, `empty`, `offline`, `game`, `cat`)을 제공한다. `className`, 의미 있는 그림의 `label`, 반복 여부 `loop`, 정지 대체 그림 `fallback`을 받는다. 주변 글자와 같은 의미면 label을 생략해 장식으로 둔다.
+
+```tsx
+<StatusAnimation variant="empty" className="size-16" />
+```
+
+첫 HTML에는 비어 있는 플레이어 호스트와 정지 그림만 렌더한다. `StatusAnimation.tsx`의 `useCallback` ref 안에서 Lottie 플레이어 생성, 모션 감소 설정의 최초 판단과 변경 구독을 처리하고 반환된 cleanup으로 해제한다. 감소 설정에서는 플레이어·애니메이션 자산을 로드하지 않는다. 별도 플레이어·구독 파일이나 훅·class를 만들거나 `useState`·`useSyncExternalStore`로 설정과 재생 상태를 React에 중계하지 않는다. ref 안에서만 호스트의 `data-motion-ready`와 그 안의 Lottie SVG를 관리하고 CSS가 준비 여부에 따라 인접 fallback을 전환한다. React는 이 속성을 작성하지 않으며, 모션 설정 전환과 준비 이벤트는 React 재렌더를 발생시키지 않는다.
+
+설정을 바꾸면 이전 재생의 observer·listener·플레이어와 늦은 로드를 정리하고 최신 설정으로 다시 연결한다. 빠르게 전환한 뒤 해제해도 구독이 다시 붙지 않으며, 노드 교체·unmount에서는 모션 구독까지 정리한다. 모션 설정 API가 없거나 일부 자원만 만들어진 초기화 실패에서도 정지 그림을 유지한다. 화면 밖이나 숨긴 탭에서는 재생을 멈추며, observer의 교차 결과를 사용해 불필요한 레이아웃 조회를 줄인다. 기본 반복은 loading과 cat뿐이며 나머지는 한 번 재생한다. 외부 이미지·서비스 요청·애니메이션 자산 라이선스 의존은 없다.
+
+공통 Spinner와 버튼 진행 표시, Toaster 성공·실패가 이 컴포넌트를 쓴다. 앱은 빈 목록·연결 상태·대표 그림에 필요할 때 연결하고, 피드 카드나 레이아웃을 유지하는 skeleton을 전부 애니메이션으로 바꾸지 않는다. jsdom은 외부 SVG 플레이어만 대체하고 실제 렌더·모션 설정 전환은 Photo Contest 웹이 소유하는 Chromium·Safari 브라우저 검사에서 확인한다.
 
 ## Storybook
 

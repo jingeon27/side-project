@@ -39,6 +39,7 @@ export function PostLikeButton({ postId }: { postId: string }) {
   return (
     <LikeToggle
       density="card"
+      className="bg-sunken px-3 text-ink"
       liked={post.likedByMe}
       label={`${post.title} 좋아요`}
       onClick={async () => {

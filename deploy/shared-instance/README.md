@@ -10,15 +10,15 @@ contest.bambyul.com      ─┤              ├─ PC Web
 api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB / PC S3
 ```
 
-제품명은 Game Mate와 별사대(별난 사진 대회)다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
+제품명은 Game Mate와 피식이다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
 
-웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 별사대 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
+웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 피식 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. PostgreSQL은 같은 EC2의 컨테이너로 실행하고, 데이터는 루트 볼륨과 분리한 EBS 볼륨(`/srv/side-postgres`)에 둔다. 각 서비스의 API·ops·migrate만 서비스별 내부(`--internal`) DB 네트워크에 연결하며 Web과 Caddy는 DB에 닿지 않는다. 원본 미디어는 EC2에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스와 DB가 함께 중단되는 구조다.
 
 ## 현재 운영 경로
 
-- Game Mate와 별사대: **main → GitHub Actions → 검증 이미지 GHCR 게시 → SSM/SSH → EC2**.
+- Game Mate와 피식: **main → GitHub Actions → 검증 이미지 GHCR 게시 → SSM/SSH → EC2**.
 - 운영 Environment는 `game-feedback-production`, `photo-contest-production`이다. 배포 활성화·대상 브랜치와 필수 변수가 맞아야 deploy가 실행된다.
 - [블로그](../../projects/blog/docs/deployment.md)는 이 호스트가 아니라 Vercel로 배포한다.
 - 앱 검증, 이미지 게시, 원격 배포, 공개 URL의 정상 응답을 각각 확인한다. 단순 push 성공이나 GHCR 게시 성공은 운영 완료가 아니다.
@@ -255,6 +255,21 @@ Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한
 
 배포 job은 먼저 `ci-superseded.sh`로 이 커밋 뒤에 같은 서비스의 경로 필터에 걸리는 커밋이 배포 브랜치에 있는지 본다. 있으면 그 커밋의 실행이 새 릴리스를 배포하므로 job summary에 이유를 남기고 생략한다. 다른 서비스나 문서만 바꾼 커밋은 검증한 릴리스를 생략시키지 않는다.
 
+### Actions 목록과 실행 조건
+
+| workflow                 | 실행 조건과 이력 표시                                                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Services                 | PR과 main/develop의 관련 경로 push에서 서비스별 검증을 선택한다. publish·deploy는 검증 성공과 운영 활성화·브랜치 조건을 만족할 때만 실행하며 PR에서는 생략한다.                         |
+| Shared instance contract | `workflow_call` 전용이다. 독립 실행 이력이 0이어도 Services의 `shared-contract / shared-instance` job에서 실행된다. 이 job의 결과로 판단한다.                                           |
+| Chat benchmark           | `workflow_dispatch`로만 실행하는 선택 측정이다. 자동 CI나 운영 부하 검사가 아니며, 파일이 기본 브랜치에 반영된 뒤 Run workflow로 실행할 수 있다. 실행 이력 0건 자체는 CI 누락이 아니다. |
+| Blog                     | 블로그·공통 의존성 등 지정 경로의 PR과 main/develop push에서 실행한다.                                                                                                                  |
+| Commits                  | PR에서 추가되는 커밋 메시지를 검사한다.                                                                                                                                                 |
+| Static analysis          | PR과 develop push에서 미사용 코드·의존성과 공통 설정을 검사한다.                                                                                                                        |
+| Terraform                | 인프라 지정 경로의 PR·main/develop push 또는 수동 실행에서 검증한다. 운영 apply를 자동 실행하지 않는다.                                                                                 |
+| Dependabot Updates       | GitHub가 관리하는 동적 workflow다. 저장소 YAML을 직접 실행하는 항목이 아니며 `.github/dependabot.yml`의 갱신 정책을 따른다.                                                             |
+
+수동 실행은 파일이 기본 브랜치에 있어야 한다는 [GitHub 조건](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)을 따른다. 현재 기본 브랜치는 `develop`이며 Chat benchmark 파일도 이미 있어 수동 실행할 수 있다. 재사용 workflow는 호출한 실행의 job을 확인하고, 실패한 필수 검사를 생략하거나 배포 조건을 풀어 실행 건수를 채우지 않는다.
+
 ### 원격 배포 실행과 로그
 
 `ci-upload.sh`가 릴리스(서비스 compose, 공용 Caddyfile, 호스트 스크립트)를 올리면 `receive.sh`가 SSH 세션 안에서 단기 `GITHUB_TOKEN`으로 두 digest를 받은 뒤 토큰을 지우고, `setsid`·`nohup`으로 분리한 `deploy-job.sh`에 배포를 넘긴다. 분리된 작업은 레지스트리 자격 증명 없이 미리 받은 이미지로 `service.sh deploy`를 끝까지 실행하므로 runner 취소·timeout·SSH 끊김이 web 정지 뒤나 롤백 도중의 배포를 끊지 않는다. CI는 `job-status.sh`로 로그와 결과를 최대 40분 따라가며(job timeout 45분) 원격 결과대로 성공·실패한다. 따라가기를 멈춰도 배포는 호스트에서 계속된다.
@@ -347,7 +362,7 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다. 호스트가 멈추면 Sentry도 신호를 보내지 못하므로, Terraform은 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하는 CloudWatch 알람과 CPU 크레딧 부족 알람을 함께 만든다(`alarm_email`로 메일 알림). 수동으로 구성했다면 [EC2 알람 동작 안내](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/UsingAlarmActions.html)대로 같은 알람을 만든다.
 
-최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
+최초 배포 후 [Services workflow](https://github.com/jingeon27/side-project/actions/workflows/services.yml)의 GF deploy·PC deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 
 | 서비스 | 공개 readiness URL                                 | Web liveness URL                           |
 | ------ | -------------------------------------------------- | ------------------------------------------ |
@@ -378,7 +393,7 @@ DB 백업은 두 겹이다.
 
 ## 로컬 검증과 과거 기록
 
-현재 앱별 실행·검사는 [Game Mate 개발 가이드](../../projects/game-feedback/docs/development.md)와 [별사대 개발 가이드](../../projects/photo-contest/docs/development.md)를 따른다. 과거 단독 구성·컨테이너 검증과 날짜별 결과는 [검증 이력](docs/validation-history.md)으로 분리했다. 과거 테스트 성공은 현재 운영 배포 성공을 의미하지 않는다.
+현재 앱별 실행·검사는 [Game Mate 개발 가이드](../../projects/game-feedback/docs/development.md)와 [피식 개발 가이드](../../projects/photo-contest/docs/development.md)를 따른다. 과거 단독 구성·컨테이너 검증과 날짜별 결과는 [검증 이력](docs/validation-history.md)으로 분리했다. 과거 테스트 성공은 현재 운영 배포 성공을 의미하지 않는다.
 
 ## 재생성 동안의 요청과 호환성
 

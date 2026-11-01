@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -174,27 +175,27 @@ test('isolated REST + SSE chat delivery benchmark', async ({ browser, baseURL },
       await Promise.allSettled(contexts.map((context) => context.close()));
     }
   })();
-  await testInfo.attach('chat-delivery.json', {
-    contentType: 'application/json',
-    body: Buffer.from(
-      JSON.stringify(
-        {
-          schemaVersion: 1,
-          status: completed ? 'complete' : 'incomplete',
-          environment: 'isolated-loopback-production-web',
-          settings: { requestedSamples: samples, intervalMs, baselineMs, warmupMessages: 1 },
-          receiverBaseline: baselines[0] ?? null,
-          samples: results,
-          summary: {
-            deliveryMs: percentiles(results.map((item) => item.deliveryMs)),
-            postResponseMs: percentiles(results.map((item) => item.postResponseMs)),
-          },
-        },
-        null,
-        2,
-      ),
-    ),
-  });
+  // body 첨부만으로는 자체 reporter 실행 후 파일이 남지 않으므로 수집할 JSON을 직접 저장한다.
+  const report = JSON.stringify(
+    {
+      schemaVersion: 1,
+      status: completed ? 'complete' : 'incomplete',
+      environment: 'isolated-loopback-production-web',
+      settings: { requestedSamples: samples, intervalMs, baselineMs, warmupMessages: 1 },
+      receiverBaseline: baselines[0] ?? null,
+      samples: results,
+      summary: {
+        deliveryMs: percentiles(results.map((item) => item.deliveryMs)),
+        postResponseMs: percentiles(results.map((item) => item.postResponseMs)),
+      },
+    },
+    null,
+    2,
+  );
+  const reportPath = testInfo.outputPath('chat-delivery.json');
+  await mkdir(testInfo.outputDir, { recursive: true });
+  await writeFile(reportPath, report, { mode: 0o600 });
+  await testInfo.attach('chat-delivery.json', { contentType: 'application/json', path: reportPath });
   if (!completed)
     throw new Error(
       '채팅 전달 벤치마크를 완료하지 못했습니다. 비식별 JSON의 완료 샘플과 연결 상태를 확인해주세요.',

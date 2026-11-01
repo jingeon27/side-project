@@ -61,7 +61,7 @@ export function LocaleSwitch({
           trackEvent('language_changed', { from_locale: locale, to_locale: next });
           router.push(pathname.replace(/^\/(ko|en)(?=\/|$)/, `/${next}`));
         }}
-        aria-label={`${t.nav.language}: ${next.toUpperCase()} (${next === 'ko' ? '한국어' : 'English'})`}
+        aria-label={`${t.nav.language}: ${next.toUpperCase()} (${t.nav.languages[next]})`}
         aria-expanded={notice}
       >
         {next.toUpperCase()}

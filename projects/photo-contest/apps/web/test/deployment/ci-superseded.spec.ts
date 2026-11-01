@@ -41,14 +41,14 @@ function decide(service: string, release: string) {
   return { output: readFileSync(output, 'utf8').trim(), summary: readFileSync(summary, 'utf8') };
 }
 
-/** 워크플로의 on.<event>.paths 목록을 읽는다. 목록은 블록 형식으로 쓴다. */
-function workflowPaths(service: string, event: 'push' | 'pull_request') {
-  const lines = readFileSync(join(repo, `.github/workflows/${service}.yml`), 'utf8').split('\n');
-  const start = lines.indexOf(`  ${event}:`);
+/** 워크플로의 on.push.paths 목록을 읽는다. 목록은 블록 형식으로 쓴다. */
+function workflowPaths() {
+  const lines = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8').split('\n');
+  const start = lines.indexOf('  push:');
   const list = lines.indexOf('    paths:', start);
   const paths: string[] = [];
   for (const line of lines.slice(list + 1)) {
-    const match = /^ {6}- '(.+)'$/.exec(line);
+    const match = /^ {6}- '?([^']+?)'?$/.exec(line);
     if (!match?.[1]) break;
     paths.push(match[1]);
   }
@@ -63,16 +63,16 @@ beforeEach(() => {
 afterEach(() => rmSync(state.directory, { recursive: true, force: true }));
 
 describe('최신 커밋 배포 판정', () => {
-  it.each(['photo-contest', 'game-feedback'])(
-    '%s 판정 경로는 워크플로 경로 필터와 같아야 한다',
-    (service) => {
-      const listed = execFileSync('bash', [script, service, '--paths'], { encoding: 'utf8' })
-        .trim()
-        .split('\n');
-      expect(workflowPaths(service, 'push')).toEqual(listed);
-      expect(workflowPaths(service, 'pull_request')).toEqual(listed);
-    },
-  );
+  it('중앙 워크플로는 두 서비스 배포 판정의 경로를 모두 검사해야 한다', () => {
+    const listed = ['photo-contest', 'game-feedback'].flatMap((service) =>
+      execFileSync('bash', [script, service, '--paths'], { encoding: 'utf8' }).trim().split('\n'),
+    );
+    expect(new Set(workflowPaths())).toEqual(new Set(listed));
+    // PR에서는 경로와 무관하게 최종 판정까지 도달해야 required check가 대기하지 않는다.
+    expect(readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8')).toMatch(
+      /^  pull_request: null$/m,
+    );
+  });
 
   it('브랜치 끝의 커밋은 배포해야 한다', () => {
     const release = commit('projects/photo-contest/apps/api/src/main.ts');
@@ -96,6 +96,7 @@ describe('최신 커밋 배포 판정', () => {
     ['공유 패키지', 'packages/design-system/src/index.ts'],
     ['공통 배포 설정', 'deploy/shared-instance/Caddyfile'],
     ['lockfile', 'yarn.lock'],
+    ['중앙 검사 워크플로', '.github/workflows/services.yml'],
   ])('뒤에 %s를 바꾼 커밋이 있으면 생략하고 요약을 남겨야 한다', (_, file) => {
     const release = commit('projects/photo-contest/apps/api/src/main.ts');
     const newer = commit(file);

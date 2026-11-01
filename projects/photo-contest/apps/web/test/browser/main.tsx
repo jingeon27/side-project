@@ -1,7 +1,11 @@
-import { StrictMode, useState } from 'react';
+import { StrictMode, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { MotionProvider } from '@side/design-system/ui/motion-provider';
+
 import { PullToRefresh } from '../../src/shared/ui/@core/pull-to-refresh/PullToRefresh';
+import { PostFeedExample } from './PostFeedExample';
+import { StatusAnimationsExample } from './StatusAnimationsExample';
 
 import '../../src/_app/styles/tailwind.css';
 
@@ -33,10 +37,21 @@ function PullToRefreshExample() {
   );
 }
 
+const examples = { feed: <PostFeedExample />, motion: <StatusAnimationsExample /> } satisfies Record<
+  string,
+  ReactNode
+>;
+const example = new URLSearchParams(window.location.search).get('example') ?? '';
 const root = document.getElementById('root');
 if (!root) throw new Error('Component test root is missing.');
 createRoot(root).render(
   <StrictMode>
-    <PullToRefreshExample />
+    <MotionProvider>
+      {Object.hasOwn(examples, example) ? (
+        examples[example as keyof typeof examples]
+      ) : (
+        <PullToRefreshExample />
+      )}
+    </MotionProvider>
   </StrictMode>,
 );

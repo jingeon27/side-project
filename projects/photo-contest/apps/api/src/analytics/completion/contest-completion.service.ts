@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { uniq } from 'es-toolkit';
 
 import { CLEANUP_BATCH_SIZE } from '../../config/limits';
@@ -23,7 +24,7 @@ export class ContestCompletionService {
    * 투표가 끝난 대회마다 contest_completed를 한 번만 남긴다.
    * @returns 이번에 기록한 대회 수
    */
-  async recordCompletedContests(now = new Date()): Promise<number> {
+  async recordCompletedContests(now = dayjs().toDate()): Promise<number> {
     const contests = await this.db.contest.findMany({
       where: { endsAt: { lte: now }, completionTrackedAt: null },
       select: {
@@ -59,7 +60,7 @@ export class ContestCompletionService {
         });
         await client.contest.update({
           where: { id: contest.id },
-          data: { completionTrackedAt: new Date() },
+          data: { completionTrackedAt: dayjs().toDate() },
         });
       });
     }

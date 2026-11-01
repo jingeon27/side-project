@@ -1,3 +1,5 @@
+import { LEGAL_POLICY_VERSION } from '@game-feedback/contracts';
+
 import { expect, test } from './support/test';
 
 for (const locale of ['en', 'ja'] as const) {
@@ -17,6 +19,15 @@ for (const locale of ['en', 'ja'] as const) {
         const content = page.getByRole('article');
         await expect(content).toHaveAttribute('lang', locale);
         expect(await content.innerText()).not.toMatch(/[가-힣]/);
+        if (kind === 'terms' || kind === 'privacy') {
+          await expect(content).not.toContainText(/alpha|draft|アルファ|草案/i);
+          await expect(content).toContainText(LEGAL_POLICY_VERSION);
+          await expect(content).toContainText('Kim Jingeon');
+          await expect(content.locator('a[href="mailto:contact@bambyul.com"]').first()).toBeVisible();
+          expect(await page.locator('meta[name="description"]').getAttribute('content')).not.toMatch(
+            /alpha|draft|アルファ|草案/i,
+          );
+        }
         await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
           'href',
           `https://feedback.example/${locale}/${kind}`,
@@ -37,6 +48,12 @@ for (const locale of ['en', 'ja'] as const) {
           url: `https://feedback.example/${locale}/${kind}`,
         });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+        if (kind === 'guide' || kind === 'terms' || kind === 'privacy') {
+          const home = page.locator('a.back-link');
+          await expect(home).toHaveAttribute('href', `/${locale}`);
+          await home.click();
+          await expect(page).toHaveURL(`/${locale}`);
+        }
       }
     } finally {
       await context.close();

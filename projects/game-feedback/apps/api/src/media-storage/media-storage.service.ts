@@ -10,6 +10,7 @@ import {
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { ApiError } from '../common/http/api-error';
 import { MEDIA_SIGNATURE_BYTES, validateMediaHeader } from '../common/media-file';
@@ -44,12 +45,10 @@ export class MediaStorage implements OnModuleDestroy {
     return prefix ? `${prefix}/${path}` : path;
   }
 
-  async reserveUpload(mimeType: string, size: number) {
+  async prepareUpload(mimeType: string, size: number) {
     const storage = this.config.mediaStorage;
-    const object = await this.db.mediaObject.create({
-      data: { backend: 'S3', key: this.key(`staging/${randomUUID()}`) },
-    });
-    const expiresAt = new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000).toISOString();
+    const object = { backend: 'S3', key: this.key(`staging/${randomUUID()}`) };
+    const expiresAt = dayjs().add(MEDIA_UPLOAD_TTL_SECONDS, 'second').toISOString();
     try {
       const form = await createPresignedPost(this.s3, {
         Bucket: storage.bucket,
@@ -61,12 +60,13 @@ export class MediaStorage implements OnModuleDestroy {
           ['eq', '$Content-Type', mimeType],
         ],
       });
-      return { objectId: object.id, form, expiresAt };
-    } catch {
+      return { object, form, expiresAt };
+    } catch (cause) {
       throw new ApiError(
         503,
         'STORAGE_UNAVAILABLE',
         '업로드 주소를 만들지 못했습니다. 잠시 후 다시 시도해주세요.',
+        { cause },
       );
     }
   }
@@ -196,7 +196,7 @@ export class MediaStorage implements OnModuleDestroy {
 
   /** Run under the operator lock, after the daily backup. Never delete a referenced object. */
   async prune() {
-    const before = new Date(Date.now() - 86400000);
+    const before = dayjs().subtract(24, 'hour').toDate();
     await this.db.postMedia.deleteMany({ where: { postId: null, createdAt: { lt: before } } });
     await this.db.chatAttachment.deleteMany({ where: { messageId: null, createdAt: { lt: before } } });
     await this.db.avatarUpload.deleteMany({ where: { expiresAt: { lt: before } } });
@@ -210,13 +210,19 @@ export class MediaStorage implements OnModuleDestroy {
         avatar: null,
         avatarUpload: null,
       },
-      data: { retiredAt: new Date() },
+      data: { retiredAt: dayjs().toDate() },
     });
     const objects = await this.db.mediaObject.findMany({
       where: {
         backend: 'S3',
         OR: [
-          { retiredAt: { lt: new Date(Date.now() - 14 * 86400000) } },
+          {
+            retiredAt: {
+              lt: dayjs()
+                .subtract(14 * 24, 'hour')
+                .toDate(),
+            },
+          },
           { key: { startsWith: this.key('staging/') }, createdAt: { lt: before } },
         ],
         postMedia: null,

@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     loadFilterPaths(),
   ]);
 
-  // 항목 변환 코드는 생략
+  // Item conversion omitted
   return [
     ...toLocationEntries(locationIds),
     ...toItemEntries(items),
@@ -84,10 +84,10 @@ async function readAuthToken(includeServerAuth: boolean) {
 The caller default is false.
 
 ```text
-// 사이트맵: 공개 응답이므로 서버 쿠키를 읽지 않는다.
+// Sitemap: this is a public response, so do not read server cookies.
 fetchPublicSummary();
 
-// SSR 프리페치: 혜택 상태·적용가가 회원별 응답이므로 쿠키 사용을 명시한다.
+// SSR prefetch: benefits and applied prices are member-specific, so request cookies explicitly.
 fetchPublicSummary({
   includeServerAuth: true,
 });

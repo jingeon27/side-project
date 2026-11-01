@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { uniq } from 'es-toolkit';
 
 import { postCacheTag } from '@game-feedback/contracts';
@@ -160,7 +161,7 @@ export class CommentsService {
           select: { postId: true },
         });
         if (!own) throw await this.deletionDenied(req, id, tx);
-        await tx.comment.update({ where: { id }, data: { deletedAt: new Date(), body: '' } });
+        await tx.comment.update({ where: { id }, data: { deletedAt: dayjs().toDate(), body: '' } });
         await tx.notification.deleteMany({ where: { commentId: id } });
         return own;
       },

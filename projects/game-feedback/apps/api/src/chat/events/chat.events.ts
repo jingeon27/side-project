@@ -1,4 +1,5 @@
 import { Inject, Injectable, type MessageEvent, type OnModuleDestroy } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { countBy } from 'es-toolkit';
 import { Observable, type Subscriber } from 'rxjs';
 
@@ -53,7 +54,7 @@ export class ChatEvents implements OnModuleDestroy {
       where: { tokenHash: { in: [...new Set(clients.map((client) => client.sessionHash))] } },
       select: { tokenHash: true, userId: true, expiresAt: true, user: { select: { demoKey: true } } },
     });
-    const now = Date.now();
+    const now = dayjs().valueOf();
     return new Set(
       sessions
         .filter(

@@ -7,14 +7,16 @@ export function Field({
   children,
   hint,
   error,
+  labelSuffix,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
   error?: string;
+  labelSuffix?: ReactNode;
 }) {
   return (
-    <FormField label={label} description={hint} error={error} className="field">
+    <FormField label={label} labelSuffix={labelSuffix} description={hint} error={error} className="field">
       {children}
     </FormField>
   );

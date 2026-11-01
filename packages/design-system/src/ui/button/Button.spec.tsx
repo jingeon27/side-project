@@ -32,7 +32,7 @@ describe('Button', () => {
     );
     const button = screen.getByRole('button', { name: '보내기' });
     expect(button.firstElementChild).toBe(screen.getByTestId('send-icon'));
-    expect(button.querySelector('.animate-spin')).toBeNull();
+    expect(button.querySelector('[data-motion="loading"]')).toBeNull();
 
     await user.tab();
     rerender(
@@ -41,9 +41,9 @@ describe('Button', () => {
       </Button>,
     );
     expect(screen.queryByTestId('send-icon')).not.toBeInTheDocument();
-    expect(button.firstElementChild).toHaveClass('animate-spin');
+    expect(button.firstElementChild).toHaveAttribute('data-slot', 'spinner');
     expect(button.firstElementChild).toHaveAttribute('aria-hidden', 'true');
-    expect(button.querySelectorAll('.animate-spin')).toHaveLength(1);
+    expect(button.querySelectorAll('[data-motion="loading"]')).toHaveLength(1);
     expect(button).toHaveAttribute('aria-busy', 'true');
     expect(button).toHaveFocus();
     expect(button).toHaveAccessibleName('보내기');

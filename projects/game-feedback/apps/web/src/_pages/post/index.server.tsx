@@ -5,9 +5,9 @@ import { getServerPost } from '@/features/post/index.server';
 import { createPageMetadata, JsonLd, pageUrl, postStructuredData } from '@/shared/seo';
 import { CommunityPage } from '@/widgets/community-shell';
 
+import { PostTopbar } from './ui/header/PostTopbar';
+import { PostTopbarPlaceholder } from './ui/header/PostTopbarPlaceholder';
 import { PostPage } from './ui/PostPage';
-import { PostTopbar } from './ui/PostTopbar';
-import { PostTopbarPlaceholder } from './ui/PostTopbarPlaceholder';
 
 interface IPostRouteProps {
   params: Promise<{ locale: string; id: string }>;
@@ -60,6 +60,7 @@ export function PostDocument({
   return (
     <CommunityPage
       locale={locale}
+      screenKey="post"
       topbar={
         streamHeader ? (
           <Suspense fallback={<PostTopbarPlaceholder locale={locale} />}>{header}</Suspense>

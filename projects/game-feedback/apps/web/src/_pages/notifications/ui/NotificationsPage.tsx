@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Bell, CheckCheck } from 'lucide-react';
+import { ArrowUpRight, Bell, BellRing, CheckCheck } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -14,12 +14,12 @@ import {
   notificationPath,
   readNotificationMutationOptions,
 } from '@/features/notification';
-import { PushNotificationSettings } from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { NotificationsTopbar } from './NotificationsTopbar';
+import { PushNotificationSettings } from './push-settings/PushNotificationSettings';
 
 interface INotificationsPageProps {
   locale: string;
@@ -30,8 +30,11 @@ function NotificationsContent({ locale }: INotificationsPageProps) {
   if (!session?.user)
     return (
       <div className="empty-feed">
-        <span>
-          <Bell size={30} />
+        <span
+          aria-hidden
+          className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+        >
+          <BellRing className="size-full" />
         </span>
         <h1>{t('당신의 플레이에 도착한 소식')}</h1>
         <p>{t('로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.')}</p>
@@ -78,8 +81,11 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
       <ErrorNotice message={mutation.error && t(mutation.error.message)} />
       {!items.length && (
         <div className="empty-feed">
-          <span>
-            <Bell size={28} />
+          <span
+            aria-hidden
+            className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+          >
+            <Bell className="size-full" />
           </span>
           <h3>{t('아직 도착한 소식이 없어요')}</h3>
           <p>{t('피드백 요청을 남기고 새로운 이야기를 만나보세요.')}</p>
@@ -117,7 +123,11 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
 
 export function NotificationsPage(props: Parameters<typeof NotificationsContent>[0]) {
   return (
-    <CommunityPage locale={props.locale} topbar={<NotificationsTopbar locale={props.locale} />}>
+    <CommunityPage
+      screenKey="notifications"
+      locale={props.locale}
+      topbar={<NotificationsTopbar locale={props.locale} />}
+    >
       <NotificationsContent {...props} />
     </CommunityPage>
   );

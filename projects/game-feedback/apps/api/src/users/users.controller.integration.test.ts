@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -128,7 +129,6 @@ describe.skipIf(!testDatabaseUrl)(
         'gameAccounts',
         'helpfulCount',
         'joinedAt',
-        'links',
         'postCount',
       ]);
       expect(Object.keys(profile.author).sort()).toEqual([
@@ -182,7 +182,7 @@ describe.skipIf(!testDatabaseUrl)(
             categoryId: 'clash-royale',
             title: '삭제한 요청',
             body: '검색에 노출하지 않는 본문입니다.',
-            deletedAt: new Date(),
+            deletedAt: dayjs().toDate(),
           },
         ],
         select: { id: true },
@@ -510,7 +510,7 @@ describe.skipIf(!testDatabaseUrl)(
       });
       const raw = token();
       await db.session.create({
-        data: { tokenHash: hash(raw), userId: user.id, expiresAt: new Date(Date.now() + 3_600_000) },
+        data: { tokenHash: hash(raw), userId: user.id, expiresAt: dayjs().add(1, 'hour').toDate() },
       });
       const save = (playerTag: string) =>
         supertest(app.getHttpServer())

@@ -16,7 +16,7 @@ describe('IconButton', () => {
     );
     const button = screen.getByRole('button', { name: '공유하기' });
     expect(screen.queryByTestId('share-icon')).not.toBeInTheDocument();
-    expect(button.firstElementChild).toHaveClass('animate-spin');
+    expect(button.firstElementChild).toHaveAttribute('data-slot', 'spinner');
     expect(button).toHaveAttribute('aria-busy', 'true');
     expect(button).toHaveClass('bg-accent', 'text-on-accent', 'size-touch', 'rounded-full');
     await user.tab();

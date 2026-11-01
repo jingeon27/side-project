@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import 'server-only';
 
 import { ApiError, getPost } from '@game-feedback/sdk';
@@ -31,7 +33,7 @@ export class PublicPostAccessCache {
     private readonly options: IPublicPostAccessCacheOptions = {
       ttlMs: 30_000,
       maxEntries: 500,
-      now: () => Date.now(),
+      now: () => dayjs().valueOf(),
     },
   ) {}
 

@@ -2,7 +2,7 @@
 
 공개 Web/WebView와 분리된 React + Vite 로컬 관리자 서비스다. `apps/admin`이 화면, FSD 도메인, Vitest/Playwright를 소유하며 REST API와 공통 디자인 시스템을 재사용한다. 공개 Web의 `/ko/admin`, `/en/admin`, `/ja/admin`은 404다.
 
-코드 변경에는 [코드스타일 스킬](../../.agents/skills/game-feedback-code-style/SKILL.md)과 [Admin 작업 규칙](AGENTS.md)을 적용한다. `_app`은 Provider·인증·라우트 조합, `_pages`는 로그인·문의·신고·사용자 관리 화면, `widgets`는 셸·대화·사용자 패널을 소유한다. `features`의 REST IO·조회 options·mutation options를 정의하고 호출부에서 useMutation으로 직접 조립한다. 폼은 각 목적의 Zod 스키마로 관리한다. 같은 경계는 앱 ESLint에서도 검사한다.
+코드 변경에는 [코드스타일 스킬](../../.agents/skills/game-feedback-client/SKILL.md)과 [Admin 작업 규칙](AGENTS.md)을 적용한다. `_app`은 Provider·인증·라우트 조합, `_pages`는 로그인·문의·신고·사용자 관리 화면, `widgets`는 셸·대화·사용자 패널을 소유한다. `features`의 REST IO·조회 options·mutation options를 정의하고 호출부에서 useMutation으로 직접 조립한다. 폼은 각 목적의 Zod 스키마로 관리한다. 같은 경계는 앱 ESLint에서도 검사한다.
 
 ## 실행
 

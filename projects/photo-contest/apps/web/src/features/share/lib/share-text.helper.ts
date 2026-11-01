@@ -54,5 +54,5 @@ export function buildContestShareText(contestTitle: string) {
 
 /** 그룹 초대 문구 */
 export function buildInviteShareText(groupName: string) {
-  return `‘${truncate(groupName.trim(), SHARE_TITLE_MAX_LENGTH)}’ 그룹에 초대할게요. 별사대에서 사진과 동영상을 함께 나눠요!`;
+  return `‘${truncate(groupName.trim(), SHARE_TITLE_MAX_LENGTH)}’ 그룹에 초대할게요. 피식에서 사진과 동영상을 함께 나눠요!`;
 }

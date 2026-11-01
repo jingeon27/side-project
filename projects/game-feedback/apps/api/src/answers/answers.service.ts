@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { postCacheTag } from '@game-feedback/contracts';
 
@@ -133,7 +134,7 @@ export class AnswersService {
         if (!own) throw await this.deletionDenied(req, id, tx);
         await tx.answer.update({
           where: { id },
-          data: { deletedAt: new Date(), body: '', helpful: false },
+          data: { deletedAt: dayjs().toDate(), body: '', helpful: false },
         });
         await tx.notification.deleteMany({ where: { answerId: id } });
         return own;
@@ -170,7 +171,7 @@ export class AnswersService {
         await this.lockVisibleAnswer(req, tx, a);
         const changed = await (tx ?? this.db).answer.updateMany({
           where: { id, helpful: !input.helpful },
-          data: { helpful: input.helpful, readAt: new Date() },
+          data: { helpful: input.helpful, readAt: dayjs().toDate() },
         });
         // 도움됨 알림은 답변마다 하나만 둔다. 해제하면 지우고, 다시 표시하면 이전 알림을 바꾼다.
         if (changed.count)

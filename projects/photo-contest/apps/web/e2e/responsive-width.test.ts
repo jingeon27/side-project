@@ -42,7 +42,7 @@ test(
 );
 
 test(
-  '데스크톱 셸과 목록은 넓은 화면의 양끝까지 채워야 한다',
+  '데스크톱 셸은 화면을 채우고 홈 목록은 제목과 같은 읽기 폭으로 정렬해야 한다',
   { tag: ['@desktop'] },
   async ({ page, signIn }, testInfo) => {
     await signIn('전체 화면 사용자');
@@ -77,6 +77,16 @@ test(
             await expect(list).toBeVisible();
             const region = await list.boundingBox();
             if (!region) throw new Error('목록 영역이 보여야 한다');
+            if (path === '/') {
+              const title = page.getByRole('heading', { name: '우리끼리 모은 순간.', exact: true });
+              const contentHeader = await title.locator('xpath=ancestor::header').boundingBox();
+              if (!contentHeader) throw new Error('홈 본문 제목이 보여야 한다');
+              expect(region.x).toBe(contentHeader.x);
+              expect(region.width).toBe(contentHeader.width);
+              expect(region.width).toBe(Math.min(1152, width - sidebar.width - 64));
+              expect(region.x - sidebar.width).toBe(width - region.x - region.width);
+              return;
+            }
             expect(region.x + region.width).toBe(width - 32);
           }
         }).toPass({ timeout: 15_000 });

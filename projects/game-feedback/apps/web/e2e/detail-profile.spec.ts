@@ -35,7 +35,7 @@ test('post detail uses a compact game breadcrumb and one contact action with unb
   }
   await header.getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL('/ko/boards/friend-sale');
-  await expect(header.locator('.brand')).toBeVisible();
+  await expect(header.locator('.brand')).toHaveCount(0);
   const crawler = await browser.newContext({
     baseURL: origin,
     javaScriptEnabled: false,
