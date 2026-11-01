@@ -44,15 +44,21 @@ npm install --global @yarnpkg/cli-dist@4.17.0 --force
 yarn install --immutable
 ```
 
-실행할 프로젝트의 README에 따라 환경 파일과 DB를 준비한 뒤 개발 서버를 시작합니다.
+각 프로젝트 README에 따라 환경 파일과 DB를 준비한 뒤, 세 서비스를 함께 실행합니다.
 
-| 프로젝트  | 개발 서버 실행                                | 로컬 주소                                     | 환경 준비                                               |
-| --------- | --------------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
-| Game Mate | `yarn workspace @side/game-feedback dev:test` | [localhost:3300/ko](http://localhost:3300/ko) | [설정 안내](projects/game-feedback/README.md#빠른-시작) |
-| 피식      | `yarn dev:photo-contest`                      | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
-| 블로그    | `yarn workspace @blog/web dev`                | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
+```sh
+yarn dev
+```
 
-Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 로컬 검토용입니다. 실제 인증과 외부 서비스를 연결할 때는 프로젝트 환경 파일을 설정하고 `yarn dev:game-feedback`을 사용합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다.
+Game Mate와 피식의 API·웹, 블로그 웹을 함께 시작합니다. 서비스 하나만 실행할 때는 같은 형식의 workspace 명령을 사용합니다.
+
+| 프로젝트  | 개발 서버 실행                           | 로컬 주소                                     | 환경 준비                                               |
+| --------- | ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
+| Game Mate | `yarn workspace @side/game-feedback dev` | [localhost:3300/ko](http://localhost:3300/ko) | [설정 안내](projects/game-feedback/README.md#빠른-시작) |
+| 피식      | `yarn workspace @side/photo-contest dev` | [localhost:3200](http://localhost:3200)       | [설정 안내](projects/photo-contest/README.md#빠른-시작) |
+| 블로그    | `yarn workspace @side/blog dev`          | [localhost:3100/ko](http://localhost:3100/ko) | [설정 안내](projects/blog/README.md#빠른-시작)          |
+
+전체 실행은 일반 개발 모드를 사용합니다. Game Mate의 테스트 인증과 예시 콘텐츠가 필요하면 별도로 `yarn workspace @side/game-feedback dev:test`를 실행합니다. 피식은 개발 DB와 마이그레이션 준비가 필요하며, 두 서비스의 미디어 업로드는 로컬에서도 실제 AWS S3를 사용합니다. Ctrl+C 또는 서비스 프로세스의 종료는 전체 실행이 시작한 서버를 함께 정리하며, DB 중지는 각 프로젝트 명령을 따릅니다.
 
 | 프로젝트      | 웹              | API  | 개발 / 테스트 DB |
 | ------------- | --------------- | ---- | ---------------- |
@@ -66,15 +72,49 @@ Game Mate의 `dev:test`는 테스트 인증과 예시 콘텐츠를 사용하는 
 
 ```text
 projects/
-  game-feedback/        # Game Mate: Next.js, NestJS REST, Expo
-  photo-contest/        # 피식: Next.js, NestJS GraphQL, Expo
-  blog/                 # 개발 기록: Next.js, 다국어 MDX
+  game-feedback/             # Game Mate
+    apps/
+      api/                   # NestJS REST API, 인증·게시글·채팅, Prisma
+      web/                   # Next.js 커뮤니티 웹
+      admin/                 # 운영자용 웹
+      mobile/                # Expo WebView 앱
+    packages/
+      contracts/             # Zod 요청·응답 스키마와 도메인 계약
+      sdk/                   # OpenAPI 기반 REST 클라이언트와 응답 검증
+      bridge/                # 웹과 모바일 사이의 메시지 계약
+    deploy/
+      shared-instance/       # 공유 EC2에서 실행할 이미지와 서비스 Compose
+    scripts/                 # 로컬 실행, DB·계약 생성과 검사 명령
+    docs/                    # 제품 결정, 구현·검증·운영 기록
+  photo-contest/             # 피식
+    apps/
+      api/                   # NestJS GraphQL·REST API, Prisma
+      web/                   # Next.js 그룹 커뮤니티 웹
+      mobile/                # Expo WebView 앱
+    packages/
+      bridge/                # 웹과 모바일 사이의 메시지 계약
+      test-kit/              # 격리 DB·API 실행과 테스트 미디어 준비·정리
+    deploy/
+      shared-instance/       # 공유 EC2용 서비스 Compose와 S3 CORS
+      scripts/               # 이전 단독 배포 구성의 호환 검증 도구
+    scripts/                 # 앱 실행 위임과 개발·테스트 PostgreSQL
+    docs/                    # 서비스 기능, 개발·배포와 검증 기록
+  blog/                      # 개발 기록
+    apps/
+      web/                   # Next.js 다국어 MDX 블로그와 콘텐츠 생성·검증
+    docs/                    # 글 작성, SEO·캐시·배포와 구현 기록
 packages/
-  design-system/        # 공통 UI, 토큰, Storybook
-  config/               # ESLint, TypeScript, tsc7
-  toolkit/              # 공통 푸시 전송과 migration/Sentry 검사
-scripts/                # Git hook, worktree, 저장소 검사
-deploy/shared-instance/ # 두 서비스의 EC2, 프록시, DB, Terraform
+  design-system/             # 여러 서비스가 공유하는 UI
+    src/                     # 컴포넌트, 디자인 토큰, Motion과 공통 훅
+    .storybook/              # Storybook 설정과 미리보기
+    scripts/                 # 패키지 테스트 실행
+  config/                    # 공통 개발 설정
+    eslint/                  # TypeScript·React·FSD 규칙과 프리셋
+    typescript/              # TypeScript 설정과 tsc7 실행 진입점
+  toolkit/                   # 서비스와 독립적인 공통 도구
+    src/                     # 푸시 전송, migration 호환성·Sentry 설정 검사
+scripts/                     # Git hook, worktree, 저장소 검사
+deploy/shared-instance/      # 두 서비스의 EC2, 프록시, DB, Terraform
 ```
 
 프로젝트의 앱은 `projects/<name>/apps/*`, 해당 프로젝트 안에서 공유하는 코드는 `projects/<name>/packages/*`에 둡니다. 여러 프로젝트가 실제로 함께 쓰는 코드만 루트 `packages/*`로 올립니다.

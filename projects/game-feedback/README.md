@@ -12,13 +12,12 @@
 
 ```sh
 cp projects/game-feedback/.env.example projects/game-feedback/.env
-yarn workspace @side/game-feedback dev:test
+yarn workspace @side/game-feedback dev
 ```
 
 - 웹 [localhost:3300/ko](http://localhost:3300/ko), API [localhost:4300](http://localhost:4300)
 - 개발 DB 55442 · 테스트 DB 55444 · 모바일 Metro 8082
-- `dev:test`는 예시 콘텐츠와 서버 테스트 토큰을 사용하는 로컬 검토용입니다. 운영 인증과 혼동하지 않습니다.
-- 실제 제공자 연동은 프로젝트 `.env`를 설정한 뒤 `yarn workspace @side/game-feedback dev`로 시작합니다.
+- 실제 제공자 연동은 프로젝트 `.env`에 설정합니다. 테스트 인증과 예시 콘텐츠가 필요한 로컬 검토는 `yarn workspace @side/game-feedback dev:test`를 사용합니다.
 - Ctrl+C는 이 명령이 시작한 Web/API만 종료합니다. 개발 DB 중지는 `yarn workspace @side/game-feedback db:stop`입니다.
 
 ## 자주 쓰는 명령

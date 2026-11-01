@@ -21,7 +21,7 @@ yarn workspace @side/photo-contest db:local
 
 ```sh
 yarn workspace @side/photo-contest db:migrate
-yarn dev:photo-contest
+yarn workspace @side/photo-contest dev
 ```
 
 - 웹: http://localhost:3200
