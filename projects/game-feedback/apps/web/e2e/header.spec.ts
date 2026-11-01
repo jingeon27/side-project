@@ -6,9 +6,9 @@ test('mobile titles follow the screen and game classifications stay inside their
   await page.setViewportSize({ width: 400, height: 844 });
   await page.goto('/ko');
   const header = page.getByRole('banner');
-  await expect(header.locator('.brand')).toBeVisible();
-  await expect(header.locator('.brand')).toContainText('Game Mate');
-  await expect(header.locator('.mobile-page-title')).toHaveCount(0);
+  await expect(header.locator('.brand')).toHaveCount(0);
+  await expect(header.getByRole('link', { name: 'Game Mate 홈', exact: true })).toHaveCount(0);
+  await expect(header.locator('.topbar-title')).toHaveText('전체');
   await expect(header.getByRole('combobox')).toHaveCount(0);
   await expect(header.getByRole('link', { name: '검색', exact: true })).toHaveAttribute('href', '/ko/search');
   await expect(header.getByRole('textbox')).toHaveCount(0);
@@ -17,11 +17,11 @@ test('mobile titles follow the screen and game classifications stay inside their
   await expect(page.locator('.game-board-navigation .game-board-title')).toContainText('클래시로얄');
   await expect(game.getByRole('link')).toHaveText([
     '전체',
-    '피드백',
     '친추판매',
     '전투 모집',
     '게임코치',
     '자유게시판',
+    '피드백',
   ]);
   await expect(game.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');
   await game.getByRole('link', { name: '전투 모집', exact: true }).click();
@@ -29,7 +29,7 @@ test('mobile titles follow the screen and game classifications stay inside their
     'href',
     '/ko/search?board=friendly',
   );
-  await expect(header.locator('.brand')).toBeVisible();
+  await expect(header.locator('.brand')).toHaveCount(0);
   await expect(game.getByRole('link', { name: '전투 모집', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
@@ -37,10 +37,10 @@ test('mobile titles follow the screen and game classifications stay inside their
   const menu = page.locator('.mobile-nav');
   for (const title of ['채팅', '프로필']) {
     await menu.getByRole('link', { name: title, exact: true }).click();
-    await expect(header.locator('.mobile-page-title')).toHaveText(title);
+    await expect(header.locator('.topbar-title')).toHaveText(title);
   }
   await menu.getByRole('link', { name: '홈', exact: true }).click();
-  await expect(header.locator('.brand')).toBeVisible();
+  await expect(header.locator('.brand')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

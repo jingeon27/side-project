@@ -9,8 +9,7 @@ export function MessagesTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
     <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
-      <Topbar.Title>{t('채팅')}</Topbar.Title>
+      <Topbar.Title heading>{t('채팅')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />
         <Topbar.Notifications href={appRoutes.notifications(locale)} />

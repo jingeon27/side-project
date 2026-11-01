@@ -29,9 +29,7 @@ test('mobile OAuth opens a signup page, permits reading terms, and completes bac
   await page.getByRole('link', { name: '이용약관', exact: true }).click();
   const terms = await popupPromise;
   await expect(terms).toHaveURL(origin + '/ko/terms');
-  await expect(
-    terms.getByRole('heading', { name: '이용약관 (비공개 알파 초안)', exact: true }),
-  ).toBeVisible();
+  await expect(terms.getByRole('heading', { name: '이용약관', exact: true })).toBeVisible();
   await terms.close();
   await expect(page).toHaveURL(origin + signup);
 
@@ -71,7 +69,7 @@ test('desktop signup is a page, keeps the draft on failure, and preserves destin
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(destination);
-  await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await page
     .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
     .getByRole('button', { name: '로그인하기', exact: true })

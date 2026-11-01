@@ -61,12 +61,6 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
             </Link>
             <div className="game-submenu">
               <SidebarBoardLink
-                kind="FEEDBACK"
-                locale={locale}
-                game={game.slug}
-                selected={gameSlug === game.slug ? selected : undefined}
-              />
-              <SidebarBoardLink
                 kind="FRIEND_SALE"
                 locale={locale}
                 game={game.slug}
@@ -86,6 +80,12 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
               />
               <SidebarBoardLink
                 kind="FREE"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
+              <SidebarBoardLink
+                kind="FEEDBACK"
                 locale={locale}
                 game={game.slug}
                 selected={gameSlug === game.slug ? selected : undefined}

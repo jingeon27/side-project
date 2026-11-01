@@ -1,10 +1,10 @@
 'use client';
 
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { FilePenLine } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button, StatusAnimation } from '@side/design-system';
-import { ButtonLink } from '@side/design-system/next';
+import { Button } from '@side/design-system';
 
 import {
   PostCard,
@@ -50,11 +50,13 @@ function MyPostList({ locale, userId }: IMyPostsProps) {
   if (!items.length)
     return (
       <div className="board-empty">
-        <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
+        <span
+          aria-hidden
+          className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+        >
+          <FilePenLine className="size-full" />
+        </span>
         <p>{t('아직 작성한 글이 없어요.')}</p>
-        <ButtonLink href={appRoutes.compose(locale)} variant="secondary" size="sm">
-          {t('글쓰기')}
-        </ButtonLink>
       </div>
     );
   return (

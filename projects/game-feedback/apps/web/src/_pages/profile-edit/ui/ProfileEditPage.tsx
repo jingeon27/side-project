@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { UserRound } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button, StatusAnimation } from '@side/design-system';
+import { Button } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { profileOptions } from '@/features/user';
@@ -36,6 +37,7 @@ export function ProfileEditPage({ locale }: { locale: string }) {
   return (
     <CommunityPage
       locale={locale}
+      screenKey="profile-edit"
       topbar={
         <Topbar.Root className="profile-topbar">
           <Topbar.Back
@@ -52,7 +54,12 @@ export function ProfileEditPage({ locale }: { locale: string }) {
         </AsyncBoundary>
       ) : (
         <div className="empty-feed">
-          <StatusAnimation variant="empty" className="mx-auto mb-3 size-14" />
+          <span
+            aria-hidden
+            className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+          >
+            <UserRound className="size-full" />
+          </span>
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
           <Button type="button" onClick={login}>
             {t('로그인 / 시작하기')}

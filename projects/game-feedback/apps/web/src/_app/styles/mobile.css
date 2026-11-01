@@ -26,9 +26,11 @@
       --mobile-page-inset: 16px;
       --mobile-page-inset-start: max(var(--mobile-page-inset), env(safe-area-inset-left));
       --mobile-page-inset-end: max(var(--mobile-page-inset), env(safe-area-inset-right));
+      --mobile-page-block-start: 20px;
       --site-header-height: 60px;
     }
     .site-grid {
+      padding-top: var(--mobile-page-block-start);
       padding-bottom: 32px;
     }
     .site-grid,
@@ -36,16 +38,17 @@
     .site-footer-inner {
       padding-inline: var(--mobile-page-inset-start) var(--mobile-page-inset-end);
     }
+    .game-board-navigation {
+      margin-block-start: calc(-1 * var(--mobile-page-block-start));
+      margin-inline: calc(-1 * var(--mobile-page-inset-start)) calc(-1 * var(--mobile-page-inset-end));
+      padding-block-start: calc(var(--mobile-page-block-start) + 8px);
+      padding-inline: var(--mobile-page-inset-start) var(--mobile-page-inset-end);
+    }
     .post-card,
     .skeleton-card,
     .empty-feed,
     .settings-card {
       padding-inline: var(--mobile-page-inset);
-    }
-    .game-board-chips {
-      flex-wrap: wrap;
-      overflow: visible;
-      padding-inline: 0;
     }
     .conversation-list-heading,
     .conversation-row,
@@ -62,17 +65,6 @@
     .header-actions {
       gap: 2px;
     }
-    .topbar.feed-topbar .brand {
-      display: inline-flex;
-      flex-shrink: 0;
-      min-height: 44px;
-      font-size: var(--text-title-lg);
-      font-weight: 800;
-      letter-spacing: -0.055em;
-      line-height: 1;
-      color: var(--color-ink);
-    }
-    .feed-topbar .brand-mark,
     .feed-topbar .feed-header-language {
       display: none;
     }
@@ -234,6 +226,11 @@
         background-color 180ms ease,
         color 180ms ease,
         border-color 180ms ease;
+    }
+  }
+  @media (max-width: 440px) {
+    :root {
+      --mobile-page-block-start: 17px;
     }
   }
 }

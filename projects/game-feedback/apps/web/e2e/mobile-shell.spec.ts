@@ -36,7 +36,7 @@ for (const { width, locale, menu, actions } of [
     const header = page.getByRole('banner').locator('.header-actions');
     expect((await page.getByRole('banner').boundingBox())?.height).toBe(60);
     await expect(header.getByRole('link')).toHaveCount(2);
-    await expect(page.getByRole('banner').locator('.brand')).toBeVisible();
+    await expect(page.getByRole('banner').locator('.brand')).toHaveCount(0);
     await expect(header.getByRole('combobox')).toHaveCount(0);
     await expect(header.getByRole('button')).toHaveCount(0);
     for (const name of actions) {

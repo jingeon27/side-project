@@ -15,7 +15,7 @@ import { AuthorLink, UserBadges } from '@/features/user';
 
 import { boardSnapshotSearch } from '../../model/board-filters';
 import type { IBoardPageProps } from '../../model/board-page.type';
-import { BoardHeading } from '../board/BoardHeading';
+import { BoardComposeEntry } from '../board/BoardComposeEntry';
 import { BoardPostList } from '../board/BoardPostList';
 import { BattleFilters } from './BattleFilters';
 
@@ -23,7 +23,7 @@ export function BattleBoard({ locale, initialBoard }: IBoardPageProps) {
   const initialSearch = 'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard);
   return (
     <section className="board-page">
-      <BoardHeading locale={locale} board="FRIENDLY" title="전투 모집" />
+      <BoardComposeEntry locale={locale} board="FRIENDLY" />
       <BattleFilters locale={locale} slug="friendly" initialSearch={initialSearch} />
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FRIENDLY" slug="friendly">
         {(post, game) => (

@@ -16,6 +16,7 @@ interface IServiceErrorBoundaryProps {
   refreshOnRetry?: boolean;
   fallbackClassName?: string;
   recoveryAction?: ReactNode;
+  compact?: boolean;
 }
 
 function ServiceErrorFallback(
@@ -25,6 +26,7 @@ function ServiceErrorFallback(
     refreshOnRetry,
     fallbackClassName,
     recoveryAction,
+    compact,
   }: Omit<IServiceErrorBoundaryProps, 'children' | 'resetKey'>,
   { reset, retry }: ErrorInfo,
 ) {
@@ -42,6 +44,7 @@ function ServiceErrorFallback(
       pending={recovery.isPending}
       recoveryAction={recoveryAction}
       onRetry={handleRetry}
+      compact={compact}
     />
   );
 }
@@ -56,6 +59,7 @@ export function ServiceErrorBoundary({
   refreshOnRetry,
   fallbackClassName,
   recoveryAction,
+  compact,
 }: IServiceErrorBoundaryProps) {
   return (
     <QueryErrorResetBoundary key={resetKey}>
@@ -65,6 +69,7 @@ export function ServiceErrorBoundary({
           refreshOnRetry={refreshOnRetry}
           fallbackClassName={fallbackClassName}
           recoveryAction={recoveryAction}
+          compact={compact}
           onReset={async () => {
             await onReset?.();
             reset();

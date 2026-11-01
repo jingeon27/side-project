@@ -6,8 +6,10 @@ import { usePathname } from 'next/navigation';
 import { appRoutes } from '@game-feedback/bridge';
 
 import { parseBattleMode } from '@/features/battle';
+import { boardBySlug } from '@/features/board';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus } from '@/features/post';
+import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 import { Topbar } from '@/widgets/community-shell';
 
@@ -17,9 +19,11 @@ interface IBoardsTopbarProps {
 }
 
 export function BoardsTopbar({ locale, slug }: IBoardsTopbarProps) {
+  const { t } = useI18n();
+  const board = boardBySlug(slug);
   return (
     <Topbar.Root className="feed-topbar">
-      <Topbar.Brand home={appRoutes.feed(locale)} />
+      <Topbar.Title heading>{t(board?.name ?? '게시판')}</Topbar.Title>
       <Topbar.Actions>
         <Suspense fallback={null}>
           <BoardSearchLink locale={locale} slug={slug} />

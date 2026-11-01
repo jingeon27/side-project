@@ -15,6 +15,36 @@ beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined))
 afterEach(() => vi.unstubAllEnvs());
 
 describe('ServiceErrorBoundary', () => {
+  it('keeps a failed compact header focused on retry and recovers without replacing healthy content', async () => {
+    function Header() {
+      const [failed, setFailed] = useState(true);
+      return (
+        <>
+          <ServiceErrorBoundary
+            title="상단 메뉴"
+            compact
+            fallbackClassName="topbar"
+            onReset={() => setFailed(false)}
+          >
+            <UnstableRegion failed={failed} />
+          </ServiceErrorBoundary>
+          <input aria-label="작성 중인 제목" defaultValue="보존할 초안" />
+        </>
+      );
+    }
+    render(<Header />);
+    expect(screen.getByRole('alert', { name: '상단 메뉴 오류' }).classList.contains('topbar')).toBe(true);
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.queryByText('잠시 후 이 영역을 다시 시도해 주세요.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도하기' }));
+    await screen.findByText('복구된 영역');
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: '작성 중인 제목' }).value).toBe(
+      '보존할 초안',
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('shows a public contact address and blocks repeated recovery while its mutation is pending without a query provider', async () => {
     vi.stubEnv('GAME_FEEDBACK_CONTACT_EMAIL', 'support@example.test');
     const recovery = Promise.withResolvers<void>();
