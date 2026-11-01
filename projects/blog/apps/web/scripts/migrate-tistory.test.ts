@@ -114,6 +114,11 @@ describe('published Tistory migration artifacts', () => {
         const dimensions = imageSize(refreshed);
         expect(dimensions.width).toBe(capture.width);
         expect(dimensions.height).toBe(capture.height);
+        for (const screen of capture.screens) {
+          const source = await readFile(path.join(root, 'public', screen.sourceImage));
+          expect(createHash('sha256').update(source).digest('hex')).toBe(screen.sourceSha256);
+          expect(imageSize(source)).toMatchObject({ width: screen.sourceWidth, height: screen.sourceHeight });
+        }
         continue;
       }
       expect(replacement).toMatch(/^\/images\/covers\/[a-z0-9-]+\.png$/);
