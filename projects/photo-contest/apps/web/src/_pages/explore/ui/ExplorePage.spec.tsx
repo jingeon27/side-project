@@ -18,11 +18,12 @@ import { ExplorePage } from './ExplorePage';
 const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/explore',
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(window.location.search),
   useRouter: () => navigation,
 }));
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/explore?q=산책');
   navigation.push.mockReset();
   navigation.replace.mockReset();
   navigation.prefetch.mockReset();

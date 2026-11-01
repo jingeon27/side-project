@@ -43,7 +43,7 @@ test(
     await expect(members).toBeEnabled();
     await members.focus();
     await page.keyboard.press('Enter');
-    const details = page.locator(`#group-community-${group.id}`);
+    const details = page.locator(`#group-community-${group.id}:visible`);
     await expect(details).toHaveJSProperty('open', true);
     await expect(details.locator('summary')).toBeFocused();
     await expect(details.locator('summary')).toBeInViewport({ ratio: 1 });

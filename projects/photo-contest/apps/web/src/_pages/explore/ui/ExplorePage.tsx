@@ -22,7 +22,7 @@ export function ExplorePage({ search }: { search: string }) {
     <div className="flex flex-1 flex-col">
       <TopAppBar title="그룹 탐색" />
       <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-1 flex-col gap-7 px-4 pt-6 pb-24 tablet:px-8 desktop:pt-10 desktop:pb-28">
-        <GroupSearchForm key={search} search={search} />
+        <GroupSearchForm key={search} />
         <section aria-label="탐색할 그룹" className="flex flex-col gap-4">
           <div className="flex min-w-0 flex-col gap-2" aria-live="polite" aria-atomic>
             <h2 className="text-title-lg text-ink">{search ? '검색 결과' : '새로 만들어진 그룹'}</h2>
