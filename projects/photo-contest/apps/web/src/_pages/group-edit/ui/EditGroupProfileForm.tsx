@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useWatch } from 'react-hook-form';
 
 import { GroupImagePicker, groupProfileSchema, uploadGroupImages } from '@/features/group';
 import {
@@ -34,6 +35,7 @@ export function EditGroupProfileForm({
   const { data } = useReadQuery(queryRef);
   const group = data.group;
   const form = useZodForm(groupProfileSchema, { defaultValues: getGroupProfileDefaults(group) });
+  const [cover, removeCover] = useWatch({ control: form.control, name: ['cover', 'removeCover'] });
   const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument, { fetchPolicy: 'no-cache' });
   const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
   const [save] = useMutation(UpdateGroupProfileDocument, {
@@ -119,8 +121,9 @@ export function EditGroupProfileForm({
             <div className="flex flex-col gap-6 pt-4">
               <GroupImagePicker
                 label="그룹 배경 사진"
+                value={cover}
                 cover
-                currentUrl={group.coverUrl}
+                currentUrl={removeCover ? null : group.coverUrl}
                 disabled={isSubmitting}
                 error={errors.cover?.message}
                 onChange={(file) => {

@@ -135,6 +135,8 @@ export function CreatePostForm({
               kind: posted.createPost.kind,
             });
             toast.success('게시물을 올렸어요');
+            // 성공한 작성만 새 요청으로 시작하고 실패한 요청의 재시도 키는 유지한다.
+            form.reset({ ...form.formState.defaultValues, clientRequestId: crypto.randomUUID() });
             if (!signal.aborted) onCreated(posted.createPost.id);
           } catch (error) {
             if (signal.aborted) {
