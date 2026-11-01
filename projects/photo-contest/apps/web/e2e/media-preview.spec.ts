@@ -21,7 +21,7 @@ test(
       buffer: await createTestImage({ width: 80, height: 120 }),
     };
     await page.goto(`/groups/${group.id}`);
-    const opener = page.getByRole('link', { name: '글쓰기', exact: true });
+    const opener = page.getByRole('button', { name: '글쓰기', exact: true });
     await opener.click();
     const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
     const picker = sheet.getByLabel('사진 또는 동영상 선택', { exact: true });

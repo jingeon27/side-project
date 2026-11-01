@@ -1,12 +1,14 @@
 'use client';
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Users } from 'lucide-react';
+import { ArrowUpRight, Users } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { CreateGroupButton, GroupCard } from '@/features/group';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
+import { ButtonLink } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
@@ -18,6 +20,11 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
         icon={<Users className="size-6" />}
         title="아직 참여한 그룹이 없어요"
         description="탐색에서 그룹을 찾거나 직접 그룹을 만들어 보세요."
+        action={
+          <ButtonLink href={ROUTES.EXPLORE} variant="accent" size="lg">
+            그룹 탐색하기 <ArrowUpRight aria-hidden className="size-4" />
+          </ButtonLink>
+        }
       />
     ))
     .otherwise((groups) => (

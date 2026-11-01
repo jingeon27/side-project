@@ -10,7 +10,7 @@ import { GroupVisibility } from '@/shared/api/generated';
 
 import { HomePageTemplate } from './HomePageTemplate';
 
-const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn(), prefetch: vi.fn() }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),

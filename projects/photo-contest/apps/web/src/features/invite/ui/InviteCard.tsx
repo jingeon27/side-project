@@ -54,10 +54,11 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           친구에게 그룹을 소개해 보세요. 비공개 그룹은 그룹장이 가입 신청을 수락해야 함께할 수 있어요.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2 desktop:grid-cols-1">
+      <div className="grid min-w-0 grid-cols-1 gap-2 tablet:grid-cols-2 desktop:grid-cols-1">
         <Button
           variant="primary"
           size="md"
+          className="h-auto min-h-touch min-w-0 max-w-full flex-wrap py-2 whitespace-normal wrap-anywhere"
           onClick={async () => {
             const method = await shareActions.share(
               inviteUrl,
@@ -72,6 +73,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
         </Button>
         <Button
           variant="secondary"
+          className="h-auto min-h-touch min-w-0 max-w-full flex-wrap py-2 whitespace-normal wrap-anywhere"
           onClick={async () => {
             const method = await shareActions.copy(inviteUrl, { copied: COPIED_MESSAGE });
             if (method) trackEvent(ANALYTICS_EVENT.InviteLinkCopied, { group_id: groupId, method });
@@ -92,7 +94,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
         <Button
           variant="ghost"
           size="sm"
-          className="self-start text-muted"
+          className="h-auto min-h-touch min-w-0 max-w-full flex-wrap self-start py-2 text-muted whitespace-normal wrap-anywhere"
           onClick={() =>
             overlay.open(({ isOpen, close: onClose, unmount }) => (
               <ConfirmDialog

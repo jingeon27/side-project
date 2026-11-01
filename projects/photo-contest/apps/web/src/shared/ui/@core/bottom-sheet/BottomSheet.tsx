@@ -2,14 +2,19 @@
 
 import type { ReactNode } from 'react';
 
-import { BottomSheet as Sheet, type TBottomSheetSnapPoint } from '@side/design-system';
+import {
+  BottomSheet as Sheet,
+  type IBottomSheetRootProps as IPrimitiveBottomSheetRootProps,
+  type TBottomSheetSnapPoint,
+} from '@side/design-system';
 
 import { cn } from '../../../lib/cn.helper';
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { useOverlayHistory } from '../../../model/router';
 import { OverlayPortal } from '../overlay-portal';
 
-interface IBottomSheetRootProps extends IOverlayControlProps {
+interface IBottomSheetRootProps
+  extends IOverlayControlProps, Pick<IPrimitiveBottomSheetRootProps, 'initialFocus' | 'finalFocus'> {
   children: ReactNode;
   className?: string;
   snapPoints?: TBottomSheetSnapPoint[];
@@ -19,7 +24,16 @@ interface IBottomSheetRootProps extends IOverlayControlProps {
  * 같은 DOM을 모바일에서는 시트로, 768px부터는 중앙 모달로 보여 준다.
  * 이 앱의 화면은 전체 폭을 쓰므로 768px 미만 시트는 공통 기본 최대 폭(540px)을 풀어 화면 너비를 채운다.
  */
-function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBottomSheetRootProps) {
+function Root({
+  isOpen,
+  onClose,
+  unmount,
+  children,
+  className,
+  snapPoints,
+  initialFocus,
+  finalFocus,
+}: IBottomSheetRootProps) {
   useOverlayHistory(isOpen, onClose);
   return (
     <OverlayPortal>
@@ -28,6 +42,8 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
           open={isOpen}
           responsive
           snapPoints={snapPoints}
+          initialFocus={initialFocus}
+          finalFocus={finalFocus}
           container={container}
           className={cn('max-tablet:max-w-none', className)}
           onOpenChange={(open) => {

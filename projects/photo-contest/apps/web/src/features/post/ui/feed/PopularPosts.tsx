@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
@@ -12,9 +14,9 @@ import { PostsEmptyState } from './PostsEmptyState';
 
 const LIMIT = 3;
 
-function PopularPostList({ postsRef }: { postsRef: QueryRef<GalleryPostsQuery> }) {
+function PopularPostList({ postsRef, empty }: { postsRef: QueryRef<GalleryPostsQuery>; empty?: ReactNode }) {
   const { data } = useReadQuery(postsRef);
-  if (!data.galleryPosts.length) return <PostsEmptyState title="이달의 첫 웃음을 기다려요" />;
+  if (!data.galleryPosts.length) return empty ?? <PostsEmptyState title="이달의 첫 웃음을 기다려요" />;
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-4" data-photo-feed>
       {data.galleryPosts.map(({ id }, index) => (
@@ -25,7 +27,15 @@ function PopularPostList({ postsRef }: { postsRef: QueryRef<GalleryPostsQuery> }
 }
 
 /** 이달(KST)의 좋아요 순위 상위 게시물. 순위·64px 사진·내용 순서로 한 줄씩 보여 준다. */
-export function PopularPosts({ groupId, preloaded = true }: { groupId?: string; preloaded?: boolean }) {
+export function PopularPosts({
+  groupId,
+  preloaded = true,
+  empty,
+}: {
+  groupId?: string;
+  preloaded?: boolean;
+  empty?: ReactNode;
+}) {
   const isSSR = useIsSSR();
   const [postsRef, { refetch }] = useBackgroundQuery(
     GalleryPostsDocument,
@@ -44,7 +54,7 @@ export function PopularPosts({ groupId, preloaded = true }: { groupId?: string; 
         이번 달 좋아요를 많이 받은 순간
       </p>
       <AsyncBoundary onRetry={refetch} fallback={fallback}>
-        {postsRef ? <PopularPostList postsRef={postsRef} /> : fallback}
+        {postsRef ? <PopularPostList postsRef={postsRef} empty={empty} /> : fallback}
       </AsyncBoundary>
     </section>
   );

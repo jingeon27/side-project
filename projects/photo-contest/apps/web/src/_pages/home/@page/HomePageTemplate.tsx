@@ -16,7 +16,7 @@ export function HomePageTemplate({ initialHasGroups }: { initialHasGroups?: bool
   return (
     <div className="flex flex-1 flex-col">
       <HomeAppBar actions={<NotificationBell />} />
-      <div className="flex flex-1 flex-col px-4 py-5 tablet:px-8 desktop:py-8">
+      <div className="flex flex-1 flex-col px-4 pt-5 pb-24 tablet:px-8 desktop:pt-8 desktop:pb-28">
         <header className="mx-auto mb-6 flex w-full max-w-6xl flex-wrap items-end justify-between gap-4 desktop:mb-8">
           <div>
             <h2 className="text-title-lg text-ink tablet:text-display">우리끼리 모은 순간.</h2>

@@ -35,6 +35,57 @@ const privateGroup = (joinRequestPending: boolean) => ({
 });
 
 describe('PrivateGroupNotice 회귀', () => {
+  it('승인 확인 실패를 알리고 같은 화면에서 재시도한 뒤 오류를 해제해야 한다', async () => {
+    const operations: string[] = [];
+    const client = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new ApolloLink(
+        (operation) =>
+          new Observable((sink) => {
+            operations.push(operation.operationName ?? '');
+            if (operation.operationName === 'Me') {
+              queueMicrotask(() => {
+                sink.next({ data: { me: null } });
+                sink.complete();
+              });
+              return;
+            }
+            const attempt = operations.filter((name) => name === 'Gallery').length;
+            queueMicrotask(() => {
+              if (attempt === 2) {
+                sink.error(new Error('Network request failed'));
+                return;
+              }
+              sink.next({ data: privateGroup(true) });
+              sink.complete();
+            });
+          }),
+      ),
+    });
+    await act(async () => {
+      render(
+        <ApolloProvider client={client}>
+          <OverlayProvider>
+            <GroupPageTemplate id="group-1" />
+          </OverlayProvider>
+        </ApolloProvider>,
+      );
+    });
+    const notice = await screen.findByRole('region', { name: '비공개 그룹 안내' });
+    const check = screen.getByRole('button', { name: '승인 상태 확인' });
+    await userEvent.click(check);
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('승인 상태를 확인하지 못했어요.');
+    expect(check).toHaveAttribute('aria-describedby', error.id);
+    expect(screen.getByRole('region', { name: '비공개 그룹 안내' })).toBe(notice);
+    expect(screen.queryByRole('link', { name: '글쓰기' })).not.toBeInTheDocument();
+    await userEvent.click(check);
+    await waitFor(() => expect(operations.filter((name) => name === 'Gallery')).toHaveLength(3));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(check).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByRole('region', { name: '비공개 그룹 안내' })).toBe(notice);
+  });
+
   it('승인 상태를 확인하는 동안 그룹 화면을 로딩으로 바꾸지 않고 안내를 유지해야 한다', async () => {
     const operations: string[] = [];
     const pending: Array<() => void> = [];

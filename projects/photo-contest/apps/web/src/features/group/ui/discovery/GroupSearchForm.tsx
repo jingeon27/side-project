@@ -43,7 +43,7 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
         placeholder="이름으로 그룹을 찾아보세요"
         maxLength={40}
         autoComplete="off"
-        className="flex-1"
+        className="min-w-0 flex-1 [&_input:not([aria-invalid=true]):not(:focus)]:border-muted"
         error={form.formState.errors.q?.message}
         {...form.register('q')}
       />

@@ -456,4 +456,77 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 
 최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.
 
+### 홈·그룹 탐색의 고정 작성 진입 (2026-11-01)
+
+origin/develop `95768361`의 피식 코드에서 홈과 그룹 탐색에 같은 `widgets/compose-entry` 버튼을 적용했다. 헤더의 중복 생성 버튼을 제거하고, 스크롤 중에는 56px `+`, 마지막 스크롤 180ms 뒤에는 문구를 표시한다. 가입 그룹이 없으면 `+ 그룹 만들기`에서 기존 그룹 생성 페이지로 바로 이동한다. 가입 그룹이 있으면 `+ 글쓰기`에서 짧은 BottomSheet로 그룹 만들기/게시글 작성을 고른다. 그룹 만들기는 즉시 이동하고, 게시글 작성은 한 그룹이면 작성 페이지로 바로 이동하며 여러 그룹이면 그룹을 누르는 즉시 이동한다. 별도의 확인·다음 버튼을 추가하지 않았다.
+
+MyGroups 서버 상태는 기존 Apollo QueryRef/AsyncBoundary와 탐색의 SSR PreloadQuery로 읽고 별도 UI 상태로 복제하지 않는다. 기존 검색어와 그룹 탐색 결과를 유지하며 프로필·다른 화면에 전역 FAB를 추가하지 않는다. 하단 메뉴·토스트와 겹치지 않게 간격을 두고 키보드 포커스와 모션 감소를 보존한다. React Activity 숨김/복귀 시 정리된 idle 타이머를 다시 예약해 추가 스크롤 없이도 펼친다. 실제 Activity 회귀 테스트에서 수정 전 실패와 수정 후 통과를 확인했다.
+
+최종 소스로 관련 UI 테스트 24개, standalone 운영 빌드의 Chromium·WebKit·desktop E2E 24개가 통과했다. 0/1/여러 그룹, 선택 즉시 이동, 헤더 생성 버튼 제거, 검색 유지, 320/390/1440px, Escape·Tab 포커스, Chromium 합성 터치 스크롤을 검증했다. 캡처 안정화 후 Chromium 2개를 다시 실행해 통과했으며 이를 서로 다른 26개 시나리오로 합산하지 않는다. 타입·lint·knip·Prettier·diff 검사도 통과했다. 테스트는 3320/4320과 전용 테스트 DB/스키마를 사용했고 해당 스키마와 소유한 테스트 프로세스는 정리했다. 실기기 제스처 검증은 아니다.
+
+3200 복구 시 오래된 root checkout/DB를 선택해 별사대가 표시됐던 문제를 바로잡았다. 새 runtime worktree의 Web/API는 origin/develop `95768361`을 기준으로 함께 실행하고, 이전 피식 개발 cluster를 복구해 사용한다. 검토한 `20261031000000_post_request_id`의 nullable 컬럼/unique index만 추가 적용했고 기존 데이터와 옛 cluster 파일은 보존했다. 현재 로그인 세션의 launchd 작업과 상태/종료/재시작 명령은 worktree 루트 `.data/runtime/README.md`에 기록했다.
+
 전체 브라우저 회귀 검사에서 좋아요 수 정규화만으로는 인기 목록 순서가 바뀌지 않는 문제를 확인했다. 활성 MONTHLY_POPULAR 쿼리만 다시 조회하고, NEWEST의 추가 페이지는 유지한다. 기존 사진/동영상/인기/삭제 흐름과 페이지네이션 E2E 4개가 통과했다.
+
+### 홈·그룹 탐색의 critique, audit와 빈 상태 polish (2026-11-01)
+
+Impeccable 4.8.0의 평가자 A(디자인)와 B(기술)를 분리해 전후 같은 상태와 기준으로 검사했다. A가 전후 각각 완료되기 전에는 B의 findings를 종합 문맥에 넣지 않았다. 임시 standalone 3320/API 4320, 별도 test PostgreSQL 55434와 UUID 스키마에서 기준 화면을 고정해 개발 데이터와 분리했다.
+
+| 화면      | Critique 전 → 후 | Audit 전 → 후 |
+| --------- | ---------------- | ------------- |
+| 홈        | 30/40 → 32/40    | 17/20 → 18/20 |
+| 그룹 탐색 | 29/40 → 32/40    | 17/20 → 18/20 |
+
+Critique는 Nielsen 10개 항목 각 0~4, Audit는 접근성·성능·테마·반응형·구현 일관성 각 0~4의 휴리스틱 평가다. Lighthouse 성능이나 전체 WCAG 인증 점수로 표현하지 않는다. MY의 참여 그룹 없음과 뒤이어 요청된 그룹 상세 FAB는 별도 추가 검증이며 이 두 화면의 전후 분모에 소급하지 않는다. 전체 평가와 추세는 worktree 루트 `.impeccable/critique/`, 캡처·측정·동작 근거는 `projects/photo-contest/.data/design-review/pisik-home-explore/`에 저장했다.
+
+홈에는 그룹 참여의 목적을 짧게 안내하고, 공개 그룹이 없는 상태에는 전체 탐색 액션을 제공한다. 참여 그룹의 빈 인기 영역은 한 문장으로 줄여 390×900에서 최신 게시물의 첫 작성 안내를 볼 수 있게 했다. MY의 정확한 `아직 참여한 그룹이 없어요` 안내에는 `EmptyState.action`으로 그룹 탐색 링크를 제공하며 프로필에 작성 FAB는 추가하지 않는다. 탐색 검색 실패는 `전체 그룹 보기`로 q만 지우고 다른 query·중복 키·hash를 보존한다. 검색 결과 제목과 검색어 요약을 분리해 긴 검색어는 두 줄로 표시하고 원래 입력/DOM 값은 유지한다. 결과 안내는 polite live region으로 제공한다.
+
+검색 입력의 비포커스 경계에 기존 muted 토큰을 좁게 적용해 라이트 1.38:1 → 5.33:1, 다크 1.97:1 → 7.74:1을 실제 settled 렌더에서 확인했다. 포커스와 invalid 상태는 기존 표현을 유지한다. 관련 단위/UI 8파일 30개, 웹 typecheck·lint·knip·Prettier가 통과했다. A는 동일 10개 상태, B는 동일 24개 상태/크기(320/390/768/1440px)에서 가로 넘침과 pageerror 0개를 확인했다. MY Enter 이동/뒤로 가기, 검색 복구 URL 보존, 200% 글자, 시트 포커스·Escape·복귀, Chromium 합성 터치 스크롤과 FAB 복원을 검증했다. 실기기나 실제 스크린 리더 검증은 아니다.
+
+정적 detector는 findings가 없었다. 런타임의 실제 첨부 링크를 중첩 카드로 본 신호와 브랜드/본문 제목 크기를 비교한 advisory는 문맥상 비결함으로 분리해 원본 결과를 보존한다. 새로운 P0/P1이나 미해결 기준 우선문제는 없다. 홈의 목록 선택 수와 인기 우선 순서는 기존 제품 결정으로 유지하고, 짧은 FAB 너비 전환의 프레임 성능을 계측했다고 주장하지 않는다. 평가용 소유 스키마·S3 test prefix·세션 파일과 임시 프로세스는 검사 후 정리했다.
+
+### 그룹 상세 글쓰기의 고정 진입 (2026-11-01)
+
+그룹 상세의 멤버용 글쓰기를 헤더에서 고정 행동으로 옮겼다. 홈·탐색과 `FloatingComposeButton`의 표시·스크롤·Activity 수명을 공유하며 정지 시 `+ 글쓰기`, 스크롤 중 `+`로 표시한다. 현재 그룹의 작성 화면이 정해져 있으므로 바텀시트 없이 앱의 router.push로 바로 이동한다. 공통 DS 전환 후에는 button 전용 FloatingActionButton을 사용한다. 그룹 미가입자의 가입 버튼과 비공개 승인 경계는 유지하고, 가입/승인이 Apollo 캐시에 반영되면 작성 버튼이 나타난다. 대회 상세의 기존 작성 버튼은 변경하지 않았다.
+
+하단 메뉴가 없는 상세는 안전 영역 위 24px, 데스크톱은 32px에 배치한다. 본문 마지막 내용과 토스트가 버튼에 가려지지 않게 여백과 marker별 토스트 위치를 조정했다. 같은 최종 standalone 운영 빌드에서 홈·탐색 24개와 그룹 상세 9개 E2E가 한 번에 통과했다. 현재 전체 웹 단위/UI 153파일 644개, 관련 추가 UI 13개와 타입·lint·knip·Prettier·diff 검사도 통과했다. 320/390/1440px, 실제 직행, 공개 익명 가입·비공개 승인 후 노출, 키보드·다크 포커스와 Chromium 합성 터치를 확인했다. 후속 그룹 상세는 홈·탐색 전후 점수에 소급하지 않는다. 소유 테스트 스키마와 임시 3320/4320/55434를 정리하고 개발 웹·API의 200 응답을 확인했다.
+
+### 그룹 상세 critique · audit · polish (2026-11-01)
+
+[그룹 상세 평가 기록](group-detail-review-2026-11-01.md)에 전후 기준과 항목별 점수, 원점수 정정, 검증 범위와 잔여 관찰을 남겼다. 디자인 평가 A의 최초 원점수는29→32/40이었으나, 공통 small 버튼의 시각 높이36px를 유효 hit area로 오판한 감점을 바로잡아 **30→32/40(+2)**로 정정했다. 기술 평가 B는 같은 기준으로 **18→20/20**이다. 독립 v1 평가와 변경 이유를 공유한 v2 한정 회귀 확인은 구분한다.
+
+소개 아래에서 기존 초대·멤버 details를 바로 열고 포커스를 옮기며, 긴 소개는 전체 폭에서 읽는다. 카테고리·초대 버튼의 확대 글자 줄바꿈을 보완하고 빈 인기 안내를 축소했다. 멤버의 첫 게시물 행동은 현재 그룹 작성으로 직행하고 빈 카테고리는 다른 query·hash를 보존하며 category만 지운다. 비공개 승인 재조회 실패는 기존 대기 상태 옆에 alert와 재시도를 제공한다. 새로운 서버 상태·권한·API 계약은 만들지 않았다.
+
+웹 전체 unit/UI154파일647개와 typecheck·lint·knip를 통과한 뒤 최종 초대/빈 피드 markup 변경을 관련2파일12개로 다시 확인했다. 최종 standalone 운영 빌드에서 홈·탐색24개+그룹 진입9개+그룹 polish6개, **39개 E2E가 한 번에 통과**했다. Chromium mobile·WebKit mobile·desktop Chromium을 사용했다. 최종 E2E 테스트 소스도 lint·typecheck·Prettier·diff 검사를 통과했다.
+
+초기 E2E 실행의 hydration 이전 키보드 진입, 같은 임시 스키마 재사용 시 검색 fixture 이름 중복, WebKit의180ms compact 상태 관찰 경합은 각각 실제 enabled 대기·실행별 fixture namespace·스크롤 전 읽기 전용 관찰로 바로잡았다. 제품의 hydration guard·180ms 동작이나 assertion을 완화하지 않았다. 실패 로그와 마지막39개 성공 로그를 별도로 보존했다.
+
+기본 글꼴32상태와200% 사용자 글꼴12상태에서 가로 넘침/pageerror가 없었다. 남은P3는 모바일의 인기 우선 순서로 최신 피드가 낮게 시작하는 점과390×900 빈 화면의 본문 작성 링크 오른쪽 약20px가 같은 목적지 FAB와 겹치는 점이다. 실기기·스크린 리더·Lighthouse 인증 결과로 표현하지 않는다.
+
+별도 [변경 코드 감사](code-audit-2026-11-01.md)는 기능·권한 경계·구조/상태·테스트·유지보수 각0–4에서 **20/20**이다. 기준95768361 대비 이 브랜치의 피식 변경만 평가했고, 코드 감사의 가상 전후 점수나 모노레포 전체 보안 인증으로 확대하지 않았다.
+
+### 공통 FloatingActionButton 연결
+
+FAB의 모양, 56px 축소 크기, 자연스러운 라벨 너비, 키보드 포커스 중 라벨 노출과 모션 감소 처리는 `@side/design-system`의 button 전용 `FloatingActionButton`이 소유한다. 피식의 `FloatingComposeButton`은 기존 hydration guard와 스크롤/Activity 수명, 1024px 배치 분기, 하단 메뉴·키보드·토스트 data marker를 유지한다. 홈·탐색은 기존 인증 경계와 작성 시트를 사용하고, 그룹 상세의 멤버 버튼은 앱의 `useAppRouter().push`로 현재 그룹 작성 페이지에 바로 이동한다. 일반 본문·메뉴·대회 링크는 그대로 유지한다.
+
+Link의 사전 로딩이 사라지지 않도록 인증된 사용자의 단일 목적지만 앱 소비자에서 준비한다. 그룹 상세는 멤버의 현재 그룹 작성 경로, 참여 그룹이 없는 홈·탐색은 그룹 생성 경로를 prefetch한다. 열린 시트도 그룹 생성과 단일 참여 그룹의 작성 경로만 준비하며 여러 그룹을 일괄 요청하지 않는다. 클릭·선택은 준비 완료를 기다리지 않고 기존 push/replace와 시트 닫기를 즉시 실행한다.
+
+공통 DS 연결 후 기존 홈·탐색·그룹 작성 E2E 33개가 통과했다. 사전 로딩 추가 후 관련 단위/UI 7파일 25개, typecheck·변경 TypeScript lint, 별도 production E2E 12개가 통과했다. 브라우저 프로젝트는 Pixel 7 Chrome·iPhone 15 Safari·데스크톱 Chrome의 3개이며 엔진은 Chromium·WebKit 2개다. 새 검사는 fresh context에서 클릭 전 목적지 RSC tree 200 응답을 관찰하고, 클릭 뒤 같은 tree 재요청과 document 재로딩 없이 실제 작성 폼이 나타남을 확인한다. Next의 열린 PPR 스트림에 response.finished()를 기다린 첫 검사는 harness 계약 오류로 1실패·1중단·10미실행을 기록했고, 제품 소스를 바꾸지 않고 tree 재사용·최종 폼 기준으로 보정했다. 이는 production AppShell 준비와 관측한 SPA 이동의 증거이며 모든 동적 데이터 완료나 개발 모드의 즉시 이동을 보장하지 않는다.
+
+### 여러 그룹의 별도 선택 시트
+
+복수 그룹의 선택 단계는 첫 작성 시트의 boolean 상태로 본문을 바꾸지 않고 별도 `ComposeGroupSelectionBottomSheet`로 연다. 이 시트가 자신의 MyGroups QueryRef·AsyncBoundary를 소유하고, 첫 행동 시트는 아래에 유지한다. Escape와 뒤로 가기는 선택 시트부터 닫고 첫 시트의 게시글 작성 버튼으로 돌아간다. 실제 그룹 선택은 기존 useAppRouter 이동 뒤 선택 시트와 첫 시트만 닫아 다른 오버레이를 일괄 정리하지 않는다. 그룹 0개의 바로 생성, 1개의 바로 작성과 단일 목적지만 준비하는 방침은 유지한다.
+
+선택 시트의 초기 포커스와 첫 시트 버튼으로의 복귀는 공통 BottomSheet의 native initialFocus/finalFocus 전달로 처리한다. 앱의 callback ref는 DOM 연결과 해제만 맡는다. 형제 overlay의 첫 포커스 전 Escape가 첫 시트를 닫지 않도록, 선택을 연 게시글 작성 버튼의 Escape만 overlay-kit의 현재 최상위 항목에 전달한다. 단계 boolean이나 전역 선택 상태는 추가하지 않았다.
+
+두 시트를 닫고 작성 화면으로 이동하면 이전 부모의 닫힌 history 항목을 뒤로 가기에서 건너뛰어야 한다. 기존 코드는 앞으로 가기도 무조건 뒤로 건너뛰어 작성 화면으로 전진하지 못했다. overlay history가 native state에 위치를 보존하고, 닫힌 항목을 현재 이동 방향대로 건너뛰도록 수정했다. Next의 기존 state를 보존하고 실제 라우트 커밋에서 위치를 승계하며, URL query 변경도 이 metadata를 유지한다. 앱의 route depth 정책은 바꾸지 않았다.
+
+최종 관련 단위/UI 9파일 44개, typecheck·변경 TypeScript lint·format 검사가 통과했다. production의 홈·탐색 복수 그룹 흐름 6개가 Pixel 7 Chrome, iPhone 15 Safari, 데스크톱 Chrome에서 통과했다(브라우저 프로젝트 3개, Chromium·WebKit 2엔진). 첫 시트와 선택 시트의 포커스, 접근성 트리의 최상위 대화상자 1개, Escape·뒤로 가기, 그룹 선택 뒤 두 시트 제거, 작성 화면에서 Back→홈→Forward→작성 화면까지 검증했다. 첫 생성 그룹이 목록 첫 항목일 것이라는 초기 E2E 가정은 실제 목록 첫 행동을 검사하도록 바로잡았으며, 이를 제품 포커스 결함으로 보았던 판정도 정정했다. 단위 검사에서 확인한 포커스 복귀·초기 Escape 문제와 브라우저에서 재현한 Forward 문제, 수정 전 실패 로그와 최종 통과 로그는 `.data/design-review/shared-fab/`에 구분해 보존했다.
+
+최종 push 전 전체 unit/UI를 다시 실행해 155파일 652개가 통과했다. 첫 실행의 4개 실패는 홈 테스트 두 파일의 라우터 mock에 prefetch가 없어서 발생했으며, mock에 해당 공개 메서드만 추가하고 기존 검증과 제품 코드는 유지했다. 관련 6개와 전체 652개를 다시 확인했고, 전체 웹 lint 및 변경 mock의 형식 검사도 통과했다. 앞선 production 33개·prefetch 12개·별도 시트 및 앞뒤 이동 6개는 각 단계의 실행으로 구분한다.
+
+### 페이지와 오버레이의 공통 Motion (2026-11-01)
+
+AppProviders는 공통 DS의 `MotionProvider`를 OverlayProvider 바깥에 두어 페이지와 열린 시트가 같은 전역 설정을 사용한다. Motion 14.9.0은 DS만 직접 의존하고 앱의 기존 motion 의존성은 제거했다. 당겨서 새로고침도 DS가 공개하는 공식 `m`·`useMotionValue`·`useSpring`과 `useMotionPreference`를 사용한다. `m.div`로 LazyMotion strict 정책에 맞추며 기존 스프링 값과 터치·핀치·키보드·요청 수명은 유지한다. 기본 0.2초 전환과 사용자 모션 감소 정책은 공통 provider가 소유한다.
+
+관련 단위/UI는 AppApolloProvider·BridgeProvider·루트 레이아웃·작성 진입·당겨서 새로고침의 5파일 39개가 통과했다. 타입·관련 lint·format, Node 24/Yarn 4.17의 설치와 immutable 검사도 통과했다. 실제 컴포넌트 브라우저 fixture에도 같은 공통 provider를 적용하고 기존 당겨서 새로고침 8개를 검증했다. Chromium 6개에서 실제 브라우저의 합성 터치 스크롤·중첩 목록·임계값·핀치 취소·키보드·모션 감소를, WebKit 2개에서 키보드와 모션 감소를 확인했다. 실기기 제스처 검증은 아니다. 최종 형식 정리 뒤 8개가 다시 통과했고 실행 중 소스 hash 변경은 없었다. 결과와 소스 manifest는 `.data/design-review/common-motion-consumers`에 보존하고 전용 fixture 서버 3349를 정리했다. 앞선 전체 652개와 production 33개·12개·6개를 이번 소스로 다시 실행했다고 주장하지 않는다.

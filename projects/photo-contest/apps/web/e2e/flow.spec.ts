@@ -5,7 +5,7 @@ import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { authenticate, expect, test, waitForHydrationOnLoad } from './support/test';
 
 async function writePost(page: Page, title: string, video = false) {
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
   await sheet.getByLabel('제목', { exact: true }).fill(title);
   await sheet.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({

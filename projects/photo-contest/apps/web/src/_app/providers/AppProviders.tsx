@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { OverlayProvider } from 'overlay-kit';
 
 import { VisualViewport } from '@side/design-system';
+import { MotionProvider } from '@side/design-system/ui/motion-provider';
 
 import { AuthSessionSync } from '@/features/auth';
 import { PUBLIC_LANDING_PATHS } from '@/shared/constants/routes';
@@ -44,15 +45,17 @@ export function AppProviders({
         <BridgeProvider>
           <NativeThemeSync />
           <ToastProvider>
-            <OverlayProvider>
-              <HydrationMarker />
-              <VisualViewport />
-              <RouteHistoryTracker />
-              {/* 분석 초기화가 로그인 사용자 설정(AuthSessionSync)보다 먼저 돌도록 앞에 둔다. */}
-              <AnalyticsTracker />
-              <SessionSync />
-              {children}
-            </OverlayProvider>
+            <MotionProvider>
+              <OverlayProvider>
+                <HydrationMarker />
+                <VisualViewport />
+                <RouteHistoryTracker />
+                {/* 분석 초기화가 로그인 사용자 설정(AuthSessionSync)보다 먼저 돌도록 앞에 둔다. */}
+                <AnalyticsTracker />
+                <SessionSync />
+                {children}
+              </OverlayProvider>
+            </MotionProvider>
           </ToastProvider>
         </BridgeProvider>
       </AppApolloProvider>

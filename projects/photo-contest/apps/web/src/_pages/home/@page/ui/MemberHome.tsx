@@ -8,6 +8,7 @@ import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { ComposeEntryButton } from '@/widgets/compose-entry';
 
 import { NoGroupHome } from '../no-group/NoGroupHome';
 
@@ -22,7 +23,13 @@ function MemberHomeContent({
   const { data } = useReadQuery(queryRef);
   // 가입·prefetch가 캐시를 먼저 바꿔도 hydration 중에는 라우트가 그린 최초 화면을 유지한다.
   const hasGroups = isSSR && initialHasGroups !== undefined ? initialHasGroups : data.myGroups.length > 0;
-  if (!hasGroups) return <NoGroupHome signedIn />;
+  if (!hasGroups)
+    return (
+      <>
+        <NoGroupHome />
+        <ComposeEntryButton hasGroups={false} />
+      </>
+    );
   // 라우트는 가입 그룹이 있다고 판단했을 때만 최신·인기 피드를 사전 조회한다.
   const preloaded = initialHasGroups === true;
   return (
@@ -37,8 +44,14 @@ function MemberHomeContent({
       </section>
       <GalleryFeed
         latest={<LatestPosts title="최신 게시물" preloaded={preloaded} empty={<PostsEmptyState />} />}
-        popular={<PopularPosts preloaded={preloaded} />}
+        popular={
+          <PopularPosts
+            preloaded={preloaded}
+            empty={<p className="text-body text-muted">이번 달에 올라온 게시물이 아직 없어요.</p>}
+          />
+        }
       />
+      <ComposeEntryButton hasGroups />
     </div>
   );
 }

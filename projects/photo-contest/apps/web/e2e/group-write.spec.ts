@@ -8,7 +8,7 @@ test(
     const group = await seedGroup(cookie, '글쓰기 페이지 그룹');
     const path = `/groups/${group.id}`;
     await page.goto(path);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(page).toHaveURL(`${path}/write`);
     await page.reload();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
@@ -19,7 +19,7 @@ test(
     await expect(form.getByLabel('내용', { exact: true })).not.toHaveAttribute('required');
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
     await expect(page).toHaveURL(path);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await form.getByLabel('제목', { exact: true }).fill('페이지에서 올린 순간');
     await form.getByLabel('첨부 링크', { exact: true }).fill('https://example.com/moment');
     await form.getByRole('checkbox', { name: /공유할 권리/ }).check();

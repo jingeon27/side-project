@@ -15,11 +15,11 @@ export function GroupCategoryFilter({
 }) {
   if (!group.categories.length) return null;
   return (
-    <nav aria-label="게시물 카테고리" className="mx-auto flex w-full max-w-5xl flex-wrap gap-2">
+    <nav aria-label="게시물 카테고리" className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap gap-2">
       <Button
         variant={categoryId ? 'secondary' : 'accent'}
-        size="sm"
-        className="rounded-full"
+        size="md"
+        className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
         aria-pressed={!categoryId}
         onClick={() => replaceSearchParams({ category: null })}
       >
@@ -29,8 +29,8 @@ export function GroupCategoryFilter({
         <Button
           key={category.id}
           variant={categoryId === category.id ? 'accent' : 'secondary'}
-          size="sm"
-          className="rounded-full"
+          size="md"
+          className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
           aria-pressed={categoryId === category.id}
           onClick={() => {
             replaceSearchParams({ category: category.id });
