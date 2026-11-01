@@ -1,0 +1,13 @@
+@layer components {
+  [data-motion] > [data-motion-player] {
+    visibility: hidden;
+  }
+
+  [data-motion] > [data-motion-player][data-motion-ready] {
+    visibility: inherit;
+  }
+
+  [data-motion] > [data-motion-player][data-motion-ready] + [data-motion-fallback] {
+    visibility: hidden;
+  }
+}

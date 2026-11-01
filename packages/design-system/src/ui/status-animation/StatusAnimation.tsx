@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useState, type ComponentType, type ReactNode } from 'react';
+import { useCallback, type ComponentType, type ReactNode } from 'react';
 
 import { Cat, CircleAlert, CircleCheck, Gamepad2, Inbox, LoaderCircle, WifiOff } from 'lucide-react';
 
 import { cn } from '../../lib/cn.helper';
-import { MOTION_ANIMATIONS, type TMotionVariant } from './motion-assets';
+import type { TMotionVariant } from './motion-assets';
 
 const GLYPHS = {
   loading: LoaderCircle,
@@ -34,19 +34,21 @@ export function StatusAnimation({
   fallback,
   loop = variant === 'loading' || variant === 'cat',
 }: IStatusAnimationProps) {
-  const [showPlayer, setShowPlayer] = useState(false);
   const Glyph = GLYPHS[variant];
   const attachPlayer = useCallback(
     (node: HTMLSpanElement | null) => {
       if (!node) return;
-      setShowPlayer(false);
+      node.removeAttribute('data-motion-ready');
       if (typeof window.matchMedia !== 'function') return;
       const lifetime = new AbortController();
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const mount = async () => {
+      const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const mountPlayer = async (playback: AbortController) => {
         try {
-          const { default: lottie } = await import('lottie-web/build/player/lottie_light');
-          if (lifetime.signal.aborted) return;
+          const [{ default: lottie }, { MOTION_ANIMATIONS }] = await Promise.all([
+            import('lottie-web/build/player/lottie_light'),
+            import('./motion-assets'),
+          ]);
+          if (playback.signal.aborted) return;
           const player = lottie.loadAnimation({
             container: node,
             renderer: 'svg',
@@ -55,43 +57,75 @@ export function StatusAnimation({
             animationData: structuredClone(MOTION_ANIMATIONS[variant]),
             rendererSettings: { className: 'size-full', preserveAspectRatio: 'xMidYMid meet' },
           });
-          const handlePlayback = () => {
-            if (!player.isLoaded) return;
-            const bounds = node.getBoundingClientRect();
-            const visible =
-              bounds.bottom > 0 &&
-              bounds.top < window.innerHeight &&
-              bounds.right > 0 &&
-              bounds.left < window.innerWidth;
-            if (reducedMotion.matches || document.hidden || !visible) {
+          const synchronize = (visible: boolean) => {
+            if (playback.signal.aborted || !player.isLoaded) return;
+            node.toggleAttribute('data-motion-ready', true);
+            if (document.hidden || !visible) {
               player.pause();
-              setShowPlayer(!reducedMotion.matches);
               return;
             }
-            setShowPlayer(true);
             player.play();
           };
-          const observer =
-            typeof IntersectionObserver === 'function' ? new IntersectionObserver(handlePlayback) : undefined;
-          observer?.observe(node);
-          player.addEventListener('DOMLoaded', handlePlayback);
-          reducedMotion.addEventListener('change', handlePlayback);
-          document.addEventListener('visibilitychange', handlePlayback);
-          lifetime.signal.addEventListener(
+          const handleVisibility = () => {
+            if (playback.signal.aborted) return;
+            const bounds = node.getBoundingClientRect();
+            synchronize(
+              bounds.bottom > 0 &&
+                bounds.top < window.innerHeight &&
+                bounds.right > 0 &&
+                bounds.left < window.innerWidth,
+            );
+          };
+          const handleFailure = () => playback.abort();
+          playback.signal.addEventListener(
             'abort',
             () => {
-              observer?.disconnect();
-              reducedMotion.removeEventListener('change', handlePlayback);
-              document.removeEventListener('visibilitychange', handlePlayback);
+              node.removeAttribute('data-motion-ready');
+              document.removeEventListener('visibilitychange', handleVisibility);
+              player.removeEventListener('DOMLoaded', handleVisibility);
+              player.removeEventListener('data_failed', handleFailure);
+              player.removeEventListener('error', handleFailure);
               player.destroy();
             },
             { once: true },
           );
+          player.addEventListener('DOMLoaded', handleVisibility);
+          player.addEventListener('data_failed', handleFailure);
+          player.addEventListener('error', handleFailure);
+          document.addEventListener('visibilitychange', handleVisibility);
+          if (typeof IntersectionObserver === 'function') {
+            const observer = new IntersectionObserver((entries) => {
+              const entry = entries.find((item) => item.target === node);
+              if (entry) synchronize(entry.isIntersecting);
+            });
+            playback.signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+            observer.observe(node);
+          }
+          handleVisibility();
         } catch {
-          // 애니메이션 청크를 못 받아도 정지 그림과 실제 조작은 사용할 수 있다.
+          playback.abort();
         }
       };
-      void mount();
+      const observePreference = () => {
+        if (lifetime.signal.aborted) return;
+        const playback = new AbortController();
+        const cleanup = () => {
+          preference.removeEventListener('change', handleChange);
+          lifetime.signal.removeEventListener('abort', cleanup);
+          playback.abort();
+        };
+        const handleChange = () => {
+          cleanup();
+          queueMicrotask(observePreference);
+        };
+        preference.addEventListener('change', handleChange, { once: true });
+        lifetime.signal.addEventListener('abort', cleanup, { once: true });
+        if (!preference.matches)
+          queueMicrotask(() => {
+            if (!playback.signal.aborted) void mountPlayer(playback);
+          });
+      };
+      observePreference();
       return () => lifetime.abort();
     },
     [variant, loop],
@@ -106,24 +140,21 @@ export function StatusAnimation({
       className={cn('relative inline-grid size-16 shrink-0 place-items-center text-accent', className)}
     >
       <span
-        data-motion-fallback
-        className={cn(
-          'col-start-1 row-start-1 flex size-full items-center justify-center',
-          showPlayer && 'invisible',
-        )}
-      >
-        {fallback ?? <Glyph className="size-full" />}
-      </span>
-      <span
+        key={`${variant}:${loop}`}
         ref={attachPlayer}
         data-motion-player
         className={cn(
           'pointer-events-none absolute inset-0 [&_svg]:size-full',
-          !showPlayer && 'invisible',
           (variant === 'loading' || variant === 'success' || variant === 'error') &&
             '[&_path]:stroke-current',
         )}
       />
+      <span
+        data-motion-fallback
+        className="col-start-1 row-start-1 flex size-full items-center justify-center"
+      >
+        {fallback ?? <Glyph className="size-full" />}
+      </span>
     </span>
   );
 }
