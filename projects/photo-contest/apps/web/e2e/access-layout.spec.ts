@@ -123,10 +123,10 @@ test(
     const viewport = page.viewportSize();
     if (viewport && viewport.width >= 1024) {
       expect(main?.width).toBeGreaterThan(1000);
-      await expect(page.locator('[data-bottom-nav]')).toBeHidden();
+      await expect(page.locator('[data-bottom-nav]:visible')).toHaveCount(0);
     }
     if (!viewport || viewport.width < 1024) {
-      await expect(page.locator('[data-bottom-nav]')).toBeVisible();
+      await expect(page.locator('[data-bottom-nav]:visible')).toHaveCount(1);
     }
     if (viewport && main) expect(Math.abs(main.x - (viewport.width - main.width) / 2)).toBeLessThan(2);
     await mkdir('.data/screens', { recursive: true });

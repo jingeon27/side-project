@@ -22,7 +22,9 @@ test(
     const nickname = await page.getByRole('heading', { level: 2 }).first().innerText();
     await expect(page.getByRole('link', { name: '로그인 · 회원가입', exact: true })).toHaveCount(0);
     await expect(
-      page.getByText('다른 기기에서도 프로필과 기록을 이어가고 싶다면', { exact: false }),
+      page
+        .getByText('다른 기기에서도 프로필과 기록을 이어가고 싶다면', { exact: false })
+        .filter({ visible: true }),
     ).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     const logout = page.getByRole('alertdialog', { name: '익명 프로필에서 로그아웃할까요?' });
