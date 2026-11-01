@@ -58,7 +58,9 @@ describe('package exports', () => {
   it('루트 진입점의 공개 값은 같은 객체로 하위 경로에서도 가져올 수 있어야 한다', async () => {
     const root = await importSubpath('ui');
     const subpaths = await Promise.all(
-      [...uiFolders.map((folder) => `ui/${folder}`), 'lib/cn.helper'].map(importSubpath),
+      [...uiFolders.map((folder) => `ui/${folder}`), 'lib/cn.helper', 'lib/use-scroll-visibility'].map(
+        importSubpath,
+      ),
     );
     const reachable = new Map(subpaths.flatMap(Object.entries));
     for (const [name, value] of Object.entries(root)) {
