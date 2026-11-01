@@ -18,3 +18,27 @@ export const landingScreens = {
   anonymousStart: (page: Page) => page.getByRole('button', { name: '익명으로 시작하기', exact: true }),
   feedHeading: (page: Page) => page.getByRole('heading', { name: '우리끼리 모은 순간.' }),
 } satisfies Record<string, (page: Page) => Locator>;
+
+export const groupScreens = {
+  categoryManager: (page: Page) =>
+    page.locator('details:visible').filter({ has: page.getByText('카테고리 관리', { exact: true }) }),
+} satisfies Record<string, (page: Page) => Locator>;
+
+export const emptyStateScreens = {
+  ownPosts: (page: Page) =>
+    page
+      .getByRole('region', { name: '올린 게시물', exact: true })
+      .getByText('아직 올린 게시물이 없어요', { exact: true }),
+  emptyContests: (page: Page) =>
+    page
+      .getByText('아직 진행 중인 대회가 없어요', { exact: true })
+      .filter({ visible: true })
+      .locator('..')
+      .locator('.lucide-trophy'),
+  emptyHallOfFame: (page: Page) =>
+    page
+      .getByText('아직 지난 대회가 없어요', { exact: true })
+      .filter({ visible: true })
+      .locator('..')
+      .locator('.lucide-medal'),
+} satisfies Record<string, (page: Page) => Locator>;

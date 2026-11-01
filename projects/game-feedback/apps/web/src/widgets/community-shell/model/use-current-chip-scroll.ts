@@ -15,16 +15,13 @@ export function useCurrentChipScroll(scopeKey: string) {
         if (!container.isConnected || !container.clientWidth) return;
         position.current = { scopeKey, left: container.scrollLeft };
       };
-      const handleCurrentVisible = () => {
+      const handleVisible = (target: HTMLAnchorElement) => {
         if (!container.clientWidth) return;
-        const remembered = position.current;
-        if (remembered?.scopeKey === scopeKey)
-          container.scrollTo({ left: remembered.left, behavior: 'instant' });
         const viewport = container.getBoundingClientRect();
         const style = getComputedStyle(container);
         const left = viewport.left + Number.parseFloat(style.paddingLeft);
         const right = viewport.right - Number.parseFloat(style.paddingRight);
-        const item = chip.getBoundingClientRect();
+        const item = target.getBoundingClientRect();
         if (item.left < left) {
           container.scrollBy({ left: item.left - left, behavior: 'instant' });
           handleScroll();
@@ -35,14 +32,27 @@ export function useCurrentChipScroll(scopeKey: string) {
         }
         handleScroll();
       };
+      const handleCurrentVisible = () => {
+        if (!container.clientWidth) return;
+        const remembered = position.current;
+        if (remembered?.scopeKey === scopeKey)
+          container.scrollTo({ left: remembered.left, behavior: 'instant' });
+        handleVisible(chip);
+      };
+      const handleFocus = (event: FocusEvent) => {
+        if (event.target instanceof HTMLAnchorElement && event.target.parentElement === container)
+          handleVisible(event.target);
+      };
 
       handleCurrentVisible();
       container.addEventListener('scroll', handleScroll, { passive: true });
+      container.addEventListener('focusin', handleFocus);
       const resize = new ResizeObserver(handleCurrentVisible);
       resize.observe(container);
       resize.observe(chip);
       return () => {
         container.removeEventListener('scroll', handleScroll);
+        container.removeEventListener('focusin', handleFocus);
         resize.disconnect();
       };
     },
