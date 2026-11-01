@@ -5,7 +5,7 @@ test('320px 홈은 폭이 넓은 대체 글꼴에서도 제목과 글쓰기 동�
   await page.goto('/en');
   await page.addStyleTag({ content: 'body { font-family: Verdana, sans-serif !important; }' });
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByRole('heading', { name: 'Home', exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('heading', { name: 'All', exact: true })).toBeVisible();
   for (const name of ['Write a post']) {
     const button = page.getByRole('button', { name, exact: true });
     await expect(button).toBeVisible();

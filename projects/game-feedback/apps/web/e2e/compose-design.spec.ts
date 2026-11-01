@@ -316,8 +316,8 @@ for (const width of [320, 390, 1440]) {
     await expect(entry).not.toHaveAttribute('data-scrolling', 'true');
     await expect.poll(async () => (await entry.boundingBox())?.width).toBeGreaterThan(100);
     await entry.focus();
-    await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
     await expect(entry).toBeFocused();
     expect(await entry.evaluate((node) => node.matches(':focus-visible'))).toBe(true);
     for (const distance of [50, 50, 50, 50]) await page.mouse.wheel(0, distance);
@@ -473,6 +473,10 @@ test.describe('touch compose entry', () => {
     await page.goto('/ko');
     const entry = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(entry).toBeInViewport({ ratio: 1 });
+    // 서버 셸 뒤에 피드가 스트리밍되므로 실제로 당길 본문이 붙은 뒤 터치를 보낸다.
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
+      .toBeGreaterThan(400);
     const session = await page.context().newCDPSession(page);
     try {
       await session.send('Input.synthesizeScrollGesture', {

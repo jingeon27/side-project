@@ -63,6 +63,9 @@ for (const width of [360, 390]) {
     const initialTitle = await chips.locator('.game-board-title').boundingBox();
     const initialGap = (initialTitle?.y ?? 0) - (initialHeader?.y ?? 0) - (initialHeader?.height ?? 0);
     expect(initialGap).toBeGreaterThanOrEqual(16);
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
+      .toBeGreaterThan(500);
     const cdp = await page.context().newCDPSession(page);
     try {
       await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true });

@@ -34,7 +34,8 @@ for (const { height, largeText } of [
     await expect(verification).toBeInViewport({ ratio: 1 });
     const title = form.getByRole('textbox', { name: /제목/ });
     await title.fill('작은 화면에서도 보존하는 초안');
-    await scroll.evaluate((node) => node.scrollTo(0, node.scrollHeight));
+    // 보조 인증 안내는 폼 끝에 있으므로 입력 시작으로 돌아왔을 때 본문과 함께 사라진다.
+    await scroll.evaluate((node) => node.scrollTo(0, 0));
     await expect(prompt).not.toBeInViewport();
     await expect(footer).toBeInViewport({ ratio: 1 });
     await expect(title).toHaveValue('작은 화면에서도 보존하는 초안');

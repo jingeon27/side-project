@@ -6,9 +6,9 @@ test('first visits use the browser region without JavaScript and retain feed fil
   browser,
 }) => {
   for (const [locale, path, heading] of [
-    ['ko-KR', 'ko', 'Game Mate'],
-    ['ja-JP', 'ja', 'Game Mate'],
-    ['en-GB', 'en', 'Game Mate'],
+    ['ko-KR', 'ko', '전체'],
+    ['ja-JP', 'ja', 'すべて'],
+    ['en-GB', 'en', 'All'],
   ] as const) {
     const context = await browser.newContext({
       locale,
@@ -20,7 +20,9 @@ test('first visits use the browser region without JavaScript and retain feed fil
       await page.goto('/?q=hog&tab=unanswered');
       await expect(page).toHaveURL(new RegExp(`/${path}\\?q=hog&tab=unanswered$`));
       await expect(page.locator('html')).toHaveAttribute('lang', path);
-      await expect(page.getByRole('banner')).toContainText(heading);
+      await expect(
+        page.getByRole('banner').getByRole('heading', { name: heading, exact: true }),
+      ).toBeVisible();
     } finally {
       await context.close();
     }

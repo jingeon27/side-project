@@ -41,9 +41,12 @@ for (const width of [320, 393, 430, 760]) {
       expect(bounds.scrollWidth, path).toBeLessThanOrEqual(bounds.width);
       if (path === '/ko') {
         const chips = page.locator('.game-board-chips:visible');
-        expect(await chips.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-        for (const chip of await chips.getByRole('link').all())
-          await expect(chip).toBeInViewport({ ratio: 1 });
+        expect(await chips.evaluate((element) => getComputedStyle(element).overflowX)).toBe('auto');
+        await chips.getByRole('link').last().focus();
+        await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
+        await chips.getByRole('link').first().focus();
+        await expect(chips.getByRole('link').first()).toBeInViewport({ ratio: 1 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       }
     }
     await page.screenshot({ path: testInfo.outputPath(`page-insets-${width}.png`), animations: 'disabled' });

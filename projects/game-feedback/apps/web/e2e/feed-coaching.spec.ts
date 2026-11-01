@@ -92,11 +92,11 @@ test('a new game receives five boards while coaching posts remain fixed to Clash
   );
   const sidebar = page.locator('.left-sidebar nav').filter({ hasText: gameName });
   await expect(sidebar.locator('.game-submenu a')).toHaveText([
-    '피드백',
     '친추판매',
     '전투 모집',
     '게임코치',
     '자유게시판',
+    '피드백',
   ]);
   await page.goto('/ko/boards/coaching');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
