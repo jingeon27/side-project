@@ -22,9 +22,12 @@ function GroupLink({ href, children }: { href: string; children: ReactNode }) {
     </Link>
   );
 }
-export function GroupNavigation({ groupId }: { groupId: string }) {
+export function GroupNavigation({ groupId, className }: { groupId: string; className?: string }) {
   return (
-    <nav aria-label="그룹 메뉴" className="mx-auto flex w-full max-w-5xl gap-2 border-b border-line">
+    <nav
+      aria-label="그룹 메뉴"
+      className={cn('mx-auto flex w-full max-w-5xl gap-2 border-b border-line', className)}
+    >
       <GroupLink href={ROUTES.GROUP(groupId)}>게시물</GroupLink>
       <GroupLink href={ROUTES.GROUP_CONTESTS(groupId)}>대회</GroupLink>
       <GroupLink href={ROUTES.GROUP_HALL_OF_FAME(groupId)}>명예의 전당</GroupLink>
