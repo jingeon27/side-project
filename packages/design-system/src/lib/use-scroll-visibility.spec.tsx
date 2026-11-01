@@ -5,9 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useScrollVisibility } from './use-scroll-visibility';
 
-const originalScrollY = Object.getOwnPropertyDescriptor(window, 'scrollY')!;
-const position = { top: 0 };
-
 function Navigation() {
   const { ref, hidden } = useScrollVisibility<HTMLDivElement>();
   return (
@@ -17,59 +14,63 @@ function Navigation() {
   );
 }
 
-function scrollTo(top: number) {
-  position.top = top;
-  fireEvent.scroll(window);
+async function scrollTo(top: number) {
+  await act(async () => {
+    document.documentElement.scrollTop = top;
+    fireEvent.scroll(document.scrollingElement ? window : document.documentElement);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
 }
 
 beforeEach(() => {
-  position.top = 0;
-  Object.defineProperty(window, 'scrollY', { configurable: true, get: () => position.top });
+  document.documentElement.scrollTop = 0;
   vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(3000);
+  vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(768);
 });
 
 afterEach(() => {
-  Object.defineProperty(window, 'scrollY', originalScrollY);
   vi.restoreAllMocks();
 });
 
 describe('scroll visibility', () => {
-  it('hides after 12px down, stays hidden at rest and reveals after 8px up without jitter', () => {
+  it('hides after 12px down, stays hidden at rest and reveals after 8px up without jitter', async () => {
     render(<Navigation />);
     const navigation = screen.getByTestId('navigation');
-    scrollTo(11);
+    await scrollTo(11);
     expect(navigation.getAttribute('data-hidden')).toBe('false');
-    scrollTo(12);
+    await scrollTo(12);
     expect(navigation.hasAttribute('inert')).toBe(true);
-    scrollTo(30);
-    scrollTo(25);
-    scrollTo(28);
+    await scrollTo(30);
+    await scrollTo(25);
+    await scrollTo(28);
     expect(navigation.getAttribute('data-hidden')).toBe('true');
-    scrollTo(22);
+    await scrollTo(22);
     expect(navigation.getAttribute('data-hidden')).toBe('false');
-    fireEvent.scroll(window);
+    await scrollTo(22);
     expect(navigation.hasAttribute('inert')).toBe(false);
   });
 
-  it('uses the same direction rule with keyboard focus and clamps elastic overscroll', () => {
+  it('uses the same direction rule with keyboard focus and clamps elastic overscroll', async () => {
     render(<Navigation />);
     const navigation = screen.getByTestId('navigation');
     act(() => screen.getByRole('button', { name: '분류' }).focus());
-    scrollTo(100);
+    await scrollTo(100);
     expect(navigation.getAttribute('data-hidden')).toBe('true');
-    scrollTo(10_000);
-    scrollTo(9000);
+    await scrollTo(10_000);
+    await scrollTo(9000);
     expect(navigation.getAttribute('data-hidden')).toBe('true');
-    scrollTo(8);
+    await scrollTo(8);
     expect(navigation.getAttribute('data-hidden')).toBe('false');
-    scrollTo(-30);
-    scrollTo(4);
+    await scrollTo(-30);
+    await scrollTo(4);
     expect(navigation.getAttribute('data-hidden')).toBe('false');
   });
 
-  it('reconnects through Activity and removes its passive listener on detach', () => {
+  it('reconnects through Activity and cleans up Motion subscriptions on detach', async () => {
     const add = vi.spyOn(window, 'addEventListener');
     const remove = vi.spyOn(window, 'removeEventListener');
+    const addRoot = vi.spyOn(document.documentElement, 'addEventListener');
+    const removeRoot = vi.spyOn(document.documentElement, 'removeEventListener');
     const content = (mode: 'visible' | 'hidden') => (
       <StrictMode>
         <Activity mode={mode}>
@@ -78,20 +79,25 @@ describe('scroll visibility', () => {
       </StrictMode>
     );
     const view = render(content('visible'));
-    scrollTo(100);
-    expect(screen.getByTestId('navigation').getAttribute('data-hidden')).toBe('true');
+    await scrollTo(100);
+    const navigation = screen.getByTestId('navigation');
+    expect(navigation.getAttribute('data-hidden')).toBe('true');
     view.rerender(content('hidden'));
+    expect(
+      [...remove.mock.calls, ...removeRoot.mock.calls].filter(([type]) => type === 'scroll'),
+    ).toHaveLength([...add.mock.calls, ...addRoot.mock.calls].filter(([type]) => type === 'scroll').length);
+    await scrollTo(112);
+    expect(navigation.getAttribute('data-hidden')).toBe('true');
     view.rerender(content('visible'));
     expect(screen.getByTestId('navigation').getAttribute('data-hidden')).toBe('false');
-    scrollTo(112);
+    await scrollTo(124);
     expect(screen.getByTestId('navigation').getAttribute('data-hidden')).toBe('true');
     view.unmount();
-    const subscriptions = add.mock.calls.filter(([type]) => type === 'scroll');
-    const removals = remove.mock.calls.filter(([type]) => type === 'scroll');
+    await scrollTo(0);
+    expect(navigation.getAttribute('data-hidden')).toBe('true');
+    const subscriptions = [...add.mock.calls, ...addRoot.mock.calls].filter(([type]) => type === 'scroll');
+    const removals = [...remove.mock.calls, ...removeRoot.mock.calls].filter(([type]) => type === 'scroll');
     expect(subscriptions.length).toBeGreaterThan(0);
-    expect(
-      subscriptions.every(([, , options]) => options && typeof options === 'object' && options.passive),
-    ).toBe(true);
     expect(removals).toHaveLength(subscriptions.length);
   });
 });

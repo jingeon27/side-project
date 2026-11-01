@@ -30,6 +30,10 @@ export type {
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
 export { useScrollVisibility } from './lib/use-scroll-visibility';
+export { useMotionPreference } from './lib/use-motion-preference';
+export { MotionProvider } from './ui/motion-provider/MotionProvider';
+export type { IMotionProviderProps } from './ui/motion-provider/MotionProvider';
+export { m, AnimatePresence, useAnimate, useMotionValue, useSpring } from './lib/motion';
 export { Mention } from './ui/mention/Mention';
 export type { IMentionProps } from './ui/mention/Mention';
 
