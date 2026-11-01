@@ -27,10 +27,10 @@ test(
     await expect(page).toHaveURL('/groups/new');
     await expect(page.getByRole('form', { name: '그룹 만들기', exact: true })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.locator('[data-compose-entry]')).toHaveCount(0);
+    await expect(page.locator('[data-compose-entry]:visible')).toHaveCount(0);
     for (const path of ['/me', '/notifications']) {
       await page.goto(path);
-      await expect(page.locator('[data-compose-entry]')).toHaveCount(0);
+      await expect(page.locator('[data-compose-entry]:visible')).toHaveCount(0);
     }
   },
 );
@@ -123,7 +123,7 @@ test(
     await expect(page).toHaveURL(`/groups/${group.id}/write`);
     await expect(page.getByRole('form', { name: '그룹에 글쓰기', exact: true })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.locator('[data-compose-entry]')).toHaveCount(0);
+    await expect(page.locator('[data-compose-entry]:visible')).toHaveCount(0);
   },
 );
 

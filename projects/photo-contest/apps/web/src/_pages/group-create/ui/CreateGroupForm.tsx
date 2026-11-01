@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@apollo/client/react';
+import { useWatch } from 'react-hook-form';
 
 import { GroupImagePicker, prependMyGroup, uploadGroupImages } from '@/features/group';
 import {
@@ -39,11 +40,12 @@ export function CreateGroupForm({
     },
   });
   // 사진 업로드를 재시도할 때 이미 만든 그룹을 다시 만들지 않는다.
-  const [create, { data: created }] = useMutation(CreateGroupDocument, {
+  const [create, { data: created, reset: resetCreated }] = useMutation(CreateGroupDocument, {
     update: (cache, { data }) => {
       if (data) prependMyGroup(cache, data.createGroup);
     },
   });
+  const [avatar, cover] = useWatch({ control: form.control, name: ['avatar', 'cover'] });
   const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument, { fetchPolicy: 'no-cache' });
   const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
   const [saveProfile] = useMutation(UpdateGroupProfileDocument, {
@@ -83,6 +85,8 @@ export function CreateGroupForm({
           if (avatarId || coverId || created?.createGroup)
             await saveProfile({ variables: { groupId: group.id, name, description, avatarId, coverId } });
           trackEvent(ANALYTICS_EVENT.GroupCreated, { group_id: group.id });
+          form.reset();
+          resetCreated();
           if (!signal.aborted) onCreated(group.id);
         } catch (error) {
           if (signal.aborted) {
@@ -128,6 +132,7 @@ export function CreateGroupForm({
             <div className="flex flex-col gap-6 pt-4">
               <GroupImagePicker
                 label="그룹 배경 사진"
+                value={cover}
                 cover
                 disabled={form.formState.isSubmitting}
                 error={form.formState.errors.cover?.message}
@@ -135,6 +140,7 @@ export function CreateGroupForm({
               />
               <GroupImagePicker
                 label="그룹 프로필 사진"
+                value={avatar}
                 disabled={form.formState.isSubmitting}
                 error={form.formState.errors.avatar?.message}
                 onChange={(file) => form.setValue('avatar', file, { shouldValidate: true })}
