@@ -1,6 +1,6 @@
 'use client';
 
-import type { Ref } from 'react';
+import type { RefCallback } from 'react';
 
 import { useQuery, useReadQuery } from '@apollo/client/react';
 
@@ -20,7 +20,7 @@ export function GroupSidebar({
   communityRef,
 }: {
   groupRef: TGroupQueryRef;
-  communityRef: Ref<HTMLDetailsElement>;
+  communityRef: RefCallback<HTMLDetailsElement>;
 }) {
   const isSSR = useIsSSR();
   const { data } = useReadQuery(groupRef);
@@ -49,10 +49,12 @@ export function GroupSidebar({
           <GroupCommunity groupRef={groupRef} viewerId={viewer?.me?.id ?? ''} />
         </div>
       </details>
-      {isGroupAdmin(group.role) ? <GroupCategoryManager groupId={group.id} /> : null}
-      {isGroupAdmin(group.role) ? <HiddenPostManager groupId={group.id} /> : null}
-      {isGroupAdmin(group.role) && group.visibility === GroupVisibility.Private ? (
-        <GroupJoinRequests groupId={group.id} />
+      {isGroupAdmin(group.role) ? (
+        <>
+          <GroupCategoryManager groupId={group.id} />
+          <HiddenPostManager groupId={group.id} />
+          {group.visibility === GroupVisibility.Private ? <GroupJoinRequests groupId={group.id} /> : null}
+        </>
       ) : null}
     </div>
   );
