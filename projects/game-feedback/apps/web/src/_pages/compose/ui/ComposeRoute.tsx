@@ -32,7 +32,7 @@ export async function ComposeRoute({
   const category = categories.find((item) => item.slug === context.game);
   if (!category) notFound();
   return (
-    <CommunityPage locale={locale} topbar={null}>
+    <CommunityPage screenKey="compose" locale={locale} topbar={null}>
       <PostComposePage
         locale={locale}
         categories={categories}

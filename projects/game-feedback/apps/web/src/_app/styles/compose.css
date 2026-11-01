@@ -46,7 +46,7 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
-  .post-compose-page .ql-editor {
+  .post-compose-page .tiptap-editor-content {
     min-height: 300px;
     max-height: none;
   }
@@ -55,6 +55,9 @@
     justify-items: start;
     gap: 16px;
     padding-block: 32px;
+  }
+  .compose-support {
+    margin-top: 24px;
   }
   :root:has(.shell-route:is([data-screen='compose'], [data-screen='profile-edit'])) {
     overflow: hidden;
@@ -98,8 +101,15 @@
     display: none;
   }
   @media (max-width: 760px) {
-    .post-compose-page .ql-editor {
+    .post-compose-page .tiptap-editor-content {
       min-height: 240px;
     }
+  }
+}
+
+@layer utilities {
+  :is(.post-compose-page .page-form, .form-stack:has(> .rich-text-field))
+    :is(input, select):not([aria-invalid='true']):not(:focus) {
+    border-color: var(--color-muted);
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useId } from 'react';
 
 import { useWatch } from 'react-hook-form';
 import { match, P } from 'ts-pattern';
@@ -28,7 +28,19 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
   const mode = useWatch({ control: form.control, name: 'battle.mode' }) ?? 'DUEL';
   const copy = postComposerCopy(board, role, mode);
   const body = useWatch({ control: form.control, name: 'body' });
+  const title = useWatch({ control: form.control, name: 'title' });
   const document = useWatch({ control: form.control, name: 'document' });
+  const bodyId = useId();
+  const bodyLabelId = `${bodyId}-label`;
+  const bodyHintId = `${bodyId}-hint`;
+  const bodyErrorId = `${bodyId}-error`;
+  const bodyError = match(form.formState.errors)
+    .with({ body: { type: 'too_big' } }, () => t('내용을 조금 줄여주세요.'))
+    .with({ body: P.nonNullable }, () => t('내용을 입력해주세요.'))
+    .with({ editorValid: P.nonNullable }, () =>
+      t('서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.'),
+    )
+    .otherwise(() => undefined);
   const bodyHint = match(board)
     .with('FEEDBACK', () => t('사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.'))
     .with('COACHING', () => t('코칭 분야, 대상, 진행 방식, 시간과 비용을 구체적으로 적어주세요.'))
@@ -46,11 +58,17 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
   );
   return (
     <>
-      <Field label={t('제목')}>
+      <Field
+        label={t('제목')}
+        labelSuffix={
+          <span className="ml-auto text-caption text-muted tabular-nums" aria-hidden="true">
+            {title?.length ?? 0}/{POST_TITLE_MAX_LENGTH}
+          </span>
+        }
+        hint={t('제목은 4~30자로 입력해주세요.')}
+        error={form.formState.errors.title && t('제목을 4~30자로 입력해 주세요.')}
+      >
         <Input {...form.register('title')} maxLength={POST_TITLE_MAX_LENGTH} placeholder={t(copy.title)} />
-        <span className="field-error">
-          {form.formState.errors.title && t('제목을 4~30자로 입력해 주세요.')}
-        </span>
       </Field>
       {board === 'FRIEND_SALE' && (
         <Field label={t('판매 금액 (원)')}>
@@ -75,10 +93,14 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
       {board === 'COACHING' && <CoachingFields form={form} />}
       {board === 'FRIENDLY' && <BattleFields form={form} />}
       <div className="rich-text-field">
-        <span>{t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}</span>
+        <span id={bodyLabelId}>{t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}</span>
         <ServiceErrorBoundary title={t('본문 편집기')}>
           <RichTextEditor
             key={board}
+            id={bodyId}
+            labelledBy={bodyLabelId}
+            describedBy={[bodyHintId, bodyError ? bodyErrorId : undefined].filter(Boolean).join(' ')}
+            invalid={Boolean(bodyError)}
             body={body}
             document={document}
             onChange={handleBodyChange}
@@ -88,17 +110,12 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
             placeholder={t(copy.body)}
           />
         </ServiceErrorBoundary>
-        <small>{bodyHint}</small>
-        <span className="field-error">
-          {form.formState.errors.body &&
-            t(
-              form.formState.errors.body.type === 'too_big'
-                ? '내용을 조금 줄여주세요.'
-                : '내용을 입력해주세요.',
-            )}
-          {form.formState.errors.editorValid &&
-            t('서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.')}
-        </span>
+        <small id={bodyHintId}>{bodyHint}</small>
+        {bodyError && (
+          <span id={bodyErrorId} className="field-error" role="alert">
+            {bodyError}
+          </span>
+        )}
       </div>
     </>
   );

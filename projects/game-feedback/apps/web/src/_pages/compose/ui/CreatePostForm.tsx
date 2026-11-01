@@ -10,7 +10,7 @@ import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
-import { Button, FormActions, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
+import { Button, FormActions, NativeSelect, NativeSelectOption } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { createPostMutationOptions } from '@/features/post';
@@ -20,7 +20,12 @@ import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
-import { postComposerSchema, PostContentFields, postContentInput } from '@/widgets/post-composer';
+import {
+  focusInvalidPostContent,
+  postComposerSchema,
+  PostContentFields,
+  postContentInput,
+} from '@/widgets/post-composer';
 import { VerificationPrompt } from '@/widgets/support';
 
 interface ICreatePostFormProps {
@@ -46,6 +51,8 @@ export function CreatePostForm({
   const create = useMutation(createPostMutationOptions(client));
   const { session } = useSession();
   const upload = useMutation(uploadPostMediaMutationOptions(session.user?.id));
+  const categoryId =
+    categories.find((category) => category.active && category.slug === 'clash-royale')?.id ?? '';
   const form = useZodForm(postComposerSchema, {
     defaultValues: {
       title: '',
@@ -55,7 +62,7 @@ export function CreatePostForm({
       coaching: { role: initialCoachingRole ?? 'COACH', pricing: { type: 'HOURLY', amount: null } },
       friendSale: { price: null },
       battle: { mode: initialBattleMode ?? 'DUEL' },
-      categoryId: initialCategoryId ?? categories[0]?.id ?? '',
+      categoryId,
     },
   });
   const board = useWatch({ control: form.control, name: 'board' }) ?? initialBoard;
@@ -77,7 +84,7 @@ export function CreatePostForm({
     } catch {
       /* Keep the draft and mutation errors. */
     }
-  });
+  }, focusInvalidPostContent);
   const errorMessage = create.error?.message ?? upload.error?.message;
   const submitLabel = match(board)
     .with('COACHING', () => t('코칭 등록'))
@@ -87,7 +94,7 @@ export function CreatePostForm({
   return (
     <form className="page-form" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
       <div data-form-scroll className="page-form-scroll">
-        <VerificationPrompt />
+        <input type="hidden" {...form.register('categoryId')} />
         <div className="form-stack">
           <Field label={t('분류')}>
             <NativeSelect
@@ -111,30 +118,11 @@ export function CreatePostForm({
               <NativeSelectOption value="FREE">{t('자유게시판')}</NativeSelectOption>
             </NativeSelect>
           </Field>
-          <Field label={t('게임')}>
-            {initialCategoryId ? (
-              <>
-                <input type="hidden" {...form.register('categoryId')} />
-                <Input
-                  readOnly
-                  aria-label={t('선택한 게임')}
-                  value={categories.find((item) => item.id === initialCategoryId)?.name ?? ''}
-                />
-              </>
-            ) : (
-              <NativeSelect {...form.register('categoryId')}>
-                {categories
-                  .filter((category) => category.active)
-                  .map((category) => (
-                    <NativeSelectOption key={category.id} value={category.id}>
-                      {category.name}
-                    </NativeSelectOption>
-                  ))}
-              </NativeSelect>
-            )}
-          </Field>
           <PostContentFields form={form} disabled={pending} onUploadMedia={upload.mutateAsync} />
           <ErrorNotice message={errorMessage && t(errorMessage)} />
+        </div>
+        <div className="compose-support">
+          <VerificationPrompt />
         </div>
       </div>
       <FormActions className="px-0" contentClassName="max-w-none">
@@ -143,7 +131,7 @@ export function CreatePostForm({
           size="lg"
           fullWidth
           type="submit"
-          disabled={!categories.length}
+          disabled={!categoryId}
           loading={pending}
           icon={<ArrowUpRight aria-hidden />}
         >
