@@ -255,6 +255,21 @@ Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한
 
 배포 job은 먼저 `ci-superseded.sh`로 이 커밋 뒤에 같은 서비스의 경로 필터에 걸리는 커밋이 배포 브랜치에 있는지 본다. 있으면 그 커밋의 실행이 새 릴리스를 배포하므로 job summary에 이유를 남기고 생략한다. 다른 서비스나 문서만 바꾼 커밋은 검증한 릴리스를 생략시키지 않는다.
 
+### Actions 목록과 실행 조건
+
+| workflow                 | 실행 조건과 이력 표시                                                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Services                 | PR과 main/develop의 관련 경로 push에서 서비스별 검증을 선택한다. publish·deploy는 검증 성공과 운영 활성화·브랜치 조건을 만족할 때만 실행하며 PR에서는 생략한다.                         |
+| Shared instance contract | `workflow_call` 전용이다. 독립 실행 이력이 0이어도 Services의 `shared-contract / shared-instance` job에서 실행된다. 이 job의 결과로 판단한다.                                           |
+| Chat benchmark           | `workflow_dispatch`로만 실행하는 선택 측정이다. 자동 CI나 운영 부하 검사가 아니며, 파일이 기본 브랜치에 반영된 뒤 Run workflow로 실행할 수 있다. 실행 이력 0건 자체는 CI 누락이 아니다. |
+| Blog                     | 블로그·공통 의존성 등 지정 경로의 PR과 main/develop push에서 실행한다.                                                                                                                  |
+| Commits                  | PR에서 추가되는 커밋 메시지를 검사한다.                                                                                                                                                 |
+| Static analysis          | PR과 develop push에서 미사용 코드·의존성과 공통 설정을 검사한다.                                                                                                                        |
+| Terraform                | 인프라 지정 경로의 PR·main/develop push 또는 수동 실행에서 검증한다. 운영 apply를 자동 실행하지 않는다.                                                                                 |
+| Dependabot Updates       | GitHub가 관리하는 동적 workflow다. 저장소 YAML을 직접 실행하는 항목이 아니며 `.github/dependabot.yml`의 갱신 정책을 따른다.                                                             |
+
+수동 실행은 파일이 기본 브랜치에 있어야 한다는 [GitHub 조건](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)을 따른다. 현재 기본 브랜치는 `develop`이며 Chat benchmark 파일도 이미 있어 수동 실행할 수 있다. 재사용 workflow는 호출한 실행의 job을 확인하고, 실패한 필수 검사를 생략하거나 배포 조건을 풀어 실행 건수를 채우지 않는다.
+
 ### 원격 배포 실행과 로그
 
 `ci-upload.sh`가 릴리스(서비스 compose, 공용 Caddyfile, 호스트 스크립트)를 올리면 `receive.sh`가 SSH 세션 안에서 단기 `GITHUB_TOKEN`으로 두 digest를 받은 뒤 토큰을 지우고, `setsid`·`nohup`으로 분리한 `deploy-job.sh`에 배포를 넘긴다. 분리된 작업은 레지스트리 자격 증명 없이 미리 받은 이미지로 `service.sh deploy`를 끝까지 실행하므로 runner 취소·timeout·SSH 끊김이 web 정지 뒤나 롤백 도중의 배포를 끊지 않는다. CI는 `job-status.sh`로 로그와 결과를 최대 40분 따라가며(job timeout 45분) 원격 결과대로 성공·실패한다. 따라가기를 멈춰도 배포는 호스트에서 계속된다.
