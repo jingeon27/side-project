@@ -18,6 +18,17 @@
   body:has(.shell-route:is([data-screen='feed'], [data-screen='boards'])):has(.floating-compose-button) {
     --service-toast-bottom: calc(92px + env(safe-area-inset-bottom));
   }
+  @media (min-width: 1024px) {
+    .floating-compose-button {
+      right: max(
+        var(--desktop-page-inset),
+        calc(
+          (100vw - var(--desktop-sidebar-width) - var(--desktop-content-width)) / 2 +
+            var(--desktop-page-inset)
+        )
+      );
+    }
+  }
   @media (max-width: 760px) {
     .floating-compose-button {
       right: max(var(--mobile-page-inset-end), calc((100vw - 650px) / 2 + 16px));

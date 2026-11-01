@@ -5,6 +5,9 @@
   .community-shell:has(> .shell-route[data-screen='compose']) .topbar {
     display: none;
   }
+  .community-shell:has(> .shell-route[data-screen='compose']) {
+    --desktop-sidebar-width: 0px;
+  }
   .community-shell:has(> .shell-route[data-screen='compose']) .site-grid {
     grid-template-columns: minmax(0, 1fr);
     max-width: 820px;
