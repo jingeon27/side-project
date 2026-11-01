@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from 'react';
 
+import { scroll } from 'motion';
+
 const HIDE_DISTANCE = 12;
 const SHOW_DISTANCE = 8;
 const ALWAYS_VISIBLE_TOP = 8;
@@ -23,18 +25,20 @@ export function useScrollVisibility<TElement extends HTMLElement = HTMLElement>(
   const [hidden, setHidden] = useState(false);
   const ref = useCallback((element: TElement | null) => {
     if (!element) return;
-    const position = () =>
-      Math.max(0, Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight));
-    const current = { value: { hidden: false, anchor: position() } };
+    const container = document.documentElement;
+    const top = Math.max(0, Math.min(container.scrollTop, container.scrollHeight - container.clientHeight));
+    const current = { value: { hidden: false, anchor: top } };
     setHidden(false);
-    const handleScroll = () => {
-      const next = nextVisibility(current.value, position());
-      const changed = next.hidden !== current.value.hidden;
-      current.value = next;
-      if (changed) setHidden(next.hidden);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return scroll(
+      (_progress, info) => {
+        const top = Math.max(0, Math.min(info.y.current, info.y.scrollLength));
+        const next = nextVisibility(current.value, top);
+        const changed = next.hidden !== current.value.hidden;
+        current.value = next;
+        if (changed) setHidden(next.hidden);
+      },
+      { container },
+    );
   }, []);
   return { ref, hidden };
 }

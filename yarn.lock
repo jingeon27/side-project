@@ -8182,6 +8182,7 @@ __metadata:
     jsdom: "catalog:"
     lottie-web: "catalog:"
     lucide-react: "catalog:"
+    motion: "catalog:"
     next: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
@@ -14259,6 +14260,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"framer-motion@npm:14.9.0":
+  version: 14.9.0
+  resolution: "framer-motion@npm:14.9.0"
+  dependencies:
+    motion-dom: "npm:14.9.0"
+    motion-utils: "npm:14.7.0"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+    remix: ^3.1.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+    remix:
+      optional: true
+  checksum: 10c0/5de4cef81e79a1f0eaf63718ddc1a6ba54593d6c1f274483abf2b250dca7ea20f7c0ecd33f4f26de16213f1cec927500185b2361fdfdcc6e9059f15bea54bef3
+  languageName: node
+  linkType: hard
+
 "fresh@npm:^2.0.0":
   version: 2.0.0
   resolution: "fresh@npm:2.0.0"
@@ -17627,6 +17650,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"motion-dom@npm:14.9.0":
+  version: 14.9.0
+  resolution: "motion-dom@npm:14.9.0"
+  dependencies:
+    motion-utils: "npm:14.7.0"
+  checksum: 10c0/457195a40365be1311ecad6dd07b88e6da6b3c1f332747932a9ec7dda1b3828a5a20754349e2ce477083d60bef6138d60fab8f7c8ee6a590f2794cc8946b6f85
+  languageName: node
+  linkType: hard
+
 "motion-utils@npm:14.1.1":
   version: 14.1.1
   resolution: "motion-utils@npm:14.1.1"
@@ -17656,6 +17688,27 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10c0/025328b2cbf07f70bf9a8afe60a95a42f08dc686a35786e46b58c4e30c25aa033ebe281866e62ac8bf832a8dbbfcf6d1b3d29734b6432969065c48b4d94f3df0
+  languageName: node
+  linkType: hard
+
+"motion@npm:14.9.0":
+  version: 14.9.0
+  resolution: "motion@npm:14.9.0"
+  dependencies:
+    framer-motion: "npm:14.9.0"
+    tslib: "npm:^2.4.0"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+    remix: ^3.1.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+    remix:
+      optional: true
+  checksum: 10c0/46b45d7da78376c5298e88ee3ff7efc7d7fd3bda7ddf5b19e7f18085b22ff6dc0571e566aed1542b0bd54a82f3c55ba5c8f095b2045000bfe276443df8019ada
   languageName: node
   linkType: hard
 
