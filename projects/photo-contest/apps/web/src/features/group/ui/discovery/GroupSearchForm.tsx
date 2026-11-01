@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { Search } from 'lucide-react';
 
@@ -12,8 +13,9 @@ import { TextField } from '@/shared/ui/@core/text-field';
 
 import { groupSearchSchema } from '../../model/group-search.schema';
 
-export function GroupSearchForm({ search = '' }: { search?: string }) {
-  const form = useZodForm(groupSearchSchema, { defaultValues: { q: search } });
+export function GroupSearchForm() {
+  const searchParams = useSearchParams();
+  const form = useZodForm(groupSearchSchema, { defaultValues: { q: searchParams.get('q') ?? '' } });
   const router = useAppRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -23,19 +25,13 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
       method="get"
       className="flex items-end gap-3"
       noValidate
-      onSubmit={(event) => {
-        // 브라우저 복원/초기 hydration 중 React change 이벤트가 없었어도 실제 입력값을 검증한다.
-        const value = new FormData(event.currentTarget).get('q');
-        form.setValue('q', typeof value === 'string' ? value : '');
-        void form.handleSubmit(({ q }) => {
-          const query = new URLSearchParams(window.location.search);
-          query.delete('q');
-          if (q) query.set('q', q);
-          const search = query.toString();
-          const href = `${ROUTES.EXPLORE}${search ? `?${search}` : ''}${window.location.hash}`;
-          startTransition(() => router.replace(href));
-        })(event);
-      }}
+      aria-busy={pending}
+      onSubmit={form.handleSubmit(({ q }) => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('q');
+        if (q) url.searchParams.set('q', q);
+        startTransition(() => router.replace(`${ROUTES.EXPLORE}${url.search}${url.hash}`));
+      })}
     >
       <TextField
         label="그룹 검색"

@@ -2,15 +2,32 @@ import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { userEvent } from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GroupSearchForm } from './GroupSearchForm';
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => navigation }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => navigation,
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
+beforeEach(() => {
+  navigation.replace.mockReset();
+  window.history.replaceState(null, '', '/explore');
+});
+
+describe('그룹 검색 초기값', () => {
+  it('URL의 q를 등록된 입력의 초기값으로 사용해야 한다', () => {
+    window.history.replaceState(null, '', '/explore?q=산책');
+    render(<GroupSearchForm />);
+    expect(screen.getByRole('textbox', { name: '그룹 검색' })).toHaveValue('산책');
+  });
+});
+
 describe('검색 폼 hydration', () => {
-  it.each([true, false])('hydration 전 입력/브라우저 복원(%s)의 검색어를 보존해야 한다', async (before) => {
-    navigation.replace.mockReset();
+  it.each([true, false])('hydration 전후 입력(%s)의 검색어를 register로 제출해야 한다', async (before) => {
     const container = document.createElement('div');
     container.innerHTML = renderToString(<GroupSearchForm />);
     document.body.append(container);
@@ -20,7 +37,7 @@ describe('검색 폼 hydration', () => {
     const root = hydrateRoot(container, <GroupSearchForm />);
     try {
       await act(async () => {});
-      if (!before) input.value = '상자 복어';
+      if (!before) await userEvent.type(input, '상자 복어');
       expect(input.value).toBe('상자 복어');
       fireEvent.submit(within(container).getByRole('search'));
       await waitFor(() =>
@@ -40,9 +57,8 @@ describe('그룹 검색 URL 병합', () => {
   it.each([' 새 검색 ', ''])(
     '검색어(%s)만 바꾸고 다른 필터·상세 키·중복 키·hash를 보존해야 한다',
     async (value) => {
-      navigation.replace.mockReset();
       window.history.replaceState(null, '', '/explore?q=old&group=g1&detail=post-1&tag=a&tag=b#results');
-      render(<GroupSearchForm search="old" />);
+      render(<GroupSearchForm />);
       fireEvent.change(screen.getByRole('textbox', { name: '그룹 검색' }), { target: { value } });
       fireEvent.submit(screen.getByRole('search'));
       await waitFor(() => expect(navigation.replace).toHaveBeenCalledOnce());
