@@ -1,59 +1,313 @@
 {
   "articleId": "side-project-design",
-  "capturedOn": "2026-10-29",
+  "capturedOn": "2026-11-01",
   "timezone": "Asia/Seoul",
-  "data": "isolated test accounts and fake game-profile provider",
+  "data": "Isolated test accounts, synthetic fixture groups, and a fake game-profile provider. Game Mate user-generated content remains Korean in the English UI.",
   "viewport": {
     "width": 390,
-    "height": 844
+    "height": 844,
+    "deviceScaleFactor": 2
   },
-  "composition": "Unmodified browser screenshots arranged with HTML and CSS, then captured in the browser.",
+  "composition": "Unmodified product screenshots displayed at the original CSS viewport size in a new HTML/CSS composition, captured at 952x1139. Only the surrounding labels are localized.",
+  "generator": "projects/blog/apps/web/scripts/capture-product-screens.ts",
+  "environment": "Local isolated test runtimes. Game Mate uses a production build of uncommitted UI changes; captures do not establish production deployment.",
+  "sources": {
+    "game-feedback": {
+      "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+      "changes": "Current single-row horizontal board chips with Feedback last, stable chip offset and opacity during navigation, full content gutters, contextual empty-state icons, current legal pages, input accessibility and profile/edit layout.",
+      "manifest": "projects/blog/docs/screen-capture-sources-2026-11-01-game-feedback.json",
+      "manifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+      "runtime": "Preserved production build with a fresh server process, independent UUID test schema, fake game-profile provider and fresh browser contexts.",
+      "buildId": "YTpam-lN3WOnWGkIJN-n-",
+      "buildSourceManifestSha256": "a62040a8bb08aa16bcec9d949a6cd3ce3377c34369eda820ea54361f865c2cad"
+    },
+    "photo-contest": {
+      "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+      "changes": "Immutable production build of the local group-detail UI changes, including the final empty-state CTA adjustment. The Explore screen uses the existing implementation.",
+      "manifest": "projects/blog/docs/screen-capture-sources-2026-11-01-photo-contest.json",
+      "manifestSha256": "354e7284d8250887c6b90b00c596266051b46a1a19f1df66d4143c400f932dbf",
+      "runtime": "Isolated browser-test database and synthetic fixture groups.",
+      "capturedManifestSha256": "c1d5a4e7281d3571df18806cf526d484698d805d036c608b4594660754fd3baf",
+      "manifestSerialization": "The checked-in JSON is formatted; its path and per-file SHA-256 entries are the captured build manifest."
+    }
+  },
   "captures": [
     {
       "original": "/images/posts/side-project-design/01-service-screens.png",
-      "replacement": "/images/posts/side-project-design/01-service-screens-pisik.png",
+      "replacement": "/images/posts/side-project-design/01-service-screens-2026-11-01.png",
       "originalSha256": "ad9c83f07b2c727e31d4d5a864e23ee221de3937f851fd0ac552c765aa0ca899",
-      "replacementSha256": "843f3a76276793b223c18513d2e917e3aa573c593155f9e2b36aa5b98ce972b7",
+      "replacementSha256": "1a1622374224a9bc54e219cde8dcdb918963ca2cf1a57c4fa2c4e3d97ad677ea",
       "width": 952,
       "height": 1139,
       "screens": [
         {
           "service": "game-feedback",
-          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
-          "route": "/ko"
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/ko",
+          "interfaceLocale": "ko",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-feed-ko.png",
+          "sourceSha256": "a6229eeddb87b9eec997aecb7fc385c1dd939e1a2a8bb42fe97b08a51ad3ebed",
+          "sourceWidth": 780,
+          "sourceHeight": 1688,
+          "readiness": [
+            {
+              "label": "글쓰기",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            }
+          ]
         },
         {
           "service": "photo-contest",
-          "revision": "50900ae818121aaf85256211f861724347baf2c9",
-          "route": "/explore"
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "354e7284d8250887c6b90b00c596266051b46a1a19f1df66d4143c400f932dbf",
+          "route": "/explore?q=%ED%95%A8%EA%BB%98",
+          "interfaceLocale": "ko",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/pisik-explore-ko.png",
+          "sourceSha256": "4c1d23976dcf2762d64161552a1a9d0cc78cc0695a03983721e63b8cda331e3c",
+          "sourceWidth": 780,
+          "sourceHeight": 1688,
+          "readiness": [
+            {
+              "label": "검색",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            },
+            {
+              "label": "그룹 만들기",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            }
+          ]
         }
-      ],
-      "recomposedOn": "2026-10-31",
-      "compositionSource": {
-        "image": "/images/posts/side-project-design/01-service-screens-revised.jpg",
-        "sha256": "362f5d53bb79e1d4d92770e5b72f9118dc94fed84f15364475f45464c8e3c74b",
-        "method": "The two existing 390x844 product captures were placed in a new HTML composition. Only the surrounding heading changed to Pisik; the product captures and original capture date were retained."
-      }
+      ]
     },
     {
       "original": "/images/posts/side-project-design/09-product-interactions.png",
-      "replacement": "/images/posts/side-project-design/09-profile-pages.jpg",
+      "replacement": "/images/posts/side-project-design/09-profile-pages-2026-11-01.png",
       "originalSha256": "1694338f3e51ad10d1dfe4ab55cb72649b062847593ab616893b9ded86e6b3c6",
-      "replacementSha256": "624602376e3cd86318ebfb3f0240fdf810e60af6a944171ac015b8b2fac1f003",
+      "replacementSha256": "2be91189b487c1106a8f06cf03861ca87d6ded424269984520b3f68d5c99a771",
       "width": 952,
       "height": 1139,
       "screens": [
         {
           "service": "game-feedback",
-          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
-          "route": "/ko/users/sample-user-0"
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/ko/users/sample-user-0",
+          "interfaceLocale": "ko",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-profile-ko.png",
+          "sourceSha256": "b50caf3c34fa417c30a1ac07f0233ce79181bf88bad52f2806d536c3d73ef93f",
+          "sourceWidth": 780,
+          "sourceHeight": 1688
         },
         {
           "service": "game-feedback",
-          "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
-          "route": "/ko/settings/profile"
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/ko/settings/profile",
+          "interfaceLocale": "ko",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-edit-ko.png",
+          "sourceSha256": "4baa964092c8f5fb6984c8f402cd8916a9588c32f9c4a037c692b344926d644b",
+          "sourceWidth": 780,
+          "sourceHeight": 1688
         }
       ]
+    }
+  ],
+  "localizedCaptures": [
+    {
+      "original": "/images/posts/side-project-design/01-service-screens-2026-11-01.png",
+      "replacement": "/images/posts/side-project-design/01-service-screens-2026-11-01-en.png",
+      "originalSha256": "1a1622374224a9bc54e219cde8dcdb918963ca2cf1a57c4fa2c4e3d97ad677ea",
+      "replacementSha256": "07fa0aeff7bd80b3a4b586ed8144060353d4f691f3b3e2547f26e9a57c8819cb",
+      "width": 952,
+      "height": 1139,
+      "kind": "browser-screenshot-composition",
+      "screens": [
+        {
+          "service": "game-feedback",
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/en",
+          "interfaceLocale": "en",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-feed-en.png",
+          "sourceSha256": "6f98e1ecf6790028b18f13d71f3f1bf5a2a000923f1df15b9b1ca6034e73d45f",
+          "sourceWidth": 780,
+          "sourceHeight": 1688,
+          "readiness": [
+            {
+              "label": "Write a post",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            }
+          ]
+        },
+        {
+          "service": "photo-contest",
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "354e7284d8250887c6b90b00c596266051b46a1a19f1df66d4143c400f932dbf",
+          "route": "/explore?q=%ED%95%A8%EA%BB%98",
+          "interfaceLocale": "ko",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/pisik-explore-ko.png",
+          "sourceSha256": "4c1d23976dcf2762d64161552a1a9d0cc78cc0695a03983721e63b8cda331e3c",
+          "sourceWidth": 780,
+          "sourceHeight": 1688,
+          "readiness": [
+            {
+              "label": "검색",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            },
+            {
+              "label": "그룹 만들기",
+              "nativeDisabled": false,
+              "ariaDisabled": null,
+              "dataDisabled": null,
+              "opacity": "1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "original": "/images/posts/side-project-design/09-profile-pages-2026-11-01.png",
+      "replacement": "/images/posts/side-project-design/09-profile-pages-2026-11-01-en.png",
+      "originalSha256": "2be91189b487c1106a8f06cf03861ca87d6ded424269984520b3f68d5c99a771",
+      "replacementSha256": "c522db65f350e888ffb0ba35159588497b01c873f763432bea156364e7de8d92",
+      "width": 952,
+      "height": 1139,
+      "kind": "browser-screenshot-composition",
+      "screens": [
+        {
+          "service": "game-feedback",
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/en/users/sample-user-0",
+          "interfaceLocale": "en",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-profile-en.png",
+          "sourceSha256": "891295282e0870645650a69957e4b080c3c66bd6c85195704714a2a66322a089",
+          "sourceWidth": 780,
+          "sourceHeight": 1688
+        },
+        {
+          "service": "game-feedback",
+          "revision": "9576836125cfd91e977b417b50dd9b049e649cff",
+          "sourceManifestSha256": "5638dc6f694844ca2c77e54cb34586d22eb60a34216e9aa97b2b7a8cbb04e206",
+          "route": "/en/settings/profile",
+          "interfaceLocale": "en",
+          "sourceImage": "/images/posts/side-project-design/captures-2026-11-01/game-edit-en.png",
+          "sourceSha256": "8a5b7f97137081609806c723f6c38784df915b5ccdbd4cbcfea1d1a40206369b",
+          "sourceWidth": 780,
+          "sourceHeight": 1688
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "articleId": "side-project-design",
+      "capturedOn": "2026-10-29",
+      "timezone": "Asia/Seoul",
+      "data": "isolated test accounts and fake game-profile provider",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "composition": "Unmodified browser screenshots arranged with HTML and CSS, then captured in the browser.",
+      "captures": [
+        {
+          "original": "/images/posts/side-project-design/01-service-screens.png",
+          "replacement": "/images/posts/side-project-design/01-service-screens-pisik.png",
+          "originalSha256": "ad9c83f07b2c727e31d4d5a864e23ee221de3937f851fd0ac552c765aa0ca899",
+          "replacementSha256": "843f3a76276793b223c18513d2e917e3aa573c593155f9e2b36aa5b98ce972b7",
+          "width": 952,
+          "height": 1139,
+          "screens": [
+            {
+              "service": "game-feedback",
+              "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+              "route": "/ko"
+            },
+            {
+              "service": "photo-contest",
+              "revision": "50900ae818121aaf85256211f861724347baf2c9",
+              "route": "/explore"
+            }
+          ],
+          "recomposedOn": "2026-10-31",
+          "compositionSource": {
+            "image": "/images/posts/side-project-design/01-service-screens-revised.jpg",
+            "sha256": "362f5d53bb79e1d4d92770e5b72f9118dc94fed84f15364475f45464c8e3c74b",
+            "method": "The two existing 390x844 product captures were placed in a new HTML composition. Only the surrounding heading changed to Pisik; the product captures and original capture date were retained."
+          }
+        },
+        {
+          "original": "/images/posts/side-project-design/09-product-interactions.png",
+          "replacement": "/images/posts/side-project-design/09-profile-pages.jpg",
+          "originalSha256": "1694338f3e51ad10d1dfe4ab55cb72649b062847593ab616893b9ded86e6b3c6",
+          "replacementSha256": "624602376e3cd86318ebfb3f0240fdf810e60af6a944171ac015b8b2fac1f003",
+          "width": 952,
+          "height": 1139,
+          "screens": [
+            {
+              "service": "game-feedback",
+              "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+              "route": "/ko/users/sample-user-0"
+            },
+            {
+              "service": "game-feedback",
+              "revision": "e9493aa5fbeebda2d209fe2fdc8b08a36e652bb8",
+              "route": "/ko/settings/profile"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "refreshes": [
+    {
+      "service": "game-feedback",
+      "refreshedOn": "2026-11-01",
+      "previousSourceManifestSha256": "5a81276a1aa46ab2fdd5c29bd5a103c78f18b7bca1f9a5836e33215b52db11db",
+      "replacedSourceImages": [
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-feed-ko.png",
+          "sha256": "718c935bfb8169570d9c138aa284a8915364bd64e87f8c2a5b509e950e70053d"
+        },
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-profile-ko.png",
+          "sha256": "f49a3f2cd9309fae64aeddb77014a40062ff06702ef77d1d83b7676b4700b11f"
+        },
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-edit-ko.png",
+          "sha256": "4baa964092c8f5fb6984c8f402cd8916a9588c32f9c4a037c692b344926d644b"
+        },
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-feed-en.png",
+          "sha256": "6ae1e7d648df2101a12b1b1e0922a895fb5ba508520824e8a6fb3be05d572b52"
+        },
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-profile-en.png",
+          "sha256": "891295282e0870645650a69957e4b080c3c66bd6c85195704714a2a66322a089"
+        },
+        {
+          "path": "/images/posts/side-project-design/captures-2026-11-01/game-edit-en.png",
+          "sha256": "8a5b7f97137081609806c723f6c38784df915b5ccdbd4cbcfea1d1a40206369b"
+        }
+      ],
+      "note": "Only the six Game Mate raw screenshots and four compositions were refreshed. The Pisik raw screenshot, capture date, readiness and source manifest remain unchanged."
     }
   ]
 }

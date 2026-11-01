@@ -31,6 +31,7 @@ export type {
 } from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
+export { useScrollVisibility } from './lib/use-scroll-visibility';
 export { Mention } from './ui/mention/Mention';
 export type { IMentionProps } from './ui/mention/Mention';
 
