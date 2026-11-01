@@ -21282,6 +21282,7 @@ __metadata:
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.7.1"
     "@side/config": "workspace:*"
     "@types/node": "catalog:"
+    concurrently: "catalog:"
     husky: "npm:^9.1.7"
     knip: "npm:6.43.0"
     lint-staged: "npm:^16.4.0"
