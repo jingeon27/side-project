@@ -1,6 +1,7 @@
 @import 'tailwindcss' source(none);
 @import '@side/design-system/styles.css';
 @import './base.css';
+@import './landing.css';
 @import './toast.css';
 @import './layout.css';
 @import './footer.css';

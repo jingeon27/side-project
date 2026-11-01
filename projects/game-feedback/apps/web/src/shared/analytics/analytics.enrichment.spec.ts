@@ -3,6 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { analyticsContext, scrubAnalyticsProperties, viewportBucket } from './analytics.enrichment';
 
 describe('Amplitude 공통 속성', () => {
+  it('세션을 읽지 않는 공개 랜딩도 별도 화면으로 구분해야 한다', () => {
+    expect(analyticsContext({ pathname: '/about', width: 390, locale: 'ko', native: false })).toMatchObject({
+      screen: 'landing',
+      locale: 'ko',
+      client: 'browser',
+    });
+    expect(
+      scrubAnalyticsProperties({
+        '[Amplitude] Page Location': 'https://game.example/about?redirect=%2Fko%2Fposts%2Fprivate',
+      }),
+    ).toEqual({ '[Amplitude] Page Location': 'https://game.example/about' });
+  });
   it('중첩된 attribution 사용자 속성에서도 검색어를 지워야 한다', () => {
     expect(
       scrubAnalyticsProperties({

@@ -27,7 +27,7 @@ export function analyticsContext({
     client: native ? 'webview' : 'browser',
     viewport_bucket: viewportBucket(width),
     locale: route?.locale ?? locale.split('-')[0],
-    screen: route?.screen ?? 'unknown',
+    screen: pathname === '/about' ? 'landing' : (route?.screen ?? 'unknown'),
   };
 }
 function withoutQuery(value: string) {

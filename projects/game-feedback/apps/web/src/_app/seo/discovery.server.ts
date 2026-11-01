@@ -26,6 +26,7 @@ export function robots(): MetadataRoute.Robots {
 export async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!getSeoConfig().indexable) return [];
   const entries = new Map<string, MetadataRoute.Sitemap[number]>();
+  entries.set(pageUrl('/about'), { url: pageUrl('/about') });
   entries.set(pageUrl('/ko'), { url: pageUrl('/ko') });
   ['ko', 'en', 'ja'].forEach((locale) => {
     ['/guide', '/terms', '/privacy', '/contact'].forEach((path) => {

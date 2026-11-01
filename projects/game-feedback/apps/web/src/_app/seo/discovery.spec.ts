@@ -39,6 +39,7 @@ describe('search discovery', () => {
     });
     const entries = await sitemap();
     const urls = entries.map((item) => item.url);
+    expect(urls).toContain('https://feedback.example/about');
     expect(entries.find((item) => item.url.endsWith('/posts/first'))?.lastModified).toBe(
       '2026-10-17T00:00:00.000Z',
     );

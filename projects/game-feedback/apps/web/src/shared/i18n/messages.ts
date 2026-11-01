@@ -841,6 +841,7 @@ const messages: Record<string, readonly [string, string]> = {
   이용약관: ['Terms of service', '利用規約'],
   '서비스 이용약관': ['Terms of service', '利用規約'],
   '서비스 안내': ['Service information', 'サービス案内'],
+  '서비스 소개': ['About Game Mate', 'Game Mateについて'],
   및: ['and', 'および'],
   '개인정보 처리방침': ['Privacy policy', 'プライバシーポリシー'],
   '에 동의합니다.': ['I agree to the above.', 'に同意します。'],

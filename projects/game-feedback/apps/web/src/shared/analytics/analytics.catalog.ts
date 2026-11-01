@@ -11,9 +11,15 @@ export const ANALYTICS_EVENT = {
   Interaction: 'ui_interaction',
   ScrollDepth: 'scroll_depth',
   PageEngagement: 'page_engagement',
+  LandingStartClicked: 'landing_start_clicked',
 } as const satisfies Record<string, keyof TAnalyticsProperties>;
 export type TAnalyticsEventName = (typeof ANALYTICS_EVENT)[keyof typeof ANALYTICS_EVENT];
 export type TAnalyticsProperties = {
+  landing_start_clicked: {
+    placement: 'header' | 'hero' | 'footer';
+    destination_screen: string;
+    redirect_applied: boolean;
+  };
   login_opened: Record<string, never>;
   login_provider_selected: { provider: TSocialProvider };
   login_succeeded: { provider: TSocialProvider };
