@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { ExplorePageTemplate, exploreSearchSchema } from '@/_pages/explore';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
-import { DiscoverGroupsDocument, MeDocument } from '@/shared/api/generated';
+import { DiscoverGroupsDocument, MeDocument, MyGroupsDocument } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata } from '@/shared/lib/seo.helper';
@@ -27,7 +27,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
   return (
     <PreloadQuery query={MeDocument}>
       <PreloadQuery query={DiscoverGroupsDocument} variables={{ search, offset: 0, limit: 24 }}>
-        <ExplorePageTemplate search={search} />
+        <PreloadQuery query={MyGroupsDocument}>
+          <ExplorePageTemplate search={search} />
+        </PreloadQuery>
       </PreloadQuery>
     </PreloadQuery>
   );

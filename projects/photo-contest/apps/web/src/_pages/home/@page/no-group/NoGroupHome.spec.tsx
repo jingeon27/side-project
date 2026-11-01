@@ -78,23 +78,23 @@ async function renderHome(hasGroup: boolean, hasPost: boolean) {
   await act(async () => {
     render(
       <ApolloProvider client={client}>
-        <NoGroupHome signedIn />
+        <NoGroupHome />
       </ApolloProvider>,
     );
   });
 }
 
-describe('참여 그룹이 없는 홈의 첫 행동', () => {
+describe('참여 그룹이 없는 홈의 탐색 안내', () => {
   it.each([false, true])(
-    '공개 그룹 유무(%s)와 관계없이 빈 사진 안내보다 그룹 찾기와 만들기를 먼저 안내해야 한다',
+    '공개 그룹 유무(%s)와 관계없이 빈 사진 안내보다 그룹 찾기를 먼저 안내해야 한다',
     async (hasGroup) => {
       await renderHome(hasGroup, false);
       expect(screen.getByRole('link', { name: '그룹 찾아보기' })).toHaveAttribute('href', '/explore');
-      expect(screen.getAllByRole('button', { name: '그룹 만들기' })).toHaveLength(1);
       expect(screen.queryByText('첫 사진을 올려보세요')).not.toBeInTheDocument();
       expect(screen.queryByRole('region', { name: '공개 그룹의 최신 사진' })).not.toBeInTheDocument();
       if (hasGroup) expect(screen.getByRole('link', { name: '공개 웃음' })).toBeVisible();
-      if (!hasGroup) expect(screen.getByText('참여할 그룹을 검색하거나 직접 만들어보세요.')).toBeVisible();
+      if (!hasGroup)
+        expect(screen.getByRole('link', { name: '전체 그룹 둘러보기' })).toHaveAttribute('href', '/explore');
     },
   );
 

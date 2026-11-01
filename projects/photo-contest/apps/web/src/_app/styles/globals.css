@@ -8,9 +8,21 @@
     --toast-bottom: calc(var(--spacing-bottom-nav) + 12px + var(--safe-bottom));
   }
 
+  #pc-main:has([data-compose-entry]) {
+    --toast-bottom: calc(96px + var(--safe-bottom));
+  }
+
+  #pc-main:has([data-compose-above-nav]) {
+    --toast-bottom: calc(var(--spacing-bottom-nav) + 84px + var(--safe-bottom));
+  }
+
   @media (width >= 1024px) {
     #pc-main:has([data-bottom-nav]) {
       --toast-bottom: calc(16px + var(--safe-bottom));
+    }
+
+    #pc-main:has([data-compose-entry]) {
+      --toast-bottom: calc(100px + var(--safe-bottom));
     }
   }
 }
