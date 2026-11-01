@@ -3180,6 +3180,7 @@ __metadata:
     "@tanstack/react-query": "catalog:"
     "@testing-library/dom": "catalog:"
     "@testing-library/react": "catalog:"
+    "@testing-library/user-event": "catalog:"
     "@tiptap/core": "npm:3.32.2"
     "@tiptap/extension-blockquote": "npm:3.32.2"
     "@tiptap/extension-list": "npm:3.32.2"
