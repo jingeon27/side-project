@@ -26,13 +26,28 @@ export function groupContestMetadata(data: IGroupContestSeoData, contestId: stri
       index: false,
       images: [],
     });
-  const images = postImageUrls(data.posts, origin).slice(0, 3);
+  const photos = [
+    ...postImageUrls(data.posts, origin),
+    ...(data.group.avatarUrl ? [siteUrl(data.group.avatarUrl, origin)] : []),
+    ...(data.group.coverUrl ? [siteUrl(data.group.coverUrl, origin)] : []),
+  ];
   return createPageMetadata({
     origin,
     path,
     title: `${data.contest.title} - ${data.group.name}`,
     description: `${data.group.name}의 ${data.contest.title}. 참여작과 대회 일정, 투표 결과를 확인하세요.`,
-    ...(images.length ? { images } : {}),
+    imageAlt: `${data.contest.title} - ${data.group.name} - 피식`,
+    images: [
+      ...Array.from(new Set(photos)).slice(0, 3),
+      {
+        url: siteUrl(
+          `/og/groups/${encodeURIComponent(data.group.id)}/contests/${encodeURIComponent(contestId)}`,
+          origin,
+        ),
+        width: 1200,
+        height: 630,
+      },
+    ],
   });
 }
 

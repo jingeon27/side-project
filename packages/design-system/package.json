@@ -16,7 +16,8 @@
     "./lib/use-motion-preference": "./src/lib/use-motion-preference.ts",
     "./lib/motion": "./src/lib/motion.ts",
     "./ui/*": "./src/ui/*/index.ts",
-    "./ui": "./src/index.ts"
+    "./ui": "./src/index.ts",
+    "./og": "./src/og.tsx"
   },
   "scripts": {
     "lint": "eslint .",

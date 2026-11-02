@@ -1,5 +1,7 @@
 import { Suspense, type ReactNode } from 'react';
 
+import { richTextMediaReferences } from '@game-feedback/contracts';
+
 import { getServerSession } from '@/features/auth/index.server';
 import { getServerPost } from '@/features/post/index.server';
 import { createPageMetadata, JsonLd, pageUrl, postStructuredData } from '@/shared/seo';
@@ -16,6 +18,10 @@ export async function postMetadata({ params }: IPostRouteProps) {
   const { locale, id } = await params;
   const { post } = await getServerPost(id);
   return createPageMetadata({
+    imagePath: `/og/posts/${encodeURIComponent(id)}`,
+    photoPaths: richTextMediaReferences(post.document)
+      .filter((media) => media.kind === 'IMAGE')
+      .map((media) => media.url),
     title: post.title,
     description: post.body,
     path: `/${locale}/posts/${encodeURIComponent(id)}`,

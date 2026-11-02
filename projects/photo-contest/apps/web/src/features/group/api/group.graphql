@@ -121,6 +121,7 @@ query PublicGroupSeo($id: ID!) {
   group(id: $id) {
     description
     avatarUrl
+    coverUrl
     categories {
       id
     }
