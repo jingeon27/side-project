@@ -225,11 +225,13 @@ export function useReviewLike() {
   });
 
   return {
-    handleLike: mutation.mutateAsync,
+    handleLike: mutation.mutate,
     isLikePending: mutation.isPending,
   };
 }
 ```
+
+The click handler does not need to await a result, so it uses `mutate`. `onError` handles the notice and rollback. With `mutateAsync`, the caller would also need to handle the rejected Promise separately.
 
 ### 1. Cancel refetches
 

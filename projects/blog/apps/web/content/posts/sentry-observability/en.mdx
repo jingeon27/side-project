@@ -274,7 +274,7 @@ What this test looks at is the envelope, the format the SDK uses to send data to
 {"type":"transaction","transaction":"/","measurements":{"lcp":{"value":1200,"unit":"millisecond"}}}
 ```
 
-The test intercepts the Sentry envelope request with `page.route`, reads the transaction payload without sending anything to the real server, and checks the pageload transaction for fcp, lcp, and ttfb measurements. A service worker from MSW, a library that returns fake API responses, would take the request before `page.route` could see it, so service workers are blocked in this E2E context. The SDK retries without a response, so the test also returns a fake success.
+The test intercepts the Sentry envelope request with `page.route`, reads the transaction payload without sending anything to the real server, and checks the pageload transaction for fcp, lcp, and ttfb measurements. A service worker from MSW, a library that returns fake API responses, would take the request before `page.route` could see it, so service workers are blocked in this E2E context. The test returns a fake success to complete the request without sending it to the external server.
 
 The point is to look at the envelope the browser actually built, instead of confirming an option was passed.
 

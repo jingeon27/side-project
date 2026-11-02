@@ -274,7 +274,7 @@ npm run test:e2e:sentry
 {"type":"transaction","transaction":"/","measurements":{"lcp":{"value":1200,"unit":"millisecond"}}}
 ```
 
-테스트는 Sentry의 envelope 요청을 `page.route`로 가로채고, 실제 서버에는 보내지 않은 채 transaction payload를 읽어요. pageload transaction에 fcp, lcp, ttfb measurement가 실렸는지 확인해요. MSW(API 응답을 가짜로 돌려주는 라이브러리)의 서비스 워커가 요청을 넘겨받으면 `page.route`가 envelope를 잡지 못해서, 이 E2E 컨텍스트에서는 서비스 워커도 막았어요. 응답을 주지 않으면 SDK가 재시도하므로 가짜 성공 응답까지 돌려줘요.
+테스트는 Sentry의 envelope 요청을 `page.route`로 가로채고, 실제 서버에는 보내지 않은 채 transaction payload를 읽어요. pageload transaction에 fcp, lcp, ttfb measurement가 실렸는지 확인해요. MSW(API 응답을 가짜로 돌려주는 라이브러리)의 서비스 워커가 요청을 넘겨받으면 `page.route`가 envelope를 잡지 못해서, 이 E2E 컨텍스트에서는 서비스 워커도 막았어요. 외부로 전송하지 않고 요청을 마무리하려고 가짜 성공 응답을 돌려줘요.
 
 옵션이 전달됐다는 사실보다 브라우저가 실제로 만든 envelope를 보려는 테스트예요.
 

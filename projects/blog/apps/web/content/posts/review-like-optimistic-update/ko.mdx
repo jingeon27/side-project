@@ -225,11 +225,13 @@ export function useReviewLike() {
   });
 
   return {
-    handleLike: mutation.mutateAsync,
+    handleLike: mutation.mutate,
     isLikePending: mutation.isPending,
   };
 }
 ```
+
+클릭에서는 반환값을 기다릴 일이 없어 `mutate`를 연결해요. 실패 안내와 롤백은 `onError`가 맡아요. `mutateAsync`를 쓴다면 이 처리와 별개로 호출부에서 거절된 Promise도 처리해야 해요.
 
 ### 1. refetch 취소
 

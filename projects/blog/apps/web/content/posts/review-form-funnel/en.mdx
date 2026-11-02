@@ -54,6 +54,8 @@ A parent form retains the complete draft while each step has its own form. Passi
 
 Ideally each step checks only its own values and final submission checks everything again. The step schemas were separated, but a problem remained where the overall schema is assembled. The schemas below separate fields by step. This example uses renamed fields and keeps the main definitions and additional validation.
 
+The schema examples and the `ZodEffects` explanation below use Zod 3. [Zod 4 stores refinements inside the schemas themselves](https://zod.dev/v4/changelog?id=drops-zodeffects), so the `_def.schema` access below cannot be used unchanged.
+
 ```typescript
 import { z } from 'zod';
 

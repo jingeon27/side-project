@@ -54,6 +54,8 @@ switch (step) {
 
 각 단계에서는 그 단계의 값만 검사하고, 최종 제출에서는 전체 값을 다시 검사하는 구조가 이상적이에요. 단계별 스키마는 나눴지만 전체 스키마를 조립하는 쪽에는 문제가 남았어요. 단계별로 필요한 필드를 나눈 스키마는 아래와 같아요. 이름을 바꾸고 주요 필드와 추가 검증만 남겼어요.
 
+아래 스키마 예제와 `ZodEffects` 설명은 Zod 3 기준이에요. [Zod 4에서는 검증 규칙을 스키마 안에 보관](https://zod.dev/v4/changelog?id=drops-zodeffects)하므로, 아래의 `_def.schema` 접근을 그대로 쓸 수 없어요.
+
 ```typescript
 import { z } from 'zod';
 
