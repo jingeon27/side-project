@@ -228,14 +228,6 @@
     padding: 10px;
     font-size: var(--text-caption);
   }
-  .game-icon {
-    width: 40px;
-    height: 40px;
-  }
-  .left-sidebar .game-icon {
-    width: 28px;
-    height: 28px;
-  }
   .game-side-link strong {
     font-size: var(--text-body);
     display: block;
@@ -350,10 +342,6 @@
     }
     .game-side-link small {
       font-size: var(--text-micro);
-    }
-    .game-icon {
-      width: 33px;
-      height: 35px;
     }
     .sidebar-bottom {
       padding: 0 9px;
