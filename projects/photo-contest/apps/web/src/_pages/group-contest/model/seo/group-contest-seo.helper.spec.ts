@@ -73,6 +73,7 @@ describe('대회 상세 SEO', () => {
     expect(metadata.alternates?.canonical).toBe(`${origin}/groups/group/contests/contest`);
     expect(metadata.openGraph).toMatchObject({
       images: [
+        expect.objectContaining({ url: `${origin}/backend/media/photo` }),
         expect.objectContaining({
           url: `${origin}/og/groups/group/contests/contest`,
           width: 1200,

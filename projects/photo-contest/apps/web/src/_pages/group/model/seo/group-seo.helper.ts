@@ -1,4 +1,4 @@
-import { postAttachmentJsonLd } from '@/features/post';
+import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
 import { GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
@@ -6,7 +6,7 @@ import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper'
 import type { IGroupSeoData } from './group-seo.type';
 
 export function groupMetadata(data: IGroupSeoData, origin: string) {
-  const { group } = data;
+  const { group, posts } = data;
   const path = ROUTES.GROUP(group.id);
   if (group.visibility !== GroupVisibility.Public)
     return createPageMetadata({
@@ -17,6 +17,11 @@ export function groupMetadata(data: IGroupSeoData, origin: string) {
       index: false,
       images: [],
     });
+  const photos = [
+    ...(group.avatarUrl ? [siteUrl(group.avatarUrl, origin)] : []),
+    ...(group.coverUrl ? [siteUrl(group.coverUrl, origin)] : []),
+    ...postImageUrls(posts, origin),
+  ];
   return createPageMetadata({
     origin,
     path,
@@ -25,7 +30,10 @@ export function groupMetadata(data: IGroupSeoData, origin: string) {
       group.description ||
       `${group.name}에서 ${group.memberCount}명의 멤버와 사진이나 동영상으로 웃긴 순간을 나눠보세요. 합성한 이미지도 올릴 수 있어요. 누구나 둘러보고 가입할 수 있는 공개 그룹입니다.`,
     imageAlt: `${group.name} - 피식`,
-    images: [siteUrl(`/og/groups/${encodeURIComponent(group.id)}`, origin)],
+    images: [
+      ...Array.from(new Set(photos)).slice(0, 3),
+      { url: siteUrl(`/og/groups/${encodeURIComponent(group.id)}`, origin), width: 1200, height: 630 },
+    ],
   });
 }
 

@@ -62,12 +62,16 @@ test('공개 그룹과 대회는 실제 제목과 대표 사진을 담은 공유
     expect(image.equals(generic)).toBe(false);
     await writeFile(`${output}/${kind}.png`, image);
     await page.goto(document);
-    const og = await page.locator('meta[property="og:image"]').getAttribute('content');
-    const twitter = await page.locator('meta[name="twitter:image"]').getAttribute('content');
+    if (kind === 'group') {
+      const firstPhoto = await page.locator('meta[property="og:image"]').first().getAttribute('content');
+      expect(new URL(firstPhoto || '').pathname).toMatch(/^\/backend\/media\//);
+    }
+    const og = await page.locator('meta[property="og:image"]').last().getAttribute('content');
+    const twitter = await page.locator('meta[name="twitter:image"]').last().getAttribute('content');
     expect(new URL(og || '').pathname).toBe(imagePath);
     expect(new URL(twitter || '').pathname).toBe(imagePath);
-    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /\S/);
-    await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute('content', /\S/);
+    await expect(page.locator('meta[property="og:image:alt"]').first()).toHaveAttribute('content', /\S/);
+    await expect(page.locator('meta[name="twitter:image:alt"]').first()).toHaveAttribute('content', /\S/);
   }
 });
 

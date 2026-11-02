@@ -26,9 +26,13 @@ const group = {
 };
 
 describe('public group image authorization', () => {
-  it('renders a real public group and prefers its cover over member photos', async () => {
+  it('renders a public group and prefers its profile photo over its cover', async () => {
     mocks.group.mockResolvedValue({
-      group: { ...group, coverUrl: '/backend/groups/group-1/cover/cover-1' },
+      group: {
+        ...group,
+        avatarUrl: '/backend/groups/group-1/avatar/avatar-1',
+        coverUrl: '/backend/groups/group-1/cover/cover-1',
+      },
       posts: [],
     });
     mocks.image.mockResolvedValue('data:image/png;base64,AQID');
@@ -39,7 +43,7 @@ describe('public group image authorization', () => {
       description: group.description,
       image: 'data:image/png;base64,AQID',
     });
-    expect(String(mocks.image.mock.calls[0]?.[0])).toContain('/groups/group-1/cover/cover-1');
+    expect(String(mocks.image.mock.calls[0]?.[0])).toContain('/groups/group-1/avatar/avatar-1');
   });
   it('uses the identical brand fallback for private group and contest content without fetching media', async () => {
     const privateData = {

@@ -24,6 +24,24 @@ describe('SEO 출력', () => {
     expect(result.robots).toMatchObject({ index: true, follow: true });
   });
 
+  it('원본 사진에는 임의 크기를 붙이지 않고 생성 카드의 크기만 유지해야 한다', () => {
+    const metadata = createPageMetadata({
+      origin: 'https://moment.example',
+      path: '/groups/group-1',
+      title: '그룹',
+      description: '소개',
+      imageAlt: '그룹 사진',
+      images: [
+        'https://moment.example/backend/media/photo',
+        { url: 'https://moment.example/og/groups/group-1', width: 1200, height: 630 },
+      ],
+    });
+    expect(metadata.openGraph?.images).toEqual([
+      { url: 'https://moment.example/backend/media/photo', alt: '그룹 사진' },
+      { url: 'https://moment.example/og/groups/group-1', alt: '그룹 사진', width: 1200, height: 630 },
+    ]);
+    expect(metadata.twitter).toMatchObject({ images: metadata.openGraph?.images });
+  });
   it('검색 제외 페이지는 Google 이미지 색인도 허용하지 않아야 한다', () => {
     expect(
       createPageMetadata({

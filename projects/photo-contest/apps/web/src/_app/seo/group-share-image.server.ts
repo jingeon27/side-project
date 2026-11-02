@@ -34,8 +34,8 @@ export async function createGroupShareImage(groupId: string, contestId?: string)
     const contest = data.contest;
     if (contestId && !contest) return fallback();
     const media =
-      data.group.coverUrl ||
       data.group.avatarUrl ||
+      data.group.coverUrl ||
       data.posts.find((post) => post.kind === PostKind.Photo)?.mediaUrl;
     const image =
       media &&
