@@ -11,7 +11,6 @@ description: Write and revise this repository's Korean and English blog articles
 
 - [프로젝트 지침](../../../AGENTS.md)과 대상 글의 현재 본문, 메타데이터, 언어별 SEO를 읽는다.
 - 개인 스킬 `~/.agents/skills/blog-writing/SKILL.md`가 있으면 읽고 그 문체 피드백을 적용한다. 사용자가 새로 주는 수정 방향이 기존 예시보다 우선한다. 개인 스킬이 없는 환경에서도 현재 프로젝트 지침과 요청에 따라 글을 편집할 수 있다.
-- 이관 글의 코드나 원본 자료를 바꿔야 할 때는 [이관 안내](../../../docs/migration.md)를 확인한다. 가져오기 스크립트로 편집본을 덮어쓰지 않는다.
 
 ## 글의 근거
 

@@ -34,7 +34,6 @@ export const metaSchema = z
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),
     coverImage: z.string().startsWith('/images/').optional(),
-    sourceUrl: z.url().optional(),
   })
   .strict()
   .refine(
@@ -229,17 +228,6 @@ export async function readContent(root: string) {
       throw new Error(`Invalid redirect ${source} → ${destination}`);
     seenSources.add(source);
     redirects.push({ source, destination, statusCode: 301 });
-  }
-  for (const article of articles) {
-    if (!article.sourceUrl || article.locale !== 'ko') continue;
-    const original = new URL(article.sourceUrl);
-    if (original.hostname === 'jingeon27.tistory.com' && /^\/\d+$/.test(original.pathname)) {
-      redirects.push({
-        source: original.pathname,
-        destination: `/${article.locale}/blog/${article.slug}`,
-        statusCode: 301,
-      });
-    }
   }
   return { articles, imports, redirects };
 }

@@ -40,7 +40,7 @@ yarn workspace @blog/web test:e2e
 | `apps/web/messages/{ko,en}.json`          | 메뉴·소개 등 UI 문구                |
 | `apps/web/public/images`                  | 커버·본문 이미지                    |
 
-이후 글 수정은 이 프로젝트의 MDX에서 합니다. `resume/blog`는 이전 초안과 이관 자료이며 발행 원본이 아닙니다. 최초 티스토리 이관의 출처와 이미지 보존 내역은 [이관 기록](docs/migration.md)에 남깁니다. 편집한 글에 importer를 덮어 실행하지 않습니다.
+이후 글 수정은 이 프로젝트의 MDX에서 합니다. `resume/blog`는 이전 초안과 이관 자료이며 발행 원본이 아닙니다. 최초 티스토리 이관의 출처와 이미지 보존 내역은 [이관 기록](docs/migration.md)에 남깁니다.
 
 ## 콘텐츠 작성
 
