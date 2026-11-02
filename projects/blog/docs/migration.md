@@ -112,6 +112,8 @@ AI 활용 포트폴리오에 사용한 최근 화면 모음 두 장과 모니터
 
 같은 날 이관 당시 상태를 고정하던 `migration-manifest.json`, `code-comment-edits.json`, `code-redactions.json`과 `english-localizations.json`의 코드 해시, 이를 기준으로 삼던 코드·이미지·발행일 검사도 제거했다. 앞선 날짜의 기록에 나오는 해시 검사는 당시 상태를 설명하며, 이관 시점의 내용은 Git 이력에서 확인한다.
 
+slug 변경에 쓰던 `content/redirects.json`, `content/generated-redirects.json`과 공개 주소 누락 검사도 제거했다. 이제 slug를 바꾸거나 글을 내리면 예전 주소는 404가 된다.
+
 ## 화면 캡처 갱신
 
 2026-10-29에 side-project-design의 예전 모바일 화면 모음을 다시 촬영한 화면으로 교체했다. 이전 이미지는 삭제하거나 덮어쓰지 않았다. 제거된 전체 목록 답변 대기 버튼과 그룹 탐색 안내, 바텀시트 프로필 편집이 현재 화면으로 오해되지 않도록 Game Mate 피드, 피식 그룹 탐색, 공개 프로필과 별도 편집 페이지를 실었다. 캡처에는 격리된 테스트 계정과 가짜 게임 API를 사용했으며 촬영한 코드 revision, 경로, 크기와 이미지 해시는 [screen-captures.json](screen-captures.json)에 기록했다. 실제 화면 픽셀은 수정하지 않고 HTML과 CSS로 두 화면씩 배치해 브라우저에서 저장했다. 교체 경로는 image-replacements.json에 남겼다.

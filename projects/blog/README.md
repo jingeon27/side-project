@@ -54,7 +54,7 @@ MDX에는 `Summary`, `Decision`, `Callout`, `Figure`, `CodeBlock`을 사용할 �
 
 목록 썸네일은 `meta.json`의 `coverImage`를 우선 사용합니다. 별도 커버가 없으면 `apps/web/src/shared/article/lib/article-thumbnails.ts`에서 지정한 본문 그림이나 주제 도해를, 매핑도 없으면 중립 기본 이미지(`thumbnails/default.svg`)를 표시합니다. 새 글에는 주제에 맞게 만든 전용 이미지를 `coverImage`에 지정하고 본문에도 같은 이미지를 의미 있는 alt와 함께 넣습니다. 대체 썸네일은 기존 글을 위한 호환 처리이며 새 글의 커버를 대신하지 않습니다.
 
-Slug는 제목을 고쳐도 유지합니다. 공개 URL을 변경해야 하면 `apps/web/content/redirects.json`에 `{ "locale": "ko", "from": "old-slug", "to": "new-slug" }`을 추가합니다. 기존 URL에서 새 URL로 301을 반환하며 대상 글이 실제로 존재하는지 생성 단계에서 검사합니다. 공개했던 글 주소가 redirect 없이 사라지면 `content:generate`(커밋된 HEAD와 비교)와 `content:validate`(대상 브랜치와의 merge base와 비교, `CONTENT_BASE_REF` → `origin/$GITHUB_BASE_REF` → `origin/develop` 순)가 실패합니다. shallow clone처럼 기준 브랜치가 없으면 HEAD와 비교합니다.
+Slug는 제목을 고쳐도 유지합니다. redirect를 두지 않으므로 slug를 바꾸거나 글을 내리면 예전 주소는 404가 됩니다.
 
 카테고리는 `engineering`, `til`, `perspectives`, `misc` 네 가지이며 글이 있는 카테고리만 페이지·사이트맵·`hreflang`에 공개합니다. 태그는 두 언어가 함께 쓰므로 영문 소문자 slug(`refactoring`)로 씁니다. UI 문구는 `messages`, SEO는 `seo`, 본문은 `content/posts`에서 관리합니다. 코드 구조는 `app → widgets → features → shared`이며 범용 `components/` 디렉터리는 만들지 않습니다.
 
