@@ -59,7 +59,7 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
         .map((game) => (
           <nav key={game.id} aria-label={t('{game} 게시판', { game: game.name })}>
             <Link className="game-side-link" href={gameBoardPath(locale, 'FEEDBACK', game.slug)}>
-              <GameIcon slug={game.slug} size={40} />
+              <GameIcon slug={game.slug} />
               <strong>{game.name}</strong>
             </Link>
             <div className="game-submenu">

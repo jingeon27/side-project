@@ -12,6 +12,9 @@ for (const width of [1024, 1280, 1920]) {
       '/ko',
     );
     await expect(sidebar.getByText('둘러보기', { exact: true })).toHaveCount(0);
+    const gameIcon = sidebar.getByRole('link', { name: '클래시로얄', exact: true }).locator('img');
+    await expect(gameIcon).toHaveCSS('width', '28px');
+    await expect(gameIcon).toHaveCSS('height', '28px');
     const card = page.locator('.post-card:visible').first();
     await expect(card).toBeVisible();
     const populatedMain = await main.boundingBox();
