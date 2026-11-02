@@ -1,24 +1,22 @@
 <Summary>
 
-Some components made me read query sequencing and calculations before I could see the screen. These examples show how I separated composition from detail in review pages, filters, and coupon calculations.
+Some components made me read query sequencing and calculations before I could see the screen. These cases, a review detail page, a settlement summary, search filters, and coupon calculations, show how I separated what a screen contains from how it gets made.
 
 </Summary>
 
 ![An illustration of tangled processing paths organized into blocks with distinct roles.](/images/covers/declarative-code.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+In a review, I sometimes have to reconstruct a screen before I can check it for missing conditions. When JSX includes query sequencing and calculations, understanding what appears requires following all that behavior first. Only then do the missing conditions or duplicated state I came looking for show up.
 
-In a review, I sometimes have to reconstruct a screen before checking its missing conditions. When JSX includes query sequencing and calculations, understanding what appears requires following all that behavior first.
+That is why I prefer declarative code: opening a component should first show what the screen contains. In this article, declarative means the code says first what is there, and how it gets made only shows up once you go inside. Writing `<table>` in HTML works the same way, naming a table without describing how to draw it. I can open the relevant part to learn how an image opens or a total is calculated.
 
-That is why I prefer declarative code: opening a component should first show what the screen contains. I can open the relevant part to learn how an image opens or a total is calculated.
-
-These choices came from changing actual code, and I recorded them in skills for agents to follow. Examples include only the relevant portions, with some internal names changed.
+These choices came from changing actual code. The examples come from the benefits portal, where users find and book hospital programs, and from admin apps such as Back-Office, used on the operations side. Where the earlier shape is available, before and after sit side by side. Where an example is not the actual code, I say it was shortened or written to illustrate the point. I recorded the choices in skills, the instruction documents coding agents read, for agents to follow. Examples include only the relevant portions, with some internal names changed.
 
 ## Splitting components
 
-I look for places where reading component names suddenly turns into reading detailed JSX. Constantly changing that reading scale makes the composition harder to see.
+I look for places where reading component names suddenly turns into reading detailed JSX. Constantly changing that reading scale makes the composition harder to see. People often call this keeping one level of abstraction.
 
-Review details include review information, payment information, visit evidence, and history. Extracting only the first two leaves this shape.
+Review details include review information, payment information, visit evidence, and history. Extracting only the first two leaves this shape, shortened here for comparison.
 
 ```tsx
 <>
@@ -37,7 +35,7 @@ Review details include review information, payment information, visit evidence, 
 </>
 ```
 
-ReviewInfo and PaymentInfo can be read by name. Visit evidence suddenly requires following one image's rendering, although it is another section of the same screen.
+`ReviewInfoDescriptions` and `ReviewPaymentDescriptions` can be read by name. Visit evidence suddenly requires following one image's rendering, although it is another section of the same screen.
 
 I gave visit evidence the same treatment.
 
@@ -50,15 +48,34 @@ I gave visit evidence the same treatment.
 </>
 ```
 
-This JSX shows which sections exist. ReviewReceiptImages contains the details of visit evidence, including its title, so changes to that section do not require finding a title in the parent and images in the child.
+This JSX shows which sections exist. `ReviewReceiptImages` contains the details of visit evidence, including its title, so changes to that section do not require finding a title in the parent and images in the child.
 
-I move section-specific handlers and calculations along with JSX. Otherwise the parent still owns the details. Reuse in another screen is not required for this split to help.
+I move section-specific handlers and calculations along with JSX. Otherwise the parent still owns the details. I tend to create these screen-specific components even when they are used in only one place.
 
-## Fetch data where it is needed
+## Fetching where the data is needed
 
-Splitting JSX alone leaves a similar problem if the parent fetches everything. Every child adds queries and props, and intermediate components keep forwarding data they do not use.
+Splitting JSX alone leaves a similar problem if the parent fetches everything. Every child adds queries and props, and intermediate components keep forwarding data they do not use. This example was written to illustrate that shape.
 
-The Back-Office settlement page passes a hospital ID and arranges statistics, deposit records, and per-branch records.
+```tsx
+// Written for illustration: the page holds all three queries and a visibility condition.
+function SettlementSummaryPage({ partnerId }: { partnerId: number }) {
+  const stats = useQuery(statsOptions(partnerId));
+  const deposits = useQuery(depositOptions(partnerId));
+  const branches = useQuery(branchOptions(partnerId));
+
+  return (
+    <>
+      <StatsDescription stats={stats.data} />
+      <DepositTable deposits={deposits.data} />
+      {branches.data?.visible && <BranchTable rows={branches.data.rows} />}
+    </>
+  );
+}
+```
+
+To read this page, you pass three queries and the branch table's visibility condition before seeing which tables exist.
+
+The Back-Office settlement summary, which shows settlement per hospital, has its page pass a hospital ID and arrange statistics, deposit records, and per-branch records.
 
 ```tsx
 <>
@@ -76,17 +93,17 @@ The Back-Office settlement page passes a hospital ID and arranges statistics, de
 
 Statistics fetches the hospital information it needs; the branch table decides its own visibility. The page shows the tables being arranged before their data preparation.
 
-All three read the settlement summary, so `useSettlementSummary` connects their URL query conditions. Each component subscribes to the same queryKey's cache, avoiding individually specified parameters drifting apart.
+All three read the settlement summary, so `useSettlementSummary` connects their URL query conditions. Each component subscribes to the same `queryKey`'s cache. TanStack Query treats queries with the same `queryKey` as one cache entry, so components calling it together wait on the same in-flight request. This also avoids individually specified parameters drifting apart.
 
-Fetching within sections also allows local error boundaries. [The error-handling article](/en/blog/error-boundary-recovery) describes keeping one failed table query from replacing an entire page.
+Fetching within sections also allows local error boundaries. An error boundary is a React component that catches rendering errors from its children and shows a fallback. [The error-handling article](/en/blog/error-boundary-recovery) describes keeping one failed table query from replacing an entire page.
 
 Selected rows and draft input still pass through props when the parent must coordinate them. Data obtainable through a query differs from state held only for the current screen.
 
 ## Fixed UI and data-driven lists
 
-The benefits portal's search has Chips for regions, medical departments, coupons, and events. Regions and departments open a Bottom Sheet; benefit Chips toggle selection. Available Chips also depend on the tab.
+The benefits portal's search has Chips, small filter buttons in a row, for regions, medical departments, coupons, and events. Regions and departments open a Bottom Sheet that slides up from the bottom of the screen; benefit Chips toggle selection. Available Chips also depend on the tab.
 
-Previously, a configuration array held Chip labels, click handlers, selection, and visibility. The following map rendered it.
+Previously, a configuration array held Chip labels, click handlers, selection, and visibility. The following `map` rendered it.
 
 ```tsx
 return FILTER_CHIPS_CONFIG
@@ -105,9 +122,9 @@ return FILTER_CHIPS_CONFIG
   ));
 ```
 
-To discover the program tab's Chips, I had to find that array and inspect visible on each entry. Even a coupon-only icon required extending the configuration to represent the difference.
+To discover the program tab's Chips, I had to find that array and inspect `visible` on each entry. `label` could be a string or a function, and `onClick` received both the sheet opener and the toggle, so learning what one Chip did meant moving back and forth between its array entry and this `map`. Even a coupon-only icon required extending the configuration to represent the difference.
 
-I made each Chip a component and listed the Chips included in each tab separately.
+I made each Chip a component and listed the Chips included in each tab separately. The keys combine the tab and the search type.
 
 ```tsx
 const FILTER_CONFIG: Record<SearchFilterCase, ComponentType<IFilterChipProps>[]> = {
@@ -128,9 +145,9 @@ const FILTER_CONFIG: Record<SearchFilterCase, ComponentType<IFilterChipProps>[]>
 };
 ```
 
-The integrated search in the program tab is now visible under `program_integrated`. Adding coupons to another tab means adding CouponChip to its array.
+The integrated search in the program tab is now visible under `program_integrated`. Adding or removing coupons on a tab means changing `CouponChip` in its array.
 
-Coupon-specific selected styling is defined here. BenefitChip shares the toggle behavior with other benefits.
+Coupon-specific selected styling is defined here. `BenefitChip` shares the toggle behavior with other benefits.
 
 ```tsx
 function CouponChip(_: IFilterChipProps) {
@@ -145,11 +162,11 @@ function CouponChip(_: IFilterChipProps) {
 
 Search Chips kept component arrays because combinations differ by tab. Those arrays now describe composition, with behavior inside each Chip. I usually write fixed menus and tabs directly in JSX.
 
-map fits server-provided lists and repeated shapes. When a configuration must encode every difference between fixed buttons, I prefer reading the buttons themselves over interpreting that configuration.
+`map` fits server-provided lists and repeated shapes. When a configuration must encode every difference between fixed buttons, I prefer reading the buttons themselves over interpreting that configuration.
 
 ## Sharing search filters
 
-A shared component had also learned screen-specific details. The admin date filter chose consultation field names from a consultationDate key.
+A shared component had also learned screen-specific details. The search filter on admin screens is a form that takes query conditions such as keywords and date ranges, and each date range has separate start and end fields. Its date input chose consultation field names from a `consultationDate` key.
 
 ```typescript
 const isConsultationDate = filter.key === 'consultationDate';
@@ -157,7 +174,7 @@ const startKey = isConsultationDate ? 'consultationStartDt' : 'reservationStartD
 const endKey = isConsultationDate ? 'consultationEndDt' : 'reservationEndDt';
 ```
 
-Adding another date type meant editing that branch. The shared input did not need to know reservation-management fields, so callers now provide the start and end names.
+Adding another date type meant editing that branch. Someone reading the screen also had to open the shared component to learn which field a value went into. The shared input did not need to know reservation-management fields, so callers now provide the start and end names.
 
 ```tsx
 const SearchFilter = createSearchFilter(
@@ -194,7 +211,7 @@ const SearchFilter = createSearchFilter(
 </SearchFilter>
 ```
 
-The screen shows which fields represent consultation and reservation dates. SearchFilter handles form creation, URL population, and reset; each screen keeps its filter combination and submission.
+The screen shows which fields represent consultation and reservation dates. `SearchFilter` handles form creation, URL population, and reset; each screen keeps its filter combination and submission.
 
 Field-name typos cause type errors. `createSearchFilter` infers types from Zod, and `createTypedForm` checks field paths against them. URL parsing uses the same schema.
 
@@ -202,7 +219,7 @@ Several screens share this form behavior, so I combined it. A feature needed by 
 
 ## Code that derives values
 
-I also want calculations to expose the meaning used by the screen. The coupon pack shows a maximum-benefit heading and rows of conditions and quantities. Fixed amounts cannot be added directly to percentage rates, and repeated coupons need a display rule.
+I also want calculations to expose the meaning used by the screen. In the benefits portal, finishing affiliation verification shows the coupon pack that was issued. It has a maximum-benefit heading above and rows of conditions and quantities below. A fixed coupon takes off a set amount, while a percentage coupon takes off a rate up to a cap. Fixed amounts cannot be added directly to percentage rates, and repeated coupons need a display rule.
 
 I first defined the amount represented by one coupon: its fixed discount or its percentage-discount cap.
 
@@ -223,9 +240,28 @@ export const getCouponPackMaxBenefitManwon = (coupons: TMemberCouponDTO[]) => {
 };
 ```
 
-The header adds each coupon type's maximum once. Because the list also groups the same template into one row, I use `uniqBy` before adding. Two fixed 30,000-won coupons plus a different percentage coupon capped at 25,000 won produce a header of “up to 50,000 won.” This describes benefits by type in the pack, using different rules from an actual checkout discount.
+The header adds each coupon type's maximum once. Because the list also groups the same template into one row, I use `uniqBy` before adding. Two fixed 30,000-won coupons plus a different percentage coupon capped at 25,000 won add up to 55,000 won, which rounds down to the 10,000-won unit for a header of “up to 50,000 won.” This describes benefits by type in the pack, using different rules from an actual checkout discount.
 
-getCouponMaxDiscount chooses the value by discount type. Aggregation can then focus on which coupons to retain and the display unit. match returns each case's value, while .exhaustive() catches an omitted type during type checking.
+`getCouponMaxDiscount` chooses the value by discount type. Aggregation can then focus on which coupons to retain and the display unit. Written as a single loop, the same calculation looks like this. It is not the earlier code; I wrote it for comparison.
+
+```typescript
+// Written for comparison: deduplication, discount-type branching, and summing share one loop.
+const seen = new Set<number>();
+let total = 0;
+
+for (const coupon of coupons) {
+  if (seen.has(coupon.couponTemplateId)) continue;
+  seen.add(coupon.couponTemplateId);
+
+  total += coupon.discountType === COUPON_DISCOUNT_TYPE.Percentage
+    ? coupon.maxDiscountAmount
+    : coupon.discountValue;
+}
+
+return Math.floor(total / 10000);
+```
+
+To review this, you have to track how `seen` and `total` change line by line before you know what the amount adds up. The ternary also silently uses `discountValue` when a new discount type appears. In the earlier code, `match` returns each case's value, while `.exhaustive()` catches an omitted type during type checking.
 
 Grouping a coupon type into one row still needs to preserve its quantity.
 
@@ -244,11 +280,23 @@ export const groupCouponsByTemplate = (coupons: TMemberCouponDTO[]): TCouponGrou
 
 `countBy` counts quantities, which are attached to each unique coupon. The UI renders the discount condition and a quantity such as “2 coupons” without searching or counting again inside JSX.
 
-uniqBy, countBy, and sumBy show what is grouped and added. Here I chose a readable explanation of the displayed amount over trying to reduce the number of iterations.
+When I read calculations like this, I want to see what they group by and what they add before loop indexes or running totals. `uniqBy`, `countBy`, and `sumBy` show that in their names. Here I chose a readable explanation of the displayed amount over trying to reduce the number of iterations.
 
-### Avoid managing the same value twice
+### Managing one value in one place
 
-Search conditions live in the URL. Chip selection can be derived there too.
+Search conditions live in the URL. Chip selection can be derived there too. Previously, URL values were copied to state and synchronized by an effect. Here is a shortened example.
+
+```typescript
+const [filterState, setFilterState] = useState(() =>
+  urlParamsToFilterState(currentParams),
+);
+
+useEffect(() => {
+  setFilterState(urlParamsToFilterState(currentParams));
+}, [currentParams]);
+```
+
+Effects run after rendering, so right after the URL changes this shape renders once with the old selection. With the same value in two places, a reviewer also has to ask which one is right. Now selection is calculated directly.
 
 ```typescript
 const currentParams = useTypedQueryParams({
@@ -261,13 +309,26 @@ const filterState = useMemo(
 );
 ```
 
-Previously, URL values were copied to state and synchronized by an effect. Now selection is calculated directly. Clicking a Chip changes the URL, and selection follows. That removes state requiring synchronization. [React's state-structure guidance](https://react.dev/learn/choosing-the-state-structure#avoid-redundant-state) discusses this redundancy.
+`useTypedQueryParams` is a hook that reads URL parameters according to a schema. Clicking a Chip changes the URL, and selection follows. That removes state requiring synchronization. [React's state-structure guidance](https://react.dev/learn/choosing-the-state-structure#avoid-redundant-state) discusses this redundancy.
 
 Bottom Sheet choices remain in a separate form while being edited. Results should not change until Apply writes them to the URL. That draft serves a different purpose from copying already-applied conditions into synchronized state.
 
-## Define query conditions alongside the query
+## Query conditions in the definition
 
-I keep execution conditions with query definitions too. queryOptions combines the key and function; components subscribe through useQuery. This client query skips requests when its ID is absent.
+I keep execution conditions with query definitions too. In TanStack Query, `queryOptions` defines the key and function as one unit, and components subscribe to that definition through `useQuery`.
+
+Guarding a query that needs an ID with `enabled` alone leaves the missing ID in the types inside the query function, which leads to an assertion. This is a shortened example.
+
+```typescript
+// Shortened example: enabled does not narrow the type inside queryFn.
+useQuery({
+  queryKey: ['fetchProgramDetail', programId],
+  queryFn: () => fetchProgramDetail({ programId: programId! }),
+  enabled: !!programId,
+});
+```
+
+A reader has to see `enabled` and `!` together to know this is safe. This client query skips requests when its ID is absent. `skipToken` is a value placed where `queryFn` goes to mark the query as not running for now.
 
 ```typescript
 export const programDetailOptions = (programId?: number) =>
@@ -281,11 +342,11 @@ export const programDetailOptions = (programId?: number) =>
 const { data, isLoading } = useQuery(programDetailOptions(programId));
 ```
 
-The caller supplies the ID. The function is created only in the branch where it exists, avoiding programId! assertions.
+The caller supplies the ID. The function is created only in the branch where it exists, avoiding `programId!` assertions.
 
-A hook that returns useQuery unchanged adds another file to follow. Returning only some results also makes later refetch or isFetching needs require wrapper changes. I use hooks when they connect URL conditions or combine queries, as useSettlementSummary does.
+A hook that returns `useQuery` unchanged adds another file to follow. Returning only some results means the wrapper has to change when `refetch` or `isFetching` is needed later. I use hooks when they connect URL conditions or combine queries, as `useSettlementSummary` does.
 
-Manual refetching needs care: `skipToken` provides no query function to run in that state. For such a case, I can use `enabled` instead. [The TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/disabling-queries) explains the distinction.
+Manual `refetch` needs care: `skipToken` provides no query function to run in that state. For such a case, I can use `enabled` instead. [The TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/disabling-queries) explains the distinction.
 
 ## Reading tests
 
@@ -309,15 +370,24 @@ it('removes only that parameter when an active benefit chip is clicked again', (
 });
 ```
 
-renderSearchFilter prepares route mocks and Query cache. writtenParams reads the URL written through History API. The selected benefit and expected values stay in this test.
+`renderSearchFilter` prepares route mocks and Query cache. `writtenParams` reads the URL written through History API. The selected benefit and expected values stay in this test.
 
-Checking hasEvent matters because other benefits must survive. Checking only that todayDiscount disappeared would miss an implementation deleting both. A helper hiding that condition would make it harder to notice from the test name.
+Checking `hasEvent` matters because other benefits must survive. Checking only that `todayDiscount` disappeared would miss an implementation deleting both. Moving the action and the expectations into a helper produces something like this, written here for illustration.
 
-New behavior specifications use BDD-style `*.spec`; production or QA bugs use `*.test`. I use `it.each` when only inputs differ, and separate tests when behavior differs.
+```typescript
+// Written for illustration: the action and expectations moved into a helper.
+it('removes only that parameter when an active benefit chip is clicked again', () => {
+  expectBenefitToggleRemovesOnly('todayDiscount');
+});
+```
+
+The name is the same, but you have to open the helper to learn whether anything checks that `hasEvent` survives. The test name alone would not make that easy to notice.
+
+New behavior specifications use BDD-style `*.spec`; production or QA bugs use `*.test`. BDD style here means writing the expected behavior as a sentence, like the test name above. I use `it.each` when only inputs differ, and separate tests when behavior differs.
 
 ## When the same review comment returns
 
-Repeated comments about abstraction levels and query placement become examples in skills. Import and query patterns lint can decide become rules. This separates explanations worth keeping from mistakes the code can flag directly.
+Repeated comments about abstraction levels and query placement become examples in skills, since fixing only the code lets the same shape come back on the next task. Import and query patterns lint can decide become rules. This separates explanations worth keeping from mistakes the code can flag directly.
 
 Shorter code still deserves another look if it takes more files to understand the screen. In a refactoring, I look for composition in the screen and detailed calculations where those calculations are performed.
 

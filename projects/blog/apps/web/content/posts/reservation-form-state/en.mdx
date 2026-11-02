@@ -1,22 +1,52 @@
 <Summary>
 
-Adding a family member left reservation dates behaving as if the old participant count still applied. I separated the server's family list from user selections and moved ongoing edits into React Hook Form.
+Adding a family member to a hospital reservation form left date selection behaving as if the old participant count still applied. A server response cache, a global store, and component state each held their own copy of the same selections and dates. I separated the family list the server owns from the choices the user makes, and moved ongoing edits into React Hook Form alone.
 
 </Summary>
 
 ![An illustration of participant rows and shared dates managed within a reservation form.](/images/covers/reservation-form-state.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+After adding a family member to a reservation form, picking a date still behaved according to the number of people from before the addition.
 
-A reservation bug appeared after adding a family member: date selection still behaved according to the old number of people. The screen selected dates, times, and participants, but several places changed those values.
+The screen books a hospital visit. A user picks a preferred date and time, checks who will be seen from among themselves and their registered family members, and applies. Someone missing from the list can be added right there: finishing family verification in a sheet that slides up from the bottom of the screen adds them to the server's family list. The bug appeared after going through that addition.
 
-React Query held the family list. Zustand stored participants and their dates again, while component-local state held the latest date choice. Changing one required copying values to the others, and adding a person involved both cache and store.
+All the screen did was select dates, times, and participants, yet several places changed those values. React Query held the family list. It is a library that keeps server responses in the browser for reuse and fetches them again when needed. Here each person in the query result also carried a selection and a preferred date and time, so ongoing edits lived in the cache as well. Zustand stored participants and their dates again. Zustand is a global state library that creates a store outside your components, which any component can read and change. The latest date choice also sat in component-local state (`useState`).
 
-I left the server list in React Query, moved selection and preferred dates into the form, and gathered submission rules in Zod. The important change was avoiding the repeated reconciliation of the same choices.
+The three places had different lifetimes too. The participant list was not refetched for 10 minutes after each fetch, and selections and dates stayed in the cache that long even after the user left the screen. The store is global, so nothing emptied it automatically, and the reservation page and the participant component each cleared it when they unmounted. Only local state went away with its component.
 
-## Every value change also updated stored validity
+Laid out side by side, the same values keep repeating. Selection and preferred date and time exist per person in both the cache and the store, and preferred dates are scattered through local state as well.
 
-The Zustand store held the draft and isValid together.
+![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01-en.png)
+
+The bug came after adding a person, so that is the path to follow. Adding a family member backed up the current IDs, waited for the family verification sheet to finish, and refetched the list. It then restored selections and dates and gave a date to anyone missing from the backup. Shortened into code, the flow looks like this. It is not the actual code, only an example I wrote to illustrate those steps.
+
+```typescript
+// A shortened example. The function names are made up for this post.
+async function addFamilyMember() {
+  const before = readCachedList();
+  rememberExistingIds(before.map(({ memberId }) => memberId));
+
+  await waitForVerificationSheet();
+  const fresh = await refetchList();
+
+  writeCachedList(
+    fresh.map((person) => {
+      const previous = before.find(({ memberId }) => memberId === person.memberId);
+
+      // Existing people get their earlier selection and date back; only new family members get the page's date.
+      return previous
+        ? { ...person, selected: previous.selected, schedule: previous.schedule }
+        : { ...person, schedule: pageSchedule };
+    }),
+  );
+}
+```
+
+All of that happened in the cache. The store received the new person only after they were checked, with a date copied from the cache, and `applyScheduleToAll` changed only the people already in the store. The cache and store could therefore hold independently changing dates for the same person.
+
+## When `validateDraft` goes missing
+
+Validity had the same arrangement. The Zustand store kept `isValid`, which decides whether the application button is enabled, right next to the draft.
 
 ```tsx
 type BookingDraftStore = {
@@ -29,7 +59,7 @@ type BookingDraftStore = {
 };
 ```
 
-Actions changing participants or dates ended with validateDraft.
+`isValid` can be computed from the values, but because it was stored separately, something had to recompute it after each change. So actions changing participants or dates ended with `validateDraft`.
 
 ```typescript
 updateParticipant: (memberId, values) =>
@@ -39,27 +69,23 @@ updateParticipant: (memberId, values) =>
   });
 ```
 
-Existing actions called it, but a new action could omit it and leave the button reading old validity for new values. Family additions and removals also required aligning people in the cache with the store array.
-
-![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01-en.png)
-
-*Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.*
-
-Adding a family member backed up existing IDs, refetched the list, restored selections and dates, and supplied a date to the new person. Yet the store received that person only after they were checked. The cache and store could therefore hold independently changing dates for the same person.
+Every action at the time called it, but a new action could easily omit it and leave the button reading old validity for new values. Family additions and removals also required aligning people in the cache with the store array. Removal shows the mismatch: the store dropped the person before the server request went out, while the cache dropped them after the server deletion finished.
 
 Zustand itself was not the cause. Server membership data had been mixed with ongoing selections and dates, then copied into another store.
 
-## Read people from the server and edit selections in the form
+## People from the server, selections in the form
 
-React Query now supplies names and family membership. React Hook Form holds selected people and preferred dates; Zod derives validity from them. Only the picker's display and unconfirmed sheet choices remain local.
+Sorted by where they come from, these values are of two kinds. The family list and names have their source on the server. The browser holds a copy, and fetching again may return something different. Who was selected and which date was preferred exist only in the browser until submission. Asking the server again cannot bring them back. That is why the earlier flow had to back up and restore selections on every refetch: both kinds lived in the same cache entry.
+
+What I needed was to stop reconciling the same choices, whichever place stored them. React Query now supplies names and family membership. React Hook Form holds selected people and preferred dates, and Zod derives validity from them. React Hook Form is a library that manages a form's values, errors, and validity in one object created by `useForm`. Zod writes the conditions on a value as a schema and compares real values against it. Only the picker's display and unconfirmed sheet choices remain local.
+
+Each value now has a single owner. In exchange, a synchronization hook has to align the form array whenever the server list changes. Here is the state layout after the refactoring.
 
 ![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02-en.png)
 
-*After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.*
-
 The picker display is separate from submitted values too. A sheet keeps temporary choices until confirmation writes them to the form. The overlay library opens and closes the sheet.
 
-Other screens do not need to share the reservation draft, so I placed FormProvider on the page. A shared hook called useSchemaForm connects zodResolver, and a synchronization hook in ParticipantSelector fills the initially empty participants array from the server. Both names are publication aliases.
+Other screens do not need to share the reservation draft, so I placed `FormProvider` on the page. Components under `FormProvider` get the same form through `useFormContext` without passing props. A shared hook called `useSchemaForm` connects `zodResolver` (the adapter that turns a Zod schema into form validation), and a synchronization hook in `ParticipantSelector` fills the initially empty `participants` array from the server. Both names are publication aliases.
 
 ```tsx
 function BookingPage() {
@@ -84,15 +110,15 @@ function BookingPage() {
 }
 ```
 
+Once a time is selected, the form copies the common date and time to every participant, and the application button turns on when all schema conditions pass.
+
 ![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03-en.png)
 
-*After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.*
+The `participants` array contains server-owned names and IDs alongside user-edited selections and dates. Requests include unselected people with their `selected` flag too. Refetching server membership must therefore preserve the choices already made in the form.
 
-The participants array contains server-owned names and IDs alongside user-edited selections and dates. Requests include unselected people with their selected flag too. Refetching server membership must therefore preserve the choices already made in the form.
+Creating the form within the page also removed screen-specific cleanup code that emptied the global Zustand store. Leaving the screen discards the draft along with the form.
 
-Creating the form within the page also removed screen-specific cleanup code that emptied the global Zustand store.
-
-## Read validity from the form, but inspect when it recalculates
+## Why does the button update on time?
 
 I moved reservation conditions into this schema.
 
@@ -126,19 +152,21 @@ export const BookingFormSchema = z
   });
 ```
 
-Submission requires a selected person and common preferredDate and preferredTime values. Per-person dates and times are checked only as strings. Until the picker completes time selection, the common values are not ready and submission remains unavailable.
+Submission requires a selected person and common `preferredDate` and `preferredTime` values. `superRefine` adds a condition that no single field can decide; here it looks across the array for a selected person. Per-person dates and times are checked only as strings. Until the picker completes time selection, the common values are not ready and submission remains unavailable.
 
-The button reads formState.isValid instead of another validity state. The schema defines error locations and messages, although this screen still shows invalidity only by disabling the button rather than displaying field errors.
+The button reads `formState.isValid` instead of another validity state, which is what replaced calling `validateDraft` in every action. The schema defines error locations and messages, although this screen still shows invalidity only by disabling the button rather than displaying field errors.
 
-Moving to a library did not make validation timing explicit. Neither useSchemaForm nor its reservation caller sets mode. The date handler omits shouldValidate on setValue, while checkboxes and individual date edits use useFieldArray.update.
+Moving to a library did not make validation timing explicit, though. Nothing in the code says why the button updates on time. `mode` is the `useForm` option that decides when validation runs, and it defaults to submission, but neither `useSchemaForm` nor its reservation caller sets it. `setValue` changes a field from code and also validates afterward if you pass `shouldValidate`, which the date handler omits. Checkboxes and individual date edits use `update` from `useFieldArray`, a hook for array-shaped fields that returns functions such as `update`, `append`, and `remove`.
 
-Following the React Hook Form 7.56 source showed why the button still updates: participants is a field array. Subscribing to isValid recalculates validity for registered or Controller-connected input changes even in default submit mode. A standalone setValue without shouldValidate does not. Here setValue replaces the whole array managed by useFieldArray, which recalculates validity after the change.
+Following the React Hook Form 7.56 source showed that the answer was the `participants` field array. Subscribing to `isValid` recalculates validity for changes in inputs connected through `register` or `Controller` (the ways of connecting an input to the form), even in default submit mode. A standalone `setValue` without `shouldValidate` does not. Here `setValue` replaces the whole array managed by `useFieldArray`, which recalculates validity after the change.
 
-Changing only date fields without touching that array could bypass this behavior. Values could update while the button stayed unchanged. Explicit caller mode or shouldValidate on the relevant updates remains an unfinished change.
+Changing only date fields without touching that array could bypass this behavior. As when `validateDraft` went missing from the store, values could update while the button stayed unchanged. Explicit caller `mode` or `shouldValidate` on the relevant updates remains an unfinished change.
 
-## Reflect family changes without discarding ongoing edits
+## What `useSyncParticipants` keeps aligned
 
-Refetching family membership must not erase chosen dates. useBookingParticipants combines member information and the family query with the member first. The synchronization hook aligns the form to that list and leaves it alone while member information is null.
+Refetching family membership must not erase chosen dates. That was the job of the backup and restore in the old structure. `useBookingParticipants` combines member information and the family query with the member first. The synchronization hook aligns the form to that list and leaves it alone while member information is `null`.
+
+In the code below, `useWatch` subscribes to a field and re-renders the component using the hook when its value changes. `intersectionBy` and `differenceBy` are utility functions that compute the intersection and difference of two arrays by a key.
 
 ```tsx
 // Create an entry by combining server values with the form's common preferred date and time.
@@ -195,19 +223,19 @@ function useSyncParticipants() {
 }
 ```
 
-Initial population uses server defaults: the member starts selected and existing family members unselected. A family member added afterward arrives with selected: true and immediately joins the reservation.
+Initial population uses server defaults: the member starts selected and existing family members unselected. A family member added afterward arrives with `selected: true` and immediately joins the reservation.
 
-InitParticipant reads the common preferredDate and preferredTime from the form for each new person. Adding someone after choosing a date supplies that date to the new row. Existing people retain their current form values, preserving individual selections and schedules.
+This is where the original scene changes. `initParticipant` reads the common `preferredDate` and `preferredTime` from the form for each new person. Adding someone after choosing a date supplies that date to the new row. Existing people retain their current form values, preserving individual selections and schedules.
+
+The hook has four branches: initial population, addition, removal, and doing nothing when the counts match. Length chooses the operation, and `memberId` identifies which people to retain or add.
 
 ![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04-en.png)
 
-*Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.*
+This implementation reconciles people only when array lengths differ. A replaced `memberId` at the same count or a name-only change leaves the array untouched. It handles additions and removals, not every same-length replacement or refreshed server field.
 
-This implementation reconciles people only when array lengths differ. A replaced memberId at the same count or a name-only change leaves the array untouched. It handles additions and removals, not every same-length replacement or refreshed server field.
+## Applying a common date and time
 
-## Write common and individual schedules into the form
-
-The picker emits date and time together after time selection. The page handler writes both the common fields and each participant's schedule.
+Before, a chosen date and time went up into page state, and the participant component started bulk updates to the cache and store only after comparing it with the last selection. Now the picker emits date and time together after time selection. The page handler writes both the common fields and each participant's schedule.
 
 ```typescript
 const handleScheduleSelect = useCallback(
@@ -226,17 +254,17 @@ const handleScheduleSelect = useCallback(
 );
 ```
 
-Passing the new schedule as overrides to initParticipant preserves selection. Choosing a common time reveals a change action on each person's card; confirming an individual sheet updates that person through useFieldArray.update. Choosing another common schedule overwrites individual changes too.
+Passing the new schedule as overrides to `initParticipant` preserves selection. Writing a date separately to the cache, store, and local state collapsed into this one form update. Choosing a common time reveals a change action on each person's card, and confirming an individual sheet updates that person through `update` from `useFieldArray`. Choosing another common schedule overwrites individual changes too.
 
-Only the participant-list component calls useFieldArray. The page handler and synchronization hook replace the array through setValue without shouldDirty or shouldValidate. That is the path responsible for the button behavior described earlier.
+Only the participant-list component calls `useFieldArray`. The page handler and synchronization hook replace the array through `setValue` without `shouldDirty` or `shouldValidate`. That is the path responsible for the button behavior described earlier.
 
-## A form still needs a connection to server membership
+## What the form did not remove
 
-ParticipantSelector assembles the selection UI, with family selection in a child component. A separate hook reflects the server list in the form array. I removed the Zustand store after separating code that had coordinated the cache, store, and local state to keep dates aligned.
+`ParticipantSelector` assembles the selection UI, with family selection in a child component. A separate hook reflects the server list in the form array. I removed the Zustand store after separating code that had coordinated the cache, store, and local state to keep dates aligned. The source of a new family member's common date is now inside the form, and giving that person a value no longer involves backing up selections and restoring them.
 
-React Hook Form still needs Controller connections for custom inputs and synchronization between server membership and ongoing edits. This form also leaves validation and dirty updates implicit, relying on field-array behavior. Automated synchronization tests have not yet been added.
+The connection to server membership did not go away. React Hook Form still needs code that reconciles the server list with ongoing edits, and as shown above that code acts only when lengths differ. Custom inputs still need `Controller`. This form also leaves validation and dirty updates implicit, relying on field-array behavior.
 
-The source of a new family member's common date is now inside the form. Adding it no longer involves backing up selections in the cache and restoring them in the store.
+Automated synchronization tests have not been added yet either. If the original bug came back through this code, no test would catch it first.
 
 ## References
 

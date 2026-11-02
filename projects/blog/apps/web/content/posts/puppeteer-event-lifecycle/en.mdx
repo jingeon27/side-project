@@ -1,16 +1,16 @@
 <Summary>
 
-An Electron collector needed request headers and file information before it could continue. A closure collected the values, while a Promise ended the wait and cleaned up the listeners.
+After reloading a page, an Electron collector had to wait until it had caught both a request's headers and a file's password. Fixing the code that polled a variable every second, I let a closure collect the values and a Promise end the wait and clean up the listeners.
 
 </Summary>
 
 ![An illustration of connecting request and response listeners before triggering browser work.](/images/covers/puppeteer-event-lifecycle.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+An [Electron collection app](/en/blog/electron-module-boundaries) had a step that downloaded password-protected files. The app drives a browser with Puppeteer, which also exposes a page's network traffic as events. With `page.on('request', callback)` the callback runs each time the page issues a request, and with `page.on('response', callback)` each time it receives a response.
 
-One task reloaded a page through Puppeteer and read information from its network events. A request supplied headers for the next API call; a response supplied a value needed to open a downloaded file. The next task could not start with only one of them.
+This step reloaded the page and read information from those events. A request supplied headers for the next API call; a response supplied a value needed to open a downloaded file. The next task could not start with only one of them.
 
-My first approach let a callback fill an outer variable, then polled that variable until a result appeared.
+A callback runs whenever an event happens, while the collection code needs to wait until a value is ready and then move to the next line. The question was how to connect the two. My first version let a callback fill an outer variable, then checked that variable every second.
 
 ```typescript
 let result: PreInfo | undefined;
@@ -26,11 +26,13 @@ while (result === undefined) {
 }
 ```
 
-Receiving a value and ending the wait were separate pieces of code. If the expected event never arrived, the loop kept waiting. Calling the function again left the previous listeners attached. Sharing one variable between request and response callbacks could also let a later value overwrite an earlier one.
+It worked, but receiving a value and ending the wait are separate pieces of code here. If the expected event never arrives, the loop keeps waiting. Nothing removes the listener, so calling the function again leaves the previous listeners attached. Sharing one variable between request and response callbacks can also let a later value overwrite an earlier one.
 
-A simple if (result) check was unsuitable too: 0, false, and an empty string could all be valid results. I used undefined for an unfinished result and registered listeners before reloading. Registering them afterward could miss an event that had already fired.
+A simple `if (result)` check does not work either: 0, false, and an empty string could all be valid results. `undefined` marks an unfinished result. Registering listeners after the reload could miss an event that already fired, so registration comes first.
 
 ## Resolve the Promise when an event supplies a result
+
+A Promise settles once, when `resolve` or `reject` is called. Calling `resolve` inside an event callback lets the caller wait for that event with a single `await`. I removed the loop and the outer variable, wrapped the wait in one Promise, and made every exit path (success, failure, or timeout) remove the listeners.
 
 ```tsx
 import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
@@ -74,9 +76,9 @@ export function waitForPreInfo<T>({
       reject(error);
     };
 
-    const consume = async (result: MaybePromise<T | undefined>) => {
+    const consume = async (read: () => MaybePromise<T | undefined>) => {
       try {
-        const value = await result;
+        const value = await read();
         if (value !== undefined) finish(value);
       } catch (error) {
         fail(error);
@@ -84,11 +86,11 @@ export function waitForPreInfo<T>({
     };
 
     const handleRequest = (request: HTTPRequest) => {
-      if (onRequest) void consume(onRequest(request));
+      if (onRequest) void consume(() => onRequest(request));
     };
 
     const handleResponse = (response: HTTPResponse) => {
-      if (onResponse) void consume(onResponse(response));
+      if (onResponse) void consume(() => onResponse(response));
     };
 
     page.on('request', handleRequest);
@@ -103,13 +105,34 @@ export function waitForPreInfo<T>({
 }
 ```
 
-A callback returning undefined means there is still something to wait for. Any other value reaches finish, which resolves the Promise and removes both listeners. If another asynchronous result arrives later, settled prevents it from processing the completed Promise again.
+A callback returning `undefined` means there is still something to wait for. Any other value reaches `finish`, which resolves the Promise and removes both listeners. `page.off` needs the same function that was registered, so `handleRequest` and `handleResponse` are kept in variables. If another asynchronous result arrives later, `settled` prevents it from processing the completed Promise again.
 
-The default wait is limited to ten seconds. A timeout or failed reload goes through fail. That path clears the timer and listeners just as completion does, so a failed attempt does not leave subscriptions behind for the next one.
+The callback runs inside `consume`. The example first published here passed the callback's result instead.
+
+```tsx
+const consume = async (result: MaybePromise<T | undefined>) => {
+  try {
+    const value = await result;
+    if (value !== undefined) finish(value);
+  } catch (error) {
+    fail(error);
+  }
+};
+
+const handleRequest = (request: HTTPRequest) => {
+  if (onRequest) void consume(onRequest(request));
+};
+```
+
+In `consume(onRequest(request))`, `onRequest` runs before `consume` does. A synchronous throw escapes to the event emitter before it reaches the `try` block, and both listeners stay attached until the timeout. So I corrected it to the current form, which passes a function to call.
+
+The default wait is limited to ten seconds. A timeout or failed reload goes through `fail`. That path clears the timer and listeners just as completion does, so a failed attempt does not leave subscriptions behind for the next one.
+
+`waitUntil: 'networkidle2'` treats the reload as finished once no more than 2 network connections have stayed open for 500 ms. What this function waits for, though, is a callback's result. If the values turn up first, the Promise resolves before the reload ends.
 
 ## Keep the first value inside a closure
 
-The function cannot choose which network event arrives first. I added a collector that retains the first value and returns a complete result when the other one arrives.
+The function cannot choose which network event arrives first. I added a collector that retains the first value and returns a complete result when the other one arrives. The values live in a closure: an inner function remembers the variables from where it was created, and can keep reading and writing them after the outer function has returned.
 
 ```typescript
 interface SitePreInfo {
@@ -150,6 +173,6 @@ const preInfo = await waitForPreInfo({
 });
 ```
 
-Both callbacks share headers and filePassword inside createSitePreInfoCollector. Headers can arrive first, or the password can arrive first; getResult returns undefined until both exist. Only then does it return an object that lets waitForPreInfo resolve.
+The call to `createSitePreInfoCollector` ends, but the two callbacks it returned still share `headers` and `filePassword`. Every other request the page makes also passes through these callbacks, so an event that fails the URL check returns `undefined` and the wait continues. Headers can arrive first, or the password can arrive first; `getResult` returns `undefined` until both exist. Only then does it return an object that lets `waitForPreInfo` resolve.
 
-Those variables belong to this collection attempt. Outside code receives the event handlers rather than direct access to the variables. The next attempt gets a fresh collector, while the previous attempt's listeners are removed when its Promise ends.
+Those variables belong to this collection attempt. Outside code receives the event handlers rather than direct access to the variables. Since the handlers do not use `this`, passing `collector.onRequest` detached from its object still works. The next attempt gets a fresh collector. The closure holds what one attempt has gathered; the Promise ends that wait and removes the attempt's listeners.

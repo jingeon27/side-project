@@ -6,8 +6,6 @@ I dropped RDS while looking at deployment costs. I considered serverless options
 
 ![An illustration of a small server hosting two apps, with data storage and backup files](/images/covers/side-project-infrastructure.png)
 
-*An illustration of the two services, data storage, and backups.*
-
 While preparing deployment for Game Mate and Pisik, I wanted to reduce fixed costs first. The plan put the apps on one EC2 instance and PostgreSQL on RDS. I began wondering whether the database could share the instance too.
 
 To compare ways of reducing that cost, I also looked into keeping the containers on Cloudflare and what returning from serverless would involve. I delegated the investigation and setup to the agent and chose a direction from its results. That meant considering the code to move and the work to maintain alongside the bill.

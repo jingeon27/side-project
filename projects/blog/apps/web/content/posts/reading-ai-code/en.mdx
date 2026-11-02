@@ -6,8 +6,6 @@ A sprint I considered finished after checking screens led to many hotfixes. I no
 
 ![A diagram of reviewing state, request conditions, and tests in changed code.](/images/covers/reading-ai-code.png)
 
-*A diagram of reviewing state, request conditions, and tests in changed code.*
-
 For one sprint, I focused on running the screens rather than reading code produced by an agent. I thought working behavior would be enough, but many hotfixes followed. Conditions I had never tried were missing from that judgment.
 
 Since then, I read diffs to decide what to test. Alongside black-box checks based on requirements, I use white-box tests whose paths come from branches and execution order in the code. Reading finds the cases; running them verifies the behavior.
@@ -51,7 +49,7 @@ if (hasTemporaryOpening(day)) return true;
 return !isTemporarilyClosed(day);
 ```
 
-If the weekly-closure branch returns false first, hasTemporaryOpening never runs. Trying a temporary opening on a normally open day would miss it. The useful case is a date overlapping the weekly closure.
+If the weekly-closure branch returns false first, `hasTemporaryOpening` never runs. Trying a temporary opening on a normally open day would miss it. The useful case is a date overlapping the weekly closure.
 
 ```typescript
 if (isPastDate(day)) return false;

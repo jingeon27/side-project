@@ -1,20 +1,20 @@
 <Summary>
 
-A shared interceptor read authentication cookies inside the sitemap cache. I separated public reads from member-specific reads and chose the cache boundary.
+After I cached the generated sitemap, a shared Axios interceptor turned out to be reading authentication cookies even on public API calls that needed no login. A cached function can't use request-specific cookies, so I separated public reads from member-specific reads. Modification times and failure handling still have work left.
 
 </Summary>
 
 ![An illustration of the boundary between public sitemap data and authenticated data.](/images/covers/sitemap-api-boundaries.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+> Company and service names and custom internal identifiers use aliases. The example call structure, cache durations, and observations come from the actual change.
 
-> Company and service names and custom internal identifiers use aliases.
+Calling public APIs from inside the sitemap cache showed a shared interceptor reading cookies, even for requests that needed no authentication.
 
-The sitemap needed URLs for branches, products, category searches, announcements, and content details. Gathering them required several APIs. I did not want every crawler visit to rebuild the same list, but generating only at build time would hold new products until the next deployment.
+A sitemap is an XML file telling search engines which addresses a site has, so a crawler can get the list before following links. In Next.js, `sitemap.ts` returns an array of entries and the framework turns it into XML.
 
-I chose to cache the result and regenerate it after an interval, using `use cache` and `cacheLife` with Cache Components enabled in Next.js 16. Calling the public APIs from there exposed a problem: the shared interceptor read authentication cookies even for requests that did not need them.
+This customer-facing service's sitemap held more than static URLs. It needed URLs for branches, products, category searches, announcements, and content details, and gathering them took several APIs. I did not want every crawler visit to rebuild the same list, but generating only at build time would hold new products until the next deployment. So I chose to cache the result and regenerate it after an interval, enabling Cache Components in Next.js 16 and using `'use cache'` and `cacheLife`.
 
-## Place a cache boundary around the sitemap
+With `cacheComponents: true` in `next.config`, writing `'use cache'` on a function's first line stores and reuses its result. `cacheLife` sets how long that result lasts, and `cacheTag` names it for invalidating later.
 
 ```typescript
 import type { MetadataRoute } from 'next';
@@ -44,23 +44,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 }
 ```
 
-Branches, products, and the other sources do not need one another’s results, so `Promise.all` fetches them together. I chose the days profile for `cacheLife`.
+Branches, products, and the other sources do not need one another’s results, so `Promise.all` fetches them together. The trouble came where those reads called the public APIs.
 
-The profile does not schedule a daily generation job. Its five-minute stale period lets the client Router Cache reuse a result without checking the server. A request arriving after one day triggers background revalidation, and expiry is one week. Requests still determine when regeneration happens.
+The Axios interceptor looked for an access token regardless of whether a request was public. An interceptor is a function Axios runs before sending every request. Here is a reduced example.
 
-`sitemap.ts` is already a special cached Route Handler unless it uses request-time APIs or dynamic configuration. Here `use cache` explicitly defines the function boundary within Cache Components and selects the days profile.
+```typescript
+// Reduced example: always looks for a token, without checking whether the request is public.
+instance.interceptors.request.use(async (config) => {
+  const token =
+    typeof window === 'undefined'
+      ? (await cookies()).get('auth_token')?.value
+      : readCookieValue('auth_token');
 
-Reusing a result across requests also requires reusing its cache store. The default self-hosted runtime cache is per-process memory; in serverless it may not survive between requests. Multiple instances need a platform’s persistent store or a shared `cacheHandler`.
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+```
 
-`public-index` is an alias for the sitemap’s actual tag. No `revalidateTag` or `updateTag` call uses it, so attaching the tag does not invalidate the sitemap after a product changes. The current path relies on timed revalidation.
+On the server, `cookies()` reads the cookies of the current request, and those differ per request. A `'use cache'` result, on the other hand, is shared across requests. The cache key is built from the build, the function, and its arguments, so a cookie read inside the function is not part of it. Stored that way, a result that depends on a cookie could reach someone other than the person it was made for.
 
-## The public query still read a cookie
+[The Next.js documentation](https://nextjs.org/docs/app/api-reference/directives/use-cache) also says cached functions cannot use request-time APIs such as `cookies()`. The restriction follows the call stack, so reading one inside a helper the cached function calls fails the same way. The APIs the sitemap calls need no authentication, but an interceptor reading `cookies()` can't run inside the cache. I needed that path to stop reading tokens.
 
-The Axios interceptor looked for an access token regardless of whether a request was public. On the server, that meant calling `cookies()` and depending on request-specific data inside the sitemap’s public cache. I needed that path to stop reading tokens.
+## Separating public reads from member reads
 
-Removing cookies does not make every response shareable. If tenant, Host, locale, or preview headers change the result, they must become arguments in the cache key. Keeping private data out of a public response is a separate check too.
-
-I first disabled server-side token reads altogether. Member-specific benefit pricing later needed authenticated SSR, so I split the behavior. Public queries do not read cookies by default; authenticated SSR callers explicitly pass `includeServerAuth: true` and stay outside the public cache.
+I first disabled server-side token reads altogether. Member-specific benefit pricing later had to be loaded on the server, so I split the rule again, since those prices differ per member and need the cookie. Public queries do not read cookies by default, and only authenticated SSR callers pass `includeServerAuth: true`. Those calls stay outside the public cache.
 
 ```typescript
 declare module 'axios' {
@@ -81,7 +88,7 @@ async function readAuthToken(includeServerAuth: boolean) {
 }
 ```
 
-The caller default is false.
+The caller default is `false`.
 
 ```text
 // Sitemap: this is a public response, so do not read server cookies.
@@ -93,13 +100,25 @@ fetchPublicSummary({
 });
 ```
 
-The caller now makes the authentication choice visible, but it can still pass the wrong boolean. Separating server-only public and authenticated clients from the browser client remains unfinished. A separate fetch wrapper’s `cache: 'no-store'` does not change Axios behavior; that option applies to Next’s extended fetch.
+The caller now makes the authentication choice visible even for the same API. In exchange, everything rests on one boolean, and it can be passed wrong. Passing `true` inside the public cache would read cookies again, and this code alone doesn't prevent that. Separating server-only public and authenticated clients from the browser client into modules remains unfinished.
 
-The browser path still has a workaround. It delays a cookie-reading Server Function by zero milliseconds, moving a render-time dispatch to the next macrotask. That does not guarantee bypassing an action queue or running in parallel. The way tokens reach browser requests still needs reconsideration alongside a BFF.
+Removing cookies does not make every response shareable. If tenant, Host, locale, or preview headers change the result, they must become arguments in the cache key. Keeping private data out of a public response is a separate check too. And a separate fetch wrapper’s `cache: 'no-store'` does not change Axios behavior, because that option applies to Next’s extended fetch.
 
-## Inaccurate sitemap metadata
+The browser path still has a workaround unrelated to the sitemap cache. It delays a cookie-reading Server Function by zero milliseconds, moving a render-time dispatch to the next macrotask. That does not guarantee bypassing an action queue or running in parallel. The way tokens reach browser requests still needs reconsideration alongside a BFF.
 
-Current code applies one generation timestamp as every item's `lastModified` and assigns priority by page type.
+## What the `days` profile decides
+
+I chose the `days` profile for `cacheLife`. It does not schedule a daily generation job. Its five-minute stale period lets the client Router Cache reuse a result without checking the server. A request arriving after one day triggers background revalidation. Expiry is one week: with no requests in that time, the next request waits for a fresh result. Requests still determine when regeneration happens.
+
+`sitemap.ts` is already a special cached Route Handler unless it uses request-time APIs or dynamic configuration. Here `'use cache'` explicitly defines the function boundary within Cache Components and selects the `days` profile.
+
+Reusing a result across requests also requires reusing its cache store. The default self-hosted runtime cache is per-process memory, and in serverless it may not survive between requests. Multiple instances need a platform’s persistent store or a shared `cacheHandler`. Only reusing the same store reduces API calls per crawler visit. I did not measure the cache hit rate, the number of origin API calls, or changes in crawling.
+
+`public-index` is an alias for the sitemap’s actual tag. No `revalidateTag` or `updateTag` call uses it, so attaching the tag does not invalidate the sitemap after a product changes. The current path relies on timed revalidation. If the tag won't be tied to content changes it should go, and if it will, the call sites have to say which changes invalidate the sitemap.
+
+## A `lastModified` that says everything just changed
+
+From here on are the parts of the sitemap I haven't fixed. `lastModified` tells crawlers when a page's content last changed. Current code applies one generation timestamp as every item's `lastModified` and assigns `priority` by page type.
 
 ```typescript
 const lastModified = new Date();
@@ -111,11 +130,11 @@ const itemEntries = items.map(({ locationId, itemId }) => ({
 }));
 ```
 
-Regenerating the sitemap makes every page look freshly modified. The product-list DTO has no modification time, while branch, announcement, and recommended-content fields have different names and meanings. The helpers discard those values and retain IDs and paths. Only entries with a confirmed content modification time should receive `lastModified`; the others can omit it.
+Regenerating the sitemap makes every page look freshly modified, though generating a sitemap is not a content change. [Google's guide](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap) says the value should reflect the page's last significant update and is used when consistently and verifiably accurate. The product-list DTO has no modification time, while branch, announcement, and recommended-content fields have different names and meanings. The helpers discard those values and retain IDs and paths. Only entries with a confirmed content modification time should receive `lastModified`, and the others can omit it.
 
 Google ignores `priority` and `changefreq` too. Assigning levels by page type does not set its crawling priority.
 
-## Full-list queries and partial failures remain transitional
+## Full-list reads that turn failures into empty arrays
 
 Branch and product helpers first request one item to learn the total, then send that total as the page size to retrieve everything. Each helper returns `[]` on error.
 
@@ -139,12 +158,14 @@ async function getAllLocationIds() {
 }
 ```
 
-Sending the total as `pageSize` can exceed the API’s limit, and the response keeps growing. Converting errors to empty arrays is more subtle: every promise appears successful, so the cache can accept a sitemap missing URLs. Paginated reads and propagating a critical source’s failure are not implemented yet.
+Sending the total as `pageSize` can exceed the API’s limit, and the response keeps growing. Converting errors to empty arrays is more subtle. From where `Promise.all` sits, every read succeeded, so a sitemap missing URLs gets cached as a normal result and can keep going out for as long as the cache lasts. Paginated reads and propagating a critical source’s failure are not implemented yet.
 
 Offset pagination can still duplicate or omit entries while data changes. Without cursor or snapshot APIs, it needs stable sorting, ID deduplication, and limits on iterations and pages. Near 50,000 URLs or 50 MB uncompressed, the result must be split with a sitemap index.
 
 Throwing errors does not always preserve a previous result. Background revalidation of a stale entry can serve old data, but a cold start, miss, or expiry can fail the sitemap response itself.
 
 The XML conversion has another possible overlap. Helpers already escape query strings. If Next.js escapes them again during final serialization, URLs can become double-escaped. Parsing the generated XML is the remaining way to check that escaping happens once.
+
+This sitemap still has work left. Public reads no longer touch cookies by default, but the generation-time `lastModified` and `priority`, the total sent as `pageSize`, errors turned into `[]`, and the pre-escaped query strings are all still in the code.
 
 References: [Next.js use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache), [Next.js cacheLife](https://nextjs.org/docs/app/api-reference/functions/cacheLife), [Google sitemap guide](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)
