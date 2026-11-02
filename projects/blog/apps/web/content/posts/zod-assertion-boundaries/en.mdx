@@ -1,36 +1,70 @@
 <Summary>
 
-Removing type assertions led me to separate failure handling for API responses, URLs, and forms. A narrower type does not necessarily mean a safer runtime value.
+TypeScript's `as` checks nothing at runtime, so it cannot stop a server from sending an unexpected value. Removing these assertions showed me that some places were better left without Zod. Where a schema did belong, I looked at who gets stuck when the value is wrong, and API responses, URLs, and forms ended up failing differently.
 
 </Summary>
 
 ![An illustration of observing, recovering, or rejecting external values at different boundaries.](/images/covers/zod-assertion-boundaries.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+TypeScript types exist only before the code runs. They disappear after the build, so they cannot stop a server from sending something other than what it promised. `as`, a type assertion, tells the type checker to trust that a value has a given type. It adds no code that checks the value.
 
-Reading through `as` assertions showed me that they existed for different reasons. Some reasserted a value whose type was already known because a library callback was loosely typed. Others trusted values arriving from an API or URL without knowing what they contained.
+```typescript
+type Review = { id: number; author: { name: string } };
 
-I initially planned to put Zod wherever an assertion was needed. The first group was better served by connecting the existing types. The second needed schemas, but a mismatch could not always stop the screen. Existing responses began with logging, URLs recovered usable conditions, and forms showed fields to correct.
+const review = response.data as Review; // This compiles
+review.author.name; // A runtime error if the server sends author as null
+```
 
-## Not every assertion became Zod
+Zod performs that check while the code runs. You describe a value's shape as a schema, Zod compares real values against it, and you can derive the TypeScript type from the same schema.
 
-A data-table callback was one such case. Its first argument was broadly typed, but the second, `record`, retained the data source’s row type.
+When I started reducing type assertions in a service already in production, my first rule was simple: put a Zod schema wherever `as` was needed. Once I began changing code, that rule was only half right.
+
+The same `as` existed for different reasons. Some reasserted a value whose type was already known because a library callback was loosely typed. Others trusted values arriving from an API or URL without knowing what they contained. The first group needed a repaired path for the types, and the second needed a check at runtime. Wrapping both in Zod would only add validation nobody needed, so I rewrote the rule.
+
+> When you see a type assertion, find where the value came from first. If the code has already verified it, fix the type flow. If it came from outside the application, set up a runtime boundary.
+
+The values that needed schemas still could not all stop the screen on a mismatch. Failure handling ended up depending on where a wrong value causes trouble, and for whom.
+
+## Assertions that did not become Zod
+
+A data-table callback was one such case. When you define a column, you pass a `render` callback that the table calls for each cell. The first argument is that cell's value, and the second, `record`, is the whole row.
+
+The trouble was the broad type of the first argument. The type does not carry which field the cell is drawing, so using the value means narrowing it again with `as`. Shortened, it looks like this.
+
+```typescript
+// The cell value is broadly typed, so as narrows it again.
+render: (status) => STATUS_LABEL[status as Status]
+```
+
+`record`, however, retained the data source's row type. Reading the same value from `record` needs no assertion.
 
 ```typescript
 // Do not assert the loose cell value again.
 render: (_, record) => STATUS_LABEL[record.status]
 ```
 
-Reading the already typed `record.status` made more sense than validating the cell again. Shared components missing generics gained them; values that could genuinely be null received corrected types and rendering branches.
+Reading the already typed `record.status` made more sense than validating the cell again. It adds no runtime checks, and if the `status` field is renamed or changes type, the compiler points at this line.
 
-An API response or URL can differ from its declaration even when the types connect correctly. Those values could not be handled by repairing type flow alone.
+A shared component missing its generic loses the type of `record` as well. In those places I added the generic so the component carries the type through. This is also a shortened example.
+
+```tsx
+// Before: the row type is cut off at any, so callers assert it again.
+function DataTable({ rows, columns }: { rows: any[]; columns: Column<any>[] }) {}
+
+// After: T is inferred from rows and carries through to record in columns.
+function DataTable<T>({ rows, columns }: { rows: T[]; columns: Column<T>[] }) {}
+```
+
+Values that could genuinely be null received corrected types and rendering branches.
+
+Values from outside the code are different. An API response or URL can differ from its declaration even when the types connect correctly, and repairing type flow alone could not handle them.
 
 - Server API responses
 - URL parameters edited by users or retained in old links
 - User-entered form values
 - Decoded tokens, stream events, and external callback values
 
-A generic such as `jwtDecode<Claims>(token)` does not verify that its result is Claims. That is a runtime boundary for Zod.
+A generic such as `jwtDecode<Claims>(token)` is no different from `as`. It does not verify that the decoded token is really `Claims`. That is a runtime boundary for Zod.
 
 ```typescript
 const claimsSchema = z.object({ role: z.enum(ROLES) });
@@ -43,11 +77,26 @@ try {
 }
 ```
 
-For a token check that already returns false on invalid input, a parse failure can follow that path. Rejecting every mismatch across existing API responses required more care.
+`parse` throws when a value does not match the schema. For a token check that already returns false on invalid input, that failure can follow the same path. Rejecting every mismatch across existing API responses required more care.
 
-## Log mismatched fields in existing API responses first
+## API responses: blocking breaks working screens first
 
-I added a `safeParse` check around API responses. Despite the name `parseApiResponse`, the function returns the original response rather than the parsed result.
+API responses had their types attached through generics such as `axios.get<Review>()`. That does not verify the response either. So I wanted schemas here too, but I could not add them in a form that blocked on failure.
+
+The ones at risk here were screens that already worked. I was adding validation to screens in production and could not assume the new schemas captured every field. Zod objects strip undeclared keys.
+
+```typescript
+const reviewSchema = z.object({ id: z.number() });
+
+// Leave createdAt out of the schema and it disappears from the result.
+reviewSchema.parse({ id: 1, createdAt: '2026-01-01' }); // { id: 1 }
+```
+
+Switching immediately to `result.data` could remove a field missing from the frontend schema in this way and break a screen that still used it.
+
+I also did not want one auxiliary field mismatch among 50 list items to remove the entire list. Policies such as field defaults may be appropriate later, but were not settled.
+
+So I added a `safeParse` check around API responses. Unlike `parse`, `safeParse` does not throw and returns a result saying whether it succeeded. Despite the name `parseApiResponse`, the function returns the original response rather than the parsed result.
 
 ```tsx
 export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T>): T {
@@ -67,10 +116,6 @@ export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T
 
 A mismatch records the fields that differ. Both success and failure return `response.data`, so recording a warning does not change the value consumed by the screen.
 
-I was adding validation to working screens and could not assume the new schemas captured every field. Zod objects strip undeclared keys. Switching immediately to `result.data` could remove a field missing from the frontend schema and break a screen that still used it.
-
-I also did not want one auxiliary field mismatch among 50 list items to remove the entire list. Policies such as field defaults may be appropriate later, but were not settled.
-
 Logs retain only information needed to investigate.
 
 - HTTP method and request path from Axios config
@@ -82,11 +127,11 @@ The log gets its method and path from the Axios response instead of a name repea
 
 A mismatch repeated in every list item could flood the issue list, so the same request and field are reported once per session. The resulting count approximates sessions encountering it rather than the total number of mismatches.
 
-This detects invalid responses without blocking them, and the return type still trusts the Axios generic. I kept it as a step for finding contract differences while preserving existing behavior. Confirmed responses can move to parsed results; new APIs, authentication, and streams use them from the start where failure can stay within a request or event.
+This detects invalid responses without blocking them, and the return type still trusts the Axios generic. I kept it as a step for finding contract differences while preserving existing behavior. Confirmed responses can move to parsed results. New APIs, authentication, and streams use them from the start where failure can stay within a request or event.
 
-## Use validation logs to correct schemas
+### After a log arrives
 
-When SCHEMA_MISMATCH appeared, I used the request path and app to find the schema, then compared OpenAPI with the actual response. I first needed to distinguish a server contract violation from an incorrect frontend schema to know which side to change.
+Validation that only observes is little better than a type assertion if nobody reads the logs, so I connected the logs to a fixing process. When `SCHEMA_MISMATCH` appeared, I used the request path and app to find the schema, then compared OpenAPI, the document where the server describes its API, with the actual response. I first needed to distinguish a server contract violation from an incorrect frontend schema to know which side to change.
 
 ```text
 SCHEMA_MISMATCH log
@@ -98,17 +143,25 @@ SCHEMA_MISMATCH log
   → Review, verify, and submit the PR
 ```
 
-The goal is not merely to remove a warning. If the actual response violates OpenAPI, I do not silently add `.nullish()` to the frontend schema. I classify a server-contract violation and stop the frontend fix. If an anyOf response union was modeled with only one member, I model both and add contract tests for both.
+I did not loosen schemas just to make a warning go away. If the actual response violates OpenAPI, I do not silently add `.nullish()`, which allows null and undefined, to the frontend schema. I classify a server-contract violation and stop the frontend fix. If an anyOf response union, a response that comes in one of two shapes, was modeled with only one member, I model both and add contract tests for both.
 
-This exposed unpaginated lists and bodyless success responses being forced into the old envelope schema. Another API returned two successful shapes while the frontend modeled only one. Some warnings reflected the frontend’s misunderstanding rather than a server error.
+This exposed unpaginated lists and bodyless success responses being forced into the envelope schema, the shared wrapper around responses. Another API returned two successful shapes while the frontend modeled only one. Some warnings reflected the frontend's misunderstanding rather than a server error.
 
-## Recover only invalid URL fields
+## URLs: one bad value can cost the search
 
-People can edit a URL or arrive through an old link. An unknown status should not also erase their search term and the detail they were viewing.
+When a URL is wrong, the person stuck is whoever followed the link. People can edit a URL or arrive through an old link. An unknown status should not also erase their search term and the detail they were viewing.
 
-The first version parsed the whole object and used default conditions on failure. An invalid status reset the valid keyword, page, and detail-drawer ID too. Independent conditions needed independent recovery.
+The first version parsed the whole object with `safeParse` and used default conditions on failure. Here is a shortened example.
 
-Schemas whose fields can recover independently now have per-field fallbacks.
+```typescript
+// One invalid field sends everything back to the defaults.
+const parsed = searchParamsSchema.safeParse(query);
+const params = parsed.success ? parsed.data : DEFAULT_PARAMS;
+```
+
+Arriving at an address such as `?keyword=coupon&pageNumber=3&id=12&status=OLD`, where only status was invalid, reset the valid keyword, page, and detail-drawer ID too. Independent conditions needed independent recovery.
+
+Schemas whose fields can recover independently now have per-field fallbacks. `.catch(value)` makes a field use that value instead of failing.
 
 ```typescript
 const searchParamsSchema = z.object({
@@ -125,28 +178,65 @@ An unknown status is dropped while the keyword and detail screen remain. Whole-o
 
 A field recovered by `.catch` makes the object parse succeed, so it leaves no mismatch log. Old links stop generating repeated warnings, but the frequency and source of invalid values disappear too. Parameters that need tracking must fail at the object boundary instead. I also avoid silent recovery for values such as payments and permissions.
 
-## Show invalid fields and block form submission
+## Forms: the person who can fix it is right there
 
-In a form, the person entering the value can correct it. I show the reason on the field and stop submission rather than passing the invalid value through or silently replacing it.
+In a form, the person entering the value can correct it. I show the reason on the field and stop submission instead of passing the invalid value through or silently replacing it.
 
-User-facing forms connect React Hook Form and zodResolver, using schemas as the source of input types and submission conditions.
+User-facing forms connect React Hook Form and `zodResolver`, using schemas as the source of input types and submission conditions. React Hook Form manages a form's values and errors, and `zodResolver` connects it to a Zod schema that checks values on submission.
 
 ```tsx
-function useZodForm<TSchema extends z.ZodType>({ schema, ...options }: Options<TSchema>) {
-  return useForm<z.infer<TSchema>>({
+function useZodForm<T extends ZodRawShape>(
+  schema: ZodObject<T>,
+  options?: Omit<UseFormProps<z.input<ZodObject<T>>, unknown, z.output<ZodObject<T>>>, 'resolver'>,
+) {
+  return useForm<z.input<ZodObject<T>>, unknown, z.output<ZodObject<T>>>({
     ...options,
     resolver: zodResolver(schema),
   });
 }
 ```
 
+This code targets Zod 4.6, React Hook Form 7.90, and @hookform/resolvers 5.9. A schema that transforms values has different input and submitted types, so `z.input` and `z.output` are passed separately.
+
+```typescript
+// The input holds a string, but submission converts it to a number.
+const priceSchema = z.object({ price: z.string().transform(Number) });
+
+type PriceInput = z.input<typeof priceSchema>; // { price: string }
+type PriceOutput = z.output<typeof priceSchema>; // { price: number }
+```
+
+The example first published here used only `z.infer`, which does not compile on these versions, so I corrected it. It may differ from the code on the versions the service used at the time.
+
 Reservation and review step forms have per-step schemas so fields in a future step do not block the current one.
 
 The Ant Design search forms in admin work differently. `createSearchFilter(schema)` narrows field names through `z.infer` and uses the schema when reading URLs. It does not replace all Ant Design submission validation. Field names are checked by the compiler, and external URL values are handled at runtime.
 
-## Derive narrowing from validation results
+## The boundaries side by side
 
-A custom guard like this was one of the most dangerous assertions.
+Even with the same tool, the roles split according to who has the problem when a value is wrong.
+
+| Boundary | Who is stuck when it is wrong | Failure handling | Value used |
+| --- | --- | --- | --- |
+| Existing API responses | Working screens, since the schema may be incomplete | Log and pass through | Original values |
+| New APIs, auth, streams | Can be narrowed to that request or event | Fail the request or event | Parsed values |
+| URL conditions | Whoever followed the link, who can lose valid conditions too | Field fallback or object fallback plus logging | Parsed values |
+| User forms | The person entering it, who can correct it | Block submission and explain the field | Parsed values |
+| External-library values | Depends on the value's impact | Ignore, fall back, or block | Depends on context |
+
+A schema mismatch and a decision to stop the screen are separate questions. Sharing a validation tool does not require one failure behavior.
+
+## Tests that feed in wrong values
+
+Tests include values after a mismatch as well as valid responses. Existing APIs must return the original object with undeclared fields intact. A new enum must record the actual request method, path, and mismatched field. Bodyless successes and unpaginated lists must remain valid contracts.
+
+For URLs, I check that one invalid enum does not remove the keyword, page, or detail ID. Forms must block the invalid value and show an error someone can correct. The cases also cover reporting an identical mismatch only once per session.
+
+After correcting schemas, I temporarily restored old definitions and checked that new tests failed. Fixtures changed incorrectly alongside schemas can otherwise keep tests green. Where possible, response mocks use `satisfies` and contract tests. Contracts available on a real dev server are not considered verified by mocks alone.
+
+## Type guards: what changed and what stayed
+
+A custom type guard uses the return type `value is T` to promise the compiler that the value can be treated as T when the function returns true. The compiler does not look at whether the function really checks that. So a guard like this was one of the most dangerous assertions.
 
 ```typescript
 function isCompletedPayment(value: unknown): value is CompletedPayment {
@@ -154,7 +244,7 @@ function isCompletedPayment(value: unknown): value is CompletedPayment {
 }
 ```
 
-This function checks only that the value is not null. Yet returning true tells the compiler to accept CompletedPayment. Adding fields to that type does not change this check, so it promises far more than it verifies.
+This function checks only that the value is not null. Yet returning true tells the compiler to accept `CompletedPayment`. Adding fields to that type does not change this check, so it promises far more than it verifies.
 
 When I only need to classify a completed payment, I return schema success as a boolean. It does not claim to narrow the entire value to a type it has not fully checked.
 
@@ -169,7 +259,7 @@ function isCompletedPayment(value: unknown): boolean {
 }
 ```
 
-When validated data is needed, I use safeParse's `data` instead of hand-declaring another `value is T` predicate.
+When validated data is needed, I use the `data` from `safeParse` instead of hand-declaring another `value is T` predicate.
 
 ```typescript
 const result = completedPaymentSchema.safeParse(value);
@@ -180,26 +270,4 @@ useCompletedPayment(result.data);
 
 Unknown tab or sort keys returned as strings by UI libraries can be ignored with `z.enum(...).optional().catch(undefined)` where that behavior is appropriate. Already narrowed row data is not revalidated. I first distinguish runtime evidence from established type flow.
 
-## Failure policy depends on the boundary's consumer
-
-The roles differ even with the same tool.
-
-| Boundary | Result used | Failure handling | Reason |
-| --- | --- | --- | --- |
-| Existing API responses | Original values | Log and pass through | Avoid breaking working screens during introduction |
-| New APIs, auth, streams | Parsed values | Fail the request or event | Failure scope can be isolated |
-| URL conditions | Parsed values | Field fallback or object fallback plus logging | Preserve valid conditions from old links |
-| User forms | Parsed values | Block submission and explain the field | Users can correct input |
-| External-library values | Depends on context | Ignore, fall back, or block | Match the value's impact |
-
-A schema mismatch and a decision to stop the screen are separate questions. Sharing a validation tool does not require one failure behavior.
-
-## Test what happens when validation fails
-
-Tests include values after a mismatch, rather than only valid responses. Existing APIs must return the original object with undeclared fields intact. A new enum must record the actual request method, path, and mismatched field. Bodyless successes and unpaginated lists must remain valid contracts.
-
-For URLs, I check that one invalid enum does not remove the keyword, page, or detail ID. Forms must block the invalid value and show an error someone can correct. The cases also cover reporting an identical mismatch only once per session.
-
-After correcting schemas, I temporarily restored old definitions and checked that new tests failed. Fixtures changed incorrectly alongside schemas can otherwise keep tests green. Where possible, response mocks use satisfies and contract tests. Contracts available on a real dev server are not considered verified by mocks alone.
-
-Some custom guards remain where validation costs more or where they supplement an external library’s types. Their tests state which fields they check. OpenAPI and frontend schemas can still disagree, so I continue to compare them through real-server contracts and mismatch logs.
+Some custom guards remain where validation costs more or where they supplement an external library's types. Their tests state which fields they check. OpenAPI and frontend schemas can still disagree, so I continue to compare them through real-server contracts and mismatch logs.

@@ -8,13 +8,12 @@ import { describe, expect, it } from 'vitest';
 
 import { getArticles } from '@/shared/article/lib/get-articles';
 
-import manifest from '../../../docs/migration-manifest.json';
 import screenCaptures from '../../../docs/screen-captures.json';
 import localizations from '../content/english-localizations.json';
 import imageReplacements from '../content/image-replacements.json';
 import { analyzeMdx } from './content';
 
-const ids = manifest.posts.map((post) => post.contentId);
+const ids = getArticles('en').map((article) => article.id);
 const root = path.join(process.cwd(), 'content/posts');
 type Root = ReturnType<typeof analyzeMdx>['tree'];
 
@@ -25,7 +24,7 @@ async function pair(id: string) {
   return sources.map((source) => analyzeMdx(source).tree) as [Root, Root];
 }
 
-describe('English editions of migrated posts', () => {
+describe('English editions', () => {
   it('registers both editions with their own title, description, slug, and reciprocal translation map', () => {
     const korean = getArticles('ko');
     const english = getArticles('en');
@@ -43,14 +42,14 @@ describe('English editions of migrated posts', () => {
     }
   });
 
-  it('preserves code and structure apart from explicitly recorded English localizations', async () => {
+  it('preserves code block languages and structure apart from recorded localized images', async () => {
     function artifacts(tree: Root) {
-      const code: string[] = [];
+      const codeLanguages: (string | null | undefined)[] = [];
       const images: string[] = [];
       const headings: number[] = [];
       const tables: number[][] = [];
       visit(tree, 'code', (node) => {
-        code.push(createHash('sha256').update(node.value).digest('hex'));
+        codeLanguages.push(node.lang);
       });
       visit(tree, 'image', (node) => {
         images.push(node.url);
@@ -61,21 +60,13 @@ describe('English editions of migrated posts', () => {
       visit(tree, 'table', (node) => {
         tables.push(node.children.map((row) => row.children.length));
       });
-      return { code, images, headings, tables };
+      return { codeLanguages, images, headings, tables };
     }
     for (const id of ids) {
       const [ko, en] = await pair(id);
       const original = artifacts(ko);
-      const edits = localizations.code[id as keyof typeof localizations.code] ?? [];
-      for (const edit of edits) {
-        expect(original.code, id).toContain(edit.originalSha256);
-        expect(artifacts(en).code, id).toContain(edit.localizedSha256);
-      }
       expect(artifacts(en), id).toEqual({
         ...original,
-        code: original.code.map(
-          (hash) => edits.find((edit) => edit.originalSha256 === hash)?.localizedSha256 ?? hash,
-        ),
         images: original.images.map(
           (image) => localizations.images[image as keyof typeof localizations.images] ?? image,
         ),

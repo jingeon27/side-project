@@ -1,30 +1,53 @@
 <Summary>
 
-Two admin apps shared program inputs but had different submission flows. I separated field types and API transformations while deciding what to share.
+A program is a treatment product a hospital registers. Sharing its inputs across two admin apps, I widened what the code checks from field-name enums to value types to conversion tests. This post covers where Ant Design Form loses value types and how I separated what to share from what each app keeps.
 
 </Summary>
 
 ![An illustration of two admin screens assembling a shared form with their own configuration.](/images/covers/typed-program-form.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+Changing a program input meant finding its `FormItem` in both hospital admin and Back-Office.
 
-Changing a program input meant finding its FormItem in both hospital admin and Back-Office. Recommended patients, equipment, and precautions also appeared in the sub-treatment template editor. The same input had several separate implementations.
+A program is a treatment product a hospital offers to users, created by entering a name, thumbnail, category, price, description, and detail images. Hospital staff register programs and request review in the hospital admin app, and the operations team approves or rejects those requests in Back-Office. Both apps deal with the same program, so their inputs overlap heavily.
 
-Submission was different in each app. Hospital administrators register programs and request review; Back-Office approves or rejects those requests. Operational notes and visibility settings belong to Back-Office, while requester and review-request details belong to hospital admin. Combining both forms wholesale would bring those differences into shared code too.
+Both apps use Ant Design Form, and a `FormItem` is a component that connects one input to the form. At first each app had its own. Recommended patients, equipment, and precautions also appeared in the sub-treatment template editor. Categories are chosen in three levels, department, treatment, and sub-treatment, and each sub-treatment has a registered template of defaults for that content, which programs pull in. The same input had several separate implementations, and changing one meant checking again whether the other screens had changed too.
+
+Submission was different in each app. Operational notes and visibility settings belong to Back-Office, while requester and review-request details belong to hospital admin. Counting the top-level fields declared in today's form types gives 34 shared, 13 for Back-Office only, and 4 for hospital admin only. Combining both forms wholesale would bring those differences into shared code too.
+
+The two apps need slightly different values for the same program. Input values in this diagram are examples.
 
 ![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01-en.png)
 
-*The two apps need slightly different values for the same program. Input values in this diagram are examples.*
-
-I shared the inputs and value types that should change together and left review and submission in each app. Mapping API responses into form values, turning edits into requests, and loading a category’s default template also became separate from the inputs.
+So I shared the inputs and value types that should change together and left review and submission in each app. What the code could verify grew from field names to value types to conversion results, and this post follows that order. Decisions about what to share were made in between.
 
 The examples include only the relevant code. Internal identifiers for hospitals have been renamed to `partner`.
 
-## From shared field names to typed values
+## Field-name enums
 
-I first gathered field names in an enum. That helped with typos but did not stop a string being assigned to `price`. A `getFieldValue` call could name the right field while its caller misunderstood the returned value.
+Ant Design Form finds values by `name`. The value of an input wrapped in `<Form.Item name="price">` lands in the form's `price` slot, and other code reads it with `form.getFieldValue('price')`. The name is only a runtime key, so a typo reads an empty slot and returns `undefined` without failing on the spot.
 
-The shared program form and each app's form now use `createTypedForm<T>()`. This wrapper accepts a value type once and applies it to Item, List, useForm, useFormInstance, and useWatch.
+I first gathered field names in an enum. That helped keep scattered strings consistent and cut down on typos, but it did not stop a string being assigned to `price`. A `getFieldValue` call could name the right field while its caller misunderstood the returned value. Here is a reduced example. It is not the code from that time, only an example written to illustrate it.
+
+```tsx
+// A shortened example. The enum name is made up for this post.
+enum ProgramField {
+  ProgramName = 'programName',
+  Price = 'price',
+}
+
+const form = Form.useFormInstance();
+
+const price = form.getFieldValue(ProgramField.Price); // any
+price.toUpperCase(); // Passes type checking, then throws at runtime.
+
+form.setFieldValue(ProgramField.Price, '100000'); // Passes type checking.
+```
+
+Ant Design's type definitions show where the value type goes missing. `getFieldValue` returns `any`, and the value `setFieldValue` accepts is `any` as well. Passing the form's value type through `Form.useForm<T>()` catches name typos, but it does not connect a name to its value type. Without its own generic, `Form.Item` treats the form's values as `any`, so `name` accepts any string. I checked this against the type definitions in Ant Design 5.29, which may differ from the version the apps used at the time.
+
+## Value types that follow the path
+
+Connecting names to values was up to me. The shared program form and each app's form now use `createTypedForm<T>()`. This wrapper accepts a value type once and applies it to `Item`, `List`, `useForm`, `useFormInstance`, and `useWatch`. `IProgramFormCommon` below is the value type both apps share.
 
 ```tsx
 // Shared package
@@ -42,7 +65,7 @@ export const ProgramInspectionForm =
   createTypedForm<IProgramInspectionClient>();
 ```
 
-Shared inputs use ProgramForm to read common fields; Back-Office inputs use ProgramInspectionForm to reach its additional fields. Both APIs use the same Ant Design Form context. They split the permitted types without duplicating the values or instance.
+Shared inputs use `ProgramForm` to read common fields, and Back-Office inputs use `ProgramInspectionForm` to reach its additional fields. Both APIs use the same Ant Design Form context. A container passes the form instance it created to the `Form` component, and inputs below it get that instance through `useFormInstance` without props. They split the permitted types without duplicating the values or instance. This is what the line between shared and app-specific looks like in types.
 
 ```typescript
 const form = ProgramForm.useFormInstance();
@@ -58,7 +81,9 @@ form.getFieldValue('programNmae');
 form.setFieldValue('price', '100000');
 ```
 
-I wanted `getFieldValue('price')` to return a number and `setFieldValue('price', ...)` to accept the same type. `TFieldNamePath<T>` limits names and nested paths, while `TPathValue<T, P>` finds the type at the chosen path.
+Compare that with the enum example. `price` now comes back as `number`, so calling `toUpperCase` on it fails type checking, as do assigning a string and misspelling the name.
+
+I wanted `getFieldValue('price')` to return a `number` and `setFieldValue('price', ...)` to accept the same type. `TFieldNamePath<T>` limits names and nested paths, while `TPathValue<T, P>` finds the type at the chosen path. In Ant Design Form a nested path is written as an array, such as `['detail', 'title']`.
 
 ```tsx
 // TFieldNamePath<T> and TDeepPartial<T> implementations omitted.
@@ -84,19 +109,33 @@ interface ITypedFieldAccess<T> {
 }
 ```
 
-`infer` splits the first path element from the rest and follows the path to find its type. `setFieldsValue` accepts `TDeepPartial<T>` for partial nested updates. `useWatch` includes `undefined` because a field may not have been registered yet.
+A conditional type picks a type based on a condition, in the form `A extends B ? C : D`, and `infer` pulls part of a type out inside that condition, much like a variable. `infer` splits the first path element from the rest and follows the path to find its type. Worked through on a small value type, it goes like this.
 
-Assertions needed to connect Ant Design remain inside the wrapper. Callers use an API linking field names to value types instead of asserting return values again.
+```typescript
+// A shortened example. The value type is made up for this post.
+type Values = { price: number; detail: { title: string } };
+
+type A = TPathValue<Values, 'price'>; // number
+type B = TPathValue<Values, 'nope'>; // never
+
+type C = TPathValue<Values, ['detail', 'title']>; // string
+// 1. 'detail' is a key of Values and the rest is ['title'], so it recurses into TPathValue<Values['detail'], ['title']>.
+// 2. 'title' is a key and nothing remains, so it ends at Values['detail']['title'], which is string.
+```
+
+`getFieldValue` and `setFieldValue` take the path as a generic `P`. The path passed at the call is inferred as `P`, and that decides the return type and the accepted value type, so callers never write a type themselves. `setFieldsValue` accepts `TDeepPartial<T>` for partial nested updates. `useWatch` includes `undefined` because a field may not have been registered yet.
+
+Assertions needed to connect Ant Design remain inside the wrapper. Callers use an API linking field names to value types instead of asserting return values again. The assertions did not disappear. They moved to one place, so a wrong type there makes the checks at every call site wrong as well.
+
+Shared and app-specific types also govern the methods that read and write their fields.
 
 ![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02-en.png)
 
-*Shared and app-specific types also govern the methods that read and write their fields.*
+## Same inputs, different assembly
 
-## Share inputs and leave assembly with the caller
+Types did not settle every difference. The template editor and program form share inputs for recommended patients, treatment highlights, equipment, procedure, and precautions.
 
-The template editor and program form share inputs for recommended patients, treatment highlights, equipment, procedure, and precautions.
-
-Treatment highlights exposed a difference. The template editor registers an icon and text, but the program keeps the imported icon and changes only the text. Instead of adding another option to the shared component, I separated FormList from the inputs placed inside it.
+Treatment highlights exposed a difference. The template editor registers an icon and text, but the program keeps the imported icon and changes only the text. Instead of adding another option to the shared component, I separated `FormList` from the inputs placed inside it. Grouping pieces under one name and letting the caller assemble them is known as a compound component structure.
 
 ```typescript
 // Sub-treatment template editor: edit the icon and copy together.
@@ -117,19 +156,48 @@ Treatment highlights exposed a difference. The template editor registers an icon
 </ProcedureHighlight.FormList>
 ```
 
-FormList owns the toggle and list. The caller chooses each row's inputs. Recommended patients and procedures share the same implementation. Equipment and precautions provide default assembly while also exposing the pieces needed by callers.
+`FormList` owns the toggle and list. The caller chooses each row's inputs. Callers have to write that assembly themselves, and in exchange the shared component gains no options. Recommended patients and procedures share the same implementation. Equipment and precautions provide default assembly while also exposing the pieces needed by callers.
 
-Some template inputs still use the original Ant Design Form. Compound composition does not itself make an input typed. The typed API limits fields the code can read and write; composition decides whether a screen shows the icon, text, or both.
+Some template inputs still use the original Ant Design Form. Compound composition does not itself make an input typed. The typed API limits fields the code can read and write, and composition decides whether a screen shows the icon, text, or both.
+
+Only inputs with different behavior are assembled differently, and the others share one implementation.
 
 ![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03-en.png)
 
-*Only inputs with different behavior are assembled differently; the others share one implementation.*
-
 Common inputs know nothing about review-request or approval APIs. The app owns `onFinish` and request buttons. Hospital requests and Back-Office approvals do not live in the same component.
 
-## Keep the server's representation out of inputs
+## The server shape inputs never see
 
-The server groups template items by type and adds `orderNo`, which was awkward to use directly in the editor. The screen needs to add and remove rows and edit images as the upload component’s file list.
+The server groups template items by type and adds `orderNo` (a sequence number), which was awkward to use directly in the editor. The screen needs to add and remove rows and edit images as the upload component's file list. Putting the recommended-patients section in all three shapes shows the difference. This is a shortened example that keeps only the structure, and its values are examples too.
+
+```typescript
+// A shortened example. Only the recommended-patients section is kept, and the values are examples.
+
+// Server response: grouped by type, with sequence numbers.
+const response = {
+  RECOMMENDED_TARGET: [
+    { orderNo: 1, title: 'People with a chipped front tooth' },
+    { orderNo: 0, title: 'People with a cavity' },
+  ],
+};
+
+// Form values: edited in array order without sequence numbers. The user has added one blank row.
+const formValues = {
+  recommendedTarget: [
+    { title: 'People with a cavity' },
+    { title: '' },
+    { title: 'People with a chipped front tooth' },
+  ],
+};
+
+// Request body: blank rows removed, then renumbered in the remaining order.
+const request = {
+  RECOMMENDED_TARGET: [
+    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: 'People with a cavity' },
+    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: 'People with a chipped front tooth' },
+  ],
+};
+```
 
 I therefore separated response-to-form and form-to-request functions. Input components handle only the shape needed for editing.
 
@@ -139,9 +207,9 @@ API response → response adapter → form values → request adapter → API re
                    FormItem only handles this editing shape.
 ```
 
-The input components no longer need to interpret response and request formats individually. Values stay in the form’s editing shape and are converted where they meet the API.
+The input components no longer need to interpret response and request formats individually. Values stay in the form's editing shape and are converted where they meet the API.
 
-The same input handles saved images and newly uploaded ones. Converting a saved asset to UploadFile with the asset in `response` puts it in the same place as a new upload’s result. Submission no longer needs separate branches for old and new files.
+The same input handles saved images and newly uploaded ones. `UploadFile` is the type of an entry in the Ant Design upload component's file list, and a finished upload puts the server response in `response`. Converting a saved asset to `UploadFile` with the asset in `response` puts it in the same place as a new upload's result. Submission no longer needs separate branches for old and new files.
 
 Thumbnails and custom images currently use `UploadFile<TCommonAsset>`. The upload response generic preserves the asset type through reads of `response.id`.
 
@@ -164,27 +232,62 @@ function convertCommonAssetToUploadFile<T extends TImageFileInfo>(
 
 Request construction explicitly selects fields rather than spreading the entire form. Thumbnails become image IDs and dates become strings. Screen-only previous prices and input modes stay out. Health-check configuration added later is edited in this form but saved by a separate API, so it is excluded from the program request too.
 
-Template conversions follow several rules.
+Template conversions follow several rules. Each section, such as recommended patients, has a toggle for whether it is provided and a list of items under it, so toggle state is part of the conversion.
 
-- Sort response items by `orderNo`; edit them in array order.
+- Sort response items by `orderNo` and edit them in array order.
 - For title-only sections, remove empty rows and renumber on submission. Do not apply that filter to image sections.
 - Pair before-and-after photos by `orderNo`, not array index, to make one form row. Split them into two equally numbered arrays for the request.
-- Distinguish `null` or `undefined` from an empty array. An absent section disables its toggle; an empty array keeps the toggle on and displays an initial row.
-- Draft and final requests treat empty sections differently. Drafts may retain empty arrays; review and registration requests omit empty sections.
+- Distinguish `null` or `undefined` from an empty array. An absent section disables its toggle, and an empty array keeps the toggle on and displays an initial row.
+- Draft and final requests treat empty sections differently. Drafts may retain empty arrays, and review and registration requests omit empty sections.
+
+The diagram separates the shared editing shape from the shape each request requires.
 
 ![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04-en.png)
 
-*The shared editing shape is separated from the shape required by each request.*
+## Conversion tests
 
-## Separate initial loading from category changes
+Type checking does not verify any of these rules. I initially wrote the conversions without tests. Correct field types could still produce the wrong request, so I added cases for both apps' response conversions, program and review requests, and drafts.
 
-The editor also needs to distinguish when values are filled. Opening a detail loads the saved program; changing its category loads a sub-treatment’s default template. Mixing those paths can let a query response overwrite the person’s edits.
+These go beyond checking that a converted value exists. They verify that unordered before-and-after images pair by sequence, a separate ID is used when an image object lacks one, and a deleted thumbnail is submitted as `null`.
+
+This is a shortened version of an actual conversion test. `createClientForm` fills the remaining defaults.
+
+```typescript
+it('removes empty titles and assigns order numbers to the remaining items', () => {
+  const form = createClientForm({
+    isRecommended: PROGRAM_PROVIDED_TYPE.PlatformProvided,
+    recommendedTarget: [
+      { title: '' },
+      { title: 'People in their 30s' },
+      { title: 'People in their 40s' },
+    ],
+  });
+
+  const result = getDetailImageInspection(form);
+  const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.PlatformTemplate].templates;
+
+  expect(templates.RECOMMENDED_TARGET).toEqual([
+    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: 'People in their 30s' },
+    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: 'People in their 40s' },
+  ]);
+});
+```
+
+Image-bearing highlights must not be removed merely because their title is empty. That difference is tested too. Draft tests separately verify that an array emptied by filtering blank titles is still sent.
+
+Type checking validates names and values accessed through the typed API. Conversion tests validate the request shape. A correct type and a correct payload are different checks. Inputs share one instance, while field access and submitted data are checked in different places.
+
+![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06-en.png)
+
+## When values get filled
+
+Neither types nor conversion tests decide when values are filled. Opening a detail loads the saved program, and changing its category loads a sub-treatment's default template. Mixing those paths can let a query response overwrite the person's edits.
 
 The review-detail container mounts the form after required queries finish and initial values can be built. Moving to another record in the same drawer calls `resetFields()` when initial values change. Passing a later asynchronous response to `initialValues` does not reinitialize an existing instance.
 
-SyncTreatmentSub loads the sub-treatment template. It reads treatment and sub-treatment IDs from the form, using `skipToken` in query options so the query runs only when both exist.
+`SyncTreatmentSub` loads the sub-treatment template. It reads treatment and sub-treatment IDs from the form, using `skipToken` in query options so the query runs only when both exist. In TanStack Query, `skipToken` goes where the query function would and makes the query skip.
 
-The effect checks the response and whether the fields are touched. Looking only at the treatment ID misses a switch between sub-items of the same treatment, so it checks the sub-treatment ID too.
+The effect checks the response and whether the fields are touched. Touched is a per-field state in Ant Design Form: it is off when a saved program has just opened, and it turns on when changing the category alters the value. Opening a detail therefore does not overwrite saved values even when the response arrives. Looking only at the treatment ID misses a switch between sub-items of the same treatment, so it checks the sub-treatment ID too.
 
 ```typescript
 const form = ProgramForm.useFormInstance();
@@ -217,52 +320,15 @@ useEffect(() => {
 }, [data, form, isTouchedTreatmentId, isTouchedTreatmentSubId]);
 ```
 
-Synchronization is limited to five template sections. It leaves manually entered extra benefits and before-and-after photos alone. This component also converts the query response to form values, avoiding repeated fetching and updates in each input component.
+Synchronization is limited to five template sections. It leaves manually entered extra benefits and before-and-after photos alone. This component also converts the query response to form values, avoiding repeated fetching and updates in each input component. Query conditions, application conditions, and updated fields can be inspected in one place.
 
 ![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05-en.png)
 
-*Query conditions, application conditions, and updated fields can be inspected in one place.*
+## What a typed form catches and misses
 
-## Preserve conversion rules in tests
+A program-field change now takes me to the shared type and `FormItem`, and an API-format change takes me to conversions and their tests. Review requests and approvals no longer need to follow shared inputs into another screen.
 
-I initially wrote the conversions without tests. Correct field types could still produce the wrong request, so I added cases for both apps’ response conversions, program and review requests, and drafts.
-
-These go beyond checking that a converted value exists. They verify that unordered before-and-after images pair by sequence, a separate ID is used when an image object lacks one, and a deleted thumbnail is submitted as `null`.
-
-This is a shortened version of an actual conversion test. `createClientForm` fills the remaining defaults.
-
-```typescript
-it('removes empty titles and assigns order numbers to the remaining items', () => {
-  const form = createClientForm({
-    isRecommended: PROGRAM_PROVIDED_TYPE.PlatformProvided,
-    recommendedTarget: [
-      { title: '' },
-      { title: 'People in their 30s' },
-      { title: 'People in their 40s' },
-    ],
-  });
-
-  const result = getDetailImageInspection(form);
-  const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.PlatformTemplate].templates;
-
-  expect(templates.RECOMMENDED_TARGET).toEqual([
-    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: 'People in their 30s' },
-    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: 'People in their 40s' },
-  ]);
-});
-```
-
-Image-bearing highlights must not be removed merely because their title is empty. That difference is tested too. Draft tests separately verify that an array emptied by filtering blank titles is still sent.
-
-Type checking validates names and values accessed through the typed API. Conversion tests validate the request shape. A correct type and a correct payload are different checks.
-
-![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06-en.png)
-
-*Inputs share one instance. Field access and submitted data are checked in different places.*
-
-A program-field change takes me to the shared type and FormItem; an API-format change takes me to conversions and their tests. Review requests and approvals no longer need to follow shared inputs into another screen.
-
-The typed form checks field paths and value types passed in code. It cannot verify the actual server response or prevent an asynchronous query from overwriting an edit. Conversion tests and checks of loading, editing, and submitting in the UI still have separate jobs.
+The typed form checks field paths and value types passed in code. A typo like `programNmae` or a string passed to `price` fails type checking. It cannot verify the actual server response or prevent an asynchronous query from overwriting an edit. The typed API does not reach template inputs that still use the original Ant Design Form either. Conversion tests and checks of loading, editing, and submitting in the UI still have separate jobs.
 
 ## References
 

@@ -1,22 +1,14 @@
 <Summary>
 
-One failed list query removed the menu and header too. I changed query placement along with Error Boundaries so a failed table or filter could be retried in place.
+One failed list query took the menu and header down with it. I decided what should remain on screen for each kind of failure, then moved where data is fetched and where Error Boundaries sit to match.
 
 </Summary>
 
 ![An illustration of retrying one failed panel while navigation and two neighboring panels remain available.](/images/covers/error-boundary-recovery.png)
 
-*An illustration of recovery scope, rather than an actual admin screen.*
+Hospital admin is the screen hospital staff use to manage reservations and programs. In it, one failed list API took the menu and header with it. Staff could neither move to another working menu nor retry only the failed query.
 
-A failed list API in hospital admin prevented users from navigating to another menu. The root Error Boundary replaced the whole app, leaving no place to retry just the failed table.
-
-Responses also differed from their declared types. New enum values or null passed compile-time assumptions and failed during rendering. Message and stack alone left me searching again for the responsible app and screen.
-
-I expected Zod and more boundaries to address it. But when I tried wrapping a table, its query ran outside it. Screen composition needed to change before adding error-handling code.
-
-## There was nowhere consistent to place boundaries
-
-The original structure was simple.
+That happened because a single Error Boundary at the app root received every query error. An Error Boundary is a React component that catches errors its children throw while rendering, and draws a fallback message in place of what broke. With this structure, any failure replaced the whole screen with an error message, which left no room for a button to retry only the failed table.
 
 ```text
 App Root Error Boundary
@@ -27,19 +19,50 @@ App Root Error Boundary
     Detail Drawer
 ```
 
-Another boundary under the root could not by itself preserve the right parts. The point where an error originated had to match the part being wrapped.
+The cover is an illustration of recovery scope, rather than an actual admin screen. It shows the shape this article works toward: the menu and two healthy panels stay, and only the failed panel gets a retry button.
 
-When page.tsx calls useQuery, the failure occurs in the page before it renders the table. A child boundary around that table cannot catch it. Preserving tabs and filters required a separate component owning the query.
+Responses also did not always match their declared types. TypeScript types do not check values at runtime, so new enum values or null passed type checking and surfaced during rendering. And logs with only a message and stack left me searching again for which app and which screen had failed.
 
-This needed to fit hospital admin, Back-Office, and the global admin screen deployed as a PoC.
+## There was nowhere to put more boundaries
 
-Their routes composed screens differently: some rendered layouts, others delegated to templates or ListViews. Detail Drawers could live in the route or inside a list.
+I expected Zod, a library that checks the shape of values at runtime, and a few more boundaries to take care of it. But when I went to wrap a table, its query was running outside the table.
 
-I first decided what should reload together, because wrapping each existing structure would protect different things.
+What a boundary catches shows why this mattered. An Error Boundary receives errors thrown while rendering by components below it. It does not catch errors from event handlers, asynchronous code such as `setTimeout`, server rendering, or the boundary itself. An API call is asynchronous, so left alone its failure never reaches a boundary.
 
-## Preserving navigation while retrying a failed region
+TanStack Query, which we use for fetching, follows the same default: `useQuery` just returns a failure as its `error` value. With the `throwOnError` option on, it rethrows that error while the component calling the hook renders, and from then on the nearest boundary above catches it. These apps threw query errors through a global default.
 
-A failed list should leave the header and menu available. A failed detail should leave the list. I wrapped UI according to what loads and retries together.
+So an error happens at whichever component called the query hook. When `page.tsx` calls `useQuery` to read the list, a query error happens in the page before the table renders, so a child boundary around the table cannot catch it. In a shortened example:
+
+```tsx
+// A shortened example. The error is thrown in Page, which calls useQuery.
+function Page() {
+  const { data } = useQuery(listOptions);
+
+  return (
+    <QueryErrorBoundary variant="section">
+      {/* This boundary only catches errors below it. An error in Page goes up past it. */}
+      <Table dataSource={data} />
+    </QueryErrorBoundary>
+  );
+}
+```
+
+Keeping the filters and tabs while replacing only the table required a separate component that owned the query. Screen composition had to change before any error-handling code was added.
+
+The admin monorepo holds hospital admin, Back-Office for the operations team, and the global service's admin screen deployed as a PoC, so this had to fit all three apps. Some routes drew their own layouts while others delegated to templates or ListViews. Detail Drawers, panels that open from the side of the screen, lived in a route on some screens and inside a list on others. The same boundary would wrap different things on each screen, so before deciding where boundaries went, I decided what should remain after a failure. Here is where that ended up.
+
+```text
+Initial fetch fails    Boundary for that recovery unit
+Refetch fails          Keep existing data; recover on a later fetch
+Mutation fails         Keep input, show a field error or toast, allow resubmission
+Schema mismatch        Log at the trust boundary; pass through or reject according to the data
+```
+
+A mutation is a request that changes server data, such as a save, and a refetch fetches data the screen already has. A trust boundary is where values from outside the code enter the app, such as server responses and URLs.
+
+## Initial fetch failure: the menu stays, and only the failed region reloads
+
+A failed list should leave the header and menu usable. A failed detail should leave the list. A single root boundary was not the answer, but I did not want to swing to a boundary around every small component either. I treated what loads and retries together as one recovery unit and put a boundary around each.
 
 ```text
 App Root Boundary        page, final fallback
@@ -50,7 +73,7 @@ App Root Boundary        page, final fallback
     Detail Drawer        overlay
 ```
 
-A route boundary wraps only the layout's children with the page variant. Lists inside use section; details use overlay. A fourth variant, field, is used by dedicated search-filter boundaries below.
+`variant` is a prop on the boundary components we built, and it sets how a failure looks. A route boundary that wraps only the layout's `{children}` uses the `page` variant. Inside it, lists use `section` and details use `overlay`. A fourth variant, `field`, is used by dedicated search-filter boundaries and comes up separately below.
 
 ```tsx
 // Layout: wrap only {children}; Header and Side Menu stay outside this boundary
@@ -66,19 +89,19 @@ A route boundary wraps only the layout's children with the page variant. Lists i
 </QueryErrorBoundary>
 ```
 
-- A route-level page replaces the body while leaving Header and Side Menu outside. The app-root final safeguard also uses page, but covers the menu too.
-- Section displays guidance and Retry in the failed region.
-- Overlay closes a failed Drawer or Modal and shows a toast.
+Choosing a variant means choosing what stays after the failure.
 
-Menus stay outside route-body boundaries, and lists and details have separate wrappers inside. What survives a failure mattered more than minimizing the number of wrappers.
+- A route-level `page` replaces the body while Header and Side Menu, outside the boundary, remain. The app-root boundary is also `page`, but it covers the menu too.
+- `section` shows a message and a Retry button where the failure happened.
+- `overlay` closes a Drawer or Modal that failed while opening and shows a toast, a brief message that disappears on its own.
 
-## Keep queries out of page composition and URL details in routes
+What survives a failure came before keeping the number of boundaries down. What I wanted to shrink was how much a single failure costs the user.
 
-I created a ListView for the querying table and left the route to arrange the screen.
+### Routes arrange the screen, ListViews fetch
 
-Client queries moved from src/app into XxxListView below a section boundary, where a list failure can produce its own fallback. That restriction does not extend to Server Component prefetching or queries in the FSD pages layer.
+For this to work, queries had to move inside the boundaries. In Next.js, a `page.tsx` under `src/app` is the route that owns one URL. I created a ListView to draw the list and left the route to arrange the screen. Client queries that ran in `src/app` moved down into `XxxListView` below a `section` boundary, where a list failure can show its own fallback. The rule does not extend to Server Component prefetching or queries in the FSD pages layer.
 
-URL-opened details moved outside the list and into the route. Inside a list, they disappear with its section fallback or when antd Tabs unmounts it through destroyOnHidden. A screen independently opened by a URL ID needed its own declaration.
+Details opened by URL went into the route, outside the list. Inside a list, a detail disappears when `section` fails, and it also closes when antd Tabs unmounts the list through `destroyOnHidden`. A screen opened independently by a URL ID got its own declaration.
 
 Before and after:
 
@@ -106,6 +129,8 @@ function ReservationPage() {
 }
 ```
 
+When this query fails, the error happens in `ReservationPage`. No boundary inside the page can catch it, so the search filter turns into a fallback along with everything else.
+
 ```tsx
 // After: ListView owns fetching; the route retains two boundaries
 function ReservationPage() {
@@ -130,13 +155,13 @@ function ReservationPage() {
 }
 ```
 
-ListView now owns querying and rendering the table. The route shows how search conditions, list, and detail are wrapped.
+The query and table now live in ListView, and the route shows which boundary wraps the search conditions, the list, and the detail. A failed list query now shows its fallback only in the `section`, and the search filter and detail Drawer outside it stay.
 
-Details opened directly from row data stayed beside the list. Moving those too would make the route query the list again. An ID-opened detail and a detail using an already-fetched row did not need identical treatment.
+Details opened directly from row data stayed beside the list. Moving those up too would make the route query the list again, which runs against moving queries down. A detail opened by ID and one using an already fetched row did not need identical treatment.
 
-## Rebuild filters to permit field boundaries
+## Options failure: the keyword input has to stay
 
-Adding boundaries to search filters led to rebuilding the components. Previously, a filter was data in a configuration array rather than an element.
+Search filters include inputs such as department whose choices (options) come from an API. A failed options request should still let people search with the other conditions. But adding boundaries to search filters led to changing the component itself. A filter did not exist as an element. It was only data in a configuration array.
 
 ```tsx
 // Before: filters and the list both live in a configuration array
@@ -156,11 +181,9 @@ Adding boundaries to search filters led to rebuilding the components. Previously
 />
 ```
 
-The renderer received filters and list children together. Callers could not wrap an individual filter, and wrapping the layout removed the list too. Extending that renderer was possible; I chose JSX filters with their own queries instead.
+The renderer receives the `filters` array and the list `children` together. Callers could not wrap one filter, and wrapping the layout took the list with it. Filters that receive `options` as a prop had the page doing the fetching, so an options failure brought up the page fallback before the filter could respond. It is the same problem as the list query above.
 
-Filters accepting options as props were especially affected. The page fetched those options, so an options failure reached the page before a filter could handle it.
-
-I replaced configuration arrays with compound JSX. `createSearchFilter` takes a URL schema and creates those components.
+Changing the renderer would have allowed per-filter boundaries with a configuration array too, but I chose to write filters as JSX with their queries inside, because that makes the recovery scope visible at the call site. `createSearchFilter` is a factory that takes a URL schema and creates compound components. A compound component is a pattern that assembles a parent and children, such as `SearchFilter.Select`, into one feature.
 
 ```tsx
 const SearchFilter = createSearchFilter(reservationSearchParamsSchema);
@@ -174,25 +197,68 @@ const SearchFilter = createSearchFilter(reservationSearchParamsSchema);
 </SearchFilter>
 ```
 
-As JSX elements, filters can be wrapped within SearchFilter's children. Moving their option queries inside lets a search-bar failure preserve the list.
+Filters that are JSX elements can be wrapped by a boundary inside `SearchFilter`'s children. Option queries moved inside too, so a search-bar failure leaves the list in place.
 
-Wrapping the whole search bar still removed the keyword input and button when only department options failed. Each querying filter now wraps itself with field. The failed field retains its label, empty control, and Retry while other conditions remain searchable. The root section catches custom filters without their own boundary.
+Wrapping the whole search bar was still not enough. One failed department options request still took away the keyword input and search button. Now a filter that fetches options wraps itself in `field`. Only the failed field shows its label, an empty control, and Retry, and people keep searching with the other conditions. The root `section` catches errors from custom filters without their own boundary.
 
-What should remain usable after an options failure gave me a more direct guide than a preferred shape for shared filters.
+In effect I rebuilt a component while trying to add a boundary to it. What input should stay usable after an options failure was a more direct guide to this design than any preferred shape for shared filters.
 
-## An overlay must reopen after failure
+## Detail failure: closing it has to allow reopening
 
-For a Drawer opened by ?id=1, removing only the failed Drawer left the ID in the URL and prevented reopening the same row. The overlay variant calls onError to clear that URL state too.
+A failed detail closes the Drawer and leaves the list. But many screens open a Drawer from a URL value such as `?id=1`, and when its query failed, removing only the Drawer was not enough. With the ID still in the URL, clicking the same row would not open it again. The `overlay` variant calls `onError` right after catching the error so that URL state is cleared too.
 
-Imperative overlay-kit modals render at a Provider rather than beneath the screen tree, outside page and section boundaries. The shared overlay wrapper adds an overlay boundary at opening and unmounts the modal on failure. A later lint restriction prevents bypassing this wrapper through direct imports.
+Imperative modals opened with overlay-kit's `overlay.open` were a different case. They render at the Provider instead of in the screen tree, which places them outside page and section boundaries. So the shared package's overlay wraps a modal in an `overlay` boundary as it opens and unmounts the modal on failure. The lint rule coming up later blocks direct overlay imports so that only this version gets used.
 
-Closing a Drawer could also leave a stale fallback. Comparing pathname misses removal of ?id=, so boundaries subscribe to pathname plus search and reset on a change.
+Once a boundary catches an error, it keeps showing its fallback until reset. A closed Drawer could leave a stale fallback, so I changed the reset condition. Comparing only pathname misses the removal of `?id=`, so boundaries subscribe to pathname and search together and reset when either changes.
 
-Initially every boundary wrapped pushState and replaceState and restored its saved function on unmount. That could remove a later boundary's or Next router's patch. The module now wraps history once, while boundaries only add and remove listeners. Unmounting an inner boundary preserves the other subscriptions and router patch.
+Subscribing to URL changes meant wrapping `pushState` and `replaceState`, because the `popstate` event fires on moves such as going back and not on calls to those two functions. At first every boundary wrapped them and restored the old function on unmount. That could erase functions added later by another boundary or the Next router. The module now wraps history once, and boundaries only add and remove listeners. Here is the difference in short form.
 
-## Observe response mismatches without stopping existing screens
+```tsx
+// Before (shortened example): each boundary wraps, then restores the function it saved.
+useEffect(() => {
+  const original = history.pushState;
+  history.pushState = function (...args) {
+    original.apply(this, args);
+    resetIfLocationChanged();
+  };
+  return () => {
+    history.pushState = original; // Anything added after this wrap disappears too.
+  };
+}, []);
 
-As response types moved to schema inference, I began checking actual responses with those schemas too.
+// After (shortened example): the module wraps once; boundaries only add and remove a listener.
+useEffect(() => subscribeLocationChange(resetIfLocationChanged), []);
+```
+
+When a nested inner boundary goes away, the remaining subscriptions and the router patch stay in place. I removed the conflict nesting would cause before splitting boundaries any finer.
+
+## Mutation and refetch failures stay out of boundaries
+
+When an initial query with nothing to render fails, its region switches to a fallback. When data is already on screen, a failure does not need to erase all of it.
+
+Saving works the same way. If a failed mutation removed the form, the user could not fix their input. Field errors (messages beside an input), toasts, and retry stay in that screen.
+
+There was also a problem where a tab left open for a long time returned to a full-screen connection failure. Notification counts in the Back-Office and hospital admin header and menu are fetched every 60 seconds, from the layout, outside the route boundary. A refetch sent right after returning, before the network came back, could fail and throw all the way to the root even with cached data. The global default throwing refetch failures too was the cause, so I narrowed the throw condition to cases with no data to show. A failed refetch no longer erases the existing screen. Shortened, the change looks like this.
+
+```typescript
+// Before (shortened example): a failed refetch throws even with data on hand.
+new QueryClient({ defaultOptions: { queries: { throwOnError: true } } });
+
+// After (shortened example): throw only when there is no data to show.
+new QueryClient({
+  defaultOptions: {
+    queries: { throwOnError: (_error, query) => query.state.data === undefined },
+  },
+});
+```
+
+`useSuspenseQuery`, the hook that hands loading and errors to Suspense and boundaries, uses the same condition by default. It throws only when the cache has no data, and when a background refetch fails it keeps rendering the value it has.
+
+An initial failure in the header or menu still reaches the root. There is no data to keep in that area, so the app-root fallback appears. In that case the menu still turns into an error screen, as it did at the start. Splitting the route body and the list does not make every query recover on its own.
+
+## When values do not match: response schemas and URLs
+
+When a request succeeded with values that did not match, I did not stop the screen either. As response types moved to schema inference, I also started reading actual responses with the same schemas.
 
 ```tsx
 export const reservationSchema = z.object({
@@ -204,9 +270,9 @@ export const reservationSchema = z.object({
 export type Reservation = z.infer<typeof reservationSchema>;
 ```
 
-I did not replace existing responses with parse results immediately. Zod removes undeclared fields, so forgetting a field still used by the screen could break it as soon as validation was added. One optional mismatch also did not warrant blocking a working list.
+I did not replace existing responses with `parse()` results right away. Zod removes fields missing from the schema, so if I had missed a field a screen still used, adding validation could break that screen on the spot. I also did not want one optional field's mismatch to block a working list that partner staff were using.
 
-The first step was to log safeParse differences and return the original response to callers.
+The first step logged differences with `safeParse` and returned the original response to callers. Unlike `parse`, `safeParse` does not throw and returns whether it succeeded as its result.
 
 ```tsx
 export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T>): T {
@@ -224,15 +290,20 @@ export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T
 }
 ```
 
-These schemas are approximate checks with optional fields opened to nullish, so they are not constrained to `z.ZodType<T>`. The returned type still trusts the Axios generic; even an unrelated schema can therefore pass compilation.
+These schemas are approximate checks with optional fields opened to nullish, so I did not constrain them to `z.ZodType<T>`. The return type still relies on the Axios generic, which means the compiler will not catch a schema for an entirely different response.
 
-This does not block invalid values: they still reach callers. It lets deployed apps expose nulls, missing enum members, and decimal strings so schemas can be corrected against responses. Global admin was deployed as a PoC at this point.
+It does not block bad values either. They still reach callers. Leaving the screen alone let me find nulls, missing enum members, and decimals sent as strings in deployed apps and correct the schemas against real responses. The global admin screen was deployed as a PoC at this point.
 
-New features and inputs that cannot accept bad values use blocking validation. [Another article](/en/blog/zod-assertion-boundaries) explains observation, recovery, and blocking by source.
+New features and inputs that must not use bad values get blocking validation. Not every Zod schema needed to behave the same way on failure. [Another article](/en/blog/zod-assertion-boundaries) explains how I split observation, recovery, and blocking by where a value comes from.
 
-## Recover URL fields individually
+URLs can be edited by users or come from old bookmarks. Screens used to assert `searchParams` strings into the desired types.
 
-Users can edit URLs or arrive from old bookmarks. Previously, screens asserted searchParams strings into the desired types.
+```typescript
+// Before (shortened example): only asserts that the string is the desired type.
+const status = searchParams.get('status') as ReservationStatus;
+```
+
+Written this way, type checking cannot know what value the address bar holds. Now screens read through a schema.
 
 ```typescript
 export const reservationSearchParamsSchema = z.object({
@@ -242,9 +313,9 @@ export const reservationSearchParamsSchema = z.object({
 });
 ```
 
-Each invalid field now recovers through its own .catch. An invalid overall structure falls back to default conditions and logs the mismatch once. A field silently recovered by catch does not appear in that log.
+`.catch(value)` makes a field use that value in place of an error when its validation fails, so each invalid field recovers through its own `.catch`. If the overall structure does not match, the screen falls back to default query conditions and logs the difference once. The aim is to keep one bad URL from sending the whole list to a boundary. A value recovered by a field's `.catch` does not appear in that log.
 
-The read-side schema also describes accepted search conditions. Binding the route and schema through a factory would let link construction use the same input type.
+The read-side schema also describes the search conditions that URL accepts. Binding the path and schema in a factory would let the code that builds links use the same input type.
 
 ```tsx
 const reservationRoute = createRoute({
@@ -255,28 +326,11 @@ const reservationRoute = createRoute({
 <Link href={reservationRoute.href({ pageNumber: 2, status: 'WAIT' })}>Pending reservations</Link>
 ```
 
-That factory remains proposed. Read-side URL validation is the part already applied.
+That factory is still a plan. Only the part that reads and validates URLs has been applied.
 
-## Keep mutation and background-refetch failures within the screen
+## Logs record where to reproduce the failure
 
-When an initial query fails with no data to render, its region shows fallback. A failed request need not erase data already on screen.
-
-Saving is similar. A mutation failure should leave the form available for correction, so field errors, toasts, and retries stay in that screen.
-
-A long-open tab could replace the whole app with a connection error on return. Header and menu notification counts poll every 60 seconds outside route boundaries. A refetch before connectivity returned threw to the root even with cached data. I narrowed throwing to the absence of displayable data, preserving the existing screen on refetch failure.
-
-Initial header and menu failures still reach the root. There is no data to retain there, so the app-root fallback appears.
-
-```text
-Initial fetch fails    Boundary for that recovery unit
-Refetch fails          Keep existing data; recover on a later fetch
-Mutation fails         Keep input, show a field error or toast, allow resubmission
-Schema mismatch        Log at the trust boundary; pass through or reject according to the data
-```
-
-## Record where to reproduce the error
-
-Logs also needed to make the failed screen easy to find. API, render, and schema errors share a CloudWatch format. Global admin does not send API errors separately; only query failures caught by its boundaries appear there.
+Once the screen stayed up, logs had to make the failed spot easy to find again. API errors, render errors, and schema mismatches go in the same shape to CloudWatch, AWS's log service. The global admin screen does not send API errors separately, so only query failures caught by its boundaries appear there.
 
 ```typescript
 type ErrorLog = {
@@ -296,13 +350,13 @@ type ErrorLog = {
 };
 ```
 
-I use method and URL from API responses and add field paths and error codes for schema mismatches. Identical mismatches for one request are logged once until reload, instead of once for every affected list entry.
+Method and URL come straight from the API response, so callers do not write a name again. Schema mismatches add the field path and error code. The same mismatch on the same request is sent once until reload. Fifty list items failing on the same field gave no reason to pile up 50 identical logs.
 
-Logging must not break the screen. Nonserializable values and binary data are omitted; large response bodies are truncated to 2,000 characters. Delivery errors are not rethrown into user flows.
+Sending logs must not break the screen either. Unserializable values and binary data are left out, and large response bodies are cut at 2,000 characters. A failed send is not rethrown into the user's flow.
 
 ### Removing handwritten boundary names
 
-A handwritten boundary name also needs updating when its component moves.
+A boundary name written by hand has to be updated whenever the code moves.
 
 ```tsx
 // Call site before removing the wrapper name
@@ -311,39 +365,43 @@ A handwritten boundary name also needs updating when its component moves.
 </QueryErrorBoundary>
 ```
 
-I tried replacing names with React componentStack, but development and production differed. Turbopack production frames shortened them to at o (chunks/...).
+I tried to replace the names with what React's `componentStack` provides, a string listing the component that threw and its parents. But development and production builds differed. Turbopack production shortened names to something like `at o (chunks/...)`.
 
-I initially kept manual names, path, and error stack rather than publishing source maps. The minified names alone were difficult to use.
+Shortened names alone made logs hard to read, so at first I backed off. I withdrew the attempt within an hour and kept manual names, path, and the error stack, and did not publish source maps. A source map is a file that maps positions in shrunken code back to the original file and line, and deploying them would have solved this. But I did not think the gain justified the deployment cost and the wider exposure of source.
 
-Moving details into routes kept requiring name changes too. A stale name could point investigation to the wrong screen, so I enabled productionBrowserSourceMaps and removed caller names. Callers now specify variant; boundaries capture the path including query, boundaryVariant, componentFrame, and componentStack. Published source maps connect minified frames to original files and lines. That also makes source, including comments, public.
+Then every detail I moved into a route needed its name rewritten as well. A stale name could point a log at the wrong screen, so I eventually turned on `productionBrowserSourceMaps` in the `next.config` of all three apps and removed `name` from call sites. That option generates browser source maps in the production build and publishes them. Callers now choose only the variant. When a boundary catches an error, it fills in the path with its query, `boundaryVariant`, `componentFrame` (the single frame that threw), and `componentStack`. Even shortened frames lead back to the original file and line through the deployed source maps. That also makes source, including comments, public. First I avoided exposing source and left name upkeep to people, and later I chose the opposite.
 
-## Test the screen that survives
+## Tests check the screen that survives
 
-Checking only that an error message appears would not catch the old full-screen failure. I also tested what remains usable beside the failed component.
+Checking that an error message appears would not catch the old full-screen failure. I also tested what people can keep doing next to the failure.
 
-A list failure must preserve its sibling detail, and one failed filter must leave other conditions usable. An inner section must not change its outer page to fallback. Closing a Drawer clears stale fallback through search changes; removing an overlay's ID allows the same item to reopen.
+A failed list must leave its sibling detail, and one failed filter must leave the other conditions searchable. An error caught by an inner `section` must not change the outer `page`. Closing a Drawer has to clear the fallback through the search change, and after an `overlay` error removes the ID, the same item has to open again.
 
-Tests also check that unmounting a nested boundary preserves history listeners and router patches, retry rerenders only the failed region, and location and frames reach logs without caller names.
+Tests also check that unmounting a nested boundary leaves other history listeners and the router patch in place, that retry redraws only the failed region, and that location and frames reach logs without caller names.
 
-Each app also has refetch regression tests: existing data survives a refetch failure, while an initial failure still shows fallback.
+The refetch fix got regression tests in each app: existing values survive a failed refetch, and a failed initial fetch still shows the fallback.
 
-## Turn documented rules into lint
+## What lint cannot decide
 
-The documents already described query placement, detail declarations, and useQuery wrappers. Different forms still accumulated in code. Even documented grep checks depended on someone remembering to run them.
+The documents already described query placement in routes, where details are declared, and how to treat `useQuery` wrappers. Different shapes still piled up in the code. Nothing flagged documents and code drifting apart, and grep checks were skipped unless someone remembered to run them.
 
-I moved the machine-decidable parts into ESLint, introducing rules into develop separately rather than merging the first branch plugin unchanged.
+I moved the machine-decidable parts into ESLint. Rather than merging the plugin I first built on a branch as it was, I applied the rules to develop one at a time.
 
 | Rule | Checks | Severity |
 | --- | --- | --- |
-| app/no-query | useQuery-family calls in src/app/**, following one-layer wrapper hooks too | warning |
-| query/no-passthrough-hook | Hooks that only return useQuery without adding behavior | error |
-| no-restricted-imports | Direct overlay-kit overlay imports bypassing boundaries | error |
+| `app/no-query` | `useQuery`-family calls in `src/app/**`, following queries wrapped in one layer of hook too | warning |
+| `query/no-passthrough-hook` | Hooks that wrap `useQuery` as it is and add nothing | error |
+| `no-restricted-imports` | Direct overlay-kit overlay imports that open modals without a boundary | error |
 
-The first rule governs route composition: a client query hook called in src/app fails above the section boundary. To replace only the table, the querying component needs to be inside that boundary.
+The first is a route composition rule. A client query hook called in `src/app` sends its error up to the boundary for the whole route. To replace only the table with a failure screen, the querying component has to be inside the `section` boundary.
 
-At first, only-warn lowered every error to warning. I removed it and assigned severity per rule. The passthrough-hook rule became an error after existing code was corrected, but app/no-query remains a warning and cannot block CI.
+When the rules first went in, the `only-warn` plugin in the shared config was lowering every error to a warning, so adding rules did not break CI. I removed it and wrote severity per rule. The wrapper hook rule became an error after existing code was cleaned up, but `app/no-query` is still a warning and does not block CI.
 
-Choosing where a detail belongs or noticing a missing route boundary still requires reading the code. These lint rules do not decide which components must remain usable together.
+Whether a detail belongs in a route and which route is missing a boundary are still judged by reading the code. These lint rules do not decide which components have to stay alive together when something fails.
+
+## The errors remain, and each one takes less of the screen
+
+This work did not make errors go away. What changed is what stays on screen after one. A failed list that used to turn the whole app into an error message now ends at that list, and a failed options request ends at one field of the search filter. Some failures still reach the app root, such as an initial failure in the header or menu. Differences between responses and types can now be found in logs, and a log's path and frames lead to the screen to reproduce.
 
 ## References
 

@@ -6,8 +6,6 @@
 
 ![두 화면에서 API와 데이터베이스로 이어지는 흐름과 테스트 카드를 그린 일러스트](/images/covers/side-project-technology.png)
 
-*기술 선택을 주제로 만든 일러스트예요. 실제 배포 구성도는 아니에요.*
-
 피식과 Game Mate를 같은 저장소에서 만들지만 API와 캐시까지 맞추지는 않았어요. 웹은 Next.js와 React, 서버는 NestJS, DB는 PostgreSQL을 쓰고, 피식에는 GraphQL과 Apollo를, Game Mate에는 REST와 TanStack Query를 골랐어요.
 
 여러 목록에 나타나는 같은 게시물을 Apollo의 정규화 캐시로 다뤄 보고 싶었어요. Game Mate에서는 글을 바꾼 뒤 어떤 목록과 상세를 다시 읽을지 쿼리 키로 직접 정해 보고 싶었고요. 같은 설정을 재사용하는 편리함보다 서로 다른 갱신 방식을 다뤄 보는 쪽을 택했어요.

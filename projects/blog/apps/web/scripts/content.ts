@@ -34,7 +34,6 @@ export const metaSchema = z
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),
     coverImage: z.string().startsWith('/images/').optional(),
-    sourceUrl: z.url().optional(),
   })
   .strict()
   .refine(
@@ -50,12 +49,9 @@ export const seoSchema = z.object({
     seoBase.extend({ slug: slugSchema, keywords: z.array(z.string().trim().min(1)) }),
   ),
 });
-export const redirectSchema = z.array(
-  z.object({ locale: z.enum(locales), from: slugSchema, to: slugSchema }).strict(),
-);
 export type Locale = (typeof locales)[number];
 export type TocEntry = { id: string; title: string; level: 2 | 3 };
-export type ContentArticle = z.infer<typeof metaSchema> &
+type ContentArticle = z.infer<typeof metaSchema> &
   z.infer<typeof seoSchema>['posts'][string] & {
     id: string;
     locale: Locale;
@@ -121,24 +117,8 @@ export function validateMdxNodes(tree: ReturnType<typeof analyzeMdx>['tree'], la
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
-export const articleUrlPath = (article: Pick<ContentArticle, 'locale' | 'slug'>) =>
+const articleUrlPath = (article: Pick<ContentArticle, 'locale' | 'slug'>) =>
   `/${article.locale}/blog/${article.slug}`;
-
-/**
- * Returns previously published article paths that are neither live nor a 301 source.
- * Changing a slug or unpublishing an article must keep its old path in content/redirects.json.
- */
-export function findMissingRedirects(
-  previous: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
-  next: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
-  redirects: readonly { source: string }[],
-): string[] {
-  const live = new Set(next.map(articleUrlPath));
-  const redirected = new Set(redirects.map((redirect) => redirect.source));
-  return [...new Set(previous.map(articleUrlPath))]
-    .filter((urlPath) => !live.has(urlPath) && !redirected.has(urlPath))
-    .sort();
-}
 
 export async function readContent(root: string) {
   const seo = Object.fromEntries(
@@ -214,32 +194,5 @@ export async function readContent(root: string) {
         throw new Error(`${id}/${locale}: broken article link ${node.url}`);
     });
   }
-  const explicitRedirects = redirectSchema.parse(await json(path.join(root, 'content/redirects.json')));
-  const redirects: { source: string; destination: string; statusCode: 301 }[] = [];
-  const seenSources = new Set<string>();
-  for (const { locale, from, to } of explicitRedirects) {
-    const source = `/${locale}/blog/${from}`;
-    const destination = `/${locale}/blog/${to}`;
-    if (
-      source === destination ||
-      validPaths.has(source) ||
-      !validPaths.has(destination) ||
-      seenSources.has(source)
-    )
-      throw new Error(`Invalid redirect ${source} → ${destination}`);
-    seenSources.add(source);
-    redirects.push({ source, destination, statusCode: 301 });
-  }
-  for (const article of articles) {
-    if (!article.sourceUrl || article.locale !== 'ko') continue;
-    const original = new URL(article.sourceUrl);
-    if (original.hostname === 'jingeon27.tistory.com' && /^\/\d+$/.test(original.pathname)) {
-      redirects.push({
-        source: original.pathname,
-        destination: `/${article.locale}/blog/${article.slug}`,
-        statusCode: 301,
-      });
-    }
-  }
-  return { articles, imports, redirects };
+  return { articles, imports };
 }

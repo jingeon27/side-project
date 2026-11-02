@@ -1,18 +1,40 @@
 <Summary>
 
-These are the TypeScript patterns I use to preserve inference and express relationships between values: satisfies, optional properties, generics, and mutually exclusive props.
+Each TypeScript pattern here, `satisfies`, optional properties, generics, and mutually exclusive props, sits beside the code you get without it. They catch mistakes that otherwise pass type checks, at the place the value is passed. Each entry stands alone, so you can read only the one you need.
 
 </Summary>
 
 ![An illustration of type constraints distinguishing valid inputs at a call site.](/images/covers/typescript-patterns.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+Gathering field names in an enum does not guarantee the values attached to them. A caller can still pass a string as a `price` or combine incompatible props. I use `satisfies`, generics, and unions to catch those combinations where they are passed. With optional properties, I also look at which keys an object may omit, rather than only the type returned when reading them.
 
-Gathering field names in an enum did not guarantee the values attached to them. A caller could still pass a string as a price or combine incompatible props. I use `satisfies`, generics, and unions to catch those combinations where they are passed. With optional properties, I also look at which keys an object may omit, rather than only the type returned when reading them.
+Each entry opens with a reduced example of the code without the pattern and what the type checker misses there.
 
-## Checking compatibility with satisfies while preserving inference
+## satisfies with as const
 
-For a route map, I want to check the required names without losing each concrete path. Here `as const` keeps the literals, while `satisfies` checks the required keys and path format.
+Some objects fill in a value for each of a fixed set of names, such as routes or labels. Annotating the variable widens the values to `string`, and `as const` alone checks nothing about the shape.
+
+```typescript
+type RouteName = 'home' | 'profile' | 'settings';
+
+// Annotating the variable widens the values to string.
+const TYPED_ROUTES: Record<RouteName, string> = {
+  home: '/',
+  profile: '/profile',
+  settings: '/settings',
+};
+
+TYPED_ROUTES.profile === '/profil'; // The typo passes
+
+// as const alone keeps the values but does not check the shape.
+const CONST_ROUTES = {
+  home: '/',
+  profile: 'profile', // The missing slash passes
+  // Leaving out settings passes too
+} as const;
+```
+
+Use both together to check that required names are present while keeping each value as a concrete string. `as const` keeps a value as a literal type such as `'/profile'` rather than `string`. `satisfies` checks a value against a type without changing the value's own type. Below, `as const` keeps the literals, and `satisfies` checks the required keys and path format. `` `/${string}` `` is a type meaning a string that starts with a slash.
 
 ```typescript
 type RouteName = 'home' | 'profile' | 'settings';
@@ -27,7 +49,9 @@ ROUTES.profile;
 // Inferred as '/profile'.
 ```
 
-Annotating the variable as `Record<RouteName, string>` can make `ROUTES.profile` read as the broader `string`. The combination keeps `'/profile'` while catching missing keys and invalid paths. I use it for exhaustive label maps too, such as payment-method labels.
+Annotating the variable as `Record<RouteName, string>` can make `ROUTES.profile` read as the broader `string`. The combination keeps `'/profile'` while catching missing keys and invalid paths, and a typo such as `ROUTES.profile === '/profil'` becomes a compile error.
+
+The same approach applies to objects that must be filled exhaustively, such as payment-method labels.
 
 ```typescript
 const LABELS = {
@@ -37,7 +61,24 @@ const LABELS = {
 } as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
 ```
 
-## T | undefined and an optional property mean different things
+Asserting the same object with `as Record<'normal' | 'coupon' | 'cancel', string>` would let a missing `cancel` pass.
+
+## A property set to undefined and a missing key
+
+A new field added with `?` can be left out wherever objects are built, and the type checker will not say anything.
+
+```typescript
+interface CouponRequest {
+  discountRate?: number;
+}
+
+// The type cannot say whether the rate was forgotten or left out on purpose.
+function toCouponRequest(): CouponRequest {
+  return {};
+}
+```
+
+With `number | undefined` as the value type, the key must always exist, so the code above stops compiling, and a missing value has to be written out as `undefined`. Here are the two declarations side by side.
 
 ```typescript
 interface Example {
@@ -55,11 +96,30 @@ Both properties can read as `number | undefined`, but constructing the object ca
 - `requiredKey` must exist, and its value may be `undefined`.
 - `optionalKey` may be omitted entirely.
 
-`exactOptionalPropertyTypes` makes the distinction explicit. `optionalKey?: number` allows the key to be absent. Assigning `undefined` requires adding it to the value type as well.
+`exactOptionalPropertyTypes` makes the distinction explicit. `optionalKey?: number` allows the key to be absent, which is different from allowing its value to be written as `undefined`. Assigning `undefined` requires adding it to the value type as well.
 
-JSON introduces another distinction: `JSON.stringify` omits object properties whose values are `undefined`. Keeping a key in a JavaScript object does not mean it will appear in the request body.
+JSON introduces another distinction: `JSON.stringify` omits object properties whose values are `undefined`. Keeping a key in a JavaScript object does not mean it will appear in the request body. `JSON.stringify({ discountRate: undefined })` produces `{}`, while a `null` value keeps the key in the JSON.
 
 ## Connecting a value and its callback with a generic
+
+If a select component declares each prop as `string`, a value that does not exist still passes, and the callback has no idea which values are possible.
+
+```tsx
+interface StringSelectProps {
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+<StringSelect
+  value="points" // Passes even though no such payment method exists
+  onValueChange={(method) => {
+    // method is a string, so passing it on needs another assertion.
+    pay(method as PaymentMethod);
+  }}
+/>;
+```
+
+A generic takes a type as a parameter. Using one `T` for both props creates the relationship that the two types must match.
 
 ```tsx
 interface SelectProps<T extends string> {
@@ -72,7 +132,7 @@ function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
 }
 ```
 
-This Select passes its value to the callback. Supplying `PaymentMethod` at the call site gives both props the same union and keeps that set of payment methods visible inside the callback.
+This `Select` passes its `value` to the callback. Supplying `PaymentMethod` at the call site gives both props the same union and keeps that set of payment methods visible inside the callback.
 
 ```tsx
 type PaymentMethod = 'normal' | 'coupon';
@@ -85,11 +145,28 @@ type PaymentMethod = 'normal' | 'coupon';
 />;
 ```
 
+Here `'points'` as the `value` is a compile error, and `method` can go to a payment function without an assertion. If `value` is a variable of type `PaymentMethod`, `T` is inferred as that union without a type argument. Passing a literal directly, as in `value="coupon"`, narrows `T` to `'coupon'` alone, which is when you write the type argument as above.
+
 A single generic expresses that relationship instead of declaring each prop independently as `string`.
 
-## Expressing mutually exclusive props with a union
+## Mutually exclusive props with a never union
 
-A component may support a value with a change callback, or just a label. Making every property optional would also permit a label and value together. I use `never` for the properties each mode must reject, so the union describes the allowed combinations.
+Use this when one component supports a value with a change callback, or just a `label`. Making every property optional would also permit a `label` and `value` together.
+
+```tsx
+type LooseProps<T extends string> = {
+  value?: T;
+  onValueChange?: (value: T) => void;
+  label?: string;
+};
+
+<LooseField label="Invalid combination" value="active" />; // Passes
+<LooseField value="active" />; // Passes without a callback
+```
+
+The implementation also has to recheck that `value` and `onValueChange` exist every time. Splitting the props into a plain union is still not enough: with the shape `{ value, onValueChange } | { label }`, passing `label` and `value` together passes as well. TypeScript does not treat a property as excess if any member of the union declares it.
+
+So `never` marks the properties each mode rejects, and the union describes the allowed combinations. No value can be assigned to the `never` type.
 
 ```tsx
 type ControlledProps<T extends string> = {
@@ -118,9 +195,11 @@ function Field<T extends string>(props: Props<T>) {
 <Field label="Invalid combination" value="active" />;      // Compile error
 ```
 
-Function overloads are useful for describing call signatures. For modeling valid React props, a discriminated union or a `never`-based XOR also lets the implementation narrow the types safely.
+An invalid combination fails where the component is called. The implementation can inspect the props and then read only the fields available for that mode. In the branch where `'label' in props` is false, `LabelOnlyProps` drops out, so `props.onValueChange` can be called directly.
 
-In this example, an invalid combination fails where the component is called. The implementation can inspect the props and then read only the fields available for that mode.
+`in` only checks whether the key exists, though. Passing `label={undefined}` explicitly passes the type check and takes the `<span>` branch. To rule that out as well, turn on the `exactOptionalPropertyTypes` option from earlier.
+
+Function overloads can also separate call styles. For this component, a props union made it easier to see which fields the implementation could use.
 
 ## References
 

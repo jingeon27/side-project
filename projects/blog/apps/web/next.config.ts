@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import type { NextConfig } from 'next';
 
 import createMDX from '@next/mdx';
@@ -14,9 +12,6 @@ const config: NextConfig = {
   experimental: { globalNotFound: true },
   pageExtensions: ['ts', 'tsx', 'md', 'mdx'],
   headers,
-  async redirects() {
-    return JSON.parse(readFileSync(new URL('./content/generated-redirects.json', import.meta.url), 'utf8'));
-  },
 };
 const withMDX = createMDX({
   options: {

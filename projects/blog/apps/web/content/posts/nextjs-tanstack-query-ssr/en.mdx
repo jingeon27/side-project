@@ -1,20 +1,34 @@
 <Summary>
 
-I wanted browser queries to pick up data fetched on the server. I used different QueryClient lifetimes in each environment and shared the query definitions between them.
+I followed the code that lets the browser's TanStack Query cache pick up data fetched ahead of time in a Next.js Server Component. `QueryClient` gets a different lifetime in each environment, and both sides share the query definitions.
 
 </Summary>
 
 ![An illustration of initial data moving between separate server and browser caches.](/images/covers/nextjs-tanstack-query-ssr.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
-
 > The examples use Next.js 15 App Router and TanStack Query v5.
 
-Fetching data on an App Router server page does not remove the client query that reads it on screen. I needed to pass the server cache to the browser and keep that browser cache alive through later renders.
+TanStack Query caches API responses in browser memory and hands them to components querying with the same key. The object holding that cache is the `QueryClient`. Fetching data on an App Router server page does not remove the client query that reads it on screen. If the server's result can't reach the browser cache, the browser has to run the same query again. That means deciding how the server cache reaches the browser and how long the browser keeps using it.
 
-The creation code could be shared, but the instance could not. Each server request gets a fresh cache; repeated browser renders keep using the same one.
+The first decision is the `QueryClient`'s lifetime. The two simplest ways to write it each break in one environment. These are examples shortened for explanation.
 
-## Separate server requests and retain the browser cache
+```typescript
+// Reduced example: one module-level instance means every server request shares this cache.
+export const queryClient = new QueryClient();
+```
+
+```tsx
+// Reduced example: creating one on every render loses the cache in the browser.
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient();
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
+```
+
+Keep one instance around on the server, and data fetched for one request stays in the next request's cache. The browser is the opposite: create a new one on every render, and you lose the cache you already have. So the creation code is shared and the instance is not. The code below runs in order, from creating the `QueryClient` to subscribing on screen.
+
+## `getQueryClient`: one per request, one for the browser
 
 ```typescript
 // query-client.ts
@@ -54,11 +68,13 @@ export function getQueryClient() {
 }
 ```
 
-On the server, each call to getQueryClient returns a new instance from makeQueryClient. Data from one request therefore does not remain in the next request's cache. In the browser, the module holds the instance so a Provider rerender does not discard it.
+On the server, each call to `getQueryClient` returns a new instance from `makeQueryClient`. In the browser, the module holds the instance so a Provider rerender does not discard it. You could keep it in `useState`, but [the TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) advises against that when code below it can suspend with no Suspense boundary in between, because React can throw the instance away if the first render suspends.
 
-I used TanStack Query's isServer to distinguish the environments. A direct typeof check must compare against a string: typeof window !== undefined is true on the server too. The corresponding server check would be typeof window === 'undefined'.
+`staleTime` sets how long fetched data counts as fresh. At the default of 0, even data the server just handed over counts as stale, so the browser fetches again as soon as the screen appears. The same documentation advises a value above 0 with SSR. The `dehydrate` setting comes up later.
 
-## Connect that instance to the provider
+TanStack Query's `isServer` distinguishes the environments. A direct `typeof` check has to compare against a string. The first edition of this article had `typeof window !== undefined`, which is always true, including on the server, because `typeof` returns a string that can never equal the value `undefined`. So the check is written as `typeof window === 'undefined'`.
+
+## Connecting the browser instance to the provider
 
 ```tsx
 'use client';
@@ -78,9 +94,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
-The provider lives in a Client Component and receives the instance from getQueryClient. Wrapping a layout's children with it does not turn Server Components passed through children into Client Components. This gives cache subscribers a provider while preserving server rendering.
+`QueryClientProvider` passes the instance down through React Context, which Server Components cannot use. So the provider lives in a Client Component and receives the instance from `getQueryClient`. Wrapping a layout's children with it does not turn Server Components passed through children into Client Components. Cache subscribers get a provider, and server rendering stays available.
 
-## Point both environments at the same query
+## `queryOptions` for pointing at the same query
 
 ```typescript
 import { queryOptions } from '@tanstack/react-query';
@@ -88,16 +104,18 @@ import { queryOptions } from '@tanstack/react-query';
 export const categoryOptions = queryOptions({
   queryKey: ['categories'],
   queryFn: async () => {
-    const response = await fetch(`${process.env.API_URL}/categories`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`);
     if (!response.ok) throw new Error('Could not load categories.');
     return (await response.json()) as Category[];
   },
 });
 ```
 
-Writing keys separately for server prefetching and client subscriptions risks requesting the same data under different cache entries. I put the key and queryFn in queryOptions and reused that definition in both places. Changes to the category key or request then belong in this definition.
+A query key is the name used to find data in the cache. Writing keys separately for server prefetching and client subscriptions risks requesting the same data under different cache entries. The key and `queryFn` sit together in `queryOptions`, and both sides reuse that definition. Changes to the category key or request belong here.
 
-## Start independent queries together
+This `queryFn` runs on both the server and the browser. The browser cannot read environment variables without the `NEXT_PUBLIC_` prefix, so the example uses `NEXT_PUBLIC_API_URL` for an API address that is safe to expose. Its value is written into the browser code during `next build`. If the server uses a separate internal address, the request function has to be split by environment.
+
+## Independent queries start together
 
 ```tsx
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
@@ -118,11 +136,13 @@ export default async function HomePage() {
 }
 ```
 
-Categories and integrations do not need each other's results, so I wait for both through Promise.all. Once they finish, dehydrate extracts the cache for HydrationBoundary. A child subscribing with the same key can then find the data the server fetched.
+Categories and integrations do not need each other's results, so `Promise.all` waits for both. `prefetchQuery` puts each result into this `queryClient`'s cache.
 
-The default dehydration policy is enough for completed queries like these. The earlier QueryClient configuration also includes pending queries to support screens that stream through Suspense without waiting for prefetching to finish.
+This instance isn't the one the provider uses, though, since every server call to `getQueryClient` creates a new one. So there is a step that hands the cache over. Once the queries finish, `dehydrate` extracts the cache as a value that can be passed along, for `HydrationBoundary`. `HydrationBoundary` fills the provider's `QueryClient` with it. A child subscribing with the same key can then find the data the server fetched.
 
-## Subscribe to the transferred cache on screen
+The default dehydration policy is enough for completed queries like these. The earlier `QueryClient` configuration also includes pending queries to support screens that stream through Suspense without waiting for prefetching to finish.
+
+## Subscribing on screen
 
 ```tsx
 'use client';
@@ -135,12 +155,31 @@ export function HomePageView() {
 }
 ```
 
-HomePageView calls useSuspenseQuery with the same integrationOptions used on the server. The matching key lets its first render read the data passed through HydrationBoundary. The browser QueryClient handles subsequent invalidation and refetching. Server prefetching does not require copying the result into another piece of state.
+`HomePageView` calls `useSuspenseQuery` with the same `integrationOptions` used on the server. This hook pauses rendering and leaves the wait to the nearest Suspense boundary when data isn't there yet, so inside the component `data` can be treated as present. The matching key lets its first render read the data passed through `HydrationBoundary`. The browser `QueryClient` handles invalidation and refetching from there. Server prefetching does not require copying the result into another piece of state.
 
-## Decide which queries to await
+Here is the flow so far, shortened. A `QueryClient` gets created separately in three places, and the data travels as the dehydrated value.
 
-For data needed in the initial HTML, I await prefetchQuery as above. In v5, however, prefetchQuery does not throw failures to its caller. A server query that needs explicit error handling should use fetchQuery.
+```text
+Server Component HomePage
+  getQueryClient()          a QueryClient for this render only
+  await prefetchQuery(...)  store the result in its cache
+  dehydrate(queryClient)    extract a value that can be passed along
+      │
+      ▼
+Server render producing HTML
+  create the provider's QueryClient and fill it with that value
+  HomePageView renders with the data
+      │
+      ▼
+Browser
+  fill the module-held QueryClient with the same value
+  this instance handles invalidate and refetch from here
+```
 
-A query that can finish after the page starts streaming can use pending dehydration, with its consumer inside Suspense. That component subscribes through useSuspenseQuery and receives the data as it becomes ready. QueryClient lifetime is shared infrastructure; waiting for every query is a separate decision.
+## Waiting or streaming, query by query
 
-Reference: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr)
+For data the initial HTML needs, await `prefetchQuery` as above. In v5, however, `prefetchQuery` does not throw failures to its caller, so a server query that needs to receive and handle errors should use `fetchQuery`.
+
+A query that can finish after the page goes out can use pending dehydration, with its consumer inside Suspense. That component subscribes through `useSuspenseQuery` and receives the data as it becomes ready. When a `QueryClient` gets created can be a shared decision, while how long to wait for a response doesn't have to be the same on every screen.
+
+References: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js browser environment variables](https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser)

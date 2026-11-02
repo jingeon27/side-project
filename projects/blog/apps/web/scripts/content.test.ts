@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { analyzeMdx, findMissingRedirects, metaSchema, readContent } from './content';
+import { analyzeMdx, metaSchema, readContent } from './content';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -31,7 +31,6 @@ async function fixture() {
   });
   await write('seo/ko.json', seo({ cache: post('캐시-설계') }));
   await write('seo/en.json', seo({ cache: post('cache-design') }));
-  await write('content/redirects.json', []);
   await writeFile(path.join(root, 'content/posts/cache/ko.mdx'), '## 캐시 설계\n\n한국어 본문');
   await writeFile(path.join(root, 'content/posts/cache/en.mdx'), '## Cache design\n\nEnglish text');
   return { root, write, seo };
@@ -75,29 +74,6 @@ describe('content registry contract', () => {
     await mkdir(path.join(root, 'content/posts/other'));
     await write('seo/ko.json', seo({ cache: post('duplicate'), other: post('duplicate') }));
     await expect(readContent(root)).rejects.toThrow('duplicate slug');
-  });
-  it('checks redirects target a real published article and prevents redirecting a live slug', async () => {
-    const { root, write } = await fixture();
-    await write('content/redirects.json', [{ locale: 'en', from: 'old-title', to: 'cache-design' }]);
-    expect((await readContent(root)).redirects).toEqual([
-      { source: '/en/blog/old-title', destination: '/en/blog/cache-design', statusCode: 301 },
-    ]);
-    await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'missing' }]);
-    await expect(readContent(root)).rejects.toThrow('Invalid redirect');
-  });
-  it('requires a 301 redirect for every previously published path that disappears', async () => {
-    const { root, write, seo } = await fixture();
-    const published = (await readContent(root)).articles;
-    await write('seo/en.json', seo({ cache: post('cache-strategy') }));
-    const renamed = await readContent(root);
-    expect(findMissingRedirects(published, renamed.articles, renamed.redirects)).toEqual([
-      '/en/blog/cache-design',
-    ]);
-
-    await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'cache-strategy' }]);
-    const redirected = await readContent(root);
-    expect(findMissingRedirects(published, redirected.articles, redirected.redirects)).toEqual([]);
-    expect(findMissingRedirects([], redirected.articles, [])).toEqual([]);
   });
   it('allows only registered MDX components with literal or numeric props and checks their src', async () => {
     const { root } = await fixture();
