@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<title>Game Mate | 플레이가 통하는 메이트</title>
+<desc>클래시로얄 친추 판매와 게임 코칭을 연결하는 Game Mate. 말풍선 모양의 G 로고와 왕관을 배치했습니다.</desc>
+<defs><filter id="shadow" x="-30%" y="-30%" width="180%" height="180%"><feDropShadow dx="0" dy="24" stdDeviation="18" flood-color="#001b15" flood-opacity=".28"/></filter></defs>
+<style>text{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;fill:#f1f8ed}.headline{font-weight:800;letter-spacing:-3px}</style>
+<rect width="1200" height="630" fill="#0b342d"/>
+<g transform="translate(64 58)"><rect width="56" height="56" rx="17" fill="#d5f5db"/><g transform="scale(.875)"><path d="M18 13h28a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H31L20 52v-9h-2a6 6 0 0 1-6-6V19a6 6 0 0 1 6-6Z" fill="#147d64"/><path d="M41 23H27v12h14v-6h-6" fill="none" stroke="#f4fff9" stroke-width="4" stroke-linejoin="round"/></g></g>
+<text x="138" y="101" font-size="40" font-weight="700" letter-spacing="-1">Game Mate</text>
+<text x="64" y="250" font-size="70" class="headline">플레이가 통하는</text>
+<text x="64" y="339" font-size="70" class="headline">메이트를 만나요.</text>
+<text x="68" y="410" font-size="28" fill="#bad5c7">클래시로얄 친추 판매와 게임 코칭</text>
+<path d="M64 508h574" stroke="#36564b" stroke-width="1.5"/>
+<text x="68" y="552" font-size="22" font-weight="600" fill="#c2d8c8">모집 글에서 채팅까지, 플레이어를 연결해요.</text>
+<text x="68" y="590" font-size="19" fill="#9fbdad">game.bambyul.com</text>
+<g transform="translate(814 196) rotate(9 154 154)"><rect width="308" height="308" rx="72" fill="none" stroke="#497963" stroke-width="2"/></g>
+<g transform="translate(784 168) rotate(-8 154 154)" filter="url(#shadow)"><rect width="308" height="308" rx="72" fill="#d5f5db"/><g transform="translate(35 27) scale(3.72)"><path d="M18 13h28a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H31L20 52v-9h-2a6 6 0 0 1-6-6V19a6 6 0 0 1 6-6Z" fill="#147d64"/><path d="M41 23H27v12h14v-6h-6" fill="none" stroke="#f4fff9" stroke-width="4" stroke-linejoin="round" stroke-linecap="square"/></g></g>
+<g transform="translate(1030 116) rotate(12 55 55)"><rect width="110" height="110" rx="32" fill="#ff9b42"/><path d="m26 42 14 11 15-21 15 21 14-11-7 35H33Z" fill="none" stroke="#3b301d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M37 87h36" stroke="#3b301d" stroke-width="5" stroke-linecap="round"/></g>
+<path d="m750 425-15 18m25 14-11 8m367-197 17 5" stroke="#729f83" stroke-width="4" stroke-linecap="round"/>
+</svg>

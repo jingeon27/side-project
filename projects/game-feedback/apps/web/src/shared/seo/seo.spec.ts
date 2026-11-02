@@ -39,6 +39,29 @@ describe('SEO metadata and visibility', () => {
     }
     expect(titles.size).toBe(Object.keys(pageContent).length);
   });
+  it('prioritizes original photos and leaves generated cards last without assigning photo dimensions', () => {
+    vi.stubEnv('WEB_ORIGIN', production.WEB_ORIGIN);
+    const metadata = createPageMetadata({
+      title: '플레이어 프로필',
+      description: '공개 프로필',
+      path: '/ko/users/user-1',
+      photoPaths: ['/api/users/user-1/avatar?v=avatar-1', '/api/users/user-1/avatar?v=avatar-1'],
+      imagePath: '/og/users/user-1',
+    });
+    expect(metadata.openGraph?.images).toEqual([
+      {
+        url: 'https://feedback.example/api/users/user-1/avatar?v=avatar-1',
+        alt: '플레이어 프로필 | Game Mate',
+      },
+      {
+        url: 'https://feedback.example/og/users/user-1',
+        alt: '플레이어 프로필 | Game Mate',
+        width: 1200,
+        height: 630,
+      },
+    ]);
+    expect(metadata.twitter).toMatchObject({ images: metadata.openGraph?.images });
+  });
   it('keeps private pages and test identities out of search even when public indexing is enabled', () => {
     for (const [key, value] of Object.entries(production)) vi.stubEnv(key, value);
     expect(createPageMetadata({ title: '공개', description: '공개', path: '/ko' }).robots).toMatchObject({

@@ -14,6 +14,7 @@ const data: IGroupContestsSeoData = {
     __typename: 'Group',
     description: '',
     avatarUrl: null,
+    coverUrl: null,
     id: 'group',
     name: '웃음 그룹',
     visibility: GroupVisibility.Public,

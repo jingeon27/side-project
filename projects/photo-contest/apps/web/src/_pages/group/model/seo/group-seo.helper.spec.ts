@@ -11,6 +11,7 @@ const data: IGroupSeoData = {
     __typename: 'Group',
     description: '',
     avatarUrl: null,
+    coverUrl: null,
     id: 'group-1',
     name: '웃긴 고양이',
     visibility: GroupVisibility.Public,
@@ -51,11 +52,19 @@ describe('공개 그룹 SEO', () => {
         ...data.group,
         description: '고양이들의 특별한 순간',
         avatarUrl: '/backend/groups/group-1/avatar/avatar-1',
+        coverUrl: '/backend/groups/group-1/cover/cover-1',
       },
     };
     expect(groupMetadata(profile, origin)).toMatchObject({
       description: profile.group.description,
-      openGraph: { images: [`${origin}${profile.group.avatarUrl}`, `${origin}/backend/media/post-1`] },
+      openGraph: {
+        images: [
+          { url: `${origin}${profile.group.avatarUrl}`, alt: '웃긴 고양이 - 피식' },
+          { url: `${origin}${profile.group.coverUrl}`, alt: '웃긴 고양이 - 피식' },
+          { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 - 피식' },
+          { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+        ],
+      },
     });
     expect(groupJsonLd(profile, origin)?.['@graph']).toEqual(
       expect.arrayContaining([
@@ -72,7 +81,19 @@ describe('공개 그룹 SEO', () => {
     expect(metadata.title).toBe('웃긴 고양이');
     expect(metadata.description).toContain('3명의 멤버');
     expect(metadata.alternates).toEqual({ canonical: `${origin}/groups/group-1` });
-    expect(metadata.openGraph).toMatchObject({ images: [`${origin}/backend/media/post-1`] });
+    expect(metadata.openGraph).toMatchObject({
+      images: [
+        { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 - 피식' },
+        { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+      ],
+    });
+  });
+
+  it('사진이 없으면 생성 카드를 첫 공유 이미지로 제공해야 한다', () => {
+    const metadata = groupMetadata({ ...data, posts: [] }, origin);
+    expect(metadata.openGraph?.images).toEqual([
+      { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+    ]);
   });
 
   it('보이는 게시물을 컬렉션·탐색 경로와 연결하고 본문·작성자·실제 좋아요·댓글 수를 담아야 한다', () => {
