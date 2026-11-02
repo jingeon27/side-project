@@ -45,7 +45,7 @@ jobs:
       SITE_URL: http://127.0.0.1:3101
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
-      # content:validate compares published URLs with the merge base of the PR base (or origin/develop).
+      # ci-scope diffs against the base commit, so the checkout needs full history.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

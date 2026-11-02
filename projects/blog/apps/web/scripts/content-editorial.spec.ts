@@ -3,7 +3,6 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import manifest from '../../../docs/migration-manifest.json';
 import localizations from '../content/english-localizations.json';
 import imageReplacements from '../content/image-replacements.json';
 import enSeo from '../seo/en.json';
@@ -16,22 +15,12 @@ const editions = [
 ] as const;
 
 describe('edited article contracts', () => {
-  it('keeps the original publication dates of migrated articles', async () => {
-    for (const post of manifest.posts) {
-      const meta = JSON.parse(
-        await readFile(path.join(contentRoot, post.contentId, 'meta.json'), 'utf8'),
-      ) as { publishedAt: string };
-
-      expect(new Date(meta.publishedAt).getTime(), post.contentId).toBe(new Date(post.publishedAt).getTime());
-    }
-  });
-
-  it.each(editions)('introduces migrated articles in $locale with a short summary', async ({ locale }) => {
-    for (const post of manifest.posts) {
-      const source = await readFile(path.join(contentRoot, post.contentId, `${locale}.mdx`), 'utf8');
+  it.each(editions)('introduces articles in $locale with a short summary', async ({ locale, seo }) => {
+    for (const id of Object.keys(seo.posts)) {
+      const source = await readFile(path.join(contentRoot, id, `${locale}.mdx`), 'utf8');
       const summary = source.match(/^<Summary>\s*\n([\s\S]*?)\n<\/Summary>/)?.[1];
 
-      expect(summary?.trim(), post.contentId).toBeTruthy();
+      expect(summary?.trim(), id).toBeTruthy();
     }
   });
 

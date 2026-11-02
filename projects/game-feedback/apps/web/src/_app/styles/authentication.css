@@ -92,6 +92,9 @@
   :root:has(.shell-route[data-screen='onboarding']) {
     overflow: hidden;
   }
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) {
+    --desktop-sidebar-width: 0px;
+  }
   .community-shell:has(> .shell-route[data-screen='onboarding']) {
     position: fixed;
     top: var(--visual-viewport-top, 0px);
@@ -104,7 +107,7 @@
     grid-template-rows: minmax(0, 1fr);
     align-content: stretch;
   }
-  .community-shell:has(> .shell-route[data-screen='onboarding']) .main-content {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .main-content {
     min-height: 0;
   }
   .onboarding-page,

@@ -164,6 +164,18 @@
     color: var(--color-muted);
     padding: 7px 12px 12px;
   }
+  .sidebar-brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 24px;
+    padding-inline: 10px;
+    border-radius: var(--radius-control);
+  }
+  .sidebar-brand:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
   .side-link {
     padding: 13px 13px;
     margin: 1px 0;
@@ -216,10 +228,6 @@
     padding: 10px;
     font-size: var(--text-caption);
   }
-  .game-icon {
-    width: 40px;
-    height: 40px;
-  }
   .game-side-link strong {
     font-size: var(--text-body);
     display: block;
@@ -268,6 +276,53 @@
   .mobile-nav {
     display: none;
   }
+  @media (min-width: 1024px) {
+    .community-shell {
+      --desktop-sidebar-width: 192px;
+      --desktop-content-width: 1216px;
+      --desktop-page-inset: 32px;
+      position: relative;
+      padding-inline-start: var(--desktop-sidebar-width);
+    }
+    .community-shell .site-grid {
+      max-width: var(--desktop-content-width);
+      padding: 32px var(--desktop-page-inset) 80px;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      align-content: stretch;
+      gap: 0;
+    }
+    .community-shell .topbar-inner {
+      max-width: var(--desktop-content-width);
+      padding-inline: var(--desktop-page-inset);
+    }
+    .main-content {
+      width: 100%;
+      max-width: 960px;
+      min-height: 100dvh;
+      margin-inline: auto;
+    }
+    .shell-left-sidebar {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: var(--desktop-sidebar-width);
+      padding: 32px 20px;
+      border-inline-end: 1px solid var(--color-line);
+      background: var(--color-surface);
+    }
+    .left-sidebar {
+      position: sticky;
+      top: 32px;
+      max-height: calc(100dvh - 64px);
+      overflow-y: auto;
+    }
+  }
+  @media (min-width: 1280px) {
+    .community-shell {
+      --desktop-sidebar-width: 224px;
+    }
+  }
   @media (max-width: 1250px) {
     .site-grid {
       grid-template-columns: 165px minmax(0, 1fr);
@@ -287,10 +342,6 @@
     }
     .game-side-link small {
       font-size: var(--text-micro);
-    }
-    .game-icon {
-      width: 33px;
-      height: 35px;
     }
     .sidebar-bottom {
       padding: 0 9px;

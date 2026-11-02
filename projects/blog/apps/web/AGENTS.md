@@ -1,6 +1,6 @@
 # Blog web application
 
-Follow the project and repository AGENTS.md. Keep route files thin. Shared UI cannot import feature or widget layers. Article data and types belong in shared/article; article presentation belongs in features/article. Do not create an entities layer. Only necessary interactive features are client components. Preserve canonical URLs when editing titles. Add explicit 301 redirects in content/redirects.json when changing a slug or unpublishing an article; content generation and validation fail when a published path disappears without one.
+Follow the project and repository AGENTS.md. Keep route files thin. Shared UI cannot import feature or widget layers. Article data and types belong in shared/article; article presentation belongs in features/article. Do not create an entities layer. Only necessary interactive features are client components. Preserve canonical URLs when editing titles. There is no redirect layer: changing a slug or unpublishing an article leaves the old URL returning 404.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

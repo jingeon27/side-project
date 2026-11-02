@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 import localizations from '../../content/english-localizations.json' with { type: 'json' };
-import redirects from '../../content/generated-redirects.json' with { type: 'json' };
 import imageReplacements from '../../content/image-replacements.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
 import ko from '../../messages/ko.json' with { type: 'json' };
@@ -376,15 +375,6 @@ test('code copy preserves all code lines and code scrolls within the article', a
   expect(['auto', 'scroll']).toContain(dimensions.overflow);
   if (dimensions.scrollWidth > dimensions.width) expect(dimensions.moved).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-});
-
-test('legacy numeric Tistory paths return an explicit 301 to the matching article', async ({ request }) => {
-  const legacy = redirects.find((entry) => entry.source === '/35')!;
-  const response = await request.get(legacy.source, { maxRedirects: 0 });
-  expect(response.status()).toBe(301);
-  expect(decodeURI(new URL(response.headers().location!, 'http://127.0.0.1:3101').pathname)).toBe(
-    legacy.destination,
-  );
 });
 
 test('theme persists and the layout stays inside the viewport', async ({ page }) => {

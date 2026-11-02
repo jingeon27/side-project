@@ -46,7 +46,7 @@ export function ArticleReader({
             </Link>
             <h1>{article.title}</h1>
             <div className="article-heading-bottom">
-              <ArticleMeta article={article} showUpdated />
+              <ArticleMeta article={article} />
               <ArticleShare locale={article.locale} contentId={article.id} title={article.title} />
             </div>
             <ArticleTags article={article} />

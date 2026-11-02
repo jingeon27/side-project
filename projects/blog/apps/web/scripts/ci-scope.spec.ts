@@ -48,7 +48,6 @@ describe('blog CI scope', () => {
         'projects/blog/apps/web/content/posts/example/ko.mdx',
         'projects/blog/apps/web/content/posts/example/en.mdx',
         'projects/blog/apps/web/content/posts/example/meta.json',
-        'projects/blog/apps/web/content/generated-redirects.json',
         'projects/blog/apps/web/seo/ko.json',
         'projects/blog/apps/web/public/images/covers/example.png',
         'projects/blog/apps/web/src/shared/article/lib/index.json',

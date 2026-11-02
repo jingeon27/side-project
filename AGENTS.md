@@ -1,5 +1,7 @@
 # Side projects monorepo
 
+- 사용자 행동이나 진입·이동 흐름을 추가하거나 변경할 때는 Amplitude 이벤트와 속성을 항상 함께 설계·구현·검증한다. 기존 이벤트 카탈로그를 사용하고 클릭과 서버 성공을 구분하며, 키가 없는 환경의 전송 생략과 개인정보·검색어·초대 토큰 수집 금지를 유지한다. 적용한 이벤트·속성과 검증 결과를 PR에 기록한다.
+
 Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 필수. 프로젝트는 `projects/<name>` 아래에서 독립적으로 관리한다.
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 
@@ -55,4 +57,4 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 
 - AGENTS.md는 해당 경로의 구조·제품 결정·안전 경계와 스킬 진입점을 둔다. 공통 규칙은 루트 스킬 한 곳에, 앱별 실행·테스트 절차는 프로젝트 스킬의 references에 둔다.
 - 프로젝트 진입점에서 필요한 주제만 선택한다. 모든 앱 스킬·참조를 미리 전부 읽거나 같은 규칙을 여러 프로젝트에 복제하지 않는다.
-- 공통 코드 규칙을 공유해도 Apollo/REST, 쿠키/관리자 세션, DB·포트·S3 격리와 네이티브 기능 차이는 각 서비스가 소유한다. 블로그 문체는 blog-writer와 개인 blog-writing에만 둔다.
+- 공통 코드 규칙을 공유해도 Apollo/REST, 쿠키/관리자 세션, DB·포트·S3 격리와 네이티브 기능 차이는 각 서비스가 소유한다. 블로그 글쓰기와 문체 피드백은 저장소의 [blog-writer](projects/blog/.agents/skills/blog-writer/SKILL.md)에서 관리한다.

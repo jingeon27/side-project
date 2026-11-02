@@ -6,8 +6,6 @@ How I chose shared screens, API contracts, caches, database safeguards, Sentry, 
 
 ![An illustration of two application panels connected to API and database blocks, with a stack of test cards](/images/covers/side-project-technology.png)
 
-*An illustration made for this article, rather than a diagram of the deployed systems.*
-
 Pisik and Game Mate share a repository, but I did not give them identical APIs and caches. Both use Next.js and React for the web, NestJS for the server, and PostgreSQL. Pisik uses GraphQL and Apollo; Game Mate uses REST and TanStack Query.
 
 I wanted to work with Apollo’s normalized cache for a post appearing in several lists. In Game Mate, I wanted to use query keys to decide which lists and details to reread after an edit. I chose to work through both update models rather than reuse one configuration everywhere.

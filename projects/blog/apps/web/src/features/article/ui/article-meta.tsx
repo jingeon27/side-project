@@ -2,7 +2,7 @@ import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { formatDate } from '@/shared/lib/date/format-date';
 
-export function ArticleMeta({ article, showUpdated = false }: { article: Article; showUpdated?: boolean }) {
+export function ArticleMeta({ article }: { article: Article }) {
   const t = labels(article.locale);
   return (
     <div className="article-meta">
@@ -15,12 +15,6 @@ export function ArticleMeta({ article, showUpdated = false }: { article: Article
         {article.locale === 'ko' ? '' : ' '}
         {t.common.minutes}
       </span>
-      {showUpdated && article.updatedAt && article.updatedAt !== article.publishedAt && (
-        <span>
-          {t.common.updated}{' '}
-          <time dateTime={article.updatedAt}>{formatDate(article.updatedAt, article.locale)}</time>
-        </span>
-      )}
     </div>
   );
 }

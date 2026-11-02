@@ -21,9 +21,11 @@ description: 피식의 Sentry 오류 수집(API·웹·앱)과 Amplitude 제품 �
 
 ## Amplitude 이벤트
 
+- 사용자 행동이나 진입·이동 흐름을 추가·변경하면 이벤트와 속성을 항상 함께 반영하고 검증한다. 클릭 이벤트는 클릭 시점, mutation 성공 이벤트는 서버 응답 성공 시점에 보낸다.
+
 - 이름은 snake_case, 카탈로그(웹 `src/shared/model/analytics`, 앱 `src/features/analytics`)의 `as const` 목록에 있는 것만 보낸다. 카탈로그에 없는 이름은 타입 오류여야 한다.
 - 속성에 닉네임·캡션·초대 토큰·이메일을 넣지 않는다. ID(cuid)와 `path_template`(ID를 `:id`로 바꾼 경로)만.
-- 서버 응답이 성공한 뒤(mutation 성공, 공유·복사 완료 후)에 보낸다.
+- mutation은 서버 응답 성공 뒤, 공유·복사는 완료 뒤에 보낸다. 클릭·진입 이벤트는 해당 행동 시점에 보내며 성공 이벤트와 이름을 구분한다.
 - 페이지뷰는 자동 수집을 끄고 경로가 바뀔 때 `page_viewed`를 직접 보낸다.
 - 로그인하면 `setUserId(user.id)`, 로그아웃하면 `reset()`. 세션 만료 등으로 비로그인이 확인되면 식별된 사용자가 남아 있을 때만 `reset()`하고(`forgetAnalyticsUser`) 앱에 `auth.changed { signedIn: false }`를 알린다(앱도 식별된 사용자가 있을 때만 reset). 앱 안의 웹은 앱이 넘긴 `analyticsDeviceId`를 기기 ID로 써서 네이티브와 같은 사용자로 묶이고, 웹이 `auth.changed { signedIn, userId }`로 앱에 알려 앱도 같은 userId를 쓴다.
 - 현재 카탈로그

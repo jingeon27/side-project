@@ -1,18 +1,20 @@
 <Summary>
 
-Adding a recruiting platform also copied the collection workflow. I introduced and then removed NestJS, while keeping request handling, collection order, and site-specific processing separate.
+I set out to copy an existing file to add a recruiting site to an Electron app that collects applicant data, and stopped when I saw it would add another copy of the same post-login workflow. NestJS came in and left five days later, but the split between request handling, collection order, and site-specific processing stayed.
 
 </Summary>
 
 ![An illustration separating a desktop application's main process, bridge, and renderer.](/images/covers/electron-module-boundaries.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+A month into the job I picked up a new recruiting platform, and my first move was to copy an existing file. That was how the Electron app was growing at the time: copy a file, change the selectors and exception handling.
 
-When I joined, an Electron app collected applicants from several recruiting platforms using data the company was authorized to access through its corporate accounts. Login and DOM structure differed, but the sequence was shared: log in, check duplicates, save applicants, and upload resumes. Each platform repeated that sequence, so a shared change required editing their files together.
+The app collects applicants from several recruiting platforms, using data the company is authorized to access through its corporate accounts. It logs in to a platform, reads the applicant list, filters out people already saved, then registers the new applicants and uploads their resume files.
 
-## Every platform file repeated the same workflow
+Electron builds desktop apps with web technology and splits them into two kinds of process. The main process is the entry point and runs in Node.js. Each window gets a renderer process that draws a web page, and by default a renderer cannot reach Node.js APIs directly. So when the screen asks for a collection run, it sends a message to main over IPC (inter-process communication), and main does the work.
 
-Each platform function contained the sequence from start to finish.
+That work goes through Puppeteer, a Node.js library that drives a browser from code: opening pages, filling inputs, and finding DOM elements with CSS selectors. Every site has its own login screen and DOM structure, so the selectors differ from site to site.
+
+The function I was about to copy held this whole sequence from start to finish.
 
 ```text
 Login
@@ -22,27 +24,43 @@ Login
   -> Download and upload files
 ```
 
-Adding a platform meant copying a file and changing selectors and exception handling. Site-specific behavior and the sequence common to every site remained in the same function.
+Reduced to its shape, each platform file had a function like the one below. I rewrote it to show the structure only, so the names and selectors differ from the real code.
 
-I first considered doing the same for my new platform. That would also add another copy of the post-login workflow.
+```typescript
+export async function collectPlatformA(page: Page) {
+  // Differs per site
+  await page.goto(PLATFORM_A_LOGIN_URL);
+  await page.type('#login-id', account.id);
+  await page.type('#login-password', account.password);
+  await page.click('#login-button');
+  const candidates = await page.$$eval('.candidate-row', readCandidateRows);
 
-## Keeping collection order independent of site changes
+  // Same on every site
+  const newCandidates = await removeDuplicates(candidates);
+  await saveCandidates(newCandidates);
+  await uploadResumes(newCandidates);
+}
+```
 
-I was reading the backend team's NestJS code and examining what Controllers and Services did. I borrowed that separation: receive IPC requests in one place, run the collection sequence in another, and implement site differences separately.
+Login and DOM structure differed from site to site, but the order did not: log in, check duplicates, save applicants, upload resumes. Site-specific code and code common to every site sat in the same function, and changing the order meant editing every platform file together. Copying it again would bring a fourth platform and a fourth copy of the post-login workflow.
+
+## Requests, collection order, and site handling
+
+I happened to be reading the backend team's NestJS code at the time, looking at what Controllers and Services did. NestJS is a Node.js server framework that puts receiving HTTP requests in a Controller and the actual processing in a Service. I borrowed that split for the collector: one place receives IPC requests, one runs the collection order, and one holds whatever differs per site. The files were divided by what has to change when something changes.
 
 - Change the Controller when the IPC request changes.
-- Change CrawlingService when the overall processing order changes.
+- Change `CrawlingService` when the overall processing order changes.
 - Change a platform's adapter when its DOM or login method changes.
 
-## Removing NestJS did not mean combining the files again
+## NestJS lasted five days
 
-I initially introduced NestJS itself. The CTO rejected the added framework weight in Electron's main process. Five days later I removed the dependency, leaving neither decorators nor a DI container.
+I initially introduced NestJS itself. In NestJS you mark a class with a decorator such as `@Injectable()`, and the framework's DI container finds the dependencies listed in a constructor, creates the instances, and passes them in. The CTO rejected it as too much framework to add to Electron's main process. I removed the dependency five days after adding it, and neither decorators nor a DI container stayed behind.
 
-I kept the separation. Passing PuppeteerService through a constructor and assembling it in a Factory let request handling, collection order, and site processing stay apart without a container.
+Removing the framework did not send the files back together, because separating requests, collection order, and site handling never required a container. Passing `PuppeteerService` through a constructor and assembling it in a Factory (a function that builds and returns an instance) was enough. I now write the instance assembly a container would have done, and the main process carries no framework.
 
-## The Controller receives IPC requests
+## What the split looks like in code
 
-An ipcMain handler receives the app request, acting as an entry point much like an HTTP Controller. The platform names and some identifiers below are illustrative replacements.
+An `ipcMain` handler receives the app's requests. A request the renderer sends with `ipcRenderer.invoke` arrives at the function registered with `ipcMain.handle`, and that function's return value becomes the result of the renderer's Promise. I treat this handler as an entry point much like an HTTP Controller. The platform names and some identifiers below are illustrative replacements.
 
 ```typescript
 const createCrawlingService =
@@ -64,9 +82,9 @@ const controller = createCrawlingController(puppeteer);
 ipcMain.handle('crawl', (_event, req) => controller.collect(req));
 ```
 
-The Controller obtains the Service for the requested platform and runs it. It knows neither login functions nor DOM selectors, and the platform list lives elsewhere. Registering another platform does not require changing this Controller.
+`createCrawlingService` is a function called twice. It takes `puppeteer` once up front, then takes a platform on each request and builds a `CrawlingService`. This is the assembly code mentioned above.
 
-## The Service owns the processing order
+The Controller obtains the Service for the requested platform and runs it. Login functions and DOM selectors are not here, and the platform list lives elsewhere, so registering another platform does not touch this code. The Service keeps only the processing order.
 
 ```typescript
 export class CrawlingService {
@@ -90,9 +108,7 @@ export class CrawlingService {
 }
 ```
 
-CrawlingService uses the PuppeteerService it receives to execute the shared order. NestJS inspired the constructor injection, but the Factory creates the actual instance. The platform functions come from CRAWLING_HANDLERS below.
-
-## Abstract classes and configuration hold platform differences
+`CrawlingService` uses the `PuppeteerService` it receives to run the shared order. The sequence each platform file used to carry now lives here, in one place. NestJS inspired the constructor injection, but the Factory above creates the actual instance. The per-platform functions come from `CRAWLING_HANDLERS`.
 
 ```tsx
 abstract class CandidateProcessor {
@@ -127,26 +143,26 @@ const CRAWLING_HANDLERS = {
 } as const satisfies Record<Platform, CrawlingHandler>;
 ```
 
-Abstract classes define methods each platform must implement. CrawlingService decides when to invoke them, while the configuration connects each platform's class and helpers. It resembles a NestJS Module without runtime DI or decorators.
+An abstract class cannot be instantiated on its own. It sets the methods a subclass must implement, and a platform implementation missing one of them fails to compile. `CrawlingService` decides when to call those methods, and the configuration object connects each platform's class and helpers. The trailing `satisfies Record<Platform, CrawlingHandler>` produces a compile error if a platform is left out of the configuration. The shape borrows from a NestJS Module, without runtime DI or decorators.
 
-The example gives Processor's constructor a specific type. That position used any in my original code.
+The example gives `Processor`'s constructor a specific type. In the code at the time, that position was `any`.
 
 ## Adding login and parsing for the next platforms
 
-For later platforms, I implemented their login and parsing and registered them in configuration. I no longer copied the collection function; CrawlingService retained the shared order.
+For later platforms, I no longer copied the collection function. The shared order stayed in `CrawlingService`, and I implemented each site's login and parsing and registered them in the configuration.
 
-One platform delivered encrypted ZIP resumes. Another needed two-factor authentication, pagination, and its own handling for education, work history, and duplicate applicants. Those differences stayed in their platform implementations. Catching errors per applicant allowed collection to continue after one failure.
+Two platforms went in this way. One delivered encrypted ZIP resumes. The other needed two-factor authentication and pagination, and handled education, work history, and duplicate applicants in its own way. Those differences went into each platform's implementation. Errors are caught per applicant, so one failure does not stop the rest of the collection.
 
-IPC requests, collection-order changes, and DOM changes no longer start in the same file. NestJS was gone, but adding a platform no longer required copying the common sequence.
+IPC changes, collection-order changes, and DOM fixes no longer start in the same file. NestJS was gone, but adding a platform stopped meaning a copy of the common sequence.
 
-## Platform functions still come from static configuration
+## Platform functions are still tied to the configuration
 
-Puppeteer can be replaced through its constructor argument. CrawlingService still reads CRAWLING_HANDLERS directly from a module, though, so login functions and Processors cannot all be swapped externally.
+This refactor left no automated tests or performance measurements behind. Structurally, Puppeteer arrives through the constructor, so a stand-in can replace it. `CrawlingService` still reads `CRAWLING_HANDLERS` directly from a module, though, so login functions and `Processor` classes cannot be swapped from outside.
 
 ## References
 
 - [NestJS: Providers](https://docs.nestjs.com/providers): constructor injection and the container's role
 - [NestJS: Modules](https://docs.nestjs.com/modules)
-- [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc): receiving requests with ipcMain.handle
+- [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc): receiving requests with `ipcMain.handle`
 - [TypeScript Handbook: abstract Classes and Members](https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members)
 - Related: [Waiting for Puppeteer requests and responses without leaking listeners](/en/blog/puppeteer-event-lifecycle): a problem downloading password-protected files in the same collection app

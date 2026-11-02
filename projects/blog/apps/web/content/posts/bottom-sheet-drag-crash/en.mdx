@@ -1,22 +1,22 @@
 <Summary>
 
-A sheet crashed when users released a drag. Upgrading removed the failing code, but I still missed a title that scrolled away with the body.
+A bottom sheet froze the screen when users released a drag. I traced the stack into the library's source and found the line reading null, but never reproduced the app action behind it, so I upgraded to a major version without that line. A conversion in the shared component kept snap positions in place, and I still missed a title that scrolled away with the body.
 
 </Summary>
 
 ![An illustration of a bottom sheet with a fixed header, scrolling content, and a drag gesture.](/images/covers/bottom-sheet-drag-crash.png)
 
-*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+Sentry was collecting a crash I had never seen in development. Sentry gathers errors from a deployed app along with their stacks, event counts, and the number of affected users.
 
-Sentry was collecting a crash I had never seen in development. Releasing a dragged sheet stopped the screen. At the first check, two related error groups held 23 events affecting 17 users, all pointing to react-modal-sheet's drag-end handler.
+The crash came from a bottom sheet, a panel that slides up from the bottom of the screen. Users can drag it to change its height or pull it down to close it. Our app leaves this behavior to the react-modal-sheet library and wraps it in a shared `BottomSheet.Root` component used across screens.
 
-I suspected one of the app's several closing paths had cleared the ref too early. Following those paths led me into the library's onDragEnd.
+Releasing a dragged sheet stopped the screen. At the first check, two related error groups held 23 events affecting 17 users. The same stack kept repeating and more users were being affected, so failing to reproduce it on my device was no reason to put it off. Every stack pointed to react-modal-sheet's drag-end handler.
 
-## Only a slow release reached the ref read
+I suspected one of the app's several closing paths had cleared the ref too early. A ref is a box a component uses to hold on to a real DOM element. React puts the element into `ref.current` when it attaches the element to the page and sets it back to `null` when it removes the element, so reading the value after the sheet is gone returns `null`. Following the closing paths, I saw that the exception sat one level below the app's code, which led me into the library's `onDragEnd`.
 
-The repeated stack and affected users made this worth investigating even without a reproduction on my device. I started with the value being read on the failing line.
+## What line 133 was reading
 
-Here is a shortened version of onDragEnd in react-modal-sheet 2.2.1.
+`onDragEnd` is the callback that runs when a user finishes dragging. It looks at the release velocity and position, then decides whether to close the sheet or which height to settle on. Here is a shortened version from react-modal-sheet 2.2.1.
 
 ```typescript
 // Simplified from react-modal-sheet 2.2.1 sheet.tsx, with fewer branches and calculations
@@ -33,17 +33,19 @@ function onDragEnd(_event, { velocity }) {
 }
 ```
 
-The handler asserts sheetRef.current as HTMLDivElement, then reads its dimensions. An assertion cannot rule out null at runtime. The same file checks null in snapTo at sheet.tsx:186–191, but not here. Since the callback belongs to the library, a check in the app's onClose would not prevent this read.
+The handler asserts `sheetRef.current` as `HTMLDivElement`, then reads its dimensions right away. `as` tells the compiler to treat the value as that type and checks nothing at runtime. The code passes type checking, and a null value throws on the next line's `getBoundingClientRect` call. The same file checks for null in `snapTo` (`sheet.tsx:186-191`), but not here. Since the callback belongs to the library, a check in the app's `onClose` would not prevent this read.
 
-A fast flick takes a branch that never reads ref. A slow drag and release reaches sheet.tsx:128–133. Gestures that both appear to close the sheet therefore run different code.
+A fast flick takes a branch that never reads the ref. A slow drag and release reaches this line (`sheet.tsx:128-133`). Gestures that both appear to close the sheet run different code, and that gave me one clue about when the crash could happen.
 
-## Closing did not immediately unmount the sheet
+## Closing did not remove the sheet right away
 
-I pictured the sheet disappearing as it closed, followed by a callback reading its empty ref. The exit animation in 2.2.1 showed why a close-state change alone could not explain it.
+My first written explanation was that the sheet unmounted as soon as it began closing, and a scheduled callback then read the empty ref. Rereading the 2.2.1 source showed that a close-state change alone could not explain it.
 
-At sheet.tsx:249–258, AnimatePresence wraps `isOpen ? children : null`. SheetContainer has a 0.2-second tween exit with `exit={{ y: windowHeight }}`. Setting isOpen false leaves the DOM until the animation ends. This repository's overlay.close, closeAll, and Root popstate → onClose paths all followed isOpen=false → exit animation → onCloseEnd → unmount. The state change alone does not empty ref before the next frame's post-render.
+At `sheet.tsx:249-258`, `AnimatePresence` wraps `isOpen ? children : null`. `AnimatePresence` is a framer-motion component that keeps a removed child in the DOM until its exit animation finishes. `SheetContainer` has a 0.2-second tween exit with `exit={{ y: windowHeight }}`, which slides the sheet off the bottom of the screen. Setting `isOpen` to false leaves the sheet in the DOM until that animation ends, and the ref stays filled.
 
-VisualElementDragControls in framer-motion 11, now Motion, schedules the drag-end callback for the next frame's post-render. Removing the entire sheet tree before then could leave null at sheet.tsx:133. I could not reproduce the app action that removed it in that interval.
+This repository's closing paths behaved the same way: `overlay.close`, `closeAll`, and Root's popstate handling for the back button → `onClose` all followed `isOpen=false` → exit animation → `onCloseEnd` → unmount. The state change alone does not empty the ref before the next frame's post-render.
+
+`VisualElementDragControls` in framer-motion 11, now Motion, schedules the drag-end callback for the next frame's post-render. framer-motion batches work per frame and runs it in steps, and post-render is the last step, after render. That leaves a gap between the moment a finger lifts and the moment `onDragEnd` runs. `AnimatePresence` only delays the removal of children inside it. If the sheet tree, `AnimatePresence` included, were gone entirely during that gap, there would be no exit animation to wait for, and `sheet.tsx:133` could read null.
 
 ```text
 Pointer input ends
@@ -55,32 +57,42 @@ Pointer input ends
   → The screen crashes
 ```
 
-Upstream issue #188, opened January 3, 2025 and still open when I checked, described the same failing read after a drag started and ended over a close button. I could not establish that our trigger was identical, but the DOM access that failed matched.
+The step marked `trigger unconfirmed` stayed open. I could not reproduce the app action that removed the tree in that interval. What I could say for certain stopped at two things: the stack ended at `sheet.tsx:133`, and that callback ran late because it was scheduled.
 
-I then looked at newer versions. In 5.x, drag end uses sheetHeight already measured by useMeasure from react-use-measure 2.1.7. It no longer rereads ref or uses AnimatePresence. The rewritten sheet had removed the DOM access rather than simply guarding it.
+## An issue from January 3, 2025, and the 5.x source
 
-## Upgrading instead of delaying close
+Upstream, meaning the library's own repository, had a report of the same failure. Issue #188, opened January 3, 2025 and still open when I checked, described the same failing read after a drag started and ended over a close button. I could not establish that our app's gesture was identical, but the DOM access that failed matched.
+
+I then looked at how newer versions handled this line. In 5.x, drag end uses `sheetHeight` already measured by `useMeasure` from react-use-measure 2.1.7, a hook that keeps an element's size in state. It no longer rereads the ref or uses `AnimatePresence`. Nobody had added a null check; the DOM access disappeared when the sheet's implementation changed.
+
+## Delay, patch, or upgrade
+
+I weighed three options. In the table, `snapPoints` is the list of heights where a sheet can stop, and detent chooses how the sheet container's height gets decided. Both come back in the next section.
 
 | Option | Benefit | Cost and risk | Decision |
 | --- | --- | --- | --- |
 | Delay closing at callers | Small scope | Cannot reliably stop the internal callback; an unreproduced trigger leaves no basis for a delay duration | Reject |
 | Patch a null guard into the package | Stops the failing read directly | A private patch must survive installation and be maintained independently of upstream fixes | Reject |
-| Upgrade to 5.6.0 | Removes the ref-access path | Changes snapPoints and detent semantics, moves imports from framer-motion to motion/react, and updates AGENTS/SKILL guidance | Choose |
+| Upgrade to 5.6.0 | Removes the ref-access path | Changes `snapPoints` and detent semantics, moves imports from framer-motion to motion/react, and updates AGENTS/SKILL guidance | Choose |
 
-I chose 5.6.0. A delay would have hidden an unreproduced timing problem behind an arbitrary duration; the newer version did not contain the failing read. One shared Root could adapt the new API while screens kept their existing interface. Rolling back would mean restoring the library, Root, and the detent props removed later. The motion/react imports could stay.
+I chose 5.6.0. For users this crash stopped the screen, so the path had to go away instead of being worked around. A delay would have hidden an unreproduced timing problem behind an arbitrary duration, while the newer version did not contain the failing read. Unlike a private patch, it also left nothing to keep alive across installs.
 
-## Keeping the snap values supplied by screens
+The price was everything in the table's last row: new `snapPoints` and detent semantics, the import change, the updated guidance. The choice assumed one place could absorb the major-version changes. A shared Root could adapt the new API while screens kept opening sheets the way they always had. Rolling back would mean restoring the library, Root, and the detent props I removed later, while the `motion/react` imports could stay.
 
-The package update needed an adapter. In 2.x, snapPoints were fractions of viewport height. In 5.x, they refer to sheet height, with a different order and initial index.
+I also missed the title scrolling with the body at this point, and that comes back on September 21.
+
+## The same 0.8, measured against something else
+
+A version bump alone would not work. A released sheet settles on one of the heights in `snapPoints`, and the meaning of those values had changed. In 2.x, `snapPoints` were fractions of viewport height. In 5.x, they are fractions of sheet height. The same `0.8` is 80% of the screen in 2.x and 80% of the sheet in 5.x. The order and the initial index changed too.
 
 | Property | 2.x | 5.x |
 | --- | --- | --- |
-| Basis for a 0–1 ratio | Viewport height | Sheet height |
+| Basis for a 0-1 ratio | Viewport height | Sheet height |
 | Order | Descending | Ascending |
 | Index 0 | Highest open position | Closed; the last index is fully open |
 | Endpoints | No required 0 or 1 | Starts at 0 and ends at 1; missing values are inserted with console.error |
 
-I kept the values screens passed to BottomSheet.Root and converted them inside Root. Callers would not need to learn the new coordinate system. I also documented the input basis in IBottomSheetRootProps.
+Some screens using the shared `BottomSheet.Root` passed viewport-based `snapPoints` directly. Rewriting each caller for the new basis would have pushed the library's rules into feature code, and I did not want each screen to learn the new library's arithmetic. I kept the values screens passed to `BottomSheet.Root` and converted them inside Root, and I documented the input basis in `IBottomSheetRootProps`.
 
 ```typescript
 function toSheetSnapConfig(points: number[], initialSnap: number) {
@@ -100,37 +112,15 @@ function toSheetSnapConfig(points: number[], initialSnap: number) {
 }
 ```
 
-The old `[0.8, 0.5, 0.3, 0]` means 80%, 50%, and 30% of the viewport, followed by closed. Dividing by the maximum height of 0.8 and reversing the order gives `[0, 0.375, 0.625, 1]`. That changes the library input while preserving where the sheet appears.
+The old `[0.8, 0.5, 0.3, 0]` means 80%, 50%, and 30% of the viewport, followed by closed. Dividing by the maximum height of 0.8 and reversing the order gives `[0, 0.375, 0.625, 1]`. The library input changes while the sheet stays where it appeared.
 
-The conversion layer also calculates actual height. In 5.x, detent determines container height later, so container styling alone could not preserve it. I used content mode, where content determines height, and passed the calculation to Sheet.Content. A single BOTTOM_SHEET_HEADER_HEIGHT constant keeps the 40px header calculation aligned with markup.
+`initialSnap` points at the opening position by array index, so after the reversal it counts from the end. When the array has no `0`, a closed position goes in at the front, which pushes the initial index along by one. `closedSnapOffset` is that one.
 
-For screens without explicit snapPoints, I compared rendered heights. content-height became content, while full-height became default because that was the closest match. The new value named full did not reproduce the old full-height behavior.
+The conversion layer also calculates actual height. The `dvh` in `contentHeight` is a viewport-height unit that follows the mobile browser's address bar as it collapses and expands. In 5.x, detent determines container height later, so container styling alone could not preserve it. I used content mode, where content determines the container's height, and passed the calculated height to `Sheet.Content`. A single `BOTTOM_SHEET_HEADER_HEIGHT` constant keeps the 40px header in the calculation aligned with the markup.
 
-## Exports and animation imports changed too
+Screens without explicit `snapPoints` moved by rendered height instead of by detent name. content-height became content, and full-height became default because that was the closest match. The new value named full did not reproduce the old full-height behavior.
 
-package.json moved from ^2.2.0 to ^5.6.0, and the lockfile resolved 2.2.1 to 5.6.0. Releases in between required changes beyond height calculation.
-
-- v3.0.0, May 11, 2024: Sheet changed from default to named export.
-- v4.0.0, December 27, 2024: the peer dependency changed from framer-motion to motion.
-- v5.0.0, September 6, 2025: Sheet.Scroller was removed, Sheet.Content gained scrolling responsibility, and snapPoints and detent changed.
-
-I installed motion ^11.18.2. Motion 11 bundles its own copy of framer-motion 11, so direct app imports could include two runtimes. I moved the app's direct imports to motion/react. The framer-motion declaration remained ^11.0.24, resolved to 11.18.2, because motion's type entrypoint reexports from framer-motion. Motion already depends on it; I removed the direct runtime import path, not its installation.
-
-I removed the now-ineffective detent props. In 2.2.1, even with snapPoints, SheetContainer.tsx:30–44 used height for full-height and maxHeight for content-height. Caller detent became ineffective only when the new Root forced content mode for explicit snapPoints. I removed those misleading values and clarified the prop description. CSS ratios such as 55.00000000000001dvh were rounded to two decimals, and the usage guidance was updated for the new API.
-
-## The height was right, but the title scrolled away
-
-Separate from the crash, scrolling a sheet moved its title with the body. This predated 5.x. During the April compound refactoring, Root wrapped Header, Content, and Footer together in Sheet.Scroller. Sticky buttons appeared fixed, but the title belonged to the scroll region. September's upgrade carried the same structure into Sheet.Content.
-
-I missed this both when reviewing April's AI-generated compound implementation and during September's upgrade. I checked height and snap positions without scrolling long content and watching the title and buttons separately. Coordinate tests and AI review passed with the problem intact. jsdom does not calculate real layout, so those passing tests did not contradict what happened on screen.
-
-On September 21, I limited scrolling to BottomSheet.Content. Only that component uses the library's Sheet.Content; Header and Footer sit outside it. Snap height applies to the combined area. Browser Mode tests exercise long-content scrolling, fixed title and buttons, 80% snap height, and button placement with short content.
-
-## Comparing visible positions instead of copied arrays
-
-Height calculations and scrolling needed different tests. For coordinate conversion, I converted sheet-relative positions back to viewport ratios. That let the assertions compare where a user would see the sheet instead of copying the transformed array into expected values.
-
-The toViewportRatio helper performs that conversion.
+To test the conversion, I turned sheet-relative positions back into viewport ratios with a `toViewportRatio` helper. The assertions then compare where a user would see the sheet instead of copying the transformed array into expected values.
 
 ```typescript
 it('points to the second-highest snap when starting there', () => {
@@ -140,11 +130,55 @@ it('points to the second-highest snap when starting there', () => {
 });
 ```
 
-The tests also cover order, the highest snap being `1`, inserting the closed position, initial-index adjustment, and content height. Deliberately breaking the index calculation made them fail.
+The tests also cover order, the highest snap being `1`, inserting the closed position, initial-index adjustment, and content height. Deliberately breaking the index calculation made them fail. On the dev server, I checked the initial position and maximum height of sheets that pass `snapPoints` directly.
 
-## The crash stopped appearing after deployment
+## Between 2.2.1 and 5.6.0
 
-Before deployment, the error reached at least 75 events and 57 users. The same groups recorded no events from the September 10 release through September 28. I did not reproduce the crash with an identical gesture, but the null-ref read was absent from the new version. Preserving snap positions still left the scrolling title unresolved; that needed the separate September 21 fix.
+package.json moved from `^2.2.0` to `^5.6.0`, and the lockfile went from 2.2.1 to 5.6.0. That crossed three major versions, so looking only at the failing function could have left a build that passed while other behavior quietly changed. Releases in between required changes beyond height calculation.
+
+- v3.0.0, May 11, 2024: `Sheet` changed from default to named export.
+- v4.0.0, December 27, 2024: the peer dependency changed from framer-motion to motion.
+- v5.0.0, September 6, 2025: `Sheet.Scroller` was removed, `Sheet.Content` took over scrolling, and `snapPoints` and detent changed.
+
+A peer dependency is one the app using a library has to install alongside it. Since the peer was motion, I installed it at `^11.18.2`. Motion 11 bundles its own copy of framer-motion 11, so direct app imports could ship the same library twice. I moved the app's direct imports to `motion/react` to leave one runtime path. The framer-motion declaration stayed at `^11.0.24`, resolved to 11.18.2, because motion's type entrypoint is `export * from 'framer-motion'`. Motion already depends on it, so it gets installed regardless; what I removed was the code importing that path at runtime. I did not open the deployed bundle to confirm the duplicate was gone.
+
+I also cleaned up detent. I first wrote that these props had never had any effect, and that was wrong too. In 2.2.1, even with `snapPoints`, full-height applied height and content-height applied maxHeight (`SheetContainer.tsx:30-44`). Caller detent became meaningless only once the new Root forced content mode for `snapPoints`. I removed those props, since changing their values no longer did anything, and corrected the description. CSS ratios such as 55.00000000000001dvh were rounded to two decimals, and the guidance for building the next sheet was updated for the new API.
+
+## September 21: a structure dating back to April
+
+5.6.0 went out on September 10.
+
+Separate from the crash, scrolling a sheet moved its title along with the body. This was not new in 5.x. During the April compound refactoring, the shared Root wrapped Header, Content, and Footer together in `Sheet.Scroller`. A compound structure splits one component into pieces such as Header and Content that callers assemble. Sticky buttons looked fixed, but the title belonged to the scroll region. September's upgrade carried the same structure over, wrapping all of Root's children in the new `Sheet.Content`.
+
+I walked past this twice: reviewing April's AI-generated code, and reviewing September's upgrade. April's change moved every usage at once, and no browser test guarded this behavior at the time. In September I checked height and snap positions without scrolling long content and watching the title and buttons separately. Coordinate tests and AI review passed with the behavior intact. jsdom imitates the DOM without a browser and does not calculate real layout, so those passing tests had nothing to object to.
+
+On September 21, I narrowed scrolling to `BottomSheet.Content`. Only that component uses the library's `Sheet.Content`, and Header and Footer sit outside it. Snap height applies to the combined area. Here is the change reduced to its structure. It is a shortened example, not the actual markup.
+
+```tsx
+// Shortened example. Before: Root wraps every child in the scroll region, so the title scrolls too.
+<Sheet.Container>
+  <Sheet.Content>{children /* Header, Content, Footer */}</Sheet.Content>
+</Sheet.Container>
+
+// After: only the inside of BottomSheet.Content scrolls.
+<Sheet.Container>
+  <BottomSheet.Header />
+  <BottomSheet.Content /> {/* The only place that uses Sheet.Content */}
+  <BottomSheet.Footer />
+</Sheet.Container>
+```
+
+Height and scrolling needed separate tests, so Browser Mode, which calculates real layout, now checks that the title and buttons stay put while long content scrolls, and that the 80% snap height and button placement with short content hold.
+
+Since then, I no longer take passing AI-generated code and reviews to mean the edges of an interaction have been checked. For anything where DOM layout and device input meet, such as scrolling, dragging, and focus, I move it around on a running screen separately from code review and leave a browser test that will tell me if it breaks again.
+
+## The error groups through September 28
+
+Before deployment, the crash reached at least 75 events and 57 users. From the September 10 release through September 28, the same error groups recorded no events.
+
+I did not reproduce the crash with an identical gesture. I found the path that reads the ref on a slow drag and release, but not the app action that removes the sheet tree in between, so I could not compare the same gesture before and after the fix. I can say this much: the null-ref read was absent from the new version, and the same error groups recorded no events afterward.
+
+Preserving snap positions still left the title scrolling with the body, and that took the separate September 21 fix.
 
 ## References
 
