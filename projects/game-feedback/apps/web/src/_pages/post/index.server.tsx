@@ -16,6 +16,7 @@ export async function postMetadata({ params }: IPostRouteProps) {
   const { locale, id } = await params;
   const { post } = await getServerPost(id);
   return createPageMetadata({
+    imagePath: `/og/posts/${encodeURIComponent(id)}`,
     title: post.title,
     description: post.body,
     path: `/${locale}/posts/${encodeURIComponent(id)}`,
