@@ -15,6 +15,7 @@ const data: IGroupContestSeoData = {
     __typename: 'Group',
     description: '',
     avatarUrl: null,
+    coverUrl: null,
     id: 'group',
     name: '공개 그룹',
     visibility: GroupVisibility.Public,
@@ -70,7 +71,15 @@ describe('대회 상세 SEO', () => {
   it('공개 대회의 canonical·공유 사진·실제 일정과 참여작을 연결해야 한다', () => {
     const metadata = groupContestMetadata(data, 'contest', origin);
     expect(metadata.alternates?.canonical).toBe(`${origin}/groups/group/contests/contest`);
-    expect(metadata.openGraph).toMatchObject({ images: [`${origin}/backend/media/photo`] });
+    expect(metadata.openGraph).toMatchObject({
+      images: [
+        expect.objectContaining({
+          url: `${origin}/og/groups/group/contests/contest`,
+          width: 1200,
+          height: 630,
+        }),
+      ],
+    });
     const ld = groupContestJsonLd(data, origin);
     expect(ld?.['@graph']).toEqual(
       expect.arrayContaining([
@@ -102,7 +111,13 @@ describe('대회 상세 SEO', () => {
     expect(ld).toContain('MediaObject');
     for (const field of ['thumbnailUrl', 'aggregateRating', 'award']) expect(ld).not.toContain(field);
     expect(groupContestMetadata(video, 'contest', origin).openGraph).toMatchObject({
-      images: [`${origin}/opengraph-image`],
+      images: [
+        expect.objectContaining({
+          url: `${origin}/og/groups/group/contests/contest`,
+          width: 1200,
+          height: 630,
+        }),
+      ],
     });
   });
 });

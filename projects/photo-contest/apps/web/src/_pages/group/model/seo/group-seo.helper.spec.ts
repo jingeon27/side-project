@@ -11,6 +11,7 @@ const data: IGroupSeoData = {
     __typename: 'Group',
     description: '',
     avatarUrl: null,
+    coverUrl: null,
     id: 'group-1',
     name: '웃긴 고양이',
     visibility: GroupVisibility.Public,
@@ -55,7 +56,9 @@ describe('공개 그룹 SEO', () => {
     };
     expect(groupMetadata(profile, origin)).toMatchObject({
       description: profile.group.description,
-      openGraph: { images: [`${origin}${profile.group.avatarUrl}`, `${origin}/backend/media/post-1`] },
+      openGraph: {
+        images: [{ url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 }],
+      },
     });
     expect(groupJsonLd(profile, origin)?.['@graph']).toEqual(
       expect.arrayContaining([
@@ -72,7 +75,9 @@ describe('공개 그룹 SEO', () => {
     expect(metadata.title).toBe('웃긴 고양이');
     expect(metadata.description).toContain('3명의 멤버');
     expect(metadata.alternates).toEqual({ canonical: `${origin}/groups/group-1` });
-    expect(metadata.openGraph).toMatchObject({ images: [`${origin}/backend/media/post-1`] });
+    expect(metadata.openGraph).toMatchObject({
+      images: [{ url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 }],
+    });
   });
 
   it('보이는 게시물을 컬렉션·탐색 경로와 연결하고 본문·작성자·실제 좋아요·댓글 수를 담아야 한다', () => {

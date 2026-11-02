@@ -33,6 +33,7 @@ export function createPageMetadata({
   description,
   index = true,
   images = [siteUrl('/opengraph-image', origin)],
+  imageAlt,
 }: {
   origin: string;
   path: string;
@@ -40,8 +41,12 @@ export function createPageMetadata({
   description: string;
   index?: boolean;
   images?: string[];
+  imageAlt?: string;
 }): Metadata {
   const url = siteUrl(path, origin);
+  const socialImages = imageAlt
+    ? images.map((url) => ({ url, alt: imageAlt, width: 1200, height: 630 }))
+    : images;
   return {
     title,
     description,
@@ -54,9 +59,14 @@ export function createPageMetadata({
       title: `${title} - ${SITE_NAME}`,
       description,
       url,
-      images,
+      images: socialImages,
     },
-    twitter: { card: 'summary_large_image', title: `${title} - ${SITE_NAME}`, description, images },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} - ${SITE_NAME}`,
+      description,
+      images: socialImages,
+    },
   };
 }
 
