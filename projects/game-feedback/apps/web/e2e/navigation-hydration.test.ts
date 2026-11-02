@@ -44,7 +44,7 @@ for (const width of [390, 1280]) {
         errors.push(message.text());
       }
     });
-    for (const locale of ['ko', 'en', 'ja']) {
+    for (const locale of ['ko', 'en', 'ja'] as const) {
       await page.goto(`/${locale}`);
       const navigation = page.locator('main:visible .game-board-navigation');
       const links = width < 760 ? navigation : page.locator('.left-sidebar:visible');
@@ -60,7 +60,11 @@ for (const width of [390, 1280]) {
         'href',
         `/${locale}/boards/free`,
       );
-      await links.locator(`a[href="/${locale}"]`).click();
+      const home =
+        width < 760
+          ? links.locator(`a[href="/${locale}"]`)
+          : links.getByRole('link', { name: { ko: '홈', en: 'Home', ja: 'ホーム' }[locale], exact: true });
+      await home.click();
       await expect(page).toHaveURL(new RegExp(`/${locale}$`));
       await expect(navigation.locator('[aria-current="page"]')).toHaveAttribute('href', `/${locale}`);
     }

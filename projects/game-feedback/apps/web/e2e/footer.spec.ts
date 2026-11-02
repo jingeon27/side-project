@@ -5,15 +5,19 @@ for (const width of [320, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 844 });
-    for (const [locale, termsLabel, privacyLabel] of [
-      ['ko', '서비스 이용약관', '개인정보 처리방침'],
-      ['en', 'Terms of service', 'Privacy policy'],
-      ['ja', '利用規約', 'プライバシーポリシー'],
+    for (const [locale, termsLabel, privacyLabel, aboutLabel] of [
+      ['ko', '서비스 이용약관', '개인정보 처리방침', '서비스 소개'],
+      ['en', 'Terms of service', 'Privacy policy', 'About Game Mate'],
+      ['ja', '利用規約', 'プライバシーポリシー', 'Game Mateについて'],
     ] as const) {
       await page.goto(`/${locale}/guide`);
       const footer = page.getByRole('contentinfo');
       await expect(footer).toHaveCount(1);
-      await expect(footer.locator('nav').getByRole('link')).toHaveCount(4);
+      await expect(footer.locator('nav').getByRole('link')).toHaveCount(5);
+      await expect(footer.getByRole('link', { name: aboutLabel, exact: true })).toHaveAttribute(
+        'href',
+        '/about',
+      );
       await expect(footer.getByRole('link', { name: 'contact@bambyul.com', exact: true })).toHaveAttribute(
         'href',
         'mailto:contact@bambyul.com',
@@ -63,6 +67,9 @@ for (const width of [320, 1440]) {
       await expect(support).toHaveCSS('margin-top', '24px');
       await expect(support).toHaveCSS('margin-bottom', '24px');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await footer.getByRole('link', { name: aboutLabel, exact: true }).click();
+      await expect(page).toHaveURL('/about');
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('혼자 막힌 플레이');
     }
   });
 }
