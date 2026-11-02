@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
-import { PostDetailSchema, PostSchema } from '@game-feedback/contracts';
+import { PostDetailSchema, PostSchema, PublicProfileSchema } from '@game-feedback/contracts';
 
 import { expect, test } from './support/test';
 
@@ -25,13 +25,49 @@ test('공개 게시글과 프로필의 제목에 연결된 OG 카드가 생성�
     expect(bytes.equals(generic)).toBe(false);
     await writeFile(`${output}/${kind}.png`, bytes);
     await page.goto(document);
-    const og = await page.locator('meta[property="og:image"]').getAttribute('content');
-    const twitter = await page.locator('meta[name="twitter:image"]').getAttribute('content');
+    const og = await page.locator('meta[property="og:image"]').last().getAttribute('content');
+    const twitter = await page.locator('meta[name="twitter:image"]').last().getAttribute('content');
     expect(new URL(og || '').pathname).toBe(imagePath);
     expect(new URL(twitter || '').pathname).toBe(imagePath);
-    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /\S/);
-    await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute('content', /\S/);
+    await expect(page.locator('meta[property="og:image:alt"]').first()).toHaveAttribute('content', /\S/);
+    await expect(page.locator('meta[name="twitter:image:alt"]').first()).toHaveAttribute('content', /\S/);
   }
+});
+
+test('프로필 사진이 있으면 생성 카드보다 먼저 공유하고 비회원도 사진을 볼 수 있어야 한다', async ({
+  page,
+  context,
+  request,
+}) => {
+  const login = await context.request.post('/api/auth/test-login', {
+    headers: { Origin: origin },
+    data: { accountId: 'sample-user-0' },
+  });
+  expect(login.ok()).toBe(true);
+  await page.goto('/ko/settings/profile');
+  await page.getByLabel('프로필 사진 선택', { exact: true }).setInputFiles({
+    name: 'profile.png',
+    mimeType: 'image/png',
+    buffer: await readFile('public/brand/og-image.png'),
+  });
+  await expect(page.getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeVisible();
+  await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+  await expect(page).toHaveURL('/ko/users/sample-user-0');
+  const profile = PublicProfileSchema.parse(await (await request.get('/api/users/sample-user-0')).json());
+  const avatar = profile.author.avatarUrl;
+  expect(avatar).toBeTruthy();
+  const paths = await page.locator('meta[property="og:image"]').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const url = new URL(node.getAttribute('content') || '');
+      return url.pathname + url.search;
+    }),
+  );
+  expect(paths).toEqual([avatar, '/og/users/sample-user-0']);
+  if (!avatar) throw new Error('Expected a saved profile photo');
+  expect((await request.get(avatar)).ok()).toBe(true);
+  expect((await context.request.delete('/api/profile/avatar', { headers: { Origin: origin } })).ok()).toBe(
+    true,
+  );
 });
 
 test('삭제된 글과 없는 프로필에는 원문을 공개하지 않고 기본 이미지를 반환해야 한다', async ({ request }) => {

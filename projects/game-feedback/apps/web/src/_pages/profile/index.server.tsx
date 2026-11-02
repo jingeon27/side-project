@@ -20,6 +20,7 @@ export async function profileMetadata({ params, searchParams }: IProfileRoutePro
   const { cursor } = await searchParams;
   return createPageMetadata({
     imagePath: `/og/users/${encodeURIComponent(id)}`,
+    photoPaths: profile.author.avatarUrl ? [profile.author.avatarUrl] : [],
     title: `${profile.author.nickname} 플레이어 프로필`,
     description: profileDescription(profile),
     path: `/${locale}/users/${encodeURIComponent(id)}${typeof cursor === 'string' ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,

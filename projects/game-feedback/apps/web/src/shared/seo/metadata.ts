@@ -20,6 +20,7 @@ interface IPageMetadata {
   isTestAccount?: boolean;
   locale?: TLocale;
   imagePath?: string;
+  photoPaths?: readonly string[];
 }
 interface IStaticPageContent extends Pick<IPageMetadata, 'title' | 'description' | 'privatePage'> {
   keywords: readonly string[];
@@ -38,6 +39,7 @@ export function createPageMetadata({
   isTestAccount,
   locale = 'ko',
   imagePath = '/og',
+  photoPaths = [],
 }: IPageMetadata): Metadata {
   const { indexable, origin } = getSeoConfig();
   const allowed = indexable && !privatePage && !isTestAccount;
@@ -45,7 +47,15 @@ export function createPageMetadata({
   const text = excerpt(description);
   const siteName = translate(locale, SITE_NAME);
   const fullTitle = `${excerpt(title, 80)} | ${siteName}`;
-  const images = [{ url: `${origin}${imagePath}`, width: 1200, height: 630, alt: fullTitle }];
+  const images = [
+    ...Array.from(new Set(photoPaths))
+      .slice(0, 3)
+      .map((photoPath) => ({
+        url: `${origin}${photoPath}`,
+        alt: fullTitle,
+      })),
+    { url: `${origin}${imagePath}`, width: 1200, height: 630, alt: fullTitle },
+  ];
   return {
     title: { absolute: fullTitle },
     description: text,
