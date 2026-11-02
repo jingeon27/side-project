@@ -530,3 +530,9 @@ Link의 사전 로딩이 사라지지 않도록 인증된 사용자의 단일 �
 AppProviders는 공통 DS의 `MotionProvider`를 OverlayProvider 바깥에 두어 페이지와 열린 시트가 같은 전역 설정을 사용한다. Motion 14.9.0은 DS만 직접 의존하고 앱의 기존 motion 의존성은 제거했다. 당겨서 새로고침도 DS가 공개하는 공식 `m`·`useMotionValue`·`useSpring`과 `useMotionPreference`를 사용한다. `m.div`로 LazyMotion strict 정책에 맞추며 기존 스프링 값과 터치·핀치·키보드·요청 수명은 유지한다. 기본 0.2초 전환과 사용자 모션 감소 정책은 공통 provider가 소유한다.
 
 관련 단위/UI는 AppApolloProvider·BridgeProvider·루트 레이아웃·작성 진입·당겨서 새로고침의 5파일 39개가 통과했다. 타입·관련 lint·format, Node 24/Yarn 4.17의 설치와 immutable 검사도 통과했다. 실제 컴포넌트 브라우저 fixture에도 같은 공통 provider를 적용하고 기존 당겨서 새로고침 8개를 검증했다. Chromium 6개에서 실제 브라우저의 합성 터치 스크롤·중첩 목록·임계값·핀치 취소·키보드·모션 감소를, WebKit 2개에서 키보드와 모션 감소를 확인했다. 실기기 제스처 검증은 아니다. 최종 형식 정리 뒤 8개가 다시 통과했고 실행 중 소스 hash 변경은 없었다. 결과와 소스 manifest는 `.data/design-review/common-motion-consumers`에 보존하고 전용 fixture 서버 3349를 정리했다. 앞선 전체 652개와 production 33개·12개·6개를 이번 소스로 다시 실행했다고 주장하지 않는다.
+
+### 서비스 OG 이미지 개편 (2026-11-02)
+
+피식의 주황색 웃는 로고와 기존 고양이 일러스트를 사진 카드로 배치하고, “혼자 보기 아까운 순간”을 중심으로 1200×630 공유 이미지를 만들었다. SVG 원고와 PNG를 `apps/web/public/brand/og-image.*`에 보관한다. 기존 `/opengraph-image`와 이미지 메타데이터의 크기, 대체 텍스트 계약을 유지하며 PNG를 그대로 반환한다. 이미지 생성 시 외부 글꼴을 조회하지 않는다. 사용자 진입이나 이동 동작은 바꾸지 않았다.
+
+Node 24/Yarn 4.17에서 웹 타입 검사, 변경 코드 ESLint, 관련 SEO 단위 테스트 4개와 production 빌드가 통과했다. 실제 standalone 빌드의 Chromium 검사에서 `/opengraph-image`의 200 응답과 PNG 형식, 1200×630 크기, 원본 파일과의 바이트 일치, `/about`의 Open Graph와 Twitter 이미지 연결을 확인했다. 원본 이미지와 작은 미리보기를 눈으로 확인했다. 운영 배포는 수행하지 않았다.
