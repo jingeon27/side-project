@@ -89,6 +89,19 @@ describe('article discovery', () => {
     expect(screen.queryByRole('link', { name: article.title })).not.toBeInTheDocument();
   });
 
+  it('writes spaces as %20 and adds no history entry when a filter leaves the URL unchanged', async () => {
+    window.history.replaceState(null, '', '?q=a%20b&ref=mail');
+    const pushState = vi.spyOn(window.history, 'pushState');
+    const user = userEvent.setup();
+    render(<BlogFeed locale="ko" articles={[article, other]} />);
+    await user.click(
+      within(screen.getByRole('group', { name: '카테고리' })).getByRole('button', { name: /전체/ }),
+    );
+    expect(pushState).not.toHaveBeenCalled();
+    expect(window.location.search).toBe('?q=a%20b&ref=mail');
+    pushState.mockRestore();
+  });
+
   it('preserves unrelated params and hash when updating and clearing URL filters', async () => {
     window.history.replaceState(null, '', '?ref=mail&ref=sidebar#archive');
     const user = userEvent.setup();
