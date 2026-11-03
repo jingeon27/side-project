@@ -2,7 +2,7 @@
 
 서비스 소개 `/about`와 이용 방법 `/about/how-it-works`는 세션 없이 읽고 각 페이지의 canonical과 index 메타데이터를 제공한다. 공개 소개에서는 인증·푸시 API를 호출하지 않는다.
 
-홈과 그룹 등 콘텐츠 화면은 익명 또는 회원 세션이 있어야 진입한다. 세션 없는 요청(크롤러 포함)은 `/sign?next=…`로 이동하며 인증 화면은 noindex다. 아래 메타데이터·서버 HTML 계약은 세션으로 진입한 콘텐츠 화면에 적용한다. 내부 공개 데이터 조회·공유 캐시는 사용자 쿠키 없이 유지한다.
+홈과 그룹 등 콘텐츠 화면은 세션 없이도 열린다. 크롤러를 포함한 세션 없는 요청도 아래 메타데이터·서버 HTML을 그대로 받으므로 공개 그룹의 게시물은 검색 결과에 노출될 수 있다. 인증 화면 `/sign`은 noindex이고 자동으로 보내지 않는다. 내부 공개 데이터 조회·공유 캐시는 사용자 쿠키 없이 유지한다.
 
 `WEB_ORIGIN`을 실제 HTTPS 서비스 도메인으로 설정한다. canonical·OG/Twitter·JSON-LD·robots·사이트맵은 이 값만 사용하며 요청 Host나 추적 파라미터로 도메인을 바꾸지 않는다. 내부 API 주소는 별도 `API_URL`이다. 운영 Compose는 기존 배포 안내대로 두 값을 전달한다.
 
@@ -59,7 +59,7 @@ Next.js fetch Data Cache에 공개 게시물·대회 목록·결과는 30초, �
 
 ## 배포 후 확인
 
-1. 로그아웃 상태에서 `/about`와 `/about/how-it-works`의 서버 HTML, canonical, index 메타데이터와 인증 API 요청이 없는지 확인한다. 홈과 공개 그룹은 세션 없이 `/sign?next=…`로 이동하는지 확인하고, 익명 세션을 만든 뒤 title·canonical·robots·OG/Twitter·application/ld+json과 게시물 본문을 확인한다.
+1. 로그아웃 상태에서 `/about`와 `/about/how-it-works`의 서버 HTML, canonical, index 메타데이터와 인증 API 요청이 없는지 확인한다. 홈, 탐색, 공개 그룹도 세션 없이 200으로 열리는지 확인하고 title·canonical·robots·OG/Twitter·application/ld+json과 게시물 본문을 확인한다.
 2. `/robots.txt`와 `/sitemap.xml` 및 하위 사이트맵이 실제 도메인·공개 그룹만 가리키는지 확인한다.
 3. 도메인 소유자가 Google Search Console에서 도메인을 인증하고 `/sitemap.xml`을 제출한다. DNS 인증과 실제 서비스 도메인은 운영자가 준비한다.
 4. Search Console URL 검사와 Rich Results Test로 배포 URL을 검사한다. 배포 환경에서 공개 미디어가 쿠키 없이 읽히는지, 비공개 미디어는 거부되는지 함께 확인한다.

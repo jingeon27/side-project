@@ -790,11 +790,8 @@ try {
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
   ).json(groupResponse);
   const publicPc = new Client(pcDomain, port, publicCa);
-  const gatedGroup = await publicPc.http(`/groups/${group.id}`);
-  assert.equal(gatedGroup.status, 307, gatedGroup.text());
-  const signLocation = new URL(gatedGroup.headers.location ?? '', `https://${pcDomain}`);
-  assert.equal(signLocation.pathname, '/sign');
-  assert.equal(signLocation.searchParams.get('next'), `/groups/${group.id}`);
+  const guestGroup = await publicPc.http(`/groups/${group.id}`);
+  assert.equal(guestGroup.status, 200, guestGroup.text());
   const anonymousSession = await publicPc.graphql('mutation { startAnonymousSession { id } }');
   publicPc.cookie = anonymousSession.headers['set-cookie']
     ?.find((value) => value.startsWith('__Host-contest_session='))

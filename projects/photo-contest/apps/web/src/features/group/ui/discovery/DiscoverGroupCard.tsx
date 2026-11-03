@@ -34,22 +34,23 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
     .with({ joinRequestPending: false }, () => '둘러보기')
     .exhaustive();
   const privateGroup = group.visibility === GroupVisibility.Private;
+  const viewerPending = isSSR || !viewer;
   return (
     <article className="flex min-w-0 flex-col rounded-card border border-line bg-surface transition-colors hover:border-line-strong">
       <Link
         href={ROUTES.GROUP(id)}
         aria-describedby={detailsId}
         aria-label={group.name}
-        aria-disabled={privateGroup && (isSSR || !viewer?.me)}
-        inert={privateGroup && (isSSR || !viewer?.me)}
+        aria-disabled={privateGroup && viewerPending}
+        inert={privateGroup && viewerPending}
         className="flex min-w-0 flex-1 flex-col gap-3 rounded-card p-4 transition-colors hover:bg-sunken active:bg-neutral-soft"
         onClick={(event) => {
           if (!privateGroup) return;
-          if (isSSR || !viewer?.me) {
+          if (viewerPending) {
             event.preventDefault();
             return;
           }
-          if (!viewer.me.isAnonymous) return;
+          if (viewer.me && !viewer.me.isAnonymous) return;
           event.preventDefault();
           promptLogin(ROUTES.GROUP(id));
         }}

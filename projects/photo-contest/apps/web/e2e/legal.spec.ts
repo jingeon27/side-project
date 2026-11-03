@@ -7,7 +7,7 @@ test(
   '약관·개인정보는 로그인 없이 읽고 문의할 수 있으며 로그인·MY에서 연결돼야 한다',
   { tag: ['@ios', '@desktop'] },
   async ({ page, context, signIn }, testInfo) => {
-    await page.goto('/');
+    await page.goto('/sign');
     await page.getByRole('link', { name: '이용약관', exact: true }).first().click();
     await expect(page).toHaveURL(`${WEB_ORIGIN}/terms`);
     await expect(page.getByRole('heading', { name: '이용약관', level: 1 })).toBeVisible();

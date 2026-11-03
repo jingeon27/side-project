@@ -12,7 +12,7 @@ test.describe('앱 셸', () => {
     await page.goto('/');
 
     await expect(webScreens.appMarker(page)).toHaveCount(1);
-    await expect(nativeHost.waitForEvent('app.ready')).resolves.toEqual({ path: '/sign?next=%2F' });
+    await expect(nativeHost.waitForEvent('app.ready')).resolves.toEqual({ path: '/' });
   });
 
   test('딥링크(navigation.open)를 받으면 그 화면으로 이동해야 한다', async ({
@@ -32,7 +32,7 @@ test.describe('앱 셸', () => {
     await expect(page.getByText('딥링크 모임').first()).toBeVisible();
   });
 
-  test('별도 소개 페이지는 로그인 없이 열고 시작하기는 기존 메인 인증으로 이어져야 한다', async ({
+  test('별도 소개 페이지는 로그인 없이 열고 시작하기는 메인으로 이어져야 한다', async ({
     page,
     nativeHost,
   }) => {
@@ -47,7 +47,7 @@ test.describe('앱 셸', () => {
     expect(apiRequests).toEqual([]);
     await expect(webScreens.homeLink(page)).toHaveCount(0);
     await webScreens.landingStart(page).click();
-    await expect(page).toHaveURL('/sign?next=%2F');
+    await expect(page).toHaveURL('/');
   });
 
   test('앱 메인은 루트의 게시물 피드와 홈 탭을 유지하고 화면 폭을 넘지 않아야 한다', async ({

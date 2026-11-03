@@ -16,7 +16,8 @@ import {
   RequestGroupMembershipDocument,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
+import { buildLoginRedirectPath } from '@/shared/lib/login-redirect.helper';
+import { ANALYTICS_EVENT, toPathTemplate, trackEvent } from '@/shared/model/analytics';
 import { toast } from '@/shared/model/toast';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
@@ -58,7 +59,17 @@ export function GroupMembershipButton({ groupId }: { groupId: string }) {
     );
   if (!viewer?.me)
     return (
-      <ButtonLink href={buildLoginRedirectPath(ROUTES.GROUP(groupId))} size="md">
+      <ButtonLink
+        href={buildLoginRedirectPath(ROUTES.GROUP(groupId))}
+        size="md"
+        onClick={() =>
+          trackEvent(ANALYTICS_EVENT.SignEntryClicked, {
+            placement: 'group_join',
+            source_path_template: toPathTemplate(window.location.pathname),
+            destination_path_template: toPathTemplate(ROUTES.GROUP(groupId)),
+          })
+        }
+      >
         로그인하고 가입하기
       </ButtonLink>
     );

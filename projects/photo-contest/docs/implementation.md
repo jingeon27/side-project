@@ -349,6 +349,16 @@ CI의 실제 Nest 통합 검사에서 인증 거절이 `ok`로 기록되는 경�
 - `Post.clientRequestId` nullable 열과 복합 unique는 새 additive migration으로 추가했다. 기존 행·키 없는 클라이언트와 데이터는 보존한다. 개발 DB 적용은 하지 않았고 개발 서버와 Prisma client가 분리된 worktree에서 테스트했다.
 - e2e의 미사용 import를 제거하고 프로젝트 lint에 Web·Mobile lint 위임을 추가했다. 실제 DB의 링크 동시 재시도·키 분리·입력 거절·호환 요청과 실제 S3/브라우저의 파일 재사용·응답 유실·저장 후 목록 실패를 회귀 검사한다. 전체 검증 결과는 후속 PR 본문과 [감사 후속 과제](../../../docs/code-quality-followups.md)에 기록한다.
 
+## 2026-11-03 세션 없는 방문과 하단 MY
+
+사용자 결정으로 세션이 없거나 만료돼도 콘텐츠 화면을 `/sign`으로 보내지 않는다. `proxy.ts`, AuthSessionSync의 이동, 세션 경로 목록과 쿠키 판별 코드를 제거했다. 권한 판단은 그대로 API가 맡는다. 홈은 공개 그룹 목록과 공개 피드를 보여 주고, MY·알림·온보딩·기존 대회·그룹 만들기는 같은 주소에서 LoginPanel을 보여 준다. 글쓰기와 그룹 수정은 권한이 없으면 그룹 화면으로 이동한다. 비공개 그룹 카드는 세션이 없어도 익명 사용자와 같은 로그인 안내를 연다.
+
+하단·데스크톱 메뉴의 MY는 세션 없음이 확인되면 이름이 SIGN으로 바뀌고 `/sign?next=%2Fme`로 이동한다. 확인 전이나 익명 세션에서는 MY와 `/me`를 유지한다. 서버 HTML에서는 세션을 알 수 없어 세션 없는 방문자도 hydration 직후까지 MY를 잠깐 본다. 소개 페이지의 시작하기는 메인으로 바로 이동한다. 크롤러도 공개 그룹의 서버 HTML과 메타데이터를 받으므로 공개 게시물은 검색 결과에 노출될 수 있다.
+
+Amplitude에는 `sign_entry_clicked`(placement = bottom_nav | desktop_nav | group_join | login_prompt, source_path_template, destination_path_template)를 추가해 클릭 시점에 보낸다. 경로는 path template로 보내 ID·토큰·검색어를 남기지 않는다. 키가 없으면 보내지 않는 기존 동작은 그대로다. 세션 없는 방문은 기존 `page_viewed`에서 사용자 ID 없는 이벤트로 구분한다.
+
+웹·모바일 타입 검사, 웹 lint, knip, 웹 단위·UI 테스트 160개 파일 665개가 통과했다. 로컬에 S3 자격 증명이 없어 업로드하지 않는 일회용 API 실행으로 Playwright를 돌렸다. 운영 빌드에서 Pixel 7·iPhone 15(WebKit)·데스크톱·웹뷰의 업로드 없는 스펙 158개가 통과했고, 업로드 단계에서 멈춘 3개(`access-layout`의 서버 HTML 검사 2개, `social-preview` 1개)는 미검증이다. 모바일 앱 셸·뒤로 가기 스펙은 14개가 통과하고 2개를 건너뛰었다. 업로드가 필요한 E2E, `test:cache`, `test:deploy`, 공통 배포 스모크, 실제 Amplitude 수신은 실행하지 않았다.
+
 ## 제목에 날짜 없는 기록
 
 ### 제품과 구조
@@ -546,3 +556,15 @@ Node 24/Yarn 4.17에서 웹 타입 검사, 변경 코드 ESLint, 관련 SEO 단�
 웹과 공통 DS 타입 검사, 변경 코드 lint와 format, 관련 단위 테스트 18개 및 공통 6개가 통과했다. 실제 standalone production 빌드의 Chromium 2개에서 그룹·대회 이미지 생성, 대표 사진과 한글 표시, 1200×630 크기, Open Graph/Twitter 주소와 대체 텍스트, 그룹장 세션의 비공개 메타데이터 차단과 직접 이미지 요청의 기본 PNG를 확인했다. 초기 검증에서 추가 필드 fixture, nullable 대회의 대체 텍스트 분기와 테스트 tuple·page 타입을 바로잡았으며 최종 검증은 새 빌드에서 통과했다. 생성 이미지와 긴 제목 예시는 시각 확인했다. 운영 배포는 수행하지 않았다.
 
 사진 우선 표시 후속 변경은 웹 타입 검사와 변경 코드 lint, 관련 단위 테스트 20개, 새 standalone production 빌드의 Chromium 2개를 통과했다. 공개 사진이 OG 목록의 첫 항목이고 생성 카드가 마지막인 점과 비공개 그룹의 이미지 태그 차단을 확인했다.
+
+### 입력 대비와 탐색 복구 PR #204 재검토 및 충돌 해결 (2026-11-03)
+
+입력 경계의 전용 `control-border` 토큰, 검색 결과와 빈 결과의 검색어 초기화, 접근성 설명과 상태 알림, 그룹 생성 취소의 이전 화면 복귀를 검토했다. 토큰 계산에서 surface 대비는 라이트 1.38:1에서 3.69:1, 다크 1.97:1에서 4.51:1로 바뀐다. 이 수치는 CSS 색상의 대비 계산이며 실제 보조기술 사용성이나 서비스 전체의 WCAG 준수를 보장하지 않는다. 검색 초기화는 q만 지우고 중복 query와 hash를 보존하며 `group_search_cleared`에 위치만 전송한다.
+
+develop `76327634`의 #203과 충돌한 GroupCreatePage와 모니터링 카탈로그를 병합했다. 비로그인 사용자는 제자리 로그인과 홈 복귀를 유지하고 세션이 있는 폼만 취소용 뒤로 가기 훅을 등록한다. 기록이 있는 취소는 이전 검색 화면으로, 직접 방문한 폼은 MY로 간다. 세션 만료 시 폼이 사라지고 상위 경로가 홈으로 돌아가는 조건도 검증했다. `sign_entry_clicked`와 `group_search_cleared`, 비공개 그룹의 로딩 중 조작 방지와 로그인 안내를 함께 보존했다. API, DB, 의존성, 운영 S3 설정은 수정하지 않았다.
+
+Node 24/Yarn 4.17에서 `yarn workspace @photo-contest/web test`의 669개와 `yarn workspace @side/design-system test`의 219개가 통과했다. 두 워크스페이스의 typecheck와 lint, 루트 `yarn knip`과 `yarn format:check`가 통과했다. 첫 타입 검사에서 새 테스트에 Playwright의 exact 옵션을 Testing Library에 넣은 오류를 수정했고 타입 검사와 GroupCreatePage 4개를 재실행해 통과했다.
+
+기존 3320/4320 테스트 서버가 사용 중이어서 테스트 포트 상수만 임시로 3348/4348로 바꾸고 원복했다. 새 production/standalone 빌드에서 group-explore-recovery, group-discovery, group-create, desktop-guest-menu의 Chromium 모바일, WebKit 모바일, 데스크톱 19개 중 16개가 통과했다. 검색 초기화, 검색 상태를 보존한 생성 취소, 사진 없는 그룹 생성, 공개 조회와 비공개 가입 승인, 비로그인 SIGN 진입을 확인했고 모바일과 데스크톱 탐색 캡처를 눈으로 확인했다. 사진을 실제 S3로 올리는 3개는 실패했다. trace의 브라우저 CORS 오류와 S3 OPTIONS의 3320 허용(200), 3348 거부(403)를 확인했으므로 이를 통과로 기록하지 않는다. 이 실행의 서버는 종료했고 임시 포트 변경은 커밋하지 않았다.
+
+`check:cleanup`은 남은 테스트 스키마 1개로 실패했다. 해당 스키마에는 이번 실행에서 생성한 고유 그룹이 없고 별도 3320/4320 서버가 실행 중이므로 삭제하지 않았다. 실제 스크린리더, 실기기와 Game Mate 화면, 충돌 해결 후 최신 원격 CI 결과는 이 로컬 검증에 포함하지 않는다. PR 병합과 배포는 수행하지 않았다.

@@ -11,7 +11,7 @@ import {
   Phase,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
+import { buildLoginRedirectPath } from '@/shared/lib/login-redirect.helper';
 import { toast } from '@/shared/model/toast';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
