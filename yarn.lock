@@ -1711,6 +1711,7 @@ __metadata:
     "@testing-library/user-event": "catalog:"
     "@types/mdx": "npm:^2.0.13"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     "@vitejs/plugin-react": "catalog:"
@@ -1726,6 +1727,7 @@ __metadata:
     next: "catalog:"
     next-intl: "npm:^4.14.9"
     prettier: "catalog:"
+    qs: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
     rehype-pretty-code: "npm:^0.14.5"
@@ -3035,6 +3037,7 @@ __metadata:
     "@tailwindcss/postcss": "catalog:"
     "@tanstack/react-query": "catalog:"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     "@vitejs/plugin-react": "catalog:"
@@ -3042,6 +3045,7 @@ __metadata:
     es-toolkit: "catalog:"
     eslint: "catalog:"
     jiti: "catalog:"
+    qs: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
     react-hook-form: "catalog:"
@@ -3072,11 +3076,13 @@ __metadata:
     "@side/toolkit": "workspace:*"
     "@types/express": "catalog:"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/supertest": "catalog:"
     dayjs: "catalog:"
     es-toolkit: "catalog:"
     express: "catalog:"
     prisma: "catalog:"
+    qs: "catalog:"
     reflect-metadata: "catalog:"
     rxjs: "catalog:"
     sharp: "catalog:"
@@ -3094,7 +3100,9 @@ __metadata:
   resolution: "@game-feedback/bridge@workspace:projects/game-feedback/packages/bridge"
   dependencies:
     "@side/config": "workspace:*"
+    "@types/qs": "catalog:"
     es-toolkit: "catalog:"
+    qs: "catalog:"
     ts-pattern: "catalog:"
     typescript: "catalog:"
     vitest: "catalog:"
@@ -3189,6 +3197,7 @@ __metadata:
     "@tiptap/react": "npm:3.32.2"
     "@tiptap/starter-kit": "npm:3.32.2"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     dayjs: "catalog:"
@@ -3201,6 +3210,7 @@ __metadata:
     lucide-react: "catalog:"
     next: "catalog:"
     overlay-kit: "catalog:"
+    qs: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
     react-hook-form: "catalog:"
@@ -6184,6 +6194,7 @@ __metadata:
     "@testing-library/dom": "catalog:"
     "@testing-library/react": "catalog:"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/react": "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
@@ -6204,6 +6215,7 @@ __metadata:
     expo-web-browser: "catalog:"
     jiti: "catalog:"
     jsdom: "catalog:"
+    qs: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
     react-native: "catalog:"
@@ -6264,6 +6276,7 @@ __metadata:
     "@testing-library/react": "catalog:"
     "@testing-library/user-event": "catalog:"
     "@types/node": "catalog:"
+    "@types/qs": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     class-variance-authority: "catalog:"
@@ -6276,6 +6289,7 @@ __metadata:
     lucide-react: "catalog:"
     next: "catalog:"
     overlay-kit: "catalog:"
+    qs: "catalog:"
     react: "catalog:"
     react-dom: "catalog:"
     react-hook-form: "catalog:"
@@ -9643,7 +9657,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/qs@npm:*":
+"@types/qs@npm:*, @types/qs@npm:6.15.1":
   version: 6.15.1
   resolution: "@types/qs@npm:6.15.1"
   checksum: 10c0/1dfdbcb4cf2a8f66d57f0b9a9fe6b1c7091cb816687b6698c1351eaf31f62e412cea9b7453a9637b570cd5fad8dced527e5a9e69b4fcc6e318daacd8b749f094
@@ -19780,7 +19794,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.14.1, qs@npm:^6.16.0, qs@npm:^6.16.1":
+"qs@npm:6.17.1, qs@npm:^6.14.1, qs@npm:^6.16.0, qs@npm:^6.16.1":
   version: 6.17.1
   resolution: "qs@npm:6.17.1"
   dependencies:
