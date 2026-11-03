@@ -8,8 +8,29 @@ import {
   readStyle,
   resolveColor,
 } from '../test/color-tokens';
+import { inputControlClassName } from '../ui/input/input.styles';
 
 const pageBackgrounds = ['canvas', 'surface', 'sunken', 'neutral-soft', 'brand-soft'];
+
+describe('입력 경계 대비', () => {
+  it.each(colorModes)('%s 모드에서 실제 입력 경계가 인접 바탕과 3:1 이상이어야 한다', (mode) => {
+    const inputToken = inputControlClassName.match(/(?:^|\s)border-([a-z-]+)(?=\s|$)/)?.[1];
+    const shadcnToken = readStyle('shadcn.css').match(
+      /--color-input-border:\s*var\(--color-([a-z-]+)\)/,
+    )?.[1];
+    if (!inputToken || !shadcnToken) throw new Error('입력 경계 색 토큰을 찾을 수 없습니다.');
+    for (const token of [inputToken, shadcnToken]) {
+      for (const background of pageBackgrounds) {
+        expect
+          .soft(
+            contrastRatio(resolveColor(token, mode), resolveColor(background, mode)),
+            `${token} / ${background}`,
+          )
+          .toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+});
 
 describe('포커스 링 대비', () => {
   it('전역 :focus-visible 링은 focus-ring 토큰을 써야 한다', () => {

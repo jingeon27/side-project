@@ -13,6 +13,7 @@ export const ANALYTICS_EVENT = {
   LoginSucceeded: 'login_succeeded',
   GroupCreated: 'group_created',
   GroupJoined: 'group_joined',
+  GroupSearchCleared: 'group_search_cleared',
   InviteLinkCopied: 'invite_link_copied',
   InviteLinkShared: 'invite_link_shared',
   InviteLinkRegenerated: 'invite_link_regenerated',
@@ -77,6 +78,7 @@ export type TAnalyticsEventProperties = {
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.GroupCreated]: { group_id: string };
   [ANALYTICS_EVENT.GroupJoined]: { group_id: string };
+  [ANALYTICS_EVENT.GroupSearchCleared]: { placement: 'results_header' | 'empty_state' };
   [ANALYTICS_EVENT.InviteLinkCopied]: { group_id: string; method: TShareMethod };
   [ANALYTICS_EVENT.InviteLinkShared]: { group_id: string; method: TShareMethod };
   [ANALYTICS_EVENT.InviteLinkRegenerated]: { group_id: string };

@@ -556,3 +556,15 @@ Node 24/Yarn 4.17에서 웹 타입 검사, 변경 코드 ESLint, 관련 SEO 단�
 웹과 공통 DS 타입 검사, 변경 코드 lint와 format, 관련 단위 테스트 18개 및 공통 6개가 통과했다. 실제 standalone production 빌드의 Chromium 2개에서 그룹·대회 이미지 생성, 대표 사진과 한글 표시, 1200×630 크기, Open Graph/Twitter 주소와 대체 텍스트, 그룹장 세션의 비공개 메타데이터 차단과 직접 이미지 요청의 기본 PNG를 확인했다. 초기 검증에서 추가 필드 fixture, nullable 대회의 대체 텍스트 분기와 테스트 tuple·page 타입을 바로잡았으며 최종 검증은 새 빌드에서 통과했다. 생성 이미지와 긴 제목 예시는 시각 확인했다. 운영 배포는 수행하지 않았다.
 
 사진 우선 표시 후속 변경은 웹 타입 검사와 변경 코드 lint, 관련 단위 테스트 20개, 새 standalone production 빌드의 Chromium 2개를 통과했다. 공개 사진이 OG 목록의 첫 항목이고 생성 카드가 마지막인 점과 비공개 그룹의 이미지 태그 차단을 확인했다.
+
+### 입력 대비와 탐색 복구 PR #204 재검토 및 충돌 해결 (2026-11-03)
+
+입력 경계의 전용 `control-border` 토큰, 검색 결과와 빈 결과의 검색어 초기화, 접근성 설명과 상태 알림, 그룹 생성 취소의 이전 화면 복귀를 검토했다. 토큰 계산에서 surface 대비는 라이트 1.38:1에서 3.69:1, 다크 1.97:1에서 4.51:1로 바뀐다. 이 수치는 CSS 색상의 대비 계산이며 실제 보조기술 사용성이나 서비스 전체의 WCAG 준수를 보장하지 않는다. 검색 초기화는 q만 지우고 중복 query와 hash를 보존하며 `group_search_cleared`에 위치만 전송한다.
+
+develop `76327634`의 #203과 충돌한 GroupCreatePage와 모니터링 카탈로그를 병합했다. 비로그인 사용자는 제자리 로그인과 홈 복귀를 유지하고 세션이 있는 폼만 취소용 뒤로 가기 훅을 등록한다. 기록이 있는 취소는 이전 검색 화면으로, 직접 방문한 폼은 MY로 간다. 세션 만료 시 폼이 사라지고 상위 경로가 홈으로 돌아가는 조건도 검증했다. `sign_entry_clicked`와 `group_search_cleared`, 비공개 그룹의 로딩 중 조작 방지와 로그인 안내를 함께 보존했다. API, DB, 의존성, 운영 S3 설정은 수정하지 않았다.
+
+Node 24/Yarn 4.17에서 `yarn workspace @photo-contest/web test`의 669개와 `yarn workspace @side/design-system test`의 219개가 통과했다. 두 워크스페이스의 typecheck와 lint, 루트 `yarn knip`과 `yarn format:check`가 통과했다. 첫 타입 검사에서 새 테스트에 Playwright의 exact 옵션을 Testing Library에 넣은 오류를 수정했고 타입 검사와 GroupCreatePage 4개를 재실행해 통과했다.
+
+기존 3320/4320 테스트 서버가 사용 중이어서 테스트 포트 상수만 임시로 3348/4348로 바꾸고 원복했다. 새 production/standalone 빌드에서 group-explore-recovery, group-discovery, group-create, desktop-guest-menu의 Chromium 모바일, WebKit 모바일, 데스크톱 19개 중 16개가 통과했다. 검색 초기화, 검색 상태를 보존한 생성 취소, 사진 없는 그룹 생성, 공개 조회와 비공개 가입 승인, 비로그인 SIGN 진입을 확인했고 모바일과 데스크톱 탐색 캡처를 눈으로 확인했다. 사진을 실제 S3로 올리는 3개는 실패했다. trace의 브라우저 CORS 오류와 S3 OPTIONS의 3320 허용(200), 3348 거부(403)를 확인했으므로 이를 통과로 기록하지 않는다. 이 실행의 서버는 종료했고 임시 포트 변경은 커밋하지 않았다.
+
+`check:cleanup`은 남은 테스트 스키마 1개로 실패했다. 해당 스키마에는 이번 실행에서 생성한 고유 그룹이 없고 별도 3320/4320 서버가 실행 중이므로 삭제하지 않았다. 실제 스크린리더, 실기기와 Game Mate 화면, 충돌 해결 후 최신 원격 CI 결과는 이 로컬 검증에 포함하지 않는다. PR 병합과 배포는 수행하지 않았다.
