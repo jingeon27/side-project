@@ -2,7 +2,7 @@
 
 import { overlay } from 'overlay-kit';
 
-import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
+import { buildLoginRedirectPath } from '@/shared/lib/login-redirect.helper';
 import { useAppRouter } from '@/shared/model/router';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 

@@ -7,7 +7,7 @@ import {
   hasSessionCookie,
   isSessionRequiredPath,
   readCookie,
-} from './auth-gate.helper';
+} from './login-redirect.helper';
 
 describe('readCookie', () => {
   it('Cookie 헤더 원문에서 이름이 정확히 같은 쿠키만 읽어야 한다', () => {

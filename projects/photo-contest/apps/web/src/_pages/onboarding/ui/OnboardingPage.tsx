@@ -17,8 +17,8 @@ import {
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
 import { ROUTES } from '@/shared/constants/routes';
-import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
+import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
 import { useZodForm } from '@/shared/model/form';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';

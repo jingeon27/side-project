@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { match } from 'ts-pattern';
 
-import { decideAuthGate } from '@/shared/lib/auth-gate.helper';
+import { decideAuthGate } from '@/shared/lib/login-redirect.helper';
 
 /**
  * 익명·회원 세션이 없으면 `/sign?next=<원래 경로>`로 보낸다.

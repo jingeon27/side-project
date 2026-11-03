@@ -7,12 +7,12 @@ import { useApolloClient, useQuery } from '@apollo/client/react';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
+import { reloadDocument } from '@/shared/lib/document-navigation.helper';
 import {
   buildLoginRedirectPath,
   getSafeNextPath,
   isSessionRequiredPath,
-} from '@/shared/lib/auth-gate.helper';
-import { reloadDocument } from '@/shared/lib/document-navigation.helper';
+} from '@/shared/lib/login-redirect.helper';
 import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { useAppRouter } from '@/shared/model/router';
