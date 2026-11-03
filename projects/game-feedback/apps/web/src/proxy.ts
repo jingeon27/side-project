@@ -1,11 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { pickBy } from 'es-toolkit';
+import qs from 'qs';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
 
 import { documentUnavailable } from '@/_app/seo/index.server';
 import { visitorAddress } from '@/shared/api/server';
 import { PUBLIC_LOOKUP_PAGES_PER_MINUTE, VisitorRateLimiter } from '@/shared/api/visitor-rate-limit';
 import { isLocale, LANGUAGE_COOKIE, LOCALE_HEADER, preferredLocale } from '@/shared/i18n/index.server';
+import { parseSearchValues } from '@/shared/lib/query-string';
 
 // 상세 문서·RSC 요청은 URL의 id로 공유 캐시를 채운다. 캐시 안의 API 호출은 방문자를 알 수 없어 내부 예산을
 // 쓰므로, 캐시에 닿기 전에 방문자 주소(Caddy가 덮어쓴 X-Forwarded-For 첫 값)마다 제한한다. 주소가 없는
@@ -42,8 +46,10 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === '/') {
     const url = publicRequestUrl(request);
     url.pathname = `/${locale}`;
-    for (const key of [...url.searchParams.keys()])
-      if (!['q', 'tab'].includes(key)) url.searchParams.delete(key);
+    url.search = qs.stringify(
+      pickBy(parseSearchValues(url.search), (_, key) => ['q', 'tab'].includes(key)),
+      { addQueryPrefix: true, arrayFormat: 'repeat' },
+    );
     return NextResponse.redirect(url);
   }
   if (/^\/(ko|en|ja)\/admin(?:\/|$)/.test(request.nextUrl.pathname))
@@ -63,7 +69,7 @@ export async function proxy(request: NextRequest) {
         (await documentUnavailable(
           request.nextUrl.pathname,
           request.cookies.get('gamefeedback_session')?.value,
-          request.nextUrl.searchParams.getAll('game'),
+          parseSearchValues(request.nextUrl.search).game ?? [],
           visitor,
         ))))
   ) {

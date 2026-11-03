@@ -5,16 +5,17 @@ import type { TFeedbackStatus } from '@game-feedback/contracts';
 
 import { parseFeedbackStatus } from '@/features/post';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 
 import { BoardFilterLink } from '../board/BoardFilterLink';
 
 export function FeedbackFilters({ locale, initialSearch }: { locale: string; initialSearch: string }) {
   const { t } = useI18n();
-  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.boards(locale, 'feedback')));
-  const status = parseFeedbackStatus(params.get('feedbackStatus'));
+  const params = parseSearch(useBrowserSearch(initialSearch, appRoutes.boards(locale, 'feedback')));
+  const status = parseFeedbackStatus(params.feedbackStatus);
   const hrefFor = (value?: TFeedbackStatus) =>
-    appRoutes.boards(locale, 'feedback', params.get('q') ?? undefined, params.get('game') ?? undefined, {
+    appRoutes.boards(locale, 'feedback', params.q, params.game, {
       feedbackStatus: value,
     });
   return (

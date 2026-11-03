@@ -24,6 +24,7 @@ import {
 } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, Await, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
@@ -65,9 +66,9 @@ function FeedResultsRegion({ locale, initialFeed }: { locale: string; initialFee
   const { session } = useSession();
   const initial = initialFeed;
   const search = useBrowserSearch(feedSnapshotSearch(initial), appRoutes.feed(locale));
-  const params = new URLSearchParams(search);
-  const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
-  const q = params.get('q')?.trim().slice(0, 100) ?? '';
+  const params = parseSearch(search);
+  const tab = params.tab === 'unanswered' ? 'unanswered' : 'latest';
+  const q = params.q?.trim().slice(0, 100) ?? '';
   return (
     <ServiceErrorBoundary title={t('최신 글')} resetKey={`${session.user?.id ?? 'anonymous'}:${tab}:${q}`}>
       <FeedResults locale={locale} tab={tab} q={q} initial={initial} />

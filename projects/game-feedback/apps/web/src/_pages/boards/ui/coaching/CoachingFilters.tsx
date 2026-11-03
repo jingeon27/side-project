@@ -5,6 +5,7 @@ import type { TCoachingRole } from '@game-feedback/contracts';
 
 import { parseCoachingRole } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 
 import { BoardFilterLink } from '../board/BoardFilterLink';
@@ -18,10 +19,10 @@ interface ICoachingFiltersProps {
 
 export function CoachingFilters({ locale, slug, initialSearch }: ICoachingFiltersProps) {
   const { t } = useI18n();
-  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.boards(locale, slug)));
-  const role = parseCoachingRole(params.get('coachingRole'));
+  const params = parseSearch(useBrowserSearch(initialSearch, appRoutes.boards(locale, slug)));
+  const role = parseCoachingRole(params.coachingRole);
   const hrefFor = (value?: TCoachingRole) =>
-    appRoutes.boards(locale, slug, params.get('q') ?? undefined, params.get('game') ?? undefined, {
+    appRoutes.boards(locale, slug, params.q, params.game, {
       coachingRole: value,
     });
   return (

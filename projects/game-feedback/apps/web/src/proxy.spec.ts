@@ -45,6 +45,21 @@ describe('public lookup pages in the proxy', () => {
     expect((await proxy(request(path))).status).toBe(200);
   });
 
+  it('루트 이동은 q·tab의 순서와 중복을 유지하고 나머지 쿼리를 버려야 한다', async () => {
+    const response = await proxy(request('/?tab=unanswered&utm=mail&q=a&q=b&next=https://other.example'));
+    expect(new URL(response.headers.get('location') ?? '').search).toBe('?tab=unanswered&q=a&q=b');
+  });
+
+  it('문서 판정에 같은 키로 온 게임을 모두 넘겨야 한다', async () => {
+    await proxy(request('/ko/posts/post-1?game=a&game=b'));
+    expect(documentUnavailable).toHaveBeenLastCalledWith('/ko/posts/post-1', undefined, ['a', 'b'], null);
+  });
+
+  it('게시판 문맥의 중복 쿼리는 문서 조회 전에 404로 막아야 한다', async () => {
+    expect((await proxy(request('/ko/boards/free?game=a&game=b'))).status).toBe(404);
+    expect(documentUnavailable).not.toHaveBeenCalled();
+  });
+
   it('limits post and profile documents and RSC requests per visitor before the shared cache', async () => {
     const visitor = '203.0.113.71';
     for (const index of Array.from({ length: PUBLIC_LOOKUP_PAGES_PER_MINUTE }, (_, offset) => offset))

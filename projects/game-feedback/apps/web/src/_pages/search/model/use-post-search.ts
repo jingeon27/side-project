@@ -1,6 +1,9 @@
+import { omit } from 'es-toolkit';
+import qs from 'qs';
 import { useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { parseSearchValues } from '@/shared/lib/query-string';
 import { useZodForm } from '@/shared/model/form';
 
 const searchSchema = z.object({ q: z.string().max(100) });
@@ -10,11 +13,11 @@ export function usePostSearch(q: string) {
   const search = useWatch({ control: form.control, name: 'q' });
 
   function commitSearch(value: string) {
-    const params = new URLSearchParams(window.location.search);
-    params.delete('q');
-    if (value) params.set('q', value);
-    const query = params.toString();
-    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+    const search = qs.stringify(
+      { ...omit(parseSearchValues(window.location.search), ['q']), q: value || undefined },
+      { addQueryPrefix: true, arrayFormat: 'repeat' },
+    );
+    window.history.replaceState(null, '', `${window.location.pathname}${search}`);
   }
 
   const handleClear = () => {
