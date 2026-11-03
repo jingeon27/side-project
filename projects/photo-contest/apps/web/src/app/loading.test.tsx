@@ -1,3 +1,5 @@
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,10 +14,13 @@ vi.mock('next/navigation', () => ({
 
 describe('라우트 로딩 회귀', () => {
   it('다음 화면을 불러오는 동안에도 데스크톱 고정 메뉴를 유지해야 한다', () => {
+    const client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
     const { container } = render(
-      <AppShell>
-        <Loading />
-      </AppShell>,
+      <ApolloProvider client={client}>
+        <AppShell>
+          <Loading />
+        </AppShell>
+      </ApolloProvider>,
     );
     expect(screen.getByRole('status', { name: '불러오는 중' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '주요 메뉴' })).toBeInTheDocument();

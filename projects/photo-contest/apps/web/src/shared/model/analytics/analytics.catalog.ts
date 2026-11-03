@@ -8,6 +8,7 @@ export const ANALYTICS_EVENT = {
   PostCreated: 'post_created',
   PageViewed: 'page_viewed',
   LandingStartClicked: 'landing_start_clicked',
+  SignEntryClicked: 'sign_entry_clicked',
   LoginStarted: 'login_started',
   LoginSucceeded: 'login_succeeded',
   GroupCreated: 'group_created',
@@ -66,6 +67,11 @@ export type TAnalyticsEventProperties = {
     destination_path_template: string;
     redirect_applied: boolean;
     group_id?: string;
+  };
+  [ANALYTICS_EVENT.SignEntryClicked]: {
+    placement: 'bottom_nav' | 'desktop_nav' | 'group_join' | 'login_prompt';
+    source_path_template: string;
+    destination_path_template: string;
   };
   [ANALYTICS_EVENT.LoginStarted]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };

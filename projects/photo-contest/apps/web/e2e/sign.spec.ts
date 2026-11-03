@@ -1,3 +1,5 @@
+import { mkdir } from 'node:fs/promises';
+
 import { productRequest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
@@ -34,6 +36,36 @@ test(
     const session = (await context.cookies()).find((cookie) => cookie.name === 'contest_session');
     expect(session?.httpOnly).toBe(true);
     expect(session?.value).not.toBe('expired'.repeat(8));
+  },
+);
+
+test(
+  '세션이 없을 때 하단 메뉴는 MY 대신 SIGN을 보여 주고 시작하면 MY로 돌아와야 한다',
+  { tag: ['@ios'] },
+  async ({ page, signIn, context }, testInfo) => {
+    const owner = await signIn('하단 메뉴 그룹장');
+    await seedGroup(owner, '하단 메뉴 공개 그룹', 'PUBLIC');
+    await context.clearCookies();
+    await page.goto('/');
+    await expect(
+      page
+        .getByRole('region', { name: '공개 그룹 목록' })
+        .getByRole('link', { name: '하단 메뉴 공개 그룹', exact: true }),
+    ).toBeVisible();
+    const menu = page.locator('[data-bottom-nav]');
+    const sign = menu.getByRole('link', { name: 'SIGN', exact: true });
+    await expect(sign).toHaveAttribute('href', '/sign?next=%2Fme');
+    await expect(menu.getByRole('link', { name: 'MY', exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await mkdir('.data/screens', { recursive: true });
+    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-guest-home.png` });
+    await sign.click();
+    await expect(page).toHaveURL('/sign?next=%2Fme');
+    await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
+    await expect(page).toHaveURL('/me');
+    await page.goto('/');
+    await expect(menu.getByRole('link', { name: 'MY', exact: true })).toHaveAttribute('href', '/me');
+    await expect(menu.getByRole('link', { name: 'SIGN', exact: true })).toHaveCount(0);
   },
 );
 
