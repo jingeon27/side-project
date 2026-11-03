@@ -77,7 +77,7 @@ test(
     await expect(page.getByRole('form', { name: '그룹 프로필 수정' })).toBeVisible();
     await page.context().clearCookies();
     await page.goto(`${path}/edit`);
-    await expect(page).toHaveURL(new RegExp(`/sign\\?next=${encodeURIComponent(`${path}/edit`)}`));
+    await expect(page).toHaveURL(path);
     await expect(page.getByRole('form', { name: '그룹 프로필 수정' })).toHaveCount(0);
   },
 );

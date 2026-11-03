@@ -75,6 +75,10 @@ test(
     const group = await seedGroup(cookie, '비공개 모임', 'PRIVATE');
     await context.clearCookies();
     await page.goto(`/groups/${group.id}`);
+    await expect(page).toHaveURL(`/groups/${group.id}`);
+    await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '최신 게시물' })).toHaveCount(0);
+    await page.getByRole('link', { name: '로그인하고 가입하기', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('/sign\\?next='));
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page).toHaveURL(`/groups/${group.id}`);
@@ -102,7 +106,9 @@ test('만료된 쿠키와 다른 그룹의 회원도 사적인 화면을 볼 수
     { name: 'contest_session', value: 'a'.repeat(43), url: WEB_ORIGIN, httpOnly: true },
   ]);
   await page.goto(`/groups/${group.id}`);
-  await expect(page).toHaveURL(new RegExp('/sign\\?next='));
+  await expect(page).toHaveURL(`/groups/${group.id}`);
+  await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '최신 게시물' })).toHaveCount(0);
   await signIn('권한-외부인');
   await page.goto(`/groups/${group.id}`);
   await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();

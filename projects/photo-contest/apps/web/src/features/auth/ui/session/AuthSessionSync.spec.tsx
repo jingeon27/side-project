@@ -127,15 +127,18 @@ describe('AuthSessionSync', () => {
     await waitFor(() => expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull());
     expect(trackEvent).not.toHaveBeenCalled();
     expect(identifyUser).not.toHaveBeenCalled();
-    expect(router.replace).toHaveBeenCalledWith('/sign?next=%2F', undefined);
+    expect(router.replace).not.toHaveBeenCalled();
     // 앱은 식별된 사용자가 없으면 이 알림을 무시한다.
     expect(authEvents()).toEqual([expect.objectContaining({ payload: { signedIn: false } })]);
   });
 });
 
-it('인증·약관 화면은 세션이 없어도 리디렉션하지 않아야 한다', async () => {
-  navigation.pathname = '/sign';
-  renderSync(null);
-  await waitFor(() => expect(authEvents()).toHaveLength(1));
-  expect(router.replace).not.toHaveBeenCalled();
-});
+it.each(['/', '/explore', '/groups/group-1', '/me', '/sign'])(
+  '%s는 세션이 없어도 인증 화면으로 보내지 않아야 한다',
+  async (pathname) => {
+    navigation.pathname = pathname;
+    renderSync(null);
+    await waitFor(() => expect(authEvents()).toHaveLength(1));
+    expect(router.replace).not.toHaveBeenCalled();
+  },
+);

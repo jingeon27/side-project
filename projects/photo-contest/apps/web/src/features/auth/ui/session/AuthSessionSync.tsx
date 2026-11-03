@@ -1,18 +1,13 @@
 'use client';
 
 import { useEffect, useEffectEvent } from 'react';
-import { usePathname } from 'next/navigation';
 
 import { useApolloClient, useQuery } from '@apollo/client/react';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { reloadDocument } from '@/shared/lib/document-navigation.helper';
-import {
-  buildLoginRedirectPath,
-  getSafeNextPath,
-  isSessionRequiredPath,
-} from '@/shared/lib/login-redirect.helper';
+import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
 import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { useAppRouter } from '@/shared/model/router';
@@ -31,7 +26,6 @@ import { authSession } from '../../model/auth-session';
 export function AuthSessionSync() {
   const bridge = useBridge();
   const router = useAppRouter();
-  const pathname = usePathname();
   const client = useApolloClient();
   const session = authSession(client);
   const { data } = useQuery(MeDocument);
@@ -75,8 +69,6 @@ export function AuthSessionSync() {
       forgetAnalyticsUser();
       saveNotifiedUserId(null);
       bridge?.notify('auth.changed', { signedIn: false });
-      if (isSessionRequiredPath(pathname))
-        router.replace(buildLoginRedirectPath(`${pathname}${window.location.search}`));
       return;
     }
     identifyUser(me.id);
@@ -95,7 +87,7 @@ export function AuthSessionSync() {
     trackEvent(ANALYTICS_EVENT.LoginSucceeded, { provider: pending.method });
     const next = getSafeNextPath(pending.next);
     if (window.location.pathname === ROUTES.HOME && next !== ROUTES.HOME) router.replace(next);
-  }, [me, bridge, router, pathname]);
+  }, [me, bridge, router]);
 
   return null;
 }

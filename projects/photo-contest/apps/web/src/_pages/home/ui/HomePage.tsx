@@ -11,6 +11,7 @@ import { BottomNav } from '@/widgets/bottom-nav';
 import { NotificationBell } from '@/widgets/notification-bell';
 
 import { MemberHome } from './member/MemberHome';
+import { NoGroupHome } from './no-group/NoGroupHome';
 
 export function HomePage({ initialHasGroups }: { initialHasGroups?: boolean }) {
   return (
@@ -33,10 +34,7 @@ export function HomePage({ initialHasGroups }: { initialHasGroups?: boolean }) {
             그룹 둘러보기 <ArrowUpRight aria-hidden className="size-4" />
           </ButtonLink>
         </header>
-        <ViewerBoundary
-          guest={<Skeleton className="h-32 w-full" />}
-          fallback={<Skeleton className="h-32 w-full" />}
-        >
+        <ViewerBoundary guest={<NoGroupHome />} fallback={<Skeleton className="h-32 w-full" />}>
           {() => <MemberHome initialHasGroups={initialHasGroups} />}
         </ViewerBoundary>
       </div>

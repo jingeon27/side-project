@@ -20,7 +20,7 @@ import { completeLogin } from '../../lib/complete-login.helper';
 import { PasswordAuthForms } from './PasswordAuthForms';
 
 interface ILoginPanelProps {
-  /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`(proxy가 붙인 원래 경로), 그것도 없으면 홈 */
+  /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`, 그것도 없으면 홈 */
   nextPath?: string;
   className?: string;
   allowAnonymous?: boolean;

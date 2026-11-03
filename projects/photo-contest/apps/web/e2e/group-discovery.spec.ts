@@ -32,8 +32,14 @@ test(
     await seedPost(owner, secret.id, secretTitle);
 
     await context.clearCookies();
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/sign\?/);
+    const guestGroup = await page.goto(groupPath);
+    expect(guestGroup?.status()).toBe(200);
+    await expect(
+      page
+        .getByRole('region', { name: '최신 게시물', exact: true })
+        .getByRole('article', { name: title, exact: true }),
+    ).toBeVisible();
+    await page.goto('/sign');
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page).toHaveURL('/');
     await page.getByRole('link', { name: '탐색', exact: true }).click();
