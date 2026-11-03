@@ -8,9 +8,9 @@ import { useMutation } from '@apollo/client/react';
 import { StartAnonymousSessionDocument } from '@/shared/api/generated';
 import { NEXT_PATH_PARAM } from '@/shared/constants/auth';
 import { ROUTES } from '@/shared/constants/routes';
-import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { cn } from '@/shared/lib/cn.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
+import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { Button } from '@/shared/ui/@core/button';
@@ -20,7 +20,7 @@ import { completeLogin } from '../../lib/complete-login.helper';
 import { PasswordAuthForms } from './PasswordAuthForms';
 
 interface ILoginPanelProps {
-  /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`(proxy가 붙인 원래 경로), 그것도 없으면 홈 */
+  /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`, 그것도 없으면 홈 */
   nextPath?: string;
   className?: string;
   allowAnonymous?: boolean;

@@ -43,19 +43,16 @@ test('공개 랜딩과 이용 방법은 로그인·API 요청 없이 읽고 서�
   expect(apiRequests).toEqual([]);
 });
 
-test('랜딩의 시작하기는 피드 인증으로 이어지고 익명 시작 후 피드로 돌아와야 한다 @desktop @ios', async ({
-  page,
-}) => {
+test('랜딩의 시작하기는 인증 없이 피드로 이어져야 한다 @desktop @ios', async ({ page }) => {
   await page.goto('/about');
   await landingScreens.startLink(page).click();
-  await expect(page).toHaveURL('/sign?next=%2F');
-  await landingScreens.anonymousStart(page).click();
   await expect(page).toHaveURL('/');
   await expect(landingScreens.feedHeading(page)).toBeVisible();
+  await expect(landingScreens.anonymousStart(page)).toHaveCount(0);
 });
 
 for (const placement of ['header', 'hero'] as const) {
-  test(`${placement} 시작하기는 redirect의 그룹을 로그인 후에도 유지한다 @desktop @ios`, async ({
+  test(`${placement} 시작하기는 redirect의 그룹으로 바로 이동한다 @desktop @ios`, async ({
     page,
     context,
     signIn,
@@ -68,8 +65,6 @@ for (const placement of ['header', 'hero'] as const) {
     const start = placement === 'header' ? landingScreens.headerStart(page) : landingScreens.startLink(page);
     await expect(start).toHaveAttribute('href', destination);
     await start.click();
-    await expect(page).toHaveURL(`/sign?${new URLSearchParams({ next: destination })}`);
-    await landingScreens.anonymousStart(page).click();
     await expect(page).toHaveURL(destination);
     await expect(landingScreens.groupHeading(page)).toHaveText(`랜딩에서 만난 그룹 ${placement}`);
   });

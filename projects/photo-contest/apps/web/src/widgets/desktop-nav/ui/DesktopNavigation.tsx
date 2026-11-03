@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { Compass, Heart, House, UserRound } from 'lucide-react';
 
+import { useMyMenuItem } from '@/features/auth';
 import { PUBLIC_LANDING_PATHS, ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
@@ -14,11 +15,22 @@ import { BrandIcon } from '@/shared/ui/@core/top-app-bar';
 /** 세션을 만드는 시작 화면은 메뉴 없이 보여 준다. */
 const PATHS_WITHOUT_NAVIGATION = new Set<string>([ROUTES.SIGN, ...PUBLIC_LANDING_PATHS]);
 
-function NavigationLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function NavigationLink({
+  href,
+  active,
+  onClick,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
   return (
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
+      onClick={onClick}
       className={cn(
         'flex min-h-touch items-center gap-4 rounded-full px-4 py-3 text-body transition-[background-color,color,transform] active:scale-[0.98]',
         active
@@ -37,6 +49,7 @@ function NavigationLink({ href, active, children }: { href: string; active: bool
  */
 export function DesktopNavigation() {
   const pathname = usePathname();
+  const myMenu = useMyMenuItem('desktop_nav');
   if (PATHS_WITHOUT_NAVIGATION.has(pathname)) return null;
   const isFormPage =
     pathname === ROUTES.GROUP_CREATE ||
@@ -66,9 +79,9 @@ export function DesktopNavigation() {
           <Compass aria-hidden className="size-6" strokeWidth={pathname === ROUTES.EXPLORE ? 2.5 : 1.7} />
           탐색
         </NavigationLink>
-        <NavigationLink href={ROUTES.ME} active={pathname === ROUTES.ME}>
+        <NavigationLink href={myMenu.href} active={pathname === ROUTES.ME} onClick={myMenu.onClick}>
           <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
-          MY
+          {myMenu.label}
         </NavigationLink>
         <NavigationLink href={ROUTES.NOTIFICATIONS} active={pathname === ROUTES.NOTIFICATIONS}>
           <Heart aria-hidden className="size-6" strokeWidth={1.7} />

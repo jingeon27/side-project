@@ -11,7 +11,7 @@ test(
     const publicGroup = await seedGroup(owner, '누구나 참여하는 웃음');
     const privateName = `우리만 보는 순간-${testInfo.project.name}`;
     const privateGroup = await seedGroup(owner, privateName, 'PRIVATE');
-    await page.goto('/');
+    await page.goto('/sign');
     await expect(page.getByText('로컬 체험용 로그인')).toHaveCount(0);
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page.getByRole('button', { name: '익명으로 시작하기', exact: true })).toHaveCount(0);
@@ -76,7 +76,7 @@ test(
     const owner = await createTestUser(API_URL, { nickname: '기록 유지 그룹장', origin: WEB_ORIGIN });
     const groupName = `가입 뒤에도 이어갈 그룹-${testInfo.project.name}`;
     const group = await seedGroup(owner, groupName);
-    await page.goto('/');
+    await page.goto('/sign');
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page.getByRole('button', { name: '익명으로 시작하기', exact: true })).toHaveCount(0);
     await page.goto(`/groups/${group.id}`);
