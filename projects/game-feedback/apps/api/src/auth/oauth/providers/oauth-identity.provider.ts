@@ -1,3 +1,4 @@
+import qs from 'qs';
 import { z } from 'zod';
 
 import { OAuthException } from '../oauth.exception';
@@ -24,25 +25,31 @@ class OAuthIdentityProvider implements IdentityProvider {
   ) {}
 
   authorizationUrl({ state }: { state: string; nonce: string; challenge: string }) {
-    const query = new URLSearchParams({
-      client_id: this.client.clientId,
-      redirect_uri: this.client.redirectUri,
-      response_type: 'code',
-      state,
-    });
-    if (this.provider.scope) query.set('scope', this.provider.scope);
-    return `${this.provider.authorizeUrl}?${query}`;
+    const query = qs.stringify(
+      {
+        client_id: this.client.clientId,
+        redirect_uri: this.client.redirectUri,
+        response_type: 'code',
+        state,
+        scope: this.provider.scope || undefined,
+      },
+      { addQueryPrefix: true },
+    );
+    return `${this.provider.authorizeUrl}${query}`;
   }
 
   async exchange(code: string) {
     try {
-      const body = new URLSearchParams({
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: this.client.redirectUri,
-        client_id: this.client.clientId,
-        client_secret: this.client.clientSecret,
-      });
+      const body = qs.stringify(
+        {
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: this.client.redirectUri,
+          client_id: this.client.clientId,
+          client_secret: this.client.clientSecret,
+        },
+        { format: 'RFC1738' },
+      );
       const response = await fetch(this.provider.tokenUrl, {
         method: 'POST',
         signal: AbortSignal.timeout(10000),

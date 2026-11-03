@@ -1,6 +1,7 @@
 import { createPublicKey, verify, type JsonWebKey } from 'node:crypto';
 
 import dayjs from 'dayjs';
+import qs from 'qs';
 
 import { OAuthException } from '../oauth.exception';
 import type { IdentityProvider } from './identity-provider';
@@ -12,17 +13,20 @@ export class GoogleIdentityProvider implements IdentityProvider {
     private readonly redirectUri: string,
   ) {}
   authorizationUrl(input: { state: string; nonce: string; challenge: string }) {
-    const query = new URLSearchParams({
-      client_id: this.clientId,
-      redirect_uri: this.redirectUri,
-      response_type: 'code',
-      scope: 'openid',
-      state: input.state,
-      nonce: input.nonce,
-      code_challenge: input.challenge,
-      code_challenge_method: 'S256',
-    });
-    return `https://accounts.google.com/o/oauth2/v2/auth?${query}`;
+    const query = qs.stringify(
+      {
+        client_id: this.clientId,
+        redirect_uri: this.redirectUri,
+        response_type: 'code',
+        scope: 'openid',
+        state: input.state,
+        nonce: input.nonce,
+        code_challenge: input.challenge,
+        code_challenge_method: 'S256',
+      },
+      { addQueryPrefix: true },
+    );
+    return `https://accounts.google.com/o/oauth2/v2/auth${query}`;
   }
   async exchange(code: string, verifier: string, nonce: string) {
     try {
@@ -30,14 +34,17 @@ export class GoogleIdentityProvider implements IdentityProvider {
         method: 'POST',
         signal: AbortSignal.timeout(10000),
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          code,
-          client_id: this.clientId,
-          client_secret: this.clientSecret,
-          redirect_uri: this.redirectUri,
-          grant_type: 'authorization_code',
-          code_verifier: verifier,
-        }),
+        body: qs.stringify(
+          {
+            code,
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+            redirect_uri: this.redirectUri,
+            grant_type: 'authorization_code',
+            code_verifier: verifier,
+          },
+          { format: 'RFC1738' },
+        ),
       });
       const data = (await response.json()) as { id_token?: string };
       if (!response.ok || !data.id_token) throw new Error('Token exchange failed');
