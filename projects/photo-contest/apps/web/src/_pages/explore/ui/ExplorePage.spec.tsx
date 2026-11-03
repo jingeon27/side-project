@@ -8,10 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DiscoverGroupsDocument,
   GroupRole,
+  GroupVisibility,
   MeDocument,
   MyGroupsDocument,
+  type DiscoverGroupsQuery,
   type MyGroupsQuery,
 } from '@/shared/api/generated';
+import { trackEvent } from '@/shared/model/analytics';
 
 import { ExplorePage } from './ExplorePage';
 
@@ -21,12 +24,17 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
   useRouter: () => navigation,
 }));
+vi.mock('@/shared/model/analytics', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/shared/model/analytics')>()),
+  trackEvent: vi.fn(),
+}));
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/explore?q=산책');
   navigation.push.mockReset();
   navigation.replace.mockReset();
   navigation.prefetch.mockReset();
+  vi.mocked(trackEvent).mockClear();
 });
 
 afterEach(() => {
@@ -43,7 +51,24 @@ const GROUP = {
   memberCount: 2,
 } satisfies MyGroupsQuery['myGroups'][number];
 
-function renderExplore({ hasGroups = false, signedIn = true } = {}) {
+const DISCOVERED = {
+  __typename: 'Group',
+  id: 'walk-group',
+  name: '산책 모임',
+  description: '',
+  avatarUrl: null,
+  visibility: GroupVisibility.Public,
+  role: null,
+  memberCount: 3,
+  joinRequestPending: false,
+  canViewPosts: true,
+} satisfies DiscoverGroupsQuery['discoverGroups'][number];
+
+function renderExplore({
+  hasGroups = false,
+  signedIn = true,
+  discovered = [] as DiscoverGroupsQuery['discoverGroups'],
+} = {}) {
   const client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
   client.writeQuery({
     query: MeDocument,
@@ -64,7 +89,7 @@ function renderExplore({ hasGroups = false, signedIn = true } = {}) {
   client.writeQuery({
     query: DiscoverGroupsDocument,
     variables: { search: '산책', offset: 0, limit: 24 },
-    data: { discoverGroups: [] },
+    data: { discoverGroups: discovered },
   });
   render(
     <ApolloProvider client={client}>
@@ -128,5 +153,19 @@ describe('그룹 탐색의 공통 작성 진입', () => {
     const { user } = renderExplore();
     await user.click(await screen.findByRole('button', { name: '전체 그룹 보기' }));
     expect(navigation.replace).toHaveBeenCalledWith('/explore?tag=a&tag=b#results', undefined);
+    expect(trackEvent).toHaveBeenCalledOnce();
+    expect(trackEvent).toHaveBeenCalledWith('group_search_cleared', { placement: 'empty_state' });
+  });
+
+  it('검색 결과가 있으면 결과 수를 알리고 검색 초기화로 검색어만 지워야 한다', async () => {
+    window.history.replaceState(null, '', '/explore?q=산책&tag=a#results');
+    const { user } = renderExplore({ discovered: [DISCOVERED] });
+    const card = await screen.findByRole('link', { name: '산책 모임' });
+    expect(card).toHaveAccessibleDescription('공개 그룹. 멤버 3명. 둘러보기.');
+    expect(screen.getByRole('status')).toHaveTextContent('그룹 1개를 표시하고 있어요.');
+    await user.click(screen.getByRole('button', { name: '검색 초기화' }));
+    expect(navigation.replace).toHaveBeenCalledWith('/explore?tag=a#results', undefined);
+    expect(trackEvent).toHaveBeenCalledOnce();
+    expect(trackEvent).toHaveBeenCalledWith('group_search_cleared', { placement: 'results_header' });
   });
 });

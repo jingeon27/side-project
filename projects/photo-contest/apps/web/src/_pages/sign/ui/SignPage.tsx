@@ -13,7 +13,13 @@ export function SignPage({ continuingAnonymously = false }: { continuingAnonymou
         <BrandIcon className="size-10 -rotate-6" />
         피식
       </h1>
-      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+      <Suspense
+        fallback={
+          <div role="status" aria-label="로그인 화면 불러오는 중">
+            <Skeleton className="h-64 w-full" />
+          </div>
+        }
+      >
         <LoginPanel continuingAnonymously={continuingAnonymously} />
       </Suspense>
     </div>
