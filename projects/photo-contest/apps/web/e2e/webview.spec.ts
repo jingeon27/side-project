@@ -52,7 +52,7 @@ test('가짜 앱 WebView에서도 비밀번호 가입·초대 공유·뒤로 가
           capabilities: ['share.open', 'clipboard.copy'],
         }),
     });
-    await page.goto('/');
+    await page.goto('/sign');
     await expect.poll(() => events).toContain('app.ready');
     await page.getByRole('tab', { name: '회원가입', exact: true }).click();
     const registration = page.getByRole('tabpanel', { name: '회원가입', exact: true });

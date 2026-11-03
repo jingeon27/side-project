@@ -17,6 +17,7 @@ const colors = [
   'subtle',
   'line',
   'line-strong',
+  'control-border',
   'brand',
   'brand-strong',
   'brand-soft',

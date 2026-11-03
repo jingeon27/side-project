@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import Link from 'next/link';
 
 import { useFragment, useQuery } from '@apollo/client/react';
@@ -17,6 +18,7 @@ import { GroupMembershipButton } from '../membership/GroupMembershipButton';
 import { GroupVisibilityBadge } from './GroupVisibilityBadge';
 
 export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinable?: boolean }) {
+  const detailsId = useId();
   const isSSR = useIsSSR();
   const promptLogin = useLoginPrompt();
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
@@ -26,26 +28,37 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
     from: { __typename: 'Group', id },
   });
   if (!complete) return null;
+  const actionLabel = match(group)
+    .with({ role: P.nonNullable }, () => '그룹으로 가기')
+    .with({ joinRequestPending: true }, () => '신청 상태 보기')
+    .with({ joinRequestPending: false }, () => '둘러보기')
+    .exhaustive();
   const privateGroup = group.visibility === GroupVisibility.Private;
+  const viewerPending = isSSR || !viewer;
   return (
     <article className="flex min-w-0 flex-col rounded-card border border-line bg-surface transition-colors hover:border-line-strong">
       <Link
         href={ROUTES.GROUP(id)}
+        aria-describedby={detailsId}
         aria-label={group.name}
-        aria-disabled={privateGroup && (isSSR || !viewer?.me)}
-        inert={privateGroup && (isSSR || !viewer?.me)}
+        aria-disabled={privateGroup && viewerPending}
+        inert={privateGroup && viewerPending}
         className="flex min-w-0 flex-1 flex-col gap-3 rounded-card p-4 transition-colors hover:bg-sunken active:bg-neutral-soft"
         onClick={(event) => {
           if (!privateGroup) return;
-          if (isSSR || !viewer?.me) {
+          if (viewerPending) {
             event.preventDefault();
             return;
           }
-          if (!viewer.me.isAnonymous) return;
+          if (viewer.me && !viewer.me.isAnonymous) return;
           event.preventDefault();
           promptLogin(ROUTES.GROUP(id));
         }}
       >
+        <p id={detailsId} className="sr-only">
+          {privateGroup ? '비공개 그룹' : '공개 그룹'}. 멤버 {formatCount(group.memberCount)}명. {actionLabel}
+          .
+        </p>
         <div className="flex min-w-0 items-center gap-3">
           <Avatar
             name={group.name}
@@ -68,11 +81,7 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             멤버 {formatCount(group.memberCount)}명
           </span>
           <span className="flex items-center gap-1.5 text-label text-ink">
-            {match(group)
-              .with({ role: P.nonNullable }, () => '그룹으로 가기')
-              .with({ joinRequestPending: true }, () => '신청 상태 보기')
-              .with({ joinRequestPending: false }, () => '둘러보기')
-              .exhaustive()}
+            {actionLabel}
             <ArrowUpRight aria-hidden className="size-3.5" />
           </span>
         </div>

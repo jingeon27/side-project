@@ -1,8 +1,10 @@
 # 사이드 프로젝트
 
-게임 메이트 서비스 **Game Mate**와 사진 커뮤니티 **피식**를 개발하는 모노레포입니다. 각 서비스의 웹, API, 모바일 앱을 함께 관리하고, 만들면서 겪은 문제와 기술 선택은 블로그에 기록합니다.
+게임 메이트 서비스 **Game Mate**와 사진 커뮤니티 **피식**을 개발하는 모노레포입니다. 각 서비스의 웹, API, 모바일 앱을 함께 관리하고, 만들면서 겪은 문제와 기술 선택은 블로그에 기록합니다.
 
 ## 서비스
+
+Game Mate와 피식 화면의 계정과 게시물은 예시 데이터입니다.
 
 ### Game Mate
 
@@ -15,6 +17,24 @@
 
 [서비스 열기](https://game.bambyul.com/ko) | [기능 안내](projects/game-feedback/docs/features.md) | [실행과 개발](projects/game-feedback/README.md)
 
+|                                                       게시판                                                        |                                                  글쓰기                                                   |
+| :-----------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: |
+| <img src="docs/media/game-mate-feed.png" width="300" alt="Game Mate 모바일 친추판매 게시판과 글쓰기 플로팅 버튼" /> | <img src="docs/media/game-mate-write.png" width="300" alt="제목과 내용을 입력한 Game Mate 글쓰기 화면" /> |
+
+<details>
+<summary>글을 작성하고 등록하는 흐름 보기 (약 7초)</summary>
+
+<img src="docs/media/game-mate-write.gif" width="360" alt="Game Mate에서 글쓰기 버튼을 눌러 제목과 내용을 작성하고 게시글을 등록하는 흐름" />
+
+</details>
+
+<details>
+<summary>데스크톱 화면 보기</summary>
+
+![사이드바와 게시물 목록이 나란히 보이는 Game Mate 데스크톱 화면](docs/media/game-mate-desktop.png)
+
+</details>
+
 ### 피식
 
 사진과 영상, 링크를 그룹 안에서 나누는 커뮤니티입니다. 그룹은 계속 이용하는 공간으로 두고, 그 안에서 별도의 사진 대회를 열어 투표하고 결과를 돌아볼 수 있습니다.
@@ -26,6 +46,24 @@
 
 [서비스 열기](https://contest.bambyul.com) | [서비스 소개](https://contest.bambyul.com/about) | [기능 안내](projects/photo-contest/docs/features.md) | [실행과 개발](projects/photo-contest/README.md)
 
+|                                                  그룹 탐색                                                   |                                                  그룹 게시물                                                   |
+| :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
+| <img src="docs/media/pisik-explore.png" width="300" alt="공개 그룹을 찾아보는 피식 모바일 그룹 탐색 화면" /> | <img src="docs/media/pisik-group.png" width="300" alt="그룹 안에서 사진과 이야기를 나누는 피식 게시물 화면" /> |
+
+<details>
+<summary>그룹을 둘러보고 댓글을 남기는 흐름 보기 (약 7초)</summary>
+
+<img src="docs/media/pisik-group.gif" width="360" alt="피식 그룹 탐색에서 그룹을 선택하고 게시물의 댓글 시트를 열어 댓글을 등록하는 흐름" />
+
+</details>
+
+<details>
+<summary>데스크톱 화면 보기</summary>
+
+![메뉴와 참여 그룹, 피드가 보이는 피식 데스크톱 화면](docs/media/pisik-desktop.png)
+
+</details>
+
 두 서비스의 모바일 앱은 Expo WebView로 웹 화면을 공유합니다. 웹 배포와 앱스토어 배포는 각각 진행합니다.
 
 ### 개발 블로그
@@ -33,6 +71,8 @@
 서비스를 만들면서 겪은 문제와 선택한 이유를 한국어와 영어로 정리합니다. 글은 Git 기반 MDX로 관리하고, 별도 API나 데이터베이스 없이 Vercel에 배포합니다.
 
 [글 읽기](https://blog.bambyul.com/ko) | [English](https://blog.bambyul.com/en) | [콘텐츠 작성과 개발](projects/blog/README.md)
+
+![한국어와 영어로 개발 기록을 읽을 수 있는 밤별 블로그 홈](docs/media/blog-home.png)
 
 ## 빠른 시작
 

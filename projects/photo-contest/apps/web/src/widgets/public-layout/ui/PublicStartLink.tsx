@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 
 import { ROUTES } from '@/shared/constants/routes';
-import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
+import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
 import { ANALYTICS_EVENT, toPathTemplate, trackEvent } from '@/shared/model/analytics';
 import { ButtonLink, type IButtonProps } from '@/shared/ui/@core/button';
 

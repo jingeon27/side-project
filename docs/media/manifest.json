@@ -1,0 +1,95 @@
+{
+  "capturedOn": "2026-11-04",
+  "timezone": "Asia/Seoul",
+  "sourceRepository": "https://github.com/jingeon27/side-project",
+  "sourceRef": "origin/develop",
+  "sourceCommit": "76327634a44a605055a213a8dc3331433ef63350",
+  "dataKind": "example-data",
+  "captures": [
+    {
+      "service": "game-mate",
+      "file": "game-mate-feed.png",
+      "route": "/ko/boards/friend-sale",
+      "width": 430,
+      "height": 860,
+      "sha256": "8225fffe9eea5c01d22ee0be1e2d4bdd0cce907b8a41dd33c5413be3fe6df6bc",
+      "bytes": 65653
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-desktop.png",
+      "route": "/ko/boards/friend-sale",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0d5b187fe71035cd98eae889288af97a73c77f4fc571f8912637ecfd911023a5",
+      "bytes": 74296
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-write.png",
+      "route": "/ko/write",
+      "width": 430,
+      "height": 860,
+      "sha256": "0125b17db56635de0e4852b52391209d830c88a592689510317398b0d625be56",
+      "bytes": 44672
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-write.gif",
+      "frames": 42,
+      "duration": 7.15,
+      "width": 430,
+      "height": 860,
+      "sha256": "694d0dd392ebd72a220f59e5d604379b043e02543c1078d84a03537f0123933d",
+      "kind": "browser-recording",
+      "bytes": 124797
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-explore.png",
+      "route": "/explore",
+      "width": 430,
+      "height": 860,
+      "sha256": "cb051f3437be589d1225ea8ed9a170cd302ed2592e0009bc331a938e52993cf5",
+      "bytes": 46180
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-desktop.png",
+      "route": "/",
+      "width": 1280,
+      "height": 800,
+      "sha256": "353311b7e4883a70d620909cc0a49b7bb4775d871f2fdffe58f0d0405460c894",
+      "bytes": 100818
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-group.png",
+      "route": "/groups/b2ab1b65-d021-4f9a-a377-43bf17967f7c",
+      "width": 430,
+      "height": 860,
+      "sha256": "16731c9e82e74e20e376b98af87098dd30ef560bd786b9c1c6e23179048ab824",
+      "bytes": 38256
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-group.gif",
+      "frames": 38,
+      "duration": 6.54,
+      "width": 430,
+      "height": 860,
+      "sha256": "e33b527281ae62206c6cff6376a44941af4339f46f26373df5764af165ec7d09",
+      "kind": "browser-recording",
+      "bytes": 92658
+    },
+    {
+      "service": "blog",
+      "file": "blog-home.png",
+      "route": "/ko",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fc79ea37416cef306f38185ae0ad448ae59244053a317ec2b84562c3d8d247a0",
+      "bytes": 144800
+    }
+  ]
+}

@@ -98,12 +98,17 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
 }
 
 describe('홈의 가입 그룹 분기', () => {
-  it('세션이 없으면 공개 목록과 로그인 폼을 홈에 표시하지 않아야 한다', async () => {
+  it('세션이 없으면 공개 그룹 목록을 보여 주고 내 그룹은 조회하지 않아야 한다', async () => {
     const { operations } = await openHome({ signedIn: false });
-    expect(screen.queryByRole('region', { name: '공개 그룹의 최신 사진' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '공개 그룹 목록' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '로그인하고 가입하기' })).toHaveAttribute(
+      'href',
+      '/sign?next=%2Fgroups%2Fpublic',
+    );
     expect(screen.queryByRole('button', { name: '익명으로 시작하기' })).not.toBeInTheDocument();
-    expect(operations).not.toContain('DiscoverGroups');
+    expect(operations).toContain('DiscoverGroups');
     expect(operations).not.toContain('MyGroups');
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
   it('가입 그룹이 없으면 공개 그룹 목록을 보여 주고 인기를 보여 주지 않아야 한다', async () => {
     await openHome();

@@ -8,10 +8,12 @@ export const ANALYTICS_EVENT = {
   PostCreated: 'post_created',
   PageViewed: 'page_viewed',
   LandingStartClicked: 'landing_start_clicked',
+  SignEntryClicked: 'sign_entry_clicked',
   LoginStarted: 'login_started',
   LoginSucceeded: 'login_succeeded',
   GroupCreated: 'group_created',
   GroupJoined: 'group_joined',
+  GroupSearchCleared: 'group_search_cleared',
   InviteLinkCopied: 'invite_link_copied',
   InviteLinkShared: 'invite_link_shared',
   InviteLinkRegenerated: 'invite_link_regenerated',
@@ -67,10 +69,16 @@ export type TAnalyticsEventProperties = {
     redirect_applied: boolean;
     group_id?: string;
   };
+  [ANALYTICS_EVENT.SignEntryClicked]: {
+    placement: 'bottom_nav' | 'desktop_nav' | 'group_join' | 'login_prompt';
+    source_path_template: string;
+    destination_path_template: string;
+  };
   [ANALYTICS_EVENT.LoginStarted]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.GroupCreated]: { group_id: string };
   [ANALYTICS_EVENT.GroupJoined]: { group_id: string };
+  [ANALYTICS_EVENT.GroupSearchCleared]: { placement: 'results_header' | 'empty_state' };
   [ANALYTICS_EVENT.InviteLinkCopied]: { group_id: string; method: TShareMethod };
   [ANALYTICS_EVENT.InviteLinkShared]: { group_id: string; method: TShareMethod };
   [ANALYTICS_EVENT.InviteLinkRegenerated]: { group_id: string };

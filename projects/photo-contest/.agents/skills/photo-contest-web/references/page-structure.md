@@ -28,16 +28,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 4. 조회 부모는 같은 Document·variables로 `useBackgroundQuery`를 시작하고 `refetch`를 소유한다. 섹션 자식은 `QueryRef`를 받아 `useReadQuery`로 읽고, 둘 사이의 `AsyncBoundary`가 로딩·실패·재시도를 처리한다. 홈 그룹 목록·그룹 순위·대회 피드/결과처럼 독립 조회는 경계도 나누어 상단바와 다른 기능을 유지한다([apollo](apollo.md) 문서). 인증은 `ViewerBoundary`를 쓰며, 만료 세션·권한 없음·잘못된 초대처럼 예상되는 응답은 `errorPolicy: 'all'`과 `getErrorCode(error)`로 읽는 컴포넌트에서 처리한다. React 오류 경계는 SSR 예외를 잡지 못하므로 예상 오류를 던지지 않는다.
 5. 화면 뼈대: 루트 `flex flex-1 flex-col`(`main#pc-main`이 이미 `min-h-dvh flex-col`) → `TopAppBar` → 본문 `flex-1` → 마지막 자식으로 `StickyCta` 또는 `BottomNav`.
 
-## 멤버 전용 화면
+## 로그인이 필요한 화면
 
-- 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isSessionRequiredPath`, `src/shared/constants/routes.ts`의 `SESSION_PATH_PREFIXES`·`SESSION_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
-- proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다([frontend](architecture.md) 문서 "인증·이동"). 홈·탐색·그룹·초대도 익명 또는 회원 세션이 필요하다. 세션이 없으면 `/sign?next=…`로 보내고 인증·정책·콜백·API·정적 파일은 제외한다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
+- 세션 여부로 경로를 막는 proxy를 두지 않는다. 세션 없는 요청도 모든 콘텐츠 경로를 그대로 연다. 새 화면은 `ViewerBoundary`의 `guest`로 공개 데이터나 제자리 `LoginPanel`을 직접 그리고 `/sign`으로 자동 이동시키지 않는다.
+- 세션이 필요한 사전 조회가 세션 없는 요청에서 실패해도 화면은 guest 상태로 그린다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
+- 세션 없는 방문자를 인증 화면으로 보내는 링크는 `buildLoginRedirectPath`로 돌아올 경로를 싣고, 클릭을 `sign_entry_clicked`로 기록한다.
 
 ## 공개 소개
 
 - 메인은 `/`를 유지한다. `/about`와 `/about/how-it-works`는 각각 `landing`, `how-it-works` 화면 slice에서 조립하고 `widgets/public-layout`을 공유한다.
-- `PUBLIC_LANDING_PATHS`의 소개 페이지는 세션 경로 목록과 proxy matcher에 넣지 않는다. AppProviders는 인증·푸시 동기화를 시작하지 않고 데스크톱 메뉴도 제외한다. 시작 링크는 `/sign?next=%2F`를 가리키며 `prefetch={false}`를 둔다.
-- 이용 방법의 상위 화면은 `/about`다. 소개 화면을 앱에서 바로 열었을 때 뒤로 가기는 네이티브의 종료 확인으로 연결하고 메인 인증으로 강제 이동시키지 않는다.
+- `PUBLIC_LANDING_PATHS`의 소개 페이지에서 AppProviders는 인증·푸시 동기화를 시작하지 않고 데스크톱 메뉴도 제외한다. 시작 링크는 메인으로 바로 이동하며 `prefetch={false}`를 둔다.
+- 이용 방법의 상위 화면은 `/about`다. 소개 화면을 앱에서 바로 열었을 때 뒤로 가기는 네이티브의 종료 확인으로 연결하고 메인으로 강제 이동시키지 않는다.
 
 ## 뒤로 가기·이동·하단 탭
 
@@ -52,7 +53,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
 | 규칙 | 뜻 | 고치는 법 |
 | --- | --- | --- |
-| `fsd/layer-imports` | 위 레이어 import. 라우트(`src/app/**`, `src/proxy.ts`, `src/instrumentation*.ts`)는 `_app`·`_pages`·`shared`만 | feature·widget은 화면 slice가 감싸서 쓴다 |
+| `fsd/layer-imports` | 위 레이어 import. 라우트(`src/app/**`, `src/instrumentation*.ts`)는 `_app`·`_pages`·`shared`만 | feature·widget은 화면 slice가 감싸서 쓴다 |
 | `fsd/slice-public-api` | 다른 slice 내부 파일 import, 또는 자기 slice 배럴 import | 그 slice `index.ts`에 export를 더한다(예외 `types/`·`mocks/`·`*.schema`·`*.server`). 같은 slice 안은 상대 경로 |
 | `fsd/no-cross-page` | 화면 slice끼리 import | 도메인이면 `features`, 아니면 `shared`로 내린다 |
 

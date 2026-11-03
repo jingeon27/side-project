@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { Compass, House, UserRound } from 'lucide-react';
 
+import { useMyMenuItem } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
 
@@ -14,16 +15,19 @@ function NavItem({
   label,
   icon,
   isActive,
+  onClick,
 }: {
   href: string;
   label: string;
   icon: ReactNode;
   isActive: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
+      onClick={onClick}
       className={cn(
         'group flex h-full flex-col items-center justify-center gap-1 text-micro transition-colors active:bg-sunken',
         isActive ? 'font-bold text-accent-ink' : 'text-muted hover:text-ink',
@@ -48,6 +52,7 @@ function NavItem({
  */
 export function BottomNav() {
   const pathname = usePathname();
+  const myMenu = useMyMenuItem('bottom_nav');
   return (
     <nav
       aria-label="주요 메뉴"
@@ -75,12 +80,13 @@ export function BottomNav() {
         </li>
         <li>
           <NavItem
-            href={ROUTES.ME}
-            label="MY"
+            href={myMenu.href}
+            label={myMenu.label}
             icon={
               <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
             }
             isActive={pathname === ROUTES.ME}
+            onClick={myMenu.onClick}
           />
         </li>
       </ul>

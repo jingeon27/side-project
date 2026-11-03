@@ -54,7 +54,7 @@ function setup() {
       },
     });
   promptLogin.mockClear();
-  return { ui, receiveViewer };
+  return { ui, receiveViewer, client };
 }
 
 it('비공개 그룹은 hydration 뒤 첫 클릭으로 로그인 안내를 연다', async () => {
@@ -75,6 +75,16 @@ it('비공개 그룹은 hydration 뒤 첫 클릭으로 로그인 안내를 연�
     await act(async () => root.unmount());
     container.remove();
   }
+});
+
+it('세션이 없어도 비공개 그룹을 누르면 이동하지 않고 로그인 안내를 연다', async () => {
+  const { ui, client } = setup();
+  client.writeQuery({ query: MeDocument, data: { me: null } });
+  render(ui);
+  const link = screen.getByRole('link', { name: '비공개 모임' });
+  await waitFor(() => expect(link).toHaveAttribute('aria-disabled', 'false'));
+  await userEvent.setup().click(link);
+  expect(promptLogin).toHaveBeenCalledExactlyOnceWith('/groups/private-group');
 });
 
 it('사용자 정보를 받기 전에는 익명 안내를 건너뛰어 이동하지 않는다', async () => {
