@@ -42,8 +42,8 @@
 
 ## 인증·이동
 
-- 메인 피드는 `ROUTES.HOME`(`/`)이다. 서비스 소개 `ROUTES.LANDING`(`/about`)와 이용 방법 `ROUTES.HOW_IT_WORKS`(`/about/how-it-works`)는 별도 공개 페이지다. `PUBLIC_LANDING_PATHS`에서 인증·푸시 동기화와 데스크톱 메뉴를 제외하고 공개 레이아웃을 쓴다. 시작 링크는 로그인 뒤 홈으로 돌아가며 `prefetch={false}`로 인증 화면의 사전 요청을 막는다.
-- `src/proxy.ts`가 콘텐츠 화면에서 세션 쿠키(운영 `__Host-contest_session`, 개발 `contest_session`)가 없으면 `/sign?next=<경로>`로 보낸다. AuthSessionSync는 만료된 세션도 같은 화면으로 보낸다. `/sign`은 첫 방문에 익명 시작·로그인·회원가입, 기존 익명 사용자에게는 세션을 유지해 홈으로 돌아가는 익명 계속하기를 제공한다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다.
+- 메인 피드는 `ROUTES.HOME`(`/`)이다. 서비스 소개 `ROUTES.LANDING`(`/about`)와 이용 방법 `ROUTES.HOW_IT_WORKS`(`/about/how-it-works`)는 별도 공개 페이지다. `PUBLIC_LANDING_PATHS`에서 인증·푸시 동기화와 데스크톱 메뉴를 제외하고 공개 레이아웃을 쓴다. 시작 링크는 메인으로 바로 이동하며 `prefetch={false}`로 사전 요청을 막는다.
+- 세션 없는 요청과 만료된 세션을 `/sign`으로 자동 이동시키지 않는다. 화면이 `ViewerBoundary`의 guest 상태로 공개 데이터나 LoginPanel을 그리고, 하단·데스크톱 메뉴의 MY는 세션 없음이 확인되면 이름이 SIGN으로 바뀌고 `/sign?next=%2Fme`로 이동한다(`useMyMenuItem`). `/sign`은 첫 방문에 익명 시작·로그인·회원가입, 기존 익명 사용자에게는 세션을 유지해 홈으로 돌아가는 익명 계속하기를 제공한다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다.
 - 로그인·로그아웃 뒤에는 `navigateDocument`(문서 이동)로 Apollo 캐시를 버린다. `next`는 `getSafeNextPath`를 거친 같은 origin 상대 경로만 쓴다.
 - 서버 데이터는 라우트 RSC의 `PreloadQuery`(`shared/api/apollo-client.server.ts`, 요청 Cookie 헤더를 API로만 전달)로 받는다. Cookie 원문을 props·캐시·로그에 넣지 않는다.
 - 내부 경로는 `ROUTES`, 백엔드 경로는 `BACKEND_ROUTES`만 쓴다. 앱 안 기록이 없으면(카톡 링크로 바로 들어온 경우) 뒤로 가기는 상위 화면으로 간다.

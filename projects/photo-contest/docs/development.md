@@ -33,7 +33,7 @@ yarn workspace @side/photo-contest dev
 
 ## 공개 소개와 디자인
 
-메인 피드는 `/`이고, `/about`와 `/about/how-it-works`는 별도로 제공하는 공개 소개 페이지입니다. 소개 페이지에서는 `AppProviders`의 `SessionSync`와 `DesktopNavigation`을 제외합니다. 시작 링크는 `/sign?next=%2F`를 사용하고 사전 로딩을 꺼서 클릭 전에 인증 API를 요청하지 않습니다. 홈, 탐색과 그룹 화면은 계속 익명 또는 회원 세션을 확인합니다.
+메인 피드는 `/`이고, `/about`와 `/about/how-it-works`는 별도로 제공하는 공개 소개 페이지입니다. 소개 페이지에서는 `AppProviders`의 `SessionSync`와 `DesktopNavigation`을 제외합니다. 시작 링크는 메인으로 바로 이동하고 사전 로딩을 꺼서 클릭 전에 인증 API를 요청하지 않습니다. 홈, 탐색과 그룹 화면은 세션이 없어도 공개 데이터를 표시합니다.
 
 공통 디자인 기준은 저장소 루트의 [UI 디자인 스킬](../../../.agents/skills/ui-design/SKILL.md)에 있습니다. 콘텐츠 밀도, 문구, 정렬과 여백, 레퍼런스 선정 기준을 웹과 모바일에서 함께 적용합니다. 피식의 웹 favicon과 공유 이미지, 모바일 아이콘은 같은 오렌지색 얼굴 로고를 사용합니다. 이름 변경은 표시 영역에 적용하며 워크스페이스, 앱 ID와 배포 환경변수는 기술 식별자를 유지합니다.
 

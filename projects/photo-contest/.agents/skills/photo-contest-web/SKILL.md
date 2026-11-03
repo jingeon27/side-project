@@ -10,7 +10,7 @@ description: 피식 웹의 화면·라우트·Apollo·폼·오버레이·반응�
 | 작업 | 참조 |
 | --- | --- |
 | FSD 배치·상태·인증·앱 연동 | [구조](references/architecture.md) |
-| 새 화면·서버 첫 데이터·SEO·게이트·뒤로 가기 | [페이지](references/page-structure.md) |
+| 새 화면·서버 첫 데이터·SEO·로그인 안내·뒤로 가기 | [페이지](references/page-structure.md) |
 | GraphQL·codegen·캐시·낙관적 응답 | [Apollo](references/apollo.md) |
 | RHF/Zod·제출·사진 변경·실패 초안 | [폼](references/form.md) |
 | 짧은 입력/선택 시트·대화상자·history·portal | [오버레이](references/overlay.md) |
