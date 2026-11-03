@@ -10,7 +10,7 @@
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-ink);
   --color-border: var(--color-line);
-  --color-input-border: var(--color-line-strong);
+  --color-input-border: var(--color-control-border);
   --color-ring: var(--color-brand);
   --radius-sm: var(--radius-badge);
   --radius-md: var(--radius-control);

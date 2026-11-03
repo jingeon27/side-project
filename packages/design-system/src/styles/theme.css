@@ -28,6 +28,8 @@
   --color-subtle: #a3a3a3;
   --color-line: #ebebeb;
   --color-line-strong: #dbdbdb;
+  /* 빈 입력의 경계는 바탕과 3:1 이상이어야 하므로 일반 구분선과 분리한다. */
+  --color-control-border: #858585;
   --color-surface: #ffffff;
   --color-sunken: #fafafa;
   --color-canvas: #ffffff;
