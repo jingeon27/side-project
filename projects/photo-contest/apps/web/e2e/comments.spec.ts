@@ -135,12 +135,11 @@ test(
       await handle.press('ArrowUp');
       await expect(handle).toHaveAttribute('aria-valuetext', '100%');
       await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
-      // 전체 높이에서도 보이는 화면이 줄면(키보드) 시트가 그 높이에 맞춰 제목·닫기·입력창을 함께 보여야 한다.
+      // 전체 높이에서도 보이는 화면이 줄면(키보드) 시트가 그 높이에 맞춰 제목과 입력창을 함께 보여야 한다.
       const heading = sheet.getByRole('heading', { name: '댓글', exact: true });
       await page.setViewportSize({ width: viewport.width, height: 500 });
       await expect.poll(async () => (await sheet.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0);
       await expect(heading).toBeInViewport();
-      await expect(sheet.getByRole('button', { name: '닫기', exact: true })).toBeInViewport();
       await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
       await page.setViewportSize(viewport);
       await handle.press('Home');
@@ -165,14 +164,15 @@ test(
     await expect(list.getByRole('listitem')).toHaveCount(2);
     await expect(list.getByRole('listitem').first()).toContainText('이 순간은 저장!');
     await expect(input).toHaveValue('');
-    await sheet.locator('[data-slot="bottom-sheet-body"]').evaluate((element) => {
+    const body = sheet.locator('[data-slot="bottom-sheet-body"], [data-slot="post-comments-body"]');
+    await body.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
     await expect(input).toBeInViewport();
     await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
     expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.setViewportSize(viewport);
-    await sheet.locator('[data-slot="bottom-sheet-body"]').evaluate((element) => {
+    await body.evaluate((element) => {
       element.scrollTop = 0;
     });
     await mkdir('.data/screens', { recursive: true });
@@ -183,16 +183,75 @@ test(
       await expect(list.getByRole('button', { name: `${nickname} 댓글 삭제` })).toHaveCount(0);
     }
     await expect(sheet.getByText('첫 댓글을 남겨보세요.')).toBeVisible();
-    // 하단 취소가 없는 댓글 시트도 보이는 닫기 버튼을 제목 옆에 둔다.
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    // 768px보다 좁은 시트는 닫기 버튼 없이 아래로 밀어 닫고, 중앙 모달은 제목 옆 버튼으로 닫는다.
     const close = sheet.getByRole('button', { name: '닫기', exact: true });
-    await expect(close).toBeInViewport();
-    await close.click();
+    if (viewport.width < 768) {
+      await expect(close).toHaveCount(0);
+      await dragComments(page, browserName, isMobile, viewport.height * 0.6);
+    }
+    if (viewport.width >= 768) {
+      await expect(close).toBeInViewport();
+      await close.click();
+    }
     await expect(sheet).toHaveCount(0);
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();
     await page.reload();
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();
   },
 );
+
+test('폭이 767px과 768px 사이를 오가면 입력을 유지한 채 바텀시트와 모달을 바꿔 보여야 한다', async ({
+  page,
+  signIn,
+}) => {
+  const cookie = await signIn('댓글 폭 회원');
+  const group = await seedGroup(cookie, '댓글 폭 그룹');
+  await seedPost(cookie, group.id, '폭이 바뀌는 순간');
+  await page.setViewportSize({ width: 767, height: 900 });
+  await page.goto(`/groups/${group.id}`);
+  await page.getByRole('button', { name: '폭이 바뀌는 순간 댓글 0개' }).click();
+  const sheet = page.getByRole('dialog', { name: '댓글', exact: true });
+  const close = sheet.getByRole('button', { name: '닫기', exact: true });
+  const handle = sheet.getByRole('slider', { name: '시트 높이 조절', exact: true });
+  await expect(sheet.getByText('첫 댓글을 남겨보세요.')).toBeVisible();
+  await expect(handle).toBeVisible();
+  await expect(close).toHaveCount(0);
+  const input = sheet.getByRole('textbox', { name: '댓글', exact: true });
+  await input.fill('돌려도 남는 초안');
+  const groupUrl = page.url();
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await expect(close).toBeVisible();
+  await expect(handle).toHaveCount(0);
+  await expect(input).toHaveValue('돌려도 남는 초안');
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      return box ? box.x > 0 && Math.abs(box.x + box.width / 2 - 384) < 2 : false;
+    })
+    .toBe(true);
+
+  await page.setViewportSize({ width: 767, height: 900 });
+  await expect(handle).toBeVisible();
+  await expect(close).toHaveCount(0);
+  await expect(input).toHaveValue('돌려도 남는 초안');
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await expect(close).toBeVisible();
+  // 끌어도 닫히지 않고, 교체를 거친 뒤에도 뒤로 가기는 화면 대신 모달을 닫는다.
+  const heading = sheet.getByRole('heading', { name: '댓글', exact: true });
+  const box = await heading.boundingBox();
+  if (!box) throw new Error('댓글 제목이 보여야 한다');
+  await page.mouse.move(box.x + 8, box.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 8, box.y + 308, { steps: 12 });
+  await page.mouse.up();
+  await expect(close).toBeVisible();
+  await page.goBack();
+  await expect(sheet).toHaveCount(0);
+  expect(page.url()).toBe(groupUrl);
+});
 
 test('댓글의 다음 페이지와 새 댓글 작성 뒤 목록을 정확히 이어 받아야 한다', async ({ page, signIn }) => {
   const cookie = await signIn('댓글 페이지 회원');

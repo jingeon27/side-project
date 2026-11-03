@@ -35,14 +35,11 @@ function CreateGroupBottomSheet({
   );
 }
 
-function CommentsLikeBottomSheet({ isOpen, onClose, unmount }: IOverlayControlProps) {
+function CloseButtonBottomSheet({ isOpen, onClose, unmount }: IOverlayControlProps) {
   return (
-    <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount} snapPoints={[0.75, 1]}>
-      <BottomSheet.Header title="댓글" closeLabel="닫기" />
-      <BottomSheet.Content>첫 댓글</BottomSheet.Content>
-      <BottomSheet.Footer cancelLabel={false}>
-        <button type="button">댓글 올리기</button>
-      </BottomSheet.Footer>
+    <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
+      <BottomSheet.Header title="글쓰기" closeLabel="닫기" />
+      <BottomSheet.Content>작성할 항목</BottomSheet.Content>
     </BottomSheet.Root>
   );
 }
@@ -163,17 +160,17 @@ describe('BottomSheet', () => {
           type="button"
           onClick={() =>
             overlay.open(({ isOpen, close: onClose, unmount }) => (
-              <CommentsLikeBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />
+              <CloseButtonBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />
             ))
           }
         >
-          댓글 열기
+          글쓰기 열기
         </button>
       </OverlayProvider>,
     );
-    const opener = screen.getByRole('button', { name: '댓글 열기' });
+    const opener = screen.getByRole('button', { name: '글쓰기 열기' });
     await user.click(opener);
-    const sheet = await screen.findByRole('dialog', { name: '댓글' });
+    const sheet = await screen.findByRole('dialog', { name: '글쓰기' });
     await waitFor(() => expect(hasOpenOverlay()).toBe(true));
     expect(within(sheet).queryByRole('button', { name: '취소' })).not.toBeInTheDocument();
     const close = within(sheet).getByRole('button', { name: '닫기' });

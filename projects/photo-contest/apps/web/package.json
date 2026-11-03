@@ -40,6 +40,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "react-use": "17.6.1",
     "rxjs": "catalog:",
     "ts-pattern": "catalog:",
     "zod": "catalog:"

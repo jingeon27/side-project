@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('PostCommentsHeader', () => {
-  it('하단 취소가 없는 댓글 시트를 제목 옆의 보이는 닫기 버튼으로 닫아야 한다', async () => {
+  it('댓글 시트는 제목 옆에 닫기 버튼을 두지 않고 Esc로 닫으면 연 버튼으로 포커스를 돌려야 한다', async () => {
     const user = userEvent.setup();
     render(
       <MockedProvider>
@@ -37,7 +37,8 @@ describe('PostCommentsHeader', () => {
     await user.click(opener);
     const sheet = await screen.findByRole('dialog', { name: '댓글' });
 
-    await user.click(within(sheet).getByRole('button', { name: '닫기' }));
+    expect(within(sheet).queryByRole('button', { name: '닫기' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(opener).toHaveFocus());
   });
