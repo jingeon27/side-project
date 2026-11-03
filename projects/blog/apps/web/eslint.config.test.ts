@@ -13,7 +13,7 @@ async function boundaryErrors(filePath: string, source: string) {
 
 describe('FSD layer boundaries', () => {
   beforeAll(async () => {
-    await eslint.calculateConfigForFile('src/app/sitemap.ts');
+    await eslint.calculateConfigForFile('src/app/robots.ts');
   }, 30_000);
 
   it('rejects else branches and accepts an early return', async () => {

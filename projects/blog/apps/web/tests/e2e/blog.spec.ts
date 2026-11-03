@@ -488,11 +488,8 @@ test('sitemap and robots expose published translations and allow rendering asset
   page,
   request,
 }) => {
-  const response = await request.get('/sitemap.xml', { maxRedirects: 0 });
-  expect(response.status()).toBe(200);
-  expect(response.headers()['content-type']).toContain('application/xml');
-  const sitemap = await page.evaluate(
-    (xml) => {
+  const parseSitemap = (text: string) =>
+    page.evaluate((xml) => {
       const document = new DOMParser().parseFromString(xml, 'application/xml');
       const namespace = 'http://www.sitemaps.org/schemas/sitemap/0.9';
       return {
@@ -509,12 +506,23 @@ test('sitemap and robots expose published translations and allow rendering asset
           ),
         })),
       };
-    },
-    await response.text(),
-  );
-  expect(sitemap.errors).toBe(0);
-  expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
-  const urls = sitemap.entries.map((entry) => entry.url);
+    }, text);
+  const entries = (
+    await Promise.all(
+      (['ko', 'en'] as const).map(async (locale) => {
+        const response = await request.get(`/${locale}/sitemap.xml`, { maxRedirects: 0 });
+        expect(response.status()).toBe(200);
+        expect(response.headers()['content-type']).toContain('application/xml');
+        const sitemap = await parseSitemap(await response.text());
+        expect(sitemap.errors).toBe(0);
+        expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
+        for (const entry of sitemap.entries) expect(new URL(entry.url).pathname).toMatch(`/${locale}`);
+        return sitemap.entries;
+      }),
+    )
+  ).flat();
+  expect((await request.get('/sitemap.xml', { maxRedirects: 0 })).status()).toBe(404);
+  const urls = entries.map((entry) => entry.url);
   expect(new Set(urls).size).toBe(urls.length);
   const origin = new URL(urls[0]!).origin;
   const articleUrl = (entry: (typeof index)[number]) =>
@@ -523,7 +531,7 @@ test('sitemap and robots expose published translations and allow rendering asset
     index.map(articleUrl).sort(),
   );
   for (const article of index) {
-    const entry = sitemap.entries.find((entry) => entry.url === articleUrl(article))!;
+    const entry = entries.find((entry) => entry.url === articleUrl(article))!;
     expect(entry.lastModified).toBe(article.updatedAt || article.publishedAt);
     const translations = index.filter((translation) => translation.id === article.id);
     const korean = translations.find((translation) => translation.locale === 'ko');
@@ -538,7 +546,8 @@ test('sitemap and robots expose published translations and allow rendering asset
   const rules = await robots.text();
   expect(rules).toMatch(/^User-Agent: \*$/m);
   expect(rules).toMatch(/^Allow: \/$/m);
-  expect(rules).toContain(`Sitemap: ${origin}/sitemap.xml`);
+  expect(rules).toContain(`Sitemap: ${origin}/ko/sitemap.xml`);
+  expect(rules).toContain(`Sitemap: ${origin}/en/sitemap.xml`);
   const blockedPaths = [...rules.matchAll(/^Disallow:\s*(\S+)$/gm)].map((match) => match[1]!);
   expect(blockedPaths).toContain('/api/');
   for (const path of [
