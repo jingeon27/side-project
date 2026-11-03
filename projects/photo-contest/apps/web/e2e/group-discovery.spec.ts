@@ -92,7 +92,7 @@ test(
       },
       await response.text(),
     );
-    expect(seo.title).toBe(`${name} - 피식`);
+    expect(seo.title).toBe(`${name} | 피식`);
     expect(seo.canonical).toBe(WEB_ORIGIN + groupPath);
     expect(seo.ogImage).toBe(`${WEB_ORIGIN}/backend/media/${postId}`);
     expect(seo.robots).toContain('index');
@@ -150,6 +150,9 @@ test(
       );
     }
     expect(urls).toContain(WEB_ORIGIN + groupPath);
+    // 대회가 없는 그룹의 빈 목록 화면은 제출하지 않는다.
+    expect(urls).not.toContain(`${WEB_ORIGIN}${groupPath}/contests`);
+    expect(urls).not.toContain(`${WEB_ORIGIN}${groupPath}/hall-of-fame`);
     expect(urls).not.toContain(`${WEB_ORIGIN}/groups/${secret.id}`);
     expect(urls).not.toContain(`${WEB_ORIGIN}/me`);
     const robots = await page.request.get('/robots.txt');

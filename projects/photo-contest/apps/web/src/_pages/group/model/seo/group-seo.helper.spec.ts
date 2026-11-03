@@ -59,10 +59,10 @@ describe('공개 그룹 SEO', () => {
       description: profile.group.description,
       openGraph: {
         images: [
-          { url: `${origin}${profile.group.avatarUrl}`, alt: '웃긴 고양이 - 피식' },
-          { url: `${origin}${profile.group.coverUrl}`, alt: '웃긴 고양이 - 피식' },
-          { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 - 피식' },
-          { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+          { url: `${origin}${profile.group.avatarUrl}`, alt: '웃긴 고양이 | 피식' },
+          { url: `${origin}${profile.group.coverUrl}`, alt: '웃긴 고양이 | 피식' },
+          { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 | 피식' },
+          { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 | 피식', width: 1200, height: 630 },
         ],
       },
     });
@@ -83,8 +83,8 @@ describe('공개 그룹 SEO', () => {
     expect(metadata.alternates).toEqual({ canonical: `${origin}/groups/group-1` });
     expect(metadata.openGraph).toMatchObject({
       images: [
-        { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 - 피식' },
-        { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+        { url: `${origin}/backend/media/post-1`, alt: '웃긴 고양이 | 피식' },
+        { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 | 피식', width: 1200, height: 630 },
       ],
     });
   });
@@ -92,7 +92,7 @@ describe('공개 그룹 SEO', () => {
   it('사진이 없으면 생성 카드를 첫 공유 이미지로 제공해야 한다', () => {
     const metadata = groupMetadata({ ...data, posts: [] }, origin);
     expect(metadata.openGraph?.images).toEqual([
-      { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 - 피식', width: 1200, height: 630 },
+      { url: `${origin}/og/groups/group-1`, alt: '웃긴 고양이 | 피식', width: 1200, height: 630 },
     ]);
   });
 

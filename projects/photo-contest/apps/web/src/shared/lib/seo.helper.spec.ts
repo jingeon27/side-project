@@ -24,6 +24,19 @@ describe('SEO 출력', () => {
     expect(result.robots).toMatchObject({ index: true, follow: true });
   });
 
+  it('공유 제목은 문자열에만 서비스 이름을 붙이고 absolute 제목은 그대로 써야 한다', () => {
+    const base = { origin: 'https://moment.example', path: '/', description: '소개' };
+    const page = createPageMetadata({ ...base, title: '고양이' });
+    expect(page.title).toBe('고양이');
+    expect(page.openGraph).toMatchObject({ title: '고양이 | 피식' });
+    expect(page.twitter).toMatchObject({ title: '고양이 | 피식' });
+
+    const brand = createPageMetadata({ ...base, title: { absolute: '같이 보면 더 웃긴 피식' } });
+    expect(brand.title).toEqual({ absolute: '같이 보면 더 웃긴 피식' });
+    expect(brand.openGraph).toMatchObject({ title: '같이 보면 더 웃긴 피식' });
+    expect(brand.twitter).toMatchObject({ title: '같이 보면 더 웃긴 피식' });
+  });
+
   it('원본 사진에는 임의 크기를 붙이지 않고 생성 카드의 크기만 유지해야 한다', () => {
     const metadata = createPageMetadata({
       origin: 'https://moment.example',

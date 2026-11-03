@@ -151,6 +151,8 @@ test(
     expect(hallErrors).toBe(0);
     const sitemap = await (await page.request.get('/sitemaps/contests/0.xml')).text();
     expect(sitemap).toContain(WEB_ORIGIN + contestPath);
+    // 단계 이동은 API를 직접 호출해 캐시를 만료시키지 않으므로 어느 목록인지는 route.test가 확인한다.
+    expect(sitemap).toMatch(new RegExp(`${WEB_ORIGIN}${groupPath}/(contests|hall-of-fame)<`));
     expect((await page.request.get('/sitemaps/contests/9999999999999.xml')).status()).toBe(404);
   },
 );

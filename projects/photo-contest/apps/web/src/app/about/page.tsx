@@ -10,7 +10,7 @@ export function generateMetadata(): Metadata {
   return createPageMetadata({
     origin: getWebOrigin(),
     path: ROUTES.LANDING,
-    title: SITE_NAME,
+    title: '서비스 소개',
     description: SITE_DESCRIPTION,
   });
 }
