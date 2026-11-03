@@ -146,7 +146,10 @@ test('mobile notification indicator and chat count follow persisted unread state
     await expect(count).toHaveText('2');
     await tabs.getByRole('link', { name: '채팅 2개', exact: true }).click();
     await page.getByTestId(`conversation-${room.id}`).click();
-    await expect(page.getByText('리플레이에서 어떤 부분이 가장 어려웠나요?', { exact: true })).toBeVisible();
+    // 대화를 열어도 숨은 사이드바의 미리보기가 DOM에 남으므로 메시지 말풍선으로 좁힌다.
+    await expect(
+      page.getByTestId(/^message-/).getByText('리플레이에서 어떤 부분이 가장 어려웠나요?', { exact: true }),
+    ).toBeVisible();
     await page.getByRole('link', { name: '대화 목록으로 돌아가기', exact: true }).click();
     await expect(tabs.getByRole('link', { name: '채팅', exact: true })).toBeVisible();
     await expect(count).toHaveCount(0);
