@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 import { originOf } from '@photo-contest/bridge';
 
 import { isRelativeWebPath, toWebPath, type ILinkOptions } from './deep-link';
@@ -63,7 +65,9 @@ function decideIntent(url: string, options: ILinkOptions): TNavigationDecision {
   const browserFallback = readHttpFallback(params.get('S.browser_fallback_url'));
   const packageName = params.get('package');
   const storeFallback =
-    packageName && ANDROID_PACKAGE.test(packageName) ? `market://details?id=${packageName}` : null;
+    packageName && ANDROID_PACKAGE.test(packageName)
+      ? `market://details${qs.stringify({ id: packageName }, { addQueryPrefix: true })}`
+      : null;
   const scheme = params.get('scheme')?.toLowerCase();
   const decision =
     scheme && scheme !== 'intent' && SCHEME.test(`${scheme}:`)

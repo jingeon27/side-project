@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 const ANDROID_PACKAGE = /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/;
 
 interface IStoreUrlOptions {
@@ -12,6 +14,6 @@ interface IStoreUrlOptions {
  */
 export function resolveStoreUrl({ platform, androidPackage }: IStoreUrlOptions) {
   if (platform === 'android' && androidPackage && ANDROID_PACKAGE.test(androidPackage))
-    return `market://details?id=${androidPackage}`;
+    return `market://details${qs.stringify({ id: androidPackage }, { addQueryPrefix: true })}`;
   return null;
 }
