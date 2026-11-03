@@ -138,7 +138,7 @@ describe('홈의 가입 그룹 분기', () => {
     await user.click(screen.getByRole('button', { name: '검색' }));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith(
-        '/explore?q=%EC%83%81%EC%9E%90+%EB%B3%B5%EC%96%B4',
+        '/explore?q=%EC%83%81%EC%9E%90%20%EB%B3%B5%EC%96%B4',
         undefined,
       ),
     );

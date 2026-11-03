@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 /** 화면 경로. 내부 링크·이동은 이 값으로만 만든다. */
 export const ROUTES = {
   LANDING: '/about',
@@ -14,7 +16,7 @@ export const ROUTES = {
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
   GROUP_EDIT: (id: string) => `/groups/${encodeURIComponent(id)}/edit`,
   GROUP_WRITE: (id: string, contestId?: string) =>
-    `/groups/${encodeURIComponent(id)}/write${contestId ? `?${new URLSearchParams({ contestId })}` : ''}`,
+    `/groups/${encodeURIComponent(id)}/write${qs.stringify({ contestId: contestId || undefined }, { addQueryPrefix: true })}`,
   GROUP_CONTESTS: (id: string) => `/groups/${encodeURIComponent(id)}/contests`,
   GROUP_HALL_OF_FAME: (id: string) => `/groups/${encodeURIComponent(id)}/hall-of-fame`,
   GROUP_CONTEST: (groupId: string, id: string) =>

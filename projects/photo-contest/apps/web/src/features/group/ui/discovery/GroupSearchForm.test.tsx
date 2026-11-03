@@ -42,7 +42,7 @@ describe('검색 폼 hydration', () => {
       fireEvent.submit(within(container).getByRole('search'));
       await waitFor(() =>
         expect(navigation.replace).toHaveBeenCalledWith(
-          '/explore?q=%EC%83%81%EC%9E%90+%EB%B3%B5%EC%96%B4',
+          '/explore?q=%EC%83%81%EC%9E%90%20%EB%B3%B5%EC%96%B4',
           undefined,
         ),
       );
