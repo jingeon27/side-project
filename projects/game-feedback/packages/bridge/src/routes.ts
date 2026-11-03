@@ -1,4 +1,5 @@
-import { compact } from 'es-toolkit';
+import { pickBy } from 'es-toolkit';
+import qs from 'qs';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
@@ -58,12 +59,10 @@ const boardSlugs: Record<string, TBoardSlug> = {
   FRIENDLY: 'friendly',
 } satisfies Record<TBoardKind, TBoardSlug>;
 function queryPath(path: string, values: Record<string, string | undefined>) {
-  const query = compact(
-    Object.entries(values).map(([key, value]) =>
-      value ? `${encodeURIComponent(key)}=${encodeURIComponent(value)}` : undefined,
-    ),
-  ).join('&');
-  return `${path}${query ? `?${query}` : ''}`;
+  return `${path}${qs.stringify(
+    pickBy(values, (value) => Boolean(value)),
+    { addQueryPrefix: true },
+  )}`;
 }
 export const appRoutes = {
   login: (locale: string, returnTo?: string) => queryPath(`${root(locale)}/login`, { returnTo }),
@@ -135,19 +134,32 @@ export const appRoutes = {
   terms: (locale: string) => `${root(locale)}/terms`,
   privacy: (locale: string) => `${root(locale)}/privacy`,
 };
+/** qs는 잘못된 인코딩을 원문으로 넘긴다. 경로 전체를 거부하도록 인코딩 오류와 제어 문자는 예외로 올린다. */
+function decodeQueryPart(text: string) {
+  const decoded = decodeURIComponent(text.replace(/\+/g, ' '));
+  if (/[\u0000-\u001f\u007f]/.test(decoded)) throw new Error('Control characters are not allowed.');
+  return decoded;
+}
+function isStringRecord(values: Record<string, unknown>): values is Record<string, string> {
+  return Object.values(values).every((value) => typeof value === 'string');
+}
 function readQuery(search: string): Record<string, string> | null {
-  const values: Record<string, string> = Object.create(null);
   try {
-    return compact(search.split('&')).reduce<Record<string, string> | null>((result, pair) => {
-      if (!result) return null;
-      const index = pair.indexOf('=');
-      const decode = (text: string) => decodeURIComponent(text.replace(/\+/g, ' '));
-      const key = decode(index < 0 ? pair : pair.slice(0, index));
-      const value = decode(index < 0 ? '' : pair.slice(index + 1));
-      if (key in result || /[\u0000-\u001f\u007f]/.test(key + value)) return null;
-      result[key] = value;
-      return result;
-    }, values);
+    // qs는 값 안의 `]=`를 키 경계로 읽어 뒤따르는 값을 다른 키로 숨긴다. 첫 `=`만 키와 값을 나누도록 값 쪽 `=`를 미리 인코딩한다.
+    const parsed = qs.parse(
+      search.replace(/=([^&]*)/g, (_, value: string) => `=${value.replaceAll('=', '%3D')}`),
+      {
+        decoder: decodeQueryPart,
+        depth: 0,
+        parseArrays: false,
+        duplicates: 'combine',
+        plainObjects: true,
+        arrayLimit: Infinity,
+        parameterLimit: Infinity,
+      },
+    );
+    // 중복 키는 배열로 합쳐지므로 문자열이 아닌 값이 있으면 경로 전체를 거부한다.
+    return isStringRecord(parsed) ? parsed : null;
   } catch {
     return null;
   }

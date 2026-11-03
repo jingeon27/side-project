@@ -199,3 +199,47 @@ describe('community board navigation', () => {
       expect(WebPathSchema.safeParse(path).success, path).toBe(false);
   });
 });
+
+describe('qs로 읽는 경로 쿼리', () => {
+  it('인코딩해 다시 읽어도 같은 경로와 값이어야 한다', () => {
+    const q = "호그 & 'ice' (덱)! a+b/c=d*e~f";
+    const path = appRoutes.search('ko', { q });
+    expect(resolveAppRoute(path)).toMatchObject({ path });
+    expect(decodeURIComponent(path.split('?q=')[1] ?? '')).toBe(q);
+    expect(appRoutes.feed('ko', { q: '수비 덱' })).toBe('/ko?q=%EC%88%98%EB%B9%84%20%EB%8D%B1');
+  });
+
+  it('빈 값은 쿼리에 넣지 않고 물음표도 남기지 않아야 한다', () => {
+    expect(appRoutes.feed('ko', { q: '' })).toBe('/ko');
+    expect(appRoutes.login('ko', '')).toBe('/ko/login');
+    expect(appRoutes.boards('ko', 'free', '   ')).toBe('/ko/boards/free');
+  });
+
+  it('값 안의 대괄호와 등호를 키로 읽어 값을 숨기지 않아야 한다', () => {
+    expect(WebPathSchema.parse('/ko?q=a]=b')).toBe('/ko?q=a%5D%3Db');
+    for (const path of ['/ko/login?returnTo=//outside.test/]=x', '/ko?q=a&q=b]=c', '/ko?q=a%5D=b&q=c'])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
+  });
+
+  it('대괄호로 감싼 키도 같은 키로 검사해야 한다', () => {
+    for (const path of ['/ko?[q]=a&q=b', '/ko/login?[returnTo]=//outside.test', '/ko?a[]=1&a[]=2'])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
+  });
+
+  it('제어 문자와 잘못된 인코딩은 무시되는 키에서도 경로 전체를 거부해야 한다', () => {
+    for (const path of ['/ko?__proto__=%00', '/ko?%00=a', '/ko?utm=%XX', '/ko?a]=%0a'])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
+  });
+
+  it('구분자가 많아도 뒤의 값을 검사에서 빠뜨리지 않아야 한다', () => {
+    for (const path of [
+      `/ko?${'&'.repeat(1001)}q=%XX`,
+      `/ko/login?${'&'.repeat(1001)}returnTo=//outside.test`,
+    ])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
+  });
+
+  it('프로토타입 이름의 키가 라우팅 값에 섞이지 않아야 한다', () => {
+    expect(WebPathSchema.parse('/ko?constructor=x&toString=y&q=hog')).toBe('/ko?q=hog');
+  });
+});
