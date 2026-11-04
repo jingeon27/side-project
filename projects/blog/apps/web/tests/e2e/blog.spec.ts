@@ -138,6 +138,14 @@ test('edited article covers load in the body and match the social preview image'
   }
 });
 
+test('bold followed by a Korean particle renders without literal markers', async ({ page }) => {
+  const entry = articles.find((candidate) => candidate.id === 'design-concepts-for-reading-ui')!;
+  await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
+  const prose = page.locator('.article-prose');
+  await expect(prose.locator('strong', { hasText: '근접성' })).toHaveCSS('font-weight', '650');
+  await expect(prose).not.toContainText('**');
+});
+
 test('localized product images load and the infrastructure article opens in both languages', async ({
   page,
 }) => {
