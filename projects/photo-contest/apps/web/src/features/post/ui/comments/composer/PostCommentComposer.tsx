@@ -13,21 +13,23 @@ import {
   RefreshPostDocument,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { useZodForm } from '@/shared/model/form';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { commentSchema } from '../../../model/comment.schema';
+import { useCommentForm, type TCommentForm } from '../../../model/comment-form.hook';
 
 export function PostCommentComposer({
   postId,
   parentId,
+  form: draftForm,
   onCancel,
   onCreated,
 }: {
   postId: string;
   parentId?: string;
+  /** 시트와 모달이 바뀌어도 입력을 잇도록 상위가 소유한 폼. 없으면 자체 폼을 쓴다. */
+  form?: TCommentForm;
   onCancel?: () => void;
   onCreated?: () => void;
 }) {
@@ -36,7 +38,8 @@ export function PostCommentComposer({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
   });
-  const form = useZodForm(commentSchema, { defaultValues: { body: '' } });
+  const ownForm = useCommentForm();
+  const form = draftForm ?? ownForm;
   const body = useWatch({ control: form.control, name: 'body' });
   const [create] = useMutation(CreatePostCommentDocument, {
     refetchQueries: [PostCommentsDocument, { query: RefreshPostDocument, variables: { id: postId } }],

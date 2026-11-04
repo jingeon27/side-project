@@ -11,7 +11,7 @@ import {
   markNotificationReadInCache,
   NotificationItem,
 } from '@/features/notification';
-import { PostCommentsBottomSheet } from '@/features/post';
+import { PostCommentsOverlay } from '@/features/post';
 import {
   MarkAllNotificationsReadDocument,
   MarkNotificationReadDocument,
@@ -64,7 +64,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
     const postId = notice.postId;
     if (postId) {
       overlay.open(({ isOpen, close: onClose, unmount }) => (
-        <PostCommentsBottomSheet postId={postId} isOpen={isOpen} onClose={onClose} unmount={unmount} />
+        <PostCommentsOverlay postId={postId} isOpen={isOpen} onClose={onClose} unmount={unmount} />
       ));
       return;
     }

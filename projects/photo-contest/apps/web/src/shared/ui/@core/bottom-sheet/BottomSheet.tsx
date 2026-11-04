@@ -18,6 +18,8 @@ interface IBottomSheetRootProps
   children: ReactNode;
   className?: string;
   snapPoints?: TBottomSheetSnapPoint[];
+  /** 상위가 history 항목을 소유하면 false로 둔다. 폭에 따라 시트와 모달을 바꿔 보여 주는 댓글이 쓴다. */
+  ownsHistory?: boolean;
 }
 
 /**
@@ -33,8 +35,9 @@ function Root({
   snapPoints,
   initialFocus,
   finalFocus,
+  ownsHistory = true,
 }: IBottomSheetRootProps) {
-  useOverlayHistory(isOpen, onClose);
+  useOverlayHistory(ownsHistory && isOpen, onClose);
   return (
     <OverlayPortal>
       {(container) => (
@@ -65,7 +68,7 @@ interface IBottomSheetHeaderProps {
   title: string;
   description?: ReactNode;
   className?: string;
-  /** 하단 취소가 없는 시트(Footer cancelLabel={false})는 이 이름의 닫기 버튼을 제목 옆에 둔다. */
+  /** 제목 옆 닫기 버튼의 이름. 생략하면 버튼 없이 밀기·Esc·바깥 누르기·뒤로 가기로 닫는다. */
   closeLabel?: string;
 }
 
@@ -81,7 +84,7 @@ function Content({ children, className }: { children: ReactNode; className?: str
   return <Sheet.Content className={className}>{children}</Sheet.Content>;
 }
 
-/** 폼의 취소와 제출은 같은 행에서 같은 너비를 쓴다. 댓글 입력창은 cancelLabel={false}로 두고 Header에 closeLabel을 준다. */
+/** 폼의 취소와 제출은 같은 행에서 같은 너비를 쓴다. 댓글 입력창은 cancelLabel={false}로 둔다. */
 function Footer({
   children,
   className,

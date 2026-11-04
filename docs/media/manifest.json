@@ -74,13 +74,15 @@
     {
       "service": "pisik",
       "file": "pisik-group.gif",
-      "frames": 38,
-      "duration": 6.54,
+      "frames": 30,
+      "duration": 7.42,
       "width": 430,
       "height": 860,
-      "sha256": "e33b527281ae62206c6cff6376a44941af4339f46f26373df5764af165ec7d09",
+      "sha256": "6f024a965b3d34741497b4d141d325c702f44fa30307f1f1270c1b3faf7553ab",
       "kind": "browser-recording",
-      "bytes": 92658
+      "bytes": 234925,
+      "sourceCommit": "d3d988a6fa101aae8bd5eca995a3485e4293a22a",
+      "sourceChange": "768px 미만 댓글 시트의 상단 닫기 버튼 제거"
     },
     {
       "service": "blog",
