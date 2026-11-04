@@ -251,6 +251,12 @@
         "Amplitude",
         "observability"
       ]
+    },
+    "design-concepts-for-reading-ui": {
+      "title": "Design concepts that explain why an interface feels awkward",
+      "slug": "design-concepts-for-reading-and-using-interfaces",
+      "description": "A coaching-card example connects visual hierarchy, grouping, typography, and interaction cues with comparison, memory demands, feedback, and recovery.",
+      "keywords": ["design concepts", "visual hierarchy", "Gestalt", "signifiers", "UX", "TIL"]
     }
   }
 }

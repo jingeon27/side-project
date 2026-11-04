@@ -1,0 +1,73 @@
+<Summary>
+
+Comparing two coaching cards gave me a way to study design concepts through one example. I connected visual hierarchy, grouping, interaction cues, memory demands, and recovery to the decisions someone makes while using an interface.
+
+</Summary>
+
+![Cards with different text sizes, spacing, and emphasis on the primary action](/images/covers/design-concepts-for-reading-ui.svg)
+
+Saying that a screen feels awkward is easier than explaining what should change. When I compared an introduction-led coaching card with one that led with the booking conditions, I preferred the second. It let me check the price and schedule before reading the description. I started learning the terms that explain that difference.
+
+## Hierarchy chooses the reading order; contrast helps express it
+
+**Visual hierarchy** is the priority given to the information someone reads. A list used to compare coaching offers can lead with cost and availability. A page for exploring a coach's teaching approach might give the description more attention.
+
+**Contrast** is a difference in size, weight, or color that can make that priority visible. Enlarging the price is a technique; deciding that the price deserves attention first is the underlying choice. Making every element large and bold reduces the differences between them. [NN/g's visual-design principles](https://www.nngroup.com/articles/principles-visual-design/) also distinguish an order of importance from differences between elements.
+
+![Two cards presenting the same coaching offer with the introduction or conditions first](/images/posts/design-concepts-for-reading-ui/conditions-en.svg)
+
+_The same coaching information, arranged for reading an introduction or comparing conditions._
+
+A large price still needs a unit. Is it per session or per hour, and how long is a session? Choosing which attributes belong in the interface and where people find them connects to **information architecture**. The information has to be chosen before its presentation can establish an order.
+
+## Distance, similarity, and boundaries create different kinds of grouping
+
+**[Proximity](https://www.nngroup.com/articles/gestalt-proximity/)** makes nearby elements appear related. A name label can sit closer to its input than that input sits to the next field's label. The relationship between spacing within and between groups matters more than a universal pixel value.
+
+**[Similarity](https://www.nngroup.com/articles/gestalt-similarity/)** makes elements with similar appearances seem to belong together. If unselected game filters use unrelated colors and shapes, those differences may suggest different functions or states. Shared roles and states need a recognizable visual pattern, with a consistent way to distinguish a selection.
+
+**Common region** groups elements inside a boundary. A card border also communicates a relationship through [common region](https://www.nngroup.com/articles/common-region/). Notification settings and visibility settings might form separate groups. Giving every individual setting its own card can weaken those larger relationships.
+
+After grouping comes **alignment** and the **grid**. Alignment gives titles a shared starting edge or prices a shared ending edge. A grid supplies the axes and columns used across the layout. When every card puts the price somewhere different, comparing offers also requires locating each price. **Whitespace** can make these groups and axes visible.
+
+## Density and typography depend on the task
+
+**Information density** describes how much information occupies a given space. A card with room for a description can suit close reading. A list or table with aligned attributes may better support comparing prices, durations, and available days. Neither extra space nor extra content is always the right answer.
+
+**Typography** includes the typeface, size, weight, line height, and line length. A **type scale** provides a system of sizes for roles such as headings, body text, labels, and supporting information. Choosing roles and using existing tokens gives similar information a consistent treatment across screens.
+
+Color can also be considered through **hue**, **saturation**, and **lightness**, the components used in [CSS HSL notation](https://www.w3.org/TR/css-color-4/#the-hsl-notation): its color family, intensity, and relative lightness. Changing a hue and changing how light it appears against the background are different adjustments. A visual distinction is also separate from meeting an accessibility requirement for color contrast.
+
+## Cues before an action and feedback after it solve different problems
+
+An **affordance** is an action made possible by the relationship between an actor and an object. A **signifier** provides a perceivable cue about where or how to act. [Don Norman's explanation](https://jnd.org/signifiers-not-affordances/) distinguishes the possible action from the signal that helps someone discover it.
+
+A link's underline, a selector's arrow, or a bottom sheet's handle can serve as cues. Drawing something that resembles a handle does not make dragging possible. The cue needs to agree with what the interface actually supports.
+
+**Mapping** connects a control with what it affects. A delete button beside an item should make its target clear. Placing a setting near its preview can also explain that relationship.
+
+After someone acts, **feedback** explains what happened. An unchanged screen after pressing Publish leaves the request's status unclear. I understand [visibility of system status](https://www.nngroup.com/articles/visibility-system-status/) as giving people enough information to decide whether to wait or act again.
+
+![A publishing request moving through pending, success, or failure with a retry path](/images/posts/design-concepts-for-reading-ui/feedback-en.svg)
+
+_Request states after pressing Publish, including a way to retry after failure._
+
+Acknowledging a click and confirming a saved post are different messages. An animation cannot establish that the server has saved anything. The interface first needs to distinguish what has finished from what is still pending.
+
+## Choosing between remembering and recognizing is a design decision
+
+**Recall** retrieves information from memory. **Recognition** identifies information that is presented. Instead of asking someone to find and retype a player tag, an interface might let them select a saved account. Connecting [recognition and recall](https://www.nngroup.com/articles/recognition-and-recall/) to that example made the distinction concrete for me. A long list still introduces the work of finding the right option.
+
+**Cognitive load** is the mental effort involved in understanding, remembering, and deciding. Prices may all be visible while differing units still require repeated calculations. Fewer words on a screen do not necessarily mean less work for the person comparing them.
+
+**Progressive disclosure** presents the initial choices and reveals further detail when needed. [Deferring secondary features](https://www.nngroup.com/articles/progressive-disclosure/) can suit additional search filters. Hiding the price or an essential condition that most people need can shorten the screen while lengthening the task.
+
+A **mental model** is someone's expectation of how a system works. After opening a post from search results, they may expect Back to restore the query and their position. Thinking about [mental models](https://www.nngroup.com/articles/mental-models/) extends the review beyond a single screen to the state before and after navigation. **Consistency**, giving the same action a familiar name and response, also helps establish those expectations.
+
+## Constraints before a failure and recovery afterward need separate attention
+
+**Constraints** limit the available actions. An interface might allow three attachments or prevent another submission while a request is pending. **Error prevention** reduces opportunities for mistakes, such as submitting twice or deleting an unclear target.
+
+Once something fails, **error recovery** provides a route forward. If a failed upload also erases the draft, retrying first requires rewriting it. Keeping the input and explaining which operation needs another attempt gives the user a way to recover. The [error-message guidelines](https://www.nngroup.com/articles/error-message-guidelines/) likewise connect an explanation of the problem with a possible solution.
+
+Preventing resubmission is a constraint and a form of prevention. Showing the request's state is feedback. Preserving a failed draft for retry is recovery. Even within one writing form, these concepts address different parts of the task.

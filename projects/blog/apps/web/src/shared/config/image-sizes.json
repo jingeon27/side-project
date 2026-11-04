@@ -43,6 +43,14 @@
     "width": 1672,
     "height": 940
   },
+  "/images/covers/design-concepts-for-reading-ui.png": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/design-concepts-for-reading-ui.svg": {
+    "width": 1200,
+    "height": 630
+  },
   "/images/covers/electron-module-boundaries.png": {
     "width": 1672,
     "height": 941
@@ -154,6 +162,22 @@
   "/images/covers/zod-assertion-boundaries.png": {
     "width": 1672,
     "height": 941
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions-en.svg": {
+    "width": 600,
+    "height": 1000
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions-ko.svg": {
+    "width": 600,
+    "height": 1000
+  },
+  "/images/posts/design-concepts-for-reading-ui/feedback-en.svg": {
+    "width": 600,
+    "height": 930
+  },
+  "/images/posts/design-concepts-for-reading-ui/feedback-ko.svg": {
+    "width": 600,
+    "height": 930
   },
   "/images/posts/health-check-program/01-en.png": {
     "width": 1080,

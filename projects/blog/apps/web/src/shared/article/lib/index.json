@@ -1,5 +1,105 @@
 [
   {
+    "category": "til",
+    "tags": ["design", "ux", "ui", "interaction-design"],
+    "publishedAt": "2026-11-04",
+    "updatedAt": "2026-11-04",
+    "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
+    "title": "화면이 어색한 이유를 설명하는 디자인 개념",
+    "description": "시각 위계와 대비, 정보 묶음과 행동 단서를 가상의 코칭 화면으로 정리했어요. 조건을 비교하는 과정부터 기억 부담과 실패 후 복구까지 디자인 개념에 연결해 봤어요.",
+    "slug": "화면을-읽고-행동하는-디자인-개념",
+    "keywords": ["디자인 개념", "시각 위계", "게슈탈트", "시그니파이어", "UX", "TIL"],
+    "id": "design-concepts-for-reading-ui",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "위계는-읽는-순서이고-대비는-그-순서를-만드는-수단이에요",
+        "title": "위계는 읽는 순서이고 대비는 그 순서를 만드는 수단이에요",
+        "level": 2
+      },
+      {
+        "id": "거리-모양-경계는-서로-다른-방식으로-정보를-묶어요",
+        "title": "거리, 모양, 경계는 서로 다른 방식으로 정보를 묶어요",
+        "level": 2
+      },
+      {
+        "id": "밀도와-글자-크기는-작업에-맞춰-정해요",
+        "title": "밀도와 글자 크기는 작업에 맞춰 정해요",
+        "level": 2
+      },
+      {
+        "id": "행동하기-전의-단서와-행동한-뒤의-피드백을-구분해요",
+        "title": "행동하기 전의 단서와 행동한 뒤의 피드백을 구분해요",
+        "level": 2
+      },
+      {
+        "id": "외워서-입력하게-할지-보고-고르게-할지도-디자인이에요",
+        "title": "외워서 입력하게 할지, 보고 고르게 할지도 디자인이에요",
+        "level": 2
+      },
+      {
+        "id": "실패하기-전의-제약과-실패한-뒤의-복구도-나눠-봐요",
+        "title": "실패하기 전의 제약과 실패한 뒤의 복구도 나눠 봐요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "화면을-읽고-행동하는-디자인-개념",
+      "en": "design-concepts-for-reading-and-using-interfaces"
+    }
+  },
+  {
+    "category": "til",
+    "tags": ["design", "ux", "ui", "interaction-design"],
+    "publishedAt": "2026-11-04",
+    "updatedAt": "2026-11-04",
+    "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
+    "title": "Design concepts that explain why an interface feels awkward",
+    "description": "A coaching-card example connects visual hierarchy, grouping, typography, and interaction cues with comparison, memory demands, feedback, and recovery.",
+    "slug": "design-concepts-for-reading-and-using-interfaces",
+    "keywords": ["design concepts", "visual hierarchy", "Gestalt", "signifiers", "UX", "TIL"],
+    "id": "design-concepts-for-reading-ui",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "hierarchy-chooses-the-reading-order-contrast-helps-express-it",
+        "title": "Hierarchy chooses the reading order; contrast helps express it",
+        "level": 2
+      },
+      {
+        "id": "distance-similarity-and-boundaries-create-different-kinds-of-grouping",
+        "title": "Distance, similarity, and boundaries create different kinds of grouping",
+        "level": 2
+      },
+      {
+        "id": "density-and-typography-depend-on-the-task",
+        "title": "Density and typography depend on the task",
+        "level": 2
+      },
+      {
+        "id": "cues-before-an-action-and-feedback-after-it-solve-different-problems",
+        "title": "Cues before an action and feedback after it solve different problems",
+        "level": 2
+      },
+      {
+        "id": "choosing-between-remembering-and-recognizing-is-a-design-decision",
+        "title": "Choosing between remembering and recognizing is a design decision",
+        "level": 2
+      },
+      {
+        "id": "constraints-before-a-failure-and-recovery-afterward-need-separate-attention",
+        "title": "Constraints before a failure and recovery afterward need separate attention",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "화면을-읽고-행동하는-디자인-개념",
+      "en": "design-concepts-for-reading-and-using-interfaces"
+    }
+  },
+  {
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "side-project", "writing", "reflection"],
     "publishedAt": "2026-10-31",
