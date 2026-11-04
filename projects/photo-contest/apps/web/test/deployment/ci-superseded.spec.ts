@@ -69,9 +69,11 @@ describe('최신 커밋 배포 판정', () => {
     );
     expect(new Set(workflowPaths())).toEqual(new Set(listed));
     // PR에서는 경로와 무관하게 최종 판정까지 도달해야 required check가 대기하지 않는다.
-    expect(readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8')).toMatch(
-      /^  pull_request: null$/m,
-    );
+    const pullRequest = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8')
+      .split(/^  pull_request:/m)[1]
+      ?.split(/^  \S/m)[0];
+    expect(pullRequest).toBeDefined();
+    expect(pullRequest).not.toMatch(/^\s+paths(?:-ignore)?:/m);
   });
 
   it('브랜치 끝의 커밋은 배포해야 한다', () => {
@@ -84,7 +86,7 @@ describe('최신 커밋 배포 판정', () => {
     ['블로그', 'projects/blog/apps/web/content/post.mdx'],
     ['루트 문서', 'README.md'],
     ['루트가 아닌 package.json', 'projects/blog/package.json'],
-    ['다른 서비스 워크플로', '.github/workflows/game-feedback.yml'],
+    ['다른 서비스 빌드 설정', 'projects/game-feedback/apps/web/next.config.ts'],
   ])('뒤에 %s만 바뀌었으면 검증한 릴리스를 그대로 배포해야 한다', (_, file) => {
     const release = commit('projects/photo-contest/apps/web/src/app/page.tsx');
     commit(file);
@@ -109,7 +111,7 @@ describe('최신 커밋 배포 판정', () => {
 
   it('서비스마다 자기 경로만 본다', () => {
     const release = commit('packages/config/eslint/src/base.ts');
-    commit('.github/workflows/game-feedback.yml');
+    commit('projects/game-feedback/apps/web/next.config.ts');
     expect(decide('photo-contest', release).output).toBe('deploy=true');
     expect(decide('game-feedback', release).output).toBe('deploy=false');
   });
