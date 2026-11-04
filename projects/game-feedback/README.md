@@ -2,7 +2,7 @@
 
 **함께 게임할 사람을 찾는 일에서, 배우고 이야기를 나누는 일까지.**
 
-친구 추가 판매와 코칭이라는 구상에서 시작한 게임 메이트 서비스입니다. 피드백·친추판매·전투 모집·게임코치·자유게시판과 영속 1:1 채팅을 제공합니다. 현재 제품 범위와 검증 한계는 [제품 문서](docs/product.md)와 [구현 기록](docs/implementation.md)을 기준으로 봅니다.
+친구 추가 판매와 코칭이라는 구상에서 시작한 글로벌 게임 서비스입니다. 한국어, 영어, 일본어로 피드백·친추판매·전투 모집·게임코치·자유게시판과 영속 1:1 채팅을 제공합니다. 현재 제품 범위와 검증 한계는 [제품 문서](docs/product.md)와 [구현 기록](docs/implementation.md)을 기준으로 봅니다.
 
 [웹 연결 주소](https://game.bambyul.com/ko) · [기능 안내](docs/features.md) · [개발 가이드](docs/development.md) · [운영 배포](../../deploy/shared-instance/README.md)
 
@@ -34,13 +34,13 @@ yarn workspace @side/game-feedback dev
 
 ## 구조와 환경
 
-| 경로                                 | 책임                                    |
-| ------------------------------------ | --------------------------------------- |
-| `apps/api`                           | NestJS REST · 인증·게시물·채팅 · Prisma |
-| `apps/web`                           | Next.js · 한국어/영어 · 반응형 웹       |
-| `apps/mobile`                        | Expo WebView · 앱 복귀·푸시 연결        |
-| `packages/contracts`, `packages/sdk` | Zod 계약 · 생성 API 클라이언트          |
-| `packages/bridge`                    | 앱↔웹 메시지 계약                       |
+| 경로                                 | 책임                                     |
+| ------------------------------------ | ---------------------------------------- |
+| `apps/api`                           | NestJS REST · 인증·게시물·채팅 · Prisma  |
+| `apps/web`                           | Next.js · 한국어/영어/일본어 · 반응형 웹 |
+| `apps/mobile`                        | Expo WebView · 앱 복귀·푸시 연결         |
+| `packages/contracts`, `packages/sdk` | Zod 계약 · 생성 API 클라이언트           |
+| `packages/bridge`                    | 앱↔웹 메시지 계약                        |
 
 환경 파일은 `projects/game-feedback/.env` 하나에서 앱별로 전달합니다. 서버 키를 `NEXT_PUBLIC_*`에 넣지 않습니다. S3는 개발·통합 테스트도 실제 버킷을 사용하되 실행별 테스트 prefix만 정리합니다. [첨부 설정](docs/media-upload.md), [관측 설정](docs/observability.md), [환경변수 반영과 데이터 격리](docs/development.md)를 참고하세요.
 
