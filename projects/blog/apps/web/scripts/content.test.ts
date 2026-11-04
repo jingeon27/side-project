@@ -109,6 +109,15 @@ describe('content registry contract', () => {
     const { tree } = analyzeMdx(source);
     expect(tree.children[0]).toMatchObject({ children: [{ type: 'strong' }, { type: 'text' }] });
   });
+  it('keeps Korean ranges as text and strikes through only double tildes', () => {
+    const range = '기간은 3~5일과 7~9일이에요.';
+    expect(analyzeMdx(range).tree.children[0]).toMatchObject({
+      children: [{ type: 'text', value: range }],
+    });
+    expect(analyzeMdx('~~취소~~는 값이에요.').tree.children[0]).toMatchObject({
+      children: [{ type: 'delete' }, { type: 'text' }],
+    });
+  });
   it('refuses malformed MDX and unresolved internal article links', async () => {
     const { root } = await fixture();
     const file = path.join(root, 'content/posts/cache/en.mdx');
