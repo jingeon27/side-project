@@ -227,7 +227,6 @@ SSM 연결 값과 SSH 인증 키는 두 배포 Environment(GF `game-feedback-pro
 | Repository Variable | `GAME_FEEDBACK_SITE_URL`                                                                                   | `https://game.bambyul.com`                                                                                                           |
 | Repository Variable | `GAME_FEEDBACK_CONTACT_EMAIL`                                                                              | `contact@bambyul.com`                                                                                                                |
 | Repository Variable | `PHOTO_CONTEST_SITE_URL`                                                                                   | `https://contest.bambyul.com`                                                                                                        |
-| Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                                                              | 운영 배포 브랜치. push 트리거와 Environment 제한에 맞춰 `main`                                                                       |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY`                                         | 선택적 공개 Web 빌드 설정                                                                                                            |
 | Repository Variable | `GAME_FEEDBACK_WEB_SENTRY_DSN` / `GAME_FEEDBACK_AMPLITUDE_API_KEY`                                         | 선택적 GF Web 빌드 설정                                                                                                              |
 | Repository Variable | `GAME_FEEDBACK_DEPLOY_ENABLED`                                                                             | 준비 중 `false`, 공개 배포 준비 후 `true`                                                                                            |
@@ -247,9 +246,9 @@ ssh-keygen -t ed25519 -f ~/.ssh/side-project-deploy -C side-project-actions
 
 코드의 SSH 단계는 대화형 비밀번호 입력 없이 실행한다. 암호문이 설정된 개인키를 해제하는 단계는 없으므로 이 전용 키의 passphrase는 비워 두고 GitHub Secret으로 보관한다. 키를 등록한 뒤 배포 러너와 같은 네트워크 경로에서 `BatchMode=yes`와 등록한 known_hosts를 사용해 접속을 확인한다.
 
-공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. 운영 DB·S3·OAuth 비밀은 각 production Environment의 `SERVICE_ENV` Secret에 두고, CI 테스트 전용 S3 키는 repository secret으로 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
+공개 Web 빌드 변수는 Services의 공용 이미지 빌드 시 읽으므로 **repository variable**에 둔다. 운영 DB·S3·OAuth 비밀은 각 production Environment의 `SERVICE_ENV` Secret에 두고, CI 테스트 전용 S3 키는 repository secret으로 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
-설정과 DB 초기화를 마친 뒤 `GAME_FEEDBACK_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
+설정과 DB 초기화를 마친 뒤 `GAME_FEEDBACK_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. 두 서비스 모두 main push 또는 main에서 실행한 Services의 `task=verify`에서만 이미지를 발행·배포한다. PR·develop·기능 브랜치·태그는 운영 배포 대상이 아니다. 운영 배포 브랜치는 main으로 고정하며 기존 `PHOTO_CONTEST_DEPLOY_BRANCH` 변수는 사용하지 않는다. 서비스별 `DEPLOY_ENABLED`와 production Environment의 main 제한을 함께 적용한다.
 
 Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime DB/S3 접근 검사 → 서비스 DB 덤프·backup 버킷 업로드 → migration → 서비스 환경 파일 원자 교체 → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
 
@@ -257,18 +256,23 @@ Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한
 
 ### Actions 목록과 실행 조건
 
-| workflow                 | 실행 조건과 이력 표시                                                                                                                                                                   |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Services                 | PR과 main/develop의 관련 경로 push에서 서비스별 검증을 선택한다. publish·deploy는 검증 성공과 운영 활성화·브랜치 조건을 만족할 때만 실행하며 PR에서는 생략한다.                         |
-| Shared instance contract | `workflow_call` 전용이다. 독립 실행 이력이 0이어도 Services의 `shared-contract / shared-instance` job에서 실행된다. 이 job의 결과로 판단한다.                                           |
-| Chat benchmark           | `workflow_dispatch`로만 실행하는 선택 측정이다. 자동 CI나 운영 부하 검사가 아니며, 파일이 기본 브랜치에 반영된 뒤 Run workflow로 실행할 수 있다. 실행 이력 0건 자체는 CI 누락이 아니다. |
-| Blog                     | 블로그·공통 의존성 등 지정 경로의 PR과 main/develop push에서 실행한다.                                                                                                                  |
-| Commits                  | PR에서 추가되는 커밋 메시지를 검사한다.                                                                                                                                                 |
-| Static analysis          | PR과 develop push에서 미사용 코드·의존성과 공통 설정을 검사한다.                                                                                                                        |
-| Terraform                | 인프라 지정 경로의 PR·main/develop push 또는 수동 실행에서 검증한다. 운영 apply를 자동 실행하지 않는다.                                                                                 |
-| Dependabot Updates       | GitHub가 관리하는 동적 workflow다. 저장소 YAML을 직접 실행하는 항목이 아니며 `.github/dependabot.yml`의 갱신 정책을 따른다.                                                             |
+| Workflow        | 실행과 역할                                                                                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Services        | PR·main/develop push에서 변경된 서비스의 정적·통합·브라우저·공용 컨테이너 검증을 실행한다. main push 또는 main 수동 `task=verify`만 운영 발행·배포가 가능하다. `task=chat-benchmark`는 격리된 채팅 측정만 실행한다. |
+| Blog            | PR·main/develop push에서 콘텐츠 또는 전체 앱을 검증한다. 배포 job은 없으며 Vercel Git 연동이 배포를 소유한다.                                                                                                       |
+| Static analysis | PR의 실제 base·head 사이 커밋 메시지와 Knip·정적 설정을 검사한다. Terraform은 인프라·이 workflow 변경 또는 수동 실행 때 같은 runner에서 fmt·validate·mock test를 실행하며 AWS plan·apply는 하지 않는다.             |
 
-수동 실행은 파일이 기본 브랜치에 있어야 한다는 [GitHub 조건](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)을 따른다. 현재 기본 브랜치는 `develop`이며 Chat benchmark 파일도 이미 있어 수동 실행할 수 있다. 재사용 workflow는 호출한 실행의 job을 확인하고, 실패한 필수 검사를 생략하거나 배포 조건을 풀어 실행 건수를 채우지 않는다.
+Dependabot Updates는 GitHub가 관리하는 동적 workflow이며 저장소의 workflow 파일 수와 별개다.
+
+| 환경    | 서비스                                                                 | 블로그                                     |
+| ------- | ---------------------------------------------------------------------- | ------------------------------------------ |
+| PR      | 실제 PR 변경과 합성 merge 검증, 운영 발행·배포 없음                    | Actions 검증과 Vercel PR 미리보기          |
+| develop | 개발 브랜치 검증, 운영 발행·배포 없음                                  | Actions 검증만 실행, Vercel 자동 배포 차단 |
+| main    | 검증한 이미지를 서비스별 production Environment로 배포(활성화 값 필요) | Actions 검증과 Vercel Production 배포      |
+
+검증 runner에는 CI용 테스트 자격증명만 전달하며, 운영 SSH·SSM·서비스 환경변수는 기존 `game-feedback-production`·`photo-contest-production` Environment에서만 읽는다. 실행 이름에도 PR/development/production을 표시한다. GitHub Environment 이름과 OIDC 신뢰 조건은 변경하지 않는다.
+
+수동 실행은 파일이 기본 브랜치에 있어야 한다는 [GitHub 조건](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)을 따른다. 기본 브랜치에 세 workflow가 반영된 뒤 Services에서 `task=chat-benchmark`를 선택하면 된다. `shared-contract`는 Services 내부 job이며 별도 workflow 실행 목록을 사용하지 않는다. 실패한 필수 검사를 생략하거나 배포 조건을 풀어 실행 건수를 채우지 않는다.
 
 ### 원격 배포 실행과 로그
 

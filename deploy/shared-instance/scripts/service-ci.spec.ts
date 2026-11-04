@@ -1,10 +1,59 @@
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { failedChecks, requiredChecks, selectServices } from './service-ci';
+import { failedChecks, isProductionRun, requiredChecks, selectServices } from './service-ci';
 
 describe('service CI selection and release gate', () => {
+  it.each([
+    ['push', 'refs/heads/main', true],
+    ['workflow_dispatch', 'refs/heads/main', true],
+    ['push', 'refs/heads/develop', false],
+    ['workflow_dispatch', 'refs/heads/develop', false],
+    ['workflow_dispatch', 'refs/heads/feat/example', false],
+    ['pull_request', 'refs/heads/main', false],
+    ['pull_request', 'refs/pull/1/merge', false],
+    ['push', 'refs/tags/main', false],
+    ['schedule', 'refs/heads/main', false],
+    [undefined, undefined, false],
+  ])('%s · %s에서 운영 배포 허용 여부는 %s여야 한다', (eventName, ref, expected) => {
+    expect(isProductionRun({ eventName, ref })).toBe(expected);
+  });
+
+  it.each([
+    ['push', 'refs/heads/main', 'true'],
+    ['push', 'refs/heads/develop', 'false'],
+    ['pull_request', 'refs/heads/main', 'false'],
+  ])('선택 CLI가 %s · %s의 운영 판정을 workflow output으로 전달해야 한다', (eventName, ref, production) => {
+    const directory = mkdtempSync(join(tmpdir(), 'service-ci-'));
+    const event = join(directory, 'event.json');
+    const output = join(directory, 'output');
+    writeFileSync(event, '{}');
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [new URL('./service-ci.ts', import.meta.url).pathname, 'select'],
+        {
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            GITHUB_EVENT_NAME: eventName,
+            GITHUB_REF: ref,
+            GITHUB_EVENT_PATH: event,
+            GITHUB_OUTPUT: output,
+          },
+        },
+      );
+      expect(result.status, result.stderr).toBe(0);
+      expect(readFileSync(output, 'utf8')).toContain(`production=${production}\n`);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it.each([
     ['projects/game-feedback/apps/web/src/page.tsx', true, false],
     ['projects/photo-contest/apps/api/src/post.ts', false, true],
