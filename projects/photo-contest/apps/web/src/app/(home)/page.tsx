@@ -16,14 +16,20 @@ import {
 import { publicPreloadContext } from '@/shared/api/public-cache.policy';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
-import { createPageMetadata, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
+import {
+  createPageMetadata,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  siteUrl,
+} from '@/shared/lib/seo.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';
 
 export function generateMetadata(): Metadata {
   return createPageMetadata({
     origin: getWebOrigin(),
     path: ROUTES.HOME,
-    title: SITE_NAME,
+    title: { absolute: SITE_TITLE },
     description: SITE_DESCRIPTION,
   });
 }

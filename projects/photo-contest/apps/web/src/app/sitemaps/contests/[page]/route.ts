@@ -5,6 +5,7 @@ import {
   getPublicGroupContestSitemapPage,
   PUBLIC_CONTEST_SITEMAP_SIZE,
 } from '@/_pages/group-contests/index.server';
+import { Phase } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { siteUrl } from '@/shared/lib/seo.helper';
@@ -26,9 +27,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
     return new Response(null, { status: 404 });
   const contests = await getPublicGroupContestSitemapPage(page);
   if (!contests.length) return new Response(null, { status: 404 });
-  return sitemapResponse(
-    sitemapDocument(
-      contests.map((contest) => siteUrl(ROUTES.GROUP_CONTEST(contest.groupId, contest.id), getWebOrigin())),
-    ),
-  );
+  const paths = contests.flatMap((contest) => [
+    ROUTES.GROUP_CONTEST(contest.groupId, contest.id),
+    // 빈 목록 화면은 색인할 내용이 없으므로 이 대회가 실제로 보이는 목록만 올린다.
+    contest.phase === Phase.Completed
+      ? ROUTES.GROUP_HALL_OF_FAME(contest.groupId)
+      : ROUTES.GROUP_CONTESTS(contest.groupId),
+  ]);
+  return sitemapResponse(sitemapDocument([...new Set(paths)].map((path) => siteUrl(path, getWebOrigin()))));
 }

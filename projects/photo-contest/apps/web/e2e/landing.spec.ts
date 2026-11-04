@@ -25,6 +25,21 @@ test('소개 화면의 주 버튼은 크기가 같고 상단 안내와 시작하
   expect(startLeft - guideRight).toBeGreaterThanOrEqual(16);
 });
 
+test('홈과 소개 화면의 제목은 서비스 이름이 겹치지 않고 공유 제목과 같아야 한다 @desktop @ios', async ({
+  page,
+}) => {
+  for (const [path, title] of [
+    ['/', '같이 보면 더 웃긴 피식'],
+    ['/about', '서비스 소개 | 피식'],
+    ['/about/how-it-works', '이용 방법 | 피식'],
+  ] as const) {
+    await page.goto(path);
+    await expect(page, path).toHaveTitle(title);
+    await expect(page.locator('meta[property="og:title"]'), path).toHaveAttribute('content', title);
+    await expect(page.locator('meta[name="twitter:title"]'), path).toHaveAttribute('content', title);
+  }
+});
+
 test('공개 랜딩과 이용 방법은 로그인·API 요청 없이 읽고 서로 이동할 수 있어야 한다 @desktop @ios', async ({
   page,
 }) => {
