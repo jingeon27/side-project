@@ -1,6 +1,6 @@
 # Actions and base images stay pinned by digest/SHA; updates are reviewed and opened manually.
 # Set every version-update PR limit to zero to stop automatic Dependabot PRs.
-# Commit messages follow `<type>(deps): …` so the Commits check accepts them (PRs land with merge commits).
+# Commit messages follow `<type>(deps): …` so the Static analysis commit check accepts them (PRs land with merge commits).
 version: 2
 updates:
   - package-ecosystem: github-actions

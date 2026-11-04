@@ -21,14 +21,17 @@ const COMMON_PATHS = [
   '.prettierignore',
   '.dockerignore',
   '.github/workflows/services.yml',
-  '.github/workflows/shared-instance.yml',
-  '.github/workflows/chat-benchmark.yml',
   'deploy/shared-instance/**',
 ] as const;
 
 /** 검사 선택과 오래된 배포 판정이 같은 변경 범위를 사용한다. */
 export function servicePaths(service: TService) {
-  return [`projects/${service}/**`, `.github/workflows/${service}.yml`, ...COMMON_PATHS];
+  return [`projects/${service}/**`, ...COMMON_PATHS];
+}
+
+/** 운영 이미지는 main push 또는 main의 명시적인 검증 실행에서만 발행한다. */
+export function isProductionRun({ eventName, ref }: { eventName?: string; ref?: string }) {
+  return (eventName === 'push' || eventName === 'workflow_dispatch') && ref === 'refs/heads/main';
 }
 
 export function selectServices({
@@ -85,9 +88,13 @@ function selectFromEvent() {
         .filter(Boolean)
     : [];
   const selected = selectServices({ files, forceAll: !validBase });
+  const production = isProductionRun({
+    eventName: process.env.GITHUB_EVENT_NAME,
+    ref: process.env.GITHUB_REF,
+  });
   appendFileSync(
     process.env.GITHUB_OUTPUT ?? '',
-    `game-feedback=${selected.gameFeedback}\nphoto-contest=${selected.photoContest}\n`,
+    `game-feedback=${selected.gameFeedback}\nphoto-contest=${selected.photoContest}\nproduction=${production}\n`,
   );
 }
 

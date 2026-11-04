@@ -60,10 +60,12 @@ Production·Preview의 `SITE_URL`을 각각 설정하고, Preview의 GA 수집�
 
 1. 기능 브랜치에서 콘텐츠·앱 검사를 실행하고 PR을 develop에 병합합니다.
 2. 검증한 develop을 main에 **merge commit**으로 반영합니다.
-3. main의 변경을 Vercel Git 연동이 자동 빌드·배포합니다. develop만 push해서 운영이 바뀌는 것은 아닙니다.
+3. main의 변경을 Vercel Git 연동이 자동 빌드·배포합니다. `apps/web/vercel.ts`의 `git.deploymentEnabled`에서 모든 브랜치를 차단하고 main만 허용합니다. develop과 기능 브랜치의 PR 미리보기도 자동 배포하지 않습니다.
 4. Production의 소스 commit과 Ready 상태를 확인하고 실제 도메인의 두 언어를 검사합니다.
 
-GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, production build, Chromium 데스크톱·모바일 E2E를 수행합니다. Vercel은 Git 연결을 통해 별도로 빌드·배포하므로 Actions에 중복 배포 job은 두지 않았습니다. GitHub Actions 실패가 Vercel Preview를 자동 차단한다는 가정은 하지 않습니다. `main` 보호 규칙에 이 검증을 필수로 추가하고 검증을 통과한 PR만 병합하도록 설정하세요. Vercel 자체 빌드 실패는 해당 배포를 차단합니다.
+[Vercel의 브랜치별 배포 설정](https://vercel.com/docs/project-configuration/git-configuration)을 앱 Root Directory의 `vercel.ts`에서 관리합니다. develop과 PR은 Actions 검증만 실행하며, main에서만 Production을 배포합니다. 이 설정은 Git 커밋에 의한 자동 배포를 제어하며 수동 CLI 배포·기존 배포를 취소하지 않습니다. 새 설정이 develop에 반영된 뒤 다음 develop push에서 배포 차단을 확인합니다.
+
+GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, production build, Chromium 데스크톱·모바일 E2E를 수행합니다. Vercel은 Git 연결을 통해 별도로 빌드·배포하므로 Actions에 중복 배포 job은 두지 않았습니다. 자동 Preview 배포는 끄지만 수동 CLI 배포는 Actions 결과와 별개입니다. `main` 보호 규칙에 이 검증을 필수로 추가하고 검증을 통과한 PR만 병합하도록 설정하세요. Vercel 자체 빌드 실패는 해당 배포를 차단합니다.
 
 모든 응답에는 `apps/web/security-headers.ts`의 보안 헤더(`X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`)를 붙입니다. 인라인 테마 스크립트·JSON-LD·RSC payload에 hash나 nonce를 적용하기 전까지 `script-src`는 제한하지 않습니다.
 

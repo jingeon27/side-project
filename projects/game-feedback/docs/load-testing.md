@@ -32,7 +32,7 @@ k6 run -e BASE_URL=http://127.0.0.1:4300 -e RATE=1 -e DURATION=30s \
 
 ## 두 브라우저의 채팅 전달 벤치마크
 
-GitHub Actions의 `Chat benchmark` workflow를 수동으로 실행할 수도 있다. 같은 격리 하네스와 실제 테스트 S3를 사용하고 표본 수는 1~20개만 받는다. 이미지 게시·운영 배포는 실행하지 않는다. `chat-delivery-<sha>` artifact에는 원문 진단 없이 `chat-delivery.json`만 보관한다. GitHub runner의 loopback 측정값이며 운영 수용량이나 SLO 달성률로 해석하지 않는다.
+GitHub Actions의 `Services`에서 Run workflow의 `task=chat-benchmark`를 선택해 수동으로 실행할 수도 있다. 같은 격리 하네스와 실제 테스트 S3를 사용하고 표본 수는 1~20개만 받는다. 이미지 게시·운영 배포는 실행하지 않는다. `chat-delivery-<sha>` artifact에는 원문 진단 없이 `chat-delivery.json`만 보관한다. GitHub runner의 loopback 측정값이며 운영 수용량이나 SLO 달성률로 해석하지 않는다.
 
 Web 소유 `apps/web/e2e-benchmark/chat-delivery.spec.ts`는 독립 브라우저 context의 새 테스트 사용자 두 명으로 실제 REST + SSE 전달을 측정한다. `benchmark:chat`으로만 실행하며 일반 CI와 일반 E2E에서는 수집하지 않는다. 지연 목표를 넘으면 실패하는 성능 threshold나 자동 재시도는 추가하지 않는다. 연결 실패·전송 실패·잘못된 전송 식별자 등 측정 전제의 실패는 명령을 실패시킨다.
 
