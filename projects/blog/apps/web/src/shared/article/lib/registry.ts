@@ -12,6 +12,10 @@ const loaders = {
     import('../../../../content/posts/cross-domain-token-handoff/en.mdx'),
   'declarative-code/ko': () => import('../../../../content/posts/declarative-code/ko.mdx'),
   'declarative-code/en': () => import('../../../../content/posts/declarative-code/en.mdx'),
+  'design-concepts-for-reading-ui/ko': () =>
+    import('../../../../content/posts/design-concepts-for-reading-ui/ko.mdx'),
+  'design-concepts-for-reading-ui/en': () =>
+    import('../../../../content/posts/design-concepts-for-reading-ui/en.mdx'),
   'electron-module-boundaries/ko': () =>
     import('../../../../content/posts/electron-module-boundaries/ko.mdx'),
   'electron-module-boundaries/en': () =>

@@ -1,5 +1,105 @@
 [
   {
+    "category": "til",
+    "tags": ["design", "ux", "ui", "interaction-design"],
+    "publishedAt": "2026-11-04",
+    "updatedAt": "2026-11-04",
+    "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
+    "title": "화면이 어색한 이유를 설명하는 디자인 개념",
+    "description": "가상의 코칭 카드를 예로 시각 위계와 대비, 정보 묶음과 행동 단서를 정리했어요. 기억해야 할 정보를 줄이고, 실패한 뒤 다시 시도할 수 있도록 돕는 방법도 함께 살펴봤어요.",
+    "slug": "화면을-읽고-행동하는-디자인-개념",
+    "keywords": ["디자인 개념", "시각 위계", "게슈탈트", "시그니파이어", "UX", "TIL"],
+    "id": "design-concepts-for-reading-ui",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "무엇을-먼저-읽게-할지-정하고-대비로-드러내요",
+        "title": "무엇을 먼저 읽게 할지 정하고, 대비로 드러내요",
+        "level": 2
+      },
+      {
+        "id": "거리-모양-경계로-정보의-관계를-보여-줘요",
+        "title": "거리, 모양, 경계로 정보의 관계를 보여 줘요",
+        "level": 2
+      },
+      {
+        "id": "정보의-양과-글자-표현은-작업에-맞춰-정해요",
+        "title": "정보의 양과 글자 표현은 작업에 맞춰 정해요",
+        "level": 2
+      },
+      {
+        "id": "행동하기-전에는-단서를-주고-행동한-뒤에는-상태를-알려줘요",
+        "title": "행동하기 전에는 단서를 주고, 행동한 뒤에는 상태를 알려줘요",
+        "level": 2
+      },
+      {
+        "id": "기억해서-입력하는-것과-보고-고르는-것은-부담이-달라요",
+        "title": "기억해서 입력하는 것과 보고 고르는 것은 부담이 달라요",
+        "level": 2
+      },
+      {
+        "id": "실수를-줄이는-일과-실패한-뒤-복구하는-일을-나눠-봐요",
+        "title": "실수를 줄이는 일과 실패한 뒤 복구하는 일을 나눠 봐요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "화면을-읽고-행동하는-디자인-개념",
+      "en": "design-concepts-for-reading-and-using-interfaces"
+    }
+  },
+  {
+    "category": "til",
+    "tags": ["design", "ux", "ui", "interaction-design"],
+    "publishedAt": "2026-11-04",
+    "updatedAt": "2026-11-04",
+    "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
+    "title": "Design concepts that explain why an interface feels awkward",
+    "description": "Coaching cards make design concepts concrete: what to read first, what looks related, how to act, and how to recover when something fails.",
+    "slug": "design-concepts-for-reading-and-using-interfaces",
+    "keywords": ["design concepts", "visual hierarchy", "Gestalt", "signifiers", "UX", "TIL"],
+    "id": "design-concepts-for-reading-ui",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "set-a-reading-order-then-make-it-visible-through-contrast",
+        "title": "Set a reading order, then make it visible through contrast",
+        "level": 2
+      },
+      {
+        "id": "use-distance-appearance-and-boundaries-to-show-relationships",
+        "title": "Use distance, appearance, and boundaries to show relationships",
+        "level": 2
+      },
+      {
+        "id": "choose-density-and-typography-for-the-task",
+        "title": "Choose density and typography for the task",
+        "level": 2
+      },
+      {
+        "id": "give-cues-before-an-action-and-feedback-afterward",
+        "title": "Give cues before an action and feedback afterward",
+        "level": 2
+      },
+      {
+        "id": "recall-and-recognition-place-different-demands-on-memory",
+        "title": "Recall and recognition place different demands on memory",
+        "level": 2
+      },
+      {
+        "id": "prevent-mistakes-and-provide-a-route-back-after-failure",
+        "title": "Prevent mistakes and provide a route back after failure",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "화면을-읽고-행동하는-디자인-개념",
+      "en": "design-concepts-for-reading-and-using-interfaces"
+    }
+  },
+  {
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "side-project", "writing", "reflection"],
     "publishedAt": "2026-10-31",
