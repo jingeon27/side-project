@@ -23,6 +23,7 @@ export default defineConfig({
     },
     'projects/photo-contest': { entry: ['scripts/*.ts'] },
     'projects/*/apps/*': { entry: appEntries },
+    'projects/blog/apps/web': { entry: [...appEntries, 'vercel.ts'] },
     'projects/photo-contest/apps/web': { entry: [...appEntries, 'test/browser/main.tsx'] },
     // k6의 내장 모듈은 npm 의존성이 아니다.
     'projects/*/apps/*/scripts': { entry: ['*.{ts,js}'], ignoreDependencies: ['k6'] },

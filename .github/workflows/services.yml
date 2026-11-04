@@ -1,5 +1,7 @@
 # 공용 호스트 검증은 실행당 한 번만 수행하고 PR의 이전 검사만 취소한다.
 name: Services
+run-name: >-
+  Services / ${{ github.event_name == 'pull_request' && format('PR {0}', github.event.pull_request.number) || github.ref_name == 'main' && 'production' || github.ref_name == 'develop' && 'development' || github.ref_name }} / ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'chat-benchmark' && 'chat benchmark' || 'verify' }}
 on:
   push:
     branches:
@@ -7,9 +9,7 @@ on:
       - develop
     paths:
       - projects/game-feedback/**
-      - .github/workflows/game-feedback.yml
       - projects/photo-contest/**
-      - .github/workflows/photo-contest.yml
       - packages/**
       - package.json
       - yarn.lock
@@ -21,12 +21,21 @@ on:
       - .prettierignore
       - .dockerignore
       - .github/workflows/services.yml
-      - .github/workflows/shared-instance.yml
       - deploy/shared-instance/**
-      - .github/workflows/chat-benchmark.yml
   # 필수 검사가 문서 전용 PR에서 대기하지 않도록 선택·최종 판정은 항상 실행한다.
-  pull_request: null
-  workflow_dispatch: null
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'verify: 브랜치 검증, main에서는 운영 배포 / chat-benchmark: 격리된 채팅 측정만 실행'
+        type: choice
+        options: [verify, chat-benchmark]
+        default: verify
+      samples:
+        description: '채팅 측정 샘플 수(1–20), 운영 부하 검사가 아님'
+        type: number
+        default: 5
 permissions:
   contents: read
 concurrency:
@@ -36,11 +45,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   selection:
+    if: github.event_name != 'workflow_dispatch' || inputs.task == 'verify'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       game-feedback: ${{ steps.select.outputs.game-feedback }}
       photo-contest: ${{ steps.select.outputs.photo-contest }}
+      production: ${{ steps.select.outputs.production }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -52,10 +63,150 @@ jobs:
       - id: select
         run: node deploy/shared-instance/scripts/service-ci.ts select
   shared-contract:
+    name: Shared container contract
     needs: selection
     if: needs.selection.outputs['game-feedback'] == 'true' || needs.selection.outputs['photo-contest'] == 'true'
-    uses: ./.github/workflows/shared-instance.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GF_S3_BUCKET: ${{ vars.GAME_FEEDBACK_S3_BUCKET }}
+      GF_S3_KEY_PREFIX: ${{ vars.GAME_FEEDBACK_S3_KEY_PREFIX || 'game-feedback/ci' }}
+      GF_S3_ACCESS_KEY_ID: ${{ secrets.GAME_FEEDBACK_S3_ACCESS_KEY_ID }}
+      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GAME_FEEDBACK_S3_SECRET_ACCESS_KEY }}
+      S3_BUCKET: ${{ vars.PHOTO_CONTEST_S3_BUCKET }}
+      S3_KEY_PREFIX: ${{ vars.PHOTO_CONTEST_S3_KEY_PREFIX || 'photo-contest/ci' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.PHOTO_CONTEST_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PHOTO_CONTEST_S3_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.PHOTO_CONTEST_S3_SESSION_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      - name: Validate Game Feedback public build settings
+        env:
+          SITE_URL: ${{ vars.GAME_FEEDBACK_SITE_URL }}
+          CONTACT_EMAIL: ${{ vars.GAME_FEEDBACK_CONTACT_EMAIL }}
+          DEPLOY_ENABLED: ${{ vars.GAME_FEEDBACK_DEPLOY_ENABLED }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          const site = process.env.SITE_URL || 'https://game.bambyul.com';
+          const url = new URL(site);
+          if (url.origin !== site || url.protocol !== 'https:') throw new Error('GAME_FEEDBACK_SITE_URL must be an HTTPS origin.');
+          if (process.env.DEPLOY_ENABLED === 'true' && (!process.env.SITE_URL || !process.env.CONTACT_EMAIL))
+            throw new Error('Configure GAME_FEEDBACK_SITE_URL and GAME_FEEDBACK_CONTACT_EMAIL before enabling deployment.');
+          const email = process.env.CONTACT_EMAIL || 'contact@bambyul.com';
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GAME_FEEDBACK_CONTACT_EMAIL.');
+          appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\n`);
+          JS
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        id: buildx
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            next-cache-gf
+            next-cache-pc
+          key: next-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: next-cache-${{ runner.os }}-
+      - uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-map: |
+            {
+              "next-cache-gf": { "target": "/app/projects/game-feedback/apps/web/.next/cache", "id": "gf-next-cache" },
+              "next-cache-pc": { "target": "/app/projects/photo-contest/apps/web/.next/cache", "id": "pc-next-cache" }
+            }
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: projects/game-feedback/deploy/shared-instance/Dockerfile
+          target: api
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-gf-api:${{ github.sha }}
+          cache-from: type=gha,scope=game-feedback-api
+          cache-to: type=gha,mode=max,scope=game-feedback-api
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: projects/game-feedback/deploy/shared-instance/Dockerfile
+          target: web
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-gf-web:${{ github.sha }}
+          build-args: |
+            WEB_ORIGIN=${{ env.GF_BUILD_SITE_URL }}
+            GAME_FEEDBACK_CONTACT_EMAIL=${{ env.GF_BUILD_CONTACT_EMAIL }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.GAME_FEEDBACK_WEB_SENTRY_DSN }}
+            SENTRY_RELEASE=${{ github.sha }}
+            NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.GAME_FEEDBACK_AMPLITUDE_API_KEY }}
+          cache-from: type=gha,scope=game-feedback-web
+          cache-to: type=gha,mode=max,scope=game-feedback-web
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: projects/photo-contest/apps/api/Dockerfile
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-pc-api:${{ github.sha }}
+          cache-from: type=gha,scope=photo-contest-api-amd64
+          cache-to: type=gha,mode=max,scope=photo-contest-api-amd64
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: projects/photo-contest/apps/web/Dockerfile
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-pc-web:${{ github.sha }}
+          build-args: |
+            WEB_ORIGIN=${{ vars.PHOTO_CONTEST_SITE_URL || 'https://contest.bambyul.com' }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.PHOTO_CONTEST_WEB_SENTRY_DSN }}
+            SENTRY_RELEASE=${{ github.sha }}
+            NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.PHOTO_CONTEST_AMPLITUDE_API_KEY }}
+          cache-from: type=gha,scope=photo-contest-web-amd64
+          cache-to: type=gha,mode=max,scope=photo-contest-web-amd64
+      - name: Verify both services behind one HTTPS proxy with external database and object storage boundaries
+        run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts "$GITHUB_SHA"
+      - name: Keep numeric replacement and database recovery evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shared-instance-verification-${{ github.sha }}
+          path: projects/game-feedback/.data/shared-instance-verification.json
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Archive the exact images verified together
+        run: |
+          docker save "side-shared-gf-api:$GITHUB_SHA" "side-shared-gf-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/game-feedback.tar.gz"
+          docker save "side-shared-pc-api:$GITHUB_SHA" "side-shared-pc-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/photo-contest.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/game-feedback.tar.gz
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shared-photo-contest-images-${{ github.sha }}
+          path: ${{ runner.temp }}/photo-contest.tar.gz
+          retention-days: 1
+          compression-level: 0
   gf-verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -349,13 +500,11 @@ jobs:
       - name: Verify the images on the legacy single-host stack and its backup restore
         run: bash projects/photo-contest/apps/web/test/deployment/containers.sh
       - name: Archive the verified images
-        if: github.event_name == 'push' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' && github.ref ==
-          format('refs/heads/{0}', vars.PHOTO_CONTEST_DEPLOY_BRANCH)
+        if: needs.selection.outputs.production == 'true' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true'
         run: docker save "photo-contest-api:$GITHUB_SHA" "photo-contest-web:$GITHUB_SHA" | gzip -1 >
           "$RUNNER_TEMP/photo-contest-images.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        if: github.event_name == 'push' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' && github.ref ==
-          format('refs/heads/{0}', vars.PHOTO_CONTEST_DEPLOY_BRANCH)
+        if: needs.selection.outputs.production == 'true' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true'
         with:
           name: photo-contest-images-${{ github.sha }}
           path: ${{ runner.temp }}/photo-contest-images.tar.gz
@@ -380,7 +529,7 @@ jobs:
       - pc-browser
       - pc-components
       - pc-containers
-    if: always()
+    if: always() && needs.selection.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -399,8 +548,7 @@ jobs:
     needs:
       - selection
       - verification
-    if: needs.selection.outputs['game-feedback'] == 'true' && (github.ref == 'refs/heads/main' &&
-      github.event_name != 'pull_request' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true')
+    if: needs.selection.outputs.production == 'true' && needs.selection.outputs['game-feedback'] == 'true' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -438,9 +586,8 @@ jobs:
           done
     name: GF publish
   gf-deploy:
-    needs: gf-publish
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' &&
-      vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
+    needs: [selection, gf-publish]
+    if: needs.selection.outputs.production == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: game-feedback-production
@@ -516,9 +663,7 @@ jobs:
     needs:
       - selection
       - verification
-    if: needs.selection.outputs['photo-contest'] == 'true' && (github.event_name == 'push' &&
-      vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' && github.ref == format('refs/heads/{0}',
-      vars.PHOTO_CONTEST_DEPLOY_BRANCH))
+    if: needs.selection.outputs.production == 'true' && needs.selection.outputs['photo-contest'] == 'true' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -563,7 +708,8 @@ jobs:
           done
     name: PC publish
   pc-deploy:
-    needs: pc-publish
+    needs: [selection, pc-publish]
+    if: needs.selection.outputs.production == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: photo-contest-production
@@ -586,8 +732,7 @@ jobs:
         id: latest
         env:
           RELEASE_SHA: ${{ github.sha }}
-          DEPLOY_BRANCH: ${{ vars.PHOTO_CONTEST_DEPLOY_BRANCH }}
-        run: bash deploy/shared-instance/scripts/ci-superseded.sh photo-contest "$DEPLOY_BRANCH"
+        run: bash deploy/shared-instance/scripts/ci-superseded.sh photo-contest main
       - name: Authenticate the SSM deployment with GitHub OIDC
         if: steps.latest.outputs.deploy == 'true' && vars.SIDE_DEPLOY_SSM_INSTANCE_ID != ''
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
@@ -636,3 +781,43 @@ jobs:
           SENTRY_RELEASE: ${{ github.sha }}
         run: node deploy/shared-instance/scripts/sentry-release.ts
     name: PC deploy
+
+  chat-benchmark:
+    name: Chat benchmark (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'chat-benchmark'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
+    timeout-minutes: 25
+    env:
+      GF_S3_BUCKET: ${{ vars.GAME_FEEDBACK_S3_BUCKET }}
+      GF_S3_REGION: ap-northeast-2
+      GF_S3_KEY_PREFIX: ${{ vars.GAME_FEEDBACK_S3_KEY_PREFIX || 'game-feedback/ci' }}
+      GF_S3_ACCESS_KEY_ID: ${{ secrets.GAME_FEEDBACK_S3_ACCESS_KEY_ID }}
+      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GAME_FEEDBACK_S3_SECRET_ACCESS_KEY }}
+      GF_CHAT_BENCHMARK_SAMPLES: ${{ inputs.samples }}
+      GF_CHAT_BENCHMARK_INTERVAL_MS: '5000'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - id: install
+        run: yarn install --immutable
+      - run: yarn workspace @side/game-feedback codegen
+      - run: yarn workspace @side/game-feedback db:test:start
+      - run: yarn workspace @game-feedback/web benchmark:chat
+      - name: Keep only the sanitized measurement JSON
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chat-delivery-${{ github.sha }}
+          path: projects/game-feedback/apps/web/.e2e-build/chat-benchmark-results/**/chat-delivery.json
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Stop the owned test database
+        if: always() && steps.install.outcome == 'success'
+        run: yarn workspace @side/game-feedback db:test:stop

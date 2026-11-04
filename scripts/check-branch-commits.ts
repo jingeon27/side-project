@@ -59,13 +59,13 @@ export function branchCommits({
     });
 }
 
-export function main(base = process.argv[2]) {
+export function main(base = process.argv[2], head = process.argv[3] ?? 'HEAD') {
   if (!base) {
-    console.error('사용법: node scripts/check-branch-commits.ts <기준 ref, 예: origin/develop>');
+    console.error('사용법: node scripts/check-branch-commits.ts <base ref> [head ref]');
     process.exitCode = 2;
     return;
   }
-  const commits = branchCommits({ base });
+  const commits = branchCommits({ base, head });
   const problems = checkBranchCommits(commits);
   if (problems.length === 0) {
     console.log(`${base} 이후 커밋 ${commits.length}개의 메시지를 확인했습니다.`);
