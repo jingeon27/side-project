@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 
+import qs from 'qs';
+
 import { getServerSession } from '@/features/auth/index.server';
 import { getServerUserPosts } from '@/features/post/index.server';
 import { getServerProfile } from '@/features/user/index.server';
@@ -23,7 +25,10 @@ export async function profileMetadata({ params, searchParams }: IProfileRoutePro
     photoPaths: profile.author.avatarUrl ? [profile.author.avatarUrl] : [],
     title: `${profile.author.nickname} 플레이어 프로필`,
     description: profileDescription(profile),
-    path: `/${locale}/users/${encodeURIComponent(id)}${typeof cursor === 'string' ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+    path: `/${locale}/users/${encodeURIComponent(id)}${qs.stringify(
+      { cursor: typeof cursor === 'string' ? cursor : undefined },
+      { addQueryPrefix: true },
+    )}`,
     keywords: [profile.author.nickname, '플레이어 프로필', '작성한 피드백'],
     type: 'profile',
     authorName: profile.author.nickname,

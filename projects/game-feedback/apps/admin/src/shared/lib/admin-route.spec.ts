@@ -47,6 +47,13 @@ describe('local admin routes', () => {
     expect(adminSupportPath('thread-1')).toBe('#support?thread=thread-1');
     expect(parseAdminRoute('#support?status=REVIEWED')).toMatchObject({ supportStatus: 'ALL' });
   });
+  it('reads the first duplicate and ignores bracket keys in hash queries', () => {
+    expect(parseAdminRoute('#support?thread=first&thread=second')).toMatchObject({ threadId: 'first' });
+    expect(parseAdminRoute('#users?user[x]=y')).toMatchObject({ userId: '' });
+    expect(parseAdminRoute('#users?user[]=a&user[]=b')).toMatchObject({ userId: '' });
+    expect(parseAdminRoute('#reports?status[]=CLOSED')).toMatchObject({ reportStatus: 'OPEN' });
+    expect(parseAdminRoute('#support?thread=a%2Db')).toMatchObject({ threadId: 'a-b' });
+  });
   it('does not turn malformed hashes into API identifiers', () => {
     expect(parseAdminRoute('#invalid?user=%2Fapi%2Fusers')).toEqual({
       tab: 'support',

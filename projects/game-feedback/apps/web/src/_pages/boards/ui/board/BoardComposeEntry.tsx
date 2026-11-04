@@ -9,6 +9,7 @@ import type { TBoardKind } from '@game-feedback/contracts';
 import { useSession } from '@/features/auth';
 import { parseBattleMode } from '@/features/battle';
 import { parseCoachingRole } from '@/features/coaching';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 import { FloatingComposeButton } from '@/widgets/compose-entry';
 
@@ -19,10 +20,10 @@ export function BoardComposeEntry({ locale, board }: { locale: string; board: TB
   const search = useBrowserSearch();
   const composeHref = useCallback(
     (query: string) => {
-      const params = new URLSearchParams(query);
-      return appRoutes.compose(locale, board, params.get('game') ?? undefined, {
-        battleMode: parseBattleMode(params.get('battleMode')),
-        coachingRole: parseCoachingRole(params.get('coachingRole')),
+      const params = parseSearch(query);
+      return appRoutes.compose(locale, board, params.game, {
+        battleMode: parseBattleMode(params.battleMode),
+        coachingRole: parseCoachingRole(params.coachingRole),
       });
     },
     [board, locale],

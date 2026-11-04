@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 import { NEXT_PATH_PARAM } from '../constants/auth';
 import { ROUTES } from '../constants/routes';
 
@@ -7,7 +9,7 @@ const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
 
 /** `/sign?next=<원래 경로+쿼리>` */
 export function buildLoginRedirectPath(nextPath: string) {
-  return `${ROUTES.SIGN}?${new URLSearchParams({ [NEXT_PATH_PARAM]: getSafeNextPath(nextPath) }).toString()}`;
+  return `${ROUTES.SIGN}${qs.stringify({ [NEXT_PATH_PARAM]: getSafeNextPath(nextPath) }, { addQueryPrefix: true })}`;
 }
 
 /** 로그인 뒤 이동할 경로. 같은 origin의 상대 경로가 아니면 홈으로 보낸다(열린 리디렉션 방지). */

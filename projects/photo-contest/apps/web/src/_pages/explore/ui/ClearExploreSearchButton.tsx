@@ -2,6 +2,7 @@
 
 import { useTransition, type ReactNode } from 'react';
 
+import { updateSearch } from '@/shared/lib/query-string.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useAppRouter } from '@/shared/model/router';
 import { Button, type IButtonProps } from '@/shared/ui/@core/button';
@@ -24,9 +25,8 @@ export function ClearExploreSearchButton({
       loading={pending}
       onClick={() => {
         trackEvent(ANALYTICS_EVENT.GroupSearchCleared, { placement });
-        const url = new URL(window.location.href);
-        url.searchParams.delete('q');
-        startTransition(() => router.replace(`${url.pathname}${url.search}${url.hash}`));
+        const { pathname, search, hash } = window.location;
+        startTransition(() => router.replace(`${pathname}${updateSearch(search, { q: null })}${hash}`));
       }}
     >
       {children}

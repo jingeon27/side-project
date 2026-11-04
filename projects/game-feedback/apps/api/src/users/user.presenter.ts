@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 import type { Author, User } from '@game-feedback/contracts';
 
 // demoKey remains an internal discriminator and is never included in public responses.
@@ -19,7 +21,9 @@ type PublicUserSource = {
 };
 export function authorDto(user: PublicUserSource): Author {
   return {
-    avatarUrl: user.avatar ? `/api/users/${encodeURIComponent(user.id)}/avatar?v=${user.avatar.id}` : null,
+    avatarUrl: user.avatar
+      ? `/api/users/${encodeURIComponent(user.id)}/avatar${qs.stringify({ v: user.avatar.id }, { addQueryPrefix: true })}`
+      : null,
     id: user.id,
     nickname: user.nickname,
     isVerified: user.isVerified,

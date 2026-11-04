@@ -3,11 +3,13 @@
 import { useEffect, useEffectEvent } from 'react';
 
 import { useApolloClient, useQuery } from '@apollo/client/react';
+import qs from 'qs';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { reloadDocument } from '@/shared/lib/document-navigation.helper';
 import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
+import { parseSearch } from '@/shared/lib/query-string.helper';
 import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { useAppRouter } from '@/shared/model/router';
@@ -77,10 +79,8 @@ export function AuthSessionSync() {
       saveNotifiedUserId(me.id);
     }
     if (me.needsOnboarding && window.location.pathname !== ROUTES.ONBOARDING) {
-      const destination = getSafeNextPath(
-        pending?.next ?? new URLSearchParams(window.location.search).get('next'),
-      );
-      router.replace(`${ROUTES.ONBOARDING}?next=${encodeURIComponent(destination)}`);
+      const destination = getSafeNextPath(pending?.next ?? parseSearch(window.location.search).next);
+      router.replace(`${ROUTES.ONBOARDING}${qs.stringify({ next: destination }, { addQueryPrefix: true })}`);
       return;
     }
     if (!pending) return;

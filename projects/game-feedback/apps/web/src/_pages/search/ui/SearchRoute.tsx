@@ -2,6 +2,8 @@ import 'server-only';
 
 import { notFound } from 'next/navigation';
 
+import qs from 'qs';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
 
 import { getServerSession } from '@/features/auth/index.server';
@@ -23,9 +25,7 @@ export async function SearchRoute({
 }) {
   const values = await searchParams;
   if (Object.values(values).some(Array.isArray)) notFound();
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(values)) if (typeof value === 'string') params.set(key, value);
-  const route = resolveAppRoute(`/${locale}/search${params.size ? `?${params}` : ''}`);
+  const route = resolveAppRoute(`/${locale}/search${qs.stringify(values, { addQueryPrefix: true })}`);
   if (!route) notFound();
   const { request } = searchQuery(route.path);
   if (

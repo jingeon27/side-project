@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import { countBy } from 'es-toolkit';
+import qs from 'qs';
 import { match, P } from 'ts-pattern';
 
 import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
@@ -54,17 +55,25 @@ function BlogFeedContent({
   const category = fixedCategory ?? params.category ?? 'all';
   const updateFilters = (updates: { q?: string; category?: Category | 'all' }, push = false) => {
     const url = new URL(window.location.href);
-    const updateParam = (key: string, next: string) => {
-      if (next) {
-        url.searchParams.set(key, next);
-        return;
-      }
-      url.searchParams.delete(key);
-    };
-    if (updates.q !== undefined) updateParam('q', updates.q);
-    if (updates.category !== undefined) {
-      updateParam('category', updates.category !== 'all' && !fixedCategory ? updates.category : '');
-    }
+    // 쓰기는 소유한 키만 바꾸고 다른 키와 중복 키를 보존한다. 빈 값은 skipNulls로 지운다.
+    const current = qs.parse(window.location.search, {
+      ignoreQueryPrefix: true,
+      depth: 0,
+      parseArrays: false,
+      duplicates: 'combine',
+      arrayLimit: Infinity,
+      parameterLimit: Infinity,
+    });
+    url.search = qs.stringify(
+      {
+        ...current,
+        ...(updates.q !== undefined ? { q: updates.q || null } : {}),
+        ...(updates.category !== undefined
+          ? { category: updates.category !== 'all' && !fixedCategory ? updates.category : null }
+          : {}),
+      },
+      { addQueryPrefix: true, arrayFormat: 'repeat', skipNulls: true },
+    );
     if (url.href === window.location.href) return;
     if (push) {
       window.history.pushState(null, '', url);

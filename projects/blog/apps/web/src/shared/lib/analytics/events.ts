@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import qs from 'qs';
 
 import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
 
@@ -129,7 +130,7 @@ export function initializeAnalytics(): void {
     const script = document.createElement('script');
     script.id = 'blog-google-analytics';
     script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+    script.src = `https://www.googletagmanager.com/gtag/js${qs.stringify({ id: measurementId }, { addQueryPrefix: true })}`;
     document.head.appendChild(script);
   } catch {
     window.__blogAnalyticsInitialized = false;

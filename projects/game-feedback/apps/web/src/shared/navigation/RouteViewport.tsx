@@ -11,6 +11,8 @@ import {
 } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import qs from 'qs';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 import { useAnimate, useMotionPreference } from '@/shared/motion';
@@ -124,7 +126,7 @@ function RouteMotion({
 function routeMotionKey(pathname: string, route: ReturnType<typeof resolveAppRoute>) {
   if (route?.tab === 'messages') return appRoutes.messages(route.locale);
   if (route?.screen === 'boards' && route.game)
-    return `${pathname}?${new URLSearchParams({ game: route.game })}`;
+    return `${pathname}${qs.stringify({ game: route.game }, { addQueryPrefix: true })}`;
   return pathname;
 }
 

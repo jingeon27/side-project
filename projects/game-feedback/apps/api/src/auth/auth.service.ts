@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 import type { Request, Response } from 'express';
+import qs from 'qs';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
@@ -37,7 +38,7 @@ import type { SessionRequest } from './session/session.types';
  * 커스텀 스킴은 다른 앱도 등록할 수 있어 그 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다.
  */
 function appCallbackUrl(callbackUrl: string, params: Record<string, string>) {
-  return `${callbackUrl}?${new URLSearchParams(params).toString()}`;
+  return `${callbackUrl}${qs.stringify(params, { addQueryPrefix: true })}`;
 }
 
 @Injectable()
