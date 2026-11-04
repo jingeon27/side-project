@@ -23,7 +23,7 @@
 
 - 피드 탭·검색어·게시판 필터는 URL이 단일 출처다. 검색어는 `window.history.replaceState`로 RSC 요청 없이 바꾸고(`_pages/search/model/use-post-search.ts`), 피드 목록은 `?tab`을 snapshot과 같은 방식으로 읽기만 한다(`feedSnapshotSearch`). 게시판 필터 칩은 `BoardFilterLink`(`TabLink replace`)로 이동한다.
 - 목록 화면은 필터를 `useBrowserSearch(initialSearch, pathname)`로 읽는다. 서버 HTML과 hydration은 snapshot으로 만든 `initialSearch`를 써서 URL 때문에 suspend하지 않고, 다른 pathname에 남은 화면은 자기 초기값을 유지한다(`use-browser-search.spec.tsx`). `next/navigation`의 `useSearchParams`는 셸(`CommunityShell`)·`NativeBridge`·`PostPage`에만 있다.
-- 잘못된 값은 클라이언트에서 `parseBattleMode`·`parseCoachingRole`·`parseFeedbackStatus`로 기본값 처리하고, 서버 라우트(`BoardsRoute`·`ComposeRoute`·`SearchRoute`)에서는 `notFound()`한다.
+- 잘못된 값은 클라이언트에서 `parseBattleMode`·`parseCoachingRole`·`parseFeedbackStatus`로 기본값 처리하고, 서버 라우트(게시판의 `boardSnapshot`·`ComposeRoute`·`SearchRoute`)에서는 `notFound()`한다.
 
 ## locale·문구
 

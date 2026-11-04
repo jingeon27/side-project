@@ -46,8 +46,9 @@ describe('social provider adapters without external requests', () => {
       expect(await provider.exchange('code', 'verifier', 'nonce')).toBe('123');
       const [tokenCall, profileCall] = fetcher.mock.calls;
       const options = tokenCall?.[1];
-      expect(options.body.get('code')).toBe('code');
-      expect(options.body.get('code_verifier')).toBe(pkce ? 'verifier' : null);
+      const tokenBody = new URLSearchParams(options.body);
+      expect(tokenBody.get('code')).toBe('code');
+      expect(tokenBody.get('code_verifier')).toBe(pkce ? 'verifier' : null);
       expect(!!options.headers.authorization).toBe(basic);
       expect(profileCall?.[1].headers.authorization).toBe('Bearer provider-token');
       expect(authorize.searchParams.get('scope') ?? '').not.toMatch(/email|offline|write/);

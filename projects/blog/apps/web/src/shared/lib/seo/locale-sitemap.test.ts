@@ -1,12 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
+import { locales } from '@/i18n/routing';
 import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import { categories } from '@/shared/article/model/categories';
 import { siteUrl } from '@/shared/config/site';
 
-import sitemap from './sitemap';
+import { localeSitemap } from './locale-sitemap';
+
+const sitemap = () => locales.flatMap((locale) => localeSitemap(locale));
 
 describe('multilingual SEO', () => {
+  it('lists only URLs under the directory of each locale sitemap', () => {
+    for (const locale of locales) {
+      const entries = localeSitemap(locale);
+      expect(entries.length).toBeGreaterThan(0);
+      for (const entry of entries)
+        expect(new URL(entry.url).pathname).toMatch(new RegExp(`^/${locale}(/|$)`));
+    }
+  });
+
   it('publishes exactly the existing article URLs in the sitemap', () => {
     const entries = sitemap();
     const actual = entries

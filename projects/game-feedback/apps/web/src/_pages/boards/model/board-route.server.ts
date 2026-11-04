@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 
 import { appRoutes, BoardQuerySchema } from '@game-feedback/bridge';
@@ -9,11 +8,10 @@ import { getServerSession } from '@/features/auth/index.server';
 import { boardBySlug } from '@/features/board';
 import { getPublicCategories } from '@/features/category/index.server';
 import { getServerPostList } from '@/features/post/index.server';
-import { initialDocumentData } from '@/shared/lib/initial-document-data';
-import { createPageMetadata, JsonLd, pageUrl } from '@/shared/seo';
+import { createPageMetadata } from '@/shared/seo';
 
-import type { IBoardSnapshot } from '../model/board-snapshot.type';
-import { BoardsPage } from './BoardsPage';
+import type { IBoardRouteProps } from './board-page.type';
+import type { IBoardSnapshot } from './board-snapshot.type';
 
 async function resolveBoard(slug: string, game: string) {
   const board = boardBySlug(slug);
@@ -22,15 +20,10 @@ async function resolveBoard(slug: string, game: string) {
   if (!category) notFound();
   return { board, category };
 }
-interface IBoardsRouteProps {
-  locale: string;
-  slug: string;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-  blockUntilReady: boolean;
-}
-async function snapshot(
+
+export async function boardSnapshot(
   slug: string,
-  searchParams: IBoardsRouteProps['searchParams'],
+  searchParams: IBoardRouteProps['searchParams'],
 ): Promise<IBoardSnapshot> {
   const params = await searchParams;
   const parsed = BoardQuerySchema.safeParse({ ...params, board: slug, game: params.game ?? undefined });
@@ -60,61 +53,7 @@ async function snapshot(
     viewerId: session.user?.id,
   };
 }
-export async function BoardsRoute({ locale, slug, searchParams, blockUntilReady }: IBoardsRouteProps) {
-  const initialData = await initialDocumentData(snapshot(slug, searchParams), blockUntilReady);
-  const initialBoard = initialData.value;
-  return (
-    <>
-      {'then' in initialBoard ? (
-        <Suspense fallback={null}>
-          <DeferredBoardJsonLd locale={locale} slug={slug} initialBoard={initialBoard} />
-        </Suspense>
-      ) : (
-        <BoardJsonLd locale={locale} slug={slug} initialBoard={initialBoard} />
-      )}
-      <BoardsPage locale={locale} slug={slug} initialBoard={initialBoard} />
-    </>
-  );
-}
-async function DeferredBoardJsonLd({
-  locale,
-  slug,
-  initialBoard,
-}: {
-  locale: string;
-  slug: string;
-  initialBoard: Promise<IBoardSnapshot>;
-}) {
-  const initial = await initialBoard.catch(() => null);
-  if (!initial) return null;
-  return <BoardJsonLd locale={locale} slug={slug} initialBoard={initial} />;
-}
-function BoardJsonLd({
-  locale,
-  slug,
-  initialBoard,
-}: {
-  locale: string;
-  slug: string;
-  initialBoard: IBoardSnapshot;
-}) {
-  const { game } = initialBoard;
-  const board = boardBySlug(slug);
-  if (!board) return null;
-  const url = pageUrl(appRoutes.boards(locale, slug, undefined, game.slug));
-  return (
-    <JsonLd
-      data={{
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        '@id': url,
-        url,
-        name: `${game.name} ${board.name}`,
-        description: board.description,
-      }}
-    />
-  );
-}
+
 export async function boardMetadata(locale: string, slug: string, game?: unknown) {
   const parsed = BoardQuerySchema.safeParse({ board: slug, game: game ?? undefined });
   if (!parsed.success) notFound();

@@ -30,6 +30,13 @@ describe('공개 그룹 사이트맵 분할 파일', () => {
     expect(getPublicGroupSitemapPage).toHaveBeenCalledWith(1);
   });
 
+  it('대회가 없을 수 있는 대회 목록과 명예의 전당은 올리지 않아야 한다', async () => {
+    const body = await (await request('1.xml')).text();
+    expect(body).toContain('/groups/group-1<');
+    expect(body).not.toContain('/groups/group-1/contests');
+    expect(body).not.toContain('/groups/group-1/hall-of-fame');
+  });
+
   it('범위 밖 번호는 페이지를 조회하지 않고 404여야 한다', async () => {
     for (const page of ['2.xml', '999999999.xml']) expect((await request(page)).status).toBe(404);
     expect(getPublicGroupSitemapPage).not.toHaveBeenCalled();

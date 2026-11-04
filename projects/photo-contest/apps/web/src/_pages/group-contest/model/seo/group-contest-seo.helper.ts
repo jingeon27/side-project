@@ -34,9 +34,9 @@ export function groupContestMetadata(data: IGroupContestSeoData, contestId: stri
   return createPageMetadata({
     origin,
     path,
-    title: `${data.contest.title} - ${data.group.name}`,
+    title: `${data.contest.title} | ${data.group.name}`,
     description: `${data.group.name}의 ${data.contest.title}. 참여작과 대회 일정, 투표 결과를 확인하세요.`,
-    imageAlt: `${data.contest.title} - ${data.group.name} - 피식`,
+    imageAlt: `${data.contest.title} | ${data.group.name} | 피식`,
     images: [
       ...Array.from(new Set(photos)).slice(0, 3),
       {

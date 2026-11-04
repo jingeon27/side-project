@@ -8,7 +8,7 @@ import { GalleryPostCardFragmentDoc } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 
-import { PostCommentsBottomSheet } from '../comments/PostCommentsBottomSheet';
+import { PostCommentsOverlay } from '../comments/PostCommentsOverlay';
 
 export function PostCommentButton({ postId }: { postId: string }) {
   const { data: post, complete } = useFragment({
@@ -24,7 +24,7 @@ export function PostCommentButton({ postId }: { postId: string }) {
       aria-label={`${post.title} 댓글 ${formatCount(post.commentCount)}개`}
       onClick={() =>
         overlay.open(({ isOpen, close: onClose, unmount }) => (
-          <PostCommentsBottomSheet postId={postId} isOpen={isOpen} onClose={onClose} unmount={unmount} />
+          <PostCommentsOverlay postId={postId} isOpen={isOpen} onClose={onClose} unmount={unmount} />
         ))
       }
     >

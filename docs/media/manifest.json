@@ -73,14 +73,17 @@
     },
     {
       "service": "pisik",
-      "file": "pisik-group.gif",
-      "frames": 38,
-      "duration": 6.54,
+      "file": "pisik-group-comments.gif",
+      "frames": 40,
+      "duration": 7.25,
       "width": 430,
       "height": 860,
-      "sha256": "e33b527281ae62206c6cff6376a44941af4339f46f26373df5764af165ec7d09",
+      "sha256": "b17b06960b392c30882ed6dfa7c3273a92d7720d5c260a9f678fefeb59e7b135",
       "kind": "browser-recording",
-      "bytes": 92658
+      "bytes": 92546,
+      "sourceCommit": "8fbfd4736adc73c02f5475b6facdc426600bff2c",
+      "sourceChange": "최신 origin/develop의 닫기 버튼 없는 모바일 댓글 바텀시트와 댓글 등록 흐름 재촬영",
+      "capturedOn": "2026-11-04"
     },
     {
       "service": "blog",

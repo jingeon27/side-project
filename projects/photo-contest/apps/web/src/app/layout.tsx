@@ -11,13 +11,13 @@ import '@/_app/styles/tailwind.css';
 
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { APP_MAIN_ID, APP_ROOT_ID, DARK_THEME_COLOR, THEME_COLOR } from '@/shared/constants/layout';
-import { PRIVATE_ROBOTS, SITE_DESCRIPTION } from '@/shared/lib/seo.helper';
+import { PRIVATE_ROBOTS, SITE_DESCRIPTION, SITE_TITLE } from '@/shared/lib/seo.helper';
 import { parseThemePreference, THEME_COOKIE } from '@/shared/model/theme/theme-preference';
 
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getWebOrigin()),
-    title: { default: '같이 보면 더 웃긴 피식', template: '%s - 피식' },
+    title: { default: SITE_TITLE, template: '%s | 피식' },
     description: SITE_DESCRIPTION,
     robots: PRIVATE_ROBOTS,
   };

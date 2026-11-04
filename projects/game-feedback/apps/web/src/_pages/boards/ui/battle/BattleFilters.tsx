@@ -5,6 +5,7 @@ import type { TBattleMode } from '@game-feedback/contracts';
 
 import { parseBattleMode } from '@/features/battle';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 
 import { BoardFilterLink } from '../board/BoardFilterLink';
@@ -18,10 +19,10 @@ interface IBattleFiltersProps {
 
 export function BattleFilters({ locale, slug, initialSearch }: IBattleFiltersProps) {
   const { t } = useI18n();
-  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.boards(locale, slug)));
-  const mode = parseBattleMode(params.get('battleMode'));
+  const params = parseSearch(useBrowserSearch(initialSearch, appRoutes.boards(locale, slug)));
+  const mode = parseBattleMode(params.battleMode);
   const hrefFor = (value?: TBattleMode) =>
-    appRoutes.boards(locale, slug, params.get('q') ?? undefined, params.get('game') ?? undefined, {
+    appRoutes.boards(locale, slug, params.q, params.game, {
       battleMode: value,
     });
   return (

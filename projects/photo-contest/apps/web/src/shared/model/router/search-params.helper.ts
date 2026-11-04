@@ -1,5 +1,4 @@
-import { isNil } from 'es-toolkit';
-
+import { updateSearch } from '../../lib/query-string.helper';
 import { pickOverlayState } from './overlay-history.store';
 
 /**
@@ -7,17 +6,10 @@ import { pickOverlayState } from './overlay-history.store';
  * Next가 감싼 replaceState가 useSearchParams를 갱신한다. null·undefined 값은 지운다.
  */
 export function replaceSearchParams(updates: Record<string, string | null | undefined>) {
-  const url = new URL(window.location.href);
-  for (const [key, value] of Object.entries(updates)) {
-    if (isNil(value)) {
-      url.searchParams.delete(key);
-      continue;
-    }
-    url.searchParams.set(key, value);
-  }
+  const { pathname, search, hash } = window.location;
   window.history.replaceState(
     pickOverlayState(window.history.state),
     '',
-    `${url.pathname}${url.search}${url.hash}`,
+    `${pathname}${updateSearch(search, updates)}${hash}`,
   );
 }

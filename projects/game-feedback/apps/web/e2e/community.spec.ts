@@ -107,13 +107,13 @@ test('every game contains five shared boards on desktop and mobile and retired b
       '자유게시판',
       '피드백',
     ]);
-    for (const [name, path] of [
-      ['친추판매', '/ko/boards/friend-sale'],
-      ['전투 모집', '/ko/boards/friendly'],
-      ['피드백', '/ko/boards/feedback'],
-      ['게임코치', '/ko/boards/coaching'],
-      ['자유게시판', '/ko/boards/free'],
-      ['홈', '/ko'],
+    for (const [name, path, filter] of [
+      ['친추판매', '/ko/boards/friend-sale', null],
+      ['전투 모집', '/ko/boards/friendly', '전투 유형'],
+      ['피드백', '/ko/boards/feedback', '답변 상태'],
+      ['게임코치', '/ko/boards/coaching', '모집 유형'],
+      ['자유게시판', '/ko/boards/free', null],
+      ['홈', '/ko', null],
     ] as const) {
       const link = navigation.getByRole('link', {
         name: !desktop && name === '홈' ? '전체' : name,
@@ -122,6 +122,14 @@ test('every game contains five shared boards on desktop and mobile and retired b
       await link.click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(link).toHaveAttribute('aria-current', 'page');
+      // 라우트마다 자기 게시판을 선언하므로 제목과 전용 필터가 경로와 맞아야 한다.
+      await expect(
+        page.getByRole('heading', { level: 1, name: name === '홈' ? '전체' : name, exact: true }),
+      ).toBeVisible();
+      for (const label of ['답변 상태', '전투 유형', '모집 유형'])
+        await expect(page.getByRole('navigation', { name: label, exact: true })).toHaveCount(
+          label === filter ? 1 : 0,
+        );
       if (!desktop) {
         await expect(link).toBeInViewport({ ratio: 1 });
         await expect(page.getByRole('dialog')).toHaveCount(0);

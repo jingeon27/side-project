@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useReadQuery, type QueryRef } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
+import qs from 'qs';
 
 import { LogoutButton } from '@/features/auth';
 import type { MeQuery } from '@/shared/api/generated';
@@ -38,7 +39,7 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
         <p className="text-caption text-muted">
           다른 기기에서도 프로필과 기록을 이어가고 싶다면{' '}
           <Link
-            href={`${ROUTES.SIGN}?${new URLSearchParams({ next: ROUTES.ME, mode: 'register' })}`}
+            href={`${ROUTES.SIGN}${qs.stringify({ next: ROUTES.ME, mode: 'register' }, { addQueryPrefix: true })}`}
             className="font-semibold text-ink underline underline-offset-4"
           >
             회원가입

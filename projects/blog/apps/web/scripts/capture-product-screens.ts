@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { chromium, expect, type Browser, type BrowserContext } from '@playwright/test';
+import qs from 'qs';
 import { z } from 'zod';
 
 const { values } = parseArgs({
@@ -247,7 +248,7 @@ async function capturePhoto(browser: Browser) {
   });
   try {
     const search = options['photo-contest-search'];
-    const route = search ? `/explore?${new URLSearchParams({ q: search })}` : '/explore';
+    const route = `/explore${qs.stringify({ q: search || undefined }, { addQueryPrefix: true })}`;
     return await capture(
       context,
       route,

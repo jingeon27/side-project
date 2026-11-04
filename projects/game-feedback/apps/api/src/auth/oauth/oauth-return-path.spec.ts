@@ -51,6 +51,12 @@ describe('OAuth 로그인 복귀 경로', () => {
     },
   );
 
+  it('검사와 복귀가 같은 파서로 읽어 대괄호 키를 복귀 경로로 쓰지 않아야 한다', () => {
+    const path = '/ko/login?[returnTo]=//outside.test';
+    expect(AuthReturnPathSchema.safeParse(path).success).toBe(true);
+    expect(new URL(loginRedirect('https://game.example', path)).href).toBe('https://game.example/ko');
+  });
+
   it.each([
     '/ko/../en/settings',
     '/ko/%2e%2e/en/settings',

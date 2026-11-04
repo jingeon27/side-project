@@ -10,6 +10,7 @@ interface IShareImage {
 }
 
 export const SITE_NAME = '피식';
+export const SITE_TITLE = '같이 보면 더 웃긴 피식';
 export const SITE_DESCRIPTION =
   '혼자 보기 아까운 순간, 피식에 모아요. 친구들과 사진, 동영상, 링크를 나누는 그룹 커뮤니티.';
 export const PUBLIC_ROBOTS = {
@@ -44,13 +45,15 @@ export function createPageMetadata({
 }: {
   origin: string;
   path: string;
-  title: string;
+  /** 문자열은 뒤에 서비스 이름을 붙인다. 이미 서비스 이름이 든 제목은 absolute로 넘긴다. */
+  title: string | { absolute: string };
   description: string;
   index?: boolean;
   images?: (string | IShareImage)[];
   imageAlt?: string;
 }): Metadata {
   const url = siteUrl(path, origin);
+  const socialTitle = typeof title === 'string' ? `${title} | ${SITE_NAME}` : title.absolute;
   const socialImages = imageAlt
     ? images.map((image) =>
         typeof image === 'string' ? { url: image, alt: imageAlt } : { alt: imageAlt, ...image },
@@ -65,14 +68,14 @@ export function createPageMetadata({
       type: 'website',
       locale: 'ko_KR',
       siteName: SITE_NAME,
-      title: `${title} - ${SITE_NAME}`,
+      title: socialTitle,
       description,
       url,
       images: socialImages,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} - ${SITE_NAME}`,
+      title: socialTitle,
       description,
       images: socialImages,
     },

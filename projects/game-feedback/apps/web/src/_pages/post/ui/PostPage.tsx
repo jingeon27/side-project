@@ -13,6 +13,7 @@ import { PostArticle, postDetailOptions, useRecordPostView } from '@/features/po
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { PostDetail } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { BackLink } from '@/shared/navigation';
 import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { StartChatLink } from '@/widgets/start-chat';
@@ -64,7 +65,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
     if (!boardContext || !game) return;
     if (boardContext.kind === 'FEEDBACK' && game === 'clash-royale' && !params.get('board')) return;
     if (
-      new URL(window.location.href).searchParams.get('board') === boardContext.slug &&
+      parseSearch(window.location.search).board === boardContext.slug &&
       (params.get('game') ?? 'clash-royale') === game
     )
       return;
