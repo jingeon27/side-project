@@ -62,11 +62,11 @@ describe('DesktopNavigation', () => {
     expect(screen.getByRole('navigation', { name: '서비스 정책' })).toBeInTheDocument();
   });
 
-  it('세션이 없으면 메뉴 이름이 SIGN으로 바뀌어 인증 화면으로 가고 클릭을 한 번 기록해야 한다', () => {
+  it('세션이 없으면 메뉴 이름이 로그인으로 바뀌어 인증 화면으로 가고 클릭을 한 번 기록해야 한다', () => {
     navigation.pathname = '/explore';
     renderNav(null);
     expect(screen.queryByRole('link', { name: 'MY' })).not.toBeInTheDocument();
-    const sign = screen.getByRole('link', { name: 'SIGN' });
+    const sign = screen.getByRole('link', { name: '로그인' });
     expect(sign).toHaveAttribute('href', '/sign?next=%2Fme');
     sign.addEventListener('click', (event) => event.preventDefault(), { once: true });
     fireEvent.click(sign, { ctrlKey: true });

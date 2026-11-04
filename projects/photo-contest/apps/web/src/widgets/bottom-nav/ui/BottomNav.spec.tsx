@@ -63,11 +63,11 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: 'MY' })).toHaveAttribute('href', '/me');
   });
 
-  it('세션이 없으면 메뉴 이름이 SIGN으로 바뀌어 인증 화면으로 가고 클릭을 한 번 기록해야 한다', () => {
+  it('세션이 없으면 메뉴 이름이 로그인으로 바뀌어 인증 화면으로 가고 클릭을 한 번 기록해야 한다', () => {
     navigation.pathname = '/groups/group-1';
     render(buildNav(null));
     expect(screen.queryByRole('link', { name: 'MY' })).not.toBeInTheDocument();
-    const sign = screen.getByRole('link', { name: 'SIGN' });
+    const sign = screen.getByRole('link', { name: '로그인' });
     expect(sign).toHaveAttribute('href', '/sign?next=%2Fme');
     sign.addEventListener('click', (event) => event.preventDefault(), { once: true });
     fireEvent.click(sign, { ctrlKey: true });
@@ -94,7 +94,7 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: 'MY' })).toHaveAttribute('href', '/me');
   });
 
-  it('세션이 없어도 서버 HTML과 맞춘 뒤 hydration이 끝나면 SIGN으로 바뀌어야 한다', async () => {
+  it('세션이 없어도 서버 HTML과 맞춘 뒤 hydration이 끝나면 로그인으로 바뀌어야 한다', async () => {
     navigation.pathname = '/';
     const ui = buildNav(null);
     const container = document.body.appendChild(document.createElement('div'));
@@ -105,7 +105,7 @@ describe('BottomNav', () => {
     const root = await act(async () => hydrateRoot(container, ui, { onRecoverableError: recoverable }));
     try {
       await waitFor(() => expect(my).toHaveAttribute('href', '/sign?next=%2Fme'));
-      expect(my).toHaveTextContent('SIGN');
+      expect(my).toHaveTextContent('로그인');
       expect(recoverable).not.toHaveBeenCalled();
     } finally {
       await act(async () => root.unmount());

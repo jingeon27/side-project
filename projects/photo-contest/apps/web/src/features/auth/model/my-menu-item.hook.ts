@@ -19,7 +19,7 @@ export function useMyMenuItem(placement: 'bottom_nav' | 'desktop_nav') {
   if (isSSR || viewer?.me !== null) return { href: ROUTES.ME, label: 'MY' };
   return {
     href: buildLoginRedirectPath(ROUTES.ME),
-    label: 'SIGN',
+    label: '로그인',
     onClick: () =>
       trackEvent(ANALYTICS_EVENT.SignEntryClicked, {
         placement,
