@@ -266,7 +266,7 @@ Dependabot Updates는 GitHub가 관리하는 동적 workflow이며 저장소의 
 
 | 환경    | 서비스                                                                 | 블로그                                     |
 | ------- | ---------------------------------------------------------------------- | ------------------------------------------ |
-| PR      | 실제 PR 변경과 합성 merge 검증, 운영 발행·배포 없음                    | Actions 검증과 Vercel PR 미리보기          |
+| PR      | 실제 PR 변경과 합성 merge 검증, 운영 발행·배포 없음                    | Actions 검증만 실행, Vercel 자동 배포 차단 |
 | develop | 개발 브랜치 검증, 운영 발행·배포 없음                                  | Actions 검증만 실행, Vercel 자동 배포 차단 |
 | main    | 검증한 이미지를 서비스별 production Environment로 배포(활성화 값 필요) | Actions 검증과 Vercel Production 배포      |
 

@@ -1,4 +1,6 @@
 name: Blog
+run-name: >-
+  Blog / ${{ github.event_name == 'pull_request' && format('PR {0}', github.event.pull_request.number) || github.ref_name == 'main' && 'production' || 'development' }} / verify
 
 on:
   push:
@@ -14,6 +16,7 @@ on:
       - '.prettierignore'
       - '.github/workflows/blog.yml'
   pull_request:
+    branches: [develop, main]
     paths:
       - 'projects/blog/**'
       - 'packages/config/**'
