@@ -163,21 +163,245 @@
     "width": 1672,
     "height": 941
   },
-  "/images/posts/design-concepts-for-reading-ui/conditions-en.svg": {
-    "width": 600,
-    "height": 1000
+  "/images/posts/design-concepts-for-reading-ui/action-contrast-en.png": {
+    "width": 1080,
+    "height": 420
   },
-  "/images/posts/design-concepts-for-reading-ui/conditions-ko.svg": {
-    "width": 600,
-    "height": 1000
+  "/images/posts/design-concepts-for-reading-ui/action-contrast-en.svg": {
+    "width": 1080,
+    "height": 420
+  },
+  "/images/posts/design-concepts-for-reading-ui/action-contrast.png": {
+    "width": 1080,
+    "height": 420
+  },
+  "/images/posts/design-concepts-for-reading-ui/action-contrast.svg": {
+    "width": 1080,
+    "height": 420
+  },
+  "/images/posts/design-concepts-for-reading-ui/alignment-en.png": {
+    "width": 1080,
+    "height": 450
+  },
+  "/images/posts/design-concepts-for-reading-ui/alignment-en.svg": {
+    "width": 1080,
+    "height": 450
+  },
+  "/images/posts/design-concepts-for-reading-ui/alignment.png": {
+    "width": 1080,
+    "height": 450
+  },
+  "/images/posts/design-concepts-for-reading-ui/alignment.svg": {
+    "width": 1080,
+    "height": 450
+  },
+  "/images/posts/design-concepts-for-reading-ui/color-en.png": {
+    "width": 1080,
+    "height": 444
+  },
+  "/images/posts/design-concepts-for-reading-ui/color-en.svg": {
+    "width": 1080,
+    "height": 444
+  },
+  "/images/posts/design-concepts-for-reading-ui/color.png": {
+    "width": 1080,
+    "height": 444
+  },
+  "/images/posts/design-concepts-for-reading-ui/color.svg": {
+    "width": 1080,
+    "height": 444
+  },
+  "/images/posts/design-concepts-for-reading-ui/common-region-en.png": {
+    "width": 1080,
+    "height": 456
+  },
+  "/images/posts/design-concepts-for-reading-ui/common-region-en.svg": {
+    "width": 1080,
+    "height": 456
+  },
+  "/images/posts/design-concepts-for-reading-ui/common-region.png": {
+    "width": 1080,
+    "height": 456
+  },
+  "/images/posts/design-concepts-for-reading-ui/common-region.svg": {
+    "width": 1080,
+    "height": 456
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions-en.png": {
+    "width": 1080,
+    "height": 640
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions-en.svg": {
+    "width": 1080,
+    "height": 640
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions.png": {
+    "width": 1080,
+    "height": 640
+  },
+  "/images/posts/design-concepts-for-reading-ui/conditions.svg": {
+    "width": 1080,
+    "height": 640
+  },
+  "/images/posts/design-concepts-for-reading-ui/density-en.png": {
+    "width": 1080,
+    "height": 550
+  },
+  "/images/posts/design-concepts-for-reading-ui/density-en.svg": {
+    "width": 1080,
+    "height": 550
+  },
+  "/images/posts/design-concepts-for-reading-ui/density.png": {
+    "width": 1080,
+    "height": 550
+  },
+  "/images/posts/design-concepts-for-reading-ui/density.svg": {
+    "width": 1080,
+    "height": 550
+  },
+  "/images/posts/design-concepts-for-reading-ui/feedback-en.png": {
+    "width": 1080,
+    "height": 586
   },
   "/images/posts/design-concepts-for-reading-ui/feedback-en.svg": {
-    "width": 600,
-    "height": 930
+    "width": 1080,
+    "height": 586
   },
-  "/images/posts/design-concepts-for-reading-ui/feedback-ko.svg": {
-    "width": 600,
-    "height": 930
+  "/images/posts/design-concepts-for-reading-ui/feedback.png": {
+    "width": 1080,
+    "height": 586
+  },
+  "/images/posts/design-concepts-for-reading-ui/feedback.svg": {
+    "width": 1080,
+    "height": 586
+  },
+  "/images/posts/design-concepts-for-reading-ui/mapping-en.png": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/mapping-en.svg": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/mapping.png": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/mapping.svg": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/mental-model-en.png": {
+    "width": 1080,
+    "height": 600
+  },
+  "/images/posts/design-concepts-for-reading-ui/mental-model-en.svg": {
+    "width": 1080,
+    "height": 600
+  },
+  "/images/posts/design-concepts-for-reading-ui/mental-model.png": {
+    "width": 1080,
+    "height": 600
+  },
+  "/images/posts/design-concepts-for-reading-ui/mental-model.svg": {
+    "width": 1080,
+    "height": 600
+  },
+  "/images/posts/design-concepts-for-reading-ui/progressive-disclosure-en.png": {
+    "width": 1080,
+    "height": 646
+  },
+  "/images/posts/design-concepts-for-reading-ui/progressive-disclosure-en.svg": {
+    "width": 1080,
+    "height": 646
+  },
+  "/images/posts/design-concepts-for-reading-ui/progressive-disclosure.png": {
+    "width": 1080,
+    "height": 646
+  },
+  "/images/posts/design-concepts-for-reading-ui/progressive-disclosure.svg": {
+    "width": 1080,
+    "height": 646
+  },
+  "/images/posts/design-concepts-for-reading-ui/proximity-en.png": {
+    "width": 1080,
+    "height": 520
+  },
+  "/images/posts/design-concepts-for-reading-ui/proximity-en.svg": {
+    "width": 1080,
+    "height": 520
+  },
+  "/images/posts/design-concepts-for-reading-ui/proximity.png": {
+    "width": 1080,
+    "height": 520
+  },
+  "/images/posts/design-concepts-for-reading-ui/proximity.svg": {
+    "width": 1080,
+    "height": 520
+  },
+  "/images/posts/design-concepts-for-reading-ui/recognition-en.png": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/recognition-en.svg": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/recognition.png": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/recognition.svg": {
+    "width": 1080,
+    "height": 490
+  },
+  "/images/posts/design-concepts-for-reading-ui/signifier-en.png": {
+    "width": 1080,
+    "height": 380
+  },
+  "/images/posts/design-concepts-for-reading-ui/signifier-en.svg": {
+    "width": 1080,
+    "height": 380
+  },
+  "/images/posts/design-concepts-for-reading-ui/signifier.png": {
+    "width": 1080,
+    "height": 380
+  },
+  "/images/posts/design-concepts-for-reading-ui/signifier.svg": {
+    "width": 1080,
+    "height": 380
+  },
+  "/images/posts/design-concepts-for-reading-ui/similarity-en.png": {
+    "width": 1080,
+    "height": 400
+  },
+  "/images/posts/design-concepts-for-reading-ui/similarity-en.svg": {
+    "width": 1080,
+    "height": 400
+  },
+  "/images/posts/design-concepts-for-reading-ui/similarity.png": {
+    "width": 1080,
+    "height": 400
+  },
+  "/images/posts/design-concepts-for-reading-ui/similarity.svg": {
+    "width": 1080,
+    "height": 400
+  },
+  "/images/posts/design-concepts-for-reading-ui/type-scale-en.png": {
+    "width": 1080,
+    "height": 540
+  },
+  "/images/posts/design-concepts-for-reading-ui/type-scale-en.svg": {
+    "width": 1080,
+    "height": 540
+  },
+  "/images/posts/design-concepts-for-reading-ui/type-scale.png": {
+    "width": 1080,
+    "height": 540
+  },
+  "/images/posts/design-concepts-for-reading-ui/type-scale.svg": {
+    "width": 1080,
+    "height": 540
   },
   "/images/posts/health-check-program/01-en.png": {
     "width": 1080,
