@@ -88,13 +88,13 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 
 ## Search Console
 
-`/sitemap.xml`과 `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. Next.js의 `app/sitemap.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
+사이트맵은 언어별로 `/ko/sitemap.xml`과 `/en/sitemap.xml`에서, `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. 사이트맵 파일은 자기 경로 아래의 URL만 담을 수 있어 언어별로 나눕니다. Next.js의 `app/ko/sitemap.ts`, `app/en/sitemap.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
 
 - 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 태그와 실제 본문이 있는 글을 포함합니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 글 수는 생성된 콘텐츠 인덱스를 기준으로 하며, 글별 `lastmod`와 실제 번역의 `hreflang`을 제공합니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
-- robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 `/sitemap.xml`을 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
+- robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 언어별 사이트맵 두 개를 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
 
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.
-2. `https://blog.bambyul.com/sitemap.xml`을 제출합니다.
+2. `https://blog.bambyul.com/ko/sitemap.xml`과 `https://blog.bambyul.com/en/sitemap.xml`을 각각 제출합니다.
 3. `/robots.txt`, 한국어·영어 홈과 대표 글 URL을 URL 검사로 확인합니다.
 4. Canonical이 자기 언어 URL인지, `hreflang`이 실제 존재하는 번역만 가리키는지 확인합니다. 두 언어가 모두 있는 페이지는 `x-default`로 한국어 버전을 가리키며 글 페이지에도 RSS `alternate`가 남아 있어야 합니다. 영어 본문이 없는 한국어 글의 영어 상세 URL은 제공하지 않습니다.
 5. 검색 실적과 Core Web Vitals는 실제 운영 데이터가 쌓인 뒤 확인합니다. LCP 2.5초·INP 200ms·CLS 0.1은 목표이며 로컬 빌드 성공이 이를 보장하지 않습니다.
