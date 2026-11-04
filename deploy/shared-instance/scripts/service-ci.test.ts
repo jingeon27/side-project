@@ -34,6 +34,7 @@ function run(binary: string, args: string[], release: string) {
     env: {
       ...process.env,
       GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/main',
       GITHUB_EVENT_PATH: join(state.directory, '.event.json'),
       GITHUB_OUTPUT: output,
       GITHUB_STEP_SUMMARY: join(state.directory, '.summary'),
@@ -67,7 +68,7 @@ describe('숨김 경로의 검사 선택과 배포 생략', () => {
       writeFileSync(join(state.directory, '.event.json'), JSON.stringify({ before: release }));
 
       expect(run(process.execPath, [policy, 'select'], release)).toBe(
-        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}`,
+        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nproduction=true`,
       );
       const selected = service === 'game-feedback' ? gameFeedback : photoContest;
       expect(run('bash', [superseded, service, 'main'], release)).toBe(`deploy=${!selected}`);

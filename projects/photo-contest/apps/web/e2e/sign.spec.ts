@@ -40,7 +40,7 @@ test(
 );
 
 test(
-  '세션이 없을 때 하단 메뉴는 MY 대신 SIGN을 보여 주고 시작하면 MY로 돌아와야 한다',
+  '세션이 없을 때 하단 메뉴는 MY 대신 로그인을 보여 주고 시작하면 MY로 돌아와야 한다',
   { tag: ['@ios'] },
   async ({ page, signIn, context }, testInfo) => {
     const owner = await signIn('하단 메뉴 그룹장');
@@ -53,7 +53,7 @@ test(
         .getByRole('link', { name: '하단 메뉴 공개 그룹', exact: true }),
     ).toBeVisible();
     const menu = page.locator('[data-bottom-nav]');
-    const sign = menu.getByRole('link', { name: 'SIGN', exact: true });
+    const sign = menu.getByRole('link', { name: '로그인', exact: true });
     await expect(sign).toHaveAttribute('href', '/sign?next=%2Fme');
     await expect(menu.getByRole('link', { name: 'MY', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -65,7 +65,7 @@ test(
     await expect(page).toHaveURL('/me');
     await page.goto('/');
     await expect(menu.getByRole('link', { name: 'MY', exact: true })).toHaveAttribute('href', '/me');
-    await expect(menu.getByRole('link', { name: 'SIGN', exact: true })).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: '로그인', exact: true })).toHaveCount(0);
   },
 );
 
