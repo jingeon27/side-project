@@ -217,7 +217,7 @@ done
 - 새 AMI가 게시되거나 `user_data`·`ssh_public_key`가 바뀌어도 EC2를 교체하지 않는다(`ignore_changes`). 호스트를 새로 만들려면 `terraform apply -replace=aws_instance.host`로 명시한다. 탄력적 IP는 네트워크 인터페이스에, PostgreSQL 볼륨은 별도 리소스로 남는다. 기존 인스턴스를 멈춘 뒤 볼륨을 떼어 새 인스턴스에 붙이고, 첫 부팅이 포맷 없이 다시 마운트한다. 루트 볼륨(이미지·Caddy 인증서·`/srv/side-project`)과 SSH host key는 새로 만들어지므로 3·7·9단계를 다시 하고, 6단계는 `prepare.sh`와 `database.sh start`만 실행한다(`bootstrap`은 다시 하지 않는다). 새로 생긴 `database/.env`는 initdb에만 쓰이므로 기존 클러스터에 영향이 없다.
 - `instance_type` 변경은 인스턴스를 멈췄다 켜며 적용된다(짧은 중단). `postgres_volume_size_gib` 증가는 운영 중에 적용되며, 이후 서버에서 파일 시스템을 넓힌다([공통 EC2 배포](../README.md#호스트-파일과-db-초기화) 참고).
 - `name_prefix`·버킷 이름·`vpc_cidr`·`availability_zone`을 바꾸면 해당 리소스가 교체된다. `availability_zone`은 PostgreSQL 볼륨까지 교체하므로 최종 스냅샷에서 복원해야 한다. plan의 `must be replaced`를 반드시 확인한다.
-- 오프라인 검사: `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test`(mock provider, AWS 호출 없음). CI는 [`.github/workflows/terraform.yml`](../../../.github/workflows/terraform.yml)에서 같은 검사를 한다.
+- 오프라인 검사: `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test`(mock provider, AWS 호출 없음). CI는 [`Static analysis`](../../../.github/workflows/static-analysis.yml)에서 인프라·정적 검사 workflow 변경 또는 수동 실행 때 같은 검사를 한다.
 
 ## 파기 시 주의
 

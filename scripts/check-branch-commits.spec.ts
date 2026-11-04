@@ -34,6 +34,10 @@ describe('PR 브랜치 커밋 검사', () => {
       expect(branchCommits({ base: valid, legacyHistory, cwd }).map(({ sha }) => sha)).toEqual(
         expect.arrayContaining([side, invalid]),
       );
+      // Static analysis는 합성 merge를 checkout하지만 커밋 검사는 PR의 실제 head까지만 본다.
+      expect(branchCommits({ base: legacyHistory, head: valid, legacyHistory, cwd })).toEqual([
+        expect.objectContaining({ sha: valid }),
+      ]);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
