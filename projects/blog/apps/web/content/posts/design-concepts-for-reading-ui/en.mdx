@@ -1,0 +1,75 @@
+<Summary>
+
+I used a pair of coaching cards to study design concepts in context. The comparison led from reading order and grouping to interaction cues, request states, memory demands, and recovery after failure.
+
+</Summary>
+
+![Cards with different text sizes, spacing, and emphasis on the primary action](/images/covers/design-concepts-for-reading-ui.svg)
+
+Knowing that a screen feels awkward is different from explaining what should change. When I compared a card that led with the coaching description with one that showed the price and schedule first, I preferred the second. I could check whether the offer suited me before reading more. That comparison became a starting point for learning the concepts behind layout and interaction.
+
+## Set a reading order, then make it visible through contrast
+
+I started with the information someone needs when choosing a coaching offer. A list used to narrow offers by cost and availability can lead with those conditions. A page about a coach's teaching approach may give more space to the description. This order of importance is **[visual hierarchy](https://www.nngroup.com/articles/principles-visual-design/)**.
+
+Once the priority is clear, the interface needs to express it. The price might use larger type, or the primary action might stand out from its surroundings. Differences in size, weight, and color provide **contrast**. If every element is equally large and bold, it becomes harder to tell what deserves attention first.
+
+![Two cards showing the same coaching information with different priorities](/images/posts/design-concepts-for-reading-ui/conditions-en.svg)
+
+_The same coaching offer, with either the description or the booking conditions given priority._
+
+Emphasizing the price does not make it comparable on its own. People also need to know whether it is per session or per hour, and how long a session lasts. Before deciding what to emphasize, I need to check that the information needed for comparison is present.
+
+There is also the question of where people find coaching offers and which filters help narrow them down. **Information architecture** covers how information is organized and how people find it. Finding the right list and reading the information within it are related tasks, but each needs attention.
+
+## Use distance, appearance, and boundaries to show relationships
+
+Related information, such as the price and duration, needs to read as a group. Distance is one way to make that relationship visible. **[Proximity](https://www.nngroup.com/articles/gestalt-proximity/)** is the tendency to perceive nearby elements as related.
+
+In a form, a name label can sit close to its input, with a larger gap before the next field. That makes it easier to see which input the label describes. The useful distinction is between spacing within a group and spacing between groups. The actual values can follow the content and the existing spacing system.
+
+Appearance provides another cue. **[Similarity](https://www.nngroup.com/articles/gestalt-similarity/)** makes elements with shared visual traits seem related. If unselected game filters use unrelated colors and shapes, those differences may suggest different functions or selection states. Filters with the same role and state can share a visual pattern, with a consistent treatment for a selected item.
+
+A shared border or background can create a group too. This is the principle of **[common region](https://www.nngroup.com/articles/common-region/)**. Separate containers can distinguish notification settings from visibility settings. Giving every individual setting its own card, however, may emphasize small boundaries at the expense of the larger groups. The boundary should reflect what belongs together.
+
+Once the groups are clear, repeated values need consistent positions. **Alignment** gives titles a shared starting edge or prices a shared ending edge. A **grid** supplies the axes and columns used across the layout. Keeping the price in the same position on each card reduces the need to locate it again for every comparison. **Whitespace** helps distinguish the groups and reveal those shared edges.
+
+## Choose density and typography for the task
+
+Reading one offer closely and comparing several offers can call for different layouts. **Information density** describes how much information occupies a given space. A description may benefit from generous spacing, while a list or table with aligned attributes may better support comparing prices, durations, and available days. The task should guide the amount and arrangement of information.
+
+The way that information is set in type matters too. **Typography** includes the typeface, size, weight, line height, and line length. A **type scale** sets a system of sizes for headings, body text, labels, and supporting information. Using existing type tokens for those roles helps keep similar information consistent across screens.
+
+**Hue** identifies the color family, **saturation** describes how vivid or muted it is, and **lightness** describes how light or dark it is. These are also the components used in [CSS HSL notation](https://www.w3.org/TR/css-color-4/#the-hsl-notation). Changing blue to red is a different choice from making the same blue lighter. A difference that is noticeable to the eye does not by itself establish compliance with an accessibility requirement for color contrast; that needs a separate check.
+
+## Give cues before an action and feedback afterward
+
+A readable layout does not necessarily explain how to use an interface. An **affordance** is an action made possible by the relationship between a person and an object. A **signifier** is a cue about where or how to act. [Don Norman's explanation](https://jnd.org/signifiers-not-affordances/) distinguishes the action that is possible from the signal that helps someone discover it.
+
+A link's underline, a selector's arrow, or a bottom sheet's handle can provide such cues. If something looks like a drag handle, it should support dragging. The cue and the available action need to agree so the interface behaves as expected.
+
+It must also be clear what the control affects. A delete button can sit beside its target, or a setting beside the preview it changes. This relationship between a control and its effect is **mapping**.
+
+After the action, **feedback** tells the person what happened. If nothing changes after pressing Publish, the request may still be pending or it may have failed. [Showing the current status](https://www.nngroup.com/articles/visibility-system-status/) helps them decide what to do next: wait for the request to finish, or investigate a failure.
+
+![A publish request branching into success or failure, with an option to retry](/images/posts/design-concepts-for-reading-ui/feedback-en.svg)
+
+_Possible outcomes of a publish request, with a retry option after failure._
+
+A button's pressed state does not confirm that the server has saved the post. The interface should indicate progress while the request is pending and confirm completion after a successful server response. Distinguishing those states comes before choosing how to display them.
+
+## Recall and recognition place different demands on memory
+
+Retrieving a player tag from memory is **recall**; identifying an account in a saved list is **recognition**. Providing that list lets someone [choose a familiar account without remembering and retyping its tag](https://www.nngroup.com/articles/recognition-and-recall/). A long list still takes effort to scan.
+
+The effort involved in understanding, remembering, and deciding is **cognitive load**. Prices may all be visible while differing units still require repeated calculations. Reducing the text on the screen does not necessarily remove that effort.
+
+Deciding how many choices to show at once connects to **progressive disclosure**. It presents the initial choices and reveals secondary features when needed. [Deferring additional features](https://www.nngroup.com/articles/progressive-disclosure/) can suit optional search filters. Hiding a price or essential condition that most people need, however, can shorten the screen while adding steps to the task.
+
+The state restored after navigation matters as well. Someone opening a post from search results may expect Back to restore the query and their position. Their understanding of how the system works is a **[mental model](https://www.nngroup.com/articles/mental-models/)**. **Consistency**, giving the same action a familiar name and response, also helps people anticipate what will happen next.
+
+## Prevent mistakes and provide a route back after failure
+
+**Constraints** limit the available actions. An interface might allow three attachments or prevent another submission while a request is pending. Reducing opportunities for mistakes, such as blocking duplicate submissions, is **error prevention**. Making a deletion target clear can also help prevent someone from removing the wrong item.
+
+Once an upload fails, the interface needs to support **error recovery**. Erasing the draft would require the person to rewrite it before trying again. Keeping the input and explaining which operation needs another attempt lets them continue from the point of failure. The [error-message guidelines](https://www.nngroup.com/articles/error-message-guidelines/) likewise call for a possible solution alongside an explanation of the problem. For a failed photo upload, that could mean keeping the title and body while letting the person retry the photo transfer.
