@@ -77,11 +77,11 @@ git commit --no-verify          # 비상시에만 사용한다
 
 ## 검증
 
-Services workflow는 변경된 서비스의 검사만 선택하고 공용 호스트의 이미지 네 개는 실행당 한 번 빌드·검증합니다. 공통 패키지·배포 설정 변경과 수동 실행은 두 서비스를 모두 선택합니다. 모든 PR에서 변경 범위와 최종 판정은 실행하며 서비스와 무관한 변경은 서비스 검사 없이 통과합니다. PR은 대상 브랜치와 합친 결과를 검사하므로 develop push와 릴리즈 PR 검증은 각각 유지합니다.
+Services workflow는 서비스 코드나 공통 패키지·배포 설정이 바뀐 PR과 main/develop push에서 실행합니다. PR과 push는 같은 경로 목록을 공유하므로 블로그만 변경되면 workflow 자체가 실행되지 않습니다. 실행한 workflow 안에서는 변경된 서비스의 검사만 선택하고 공용 호스트의 이미지 네 개는 실행당 한 번 빌드·검증합니다. 공통 경로 변경과 수동 실행은 두 서비스를 모두 선택합니다. PR은 대상 브랜치와 합친 결과를 검사하므로 서비스 변경이 있는 develop push와 릴리즈 PR 검증은 각각 유지합니다.
 
 GF의 정적·단위 검사(`yarn workspace @side/game-feedback test:unit`)는 S3 없이 실행합니다. 실제 API·DB 통합, 운영 빌드, 브라우저 E2E는 별도 작업에서 실제 테스트 S3와 격리 DB를 사용합니다. 기존 `test:game-feedback` 명령은 API 통합 검사를 포함하는 동작을 유지합니다.
 
-`Service verification`은 선택한 검사가 모두 성공해야 통과합니다. 선택한 작업의 생략·취소·누락도 실패이며 두 서비스의 이미지 발행은 이 결과를 기다립니다. 서비스별 배포 활성화 값·main/배포 브랜치 조건·Environment·배포 잠금과 검증한 이미지 digest 사용은 유지합니다. 필수 상태 검사를 설정한다면 `Service verification`을 선택합니다.
+`Service verification`은 선택한 검사가 모두 성공해야 통과합니다. 선택한 작업의 생략·취소·누락도 실패이며 두 서비스의 이미지 발행은 이 결과를 기다립니다. 서비스별 배포 활성화 값·main/배포 브랜치 조건·Environment·배포 잠금과 검증한 이미지 digest 사용은 유지합니다. Services와 Blog는 경로 필터에 따라 실행되지 않으므로 모든 PR의 필수 상태 검사로 지정하지 않습니다. 전역 필수 상태 검사는 모든 PR에서 실행하는 Static analysis를 기준으로 설정해야 합니다. 실행되지 않은 workflow의 상태를 필수로 요구하면 해당 PR이 대기 상태에 남습니다.
 
 실패 시 이 작업의 Summary에서 실패 영역과 재현 명령을 확인합니다. 브라우저 trace는 GF/PC Playwright artifact, 컨테이너 trace는 PC deployment artifact에 있습니다. 컨테이너 재현에는 검증 대상 SHA로 빌드한 이미지·Docker·두 서비스의 테스트 S3 설정이 필요합니다.
 
