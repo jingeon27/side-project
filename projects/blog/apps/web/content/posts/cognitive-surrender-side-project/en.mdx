@@ -1,0 +1,103 @@
+<Summary>
+
+Addy Osmani's writing on cognitive surrender made me look back at the start of my side projects, when I left detailed conditions and design to the agent. This covers the cases I had to fill in later, the screens that disappointed me, why I stop at offloading at work, and what I plan to study next.
+
+</Summary>
+
+![Documents descending a staircase, from one covered in review marks to one with only a check badge and empty rows left unfilled](/images/covers/cognitive-surrender-side-project.png)
+
+_An illustration of checking results a little less at each step, rather than a screenshot of a service._
+
+While reading [Addy Osmani's "Critical thinking when agents do the work,"](https://x.com/addyosmani/status/2117512471930167377) I stopped at the phrase cognitive surrender. It described how I had started my side projects.
+
+## Offloading is not surrender
+
+Osmani describes how much we lean on AI as a spectrum with three points.
+
+| Point on the spectrum | Description                                                                    |
+| --------------------- | ------------------------------------------------------------------------------ |
+| Cognitive offloading  | You delegate tasks to the AI but keep ownership of the result                  |
+| Deferral              | The tool's output becomes your next input and stops being a hypothesis to test |
+| Cognitive surrender   | The AI's output quietly becomes your own, and you feel no need to check it     |
+
+The term cognitive surrender comes from [a paper](https://ssrn.com/abstract=6097646) by Steven Shaw and Gideon Nave at Wharton.
+
+Osmani says people move down this spectrum without noticing. You read one answer carefully, so you skim the next, and then you only scan the outline of the one after that. Surrender is the point where someone asks about a line of code and you can't explain it, even with your agent's help.
+
+## I decided only the stack, requirements, and caching policy
+
+When I started my side projects, the photo community Pisik and the gaming service Game Mate, I decided little beyond the tech stack, the requirements, and the caching policy. I left detailed conditions and design to the agent. I did try the resulting screens and ask for changes, so I can't say I checked nothing. But I had also handed over the decision about which situations to handle, and I relied on the agent's reports for the implementation details and test results. Looking back, that was closer to surrender than to offloading.
+
+This passage from the article reminded me of that period.
+
+> An agent often won't stop you there. It fills in what you left out and hands back something that looks done, even though the idea behind it is still fuzzy.
+
+A person given a vague request will often ask what you mean. An agent tends to fill the gap and return something that looks finished. The conditions I never set were filled in the same way.
+
+## Filling in the cases missing from the reports
+
+Checking the results turned up technical debt in the code and cases the agent's reports had not mentioned. On Pisik's contest screen for public groups, the post button didn't appear right after someone joined. It showed up only after they left the page and came back.
+
+The screens for creating and editing a group upload two photos together. If one upload failed, the submit lock was released before the other finished. The record of the photo that had succeeded was lost as well, so a retry uploaded both again. I had this changed to resend only the photo that failed.
+
+I had to list cases like these separately and fill them in one at a time. I was finding conditions I had never set inside work I thought was finished.
+
+I also reworked the code separately. I used Knip, a tool that finds unused code, to remove unreferenced files and exports. I moved UI and forms used by a single page into the FSD pages layer. In Pisik's API, authentication, groups, and posts had different responsibilities mixed together in their domain folders, so I [split them into subfolders and made contest completion lookups choose a strategy through Nest DI](https://github.com/jingeon27/side-project/pull/144). File uploads now go straight to S3 through presigned URLs instead of passing through the API server.
+
+## Screens that worked and still disappointed me
+
+Pisik's first home screen put a group list ahead of the photos, with long explanations covering the images. There was also a story-style border even though the service had no stories. The features worked, but these weren't the screens I wanted to build, so I asked for photos from my groups to appear right away.
+
+![A comparison showing the first home with a group list on top and a long notice covering the photo, next to a home where photos from joined groups appear right away](/images/posts/cognitive-surrender-side-project/01-first-home-en.png)
+
+_The parts of the first home I asked to change, drawn side by side._
+
+Game Mate's comments also needed changes once I used them. When someone replies to a reply, I asked for that reply's author to be tagged so it's clear who the response is for. I also asked to remove the chat button on comments and to move report and block into a ⋮ dropdown next to the nickname. These changes are in [PR #155](https://github.com/jingeon27/side-project/pull/155).
+
+A lot of the design also looked AI-generated. The [UI design criteria](https://github.com/jingeon27/side-project/blob/develop/.agents/skills/ui-design/SKILL.md) I later added to the repository show what I wanted to remove. They say not to fill an empty-looking screen with cards, stats, and badges, not to wrap every area in a bordered card, and to cut meaningless English subheadings and repeated slogans.
+
+I added those criteria more than two weeks after the project started. Around the same time, [a review of Pisik's group detail screen](https://github.com/jingeon27/side-project/blob/develop/projects/photo-contest/docs/group-detail-review-2026-11-01.md) noted that without product or design documents, it improved only parts of the screen, based on the existing tokens and components. Because I hadn't set a standard at the start, the screens the agent had built became the standard.
+
+## What if I had changed the order?
+
+If I had set up a proper system first and defined conditions for each case before delegating, I suspect it would have taken fewer tokens and less time. The cost of re-checking and reworking finished code is what makes me think so. The design might also have turned out better if I had asked for HTML first and set clearer criteria before starting. I haven't built the same project twice to compare, so this is a guess.
+
+![A comparison of two work orders. In the one I followed, verification and fixes repeat after implementation. In the one I would try, conditions and design criteria come before implementation](/images/posts/cognitive-surrender-side-project/02-work-order-en.png)
+
+_The order I actually followed next to the one I would try now._
+
+The repository's AGENTS.md now says to briefly define the goal, what's out of scope, the completion criteria, and how to verify them before implementing. The article has a similar line.
+
+> Define "verified" upfront, because post-facto, you'll rationalize any outcome.
+
+Waiting until the work is done to decide what counts as verified makes it easy to justify whatever came out.
+
+## At work, I stop at offloading
+
+Reading the article, I realized that what I do at work is cognitive offloading. The agent handles implementation, but [I check the plan, the diff, and the screens myself](/en/blog/plan-gated-ai-workflow). I started doing that after a sprint of only checking screens, without reading the code, [led to many hotfixes](/en/blog/reading-ai-code).
+
+Of offloading, Osmani writes, "I do this all day. You should, too." That resonated with me. So did his advice to hand off what is cheap to get wrong and keep the reasoning where others will have to deal with the consequences. I could fill in the missing cases in a side project later on my own, but users and colleagues run into problems in a live service first. So for now, I don't think surrender is workable at my job, and I think I should stay at offloading.
+
+Working this way requires being able to judge the result. That's why I think offloading favors experts with an eye for judgment over people with middling skill. It differs by field for me too. At my job, I knew the codebase and its existing behavior, so I could read a diff and point out a wrong implementation. In design, by contrast, [I could feel a screen was awkward without being able to explain what to change or why](/en/blog/design-concepts-for-reading-and-using-interfaces). With the same tool, I could only delegate well as far as I could judge.
+
+## So I plan to study other fields too
+
+To delegate more, I first need to be able to judge more. My short-term goal is to study other fields until I understand them reasonably well. There's no denying that agents help people do more, and other fields' expertise has become easier to reach. That's how I, a frontend developer, could set the cost and direction and [have an agent configure the infrastructure on a single EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
+
+I had actually thought it was hard to become a generalist. As an aside, and it's a little embarrassing to use this example, [the well theory](https://fmkorea.com/index.php?cpage=1&document_srl=10341267858) from League of Legends coach cvMax (Kim Dae-ho) explains why. It compares a choice to digging wells: widen your champion pool, the range of characters you can play, or narrow it and master a few. A single deep well has a small surface, so it takes in more water than it loses to evaporation. Dig many wells and evaporation grows while keeping them supplied gets harder. It's about a game, but it seemed to fit broadening across fields in development.
+
+But as agents have improved, I've changed my mind. Now it feels like you can dig several wells faster than the water evaporates.
+
+That doesn't mean I'll study development any less. I want to review what I've already learned and keep broadening it. The article also quotes Anthropic research: "supervising Claude requires the very coding skills that may atrophy from AI overuse."
+
+This seems like a good time to dig more wells, so I plan to study hard.
+
+## I rework an agent's answers before passing them on
+
+One more thing: when an agent's result has to be shared at work, it goes more smoothly if I explain it myself. I chose the question and know the background, so I understand the answer differently from a third party who receives only the result. I fill in its unstated assumptions as I read, and the person receiving it doesn't have them.
+
+![Three cases: I read the answer with the question and background, a third party receives only the answer if I forward it, and they receive the assumptions they need if I rework it](/images/posts/cognitive-surrender-side-project/03-handing-off-en.png)
+
+_How I hand over the same answer changes the context the other person has._
+
+So even when an agent helps me find an answer, I think I should rework it rather than forward it as is. I read this line from the article in the same way: "When you can't explain the answer to a question, even by way of your agent, you've ceded ownership." I have to be able to explain an answer in my own words before I can pass it on to someone else.

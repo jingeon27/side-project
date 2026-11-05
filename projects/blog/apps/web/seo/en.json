@@ -23,6 +23,19 @@
     }
   },
   "posts": {
+    "cognitive-surrender-side-project": {
+      "title": "The side project where I came close to cognitive surrender",
+      "slug": "cognitive-surrender-side-project",
+      "description": "Addy Osmani's writing on cognitive surrender made me look back at leaving detailed conditions and design to an agent in my side projects. I cover the cases I filled in later, the disappointing screens, and why I stop at offloading at work.",
+      "keywords": [
+        "cognitive surrender",
+        "cognitive offloading",
+        "AI workflow",
+        "coding agents",
+        "side projects",
+        "reflection"
+      ]
+    },
     "reviewing-ai-output": {
       "title": "The criteria I developed while reviewing AI-generated code and writing",
       "slug": "reviewing-ai-output",

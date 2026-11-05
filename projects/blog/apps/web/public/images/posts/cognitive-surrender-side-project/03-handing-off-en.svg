@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="920" viewBox="0 0 1080 920">
+  <title>The same answer, without my context</title>
+  <desc>Drawn to explain the idea. Not a real conversation or document.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6a7873" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#a85f43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+  <rect width="1080" height="920" fill="#f4f1ea"/>
+  <text x="68" y="62" font-size="24" font-weight="400" fill="#62756d" text-anchor="start">03 / Passing on an answer</text>
+  <text x="68" y="124" font-size="40" font-weight="700" fill="#273b36" text-anchor="start">The same answer, without my context</text>
+  <rect x="68" y="148" width="240" height="50" rx="10" fill="#ebeae1"/><text x="88" y="183" font-size="28" font-weight="700" fill="#273b36" text-anchor="start">When I read it</text><rect x="68" y="204" width="944" height="152" rx="16" fill="#fffef9" stroke="#d0d5cb" stroke-width="2"/><rect x="92" y="226" width="287" height="64" rx="12" fill="#f1efe6" stroke="#d0d5cb" stroke-width="2.5" /><text x="235.5" y="267" font-size="26" font-weight="500" fill="#273b36" text-anchor="middle">The question I chose</text><rect x="397" y="226" width="287" height="64" rx="12" fill="#f1efe6" stroke="#d0d5cb" stroke-width="2.5" /><text x="540.5" y="267" font-size="26" font-weight="500" fill="#273b36" text-anchor="middle">Background</text><rect x="701" y="226" width="287" height="64" rx="12" fill="#e4ece0"  /><text x="844.5" y="267" font-size="26" font-weight="500" fill="#2f5a48" text-anchor="middle">The agent&#x27;s answer</text><text x="92" y="330" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">I fill in the answer&#x27;s unstated assumptions as I read</text>
+  <rect x="68" y="380" width="320" height="50" rx="10" fill="#f5e6df"/><text x="88" y="415" font-size="28" font-weight="700" fill="#9c5238" text-anchor="start">If I forward it as is</text><rect x="68" y="436" width="944" height="152" rx="16" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><rect x="92" y="458" width="287" height="64" rx="12" fill="none" stroke="#a85f43" stroke-width="2.5" stroke-dasharray="8 8"/><text x="235.5" y="499" font-size="26" font-weight="500" fill="#9c5238" text-anchor="middle">The question I chose</text><rect x="397" y="458" width="287" height="64" rx="12" fill="none" stroke="#a85f43" stroke-width="2.5" stroke-dasharray="8 8"/><text x="540.5" y="499" font-size="26" font-weight="500" fill="#9c5238" text-anchor="middle">Background</text><rect x="701" y="458" width="287" height="64" rx="12" fill="#e4ece0"  /><text x="844.5" y="499" font-size="26" font-weight="500" fill="#2f5a48" text-anchor="middle">The agent&#x27;s answer</text><text x="92" y="562" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">A third party gets the answer without its assumptions</text>
+  <rect x="68" y="612" width="310" height="50" rx="10" fill="#e4ece0"/><text x="88" y="647" font-size="28" font-weight="700" fill="#2f5a48" text-anchor="start">If I rework it first</text><rect x="68" y="668" width="944" height="152" rx="16" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><rect x="92" y="690" width="439" height="64" rx="12" fill="#f1efe6" stroke="#d0d5cb" stroke-width="2.5" /><text x="311.5" y="731" font-size="26" font-weight="500" fill="#273b36" text-anchor="middle">The assumptions they need</text><rect x="549" y="690" width="439" height="64" rx="12" fill="#e4ece0"  /><text x="768.5" y="731" font-size="26" font-weight="500" fill="#2f5a48" text-anchor="middle">The answer in my own words</text><text x="92" y="794" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">They read the answer along with its assumptions</text>
+  <path d="M 68 848 H 1012" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="68" y="892" font-size="24" font-weight="400" fill="#7d8a84" text-anchor="start">Drawn to explain the idea. Not a real conversation or document.</text>
+  </g>
+</svg>
