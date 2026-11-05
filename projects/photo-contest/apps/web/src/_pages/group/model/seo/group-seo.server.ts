@@ -63,5 +63,5 @@ export async function getPublicGroupSitemapPage(page: number) {
       },
       PUBLIC_SITEMAP_TTL,
     )
-  ).discoverGroups;
+  ).publicGroupSitemap;
 }

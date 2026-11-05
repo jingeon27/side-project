@@ -217,17 +217,8 @@
     "side-project-infrastructure": {
       "title": "Starting with one EC2 instance",
       "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
-      "description": "Why I chose one EC2 instance for two services and PostgreSQL, delegated Terraform setup to an agent, and worked through backups, S3 permissions, and deployment over SSM.",
-      "keywords": [
-        "side projects",
-        "AWS",
-        "EC2",
-        "PostgreSQL",
-        "S3",
-        "Terraform",
-        "infrastructure",
-        "backups"
-      ]
+      "description": "Balancing value for money, availability, and maintenance: agent-configured EC2 for two services, Vercel for the blog, and the tradeoffs of Lightsail, Lambda, and Workers.",
+      "keywords": ["side projects", "AWS CLI", "EC2", "Terraform", "Docker", "Caddy", "Vercel", "serverless"]
     },
     "side-project-technology": {
       "title": "Choosing the stack and refining the structure of two side projects",

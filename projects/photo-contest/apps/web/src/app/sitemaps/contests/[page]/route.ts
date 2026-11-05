@@ -1,5 +1,7 @@
 import { connection } from 'next/server';
 
+import { sortBy } from 'es-toolkit';
+
 import {
   getPublicGroupContestCount,
   getPublicGroupContestSitemapPage,
@@ -27,12 +29,25 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
     return new Response(null, { status: 404 });
   const contests = await getPublicGroupContestSitemapPage(page);
   if (!contests.length) return new Response(null, { status: 404 });
-  const paths = contests.flatMap((contest) => [
-    ROUTES.GROUP_CONTEST(contest.groupId, contest.id),
-    // 빈 목록 화면은 색인할 내용이 없으므로 이 대회가 실제로 보이는 목록만 올린다.
-    contest.phase === Phase.Completed
-      ? ROUTES.GROUP_HALL_OF_FAME(contest.groupId)
-      : ROUTES.GROUP_CONTESTS(contest.groupId),
-  ]);
-  return sitemapResponse(sitemapDocument([...new Set(paths)].map((path) => siteUrl(path, getWebOrigin()))));
+  // 같은 키는 Map에 마지막으로 넣은 값이 남는다. 오래된 순으로 넣어 목록 화면이 가장 늦은 대회의 시각을 갖게 한다.
+  const lastModifiedByPath = new Map(
+    sortBy(contests, [(contest) => Date.parse(contest.lastModifiedAt)]).flatMap((contest) => [
+      [ROUTES.GROUP_CONTEST(contest.groupId, contest.id), contest.lastModifiedAt] as const,
+      // 빈 목록 화면은 색인할 내용이 없으므로 이 대회가 실제로 보이는 목록만 올린다.
+      [
+        contest.phase === Phase.Completed
+          ? ROUTES.GROUP_HALL_OF_FAME(contest.groupId)
+          : ROUTES.GROUP_CONTESTS(contest.groupId),
+        contest.lastModifiedAt,
+      ] as const,
+    ]),
+  );
+  return sitemapResponse(
+    sitemapDocument(
+      [...lastModifiedByPath].map(([path, lastModified]) => ({
+        url: siteUrl(path, getWebOrigin()),
+        lastModified,
+      })),
+    ),
+  );
 }

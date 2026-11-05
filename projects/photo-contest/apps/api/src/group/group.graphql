@@ -61,12 +61,20 @@ type InvitePreview {
   joinRequestPending: Boolean!
 }
 
+"공개 그룹의 사이트맵 항목. 비공개 그룹의 활동 시각이 드러나지 않도록 Group 타입과 분리한다"
+type PublicGroupSitemapEntry {
+  id: ID!
+  "마지막 공개 게시물 등록 시각. 게시물이 없으면 그룹 생성 시각이다. 프로필·게시물 수정 시각은 저장하지 않아 포함하지 않는다"
+  lastModifiedAt: DateTime!
+}
+
 type Query {
   myGroups: [Group!]!
   group(id: ID!): Group!
   "공개·비공개 그룹의 이름을 탐색한다. 비공개 게시물·초대 토큰·멤버 명단은 노출하지 않는다"
   discoverGroups(search: String, visibility: GroupVisibility, offset: Int = 0, limit: Int = 24): [Group!]!
   publicGroupCount: Int!
+  publicGroupSitemap(offset: Int = 0, limit: Int = 24): [PublicGroupSitemapEntry!]!
   "그룹장·부관리자만 가입 신청을 조회한다"
   groupJoinRequests(groupId: ID!, offset: Int = 0, limit: Int = 24): [GroupJoinRequest!]!
   "로그인하지 않아도 초대 토큰으로 그룹을 미리 본다"

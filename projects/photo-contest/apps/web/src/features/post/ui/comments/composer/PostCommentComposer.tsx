@@ -2,7 +2,7 @@
 
 import { useFragment, useMutation, useQuery } from '@apollo/client/react';
 import { Field } from '@base-ui/react/field';
-import { ArrowUp } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 
 import {
@@ -83,7 +83,7 @@ export function PostCommentComposer({
                 rows={1}
                 maxLength={1000}
                 placeholder={parentId ? '답글을 남겨보세요.' : '댓글을 남겨보세요.'}
-                className="max-h-32 min-h-touch w-full min-w-0 flex-1 resize-none field-sizing-content bg-transparent px-3 py-3 text-input text-ink outline-none placeholder:text-subtle"
+                className="max-h-32 min-h-touch w-full min-w-0 flex-1 resize-none field-sizing-content bg-transparent px-3 py-2.5 text-input text-ink outline-none placeholder:text-subtle"
               />
             }
           />
@@ -92,10 +92,9 @@ export function PostCommentComposer({
             size="md"
             aria-label={parentId ? '답글 올리기' : '댓글 올리기'}
             loading={isSubmitting}
-            className="size-touch rounded-full p-0"
-          >
-            <ArrowUp aria-hidden className="size-5" />
-          </Button>
+            icon={<Send aria-hidden className="size-5" />}
+            className="size-touch p-0"
+          />
         </div>
         <div className="mt-1.5 flex items-center justify-between gap-3 px-1 text-micro text-muted">
           <div className="flex items-center">

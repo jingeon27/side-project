@@ -1,57 +1,84 @@
 <Summary>
 
-I dropped RDS while looking at deployment costs. I considered serverless options too, but decided to start with the web apps, APIs, and PostgreSQL on one small EC2 instance. That also meant working through storage, backups, and S3 permissions.
+I weighed value for money, availability, and maintenance effort when choosing shared EC2 hosting for Game Mate and Pisik and separate Vercel hosting for the blog. An agent handled the AWS CLI, Terraform, Docker, and Caddy configuration. The decision also accounted for shared failures, database recovery, and the work involved in moving to another platform.
 
 </Summary>
 
 ![An illustration of a small server hosting two apps, with data storage and backup files](/images/covers/side-project-infrastructure.png)
 
-While preparing deployment for Game Mate and Pisik, I wanted to reduce fixed costs first. The plan put the apps on one EC2 instance and PostgreSQL on RDS. I began wondering whether the database could share the instance too.
+While preparing deployment for Game Mate and Pisik, I wanted to reduce fixed costs first. The initial plan put the apps on one EC2 instance and PostgreSQL on RDS. I considered sharing the instance with the database too, rather than provisioning a server and database for each service while usage was still low.
 
-To compare ways of reducing that cost, I also looked into keeping the containers on Cloudflare and what returning from serverless would involve. I delegated the investigation and setup to the agent and chose a direction from its results. That meant considering the code to move and the work to maintain alongside the bill.
+I compared value for money, availability, and maintenance effort: what the infrastructure could support for its cost, which services would stop together, and what each deployment or change would require. A lower server bill would not necessarily reduce the overall cost if migration and operation took substantially more work.
 
-## I considered moving to serverless
+I delegated infrastructure configuration to the agent to reduce manual setup. It inspected AWS resources, wrote and applied Terraform, and prepared the Docker and Caddy deployment files. I chose the cost and architecture direction, completed authentication and permission steps when needed, and asked for further checks after reviewing the results.
 
-My first question was which Cloudflare product did the job of EC2. I looked into Workers and Containers, and checked whether R2 could handle the presigned uploads already in the apps.
+## Configuring infrastructure through the CLI and versioned files
 
-Running the existing Docker images on another platform and adapting the APIs to Workers were different moves. The first starts with deployment settings; the second reaches into how the APIs run. Game Mate’s chat SSE connections and Pisik’s in-process scheduled work needed somewhere to live.
+For the agent to handle the work, it needed commands it could run and results it could inspect. It used the AWS CLI to inspect resource state and the results of configuration changes, while Terraform defined the underlying resources: EC2, networking, the PostgreSQL EBS volume, IAM policies, and the backup bucket. The [Terraform guide](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/terraform/README.md) records those resources and the apply sequence.
 
-I also wondered whether Hyperdrive could take care of the database. It turns out to [accelerate connections and queries to an existing database](https://developers.cloudflare.com/hyperdrive/). I would still need somewhere to run PostgreSQL.
+Docker and Compose define what runs on the server. Each service has web and API containers, alongside PostgreSQL and Caddy, with images, environment variables, networks, and volumes recorded in files. Terraform's first-boot script installs Docker and Compose, mounts the data volume, and prepares swap. Later application deployments replace containers on that host.
 
-An API adapted to a platform would need changes again on the way back to EC2. The work would depend on whether I had kept the same containers and PostgreSQL. Usage-based billing also meant deciding where to limit incoming traffic: the per-invocation CPU limit in the [Workers documentation](https://developers.cloudflare.com/workers/platform/pricing/#custom-limits) limits one execution, rather than the total number of calls.
+Caddy routes hostnames to the right containers and handles HTTPS. Once the domain and reachability requirements are met, its [automatic certificate provisioning and renewal](https://caddyserver.com/docs/automatic-https) removes a separate certificate-renewal task. The agent prepared the Caddyfile with the Compose configuration. The proxy script validates configuration changes before reloading them.
 
-After comparing that work with the existing setup, I chose to keep the Node server and Docker deployment. Terraform, S3, and IAM were already being prepared around AWS, so I decided to finish that setup and start on a small EC2 instance.
+Terraform owns the underlying resources; Compose and the Caddyfile describe how the host runs the services. The existing media bucket stays outside the resources Terraform creates and has separate configuration. Reducing manual console work still meant being clear about which tool owns each setting.
 
-## Would one small instance be enough for the database too?
+GitHub Actions handles repeated application deployments. After verifying code on main and publishing the images, it deploys to the existing host through [SSH over an SSM tunnel](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/README.md#외부-ssh를-열지-않는-ssm-cd). GitHub obtains temporary AWS credentials through OIDC, and service environment files come from GitHub Environment secrets. Scripts run the backup, migration, and container-replacement sequence, reducing the commands someone needs to enter on the server for each release.
 
-Once I chose the server, I also had to consider the impact of putting the database there. If that instance stops, the web apps, APIs, and database stop together. I asked for backup and recovery procedures to be included in the deployment setup alongside replacing RDS.
+## Two services share EC2; the blog stays separate
+
+Sharing a host does not merge the services into one application. Game Mate and Pisik each have their own web and API containers. One PostgreSQL process serves separate databases and accounts, with different roles for API runtime and migrations.
 
 ```text
 One EC2 instance
-  Caddy :443
-    ├─ Game Mate Web ─ Game Mate API ─┐
-    └─ Photo Web ─ Photo API ────────┤
-                                    └─ PostgreSQL container
-                                         ├─ game_feedback DB
-                                         └─ photo_contest DB
-Dedicated EBS volume  PostgreSQL data
-Private media S3      Service-specific object prefixes
-Separate backup S3    Database dumps before deployment
+├─ Caddy: hostname routing and HTTPS
+├─ Game Mate: Web + API → game_feedback database
+├─ Pisik: Web + API → photo_contest database
+└─ PostgreSQL: data on a dedicated EBS volume
+
+Media S3: service-specific object prefixes
+Backup S3: database dumps before deployment
+Vercel: separate blog deployment
 ```
 
-The blog stays on Vercel, outside this server. There is one PostgreSQL process, with separate databases and accounts for the two services. API runtime accounts and migration accounts are separate too.
+Docker networks are separated by service too. Each API reaches PostgreSQL through its service's internal database network; the web containers and Caddy do not join those networks. Sharing the host does not give every container access to the database networks.
 
-The [t3.small configuration](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/variables.tf) has 2 GiB of memory and 2 GiB of swap. The container limits for Caddy, PostgreSQL, and both services’ web apps and APIs total roughly 3.1 GiB. If they reach those limits together, physical memory will not cover them.
+The blog builds articles from MDX in the repository and needs neither a service API nor PostgreSQL. I deployed its Next.js app separately on Vercel. [Git-based deployment is enabled only for main](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/projects/blog/apps/web/vercel.ts). Develop and pull requests run verification; main determines when changes reach the public blog.
 
-The limits do not reserve that memory, so their sum alone does not rule out running the services. I set sustained swap use or OOM kills as reasons to move to 4 GiB. Keeping the small instance depends on its memory use and responses under load.
+Its build and deployment can run independently of replacing the two services' containers. An EC2 host failure also does not take the blog down with it. Keeping the blog separate avoids adding another container and its resource requirements to that host.
 
-I compared costs including EBS, public IPv4, snapshots, and S3 storage, requests, and transfer alongside the instance. Removing RDS did not remove those charges.
+Sharing EC2 reduces the fixed infrastructure provisioned for separate services, but it also shares CPU and memory. Load from one service can affect the other. If the host stops, both services and PostgreSQL stop together. Separate networks and accounts do not isolate that host-level failure. I accepted that shared point of failure in return for lower initial infrastructure costs and fewer hosts to maintain.
+
+The [t3.small configuration](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/terraform/variables.tf) starts with 2 GiB of memory and 2 GiB of swap. Limits for Caddy, PostgreSQL, and both services' web and API containers total roughly 3.1 GiB. Those limits do not reserve memory, but reaching them together would exceed physical capacity. I chose sustained swap use or OOM kills as reasons to move to 4 GiB. A service that keeps consuming most of the resources could also become a candidate for a separate host, as could the database.
+
+The cost comparison included EBS, public IPv4, snapshots, and S3 storage, requests, and transfer alongside the instance. Removing RDS also makes backup and recovery part of the maintenance cost. Terraform and scripts reduce repeated work, and the configuration includes backup and recovery procedures, but those measures do not provide a redundant server or uninterrupted service.
+
+## Why EC2 fit this setup better than Lightsail
+
+Lightsail bundles a server, disk, and data transfer into a convenient starting plan. It was worth considering for a simple server. This setup, however, also needed coordinated permissions, management access, database storage, and backups.
+
+Deployment and management use SSM without exposing an external SSH port, and database dumps reach S3 through the EC2 instance role. Terraform also manages the database EBS volume, daily snapshot policy, and security groups. Lightsail can join Systems Manager through [hybrid activation](https://repost.aws/knowledge-center/add-lightsail-to-systems-manager), but the EC2 instance-role and SSM configuration already being prepared fit this deployment more directly.
+
+I also wanted to keep managing later memory and networking changes within that configuration. AWS's [Lightsail-to-EC2 export guide](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-faq-export-to-ec2.html) describes the broader instance choices and finer networking control available in EC2. Keeping the EC2 roles, SSM access, and EBS setup reduced the configuration I would have to revisit for a different platform. I counted that work alongside the monthly bill, then removed the unused Lightsail configuration and scripts to leave one deployment path.
+
+## Lambda and Workers involved changing how the APIs run
+
+I considered Lambda and Workers as alternatives to managing a server myself. The complication was that the APIs do more than handle isolated requests. Game Mate keeps chat SSE connections and its connected-client list inside the API process. Pisik uses an in-process timer for cleanup, contest completion, and notifications.
+
+Lambda supports [response streaming](https://docs.aws.amazon.com/lambda/latest/dg/configuration-response-streaming.html), but its HTTP requests have a [maximum duration of 15 minutes](https://docs.aws.amazon.com/lambda/latest/dg/web-functions-revisions-timeout.html). Moving the chat would require checking disconnection and reconnection behavior, as well as delivering new messages to connections spread across execution environments. Periodic work that must run without an incoming request would need a separate execution path instead of the API's timer.
+
+Lambda's [container image support](https://docs.aws.amazon.com/lambda/latest/dg/images-create.html) does not deploy an entire Compose stack. The image must fit the function's execution model, and PostgreSQL still needs a home and connection management. Comparing hosting costs would also involve moving the API and scheduled work.
+
+Workers provides [Node HTTP server integration](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/) and can [stream responses while the client remains connected](https://developers.cloudflare.com/workers/platform/limits/#duration). It is a different runtime from [Cloudflare Containers](https://developers.cloudflare.com/containers/), which runs container images. I would need to check the API's dependencies and entry point against Workers and decide where its connection state and periodic work belonged. Scheduled work could use an execution mechanism such as [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+
+I also checked whether Hyperdrive would replace the database. It [accelerates connections and queries to an existing database](https://developers.cloudflare.com/hyperdrive/), so PostgreSQL would still need hosting. Comparing only API execution charges would leave out that cost and the migration work.
+
+I chose to finish the deployment while retaining the Node servers, Docker, and PostgreSQL. Preserving the existing chat and scheduled work kept both initial infrastructure costs and migration effort within the scope I wanted. Taking responsibility for database storage and recovery was part of that choice.
 
 ## Running the database meant preparing backups
 
 I put database data on a separate encrypted EBS volume, mounted at `/srv/side-postgres`. A marker file identifies the volume. If it is missing, database startup stops, so a failed mount does not quietly create an empty database on the root disk.
 
-The configuration takes a daily volume snapshot and keeps seven by default. Before a deployment migration, it runs `pg_dump` for that service and uploads the dump to a separate S3 backup bucket. If creating or uploading the dump fails, the migration stops too. The [deployment and backup scripts](https://github.com/jingeon27/side-project/tree/65c3d13a/deploy/shared-instance/scripts) follow that order.
+The configuration takes a daily volume snapshot and keeps seven by default. Before a deployment migration, it runs `pg_dump` for that service and uploads the dump to a separate S3 backup bucket. If creating or uploading the dump fails, the migration stops too. The [deployment and backup scripts](https://github.com/jingeon27/side-project/tree/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/scripts) follow that order.
 
 I separated restoring the database from rolling back an application image. An older container still sees a migration that has already run. Checking the old app against the changed schema and restoring the database from backup need separate procedures.
 
@@ -59,7 +86,7 @@ Recovery uses a snapshot volume or a dump loaded into a fresh database, rather t
 
 ## I added S3 permissions, but CI still failed
 
-I wanted one existing S3 media bucket with a folder for each project. The initial code assumed a separate bucket for each service, so I changed that first.
+I wanted one existing S3 media bucket with a folder for each project. The initial code assumed a separate bucket for each service, so I asked the agent to change that assumption first.
 
 ```text
 media-bucket/
@@ -82,7 +109,7 @@ CI uploads still failed after I added `GetObject`, `PutObject`, and `DeleteObjec
 | `GetObject`, `PutObject`, `DeleteObject` | `arn:aws:s3:::media-bucket/game-feedback/production/*` | Put the path in the object ARN |
 | `ListBucket` | `arn:aws:s3:::media-bucket` | Add an `s3:prefix` condition |
 
-An ARN ending in `.../game-feedback/` does not mean all files below it. The object pattern needs `*`. Listing needs permission on the bucket ARN, restricted by a prefix condition. The revised [IAM policy](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/iam.tf) has separate statements for the two operations.
+An ARN ending in `.../game-feedback/` does not mean all files below it. The object pattern needs `*`. Listing needs permission on the bucket ARN, restricted by a prefix condition. The revised [IAM policy](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/terraform/iam.tf) has separate statements for the two operations.
 
 After IAM, browser uploads needed CORS attention too. The test origin was not allowed on the bucket. [CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html) controls cross-origin browser access, while IAM and the signature control object permission. Having only one side configured did not make the upload work.
 
@@ -94,7 +121,7 @@ Since R2 is S3-compatible, I asked whether it could handle the current upload fl
 
 The [R2 documentation](https://developers.cloudflare.com/r2/api/s3/presigned-urls/) supports GET, HEAD, PUT, and DELETE, but not HTML form POST uploads.
 
-S3 compatibility did not make the current upload portable without changes. Switching to PUT would require revisiting the POST policy conditions and completion checks. I kept S3 and left that work for a storage comparison if media transfer costs warranted it. It did not need to be bundled with moving off EC2.
+S3 compatibility did not make the current upload portable without changes. Switching to PUT would require revisiting the POST policy conditions and completion checks. I kept S3 and left that work for a storage comparison if media transfer costs warranted it. I kept that decision separate from choosing the server runtime.
 
 ## Adding API domains did not mean changing the cookies
 
@@ -102,22 +129,12 @@ I chose to give the APIs their own hostnames. Each service has a web hostname an
 
 Browsers still use same-origin `/api` or `/backend` paths, with the existing host-only session cookie on the web hostname. Pisik GraphQL mutations go through the web proxy so they still trigger Next cache invalidation.
 
-Web traffic enters through Caddy on ports 80 and 443. Web and API containers have service-specific Docker networks. Only API, operations, and migration containers join the database networks. Caddy and the web containers have no need to connect directly to the database. The [proxy and network settings](https://github.com/jingeon27/side-project/tree/65c3d13a/deploy/shared-instance) are in the deployment directory.
-
-## I used Terraform to manage infrastructure as code
-
-After choosing the server and storage setup, I wanted to minimize manual configuration. I delegated defining and applying EC2, the network, the PostgreSQL EBS volume, IAM policies, and the backup bucket through Terraform to the agent. Their configuration and history would remain in the repository rather than depend on remembering console changes.
-
-I considered Lightsail but chose EC2. I removed the unused Lightsail configuration and scripts so they would not remain as a competing deployment path.
-
-Terraform manages the underlying server and network, while GitHub Actions builds images and replaces containers on the existing EC2 instance. Deployment connects through [SSH over an SSM tunnel](https://github.com/jingeon27/side-project/blob/0deb9209f7f8a7b8a4c7f3e2e446634c8637d41d/deploy/shared-instance/README.md#외부-ssh를-열지-않는-ssm-cd). Service environment files are managed as `SERVICE_ENV` Secrets in GitHub Environments and applied to the server during CD.
-
-The existing media bucket stays outside Terraform management, while a separate backup bucket holds database dumps. I recorded the initial server setup steps in the [Terraform guide](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/README.md).
+Web traffic enters through Caddy on ports 80 and 443. Web and API containers have service-specific Docker networks. Only API, operations, and migration containers join the database networks. Caddy and the web containers have no need to connect directly to the database. The [proxy and network settings](https://github.com/jingeon27/side-project/tree/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance) are in the deployment directory.
 
 ## What I still need to check on the server
 
-The [CloudWatch configuration](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/monitoring.tf) includes a reboot action after failed instance status checks and an alarm for low CPU credits. A stopped server cannot send application errors, so I needed a check outside the apps too. Email notifications require confirming the subscription after entering an address.
+The [CloudWatch configuration](https://github.com/jingeon27/side-project/blob/90d78ae201c9872a3823a0bd4c1244e05cc14e8e/deploy/shared-instance/terraform/monitoring.tf) includes a reboot action after failed instance status checks and an alarm for low CPU credits. A stopped server cannot send application errors, so I needed a check outside the apps too. Email notifications require confirming the subscription after entering an address.
 
-Configuring the underlying environment still leaves checks on the actual server. A missing data volume should stop the database, and backup restoration needs its own exercise. Swap use, container exits, and response times under load also inform whether to keep the small instance. I received the agent's reports of configuration and execution results and asked for further checks where needed.
+Configuring the underlying environment still leaves checks on the actual server. A missing data volume should stop the database, and backup restoration needs its own exercise. Swap use, container exits, and response times under load also inform whether to keep the small instance. Delegating setup and execution to the agent still leaves ongoing work on patching, capacity, and recovery checks.
 
 The product and screen changes are in [Giving an AI agent autonomy, then reviewing and revising what it built](/en/blog/what-i-kept-changing-while-planning-my-side-projects).

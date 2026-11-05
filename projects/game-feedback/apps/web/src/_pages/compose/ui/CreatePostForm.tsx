@@ -4,7 +4,6 @@ import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 import { match, P } from 'ts-pattern';
 
@@ -126,15 +125,7 @@ export function CreatePostForm({
         </div>
       </div>
       <FormActions className="px-0" contentClassName="max-w-none">
-        <Button
-          variant="accent"
-          size="lg"
-          fullWidth
-          type="submit"
-          disabled={!categoryId}
-          loading={pending}
-          icon={<ArrowUpRight aria-hidden />}
-        >
+        <Button variant="accent" size="lg" fullWidth type="submit" disabled={!categoryId} loading={pending}>
           {submitLabel}
         </Button>
       </FormActions>

@@ -18,7 +18,7 @@ import { isAdmin } from '../../group/membership/group-role';
 import { MembershipService } from '../../group/membership/membership.service';
 import { presentPost } from '../../post/post.presenter';
 import { postInclude } from '../../post/post.query';
-import { contestDates, phase, PHASE } from '../contest.policy';
+import { contestDates, contestLastModifiedAt, phase, PHASE } from '../contest.policy';
 import type { ICreateContestInput } from '../contest.service';
 import { rankResults } from '../ranking/result-ranking';
 import { CONTEST_FORMAT, GROUP_CONTEST_FILTER, type TGroupContestFilter } from './group-contest.policy';
@@ -49,6 +49,7 @@ export interface IGroupContestNode extends Contest {
   entryCount: number;
   loadResults: () => Promise<TGroupContestResult[]>;
   loadWinners: () => Promise<TGroupContestResult[]>;
+  loadLastModifiedAt: () => Promise<Date>;
 }
 
 @Injectable()
@@ -217,6 +218,18 @@ export class GroupContestService {
       (ids) => this.winnersOf(ids, viewer?.id ?? null),
       [] as TGroupContestResult[],
     );
+    const loadLastEntryAt = siblingLoader(
+      rows.map((row) => row.id),
+      async (ids) => {
+        const latest = await this.db.post.groupBy({
+          by: ['contestId'],
+          where: { contestId: { in: [...ids] }, hidden: false },
+          _max: { createdAt: true },
+        });
+        return new Map(latest.map((entry) => [entry.contestId ?? '', entry._max.createdAt]));
+      },
+      null as Date | null,
+    );
     return rows.map((row): IGroupContestNode => {
       const currentPhase = phase(row);
       return {
@@ -230,6 +243,7 @@ export class GroupContestService {
         entryCount: row._count.posts,
         loadResults: () => (currentPhase === PHASE.COMPLETED ? loadResults(row.id) : Promise.resolve([])),
         loadWinners: () => (currentPhase === PHASE.COMPLETED ? loadWinners(row.id) : Promise.resolve([])),
+        loadLastModifiedAt: async () => contestLastModifiedAt(row, await loadLastEntryAt(row.id)),
       };
     });
   }

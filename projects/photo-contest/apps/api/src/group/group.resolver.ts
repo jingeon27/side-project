@@ -36,6 +36,11 @@ export class GroupResolver {
   }
 
   @Query()
+  publicGroupSitemap(@Args('offset') offset?: number | null, @Args('limit') limit?: number | null) {
+    return this.groups.publicGroupSitemap(offset, limit);
+  }
+
+  @Query()
   invitePreview(@OptionalViewer() viewer: IViewer | null, @Args('token') token: string) {
     return this.groups.invitePreview(viewer, token);
   }

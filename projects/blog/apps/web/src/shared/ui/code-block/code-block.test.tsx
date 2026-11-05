@@ -55,4 +55,23 @@ describe('article reading aids', () => {
     expect(await navigator.clipboard.readText()).toBe('const answer = 42;\nconsole.log(answer);\n');
     expect(screen.getByRole('status')).toHaveTextContent(labels('ko').article.copied);
   });
+
+  it('copies a blank highlighted line without the space added for rendering', async () => {
+    const user = userEvent.setup();
+    render(
+      <NextIntlClientProvider locale="ko" messages={{}}>
+        <CodeBlock data-language="text">
+          <code>
+            <span data-line="">first</span>
+            {'\n'}
+            <span data-line=""> </span>
+            {'\n'}
+            <span data-line="">{'  indented'}</span>
+          </code>
+        </CodeBlock>
+      </NextIntlClientProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: labels('ko').article.copyCode }));
+    expect(await navigator.clipboard.readText()).toBe('first\n\n  indented\n');
+  });
 });

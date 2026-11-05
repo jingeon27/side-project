@@ -4,6 +4,7 @@ import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
 import GithubSlugger from 'github-slugger';
 import { toString } from 'mdast-util-to-string';
+import remarkCjkFriendly from 'remark-cjk-friendly';
 import remarkGfm from 'remark-gfm';
 import remarkMdx from 'remark-mdx';
 import remarkParse from 'remark-parse';
@@ -60,7 +61,9 @@ type ContentArticle = z.infer<typeof metaSchema> &
     translations: Partial<Record<Locale, string>>;
   };
 
-const parser = unified().use(remarkParse).use(remarkMdx).use(remarkGfm);
+// A single `~` also marks ranges such as 3~5일, so only `~~` may strike through text.
+const gfmOptions = { singleTilde: false };
+const parser = unified().use(remarkParse).use(remarkMdx).use(remarkGfm, gfmOptions).use(remarkCjkFriendly);
 export function analyzeMdx(source: string) {
   const tree = parser.parse(source);
   const slugger = new GithubSlugger();
@@ -163,7 +166,7 @@ export async function readContent(root: string) {
     for (const locale of available) {
       const source = await readFile(path.join(dir, `${locale}.mdx`), 'utf8');
       if (!source.trim()) throw new Error(`${id}/${locale}: empty content`);
-      await compile(source, { remarkPlugins: [remarkGfm] });
+      await compile(source, { remarkPlugins: [[remarkGfm, gfmOptions], remarkCjkFriendly] });
       const { toc, readingMinutes, tree } = analyzeMdx(source);
       const images = validateMdxNodes(tree, `${id}/${locale}`);
       visit(tree, 'image', (node) => {

@@ -1,7 +1,18 @@
 {
   "category": "engineering",
-  "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+  "tags": [
+    "side-project",
+    "infrastructure",
+    "aws",
+    "ec2",
+    "postgresql",
+    "s3",
+    "terraform",
+    "docker",
+    "caddy",
+    "vercel"
+  ],
   "publishedAt": "2026-10-28",
   "coverImage": "/images/covers/side-project-infrastructure.png",
-  "updatedAt": "2026-10-31"
+  "updatedAt": "2026-11-05"
 }

@@ -3,7 +3,7 @@
     "category": "til",
     "tags": ["design", "ux", "ui", "interaction-design"],
     "publishedAt": "2026-11-04",
-    "updatedAt": "2026-11-04",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
     "title": "화면이 어색한 이유를 설명하는 디자인 개념",
     "description": "가상의 코칭 카드를 예로 시각 위계와 대비, 정보 묶음과 행동 단서를 정리했어요. 기억해야 할 정보를 줄이고, 실패한 뒤 다시 시도할 수 있도록 돕는 방법도 함께 살펴봤어요.",
@@ -28,8 +28,8 @@
         "level": 2
       },
       {
-        "id": "행동하기-전에는-단서를-주고-행동한-뒤에는-상태를-알려줘요",
-        "title": "행동하기 전에는 단서를 주고, 행동한 뒤에는 상태를 알려줘요",
+        "id": "행동하기-전에는-단서를-주고-행동한-뒤에는-상태를-알려-줘요",
+        "title": "행동하기 전에는 단서를 주고, 행동한 뒤에는 상태를 알려 줘요",
         "level": 2
       },
       {
@@ -41,9 +41,34 @@
         "id": "실수를-줄이는-일과-실패한-뒤-복구하는-일을-나눠-봐요",
         "title": "실수를 줄이는 일과 실패한 뒤 복구하는 일을 나눠 봐요",
         "level": 2
+      },
+      {
+        "id": "처음의-카드를-용어로-다시-읽어-봐요",
+        "title": "처음의 카드를 용어로 다시 읽어 봐요",
+        "level": 2
+      },
+      {
+        "id": "정보를-어디에-놓고-어떻게-읽게-할까요",
+        "title": "정보를 어디에 놓고 어떻게 읽게 할까요",
+        "level": 3
+      },
+      {
+        "id": "화면의-표현을-어떻게-조절할까요",
+        "title": "화면의 표현을 어떻게 조절할까요",
+        "level": 3
+      },
+      {
+        "id": "어떻게-행동하고-결과를-이해할까요",
+        "title": "어떻게 행동하고 결과를 이해할까요",
+        "level": 3
+      },
+      {
+        "id": "생각과-실수의-부담을-어떻게-줄일까요",
+        "title": "생각과 실수의 부담을 어떻게 줄일까요",
+        "level": 3
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 14,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
@@ -53,7 +78,7 @@
     "category": "til",
     "tags": ["design", "ux", "ui", "interaction-design"],
     "publishedAt": "2026-11-04",
-    "updatedAt": "2026-11-04",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
     "title": "Design concepts that explain why an interface feels awkward",
     "description": "Coaching cards make design concepts concrete: what to read first, what looks related, how to act, and how to recover when something fails.",
@@ -91,9 +116,34 @@
         "id": "prevent-mistakes-and-provide-a-route-back-after-failure",
         "title": "Prevent mistakes and provide a route back after failure",
         "level": 2
+      },
+      {
+        "id": "reading-the-first-card-again-with-these-terms",
+        "title": "Reading the first card again with these terms",
+        "level": 2
+      },
+      {
+        "id": "where-information-goes-and-how-it-reads",
+        "title": "Where information goes and how it reads",
+        "level": 3
+      },
+      {
+        "id": "how-the-interface-expresses-it",
+        "title": "How the interface expresses it",
+        "level": 3
+      },
+      {
+        "id": "how-people-act-and-understand-the-result",
+        "title": "How people act and understand the result",
+        "level": 3
+      },
+      {
+        "id": "how-to-lower-the-burden-of-thinking-and-mistakes",
+        "title": "How to lower the burden of thinking and mistakes",
+        "level": 3
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 13,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
@@ -179,25 +229,46 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "tags": [
+      "side-project",
+      "infrastructure",
+      "aws",
+      "ec2",
+      "postgresql",
+      "s3",
+      "terraform",
+      "docker",
+      "caddy",
+      "vercel"
+    ],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-31",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/side-project-infrastructure.png",
     "title": "일단 EC2 한 대에 올려보기로 했어요",
-    "description": "고정 비용을 줄이려고 EC2 한 대에 두 서비스와 PostgreSQL을 함께 두기로 했어요. 에이전트에게 Terraform 설정을 맡기고 백업, S3 권한과 SSM 배포 경로를 정한 과정을 적었어요.",
+    "description": "가성비와 가용성, 유지보수 비용을 고려해 두 서비스는 EC2를 공유하고 블로그는 Vercel로 분리했어요. 에이전트가 AWS CLI, Terraform, Docker, Caddy로 구성한 과정과 Lightsail, Lambda, Workers를 선택하지 않은 이유를 적었어요.",
     "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
-    "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"],
+    "keywords": ["사이드 프로젝트", "AWS CLI", "EC2", "Terraform", "Docker", "Caddy", "Vercel", "서버리스"],
     "id": "side-project-infrastructure",
     "locale": "ko",
     "toc": [
       {
-        "id": "서버리스로-옮길까도-생각했어요",
-        "title": "서버리스로 옮길까도 생각했어요",
+        "id": "cli와-설정-파일로-인프라를-구성했어요",
+        "title": "CLI와 설정 파일로 인프라를 구성했어요",
         "level": 2
       },
       {
-        "id": "small-한-대에-db까지-넣으면-괜찮을까",
-        "title": "small 한 대에 DB까지 넣으면 괜찮을까",
+        "id": "두-서비스는-ec2를-공유하고-블로그는-분리했어요",
+        "title": "두 서비스는 EC2를 공유하고 블로그는 분리했어요",
+        "level": 2
+      },
+      {
+        "id": "lightsail보다-ec2가-이번-구성에-맞았어요",
+        "title": "Lightsail보다 EC2가 이번 구성에 맞았어요",
+        "level": 2
+      },
+      {
+        "id": "lambda와-workers는-api를-옮기는-작업까지-필요했어요",
+        "title": "Lambda와 Workers는 API를 옮기는 작업까지 필요했어요",
         "level": 2
       },
       {
@@ -221,17 +292,12 @@
         "level": 2
       },
       {
-        "id": "terraform으로-인프라도-코드로-관리했어요",
-        "title": "Terraform으로 인프라도 코드로 관리했어요",
-        "level": 2
-      },
-      {
         "id": "실제-서버에서-봐야-할-것들",
         "title": "실제 서버에서 봐야 할 것들",
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 12,
     "translations": {
       "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
       "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
@@ -239,25 +305,46 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "infrastructure", "aws", "ec2", "postgresql", "s3", "terraform"],
+    "tags": [
+      "side-project",
+      "infrastructure",
+      "aws",
+      "ec2",
+      "postgresql",
+      "s3",
+      "terraform",
+      "docker",
+      "caddy",
+      "vercel"
+    ],
     "publishedAt": "2026-10-28",
-    "updatedAt": "2026-10-31",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/side-project-infrastructure.png",
     "title": "Starting with one EC2 instance",
-    "description": "Why I chose one EC2 instance for two services and PostgreSQL, delegated Terraform setup to an agent, and worked through backups, S3 permissions, and deployment over SSM.",
+    "description": "Balancing value for money, availability, and maintenance: agent-configured EC2 for two services, Vercel for the blog, and the tradeoffs of Lightsail, Lambda, and Workers.",
     "slug": "why-i-chose-one-ec2-instance-for-my-side-projects",
-    "keywords": ["side projects", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "infrastructure", "backups"],
+    "keywords": ["side projects", "AWS CLI", "EC2", "Terraform", "Docker", "Caddy", "Vercel", "serverless"],
     "id": "side-project-infrastructure",
     "locale": "en",
     "toc": [
       {
-        "id": "i-considered-moving-to-serverless",
-        "title": "I considered moving to serverless",
+        "id": "configuring-infrastructure-through-the-cli-and-versioned-files",
+        "title": "Configuring infrastructure through the CLI and versioned files",
         "level": 2
       },
       {
-        "id": "would-one-small-instance-be-enough-for-the-database-too",
-        "title": "Would one small instance be enough for the database too?",
+        "id": "two-services-share-ec2-the-blog-stays-separate",
+        "title": "Two services share EC2; the blog stays separate",
+        "level": 2
+      },
+      {
+        "id": "why-ec2-fit-this-setup-better-than-lightsail",
+        "title": "Why EC2 fit this setup better than Lightsail",
+        "level": 2
+      },
+      {
+        "id": "lambda-and-workers-involved-changing-how-the-apis-run",
+        "title": "Lambda and Workers involved changing how the APIs run",
         "level": 2
       },
       {
@@ -281,17 +368,12 @@
         "level": 2
       },
       {
-        "id": "i-used-terraform-to-manage-infrastructure-as-code",
-        "title": "I used Terraform to manage infrastructure as code",
-        "level": 2
-      },
-      {
         "id": "what-i-still-need-to-check-on-the-server",
         "title": "What I still need to check on the server",
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 10,
     "translations": {
       "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
       "en": "why-i-chose-one-ec2-instance-for-my-side-projects"

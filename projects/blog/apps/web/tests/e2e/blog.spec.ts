@@ -138,6 +138,14 @@ test('edited article covers load in the body and match the social preview image'
   }
 });
 
+test('bold followed by a Korean particle renders without literal markers', async ({ page }) => {
+  const entry = articles.find((candidate) => candidate.id === 'design-concepts-for-reading-ui')!;
+  await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
+  const prose = page.locator('.article-prose');
+  await expect(prose.locator('strong', { hasText: '근접성' })).toHaveCSS('font-weight', '650');
+  await expect(prose).not.toContainText('**');
+});
+
 test('localized product images load and the infrastructure article opens in both languages', async ({
   page,
 }) => {
@@ -521,10 +529,22 @@ test('sitemap and robots expose published translations and allow rendering asset
       }),
     )
   ).flat();
-  expect((await request.get('/sitemap.xml', { maxRedirects: 0 })).status()).toBe(404);
   const urls = entries.map((entry) => entry.url);
   expect(new Set(urls).size).toBe(urls.length);
   const origin = new URL(urls[0]!).origin;
+  const sitemapIndex = await request.get('/sitemap.xml', { maxRedirects: 0 });
+  expect(sitemapIndex.status()).toBe(200);
+  expect(sitemapIndex.headers()['content-type']).toContain('application/xml');
+  const sitemapIndexBody = await sitemapIndex.text();
+  for (const locale of ['ko', 'en'])
+    expect(sitemapIndexBody).toContain(`<loc>${origin}/${locale}/sitemap.xml</loc>`);
+  // A tag page for one article stays reachable but is neither listed nor indexed.
+  const koreanTags = index.filter((article) => article.locale === 'ko').flatMap((article) => article.tags);
+  const singleTag = koreanTags.find((tag) => koreanTags.indexOf(tag) === koreanTags.lastIndexOf(tag))!;
+  const singleTagPath = `/ko/blog/tag/${encodeURIComponent(singleTag)}`;
+  expect(urls).not.toContain(`${origin}${singleTagPath}`);
+  await page.goto(singleTagPath);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   const articleUrl = (entry: (typeof index)[number]) =>
     `${origin}/${entry.locale}/blog/${encodeURIComponent(entry.slug)}`;
   expect(urls.filter((url) => /\/(ko|en)\/blog\/[^/]+$/.test(url)).sort()).toEqual(
@@ -540,6 +560,15 @@ test('sitemap and robots expose published translations and allow rendering asset
       ...(korean && translations.length > 1 ? { 'x-default': articleUrl(korean) } : {}),
     });
   }
+  // Listings carry the date of their newest article; the static about page has no date to report.
+  for (const locale of ['ko', 'en']) {
+    for (const path of ['', '/blog', '/blog/category/engineering'])
+      expect(entries.find((entry) => entry.url === `${origin}/${locale}${path}`)?.lastModified).toBeTruthy();
+    expect(entries.find((entry) => entry.url === `${origin}/${locale}/about`)?.lastModified).toBeUndefined();
+  }
+  expect(
+    entries.filter((entry) => entry.url.includes('/blog/tag/')).every((entry) => entry.lastModified),
+  ).toBe(true);
   const robots = await request.get('/robots.txt', { maxRedirects: 0 });
   expect(robots.status()).toBe(200);
   expect(robots.headers()['content-type']).toContain('text/plain');

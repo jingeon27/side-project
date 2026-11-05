@@ -77,8 +77,21 @@ describe('SEO 출력', () => {
 
   it('사이트맵의 URL·인덱스는 XML 특수 문자를 이스케이프하고 가짜 수정일을 만들지 않아야 한다', () => {
     const url = 'https://moment.example/?a=1&b=<unsafe>';
-    expect(sitemapDocument([url])).toContain('<loc>https://moment.example/?a=1&amp;b=&lt;unsafe&gt;</loc>');
+    expect(sitemapDocument([{ url }])).toContain(
+      '<loc>https://moment.example/?a=1&amp;b=&lt;unsafe&gt;</loc>',
+    );
     expect(sitemapIndex([url])).toContain('<sitemap><loc>');
-    expect(sitemapDocument([url])).not.toContain('<lastmod>');
+    expect(sitemapDocument([{ url }])).not.toContain('<lastmod>');
+  });
+
+  it('확인된 수정 시각이 있는 URL에만 lastmod를 넣어야 한다', () => {
+    const body = sitemapDocument([
+      { url: 'https://moment.example/a', lastModified: '2026-10-20T01:02:03.000Z' },
+      { url: 'https://moment.example/b' },
+    ]);
+    expect(body).toContain(
+      '<url><loc>https://moment.example/a</loc><lastmod>2026-10-20T01:02:03.000Z</lastmod></url>',
+    );
+    expect(body).toContain('<url><loc>https://moment.example/b</loc></url>');
   });
 });

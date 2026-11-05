@@ -22,7 +22,7 @@ Game Mate와 피식 화면의 계정과 게시물은 예시 데이터입니다.
 | <img src="docs/media/game-mate-feed.png" width="300" alt="Game Mate 모바일 친추판매 게시판과 글쓰기 플로팅 버튼" /> | <img src="docs/media/game-mate-write.png" width="300" alt="제목과 내용을 입력한 Game Mate 글쓰기 화면" /> |
 
 <details>
-<summary>글을 작성하고 등록하는 흐름 보기 (약 7초)</summary>
+<summary>글을 작성하고 등록하는 흐름 보기 (약 10초)</summary>
 
 <img src="docs/media/game-mate-write.gif" width="360" alt="Game Mate에서 글쓰기 버튼을 눌러 제목과 내용을 작성하고 게시글을 등록하는 흐름" />
 

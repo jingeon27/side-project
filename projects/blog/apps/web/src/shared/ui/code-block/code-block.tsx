@@ -26,8 +26,10 @@ function textContent(node: ReactNode): string {
 function highlightedLines(node: ReactNode): string[] {
   return Children.toArray(node).flatMap((child) => {
     if (!isValidElement<{ children?: ReactNode; 'data-line'?: unknown }>(child)) return [];
-    if ('data-line' in child.props) return [textContent(child.props.children)];
-    return highlightedLines(child.props.children);
+    if (!('data-line' in child.props)) return highlightedLines(child.props.children);
+    const line = textContent(child.props.children);
+    // rehype-pretty-code renders an empty source line as one space.
+    return [line === ' ' ? '' : line];
   });
 }
 

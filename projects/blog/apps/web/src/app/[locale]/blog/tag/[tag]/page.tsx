@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { uniq } from 'es-toolkit';
 
-import { getArticles } from '@/shared/article/lib/get-articles';
+import { getArticles, getIndexedTags } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: Props) {
   if (locale !== 'ko' && locale !== 'en') notFound();
   const name = getArticles(locale).some((article) => article.tags.includes(tag)) ? tag : decodeTag(tag);
   if (!getArticles(locale).some((article) => article.tags.includes(name))) notFound();
-  return pageMetadata(locale, 'blog', `/blog/tag/${encodeURIComponent(name)}`, `#${name}`);
+  return {
+    ...pageMetadata(locale, 'blog', `/blog/tag/${encodeURIComponent(name)}`, `#${name}`),
+    robots: { index: getIndexedTags(locale).includes(name), follow: true },
+  };
 }
 export default async function TagPage({ params }: Props) {
   const { locale, tag } = await params;
