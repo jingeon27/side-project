@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1056" viewBox="0 0 1080 1056">
+  <title>처음 나온 홈과 고쳐 달라고 한 홈</title>
+  <desc>글에 적은 문제를 설명하려고 다시 그린 도해예요. 실제 서비스 화면은 아니에요.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6a7873" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#a85f43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+  <rect width="1080" height="1056" fill="#f4f1ea"/>
+  <text x="68" y="62" font-size="24" font-weight="400" fill="#62756d" text-anchor="start">01 / 다시 그린 화면</text>
+  <text x="68" y="124" font-size="40" font-weight="700" fill="#273b36" text-anchor="start">처음 나온 홈과 고쳐 달라고 한 홈</text>
+  <rect x="68" y="148" width="300" height="50" rx="10" fill="#f5e6df"/><text x="88" y="183" font-size="28" font-weight="700" fill="#9c5238" text-anchor="start">처음 나온 홈</text>
+  <rect x="568" y="148" width="300" height="50" rx="10" fill="#e4ece0"/><text x="588" y="183" font-size="28" font-weight="700" fill="#2f5a48" text-anchor="start">고쳐 달라고 한 홈</text>
+  <rect x="68" y="208" width="444" height="580" rx="28" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/>
+  <rect x="568" y="208" width="444" height="580" rx="28" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/>
+  <rect x="96" y="236" width="120" height="14" rx="7" fill="#c8d1c8"/>
+  <rect x="96" y="270" width="388" height="60" rx="12" fill="#f7f6f0" stroke="#d0d5cb" stroke-width="2"/>
+  <circle cx="128" cy="300" r="16" fill="#c8d1c8"/>
+  <path d="M 160 292 H 326 M 160 310 H 266" stroke="#d0d5cb" stroke-width="7" stroke-linecap="round"/>
+  <rect x="96" y="342" width="388" height="60" rx="12" fill="#f7f6f0" stroke="#d0d5cb" stroke-width="2"/>
+  <circle cx="128" cy="372" r="16" fill="#c8d1c8"/>
+  <path d="M 160 364 H 326 M 160 382 H 266" stroke="#d0d5cb" stroke-width="7" stroke-linecap="round"/>
+  <rect x="96" y="414" width="388" height="60" rx="12" fill="#f7f6f0" stroke="#d0d5cb" stroke-width="2"/>
+  <circle cx="128" cy="444" r="16" fill="#c8d1c8"/>
+  <path d="M 160 436 H 326 M 160 454 H 266" stroke="#d0d5cb" stroke-width="7" stroke-linecap="round"/>
+  <rect x="96" y="502" width="388" height="262" rx="14" fill="#dfe6dd"/><circle cx="422" cy="558" r="24" fill="#f3f1e9"/><path d="M 116 748 L 236 612 L 313 675 L 375 633 L 464 748 Z" fill="#a9bdb0"/>
+  <circle cx="134" cy="540" r="23" fill="#fffef9" stroke="#d9826a" stroke-width="5"/>
+  <circle cx="134" cy="540" r="14" fill="#c8d1c8"/>
+  <rect x="96" y="606" width="388" height="158" rx="14" fill="#273b36" opacity=".84"/>
+  <path d="M 120 642 H 454 M 120 674 H 430 M 120 706 H 460 M 120 738 H 286" stroke="#e7ebe4" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="498" cy="342" r="16" fill="#a85f43"/><text x="498" y="348" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">1</text>
+  <circle cx="498" cy="686" r="16" fill="#a85f43"/><text x="498" y="692" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">2</text>
+  <circle cx="176" cy="540" r="16" fill="#a85f43"/><text x="176" y="546" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">3</text>
+  <rect x="596" y="236" width="120" height="14" rx="7" fill="#c8d1c8"/>
+  <rect x="596" y="270" width="388" height="270" rx="14" fill="#dfe6dd"/><circle cx="922" cy="326" r="24" fill="#f3f1e9"/><path d="M 616 524 L 736 383 L 813 448 L 875 405 L 964 524 Z" fill="#a9bdb0"/>
+  <circle cx="612" cy="568" r="14" fill="#c8d1c8"/>
+  <path d="M 640 568 H 786" stroke="#d0d5cb" stroke-width="7" stroke-linecap="round"/>
+  <rect x="596" y="600" width="388" height="170" rx="14" fill="#dfe6dd"/><circle cx="922" cy="656" r="24" fill="#f3f1e9"/><path d="M 616 754 L 736 671 L 813 712 L 875 685 L 964 754 Z" fill="#a9bdb0"/>
+  <circle cx="84" cy="836" r="16" fill="#a85f43"/><text x="84" y="842" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">1</text>
+  <text x="112" y="846" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">그룹 목록이 먼저 나와요</text>
+  <circle cx="84" cy="886" r="16" fill="#a85f43"/><text x="84" y="892" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">2</text>
+  <text x="112" y="896" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">긴 안내가 사진을 가려요</text>
+  <circle cx="84" cy="936" r="16" fill="#a85f43"/><text x="84" y="942" font-size="18" font-weight="700" fill="#fffef9" text-anchor="middle">3</text>
+  <text x="112" y="946" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">스토리 없이 테두리만 있어요</text>
+  <circle cx="584" cy="836" r="16" fill="#4f786a"/><path d="M 577 836 L 582 841 L 592 830" fill="none" stroke="#fffef9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="612" y="846" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">그룹 사진을 바로 봐요</text>
+  <circle cx="584" cy="886" r="16" fill="#4f786a"/><path d="M 577 886 L 582 891 L 592 880" fill="none" stroke="#fffef9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="612" y="896" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">목록은 마이페이지로 옮겨요</text>
+  <circle cx="584" cy="936" r="16" fill="#4f786a"/><path d="M 577 936 L 582 941 L 592 930" fill="none" stroke="#fffef9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="612" y="946" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">안내를 줄이고 테두리를 지워요</text>
+  <path d="M 68 984 H 1012" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="68" y="1028" font-size="24" font-weight="400" fill="#7d8a84" text-anchor="start">글에 적은 문제를 설명하려고 다시 그린 도해예요. 실제 서비스 화면은 아니에요.</text>
+  </g>
+</svg>

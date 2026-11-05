@@ -23,6 +23,12 @@
     }
   },
   "posts": {
+    "cognitive-surrender-side-project": {
+      "title": "인지적 항복에 가까웠던 사이드프로젝트",
+      "slug": "인지적-항복에-가까웠던-사이드프로젝트",
+      "description": "Addy Osmani의 글에서 인지적 항복이라는 표현을 읽고, 세부 조건과 디자인을 에이전트에게 넘겼던 사이드프로젝트 초기를 돌아봤어요. 뒤늦게 채운 케이스와 아쉬웠던 화면, 업무에서 위임까지만 하는 이유를 적었어요.",
+      "keywords": ["인지적 항복", "cognitive surrender", "AI 활용", "코딩 에이전트", "사이드프로젝트", "회고"]
+    },
     "reviewing-ai-output": {
       "title": "AI가 만든 코드와 글을 검토하며 쌓은 기준",
       "slug": "ai가-만든-코드와-글을-검토하며-쌓은-기준",
