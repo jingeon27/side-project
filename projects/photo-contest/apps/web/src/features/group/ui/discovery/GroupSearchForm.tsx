@@ -1,6 +1,5 @@
 'use client';
 
-import { useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { Search } from 'lucide-react';
@@ -18,7 +17,6 @@ export function GroupSearchForm() {
   const searchParams = useSearchParams();
   const form = useZodForm(groupSearchSchema, { defaultValues: { q: searchParams.get('q') ?? '' } });
   const router = useAppRouter();
-  const [pending, startTransition] = useTransition();
   return (
     <form
       role="search"
@@ -26,12 +24,10 @@ export function GroupSearchForm() {
       method="get"
       className="flex items-end gap-3"
       noValidate
-      aria-busy={pending}
       onSubmit={form.handleSubmit(({ q }) => {
-        const { search, hash } = window.location;
         // 기존 q를 지운 뒤 마지막에 붙여 다른 키의 순서를 그대로 둔다.
-        const next = updateSearch(updateSearch(search, { q: null }), { q: q || null });
-        startTransition(() => router.replace(`${ROUTES.EXPLORE}${next}${hash}`));
+        const next = updateSearch(updateSearch(window.location.search, { q: null }), { q: q || null });
+        router.replace(`${ROUTES.EXPLORE}${next}${window.location.hash}`);
       })}
     >
       <TextField
@@ -44,7 +40,7 @@ export function GroupSearchForm() {
         error={form.formState.errors.q?.message}
         {...form.register('q')}
       />
-      <Button type="submit" variant="accent" size="lg" loading={pending} className="shrink-0 rounded-full">
+      <Button type="submit" variant="accent" size="lg" className="shrink-0 rounded-full">
         <Search aria-hidden className="mr-1 size-4" />
         검색
       </Button>

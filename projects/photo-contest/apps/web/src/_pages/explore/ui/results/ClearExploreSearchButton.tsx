@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { updateSearch } from '@/shared/lib/query-string.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
@@ -17,16 +17,15 @@ export function ClearExploreSearchButton({
   children: ReactNode;
 }) {
   const router = useAppRouter();
-  const [pending, startTransition] = useTransition();
   return (
     <Button
       variant={variant}
       size={size}
-      loading={pending}
       onClick={() => {
         trackEvent(ANALYTICS_EVENT.GroupSearchCleared, { placement });
-        const { pathname, search, hash } = window.location;
-        startTransition(() => router.replace(`${pathname}${updateSearch(search, { q: null })}${hash}`));
+        router.replace(
+          `${window.location.pathname}${updateSearch(window.location.search, { q: null })}${window.location.hash}`,
+        );
       }}
     >
       {children}
