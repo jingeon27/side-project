@@ -56,13 +56,17 @@ test('프로필 사진이 있으면 생성 카드보다 먼저 공유하고 비�
   const profile = PublicProfileSchema.parse(await (await request.get('/api/users/sample-user-0')).json());
   const avatar = profile.author.avatarUrl;
   expect(avatar).toBeTruthy();
-  const paths = await page.locator('meta[property="og:image"]').evaluateAll((nodes) =>
-    nodes.map((node) => {
-      const url = new URL(node.getAttribute('content') || '');
-      return url.pathname + url.search;
-    }),
-  );
-  expect(paths).toEqual([avatar, '/og/users/sample-user-0']);
+  // 클라이언트 이동은 화면을 먼저 그리고 메타데이터를 스트리밍하므로 URL 변경 직후에는 아직 없을 수 있다.
+  await expect
+    .poll(() =>
+      page.locator('meta[property="og:image"]').evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const url = new URL(node.getAttribute('content') || '');
+          return url.pathname + url.search;
+        }),
+      ),
+    )
+    .toEqual([avatar, '/og/users/sample-user-0']);
   if (!avatar) throw new Error('Expected a saved profile photo');
   expect((await request.get(avatar)).ok()).toBe(true);
   expect((await context.request.delete('/api/profile/avatar', { headers: { Origin: origin } })).ok()).toBe(
