@@ -6,6 +6,10 @@ const loaders = {
   'bottom-sheet-drag-crash/en': () => import('../../../../content/posts/bottom-sheet-drag-crash/en.mdx'),
   'chatbot-message-layer/ko': () => import('../../../../content/posts/chatbot-message-layer/ko.mdx'),
   'chatbot-message-layer/en': () => import('../../../../content/posts/chatbot-message-layer/en.mdx'),
+  'cognitive-surrender-side-project/ko': () =>
+    import('../../../../content/posts/cognitive-surrender-side-project/ko.mdx'),
+  'cognitive-surrender-side-project/en': () =>
+    import('../../../../content/posts/cognitive-surrender-side-project/en.mdx'),
   'cross-domain-token-handoff/ko': () =>
     import('../../../../content/posts/cross-domain-token-handoff/ko.mdx'),
   'cross-domain-token-handoff/en': () =>

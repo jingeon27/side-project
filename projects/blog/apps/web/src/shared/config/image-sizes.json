@@ -35,6 +35,14 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/cognitive-surrender-side-project.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/cognitive-surrender-side-project.svg": {
+    "width": 1280,
+    "height": 720
+  },
   "/images/covers/cross-domain-token-handoff.png": {
     "width": 1672,
     "height": 940
@@ -162,6 +170,54 @@
   "/images/covers/zod-assertion-boundaries.png": {
     "width": 1672,
     "height": 941
+  },
+  "/images/posts/cognitive-surrender-side-project/01-first-home-en.png": {
+    "width": 1080,
+    "height": 1056
+  },
+  "/images/posts/cognitive-surrender-side-project/01-first-home-en.svg": {
+    "width": 1080,
+    "height": 1056
+  },
+  "/images/posts/cognitive-surrender-side-project/01-first-home.png": {
+    "width": 1080,
+    "height": 1056
+  },
+  "/images/posts/cognitive-surrender-side-project/01-first-home.svg": {
+    "width": 1080,
+    "height": 1056
+  },
+  "/images/posts/cognitive-surrender-side-project/02-work-order-en.png": {
+    "width": 1080,
+    "height": 970
+  },
+  "/images/posts/cognitive-surrender-side-project/02-work-order-en.svg": {
+    "width": 1080,
+    "height": 970
+  },
+  "/images/posts/cognitive-surrender-side-project/02-work-order.png": {
+    "width": 1080,
+    "height": 970
+  },
+  "/images/posts/cognitive-surrender-side-project/02-work-order.svg": {
+    "width": 1080,
+    "height": 970
+  },
+  "/images/posts/cognitive-surrender-side-project/03-handing-off-en.png": {
+    "width": 1080,
+    "height": 920
+  },
+  "/images/posts/cognitive-surrender-side-project/03-handing-off-en.svg": {
+    "width": 1080,
+    "height": 920
+  },
+  "/images/posts/cognitive-surrender-side-project/03-handing-off.png": {
+    "width": 1080,
+    "height": 920
+  },
+  "/images/posts/cognitive-surrender-side-project/03-handing-off.svg": {
+    "width": 1080,
+    "height": 920
   },
   "/images/posts/design-concepts-for-reading-ui/action-contrast-en.png": {
     "width": 1080,

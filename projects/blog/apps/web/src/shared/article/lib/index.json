@@ -1,5 +1,130 @@
 [
   {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "side-project", "reflection", "learning"],
+    "publishedAt": "2026-11-06",
+    "coverImage": "/images/covers/cognitive-surrender-side-project.png",
+    "title": "인지적 항복에 가까웠던 사이드프로젝트",
+    "description": "Addy Osmani의 글에서 인지적 항복이라는 표현을 읽고, 세부 조건과 디자인을 에이전트에게 넘겼던 사이드프로젝트 초기를 돌아봤어요. 뒤늦게 채운 케이스와 아쉬웠던 화면, 업무에서 위임까지만 하는 이유를 적었어요.",
+    "slug": "인지적-항복에-가까웠던-사이드프로젝트",
+    "keywords": ["인지적 항복", "cognitive surrender", "AI 활용", "코딩 에이전트", "사이드프로젝트", "회고"],
+    "id": "cognitive-surrender-side-project",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "맡기는-것과-항복하는-것은-달라요",
+        "title": "맡기는 것과 항복하는 것은 달라요",
+        "level": 2
+      },
+      {
+        "id": "기술-스택과-요구사항-캐싱-정책만-정했어요",
+        "title": "기술 스택과 요구사항, 캐싱 정책만 정했어요",
+        "level": 2
+      },
+      {
+        "id": "결과-보고에-없던-케이스를-따로-모아-채웠어요",
+        "title": "결과 보고에 없던 케이스를 따로 모아 채웠어요",
+        "level": 2
+      },
+      {
+        "id": "동작하는-화면에도-아쉬운-부분이-많았어요",
+        "title": "동작하는 화면에도 아쉬운 부분이 많았어요",
+        "level": 2
+      },
+      {
+        "id": "순서를-바꿨다면-어땠을까요",
+        "title": "순서를 바꿨다면 어땠을까요",
+        "level": 2
+      },
+      {
+        "id": "업무에서는-위임까지만-해요",
+        "title": "업무에서는 위임까지만 해요",
+        "level": 2
+      },
+      {
+        "id": "그래서-다른-분야도-공부하려고-해요",
+        "title": "그래서 다른 분야도 공부하려고 해요",
+        "level": 2
+      },
+      {
+        "id": "에이전트의-답은-제가-가공해서-전달해요",
+        "title": "에이전트의 답은 제가 가공해서 전달해요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "인지적-항복에-가까웠던-사이드프로젝트",
+      "en": "cognitive-surrender-side-project"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["ai-workflow", "side-project", "reflection", "learning"],
+    "publishedAt": "2026-11-06",
+    "coverImage": "/images/covers/cognitive-surrender-side-project.png",
+    "title": "The side project where I came close to cognitive surrender",
+    "description": "Addy Osmani's writing on cognitive surrender made me look back at leaving detailed conditions and design to an agent in my side projects. I cover the cases I filled in later, the disappointing screens, and why I stop at offloading at work.",
+    "slug": "cognitive-surrender-side-project",
+    "keywords": [
+      "cognitive surrender",
+      "cognitive offloading",
+      "AI workflow",
+      "coding agents",
+      "side projects",
+      "reflection"
+    ],
+    "id": "cognitive-surrender-side-project",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "offloading-is-not-surrender",
+        "title": "Offloading is not surrender",
+        "level": 2
+      },
+      {
+        "id": "i-decided-only-the-stack-requirements-and-caching-policy",
+        "title": "I decided only the stack, requirements, and caching policy",
+        "level": 2
+      },
+      {
+        "id": "filling-in-the-cases-missing-from-the-reports",
+        "title": "Filling in the cases missing from the reports",
+        "level": 2
+      },
+      {
+        "id": "screens-that-worked-and-still-disappointed-me",
+        "title": "Screens that worked and still disappointed me",
+        "level": 2
+      },
+      {
+        "id": "what-if-i-had-changed-the-order",
+        "title": "What if I had changed the order?",
+        "level": 2
+      },
+      {
+        "id": "at-work-i-stop-at-offloading",
+        "title": "At work, I stop at offloading",
+        "level": 2
+      },
+      {
+        "id": "so-i-plan-to-study-other-fields-too",
+        "title": "So I plan to study other fields too",
+        "level": 2
+      },
+      {
+        "id": "i-rework-an-agents-answers-before-passing-them-on",
+        "title": "I rework an agent's answers before passing them on",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "인지적-항복에-가까웠던-사이드프로젝트",
+      "en": "cognitive-surrender-side-project"
+    }
+  },
+  {
     "category": "til",
     "tags": ["design", "ux", "ui", "interaction-design"],
     "publishedAt": "2026-11-04",
