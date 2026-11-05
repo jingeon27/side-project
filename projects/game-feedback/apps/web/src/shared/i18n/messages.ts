@@ -238,7 +238,6 @@ const messages: Record<string, readonly [string, string]> = {
     'Share a game story or a recruitment post.',
     'ゲームの話題や募集を投稿してみましょう。',
   ],
-  '더 많은 글 보기': ['More posts', '投稿をもっと見る'],
   자유게시판: ['General', '自由掲示板'],
   게임코치: ['Game coaching', 'ゲームコーチ'],
   '게임 이야기와 일상을 자유롭게 나눠보세요.': [

@@ -4,11 +4,11 @@ import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { MessageCircleQuestion, Newspaper, Plus, SearchX } from 'lucide-react';
+import { MessageCircleQuestion, Newspaper, SearchX } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Spinner } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import {
@@ -169,19 +169,10 @@ function FeedResults({
         ))}
       </div>
       <div ref={sentinel} className="feed-sentinel" />
-      {feed.hasNextPage && (
-        <Button
-          variant="secondary"
-          size="lg"
-          fullWidth
-          type="button"
-          className="load-more"
-          loading={feed.isFetchingNextPage}
-          icon={<Plus aria-hidden />}
-          onClick={() => feed.fetchNextPage()}
-        >
-          {t('더 많은 글 보기')}
-        </Button>
+      {isFetchingNextPage && (
+        <div className="feed-loading-more">
+          <Spinner label={t('게시글 불러오는 중')} />
+        </div>
       )}
       {posts.length > 0 && !hasNextPage && (
         <div className="feed-end">
