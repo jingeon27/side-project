@@ -41,11 +41,11 @@ function decide(service: string, release: string) {
   return { output: readFileSync(output, 'utf8').trim(), summary: readFileSync(summary, 'utf8') };
 }
 
-/** 워크플로의 on.push.paths 목록을 읽는다. 목록은 블록 형식으로 쓴다. */
+/** PR과 push가 공유하는 경로 목록을 읽는다. 목록은 블록 형식으로 쓴다. */
 function workflowPaths() {
   const lines = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8').split('\n');
   const start = lines.indexOf('  push:');
-  const list = lines.indexOf('    paths:', start);
+  const list = lines.indexOf('    paths: &service_paths', start);
   const paths: string[] = [];
   for (const line of lines.slice(list + 1)) {
     const match = /^ {6}- '?([^']+?)'?$/.exec(line);
@@ -63,17 +63,38 @@ beforeEach(() => {
 afterEach(() => rmSync(state.directory, { recursive: true, force: true }));
 
 describe('최신 커밋 배포 판정', () => {
-  it('중앙 워크플로는 두 서비스 배포 판정의 경로를 모두 검사해야 한다', () => {
+  it('PR과 push는 두 서비스 배포 판정과 같은 경로 목록을 공유해야 한다', () => {
     const listed = ['photo-contest', 'game-feedback'].flatMap((service) =>
       execFileSync('bash', [script, service, '--paths'], { encoding: 'utf8' }).trim().split('\n'),
     );
     expect(new Set(workflowPaths())).toEqual(new Set(listed));
-    // PR에서는 경로와 무관하게 최종 판정까지 도달해야 required check가 대기하지 않는다.
     const pullRequest = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8')
       .split(/^  pull_request:/m)[1]
       ?.split(/^  \S/m)[0];
     expect(pullRequest).toBeDefined();
-    expect(pullRequest).not.toMatch(/^\s+paths(?:-ignore)?:/m);
+    expect(pullRequest).toMatch(/^    paths: \*service_paths$/m);
+  });
+
+  it.each([
+    [['projects/blog/apps/web/content/post.mdx', 'projects/blog/apps/web/seo/ko.json'], false],
+    [['projects/blog/apps/web/src/app/page.tsx', 'projects/blog/apps/web/next.config.ts'], false],
+    [['projects/blog/apps/web/public/images/post.png', '.github/workflows/blog.yml'], false],
+    [['projects/blog/README.md', 'README.md'], false],
+    [['projects/blog/README.md', 'projects/game-feedback/apps/web/src/app/page.tsx'], true],
+    [['projects/blog/README.md', 'projects/photo-contest/apps/api/src/main.ts'], true],
+    [['projects/blog/README.md', 'packages/design-system/.storybook/main.ts'], true],
+    [['projects/blog/README.md', 'deploy/shared-instance/Caddyfile'], true],
+    [['projects/blog/README.md', 'yarn.lock'], true],
+    [['projects/game-feedback/.env.example'], true],
+  ] as const)('%j 변경 시 Services 실행 대상 여부는 %s여야 한다', (files, expected) => {
+    const base = git('rev-parse', 'HEAD');
+    for (const file of files) commit(file);
+    const diff = spawnSync('git', ['diff', '--quiet', base, 'HEAD', '--', ...workflowPaths()], {
+      cwd: state.directory,
+      encoding: 'utf8',
+    });
+    expect([0, 1], diff.stderr).toContain(diff.status);
+    expect(diff.status === 1).toBe(expected);
   });
 
   it('브랜치 끝의 커밋은 배포해야 한다', () => {

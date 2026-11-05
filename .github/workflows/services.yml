@@ -7,7 +7,7 @@ on:
     branches:
       - main
       - develop
-    paths:
+    paths: &service_paths
       - projects/game-feedback/**
       - projects/photo-contest/**
       - packages/**
@@ -22,9 +22,10 @@ on:
       - .dockerignore
       - .github/workflows/services.yml
       - deploy/shared-instance/**
-  # 필수 검사가 문서 전용 PR에서 대기하지 않도록 선택·최종 판정은 항상 실행한다.
+  # PR과 push가 같은 경로를 사용해 블로그만 바뀐 실행은 만들지 않는다.
   pull_request:
     branches: [develop, main]
+    paths: *service_paths
   workflow_dispatch:
     inputs:
       task:
