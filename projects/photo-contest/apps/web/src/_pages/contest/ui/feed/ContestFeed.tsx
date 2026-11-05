@@ -7,7 +7,16 @@ import { Images } from 'lucide-react';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { FEED_PAGE_SIZE, PHOTO_SORT, SubmissionCard, type TPhotoSort } from '@/features/submission';
+import {
+  FEED_PAGE_SIZE,
+  PHOTO_SORT,
+  SubmissionCard,
+  SubmissionCardActions,
+  SubmissionCardBody,
+  SubmissionCardCaption,
+  SubmissionCardPhoto,
+  type TPhotoSort,
+} from '@/features/submission';
 import { VoteButton } from '@/features/vote';
 import { Phase, SubmissionsDocument, type SubmissionsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
@@ -40,7 +49,6 @@ function FeedContent({
     canFetchMore: (data) =>
       data.submissions.filter((photo) => !photo.hidden).length < (context?.contest.submissionCount ?? 0),
   });
-  const { data, refetch } = pagination;
   const [pending, startTransition] = useTransition();
   const count = context?.contest.submissionCount;
   const previousCount = useRef(count);
@@ -50,25 +58,23 @@ function FeedContent({
     if (count === undefined) return;
     startTransition(async () => {
       try {
-        await refetch();
+        await pagination.refetch();
       } catch {
         /* 다시 조회 오류는 피드 경계에서 복구한다. */
       }
     });
-  }, [count, refetch, startTransition]);
+  }, [count, pagination, startTransition]);
   if (!context) return null;
-  const { contest } = context;
-  const photos = data.submissions.filter((submission) => !submission.hidden);
-  const hasMore = pagination.hasNextPage;
+  const photos = pagination.data.submissions.filter((submission) => !submission.hidden);
   const handleRefresh = () =>
     startTransition(async () => {
       try {
-        await refetch();
+        await pagination.refetch();
       } catch {
         /* 피드 경계가 재시도를 제공한다. */
       }
     });
-  if (!photos.length && !hasMore)
+  if (!photos.length && !pagination.hasNextPage)
     return (
       <EmptyState
         icon={<Images />}
@@ -88,39 +94,35 @@ function FeedContent({
         사진 새로고침
       </Button>
       {photos.map((submission, index) => (
-        <SubmissionCard
-          key={submission.id}
-          submission={submission}
-          viewerId={viewerId}
-          isPriority={index === 0}
-          actions={
-            <>
+        <SubmissionCard key={submission.id} submission={submission}>
+          <SubmissionCardPhoto isPriority={index === 0} />
+          <SubmissionCardBody>
+            <SubmissionCardCaption viewerId={viewerId} />
+            <SubmissionCardActions>
               <LikeButton submission={submission} isMine={submission.author.id === viewerId} />
-              {contest.phase === Phase.Voting ? (
+              {context.contest.phase === Phase.Voting ? (
                 <VoteButton
-                  contestId={contest.id}
+                  contestId={context.contest.id}
                   submissionId={submission.id}
-                  votedSubmissionId={contest.votedSubmissionId ?? null}
+                  votedSubmissionId={context.contest.votedSubmissionId ?? null}
                   isMine={submission.author.id === viewerId}
                   isHidden={submission.hidden}
                 />
               ) : null}
-            </>
-          }
-          moderation={
+            </SubmissionCardActions>
             <ModerationActions
               submission={submission}
-              contestId={contest.id}
-              isAdmin={contest.isAdmin}
+              contestId={context.contest.id}
+              isAdmin={context.contest.isAdmin}
               isMine={submission.author.id === viewerId}
               isCompleted={false}
             />
-          }
-        />
+          </SubmissionCardBody>
+        </SubmissionCard>
       ))}
       <div className="col-span-full">
         <FeedLoadMore
-          hasMore={hasMore}
+          hasMore={pagination.hasNextPage}
           loading={pending || pagination.isFetchingNextPage}
           onLoadMore={pagination.fetchNextPage}
         />
