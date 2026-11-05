@@ -87,7 +87,8 @@ function Query() {
   );
 }
 
-async function setup(rows: Record<string, string[]>) {
+/** refetchGate를 넘기면 처음 조회 뒤의 첫 페이지 요청은 그 Promise가 끝날 때까지 응답하지 않는다. */
+async function setup(rows: Record<string, string[]>, refetchGate?: Promise<void>) {
   const requests: Array<{ scope: string; offset: number }> = [];
   const client = new ApolloClient({
     cache: new InMemoryCache({
@@ -97,8 +98,12 @@ async function setup(rows: Record<string, string[]>) {
       (operation) =>
         new Observable((observer) => {
           const { scope, offset, limit } = operation.variables;
+          const gate =
+            refetchGate && offset === 0 && requests.some((request) => request.offset === 0)
+              ? refetchGate
+              : Promise.resolve();
           requests.push({ scope, offset });
-          queueMicrotask(() => {
+          void gate.then(() => {
             observer.next({
               data: {
                 items:
@@ -123,6 +128,27 @@ async function setup(rows: Record<string, string[]>) {
 }
 
 describe('useInfiniteQuery', () => {
+  it('첫 페이지를 다시 받는 동안에는 이전 길이로 계산한 추가 조회를 보내지 않아야 한다', async () => {
+    const refetchGate = Promise.withResolvers<void>();
+    const requests = await setup({ first: ['a', 'b', 'c', 'd'] }, refetchGate.promise);
+    await screen.findByText('b');
+    await waitFor(() => expect(screen.getByRole('button', { name: '더 보기' })).toBeEnabled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '새로고침' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+    });
+    expect(requests.filter((request) => request.offset === 2)).toHaveLength(0);
+    await act(async () => refetchGate.resolve());
+    await waitFor(() => expect(screen.getByRole('button', { name: '더 보기' })).toBeEnabled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+    });
+    expect(await screen.findByText('d')).toBeInTheDocument();
+    expect(requests.map((request) => request.offset)).toEqual([0, 0, 2]);
+  });
+
   it('Apollo 목록을 이어 읽고 짧은 마지막 페이지에서 멈춰야 한다', async () => {
     const requests = await setup({ first: ['a', 'b', 'c', 'd', 'e'] });
     await screen.findByText('b');

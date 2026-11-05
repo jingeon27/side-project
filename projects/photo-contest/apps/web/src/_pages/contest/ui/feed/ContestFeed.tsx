@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useTransition } from 'react';
+import { startTransition, useEffect, useRef } from 'react';
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Images } from 'lucide-react';
@@ -49,13 +49,13 @@ function FeedContent({
     canFetchMore: (data) =>
       data.submissions.filter((photo) => !photo.hidden).length < (context?.contest.submissionCount ?? 0),
   });
-  const [pending, startTransition] = useTransition();
   const count = context?.contest.submissionCount;
   const previousCount = useRef(count);
   useEffect(() => {
     if (previousCount.current === count) return;
     previousCount.current = count;
     if (count === undefined) return;
+    // 사진 수 변화에 따른 동기화는 진행 표시 없이 기존 사진을 유지한 채 받는다.
     startTransition(async () => {
       try {
         await pagination.refetch();
@@ -63,17 +63,9 @@ function FeedContent({
         /* 다시 조회 오류는 피드 경계에서 복구한다. */
       }
     });
-  }, [count, pagination, startTransition]);
+  }, [count, pagination]);
   if (!context) return null;
   const photos = pagination.data.submissions.filter((submission) => !submission.hidden);
-  const handleRefresh = () =>
-    startTransition(async () => {
-      try {
-        await pagination.refetch();
-      } catch {
-        /* 피드 경계가 재시도를 제공한다. */
-      }
-    });
   if (!photos.length && !pagination.hasNextPage)
     return (
       <EmptyState
@@ -88,8 +80,16 @@ function FeedContent({
         variant="ghost"
         size="sm"
         className="col-span-full justify-self-start"
-        loading={pending || pagination.isFetchingNextPage}
-        onClick={handleRefresh}
+        loading={pagination.isFetchingNextPage}
+        onClick={() =>
+          startTransition(async () => {
+            try {
+              await pagination.refetch();
+            } catch {
+              /* 피드 경계가 재시도를 제공한다. */
+            }
+          })
+        }
       >
         사진 새로고침
       </Button>
@@ -123,7 +123,7 @@ function FeedContent({
       <div className="col-span-full">
         <FeedLoadMore
           hasMore={pagination.hasNextPage}
-          loading={pending || pagination.isFetchingNextPage}
+          loading={pagination.isFetchingNextPage}
           onLoadMore={pagination.fetchNextPage}
         />
       </div>
