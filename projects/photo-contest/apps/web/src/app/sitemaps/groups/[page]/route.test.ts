@@ -19,7 +19,13 @@ beforeEach(() => {
   vi.mocked(getPublicGroupCount).mockReset().mockResolvedValue(49);
   vi.mocked(getPublicGroupSitemapPage)
     .mockReset()
-    .mockResolvedValue([{ __typename: 'Group', id: 'group-1' }] as never);
+    .mockResolvedValue([
+      {
+        __typename: 'PublicGroupSitemapEntry',
+        id: 'group-1',
+        lastModifiedAt: '2026-10-20T01:02:03.000Z',
+      },
+    ] as never);
 });
 
 describe('공개 그룹 사이트맵 분할 파일', () => {
@@ -28,6 +34,11 @@ describe('공개 그룹 사이트맵 분할 파일', () => {
     expect(last.status).toBe(200);
     expect(await last.text()).toContain('/groups/group-1');
     expect(getPublicGroupSitemapPage).toHaveBeenCalledWith(1);
+  });
+
+  it('API가 준 그룹 수정 시각을 lastmod로 올려야 한다', async () => {
+    const body = await (await request('1.xml')).text();
+    expect(body).toMatch(/\/groups\/group-1<\/loc><lastmod>2026-10-20T01:02:03\.000Z<\/lastmod>/);
   });
 
   it('대회가 없을 수 있는 대회 목록과 명예의 전당은 올리지 않아야 한다', async () => {

@@ -47,4 +47,8 @@ export class GroupContestResolver {
   winners(@Parent() contest: IGroupContestNode) {
     return contest.loadWinners();
   }
+  @ResolveField()
+  lastModifiedAt(@Parent() contest: IGroupContestNode) {
+    return contest.loadLastModifiedAt();
+  }
 }

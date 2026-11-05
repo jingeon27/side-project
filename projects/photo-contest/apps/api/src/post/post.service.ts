@@ -19,7 +19,7 @@ import { PostFileService } from './media/post-file.service';
 import { postLink } from './post-link.policy';
 import { koreanMonth } from './post-order';
 import { presentPost } from './post.presenter';
-import { postInclude } from './post.query';
+import { postInclude, VISIBLE_POST } from './post.query';
 
 interface IPostInput {
   clientRequestId?: string | null;
@@ -95,8 +95,7 @@ export class PostService {
         ...scope,
         ...(query.categoryId ? { categoryId: query.categoryId } : {}),
         ...(query.contestId ? { contestId: query.contestId } : {}),
-        hidden: false,
-        OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
+        ...VISIBLE_POST,
         ...(popular ? { createdAt: koreanMonth() } : {}),
       },
       include: postInclude(viewer?.id ?? null),

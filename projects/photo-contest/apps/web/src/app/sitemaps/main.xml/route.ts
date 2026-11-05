@@ -9,11 +9,10 @@ export async function GET() {
   await connection();
   const origin = getWebOrigin();
   return sitemapResponse(
-    sitemapDocument([
-      siteUrl(ROUTES.HOME, origin),
-      siteUrl(ROUTES.LANDING, origin),
-      siteUrl(ROUTES.HOW_IT_WORKS, origin),
-      siteUrl(ROUTES.EXPLORE, origin),
-    ]),
+    sitemapDocument(
+      [ROUTES.HOME, ROUTES.LANDING, ROUTES.HOW_IT_WORKS, ROUTES.EXPLORE].map((path) => ({
+        url: siteUrl(path, origin),
+      })),
+    ),
   );
 }

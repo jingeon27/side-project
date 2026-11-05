@@ -77,6 +77,7 @@ describe('대회 목록·명예의 전당 SEO와 사이트맵', () => {
     expect(new Set(allIds).size).toBe(count);
     expect(allIds).toEqual(expect.arrayContaining(ids));
     expect(allIds).not.toContain(privateContestId);
+    for (const contest of pages.flat()) expect(Date.parse(contest.lastModifiedAt)).not.toBeNaN();
     expect((await getGroupContestsSeoData(groupId, false))?.contests).toHaveLength(24);
     expect((await getGroupContestsSeoData(groupId, true))?.contests).toEqual([]);
     expect((await getGroupContestsSeoData(privateId, false))?.contests).toEqual([]);

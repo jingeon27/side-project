@@ -19,6 +19,8 @@ type GroupContest {
   votedPostId: ID
   entryCount: Int!
   winners: [GroupContestResult!]!
+  "화면이 마지막으로 바뀐 시각. 생성, 지나간 단계 경계, 마지막 참여작 중 가장 늦은 값이다"
+  lastModifiedAt: DateTime!
 }
 
 type GroupContestResult {

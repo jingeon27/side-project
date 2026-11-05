@@ -26,6 +26,7 @@ import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { NOTIFICATION_TYPE } from '../notification/notification-type';
 import { writeNotifications } from '../notification/notification.writer';
+import { VISIBLE_POST } from '../post/post.query';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { GroupCategoryService } from './categories/group-category.service';
 import { GROUP_ROLE, toGroupRole, type TGroupRole } from './membership/group-role';
@@ -154,6 +155,27 @@ export class GroupService {
 
   publicGroupCount() {
     return this.db.group.count({ where: { visibility: GROUP_VISIBILITY.PUBLIC } });
+  }
+
+  async publicGroupSitemap(offset?: number | null, limit?: number | null) {
+    const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
+    const groups = await this.db.group.findMany({
+      where: { visibility: GROUP_VISIBILITY.PUBLIC },
+      select: { id: true, createdAt: true },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: range.offset,
+      take: range.limit,
+    });
+    const latestPosts = await this.db.post.groupBy({
+      by: ['groupId'],
+      where: { groupId: { in: groups.map((group) => group.id) }, ...VISIBLE_POST },
+      _max: { createdAt: true },
+    });
+    const lastPostAt = new Map(latestPosts.map((post) => [post.groupId, post._max.createdAt]));
+    return groups.map((group) => ({
+      id: group.id,
+      lastModifiedAt: lastPostAt.get(group.id) ?? group.createdAt,
+    }));
   }
 
   async createGroup(
