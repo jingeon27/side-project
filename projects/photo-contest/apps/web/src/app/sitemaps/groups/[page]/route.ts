@@ -24,6 +24,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
   const groups = await getPublicGroupSitemapPage(page);
   if (!groups.length) return new Response(null, { status: 404 });
   return sitemapResponse(
-    sitemapDocument(groups.map((group) => siteUrl(ROUTES.GROUP(group.id), getWebOrigin()))),
+    sitemapDocument(
+      groups.map((group) => ({
+        url: siteUrl(ROUTES.GROUP(group.id), getWebOrigin()),
+        lastModified: group.lastModifiedAt,
+      })),
+    ),
   );
 }

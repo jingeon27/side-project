@@ -18,13 +18,24 @@ vi.mock('@/_pages/group-contests/index.server', () => ({
 const request = (page: string) =>
   GET(new Request(`http://localhost:3200/sitemaps/contests/${page}`), { params: Promise.resolve({ page }) });
 
+const contest = (
+  id: string,
+  groupId: string,
+  phase: string,
+  lastModifiedAt = '2026-10-01T00:00:00.000Z',
+) => ({
+  __typename: 'GroupContest',
+  id,
+  groupId,
+  phase,
+  lastModifiedAt,
+});
+
 beforeEach(() => {
   vi.mocked(getPublicGroupContestCount).mockReset().mockResolvedValue(48);
   vi.mocked(getPublicGroupContestSitemapPage)
     .mockReset()
-    .mockResolvedValue([
-      { __typename: 'GroupContest', id: 'contest-1', groupId: 'group-1', phase: 'VOTING' },
-    ] as never);
+    .mockResolvedValue([contest('contest-1', 'group-1', 'VOTING')] as never);
 });
 
 describe('공개 그룹 대회 사이트맵 분할 파일', () => {
@@ -37,9 +48,9 @@ describe('공개 그룹 대회 사이트맵 분할 파일', () => {
 
   it('대회가 보이는 목록 화면만 한 번씩 올리고 빈 목록 화면은 올리지 않아야 한다', async () => {
     vi.mocked(getPublicGroupContestSitemapPage).mockResolvedValue([
-      { __typename: 'GroupContest', id: 'ongoing-1', groupId: 'ongoing', phase: 'SUBMISSION' },
-      { __typename: 'GroupContest', id: 'ongoing-2', groupId: 'ongoing', phase: 'VOTING' },
-      { __typename: 'GroupContest', id: 'ended', groupId: 'finished', phase: 'COMPLETED' },
+      contest('ongoing-1', 'ongoing', 'SUBMISSION'),
+      contest('ongoing-2', 'ongoing', 'VOTING'),
+      contest('ended', 'finished', 'COMPLETED'),
     ] as never);
     const body = await (await request('0.xml')).text();
 
@@ -53,6 +64,21 @@ describe('공개 그룹 대회 사이트맵 분할 파일', () => {
       'finished/contests/ended',
     ])
       expect(body).toContain(`/groups/${path}<`);
+  });
+
+  it('대회 상세는 자기 시각을, 함께 보이는 목록은 가장 늦은 대회의 시각을 lastmod로 올려야 한다', async () => {
+    // 목록 순서와 무관해야 하므로 최신 대회를 일부러 앞에 둔다.
+    vi.mocked(getPublicGroupContestSitemapPage).mockResolvedValue([
+      contest('newer', 'ongoing', 'SUBMISSION', '2026-10-20T00:00:00.000Z'),
+      contest('older', 'ongoing', 'VOTING', '2026-10-05T00:00:00.000Z'),
+    ] as never);
+    const body = await (await request('0.xml')).text();
+    const lastModifiedOf = (path: string) =>
+      body.match(new RegExp(`/groups/${path}</loc><lastmod>([^<]+)</lastmod>`))?.[1];
+
+    expect(lastModifiedOf('ongoing/contests/newer')).toBe('2026-10-20T00:00:00.000Z');
+    expect(lastModifiedOf('ongoing/contests/older')).toBe('2026-10-05T00:00:00.000Z');
+    expect(lastModifiedOf('ongoing/contests')).toBe('2026-10-20T00:00:00.000Z');
   });
 
   it('범위 밖이거나 형식이 틀린 번호는 페이지를 조회하지 않고 404여야 한다', async () => {

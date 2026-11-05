@@ -137,8 +137,9 @@ query PublicGroupCount {
 }
 
 query PublicGroupSitemap($offset: Int!, $limit: Int!) {
-  discoverGroups(visibility: PUBLIC, offset: $offset, limit: $limit) {
+  publicGroupSitemap(offset: $offset, limit: $limit) {
     id
+    lastModifiedAt
   }
 }
 

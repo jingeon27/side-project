@@ -83,6 +83,7 @@ query PublicGroupContestSitemap($offset: Int!, $limit: Int!) {
     id
     groupId
     phase
+    lastModifiedAt
   }
 }
 query PublicGroupContestCount {
