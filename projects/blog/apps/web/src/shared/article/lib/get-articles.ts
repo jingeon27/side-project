@@ -18,3 +18,11 @@ export function getPublishedCategories(locale: Locale): Category[] {
 export function getCategoryLocales(category: Category): Locale[] {
   return (['ko', 'en'] as const).filter((locale) => getPublishedCategories(locale).includes(category));
 }
+/**
+ * Tags worth offering to search engines. A page for a single article only repeats that
+ * article, so it stays reachable from the site but is left out of the index and sitemap.
+ */
+export function getIndexedTags(locale: Locale): string[] {
+  const tags = getArticles(locale).flatMap((article) => article.tags);
+  return [...new Set(tags)].filter((tag) => tags.indexOf(tag) !== tags.lastIndexOf(tag));
+}
