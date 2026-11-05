@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useCallback } from 'react';
 
-import { Button } from '@/shared/ui/@core/button';
+import { Spinner } from '@/shared/ui/@core/spinner';
 
 interface IFeedLoadMoreProps {
   hasMore: boolean;
@@ -11,34 +11,30 @@ interface IFeedLoadMoreProps {
 }
 
 /**
- * 끝에 가까워지면 다음 사진을 불러오는 감시 지점과, 같은 일을 하는 "사진 더 보기" 버튼.
- * 버튼은 화면 읽기 프로그램·키보드 사용자와 IntersectionObserver가 없는 환경을 위해 남긴다.
+ * 목록 끝이 가까워지면 다음 사진을 불러온다. 불러오는 동안 감시를 멈췄다가 끝나면 다시 붙여,
+ * 새 페이지가 짧아 끝 지점이 계속 보여도 첫 관찰 결과로 이어서 불러온다.
  */
 export function FeedLoadMore({ hasMore, loading, onLoadMore }: IFeedLoadMoreProps) {
-  const sentinel = useRef<HTMLDivElement>(null);
-  const handleIntersection = useEffectEvent((entries: IntersectionObserverEntry[]) => {
-    if (entries.some((entry) => entry.isIntersecting) && !loading) onLoadMore();
-  });
-
-  useEffect(() => {
-    const target = sentinel.current;
-    if (!hasMore || !target || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      handleIntersection,
-      // 한 화면쯤 남았을 때 미리 불러온다.
-      { rootMargin: '0px 0px 600px 0px' },
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [hasMore]);
+  const observeEnd = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || loading) return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) onLoadMore();
+        },
+        // 한 화면쯤 남았을 때 미리 불러온다.
+        { rootMargin: '0px 0px 600px 0px' },
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    },
+    [loading, onLoadMore],
+  );
 
   if (!hasMore) return null;
   return (
-    <div className="flex flex-col items-stretch">
-      <div ref={sentinel} aria-hidden className="h-px" />
-      <Button variant="secondary" fullWidth loading={loading} onClick={onLoadMore}>
-        사진 더 보기
-      </Button>
+    <div ref={observeEnd} className="flex min-h-touch items-center justify-center">
+      {loading ? <Spinner label="사진을 더 불러오는 중" className="text-muted" /> : null}
     </div>
   );
 }

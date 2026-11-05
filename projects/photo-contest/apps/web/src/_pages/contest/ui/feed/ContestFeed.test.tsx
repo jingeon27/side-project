@@ -2,8 +2,7 @@ import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { ApolloProvider, useBackgroundQuery } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { submissionTypePolicies } from '@/features/submission';
 import {
@@ -33,6 +32,33 @@ const CONTEST: ContestQuery['contest'] = {
   hiddenSubmissions: [],
 };
 const VARIABLES = { contestId: 'contest', sort: SubmissionSort.Newest, offset: 0, limit: 24 };
+const LOADING_MORE = '사진을 더 불러오는 중';
+
+const endObservers = new Set<IntersectionObserverCallback>();
+beforeEach(() => {
+  endObservers.clear();
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe() {
+        endObservers.add(this.callback);
+      }
+      disconnect() {
+        endObservers.delete(this.callback);
+      }
+    },
+  );
+});
+afterEach(() => vi.unstubAllGlobals());
+
+/** 피드 끝 지점이 화면 가까이 들어온 것처럼 알린다. */
+const reachFeedEnd = () =>
+  act(() => {
+    endObservers.forEach((callback) =>
+      callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver),
+    );
+  });
 
 function photo(index: number): SubmissionCardFragment {
   return {
@@ -94,23 +120,25 @@ function setup(
       <Harness />
     </ApolloProvider>,
   );
-  return { client, user: userEvent.setup() };
+  return { client };
 }
 
 describe('사진 피드 조회 맥락', () => {
   it('관리자의 숨긴 사진도 offset에 세고 더 읽는 동안 기존 사진과 안내를 유지해야 한다', async () => {
-    const { user } = setup();
+    setup();
     expect(await screen.findByText('사진-6')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: '사진 더 보기' }));
+    reachFeedEnd();
+    expect(await screen.findByText(LOADING_MORE)).toBeInTheDocument();
     expect(screen.getByText('사진-6')).toBeVisible();
     expect(screen.getByRole('heading', { name: '대회 안내' })).toBeVisible();
     expect(await screen.findByText('사진-29')).toBeVisible();
     expect(screen.queryByText('사진-0')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '사진 더 보기' })).not.toBeInTheDocument();
+    expect(screen.queryByText(LOADING_MORE)).not.toBeInTheDocument();
+    expect(endObservers.size).toBe(0);
   });
 
   it('사진 수가 달라져 첫 페이지를 다시 받으면 이전 페이지의 끝 사진을 남기지 않아야 한다', async () => {
-    const { client, user } = setup([
+    const { client } = setup([
       {
         request: { query: SubmissionsDocument, variables: VARIABLES },
         result: { data: { submissions: [photo(6)] } },
@@ -118,7 +146,7 @@ describe('사진 피드 조회 맥락', () => {
       },
     ]);
     await screen.findByText('사진-6');
-    await user.click(screen.getByRole('button', { name: '사진 더 보기' }));
+    reachFeedEnd();
     await screen.findByText('사진-29');
     act(() =>
       client.writeQuery({
@@ -133,14 +161,15 @@ describe('사진 피드 조회 맥락', () => {
   });
 
   it('첫 페이지가 모두 숨긴 사진이어도 남은 공개 사진을 불러올 수 있어야 한다', async () => {
-    const { user } = setup(
+    setup(
       [],
       Array.from({ length: 24 }, (_, index) => ({ ...photo(index), hidden: true })),
       6,
     );
-    await user.click(await screen.findByRole('button', { name: '사진 더 보기' }));
+    await waitFor(() => expect(endObservers.size).toBe(1));
+    reachFeedEnd();
     expect(await screen.findByText('사진-29')).toBeVisible();
     expect(screen.queryByText('사진-0')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '사진 더 보기' })).not.toBeInTheDocument();
+    expect(endObservers.size).toBe(0);
   });
 });
