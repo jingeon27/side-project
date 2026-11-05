@@ -1,4 +1,4 @@
 interface:
-  display_name: "블로그 작성 도우미"
-  short_description: "사용자 문체 피드백과 실제 코드 근거를 반영하는 블로그 작성과 교정"
-  default_prompt: "$blog-writer 스킬로 요청한 글을 작성하거나 고쳐줘. 블로그 문체 피드백과 확인한 근거를 반영해줘."
+  display_name: '블로그 작성 도우미'
+  short_description: '독자 목적에 맞는 구성과 사용자 문체, 실제 근거를 반영하는 한영 블로그 작성과 교정'
+  default_prompt: '$blog-writer 스킬로 요청한 글을 작성하거나 고쳐줘. 새 글이나 큰 개정은 독자 목적과 핵심 질문에 맞춰 구성하고, 블로그 문체 피드백과 확인한 근거를 반영해줘.'
