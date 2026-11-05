@@ -3,7 +3,7 @@
     "category": "til",
     "tags": ["design", "ux", "ui", "interaction-design"],
     "publishedAt": "2026-11-04",
-    "updatedAt": "2026-11-04",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
     "title": "화면이 어색한 이유를 설명하는 디자인 개념",
     "description": "가상의 코칭 카드를 예로 시각 위계와 대비, 정보 묶음과 행동 단서를 정리했어요. 기억해야 할 정보를 줄이고, 실패한 뒤 다시 시도할 수 있도록 돕는 방법도 함께 살펴봤어요.",
@@ -28,8 +28,8 @@
         "level": 2
       },
       {
-        "id": "행동하기-전에는-단서를-주고-행동한-뒤에는-상태를-알려줘요",
-        "title": "행동하기 전에는 단서를 주고, 행동한 뒤에는 상태를 알려줘요",
+        "id": "행동하기-전에는-단서를-주고-행동한-뒤에는-상태를-알려-줘요",
+        "title": "행동하기 전에는 단서를 주고, 행동한 뒤에는 상태를 알려 줘요",
         "level": 2
       },
       {
@@ -41,9 +41,34 @@
         "id": "실수를-줄이는-일과-실패한-뒤-복구하는-일을-나눠-봐요",
         "title": "실수를 줄이는 일과 실패한 뒤 복구하는 일을 나눠 봐요",
         "level": 2
+      },
+      {
+        "id": "처음의-카드를-용어로-다시-읽어-봐요",
+        "title": "처음의 카드를 용어로 다시 읽어 봐요",
+        "level": 2
+      },
+      {
+        "id": "정보를-어디에-놓고-어떻게-읽게-할까요",
+        "title": "정보를 어디에 놓고 어떻게 읽게 할까요",
+        "level": 3
+      },
+      {
+        "id": "화면의-표현을-어떻게-조절할까요",
+        "title": "화면의 표현을 어떻게 조절할까요",
+        "level": 3
+      },
+      {
+        "id": "어떻게-행동하고-결과를-이해할까요",
+        "title": "어떻게 행동하고 결과를 이해할까요",
+        "level": 3
+      },
+      {
+        "id": "생각과-실수의-부담을-어떻게-줄일까요",
+        "title": "생각과 실수의 부담을 어떻게 줄일까요",
+        "level": 3
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 14,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
@@ -53,7 +78,7 @@
     "category": "til",
     "tags": ["design", "ux", "ui", "interaction-design"],
     "publishedAt": "2026-11-04",
-    "updatedAt": "2026-11-04",
+    "updatedAt": "2026-11-05",
     "coverImage": "/images/covers/design-concepts-for-reading-ui.png",
     "title": "Design concepts that explain why an interface feels awkward",
     "description": "Coaching cards make design concepts concrete: what to read first, what looks related, how to act, and how to recover when something fails.",
@@ -91,9 +116,34 @@
         "id": "prevent-mistakes-and-provide-a-route-back-after-failure",
         "title": "Prevent mistakes and provide a route back after failure",
         "level": 2
+      },
+      {
+        "id": "reading-the-first-card-again-with-these-terms",
+        "title": "Reading the first card again with these terms",
+        "level": 2
+      },
+      {
+        "id": "where-information-goes-and-how-it-reads",
+        "title": "Where information goes and how it reads",
+        "level": 3
+      },
+      {
+        "id": "how-the-interface-expresses-it",
+        "title": "How the interface expresses it",
+        "level": 3
+      },
+      {
+        "id": "how-people-act-and-understand-the-result",
+        "title": "How people act and understand the result",
+        "level": 3
+      },
+      {
+        "id": "how-to-lower-the-burden-of-thinking-and-mistakes",
+        "title": "How to lower the burden of thinking and mistakes",
+        "level": 3
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 13,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
