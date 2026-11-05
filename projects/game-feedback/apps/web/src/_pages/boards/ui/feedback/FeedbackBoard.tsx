@@ -5,6 +5,8 @@ import { appRoutes } from '@game-feedback/bridge';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardFooter,
@@ -26,17 +28,19 @@ export function FeedbackBoard({ locale, initialBoard }: IBoardPageProps) {
       <FeedbackFilters locale={locale} initialSearch={initialSearch} />
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FEEDBACK" slug="feedback">
         {(post, game) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} showLabel={false} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard showLabel={false} />
             </PostCardHeader>
-            <PostCardContent post={post} href={appRoutes.post(locale, post.id, post.board, game.slug)} />
-            <PostCardFooter
-              post={post}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            >
-              <PostCardActivity post={post} />
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, game.slug)} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         )}

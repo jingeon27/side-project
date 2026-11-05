@@ -3,22 +3,11 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
-import { match } from 'ts-pattern';
+import { usePostCard } from './post-card.hook';
 
-import { BattleSummary } from '@/features/battle';
-import { CoachingSummary } from '@/features/coaching';
-import { FriendSaleSummary } from '@/features/friend-sale';
-import type { Post } from '@/shared/api';
-
-export function PostCardContent({
-  post,
-  href,
-  children,
-}: {
-  post: Pick<Post, 'title' | 'body'>;
-  href: string;
-  children?: ReactNode;
-}) {
+/** 상세로 가는 제목과 본문 요약. 게시판별 요약은 children으로 넣는다. */
+export function PostCardContent({ href, children }: { href: string; children?: ReactNode }) {
+  const post = usePostCard();
   return (
     <>
       <Link href={href} className="post-title-link">
@@ -28,17 +17,4 @@ export function PostCardContent({
       {children}
     </>
   );
-}
-
-export function PostCardDetails({
-  post,
-}: {
-  post: Pick<Post, 'board' | 'coaching' | 'friendSale' | 'battle'>;
-}) {
-  return match(post.board)
-    .with('COACHING', () => post.coaching && <CoachingSummary details={post.coaching} />)
-    .with('FRIEND_SALE', () => <FriendSaleSummary details={post.friendSale} />)
-    .with('FRIENDLY', () => post.battle && <BattleSummary details={post.battle} />)
-    .with('FEEDBACK', 'FREE', undefined, () => null)
-    .exhaustive();
 }

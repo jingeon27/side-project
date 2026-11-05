@@ -14,6 +14,8 @@ import { useSession } from '@/features/auth';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardDetails,
@@ -150,19 +152,21 @@ function FeedResults({
       <div className="post-list">
         {posts.map((post) => (
           <ServiceErrorBoundary key={post.id} title={t('게시글')} resetKey={post.id}>
-            <PostCard board={post.board}>
-              <PostCardHeader post={post}>
-                <PostCardBoard post={post} />
+            <PostCard post={post}>
+              <PostCardHeader>
+                <PostCardBoard />
               </PostCardHeader>
-              <PostCardContent post={post} href={appRoutes.post(locale, post.id)}>
-                <PostCardDetails post={post} />
+              <PostCardContent href={appRoutes.post(locale, post.id)}>
+                <PostCardDetails />
               </PostCardContent>
-              <PostCardFooter
-                post={post}
-                authorName={<AuthorLink author={post.author} locale={locale} />}
-                authorContent={<UserBadges author={post.author} compact showTag={false} />}
-              >
-                <PostCardActivity post={post} />
+              <PostCardFooter>
+                <PostCardAuthor>
+                  <PostCardAuthorName>
+                    <AuthorLink author={post.author} locale={locale} />
+                  </PostCardAuthorName>
+                  <UserBadges author={post.author} compact showTag={false} />
+                </PostCardAuthor>
+                <PostCardActivity />
               </PostCardFooter>
             </PostCard>
           </ServiceErrorBoundary>
