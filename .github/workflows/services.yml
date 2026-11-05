@@ -111,7 +111,9 @@ jobs:
             next-cache-pc
           key: next-cache-${{ runner.os }}-${{ github.sha }}
           restore-keys: next-cache-${{ runner.os }}-
+      # 캐시는 빌드 속도용이다. 검증이 끝난 뒤 사후 단계의 저장이 디스크 부족으로 실패해도 결과를 바꾸지 않는다.
       - uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        continue-on-error: true
         with:
           builder: ${{ steps.buildx.outputs.name }}
           cache-map: |
@@ -207,6 +209,9 @@ jobs:
           path: ${{ runner.temp }}/photo-contest.tar.gz
           retention-days: 1
           compression-level: 0
+      - name: Report runner disk before saving the build cache
+        if: always()
+        run: df -h /
   gf-verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
