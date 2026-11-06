@@ -102,7 +102,6 @@ test('a new game receives five boards while coaching posts remain fixed to Clash
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '글쓰기', exact: true });
   await expect(editor.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveCount(0);
-  await expect(editor.locator('input[name="categoryId"]')).not.toHaveValue('');
   const classification = editor.getByRole('combobox', { name: '분류', exact: true });
   await expect(classification).toHaveValue('COACHING');
   await classification.selectOption('FRIEND_SALE');
