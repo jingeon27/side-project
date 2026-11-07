@@ -1,5 +1,10 @@
 import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
-import { GroupVisibility, type GroupContestsQuery, type PublicGroupSeoQuery } from '@/shared/api/generated';
+import {
+  GroupContestFilter,
+  GroupVisibility,
+  type GroupContestsQuery,
+  type PublicGroupSeoQuery,
+} from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
 
@@ -8,8 +13,34 @@ export interface IGroupContestsSeoData {
   contests: GroupContestsQuery['groupContests'];
 }
 
-export function groupContestsMetadata(data: IGroupContestsSeoData, hallOfFame: boolean, origin: string) {
-  const path = hallOfFame ? ROUTES.GROUP_HALL_OF_FAME(data.group.id) : ROUTES.GROUP_CONTESTS(data.group.id);
+/** 대회 목록 라우트마다 다른 조회 필터·경로·이름·설명. 라우트가 하나를 골라 넘긴다. */
+export interface IGroupContestListing {
+  filter: GroupContestFilter;
+  path: (groupId: string) => string;
+  name: string;
+  description: (groupName: string) => string;
+}
+
+export const GROUP_CONTESTS_LISTING = {
+  filter: GroupContestFilter.Active,
+  path: ROUTES.GROUP_CONTESTS,
+  name: '그룹 대회',
+  description: (groupName) => `${groupName}에서 열리는 대회를 둘러보고, 사진이나 동영상으로 참여해 보세요.`,
+} satisfies IGroupContestListing;
+
+export const GROUP_HALL_OF_FAME_LISTING = {
+  filter: GroupContestFilter.Completed,
+  path: ROUTES.GROUP_HALL_OF_FAME,
+  name: '명예의 전당',
+  description: (groupName) => `${groupName}에서 함께 뽑은 지난 대회 우승작과 최종 결과를 만나보세요.`,
+} satisfies IGroupContestListing;
+
+export function groupContestsMetadata(
+  data: IGroupContestsSeoData,
+  listing: IGroupContestListing,
+  origin: string,
+) {
+  const path = listing.path(data.group.id);
   if (data.group.visibility !== GroupVisibility.Public)
     return createPageMetadata({
       origin,
@@ -26,19 +57,19 @@ export function groupContestsMetadata(data: IGroupContestsSeoData, hallOfFame: b
   return createPageMetadata({
     origin,
     path,
-    title: `${data.group.name} | ${hallOfFame ? '명예의 전당' : '그룹 대회'}`,
-    description: hallOfFame
-      ? `${data.group.name}에서 함께 뽑은 지난 대회 우승작과 최종 결과를 만나보세요.`
-      : `${data.group.name}에서 열리는 대회를 둘러보고, 사진이나 동영상으로 참여해 보세요.`,
+    title: `${data.group.name} | ${listing.name}`,
+    description: listing.description(data.group.name),
     ...(images.length ? { images } : {}),
   });
 }
 
-export function groupContestsJsonLd(data: IGroupContestsSeoData, hallOfFame: boolean, origin: string) {
+export function groupContestsJsonLd(
+  data: IGroupContestsSeoData,
+  listing: IGroupContestListing,
+  origin: string,
+) {
   if (data.group.visibility !== GroupVisibility.Public) return null;
-  const path = hallOfFame ? ROUTES.GROUP_HALL_OF_FAME(data.group.id) : ROUTES.GROUP_CONTESTS(data.group.id);
-  const url = siteUrl(path, origin);
-  const title = hallOfFame ? '명예의 전당' : '그룹 대회';
+  const url = siteUrl(listing.path(data.group.id), origin);
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -53,14 +84,14 @@ export function groupContestsJsonLd(data: IGroupContestsSeoData, hallOfFame: boo
             name: data.group.name,
             item: siteUrl(ROUTES.GROUP(data.group.id), origin),
           },
-          { '@type': 'ListItem', position: 3, name: title, item: url },
+          { '@type': 'ListItem', position: 3, name: listing.name, item: url },
         ],
       },
       {
         '@type': 'CollectionPage',
         '@id': url,
         url,
-        name: `${data.group.name} | ${title}`,
+        name: `${data.group.name} | ${listing.name}`,
         inLanguage: 'ko-KR',
         breadcrumb: { '@id': `${url}#breadcrumb` },
         mainEntity: {

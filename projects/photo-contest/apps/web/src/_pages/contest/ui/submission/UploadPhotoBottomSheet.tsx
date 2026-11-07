@@ -69,7 +69,6 @@ export function UploadPhotoBottomSheet({
   });
   const beginSubmit = useAbortOnClose(isOpen);
 
-  const { errors, isSubmitting } = form.formState;
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
@@ -121,9 +120,9 @@ export function UploadPhotoBottomSheet({
                     aria-required="true"
                     accept={PHOTO_ACCEPT}
                     aria-label="사진 선택"
-                    aria-invalid={Boolean(errors.photo)}
-                    aria-describedby={errors.photo ? photoErrorId : undefined}
-                    disabled={isSubmitting}
+                    aria-invalid={Boolean(form.formState.errors.photo)}
+                    aria-describedby={form.formState.errors.photo ? photoErrorId : undefined}
+                    disabled={form.formState.isSubmitting}
                     className="sr-only"
                     onBlur={field.onBlur}
                     onChange={(event) => {
@@ -163,9 +162,9 @@ export function UploadPhotoBottomSheet({
                     </span>
                   ) : null}
                 </label>
-                {errors.photo ? (
+                {form.formState.errors.photo ? (
                   <p id={photoErrorId} role="alert" className="text-caption text-danger">
-                    {errors.photo.message}
+                    {form.formState.errors.photo.message}
                   </p>
                 ) : null}
               </div>
@@ -177,7 +176,7 @@ export function UploadPhotoBottomSheet({
             placeholder="이 사진의 웃음 포인트는…"
             rows={3}
             maxLength={160}
-            error={errors.caption?.message}
+            error={form.formState.errors.caption?.message}
             {...form.register('caption')}
           />
           <div className="flex flex-col gap-1.5">
@@ -185,8 +184,8 @@ export function UploadPhotoBottomSheet({
               <input
                 type="checkbox"
                 required
-                aria-invalid={Boolean(errors.rightsConfirmed)}
-                aria-describedby={errors.rightsConfirmed ? rightsErrorId : undefined}
+                aria-invalid={Boolean(form.formState.errors.rightsConfirmed)}
+                aria-describedby={form.formState.errors.rightsConfirmed ? rightsErrorId : undefined}
                 className="mt-0.5 size-5 shrink-0 accent-brand"
                 {...form.register('rightsConfirmed')}
               />
@@ -195,16 +194,16 @@ export function UploadPhotoBottomSheet({
                 그룹 멤버에게만 공개됩니다.
               </span>
             </label>
-            {errors.rightsConfirmed ? (
+            {form.formState.errors.rightsConfirmed ? (
               <p id={rightsErrorId} role="alert" className="text-caption text-danger">
-                {errors.rightsConfirmed.message}
+                {form.formState.errors.rightsConfirmed.message}
               </p>
             ) : null}
           </div>
         </form>
       </BottomSheet.Content>
       <BottomSheet.Footer>
-        <Button type="submit" form={FORM_ID} fullWidth loading={isSubmitting}>
+        <Button type="submit" form={FORM_ID} fullWidth loading={form.formState.isSubmitting}>
           사진 제출하기
         </Button>
       </BottomSheet.Footer>

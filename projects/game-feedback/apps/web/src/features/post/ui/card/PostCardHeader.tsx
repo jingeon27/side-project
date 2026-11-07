@@ -4,21 +4,15 @@ import type { ReactNode } from 'react';
 
 import { Eye } from 'lucide-react';
 
-import { boardByKind } from '@/features/board';
-import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { formatDateTime, timeAgo } from '@/shared/lib/date';
 
-import { PostStatus } from '../PostStatus';
+import { usePostCard } from './post-card.hook';
 
-export function PostCardHeader({
-  post,
-  children,
-}: {
-  post: Pick<Post, 'createdAt' | 'viewCount'>;
-  children: ReactNode;
-}) {
+/** 게시판·상태(children)와 조회수·작성 시각 줄 */
+export function PostCardHeader({ children }: { children: ReactNode }) {
   const { t, locale } = useI18n();
+  const post = usePostCard();
   return (
     <div className="post-topline">
       <div className="post-board-status">{children}</div>
@@ -37,24 +31,5 @@ export function PostCardHeader({
         </time>
       </div>
     </div>
-  );
-}
-
-export function PostCardBoard({
-  post,
-  showLabel = true,
-}: {
-  post: Pick<Post, 'board' | 'answerCount' | 'helpfulCount'>;
-  showLabel?: boolean;
-}) {
-  const { t } = useI18n();
-  const board = boardByKind(post.board);
-  return (
-    <>
-      {showLabel && <span className="small muted">{t(board?.name ?? '피드백')}</span>}
-      {(post.board === 'FEEDBACK' || post.board === undefined) && (
-        <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
-      )}
-    </>
   );
 }

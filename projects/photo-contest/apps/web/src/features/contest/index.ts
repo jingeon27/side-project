@@ -9,5 +9,6 @@ export {
 } from './lib/contest-schedule.helper';
 
 export { PhaseBadge } from './ui/card/PhaseBadge';
+export { CompletedGroupContestCard } from './ui/card/CompletedGroupContestCard';
 export { GroupContestCard } from './ui/card/GroupContestCard';
 export { GroupContestVoteButton } from './ui/vote/GroupContestVoteButton';

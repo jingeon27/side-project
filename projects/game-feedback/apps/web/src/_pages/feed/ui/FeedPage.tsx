@@ -4,16 +4,18 @@ import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { MessageCircleQuestion, Newspaper, Plus, SearchX } from 'lucide-react';
+import { MessageCircleQuestion, Newspaper, SearchX } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Spinner } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardDetails,
@@ -150,38 +152,31 @@ function FeedResults({
       <div className="post-list">
         {posts.map((post) => (
           <ServiceErrorBoundary key={post.id} title={t('게시글')} resetKey={post.id}>
-            <PostCard board={post.board}>
-              <PostCardHeader post={post}>
-                <PostCardBoard post={post} />
+            <PostCard post={post}>
+              <PostCardHeader>
+                <PostCardBoard />
               </PostCardHeader>
-              <PostCardContent post={post} href={appRoutes.post(locale, post.id)}>
-                <PostCardDetails post={post} />
+              <PostCardContent href={appRoutes.post(locale, post.id)}>
+                <PostCardDetails />
               </PostCardContent>
-              <PostCardFooter
-                post={post}
-                authorName={<AuthorLink author={post.author} locale={locale} />}
-                authorContent={<UserBadges author={post.author} compact showTag={false} />}
-              >
-                <PostCardActivity post={post} />
+              <PostCardFooter>
+                <PostCardAuthor>
+                  <PostCardAuthorName>
+                    <AuthorLink author={post.author} locale={locale} />
+                  </PostCardAuthorName>
+                  <UserBadges author={post.author} compact showTag={false} />
+                </PostCardAuthor>
+                <PostCardActivity />
               </PostCardFooter>
             </PostCard>
           </ServiceErrorBoundary>
         ))}
       </div>
       <div ref={sentinel} className="feed-sentinel" />
-      {feed.hasNextPage && (
-        <Button
-          variant="secondary"
-          size="lg"
-          fullWidth
-          type="button"
-          className="load-more"
-          loading={feed.isFetchingNextPage}
-          icon={<Plus aria-hidden />}
-          onClick={() => feed.fetchNextPage()}
-        >
-          {t('더 많은 글 보기')}
-        </Button>
+      {isFetchingNextPage && (
+        <div className="feed-loading-more">
+          <Spinner label={t('게시글 불러오는 중')} />
+        </div>
       )}
       {posts.length > 0 && !hasNextPage && (
         <div className="feed-end">

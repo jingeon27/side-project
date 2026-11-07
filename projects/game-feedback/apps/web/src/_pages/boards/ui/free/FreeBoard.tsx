@@ -5,6 +5,8 @@ import { appRoutes } from '@game-feedback/bridge';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardFooter,
@@ -23,17 +25,19 @@ export function FreeBoard({ locale, initialBoard }: IBoardPageProps) {
 
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FREE" slug="free">
         {(post, game) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard />
             </PostCardHeader>
-            <PostCardContent post={post} href={appRoutes.post(locale, post.id, post.board, game.slug)} />
-            <PostCardFooter
-              post={post}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            >
-              <PostCardActivity post={post} />
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, game.slug)} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         )}

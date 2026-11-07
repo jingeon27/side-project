@@ -1,4 +1,4 @@
-import type { TPostComposerForm } from '../model/post-composer.schema';
+import type { TPostComposerForm } from './post-composer.schema';
 
 type TInvalidHandler = NonNullable<Parameters<TPostComposerForm['handleSubmit']>[1]>;
 

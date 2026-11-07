@@ -10,6 +10,8 @@ import { useSession } from '@/features/auth';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardDetails,
@@ -123,22 +125,21 @@ function SearchResults({
       {!posts.length && <p className="search-empty">{t('일치하는 게시글이 없어요')}</p>}
       <div className="post-list">
         {posts.map((post) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} showLabel={board?.kind !== 'FEEDBACK'} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard showLabel={board?.kind !== 'FEEDBACK'} />
             </PostCardHeader>
-            <PostCardContent
-              post={post}
-              href={appRoutes.post(locale, post.id, board?.kind, request.category)}
-            >
-              <PostCardDetails post={post} />
+            <PostCardContent href={appRoutes.post(locale, post.id, board?.kind, request.category)}>
+              <PostCardDetails />
             </PostCardContent>
-            <PostCardFooter
-              post={post}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            >
-              <PostCardActivity post={post} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         ))}

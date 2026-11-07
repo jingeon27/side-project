@@ -3,7 +3,6 @@ import 'server-only';
 import { cache } from 'react';
 
 import {
-  GroupContestFilter,
   GroupContestsDocument,
   GroupVisibility,
   PublicGroupContestCountDocument,
@@ -14,12 +13,16 @@ import { PUBLIC_CONTENT_TTL, PUBLIC_SITEMAP_TTL } from '@/shared/api/public-cach
 import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 
-import { groupContestsMetadata, type IGroupContestsSeoData } from './group-contests-seo.helper';
+import {
+  groupContestsMetadata,
+  type IGroupContestListing,
+  type IGroupContestsSeoData,
+} from './group-contests-seo.helper';
 
 export const PUBLIC_CONTEST_SITEMAP_SIZE = 48;
 
 export const getGroupContestsSeoData = cache(
-  async (groupId: string, hallOfFame: boolean): Promise<IGroupContestsSeoData | null> => {
+  async (groupId: string, listing: IGroupContestListing): Promise<IGroupContestsSeoData | null> => {
     try {
       const { group } = await publicQuery(PublicGroupSeoDocument, { id: groupId });
       if (group.visibility !== GroupVisibility.Public) return { group, contests: [] };
@@ -27,7 +30,7 @@ export const getGroupContestsSeoData = cache(
         GroupContestsDocument,
         {
           groupId,
-          filter: hallOfFame ? GroupContestFilter.Completed : GroupContestFilter.Active,
+          filter: listing.filter,
           offset: 0,
           limit: 24,
         },
@@ -41,9 +44,9 @@ export const getGroupContestsSeoData = cache(
   },
 );
 
-export async function getGroupContestsMetadata(groupId: string, hallOfFame: boolean) {
-  const data = await getGroupContestsSeoData(groupId, hallOfFame);
-  return data ? groupContestsMetadata(data, hallOfFame, getWebOrigin()) : null;
+export async function getGroupContestsMetadata(groupId: string, listing: IGroupContestListing) {
+  const data = await getGroupContestsSeoData(groupId, listing);
+  return data ? groupContestsMetadata(data, listing, getWebOrigin()) : null;
 }
 
 export async function getPublicGroupContestCount() {

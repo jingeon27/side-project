@@ -10,9 +10,9 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
-import { ClearExploreSearchButton } from './ClearExploreSearchButton';
 import { ExploreComposeEntry } from './ExploreComposeEntry';
-import { GroupDiscoveryResults } from './GroupDiscoveryResults';
+import { ClearExploreSearchButton } from './results/ClearExploreSearchButton';
+import { GroupDiscoveryResults } from './results/GroupDiscoveryResults';
 
 export function ExplorePage({ search }: { search: string }) {
   const [queryRef, { refetch }] = useBackgroundQuery(DiscoverGroupsDocument, {

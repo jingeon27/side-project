@@ -39,7 +39,6 @@ export function CreateGroupContestBottomSheet({
       router.push(ROUTES.GROUP_CONTEST(groupId, createGroupContest.id));
     },
   });
-  const { errors } = form.formState;
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
@@ -72,7 +71,7 @@ export function CreateGroupContestBottomSheet({
             required
             label="대회 제목"
             maxLength={80}
-            error={errors.title?.message}
+            error={form.formState.errors.title?.message}
             {...form.register('title')}
           />
           <TextField
@@ -83,21 +82,21 @@ export function CreateGroupContestBottomSheet({
             max={100}
             step={1}
             description="이 대회에서 한 사람이 좋아요를 남길 수 있는 작품 수예요. 기본값은 1개이며, 취소하면 다른 작품을 선택할 수 있어요. 대회 투표와는 별개입니다."
-            error={errors.likeLimit?.message}
+            error={form.formState.errors.likeLimit?.message}
             {...form.register('likeLimit', { valueAsNumber: true })}
           />
           <TextField
             required
             type="datetime-local"
             label="시작 시각"
-            error={errors.startsAt?.message}
+            error={form.formState.errors.startsAt?.message}
             {...form.register('startsAt')}
           />
           <TextField
             required
             type="datetime-local"
             label="게시물 접수 마감"
-            error={errors.submissionEndsAt?.message}
+            error={form.formState.errors.submissionEndsAt?.message}
             {...form.register('submissionEndsAt')}
           />
           <TextField
@@ -105,7 +104,7 @@ export function CreateGroupContestBottomSheet({
             type="datetime-local"
             label="투표 마감"
             description="대회는 최대 90일 동안 진행할 수 있어요. 입력 시각은 기기의 시간대 기준입니다."
-            error={errors.endsAt?.message}
+            error={form.formState.errors.endsAt?.message}
             {...form.register('endsAt')}
           />
         </form>

@@ -1,9 +1,8 @@
 import { match, P } from 'ts-pattern';
-import type { z } from 'zod';
 
-import type { postComposerSchema } from './post-composer.schema';
+import type { TPostComposerValues } from './post-composer.schema';
 
-export function postContentInput(values: z.output<typeof postComposerSchema>) {
+export function postContentInput(values: TPostComposerValues) {
   return {
     title: values.title,
     body: values.body,

@@ -9,6 +9,8 @@ import { Button } from '@side/design-system';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardDetails,
@@ -63,18 +65,19 @@ function MyPostList({ locale, userId }: IMyPostsProps) {
     <>
       <div className="post-list settings-post-list">
         {items.map((post) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard />
             </PostCardHeader>
-            <PostCardContent
-              post={post}
-              href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
-            >
-              <PostCardDetails post={post} />
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, post.category.slug)}>
+              <PostCardDetails />
             </PostCardContent>
-            <PostCardFooter post={post} authorContent={<UserBadges author={post.author} compact />}>
-              <PostCardActivity post={post} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName />
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         ))}

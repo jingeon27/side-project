@@ -8,7 +8,7 @@ import { formatCount } from '@/shared/lib/format.helper';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Badge } from '@/shared/ui/@core/badge';
 
-import { isGroupOwner } from '../../lib/group.helper';
+import { isGroupOwner } from '../../../lib/group.helper';
 
 interface IGroupCardProps {
   group: GroupCardFragment;

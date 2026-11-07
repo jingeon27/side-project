@@ -18,6 +18,7 @@ import { useZodForm } from '@/shared/model/form';
 import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 import {
   focusInvalidPostContent,
+  POST_DETAIL_DEFAULTS,
   postComposerSchema,
   PostContentFields,
   postContentInput,
@@ -43,9 +44,9 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
       editorValid: true,
       board: post.board,
       categoryId: post.categoryId,
-      coaching: post.coaching ?? { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
-      friendSale: post.friendSale ?? { price: null },
-      battle: post.battle ?? { mode: 'DUEL' },
+      coaching: post.coaching ?? POST_DETAIL_DEFAULTS.coaching,
+      friendSale: post.friendSale ?? POST_DETAIL_DEFAULTS.friendSale,
+      battle: post.battle ?? POST_DETAIL_DEFAULTS.battle,
     },
   });
   const pending = update.isPending || upload.isPending;
@@ -87,8 +88,6 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
       }
     >
       <form id={formId} className="form-stack" aria-label={t('게시글 수정')} onSubmit={handleSubmit}>
-        <input type="hidden" {...form.register('board')} />
-        <input type="hidden" {...form.register('categoryId')} />
         <Field label={t('분류')}>
           <Input readOnly value={t(boardByKind(post.board)?.name ?? '게시글')} />
         </Field>
