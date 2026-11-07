@@ -6,6 +6,8 @@ import { FriendSaleSummary } from '@/features/friend-sale';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardFooter,
@@ -24,19 +26,21 @@ export function FriendSaleBoard({ locale, initialBoard }: IBoardPageProps) {
 
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FRIEND_SALE" slug="friend-sale">
         {(post, game) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard />
             </PostCardHeader>
-            <PostCardContent post={post} href={appRoutes.post(locale, post.id, post.board, game.slug)}>
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, game.slug)}>
               <FriendSaleSummary details={post.friendSale} />
             </PostCardContent>
-            <PostCardFooter
-              post={post}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            >
-              <PostCardActivity post={post} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         )}

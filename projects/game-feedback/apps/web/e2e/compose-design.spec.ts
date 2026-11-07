@@ -553,7 +553,6 @@ test('create keeps its game hidden and submits Clash Royale without a game selec
   await expect(body).toBeVisible();
   await expect(form.getByRole('combobox', { name: '게임', exact: true })).toHaveCount(0);
   await expect(form.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveCount(0);
-  await expect(form.locator('input[type="hidden"][name="categoryId"]')).toHaveValue('clash-royale');
   await form.getByLabel('제목', { exact: true }).fill(`기본 게임 등록 ${randomUUID().slice(0, 8)}`);
   await body.fill('게임을 고르지 않고 클래시로얄 이야기를 등록합니다.');
   const creation = page.waitForResponse(

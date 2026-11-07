@@ -10,7 +10,13 @@ import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
 import { countByRank, RankBadge } from '@/features/ranking';
 import { buildResultShareText, useShareActions } from '@/features/share';
-import { SubmissionCard } from '@/features/submission';
+import {
+  SubmissionCard,
+  SubmissionCardActions,
+  SubmissionCardBody,
+  SubmissionCardCaption,
+  SubmissionCardPhoto,
+} from '@/features/submission';
 import { ContestResultsDocument, type ContestResultsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
@@ -44,17 +50,15 @@ function ResultsContent({
     }
   }, [contestId]);
   if (!context) return null;
-  const { contest } = context;
-  const results = data.contestResults;
-  const winners = results.filter(({ winner }) => winner);
-  const rankCounts = countByRank(results);
+  const winners = data.contestResults.filter(({ winner }) => winner);
+  const rankCounts = countByRank(data.contestResults);
   const handleShare = async () => {
     const method = await shareActions.share(
-      window.location.origin + ROUTES.CONTEST(contest.id),
+      window.location.origin + ROUTES.CONTEST(context.contest.id),
       {
         title: '피식 대회 결과',
         text: buildResultShareText(
-          contest.title,
+          context.contest.title,
           winners.map(({ submission, voteCount }) => ({
             nickname: submission.author.nickname,
             caption: submission.caption,
@@ -64,7 +68,7 @@ function ResultsContent({
       },
       { copied: '결과 링크를 복사했어요' },
     );
-    if (method) trackEvent(ANALYTICS_EVENT.ResultShared, { contest_id: contest.id, method });
+    if (method) trackEvent(ANALYTICS_EVENT.ResultShared, { contest_id: context.contest.id, method });
   };
   return (
     <div className="grid items-start gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
@@ -75,7 +79,7 @@ function ResultsContent({
         <Share2 aria-hidden className="size-4" />
         결과 공유하기
       </Button>
-      {match(results)
+      {match(data.contestResults)
         .with([], () => (
           <EmptyState
             icon={<Medal />}
@@ -85,25 +89,24 @@ function ResultsContent({
         ))
         .otherwise((rows) =>
           rows.map(({ submission, rank, voteCount, winner }, index) => (
-            <SubmissionCard
-              key={submission.id}
-              submission={submission}
-              viewerId={viewerId}
-              isWinner={winner}
-              isPriority={index === 0}
-              badge={<RankBadge rank={rank} sameRankCount={rankCounts.get(rank) ?? 1} />}
-              stats={<p className="text-label text-ink">{voteCount}표</p>}
-              actions={<LikeButton submission={submission} isMine={submission.author.id === viewerId} />}
-              moderation={
+            <SubmissionCard key={submission.id} submission={submission} isWinner={winner}>
+              <SubmissionCardPhoto isPriority={index === 0} />
+              <SubmissionCardBody>
+                <RankBadge rank={rank} sameRankCount={rankCounts.get(rank) ?? 1} className="self-start" />
+                <SubmissionCardCaption viewerId={viewerId} />
+                <p className="text-label text-ink">{voteCount}표</p>
+                <SubmissionCardActions>
+                  <LikeButton submission={submission} isMine={submission.author.id === viewerId} />
+                </SubmissionCardActions>
                 <ModerationActions
                   submission={submission}
-                  contestId={contest.id}
-                  isAdmin={contest.isAdmin}
+                  contestId={context.contest.id}
+                  isAdmin={context.contest.isAdmin}
                   isMine={submission.author.id === viewerId}
                   isCompleted
                 />
-              }
-            />
+              </SubmissionCardBody>
+            </SubmissionCard>
           )),
         )}
     </div>

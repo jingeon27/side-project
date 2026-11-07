@@ -6,6 +6,8 @@ import { BattleSummary } from '@/features/battle';
 import {
   PostCard,
   PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
   PostCardBoard,
   PostCardContent,
   PostCardFooter,
@@ -27,19 +29,21 @@ export function BattleBoard({ locale, initialBoard }: IBoardPageProps) {
       <BattleFilters locale={locale} slug="friendly" initialSearch={initialSearch} />
       <BoardPostList locale={locale} initialBoard={initialBoard} board="FRIENDLY" slug="friendly">
         {(post, game) => (
-          <PostCard key={post.id} board={post.board}>
-            <PostCardHeader post={post}>
-              <PostCardBoard post={post} />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard />
             </PostCardHeader>
-            <PostCardContent post={post} href={appRoutes.post(locale, post.id, post.board, game.slug)}>
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, game.slug)}>
               {post.battle && <BattleSummary details={post.battle} />}
             </PostCardContent>
-            <PostCardFooter
-              post={post}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            >
-              <PostCardActivity post={post} />
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
             </PostCardFooter>
           </PostCard>
         )}

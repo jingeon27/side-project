@@ -6,21 +6,16 @@ import { GroupContestsPage } from '@/_pages/group-contests';
 import {
   getGroupContestsMetadata,
   getGroupContestsSeoData,
+  GROUP_CONTESTS_LISTING,
   groupContestsJsonLd,
 } from '@/_pages/group-contests/index.server';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
-import {
-  GalleryDocument,
-  GroupContestFilter,
-  GroupContestsDocument,
-  GroupVisibility,
-  MeDocument,
-} from '@/shared/api/generated';
+import { GalleryDocument, GroupContestsDocument, GroupVisibility, MeDocument } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const metadata = await getGroupContestsMetadata((await params).id, false);
+  const metadata = await getGroupContestsMetadata((await params).id, GROUP_CONTESTS_LISTING);
   if (!metadata) notFound();
   return metadata;
 }
@@ -28,10 +23,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
-  const seo = await getGroupContestsSeoData(id, false);
+  const seo = await getGroupContestsSeoData(id, GROUP_CONTESTS_LISTING);
   if (!seo) notFound();
-  const jsonLd = groupContestsJsonLd(seo, false, getWebOrigin());
-  const content = <GroupContestsPage groupId={id} hallOfFame={false} />;
+  const jsonLd = groupContestsJsonLd(seo, GROUP_CONTESTS_LISTING, getWebOrigin());
+  const content = <GroupContestsPage groupId={id} />;
   return (
     <>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
@@ -40,7 +35,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {seo.group.visibility === GroupVisibility.Public ? (
             <PreloadQuery
               query={GroupContestsDocument}
-              variables={{ groupId: id, filter: GroupContestFilter.Active, offset: 0, limit: 24 }}
+              variables={{ groupId: id, filter: GROUP_CONTESTS_LISTING.filter, offset: 0, limit: 24 }}
               errorPolicy="all"
             >
               {content}

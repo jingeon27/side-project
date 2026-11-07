@@ -5,6 +5,7 @@ import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 
 import { CreateGroupContestDocument, CreateGroupDocument, GroupVisibility } from '@/shared/api/generated';
 
+import { GROUP_CONTESTS_LISTING, GROUP_HALL_OF_FAME_LISTING } from './group-contests-seo.helper';
 import {
   getGroupContestsSeoData,
   getPublicGroupContestCount,
@@ -78,9 +79,9 @@ describe('대회 목록·명예의 전당 SEO와 사이트맵', () => {
     expect(allIds).toEqual(expect.arrayContaining(ids));
     expect(allIds).not.toContain(privateContestId);
     for (const contest of pages.flat()) expect(Date.parse(contest.lastModifiedAt)).not.toBeNaN();
-    expect((await getGroupContestsSeoData(groupId, false))?.contests).toHaveLength(24);
-    expect((await getGroupContestsSeoData(groupId, true))?.contests).toEqual([]);
-    expect((await getGroupContestsSeoData(privateId, false))?.contests).toEqual([]);
-    expect(await getGroupContestsSeoData('missing-contest-group', true)).toBeNull();
+    expect((await getGroupContestsSeoData(groupId, GROUP_CONTESTS_LISTING))?.contests).toHaveLength(24);
+    expect((await getGroupContestsSeoData(groupId, GROUP_HALL_OF_FAME_LISTING))?.contests).toEqual([]);
+    expect((await getGroupContestsSeoData(privateId, GROUP_CONTESTS_LISTING))?.contests).toEqual([]);
+    expect(await getGroupContestsSeoData('missing-contest-group', GROUP_HALL_OF_FAME_LISTING)).toBeNull();
   });
 });

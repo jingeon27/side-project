@@ -14,16 +14,20 @@ import { UploadPhotoBottomSheet } from './UploadPhotoBottomSheet';
 export function ContestSubmissionCta({ contestRef }: { contestRef: TContestQueryRef }) {
   const { data } = useReadQuery(contestRef);
   if (!data) return null;
-  const { contest } = data;
   const handleSubmitPhoto = () =>
     overlay.open(({ isOpen, close: onClose, unmount }) => (
-      <UploadPhotoBottomSheet contestId={contest.id} isOpen={isOpen} onClose={onClose} unmount={unmount} />
+      <UploadPhotoBottomSheet
+        contestId={data.contest.id}
+        isOpen={isOpen}
+        onClose={onClose}
+        unmount={unmount}
+      />
     ));
-  return match(contest.phase)
+  return match(data.contest.phase)
     .with(Phase.Submission, () => (
       <StickyCta>
-        <Button fullWidth disabled={Boolean(contest.mySubmissionId)} onClick={handleSubmitPhoto}>
-          {contest.mySubmissionId ? '사진 제출 완료' : '사진 제출하기'}
+        <Button fullWidth disabled={Boolean(data.contest.mySubmissionId)} onClick={handleSubmitPhoto}>
+          {data.contest.mySubmissionId ? '사진 제출 완료' : '사진 제출하기'}
         </Button>
       </StickyCta>
     ))

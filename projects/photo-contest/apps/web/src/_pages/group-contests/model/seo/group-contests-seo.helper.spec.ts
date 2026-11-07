@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { GroupVisibility, Phase } from '@/shared/api/generated';
 
 import {
+  GROUP_CONTESTS_LISTING,
+  GROUP_HALL_OF_FAME_LISTING,
   groupContestsJsonLd,
   groupContestsMetadata,
   type IGroupContestsSeoData,
@@ -44,13 +46,13 @@ const data: IGroupContestsSeoData = {
 
 describe('그룹 대회·명예의 전당 SEO', () => {
   it('각 목록은 별도 canonical과 제목을 가지며 실제 대회로 연결해야 한다', () => {
-    expect(groupContestsMetadata(data, false, origin).alternates?.canonical).toBe(
+    expect(groupContestsMetadata(data, GROUP_CONTESTS_LISTING, origin).alternates?.canonical).toBe(
       `${origin}/groups/group/contests`,
     );
-    expect(groupContestsMetadata(data, true, origin).alternates?.canonical).toBe(
+    expect(groupContestsMetadata(data, GROUP_HALL_OF_FAME_LISTING, origin).alternates?.canonical).toBe(
       `${origin}/groups/group/hall-of-fame`,
     );
-    const hall = groupContestsJsonLd(data, true, origin);
+    const hall = groupContestsJsonLd(data, GROUP_HALL_OF_FAME_LISTING, origin);
     expect(hall?.['@graph']).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -65,11 +67,11 @@ describe('그룹 대회·명예의 전당 SEO', () => {
   });
   it('비공개 목록은 제목·대회·공유 사진을 검색에 공개하지 않아야 한다', () => {
     const secret = { ...data, group: { ...data.group, visibility: GroupVisibility.Private } };
-    for (const hall of [false, true]) {
-      const metadata = groupContestsMetadata(secret, hall, origin);
+    for (const listing of [GROUP_CONTESTS_LISTING, GROUP_HALL_OF_FAME_LISTING]) {
+      const metadata = groupContestsMetadata(secret, listing, origin);
       expect(metadata.robots).toMatchObject({ index: false, follow: false });
       expect(JSON.stringify(metadata)).not.toContain('지난 대회');
-      expect(groupContestsJsonLd(secret, hall, origin)).toBeNull();
+      expect(groupContestsJsonLd(secret, listing, origin)).toBeNull();
     }
   });
 });

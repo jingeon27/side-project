@@ -60,9 +60,16 @@ export function useInfiniteQuery<TData, TItem extends { id: string }>(
         }
       });
     },
-    refetch: () => {
+    refetch: async () => {
       setLastPage(null);
-      return refetch();
+      // 첫 페이지를 다시 받는 동안 이전 길이로 계산한 offset의 추가 조회를 보내지 않는다.
+      const request = refetch();
+      activeRequest.current = request;
+      try {
+        return await request;
+      } finally {
+        if (activeRequest.current === request) activeRequest.current = null;
+      }
     },
   };
 }

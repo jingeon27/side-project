@@ -15,12 +15,11 @@ export function ContestGuide({ contestRef }: { contestRef: TContestQueryRef }) {
   const { refetch } = useQueryRefHandlers(contestRef);
   const [pending, startTransition] = useTransition();
   if (!data) return null;
-  const { contest } = data;
-  const deadline = getPhaseDeadline(contest.phase, contest);
+  const deadline = getPhaseDeadline(data.contest.phase, data.contest);
   const guide = getPhaseGuide({
-    phase: contest.phase,
-    hasSubmitted: Boolean(contest.mySubmissionId),
-    hasVoted: Boolean(contest.votedSubmissionId),
+    phase: data.contest.phase,
+    hasSubmitted: Boolean(data.contest.mySubmissionId),
+    hasVoted: Boolean(data.contest.votedSubmissionId),
   });
   const handleRefresh = () =>
     startTransition(async () => {
@@ -32,7 +31,7 @@ export function ContestGuide({ contestRef }: { contestRef: TContestQueryRef }) {
     });
   return (
     <section className="rounded-card bg-brand-soft p-4">
-      <PhaseBadge phase={contest.phase} />
+      <PhaseBadge phase={data.contest.phase} />
       <h2 className="mt-3 text-title text-ink">{guide.title}</h2>
       <p className="mt-1 text-body text-muted">{guide.description}</p>
       <p className="mt-3 text-caption text-muted">

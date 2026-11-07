@@ -2,14 +2,14 @@ export { canLeaveGroup, isGroupAdmin, isGroupOwner } from './lib/group.helper';
 export { prependMyGroup } from './model/group.cache';
 export { groupTypePolicies } from './model/group.type-policies';
 export { CreateGroupButton } from './ui/create/CreateGroupButton';
-export { DiscoverGroupCard } from './ui/discovery/DiscoverGroupCard';
-export { GroupCard } from './ui/discovery/GroupCard';
+export { DiscoverGroupCard } from './ui/discovery/card/DiscoverGroupCard';
+export { GroupCard } from './ui/discovery/card/GroupCard';
 
 export { GroupContentFrame } from './ui/navigation/GroupContentFrame';
 export { GroupMembershipButton } from './ui/membership/GroupMembershipButton';
 export { GroupNavigation } from './ui/navigation/GroupNavigation';
 export { GroupSearchForm } from './ui/discovery/GroupSearchForm';
-export { GroupVisibilityBadge } from './ui/discovery/GroupVisibilityBadge';
+export { GroupVisibilityBadge } from './ui/discovery/card/GroupVisibilityBadge';
 export { LeaveGroupButton } from './ui/membership/LeaveGroupButton';
 export { MemberList } from './ui/members/MemberList';
 

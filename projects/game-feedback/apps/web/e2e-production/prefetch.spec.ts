@@ -138,9 +138,15 @@ for (const width of [400, 1440]) {
   });
 }
 
-for (const [name, source, board, parent] of [
-  ['feed', '/ko', 'FEEDBACK', '/ko'],
-  ['friendly', '/ko/boards/friendly?battleMode=TEAM', 'FRIENDLY', '/ko/boards/friendly?battleMode=TEAM'],
+for (const [name, source, board, parent, submit] of [
+  ['feed', '/ko', 'FEEDBACK', '/ko', '피드백 요청 올리기'],
+  [
+    'friendly',
+    '/ko/boards/friendly?battleMode=TEAM',
+    'FRIENDLY',
+    '/ko/boards/friendly?battleMode=TEAM',
+    '게시글 등록',
+  ],
 ] as const) {
   test(`the signed-in ${name} FAB prefetches a compose shell before its interactive form streams`, async ({
     page,
@@ -169,7 +175,8 @@ for (const [name, source, board, parent] of [
     const form = page.getByRole('form', { name: '글쓰기', exact: true });
     await expect(form).toBeVisible();
     await expect(form.getByRole('combobox', { name: '분류', exact: true })).toHaveValue(board);
-    await expect(form.locator('input[name="categoryId"]')).not.toHaveValue('');
+    // 기본 게임이 정해지지 않으면 등록 버튼이 비활성으로 남는다.
+    await expect(form.getByRole('button', { name: submit, exact: true })).toBeEnabled();
     if (board === 'FRIENDLY') {
       expect(new URL(page.url()).searchParams.get('battleMode')).toBe('TEAM');
       await expect(form.getByRole('combobox', { name: '전투 유형', exact: true })).toHaveValue('TEAM');

@@ -14,7 +14,7 @@ import { formatCount } from '@/shared/lib/format.helper';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
-import { GroupMembershipButton } from '../membership/GroupMembershipButton';
+import { GroupMembershipButton } from '../../membership/GroupMembershipButton';
 import { GroupVisibilityBadge } from './GroupVisibilityBadge';
 
 export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinable?: boolean }) {
