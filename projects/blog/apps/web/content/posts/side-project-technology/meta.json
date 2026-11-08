@@ -2,6 +2,7 @@
   "category": "engineering",
   "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint", "sentry"],
   "publishedAt": "2026-10-28",
-  "coverImage": "/images/covers/side-project-technology.png",
-  "updatedAt": "2026-10-31"
+  "coverImage": "/images/covers/side-project-technology.avif",
+  "updatedAt": "2026-10-31",
+  "socialImage": "/images/covers/side-project-technology-og.jpg"
 }

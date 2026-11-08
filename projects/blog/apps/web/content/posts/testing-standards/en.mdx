@@ -4,7 +4,7 @@ Registration requests that passed on a fake server (a mock) returning 200 withou
 
 </Summary>
 
-![Check function inputs and outputs, submitted form requests, and browser navigation results separately.](/images/covers/testing-standards.png)
+![Check function inputs and outputs, submitted form requests, and browser navigation results separately.](/images/covers/testing-standards.avif)
 
 We built the global service with MSW before its backend was ready. MSW is a library that intercepts HTTP requests from an app at the network level and returns responses you wrote in advance, and the functions that decide those responses are called handlers. Our handlers returned 200 without inspecting the body. Integration tests passed, and once connected to the real API, those requests were rejected.
 

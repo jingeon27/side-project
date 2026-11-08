@@ -4,7 +4,7 @@ Adding a family member to a hospital reservation form left date selection behavi
 
 </Summary>
 
-![An illustration of participant rows and shared dates managed within a reservation form.](/images/covers/reservation-form-state.png)
+![An illustration of participant rows and shared dates managed within a reservation form.](/images/covers/reservation-form-state.avif)
 
 After adding a family member to a reservation form, picking a date still behaved according to the number of people from before the addition.
 
@@ -16,7 +16,7 @@ The three places had different lifetimes too. The participant list was not refet
 
 Laid out side by side, the same values keep repeating. Selection and preferred date and time exist per person in both the cache and the store, and preferred dates are scattered through local state as well.
 
-![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01-en.png)
+![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01-en.avif)
 
 The bug came after adding a person, so that is the path to follow. Adding a family member backed up the current IDs, waited for the family verification sheet to finish, and refetched the list. It then restored selections and dates and gave a date to anyone missing from the backup. Shortened into code, the flow looks like this. It is not the actual code, only an example I wrote to illustrate those steps.
 
@@ -81,7 +81,7 @@ What I needed was to stop reconciling the same choices, whichever place stored t
 
 Each value now has a single owner. In exchange, a synchronization hook has to align the form array whenever the server list changes. Here is the state layout after the refactoring.
 
-![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02-en.png)
+![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02-en.avif)
 
 The picker display is separate from submitted values too. A sheet keeps temporary choices until confirmation writes them to the form. The overlay library opens and closes the sheet.
 
@@ -112,7 +112,7 @@ function BookingPage() {
 
 Once a time is selected, the form copies the common date and time to every participant, and the application button turns on when all schema conditions pass.
 
-![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03-en.png)
+![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03-en.avif)
 
 The `participants` array contains server-owned names and IDs alongside user-edited selections and dates. Requests include unselected people with their `selected` flag too. Refetching server membership must therefore preserve the choices already made in the form.
 
@@ -229,7 +229,7 @@ This is where the original scene changes. `initParticipant` reads the common `pr
 
 The hook has four branches: initial population, addition, removal, and doing nothing when the counts match. Length chooses the operation, and `memberId` identifies which people to retain or add.
 
-![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04-en.png)
+![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04-en.avif)
 
 This implementation reconciles people only when array lengths differ. A replaced `memberId` at the same count or a name-only change leaves the array untouched. It handles additions and removals, not every same-length replacement or refreshed server field.
 

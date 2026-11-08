@@ -93,16 +93,24 @@ describe('English editions', () => {
         readFile(path.join(web, 'public', localized)),
       ]);
       expect(files[0].length, original).toBeGreaterThan(0);
-      expect(files[1].subarray(0, 8), localized).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      const localizedSize = imageSize(files[1]);
+      expect(localizedSize.type, localized).toBe('avif');
       expect(images.has(localized), localized).toBe(true);
       expect(images.has(original), original).toBe(false);
       const capture = screenCaptures.localizedCaptures.find(
-        (entry) => entry.original === original && entry.replacement === localized,
+        (entry) =>
+          entry.original.replace(/\.png$/, '.avif') === original &&
+          entry.replacement.replace(/\.png$/, '.avif') === localized,
       );
       if (capture) {
-        expect(createHash('sha256').update(files[0]).digest('hex')).toBe(capture.originalSha256);
-        expect(createHash('sha256').update(files[1]).digest('hex')).toBe(capture.replacementSha256);
-        expect(imageSize(files[1])).toMatchObject({ width: capture.width, height: capture.height });
+        const originals = await Promise.all([
+          readFile(path.join(web, 'public', capture.original)),
+          readFile(path.join(web, 'public', capture.replacement)),
+        ]);
+        expect(createHash('sha256').update(originals[0]).digest('hex')).toBe(capture.originalSha256);
+        expect(createHash('sha256').update(originals[1]).digest('hex')).toBe(capture.replacementSha256);
+        expect(imageSize(originals[1])).toMatchObject({ width: capture.width, height: capture.height });
+        expect(localizedSize).toMatchObject({ width: capture.width, height: capture.height });
         for (const screen of capture.screens) {
           const source = await readFile(path.join(web, 'public', screen.sourceImage));
           expect(createHash('sha256').update(source).digest('hex')).toBe(screen.sourceSha256);
@@ -111,7 +119,7 @@ describe('English editions', () => {
         }
         continue;
       }
-      const diagram = await readFile(path.join(web, 'public', localized.replace(/\.png$/, '.svg')), 'utf8');
+      const diagram = await readFile(path.join(web, 'public', localized.replace(/\.avif$/, '.svg')), 'utf8');
       expect(diagram, localized).not.toMatch(/[가-힣ㄱ-ㅎㅏ-ㅣ]/);
     }
   });

@@ -3,5 +3,6 @@
   "tags": ["ai-workflow", "code-review", "testing", "reflection"],
   "publishedAt": "2026-10-05T12:01:45+09:00",
   "updatedAt": "2026-11-01",
-  "coverImage": "/images/covers/reading-ai-code.png"
+  "coverImage": "/images/covers/reading-ai-code.avif",
+  "socialImage": "/images/covers/reading-ai-code-og.jpg"
 }

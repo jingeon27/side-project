@@ -7,7 +7,7 @@ interface BrandMarkProps {
 export function BrandMark({
   className,
   size = 36,
-  imageHref = '/images/brand/bambyul-mascot.png',
+  imageHref = '/images/brand/bambyul-mascot.avif',
 }: BrandMarkProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- ImageResponse needs a plain image element for the shared logo.

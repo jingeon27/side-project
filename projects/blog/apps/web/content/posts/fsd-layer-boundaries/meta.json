@@ -3,5 +3,6 @@
   "tags": ["fsd", "architecture", "refactoring", "nextjs"],
   "publishedAt": "2026-07-01T19:35:43+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/fsd-layer-boundaries.png"
+  "coverImage": "/images/covers/fsd-layer-boundaries.avif",
+  "socialImage": "/images/covers/fsd-layer-boundaries-og.jpg"
 }

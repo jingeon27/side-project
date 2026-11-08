@@ -13,6 +13,7 @@ export type Article = {
   publishedAt: string;
   updatedAt?: string;
   coverImage?: string;
+  socialImage?: string;
   readingMinutes: number;
   toc: TocEntry[];
   translations: Partial<Record<Locale, string>>;

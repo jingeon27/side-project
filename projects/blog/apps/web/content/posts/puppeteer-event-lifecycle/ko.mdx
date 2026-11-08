@@ -4,7 +4,7 @@ Electron 수집 앱에서 페이지를 새로 불러온 뒤, 요청 헤더와 �
 
 </Summary>
 
-![요청과 응답을 기다리는 구독을 먼저 연결하는 브라우저 흐름을 그린 일러스트](/images/covers/puppeteer-event-lifecycle.png)
+![요청과 응답을 기다리는 구독을 먼저 연결하는 브라우저 흐름을 그린 일러스트](/images/covers/puppeteer-event-lifecycle.avif)
 
 [Electron 수집 앱](/ko/blog/nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준)에 비밀번호가 걸린 파일을 내려받는 단계가 있었어요. 이 앱은 Puppeteer로 브라우저를 조작하는데, Puppeteer에서는 페이지가 주고받는 네트워크도 이벤트로 볼 수 있어요. `page.on('request', 콜백)`을 걸면 페이지가 요청을 보낼 때마다, `page.on('response', 콜백)`을 걸면 응답을 받을 때마다 콜백이 불려요.
 
