@@ -26,14 +26,20 @@ test(
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     await latest.getByRole('button', { name: '우연히 찍힌 완벽한 순간 댓글 1개' }).click();
     const sheet = page.getByRole('dialog', { name: '댓글', exact: true });
+    const replyInput = sheet.getByRole('textbox', { name: '답글', exact: true });
     await sheet.getByRole('button', { name: '답글 달기', exact: true }).click();
-    await sheet.getByRole('textbox', { name: '답글', exact: true }).fill('덕분에 오늘도 한 번 웃고 가요.');
+    await replyInput.fill('취소할 답글');
+    await sheet.getByRole('button', { name: '답글 작성 취소', exact: true }).click();
+    await expect(replyInput).toHaveCount(0);
+    await sheet.getByRole('button', { name: '답글 달기', exact: true }).click();
+    await expect(replyInput).toHaveValue('');
+    await replyInput.fill('덕분에 오늘도 한 번 웃고 가요.');
     await sheet.getByRole('button', { name: '답글 올리기', exact: true }).click();
     const replies = sheet.getByRole('list', { name: '답글', exact: true });
     await expect(replies.getByText('덕분에 오늘도 한 번 웃고 가요.')).toBeVisible();
     await expect(replies.locator('[data-slot="mention"]')).toHaveText('@웃음 수집가');
     await expect(replies.locator('[data-slot="mention"]')).toHaveCSS('border-top-width', '1px');
-    await expect(sheet.getByRole('textbox', { name: '답글', exact: true })).toHaveCount(0);
+    await expect(replyInput).toHaveCount(0);
     await replies.getByRole('button', { name: '댓글 좋아요 0개', exact: true }).click();
     await expect(replies.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
       'aria-pressed',
