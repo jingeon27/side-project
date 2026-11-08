@@ -4,7 +4,7 @@ Adding coupons to the payment history screen used by hospitals and operations ma
 
 </Summary>
 
-![An illustration of ordinary and coupon payments handled through one classification point.](/images/covers/payment-coupon-branches.png)
+![An illustration of ordinary and coupon payments handled through one classification point.](/images/covers/payment-coupon-branches.avif)
 
 Hospital admin, used by hospitals, and Back-Office, used by the operations team, both have a payment history screen that stacks the payments for one treatment as a timeline. Each row is one payment, showing a colored dot, a status tag, a date, and an amount. Expanding a row reveals fields for the payment date, outstanding balance, total expected amount, and final amount, and on a row that has not been saved those fields are inputs. The service records cancellations as separate transactions rather than modifying the original payment, adding a row whose method is cancellation.
 
@@ -14,7 +14,7 @@ I call the code that picks which detail component to draw for an expanded row th
 
 The diagram below summarizes those stages and the other places coupon support touched.
 
-![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04-en.png)
+![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04-en.avif)
 
 ## Five ifs on the day coupons went in
 
@@ -92,7 +92,7 @@ Visibility and color helpers already existed. The color helper dates from March,
 
 As the diagram below shows, visibility, dot color, header, expansion, and details make five separate decisions for one payment row.
 
-![Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.](/images/posts/payment-coupon-branches/02-en.png)
+![Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.](/images/posts/payment-coupon-branches/02-en.avif)
 
 ## A match that asks about saved state first
 
@@ -217,7 +217,7 @@ I did not introduce a separate form-to-request mapper. There were few editing-on
 
 The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO, and confirmation selects the required fields from the coupon row. The diagram below lays out that structure.
 
-![The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.](/images/posts/payment-coupon-branches/01-en.png)
+![The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.](/images/posts/payment-coupon-branches/01-en.avif)
 
 Saved coupon payments do not receive separate timeline rows. The on-site payment in the same transaction finds the linked coupon row through `transactionId` and shows its usage amount.
 
@@ -268,7 +268,7 @@ The form does not automatically choose a replacement. Users can select another c
 
 The diagram below covers what happens when the amount changes before confirmation, and how completion details find the linked coupon-payment row after confirmation.
 
-![Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.](/images/posts/payment-coupon-branches/03-en.png)
+![Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.](/images/posts/payment-coupon-branches/03-en.avif)
 
 ## Decisions still outside the renderer
 

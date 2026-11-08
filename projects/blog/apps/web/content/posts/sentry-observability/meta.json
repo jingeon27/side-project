@@ -3,5 +3,6 @@
   "tags": ["sentry", "nextjs", "observability", "web-vitals", "security"],
   "publishedAt": "2026-08-25T21:10:15+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/sentry-observability.png"
+  "coverImage": "/images/covers/sentry-observability.avif",
+  "socialImage": "/images/covers/sentry-observability-og.jpg"
 }

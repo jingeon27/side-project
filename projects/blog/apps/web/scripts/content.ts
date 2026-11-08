@@ -35,6 +35,7 @@ export const metaSchema = z
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),
     coverImage: z.string().startsWith('/images/').optional(),
+    socialImage: z.string().startsWith('/images/').optional(),
   })
   .strict()
   .refine(
@@ -163,6 +164,7 @@ export async function readContent(root: string) {
       if (post) translations[locale] = post.slug;
     }
     if (meta.coverImage) await access(path.join(root, 'public', meta.coverImage));
+    if (meta.socialImage) await access(path.join(root, 'public', meta.socialImage));
     for (const locale of available) {
       const source = await readFile(path.join(dir, `${locale}.mdx`), 'utf8');
       if (!source.trim()) throw new Error(`${id}/${locale}: empty content`);

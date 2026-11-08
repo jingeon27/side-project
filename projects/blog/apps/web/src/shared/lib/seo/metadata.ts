@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { locales, type Locale } from '@/i18n/routing';
+import imageSizes from '@/shared/config/image-sizes.json';
 import { absoluteUrl, author, siteUrl } from '@/shared/config/site';
 
 import en from '../../../../seo/en.json';
@@ -20,6 +21,7 @@ export interface ArticleSeo {
   publishedAt: string;
   updatedAt?: string;
   coverImage?: string;
+  socialImage?: string;
   translations: Partial<Record<Locale, string>>;
 }
 
@@ -90,7 +92,9 @@ export function pageMetadata(
 
 export function articleMetadata(article: ArticleSeo): Metadata {
   const url = absoluteUrl(articlePath(article.locale, article.slug));
-  const image = absoluteUrl(article.coverImage || `/og/${article.locale}/${article.id}`);
+  const imagePath = article.socialImage ?? article.coverImage;
+  const image = absoluteUrl(imagePath ?? `/og/${article.locale}/${article.id}`);
+  const size = imageSizes[imagePath as keyof typeof imageSizes] ?? { width: 1200, height: 630 };
   const base = pageMetadata(article.locale, 'blog');
   return {
     ...base,
@@ -115,7 +119,7 @@ export function articleMetadata(article: ArticleSeo): Metadata {
       authors: [author.github],
       section: article.category,
       tags: article.tags,
-      images: [{ url: image, width: 1200, height: 630, alt: article.title }],
+      images: [{ url: image, ...size, alt: article.title }],
     },
     twitter: {
       card: 'summary_large_image',

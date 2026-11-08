@@ -3,5 +3,6 @@
   "tags": ["react", "error-boundary", "zod", "observability"],
   "publishedAt": "2026-08-17T07:46:22+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/error-boundary-recovery.png"
+  "coverImage": "/images/covers/error-boundary-recovery.avif",
+  "socialImage": "/images/covers/error-boundary-recovery-og.jpg"
 }

@@ -119,7 +119,7 @@ test('cover and SVG thumbnails load without breaking title links or mobile layou
   }
 });
 
-test('edited article covers load in the body and match the social preview image', async ({ page }) => {
+test('article covers load in the body and expose the social preview image', async ({ page }) => {
   for (const entry of articles.filter((candidate) => candidate.coverImage)) {
     await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
     const image = page.locator('.article-prose img').first();
@@ -132,7 +132,7 @@ test('edited article covers load in the body and match the social preview image'
     expect(source.searchParams.get('url') || source.pathname).toBe(entry.coverImage);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       'content',
-      new RegExp(`${entry.coverImage!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+      new RegExp(`${(entry.socialImage ?? entry.coverImage!).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
@@ -283,7 +283,7 @@ test('article SEO matches canonical, language availability, and structured data'
   );
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'article');
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', article.title);
-  const expectedImage = article.coverImage || `/og/${article.locale}/${article.id}`;
+  const expectedImage = article.socialImage ?? article.coverImage ?? `/og/${article.locale}/${article.id}`;
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
     new RegExp(`${expectedImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),

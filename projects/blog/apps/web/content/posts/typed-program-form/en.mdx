@@ -4,7 +4,7 @@ A program is a treatment product a hospital registers. Sharing its inputs across
 
 </Summary>
 
-![An illustration of two admin screens assembling a shared form with their own configuration.](/images/covers/typed-program-form.png)
+![An illustration of two admin screens assembling a shared form with their own configuration.](/images/covers/typed-program-form.avif)
 
 Changing a program input meant finding its `FormItem` in both hospital admin and Back-Office.
 
@@ -16,7 +16,7 @@ Submission was different in each app. Operational notes and visibility settings 
 
 The two apps need slightly different values for the same program. Input values in this diagram are examples.
 
-![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01-en.png)
+![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01-en.avif)
 
 So I shared the inputs and value types that should change together and left review and submission in each app. What the code could verify grew from field names to value types to conversion results, and this post follows that order. Decisions about what to share were made in between.
 
@@ -129,7 +129,7 @@ Assertions needed to connect Ant Design remain inside the wrapper. Callers use a
 
 Shared and app-specific types also govern the methods that read and write their fields.
 
-![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02-en.png)
+![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02-en.avif)
 
 ## Same inputs, different assembly
 
@@ -162,7 +162,7 @@ Some template inputs still use the original Ant Design Form. Compound compositio
 
 Only inputs with different behavior are assembled differently, and the others share one implementation.
 
-![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03-en.png)
+![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03-en.avif)
 
 Common inputs know nothing about review-request or approval APIs. The app owns `onFinish` and request buttons. Hospital requests and Back-Office approvals do not live in the same component.
 
@@ -242,7 +242,7 @@ Template conversions follow several rules. Each section, such as recommended pat
 
 The diagram separates the shared editing shape from the shape each request requires.
 
-![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04-en.png)
+![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04-en.avif)
 
 ## Conversion tests
 
@@ -277,7 +277,7 @@ Image-bearing highlights must not be removed merely because their title is empty
 
 Type checking validates names and values accessed through the typed API. Conversion tests validate the request shape. A correct type and a correct payload are different checks. Inputs share one instance, while field access and submitted data are checked in different places.
 
-![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06-en.png)
+![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06-en.avif)
 
 ## When values get filled
 
@@ -322,7 +322,7 @@ useEffect(() => {
 
 Synchronization is limited to five template sections. It leaves manually entered extra benefits and before-and-after photos alone. This component also converts the query response to form values, avoiding repeated fetching and updates in each input component. Query conditions, application conditions, and updated fields can be inspected in one place.
 
-![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05-en.png)
+![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05-en.avif)
 
 ## What a typed form catches and misses
 

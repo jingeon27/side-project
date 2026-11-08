@@ -4,7 +4,7 @@ After reloading a page, an Electron collector had to wait until it had caught bo
 
 </Summary>
 
-![An illustration of connecting request and response listeners before triggering browser work.](/images/covers/puppeteer-event-lifecycle.png)
+![An illustration of connecting request and response listeners before triggering browser work.](/images/covers/puppeteer-event-lifecycle.avif)
 
 An [Electron collection app](/en/blog/electron-module-boundaries) had a step that downloaded password-protected files. The app drives a browser with Puppeteer, which also exposes a page's network traffic as events. With `page.on('request', callback)` the callback runs each time the page issues a request, and with `page.on('response', callback)` each time it receives a response.
 

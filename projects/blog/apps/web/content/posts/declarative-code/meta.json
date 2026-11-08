@@ -3,5 +3,6 @@
   "tags": ["typescript", "react", "refactoring", "declarative-programming"],
   "publishedAt": "2026-08-12T00:42:29+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/declarative-code.png"
+  "coverImage": "/images/covers/declarative-code.avif",
+  "socialImage": "/images/covers/declarative-code-og.jpg"
 }

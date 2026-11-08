@@ -3,5 +3,6 @@
   "tags": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"],
   "publishedAt": "2025-06-30T23:14:01+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/reservation-form-state.png"
+  "coverImage": "/images/covers/reservation-form-state.avif",
+  "socialImage": "/images/covers/reservation-form-state-og.jpg"
 }
