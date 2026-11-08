@@ -276,7 +276,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       offset: 0,
       limit: 1,
     });
-    expect(popular.submissions.map(({ id }) => id)).toEqual([ownerPhoto.id]);
+    expect(popular.submissionsPage.items.map(({ id }) => id)).toEqual([ownerPhoto.id]);
     expect(
       (await ok(UnlikeSubmissionDocument, member, { submissionId: ownerPhoto.id })).unlikeSubmission
         .likeCount,
@@ -382,17 +382,19 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     }
     const photo = created[0];
     if (!photo) throw new Error('사진 준비 실패');
-    expect((await ok(GalleryPostsDocument, owner, variables)).galleryPosts.map((p) => p.id)).toEqual(
-      created.map((p) => p.id).reverse(),
-    );
+    expect(
+      (await ok(GalleryPostsDocument, owner, variables)).galleryPostsPage.items.map((p) => p.id),
+    ).toEqual(created.map((p) => p.id).reverse());
     expect((await ok(LikePostDocument, owner, { postId: photo.id })).likePost.likeCount).toBe(1);
     expect(
-      (await ok(GalleryPostsDocument, owner, { ...variables, sort: PostSort.MonthlyPopular })).galleryPosts[0]
-        ?.id,
+      (await ok(GalleryPostsDocument, owner, { ...variables, sort: PostSort.MonthlyPopular }))
+        .galleryPostsPage.items[0]?.id,
     ).toBe(photo.id);
     expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
     expect(
-      (await ok(GalleryPostsDocument, outsider, variables)).galleryPosts.find((post) => post.id === photo.id),
+      (await ok(GalleryPostsDocument, outsider, variables)).galleryPostsPage.items.find(
+        (post) => post.id === photo.id,
+      ),
     ).toMatchObject({ canModerate: false, canInteract: false, canDelete: false, likedByMe: false });
     expect(
       (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
@@ -423,8 +425,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     const commentVariables = { postId: photo.id, offset: 0, limit: 24 };
     expect((await ok(PostCommentsDocument, owner, commentVariables)).postComments).toEqual([comment]);
     expect(
-      (await ok(GalleryPostsDocument, owner, variables)).galleryPosts.find(({ id }) => id === photo.id)
-        ?.commentCount,
+      (await ok(GalleryPostsDocument, owner, variables)).galleryPostsPage.items.find(
+        ({ id }) => id === photo.id,
+      )?.commentCount,
     ).toBe(1);
     expect((await ok(PostCommentsDocument, outsider, commentVariables)).postComments).toEqual([
       { ...comment, canDelete: false, canInteract: false },
@@ -506,7 +509,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     });
     await ok(DeletePostDocument, owner, { postId: photo.id });
     expect(
-      (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
+      (await ok(GalleryPostsDocument, member, variables)).galleryPostsPage.items.some(
+        (p) => p.id === photo.id,
+      ),
     ).toBe(false);
   });
   it('링크 게시물 문서는 파일 없이 실행되고 비공개 링크는 멤버에게만 보여야 한다', async () => {
@@ -533,7 +538,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
           offset: 0,
           limit: 24,
         })
-      ).galleryPosts[0],
+      ).galleryPostsPage.items[0],
     ).toMatchObject({ id: createPost.id });
     expect(
       (

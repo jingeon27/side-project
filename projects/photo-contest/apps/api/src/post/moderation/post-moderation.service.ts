@@ -6,6 +6,7 @@ import { ANALYTICS_EVENT } from '../../analytics/analytics-event';
 import { recordEvent } from '../../analytics/analytics-event.writer';
 import type { IViewer } from '../../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../../common/errors';
+import { offsetPage } from '../../common/offset-page';
 import { pageRange } from '../../common/validation';
 import { Database } from '../../database/database.service';
 import { isAdmin } from '../../group/membership/group-role';
@@ -23,12 +24,13 @@ export class PostModerationService {
   async hidden(viewer: IViewer, groupId: string, offset = 0, limit = 24) {
     const range = pageRange(offset, limit);
     await this.membership.requireAdmin(viewer.id, groupId);
-    return this.db.post.findMany({
+    const rows = await this.db.post.findMany({
       where: { groupId, OR: [{ hidden: true }, { legacySubmission: { hidden: true } }] },
       skip: range.offset,
-      take: range.limit,
+      take: range.limit + 1,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
+    return offsetPage(rows, range);
   }
 
   async setHidden(viewer: IViewer, postId: string, hidden: boolean) {

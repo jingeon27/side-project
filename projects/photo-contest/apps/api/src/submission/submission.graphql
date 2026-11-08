@@ -38,9 +38,20 @@ type UploadTicket {
   expiresAt: DateTime!
 }
 
+type SubmissionPage {
+  items: [Submission!]!
+  nextOffset: Int
+}
+
 type Query {
   "관리자가 아니면 숨긴 사진을 제외한다"
   submissions(contestId: ID!, offset: Int = 0, limit: Int = 24, sort: SubmissionSort = NEWEST): [Submission!]!
+  submissionsPage(
+    contestId: ID!
+    offset: Int = 0
+    limit: Int = 24
+    sort: SubmissionSort = NEWEST
+  ): SubmissionPage!
 }
 
 type Mutation {

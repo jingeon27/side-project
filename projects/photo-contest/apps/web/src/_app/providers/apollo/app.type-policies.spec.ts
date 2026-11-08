@@ -5,9 +5,12 @@ import { APP_TYPE_POLICIES } from './app.type-policies';
 
 const SUBMISSIONS = gql`
   query Submissions($contestId: ID!, $sort: SubmissionSort, $offset: Int, $limit: Int) {
-    submissions(contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
-      id
-      caption
+    submissionsPage(contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
+      nextOffset
+      items {
+        id
+        caption
+      }
     }
   }
 `;
@@ -38,7 +41,10 @@ const CONTEST = gql`
 `;
 
 interface ISubmissionsData {
-  submissions: Array<{ __typename: 'Submission'; id: string; caption: string }>;
+  submissionsPage: {
+    items: Array<{ __typename: 'Submission'; id: string; caption: string }>;
+    nextOffset: number | null;
+  };
 }
 
 const submission = (id: string) => ({ __typename: 'Submission' as const, id, caption: `사진 ${id}` });
@@ -50,17 +56,22 @@ function writePage(
   cache.writeQuery({
     query: SUBMISSIONS,
     variables: { contestId: 'c1', sort, offset, limit: 2 },
-    data: { submissions: ids.map(submission) },
+    data: {
+      submissionsPage: {
+        __typename: 'SubmissionPage',
+        items: ids.map(submission),
+        nextOffset: ids.length === 2 ? offset + 2 : null,
+      },
+    },
   });
 }
 
-const readIds = (cache: InMemoryCache, sort: string) =>
-  cache
-    .readQuery<ISubmissionsData>({
-      query: SUBMISSIONS,
-      variables: { contestId: 'c1', sort, offset: 0, limit: 2 },
-    })
-    ?.submissions.map(({ id }) => id);
+const readPage = (cache: InMemoryCache, sort: string) =>
+  cache.readQuery<ISubmissionsData>({
+    query: SUBMISSIONS,
+    variables: { contestId: 'c1', sort, offset: 0, limit: 2 },
+  })?.submissionsPage;
+const readIds = (cache: InMemoryCache, sort: string) => readPage(cache, sort)?.items.map(({ id }) => id);
 
 describe('APP_TYPE_POLICIES', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -112,6 +123,8 @@ describe('APP_TYPE_POLICIES', () => {
 
     expect(readIds(cache, 'NEWEST')).toEqual(['s3', 's2', 's1']);
     expect(readIds(cache, 'MOST_LIKED')).toEqual(['s1', 's3']);
+    expect(readPage(cache, 'NEWEST')?.nextOffset).toBeNull();
+    expect(readPage(cache, 'MOST_LIKED')?.nextOffset).toBe(2);
   });
 
   it('첫 페이지를 다시 받아도(앱 복귀·내 제출 후) 더 불러온 사진은 남아야 한다', () => {
@@ -121,6 +134,7 @@ describe('APP_TYPE_POLICIES', () => {
     writePage(cache, { sort: 'NEWEST', offset: 0, ids: ['s3', 's2'] });
 
     expect(readIds(cache, 'NEWEST')).toEqual(['s3', 's2', 's1']);
+    expect(readPage(cache, 'NEWEST')?.nextOffset).toBeNull();
   });
 
   it('캐시에서 지운(evict) 사진은 목록에서 빠져야 한다', () => {

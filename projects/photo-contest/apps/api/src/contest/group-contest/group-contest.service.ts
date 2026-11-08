@@ -10,6 +10,7 @@ import { isAnonymous } from '../../auth/anonymous/anonymous';
 import type { IViewer } from '../../auth/session/session.service';
 import { siblingLoader } from '../../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../../common/errors';
+import { offsetPage } from '../../common/offset-page';
 import { pageRange, textValue } from '../../common/validation';
 import { CONTEST_LIKE_LIMIT_MAX, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../../config/limits';
 import { Database } from '../../database/database.service';
@@ -82,9 +83,10 @@ export class GroupContestService {
       include: contestInclude(viewer?.id ?? null),
       orderBy: [{ endsAt: 'desc' }, { id: 'desc' }],
       skip: range.offset,
-      take: range.limit,
+      take: range.limit + 1,
     });
-    return this.nodes(rows, viewer, member);
+    const page = offsetPage(rows, range);
+    return { ...page, items: this.nodes(page.items, viewer, member) };
   }
 
   async get(viewer: IViewer | null, id: string) {

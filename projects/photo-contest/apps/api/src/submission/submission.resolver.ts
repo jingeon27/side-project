@@ -14,7 +14,16 @@ export class SubmissionResolver {
   constructor(private readonly submissionService: SubmissionService) {}
 
   @Query()
-  submissions(
+  async submissions(
+    @Viewer() viewer: IViewer,
+    @Args('contestId') contestId: string,
+    @Args() query: ISubmissionListQuery,
+  ) {
+    return (await this.submissionService.list(viewer, contestId, query)).items;
+  }
+
+  @Query()
+  submissionsPage(
     @Viewer() viewer: IViewer,
     @Args('contestId') contestId: string,
     @Args() query: ISubmissionListQuery,

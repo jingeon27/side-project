@@ -17,6 +17,7 @@ import { m, useMotionValue, useSpring } from '@side/design-system/lib/motion';
 import { useMotionPreference } from '@side/design-system/lib/use-motion-preference';
 
 import { Spinner } from '../spinner/Spinner';
+import { PullToRefreshPendingContext } from './pull-to-refresh.context';
 
 const REFRESH_DISTANCE = 64;
 const MAX_PULL_DISTANCE = 96;
@@ -150,7 +151,7 @@ export function PullToRefresh({
           </>
         ) : null}
       </m.div>
-      {children}
+      <PullToRefreshPendingContext value={pending}>{children}</PullToRefreshPendingContext>
     </div>
   );
 }

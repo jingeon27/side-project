@@ -9,7 +9,14 @@ export class GroupContestResolver {
   constructor(private readonly contests: GroupContestService) {}
 
   @Query()
-  groupContests(
+  async groupContests(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() input: Parameters<GroupContestService['list']>[1],
+  ) {
+    return (await this.contests.list(viewer, input)).items;
+  }
+  @Query()
+  groupContestsPage(
     @OptionalViewer() viewer: IViewer | null,
     @Args() input: Parameters<GroupContestService['list']>[1],
   ) {

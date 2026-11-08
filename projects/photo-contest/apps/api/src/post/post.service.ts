@@ -7,6 +7,7 @@ import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { offsetPage } from '../common/offset-page';
 import { pageRange, textValue } from '../common/validation';
 import { PAGE_SIZE_DEFAULT, POST_BODY_LIMIT, POST_TITLE_LIMIT } from '../config/limits';
 import { assertContestParticipation } from '../contest/group-contest/group-contest.policy';
@@ -88,7 +89,7 @@ export class PostService {
   }
 
   private async findPosts(viewer: IViewer | null, scope: Prisma.PostWhereInput, query: IPostQuery) {
-    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
+    const range = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const popular = query.sort === 'MONTHLY_POPULAR';
     const rows = await this.db.post.findMany({
       where: {
@@ -99,15 +100,16 @@ export class PostService {
         ...(popular ? { createdAt: koreanMonth() } : {}),
       },
       include: postInclude(viewer?.id ?? null),
-      skip: offset,
-      take: limit,
+      skip: range.offset,
+      take: range.limit + 1,
       orderBy: [
         ...(popular ? [{ likes: { _count: 'desc' as const } }] : []),
         { createdAt: 'desc' },
         { id: 'desc' },
       ],
     });
-    return rows.map((row) => presentPost(row, viewer?.id ?? null));
+    const page = offsetPage(rows, range);
+    return { ...page, items: page.items.map((row) => presentPost(row, viewer?.id ?? null)) };
   }
   async create(viewer: IViewer, input: IPostInput, address: string | null = null) {
     if (!input.rightsConfirmed) fail('공유할 권리와 촬영된 사람의 동의를 확인해 주세요.');

@@ -9,7 +9,7 @@ import { PostCommentCardFragmentDoc } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 
-import { PostCommentComposer } from '../composer/PostCommentComposer';
+import { PostReplyComposer } from '../composer/PostReplyComposer';
 import { PostCommentReplies } from './PostCommentReplies';
 
 export function PostCommentReplySection({ parentId }: { parentId: string }) {
@@ -53,7 +53,7 @@ export function PostCommentReplySection({ parentId }: { parentId: string }) {
       </div>
       {composing ? (
         <div className="mt-2 rounded-card border border-line bg-sunken p-3">
-          <PostCommentComposer
+          <PostReplyComposer
             postId={comment.postId}
             parentId={parentId}
             onCancel={() => setComposing(false)}

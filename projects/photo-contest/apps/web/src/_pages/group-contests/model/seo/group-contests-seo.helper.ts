@@ -10,7 +10,7 @@ import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper'
 
 export interface IGroupContestsSeoData {
   group: PublicGroupSeoQuery['group'];
-  contests: GroupContestsQuery['groupContests'];
+  contests: GroupContestsQuery['groupContestsPage']['items'];
 }
 
 /** 대회 목록 라우트마다 다른 조회 필터·경로·이름·설명. 라우트가 하나를 골라 넘긴다. */

@@ -73,9 +73,17 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
             data = { myGroups: state.hasGroup ? [{ ...group, role: 'MEMBER' }] : [] };
           if (operation.operationName === 'NotificationUnreadCount') data = { notificationUnreadCount: 0 };
           if (operation.operationName === 'DiscoverGroups')
-            data = { discoverGroups: [{ ...group, role: state.hasGroup ? 'MEMBER' : null }] };
-          if (operation.operationName === 'PublicGalleryPosts') data = { publicGalleryPosts: [] };
-          if (operation.operationName === 'GalleryPosts') data = { galleryPosts: [] };
+            data = {
+              discoverGroupsPage: {
+                __typename: 'DiscoverGroupPage',
+                items: [{ ...group, role: state.hasGroup ? 'MEMBER' : null }],
+                nextOffset: null,
+              },
+            };
+          if (operation.operationName === 'PublicGalleryPosts')
+            data = { publicGalleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
+          if (operation.operationName === 'GalleryPosts')
+            data = { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
           if (operation.operationName === 'RequestGroupMembership') {
             state.hasGroup = true;
             data = { requestGroupMembership: { ...group, role: 'MEMBER' } };

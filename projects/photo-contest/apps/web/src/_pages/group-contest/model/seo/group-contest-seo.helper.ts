@@ -12,7 +12,7 @@ import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper'
 export interface IGroupContestSeoData {
   group: PublicGroupSeoQuery['group'];
   contest: (PublicGroupContestSeoQuery['groupContest'] & { winners: GroupContestAwardFragment[] }) | null;
-  posts: GalleryPostsQuery['galleryPosts'];
+  posts: GalleryPostsQuery['galleryPostsPage']['items'];
 }
 
 export function groupContestMetadata(data: IGroupContestSeoData, contestId: string, origin: string) {

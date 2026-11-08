@@ -7,6 +7,7 @@ import { recordEvent } from '../../analytics/analytics-event.writer';
 import type { IViewer } from '../../auth/session/session.service';
 import { USER_VIEW_SELECT } from '../../auth/user-view';
 import { ERROR_CODE, fail } from '../../common/errors';
+import { offsetPage } from '../../common/offset-page';
 import { pageRange } from '../../common/validation';
 import { PAGE_SIZE_DEFAULT } from '../../config/limits';
 import { Database } from '../../database/database.service';
@@ -26,7 +27,7 @@ export class GroupJoinRequestService {
   async list(viewer: IViewer, groupId: string, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
     await this.membership.requireAdmin(viewer.id, groupId);
-    return this.db.groupJoinRequest.findMany({
+    const rows = await this.db.groupJoinRequest.findMany({
       where: { groupId },
       include: { user: { select: USER_VIEW_SELECT } },
       orderBy: [
@@ -36,8 +37,9 @@ export class GroupJoinRequestService {
         { id: 'asc' },
       ],
       skip: range.offset,
-      take: range.limit,
+      take: range.limit + 1,
     });
+    return offsetPage(rows, range);
   }
 
   async review(viewer: IViewer, requestId: string, approved: boolean) {

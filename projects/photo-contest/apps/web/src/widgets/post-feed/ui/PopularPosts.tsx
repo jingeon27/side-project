@@ -14,10 +14,11 @@ const LIMIT = 3;
 
 function PopularPostList({ postsRef, empty }: { postsRef: QueryRef<GalleryPostsQuery>; empty?: ReactNode }) {
   const { data } = useReadQuery(postsRef);
-  if (!data.galleryPosts.length) return empty ?? <PostsEmptyState title="이달의 첫 웃음을 기다려요" />;
+  if (!data.galleryPostsPage.items.length)
+    return empty ?? <PostsEmptyState title="이달의 첫 웃음을 기다려요" />;
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-4" data-photo-feed>
-      {data.galleryPosts.map(({ id }, index) => (
+      {data.galleryPostsPage.items.map(({ id }, index) => (
         <PopularPostCard key={id} id={id} rank={index + 1} />
       ))}
     </div>

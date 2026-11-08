@@ -68,15 +68,32 @@ type PublicGroupSitemapEntry {
   lastModifiedAt: DateTime!
 }
 
+type DiscoverGroupPage {
+  items: [Group!]!
+  nextOffset: Int
+}
+
+type GroupJoinRequestPage {
+  items: [GroupJoinRequest!]!
+  nextOffset: Int
+}
+
 type Query {
   myGroups: [Group!]!
   group(id: ID!): Group!
   "공개·비공개 그룹의 이름을 탐색한다. 비공개 게시물·초대 토큰·멤버 명단은 노출하지 않는다"
   discoverGroups(search: String, visibility: GroupVisibility, offset: Int = 0, limit: Int = 24): [Group!]!
+  discoverGroupsPage(
+    search: String
+    visibility: GroupVisibility
+    offset: Int = 0
+    limit: Int = 24
+  ): DiscoverGroupPage!
   publicGroupCount: Int!
   publicGroupSitemap(offset: Int = 0, limit: Int = 24): [PublicGroupSitemapEntry!]!
   "그룹장·부관리자만 가입 신청을 조회한다"
   groupJoinRequests(groupId: ID!, offset: Int = 0, limit: Int = 24): [GroupJoinRequest!]!
+  groupJoinRequestsPage(groupId: ID!, offset: Int = 0, limit: Int = 24): GroupJoinRequestPage!
   "로그인하지 않아도 초대 토큰으로 그룹을 미리 본다"
   invitePreview(token: String!): InvitePreview!
 }

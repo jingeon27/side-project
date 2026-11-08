@@ -27,7 +27,15 @@ describe('GroupJoinRequests 회귀', () => {
               ? [request('request-1', '먼저 온 친구')]
               : [request('request-1', '먼저 온 친구'), request('request-2', '새로 온 친구')];
           const respond = () => {
-            sink.next({ data: { groupJoinRequests: requests } });
+            sink.next({
+              data: {
+                groupJoinRequestsPage: {
+                  __typename: 'GroupJoinRequestPage',
+                  items: requests,
+                  nextOffset: null,
+                },
+              },
+            });
             sink.complete();
           };
           if (operations.length === 1) {

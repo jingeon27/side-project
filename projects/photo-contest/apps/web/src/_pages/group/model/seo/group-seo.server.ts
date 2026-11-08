@@ -23,7 +23,7 @@ const readGroupSeoData = cache(async (id: string): Promise<IGroupSeoData | null>
   try {
     const { group } = await publicQuery(PublicGroupSeoDocument, { id });
     if (group.visibility !== GroupVisibility.Public) return { group, posts: [] };
-    const { galleryPosts } = await publicQuery(
+    const { galleryPostsPage } = await publicQuery(
       GalleryPostsDocument,
       {
         groupId: id,
@@ -33,7 +33,7 @@ const readGroupSeoData = cache(async (id: string): Promise<IGroupSeoData | null>
       },
       PUBLIC_CONTENT_TTL,
     );
-    return { group, posts: galleryPosts };
+    return { group, posts: galleryPostsPage.items };
   } catch (error) {
     if (error instanceof PublicQueryError && error.code === 'NOT_FOUND') return null;
     throw error;
