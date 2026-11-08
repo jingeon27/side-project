@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId } from 'react';
 
 import { useMutation } from '@apollo/client/react';
 import dayjs from 'dayjs';
@@ -28,8 +28,9 @@ export function CreateGroupContestBottomSheet({
   unmount,
 }: IBottomSheetControlProps & { groupId: string }) {
   const formId = useId();
-  const [defaults] = useState(() => buildContestDefaults(dayjs().toDate()));
-  const form = useZodForm(createGroupContestSchema, { defaultValues: { ...defaults, likeLimit: 1 } });
+  const form = useZodForm(createGroupContestSchema, {
+    defaultValues: { ...buildContestDefaults(dayjs().toDate()), likeLimit: 1 },
+  });
   const router = useAppRouter();
   const [create] = useMutation(CreateGroupContestDocument, {
     refetchQueries: [GroupContestsDocument],

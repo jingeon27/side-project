@@ -44,7 +44,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 - 공통 미사용 검사는 `yarn knip`, 전체 현황은 `yarn knip:report`다. 새 문제를 `knip-baseline.json`에 추가해 숨기지 않는다. 기존 항목을 정리하면 기준선에서도 지운다. 값·타입·namespace의 `export *` 대신 필요한 이름을 명시하며 공통 ESLint 규칙이 검사한다.
 - 커밋·push·PR은 공통 [commit](.agents/skills/commit/SKILL.md) 스킬을 따른다. 서비스·앱·패키지 단위로 작게 나누고 관련 테스트·계약 생성 결과를 함께 둔다.
 - husky hook: `pre-commit`은 스테이징된 파일만 Prettier로 정리하고 `commit-msg`는 `<type>(<scope>): <내용>` 형식과 `Co-Authored-By` trailer 금지를 검사한다. 새 worktree는 `yarn install` 후 hook이 생긴다. 실패하면 고쳐서 다시 커밋한다. hook이 필요 없는 자동화는 `HUSKY=0`을 쓰고 `--no-verify`는 비상시에만 쓴다.
-- CI workflow는 `Services`, `Blog`, `Static analysis` 세 개로 관리한다. PR·develop은 검증, main은 운영 배포 대상으로 구분하며 블로그 Vercel Git 자동 배포는 main만 허용하고 develop·PR 미리보기를 차단한다. 공용 이미지 검증·수동 채팅 측정은 Services, 커밋·Terraform 검사는 Static analysis가 소유한다.
+- CI workflow는 `Services`, `Blog`, `Static analysis` 세 개로 관리한다. PR·develop은 검증, main은 운영 배포 대상으로 구분하며 블로그 Vercel Git 자동 배포는 main만 허용하고 develop·PR 미리보기를 차단한다. 공용 이미지 검증은 Services가, 커밋·Terraform 검사는 Static analysis가 소유한다.
 - 모든 변경은 기능 브랜치 → develop → main 순서로 반영한다. 기능·수정 PR의 base는 develop이며 main에는 develop에서만 PR을 올린다. 배포 장애 수정도 같은 경로를 따른다.
 - 일반 PR 제목은 `<type>(<scope>): <내용>` 형식을 쓴다. `develop → main` 릴리스 PR 제목은 `Release v<SemVer>` 형식으로 정한다(예: `Release v0.1.1-beta.2`). 릴리스 PR에서도 개별 커밋 메시지는 기존 커밋 컨벤션을 따른다.
 - PR은 squash가 아니라 merge commit으로 합친다(#94까지는 squash였으므로 그 이전 이력은 `gh pr view <번호> --json commits`로 본다). 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Static analysis` 안에 있는 커밋 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.

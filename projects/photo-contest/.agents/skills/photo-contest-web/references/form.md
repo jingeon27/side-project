@@ -63,6 +63,7 @@ try {
 ## 초기화
 
 - 시트의 폼은 닫힐 때 `unmount`로 함께 사라지고 다시 열면 새로 만들어진다. 닫기에서 `reset()`을 부르지 말고 `unmount`를 넘겼는지만 확인한다. 화면에 남는 폼만 성공 뒤 `form.reset()`.
+- 동기 `defaultValues`는 React Hook Form이 폼 생성 시 보관한다. 시트의 기본 일정은 `useZodForm`의 `defaultValues`에 바로 넘긴다.
 
 ## 테스트
 
