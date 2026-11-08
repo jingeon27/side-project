@@ -44,3 +44,8 @@ description: 이 모노레포의 TypeScript와 React 코드를 작성하거나 �
 - 외부 상태 표시는 `useSyncExternalStore`, 사용자 조작은 일반 핸들러를 쓴다. QueryClient·채널처럼 수명이 고정된 자원의 lazy useState는 허용한다. ref는 포커스·취소 등 실제 imperative 자원에 필요한 경우만 쓴다.
 - outside-click·포커스 복귀/트랩·Escape·ARIA·키보드 탐색은 기존 UI primitive에 맡긴다. 앱은 도메인 동작·history·portal·브리지만 조합한다. DOM primitive를 네이티브 OS 기능의 대체재로 쓰지 않는다.
 - 수명 변경은 콜백 교체·StrictMode 재연결·unmount 뒤 응답·실패 초안 보존을 동작으로 검증한다. 문구·구현을 그대로 복사하는 테스트를 추가하지 않는다.
+
+## 변경분 리뷰
+
+- 추가·수정한 제품 코드가 운영 진입점에서 호출되는 경로와 삭제한 코드의 남은 사용처를 확인한다. 테스트·예제 참조를 구분하고 공개 API와 동적 등록도 확인한다.
+- 변경한 `useState`·`useRef`·동기화 effect가 폼이나 쿼리가 이미 관리하는 기본값, 입력값, 조회 결과, 진행 상태를 다시 보관하는지 확인한다.
