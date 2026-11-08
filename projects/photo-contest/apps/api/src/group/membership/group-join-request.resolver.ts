@@ -9,7 +9,17 @@ export class GroupJoinRequestResolver {
   constructor(private readonly requests: GroupJoinRequestService) {}
 
   @Query()
-  groupJoinRequests(
+  async groupJoinRequests(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
+  ) {
+    return (await this.requests.list(viewer, groupId, offset, limit)).items;
+  }
+
+  @Query()
+  groupJoinRequestsPage(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
     @Args('offset') offset?: number | null,

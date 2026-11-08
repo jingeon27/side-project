@@ -34,8 +34,11 @@ fragment GalleryPostCard on GalleryPost {
   }
 }
 query MyGalleryPosts($groupId: ID, $offset: Int!, $limit: Int!) {
-  myGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
-    ...GalleryPostCard
+  myGalleryPostsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
 query GalleryPosts(
@@ -46,7 +49,7 @@ query GalleryPosts(
   $offset: Int!
   $limit: Int!
 ) {
-  galleryPosts(
+  galleryPostsPage(
     groupId: $groupId
     contestId: $contestId
     categoryId: $categoryId
@@ -54,7 +57,10 @@ query GalleryPosts(
     offset: $offset
     limit: $limit
   ) {
-    ...GalleryPostCard
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
 mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
@@ -167,8 +173,11 @@ mutation DeletePostComment($commentId: ID!) {
 }
 
 query PublicGalleryPosts($sort: PostSort!, $offset: Int!, $limit: Int!) {
-  publicGalleryPosts(sort: $sort, offset: $offset, limit: $limit) {
-    ...GalleryPostCard
+  publicGalleryPostsPage(sort: $sort, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
 
@@ -178,10 +187,13 @@ query RefreshPost($id: ID!) {
   }
 }
 query HiddenGalleryPosts($groupId: ID!, $offset: Int!, $limit: Int!) {
-  hiddenGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
-    id
-    title
-    createdAt
+  hiddenGalleryPostsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      id
+      title
+      createdAt
+    }
   }
 }
 mutation SetPostHidden($postId: ID!, $hidden: Boolean!) {

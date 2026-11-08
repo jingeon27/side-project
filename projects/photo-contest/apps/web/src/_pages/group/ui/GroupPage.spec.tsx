@@ -29,11 +29,14 @@ const owner = {
 function respond(name: string) {
   if (name === 'Me') return { me: null };
   if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
-  if (name === 'GalleryPosts') return { galleryPosts: [] };
+  if (name === 'GalleryPosts')
+    return { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
   if (name === 'GroupCategories')
     return { group: { __typename: 'Group', id: 'group-1', role: GroupRole.Owner, categories: [] } };
-  if (name === 'HiddenGalleryPosts') return { hiddenGalleryPosts: [] };
-  if (name === 'GroupJoinRequests') return { groupJoinRequests: [] };
+  if (name === 'HiddenGalleryPosts')
+    return { hiddenGalleryPostsPage: { __typename: 'HiddenGalleryPostPage', items: [], nextOffset: null } };
+  if (name === 'GroupJoinRequests')
+    return { groupJoinRequestsPage: { __typename: 'GroupJoinRequestPage', items: [], nextOffset: null } };
   return {};
 }
 

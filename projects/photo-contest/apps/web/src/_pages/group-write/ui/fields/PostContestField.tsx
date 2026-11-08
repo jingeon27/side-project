@@ -26,12 +26,12 @@ function ContestSelection({
   queryRef: QueryRef<GroupContestsQuery>;
   groupId: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (data) => data.groupContests,
-    pageSize: 48,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    queryRef,
+    (data) => data.groupContestsPage.nextOffset,
+  );
   const id = useId();
-  if (!data.groupContests.length)
+  if (!data.groupContestsPage.items.length)
     return (
       <p className="text-body text-muted">
         현재 접수 중인 대회가 없어요.{' '}
@@ -56,7 +56,7 @@ function ContestSelection({
         {...form.register('contestId')}
       >
         <option value="">대회를 선택해 주세요</option>
-        {data.groupContests.map((contest) => (
+        {data.groupContestsPage.items.map((contest) => (
           <option key={contest.id} value={contest.id}>
             {contest.title}
           </option>
@@ -104,7 +104,7 @@ function AvailableContests({
 }) {
   const participating = useWatch({ control: form.control, name: 'participateInContest' });
   const { data } = useReadQuery(queryRef);
-  if (!data.groupContests.length) return null;
+  if (!data.groupContestsPage.items.length) return null;
   return (
     <section className="flex flex-col gap-3 rounded-control border border-line p-4">
       <label className="flex min-h-touch cursor-pointer items-center gap-3 text-label text-ink">

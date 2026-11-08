@@ -76,7 +76,7 @@ function Feed({ isAdmin }: { isAdmin: boolean }) {
   const { data } = useQuery(SubmissionsDocument, { variables: FEED });
   return (
     <ul>
-      {data?.submissions
+      {data?.submissionsPage.items
         .filter((submission) => !submission.hidden)
         .map((submission) => (
           <li key={submission.id} aria-label={submission.caption}>
@@ -104,11 +104,15 @@ function renderFeed({ isAdmin, mocks = [] }: { isAdmin: boolean; mocks?: MockLin
     query: SubmissionsDocument,
     variables: FEED,
     data: {
-      submissions: [
-        photo('photo-a'),
-        photo('photo-b'),
-        photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } }),
-      ],
+      submissionsPage: {
+        __typename: 'SubmissionPage',
+        items: [
+          photo('photo-a'),
+          photo('photo-b'),
+          photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } }),
+        ],
+        nextOffset: null,
+      },
     },
   });
   render(
@@ -209,12 +213,16 @@ describe('ModerationActions', () => {
           request: { query: SubmissionsDocument, variables: FEED },
           result: {
             data: {
-              submissions: [
-                photo('photo-b'),
-                photo('photo-mine', {
-                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
-                }),
-              ],
+              submissionsPage: {
+                __typename: 'SubmissionPage',
+                items: [
+                  photo('photo-b'),
+                  photo('photo-mine', {
+                    author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                  }),
+                ],
+                nextOffset: null,
+              },
             },
           },
         },
@@ -251,12 +259,16 @@ describe('ModerationActions', () => {
           request: { query: SubmissionsDocument, variables: FEED },
           result: {
             data: {
-              submissions: [
-                photo('photo-a'),
-                photo('photo-mine', {
-                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
-                }),
-              ],
+              submissionsPage: {
+                __typename: 'SubmissionPage',
+                items: [
+                  photo('photo-a'),
+                  photo('photo-mine', {
+                    author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                  }),
+                ],
+                nextOffset: null,
+              },
             },
           },
         },

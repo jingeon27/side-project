@@ -17,11 +17,9 @@ function ReplyList({
   queryRef: QueryRef<PostCommentsQuery>;
   replyToName: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (data) => data.postComments,
-    pageSize: 12,
-    canFetchMore: (data) => data.postComments.length < data.postCommentCount,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, (data) =>
+    data.postComments.length < data.postCommentCount ? data.postComments.length : null,
+  );
   return (
     <>
       <ul aria-label="답글" className="flex flex-col gap-4">

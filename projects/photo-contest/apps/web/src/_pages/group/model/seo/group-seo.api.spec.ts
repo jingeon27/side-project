@@ -99,12 +99,12 @@ describe('공개 그룹의 SEO·사이트맵 실제 API', () => {
       .requestGroupMembership;
     expect(requested).toMatchObject({ role: null, canViewPosts: false, joinRequestPending: true });
     const userId = (await execute(applicant, MeDocument, {})).me?.id;
-    const { groupJoinRequests } = await execute(owner, GroupJoinRequestsDocument, {
+    const { groupJoinRequestsPage } = await execute(owner, GroupJoinRequestsDocument, {
       groupId: privateId,
       offset: 0,
       limit: 24,
     });
-    const pending = groupJoinRequests.find((request) => request.user.id === userId);
+    const pending = groupJoinRequestsPage.items.find((request) => request.user.id === userId);
     if (!pending) throw new Error('가입 신청이 있어야 한다');
     await execute(owner, ApproveGroupJoinRequestDocument, { requestId: pending.id });
     expect((await execute(applicant, GalleryDocument, { id: privateId })).group).toMatchObject({

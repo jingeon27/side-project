@@ -17,11 +17,9 @@ export function PostCommentList({
   commentsRef: QueryRef<PostCommentsQuery>;
   postId: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(commentsRef, {
-    select: (data) => data.postComments,
-    pageSize: 24,
-    canFetchMore: (data) => data.postComments.length < data.postCommentCount,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(commentsRef, (data) =>
+    data.postComments.length < data.postCommentCount ? data.postComments.length : null,
+  );
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },

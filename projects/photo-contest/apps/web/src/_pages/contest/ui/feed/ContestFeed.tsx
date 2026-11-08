@@ -23,10 +23,10 @@ import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
+import { FeedLoadMore } from '@/shared/ui/@core/feed-load-more';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import type { TContestQueryRef } from '../../model/contest-query.type';
-import { FeedLoadMore } from './FeedLoadMore';
 
 interface IContestFeedProps {
   contestRef: TContestQueryRef;
@@ -43,12 +43,12 @@ function FeedContent({
   viewerId: string;
 }) {
   const { data: context } = useReadQuery(contestRef);
-  const pagination = useInfiniteQuery(submissionsRef, {
-    select: (data) => data.submissions,
-    pageSize: FEED_PAGE_SIZE,
-    canFetchMore: (data) =>
-      data.submissions.filter((photo) => !photo.hidden).length < (context?.contest.submissionCount ?? 0),
-  });
+  const pagination = useInfiniteQuery(submissionsRef, (data) =>
+    data.submissionsPage.items.filter((photo) => !photo.hidden).length <
+    (context?.contest.submissionCount ?? 0)
+      ? data.submissionsPage.nextOffset
+      : null,
+  );
   const count = context?.contest.submissionCount;
   const previousCount = useRef(count);
   useEffect(() => {
@@ -65,7 +65,7 @@ function FeedContent({
     });
   }, [count, pagination]);
   if (!context) return null;
-  const photos = pagination.data.submissions.filter((submission) => !submission.hidden);
+  const photos = pagination.data.submissionsPage.items.filter((submission) => !submission.hidden);
   if (!photos.length && !pagination.hasNextPage)
     return (
       <EmptyState
@@ -124,6 +124,7 @@ function FeedContent({
         <FeedLoadMore
           hasMore={pagination.hasNextPage}
           loading={pagination.isFetchingNextPage}
+          loadingLabel="사진을 더 불러오는 중"
           onLoadMore={pagination.fetchNextPage}
         />
       </div>

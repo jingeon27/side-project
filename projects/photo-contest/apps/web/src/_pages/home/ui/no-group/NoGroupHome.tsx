@@ -15,7 +15,7 @@ import { PublicGalleryBoard } from './PublicGalleryBoard';
 
 function PublicGroups({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);
-  if (!data.discoverGroups.length)
+  if (!data.discoverGroupsPage.items.length)
     return (
       <EmptyState
         icon={<UsersRound />}
@@ -30,7 +30,7 @@ function PublicGroups({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> })
     );
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 tablet:grid-cols-2 wide:grid-cols-3">
-      {data.discoverGroups.map(({ id }) => (
+      {data.discoverGroupsPage.items.map(({ id }) => (
         <DiscoverGroupCard key={id} id={id} joinable />
       ))}
     </div>

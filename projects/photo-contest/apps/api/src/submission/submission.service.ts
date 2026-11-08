@@ -5,6 +5,7 @@ import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { offsetPage } from '../common/offset-page';
 import { pageRange, textValue } from '../common/validation';
 import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
@@ -45,8 +46,8 @@ export class SubmissionService {
   ) {}
 
   /** 관리자가 아니면 숨긴 사진을 뺀다. 인자가 null이면 스키마 기본값과 같게 본다. */
-  async list(viewer: IViewer, contestId: string, query: ISubmissionListQuery): Promise<ISubmissionView[]> {
-    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
+  async list(viewer: IViewer, contestId: string, query: ISubmissionListQuery) {
+    const range = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const sort = toSubmissionSort(query.sort);
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
     const admin = isAdmin(member);
@@ -54,11 +55,12 @@ export class SubmissionService {
       where: { contestId, ...(admin ? {} : { hidden: false }) },
       include: submissionInclude(viewer.id, admin),
       orderBy: submissionOrderBy(sort),
-      skip: offset,
-      take: limit,
+      skip: range.offset,
+      take: range.limit + 1,
     });
     const completed = phase(contest) === PHASE.COMPLETED;
-    return rows.map((row) => presentSubmission(row, { completed, admin }));
+    const page = offsetPage(rows, range);
+    return { ...page, items: page.items.map((row) => presentSubmission(row, { completed, admin })) };
   }
 
   /** 접근을 확인한 사진 하나를 조회자 기준으로 다시 읽는다. 좋아요처럼 사진을 바꾼 뒤 돌려줄 때 쓴다. */

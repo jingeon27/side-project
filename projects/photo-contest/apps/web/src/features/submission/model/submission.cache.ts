@@ -4,7 +4,7 @@ import { ContestDocument } from '@/shared/api/generated';
 
 /** 사진이 빠지면 offset 위치가 밀리므로 목록을 처음부터 다시 받는다. */
 export function resetSubmissionFeeds(cache: ApolloCache) {
-  cache.evict({ id: 'ROOT_QUERY', fieldName: 'submissions' });
+  cache.evict({ id: 'ROOT_QUERY', fieldName: 'submissionsPage' });
 }
 
 /** 내 사진을 냈다고 대회에 적는다(제출 버튼을 숨기고 사진 수를 늘린다). 목록은 첫 페이지를 다시 받아 채운다. */

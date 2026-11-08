@@ -44,10 +44,13 @@ function seedFeeds(cache: InMemoryCache) {
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: { groupId: null, sort, offset: 0, limit },
-      data: { galleryPosts: [] },
+      data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } },
     });
 }
-const respondEmptyFeed = (name: string) => (name === 'GalleryPosts' ? { galleryPosts: [] } : {});
+const respondEmptyFeed = (name: string) =>
+  name === 'GalleryPosts'
+    ? { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } }
+    : {};
 
 describe('홈의 개인 피드 SSR·hydration', () => {
   it('사전 조회하지 않은 피드는 틀만 서버 HTML에 그리고 hydration 뒤 브라우저에서 받아야 한다', async () => {

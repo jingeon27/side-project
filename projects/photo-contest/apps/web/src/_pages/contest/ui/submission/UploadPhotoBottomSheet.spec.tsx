@@ -111,7 +111,9 @@ const successMocks = (): MockLink.MockedResponse[] => [
 
 const FEED = { contestId: 'contest-1', sort: SubmissionSort.Newest, offset: 0, limit: 24 };
 
-const feedPage = (submissions: SubmissionCardFragment[]) => ({ submissions });
+const feedPage = (submissions: SubmissionCardFragment[]) => ({
+  submissionsPage: { __typename: 'SubmissionPage' as const, items: submissions, nextOffset: null },
+});
 
 /** 대회 화면에 열려 있는 피드. 처음에는 비어 있고, 제출한 뒤 다시 받으면 내 사진이 보인다. */
 const feedMocks = (): MockLink.MockedResponse[] => [
@@ -123,7 +125,7 @@ function FeedProbe() {
   const { data } = useQuery(SubmissionsDocument, { variables: FEED });
   return (
     <ul aria-label="피드">
-      {data?.submissions.map((submission) => (
+      {data?.submissionsPage.items.map((submission) => (
         <li key={submission.id}>{submission.caption}</li>
       ))}
     </ul>

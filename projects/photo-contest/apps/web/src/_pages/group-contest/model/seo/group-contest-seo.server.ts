@@ -36,7 +36,7 @@ export const getGroupContestSeoData = cache(
           posts: groupContestResults.map((result) => result.post),
         };
       }
-      const { galleryPosts } = await publicQuery(
+      const { galleryPostsPage } = await publicQuery(
         GalleryPostsDocument,
         {
           groupId,
@@ -47,7 +47,7 @@ export const getGroupContestSeoData = cache(
         },
         PUBLIC_CONTENT_TTL,
       );
-      return { group, contest: { ...contest, winners: [] }, posts: galleryPosts };
+      return { group, contest: { ...contest, winners: [] }, posts: galleryPostsPage.items };
     } catch (error) {
       if (
         error instanceof PublicQueryError &&

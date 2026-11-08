@@ -7,9 +7,10 @@ import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/rea
 import { PostCard, PostCardList } from '@/features/post';
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
-import { Button } from '@/shared/ui/@core/button';
+import { FeedLoadMore } from '@/shared/ui/@core/feed-load-more';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 const PAGE_SIZE = 24;
@@ -37,15 +38,16 @@ function LatestPostList({
   empty: ReactNode;
   postAction?: (postId: string) => ReactNode;
 }) {
-  const { items, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(postsRef, {
-    select: (data) => data.galleryPosts,
-    pageSize: PAGE_SIZE,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    postsRef,
+    (data) => data.galleryPostsPage.nextOffset,
+    (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'latest', offset }),
+  );
   return (
     <div className="flex flex-col gap-4">
-      {items.length ? (
+      {data.galleryPostsPage.items.length ? (
         <PostCardList>
-          {items.map(({ id }) => (
+          {data.galleryPostsPage.items.map(({ id }) => (
             <div key={id} className="flex min-w-0 flex-col gap-3">
               <PostCard id={id} />
               {postAction?.(id)}
@@ -55,16 +57,17 @@ function LatestPostList({
       ) : (
         empty
       )}
-      {hasNextPage ? (
-        <Button variant="secondary" onClick={fetchNextPage} loading={isFetchingNextPage}>
-          게시물 더 보기
-        </Button>
-      ) : null}
+      <FeedLoadMore
+        hasMore={hasNextPage}
+        loading={isFetchingNextPage}
+        loadingLabel="게시물을 더 불러오는 중"
+        onLoadMore={fetchNextPage}
+      />
     </div>
   );
 }
 
-/** 최신순 게시물 목록과 더 보기. 그룹·대회·카테고리로 좁힐 수 있다. */
+/** 최신순 게시물 목록. 그룹·대회·카테고리로 좁힐 수 있다. */
 export function LatestPosts({
   groupId,
   contestId,

@@ -2,25 +2,28 @@ import { Suspense, useState, useTransition } from 'react';
 
 import { ApolloClient, ApolloLink, gql, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider, useBackgroundQuery, type QueryRef } from '@apollo/client/react';
-import { offsetLimitPagination } from '@apollo/client/utilities';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { useInfiniteQuery } from './infinite-query.hook';
+import { offsetPagePagination } from './offset-page-pagination';
 
 interface IItem {
   __typename: 'Item';
   id: string;
 }
 interface IData {
-  items: IItem[];
+  itemsPage: { items: IItem[]; nextOffset: number | null };
 }
 const DOCUMENT: TypedDocumentNode<IData, { offset: number; limit: number; scope: string }> = gql`
   query InfiniteItems($offset: Int!, $limit: Int!, $scope: String!) {
-    items(offset: $offset, limit: $limit, scope: $scope) {
-      __typename
-      id
+    itemsPage(offset: $offset, limit: $limit, scope: $scope) {
+      nextOffset
+      items {
+        __typename
+        id
+      }
     }
   }
 `;
@@ -28,15 +31,15 @@ const clients: ApolloClient[] = [];
 afterEach(() => clients.splice(0).forEach((client) => client.stop()));
 
 function List({ queryRef }: { queryRef: QueryRef<IData> }) {
-  const { items, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useInfiniteQuery(queryRef, {
-    select: (data) => data.items,
-    pageSize: 2,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useInfiniteQuery(
+    queryRef,
+    (result) => result.itemsPage.nextOffset,
+  );
   const [refreshing, startTransition] = useTransition();
   return (
     <>
       <ul aria-label="목록">
-        {items.map((item) => (
+        {data.itemsPage.items.map((item) => (
           <li key={item.id}>{item.id}</li>
         ))}
       </ul>
@@ -92,7 +95,7 @@ async function setup(rows: Record<string, string[]>, refetchGate?: Promise<void>
   const requests: Array<{ scope: string; offset: number }> = [];
   const client = new ApolloClient({
     cache: new InMemoryCache({
-      typePolicies: { Query: { fields: { items: offsetLimitPagination(['scope']) } } },
+      typePolicies: { Query: { fields: { itemsPage: offsetPagePagination(['scope']) } } },
     }),
     link: new ApolloLink(
       (operation) =>
@@ -104,10 +107,15 @@ async function setup(rows: Record<string, string[]>, refetchGate?: Promise<void>
               : Promise.resolve();
           requests.push({ scope, offset });
           void gate.then(() => {
+            const source = rows[scope] ?? [];
+            const nextOffset = offset + limit;
             observer.next({
               data: {
-                items:
-                  rows[scope]?.slice(offset, offset + limit).map((id) => ({ __typename: 'Item', id })) ?? [],
+                itemsPage: {
+                  __typename: 'ItemPage',
+                  items: source.slice(offset, nextOffset).map((id) => ({ __typename: 'Item', id })),
+                  nextOffset: nextOffset < source.length ? nextOffset : null,
+                },
               },
             });
             observer.complete();
@@ -146,10 +154,11 @@ describe('useInfiniteQuery', () => {
       fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
     });
     expect(await screen.findByText('d')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
     expect(requests.map((request) => request.offset)).toEqual([0, 0, 2]);
   });
 
-  it('Apollo 목록을 이어 읽고 짧은 마지막 페이지에서 멈춰야 한다', async () => {
+  it('Apollo 목록을 이어 읽고 서버의 다음 offset이 null이면 멈춰야 한다', async () => {
     const requests = await setup({ first: ['a', 'b', 'c', 'd', 'e'] });
     await screen.findByText('b');
     await waitFor(() => expect(screen.getByRole('button', { name: '더 보기' })).toBeEnabled());
@@ -168,7 +177,7 @@ describe('useInfiniteQuery', () => {
   });
 
   it('같은 순간의 추가 조회를 합치고 다른 QueryRef에서는 끝 상태를 초기화해야 한다', async () => {
-    const requests = await setup({ first: ['a', 'b'], second: ['x', 'y', 'z'] });
+    const requests = await setup({ first: ['a', 'b', 'c'], second: ['x', 'y', 'z'] });
     await screen.findByText('b');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '연속 조회' }));
@@ -191,13 +200,10 @@ describe('useInfiniteQuery', () => {
 
   it('첫 페이지가 같아도 새로고침 후 추가된 다음 페이지를 다시 읽을 수 있어야 한다', async () => {
     const rows = { first: ['a', 'b'] };
-    await setup(rows);
+    const requests = await setup(rows);
     await screen.findByText('b');
-    await waitFor(() => expect(screen.getByRole('button', { name: '더 보기' })).toBeEnabled());
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
-    });
-    await waitFor(() => expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull());
+    expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
+    expect(requests.map((request) => request.offset)).toEqual([0]);
     rows.first.push('c');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '새로고침' }));

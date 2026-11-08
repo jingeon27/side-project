@@ -1,13 +1,15 @@
 import type { TypePolicies } from '@apollo/client/cache';
 import { offsetLimitPagination } from '@apollo/client/utilities';
 
+import { offsetPagePagination } from '@/shared/api/offset-page-pagination';
+
 export const postTypePolicies = {
   Query: {
     fields: {
-      galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'categoryId', 'sort']),
-      publicGalleryPosts: offsetLimitPagination(['sort']),
-      myGalleryPosts: offsetLimitPagination(['groupId']),
-      hiddenGalleryPosts: offsetLimitPagination(['groupId']),
+      galleryPostsPage: offsetPagePagination(['groupId', 'contestId', 'categoryId', 'sort']),
+      publicGalleryPostsPage: offsetPagePagination(['sort']),
+      myGalleryPostsPage: offsetPagePagination(['groupId']),
+      hiddenGalleryPostsPage: offsetPagePagination(['groupId']),
       postComments: offsetLimitPagination(['postId', 'parentId']),
     },
   },

@@ -61,7 +61,8 @@ describe('비공개 그룹 가입 승인 확인', () => {
         };
       if (name === 'Me') return { me: null };
       if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
-      if (name === 'GalleryPosts') return { galleryPosts: [] };
+      if (name === 'GalleryPosts')
+        return { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
       return {};
     });
     render(
@@ -114,7 +115,8 @@ describe('그룹 상세의 고정 글쓰기', () => {
       const browser = createBrowserClient(server, (name) => {
         if (name === 'Me') return { me: null };
         if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
-        if (name === 'GalleryPosts') return { galleryPosts: [] };
+        if (name === 'GalleryPosts')
+          return { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
         return {};
       });
       render(
@@ -157,7 +159,8 @@ describe('그룹 상세의 고정 글쓰기', () => {
     const browser = createBrowserClient(server, (name) => {
       if (name === 'Me') return { me: null };
       if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
-      if (name === 'GalleryPosts') return { galleryPosts: [] };
+      if (name === 'GalleryPosts')
+        return { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
       return {};
     });
     render(

@@ -34,11 +34,9 @@ const PAGE_SIZE = 20;
 
 function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuery> }) {
   const router = useAppRouter();
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (page) => page.myNotifications.items,
-    pageSize: PAGE_SIZE,
-    canFetchMore: (page) => page.myNotifications.hasMore,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, (data) =>
+    data.myNotifications.hasMore ? data.myNotifications.items.length : null,
+  );
   // 목록을 다시 받으면 첫 페이지 응답이 더 읽은 알림을 지우므로 읽음은 캐시에서 바로 고친다.
   // 서버가 거절하면 Apollo가 낙관적 변경을 되돌리고 ErrorLink가 알린다.
   const [read] = useMutation(MarkNotificationReadDocument, {

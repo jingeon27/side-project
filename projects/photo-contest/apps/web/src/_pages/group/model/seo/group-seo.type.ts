@@ -2,5 +2,5 @@ import type { GalleryPostsQuery, PublicGroupSeoQuery } from '@/shared/api/genera
 
 export interface IGroupSeoData {
   group: PublicGroupSeoQuery['group'];
-  posts: GalleryPostsQuery['galleryPosts'];
+  posts: GalleryPostsQuery['galleryPostsPage']['items'];
 }

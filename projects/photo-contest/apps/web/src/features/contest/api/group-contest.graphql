@@ -28,8 +28,11 @@ fragment GroupContestCard on GroupContest {
   }
 }
 query GroupContests($groupId: ID!, $filter: GroupContestFilter!, $offset: Int!, $limit: Int!) {
-  groupContests(groupId: $groupId, filter: $filter, offset: $offset, limit: $limit) {
-    ...GroupContestCard
+  groupContestsPage(groupId: $groupId, filter: $filter, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GroupContestCard
+    }
   }
 }
 query GroupContest($id: ID!) {

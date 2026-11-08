@@ -22,6 +22,7 @@
 - 노드(Group·Contest)의 비싼·조회자별 필드: 서비스가 `load*` 클로저를 단 노드를 돌려주고, 클로저는 `src/common/batch.ts`의 `siblingLoader(형제 ids, (keys) => in 쿼리 한 번 → Map, 기본값)`로 만든다(`ContestService.loaders`, `GroupService.membersLoader`). `@ResolveField`는 `parent.loadX()`만 부르므로 선택될 때만, 목록당 한 번 계산된다.
 - Map은 es-toolkit으로 만든다(`groupBy` + `mapValues` → `new Map(Object.entries(…))`, `keyBy`, `uniq`). `common/`에 일반 유틸을 새로 만들지 않는다.
 - 페이지로 나누는 목록은 `submissions`처럼 `offset`·`limit` 인자를 `pageRange()`(offset ≥ 0, limit 1~`PAGE_SIZE_MAX`)로 받고, 정렬의 마지막 열을 `id`로 고정해 같은 시각의 항목이 페이지 사이에서 흔들리지 않게 한다(`src/submission/submission-sort.ts`). 커서·Relay 연결로 바꾸지 않는다(사용자 결정).
+- 무한 목록의 페이지 응답은 같은 권한·필터·정렬 조건으로 `limit + 1`개를 읽고 `offsetPage`로 `items`와 `nextOffset`을 만든다. 요청할 수 있는 다음 페이지가 없으면 `nextOffset`은 `null`이다.
 - 좋아요·표 수 같은 개수는 읽을 때 `_count`로 센다. 카운터 열을 만들어 올리고 내리지 않는다(사용자 결정).
 
 ## 이벤트·설정
