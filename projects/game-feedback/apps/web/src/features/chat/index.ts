@@ -6,6 +6,7 @@ export {
 } from './model/chat.options';
 
 export { chatError } from './model/chat-error';
+export { invalidateChatQueries } from './model/invalidate-chat-queries';
 export { useChatRealtime } from './model/use-chat-realtime';
 export { removeAttachment as discardChatAttachment } from './api/chat.api';
 export type { TChatConnection } from './model/chat.types';

@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BRIDGE_EVENT, parseNativeMessage } from '@game-feedback/bridge';
 
 import { useSession } from '@/features/auth';
-import { chatScopeOptions } from '@/features/chat';
+import { chatScopeOptions, invalidateChatQueries } from '@/features/chat';
 import { notificationListOptions, notificationSummaryOptions } from '@/features/notification';
 import { synchronizePush, useNativePushSupported } from '@/features/push-notifications';
 import { useI18n, type TLocale } from '@/shared/i18n';
@@ -41,7 +41,7 @@ export function NativePushSync() {
     if (message?.type !== 'push-received') return;
     requestPushSync(locale);
     void client.invalidateQueries(notificationListOptions(userId));
-    void client.invalidateQueries(chatScopeOptions(userId));
+    void invalidateChatQueries(client, chatScopeOptions(userId));
   });
   useEffect(() => {
     if (!supported || !userId) return;

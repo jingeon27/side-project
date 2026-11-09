@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 
 import { fetchEventSource, type FetchEventSourceInit } from '@microsoft/fetch-event-source';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { InfiniteQueryObserver, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -76,6 +76,46 @@ describe('chat SSE external store', () => {
     expect(client.getQueryState(otherNotices)?.isInvalidated).toBe(false);
     dispose();
     client.clear();
+  });
+
+  it('keeps older messages when invalidation arrives during pagination and then refreshes the room', async () => {
+    const { client, stream, dispose } = setup();
+    const olderPage = Promise.withResolvers<{ items: string[]; nextCursor: string | null }>();
+    const fetchPage = vi.fn(async ({ pageParam }: { pageParam: string }) => {
+      if (pageParam === 'older') return olderPage.promise;
+      return { items: ['incoming', 'recent'], nextCursor: 'older' };
+    });
+    const observer = new InfiniteQueryObserver(client, {
+      queryKey: chatMessageOptions('alice', 'room-1').queryKey,
+      queryFn: fetchPage,
+      initialPageParam: '',
+      getNextPageParam: (page) => page.nextCursor ?? undefined,
+      initialData: { pages: [{ items: ['recent'], nextCursor: 'older' }], pageParams: [''] },
+      staleTime: Infinity,
+    });
+    const unsubscribe = observer.subscribe(vi.fn());
+
+    try {
+      const loading = observer.fetchNextPage();
+      const event = JSON.stringify({ conversationId: 'room-1' });
+      invalidate(stream, event);
+      invalidate(stream, event);
+      olderPage.resolve({ items: ['past'], nextCursor: null });
+      await loading;
+
+      await vi.waitFor(() =>
+        expect(observer.getCurrentResult().data?.pages.flatMap((page) => page.items)).toEqual([
+          'incoming',
+          'recent',
+          'past',
+        ]),
+      );
+      expect(fetchPage.mock.calls.map(([{ pageParam }]) => pageParam)).toEqual(['older', '', 'older']);
+    } finally {
+      unsubscribe();
+      dispose();
+      client.clear();
+    }
   });
 
   it('ignores invalid payloads and stale callbacks after all subscribers leave', async () => {
