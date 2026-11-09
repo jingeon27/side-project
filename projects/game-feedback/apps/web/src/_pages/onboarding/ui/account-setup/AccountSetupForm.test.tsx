@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,7 +8,12 @@ import { AccountSetupForm } from './AccountSetupForm';
 
 function renderForm() {
   const onSubmit = vi.fn();
-  render(<AccountSetupForm submitLabel="가입 완료하기" pending={false} onSubmit={onSubmit} />);
+  const client = new QueryClient();
+  render(
+    <QueryClientProvider client={client}>
+      <AccountSetupForm submitLabel="가입 완료하기" pending={false} onSubmit={onSubmit} />
+    </QueryClientProvider>,
+  );
   fireEvent.click(screen.getByRole('checkbox', { name: /이용약관/ }));
   fireEvent.click(screen.getByRole('checkbox', { name: '만 14세 이상입니다.' }));
   return onSubmit;
