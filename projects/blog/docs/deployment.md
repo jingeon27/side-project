@@ -90,9 +90,9 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 
 ## Search Console
 
-사이트맵은 언어별로 `/ko/sitemap.xml`과 `/en/sitemap.xml`에서, `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. `/sitemap.xml`은 두 파일을 가리키는 사이트맵 인덱스입니다. 언어별 파일은 자기 경로 아래의 URL만 담습니다. Next.js의 `app/ko/sitemap.ts`, `app/en/sitemap.ts`, `app/sitemap.xml/route.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
+사이트맵은 언어별로 `/ko/sitemap.xml`과 `/en/sitemap.xml`에서, `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. `/sitemap.xml`은 두 파일을 가리키는 사이트맵 인덱스입니다. 언어별 파일은 자기 경로 아래의 URL과 `lastmod`만 담고, 언어 대체(hreflang)는 각 페이지 `<head>`가 제공합니다. Next.js `sitemap.ts`는 hreflang 링크를 `lastmod`보다 먼저 써서 사이트맵 스키마 순서(`loc` → `lastmod` → 확장 태그)를 어기기 때문입니다. Next.js의 `app/ko/sitemap.ts`, `app/en/sitemap.ts`, `app/sitemap.xml/route.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
 
-- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 글이 2개 이상인 태그와 실제 본문이 있는 글을 포함합니다. 글이 1개뿐인 태그 페이지는 글의 링크로 계속 열리지만 그 글을 반복할 뿐이라 사이트맵에서 빼고 `noindex, follow`로 둡니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 글 수는 생성된 콘텐츠 인덱스를 기준으로 하며, 글별 `lastmod`와 실제 번역의 `hreflang`을 제공합니다. 홈·목록·카테고리·태그의 `lastmod`는 그 페이지에 보이는 글 중 가장 최근 수정일이고, 수정일 기록이 없는 소개 페이지에는 넣지 않습니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
+- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 글이 2개 이상인 태그와 실제 본문이 있는 글을 포함합니다. 글이 1개뿐인 태그 페이지는 글의 링크로 계속 열리지만 그 글을 반복할 뿐이라 사이트맵에서 빼고 `noindex, follow`로 둡니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 글 수는 생성된 콘텐츠 인덱스를 기준으로 하며, 사이트맵은 글별 `lastmod`를, 각 글의 `<head>`는 실제 번역의 `hreflang`을 제공합니다. 홈·목록·카테고리·태그의 `lastmod`는 그 페이지에 보이는 글 중 가장 최근 수정일이고, 수정일 기록이 없는 소개 페이지에는 넣지 않습니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
 - robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 언어별 사이트맵 두 개를 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
 
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.

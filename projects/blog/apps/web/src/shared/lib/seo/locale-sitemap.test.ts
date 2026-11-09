@@ -6,6 +6,7 @@ import { categories } from '@/shared/article/model/categories';
 import { siteUrl } from '@/shared/config/site';
 
 import { localeSitemap } from './locale-sitemap';
+import { articleMetadata, pageMetadata } from './metadata';
 
 const sitemap = () => locales.flatMap((locale) => localeSitemap(locale));
 
@@ -17,6 +18,11 @@ describe('multilingual SEO', () => {
       for (const entry of entries)
         expect(new URL(entry.url).pathname).toMatch(new RegExp(`^/${locale}(/|$)`));
     }
+  });
+
+  it('leaves hreflang to each page head so the sitemap keeps loc before lastmod', () => {
+    // Next writes sitemap hreflang links before lastmod, against the sitemap schema order.
+    for (const entry of sitemap()) expect(entry, entry.url).not.toHaveProperty('alternates');
   });
 
   it('publishes exactly the existing article URLs in the sitemap', () => {
@@ -33,60 +39,44 @@ describe('multilingual SEO', () => {
       )
       .sort();
     expect(actual).toEqual(expected);
-    for (const locale of ['ko', 'en'] as const)
+    expect(entries.some((entry) => entry.url.endsWith('/ko/blog/category/engineering'))).toBe(true);
+  });
+
+  it('offers every published translation in the article head and points x-default to Korean', () => {
+    for (const locale of locales)
       for (const article of getArticles(locale)) {
-        const entry = entries.find(
-          (candidate) =>
-            candidate.url === `${siteUrl.origin}/${locale}/blog/${encodeURIComponent(article.slug)}`,
-        )!;
-        for (const language of ['ko', 'en'] as const) {
+        const languages = articleMetadata(article).alternates?.languages ?? {};
+        for (const language of locales) {
           const slug = article.translations[language];
           if (slug)
-            expect(entry.alternates?.languages?.[language]).toBe(
+            expect(languages[language], article.slug).toBe(
               `${siteUrl.origin}/${language}/blog/${encodeURIComponent(slug)}`,
             );
         }
+        const versions = Object.keys(languages).filter((key) => key !== 'x-default');
+        if (versions.length > 1 && 'ko' in languages) {
+          expect(languages['x-default'], article.slug).toBe(languages.ko);
+          continue;
+        }
+        expect(languages, article.slug).not.toHaveProperty('x-default');
       }
-    expect(entries.some((entry) => entry.url.endsWith('/ko/blog/category/engineering'))).toBe(true);
-  });
-  it('points x-default to the Korean version of every multilingual entry', () => {
-    for (const entry of sitemap()) {
-      const languages = entry.alternates?.languages ?? {};
-      const versions = Object.keys(languages).filter((key) => key !== 'x-default');
-      if (versions.length > 1 && 'ko' in languages) {
-        expect(languages['x-default'], entry.url).toBe(languages.ko);
-        continue;
-      }
-      expect(languages, entry.url).not.toHaveProperty('x-default');
-    }
-    expect(sitemap().find((entry) => entry.url === `${siteUrl.origin}/en`)?.alternates?.languages).toEqual({
+    expect(pageMetadata('en', 'home').alternates?.languages).toEqual({
       ko: `${siteUrl.origin}/ko`,
       en: `${siteUrl.origin}/en`,
       'x-default': `${siteUrl.origin}/ko`,
     });
   });
 
-  it('lists and offers hreflang only for categories that have articles', () => {
-    const entries = sitemap();
-    for (const locale of ['ko', 'en'] as const) {
+  it('lists only categories that have articles', () => {
+    const urls = new Set(sitemap().map((entry) => entry.url));
+    for (const locale of locales) {
       const published = getPublishedCategories(locale);
       expect(published.length).toBeGreaterThan(0);
       for (const category of categories) {
         const url = `${siteUrl.origin}/${locale}/blog/category/${category}`;
         const hasArticles = getArticles(locale).some((article) => article.category === category);
         expect(published.includes(category), url).toBe(hasArticles);
-        expect(
-          entries.some((entry) => entry.url === url),
-          url,
-        ).toBe(hasArticles);
-      }
-    }
-    for (const entry of entries.filter((candidate) => candidate.url.includes('/blog/category/'))) {
-      for (const alternate of Object.values(entry.alternates?.languages ?? {})) {
-        expect(
-          entries.some((candidate) => candidate.url === alternate),
-          alternate,
-        ).toBe(true);
+        expect(urls.has(url), url).toBe(hasArticles);
       }
     }
   });
