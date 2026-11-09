@@ -58,11 +58,24 @@ type HiddenGalleryPost {
   title: String!
   createdAt: DateTime!
 }
+type GalleryPostPage {
+  items: [GalleryPost!]!
+  nextOffset: Int
+}
+
+type HiddenGalleryPostPage {
+  items: [HiddenGalleryPost!]!
+  nextOffset: Int
+}
+
 extend type Query {
   galleryPost(id: ID!): GalleryPost!
   hiddenGalleryPosts(groupId: ID!, offset: Int = 0, limit: Int = 24): [HiddenGalleryPost!]!
+  hiddenGalleryPostsPage(groupId: ID!, offset: Int = 0, limit: Int = 24): HiddenGalleryPostPage!
   publicGalleryPosts(sort: PostSort!, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  publicGalleryPostsPage(sort: PostSort!, offset: Int = 0, limit: Int = 24): GalleryPostPage!
   myGalleryPosts(groupId: ID, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  myGalleryPostsPage(groupId: ID, offset: Int = 0, limit: Int = 24): GalleryPostPage!
   postDownload(postId: ID!): PostDownload!
   galleryPosts(
     categoryId: ID
@@ -72,6 +85,14 @@ extend type Query {
     offset: Int = 0
     limit: Int = 24
   ): [GalleryPost!]!
+  galleryPostsPage(
+    categoryId: ID
+    groupId: ID
+    contestId: ID
+    sort: PostSort = NEWEST
+    offset: Int = 0
+    limit: Int = 24
+  ): GalleryPostPage!
   postComments(postId: ID!, parentId: ID, offset: Int = 0, limit: Int = 24): [PostComment!]!
   postCommentCount(postId: ID!, parentId: ID): Int!
 }

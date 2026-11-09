@@ -12,6 +12,7 @@ import { nicknameLength } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field } from '@/shared/ui';
+import { GameProfileLookup } from '@/widgets/game-profile';
 
 import {
   accountSetupSchema,
@@ -38,7 +39,7 @@ export function AccountSetupForm({
   const { t, locale } = useI18n();
   const formId = useId();
   const form = useZodForm(accountSetupSchema, {
-    defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false },
+    defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false, playerTag: null },
   });
   const [agreed, ageConfirmed] = useWatch({ control: form.control, name: ['acceptedTerms', 'ageConfirmed'] });
   const agreementError =
@@ -47,6 +48,14 @@ export function AccountSetupForm({
     <div className="account-setup-layout">
       <div className="account-setup-scroll">
         {children}
+        <section className="info-card" aria-labelledby="onboarding-game-profile-title">
+          <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
+          <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
+          <GameProfileLookup
+            disabled={pending}
+            onSelectionChange={(profile) => form.setValue('playerTag', profile?.playerTag ?? null)}
+          />
+        </section>
         <form
           id={formId}
           noValidate

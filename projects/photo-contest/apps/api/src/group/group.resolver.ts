@@ -23,7 +23,15 @@ export class GroupResolver {
   }
 
   @Query()
-  discoverGroups(
+  async discoverGroups(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<GroupService['discoverGroups']>[1],
+  ) {
+    return (await this.groups.discoverGroups(viewer, query)).items;
+  }
+
+  @Query()
+  discoverGroupsPage(
     @OptionalViewer() viewer: IViewer | null,
     @Args() query: Parameters<GroupService['discoverGroups']>[1],
   ) {

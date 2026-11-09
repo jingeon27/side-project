@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import dayjs from 'dayjs';
 
-import { graphqlRequest, uploadTestPostMedia } from '@photo-contest/test-kit';
+import { createTestImage, graphqlRequest, uploadTestPostMedia } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { authenticate, expect, seedGroup, test } from './support/test';
@@ -21,12 +21,11 @@ test('공개 그룹과 대회는 실제 제목과 대표 사진을 담은 공유
     if (!result.data) throw new Error('Expected product data');
     return result.data;
   };
-  const bytes = await readFile('../../../blog/apps/web/public/images/covers/reading-ai-code.png');
   const uploadId = await uploadTestPostMedia(API_URL, {
     cookie,
     origin: WEB_ORIGIN,
     groupId: group.id,
-    body: bytes,
+    body: await createTestImage(),
     contentType: 'image/png',
   });
   await call(

@@ -3,5 +3,6 @@
   "tags": ["react", "typescript", "sse", "chatbot"],
   "publishedAt": "2026-06-25T19:58:03+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/chatbot-message-layer.png"
+  "coverImage": "/images/covers/chatbot-message-layer.avif",
+  "socialImage": "/images/covers/chatbot-message-layer-og.jpg"
 }

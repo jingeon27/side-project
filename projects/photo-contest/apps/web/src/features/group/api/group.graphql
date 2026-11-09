@@ -80,8 +80,11 @@ fragment DiscoverGroup on Group {
 }
 
 query DiscoverGroups($search: String, $visibility: GroupVisibility, $offset: Int = 0, $limit: Int = 24) {
-  discoverGroups(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
-    ...DiscoverGroup
+  discoverGroupsPage(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...DiscoverGroup
+    }
   }
 }
 
@@ -104,8 +107,11 @@ fragment GroupJoinRequestRow on GroupJoinRequest {
 }
 
 query GroupJoinRequests($groupId: ID!, $offset: Int = 0, $limit: Int = 24) {
-  groupJoinRequests(groupId: $groupId, offset: $offset, limit: $limit) {
-    ...GroupJoinRequestRow
+  groupJoinRequestsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GroupJoinRequestRow
+    }
   }
 }
 

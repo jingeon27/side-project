@@ -26,54 +26,62 @@ async function renderHome(hasGroup: boolean, hasPost: boolean) {
     query: DiscoverGroupsDocument,
     variables: { visibility: GroupVisibility.Public, offset: 0, limit: 6 },
     data: {
-      discoverGroups: hasGroup
-        ? [
-            {
-              __typename: 'Group',
-              id: 'public-group',
-              name: '공개 웃음',
-              description: '',
-              avatarUrl: null,
-              visibility: GroupVisibility.Public,
-              role: null,
-              memberCount: 1,
-              canViewPosts: true,
-              joinRequestPending: false,
-            },
-          ]
-        : [],
+      discoverGroupsPage: {
+        __typename: 'DiscoverGroupPage',
+        items: hasGroup
+          ? [
+              {
+                __typename: 'Group',
+                id: 'public-group',
+                name: '공개 웃음',
+                description: '',
+                avatarUrl: null,
+                visibility: GroupVisibility.Public,
+                role: null,
+                memberCount: 1,
+                canViewPosts: true,
+                joinRequestPending: false,
+              },
+            ]
+          : [],
+        nextOffset: null,
+      },
     },
   });
   client.writeQuery<PublicGalleryPostsQuery>({
     query: PublicGalleryPostsDocument,
     variables: { sort: PostSort.Newest, offset: 0, limit: 24 },
     data: {
-      publicGalleryPosts: hasPost
-        ? [
-            {
-              __typename: 'GalleryPost',
-              id: 'public-post',
-              groupId: 'public-group',
-              groupName: '공개 웃음',
-              category: null,
-              contestId: null,
-              contest: null,
-              title: '함께 웃은 순간',
-              body: '친구들과 나눈 이야기',
-              kind: PostKind.Photo,
-              mediaUrl: null,
-              linkUrl: null,
-              createdAt: '2026-10-31T00:00:00Z',
-              likeCount: 0,
-              commentCount: 0,
-              likedByMe: false,
-              canDelete: false,
-              canModerate: false,
-              canInteract: false,
-              author: { __typename: 'User', id: 'author', nickname: '웃음친구', avatar: null },
-            },
-          ]
-        : [],
+      publicGalleryPostsPage: {
+        __typename: 'GalleryPostPage',
+        items: hasPost
+          ? [
+              {
+                __typename: 'GalleryPost',
+                id: 'public-post',
+                groupId: 'public-group',
+                groupName: '공개 웃음',
+                category: null,
+                contestId: null,
+                contest: null,
+                title: '함께 웃은 순간',
+                body: '친구들과 나눈 이야기',
+                kind: PostKind.Photo,
+                mediaUrl: null,
+                linkUrl: null,
+                createdAt: '2026-10-31T00:00:00Z',
+                likeCount: 0,
+                commentCount: 0,
+                likedByMe: false,
+                canDelete: false,
+                canModerate: false,
+                canInteract: false,
+                author: { __typename: 'User', id: 'author', nickname: '웃음친구', avatar: null },
+              },
+            ]
+          : [],
+        nextOffset: null,
+      },
     },
   });
   await act(async () => {

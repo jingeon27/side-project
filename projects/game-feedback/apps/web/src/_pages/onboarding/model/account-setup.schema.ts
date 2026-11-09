@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { NicknameSchema } from '@game-feedback/contracts';
+import { NicknameSchema, PlayerTagSchema } from '@game-feedback/contracts';
 
 import { nicknameLength } from '@/features/user';
 
@@ -19,5 +19,6 @@ export const accountSetupSchema = z.object({
     ),
   acceptedTerms: z.boolean().refine((accepted) => accepted, '이용약관과 개인정보 처리방침에 동의해 주세요.'),
   ageConfirmed: z.boolean().refine((confirmed) => confirmed, '만 14세 이상만 가입할 수 있어요.'),
+  playerTag: PlayerTagSchema.nullable(),
 });
 export type TAccountSetupValues = z.infer<typeof accountSetupSchema>;

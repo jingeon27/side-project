@@ -13,5 +13,6 @@ description: 블로그 앱의 글 레이어, Base UI 검색, URL 필터와 정�
 - q와 category는 URL이 단일 출처다. 입력은 replaceState, 뒤로 가기로 복원할 선택은 pushState를 기존 useSearchParams와 연결한다. 소유 key만 변경해 다른 query·중복 key·hash와 고정 카테고리/태그 경로를 보존한다.
 - widgets/blog-feed/model의 필드별 Zod catch(undefined)로 잘못된 필터만 되돌린다. 입력 중 공백·대소문자를 임의로 변환하지 않는다.
 - Git MDX·생성 레지스트리를 클라이언트 API 조회나 ID 재조회로 바꾸지 않는다. 기존 라우트 error.tsx, URL 읽기용 Suspense와 서버 초기 글 목록을 보존한다.
+- 언어별 사이트맵은 Next `sitemap.ts`로 URL과 `lastmod`만 쓰고 hreflang은 페이지 head 메타데이터가 소유한다. Next `sitemap.ts`는 alternates를 `lastmod` 앞에 써 스키마 순서를 어기므로 사이트맵에 alternates를 다시 넣지 않고, 형식은 파서 오류가 아니라 스키마 순서로 확인한다.
 - 편집 기능을 요청받았을 때만 저장 폼·제출 변환을 만든다. Autocomplete를 저장 폼으로 바꾸거나 미래를 위한 폼 계층을 추가하지 않는다.
 - 순수 계산은 node unit, 렌더·단순 입력은 기존 UI 테스트, URL 직접 진입·새로고침·뒤로/앞으로는 실제 Playwright로 확인한다. UI 변경은 운영 빌드와 모바일·데스크톱 E2E를 확인하고 mock 통과만으로 탐색 성공을 주장하지 않는다.

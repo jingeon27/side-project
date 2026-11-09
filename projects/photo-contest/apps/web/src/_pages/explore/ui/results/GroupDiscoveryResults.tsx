@@ -20,11 +20,11 @@ export function GroupDiscoveryResults({
   queryRef: QueryRef<DiscoverGroupsQuery>;
   search: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (data) => data.discoverGroups,
-    pageSize: 24,
-  });
-  if (!data.discoverGroups.length)
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    queryRef,
+    (data) => data.discoverGroupsPage.nextOffset,
+  );
+  if (!data.discoverGroupsPage.items.length)
     return (
       <div role="status">
         <EmptyState
@@ -52,10 +52,10 @@ export function GroupDiscoveryResults({
   return (
     <div className="flex flex-col gap-6">
       <p role="status" className="sr-only">
-        그룹 {formatCount(data.discoverGroups.length)}개를 표시하고 있어요.
+        그룹 {formatCount(data.discoverGroupsPage.items.length)}개를 표시하고 있어요.
       </p>
       <div className="grid min-w-0 grid-cols-1 gap-4 tablet:grid-cols-2 wide:grid-cols-3">
-        {data.discoverGroups.map(({ id }) => (
+        {data.discoverGroupsPage.items.map(({ id }) => (
           <DiscoverGroupCard key={id} id={id} />
         ))}
       </div>

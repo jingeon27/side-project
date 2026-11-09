@@ -3,5 +3,6 @@
   "tags": ["typescript", "react"],
   "publishedAt": "2024-05-25T17:01:01+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/typescript-patterns.png"
+  "coverImage": "/images/covers/typescript-patterns.avif",
+  "socialImage": "/images/covers/typescript-patterns-og.jpg"
 }

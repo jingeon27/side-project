@@ -27,15 +27,12 @@ function ContestRows({
   empty,
   renderContest,
 }: IContestRowsProps & { queryRef: QueryRef<GroupContestsQuery> }) {
-  const pagination = useInfiniteQuery(queryRef, {
-    select: (data) => data.groupContests,
-    pageSize: PAGE_SIZE,
-  });
-  if (!pagination.data.groupContests.length) return empty;
+  const pagination = useInfiniteQuery(queryRef, (data) => data.groupContestsPage.nextOffset);
+  if (!pagination.data.groupContestsPage.items.length) return empty;
   return (
     <>
       <div className="grid min-w-0 grid-cols-1 gap-5 tablet:grid-cols-2">
-        {pagination.data.groupContests.map((contest) => (
+        {pagination.data.groupContestsPage.items.map((contest) => (
           <Fragment key={contest.id}>{renderContest(contest.id)}</Fragment>
         ))}
       </div>

@@ -21,15 +21,16 @@ describe('article images', () => {
     for (const [original, replacement] of Object.entries(replacements)) {
       const archived = await readFile(path.join(root, 'public', original));
       expect(archived.length, original).toBeGreaterThan(0);
+      const replacementSize = imageSize(await readFile(path.join(root, 'public', replacement)));
+      expect(replacementSize.type).toBe('avif');
       const capture = screenCaptures.captures.find((entry) => entry.original === original);
       if (capture) {
-        expect(replacement).toBe(capture.replacement);
+        expect(replacement).toBe(capture.replacement.replace(/\.png$/, '.avif'));
         expect(createHash('sha256').update(archived).digest('hex')).toBe(capture.originalSha256);
-        const refreshed = await readFile(path.join(root, 'public', replacement));
+        const refreshed = await readFile(path.join(root, 'public', capture.replacement));
         expect(createHash('sha256').update(refreshed).digest('hex')).toBe(capture.replacementSha256);
-        const dimensions = imageSize(refreshed);
-        expect(dimensions.width).toBe(capture.width);
-        expect(dimensions.height).toBe(capture.height);
+        expect(imageSize(refreshed)).toMatchObject({ width: capture.width, height: capture.height });
+        expect(replacementSize).toMatchObject({ width: capture.width, height: capture.height });
         for (const screen of capture.screens) {
           const source = await readFile(path.join(root, 'public', screen.sourceImage));
           expect(createHash('sha256').update(source).digest('hex')).toBe(screen.sourceSha256);
@@ -37,11 +38,9 @@ describe('article images', () => {
         }
         continue;
       }
-      expect(replacement).toMatch(/^\/images\/covers\/[a-z0-9-]+\.png$/);
-      const bytes = await readFile(path.join(root, 'public', replacement));
-      expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      expect(bytes.readUInt32BE(16)).toBeGreaterThan(0);
-      expect(bytes.readUInt32BE(20)).toBeGreaterThan(0);
+      expect(replacement).toMatch(/^\/images\/covers\/[a-z0-9-]+\.avif$/);
+      expect(replacementSize.width).toBeGreaterThan(0);
+      expect(replacementSize.height).toBeGreaterThan(0);
     }
   });
 

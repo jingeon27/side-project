@@ -54,6 +54,7 @@ const gameProfile: GameProfile = {
 };
 const clients: QueryClient[] = [];
 const request = vi.fn<typeof fetch>();
+const respondToProfile = vi.fn<() => Promise<Response>>();
 let respondToOnboarding: () => Promise<Response>;
 let respondToSession: () => Promise<Response>;
 
@@ -88,12 +89,13 @@ function acceptRequiredItems() {
 beforeEach(() => {
   navigation.replace.mockReset();
   request.mockReset();
+  respondToProfile.mockReset().mockImplementation(async () => Response.json(gameProfile));
   respondToOnboarding = async () => Response.json(completedSession);
   respondToSession = async () => Response.json(pendingSession);
   request.mockImplementation(async (url) => {
     if (url === '/api/session') return respondToSession();
     if (url === '/api/auth/onboard') return respondToOnboarding();
-    if (String(url).startsWith('/api/game-profiles/')) return Response.json(gameProfile);
+    if (String(url).startsWith('/api/game-profiles/')) return respondToProfile();
     throw new Error(`Unexpected request: ${String(url)}`);
   });
   vi.stubGlobal('fetch', request);
@@ -129,6 +131,30 @@ describe('회원가입 페이지', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
     fireEvent.click(await screen.findByRole('button', { name: '연결하지 않기' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
+      target: { value: '새플레이어' },
+    });
+    acceptRequiredItems();
+    fireEvent.click(screen.getByRole('button', { name: '가입 완료하기' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(returnTo));
+    const submitted = request.mock.calls.find(([url]) => url === '/api/auth/onboard');
+    expect(JSON.parse(String(submitted?.[1]?.body))).not.toHaveProperty('playerTag');
+  });
+
+  it('프로필을 다시 조회하다 실패하면 이전 태그 없이 가입해야 한다', async () => {
+    await renderReadyPage();
+    fireEvent.change(screen.getByRole('textbox', { name: '플레이어 태그' }), {
+      target: { value: '#QLLLPR89G' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await screen.findByRole('button', { name: '연결하지 않기' });
+
+    const message = '게임 프로필을 다시 불러오지 못했어요.';
+    respondToProfile.mockResolvedValueOnce(Response.json({ code: 'TEST_FAILURE', message }, { status: 503 }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await screen.findByText(message);
+    expect(screen.queryByRole('button', { name: '연결하지 않기' })).toBeNull();
+
     fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
       target: { value: '새플레이어' },
     });

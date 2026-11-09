@@ -1,12 +1,13 @@
 import type { TypePolicies } from '@apollo/client/cache';
-import { offsetLimitPagination } from '@apollo/client/utilities';
+
+import { offsetPagePagination } from '@/shared/api/offset-page-pagination';
 
 /** id가 없는 객체 목록(멤버, 그룹 순위)은 서버 응답으로 통째로 바꾼다. */
 export const groupTypePolicies = {
   Query: {
     fields: {
-      discoverGroups: offsetLimitPagination(['search', 'visibility']),
-      groupJoinRequests: offsetLimitPagination(['groupId']),
+      discoverGroupsPage: offsetPagePagination(['search', 'visibility']),
+      groupJoinRequestsPage: offsetPagePagination(['groupId']),
     },
   },
   Group: {

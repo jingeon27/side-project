@@ -21,7 +21,16 @@ export class PostResolver {
     return this.posts.find(viewer, id);
   }
   @Query()
-  hiddenGalleryPosts(
+  async hiddenGalleryPosts(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @Args('offset') offset: number,
+    @Args('limit') limit: number,
+  ) {
+    return (await this.moderation.hidden(viewer, groupId, offset, limit)).items;
+  }
+  @Query()
+  hiddenGalleryPostsPage(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
     @Args('offset') offset: number,
@@ -38,18 +47,39 @@ export class PostResolver {
     return this.files.download(viewer, id);
   }
   @Query()
-  publicGalleryPosts(
+  async publicGalleryPosts(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['listPublic']>[1],
+  ) {
+    return (await this.posts.listPublic(viewer, query)).items;
+  }
+  @Query()
+  publicGalleryPostsPage(
     @OptionalViewer() viewer: IViewer | null,
     @Args() query: Parameters<PostService['listPublic']>[1],
   ) {
     return this.posts.listPublic(viewer, query);
   }
   @Query()
-  myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+  async myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+    return (await this.posts.listMine(viewer, query)).items;
+  }
+  @Query()
+  myGalleryPostsPage(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
     return this.posts.listMine(viewer, query);
   }
   @Query()
-  galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
+  async galleryPosts(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['list']>[1],
+  ) {
+    return (await this.posts.list(viewer, query)).items;
+  }
+  @Query()
+  galleryPostsPage(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['list']>[1],
+  ) {
     return this.posts.list(viewer, query);
   }
   @Mutation()

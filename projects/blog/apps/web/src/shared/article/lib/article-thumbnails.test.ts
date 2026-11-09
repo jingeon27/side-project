@@ -1,6 +1,7 @@
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 
+import { imageSize } from 'image-size';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -34,6 +35,13 @@ async function expectLocalImage(src: string) {
   if (extension === '.jpg' || extension === '.jpeg') {
     expect(bytes.subarray(0, 3)).toEqual(Buffer.from([255, 216, 255]));
     expect(bytes.subarray(-2)).toEqual(Buffer.from([255, 217]));
+    return;
+  }
+  if (extension === '.avif') {
+    const size = imageSize(bytes);
+    expect(size.type).toBe('avif');
+    expect(size.width).toBeGreaterThan(0);
+    expect(size.height).toBeGreaterThan(0);
     return;
   }
   if (extension === '.svg') {

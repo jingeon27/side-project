@@ -10,11 +10,11 @@ new RuleTester({ languageOptions }).run('no-overlay-state', noOverlayState, {
   invalid: [
     {
       ...fixtures.read('invalid/direct.tsx'),
-      errors: [{ messageId: 'overlayState' }, { messageId: 'overlayState' }],
+      errors: [{ messageId: 'overlayState' }],
     },
     {
       ...fixtures.read('invalid/namespace.tsx'),
-      errors: [{ messageId: 'overlayState' }, { messageId: 'overlayState' }],
+      errors: [{ messageId: 'overlayState' }],
     },
   ],
 });

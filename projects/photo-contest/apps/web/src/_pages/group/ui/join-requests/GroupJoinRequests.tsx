@@ -96,15 +96,15 @@ function JoinRequestRow({ id }: { id: string }) {
 }
 
 function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (data) => data.groupJoinRequests,
-    pageSize: PAGE_SIZE,
-  });
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    queryRef,
+    (data) => data.groupJoinRequestsPage.nextOffset,
+  );
   return (
     <>
-      {data.groupJoinRequests.length ? (
+      {data.groupJoinRequestsPage.items.length ? (
         <ul aria-label="그룹 가입 신청">
-          {data.groupJoinRequests.map(({ id }) => (
+          {data.groupJoinRequestsPage.items.map(({ id }) => (
             <JoinRequestRow key={id} id={id} />
           ))}
         </ul>

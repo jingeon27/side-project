@@ -30,12 +30,12 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
   cache.writeQuery({
     query: DiscoverGroupsDocument,
     variables: { visibility: GroupVisibility.Public, offset: 0, limit: 6 },
-    data: { discoverGroups: [] },
+    data: { discoverGroupsPage: { __typename: 'DiscoverGroupPage', items: [], nextOffset: null } },
   });
   cache.writeQuery({
     query: PublicGalleryPostsDocument,
     variables: { sort: PostSort.Newest, offset: 0, limit: 24 },
-    data: { publicGalleryPosts: [] },
+    data: { publicGalleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } },
   });
   for (const [sort, limit] of [
     [PostSort.Newest, 24],
@@ -44,7 +44,7 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: { groupId: null, sort, offset: 0, limit },
-      data: { galleryPosts: [] },
+      data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } },
     });
   }
   const serverClient = new ApolloClient({ cache, link: ApolloLink.empty() });

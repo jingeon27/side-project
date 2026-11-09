@@ -85,7 +85,7 @@ describe('진행 중인 그룹 대회 회귀', () => {
           offset: 0,
           limit: 24,
         },
-        data: { galleryPosts: [] },
+        data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } },
       });
     });
     const ui = <GroupContestPage id="contest-1" groupId="group-1" />;
@@ -181,7 +181,8 @@ describe('public group membership in the contest', () => {
       if (name === 'Gallery') return { group };
       if (name === 'GroupContest') return { groupContest: { ...contest.groupContest, canParticipate: true } };
       if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
-      if (name === 'GalleryPosts') return { galleryPosts: [] };
+      if (name === 'GalleryPosts')
+        return { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } };
       if (name === 'Me') return { me: server.cache.readQuery({ query: MeDocument })?.me };
       return {};
     });

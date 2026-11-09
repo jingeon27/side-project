@@ -16,6 +16,7 @@
 - 직접 만드는 입력(파일·체크박스)은 `aria-invalid`, `useId`로 만든 `aria-describedby`, `role="alert"` 안내문을 손으로 잇고, 감싸는 label에 `min-h-touch`(44px)를 줘 누를 영역을 확보한다. 파일은 `Controller`의 `field.onChange(file)`로 넣고 `event.currentTarget.value = ''`로 비워 같은 파일을 다시 고를 수 있게 한다.
 - 시트에서는 `<form id={FORM_ID}>`를 `BottomSheet.Content` 안에 두고, 제출 버튼은 `BottomSheet.Footer`에서 `type="submit" form={FORM_ID}`로 잇는다. form으로 Content와 Footer를 함께 감싸면 Content만 스크롤되는 구조가 깨진다.
 - 렌더에 쓰는 값(글자 수, 미리보기, 버튼 활성)은 `useWatch({ control: form.control, name })`, 핸들러 안에서는 `form.getValues()`. 렌더 중 `form.watch()`는 폼 전체를 다시 그린다.
+- 원댓글과 답글 작성처럼 초안 소유자와 제출 대상이 다른 짧은 폼은 각 컴포넌트에서 입력 JSX와 제출을 직접 작성한다. 같은 마크업은 두 곳에 반복해도 된다.
 
 필수인 TextField·TextArea에는 required를 명시한다. 공통 컴포넌트가 필수·선택 표시를 붙이며 접근성 이름은 바꾸지 않는다. 직접 만든 파일 입력은 선택 뒤 value를 비우므로 aria-required를 사용하고, 필수 동의 체크박스는 required와 같은 필수 표시를 붙인다. 표시는 Zod 검증과 일치해야 한다.
 
@@ -62,6 +63,7 @@ try {
 ## 초기화
 
 - 시트의 폼은 닫힐 때 `unmount`로 함께 사라지고 다시 열면 새로 만들어진다. 닫기에서 `reset()`을 부르지 말고 `unmount`를 넘겼는지만 확인한다. 화면에 남는 폼만 성공 뒤 `form.reset()`.
+- 동기 `defaultValues`는 React Hook Form이 폼 생성 시 보관한다. 시트의 기본 일정은 `useZodForm`의 `defaultValues`에 바로 넘긴다.
 
 ## 테스트
 

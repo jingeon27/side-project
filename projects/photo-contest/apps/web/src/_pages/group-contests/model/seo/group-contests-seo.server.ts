@@ -26,7 +26,7 @@ export const getGroupContestsSeoData = cache(
     try {
       const { group } = await publicQuery(PublicGroupSeoDocument, { id: groupId });
       if (group.visibility !== GroupVisibility.Public) return { group, contests: [] };
-      const { groupContests } = await publicQuery(
+      const { groupContestsPage } = await publicQuery(
         GroupContestsDocument,
         {
           groupId,
@@ -36,7 +36,7 @@ export const getGroupContestsSeoData = cache(
         },
         PUBLIC_CONTENT_TTL,
       );
-      return { group, contests: groupContests };
+      return { group, contests: groupContestsPage.items };
     } catch (error) {
       if (error instanceof PublicQueryError && error.code === 'NOT_FOUND') return null;
       throw error;

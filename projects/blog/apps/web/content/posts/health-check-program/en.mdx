@@ -4,7 +4,7 @@ I brought health checks from phone inquiries into selection and payment inside a
 
 </Summary>
 
-![An illustration linking examination selection, a reservation calendar and confirmation](/images/covers/health-check-program.png)
+![An illustration linking examination selection, a reservation calendar and confirmation](/images/covers/health-check-program.avif)
 
 Health checks originally could not be booked inside the benefits portal. Users read about them on an external site and called to inquire. Then a partner asked to take reservations through the portal, and that started the work of adding health checks to existing programs. I am writing this after the official launch, looking back at how it was built.
 
@@ -18,7 +18,7 @@ Health checks, however, use corporate codes or take a deposit up front, and they
 
 The sections follow the order the screens connect. The diagrams were redrawn from screens I checked directly, and code includes only the relevant parts. As the diagram below shows, treatment and health-check programs differ from who registers them to what happens after an application.
 
-![Treatment and health-check programs differ in who registers them and what happens after an application.](/images/posts/health-check-program/01-en.png)
+![Treatment and health-check programs differ in who registers them and what happens after an application.](/images/posts/health-check-program/01-en.avif)
 
 ## Registration and review
 
@@ -47,7 +47,7 @@ Health-check detection changed from department names to IDs. I gathered those co
 
 A configuration contains basic examinations and optional groups. Basic ones come with the program by default, and users choose optional ones per group. Each group has a name, a `pickCount` saying how many to choose, and its choices. Back-Office stores it, hospital admin displays it read-only, and the portal uses it for the detail summary and the selection screen during application.
 
-![Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.](/images/posts/health-check-program/02-en.png)
+![Back-Office edits the configuration, hospital admin displays it locked, and the portal renders summary and selection views.](/images/posts/health-check-program/02-en.avif)
 
 Putting one examination in several groups could duplicate it in a reservation, so registration disables items another group already holds. In the function below, `owner` is the slot being edited: `'included'` for basic examinations or a group's index. The function returns what everything except that slot has claimed.
 
@@ -93,7 +93,7 @@ Health checks have no coupon query or adjusted price, and they show examination 
 
 The detail page fetches the program, records recently viewed programs, and chooses a screen. Each View assembles its own structure.
 
-![The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.](/images/posts/health-check-program/03-en.png)
+![The detail page queries, records recently viewed programs, and chooses a screen. Each View assembles its own structure.](/images/posts/health-check-program/03-en.avif)
 
 ```tsx
 // Names and code are simplified. The page queries, records recent treatments, and chooses a view.
@@ -139,7 +139,7 @@ We chose to lock unselected chips once a group is full. A user who wants to chan
 
 The diagram below follows the sheet's behavior as I checked it in the portal. Completing a group disables unselected chips, and selection confirmation becomes available only after all groups are complete. Its example values are illustrative.
 
-![Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.](/images/posts/health-check-program/04-en.png)
+![Completing a group disables unselected chips. Selection confirmation becomes available only after all groups are complete.](/images/posts/health-check-program/04-en.avif)
 
 ```tsx
 // Selection now only adds and removes; eviction and the pickCount argument were removed.
@@ -161,7 +161,7 @@ During development, creation order changed too, because the backend contract cha
 
 I settled where the user lands for each payment result up front. Approval goes to reservation details. Failure, a declined approval, and a refund right after approval return to the application. An unknown outcome goes to the reservation list.
 
-![Each payment outcome has an explicit destination for the user.](/images/posts/health-check-program/05-en.png)
+![Each payment outcome has an explicit destination for the user.](/images/posts/health-check-program/05-en.avif)
 
 Toss Payments returns mobile results through a redirect, so the page opens fresh on return with its memory empty. I save form values in `sessionStorage` with `orderId`. `sessionStorage` lasts until the tab closes, so it is still readable after a trip to the payment window in the same tab. I restore the values once, only for the same payment attempt and only if they pass the current form schema. Reading deletes the stored value whether it was valid or not, which keeps an old address and examination choices out of the next application.
 

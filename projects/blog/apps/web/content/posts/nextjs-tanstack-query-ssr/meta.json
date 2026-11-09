@@ -3,5 +3,6 @@
   "tags": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"],
   "publishedAt": "2025-01-22T17:27:17+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/nextjs-tanstack-query-ssr.png"
+  "coverImage": "/images/covers/nextjs-tanstack-query-ssr.avif",
+  "socialImage": "/images/covers/nextjs-tanstack-query-ssr-og.jpg"
 }

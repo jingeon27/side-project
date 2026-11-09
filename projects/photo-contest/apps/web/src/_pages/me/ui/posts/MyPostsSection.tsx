@@ -13,11 +13,13 @@ import {
   type MyGroupsQuery,
 } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { replaceSearchParams } from '@/shared/model/router';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
+import { FeedLoadMore } from '@/shared/ui/@core/feed-load-more';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 function MyPosts({ groupId }: { groupId: string | null }) {
@@ -43,11 +45,12 @@ function MyPosts({ groupId }: { groupId: string | null }) {
 }
 
 function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQuery>; filtered: boolean }) {
-  const { items, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
-    select: (data) => data.myGalleryPosts,
-    pageSize: 24,
-  });
-  if (!items.length)
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    queryRef,
+    (data) => data.myGalleryPostsPage.nextOffset,
+    (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'my', offset }),
+  );
+  if (!data.myGalleryPostsPage.items.length)
     return (
       <EmptyState
         icon={<FileImage />}
@@ -58,15 +61,16 @@ function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQ
   return (
     <div className="flex min-w-0 flex-col gap-5">
       <PostCardList>
-        {items.map(({ id }) => (
+        {data.myGalleryPostsPage.items.map(({ id }) => (
           <PostCard key={id} id={id} />
         ))}
       </PostCardList>
-      {hasNextPage ? (
-        <Button variant="secondary" loading={isFetchingNextPage} onClick={fetchNextPage}>
-          게시물 더 보기
-        </Button>
-      ) : null}
+      <FeedLoadMore
+        hasMore={hasNextPage}
+        loading={isFetchingNextPage}
+        loadingLabel="게시물을 더 불러오는 중"
+        onLoadMore={fetchNextPage}
+      />
     </div>
   );
 }

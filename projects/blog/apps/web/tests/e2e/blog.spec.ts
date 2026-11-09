@@ -119,7 +119,7 @@ test('cover and SVG thumbnails load without breaking title links or mobile layou
   }
 });
 
-test('edited article covers load in the body and match the social preview image', async ({ page }) => {
+test('article covers load in the body and expose the social preview image', async ({ page }) => {
   for (const entry of articles.filter((candidate) => candidate.coverImage)) {
     await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
     const image = page.locator('.article-prose img').first();
@@ -132,7 +132,7 @@ test('edited article covers load in the body and match the social preview image'
     expect(source.searchParams.get('url') || source.pathname).toBe(entry.coverImage);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       'content',
-      new RegExp(`${entry.coverImage!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+      new RegExp(`${(entry.socialImage ?? entry.coverImage!).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
@@ -283,7 +283,7 @@ test('article SEO matches canonical, language availability, and structured data'
   );
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'article');
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', article.title);
-  const expectedImage = article.coverImage || `/og/${article.locale}/${article.id}`;
+  const expectedImage = article.socialImage ?? article.coverImage ?? `/og/${article.locale}/${article.id}`;
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
     new RegExp(`${expectedImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
@@ -492,10 +492,7 @@ test('unknown pages, slugs, categories, tags and unsupported locales return 404'
   }
 });
 
-test('sitemap and robots expose published translations and allow rendering assets', async ({
-  page,
-  request,
-}) => {
+test('sitemap and robots list published URLs and allow rendering assets', async ({ page, request }) => {
   const parseSitemap = (text: string) =>
     page.evaluate((xml) => {
       const document = new DOMParser().parseFromString(xml, 'application/xml');
@@ -506,12 +503,7 @@ test('sitemap and robots expose published translations and allow rendering asset
         entries: Array.from(document.getElementsByTagNameNS(namespace, 'url'), (entry) => ({
           url: entry.getElementsByTagNameNS(namespace, 'loc')[0]?.textContent || '',
           lastModified: entry.getElementsByTagNameNS(namespace, 'lastmod')[0]?.textContent,
-          languages: Object.fromEntries(
-            Array.from(entry.getElementsByTagNameNS('http://www.w3.org/1999/xhtml', 'link'), (link) => [
-              link.getAttribute('hreflang'),
-              link.getAttribute('href'),
-            ]),
-          ),
+          order: Array.from(entry.children, (child) => child.localName).join(' '),
         })),
       };
     }, text);
@@ -524,7 +516,11 @@ test('sitemap and robots expose published translations and allow rendering asset
         const sitemap = await parseSitemap(await response.text());
         expect(sitemap.errors).toBe(0);
         expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
-        for (const entry of sitemap.entries) expect(new URL(entry.url).pathname).toMatch(`/${locale}`);
+        for (const entry of sitemap.entries) {
+          expect(new URL(entry.url).pathname).toMatch(`/${locale}`);
+          // hreflang stays in each page head; Next would write sitemap links before lastmod.
+          expect(entry.order, entry.url).toMatch(/^loc( lastmod)?$/);
+        }
         return sitemap.entries;
       }),
     )
@@ -550,16 +546,10 @@ test('sitemap and robots expose published translations and allow rendering asset
   expect(urls.filter((url) => /\/(ko|en)\/blog\/[^/]+$/.test(url)).sort()).toEqual(
     index.map(articleUrl).sort(),
   );
-  for (const article of index) {
-    const entry = entries.find((entry) => entry.url === articleUrl(article))!;
-    expect(entry.lastModified).toBe(article.updatedAt || article.publishedAt);
-    const translations = index.filter((translation) => translation.id === article.id);
-    const korean = translations.find((translation) => translation.locale === 'ko');
-    expect(entry.languages).toEqual({
-      ...Object.fromEntries(translations.map((translation) => [translation.locale, articleUrl(translation)])),
-      ...(korean && translations.length > 1 ? { 'x-default': articleUrl(korean) } : {}),
-    });
-  }
+  for (const article of index)
+    expect(entries.find((entry) => entry.url === articleUrl(article))?.lastModified).toBe(
+      article.updatedAt || article.publishedAt,
+    );
   // Listings carry the date of their newest article; the static about page has no date to report.
   for (const locale of ['ko', 'en']) {
     for (const path of ['', '/blog', '/blog/category/engineering'])

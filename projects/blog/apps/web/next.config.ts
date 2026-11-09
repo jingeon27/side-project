@@ -9,6 +9,7 @@ import { headers } from './security-headers';
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
+  images: { formats: ['image/avif', 'image/webp'] },
   experimental: { globalNotFound: true },
   pageExtensions: ['ts', 'tsx', 'md', 'mdx'],
   headers,

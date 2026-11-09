@@ -38,7 +38,9 @@ async function setup(filter: GroupContestFilter, contests: GroupContestCardFragm
         query: GroupContestsDocument,
         variables: { groupId: 'group-1', filter, offset: 0, limit: 24 },
       },
-      result: { data: { groupContests: contests } },
+      result: {
+        data: { groupContestsPage: { __typename: 'GroupContestPage', items: contests, nextOffset: null } },
+      },
     },
   ]);
   await act(async () => {

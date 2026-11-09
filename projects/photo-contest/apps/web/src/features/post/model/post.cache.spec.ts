@@ -13,7 +13,7 @@ import {
 import { resetGalleryPosts } from './post.cache';
 import { postTypePolicies } from './post.type-policies';
 
-function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][number] {
+function post(id: string, groupId: string): GalleryPostsQuery['galleryPostsPage']['items'][number] {
   return {
     __typename: 'GalleryPost',
     category: null,
@@ -48,12 +48,18 @@ describe('그룹 게시물 캐시', () => {
       cache.writeQuery({
         query: GalleryPostsDocument,
         variables: { ...VARIABLES, groupId: 'group', categoryId },
-        data: { galleryPosts: ids.map((id) => post(id, 'group')) },
+        data: {
+          galleryPostsPage: {
+            __typename: 'GalleryPostPage',
+            items: ids.map((id) => post(id, 'group')),
+            nextOffset: null,
+          },
+        },
       });
     const read = (categoryId: string) =>
       cache
         .readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'group', categoryId } })
-        ?.galleryPosts.map(({ id }) => id);
+        ?.galleryPostsPage.items.map(({ id }) => id);
     expect(read('category-a')).toEqual(['a', 'b']);
     expect(read('category-b')).toEqual(['c']);
   });
@@ -111,7 +117,13 @@ describe('그룹 게시물 캐시', () => {
       cache.writeQuery({
         query: GalleryPostsDocument,
         variables,
-        data: { galleryPosts: ids.map((id) => post(id, 'a')) },
+        data: {
+          galleryPostsPage: {
+            __typename: 'GalleryPostPage',
+            items: ids.map((id) => post(id, 'a')),
+            nextOffset: null,
+          },
+        },
       });
     write(VARIABLES, ['new', 'middle']);
     write({ ...VARIABLES, offset: 2 }, ['old']);
@@ -119,15 +131,17 @@ describe('그룹 게시물 캐시', () => {
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: { ...VARIABLES, groupId: 'b' },
-      data: { galleryPosts: [post('other', 'b')] },
+      data: {
+        galleryPostsPage: { __typename: 'GalleryPostPage', items: [post('other', 'b')], nextOffset: null },
+      },
     });
     const read = (variables: GalleryPostsQueryVariables) =>
-      cache.readQuery({ query: GalleryPostsDocument, variables })?.galleryPosts.map((p) => p.id);
+      cache.readQuery({ query: GalleryPostsDocument, variables })?.galleryPostsPage.items.map((p) => p.id);
     expect(read(VARIABLES)).toEqual(['new', 'middle', 'old']);
     expect(read({ ...VARIABLES, sort: PostSort.MonthlyPopular })).toEqual(['old', 'new']);
     expect(
       cache.readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'b' } })
-        ?.galleryPosts[0]?.id,
+        ?.galleryPostsPage.items[0]?.id,
     ).toBe('other');
   });
   it('가입·작성·삭제 뒤 이전 뒷페이지가 새 목록에 되살아나지 않아야 한다', () => {
@@ -135,21 +149,29 @@ describe('그룹 게시물 캐시', () => {
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: VARIABLES,
-      data: { galleryPosts: [post('deleted', 'a')] },
+      data: {
+        galleryPostsPage: { __typename: 'GalleryPostPage', items: [post('deleted', 'a')], nextOffset: null },
+      },
     });
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: { ...VARIABLES, offset: 2 },
-      data: { galleryPosts: [post('old', 'a')] },
+      data: {
+        galleryPostsPage: { __typename: 'GalleryPostPage', items: [post('old', 'a')], nextOffset: null },
+      },
     });
     resetGalleryPosts(cache);
     cache.writeQuery({
       query: GalleryPostsDocument,
       variables: VARIABLES,
-      data: { galleryPosts: [post('fresh', 'b')] },
+      data: {
+        galleryPostsPage: { __typename: 'GalleryPostPage', items: [post('fresh', 'b')], nextOffset: null },
+      },
     });
     expect(
-      cache.readQuery({ query: GalleryPostsDocument, variables: VARIABLES })?.galleryPosts.map((p) => p.id),
+      cache
+        .readQuery({ query: GalleryPostsDocument, variables: VARIABLES })
+        ?.galleryPostsPage.items.map((p) => p.id),
     ).toEqual(['fresh']);
   });
   it('그룹 피드와 각 대회 참여작의 offset 목록을 분리해야 한다', () => {
@@ -158,7 +180,9 @@ describe('그룹 게시물 캐시', () => {
       cache.writeQuery({
         query: GalleryPostsDocument,
         variables: { ...VARIABLES, groupId: 'a', contestId, offset },
-        data: { galleryPosts: [post(id, 'a')] },
+        data: {
+          galleryPostsPage: { __typename: 'GalleryPostPage', items: [post(id, 'a')], nextOffset: null },
+        },
       });
     write(undefined, 0, 'general');
     write('first', 0, 'first-new');
@@ -167,7 +191,7 @@ describe('그룹 게시물 캐시', () => {
     const read = (contestId?: string) =>
       cache
         .readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'a', contestId } })
-        ?.galleryPosts.map(({ id }) => id);
+        ?.galleryPostsPage.items.map(({ id }) => id);
     expect(read()).toEqual(['general']);
     expect(read('first')).toEqual(['first-new', 'first-old']);
     expect(read('second')).toEqual(['second-new']);

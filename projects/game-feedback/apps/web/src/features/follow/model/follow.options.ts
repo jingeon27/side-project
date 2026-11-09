@@ -17,10 +17,7 @@ export function followStatusOptions(
   viewerId: string,
   userId: string,
 ): ReturnType<typeof createFollowStatusOptions>;
-export function followStatusOptions(
-  viewerId?: string,
-  userId?: string,
-): ReturnType<typeof createFollowStatusOptions> | ReturnType<typeof followScope>;
+export function followStatusOptions(viewerId?: string, userId?: string): ReturnType<typeof followScope>;
 export function followStatusOptions(viewerId?: string, userId?: string) {
   return viewerId && userId ? createFollowStatusOptions(viewerId, userId) : followScope(viewerId, userId);
 }

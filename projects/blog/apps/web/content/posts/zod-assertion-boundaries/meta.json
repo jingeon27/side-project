@@ -3,5 +3,6 @@
   "tags": ["zod", "typescript", "validation", "error-handling"],
   "publishedAt": "2026-09-05T20:01:00+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/zod-assertion-boundaries.png"
+  "coverImage": "/images/covers/zod-assertion-boundaries.avif",
+  "socialImage": "/images/covers/zod-assertion-boundaries-og.jpg"
 }

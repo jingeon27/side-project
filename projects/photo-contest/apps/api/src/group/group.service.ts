@@ -12,6 +12,7 @@ import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { offsetPage } from '../common/offset-page';
 import { pageRange, textValue, type IPageRange } from '../common/validation';
 import {
   GROUP_CONTEST_HISTORY,
@@ -130,7 +131,7 @@ export class GroupService {
       offset?: number | null;
       limit?: number | null;
     },
-  ): Promise<IGroupNode[]> {
+  ) {
     const range = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const search = query.search?.trim() ?? '';
     if (search.length > TEXT_LIMIT.GROUP_NAME) fail('검색어는 40자 이하로 입력해 주세요.');
@@ -142,15 +143,19 @@ export class GroupService {
       include: viewerGroupInclude(viewer),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip: range.offset,
-      take: range.limit,
+      take: range.limit + 1,
     });
-    return this.toNodes(
-      groups.map((group) => ({
-        group,
-        role: group.members[0]?.role ?? null,
-        joinRequestPending: group.joinRequests.length > 0,
-      })),
-    );
+    const page = offsetPage(groups, range);
+    return {
+      ...page,
+      items: this.toNodes(
+        page.items.map((group) => ({
+          group,
+          role: group.members[0]?.role ?? null,
+          joinRequestPending: group.joinRequests.length > 0,
+        })),
+      ),
+    };
   }
 
   publicGroupCount() {

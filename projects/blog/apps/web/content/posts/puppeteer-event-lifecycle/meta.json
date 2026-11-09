@@ -3,5 +3,6 @@
   "tags": ["closure", "electron", "javascript", "puppeteer", "typescript"],
   "publishedAt": "2024-03-29T00:04:51+09:00",
   "updatedAt": "2026-11-02",
-  "coverImage": "/images/covers/puppeteer-event-lifecycle.png"
+  "coverImage": "/images/covers/puppeteer-event-lifecycle.avif",
+  "socialImage": "/images/covers/puppeteer-event-lifecycle-og.jpg"
 }

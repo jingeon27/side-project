@@ -30,6 +30,11 @@ type GroupContestResult {
   winner: Boolean!
 }
 
+type GroupContestPage {
+  items: [GroupContest!]!
+  nextOffset: Int
+}
+
 extend type Query {
   publicGroupContestCount: Int!
   publicGroupContests(offset: Int = 0, limit: Int = 24): [GroupContest!]!
@@ -39,6 +44,12 @@ extend type Query {
     offset: Int = 0
     limit: Int = 24
   ): [GroupContest!]!
+  groupContestsPage(
+    groupId: ID!
+    filter: GroupContestFilter = ACTIVE
+    offset: Int = 0
+    limit: Int = 24
+  ): GroupContestPage!
   groupContest(id: ID!): GroupContest!
   groupContestResults(contestId: ID!): [GroupContestResult!]!
 }

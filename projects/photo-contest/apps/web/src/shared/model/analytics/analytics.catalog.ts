@@ -6,6 +6,7 @@ export const ANALYTICS_EVENT = {
   CategoryCreated: 'category_created',
   CategoryFilterApplied: 'category_filter_applied',
   PostCreated: 'post_created',
+  PostListPageLoaded: 'post_list_page_loaded',
   PageViewed: 'page_viewed',
   LandingStartClicked: 'landing_start_clicked',
   SignEntryClicked: 'sign_entry_clicked',
@@ -61,6 +62,7 @@ export type TAnalyticsEventProperties = {
     category_id: string | null;
     kind: 'PHOTO' | 'VIDEO' | 'LINK';
   };
+  [ANALYTICS_EVENT.PostListPageLoaded]: { surface: 'latest' | 'public' | 'my'; offset: number };
   [ANALYTICS_EVENT.PageViewed]: { path_template: string };
   [ANALYTICS_EVENT.LandingStartClicked]: {
     placement: 'header' | 'hero' | 'guide';

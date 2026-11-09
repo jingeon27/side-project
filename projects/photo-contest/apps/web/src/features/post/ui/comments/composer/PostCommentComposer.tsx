@@ -17,37 +17,19 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { useCommentForm, type TCommentForm } from '../../../model/comment-form.hook';
+import type { TCommentForm } from '../../../model/comment-form.hook';
 
-export function PostCommentComposer({
-  postId,
-  parentId,
-  form: draftForm,
-  onCancel,
-  onCreated,
-}: {
-  postId: string;
-  parentId?: string;
-  /** 시트와 모달이 바뀌어도 입력을 잇도록 상위가 소유한 폼. 없으면 자체 폼을 쓴다. */
-  form?: TCommentForm;
-  onCancel?: () => void;
-  onCreated?: () => void;
-}) {
+export function PostCommentComposer({ postId, form }: { postId: string; form: TCommentForm }) {
   const { data } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
   });
-  const ownForm = useCommentForm();
-  const form = draftForm ?? ownForm;
   const body = useWatch({ control: form.control, name: 'body' });
   const [create] = useMutation(CreatePostCommentDocument, {
     refetchQueries: [PostCommentsDocument, { query: RefreshPostDocument, variables: { id: postId } }],
     awaitRefetchQueries: true,
-    onCompleted: () => {
-      form.reset();
-      onCreated?.();
-    },
+    onCompleted: () => form.reset(),
   });
   const { errors, isSubmitting } = form.formState;
   if (!complete) return null;
@@ -64,7 +46,7 @@ export function PostCommentComposer({
       className="mx-auto flex w-full max-w-3xl items-start gap-3"
       onSubmit={form.handleSubmit(async (values) => {
         try {
-          await create({ variables: { postId, parentId, ...values } });
+          await create({ variables: { postId, ...values } });
         } catch {
           /* ErrorLink가 알리고 입력은 유지한다. */
         }
@@ -82,7 +64,7 @@ export function PostCommentComposer({
                 disabled={isSubmitting}
                 rows={1}
                 maxLength={1000}
-                placeholder={parentId ? '답글을 남겨보세요.' : '댓글을 남겨보세요.'}
+                placeholder="댓글을 남겨보세요."
                 className="max-h-32 min-h-touch w-full min-w-0 flex-1 resize-none field-sizing-content bg-transparent px-3 py-2.5 text-input text-ink outline-none placeholder:text-subtle"
               />
             }
@@ -90,7 +72,7 @@ export function PostCommentComposer({
           <Button
             type="submit"
             size="md"
-            aria-label={parentId ? '답글 올리기' : '댓글 올리기'}
+            aria-label="댓글 올리기"
             loading={isSubmitting}
             icon={<Send aria-hidden className="size-5" />}
             className="size-touch p-0"
@@ -98,22 +80,11 @@ export function PostCommentComposer({
         </div>
         <div className="mt-1.5 flex items-center justify-between gap-3 px-1 text-micro text-muted">
           <div className="flex items-center">
-            <Field.Label>{parentId ? '답글' : '댓글'}</Field.Label>
+            <Field.Label>댓글</Field.Label>
             <FieldRequirement required />
           </div>
           <span aria-hidden>{body.length} / 1,000</span>
         </div>
-        {onCancel ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={isSubmitting}
-            className="mt-1 text-caption text-muted"
-            onClick={onCancel}
-          >
-            답글 작성 취소
-          </Button>
-        ) : null}
         <Field.Error
           match={Boolean(errors.body)}
           role="alert"

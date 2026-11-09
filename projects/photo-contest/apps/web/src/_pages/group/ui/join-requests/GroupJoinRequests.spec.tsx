@@ -16,7 +16,11 @@ function createClient() {
         new Observable((sink) => {
           operations.push(operation.operationName ?? '');
           queueMicrotask(() => {
-            sink.next({ data: { groupJoinRequests: [] } });
+            sink.next({
+              data: {
+                groupJoinRequestsPage: { __typename: 'GroupJoinRequestPage', items: [], nextOffset: null },
+              },
+            });
             sink.complete();
           });
         }),

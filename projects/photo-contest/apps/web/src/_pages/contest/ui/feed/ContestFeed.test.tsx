@@ -47,6 +47,9 @@ beforeEach(() => {
       disconnect() {
         endObservers.delete(this.callback);
       }
+      takeRecords() {
+        return [];
+      }
     },
   );
 });
@@ -99,7 +102,15 @@ function setup(
     link: new MockLink([
       {
         request: { query: SubmissionsDocument, variables: { ...VARIABLES, offset: 24 } },
-        result: { data: { submissions: Array.from({ length: 6 }, (_, index) => photo(index + 24)) } },
+        result: {
+          data: {
+            submissionsPage: {
+              __typename: 'SubmissionPage',
+              items: Array.from({ length: 6 }, (_, index) => photo(index + 24)),
+              nextOffset: null,
+            },
+          },
+        },
         delay: 100,
       },
       ...extraMocks,
@@ -113,7 +124,7 @@ function setup(
   client.writeQuery({
     query: SubmissionsDocument,
     variables: VARIABLES,
-    data: { submissions: initialPhotos },
+    data: { submissionsPage: { __typename: 'SubmissionPage', items: initialPhotos, nextOffset: 24 } },
   });
   render(
     <ApolloProvider client={client}>
@@ -141,7 +152,9 @@ describe('사진 피드 조회 맥락', () => {
     const { client } = setup([
       {
         request: { query: SubmissionsDocument, variables: VARIABLES },
-        result: { data: { submissions: [photo(6)] } },
+        result: {
+          data: { submissionsPage: { __typename: 'SubmissionPage', items: [photo(6)], nextOffset: null } },
+        },
         delay: 0,
       },
     ]);

@@ -12,6 +12,7 @@ import {
 } from '../api/chat.api';
 import { chatMessageOptions, conversationScopeOptions } from './chat.options';
 import type { IChatMessageInput } from './chat.types';
+import { invalidateChatQueries } from './invalidate-chat-queries';
 
 export function createConversationMutationOptions(client: QueryClient, userId?: string) {
   return mutationOptions({
@@ -27,7 +28,7 @@ export function sendChatMessageMutationOptions(client: QueryClient, userId: stri
     mutationFn: (input: IChatMessageInput) => postChatMessage(conversationId, input),
     onSuccess: () =>
       Promise.all([
-        client.invalidateQueries(chatMessageOptions(userId, conversationId)),
+        invalidateChatQueries(client, chatMessageOptions(userId, conversationId)),
         client.invalidateQueries(conversationScopeOptions(userId)),
       ]),
   });

@@ -140,7 +140,7 @@ describe('생성 문서로 사용하는 그룹 대회·운영 권한·공개 SEO
       offset: 0,
       limit: 24,
     });
-    expect(hall.groupContests[0]?.winners[0]?.post.id).toBe(postId);
+    expect(hall.groupContestsPage.items[0]?.winners[0]?.post.id).toBe(postId);
     expect((await getGroupContestSeoData(publicId, contestId))?.contest?.winners[0]?.post.id).toBe(postId);
   });
 

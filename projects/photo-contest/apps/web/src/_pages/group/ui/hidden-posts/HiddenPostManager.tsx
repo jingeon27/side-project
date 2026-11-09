@@ -19,11 +19,8 @@ function HiddenPosts({ queryRef }: { queryRef: QueryRef<HiddenGalleryPostsQuery>
     refetchQueries: [HiddenGalleryPostsDocument, ...POST_FEED_QUERIES],
     awaitRefetchQueries: true,
   });
-  const pagination = useInfiniteQuery(queryRef, {
-    select: (data) => data.hiddenGalleryPosts,
-    pageSize: 24,
-  });
-  const posts = pagination.items;
+  const pagination = useInfiniteQuery(queryRef, (data) => data.hiddenGalleryPostsPage.nextOffset);
+  const posts = pagination.data.hiddenGalleryPostsPage.items;
   return (
     <div className="flex flex-col gap-3">
       {!posts.length ? <p className="text-caption text-muted">숨긴 게시물이 없어요.</p> : null}

@@ -62,12 +62,12 @@ const DISCOVERED = {
   memberCount: 3,
   joinRequestPending: false,
   canViewPosts: true,
-} satisfies DiscoverGroupsQuery['discoverGroups'][number];
+} satisfies DiscoverGroupsQuery['discoverGroupsPage']['items'][number];
 
 function renderExplore({
   hasGroups = false,
   signedIn = true,
-  discovered = [] as DiscoverGroupsQuery['discoverGroups'],
+  discovered = [] as DiscoverGroupsQuery['discoverGroupsPage']['items'],
 } = {}) {
   const client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
   client.writeQuery({
@@ -89,7 +89,7 @@ function renderExplore({
   client.writeQuery({
     query: DiscoverGroupsDocument,
     variables: { search: '산책', offset: 0, limit: 24 },
-    data: { discoverGroups: discovered },
+    data: { discoverGroupsPage: { __typename: 'DiscoverGroupPage', items: discovered, nextOffset: null } },
   });
   render(
     <ApolloProvider client={client}>

@@ -61,7 +61,15 @@ function createClient(post = galleryPost(), { reject = false } = {}) {
             return;
           }
           if (name === 'GalleryPosts') {
-            sink.next({ data: { galleryPosts: [{ ...post, likeCount: 4, likedByMe: true }] } });
+            sink.next({
+              data: {
+                galleryPostsPage: {
+                  __typename: 'GalleryPostPage',
+                  items: [{ ...post, likeCount: 4, likedByMe: true }],
+                  nextOffset: null,
+                },
+              },
+            });
             sink.complete();
             return;
           }
@@ -156,12 +164,12 @@ describe('PostLikeButton', () => {
     client.writeQuery({
       query: GalleryPostsDocument,
       variables: { groupId: null, sort: PostSort.Newest, offset: 0, limit: 24 },
-      data: { galleryPosts: [galleryPost()] },
+      data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [galleryPost()], nextOffset: null } },
     });
     client.writeQuery({
       query: GalleryPostsDocument,
       variables: { groupId: null, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 },
-      data: { galleryPosts: [galleryPost()] },
+      data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [galleryPost()], nextOffset: null } },
     });
     function ActiveLists() {
       useQuery(GalleryPostsDocument, {
