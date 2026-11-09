@@ -11,6 +11,7 @@ import { notificationListOptions } from '@/features/notification';
 
 import { chatMessageOptions, chatMessageScopeOptions, conversationScopeOptions } from './chat.options';
 import type { TChatConnection } from './chat.types';
+import { invalidateChatQueries } from './invalidate-chat-queries';
 
 const invalidationSchema = z.object({ conversationId: z.string().min(1).max(128).nullable() });
 interface IChatRealtimeOptions {
@@ -70,11 +71,10 @@ export class ChatRealtimeConnection {
     if (!this.lifetime || !userId) return;
     void client.invalidateQueries(conversationScopeOptions(userId));
     void client.invalidateQueries(notificationListOptions(userId));
-    if (conversationId) {
-      void client.invalidateQueries(chatMessageOptions(userId, conversationId));
-      return;
-    }
-    void client.invalidateQueries(chatMessageScopeOptions(userId));
+    const messages = conversationId
+      ? chatMessageOptions(userId, conversationId)
+      : chatMessageScopeOptions(userId);
+    void invalidateChatQueries(client, messages);
   }
 
   private openStream() {
