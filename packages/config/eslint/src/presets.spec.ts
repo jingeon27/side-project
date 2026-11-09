@@ -31,17 +31,26 @@ function enabledSideRules(config: Linter.Config[]) {
   const fatal = messages.find((message) => message.fatal);
   if (fatal) throw new Error(fatal.message);
   return [
-    ...new Set(messages.map((message) => message.ruleId).filter((id) => id?.startsWith('side/'))),
+    ...new Set(
+      messages
+        .filter(({ ruleId }) => ruleId?.startsWith('side/'))
+        .map(({ ruleId, messageId }) => `${ruleId}:${messageId}`),
+    ),
   ].sort();
 }
 
 describe('preset별 side 규칙 배선', () => {
-  const reactRules = ['side/no-component-fetch', 'side/no-else', 'side/no-form-state-copy'];
+  const baseRules = ['side/no-else:noElse'];
+  const reactRules = [
+    'side/no-component-fetch:mutation',
+    ...baseRules,
+    'side/no-overlay-state:formStateCopy',
+  ];
   it.each([
-    ['baseConfig', baseConfig, ['side/no-else']],
+    ['baseConfig', baseConfig, baseRules],
     ['reactConfig', reactConfig, reactRules],
     ['reactDomConfig', reactDomConfig, reactRules],
-    ['nextConfig', nextConfig, [...reactRules, 'side/no-overlay-state']],
+    ['nextConfig', nextConfig, [...reactRules, 'side/no-overlay-state:overlayState']],
     ['expoConfig', expoConfig, reactRules],
   ])('%s는 분류 범위의 규칙만 켜고 side 플러그인을 다시 등록해도 충돌하지 않는다', (_, config, rules) => {
     expect(enabledSideRules(config)).toEqual(rules);

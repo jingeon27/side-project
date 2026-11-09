@@ -24,8 +24,7 @@
 | ---------- | ------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `common`   | `side/no-else`            | `baseConfig`                        | 아래 preset을 쓰는 모든 워크스페이스, PC·GF 루트(api·packages·스크립트), migration-check, 이 패키지 |
 | `web`      | `side/no-component-fetch` | `reactConfig`                       | Next(PC·GF web), Expo(PC·GF mobile), Vite(GF admin), design-system                                  |
-| `web`      | `side/no-form-state-copy` | `reactConfig`                       | Next(PC·GF web), Expo(PC·GF mobile), Vite(GF admin), design-system                                  |
-| `web`      | `side/no-overlay-state`   | `nextConfig`                        | Next(PC·GF web)만                                                                                   |
+| `web`      | `side/no-overlay-state`   | `reactConfig`, `nextConfig`         | React 앱과 design-system의 폼 상태 검사, Next(PC·GF web)의 오버레이·요청 오류 이름 검사             |
 | `react`    | `react/jsx-handler-names` | `reactConfig`, `handlerNamesConfig` | PC·GF web·admin·mobile, blog web, design-system                                                     |
 | `api`      | 아직 없음                 | -                                   | -                                                                                                   |
 | `fsd`      | `fsd/*`                   | `fsdBoundaries(srcDir)`             | PC web·mobile, GF web·admin·mobile                                                                  |
@@ -43,9 +42,9 @@ FSD 규칙은 `srcDir` 바로 아래 파일(Next `proxy`·`instrumentation*`, Vi
 
 `side/no-component-fetch`는 `.tsx`·`.jsx` 파일(테스트 제외)에서 전역 `fetch`와 `window`·`globalThis`·`self`를 거친 `fetch` 참조를 막습니다. 호출뿐 아니라 별칭 대입·`.call`/`.apply`도 포함하고, 매개변수나 `refetch` 별칭 같은 지역 `fetch`는 제외합니다. Next 서버 컴포넌트(RSC)도 예외로 두지 않습니다. 서버 조회는 `shared/api`·도메인 `api`의 `*.server.ts`(Next fetch 캐시 옵션 포함)나 Route Handler(`route.ts`)에 두고, 컴포넌트는 그 함수를 호출합니다.
 
-`side/no-form-state-copy`는 `useForm`·`useFormContext`·`useFormState`와 프로젝트의 `useZodForm`이 반환한 폼 상태를 추적합니다. React `useState`에 초기값으로 보관하거나 해당 값을 구독하는 effect에서 그대로 동기화하면 오류를 냅니다. 폼 오류와 제출 상태는 `formState`에서 읽고, 필드 오류를 등록할 때는 `setError`를 사용합니다.
+`side/no-overlay-state`는 `useForm`·`useFormContext`·`useFormState`와 프로젝트의 `useZodForm`이 반환한 폼 상태를 추적합니다. React `useState`에 초기값으로 보관하거나 해당 값을 구독하는 effect에서 그대로 동기화하면 오류를 냅니다. 폼 오류와 제출 상태는 `formState`에서 읽고, 필드 오류를 등록할 때는 `setError`를 사용합니다.
 
-`side/no-overlay-state`는 `useState`(react import 별칭, `React.useState`·`React['useState']` 포함)로 만든 오버레이 열림 상태(`open`·`isOpen`·`visible`·`shown`·`show`, 또는 `sheet`·`modal`·`dialog` 같은 오버레이 명사가 붙은 이름)와 요청 오류 상태(`error`·`submitError` 등)를 막습니다. `menuOpen` 같은 화면 안 토글과 `hasLoadError` 같은 불리언을 허용합니다. `emailError` 같은 필드 오류는 `side/no-form-state-copy`가 폼 상태에서 복제했는지 검사합니다.
+Next preset은 `checkStateNames`를 켜서 오버레이 열림 상태(`open`·`isOpen`·`visible`·`shown`·`show`, 또는 `sheet`·`modal`·`dialog` 같은 오버레이 명사가 붙은 이름)와 요청 오류 상태(`error`·`submitError` 등)도 검사합니다. `menuOpen` 같은 화면 안 토글과 `hasLoadError` 같은 불리언을 허용합니다. `emailError` 같은 필드 오류는 폼 상태의 출처를 추적해서 검사합니다.
 
 모든 `eslint.config.ts`는 preset 뒤에 `tsconfigRootDir(import.meta.dirname)`을 둡니다. 에디터 ESLint 서버처럼 한 프로세스가 여러 설정을 읽으면 typescript-eslint가 루트 후보를 모두 모아 `multiple candidate TSConfigRootDirs` 파싱 오류를 냅니다.
 

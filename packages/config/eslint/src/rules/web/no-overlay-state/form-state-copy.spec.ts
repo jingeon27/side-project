@@ -1,11 +1,11 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
 import { languageOptions } from '../../../test/rule-tester';
-import { noFormStateCopy } from './no-form-state-copy';
+import { noOverlayState } from './no-overlay-state';
 
 const errors = [{ messageId: 'formStateCopy' }] as const;
 
-new RuleTester({ languageOptions }).run('no-form-state-copy', noFormStateCopy, {
+new RuleTester({ languageOptions }).run('no-overlay-state의 폼 상태 검사', noOverlayState, {
   valid: [
     `
       import { useState } from 'react';
@@ -18,14 +18,18 @@ new RuleTester({ languageOptions }).run('no-form-state-copy', noFormStateCopy, {
       const [draft, setDraft] = useState(form.formState.errors.email?.message);
       const handleChange = (value: string) => setDraft(value);
     `,
-    `
+    {
+      code: `
       import { useEffect, useState } from 'react';
       import { useForm } from 'react-hook-form';
       const { formState } = useForm();
       const [submittedError, setSubmittedError] = useState(null);
       useEffect(() => setSubmittedError(formState.errors.email), [formState.submitCount]);
-    `,
-    `
+      `,
+      options: [{ checkStateNames: false }],
+    },
+    {
+      code: `
       import { useEffect, useState } from 'react';
       import { useFormState } from 'react-hook-form';
       const { errors } = useFormState();
@@ -33,7 +37,9 @@ new RuleTester({ languageOptions }).run('no-form-state-copy', noFormStateCopy, {
       useEffect(() => {
         if (errors.email) setError(errors.email);
       }, [errors.email]);
-    `,
+      `,
+      options: [{ checkStateNames: false }],
+    },
     `
       import { useState } from 'react';
       import { useForm } from 'react-hook-form';
@@ -89,8 +95,8 @@ new RuleTester({ languageOptions }).run('no-form-state-copy', noFormStateCopy, {
         import { useLayoutEffect, useState } from 'react';
         import { useZodForm } from '@/shared/model';
         const form = useZodForm(schema);
-        const [anything, update] = useState(form.formState.isSubmitting);
-        useLayoutEffect(() => update(form.formState.isSubmitting), [form.formState.isSubmitting]);
+        const [submitError, update] = useState(form.formState.errors.root?.message);
+        useLayoutEffect(() => update(form.formState.errors.root?.message), [form.formState.errors.root?.message]);
       `,
       errors,
     },

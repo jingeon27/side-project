@@ -15,7 +15,7 @@ export const nextConfig: Linter.Config[] = [
   {
     name: 'side/next',
     rules: {
-      'side/no-overlay-state': 'error',
+      'side/no-overlay-state': ['error', { checkStateNames: true }],
       'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
       'react/jsx-pascal-case': 'error',
       '@typescript-eslint/no-explicit-any': 'error',

@@ -35,7 +35,7 @@ export const reactConfig: Linter.Config[] = [
         { namedComponents: 'function-declaration', unnamedComponents: 'arrow-function' },
       ],
       'side/no-component-fetch': 'error',
-      'side/no-form-state-copy': 'error',
+      'side/no-overlay-state': ['error', { checkStateNames: false }],
     },
   },
 ];
