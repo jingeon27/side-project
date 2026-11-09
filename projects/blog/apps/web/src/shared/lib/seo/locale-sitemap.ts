@@ -3,16 +3,11 @@ import type { MetadataRoute } from 'next';
 import { maxBy } from 'es-toolkit';
 
 import { locales, type Locale } from '@/i18n/routing';
-import {
-  getArticles,
-  getCategoryLocales,
-  getIndexedTags,
-  getPublishedCategories,
-} from '@/shared/article/lib/get-articles';
+import { getArticles, getIndexedTags, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import type { Article } from '@/shared/article/model/types';
 import { absoluteUrl } from '@/shared/config/site';
 
-import { articleAlternates, articlePath, withDefaultLanguage } from './metadata';
+import { articlePath } from './metadata';
 
 const articleLastModified = (article: Article) => article.updatedAt || article.publishedAt;
 
@@ -35,43 +30,34 @@ export function sitemapIndexXml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemaps.join('')}</sitemapindex>`;
 }
 
-/** A sitemap may only list URLs under its own directory, so each locale publishes its own file. */
+/**
+ * A sitemap may only list URLs under its own directory, so each locale publishes its own file.
+ * hreflang lives in each page head: Next writes sitemap hreflang links before lastmod, which the
+ * sitemap schema (loc, lastmod, then extension elements) rejects.
+ */
 export function localeSitemap(locale: Locale): MetadataRoute.Sitemap {
   const articles = getArticles(locale);
   const newest = latestModified(articles);
-  const corePaths: [string, readonly Locale[], string?][] = [
-    ['', locales, newest],
-    ['/blog', locales, newest],
+  const listings: [string, string?][] = [
+    ['', newest],
+    ['/blog', newest],
     // Static copy without a tracked edit date: no lastmod is more honest than an invented one.
-    ['/about', locales],
-    // Empty categories are not published, so neither listed nor offered as an alternate.
-    ...getPublishedCategories(locale).map((category): [string, Locale[], string?] => [
+    ['/about'],
+    // Empty categories are not published, so they are not listed.
+    ...getPublishedCategories(locale).map((category): [string, string?] => [
       `/blog/category/${category}`,
-      getCategoryLocales(category),
       latestModified(articles.filter((article) => article.category === category)),
     ]),
+    ...getIndexedTags(locale).map((tag): [string, string?] => [
+      `/blog/tag/${encodeURIComponent(tag)}`,
+      latestModified(articles.filter((article) => article.tags.includes(tag))),
+    ]),
   ];
-  const entries: MetadataRoute.Sitemap = corePaths.map(([path, pathLocales, lastModified]) => ({
-    url: absoluteUrl(`/${locale}${path}`),
-    lastModified,
-    alternates: {
-      languages: withDefaultLanguage(
-        Object.fromEntries(pathLocales.map((value) => [value, absoluteUrl(`/${value}${path}`)])),
-      ),
-    },
-  }));
-  for (const tag of getIndexedTags(locale)) {
-    entries.push({
-      url: absoluteUrl(`/${locale}/blog/tag/${encodeURIComponent(tag)}`),
-      lastModified: latestModified(articles.filter((article) => article.tags.includes(tag))),
-    });
-  }
   return [
-    ...entries,
+    ...listings.map(([path, lastModified]) => ({ url: absoluteUrl(`/${locale}${path}`), lastModified })),
     ...articles.map((article) => ({
       url: absoluteUrl(articlePath(locale, article.slug)),
       lastModified: articleLastModified(article),
-      alternates: { languages: withDefaultLanguage(articleAlternates(article)) },
     })),
   ];
 }
