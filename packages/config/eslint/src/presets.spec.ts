@@ -16,6 +16,7 @@ import { useForm } from 'react-hook-form';
 export function Overlay() {
   const form = useForm();
   const [submitting] = useState(form.formState.isSubmitting);
+  const [requestError] = useState('');
   const [open, setOpen] = useState(false);
   if (open) setOpen(false);
   else fetch('/upload');
@@ -44,13 +45,17 @@ describe('preset별 side 규칙 배선', () => {
   const reactRules = [
     'side/no-component-fetch:mutation',
     ...baseRules,
-    'side/no-overlay-state:formStateCopy',
+    'side/no-form-state-copy:formStateCopy',
   ];
   it.each([
     ['baseConfig', baseConfig, baseRules],
     ['reactConfig', reactConfig, reactRules],
     ['reactDomConfig', reactDomConfig, reactRules],
-    ['nextConfig', nextConfig, [...reactRules, 'side/no-overlay-state:overlayState']],
+    [
+      'nextConfig',
+      nextConfig,
+      [...reactRules, 'side/no-overlay-state:overlayState', 'side/no-request-error-state:requestErrorState'],
+    ],
     ['expoConfig', expoConfig, reactRules],
   ])('%s는 분류 범위의 규칙만 켜고 side 플러그인을 다시 등록해도 충돌하지 않는다', (_, config, rules) => {
     expect(enabledSideRules(config)).toEqual(rules);

@@ -13,6 +13,6 @@ new RuleTester({ languageOptions }).run('no-overlay-state 감사 회귀', noOver
     { ...fixtures.read('invalid/alias.tsx'), errors: [overlayState] },
     { ...fixtures.read('invalid/computed.tsx'), errors: [overlayState] },
     { ...fixtures.read('invalid/tuple.tsx'), errors: [overlayState, overlayState] },
-    { ...fixtures.read('invalid/names.tsx'), errors: Array.from({ length: 5 }, () => overlayState) },
+    { ...fixtures.read('invalid/names.tsx'), errors: Array.from({ length: 4 }, () => overlayState) },
   ],
 });

@@ -1,11 +1,11 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
 import { languageOptions } from '../../../test/rule-tester';
-import { noOverlayState } from './no-overlay-state';
+import { noFormStateCopy } from './no-form-state-copy';
 
 const errors = [{ messageId: 'formStateCopy' }] as const;
 
-new RuleTester({ languageOptions }).run('no-overlay-state의 폼 상태 검사', noOverlayState, {
+new RuleTester({ languageOptions }).run('no-form-state-copy', noFormStateCopy, {
   valid: [
     `
       import { useState } from 'react';
@@ -26,7 +26,6 @@ new RuleTester({ languageOptions }).run('no-overlay-state의 폼 상태 검사',
       const [submittedError, setSubmittedError] = useState(null);
       useEffect(() => setSubmittedError(formState.errors.email), [formState.submitCount]);
       `,
-      options: [{ checkStateNames: false }],
     },
     {
       code: `
@@ -38,7 +37,6 @@ new RuleTester({ languageOptions }).run('no-overlay-state의 폼 상태 검사',
         if (errors.email) setError(errors.email);
       }, [errors.email]);
       `,
-      options: [{ checkStateNames: false }],
     },
     `
       import { useState } from 'react';
