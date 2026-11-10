@@ -15,37 +15,34 @@ export function useInfiniteQuery<TData>(
   const result = useReadQuery(queryRef);
   const nextOffset = getNextOffset(result.data);
   const [isFetchingNextPage, startTransition] = useTransition();
-  const activeRequest = useRef<Promise<unknown> | null>(null);
+  // 새로고침과 추가 조회가 겹칠 수 있어, 먼저 끝난 요청이 남은 요청의 잠금을 풀지 않도록 모두 기록한다.
+  const activeRequests = useRef(new Set<Promise<unknown>>());
+  const track = async <T>(request: Promise<T>) => {
+    activeRequests.current.add(request);
+    try {
+      return await request;
+    } finally {
+      activeRequests.current.delete(request);
+    }
+  };
 
   return {
     ...result,
     hasNextPage: nextOffset !== null,
     isFetchingNextPage,
     fetchNextPage: () => {
-      if (nextOffset === null || activeRequest.current) return;
+      if (nextOffset === null || activeRequests.current.size) return;
       startTransition(async () => {
-        const request = fetchMore({ variables: { offset: nextOffset } });
-        activeRequest.current = request;
         try {
-          await request;
+          await track(fetchMore({ variables: { offset: nextOffset } }));
         } catch {
           /* 조회 오류는 같은 QueryRef의 AsyncBoundary에서 복구한다. */
           return;
-        } finally {
-          if (activeRequest.current === request) activeRequest.current = null;
         }
         onPageLoaded?.(nextOffset);
       });
     },
-    refetch: async () => {
-      // 첫 페이지를 다시 받는 동안 이전 페이지 정보로 추가 조회를 보내지 않는다.
-      const request = refetch();
-      activeRequest.current = request;
-      try {
-        return await request;
-      } finally {
-        if (activeRequest.current === request) activeRequest.current = null;
-      }
-    },
+    // 첫 페이지를 다시 받는 동안 이전 페이지 정보로 추가 조회를 보내지 않는다.
+    refetch: () => track(refetch()),
   };
 }

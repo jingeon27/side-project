@@ -46,6 +46,23 @@ test('추가 조회 중 기존 목록을 유지하고 다시 스크롤해도 중
   await expect(loading).toBeHidden();
 });
 
+test('다음 페이지가 붙어도 보던 카드의 위치와 스크롤을 유지해야 한다', async ({ page }) => {
+  const response = Promise.withResolvers<'success'>();
+  const { feed, cards, offsets } = await openGallery(page, { responses: { 24: response.promise } });
+  await expect(cards).toHaveCount(24);
+  const lastCard = cards.last();
+  await lastCard.scrollIntoViewIfNeeded();
+  await expect.poll(() => offsets).toEqual([0, 24]);
+  await expect(feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' })).toBeVisible();
+  const scrollY = await page.evaluate(() => window.scrollY);
+  const top = await lastCard.evaluate((card) => card.getBoundingClientRect().top);
+
+  response.resolve('success');
+  await expect(cards).toHaveCount(26);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  expect(await cards.nth(23).evaluate((card) => card.getBoundingClientRect().top)).toBe(top);
+});
+
 test('마지막 페이지가 24개로 꽉 차도 nextOffset이 null이면 요청을 멈춰야 한다', async ({ page }) => {
   const { cards, offsets } = await openGallery(page, { lastPageSize: 24 });
   await expect(cards).toHaveCount(24);
