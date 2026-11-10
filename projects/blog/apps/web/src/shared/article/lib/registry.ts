@@ -80,6 +80,8 @@ const loaders = {
   'typed-program-form/en': () => import('../../../../content/posts/typed-program-form/en.mdx'),
   'typescript-patterns/ko': () => import('../../../../content/posts/typescript-patterns/ko.mdx'),
   'typescript-patterns/en': () => import('../../../../content/posts/typescript-patterns/en.mdx'),
+  'yarn-workspaces-turborepo/ko': () => import('../../../../content/posts/yarn-workspaces-turborepo/ko.mdx'),
+  'yarn-workspaces-turborepo/en': () => import('../../../../content/posts/yarn-workspaces-turborepo/en.mdx'),
   'zod-assertion-boundaries/ko': () => import('../../../../content/posts/zod-assertion-boundaries/ko.mdx'),
   'zod-assertion-boundaries/en': () => import('../../../../content/posts/zod-assertion-boundaries/en.mdx'),
 };
