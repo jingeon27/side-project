@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 홈 피드는 기존 `/`(`ROUTES.HOME`)를 유지한다. `/about`(서비스 소개)와 `/about/how-it-works`(이용 방법)는 별도 공개 페이지다. 공개 소개는 AppProviders의 SessionSync와 DesktopNavigation을 제외하며 인증 API 없이 읽힌다. 인증 진입 링크에는 prefetch=false를 둔다. 피드·그룹의 기존 세션·권한 검사는 유지한다.
 
-화면·상태·레이어는 [architecture](../../.agents/skills/photo-contest-web/references/architecture.md), 테스트 격리는 [photo-contest-testing](../../.agents/skills/photo-contest-testing/SKILL.md)를 따른다. 위 Next.js 자동 안내는 유지한다.
+화면·상태·레이어는 [architecture](../../.agents/skills/photo-contest-web/references/architecture.md), 테스트 격리와 상태·오버레이 검증 기준은 [photo-contest-testing](../../.agents/skills/photo-contest-testing/SKILL.md)를 따른다. 위 Next.js 자동 안내는 유지한다.
 
 여러 기능이 모이는 ui·model은 책임별 하위 폴더로 묶고, 각 기능의 하위 UI와 테스트를 함께 둔다. 페이지 진입과 조립 파일은 상위에 두며 이전 위치의 호환 re-export는 남기지 않는다.
 

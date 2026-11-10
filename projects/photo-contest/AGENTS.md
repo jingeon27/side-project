@@ -49,7 +49,7 @@
 - 모바일 앱(Expo WebView 셸): [overview](.agents/skills/photo-contest-mobile/references/overview.md)
 - 웹 ↔ 앱 메시지 추가·변경: [photo-contest-bridge](.agents/skills/photo-contest-bridge/SKILL.md)
 - Sentry·Amplitude·이벤트 추가: [photo-contest-monitoring](.agents/skills/photo-contest-monitoring/SKILL.md)
-- 테스트 레인·격리 DB·포트: [photo-contest-testing](.agents/skills/photo-contest-testing/SKILL.md)
+- 테스트 레인·격리 DB·포트, 상태 순서와 오버레이 주변 동작 검증 기준: [photo-contest-testing](.agents/skills/photo-contest-testing/SKILL.md)
 - 커밋 단위·메시지·PR: [공통 절차](../../.agents/skills/commit/SKILL.md)
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55432) 프로세스를 끄거나 재시작하지 않는다.
