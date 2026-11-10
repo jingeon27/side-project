@@ -13,8 +13,8 @@
     "locale": "ko",
     "toc": [
       {
-        "id": "라이브러리는-무엇을-테스트하는지-먼저-봤어요",
-        "title": "라이브러리는 무엇을 테스트하는지 먼저 봤어요",
+        "id": "라이브러리-테스트를-답지로-봤어요",
+        "title": "라이브러리 테스트를 답지로 봤어요",
         "level": 2
       },
       {
@@ -41,9 +41,14 @@
         "id": "메뉴를-연-뒤-어디를-누르는지-나누기",
         "title": "메뉴를 연 뒤 어디를 누르는지 나누기",
         "level": 2
+      },
+      {
+        "id": "답지를-보고-더한-테스트",
+        "title": "답지를 보고 더한 테스트",
+        "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 11,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -63,8 +68,8 @@
     "locale": "en",
     "toc": [
       {
-        "id": "i-first-looked-at-what-libraries-test",
-        "title": "I first looked at what libraries test",
+        "id": "library-tests-as-an-answer-key",
+        "title": "Library tests as an answer key",
         "level": 2
       },
       {
@@ -91,9 +96,14 @@
         "id": "click-the-background-a-menu-item-or-the-trigger",
         "title": "Click the background, a menu item, or the trigger",
         "level": 2
+      },
+      {
+        "id": "tests-added-from-the-answer-key",
+        "title": "Tests added from the answer key",
+        "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 11,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
