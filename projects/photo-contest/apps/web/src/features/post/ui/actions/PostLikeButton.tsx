@@ -41,7 +41,7 @@ export function PostLikeButton({ postId }: { postId: string }) {
       density="card"
       className="bg-sunken px-3 text-ink"
       liked={post.likedByMe}
-      label={`${post.title} 좋아요`}
+      label={`${post.title} 좋아요 ${formatCount(post.likeCount)}개`}
       onClick={async () => {
         if (!post.canInteract) {
           toast.info('그룹에 가입하면 좋아요를 남길 수 있어요.');

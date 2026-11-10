@@ -110,7 +110,7 @@ async function renderButton(client: ApolloClient, children?: ReactNode) {
       </ApolloProvider>,
     );
   });
-  return screen.getByRole('button', { name: '점심의 순간 좋아요' });
+  return screen.getByRole('button', { name: /^점심의 순간 좋아요 / });
 }
 
 describe('PostLikeButton', () => {

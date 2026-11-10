@@ -126,9 +126,9 @@ test(
       );
     }
     await page.goto(contestPath);
-    const first = page.getByRole('button', { name: '첫 번째 순간 좋아요', exact: true });
-    const second = page.getByRole('button', { name: '두 번째 순간 좋아요', exact: true });
-    const third = page.getByRole('button', { name: '세 번째 순간 좋아요', exact: true });
+    const first = page.getByRole('button', { name: /^첫 번째 순간 좋아요 / });
+    const second = page.getByRole('button', { name: /^두 번째 순간 좋아요 / });
+    const third = page.getByRole('button', { name: /^세 번째 순간 좋아요 / });
     await first.click();
     await expect(first).toHaveAttribute('aria-pressed', 'true');
     await second.click();
