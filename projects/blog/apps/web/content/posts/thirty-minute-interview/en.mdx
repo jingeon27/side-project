@@ -22,7 +22,13 @@ When I joined my current company, I lost trust early on. The approaches from my 
 
 Now I am the only frontend developer, building the user-facing service, the hospital admin, and the back office. I introduced testing, monitoring, and a way of working with coding agents on my own. Even after I became the only frontend developer, our pace picked up, and I even heard people on the development team call me the ace.
 
-A year and a half later, I interviewed with the same company again. I had worked hard, and before the interview I went back over my past work and prepared questions and answers built on it. I thought it would go differently. The questions I got were not the ones I had expected. I do not have the result yet, but the interview itself went the same way as the first one.
+A year and a half later, I interviewed with the same company again. I had worked hard, and before the interview I went back over my past work and prepared questions and answers built on it. Along with basics such as TypeScript, I reviewed these topics again.
+
+- Browser rendering: the order from the DOM and CSSOM through style calculation, layout, paint, rasterization, and compositing, and which step a given change sends the browser back to
+- The event loop: when tasks, microtasks, and `requestAnimationFrame` callbacks run, and why long tasks block input and screen updates
+- The browser back button and the History API, React's render and commit phases, cookies and CORS
+
+I thought it would go differently. The questions I got were not the ones I had expected. I do not have the result yet, but the interview itself went the same way as the first one.
 
 ## I had not thought the answers through
 
@@ -50,12 +56,7 @@ When I studied this again after the interview, I found that Yarn Workspaces and 
 
 ## What I am studying now
 
-I am practicing explaining the topics I prepared for the interview out loud, in under a minute, without looking at my notes.
-
-- Browser rendering: the order from the DOM and CSSOM through style calculation, layout, paint, rasterization, and compositing, and which step a given change sends the browser back to
-- The event loop: when tasks, microtasks, and `requestAnimationFrame` callbacks run, and why long tasks block input and screen updates
-- The browser back button and the History API, React's render and commit phases, cookies and CORS
-- Topics I studied again after the interview: the dependencies Yarn Workspaces and Turborepo each manage, and how to test infinite scroll and dropdown states one at a time
+I studied the two topics I could not explain in the interview again and wrote them up: the dependencies Yarn Workspaces and Turborepo each manage, and how to test infinite scroll and dropdown states one at a time. I am also practicing explaining the topics I prepared before the interview out loud, without looking at my notes.
 
 The point where an explanation stalls is the point I do not know precisely. When I get stuck, I go back to the docs and the code, and next time I start explaining from that point.
 
