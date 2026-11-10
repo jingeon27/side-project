@@ -120,6 +120,7 @@
     "category": "engineering",
     "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
     "publishedAt": "2026-11-10",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",
     "socialImage": "/images/covers/yarn-workspaces-turborepo-og.jpg",
     "title": "Yarn Workspaces와 Turborepo, 패키지 연결부터 빌드 캐시까지",
@@ -137,6 +138,11 @@
       {
         "id": "간접-의존성에-적용한-resolutions",
         "title": "간접 의존성에 적용한 resolutions",
+        "level": 3
+      },
+      {
+        "id": "고른-패키지를-배치하는-nodelinker",
+        "title": "고른 패키지를 배치하는 nodeLinker",
         "level": 3
       },
       {
@@ -170,7 +176,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 14,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -180,6 +186,7 @@
     "category": "engineering",
     "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
     "publishedAt": "2026-11-10",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",
     "socialImage": "/images/covers/yarn-workspaces-turborepo-og.jpg",
     "title": "From package links to build caches with Yarn Workspaces and Turborepo",
@@ -197,6 +204,11 @@
       {
         "id": "overriding-a-transitive-dependency-with-resolutions",
         "title": "Overriding a transitive dependency with resolutions",
+        "level": 3
+      },
+      {
+        "id": "placing-the-chosen-packages-with-nodelinker",
+        "title": "Placing the chosen packages with nodeLinker",
         "level": 3
       },
       {
@@ -230,7 +242,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 10,
+    "readingMinutes": 12,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
