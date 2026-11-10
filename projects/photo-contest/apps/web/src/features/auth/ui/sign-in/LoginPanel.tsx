@@ -78,8 +78,7 @@ export function LoginPanel({
       )}
     >
       <div className="pb-2 text-center">
-        <p className="text-caption text-muted">친구들과 나누는 웃긴 순간</p>
-        <h2 id={headingId} className="mt-2 text-title-lg text-ink">
+        <h2 id={headingId} className="text-title-lg text-ink">
           함께 웃는 순간을 나눠요
         </h2>
         <p className="mt-1 text-body text-muted">그룹에 참여해 사진과 동영상을 나눠보세요.</p>

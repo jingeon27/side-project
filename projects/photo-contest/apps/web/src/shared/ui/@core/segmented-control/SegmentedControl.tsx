@@ -31,7 +31,7 @@ export function SegmentedControl({
         const next = pressed.find((item) => item !== value);
         if (next) onValueChange(next);
       }}
-      className={cn('flex rounded-control bg-sunken p-1', className)}
+      className={cn('flex rounded-card bg-sunken p-1', className)}
     >
       {children}
     </ToggleGroup>
@@ -43,7 +43,7 @@ export function SegmentedControlItem({ value, children }: { value: string; child
     <Toggle
       value={value}
       className={cn(
-        'relative flex h-9 min-w-0 flex-1 items-center justify-center rounded-[10px] px-3 text-label text-muted transition-colors',
+        'relative flex h-9 min-w-0 flex-1 items-center justify-center rounded-control px-3 text-label text-muted transition-colors',
         "before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
         'hover:text-ink data-pressed:bg-surface data-pressed:text-ink data-pressed:shadow-card',
       )}

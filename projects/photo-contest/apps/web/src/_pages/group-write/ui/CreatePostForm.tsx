@@ -198,8 +198,8 @@ export function CreatePostForm({
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹의
-                공개 범위에 따라 게시됩니다.
+                공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹의 공개 범위에 따라 게시됩니다.
+                <FieldRequirement required />
               </span>
             </label>
             {errors.rightsConfirmed ? (
@@ -211,8 +211,7 @@ export function CreatePostForm({
         </div>
       </div>
       <StickyCta className="tablet:px-8" contentClassName="max-w-5xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-          <p className="hidden text-caption text-muted desktop:block">그룹의 공개 범위에 따라 게시돼요.</p>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-4">
           <Button
             type="submit"
             form={formId}

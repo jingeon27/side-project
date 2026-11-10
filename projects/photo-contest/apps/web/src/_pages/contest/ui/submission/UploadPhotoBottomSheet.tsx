@@ -190,8 +190,8 @@ export function UploadPhotoBottomSheet({
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                <FieldRequirement required /> 이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다.
-                그룹 멤버에게만 공개됩니다.
+                이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다. 그룹 멤버에게만 공개됩니다.
+                <FieldRequirement required />
               </span>
             </label>
             {form.formState.errors.rightsConfirmed ? (

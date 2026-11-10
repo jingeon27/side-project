@@ -2,12 +2,14 @@
 
 import { useId, type ComponentProps } from 'react';
 
+import { NativeSelect, NativeSelectOption } from '@side/design-system';
+
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 export function PostCategorySelect({
   categories,
   ...props
-}: ComponentProps<'select'> & { categories: readonly { id: string; name: string }[] }) {
+}: Omit<ComponentProps<'select'>, 'size'> & { categories: readonly { id: string; name: string }[] }) {
   const id = useId();
   return (
     <div className="flex flex-col gap-2">
@@ -15,18 +17,15 @@ export function PostCategorySelect({
         카테고리
         <FieldRequirement required={false} />
       </label>
-      <select
-        id={id}
-        className="min-h-touch w-full rounded-control border border-line-strong bg-surface px-3 text-body text-ink"
-        {...props}
-      >
-        <option value="">미분류</option>
+      {/* 제목·링크 입력과 같은 높이·테두리를 쓰도록 공통 native select를 쓴다. */}
+      <NativeSelect id={id} {...props}>
+        <NativeSelectOption value="">미분류</NativeSelectOption>
         {categories.map((category) => (
-          <option key={category.id} value={category.id}>
+          <NativeSelectOption key={category.id} value={category.id}>
             {category.name}
-          </option>
+          </NativeSelectOption>
         ))}
-      </select>
+      </NativeSelect>
     </div>
   );
 }

@@ -31,7 +31,6 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
           <div>
             <p className="mb-1 text-caption text-muted">나의 프로필</p>
             <h2 className="break-words text-title-lg text-ink">{viewer.nickname}</h2>
-            <p className="mt-2 text-body text-muted">우리끼리 모은 순간을 다시 만나보세요.</p>
           </div>
         </div>
       </div>
