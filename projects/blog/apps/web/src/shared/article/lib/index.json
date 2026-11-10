@@ -1,5 +1,125 @@
 [
   {
+    "category": "engineering",
+    "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",
+    "socialImage": "/images/covers/yarn-workspaces-turborepo-og.jpg",
+    "title": "Yarn Workspaces와 Turborepo, 패키지 연결부터 빌드 캐시까지",
+    "description": "공유 토큰 하나를 바꿔 보며 Yarn Workspaces의 패키지 연결, Turborepo의 작업 그래프, 빌드 해시와 캐시 복원을 설명해요.",
+    "slug": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
+    "keywords": ["Yarn Workspaces", "Turborepo", "모노레포", "빌드 캐시", "작업 그래프"],
+    "id": "yarn-workspaces-turborepo",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "yarn은-패키지를-어떻게-연결할까요",
+        "title": "Yarn은 패키지를 어떻게 연결할까요",
+        "level": 2
+      },
+      {
+        "id": "간접-의존성에-적용한-resolutions",
+        "title": "간접 의존성에 적용한 resolutions",
+        "level": 3
+      },
+      {
+        "id": "링크가-생긴-다음에는-파일을-만들어야-해요",
+        "title": "링크가 생긴 다음에는 파일을 만들어야 해요",
+        "level": 2
+      },
+      {
+        "id": "turborepo는-패키지-위에-작업-그래프를-만들어요",
+        "title": "Turborepo는 패키지 위에 작업 그래프를 만들어요",
+        "level": 2
+      },
+      {
+        "id": "캐시에서-어떤-파일이-돌아올까요",
+        "title": "캐시에서 어떤 파일이 돌아올까요",
+        "level": 2
+      },
+      {
+        "id": "캐시-키에-빠진-입력을-찾는-법",
+        "title": "캐시 키에 빠진 입력을 찾는 법",
+        "level": 2
+      },
+      {
+        "id": "실행할-작업을-고르는-일과-캐시를-확인하는-일",
+        "title": "실행할 작업을 고르는 일과 캐시를 확인하는 일",
+        "level": 2
+      },
+      {
+        "id": "지금-사이드프로젝트는-어디까지-쓰고-있나요",
+        "title": "지금 사이드프로젝트는 어디까지 쓰고 있나요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
+      "en": "yarn-workspaces-turborepo-build-graph-and-cache"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",
+    "socialImage": "/images/covers/yarn-workspaces-turborepo-og.jpg",
+    "title": "From package links to build caches with Yarn Workspaces and Turborepo",
+    "description": "Follow a design token change through Yarn's workspace links, Turborepo's task graph, and the build artifacts a cache hit restores.",
+    "slug": "yarn-workspaces-turborepo-build-graph-and-cache",
+    "keywords": ["Yarn Workspaces", "Turborepo", "monorepo", "build cache", "task graph"],
+    "id": "yarn-workspaces-turborepo",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "how-yarn-connects-the-packages",
+        "title": "How Yarn connects the packages",
+        "level": 2
+      },
+      {
+        "id": "overriding-a-transitive-dependency-with-resolutions",
+        "title": "Overriding a transitive dependency with resolutions",
+        "level": 3
+      },
+      {
+        "id": "the-link-exists-before-the-build-output",
+        "title": "The link exists before the build output",
+        "level": 2
+      },
+      {
+        "id": "turborepo-turns-package-relationships-into-a-task-graph",
+        "title": "Turborepo turns package relationships into a task graph",
+        "level": 2
+      },
+      {
+        "id": "what-a-cache-hit-restores",
+        "title": "What a cache hit restores",
+        "level": 2
+      },
+      {
+        "id": "finding-inputs-that-should-affect-the-key",
+        "title": "Finding inputs that should affect the key",
+        "level": 2
+      },
+      {
+        "id": "selecting-tasks-and-reusing-their-results",
+        "title": "Selecting tasks and reusing their results",
+        "level": 2
+      },
+      {
+        "id": "where-the-side-project-repository-fits",
+        "title": "Where the side-project repository fits",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
+      "en": "yarn-workspaces-turborepo-build-graph-and-cache"
+    }
+  },
+  {
     "category": "perspectives",
     "tags": ["ai-workflow", "side-project", "reflection", "learning"],
     "publishedAt": "2026-11-06",

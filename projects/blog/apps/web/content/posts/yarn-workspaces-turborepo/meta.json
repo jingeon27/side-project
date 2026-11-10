@@ -1,0 +1,7 @@
+{
+  "category": "engineering",
+  "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
+  "publishedAt": "2026-11-10",
+  "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",
+  "socialImage": "/images/covers/yarn-workspaces-turborepo-og.jpg"
+}
