@@ -74,6 +74,11 @@ export function pushOverlayEntry(onBack: () => void) {
   return key;
 }
 
+/** key의 오버레이 위에 다른 오버레이가 열려 있지 않은지. */
+export function isTopOverlayEntry(key: string) {
+  return stack.at(-1)?.key === key;
+}
+
 /** 오버레이가 뒤로 가기 말고 다른 방법(닫기 버튼, 스와이프, 완료)으로 닫혔을 때 쌓았던 항목을 걷어 낸다. */
 export function releaseOverlayEntry(key: string) {
   const index = stack.findIndex((entry) => entry.key === key);
