@@ -113,8 +113,8 @@
         "level": 2
       },
       {
-        "id": "제가-한-일인데-이유가-기억나지-않았어요",
-        "title": "제가 한 일인데 이유가 기억나지 않았어요",
+        "id": "깊이-공부했던-것도-흐려져-있었어요",
+        "title": "깊이 공부했던 것도 흐려져 있었어요",
         "level": 2
       },
       {
@@ -128,7 +128,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 6,
     "translations": {
       "ko": "30분-동안-제대로-대답하지-못했어요",
       "en": "thirty-minutes-of-questions-i-could-not-answer"
@@ -158,8 +158,8 @@
         "level": 2
       },
       {
-        "id": "i-did-the-work-but-could-not-remember-why",
-        "title": "I did the work, but could not remember why",
+        "id": "even-what-i-had-studied-in-depth-had-faded",
+        "title": "Even what I had studied in depth had faded",
         "level": 2
       },
       {
@@ -173,7 +173,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 7,
     "translations": {
       "ko": "30분-동안-제대로-대답하지-못했어요",
       "en": "thirty-minutes-of-questions-i-could-not-answer"

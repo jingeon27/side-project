@@ -14,15 +14,15 @@ In particular, I could not explain Yarn Workspaces, or how I think about splitti
 
 ## I thought this time would be different
 
-At my first company, I built the frontend of a recruiting SaaS. I learned by reading the source of several open source libraries and got to the point of writing library-level type inference and component designs. The CEO, a developer by background, valued my work, and when I said I was leaving, the CEO asked whether I would keep working for the company as a freelancer from home.
+At my first company, I built the frontend of a recruiting SaaS. Reading the source of several open source libraries taught me to write library-level type inference and component designs. The CEO, a developer by background, valued my work, so when I said I was leaving, the CEO asked whether I would keep working for the company as a freelancer from home.
 
-After leaving, I burned out a little. I rested for a while, then felt I had to do something, so I joined a team project called Doneness on BeSide. It was a cooking timer that also showed tips for getting food to the doneness you want. About six months into that break, I interviewed with this company for the first time. My development instincts had dulled, and I could not answer most of the questions, including basic syntax questions.
+After leaving, I burned out a little. I rested for a while, then felt I had to do something, so I joined a team project called Doneness on BeSide. It was a cooking timer that also showed tips for getting food to the doneness you want. During those six months off, I applied for the first time to the company I have now interviewed with again. My development instincts had dulled, and in the interview I could not answer most of the questions, including basic syntax questions.
 
-When I joined my current company, I lost trust early on. The approaches from my previous job looked good to me, so I persuaded the team to switch our form and UI libraries. I made the changes before I understood the service's context, which led to a lot of disagreement, and I was not careful enough, so I shipped a lot of bugs. For the next three months, I kept finishing small tasks without mistakes to win that trust back.
+Then I joined my current company, and at first I lost the team's trust. The approaches from my previous job looked good to me, so I persuaded the team to switch our form and UI libraries. I made the changes before I understood the service's context, which led to a lot of disagreement, and I was not careful enough, so I shipped a lot of bugs. For the next three months, I focused on finishing small tasks without mistakes to rebuild that trust.
 
-Now I am the only frontend developer, building the user-facing service, the hospital admin, and the back office. I introduced testing, monitoring, and a way of working with coding agents on my own. Even after I became the only frontend developer, our pace picked up, and I even heard people on the development team call me the ace.
+Once I had it back, I introduced testing, monitoring, and a way of working with coding agents one by one. Now I am the only frontend developer, building the user-facing service, the hospital admin, and the back office, and our pace has actually picked up. I even heard people on the development team call me the ace.
 
-A year and a half later, I interviewed with the same company again. I had worked hard, and before the interview I went back over my past work and prepared questions and answers built on it. Along with basics such as TypeScript, I reviewed these topics again.
+A year and a half later, I interviewed with that company again. Before the interview, I went back over my past work and prepared questions and answers built on it. Along with basics such as TypeScript, I reviewed these topics again.
 
 - Browser rendering: the order from the DOM and CSSOM through style calculation, layout, paint, rasterization, and compositing, and which step a given change sends the browser back to
 - The event loop: when tasks, microtasks, and `requestAnimationFrame` callbacks run, and why long tasks block input and screen updates
@@ -32,19 +32,15 @@ I thought it would go differently. The questions I got were not the ones I had e
 
 ## I had not thought the answers through
 
-The questions started from my own work and kept turning into "Why did you do it that way?" They needed real thought, and I had never thought through questions like that in advance.
+The questions started from my own work and kept turning into "Why did you do it that way?" They needed real thought, and since they were not the questions I had expected, I had not thought them through in advance.
 
-At work, when I ran into a problem, I looked things up and read the code as far as I needed, then decided. I rarely went back to work out why the decision was right or how it compared with other options. So in the interview I had to build answers on the spot, and words came out while I was still organizing my thoughts. Even as I spoke, I was not sure I was answering the question.
+At work, when I ran into a problem, I took the time to look things up and read the code before deciding. In the interview, I had to answer questions that deserved the same depth of thought in a short time, and words came out while I was still organizing my thoughts. Even as I spoke, I was not sure I was answering the question.
 
 Testing was the same. At work I had kept tests for a new feature's expected behavior separate from tests that reproduce bugs found in production, but when asked why I split them that way, I could not explain it in my own words.
 
-## I did the work, but could not remember why
+## Even what I had studied in depth had faded
 
-I had already noticed that I could not remember my reasons while preparing. When I asked myself why I chose the file upload approach in a side project, or why my two services used different API styles, I could not answer right away. The code and docs recorded what I changed and what I checked. For many decisions, though, I had not written down what I compared or why I chose one option over the other.
-
-While working with coding agents, I kept writing docs and rules so the next task could start from the same context. Those notes were for the agent to keep working. They were not quite the reasons I would need to explain a decision to someone later. The results were recorded, but the reasons lived only in my memory, and that memory faded faster than I expected.
-
-Technologies were no different. Some I had studied in depth and some only as far as I needed, and studying something in depth did not mean it stayed with me. I looked into monorepos quite thoroughly when I first introduced one. That knowledge never made it into long-term memory, and when I tried to explain it in the interview, much of it had faded.
+Some technologies I studied in depth, and others only as far as I needed. Monorepos were in the first group: I looked into them quite thoroughly when I first introduced one. But studying something in depth did not mean it stayed with me. What I learned back then never made it into long-term memory, and when I tried to explain it in the interview, much of it had faded.
 
 ## I thought I knew, but I did not know it precisely
 
