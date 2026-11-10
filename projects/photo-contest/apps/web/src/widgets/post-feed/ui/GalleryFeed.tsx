@@ -24,7 +24,8 @@ export function GalleryFeed({
   return (
     <PullToRefresh onRefresh={() => client.refetchQueries({ include: [GalleryPostsDocument] })}>
       <div className="mx-auto grid w-full max-w-6xl items-start gap-8 desktop:grid-cols-[minmax(0,1fr)_280px] desktop:gap-6 wide:grid-cols-[minmax(0,1fr)_300px] wide:gap-8">
-        <div className="order-2 mx-auto w-full min-w-0 max-w-app desktop:order-1 desktop:max-w-feed">
+        {/* 데스크톱에서는 피드를 열의 왼쪽에 붙여 화면 제목·탭과 같은 시작선에서 읽게 한다. */}
+        <div className="order-2 mx-auto w-full min-w-0 max-w-app desktop:order-1 desktop:mx-0 desktop:max-w-feed">
           {latest}
         </div>
         <div className="contents desktop:sticky desktop:top-24 desktop:order-2 desktop:block desktop:max-h-[calc(100dvh-112px)] desktop:min-w-0 desktop:overflow-y-auto desktop:overscroll-contain">

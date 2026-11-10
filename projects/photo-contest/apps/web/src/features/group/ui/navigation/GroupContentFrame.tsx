@@ -100,22 +100,30 @@ function GroupContent({
   );
 }
 
+/**
+ * 그룹 이름 뒤에 화면 이름을 이어 제목으로 둔다. 탭(대회·명예의 전당)을 바꿔도 어느 그룹의 어느 화면인지 남고,
+ * 그룹을 받기 전에는 화면 이름만 보여 준다. 뒤로 가기는 대회 상세(breadcrumb)면 대회 목록, 탭이면 그룹 화면이다.
+ */
 function GroupHeader({
+  groupId,
   groupRef,
   title,
+  breadcrumb,
   actions,
 }: {
+  groupId: string;
   groupRef: TGalleryRef;
   title: string;
+  breadcrumb: boolean;
   actions?: ReactNode;
 }) {
   const { data } = useReadQuery(groupRef);
+  const backHref = match({ breadcrumb, loaded: Boolean(data) })
+    .with({ breadcrumb: false }, () => ROUTES.GROUP(groupId))
+    .with({ loaded: true }, () => ROUTES.GROUP_CONTESTS(groupId))
+    .otherwise(() => ROUTES.EXPLORE);
   return (
-    <TopAppBar
-      title={data ? `${data.group.name} > ${title}` : title}
-      backHref={data ? ROUTES.GROUP_CONTESTS(data.group.id) : ROUTES.EXPLORE}
-      actions={actions}
-    />
+    <TopAppBar title={data ? `${data.group.name} > ${title}` : title} backHref={backHref} actions={actions} />
   );
 }
 
@@ -132,23 +140,22 @@ export function GroupContentFrame({
     variables: { id: groupId },
     errorPolicy: 'all',
   });
+  const fallbackBackHref = breadcrumb ? ROUTES.GROUP_CONTESTS(groupId) : ROUTES.GROUP(groupId);
   return (
     <div className="flex flex-1 flex-col">
-      {breadcrumb ? (
-        <AsyncBoundary
-          onRetry={refetch}
-          fallback={
-            <TopAppBar title={title} backHref={ROUTES.GROUP_CONTESTS(groupId)} actions={headerActions} />
-          }
-          renderError={() => (
-            <TopAppBar title={title} backHref={ROUTES.GROUP_CONTESTS(groupId)} actions={headerActions} />
-          )}
-        >
-          <GroupHeader groupRef={groupRef} title={title} actions={headerActions} />
-        </AsyncBoundary>
-      ) : (
-        <TopAppBar title={title} backHref={ROUTES.GROUP(groupId)} actions={headerActions} />
-      )}
+      <AsyncBoundary
+        onRetry={refetch}
+        fallback={<TopAppBar title={title} backHref={fallbackBackHref} actions={headerActions} />}
+        renderError={() => <TopAppBar title={title} backHref={fallbackBackHref} actions={headerActions} />}
+      >
+        <GroupHeader
+          groupId={groupId}
+          groupRef={groupRef}
+          title={title}
+          breadcrumb={breadcrumb}
+          actions={headerActions}
+        />
+      </AsyncBoundary>
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 tablet:px-8">
         <AsyncBoundary
           fallback={<Skeleton className="h-64 w-full" />}
