@@ -57,6 +57,8 @@ const entry = (id: string, title: string, overrides: Partial<GalleryPostCardFrag
     body: '',
     kind: PostKind.Photo,
     mediaUrl: `/backend/media/${id}`,
+    mediaWidth: null,
+    mediaHeight: null,
     linkUrl: null,
     createdAt: '2026-10-05T00:00:00.000Z',
     likeCount: 0,

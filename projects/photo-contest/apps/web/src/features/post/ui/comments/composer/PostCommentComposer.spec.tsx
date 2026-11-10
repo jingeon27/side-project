@@ -38,6 +38,8 @@ function galleryPost(overrides: Partial<GalleryPostCardFragment> = {}): GalleryP
     body: '',
     kind: PostKind.Photo,
     mediaUrl: '/backend/media/upload-1',
+    mediaWidth: null,
+    mediaHeight: null,
     linkUrl: null,
     createdAt: '2026-10-26T00:00:00.000Z',
     likeCount: 0,
