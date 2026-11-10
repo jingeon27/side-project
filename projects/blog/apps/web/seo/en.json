@@ -23,11 +23,11 @@
     }
   },
   "posts": {
-    "thirty-minute-interview": {
-      "title": "Thirty minutes of questions I could not answer",
-      "slug": "thirty-minutes-of-questions-i-could-not-answer",
-      "description": "A year and a half after my first interview with a company, I interviewed again and still could not answer most of the questions. What I could not explain, and what I am studying now.",
-      "keywords": ["interview reflection", "frontend interview", "retrospective", "side project", "learning"]
+    "recent-reflections": {
+      "title": "Things I have been thinking about lately",
+      "slug": "things-i-have-been-thinking-about-lately",
+      "description": "Looking back at my past work: what I knew, what I did not, what I am studying now, and why I enjoy development these days.",
+      "keywords": ["reflection", "learning", "side project", "AI-assisted development", "frontend"]
     },
     "scroll-and-dropdown-states": {
       "title": "Testing infinite scroll and dropdown menus one state at a time",

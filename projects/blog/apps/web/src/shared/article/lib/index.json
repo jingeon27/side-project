@@ -1,5 +1,95 @@
 [
   {
+    "category": "perspectives",
+    "tags": ["reflection", "learning", "side-project", "ai-workflow"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/recent-reflections.avif",
+    "socialImage": "/images/covers/recent-reflections-og.jpg",
+    "title": "요즘 개발하면서 느낀 것들",
+    "description": "지난 업무를 다시 돌아보며 제가 무엇을 알고 무엇을 몰랐는지, 지금 무엇을 공부하고 있는지, 요즘 개발이 왜 즐거운지 적었어요.",
+    "slug": "요즘-개발하면서-느낀-것들",
+    "keywords": ["회고", "학습", "사이드프로젝트", "AI 개발", "프론트엔드"],
+    "id": "recent-reflections",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "이번에는-다를-거라고-생각했어요",
+        "title": "이번에는 다를 거라고 생각했어요",
+        "level": 2
+      },
+      {
+        "id": "깊게-고민해-둔-답이-없었어요",
+        "title": "깊게 고민해 둔 답이 없었어요",
+        "level": 2
+      },
+      {
+        "id": "깊이-공부했던-것도-흐려져-있었어요",
+        "title": "깊이 공부했던 것도 흐려져 있었어요",
+        "level": 2
+      },
+      {
+        "id": "안다고-생각했지만-정확히-알지는-못했어요",
+        "title": "안다고 생각했지만 정확히 알지는 못했어요",
+        "level": 2
+      },
+      {
+        "id": "지금-공부하고-있는-것",
+        "title": "지금 공부하고 있는 것",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 6,
+    "translations": {
+      "ko": "요즘-개발하면서-느낀-것들",
+      "en": "things-i-have-been-thinking-about-lately"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["reflection", "learning", "side-project", "ai-workflow"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/recent-reflections.avif",
+    "socialImage": "/images/covers/recent-reflections-og.jpg",
+    "title": "Things I have been thinking about lately",
+    "description": "Looking back at my past work: what I knew, what I did not, what I am studying now, and why I enjoy development these days.",
+    "slug": "things-i-have-been-thinking-about-lately",
+    "keywords": ["reflection", "learning", "side project", "AI-assisted development", "frontend"],
+    "id": "recent-reflections",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-thought-this-time-would-be-different",
+        "title": "I thought this time would be different",
+        "level": 2
+      },
+      {
+        "id": "i-had-not-thought-the-answers-through",
+        "title": "I had not thought the answers through",
+        "level": 2
+      },
+      {
+        "id": "even-what-i-had-studied-in-depth-had-faded",
+        "title": "Even what I had studied in depth had faded",
+        "level": 2
+      },
+      {
+        "id": "i-thought-i-knew-but-i-did-not-know-it-precisely",
+        "title": "I thought I knew, but I did not know it precisely",
+        "level": 2
+      },
+      {
+        "id": "what-i-am-studying-now",
+        "title": "What I am studying now",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 7,
+    "translations": {
+      "ko": "요즘-개발하면서-느낀-것들",
+      "en": "things-i-have-been-thinking-about-lately"
+    }
+  },
+  {
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
@@ -87,96 +177,6 @@
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
-    }
-  },
-  {
-    "category": "perspectives",
-    "tags": ["interview", "reflection", "learning", "side-project"],
-    "publishedAt": "2026-11-10",
-    "coverImage": "/images/covers/thirty-minute-interview.avif",
-    "socialImage": "/images/covers/thirty-minute-interview-og.jpg",
-    "title": "30분 동안 제대로 대답하지 못했어요",
-    "description": "1년 반 만에 같은 회사의 면접을 다시 봤는데, 이번에도 대부분의 질문에 답하지 못했어요. 제가 한 일의 이유와 깊이 공부했던 기술, 제가 쓰는 도구의 설정을 설명하지 못한 경험과 지금 공부하고 있는 것을 적었어요.",
-    "slug": "30분-동안-제대로-대답하지-못했어요",
-    "keywords": ["면접 회고", "프론트엔드 면접", "회고", "사이드프로젝트", "학습"],
-    "id": "thirty-minute-interview",
-    "locale": "ko",
-    "toc": [
-      {
-        "id": "이번에는-다를-거라고-생각했어요",
-        "title": "이번에는 다를 거라고 생각했어요",
-        "level": 2
-      },
-      {
-        "id": "깊게-고민해-둔-답이-없었어요",
-        "title": "깊게 고민해 둔 답이 없었어요",
-        "level": 2
-      },
-      {
-        "id": "깊이-공부했던-것도-흐려져-있었어요",
-        "title": "깊이 공부했던 것도 흐려져 있었어요",
-        "level": 2
-      },
-      {
-        "id": "안다고-생각했지만-정확히-알지는-못했어요",
-        "title": "안다고 생각했지만 정확히 알지는 못했어요",
-        "level": 2
-      },
-      {
-        "id": "지금-공부하고-있는-것",
-        "title": "지금 공부하고 있는 것",
-        "level": 2
-      }
-    ],
-    "readingMinutes": 6,
-    "translations": {
-      "ko": "30분-동안-제대로-대답하지-못했어요",
-      "en": "thirty-minutes-of-questions-i-could-not-answer"
-    }
-  },
-  {
-    "category": "perspectives",
-    "tags": ["interview", "reflection", "learning", "side-project"],
-    "publishedAt": "2026-11-10",
-    "coverImage": "/images/covers/thirty-minute-interview.avif",
-    "socialImage": "/images/covers/thirty-minute-interview-og.jpg",
-    "title": "Thirty minutes of questions I could not answer",
-    "description": "A year and a half after my first interview with a company, I interviewed again and still could not answer most of the questions. What I could not explain, and what I am studying now.",
-    "slug": "thirty-minutes-of-questions-i-could-not-answer",
-    "keywords": ["interview reflection", "frontend interview", "retrospective", "side project", "learning"],
-    "id": "thirty-minute-interview",
-    "locale": "en",
-    "toc": [
-      {
-        "id": "i-thought-this-time-would-be-different",
-        "title": "I thought this time would be different",
-        "level": 2
-      },
-      {
-        "id": "i-had-not-thought-the-answers-through",
-        "title": "I had not thought the answers through",
-        "level": 2
-      },
-      {
-        "id": "even-what-i-had-studied-in-depth-had-faded",
-        "title": "Even what I had studied in depth had faded",
-        "level": 2
-      },
-      {
-        "id": "i-thought-i-knew-but-i-did-not-know-it-precisely",
-        "title": "I thought I knew, but I did not know it precisely",
-        "level": 2
-      },
-      {
-        "id": "what-i-am-studying-now",
-        "title": "What I am studying now",
-        "level": 2
-      }
-    ],
-    "readingMinutes": 7,
-    "translations": {
-      "ko": "30분-동안-제대로-대답하지-못했어요",
-      "en": "thirty-minutes-of-questions-i-could-not-answer"
     }
   },
   {
