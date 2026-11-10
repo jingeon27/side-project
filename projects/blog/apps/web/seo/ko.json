@@ -32,7 +32,7 @@
     "yarn-workspaces-turborepo": {
       "title": "Yarn Workspaces와 Turborepo, 패키지 연결부터 빌드 캐시까지",
       "slug": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
-      "description": "공유 토큰 하나를 바꿔 보며 Yarn Workspaces의 패키지 연결, Turborepo의 작업 그래프, 빌드 해시와 캐시 복원을 설명해요.",
+      "description": "Yarn Workspaces는 패키지 사이의 의존성을, Turborepo는 작업 사이의 의존성을 관리해요. 공유 토큰 하나를 바꿔 보며 두 도구가 각각 무엇을 정하는지 설명해요.",
       "keywords": ["Yarn Workspaces", "Turborepo", "모노레포", "빌드 캐시", "작업 그래프"]
     },
     "cognitive-surrender-side-project": {

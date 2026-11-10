@@ -32,7 +32,7 @@
     "yarn-workspaces-turborepo": {
       "title": "From package links to build caches with Yarn Workspaces and Turborepo",
       "slug": "yarn-workspaces-turborepo-build-graph-and-cache",
-      "description": "Follow a design token change through Yarn's workspace links, Turborepo's task graph, and the build artifacts a cache hit restores.",
+      "description": "Yarn Workspaces manages dependencies between packages, and Turborepo manages dependencies between tasks. Changing one shared token shows what each tool decides.",
       "keywords": ["Yarn Workspaces", "Turborepo", "monorepo", "build cache", "task graph"]
     },
     "cognitive-surrender-side-project": {
