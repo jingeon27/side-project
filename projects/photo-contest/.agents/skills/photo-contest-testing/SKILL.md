@@ -1,6 +1,6 @@
 ---
 name: photo-contest-testing
-description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration, Playwright e2e), 격리 DB 스키마, 테스트 포트, BDD 이름 규칙에 맞춰 테스트를 작성하거나 실행할 때 사용한다.
+description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration, Playwright e2e), 격리 DB 스키마, 테스트 포트, BDD 이름 규칙, 그리고 라이브러리 테스트를 기준으로 한 상태 순서·실패 뒤·오버레이 주변 동작 검증에 맞춰 테스트를 작성하거나 실행할 때 사용한다.
 ---
 
 ## 소유권
@@ -22,6 +22,33 @@ description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration
 - 목은 마지막 수단이다. 폼은 실제 RHF·Base UI로, 캐시는 실제 InMemoryCache로, API는 실제 PostgreSQL로 검증한다. Expo 푸시·Amplitude·Sentry 전송처럼 밖으로 나가는 경계만 대체한다(supertest는 fetch를 쓰지 않으므로 외부 제공자용 `vi.stubGlobal('fetch')`와 섞이지 않는다).
 - 의미 없는 호출 횟수 대신 사용자 동작과 서버·DB 결과를 단언한다. 기다리지 않고 `queryBy… not.toBeInTheDocument()`만 확인하는 '초록인데 빈' 테스트를 만들지 않는다.
 - 권한·동시성은 실제 요청으로 확인한다(예: 같은 사용자의 동시 투표 8건 → 정확히 1건).
+
+## 상태와 주변 동작
+
+라이브러리가 자기 컴포넌트를 검증하는 방식을 기준으로 삼는다. 비슷한 컴포넌트를 테스트하기 전에 TanStack Query(`useInfiniteQuery`·`useMutation`), Base UI(menu·dialog·toast·toggle-group), Radix의 테스트 파일에서 같은 동작을 어떻게 확인하는지 먼저 연다. 인용할 때는 커밋 SHA에 고정한다.
+
+- 마지막 결과 하나로 끝내지 않는다. 응답을 기다리는 동안, 실패한 뒤, 마지막 페이지 이후처럼 상태가 바뀌는 지점마다 단언한다.
+- 순서가 중요한 상태는 `useLayoutEffect`로 화면에 반영된 값을 모으고, 연달아 같은 값은 하나로 합쳐 전체 순서를 `toEqual`로 비교한다(`src/shared/api/infinite-query.hook.spec.tsx`, `PostCommentLikeButton.spec.tsx`). 대기 → 성공 사이에 목록이 로딩 화면으로 바뀌거나 낙관적 값이 깜빡이면 여기서 드러난다.
+- 응답은 `Promise.withResolvers`나 `release()`로 붙잡아 대기 중인 상태를 정해진 시점에 확인한다. 대기 중에 다시 눌러도 요청이 한 번인지 함께 본다.
+- 실패 뒤에는 남아야 하는 것(입력한 내용, 이미 받은 목록, 낙관적 업데이트 전의 정확한 값)과 알림, 같은 변수로 다시 시도해 성공하는지를 확인한다.
+- 상태가 겹치는 경우를 따로 둔다. 다음 페이지를 받는 중 새로고침이 끝날 때, 메뉴를 연 채로 다음 페이지가 도착하거나 실패할 때, 시트 위에 확인 대화상자가 열린 채 Esc를 누를 때가 그 예다.
+- Apollo는 같은 쿼리를 진행 중에 합쳐 보내므로, 중복 조회는 네트워크 요청 수가 아니라 페이지 도착 콜백이나 mutation 결과 처리 횟수로 확인한다.
+
+오버레이(메뉴·시트·대화상자·알림)는 열고 닫히는지보다 주변을 본다.
+
+- 상태별 ARIA: 닫힘·열림의 `aria-expanded`, 열렸을 때만 존재하는 요소를 가리키는 `aria-controls`, `aria-pressed`, 대화상자의 이름과 설명, 알림의 `aria-live`·`role="alert"`.
+- 키보드: 키보드로 열 때 첫 포커스, 화살표 이동(구분선·권한 없는 항목 제외), Esc. 키보드 테스트 이름에는 '키보드'를 넣어 Desktop Safari 프로젝트에서도 돌게 한다.
+- 포커스: 닫은 뒤 연 요소로 돌아오는지. 오버레이 위에 다른 오버레이가 있으면 한 겹씩 닫히고 포커스와 history 항목도 한 겹씩 돌아오는지.
+- 닫는 경로를 모두 나눈다: 바깥 누르기, 닫기 버튼, Esc, 뒤로 가기, 항목 선택. 닫혔다는 결과만 보면 서로 구분되지 않으므로 각 경로 뒤에 이어지는 상태(확인 대화상자 유무, 요청 유무)까지 단언한다.
+- 확인 중이거나 닫히는 중의 입력: 닫히는 전환은 스타일을 주입해 늘리고 `data-ending-style`을 확인한 뒤 포인터를 움직여 누른다. 열린 채 목록이 바뀌거나 사라질 때 스크롤 잠금(`body` overflow)이 풀리는지도 본다.
+- 열린 방향은 좌표와 함께 Base UI의 `data-side`로 확인한다.
+
+판단 기준
+
+- 제품이 정하지 않은 라이브러리 기본값(화살표 순환, 첫 Tab 정지점 등)은 고정하지 않는다. 테스트하다 발견한 접근성 문제는 요구사항을 새로 만드는 일이므로 실패 테스트로 박지 말고 따로 보고한다.
+- 테스트가 실제로 잡는지 확인한다. 대상 코드를 잠시 망가뜨려(잠금 제거, 닫히는 메뉴에 포인터 허용 등) 새 테스트가 실패하는 것을 본 뒤 되돌린다. 새 브라우저 테스트는 `--repeat-each=3`으로 흔들림을 본다.
+- 버그를 찾으면 jsdom 재현에서 멈추지 말고 실제 브라우저(Chromium·WebKit)에서도 재현한 뒤 고친다. jsdom은 CSS 전환·레이아웃·`focus({ preventScroll })`을 흉내 내지 못한다.
+- Vitest 가짜 타이머에서는 `userEvent`가 내부 `setTimeout(0)`을 기다리다 멈춘다. 이때만 `fireEvent`로 키를 보낸다.
 
 ## DB·서버 격리
 
