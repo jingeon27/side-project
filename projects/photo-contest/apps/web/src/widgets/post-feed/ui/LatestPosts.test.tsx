@@ -119,6 +119,8 @@ it('스크롤로 다음 페이지가 도착했을 때 목록 종류와 offset만
     contest: null,
     kind: PostKind.Link,
     mediaUrl: null,
+    mediaWidth: null,
+    mediaHeight: null,
     linkUrl: 'https://example.com',
     createdAt: '2026-11-01T00:00:00.000Z',
     likeCount: 0,

@@ -21,7 +21,8 @@ import { Button } from '@/shared/ui/@core/button';
 import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
-import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
+import { uploadMediaSize } from '../lib/upload-media-size.helper';
+import { isTooLongVideo, readVideoMetadata } from '../lib/video-metadata.helper';
 import { postSchema } from '../model/post.schema';
 import { PostMediaField } from './fields/media/PostMediaField';
 import { PostCategoryField } from './fields/PostCategoryField';
@@ -65,16 +66,24 @@ export function CreatePostForm({
   const uploadMedia = async (file: File, signal: AbortSignal) => {
     const completedMedia = form.getValues('completedMedia');
     if (completedMedia?.file === file) return completedMedia.uploadId;
-    if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
+    const video = file.type.startsWith('video/') ? await readVideoMetadata(file) : null;
+    if (isTooLongVideo(video?.seconds ?? null)) {
       form.setError('media', { message: '5분 이하의 동영상을 선택해 주세요.' }, { shouldFocus: true });
       return;
     }
-    const content = file.type.startsWith('video/')
-      ? { body: file, contentType: file.type }
+    const content = video
+      ? { body: file, contentType: file.type, size: video.size }
       : await prepareUploadImage(file, browserImageCodec);
     throwIfClosed(signal);
+    const size = uploadMediaSize(content.size);
     const { data } = await requestUpload({
-      variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
+      variables: {
+        groupId,
+        contentType: content.contentType,
+        byteSize: content.body.size,
+        width: size?.width,
+        height: size?.height,
+      },
     });
     if (!data) return;
     await uploadToStorage(data.requestPostUpload, content.body, { signal });

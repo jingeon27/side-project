@@ -15,6 +15,8 @@ const posts: GalleryPostCardFragment[] = Array.from({ length: pageSize * 2 }, (_
   contest: null,
   kind: 'PHOTO',
   mediaUrl: '/brand/afternoon-cat.svg',
+  mediaWidth: null,
+  mediaHeight: null,
   linkUrl: null,
   createdAt: '2026-11-10T03:00:00.000Z',
   likeCount: 0,

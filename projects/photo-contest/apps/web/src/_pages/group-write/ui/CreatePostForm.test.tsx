@@ -180,11 +180,15 @@ async function fillUploadForm({
 }: { completeUpload?: Observable<ApolloLink.Result> } = {}) {
   const user = userEvent.setup({ applyAccept: false });
   const operationNames: string[] = [];
+  const uploadRequests: Record<string, unknown>[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink((operation) => {
       operationNames.push(operation.operationName ?? '');
-      if (operation.operationName === 'RequestPostUpload') return of({ data: { requestPostUpload: TICKET } });
+      if (operation.operationName === 'RequestPostUpload') {
+        uploadRequests.push(operation.variables);
+        return of({ data: { requestPostUpload: TICKET } });
+      }
       if (operation.operationName === 'CompletePostUpload') return completeUpload;
       return EMPTY;
     }),
@@ -199,7 +203,7 @@ async function fillUploadForm({
   await user.upload(screen.getByLabelText('사진 또는 동영상 선택'), photo());
   await user.type(screen.getByLabelText('제목', { exact: false }), '웃긴 순간');
   await user.click(screen.getByRole('checkbox', { name: /공유할 권리/ }));
-  return { user, client, operationNames, ...view };
+  return { user, client, operationNames, uploadRequests, ...view };
 }
 
 describe('게시물 업로드 티켓', () => {
@@ -216,6 +220,35 @@ describe('게시물 업로드 티켓', () => {
     const cached = JSON.stringify(client.extract());
     expect(cached).not.toContain('PostUploadTicket');
     expect(cached).not.toContain(TICKET.url);
+  });
+
+  it('브라우저가 잰 사진 크기를 화면 틀 비율용으로 함께 보내야 한다', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({ width: 1200, height: 900, close: () => {} })),
+    );
+    // jsdom에는 canvas가 없어 다시 그리지 못하고, 디코드한 크기를 지닌 원본으로 보낸다.
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(null, { status: 403 })),
+    );
+    const { user, uploadRequests } = await fillUploadForm();
+    await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
+    await waitFor(() => expect(uploadRequests).toHaveLength(1));
+    expect(uploadRequests[0]).toMatchObject({ groupId: 'gallery', width: 1200, height: 900 });
+  });
+
+  it('잴 수 없었던 사진은 크기 없이 올려야 한다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(null, { status: 403 })),
+    );
+    const { user, uploadRequests } = await fillUploadForm();
+    await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
+    await waitFor(() => expect(uploadRequests).toHaveLength(1));
+    expect(uploadRequests[0]).not.toHaveProperty('width');
+    expect(uploadRequests[0]).not.toHaveProperty('height');
   });
 });
 

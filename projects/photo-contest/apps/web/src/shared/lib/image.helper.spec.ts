@@ -59,6 +59,7 @@ describe('prepareUploadImage', () => {
     const prepared = await prepareUploadImage(file('big.png', 'image/png'), value);
 
     expect(prepared.contentType).toBe('image/jpeg');
+    expect(prepared.size).toEqual({ width: 2048, height: 1536 });
     expect(encodeJpeg).toHaveBeenCalledWith(expect.anything(), { width: 2048, height: 1536 }, 0.9);
     expect(close).toHaveBeenCalled();
   });
@@ -68,7 +69,7 @@ describe('prepareUploadImage', () => {
 
     const prepared = await prepareUploadImage(original, codec({ decodes: false }).value);
 
-    expect(prepared).toEqual({ body: original, contentType: 'image/webp' });
+    expect(prepared).toEqual({ body: original, contentType: 'image/webp', size: null });
   });
 
   it('디코드하지 못한 HEIC는 JPEG/PNG/WebP로 바꾸라고 알려야 한다', async () => {
@@ -86,11 +87,15 @@ describe('prepareUploadImage', () => {
     ).rejects.toThrow(IMAGE_MESSAGE.TooLarge);
   });
 
-  it('인코드에 실패하면 원본으로 대신해야 한다', async () => {
+  it('인코드에 실패하면 디코드한 크기를 지닌 원본으로 대신해야 한다', async () => {
     const original = file('photo.jpg', 'image/jpeg');
     const { value, close } = codec({ encoded: null });
 
-    expect(await prepareUploadImage(original, value)).toEqual({ body: original, contentType: 'image/jpeg' });
+    expect(await prepareUploadImage(original, value)).toEqual({
+      body: original,
+      contentType: 'image/jpeg',
+      size: { width: 4000, height: 3000 },
+    });
     expect(close).toHaveBeenCalled();
   });
 });
