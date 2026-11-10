@@ -23,6 +23,11 @@
         "level": 2
       },
       {
+        "id": "같은-응답을-msw로-만들기",
+        "title": "같은 응답을 MSW로 만들기",
+        "level": 2
+      },
+      {
         "id": "스크롤한-위치에서-드롭다운-열기",
         "title": "스크롤한 위치에서 드롭다운 열기",
         "level": 2
@@ -33,7 +38,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 5,
+    "readingMinutes": 7,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -63,6 +68,11 @@
         "level": 2
       },
       {
+        "id": "serve-the-same-responses-with-msw",
+        "title": "Serve the same responses with MSW",
+        "level": 2
+      },
+      {
         "id": "open-the-dropdown-from-a-scrolled-position",
         "title": "Open the dropdown from a scrolled position",
         "level": 2
@@ -73,7 +83,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 5,
+    "readingMinutes": 6,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"

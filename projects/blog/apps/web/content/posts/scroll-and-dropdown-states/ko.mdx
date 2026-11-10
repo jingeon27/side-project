@@ -54,6 +54,70 @@ await expect(cards).toHaveCount(26);
 
 추가 조회가 실패하면 이미 보던 카드 24개도 오류 화면으로 바뀌어요. 피식의 목록은 Apollo의 `QueryRef`로 읽는데, `useQueryRefHandlers`의 `fetchMore`가 실패하면 같은 `QueryRef`도 실패 상태가 되어 목록을 감싼 오류 경계로 넘어가기 때문이에요. 이 테스트는 지금의 동작을 고정한 것이에요. 보던 목록을 남기려면 추가 조회의 실패를 `QueryRef`와 분리하고, 목록 아래에 다시 시도 버튼을 따로 둬야 해요.
 
+## 같은 응답을 MSW로 만들기
+
+앞에서 `page.route`로 제어한 GraphQL 응답은 MSW 3의 핸들러로도 구성할 수 있어요. `GalleryPosts`에서 `offset: 0`은 첫 카드 24개와 `nextOffset: 24`를, `offset: 24`는 나머지 24개와 `nextOffset: null`을 반환해요. 응답을 보류하거나 실패시킬 때는 해당 offset에 Promise를 넣어요. [MSW GraphQL 핸들러](https://mswjs.io/api/graphql/)
+
+```typescript
+import { graphql } from 'msw/graphql';
+import { HttpResponse } from 'msw/http';
+
+import { GalleryPostsDocument, type GalleryPostsQuery } from '@/shared/api/generated';
+
+type TResponse = 'success' | 'error';
+
+function galleryHandler(
+  endpoint: string,
+  posts: GalleryPostsQuery['galleryPostsPage']['items'],
+  responses: Partial<Record<number, Promise<TResponse>>> = {},
+) {
+  const pageSize = 24;
+
+  return graphql.link(endpoint).query(GalleryPostsDocument, async ({ variables: { offset } }) => {
+    if (offset !== 0 && offset !== pageSize) {
+      return HttpResponse.json({ errors: [{ message: `Unexpected offset ${offset}` }] });
+    }
+
+    if ((await responses[offset]) === 'error') {
+      return HttpResponse.json({ errors: [{ message: 'Gallery request failed' }] });
+    }
+
+    return HttpResponse.json({
+      data: {
+        galleryPostsPage: {
+          __typename: 'GalleryPostPage',
+          items: posts.slice(offset, offset + pageSize),
+          nextOffset: offset === 0 ? pageSize : null,
+        },
+      },
+    });
+  });
+}
+```
+
+`posts`에 서로 다른 카드 48개를 준비해요. 브라우저 테스트 페이지에서 워커를 시작한 뒤, 목록을 띄우기 전에 추가 응답을 보류하는 핸들러를 등록해요. [MSW 브라우저 설정](https://mswjs.io/api/setup-worker/)
+
+```typescript
+import { setupWorker } from 'msw/browser';
+
+const endpoint = new URL('/__test__/gallery', window.location.origin).href;
+const worker = setupWorker(galleryHandler(endpoint, posts));
+await worker.start();
+
+const nextPage = Promise.withResolvers<'success'>();
+worker.use(galleryHandler(endpoint, posts, { 24: nextPage.promise }));
+```
+
+스크롤해서 카드 24개와 스피너가 함께 보이면 `nextPage.resolve('success')`를 호출해요. 이어 카드가 48개로 늘어나는지 확인해요. 첫 로딩을 검사할 때는 새 Promise를 `offset: 0`에 연결하고, 스켈레톤이 보인 뒤 응답을 풀어요.
+
+오류를 검사하는 테스트에서는 `offset: 24`의 응답을 `'error'`로 정해요.
+
+```typescript
+worker.use(galleryHandler(endpoint, posts, { 24: Promise.resolve('error') }));
+```
+
+`24`를 `0`으로 바꾸면 첫 조회가 실패해요. 두 경우 모두 오류 화면을 확인한 뒤 `worker.resetHandlers()`를 호출하면 처음 등록한 성공 핸들러가 복원돼요. 그 상태에서 다시 시도 버튼을 눌러 첫 페이지가 돌아오는지 확인할 수 있어요.
+
 ## 스크롤한 위치에서 드롭다운 열기
 
 게시물 목록에서 처음 보이지 않는 여덟 번째 카드까지 내려가요. 아이콘을 화면 안에 둔 뒤 아래쪽 공간을 두 가지로 나눴어요. 300px을 남기면 메뉴가 누른 아이콘 아래에 붙어요. 20px만 남기면 메뉴가 아이콘 위로 올라와서 수정과 삭제를 모두 볼 수 있어요. 열기 전후의 `scrollY`도 비교해서 메뉴를 열자마자 목록이 움직이지 않는지 확인했어요. [Base UI 메뉴 위치 설정](https://base-ui.com/react/components/menu)
