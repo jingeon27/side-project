@@ -24,10 +24,10 @@
   },
   "posts": {
     "scroll-and-dropdown-states": {
-      "title": "무한 스크롤과 드롭다운을 상태별로 테스트하기",
+      "title": "컴포넌트는 어떤 식으로 테스트할까? 보편적인 UI에 담긴 고민들",
       "slug": "무한-스크롤과-드롭다운-상태별로-테스트하기",
-      "description": "첫 조회와 추가 조회의 로딩과 오류, 마지막 페이지 뒤 스크롤, 드롭다운의 위치와 클릭 동작을 Playwright로 확인해요.",
-      "keywords": ["무한 스크롤", "드롭다운", "Playwright", "브라우저 테스트", "로딩 상태"]
+      "description": "무한 스크롤과 드롭다운 같은 흔한 UI에도 응답을 기다릴 때, 요청이 실패한 뒤, 메뉴가 닫히는 동안처럼 확인할 상태가 많아요. 라이브러리 테스트를 답지 삼아 피식에 적용했어요.",
+      "keywords": ["컴포넌트 테스트", "무한 스크롤", "드롭다운", "Playwright", "브라우저 테스트", "로딩 상태"]
     },
     "yarn-workspaces-turborepo": {
       "title": "Yarn Workspaces와 Turborepo, 패키지 연결부터 빌드 캐시까지",
