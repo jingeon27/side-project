@@ -16,7 +16,11 @@ import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../../config/limits';
 
 const REQUEST =
   'mutation($group:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size){id url expiresAt fields{name value}}}';
+const SIZED_REQUEST =
+  'mutation($group:ID!,$type:String!,$size:Int!,$width:Int,$height:Int){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size,width:$width,height:$height){id url expiresAt fields{name value}}}';
 const COMPLETE = 'mutation($id:ID!){completePostUpload(uploadId:$id){id kind contentType byteSize}}';
+const SIZED_CREATE =
+  'mutation($group:ID!,$upload:ID!){createPost(groupId:$group,uploadId:$upload,title:"비율 검증",rightsConfirmed:true){mediaWidth mediaHeight}}';
 const CREATE =
   'mutation($group:ID!,$upload:ID!){createPost(groupId:$group,uploadId:$upload,title:"직접 전송 검증",rightsConfirmed:true){id mediaUrl}}';
 interface ITicket {
@@ -86,6 +90,8 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       contentType: 'image/png',
       byteSize: image.length,
       storageKey: null,
+      width: null,
+      height: null,
     });
     expect(row.stagingKey?.startsWith(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
     const { S3_BUCKET } = inject('s3Env');
@@ -118,6 +124,38 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     expect((await api.gqlFail(member.cookie, REQUEST, { group: groupId, ...input })).code).toBe(
       'BAD_USER_INPUT',
     );
+  });
+
+  it('함께 보낸 가로·세로는 게시물 틀 비율로 돌려주고 한쪽만 보내거나 범위를 벗어나면 거부해야 한다', async () => {
+    const image = await createTestImage({ width: 320, height: 180 });
+    const variables = { group: groupId, type: 'image/png', size: image.length };
+    for (const size of [
+      { width: 320, height: null },
+      { width: null, height: 180 },
+      { width: 0, height: 180 },
+      { width: 320, height: 20_001 },
+    ])
+      expect((await api.gqlFail(member.cookie, SIZED_REQUEST, { ...variables, ...size })).code).toBe(
+        'BAD_USER_INPUT',
+      );
+    const { requestPostUpload: grant } = await api.gqlOk<{ requestPostUpload: ITicket }>(
+      member.cookie,
+      SIZED_REQUEST,
+      { ...variables, width: 320, height: 180 },
+    );
+    tickets.add(grant.id);
+    expect(await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).toMatchObject({
+      width: 320,
+      height: 180,
+    });
+    expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
+    await complete(grant);
+    const { createPost } = await api.gqlOk<{ createPost: { mediaWidth: number; mediaHeight: number } }>(
+      member.cookie,
+      SIZED_CREATE,
+      { group: groupId, upload: grant.id },
+    );
+    expect(createPost).toEqual({ mediaWidth: 320, mediaHeight: 180 });
   });
 
   it('파일 전송 전에는 완료·게시하지 못하고 완료는 티켓 소유자만 실행하며 같은 키를 확정해야 한다', async () => {

@@ -227,6 +227,9 @@ model PostUpload {
   kind String @default("PHOTO")
   contentType String @default("image/webp")
   byteSize Int @default(0)
+  // 브라우저가 올리기 전에 잰 가로·세로. 게시물 화면의 틀 비율에만 쓰며, 모르면 둘 다 null이다.
+  width Int?
+  height Int?
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   post Post?

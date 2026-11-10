@@ -11,7 +11,7 @@ export const likeToggleVariants = cva('gap-1.5', {
     density: {
       card: 'rounded-full px-2 aria-pressed:bg-danger-soft aria-pressed:text-danger',
       chip: 'rounded-full px-2.5 text-ink aria-pressed:text-danger',
-      inline: 'px-2 text-micro text-muted aria-pressed:text-danger',
+      inline: 'px-2 text-caption text-muted aria-pressed:text-danger',
     },
   },
   defaultVariants: { density: 'card' },

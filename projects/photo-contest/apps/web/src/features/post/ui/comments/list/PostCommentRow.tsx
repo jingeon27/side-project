@@ -48,10 +48,11 @@ export function PostCommentRow({ id, replyToName }: { id: string; replyToName?: 
           {isMine ? <span className="text-micro font-normal text-muted">나</span> : null}
           {isPostAuthor ? <span className="text-micro font-normal text-muted">작성자</span> : null}
         </p>
+        {/* 말풍선이 보여야 안쪽 여백이 들여쓰기로 보이지 않고 이름과 같은 시작선에 놓인다. */}
         <p
           className={cn(
-            'w-fit max-w-full rounded-card px-3 py-2.5 text-body leading-relaxed whitespace-pre-wrap wrap-break-word',
-            isMine ? 'bg-sunken text-ink' : 'bg-surface text-ink',
+            'w-fit max-w-full rounded-card px-3 py-2.5 text-body leading-relaxed whitespace-pre-wrap wrap-break-word text-ink',
+            isMine ? 'bg-accent-soft' : 'bg-neutral-soft',
           )}
         >
           {replyToName ? (
@@ -63,14 +64,14 @@ export function PostCommentRow({ id, replyToName }: { id: string; replyToName?: 
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <PostCommentLikeButton id={id} />
-          <time className="text-micro text-muted" dateTime={comment.createdAt}>
+          <time className="text-caption text-muted" dateTime={comment.createdAt}>
             {formatDateTime(comment.createdAt)}
           </time>
           {comment.canDelete ? (
             <Button
               variant="ghost"
               size="sm"
-              className="px-2 text-micro text-muted"
+              className="px-2 text-caption text-muted"
               aria-label={`${comment.author.nickname} 댓글 삭제`}
               onClick={() =>
                 overlay.open(({ isOpen, close: onClose, unmount }) => (

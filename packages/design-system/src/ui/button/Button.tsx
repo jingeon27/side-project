@@ -32,8 +32,11 @@ export const buttonVariants = cva(
         lg: 'h-cta px-5',
         /** 44px. 보조 행동 */
         md: 'h-touch px-4',
-        /** 36px 칩. 보이는 크기는 작아도 누르는 영역은 44px로 넓힌다. */
-        sm: "h-9 px-3 text-label before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
+        /**
+         * 36px 칩. 보이는 크기는 작아도 누르는 영역은 44px로 넓힌다. 가상 요소는 테두리 안쪽을 기준으로 놓이므로
+         * 위아래를 늘리는 대신 가운데에 44px 높이로 둔다.
+         */
+        sm: "h-9 px-3 text-label before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-['']",
       },
       fullWidth: { true: 'w-full', false: '' },
     },

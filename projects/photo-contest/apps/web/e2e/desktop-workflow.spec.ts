@@ -94,6 +94,10 @@ test(
     await composer.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(composer).toHaveCount(0);
     await expect(latest.getByRole('heading', { name: '스크롤하다 남긴 순간', exact: true })).toBeInViewport();
+    // 브라우저가 잰 360×240이 API를 거쳐 카드 틀의 비율이 된다.
+    await expect(
+      latest.getByRole('img', { name: '스크롤하다 남긴 순간', exact: true }).locator('..'),
+    ).toHaveCSS('aspect-ratio', '1.5 / 1');
 
     await latest.getByRole('button', { name: '함께 웃는 오후 댓글 1개', exact: true }).click();
     const comments = page.getByRole('dialog', { name: '댓글', exact: true });

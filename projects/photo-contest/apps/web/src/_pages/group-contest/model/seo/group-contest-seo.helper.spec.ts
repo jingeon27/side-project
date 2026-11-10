@@ -55,6 +55,8 @@ const data: IGroupContestSeoData = {
       kind: PostKind.Photo,
       linkUrl: null,
       mediaUrl: '/backend/media/photo',
+      mediaWidth: null,
+      mediaHeight: null,
       createdAt: '2026-10-20T00:00:00Z',
       likeCount: 2,
       commentCount: 0,

@@ -68,6 +68,8 @@ async function renderHome(hasGroup: boolean, hasPost: boolean) {
                 body: '친구들과 나눈 이야기',
                 kind: PostKind.Photo,
                 mediaUrl: null,
+                mediaWidth: null,
+                mediaHeight: null,
                 linkUrl: null,
                 createdAt: '2026-10-31T00:00:00Z',
                 likeCount: 0,

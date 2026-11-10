@@ -19,6 +19,8 @@ fragment GalleryPostCard on GalleryPost {
   body
   kind
   mediaUrl
+  mediaWidth
+  mediaHeight
   linkUrl
   createdAt
   likeCount
@@ -63,8 +65,14 @@ query GalleryPosts(
     }
   }
 }
-mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
-  requestPostUpload(groupId: $groupId, contentType: $contentType, byteSize: $byteSize) {
+mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!, $width: Int, $height: Int) {
+  requestPostUpload(
+    groupId: $groupId
+    contentType: $contentType
+    byteSize: $byteSize
+    width: $width
+    height: $height
+  ) {
     id
     url
     fields {

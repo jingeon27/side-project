@@ -88,11 +88,11 @@ export function DesktopNavigation() {
           알림
         </NavigationLink>
         {!isFormPage && (
-          <div className="mt-auto px-3 text-caption text-subtle">
-            <p className="text-label text-muted">혼자 보기 아까운 순간.</p>
+          <div className="mt-auto px-3 text-caption text-muted">
+            <p className="text-label">혼자 보기 아까운 순간.</p>
             <p className="mt-2">우리끼리 모으면 더 피식.</p>
             <LegalLinks className="mt-3 gap-x-2" />
-            <p className="mt-6 text-micro">© 피식</p>
+            <p className="mt-6">© 피식</p>
           </div>
         )}
       </nav>

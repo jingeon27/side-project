@@ -8,6 +8,12 @@ import { match } from 'ts-pattern';
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 
+/** 틀은 사진 비율을 따르되 세로는 4:5, 가로는 1.91:1까지만 늘린다. 크기를 모르는 예전 게시물은 null이다. */
+function frameRatio(width: number | null | undefined, height: number | null | undefined) {
+  if (!width || !height) return null;
+  return Math.min(1.91, Math.max(4 / 5, width / height));
+}
+
 export function PostMedia({
   postId,
   detail = false,
@@ -25,11 +31,15 @@ export function PostMedia({
   if (!complete) return null;
   const mediaUrl = post.mediaUrl;
   if (!mediaUrl) return null;
+  const ratio = frameRatio(post.mediaWidth, post.mediaHeight);
   const frameClassName = cn(
     'w-full overflow-hidden rounded-card bg-sunken object-contain',
-    detail ? 'min-h-56 flex-1' : 'aspect-square desktop:aspect-4/3 desktop:max-h-[60dvh]',
+    // 댓글 창의 원본은 열 높이를 채우지 않고 사진 크기만큼만 두어 본문이 사진 바로 아래에 온다.
+    detail ? 'max-h-[60dvh] shrink-0' : 'desktop:max-h-[60dvh]',
+    !ratio && (detail ? 'aspect-4/3' : 'aspect-square desktop:aspect-4/3'),
     className,
   );
+  const frameStyle = ratio ? { aspectRatio: ratio } : undefined;
   return match(post.kind)
     .with(PostKind.Video, () => (
       // eslint-disable-next-line jsx-a11y/media-has-caption -- 사용자가 올린 동영상이라 함께 제공할 자막 파일이 없다.
@@ -40,10 +50,11 @@ export function PostMedia({
         preload={detail ? 'none' : 'metadata'}
         aria-label={post.title}
         className={frameClassName}
+        style={frameStyle}
       />
     ))
     .with(PostKind.Photo, () => (
-      <div className={cn('relative', frameClassName)}>
+      <div className={cn('relative', frameClassName)} style={frameStyle}>
         <Image
           src={mediaUrl}
           alt={post.title}

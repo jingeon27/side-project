@@ -42,13 +42,19 @@ export function TopAppBar({ title, backHref, actions, className, showBrand = fal
           className={cn('min-w-0 flex-1 text-title text-ink', backHref ? 'px-1' : 'px-3')}
         >
           {showBrand ? (
-            <span
-              aria-hidden
-              className="flex items-center gap-2 text-title-lg font-extrabold tracking-tighter"
-            >
-              <BrandIcon className="size-7" />
-              피식
-            </span>
+            <>
+              <span
+                aria-hidden
+                className="flex items-center gap-2 text-title-lg font-extrabold tracking-tighter desktop:hidden"
+              >
+                <BrandIcon className="size-7" />
+                피식
+              </span>
+              {/* 데스크톱은 왼쪽 메뉴가 로고를 보여 주므로 앱바에는 화면 이름만 둔다. */}
+              <span aria-hidden className="hidden truncate desktop:block">
+                {title}
+              </span>
+            </>
           ) : (
             <span className="line-clamp-1">{title}</span>
           )}

@@ -16,6 +16,8 @@ export function presentPost(row: TPostRow, userId: string | null) {
     createdAt: row.createdAt,
     kind: row.upload?.kind ?? 'LINK',
     mediaUrl: row.upload ? `/backend/media/${row.id}` : null,
+    mediaWidth: row.upload?.width ?? null,
+    mediaHeight: row.upload?.height ?? null,
     linkUrl: row.linkUrl,
     likeCount: row._count.likes,
     commentCount: row._count.comments,
