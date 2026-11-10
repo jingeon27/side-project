@@ -23,6 +23,12 @@
     }
   },
   "posts": {
+    "scroll-and-dropdown-states": {
+      "title": "Testing infinite scroll and dropdown menus one state at a time",
+      "slug": "testing-infinite-scroll-and-dropdown-states",
+      "description": "Use Playwright to test initial and next-page loading, retries, scrolling past the final page, and dropdown placement and clicks.",
+      "keywords": ["infinite scroll", "dropdown menus", "Playwright", "browser testing", "loading states"]
+    },
     "yarn-workspaces-turborepo": {
       "title": "From package links to build caches with Yarn Workspaces and Turborepo",
       "slug": "yarn-workspaces-turborepo-build-graph-and-cache",

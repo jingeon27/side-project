@@ -1,6 +1,86 @@
 [
   {
     "category": "engineering",
+    "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
+    "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
+    "title": "무한 스크롤과 드롭다운을 상태별로 테스트하기",
+    "description": "첫 조회와 추가 조회의 로딩·오류, 마지막 페이지 뒤 스크롤, 드롭다운의 위치와 클릭 동작을 Playwright로 확인해요.",
+    "slug": "무한-스크롤과-드롭다운-상태별로-테스트하기",
+    "keywords": ["무한 스크롤", "드롭다운", "Playwright", "브라우저 테스트", "로딩 상태"],
+    "id": "scroll-and-dropdown-states",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "응답을-기다리는-상태를-만드는-법",
+        "title": "응답을 기다리는 상태를 만드는 법",
+        "level": 2
+      },
+      {
+        "id": "마지막-페이지까지-갔을-때와-요청이-실패했을-때",
+        "title": "마지막 페이지까지 갔을 때와 요청이 실패했을 때",
+        "level": 2
+      },
+      {
+        "id": "스크롤한-위치에서-드롭다운-열기",
+        "title": "스크롤한 위치에서 드롭다운 열기",
+        "level": 2
+      },
+      {
+        "id": "메뉴를-연-뒤-어디를-누르는지-나누기",
+        "title": "메뉴를 연 뒤 어디를 누르는지 나누기",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
+      "en": "testing-infinite-scroll-and-dropdown-states"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
+    "publishedAt": "2026-11-10",
+    "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
+    "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
+    "title": "Testing infinite scroll and dropdown menus one state at a time",
+    "description": "Use Playwright to test initial and next-page loading, retries, scrolling past the final page, and dropdown placement and clicks.",
+    "slug": "testing-infinite-scroll-and-dropdown-states",
+    "keywords": ["infinite scroll", "dropdown menus", "Playwright", "browser testing", "loading states"],
+    "id": "scroll-and-dropdown-states",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "hold-the-response-while-the-browser-shows-loading",
+        "title": "Hold the response while the browser shows loading",
+        "level": 2
+      },
+      {
+        "id": "reach-the-final-page-and-recover-from-errors",
+        "title": "Reach the final page and recover from errors",
+        "level": 2
+      },
+      {
+        "id": "open-the-dropdown-from-a-scrolled-position",
+        "title": "Open the dropdown from a scrolled position",
+        "level": 2
+      },
+      {
+        "id": "click-the-background-a-menu-item-or-the-trigger",
+        "title": "Click the background, a menu item, or the trigger",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 5,
+    "translations": {
+      "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
+      "en": "testing-infinite-scroll-and-dropdown-states"
+    }
+  },
+  {
+    "category": "engineering",
     "tags": ["monorepo", "yarn", "turborepo", "build-cache"],
     "publishedAt": "2026-11-10",
     "coverImage": "/images/covers/yarn-workspaces-turborepo.avif",

@@ -1,0 +1,69 @@
+<Summary>
+
+I tested initial loading, loading the next page, the end of the list, and both kinds of failure separately. For dropdowns, I checked where the menu opens after scrolling and what happens when you click the background, a menu item, or the trigger.
+
+</Summary>
+
+![A spinner beneath the existing cards while the next page loads, alongside a dropdown that opens above its trigger near the bottom of the viewport.](/images/covers/scroll-and-dropdown-states.avif)
+
+A test that scrolls to the end and sees new cards can pass even if the existing list disappears while the request is pending. A dropdown test that only checks whether the menu opens can miss an item clipped by the bottom of the screen.
+
+Photo Contest already had a gallery test that started with 24 posts and scrolled to the next page. I added cases for delayed and failed responses and for opening a post's menu farther down the list. [Existing gallery E2E test](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/gallery-pagination.spec.ts)
+
+## Hold the response while the browser shows loading
+
+The browser test page renders the app's latest-posts feed, post cards, and dropdowns. The first query starts in the browser, and Playwright's `page.route` controls when the GraphQL response arrives. The app's `IntersectionObserver` detects the end of the list, and its Apollo cache appends the next page. The fixture records `offset: 0` for the first request and `offset: 24` for the next one. A separate E2E test checks that the server includes preloaded content in the HTML. [Playwright request interception](https://playwright.dev/docs/mock) · [Server HTML E2E](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32)
+
+Holding the first response exposes the skeleton before any cards appear. Holding the next response exposes a spinner below the 24 existing cards. This shortened test shows the second case. `openGallery` installs the route before navigation and holds the second response until the test resolves the promise.
+
+```typescript
+const response = Promise.withResolvers<'success'>();
+const { feed, cards, offsets } = await openGallery(page, {
+  responses: { 24: response.promise },
+});
+
+await expect(cards).toHaveCount(24);
+await scrollPastEnd(page);
+await expect(feed.getByRole('status')).toBeVisible();
+await expect(cards).toHaveCount(24);
+expect(offsets).toEqual([0, 24]);
+
+response.resolve('success');
+await expect(cards).toHaveCount(26);
+```
+
+Before releasing the response, the full test scrolls back up, starts watching for requests, and scrolls to the end again. It checks that `offset: 24` appears once. When the response arrives, the last card appears and the spinner disappears.
+
+## Reach the final page and recover from errors
+
+The original fixture returned 24 cards on the first page and two on the last. I temporarily changed the feed to infer the next offset from the card count. All four tests still passed. Both implementations stopped after 26 cards.
+
+The new case fills the last page with 24 cards and returns `nextOffset: null`. Once 48 cards appear, the test starts watching for requests, scrolls beyond the document's height, and sends another wheel input. No request arrives within the one-second watch window, so the sequence stays at `[0, 24]`. With the same data, the card-count implementation fails by requesting `offset: 48`. [Playwright request watching](https://playwright.dev/docs/api/class-page#page-wait-for-request)
+
+| State | What the browser shows | Request check |
+| --- | --- | --- |
+| First response pending | A skeleton before any cards, then the first 24 cards when the response arrives | One request at `offset: 0` |
+| Next response pending | The existing cards and a spinner below the list | One request at `offset: 24` even after scrolling to the end again |
+| Final response received | A full second page brings the total to 48 cards | `[0, 24]` after scrolling past the end |
+| First request fails | An error with Retry, followed by the first page after retry | `[0, 0]` |
+| Next request fails | An error in the list area, followed by a fresh first page after retry | `[0, 24, 0, 24]` after scrolling again |
+
+The two failures are separate cases. In Photo Contest, a failed next-page request shows an error in the list area. Retry starts by fetching the first page again. A check that only looks at the final count after recovery could miss the difference. The test records which offset failed and checks that scrolling can reach the next page after retry.
+
+## Open the dropdown from a scrolled position
+
+I scrolled to the eighth post, which starts below the visible part of the page. I tested two positions for its trigger. With 300 pixels of space below the trigger, the menu opens beneath it. With 20 pixels, it opens above the trigger and both Edit and Delete remain reachable. The test compares `scrollY` before and after opening so it also catches a jump in the list. [Base UI menu positioning](https://base-ui.com/react/components/menu)
+
+For the second case, the popup's bottom edge should be above the trigger's top edge, and its horizontal edges should fit within the viewport. An exact visible ratio of `1` failed when the browser returned `0.99999988`. The tests allow that small rounding difference when checking item visibility and use the coordinates to verify where the popup opens. [Playwright viewport assertions](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport)
+
+## Click the background, a menu item, or the trigger
+
+Each test starts with the menu open on a post in the scrolled list. The trigger and menu share an accessible name that includes the card title. The test looks up that named menu before selecting an item inside it, so it checks which card the action belongs to.
+
+| Click target | What the test checks |
+| --- | --- |
+| Background outside the menu | The popup closes and `aria-expanded` becomes `false`. The click opens no confirmation and sends no further request |
+| Delete item | The menu closes and a confirmation dialog opens. Deletion waits for confirmation, and cancelling leaves the post present |
+| The trigger that opened the menu | A second click closes it. A third click opens it again |
+
+Checking that the menu closed would pass for both the background and Delete. Choosing Delete must also open the confirmation dialog. Clicking the background leaves the page without that dialog. Each case has its own test for that next state.
