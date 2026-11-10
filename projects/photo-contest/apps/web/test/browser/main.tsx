@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { MotionProvider } from '@side/design-system/ui/motion-provider';
 
 import { PullToRefresh } from '../../src/shared/ui/@core/pull-to-refresh/PullToRefresh';
+import { GalleryInteractionsExample } from './GalleryInteractionsExample';
 import { PostFeedExample } from './PostFeedExample';
 import { StatusAnimationsExample } from './StatusAnimationsExample';
 
@@ -37,10 +38,11 @@ function PullToRefreshExample() {
   );
 }
 
-const examples = { feed: <PostFeedExample />, motion: <StatusAnimationsExample /> } satisfies Record<
-  string,
-  ReactNode
->;
+const examples = {
+  feed: <PostFeedExample />,
+  gallery: <GalleryInteractionsExample />,
+  motion: <StatusAnimationsExample />,
+} satisfies Record<string, ReactNode>;
 const example = new URLSearchParams(window.location.search).get('example') ?? '';
 const root = document.getElementById('root');
 if (!root) throw new Error('Component test root is missing.');

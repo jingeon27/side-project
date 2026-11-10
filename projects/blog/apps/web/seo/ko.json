@@ -23,6 +23,12 @@
     }
   },
   "posts": {
+    "scroll-and-dropdown-states": {
+      "title": "무한 스크롤과 드롭다운을 상태별로 테스트하기",
+      "slug": "무한-스크롤과-드롭다운-상태별로-테스트하기",
+      "description": "첫 조회와 추가 조회의 로딩과 오류, 마지막 페이지 뒤 스크롤, 드롭다운의 위치와 클릭 동작을 Playwright로 확인해요.",
+      "keywords": ["무한 스크롤", "드롭다운", "Playwright", "브라우저 테스트", "로딩 상태"]
+    },
     "yarn-workspaces-turborepo": {
       "title": "Yarn Workspaces와 Turborepo, 패키지 연결부터 빌드 캐시까지",
       "slug": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",

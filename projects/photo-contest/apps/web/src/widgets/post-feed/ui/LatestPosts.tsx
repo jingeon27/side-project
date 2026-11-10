@@ -94,7 +94,11 @@ export function LatestPosts({
           refetchWritePolicy: 'overwrite',
         },
   );
-  const fallback = <Skeleton className="h-48 w-full" />;
+  const fallback = (
+    <div role="status" aria-label="게시물 불러오는 중">
+      <Skeleton className="h-48 w-full" />
+    </div>
+  );
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label={title}>
       <div className="mb-1 flex min-h-touch items-center justify-between gap-3 border-b border-line pb-3">
