@@ -33,6 +33,8 @@ function galleryPost(overrides: Partial<GalleryPostCardFragment> = {}): GalleryP
     body: '',
     kind: PostKind.Photo,
     mediaUrl: '/backend/media/upload-1',
+    mediaWidth: null,
+    mediaHeight: null,
     linkUrl: null,
     createdAt: '2026-10-26T00:00:00.000Z',
     likeCount: 3,
@@ -108,7 +110,7 @@ async function renderButton(client: ApolloClient, children?: ReactNode) {
       </ApolloProvider>,
     );
   });
-  return screen.getByRole('button', { name: '점심의 순간 좋아요' });
+  return screen.getByRole('button', { name: /^점심의 순간 좋아요 / });
 }
 
 describe('PostLikeButton', () => {

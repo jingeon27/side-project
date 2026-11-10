@@ -33,6 +33,8 @@ const post: GalleryPostCardFragment = {
   body: '밥 먹다 웃은 순간',
   kind: PostKind.Photo,
   mediaUrl: '/backend/media/upload-1',
+  mediaWidth: null,
+  mediaHeight: null,
   linkUrl: null,
   createdAt: '2026-10-26T00:00:00.000Z',
   likeCount: 2,
@@ -85,7 +87,9 @@ describe('게시물 카드', () => {
     expect(within(card).getByRole('img', { name: '점심의 순간' })).toBeInTheDocument();
     expect(within(card).getByText('밥 먹다 웃은 순간')).toBeInTheDocument();
     expect(within(card).getByRole('button', { name: '점심의 순간 더보기' })).toBeInTheDocument();
-    expect(within(card).getByRole('button', { name: '점심의 순간 좋아요' })).toHaveTextContent('좋아요 2개');
+    expect(within(card).getByRole('button', { name: '점심의 순간 좋아요 2개' })).toHaveTextContent(
+      '좋아요 2개',
+    );
     expect(within(card).getByRole('button', { name: '점심의 순간 댓글 1개' })).toBeInTheDocument();
     expect(within(card).queryByRole('link', { name: '그룹 보기' })).not.toBeInTheDocument();
   });

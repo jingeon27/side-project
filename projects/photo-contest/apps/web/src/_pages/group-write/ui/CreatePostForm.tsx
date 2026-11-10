@@ -21,7 +21,8 @@ import { Button } from '@/shared/ui/@core/button';
 import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
-import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
+import { uploadMediaSize } from '../lib/upload-media-size.helper';
+import { isTooLongVideo, readVideoMetadata } from '../lib/video-metadata.helper';
 import { postSchema } from '../model/post.schema';
 import { PostMediaField } from './fields/media/PostMediaField';
 import { PostCategoryField } from './fields/PostCategoryField';
@@ -65,16 +66,24 @@ export function CreatePostForm({
   const uploadMedia = async (file: File, signal: AbortSignal) => {
     const completedMedia = form.getValues('completedMedia');
     if (completedMedia?.file === file) return completedMedia.uploadId;
-    if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
+    const video = file.type.startsWith('video/') ? await readVideoMetadata(file) : null;
+    if (isTooLongVideo(video?.seconds ?? null)) {
       form.setError('media', { message: '5분 이하의 동영상을 선택해 주세요.' }, { shouldFocus: true });
       return;
     }
-    const content = file.type.startsWith('video/')
-      ? { body: file, contentType: file.type }
+    const content = video
+      ? { body: file, contentType: file.type, size: video.size }
       : await prepareUploadImage(file, browserImageCodec);
     throwIfClosed(signal);
+    const size = uploadMediaSize(content.size);
     const { data } = await requestUpload({
-      variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
+      variables: {
+        groupId,
+        contentType: content.contentType,
+        byteSize: content.body.size,
+        width: size?.width,
+        height: size?.height,
+      },
     });
     if (!data) return;
     await uploadToStorage(data.requestPostUpload, content.body, { signal });
@@ -189,8 +198,8 @@ export function CreatePostForm({
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹의
-                공개 범위에 따라 게시됩니다.
+                공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹의 공개 범위에 따라 게시됩니다.
+                <FieldRequirement required />
               </span>
             </label>
             {errors.rightsConfirmed ? (
@@ -202,8 +211,7 @@ export function CreatePostForm({
         </div>
       </div>
       <StickyCta className="tablet:px-8" contentClassName="max-w-5xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-          <p className="hidden text-caption text-muted desktop:block">그룹의 공개 범위에 따라 게시돼요.</p>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-4">
           <Button
             type="submit"
             form={formId}

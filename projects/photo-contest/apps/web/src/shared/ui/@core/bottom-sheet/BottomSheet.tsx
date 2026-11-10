@@ -37,7 +37,7 @@ function Root({
   finalFocus,
   ownsHistory = true,
 }: IBottomSheetRootProps) {
-  useOverlayHistory(ownsHistory && isOpen, onClose);
+  const isTopOverlay = useOverlayHistory(ownsHistory && isOpen, onClose);
   return (
     <OverlayPortal>
       {(container) => (
@@ -50,7 +50,9 @@ function Root({
           container={container}
           className={cn('max-tablet:max-w-none', className)}
           onOpenChange={(open) => {
-            if (!open) onClose();
+            // overlay-kit은 확인 대화상자를 시트 옆에 그려, 포커스가 대화상자 밖이면 Esc가 시트까지 닫는다.
+            // 위에 다른 오버레이가 열려 있으면 그쪽만 닫히게 둔다.
+            if (!open && isTopOverlay()) onClose();
           }}
           onOpenChangeComplete={(open) => {
             if (!open) unmount?.();

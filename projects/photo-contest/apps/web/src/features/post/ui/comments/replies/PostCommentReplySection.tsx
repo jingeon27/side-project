@@ -27,7 +27,7 @@ export function PostCommentReplySection({ parentId }: { parentId: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 px-2 text-micro text-muted"
+            className="gap-1.5 px-2 text-caption text-muted"
             aria-expanded={composing}
             onClick={() => setComposing(!composing)}
           >
@@ -38,7 +38,7 @@ export function PostCommentReplySection({ parentId }: { parentId: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 px-2 text-micro text-ink"
+            className="gap-1.5 px-2 text-caption text-ink"
             aria-expanded={expanded}
             onClick={() => setExpanded(!expanded)}
           >

@@ -23,17 +23,18 @@
     }
   },
   "posts": {
-    "recent-reflections": {
-      "title": "Things I have been thinking about lately",
-      "slug": "things-i-have-been-thinking-about-lately",
-      "description": "Looking back at my past work: what I knew, what I did not, what I am studying now, and why I enjoy development these days.",
-      "keywords": ["reflection", "learning", "side project", "AI-assisted development", "frontend"]
-    },
     "scroll-and-dropdown-states": {
-      "title": "Testing infinite scroll and dropdown menus one state at a time",
+      "title": "How should you test a component? The questions behind everyday UI",
       "slug": "testing-infinite-scroll-and-dropdown-states",
-      "description": "Use Playwright to test initial and next-page loading, retries, scrolling past the final page, and dropdown placement and clicks.",
-      "keywords": ["infinite scroll", "dropdown menus", "Playwright", "browser testing", "loading states"]
+      "description": "Even everyday UI like infinite scroll and dropdowns has many states to check: waiting for a response, after a failure, and while a menu closes. I used library tests as an answer key and applied them to Photo Contest.",
+      "keywords": [
+        "component testing",
+        "infinite scroll",
+        "dropdown menus",
+        "Playwright",
+        "browser testing",
+        "loading states"
+      ]
     },
     "yarn-workspaces-turborepo": {
       "title": "From package links to build caches with Yarn Workspaces and Turborepo",

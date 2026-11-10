@@ -41,6 +41,8 @@ export interface IImageCodec<TImage extends IDecodedImage = IDecodedImage> {
 export interface IPreparedImage {
   body: Blob;
   contentType: string;
+  /** 올리는 사진의 가로·세로. 게시물 화면 틀의 비율에 쓰며, 디코드하지 못한 원본이면 null이다. */
+  size: { width: number; height: number } | null;
 }
 
 export function isHeicFile(file: Pick<File, 'type' | 'name'>) {
@@ -60,11 +62,11 @@ export function fitWithin(width: number, height: number, maxSide: number) {
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
-function keepOriginal(file: File): IPreparedImage {
+function keepOriginal(file: File, size: IPreparedImage['size'] = null): IPreparedImage {
   if (isHeicFile(file)) throw new ImagePrepareError(IMAGE_MESSAGE.HeicUnsupported);
   if (!SERVER_IMAGE_TYPES.has(file.type)) throw new ImagePrepareError(IMAGE_MESSAGE.Unsupported);
   if (file.size > UPLOAD_MAX_BYTES) throw new ImagePrepareError(IMAGE_MESSAGE.TooLarge);
-  return { body: file, contentType: file.type };
+  return { body: file, contentType: file.type, size };
 }
 
 /**
@@ -82,12 +84,11 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
     return keepOriginal(file);
   }
   try {
-    const blob = await codec.encodeJpeg(
-      image,
-      fitWithin(image.width, image.height, UPLOAD_MAX_SIDE),
-      UPLOAD_JPEG_QUALITY,
-    );
-    return blob ? { body: blob, contentType: 'image/jpeg' } : keepOriginal(file);
+    const size = fitWithin(image.width, image.height, UPLOAD_MAX_SIDE);
+    const blob = await codec.encodeJpeg(image, size, UPLOAD_JPEG_QUALITY);
+    return blob
+      ? { body: blob, contentType: 'image/jpeg', size }
+      : keepOriginal(file, { width: image.width, height: image.height });
   } finally {
     image.close();
   }

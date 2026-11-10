@@ -27,6 +27,9 @@ type GalleryPost {
   createdAt: DateTime!
   kind: PostKind!
   mediaUrl: String
+  "올릴 때 브라우저가 잰 가로·세로. 화면 틀의 비율에만 쓰며, 모르면 둘 다 null"
+  mediaWidth: Int
+  mediaHeight: Int
   linkUrl: String
   likeCount: Int!
   commentCount: Int!
@@ -99,7 +102,14 @@ extend type Query {
 extend type Mutation {
   setPostCategory(postId: ID!, categoryId: ID): GalleryPost!
   setPostHidden(postId: ID!, hidden: Boolean!): Boolean!
-  requestPostUpload(groupId: ID!, contentType: String!, byteSize: Int!): PostUploadTicket!
+  "width·height는 함께 보내거나 함께 비운다. 1~20000 정수"
+  requestPostUpload(
+    groupId: ID!
+    contentType: String!
+    byteSize: Int!
+    width: Int
+    height: Int
+  ): PostUploadTicket!
   completePostUpload(uploadId: ID!): PostUploadResult!
   createPost(
     clientRequestId: String

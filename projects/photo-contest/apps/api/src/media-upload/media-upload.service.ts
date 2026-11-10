@@ -16,13 +16,16 @@ import { phase, PHASE } from '../contest/contest.policy';
 import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership/membership.service';
-import { postUploadPolicy } from '../post/media/post-upload.policy';
+import { postMediaSize, postUploadPolicy } from '../post/media/post-upload.policy';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { uploadedObjectMetadata } from '../storage/uploaded-object';
 import { assertStorageQuota } from './storage-quota';
 
-type TUploadPurpose = { kind: 'POST' } | { kind: 'SUBMISSION'; contestId: string } | { kind: 'GROUP_AVATAR' };
+type TUploadPurpose =
+  | { kind: 'POST'; width?: number | null; height?: number | null }
+  | { kind: 'SUBMISSION'; contestId: string }
+  | { kind: 'GROUP_AVATAR' };
 type TCompletionPurpose = { submissionId: string } | { avatarId: string };
 interface IUploadTicket {
   id: string;
@@ -74,6 +77,7 @@ export class MediaUploadService {
     const policy = postUploadPolicy(contentType, byteSize);
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
+    const size = purpose.kind === 'POST' ? postMediaSize(purpose.width, purpose.height) : null;
     const key = createMediaKey(policy.extension);
     const expiresAt = dayjs()
       .add(contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000, 'millisecond')
@@ -119,6 +123,8 @@ export class MediaUploadService {
           kind: policy.kind,
           contentType,
           byteSize,
+          width: size?.width,
+          height: size?.height,
           expiresAt,
           // 완료하면 expiresAt은 게시 유효기간으로 바뀐다. 저장소가 이 키에 쓰기를 받는 마지막 시각은 따로 둔다.
           policyExpiresAt: expiresAt,

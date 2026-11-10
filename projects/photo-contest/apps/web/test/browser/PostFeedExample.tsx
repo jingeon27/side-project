@@ -25,6 +25,8 @@ const POST = {
   contest: null,
   kind: PostKind.Photo,
   mediaUrl: '/brand/afternoon-cat.svg',
+  mediaWidth: null,
+  mediaHeight: null,
   linkUrl: null,
   createdAt: '2026-10-30T03:00:00.000Z',
   likeCount: 2,
