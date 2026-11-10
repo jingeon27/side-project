@@ -53,7 +53,8 @@ test('browse home, search articles, open detail, and visit About', async ({ page
 test('opening an article from a scrolled list reaches the top in its first frame', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/ko/blog');
-  const link = page.locator('.article-list .article-row h3').getByRole('link').nth(7);
+  // Wait for the hydrated feed before scrolling. Its links replace the server fallback.
+  const link = page.locator('.blog-feed .article-row h3').getByRole('link').nth(7);
   await link.scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
   const timeOrigin = await page.evaluate(() => performance.timeOrigin);
