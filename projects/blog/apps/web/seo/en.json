@@ -23,10 +23,22 @@
     }
   },
   "posts": {
+    "recent-reflections": {
+      "title": "Things I have been thinking about lately",
+      "slug": "things-i-have-been-thinking-about-lately",
+      "description": "Looking back at my past work: what I knew, what I did not, what I am studying now, and why I enjoy development these days.",
+      "keywords": ["reflection", "learning", "side project", "AI-assisted development", "frontend"]
+    },
+    "scroll-and-dropdown-states": {
+      "title": "Testing infinite scroll and dropdown menus one state at a time",
+      "slug": "testing-infinite-scroll-and-dropdown-states",
+      "description": "Use Playwright to test initial and next-page loading, retries, scrolling past the final page, and dropdown placement and clicks.",
+      "keywords": ["infinite scroll", "dropdown menus", "Playwright", "browser testing", "loading states"]
+    },
     "yarn-workspaces-turborepo": {
       "title": "From package links to build caches with Yarn Workspaces and Turborepo",
       "slug": "yarn-workspaces-turborepo-build-graph-and-cache",
-      "description": "Follow a design token change through Yarn's workspace links, Turborepo's task graph, and the build artifacts a cache hit restores.",
+      "description": "Yarn Workspaces manages dependencies between packages, and Turborepo manages dependencies between tasks. Changing one shared token shows what each tool decides.",
       "keywords": ["Yarn Workspaces", "Turborepo", "monorepo", "build cache", "task graph"]
     },
     "cognitive-surrender-side-project": {

@@ -52,6 +52,8 @@ const loaders = {
   'query-key-factory/en': () => import('../../../../content/posts/query-key-factory/en.mdx'),
   'reading-ai-code/ko': () => import('../../../../content/posts/reading-ai-code/ko.mdx'),
   'reading-ai-code/en': () => import('../../../../content/posts/reading-ai-code/en.mdx'),
+  'recent-reflections/ko': () => import('../../../../content/posts/recent-reflections/ko.mdx'),
+  'recent-reflections/en': () => import('../../../../content/posts/recent-reflections/en.mdx'),
   'reservation-form-state/ko': () => import('../../../../content/posts/reservation-form-state/ko.mdx'),
   'reservation-form-state/en': () => import('../../../../content/posts/reservation-form-state/en.mdx'),
   'review-form-funnel/ko': () => import('../../../../content/posts/review-form-funnel/ko.mdx'),
@@ -62,6 +64,10 @@ const loaders = {
     import('../../../../content/posts/review-like-optimistic-update/en.mdx'),
   'reviewing-ai-output/ko': () => import('../../../../content/posts/reviewing-ai-output/ko.mdx'),
   'reviewing-ai-output/en': () => import('../../../../content/posts/reviewing-ai-output/en.mdx'),
+  'scroll-and-dropdown-states/ko': () =>
+    import('../../../../content/posts/scroll-and-dropdown-states/ko.mdx'),
+  'scroll-and-dropdown-states/en': () =>
+    import('../../../../content/posts/scroll-and-dropdown-states/en.mdx'),
   'sentry-observability/ko': () => import('../../../../content/posts/sentry-observability/ko.mdx'),
   'sentry-observability/en': () => import('../../../../content/posts/sentry-observability/en.mdx'),
   'side-project-design/ko': () => import('../../../../content/posts/side-project-design/ko.mdx'),

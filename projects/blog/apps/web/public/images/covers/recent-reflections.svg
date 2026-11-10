@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>An interview window with an unanswered speech bubble, a stack of prepared question cards, and an open laptop</title>
+  <desc>On the left, a video call window shows a person and an empty speech bubble with three dots. In the middle, a stack of note cards stands for prepared questions, with only some of them checked. On the right, a laptop shows lines of code with a small spark above it. A dashed line connects the three scenes. An editorial illustration, not a product screenshot.</desc>
+  <defs>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 H 0 V 30" fill="none" stroke="#dddcd4" stroke-width="1" opacity=".45"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#f3f1e9"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <path d="M 230 398 C 300 500, 520 500, 590 420 M 612 420 C 690 500, 930 500, 990 432" fill="none" stroke="#9aa59f" stroke-width="3" stroke-dasharray="10 10" stroke-linecap="round"/>
+
+  <g>
+    <rect x="70" y="150" width="300" height="230" rx="16" fill="#fffef9" stroke="#b6c0b9" stroke-width="2"/>
+    <rect x="70" y="150" width="300" height="34" rx="16" fill="#e7ebe6"/>
+    <rect x="70" y="168" width="300" height="16" fill="#e7ebe6"/>
+    <circle cx="94" cy="167" r="6" fill="#c9cfc8"/>
+    <circle cx="114" cy="167" r="6" fill="#c9cfc8"/>
+    <circle cx="134" cy="167" r="6" fill="#c9cfc8"/>
+    <circle cx="220" cy="262" r="34" fill="#cfd8d2"/>
+    <path d="M 160 352 C 172 312, 268 312, 280 352 Z" fill="#cfd8d2"/>
+    <path d="M 300 96 H 430 A 16 16 0 0 1 446 112 V 168 A 16 16 0 0 1 430 184 H 340 L 312 210 L 318 184 H 300 A 16 16 0 0 1 284 168 V 112 A 16 16 0 0 1 300 96 Z" fill="#fffef9" stroke="#6a7873" stroke-width="2.5"/>
+    <circle cx="335" cy="140" r="7" fill="#9aa59f"/>
+    <circle cx="365" cy="140" r="7" fill="#9aa59f"/>
+    <circle cx="395" cy="140" r="7" fill="#9aa59f"/>
+  </g>
+
+  <g>
+    <rect x="486" y="218" width="236" height="188" rx="12" fill="#fffef9" stroke="#c4ccc5" stroke-width="2" transform="rotate(-6 604 312)"/>
+    <rect x="482" y="206" width="236" height="188" rx="12" fill="#fffef9" stroke="#c4ccc5" stroke-width="2" transform="rotate(4 600 300)"/>
+    <rect x="482" y="196" width="236" height="188" rx="12" fill="#fffef9" stroke="#b6c0b9" stroke-width="2"/>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 510 236 L 520 246 L 538 226" stroke="#5f8f74" stroke-width="4"/>
+      <path d="M 556 236 H 686" stroke="#c9cfc8" stroke-width="7"/>
+      <path d="M 510 286 L 520 296 L 538 276" stroke="#5f8f74" stroke-width="4"/>
+      <path d="M 556 286 H 668" stroke="#c9cfc8" stroke-width="7"/>
+      <rect x="510" y="324" width="26" height="26" rx="5" stroke="#9aa59f" stroke-width="3"/>
+      <path d="M 556 337 H 690" stroke="#c9cfc8" stroke-width="7" stroke-dasharray="14 10"/>
+    </g>
+  </g>
+
+  <g>
+    <rect x="850" y="196" width="290" height="190" rx="14" fill="#fffef9" stroke="#b6c0b9" stroke-width="2"/>
+    <rect x="866" y="212" width="258" height="158" rx="8" fill="#2f3b37"/>
+    <path d="M 818 386 H 1172 L 1150 414 H 840 Z" fill="#e7ebe6" stroke="#b6c0b9" stroke-width="2"/>
+    <g stroke-linecap="round" stroke-width="7" fill="none">
+      <path d="M 888 240 H 950" stroke="#8fc5a6"/>
+      <path d="M 908 266 H 1010" stroke="#e8e2cf"/>
+      <path d="M 908 292 H 984" stroke="#9fc3dd"/>
+      <path d="M 928 318 H 1060" stroke="#e8e2cf"/>
+      <path d="M 888 344 H 940" stroke="#8fc5a6"/>
+    </g>
+    <g stroke="#d9a441" stroke-width="4" stroke-linecap="round">
+      <path d="M 1146 150 V 180"/>
+      <path d="M 1131 165 H 1161"/>
+      <path d="M 1135 154 L 1157 176"/>
+      <path d="M 1157 154 L 1135 176"/>
+    </g>
+  </g>
+</svg>
