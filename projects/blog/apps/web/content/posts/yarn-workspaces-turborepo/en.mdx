@@ -1,0 +1,170 @@
+<Summary>
+
+A web app gets its button color from a shared design token. What needs to run when that color changes? A small monorepo makes it possible to follow the package links Yarn creates, the tasks Turborepo schedules, and the files a cache hit restores.
+
+</Summary>
+
+![The upper diagram links the web, UI, and tokens packages. The lower diagram connects their build tasks in the same dependency direction.](/images/covers/yarn-workspaces-turborepo.avif)
+
+_An arrow means the item on the left depends on the item on the right. Execution starts with tokens on the right._
+
+In the example repository, `yarn install` completed and building just the web app ended with `ERR_MODULE_NOT_FOUND`. Node was looking for `node_modules/@demo/ui/dist/index.mjs`. The link to `@demo/ui` existed. The build had yet to produce the file at the other end of the link.
+
+Web consumes UI, and UI consumes design tokens. A change to one token reaches the web app's button CSS. The example was run with Yarn 4.17.0 and Turborepo 2.11.10.
+
+## How Yarn connects the packages
+
+The `workspaces` field in the root `package.json` tells Yarn where to find packages. Each package's own `name` identifies it within the project. With `@demo/web` as the name in `apps/web/package.json`, `yarn workspace @demo/web build` runs the web package's build script. [Yarn Workspaces](https://yarnpkg.com/features/workspaces)
+
+```json
+{
+  "name": "demo",
+  "private": true,
+  "packageManager": "yarn@4.17.0",
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+`packageManager` declares which Yarn version the project uses. On a machine with several versions installed, `yarn --version` shows which CLI the shell actually ran. The `workspace:` and `foreach` examples use Yarn 4. [Yarn manifest documentation](https://yarnpkg.com/configuration/manifest#packagemanager)
+
+Web declares `"@demo/ui": "workspace:*"` in `dependencies`. UI does the same for `@demo/tokens`. The `workspace:` protocol points Yarn to a workspace of that name in the current project. The notation becomes a regular version range when the package is packed for publication. I packed UI with tokens at version `1.2.3`. The packed manifest pinned `1.2.3` for `workspace:*` and allowed `^1.2.3` for `workspace:^`. Both resolve to the same local workspace in this example. They give an outside consumer different upgrade ranges. [Yarn workspace cross-references](https://yarnpkg.com/features/workspaces#cross-references)
+
+The `nodeLinker` setting governs how that relationship reaches Node. With `node-modules`, Yarn builds a `node_modules` tree and links the local packages. With Plug'n'Play, a loader uses the package locations and dependency information in `.pnp.cjs`. A hoisted dependency in an ancestor `node_modules` can make an undeclared import work locally. Declare the relationship in the consuming package's manifest so it is visible to a focused install and to tools that read the package graph. [Yarn install modes](https://yarnpkg.com/features/linkers)
+
+For shared external dependency ranges, a Yarn catalog lets the applications refer to `catalog:` and keep the range in `.yarnrc.yml`. The resolution that Yarn installs goes in `yarn.lock`. In CI, `yarn install --immutable` fails if the install would change that lockfile. A dependency update includes the new range and the corresponding resolution. [Yarn catalogs](https://yarnpkg.com/features/catalogs), [Yarn install](https://yarnpkg.com/cli/install)
+
+### Overriding a transitive dependency with resolutions
+
+A catalog applies where a workspace refers to it with `catalog:`. An installed library can also request a version in its own manifest. In this repository, `@nestjs/platform-express` requests `multer@2.4.0`. The root `package.json` can override how Yarn resolves that request through `resolutions`. [Yarn resolutions](https://yarnpkg.com/configuration/manifest#resolutions)
+
+These are three rules from the side-project repository. [Root package.json](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json#L70-L74)
+
+```json
+{
+  "resolutions": {
+    "body-parser": "2.4.0",
+    "multer@npm:2.4.0": "npm:2.5.0",
+    "undici@npm:7.29.1": "npm:7.30.1"
+  }
+}
+```
+
+A bare name like `body-parser` matches requests for that package and resolves them to `2.4.0`. A key like `multer@npm:2.4.0` narrows the match to a specific request. Run `yarn why multer` and Yarn reports `2.5.0` under the Nest package, whose own manifest requests `2.4.0`.
+
+The `undici` rule resolves `@scalar/json-magic`'s request for `7.29.1` to `7.30.1`. `yarn why undici` also shows `6.29.1` under `@sentry/cli` and `8.12.3` under `node-gyp`. The choice of key determines how much of the dependency graph the override affects. After editing `resolutions`, run `yarn install` to update the lockfile and use `yarn why` to inspect the affected paths. [yarn why](https://yarnpkg.com/cli/why)
+
+## The link exists before the build output
+
+`packages/ui/package.json` declares the dependency on tokens and the entry point that web imports. An import of `@demo/ui` follows `exports` to `./dist/index.mjs`.
+
+```json
+{
+  "name": "@demo/ui",
+  "version": "1.2.3",
+  "type": "module",
+  "exports": "./dist/index.mjs",
+  "dependencies": {
+    "@demo/tokens": "workspace:*"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
+```
+
+Tokens also exports its built module from `dist/index.mjs`. Following the files each script reads and writes gives the build order.
+
+| Package        | Input to the build                   | File it produces  |
+| -------------- | ------------------------------------ | ----------------- |
+| `@demo/tokens` | A color value in its own source      | `dist/index.mjs`  |
+| `@demo/ui`     | The color exported by `@demo/tokens` | `dist/index.mjs`  |
+| `@demo/web`    | Button CSS exported by `@demo/ui`    | `dist/page.css`   |
+| `@demo/docs`   | Its own documentation               | `dist/index.html` |
+
+On a fresh checkout, `yarn workspace @demo/web build` reaches for the UI module before the file exists. On a machine that has built UI before, the same command can succeed by reading yesterday's output. A change to the token source can leave the CSS on the old color.
+
+Yarn can run these builds in order.
+
+```bash
+yarn workspaces foreach -R -p -t --from '@demo/web' run build
+```
+
+`-R` and `--from` select workspaces by following dependencies from web. `-t` waits for the selected workspaces listed in `dependencies`, and `-p` lets independent work run concurrently. Use `--topological-dev` when the order also depends on `devDependencies`. This covers the case where the same command needs to run in several workspaces in dependency order. [Yarn foreach options](https://yarnpkg.com/cli/workspaces/foreach)
+
+## Turborepo turns package relationships into a task graph
+
+Web's build reads UI's output. Suppose web's test reads the files produced by web's own build. Lint reads source and can run independently. With Turbo installed as a root development dependency, the following `turbo.json` expresses those relationships.
+
+```json
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "lint": {}
+  }
+}
+```
+
+The caret in `^build` tells Turbo to look for `build` in **dependency packages**. `@demo/web#build` waits for UI's build, which waits for the tokens build. The plain `"build"` under `test` means the build in **the same package**. So `@demo/web#test` waits for web's build and inherits its prerequisites. The nodes are now `package#task` pairs. Docs has an independent build that can start while the other packages are building. [Turborepo package and task graphs](https://turborepo.dev/docs/core-concepts/package-and-task-graph)
+
+I also tried exposing UI's source directly and removing its build script. UI still imported the compiled tokens. The dry-run plan listed `@demo/ui#build` with a command of `<NONEXISTENT>` and the tokens build as its dependency. Turborepo calls this a transit node. It carries dependencies through the graph without running a script of its own. Changing UI's source changed the hash of that node and of the web build. [Turborepo transit nodes](https://turborepo.dev/docs/core-concepts/package-and-task-graph#transit-nodes)
+
+## What a cache hit restores
+
+Once Turbo has a task graph, it can decide which tasks need to execute. It hashes the task definition, package files, external dependency resolutions that affect the package, configured environment values, and the hashes of prerequisite tasks. Root dependencies and files listed in `globalDependencies` can affect all tasks. A change to the tokens build hash changes the UI build hash even when the UI source is identical. [Turborepo cache keys](https://turborepo.dev/docs/crafting-your-repository/caching)
+
+After the first build, I moved the three `dist` directories away and requested web's build with the same inputs. All three tasks hit the local cache. The restored `dist/page.css` contained the original color, `#2459c4`.
+
+```bash
+SITE_TITLE=Demo yarn turbo run build --filter=@demo/web --cache=local:rw
+```
+
+The `outputs` globs are relative to each package and tell Turbo which files to save and restore. I removed `outputs` from the web task and ran the experiment again. The cache replayed the build log, but `page.css` was missing. Lint can reuse a successful run and its log. A deploy step needs the build files themselves, so their paths belong in `outputs`. A Next.js application can use `[".next/**", "!.next/cache/**"]` to cache its build artifacts separately from Next's incremental build cache. [Turborepo outputs](https://turborepo.dev/docs/reference/configuration#outputs)
+
+## Finding inputs that should affect the key
+
+Suppose web's build writes the value of `SITE_TITLE` to `dist/title.txt`. Only web's output depends on that value. I added a task entry to the root `turbo.json`'s `tasks` object.
+
+```json
+{
+  "@demo/web#build": {
+    "dependsOn": ["^build"],
+    "outputs": ["dist/**"],
+    "env": ["SITE_TITLE"]
+  }
+}
+```
+
+Changing `SITE_TITLE` from `Demo` to `Preview` gave tokens and UI cache hits and ran web's build again. A variable in `env` is available to the task and its value contributes to the hash. Use `globalEnv` for values that affect every task. `passThroughEnv` makes a value available without hashing it, so putting an output-affecting value there can reuse an artifact produced with a previous value. The default Strict Mode filters the task environment based on the configured and framework-inferred variables, among other allowed values. [Turborepo environment variables](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables)
+
+If the framework reads `.env.production`, the file belongs in the task's inputs too. When Git ignores it, `["$TURBO_DEFAULT$", ".env.production"]` can add it while preserving Turbo's default selection. A custom `inputs` array replaces that selection unless it includes `$TURBO_DEFAULT$`. For a particular task that reads the root TypeScript config, `$TURBO_ROOT$/tsconfig.base.json` can add just that file. [Turborepo inputs](https://turborepo.dev/docs/reference/configuration#inputs)
+
+`--dry=json` prints the files and prerequisite tasks in the plan before anything runs. I used the following command to compare the `hash` fields under `tasks` before and after changing the color to `#116a55`. The tokens, UI, and web build hashes changed. The independent docs build kept the same hash. Check `inputs` for files used to compute the hash, `dependencies` for prerequisite tasks, and `outputs` for paths a hit can restore. [Turborepo run options](https://turborepo.dev/docs/reference/run)
+
+```bash
+SITE_TITLE=Preview yarn turbo run build --dry=json
+```
+
+## Selecting tasks and reusing their results
+
+`--filter=@demo/web` starts with web. The task graph brings in the UI and tokens builds that web needs. After editing a token, `--filter='...@demo/tokens'` starts with tokens and the packages that depend on it. The prefix `...` walks toward consumers.
+
+In CI, `--affected` selects packages based on Git changes. When a pull request targets `develop`, set that as the comparison base. The checkout needs both revisions and enough history for the comparison. A dry run lets you check the selection before executing anything. [Turborepo affected selection](https://turborepo.dev/docs/reference/run#--affected)
+
+```bash
+TURBO_SCM_BASE=origin/develop TURBO_SCM_HEAD=HEAD \
+  yarn turbo run build --affected --dry=json
+```
+
+A selected task can still get a cache hit. Remote caching lets a different CI runner or developer machine reuse the artifact. If a build fetches the latest content from a CMS, the output can change while the code stays the same. Include a content snapshot or revision in the inputs to reuse that build safely. A database migration changes an external database, so the task should run with `cache: false`. [Turborepo remote caching](https://turborepo.dev/docs/core-concepts/remote-caching)
+
+## Where the side-project repository fits
+
+The repository that hosts this blog uses Yarn Workspaces. Its root build selects the `@side/*` projects with `workspaces foreach`, and `@side/blog` delegates its build to `@blog/web`. The web app links `@side/design-system` with `workspace:*`. The design system exports from `src`, so the blog build processes the source of the components it uses. The example's dependency builds serve a different purpose because the consumer reads their compiled `dist` files. [Root scripts](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json), [Design system exports](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/packages/design-system/package.json)
+
+CI also verifies the blog and services separately. A change confined to blog content, such as prose or images, takes the content validation path. The step that actually takes time is a good place to start when considering Turbo. Slow package downloads point to Yarn's cache. Rebuilding several applications from identical inputs points to a task artifact cache. Once several apps consume a shared package's `dist`, a task graph also gives them a way to declare which build produces the files and which builds have to wait for them. [Blog CI configuration](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/.github/workflows/blog.yml)

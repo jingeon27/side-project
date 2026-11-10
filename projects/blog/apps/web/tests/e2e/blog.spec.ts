@@ -50,6 +50,27 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
+test('opening an article from a scrolled list reaches the top in its first frame', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/ko/blog');
+  // Wait for the hydrated feed before scrolling. Its links replace the server fallback.
+  const link = page.locator('.blog-feed .article-row h3').getByRole('link').nth(7);
+  await link.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+  const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+
+  const [firstDetailFrame] = await Promise.all([
+    page.waitForFunction(() =>
+      document.querySelector('.article-prose') ? { scrollY: window.scrollY } : null,
+    ),
+    link.click(),
+  ]);
+
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  expect(await firstDetailFrame.jsonValue()).toEqual({ scrollY: 0 });
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
+});
+
 test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
   for (const [locale, messages] of [
     ['ko', ko],
