@@ -12,7 +12,7 @@ Photo Contest already had a gallery test that started with 24 posts and scrolled
 
 ## Hold the response while the browser shows loading
 
-The browser test page renders the app's latest-posts feed, post cards, and dropdowns. The first query starts in the browser, and Playwright's `page.route` controls when the GraphQL response arrives. The app's `IntersectionObserver` detects the end of the list, and its Apollo cache appends the next page. The fixture records `offset: 0` for the first request and `offset: 24` for the next one. A separate E2E test checks that the server includes preloaded content in the HTML. [Playwright request interception](https://playwright.dev/docs/mock) · [Server HTML E2E](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32)
+The browser test page renders the app's latest-posts feed, post cards, and dropdowns. The first query starts in the browser, and Playwright's `page.route` controls when the GraphQL response arrives. The app's `IntersectionObserver` detects the end of the list, and its Apollo cache appends the next page. The fixture records `offset: 0` for the first request and `offset: 24` for the next one. A separate E2E test checks that the server includes preloaded content in the HTML. [Playwright request interception](https://playwright.dev/docs/mock), [Server HTML E2E](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32)
 
 Holding the first response exposes the skeleton before any cards appear. Holding the next response exposes a spinner below the 24 existing cards. This shortened test shows the second case. `openGallery` installs the route before navigation and holds the second response until the test resolves the promise.
 
@@ -46,9 +46,11 @@ The new case fills the last page with 24 cards and returns `nextOffset: null`. O
 | Next response pending | The existing cards and a spinner below the list | One request at `offset: 24` even after scrolling to the end again |
 | Final response received | A full second page brings the total to 48 cards | `[0, 24]` after scrolling past the end |
 | First request fails | An error with Retry, followed by the first page after retry | `[0, 0]` |
-| Next request fails | An error in the list area, followed by a fresh first page after retry | `[0, 24, 0, 24]` after scrolling again |
+| Next request fails | An error replaces the cards already on screen, and retry starts again from the first page | `[0, 24, 0, 24]` after scrolling again |
 
 The two failures are separate cases. In Photo Contest, a failed next-page request shows an error in the list area. Retry starts by fetching the first page again. A check that only looks at the final count after recovery could miss the difference. The test records which offset failed and checks that scrolling can reach the next page after retry.
+
+When a next-page request fails, the 24 cards already on screen are replaced by the error as well. The list reads from an Apollo `QueryRef`, and a failed `fetchMore` from `useQueryRefHandlers` puts that same `QueryRef` into an error state, so the error boundary around the list takes over. This test pins the current behavior. Keeping the loaded cards would require separating the next-page failure from the `QueryRef` and adding a separate retry button below the list.
 
 ## Open the dropdown from a scrolled position
 
