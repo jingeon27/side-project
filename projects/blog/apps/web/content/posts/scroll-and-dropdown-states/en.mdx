@@ -52,6 +52,70 @@ The two failures are separate cases. In Photo Contest, a failed next-page reques
 
 When a next-page request fails, the 24 cards already on screen are replaced by the error as well. The list reads from an Apollo `QueryRef`, and a failed `fetchMore` from `useQueryRefHandlers` puts that same `QueryRef` into an error state, so the error boundary around the list takes over. This test pins the current behavior. Keeping the loaded cards would require separating the next-page failure from the `QueryRef` and adding a separate retry button below the list.
 
+## Serve the same responses with MSW
+
+MSW 3 can serve the same responses as the `page.route` fixture above. For `GalleryPosts`, `offset: 0` returns the first 24 cards with `nextOffset: 24`, and `offset: 24` returns the remaining 24 with `nextOffset: null`. Pass a promise at a given offset to hold that response or make it fail. [MSW GraphQL handlers](https://mswjs.io/api/graphql/)
+
+```typescript
+import { graphql } from 'msw/graphql';
+import { HttpResponse } from 'msw/http';
+
+import { GalleryPostsDocument, type GalleryPostsQuery } from '@/shared/api/generated';
+
+type TResponse = 'success' | 'error';
+
+function galleryHandler(
+  endpoint: string,
+  posts: GalleryPostsQuery['galleryPostsPage']['items'],
+  responses: Partial<Record<number, Promise<TResponse>>> = {},
+) {
+  const pageSize = 24;
+
+  return graphql.link(endpoint).query(GalleryPostsDocument, async ({ variables: { offset } }) => {
+    if (offset !== 0 && offset !== pageSize) {
+      return HttpResponse.json({ errors: [{ message: `Unexpected offset ${offset}` }] });
+    }
+
+    if ((await responses[offset]) === 'error') {
+      return HttpResponse.json({ errors: [{ message: 'Gallery request failed' }] });
+    }
+
+    return HttpResponse.json({
+      data: {
+        galleryPostsPage: {
+          __typename: 'GalleryPostPage',
+          items: posts.slice(offset, offset + pageSize),
+          nextOffset: offset === 0 ? pageSize : null,
+        },
+      },
+    });
+  });
+}
+```
+
+Put 48 distinct fixture cards in `posts`. Start the worker on the browser test page, then register the handler that holds the next response before mounting the feed. [MSW browser setup](https://mswjs.io/api/setup-worker/)
+
+```typescript
+import { setupWorker } from 'msw/browser';
+
+const endpoint = new URL('/__test__/gallery', window.location.origin).href;
+const worker = setupWorker(galleryHandler(endpoint, posts));
+await worker.start();
+
+const nextPage = Promise.withResolvers<'success'>();
+worker.use(galleryHandler(endpoint, posts, { 24: nextPage.promise }));
+```
+
+Scroll to the end, check that the 24 cards and the spinner are both visible, then call `nextPage.resolve('success')`. Check that the list grows to 48 cards. To test initial loading, use a fresh promise at `offset: 0` and release the response after checking for the skeleton.
+
+In a separate test, resolve the response to `'error'` at `offset: 24` to fail the next-page request.
+
+```typescript
+worker.use(galleryHandler(endpoint, posts, { 24: Promise.resolve('error') }));
+```
+
+Use `0` to fail the first request. In either case, once the error is visible, call `worker.resetHandlers()` to restore the initial success handler. You can then click Retry and check that the first page returns.
+
 ## Open the dropdown from a scrolled position
 
 I scrolled to the eighth post, which starts below the visible part of the page. I tested two positions for its trigger. With 300 pixels of space below the trigger, the menu opens beneath it. With 20 pixels, it opens above the trigger and both Edit and Delete remain reachable. The test compares `scrollY` before and after opening so it also catches a jump in the list. [Base UI menu positioning](https://base-ui.com/react/components/menu)
