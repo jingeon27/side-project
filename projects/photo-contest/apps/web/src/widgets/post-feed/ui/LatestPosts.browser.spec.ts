@@ -15,7 +15,7 @@ function expectNoGalleryRequest(page: Page) {
 test('첫 응답을 기다리는 동안 스켈레톤을 표시하고 응답 뒤에 첫 페이지를 보여야 한다', async ({ page }) => {
   const response = Promise.withResolvers<'success'>();
   const { feed, cards, offsets } = await openGallery(page, { responses: { 0: response.promise } });
-  const skeleton = feed.locator('[aria-hidden="true"].animate-pulse');
+  const skeleton = feed.getByRole('status', { name: '게시물 불러오는 중', exact: true });
   await expect(skeleton).toBeVisible();
   await expect(cards).toHaveCount(0);
   await expect.poll(() => offsets).toEqual([0]);
