@@ -10,7 +10,7 @@ _An illustration of the answers I could not give, the questions I had prepared, 
 
 I had a 30-minute video interview and could not answer most of the questions well. When I went back over them afterward, the questions were not unusually hard. There was simply a lot I did not know. Even things I thought I knew fell apart once I tried to explain them.
 
-In particular, I could not explain Yarn Workspaces, or how I think about splitting tests and deciding what each one checks. After the interview, I studied both topics again and wrote them up as posts on [Yarn Workspaces and Turborepo](/en/blog/yarn-workspaces-turborepo-build-graph-and-cache) and on [testing infinite scroll and dropdown menus](/en/blog/testing-infinite-scroll-and-dropdown-states).
+I got stuck the most on questions about Yarn Workspaces and testing. After the interview, I studied both topics again and wrote them up as posts on [Yarn Workspaces and Turborepo](/en/blog/yarn-workspaces-turborepo-build-graph-and-cache) and on [testing infinite scroll and dropdown menus](/en/blog/testing-infinite-scroll-and-dropdown-states).
 
 ## I thought this time would be different
 
@@ -18,11 +18,11 @@ At my first company, I built the frontend of a recruiting SaaS. Reading the sour
 
 After leaving, I burned out a little. I rested for a while, then felt I had to do something, so I joined a team project called Doneness on BeSide. It was a cooking timer that also showed tips for getting food to the doneness you want. During those six months off, I applied for the first time to the company I have now interviewed with again. My development instincts had dulled, and in the interview I could not answer most of the questions, including basic syntax questions.
 
-Then I joined my current company, and at first I lost the team's trust. The approaches from my previous job looked good to me, so I persuaded the team to switch our form and UI libraries. I made the changes before I understood the service's context, which led to a lot of disagreement, and I was not careful enough, so I shipped a lot of bugs. For the next three months, I focused on finishing small tasks without mistakes to rebuild that trust.
+Then I joined my current company, and at first I lost the team's trust. The approaches from my previous job looked good to me, so I persuaded the team to switch our form and UI libraries. I did not properly track the side effects of those changes, and they caused a lot of bugs. For the next three months, I focused on finishing small tasks without mistakes to rebuild that trust.
 
 Once I had it back, I introduced testing, monitoring, and a way of working with coding agents one by one. Now I am the only frontend developer, building the user-facing service, the hospital admin, and the back office, and our pace has actually picked up. I even heard people on the development team call me the ace.
 
-A year and a half later, I interviewed with that company again. Before the interview, I went back over my past work and prepared questions and answers built on it. Along with basics such as TypeScript, I reviewed these topics again.
+A year and a half later, I interviewed with that company again. Before the interview, I went back over my past work and prepared the questions and answers that work was likely to raise. Along with basics such as TypeScript, I reviewed these topics again.
 
 - Browser rendering: the order from the DOM and CSSOM through style calculation, layout, paint, rasterization, and compositing, and which step a given change sends the browser back to
 - The event loop: when tasks, microtasks, and `requestAnimationFrame` callbacks run, and why long tasks block input and screen updates
@@ -36,7 +36,7 @@ The questions started from my own work and kept turning into "Why did you do it 
 
 At work, when I ran into a problem, I took the time to look things up and read the code before deciding. In the interview, I had to answer questions that deserved the same depth of thought in a short time, and words came out while I was still organizing my thoughts. Even as I spoke, I was not sure I was answering the question.
 
-Testing was the same. At work I had kept tests for a new feature's expected behavior separate from tests that reproduce bugs found in production, but when asked why I split them that way, I could not explain it in my own words.
+Testing was the same. At work I had kept tests for a new feature's expected behavior separate from tests that reproduce bugs found in production ([the standards I set when introducing tests](/en/blog/testing-standards)), but when asked why I split them that way, I could not explain it in my own words.
 
 ## Even what I had studied in depth had faded
 
@@ -46,7 +46,7 @@ Some technologies I studied in depth, and others only as far as I needed. Monore
 
 When Yarn Workspaces and Turborepo came up in the interview, I said Yarn Workspaces would be the better choice. Asked why, I said it lets you unify package dependencies into one.
 
-Next I was asked whether I knew `nodeLinker`. I said it is the setting that ties package dependencies together into one. In fact, `nodeLinker` decides whether installed packages are laid out as a `node_modules` tree or linked through Plug'n'Play. Pinning dependencies to a single version, which is what I was describing, is the job of `resolutions`, and when I was asked about `resolutions`, I said I did not know it.
+Next I was asked whether I knew `nodeLinker`. I said it is the setting that ties package dependencies together into one. In fact, `nodeLinker` decides whether installed packages are laid out as a `node_modules` tree or linked through Plug'n'Play. Pinning dependencies to a single version, which is what I was describing, is the job of `resolutions`, and when I was asked about `resolutions`, I said I did not know it. [Yarn linkers](https://yarnpkg.com/features/linkers), [Yarn resolutions](https://yarnpkg.com/configuration/manifest#resolutions)
 
 When I studied this again after the interview, I found that Yarn Workspaces and Turborepo are not alternatives to choose between. Yarn manages dependencies between packages, and Turborepo manages dependencies between tasks. Both `nodeLinker` and `resolutions` are in my own side project repository, yet I could not say precisely what either one does.
 
@@ -54,12 +54,12 @@ When I studied this again after the interview, I found that Yarn Workspaces and 
 
 I studied the two topics I could not explain in the interview again and wrote them up: the dependencies Yarn Workspaces and Turborepo each manage, and how to test infinite scroll and dropdown states one at a time. I am also practicing explaining the topics I prepared before the interview out loud, without looking at my notes.
 
-The point where an explanation stalls is the point I do not know precisely. When I get stuck, I go back to the docs and the code, and next time I start explaining from that point.
+Where I get stuck explaining is usually where I do not know something precisely. I go back to the docs and the code for those parts, and next time I start explaining from there.
 
-Beyond specific technologies, I am thinking again about a few things: how much frontier AI has changed the way we build software, what attitude I should bring to my work as a result, and how I should look at products. An agent can implement quickly, but deciding what to build and explaining why is still my job. That was exactly what I was missing in this interview.
+Beyond technology, I keep thinking about how much frontier AI has changed the way we build software, and what that means for how I approach my work and look at products. An agent can implement quickly, but deciding what to build and explaining why is still my job. That was what I was missing in this interview.
 
-So I subscribe to GeekNews, FE Article, and FE News. I follow how AI is changing development and how other developers think about products and technology, and I hold that up against my own work.
+So I subscribe to [GeekNews](https://news.hada.io), FE Article, and [FE News](https://github.com/naver/fe-news). I read about how AI is changing development and how other developers think about products and technology, and compare it with my own work.
 
-The interview showed me how much I still lack, but I enjoy development itself these days. Building has become cheaper, so picking up an unfamiliar technology feels lighter, and I am trying many things in side projects. In the two services I built as side projects, I used GraphQL in one and REST in the other, and set up the servers and infrastructure myself. I would like more people to use the products I build and use myself, and I want to keep improving them based on how people respond.
+The interview showed me how much I still lack, but I enjoy development itself these days. Building has become cheaper, so picking up an unfamiliar technology feels lighter, and I am trying many things in side projects. In my two side project services, I [used GraphQL in one and REST in the other](/en/blog/choosing-the-stack-and-boundaries-for-two-side-projects), and [set up the servers and infrastructure myself](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects). I would like more people to use the products I build and use myself, and I want to keep improving them based on how people respond.
 
-My side projects now are very different from the one I joined on BeSide during my break. Back then I started with a team because I felt I had to do something. Now there is much more one person can do and build. So I want to make things myself, whether that is simply something fun or software that removes a small daily annoyance. I had never set a goal for my side projects, but writing this post made me realize that this is the goal.
+My side projects now are very different from the one I joined on BeSide during my break. Back then I started with a team because I felt I had to do something. Now there is much more one person can do and build. So I want to make things myself, whether that is simply something fun or software that removes a small daily annoyance. I had never set a goal for my side projects, but writing this, I think this has been it.
