@@ -10,6 +10,16 @@
 
 피식의 갤러리에는 이미 첫 게시물 24개에서 스크롤을 내려 다음 페이지를 읽는 테스트가 있었어요. 여기에 응답이 늦거나 실패했을 때와, 페이지 아래쪽에서 게시물의 더보기 메뉴를 눌렀을 때를 추가했어요. [기존 갤러리 E2E](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/gallery-pagination.spec.ts)
 
+## 라이브러리는 무엇을 테스트하는지 먼저 봤어요
+
+예전에는 테스트 코드가 특정 요구사항에 맞게 동작하는지와 기본 동작만 확인하면 된다고 생각했어요. 이번에 테스트를 보완하면서 TanStack Query의 `useInfiniteQuery` 테스트와 Radix의 DropdownMenu 테스트를 참고했는데, 테스트를 더 깊게 생각해 보는 계기가 됐어요.
+
+TanStack Query는 렌더할 때마다 훅의 상태를 배열에 모아 두고, 첫 조회와 다음 페이지 조회가 어떤 순서로 상태를 바꾸는지 확인해요. 다음 페이지 요청이 실패해도 이미 받은 페이지가 남고 `isFetchNextPageError`가 켜지는지, `getNextPageParam`이 `undefined`를 돌려주면 `hasNextPage`가 `false`가 되는지도 따로 검사해요. [useInfiniteQuery 테스트](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx)
+
+Radix의 DropdownMenu 테스트는 메뉴가 열리고 닫히는 것보다 그 주변을 더 많이 봐요. 닫혀 있을 때 `aria-controls`가 없는 요소를 가리키지 않는지, 창이 포커스를 잃으면 하위 메뉴까지 닫히는지, 메뉴가 닫히는 동안 포인터가 지나가도 항목이 포커스를 가져가지 않는지 같은 경우예요. shadcn/ui의 드롭다운도 이 Radix 컴포넌트에 스타일을 입혀 쓰는 구조라서, 동작을 어떻게 검증하는지는 Radix의 테스트를 기준으로 봤어요. [DropdownMenu 테스트](https://github.com/radix-ui/primitives/blob/fe02008f49834d7421427fe532e5b11f13c7bcac/packages/react/dropdown-menu/src/dropdown-menu.test.tsx)
+
+그래서 이 글의 테스트도 마지막 결과 하나만 보지 않고, 응답을 기다리는 동안과 요청이 실패한 뒤, 마지막 페이지 이후처럼 상태가 바뀌는 지점을 나눠 확인했어요. 다음 페이지가 실패해도 이미 받은 목록을 남기는 TanStack Query와 달리, 피식은 지금 목록 전체가 오류 화면으로 바뀌어요. 이 차이는 뒤의 실패 절에 적었어요.
+
 ## 응답을 기다리는 상태를 만드는 법
 
 브라우저 테스트 페이지에는 피식의 최신 게시물 목록과 게시물 카드, 더보기 메뉴를 띄워요. 브라우저에서 첫 조회를 시작하고, Playwright의 `page.route`로 GraphQL 응답 시점을 제어해요. 목록 끝을 감지하는 `IntersectionObserver`와 다음 페이지를 붙이는 Apollo 캐시는 제품 코드를 써요. 첫 요청은 `offset: 0`, 추가 요청은 `offset: 24`로 기록했어요. 서버가 프리로드한 콘텐츠가 HTML에 포함되는지는 별도의 E2E에서 확인해요. [Playwright 요청 가로채기](https://playwright.dev/docs/mock), [서버 HTML E2E](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32)

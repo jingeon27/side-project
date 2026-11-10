@@ -13,6 +13,11 @@
     "locale": "ko",
     "toc": [
       {
+        "id": "라이브러리는-무엇을-테스트하는지-먼저-봤어요",
+        "title": "라이브러리는 무엇을 테스트하는지 먼저 봤어요",
+        "level": 2
+      },
+      {
         "id": "응답을-기다리는-상태를-만드는-법",
         "title": "응답을 기다리는 상태를 만드는 법",
         "level": 2
@@ -38,7 +43,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 8,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -57,6 +62,11 @@
     "id": "scroll-and-dropdown-states",
     "locale": "en",
     "toc": [
+      {
+        "id": "i-first-looked-at-what-libraries-test",
+        "title": "I first looked at what libraries test",
+        "level": 2
+      },
       {
         "id": "hold-the-response-while-the-browser-shows-loading",
         "title": "Hold the response while the browser shows loading",
@@ -83,7 +93,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 8,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
