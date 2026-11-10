@@ -23,12 +23,6 @@
     }
   },
   "posts": {
-    "recent-reflections": {
-      "title": "Things I have been thinking about lately",
-      "slug": "things-i-have-been-thinking-about-lately",
-      "description": "Looking back at my past work: what I knew, what I did not, what I am studying now, and why I enjoy development these days.",
-      "keywords": ["reflection", "learning", "side project", "AI-assisted development", "frontend"]
-    },
     "scroll-and-dropdown-states": {
       "title": "Testing infinite scroll and dropdown menus one state at a time",
       "slug": "testing-infinite-scroll-and-dropdown-states",
