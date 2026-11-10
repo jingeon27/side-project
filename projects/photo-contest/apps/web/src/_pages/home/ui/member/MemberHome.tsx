@@ -1,12 +1,15 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { GroupCard } from '@/features/group';
 import { PostsEmptyState } from '@/features/post';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
+import { Avatar } from '@/shared/ui/@core/avatar';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { ComposeEntryButton } from '@/widgets/compose-entry';
 import { GalleryFeed, LatestPosts, PopularPosts } from '@/widgets/post-feed';
@@ -35,13 +38,27 @@ function MemberHomeContent({
   const preloaded = initialHasGroups === true;
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
+      {/* 홈의 주인공은 피드다. 그룹은 한 줄로 바로 가기만 두고, 멤버 수·소개는 MY의 그룹 카드에서 본다. */}
       <section aria-label="참여한 그룹" className="flex flex-col gap-3">
         <h2 className="text-title text-ink">참여한 그룹</h2>
-        <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 wide:grid-cols-3">
+        <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 tablet:-mx-8 tablet:px-8 desktop:mx-0 desktop:flex-wrap desktop:overflow-visible desktop:p-0">
           {data.myGroups.map((group) => (
-            <GroupCard key={group.id} group={group} />
+            <li key={group.id} className="shrink-0">
+              <Link
+                href={ROUTES.GROUP(group.id)}
+                className="flex min-h-touch max-w-56 items-center gap-2 rounded-full border border-line bg-surface py-1 pr-4 pl-1 text-label text-ink transition-colors hover:border-line-strong hover:bg-sunken active:bg-neutral-soft"
+              >
+                <Avatar
+                  name={group.name}
+                  src={group.avatarUrl}
+                  size="sm"
+                  className="bg-accent-soft text-accent-ink"
+                />
+                <span className="truncate">{group.name}</span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
       <GalleryFeed
         latest={<LatestPosts title="최신 게시물" preloaded={preloaded} empty={<PostsEmptyState />} />}
@@ -59,7 +76,7 @@ function MemberHomeContent({
 export function MemberHome({ initialHasGroups }: { initialHasGroups?: boolean }) {
   const [queryRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);
   return (
-    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
+    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-24 w-full" />}>
       <MemberHomeContent queryRef={queryRef} initialHasGroups={initialHasGroups} />
     </AsyncBoundary>
   );
