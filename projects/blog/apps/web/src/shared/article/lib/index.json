@@ -34,6 +34,11 @@
         "level": 2
       },
       {
+        "id": "새로고침과-추가-조회가-겹칠-때",
+        "title": "새로고침과 추가 조회가 겹칠 때",
+        "level": 2
+      },
+      {
         "id": "같은-응답을-msw로-만들기",
         "title": "같은 응답을 MSW로 만들기",
         "level": 2
@@ -49,8 +54,18 @@
         "level": 2
       },
       {
-        "id": "답지를-보고-더한-테스트",
-        "title": "답지를 보고 더한 테스트",
+        "id": "키보드-조작과-포커스-확인하기",
+        "title": "키보드 조작과 포커스 확인하기",
+        "level": 2
+      },
+      {
+        "id": "메뉴가-닫히는-동안의-입력-확인하기",
+        "title": "메뉴가 닫히는 동안의 입력 확인하기",
+        "level": 2
+      },
+      {
+        "id": "목록이-바뀔-때-열린-메뉴는-어떻게-될까",
+        "title": "목록이 바뀔 때 열린 메뉴는 어떻게 될까",
         "level": 2
       }
     ],
@@ -102,6 +117,11 @@
         "level": 2
       },
       {
+        "id": "when-refresh-and-next-page-requests-overlap",
+        "title": "When refresh and next-page requests overlap",
+        "level": 2
+      },
+      {
         "id": "serve-the-same-responses-with-msw",
         "title": "Serve the same responses with MSW",
         "level": 2
@@ -117,12 +137,22 @@
         "level": 2
       },
       {
-        "id": "tests-added-from-the-answer-key",
-        "title": "Tests added from the answer key",
+        "id": "keyboard-interaction-and-focus",
+        "title": "Keyboard interaction and focus",
+        "level": 2
+      },
+      {
+        "id": "input-while-the-menu-is-closing",
+        "title": "Input while the menu is closing",
+        "level": 2
+      },
+      {
+        "id": "what-happens-to-an-open-menu-when-the-list-changes",
+        "title": "What happens to an open menu when the list changes?",
         "level": 2
       }
     ],
-    "readingMinutes": 16,
+    "readingMinutes": 15,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"

@@ -1,6 +1,6 @@
 <Summary>
 
-An interview made me reconsider how little thought I had given to component unit tests. I read the tests of libraries I trusted to find cases I had missed, then checked loading and failures in an infinite list, dropdown position and focus, and input while a menu is closing in Photo Contest.
+An interview prompted me to revisit the component tests I had given too little thought to. Reading library tests helped me find missing cases in Photo Contest's infinite scroll and dropdown menus, and reconsider how to divide those tests.
 
 </Summary>
 
@@ -8,9 +8,9 @@ An interview made me reconsider how little thought I had given to component unit
 
 At work, I wrote unit tests mainly for logic and checked screens through integration and E2E tests. I built those screens with Radix, Base UI, and shadcn/ui, which I trusted for their popularity, high download counts, and quick fixes for reported issues. I had given little thought to how their components were tested.
 
-When reading library code, I focused on the implementation and type definitions. I opened tests mainly to look up usage, since they showed examples of different inputs and ways to use a feature. Then a question about dropdown menu design in an interview made me realize how little thought I had given to UI I used regularly. I felt embarrassed.
+When reading library code, I usually started with the implementation and type definitions. Tests were useful as examples of inputs and usage. Then an interview question about dropdown menu design made me realize how little I had considered the UI I used regularly. I felt embarrassed.
 
-That experience also made me reconsider my test file convention at work. New feature specifications went in `*.spec.*` files, and unexpected failures were reproduced in `*.test.*` files. I expected gaps in my own test design and wanted a place to keep adding cases I had missed. Looking back, I was relying on filling those gaps after a failure surfaced. I needed to think more carefully about which situations to cover when writing the initial specification. [My testing standards](/en/blog/testing-standards)
+That experience also made me revisit my [test file convention at work](/en/blog/testing-standards). New feature specifications went in `*.spec.*` files, while `*.test.*` files reproduced unexpected failures to prevent regressions. I knew my test design had gaps and wanted to keep filling them as problems surfaced. Looking back, I should have spent more thought on which situations to cover in the initial specification.
 
 Infinite scrolling and dropdowns have plenty of cases that are easy to miss. A test that only checks for new cards after scrolling to the end can pass even if the existing list disappears while the request is pending. Checking only that a menu opens can miss an item clipped by the bottom of the screen.
 
@@ -18,27 +18,29 @@ Photo Contest already had a [gallery E2E test](https://github.com/jingeon27/side
 
 ## Library tests as an answer key
 
-This time, I read the tests in TanStack Query, Radix, shadcn/ui, and Base UI by following their starting state, actions, and assertions. I used them as an answer key to find cases I had not thought of.
+This time, I read tests in TanStack Query, Radix, and Base UI by following their starting conditions, actions, and expected results. I used them as an answer key to find cases I had not thought of.
 
 Reading tests also gave me a glimpse of how the libraries had resolved issues. The reproduction code and assertions showed which input or interaction had caused a problem and what behavior the fix was meant to preserve.
 
 The TanStack Query [`useInfiniteQuery` tests](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx) collect the hook's state on every render and check the order in which the first fetch and next-page fetches change it. They separately check that pages already fetched stay when a next-page request fails, with `isFetchNextPageError` set, and that `hasNextPage` becomes `false` when `getNextPageParam` returns `undefined`.
 
-shadcn/ui offers one dropdown in Radix, Base UI, and React Aria versions, with styles on top of each. As in the [Base UI version](https://github.com/shadcn-ui/ui/blob/8ab27715521cbd4f87ae6886cd989cbb678f6de7/apps/v4/registry/bases/base/ui/dropdown-menu.tsx), behavior such as opening, closing, and focus belongs to the component underneath, so its repository has no behavior tests for the dropdown. To see how that behavior is verified, I looked at the Radix and Base UI tests.
+I also looked at shadcn/ui, which I had been using regularly. It offers dropdown implementations based on Radix, Base UI, and React Aria. The [Base UI version](https://github.com/shadcn-ui/ui/blob/8ab27715521cbd4f87ae6886cd989cbb678f6de7/apps/v4/registry/bases/base/ui/dropdown-menu.tsx) composes Base UI components and adds styles. I followed opening, closing, and focus behavior to the tests in the underlying Radix and Base UI libraries.
 
-The Radix [DropdownMenu tests](https://github.com/radix-ui/primitives/blob/fe02008f49834d7421427fe532e5b11f13c7bcac/packages/react/dropdown-menu/src/dropdown-menu.test.tsx) look at the edges more than at opening and closing. They check that `aria-controls` does not point to a missing element while the menu is closed, that submenus close when the window loses focus, and that an item does not take focus when the pointer passes over it while the menu is closing.
+The Radix [DropdownMenu tests](https://github.com/radix-ui/primitives/blob/fe02008f49834d7421427fe532e5b11f13c7bcac/packages/react/dropdown-menu/src/dropdown-menu.test.tsx) cover details that are easy to overlook when opening and closing a menu. They check that `aria-controls` does not point to a missing element, that submenus close when the window loses focus, and that items cannot take focus from a passing pointer during dismissal.
 
-The Photo Contest post menu is built with Base UI, so I also opened its [menu tests](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/root/MenuRoot.test.tsx). What stood out was how small the cases were. Suites group topics such as keyboard navigation and focus management. Within them, separate tests cover opening with Enter and focusing the first item, opening with ArrowUp and focusing the last item, and returning focus to the trigger after closing. Combining every interaction into one long test would leave later behavior unchecked whenever an earlier step failed.
+Photo Contest uses Base UI for its post menus. In its [menu tests](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/root/MenuRoot.test.tsx), I noticed how small the individual cases were. Suites group keyboard navigation and focus management, then separate tests check each behavior: Enter focuses the first item, ArrowUp focuses the last, and closing returns focus to the trigger. A failed interaction does not prevent the other tests from running.
 
-The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) has a different purpose. It records opening, closing, and reopening during an exit because their sequence is what it needs to verify. It repeats the same checks with `it.each`, combining controlled state, `keepMounted`, initially open state, and the portal container. This file runs in a real browser and is skipped in jsdom. Independent interactions get their own tests; lifecycle checks keep the sequence they need to examine.
+The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) records opening, closing, and reopening during dismissal in sequence. Those steps belong together because an earlier transition can affect the next one. It repeats the checks with `it.each` across controlled state, `keepMounted`, initially open state, and portal container options. This file runs in a real browser and is skipped in jsdom.
 
-That structure made me revisit the Photo Contest tests. Beyond separating loading from failure, I needed to consider which behavior each test explained. The sections below cover what the tests currently verify and where I would split or improve them after reading the library tests.
+I reread the Photo Contest tests with that distinction in mind. Some behaviors can be checked independently, while others need a sequence of states. The following sections cover the existing tests and the improvements I would make after reading the library tests.
 
 ## Control responses to create each state
 
-The state tests run on a browser test page that renders the app's latest-posts feed, post cards, and dropdowns, and Playwright's [`page.route`](https://playwright.dev/docs/mock) controls when the GraphQL response arrives. The app's `IntersectionObserver` detects the end of the list, and its Apollo cache appends the next page. By default the first page has 24 cards and the last page has two. The fixture records the offset of each request, so the first request appears as `offset: 0` and the next one as `offset: 24`. Because the first query starts in the browser rather than on the server, a [separate E2E test](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32) checks that the server includes preloaded content in the HTML.
+Photo Contest has a dedicated browser test page that renders the real latest-posts feed, post cards, and menus. Playwright's [`page.route`](https://playwright.dev/docs/mock) controls when GraphQL responses arrive. The feed still uses its actual `IntersectionObserver` and Apollo cache to detect the end and append pages.
 
-These are the states the page creates and what the existing tests check.
+The default responses contain 24 cards on the first page and two on the last. Recording each request's offset produces `0` for the initial query and `24` for the next one. This page starts its first query in the browser. A [separate E2E test](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/access-layout.spec.ts#L32) checks that server-preloaded content appears in the HTML.
+
+Holding or failing a response lets the tests check these situations.
 
 | State | What the browser shows | Request check |
 | --- | --- | --- |
@@ -50,7 +52,9 @@ These are the states the page creates and what the existing tests check.
 
 TanStack Query [creates a new QueryClient before each test and clears it afterward](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx#L31-L46). Reusing cached data could skip initial loading and change the starting condition. In Photo Contest, each Playwright test starts the app and its Apollo client on a fresh page, with routes installed for that page. Each test also creates its own response promises and request log.
 
-Holding the first response exposes the skeleton before any cards appear. Holding the next response exposes a spinner below the 24 existing cards. The current next-page test combines keeping the list visible, preventing duplicate requests, and appending the result. Following Base UI's smaller cases, I would separate the list's loading lifecycle from the behavior of scrolling again during a pending request. These examples show that split using the existing fixture. [`openGallery`](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/test/browser/gallery.fixture.ts) installs routes before navigation and holds the first response at the specified offset until its promise resolves.
+Holding the first response exposes the skeleton. Holding the next one exposes a spinner below the existing cards. The current next-page test checks list retention, duplicate requests, and appending cards together. I would separate the loading lifecycle from the behavior of scrolling again during a pending request.
+
+These examples split the test using the existing fixture. [`openGallery`](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/test/browser/gallery.fixture.ts) installs routes before navigation and holds the first response at the specified offset until its promise resolves.
 
 ```typescript
 test('keeps the list during loading and appends the next page', async ({ page }) => {
@@ -58,27 +62,27 @@ test('keeps the list during loading and appends the next page', async ({ page })
   const { feed, cards } = await openGallery(page, {
     responses: { 24: response.promise },
   });
-  const loading = feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' });
+  const loading = feed.getByRole('status');
 
   try {
     await expect(cards).toHaveCount(24);
     await scrollPastEnd(page);
     await expect(loading).toBeVisible();
-    await expect(cards.first()).toHaveAccessibleName('테스트 사진 1');
+    await expect(cards.first()).toBeVisible();
     await expect(cards).toHaveCount(24);
   } finally {
     response.resolve('success');
   }
 
   await expect(cards).toHaveCount(26);
-  await expect(cards.last()).toHaveAccessibleName('테스트 사진 26');
+  await expect(cards.last()).toBeVisible();
   await expect(loading).toBeHidden();
 });
 ```
 
-Check that loading is visible before releasing the response. Otherwise, a test could inspect only the completed screen and miss the pending state entirely. The count, first card's name, and spinner all help describe this one behavior, so they belong together. Splitting a test does not require reducing it to one assertion.
+Check that loading is visible before releasing the response, so the test cannot pass by inspecting only the completed screen. The card count, first card's visibility, and spinner all establish that the list remains usable during loading. These assertions describe the same behavior and can stay together.
 
-A separate test can keep the response pending, scroll back up, and return to the end to check duplicate requests. The existing `expectNoGalleryRequest` helper waits up to one second for a gallery request and passes only if that wait times out.
+The duplicate-request case also holds the next response, then scrolls up and returns to the end. The existing `expectNoGalleryRequest` helper waits one second for a gallery request and passes if none arrives.
 
 ```typescript
 test('does not request the same offset again while the next page is pending', async ({ page }) => {
@@ -91,7 +95,7 @@ test('does not request the same offset again while the next page is pending', as
     await expect(cards).toHaveCount(24);
     await scrollPastEnd(page);
     await expect(
-      feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' }),
+      feed.getByRole('status'),
     ).toBeVisible();
     await cards.first().scrollIntoViewIfNeeded();
 
@@ -104,27 +108,43 @@ test('does not request the same offset again while the next page is pending', as
 });
 ```
 
-Start watching before the second scroll, or an immediate request could escape observation. The `finally` block releases the response even when an assertion fails. Starting each case on its own page also lets the duplicate-request test run independently when the list's loading behavior is broken.
+Start watching before the second scroll to catch an immediate request. The `finally` block releases the response whether the test passes or fails. With separate cases, a failure to retain the list does not prevent the duplicate-request behavior from being checked.
 
 ## Reach the final page
 
-With the default data, requests stop after 26 cards. When I temporarily changed the feed to infer the next offset from the card count instead of the server's `nextOffset`, all four existing tests still passed. The last page had only two cards, so both implementations stopped at the same point.
+With the default data, fetching stopped after 26 cards. I temporarily changed the feed to infer the next offset from the card count instead of the server's `nextOffset`, but all four tests that existed then still passed. With only two cards on the last page, both implementations stopped at the same point.
 
 So I added a separate test that fills the last page with 24 cards and returns `nextOffset: null`. Once 48 cards appear, the test starts [watching for requests](https://playwright.dev/docs/api/class-page#page-wait-for-request), scrolls beyond the document's height, and sends another wheel input. No request arrives within the one-second watch window, so the sequence stays at `[0, 24]`. With the same data, the card-count implementation fails by requesting `offset: 48`.
 
-Reaching the bottom again matters only after the final response has arrived. No request while still loading, or while halfway down the list, does not establish that pagination has ended. The one-second window bounds what the browser test observes; the hook tests separately check that pagination follows the server's end condition.
+The test waits for the final response before scrolling to the end again. An absence of requests during loading, or halfway down the list, would not establish that pagination had ended. The browser test observes a one-second window. Separate hook tests check that fetching follows the server's end condition.
 
 ## Recover from failed requests
 
-The two failures are separate cases. In both, retry starts by fetching the first page again, so a check that only looks at the final count after recovery could miss the difference. The test records which offset failed and checks that scrolling can reach the next page after retry.
+I tested initial-query and next-page failures separately. Both recover by fetching the first page again, so the final card count alone cannot distinguish them. The tests record which offset failed, then check that scrolling can fetch the next page after retry.
 
-When a next-page request fails, the 24 cards already on screen are replaced by the error as well. The list reads from an Apollo `QueryRef`, and a failed `fetchMore` puts that same `QueryRef` into an error state, so the error boundary around the list takes over. TanStack Query keeps the pages already fetched. Choosing that behavior for Photo Contest would mean handling next-page errors separately from a failure of the whole list and offering retry below it. Expectations borrowed from a library still need to match the product's intended behavior.
+When a next-page request fails, the 24 cards already displayed are replaced by the error screen. The list reads from an Apollo `QueryRef`. A failed `fetchMore` puts that reference into an error state, which activates the list's error boundary.
 
-Check that the error is visible before retrying. The initial-error case starts without cards; the next-page case first loads 24 cards and then scrolls. Error and retry belong in one test when the question is whether that failed query can recover. A retry that fails again would deserve its own case, prepared with two consecutive failures, checking that the error and Retry button remain available.
+The TanStack Query test checks that existing pages remain after a next-page failure. Keeping them in Photo Contest would require handling that error separately from failure of the whole list and offering retry below it. The expected result still needs to match the product's intended behavior.
+
+The preparation differs too. The initial-error case starts without cards, while the next-page case first loads 24 cards and then scrolls. Both establish that the error is visible before retrying. Error and retry belong together here because the test checks recovery from that specific failed query.
+
+A retry that also fails could have its own test. Two consecutive failure responses would let it check that the error and Retry button remain available.
+
+## When refresh and next-page requests overlap
+
+I also examined the query states behind the screen. Following TanStack Query's tests, I recorded the states committed to the UI in order. A next-page request should keep the list visible with a loading state, then append the page and end loading. The record exposes any intermediate state that replaces the whole list with a loading screen.
+
+Testing an overlap between refresh and next-page requests revealed a bug. If refresh finished first, a later call to fetch more requested the pending offset again and ran the page-loaded callback twice. The latest-posts feed uses that callback to send analytics events, so those could be duplicated too.
+
+The hook remembered only one pending request. Refresh completion cleared that record, making the hook accept another request while the next page was still loading.
+
+The screen did not reveal this immediately because it stops observing the end during next-page loading. But the contest feed refreshes when its photo count changes, so the requests can overlap. The [first fix](https://github.com/jingeon27/side-project/commit/4830f074859ade4126f7d0a93c7bad9148bc9e92) tracked every pending request. The hook [now reads Apollo ObservableQuery's current state](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/src/shared/api/infinite-query.hook.ts) to decide whether it can fetch the next page, without maintaining a separate request log.
+
+The hook tests disable Apollo's `queryDeduplication`. Otherwise, several calls could be combined into one network request and escape detection. That is why the tests check both requested offsets and the page-loaded callback count. Browser tests cover actual scrolling, while hook tests cover request control when operations overlap.
 
 ## Serve the same responses with MSW
 
-The Photo Contest tests control responses with `page.route`, but [MSW 3 GraphQL handlers](https://mswjs.io/api/graphql/) can serve the same responses. For `GalleryPosts`, `offset: 0` returns the first 24 cards with `nextOffset: 24`, and `offset: 24` returns the remaining 24 with `nextOffset: null`. Pass a promise at a given offset to hold that response or make it fail.
+So far, the tests have controlled responses with `page.route`. [MSW 3 GraphQL handlers](https://mswjs.io/api/graphql/) can create the same situations. This example splits 48 cards into two pages. Offset `0` returns 24 cards and `nextOffset: 24`. Offset `24` returns the rest and `nextOffset: null`. A promise at a specific offset can hold that response or make it fail.
 
 ```typescript
 import { graphql } from 'msw/graphql';
@@ -186,23 +206,27 @@ worker.use(galleryHandler(endpoint, posts, { 24: Promise.resolve('error') }));
 
 Use `0` to fail the first request. In either case, once the error is visible, call [`worker.resetHandlers()`](https://mswjs.io/api/setup-worker/reset-handlers/) to restore the initial success handler. You can then click Retry and check that the first page returns.
 
-Resetting handlers alone does not isolate the next test. `resetHandlers()` clears neither Apollo's cache nor pending promises. Unmount the component and release pending responses during cleanup, then prepare fresh promises and a new Apollo client for the next test. Keep the existing client when retrying within the same test so the test exercises recovery. The error handler above keeps failing until replaced, so restoring success before retry matters too.
+Prepare handlers and client state separately for each test. `resetHandlers()` clears neither Apollo's cache nor pending promises. Unmount the component and release pending responses during cleanup, then use fresh promises and a new Apollo client in the next test. Keep the existing client when retrying within one test to exercise recovery from its failure.
 
-A successful mocked response does not prove that the spinner or error display works. Replacing the response mechanism with MSW should leave the UI assertions intact, including whether the existing cards remain and when the error appears.
+The error handler above keeps failing until replaced. Restore the success handler after checking the error, then click Retry.
+
+MSW changes how the response is prepared. The UI assertions still need to check whether the existing cards remain and when the spinner or error appears.
 
 ## Open the dropdown from a scrolled position
 
 I scrolled to the eighth post, which starts below the visible part of the page. With its trigger on screen, I compared [where the menu opens](https://base-ui.com/react/components/menu) with two amounts of space below the trigger. With 300 pixels, the menu opens beneath it. With 20 pixels, it opens above the trigger and both Edit and Delete remain reachable. The test compares `scrollY` before and after opening so it also catches a jump in the list.
 
-For the second case, the popup's bottom edge should be above the trigger's top edge, and its horizontal edges should fit within the viewport. Requiring an exact visible ratio of `1` in Playwright's [viewport assertion](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport) failed when the browser returned `0.99999988`. So the tests allow that small rounding difference when checking item visibility and use the coordinates to verify where the popup opens.
+For a menu opening upward, the test checks that its bottom edge sits above the trigger and that its horizontal edges fit within the viewport. Playwright's [viewport assertion](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport) checks item visibility.
 
-As Base UI repeats a shared check across option combinations, the two placement cases could use pairs of available space and expected direction to create separate tests. Running both placements inside one test would leave the second unchecked if the first failed. Real browser tests still need to cover positioning, scrolling, and focus. Keeping card preparation and placement in a helper leaves the comparisons visible in each test.
+Requiring an exact visible ratio of `1` failed when the browser returned `0.99999988`. This was a small rounding difference, so the tests allow a little tolerance for visibility and use coordinates to verify the opening direction.
+
+The two placement cases could use pairs of available space and expected direction, much like Base UI's `it.each`. Each pair should generate its own test so a failure in one does not prevent the other from running. A helper can prepare the card and scroll position, while each test keeps its coordinate comparisons visible.
 
 ## Click the background, a menu item, or the trigger
 
 Checking only that the menu closed would pass for both the background and Delete. Choosing Delete must also open the confirmation dialog, while clicking the background must leave the page without it. So each click target has its own test.
 
-Each test starts with the menu open on a post in the scrolled list. The trigger and menu share an accessible name that includes the card title. The test looks up that named menu before selecting an item inside it, so it checks which card the action belongs to.
+Each test scrolls to the same card before opening its menu. The trigger and menu share an accessible name that includes the card title. Looking up that named menu before choosing an item makes it clear which card the test operates on.
 
 | Click target | What the test checks |
 | --- | --- |
@@ -210,9 +234,13 @@ Each test starts with the menu open on a post in the scrolled list. The trigger 
 | Delete item | The menu closes and a confirmation dialog opens. Cancelling closes the dialog and leaves that post present |
 | The trigger that opened the menu | A second click closes it. A third click opens it again |
 
-The offset log covers list queries only. Checking that cancellation sends no deletion request would require watching the delete mutation before clicking. A separate confirmation test could check that the correct post id is sent exactly once. A closed dialog or a card that remains on screen does not establish which requests reached the server.
+The offset log covers list queries only. Checking that cancellation sends no deletion request would require watching the delete mutation before clicking. A confirmation test could also check that the correct post id is sent exactly once. A card that remains on screen does not prove that no deletion request was sent.
 
-The keyboard test could be split further. It currently opens with Enter, moves with an arrow key, and closes with Escape in a single test. The keyboard checks also run in Desktop Safari. Following Base UI's focus tests, I would give each interaction its own expected result. An Escape test still needs to open the menu and establish focus on an item before it can check dismissal.
+## Keyboard interaction and focus
+
+The keyboard test opens the menu with Enter, moves between items with ArrowDown, then closes with Escape. It runs in Desktop Safari too. Those three interactions currently share one test, but could be split like Base UI's focus tests.
+
+Alongside focus, the tests check `aria-controls`. The trigger has no such attribute while closed and points to the menu's id while open. Closing must remove it again so it cannot reference an unmounted menu.
 
 | Separate case | Starting condition | Expected result |
 | --- | --- | --- |
@@ -221,22 +249,18 @@ The keyboard test could be split further. It currently opens with Enter, moves w
 | Close with Escape | Menu open, an item focused | Menu disappears and focus returns to the trigger |
 | Cancel deletion | Delete confirmation open | Post remains and focus returns to the trigger |
 
-Selecting Delete and cancelling its confirmation belong together when checking that return path. Menu placement and next-page arrival have their own cases. The useful size is one where a failing test's name helps locate the broken behavior.
+An Escape test still needs to prepare an open menu with focus on an item. Testing focus after cancelling deletion also requires selecting Delete first. Keep that preparation with its expected result, while testing unrelated conditions such as placement and page arrival separately. This makes a failure easier to locate.
 
-## Tests added from the answer key
+## Input while the menu is closing
 
-In the infinite scroll hook test, I recorded each state committed to the screen in order, following TanStack Query's query-state tests. Requesting the next page should switch to loading while the existing list stays, and when the response arrives the new page should appear and loading should end. If a step that swaps the list for a loading screen slips in between, it shows up immediately in the recorded order. Keeping the intermediate states together makes sense when their order is the behavior under test.
+A menu can remain visible briefly while closing. I checked that moving or clicking the pointer over it cannot activate an item. The test stretches the transition to two seconds, presses Escape, then moves over Delete and clicks. The item stays unhighlighted and no confirmation opens. Deliberately allowing pointer input during dismissal made this test fail.
 
-Recording a refresh that overlaps the next page the same way found a bug. When a refresh finished first while the next page was still loading and the hook was then asked for more, it started another fetch for the same offset and called the page-loaded callback twice. In the latest-posts feed, that callback sends an analytics event. This happened because the hook remembered only one in-flight request, so the finished refresh also cleared the record of the next-page request still in flight.
+Base UI's popup transition test also controls when the animation ends. It stretches the transition to ten seconds to leave time for intermediate checks, then calls `finish()` on the animations returned by `getAnimations()`.
 
-The screen did not show it right away because the end of the list is not observed while a page is loading. But a list that refreshes automatically, like the contest feed when its photo count changes, can overlap the two requests. The [first fix](https://github.com/jingeon27/side-project/commit/4830f074859ade4126f7d0a93c7bad9148bc9e92) recorded every in-flight request. The hook [now reads Apollo ObservableQuery's current query state](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/src/shared/api/infinite-query.hook.ts) and allows the next page only once Apollo is ready, without keeping its own record of pending requests.
+Photo Contest could use this approach to avoid waiting for the full transition. First establish that the exit animation has started, check that it ignores pointer input, then finish the transition and check that the menu is removed. The animation list can be empty before a transition starts too, so checking the start must come first.
 
-The hook tests also disable Apollo's `queryDeduplication`. One network request could otherwise conceal several calls that Apollo combined. Checking the requested offsets and page-loaded callback count together catches duplicated analytics events too. The hook tests cover that call control; the browser tests check that actual scrolling initiates a request.
+## What happens to an open menu when the list changes?
 
-I also added a check for `aria-controls`. The trigger has no such attribute while closed and points to the menu's id only while open. Closing removes the attribute again so it cannot keep pointing to an unmounted menu.
+Finally, I checked what happens when [list updates and menu interactions overlap](https://github.com/jingeon27/side-project/commit/49294bdff9abf8120bb67cfc06c6e61ef4d7188b). Appending a page should preserve the card's position and `scrollY`. With the last card's menu open, it should also leave the menu at the same coordinates.
 
-For input while the menu is closing, I stretched the transition as Base UI does. The test sets the menu transition to 2 seconds, presses Escape, then moves the pointer over Delete and clicks while the menu is still closing. The item is not highlighted and no confirmation dialog opens. When I deliberately let the closing menu receive pointer input, the test failed.
-
-Base UI offers a further improvement here. Its popup transition test stretches the transition to 10 seconds so it cannot easily miss an intermediate state, then calls `finish()` on the animations returned by `getAnimations()` after the relevant checks. The test controls when the transition ends instead of waiting ten seconds. Applied to Photo Contest, this would mean establishing that the exit transition has started, checking that pointer input is ignored during it, then finishing the transition and checking unmounting. An empty animation list before the transition starts must not be mistaken for completion.
-
-I also tested the cases where [infinite scroll and the menu overlap](https://github.com/jingeon27/side-project/commit/49294bdff9abf8120bb67cfc06c6e61ef4d7188b). With the last card's menu open, the menu stays at the same coordinates when the next page arrives. When the next page fails, the list turns into an error, the menu disappears, and the scroll lock the menu put on `body` is released. Retrying brings back the first page. Without a menu, the test also checks that the card in view and `scrollY` stay put when the next page is appended.
+A failed next-page request replaces the list with the error screen and removes the open menu. The test checks that the menu's scroll lock on `body` is released as well. Retrying brings back the first page so the list can be read again.
