@@ -193,7 +193,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 14,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -264,7 +264,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 12,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"

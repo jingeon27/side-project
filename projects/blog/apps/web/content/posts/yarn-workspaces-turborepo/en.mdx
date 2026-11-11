@@ -14,7 +14,7 @@ _An arrow means the item on the left depends on the item on the right. Execution
 | --------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Dependency it manages | Between packages                                                                        | Between tasks                                                        |
 | Question it answers   | Which versions to install and where to link them                                        | Which tasks run first and which need to run again                    |
-| Where you declare it  | Each package's `dependencies` with `workspace:` and `catalog:`, plus root `resolutions` | `dependsOn`, `outputs`, `inputs`, and `env` in the root `turbo.json` |
+| Where you declare it  | Each package's `dependencies` with `workspace:` and `catalog:`, root `resolutions`, and `nodeLinker` in `.yarnrc.yml` | `dependsOn`, `outputs`, `inputs`, and `env` in the root `turbo.json` |
 | What it leaves behind | `yarn.lock` and the package layout for the chosen install mode                                                 | A task graph and a cache of task outputs                             |
 
 Turborepo does not ask you to declare package relationships again. It reads them from the same `package.json` files Yarn uses and builds its task graph on top. The two tools do not replace each other. Turborepo adds task ordering and caching on top of the package relationships Yarn has already linked.
@@ -42,17 +42,19 @@ Web declares `"@demo/ui": "workspace:*"` in `dependencies`. UI does the same for
 
 ### Placing the chosen packages with nodeLinker
 
-The `nodeLinker` setting in `.yarnrc.yml` selects how Link works. The same dependency declarations can produce different layouts on disk and different ways for Node to find packages. The default is `pnp`. [Yarn nodeLinker setting](https://yarnpkg.com/configuration/yarnrc#nodeLinker)
+The `nodeLinker` setting in `.yarnrc.yml` selects how Link works. The same dependency declarations can produce different layouts on disk and different ways for Node to find packages. The default is `pnp`. The table summarizes the install layouts, checks for undeclared dependencies, and tool integration requirements described in Yarn's documentation. [Yarn install modes](https://yarnpkg.com/features/linkers)
 
-| Mode | What it puts on disk | Tool integration |
-| --- | --- | --- |
-| `node-modules` | A `node_modules` tree with symlinks to local workspaces | Uses Node's standard lookup structure, which existing tools generally support |
-| `pnp` | A `.pnp.cjs` loader recording package locations and dependencies | Editors may need SDKs, and missing dependency declarations may need `packageExtensions` |
-| `pnpm` | `node_modules/.store` populated with hardlinks from a central store, plus symlinks into it | Uses `node_modules`, but tools still need to support symlinks |
+| Mode | How Node finds packages | Undeclared dependencies | Features and tool integration |
+| --- | --- | --- | --- |
+| `node-modules` | A `node_modules` tree with symlinks to local workspaces | Not blocked | Compatible with existing tools and requires no editor SDK |
+| `pnp` | A `.pnp.cjs` loader recording package locations and dependencies | Blocked | Fast installs and support for Zero-installs. Editors may need SDKs |
+| `pnpm` | `node_modules/.store` populated with hardlinks from a central store, plus symlinks into it | Partly blocked | Requires no editor SDK. Tools need to support symlinks |
 
 With `node-modules`, Yarn hoists dependencies toward the top of the tree to reduce duplication. An import can therefore succeed even when the package is missing from the consumer's manifest. PnP checks declared dependencies through its loader and reports which declaration is missing when a package tries an undeclared access. [Yarn install modes compared](https://yarnpkg.com/features/linkers)
 
 Declare each dependency in the package that consumes it regardless of the install mode. Focused installs and Turborepo's package graph also rely on those manifest declarations. [Yarn Workspaces](https://yarnpkg.com/features/workspaces)
+
+A third-party library can also omit a dependency declaration. An error may appear when its code tries to load that package. The `packageExtensions` setting in `.yarnrc.yml` can fill in the library's missing declaration. Dependencies used by your own code belong in the consuming workspace's `dependencies`. [Yarn packageExtensions setting](https://yarnpkg.com/configuration/yarnrc#packageExtensions)
 
 I started the side-project repository that hosts this blog with `nodeLinker: node-modules`. Configuring PnP support for each tool I used was cumbersome, and Zero-installs, which keeps the cache in the repository to skip installation, was not an option. The root `node_modules/@side/design-system` is still a symlink to `packages/design-system`. [Yarn configuration](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1), [Yarn Zero-installs](https://yarnpkg.com/features/caching#zero-installs)
 
