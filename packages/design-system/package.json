@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "catalog:",
+    "@playwright/test": "catalog:",
     "@side/config": "workspace:*",
     "@storybook/addon-a11y": "10.6.3",
     "@storybook/addon-docs": "10.6.3",
