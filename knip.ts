@@ -21,6 +21,8 @@ export default defineConfig({
       // createRequire로 읽는 CommonJS 설정과 플러그인이다.
       ignoreDependencies: ['eslint-config-expo', 'eslint-plugin-jsx-a11y'],
     },
+    // test:browser가 쓰는 Playwright 설정이다.
+    'packages/design-system': { entry: ['playwright.config.ts'] },
     'projects/photo-contest': { entry: ['scripts/*.ts'] },
     'projects/*/apps/*': { entry: appEntries },
     'projects/blog/apps/web': { entry: [...appEntries, 'vercel.ts'] },
