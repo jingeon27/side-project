@@ -5,14 +5,16 @@ import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 import { PostCardList, PostPreviewCard } from '@/features/post';
 import { PostSort, PublicGalleryPostsDocument, type PublicGalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { FeedLoadMore } from '@/shared/ui/@core/feed-load-more';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery> }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const pagination = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (data) => data.publicGalleryPostsPage.nextOffset,
     (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'public', offset }),
   );
