@@ -7,6 +7,7 @@ import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/rea
 import { PostCard, PostCardList } from '@/features/post';
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -38,8 +39,9 @@ function LatestPostList({
   empty: ReactNode;
   postAction?: (postId: string) => ReactNode;
 }) {
+  const observableQuery = useObservableQueryRef(postsRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    postsRef,
+    observableQuery,
     (data) => data.galleryPostsPage.nextOffset,
     (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'latest', offset }),
   );

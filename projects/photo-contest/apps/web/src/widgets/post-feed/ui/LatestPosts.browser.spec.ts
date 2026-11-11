@@ -14,36 +14,65 @@ function expectNoGalleryRequest(page: Page) {
 
 test('첫 응답을 기다리는 동안 스켈레톤을 표시하고 응답 뒤에 첫 페이지를 보여야 한다', async ({ page }) => {
   const response = Promise.withResolvers<'success'>();
-  const { feed, cards, offsets } = await openGallery(page, { responses: { 0: response.promise } });
+  const { feed, cards } = await openGallery(page, { responses: { 0: response.promise } });
   const skeleton = feed.getByRole('status', { name: '게시물 불러오는 중', exact: true });
-  await expect(skeleton).toBeVisible();
-  await expect(cards).toHaveCount(0);
-  await expect.poll(() => offsets).toEqual([0]);
-  await Promise.all([expectNoGalleryRequest(page), scrollPastEnd(page)]);
-  expect(offsets).toEqual([0]);
-  response.resolve('success');
+  try {
+    await expect(skeleton).toBeVisible();
+    await expect(cards).toHaveCount(0);
+  } finally {
+    response.resolve('success');
+  }
   await expect(cards).toHaveCount(24);
   await expect(skeleton).toBeHidden();
-  expect(offsets).toEqual([0]);
 });
 
-test('추가 조회 중 기존 목록을 유지하고 다시 스크롤해도 중복 요청하지 않아야 한다', async ({ page }) => {
+test('첫 응답을 기다리는 동안 스크롤해도 추가 요청하지 않아야 한다', async ({ page }) => {
   const response = Promise.withResolvers<'success'>();
-  const { feed, cards, offsets } = await openGallery(page, { responses: { 24: response.promise } });
-  const loading = feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' });
-  await expect(cards).toHaveCount(24);
-  await scrollPastEnd(page);
-  await expect(loading).toBeVisible();
-  await expect(cards.first()).toHaveAccessibleName('테스트 사진 1');
-  await expect(cards).toHaveCount(24);
-  await cards.first().scrollIntoViewIfNeeded();
-  await Promise.all([expectNoGalleryRequest(page), scrollPastEnd(page)]);
-  expect(offsets).toEqual([0, 24]);
+  const { feed, cards, offsets } = await openGallery(page, { responses: { 0: response.promise } });
+  try {
+    await expect(feed.getByRole('status', { name: '게시물 불러오는 중', exact: true })).toBeVisible();
+    await expect(cards).toHaveCount(0);
+    await expect.poll(() => offsets).toEqual([0]);
+    const noRequest = expectNoGalleryRequest(page);
+    await Promise.all([noRequest, scrollPastEnd(page)]);
+    expect(offsets).toEqual([0]);
+  } finally {
+    response.resolve('success');
+  }
+});
 
-  response.resolve('success');
+test('추가 조회 중 기존 목록을 유지하고 응답 뒤 새 카드를 붙여야 한다', async ({ page }) => {
+  const response = Promise.withResolvers<'success'>();
+  const { feed, cards } = await openGallery(page, { responses: { 24: response.promise } });
+  const loading = feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' });
+  try {
+    await expect(cards).toHaveCount(24);
+    await scrollPastEnd(page);
+    await expect(loading).toBeVisible();
+    await expect(cards.first()).toHaveAccessibleName('테스트 사진 1');
+    await expect(cards).toHaveCount(24);
+  } finally {
+    response.resolve('success');
+  }
   await expect(cards).toHaveCount(26);
   await expect(cards.last()).toHaveAccessibleName('테스트 사진 26');
   await expect(loading).toBeHidden();
+});
+
+test('추가 조회 중 목록 끝에 다시 내려도 같은 offset을 중복 요청하지 않아야 한다', async ({ page }) => {
+  const response = Promise.withResolvers<'success'>();
+  const { feed, cards, offsets } = await openGallery(page, { responses: { 24: response.promise } });
+  try {
+    await expect(cards).toHaveCount(24);
+    await scrollPastEnd(page);
+    await expect(feed.getByRole('status').filter({ hasText: '게시물을 더 불러오는 중' })).toBeVisible();
+    await cards.first().scrollIntoViewIfNeeded();
+    const noRequest = expectNoGalleryRequest(page);
+    await Promise.all([noRequest, scrollPastEnd(page)]);
+    expect(offsets).toEqual([0, 24]);
+  } finally {
+    response.resolve('success');
+  }
 });
 
 test('다음 페이지가 붙어도 보던 카드의 위치와 스크롤을 유지해야 한다', async ({ page }) => {

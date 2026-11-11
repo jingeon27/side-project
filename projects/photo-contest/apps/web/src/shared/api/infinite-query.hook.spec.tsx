@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AsyncBoundary } from '../ui/@core/async-boundary';
 import { useInfiniteQuery } from './infinite-query.hook';
+import { useObservableQueryRef } from './observable-query-ref.hook';
 import { offsetPagePagination } from './offset-page-pagination';
 
 interface IItem {
@@ -52,8 +53,9 @@ function Fallback() {
 }
 
 function List({ queryRef }: { queryRef: QueryRef<IData> }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (result) => result.itemsPage.nextOffset,
     (offset) => loadedOffsets.push(offset),
   );
@@ -115,6 +117,8 @@ function Query() {
 }
 
 interface ISetupOptions {
+  /** 첫 조회는 이 Promise가 끝날 때까지 응답하지 않는다. */
+  initialPageGate?: Promise<void>;
   /** 처음 조회 뒤의 첫 페이지 요청은 이 Promise가 끝날 때까지 응답하지 않는다. */
   refetchGate?: Promise<void>;
   /** 다음 페이지 요청은 이 Promise가 끝날 때까지 응답하지 않는다. */
@@ -126,6 +130,7 @@ interface ISetupOptions {
 async function setup(rows: Record<string, string[]>, options: ISetupOptions = {}) {
   const requests: Array<{ scope: string; offset: number }> = [];
   const client = new ApolloClient({
+    queryDeduplication: false,
     cache: new InMemoryCache({
       typePolicies: { Query: { fields: { itemsPage: offsetPagePagination(['scope']) } } },
     }),
@@ -134,14 +139,10 @@ async function setup(rows: Record<string, string[]>, options: ISetupOptions = {}
         new Observable((observer) => {
           const { scope, offset, limit } = operation.variables;
           const firstRequest = !requests.some((request) => request.offset === offset);
-          const gate =
-            offset === 0
-              ? options.refetchGate && !firstRequest
-                ? options.refetchGate
-                : Promise.resolve()
-              : (options.nextPageGate ?? Promise.resolve());
+          const firstPageGate = firstRequest ? options.initialPageGate : options.refetchGate;
+          const gate = offset === 0 ? firstPageGate : options.nextPageGate;
           requests.push({ scope, offset });
-          void gate.then(() => {
+          void (gate ?? Promise.resolve()).then(() => {
             if (firstRequest && options.failOffset === offset) {
               observer.error(new Error('목록 연결 실패'));
               return;
@@ -163,7 +164,8 @@ async function setup(rows: Record<string, string[]>, options: ISetupOptions = {}
     ),
   });
   clients.push(client);
-  await client.query({ query: DOCUMENT, variables: { scope: 'first', offset: 0, limit: 2 } });
+  if (!options.initialPageGate)
+    await client.query({ query: DOCUMENT, variables: { scope: 'first', offset: 0, limit: 2 } });
   await act(async () => {
     render(
       <ApolloProvider client={client}>
@@ -185,6 +187,26 @@ function distinctCommits() {
 }
 
 describe('useInfiniteQuery', () => {
+  it('첫 조회는 Suspense를 표시하고 추가 조회는 기존 목록을 유지해야 한다', async () => {
+    const initialPage = Promise.withResolvers<void>();
+    const nextPage = Promise.withResolvers<void>();
+    const requests = await setup(
+      { first: ['a', 'b', 'c'] },
+      { initialPageGate: initialPage.promise, nextPageGate: nextPage.promise },
+    );
+    expect(screen.getByText('조회 중')).toBeVisible();
+    await act(async () => initialPage.resolve());
+    expect(await screen.findByText('b')).toBeVisible();
+
+    await click('더 보기');
+    expect(screen.getByRole('button', { name: '더 보기' })).toBeDisabled();
+    expect(screen.getByText('b')).toBeVisible();
+    expect(screen.queryByText('조회 중')).toBeNull();
+    await act(async () => nextPage.resolve());
+    expect(await screen.findByText('c')).toBeVisible();
+    expect(requests.map((request) => request.offset)).toEqual([0, 2]);
+  });
+
   it('첫 페이지를 다시 받는 동안에는 이전 길이로 계산한 추가 조회를 보내지 않아야 한다', async () => {
     const refetchGate = Promise.withResolvers<void>();
     const requests = await setup({ first: ['a', 'b', 'c', 'd'] }, { refetchGate: refetchGate.promise });
@@ -279,7 +301,7 @@ describe('useInfiniteQuery', () => {
     await click('연속 조회');
     await act(async () => nextPageGate.resolve());
     await screen.findByText('d');
-    // Apollo가 같은 요청을 하나로 합쳐 보내므로, 중복 조회는 페이지 도착 콜백 횟수로 확인한다.
+    // 중복 요청과 페이지 도착 알림이 모두 한 번씩만 발생해야 한다.
     expect(loadedOffsets).toEqual([2]);
     expect(requests.map((request) => request.offset)).toEqual([0, 2, 0]);
     expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual(['a', 'b', 'c', 'd']);

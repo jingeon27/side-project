@@ -20,6 +20,7 @@ import {
 import { VoteButton } from '@/features/vote';
 import { Phase, SubmissionsDocument, type SubmissionsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
@@ -43,7 +44,8 @@ function FeedContent({
   viewerId: string;
 }) {
   const { data: context } = useReadQuery(contestRef);
-  const pagination = useInfiniteQuery(submissionsRef, (data) =>
+  const observableQuery = useObservableQueryRef(submissionsRef);
+  const pagination = useInfiniteQuery(observableQuery, (data) =>
     data.submissionsPage.items.filter((photo) => !photo.hidden).length <
     (context?.contest.submissionCount ?? 0)
       ? data.submissionsPage.nextOffset

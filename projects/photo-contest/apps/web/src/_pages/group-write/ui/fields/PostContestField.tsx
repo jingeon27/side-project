@@ -8,6 +8,7 @@ import { useWatch, type UseFormReturn } from 'react-hook-form';
 
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ROUTES } from '@/shared/constants/routes';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -26,8 +27,9 @@ function ContestSelection({
   queryRef: QueryRef<GroupContestsQuery>;
   groupId: string;
 }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (data) => data.groupContestsPage.nextOffset,
   );
   const id = useId();

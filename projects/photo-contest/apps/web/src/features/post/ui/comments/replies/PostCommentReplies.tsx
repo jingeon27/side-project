@@ -4,6 +4,7 @@ import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
 import { PostCommentsDocument, type PostCommentsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -17,8 +18,10 @@ function ReplyList({
   queryRef: QueryRef<PostCommentsQuery>;
   replyToName: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, (data) =>
-    data.postComments.length < data.postCommentCount ? data.postComments.length : null,
+  const observableQuery = useObservableQueryRef(queryRef);
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    observableQuery,
+    (data) => (data.postComments.length < data.postCommentCount ? data.postComments.length : null),
   );
   return (
     <>
