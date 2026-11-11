@@ -50,13 +50,16 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
-test('opening an article from a scrolled list reaches the top in its first frame', async ({ page }) => {
+test('article navigation reaches the top and restores the list position without smooth scrolling', async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/ko/blog');
   // Wait for the hydrated feed before scrolling. Its links replace the server fallback.
   const link = page.locator('.blog-feed .article-row h3').getByRole('link').nth(7);
   await link.scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+  const listScrollY = await page.evaluate(() => window.scrollY);
+  expect(listScrollY).toBeGreaterThan(300);
   const timeOrigin = await page.evaluate(() => performance.timeOrigin);
 
   const [firstDetailFrame] = await Promise.all([
@@ -68,7 +71,19 @@ test('opening an article from a scrolled list reaches the top in its first frame
 
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
   expect(await firstDetailFrame.jsonValue()).toEqual({ scrollY: 0 });
-  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
+  const [firstListFrame] = await Promise.all([
+    page.waitForFunction(() => {
+      const row = document.querySelector('.blog-feed .article-row');
+      return window.location.pathname === '/ko/blog' && row?.getClientRects().length
+        ? { scrollY: window.scrollY }
+        : null;
+    }),
+    page.goBack(),
+  ]);
+  const restored = await firstListFrame.jsonValue();
+  expect(restored?.scrollY).toBeCloseTo(listScrollY, 0);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
 });
 
 test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
