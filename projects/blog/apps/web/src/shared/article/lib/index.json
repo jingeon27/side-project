@@ -136,13 +136,13 @@
         "level": 2
       },
       {
-        "id": "간접-의존성에-적용한-resolutions",
-        "title": "간접 의존성에 적용한 resolutions",
+        "id": "고른-패키지를-배치하는-nodelinker",
+        "title": "고른 패키지를 배치하는 nodeLinker",
         "level": 3
       },
       {
-        "id": "고른-패키지를-배치하는-nodelinker",
-        "title": "고른 패키지를 배치하는 nodeLinker",
+        "id": "버전을-고르는-catalog와-resolutions",
+        "title": "버전을 고르는 catalog와 resolutions",
         "level": 3
       },
       {
@@ -202,13 +202,13 @@
         "level": 2
       },
       {
-        "id": "overriding-a-transitive-dependency-with-resolutions",
-        "title": "Overriding a transitive dependency with resolutions",
+        "id": "placing-the-chosen-packages-with-nodelinker",
+        "title": "Placing the chosen packages with nodeLinker",
         "level": 3
       },
       {
-        "id": "placing-the-chosen-packages-with-nodelinker",
-        "title": "Placing the chosen packages with nodeLinker",
+        "id": "choosing-versions-with-catalog-and-resolutions",
+        "title": "Choosing versions with catalog and resolutions",
         "level": 3
       },
       {

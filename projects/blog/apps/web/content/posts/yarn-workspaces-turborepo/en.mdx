@@ -14,7 +14,7 @@ _An arrow means the item on the left depends on the item on the right. Execution
 | --------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Dependency it manages | Between packages                                                                        | Between tasks                                                        |
 | Question it answers   | Which versions to install and where to link them                                        | Which tasks run first and which need to run again                    |
-| Where you declare it  | Each package's `dependencies` with `workspace:` and `catalog:`, plus root `resolutions` | `dependsOn`, `outputs`, `inputs`, and `env` in the root `turbo.json` |
+| Where you declare it  | Each package's `dependencies` with `workspace:` and `catalog:`, plus root `resolutions` and `nodeLinker` in `.yarnrc.yml` | `dependsOn`, `outputs`, `inputs`, and `env` in the root `turbo.json` |
 | What it leaves behind | Links in `node_modules` and `yarn.lock`                                                 | A task graph and a cache of task outputs                             |
 
 Turborepo does not ask you to declare package relationships again. It reads them from the same `package.json` files Yarn uses and builds its task graph on top. The two tools do not replace each other. Turborepo adds task ordering and caching on top of the package relationships Yarn has already linked.
@@ -38,11 +38,31 @@ The `workspaces` field in the root `package.json` tells Yarn where to find packa
 
 Web declares `"@demo/ui": "workspace:*"` in `dependencies`. UI does the same for `@demo/tokens`. The `workspace:` protocol points Yarn to a workspace of that name in the current project. The notation becomes a regular version range when the package is packed for publication. I packed UI with tokens at version `1.2.3`. The packed manifest pinned `1.2.3` for `workspace:*` and allowed `^1.2.3` for `workspace:^`. Both resolve to the same local workspace in this example. They give an outside consumer different upgrade ranges. [Yarn workspace cross-references](https://yarnpkg.com/features/workspaces#cross-references)
 
-`yarn install` processes these declarations in three steps, and its output prints `Resolution step`, `Fetch step`, and `Link step` in that order. Resolution decides which package and version satisfies each request. Web's `"@demo/ui": "workspace:*"` resolves to the UI package in the same repository, and an external range resolves to a concrete version that Yarn records in `yarn.lock`. Fetch puts the chosen packages in the cache. Link places them on disk where Node can find them. The settings in the rest of this section map onto those steps: `catalog:` and `resolutions` change what Resolution picks, and `nodeLinker` decides how Link lays the chosen packages out. [Yarn install architecture](https://yarnpkg.com/advanced/architecture)
+`yarn install` processes these declarations in three steps, and its output prints `Resolution step`, `Fetch step`, and `Link step` in that order. Resolution decides which package and version satisfies each request. Web's `"@demo/ui": "workspace:*"` resolves to the UI package in the same repository, and an external range resolves to a concrete version that Yarn records in `yarn.lock`. Fetch puts the chosen packages in the cache. Link places them on disk where Node can find them.
+
+The settings in the rest of this section map onto those steps: `nodeLinker` decides how Link lays the chosen packages out, and `catalog:` and `resolutions` change what Resolution picks. [Yarn install architecture](https://yarnpkg.com/advanced/architecture)
+
+### Placing the chosen packages with nodeLinker
+
+The `nodeLinker` setting in `.yarnrc.yml` selects how the Link step works. It accepts `pnp`, `pnpm`, and `node-modules`, and Yarn uses `pnp` when the setting is absent. The modes differ in where Node finds packages and in whether a dependency missing from `package.json` can still be imported. The table lists some of the strengths and drawbacks given in [Yarn's install modes documentation](https://yarnpkg.com/features/linkers).
+
+| Value | Where Node finds packages | Undeclared dependencies | Listed strengths | Listed drawbacks |
+| --- | --- | --- | --- | --- |
+| `pnp` | Locations recorded in `.pnp.cjs` | Blocked | Very fast installs; with the cache in the repository, it can run without an install | IDE integrations often need SDKs, and some libraries need `packageExtensions` |
+| `pnpm` | Links into `node_modules/.store` | Partly blocked | No IDE SDKs needed | Some tools don't support symlinks |
+| `node-modules` | The `node_modules` tree Node already reads | Not blocked | Compatible with the whole ecosystem | Average install speed |
+
+With `node-modules`, Yarn builds the `node_modules` tree that Node expects and symlinks local workspaces into it. To reduce duplication, it hoists dependencies as high in the tree as it can. A package can therefore import something missing from its own `package.json` as long as an ancestor `node_modules` happens to contain it. Declaring each dependency in the consuming package's manifest removes the reliance on that accident, and the declaration is what a focused install and Turborepo's package graph read.
+
+With `pnp`, there is no `node_modules`. Yarn records each package's location and dependencies in `.pnp.cjs`, a loader that tells Node where to find each package. A request for a dependency the package has not declared fails with an error, so an import cannot succeed by accident the way it can under `node-modules`. An external library that leaves out one of its own dependencies fails the same way when it is loaded, and `packageExtensions` in `.yarnrc.yml` fills in the missing declaration.
+
+The side project has used `nodeLinker: node-modules` since the repository was created, which is why the root `node_modules/@side/design-system` is a symlink to `packages/design-system`. I chose it because I had heard that PnP caused a lot of tool compatibility problems, and I have kept it since. I have never switched this repository to PnP and run its installs and builds, so I don't know yet which apps would break. [Yarn configuration](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1)
+
+In this repository, pull request checks catch the undeclared dependencies that PnP would block. The blog app does not declare `graphql`. Pisik's web app and API use it, though, and it sits in the root `node_modules`, so `import('graphql')` from the blog app's folder succeeded. I put the same import in a test file in the blog app and ran `yarn knip`, and Knip reported `graphql` under `Unlisted dependencies`. CI runs this check on every pull request that changes more than blog posts and images. [Static analysis CI](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.github/workflows/static-analysis.yml#L93-L95)
+
+### Choosing versions with catalog and resolutions
 
 For shared external dependency ranges, a Yarn catalog lets the applications refer to `catalog:` and keep the range in `.yarnrc.yml`. The resolution that Yarn installs goes in `yarn.lock`. In CI, `yarn install --immutable` fails if the install would change that lockfile. A dependency update includes the new range and the corresponding resolution. [Yarn catalogs](https://yarnpkg.com/features/catalogs), [Yarn install](https://yarnpkg.com/cli/install)
-
-### Overriding a transitive dependency with resolutions
 
 A catalog applies where a workspace refers to it with `catalog:`. An installed library can also request a version in its own manifest. In this repository, `@nestjs/platform-express` requests `multer@2.4.0`. The root `package.json` can override how Yarn resolves that request through `resolutions`. [Yarn resolutions](https://yarnpkg.com/configuration/manifest#resolutions)
 
@@ -61,14 +81,6 @@ These are three rules from the side-project repository. [Root package.json](http
 A bare name like `body-parser` matches requests for that package and resolves them to `2.4.0`. A key like `multer@npm:2.4.0` narrows the match to a specific request. Run `yarn why multer` and Yarn reports `2.5.0` under the Nest package, whose own manifest requests `2.4.0`.
 
 The `undici` rule resolves `@scalar/json-magic`'s request for `7.29.1` to `7.30.1`. `yarn why undici` also shows `6.29.1` under `@sentry/cli` and `8.12.3` under `node-gyp`. The choice of key determines how much of the dependency graph the override affects. After editing `resolutions`, run `yarn install` to update the lockfile and use `yarn why` to inspect the affected paths. [yarn why](https://yarnpkg.com/cli/why)
-
-### Placing the chosen packages with nodeLinker
-
-The `nodeLinker` setting in `.yarnrc.yml` selects how the Link step works. It accepts `pnp`, `pnpm`, and `node-modules`, and Yarn uses `pnp` when the setting is absent. [Yarn install modes](https://yarnpkg.com/features/linkers)
-
-With `node-modules`, Yarn builds the `node_modules` tree that Node expects and symlinks local workspaces into it. To reduce duplication, it hoists dependencies as high in the tree as it can. A package can therefore import something missing from its own `package.json` as long as an ancestor `node_modules` happens to contain it. Yarn's documentation lists the lack of protection against these ghost dependencies as a drawback of this mode. Declaring each dependency in the consuming package's manifest removes the reliance on that accident, and the declaration is what a focused install and Turborepo's package graph read.
-
-With `pnp`, there is no `node_modules`. Yarn records each package's location and dependencies in `.pnp.cjs`, and that loader tells Node where to find a package. A request for a dependency the package has not declared fails with an error, so hoisting cannot make an import work by accident. Yarn's documentation lists the costs too: editor integrations often need SDKs, and a library that omits a dependency declaration sometimes needs `packageExtensions` to fill it in. The `pnpm` mode keeps packages in a flat `node_modules/.store` folder and links them into place.
 
 ## The link exists before the build output
 
@@ -187,7 +199,3 @@ A selected task can still get a cache hit. Remote caching lets a different CI ru
 The repository that hosts this blog uses Yarn Workspaces and does not use Turborepo yet. Its root build selects the `@side/*` projects with `workspaces foreach`, and `@side/blog` delegates its build to `@blog/web`. The web app links `@side/design-system` with `workspace:*`. The design system exports from `src`, so the blog build processes the source of the components it uses and the design system does not need a build of its own first. The example's dependency builds serve a different purpose because the consumer reads their compiled `dist` files. [Root scripts](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json), [Design system exports](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/packages/design-system/package.json)
 
 CI also verifies the blog and services separately. A change confined to blog content, such as prose or images, takes the content validation path. The step that actually takes time is a good place to start when considering Turbo. Slow package downloads point to Yarn's cache. Rebuilding several applications from identical inputs points to a task artifact cache. Once several apps consume a shared package's `dist`, a task graph also gives them a way to declare which build produces the files and which builds have to wait for them. [Blog CI configuration](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/.github/workflows/blog.yml)
-
-The side project sets `nodeLinker: node-modules` in `.yarnrc.yml`, so the root `node_modules/@side/design-system` is a symlink to `packages/design-system`. When I set up the repository, I had heard that PnP caused a lot of tool compatibility problems, so I started with `node-modules` and have kept it. I have not switched this repository to PnP and run its installs and builds, so I have not confirmed which apps would actually break. [Yarn configuration](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1)
-
-The pull request checks catch what `node-modules` lets through. The blog app does not declare `graphql`. Pisik's web app and API use it, though, and it sits in the root `node_modules`, so `import('graphql')` from the blog app's folder succeeded. I put the same import in a test file in the blog app and ran `yarn knip`, and Knip reported `graphql` under `Unlisted dependencies`. CI runs this check on every pull request that changes more than blog posts and images, so an undeclared dependency that PnP would turn into a runtime error is found before merge. [Static analysis CI](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.github/workflows/static-analysis.yml#L93-L95)
