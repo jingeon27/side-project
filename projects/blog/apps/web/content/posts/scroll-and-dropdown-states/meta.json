@@ -2,6 +2,7 @@
   "category": "engineering",
   "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
   "publishedAt": "2026-11-10",
+  "updatedAt": "2026-11-11",
   "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
   "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg"
 }

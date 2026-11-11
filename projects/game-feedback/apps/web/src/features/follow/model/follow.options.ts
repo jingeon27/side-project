@@ -3,21 +3,11 @@ import { compact } from 'es-toolkit';
 
 import { fetchFollowStatus } from '../api/follow.api';
 
-function followScope(viewerId?: string, userId?: string) {
-  return queryOptions({ queryKey: compact(['user-follow', viewerId, userId]), queryFn: skipToken });
-}
-function createFollowStatusOptions(viewerId: string, userId: string) {
+/** 두 id가 모두 있을 때만 조회한다. 인자 없이 부르면 `['user-follow']` 무효화 prefix다. */
+export function followStatusOptions(viewerId?: string, userId?: string) {
   return queryOptions({
-    queryKey: followScope(viewerId, userId).queryKey,
-    queryFn: ({ signal }) => fetchFollowStatus(userId, signal),
+    queryKey: compact(['user-follow', viewerId, userId]),
+    queryFn: viewerId && userId ? ({ signal }) => fetchFollowStatus(userId, signal) : skipToken,
     staleTime: 0,
   });
-}
-export function followStatusOptions(
-  viewerId: string,
-  userId: string,
-): ReturnType<typeof createFollowStatusOptions>;
-export function followStatusOptions(viewerId?: string, userId?: string): ReturnType<typeof followScope>;
-export function followStatusOptions(viewerId?: string, userId?: string) {
-  return viewerId && userId ? createFollowStatusOptions(viewerId, userId) : followScope(viewerId, userId);
 }

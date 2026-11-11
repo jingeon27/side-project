@@ -3,6 +3,7 @@
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
     "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
     "title": "컴포넌트는 어떤 식으로 테스트할까? 보편적인 UI에 담긴 고민들",
@@ -18,13 +19,18 @@
         "level": 2
       },
       {
-        "id": "응답을-기다리는-상태를-만드는-법",
-        "title": "응답을 기다리는 상태를 만드는 법",
+        "id": "응답-시점을-제어해-상태-만들기",
+        "title": "응답 시점을 제어해 상태 만들기",
         "level": 2
       },
       {
-        "id": "마지막-페이지까지-갔을-때와-요청이-실패했을-때",
-        "title": "마지막 페이지까지 갔을 때와 요청이 실패했을 때",
+        "id": "마지막-페이지까지-갔을-때",
+        "title": "마지막 페이지까지 갔을 때",
+        "level": 2
+      },
+      {
+        "id": "요청이-실패했을-때",
+        "title": "요청이 실패했을 때",
         "level": 2
       },
       {
@@ -58,6 +64,7 @@
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
     "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
     "title": "How should you test a component? The questions behind everyday UI",
@@ -80,13 +87,18 @@
         "level": 2
       },
       {
-        "id": "hold-the-response-while-the-browser-shows-loading",
-        "title": "Hold the response while the browser shows loading",
+        "id": "control-responses-to-create-each-state",
+        "title": "Control responses to create each state",
         "level": 2
       },
       {
-        "id": "reach-the-final-page-and-recover-from-errors",
-        "title": "Reach the final page and recover from errors",
+        "id": "reach-the-final-page",
+        "title": "Reach the final page",
+        "level": 2
+      },
+      {
+        "id": "recover-from-failed-requests",
+        "title": "Recover from failed requests",
         "level": 2
       },
       {

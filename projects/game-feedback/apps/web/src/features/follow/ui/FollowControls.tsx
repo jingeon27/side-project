@@ -1,12 +1,12 @@
 'use client';
 
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BellOff, BellRing, UserCheck, UserPlus } from 'lucide-react';
 
 import { Button } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
+import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
 
 import { updateFollowMutationOptions } from '../model/follow.mutation-options';
 import { followStatusOptions } from '../model/follow.options';
@@ -37,10 +37,11 @@ export function FollowControls({ userId, viewerId, onLogin }: IFollowControlsPro
 function FollowControlContent({ userId, viewerId }: { userId: string; viewerId: string }) {
   const { t } = useI18n();
   const client = useQueryClient();
-  const query = useSuspenseQuery(followStatusOptions(viewerId, userId));
+  const query = useQuery(followStatusOptions(viewerId, userId));
   const mutation = useMutation(updateFollowMutationOptions(client, viewerId));
-  const { following, notifyNewPosts } = query.data;
   if (query.error && !query.isFetching) throw query.error;
+  if (!query.data) return <LoadingState />;
+  const { following, notifyNewPosts } = query.data;
   return (
     <>
       <Button
