@@ -42,7 +42,7 @@ html[data-theme='dark'] {
   box-sizing: border-box;
 }
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scroll-padding-top: 110px;
   -webkit-text-size-adjust: 100%;
 }
