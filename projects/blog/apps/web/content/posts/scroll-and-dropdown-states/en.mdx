@@ -8,7 +8,7 @@ An interview made me reconsider how little thought I had given to component unit
 
 At work, I wrote unit tests mainly for logic and checked screens through integration and E2E tests. I built those screens with Radix, Base UI, and shadcn/ui, which I trusted for their popularity, high download counts, and quick fixes for reported issues. I had given little thought to how their components were tested.
 
-When reading library code, I focused on the implementation and type definitions. I opened tests mainly to look up usage, since they showed examples of different inputs and ways to use a feature. Then a question about dropdown menu design in an interview at Karrot made me realize how little thought I had given to UI I used regularly. I felt embarrassed.
+When reading library code, I focused on the implementation and type definitions. I opened tests mainly to look up usage, since they showed examples of different inputs and ways to use a feature. Then a question about dropdown menu design in an interview made me realize how little thought I had given to UI I used regularly. I felt embarrassed.
 
 That experience also made me reconsider my test file convention at work. New feature specifications went in `*.spec.*` files, and unexpected failures were reproduced in `*.test.*` files. I expected gaps in my own test design and wanted a place to keep adding cases I had missed. Looking back, I was relying on filling those gaps after a failure surfaced. I needed to think more carefully about which situations to cover when writing the initial specification. [My testing standards](/en/blog/testing-standards)
 
