@@ -22,7 +22,8 @@
 ## 쿼리 키
 
 - 첫 요소가 도메인 식별자다: `['fetchPostList', params]`, `['fetchPostDetail', id]`, `['chat', userId, …]`, `['fetchNotificationList', userId, params]`, `['user-follow', viewerId, userId]`. `['session']`은 세션 전용이다. 다른 키를 `session`으로 시작하지 않는다(계정 전환 때 `session` 외 전부 지운다).
-- 오버로드 factory: 인자 없이 부르면 `queryFn: skipToken`인 prefix scope(무효화·취소 전용), 인자가 있으면 실제 options를 돌려준다(`postListOptions`·`postDetailOptions`·`notificationListOptions`·`followStatusOptions`). 무효화는 `client.invalidateQueries(postListOptions())`처럼 factory 결과를 넘긴다. `userPostListOptions`는 `fetchPostList` prefix를 공유해 목록 무효화에 함께 걸린다.
+- 오버로드 factory: 인자 없이 부르면 `queryFn: skipToken`인 prefix scope(무효화·취소 전용), 인자가 있으면 실제 options를 돌려준다(`postListOptions`·`postDetailOptions`·`notificationListOptions`). 무효화는 `client.invalidateQueries(postListOptions())`처럼 factory 결과를 넘긴다. `userPostListOptions`는 `fetchPostList` prefix를 공유해 목록 무효화에 함께 걸린다.
+- `followStatusOptions`는 오버로드용 내부 함수로 나누지 않은 하나의 factory다. 두 id가 모두 있을 때만 조회하고 나머지는 `skipToken`이며, 인자 없이 부르면 `['user-follow']` 무효화 prefix가 된다. `skipToken`이 섞인 options는 `useSuspenseQuery`가 받지 않으므로 `useQuery`로 읽는다.
 - 로그인 사용자 데이터 키에는 사용자 id를 넣어 다른 계정 캐시를 건드리지 않는다(`chat-cache.spec.ts`, `notification.options.spec.ts`). 조회에 필요한 id가 없으면 `skipToken`(`conversationBadgeOptions`, `notificationSummaryOptions`).
 - 앱 lint(`eslint.config.ts` `no-restricted-syntax`)는 `useQuery`·`useSuspenseQuery`·`useInfiniteQuery`·`useSuspenseInfiniteQuery` 인자의 `queryKey: [...]` 리터럴과 `invalidateQueries`·`refetchQueries`·`cancelQueries`·`removeQueries`·`resetQueries`·`getQueriesData`·`setQueriesData`의 `{ queryKey: [...] }` 리터럴을 막는다. factory를 spread하고 화면별 옵션(`throwOnError`·`initialData`·`refetchInterval`)만 덧붙인다.
 - QueryClient 기본값은 `_app/providers/Providers.tsx`(staleTime 15초, retry 1, 창 포커스 재조회)이고 서버 세션을 `setQueryData(sessionOptions().queryKey, initialSession)`로 심는다.
@@ -31,7 +32,7 @@
 
 - 공개 목록·상세·프로필은 `useInfiniteQuery`/`useQuery` + `throwOnError: true` + `initialData`다. `initialData`는 서버 snapshot의 viewer id와 현재 세션 id가 같을 때만 준다(차단·작성자 전용 정보가 계정마다 다르다). 목록은 조회 조건까지 같아야 하고 `initialDataUpdatedAt: 0`으로 곧바로 다시 받는다. 상세·프로필은 `refetchOnMount: 'always'`.
 - 오류는 `if (query.error && !query.isFetching) throw query.error`로 경계에 넘긴다. 재조회 중에는 기존 화면을 유지한다.
-- 서버 초기 데이터가 없는 쿠키 의존 조회는 `AsyncBoundary clientOnly` + `useSuspenseQuery`/`useSuspenseInfiniteQuery`다(`MyPosts`, `NotificationsPage`, `MessagesPage`, `FollowControls`). SSR 중에는 fallback만 그려 세션 없이 요청하지 않는다.
+- 서버 초기 데이터가 없는 쿠키 의존 조회는 `AsyncBoundary clientOnly` + `useSuspenseQuery`/`useSuspenseInfiniteQuery`다(`MyPosts`, `NotificationsPage`, `MessagesPage`). SSR 중에는 fallback만 그려 세션 없이 요청하지 않는다. `FollowControls`도 같은 경계 안에 있지만 `useQuery`로 읽어서, 데이터가 없으면 경계와 같은 `LoadingState`를 그리고 오류는 경계로 넘긴다.
 
 ## 계정 전환
 
