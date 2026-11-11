@@ -54,7 +54,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 17,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -122,7 +122,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 16,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
