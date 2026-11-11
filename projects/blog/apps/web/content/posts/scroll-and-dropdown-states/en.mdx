@@ -32,7 +32,7 @@ Photo Contest uses Base UI for its post menus. In its [menu tests](https://githu
 
 The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) records opening, closing, and reopening during dismissal in sequence. Those steps belong together because an earlier transition can affect the next one. It repeats the checks with `it.each` across controlled state, `keepMounted`, initially open state, and portal container options. This file runs in a real browser and is skipped in jsdom.
 
-I reread the Photo Contest tests with that distinction in mind. Some behaviors can be checked independently, while others need a sequence of states. The following sections cover the existing tests and the improvements I would make after reading the library tests.
+I revisited the Photo Contest tests with this distinction in mind. I split independent interactions into separate cases and kept sequences together where the transitions mattered. The following sections cover those changes and the cases I could still add.
 
 ## Control responses to create each state
 
@@ -52,9 +52,9 @@ Holding or failing a response lets the tests check these situations.
 
 TanStack Query [creates a new QueryClient before each test and clears it afterward](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx#L31-L46). Reusing cached data could skip initial loading and change the starting condition. In Photo Contest, each Playwright test starts the app and its Apollo client on a fresh page, with routes installed for that page. Each test also creates its own response promises and request log.
 
-Holding the first response exposes the skeleton. Holding the next one exposes a spinner below the existing cards. The current next-page test checks list retention, duplicate requests, and appending cards together. I would separate the loading lifecycle from the behavior of scrolling again during a pending request.
+Holding the first response exposes the skeleton. Holding the next one exposes a spinner below the existing cards. The next-page test originally checked list retention, duplicate requests, and appending cards together. I split the loading lifecycle from duplicate-request prevention. Initial loading and preventing requests during that loading now have separate tests too.
 
-These examples split the test using the existing fixture. [`openGallery`](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/test/browser/gallery.fixture.ts) installs routes before navigation and holds the first response at the specified offset until its promise resolves.
+These examples show shortened versions of the split tests. [`openGallery`](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/test/browser/gallery.fixture.ts) installs routes before navigation and holds the first response at the specified offset until its promise resolves.
 
 ```typescript
 test('keeps the list during loading and appends the next page', async ({ page }) => {
@@ -238,11 +238,11 @@ The offset log covers list queries only. Checking that cancellation sends no del
 
 ## Keyboard interaction and focus
 
-The keyboard test opens the menu with Enter, moves between items with ArrowDown, then closes with Escape. It runs in Desktop Safari too. Those three interactions currently share one test, but could be split like Base UI's focus tests.
+Opening with Enter, moving with ArrowDown, and closing with Escape now have separate tests. Each prepares the menu on a fresh page, so failure in one interaction does not prevent the others from being checked. These tests also run in Desktop Safari.
 
 Alongside focus, the tests check `aria-controls`. The trigger has no such attribute while closed and points to the menu's id while open. Closing must remove it again so it cannot reference an unmounted menu.
 
-| Separate case | Starting condition | Expected result |
+| Test | Starting condition | Expected result |
 | --- | --- | --- |
 | Open with Enter | Trigger focused | Edit receives focus |
 | Move with ArrowDown | Menu open, Edit focused | Focus skips the separator and moves to Delete |
@@ -253,11 +253,13 @@ An Escape test still needs to prepare an open menu with focus on an item. Testin
 
 ## Input while the menu is closing
 
-A menu can remain visible briefly while closing. I checked that moving or clicking the pointer over it cannot activate an item. The test stretches the transition to two seconds, presses Escape, then moves over Delete and clicks. The item stays unhighlighted and no confirmation opens. Deliberately allowing pointer input during dismissal made this test fail.
+A menu can remain visible briefly while closing. Moving or clicking the pointer over it must not activate an item. Checking only after the transition ends would miss this interval.
 
 Base UI's popup transition test also controls when the animation ends. It stretches the transition to ten seconds to leave time for intermediate checks, then calls `finish()` on the animations returned by `getAnimations()`.
 
-Photo Contest could use this approach to avoid waiting for the full transition. First establish that the exit animation has started, check that it ignores pointer input, then finish the transition and check that the menu is removed. The animation list can be empty before a transition starts too, so checking the start must come first.
+I changed the Photo Contest test to control completion too. It stretches the exit transition to ten seconds, presses Escape, and checks both `data-ending-style` and the presence of actual animations. It then calls `pause()` before moving the pointer over Delete and clicking. An empty animation list can also mean the transition has not started, so the start check comes first.
+
+During those interactions, the menu must remain in the DOM, the item must stay unhighlighted, and no deletion confirmation should open. Afterward, `finish()` ends the transition and the test checks that the menu is removed. Deliberately allowing pointer input during dismissal makes this test fail.
 
 ## What happens to an open menu when the list changes?
 
