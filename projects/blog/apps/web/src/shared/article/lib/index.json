@@ -1,6 +1,96 @@
 [
   {
     "category": "engineering",
+    "tags": ["testing", "dropdown", "playwright", "reflection"],
+    "publishedAt": "2026-11-11",
+    "coverImage": "/images/covers/dropdown-test-design.avif",
+    "socialImage": "/images/covers/dropdown-test-design-og.jpg",
+    "title": "드롭다운 테스트는 어떻게 설계할까? 라이브러리 테스트에서 이슈 기록을 읽어 봤어요",
+    "description": "드롭다운 테스트를 어떻게 설계하겠냐는 질문에 케이스 세 개로 답했다가, 어떤 드롭다운인지부터 정해야 했다는 걸 알았어요. Radix와 Base UI의 테스트를 이슈까지 따라가 보고, 누가 어떤 상태에서 조작하는지로 케이스를 골라 공용 메뉴에 적용했어요.",
+    "slug": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
+    "keywords": ["컴포넌트 테스트", "드롭다운", "테스트 설계", "Radix", "Base UI", "Playwright"],
+    "id": "dropdown-test-design",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "드롭다운의-스펙부터-정해야-했어요",
+        "title": "드롭다운의 스펙부터 정해야 했어요",
+        "level": 2
+      },
+      {
+        "id": "라이브러리-테스트를-검증하는-입장에서-다시-읽었어요",
+        "title": "라이브러리 테스트를 검증하는 입장에서 다시 읽었어요",
+        "level": 2
+      },
+      {
+        "id": "누가-어떤-상태에서-조작하는지로-케이스를-골라요",
+        "title": "누가, 어떤 상태에서 조작하는지로 케이스를 골라요",
+        "level": 2
+      },
+      {
+        "id": "실제-브라우저에서-확인할-범위",
+        "title": "실제 브라우저에서 확인할 범위",
+        "level": 2
+      },
+      {
+        "id": "공용-메뉴에-적용해-보니",
+        "title": "공용 메뉴에 적용해 보니",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
+      "en": "designing-dropdown-tests-from-library-issue-history"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["testing", "dropdown", "playwright", "reflection"],
+    "publishedAt": "2026-11-11",
+    "coverImage": "/images/covers/dropdown-test-design.avif",
+    "socialImage": "/images/covers/dropdown-test-design-og.jpg",
+    "title": "How do you design dropdown tests? Reading issue history in library tests",
+    "description": "Asked how I would design dropdown tests, I answered with three cases and later realized I first had to decide what kind of dropdown it was. I traced Radix and Base UI tests back to their issues, chose cases by who interacts and in which state, and applied that to a shared menu.",
+    "slug": "designing-dropdown-tests-from-library-issue-history",
+    "keywords": ["component testing", "dropdown menus", "test design", "Radix", "Base UI", "Playwright"],
+    "id": "dropdown-test-design",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-had-to-define-the-dropdown-first",
+        "title": "I had to define the dropdown first",
+        "level": 2
+      },
+      {
+        "id": "rereading-library-tests-as-a-verifier",
+        "title": "Rereading library tests as a verifier",
+        "level": 2
+      },
+      {
+        "id": "choosing-cases-by-who-interacts-and-in-which-state",
+        "title": "Choosing cases by who interacts and in which state",
+        "level": 2
+      },
+      {
+        "id": "what-needs-a-real-browser",
+        "title": "What needs a real browser",
+        "level": 2
+      },
+      {
+        "id": "applying-it-to-the-shared-menu",
+        "title": "Applying it to the shared menu",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
+      "en": "designing-dropdown-tests-from-library-issue-history"
+    }
+  },
+  {
+    "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
     "updatedAt": "2026-11-11",
