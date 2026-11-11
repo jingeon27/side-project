@@ -105,9 +105,18 @@ test('더보기 아이콘은 열려 있는 메뉴만 aria-controls로 가리켜�
   await expect(trigger).not.toHaveAttribute('aria-controls');
 });
 
-test('키보드로 연 메뉴는 첫 항목부터 이동하고 Escape로 닫으면 더보기 아이콘으로 포커스를 돌려야 한다', async ({
-  page,
-}) => {
+test('키보드 Enter로 메뉴를 열면 첫 항목에 포커스를 주어야 한다', async ({ page }) => {
+  const { trigger, menu } = await scrollToCardMenu(page);
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: '수정' })).toBeFocused();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+});
+
+test('키보드 아래 화살표로 구분선을 건너 다음 메뉴 항목으로 이동해야 한다', async ({ page }) => {
   const { trigger, menu } = await scrollToCardMenu(page);
   const scrollY = await page.evaluate(() => window.scrollY);
   await trigger.focus();
@@ -117,6 +126,15 @@ test('키보드로 연 메뉴는 첫 항목부터 이동하고 Escape로 닫으�
   await page.keyboard.press('ArrowDown');
   await expect(menu.getByRole('menuitem', { name: '삭제' })).toBeFocused();
   await expect(menu.getByRole('menuitem')).toHaveText(['수정', '삭제']);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+});
+
+test('키보드 Escape로 메뉴를 닫으면 더보기 아이콘으로 포커스를 돌려야 한다', async ({ page }) => {
+  const { trigger, menu } = await scrollToCardMenu(page);
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(menu.getByRole('menuitem', { name: '수정' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -127,7 +145,7 @@ test('키보드로 연 메뉴는 첫 항목부터 이동하고 Escape로 닫으�
 test('키보드로 삭제를 고른 뒤 확인 대화상자를 닫으면 더보기 아이콘으로 포커스를 돌려야 한다', async ({
   page,
 }) => {
-  const { trigger, menu } = await scrollToCardMenu(page);
+  const { feed, trigger, menu } = await scrollToCardMenu(page);
   await trigger.focus();
   await page.keyboard.press('Enter');
   await page.keyboard.press('ArrowDown');
@@ -138,26 +156,44 @@ test('키보드로 삭제를 고른 뒤 확인 대화상자를 닫으면 더보�
   await page.keyboard.press('Escape');
   await expect(confirmation).toBeHidden();
   await expect(trigger).toBeFocused();
+  await expect(feed.getByRole('article', { name: cardName, exact: true })).toBeVisible();
 });
 
-test('닫히는 중인 메뉴는 포인터가 지나가거나 눌러도 항목을 실행하지 않아야 한다', async ({ page }) => {
+test('키보드로 닫는 메뉴는 전환 중 포인터 입력을 무시하고 전환이 끝난 뒤 제거되어야 한다', async ({
+  page,
+}) => {
   const { trigger, menu } = await scrollToCardMenu(page);
   await trigger.click();
+  await expect(menu).not.toHaveAttribute('data-starting-style');
   await menu.evaluate((popup) => Promise.all(popup.getAnimations().map((animation) => animation.finished)));
+  await expect(menu).toHaveCSS('opacity', '1');
   const remove = menu.getByRole('menuitem', { name: '삭제' });
   const box = await remove.boundingBox();
   expect(box).not.toBeNull();
   const x = (box?.x ?? 0) + (box?.width ?? 0) / 2;
   const y = (box?.y ?? 0) + (box?.height ?? 0) / 2;
-  // 닫히는 전환을 늘려 그 사이에 포인터를 움직인다.
-  await page.addStyleTag({ content: '[role="menu"] { transition-duration: 2s !important; }' });
+  // 전환을 붙잡아 입력 검사와 메뉴 제거 시점을 테스트에서 정한다.
+  await page.addStyleTag({ content: '[role="menu"] { transition-duration: 10s !important; }' });
   await page.keyboard.press('Escape');
   await expect(menu).toHaveAttribute('data-ending-style');
+  await expect.poll(() => menu.evaluate((popup) => popup.getAnimations().length)).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      menu.evaluate((popup) => {
+        const animations = popup.getAnimations();
+        animations.forEach((animation) => animation.pause());
+        return animations.length > 0 && animations.every((animation) => animation.playState === 'paused');
+      }),
+    )
+    .toBe(true);
   await page.mouse.move(x, y);
   await expect(remove).not.toHaveAttribute('data-highlighted');
   await page.mouse.click(x, y);
-  await expect(menu).toHaveCount(0);
+  await expect(menu).toHaveCount(1);
+  await expect(menu).toHaveAttribute('data-ending-style');
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await menu.evaluate((popup) => popup.getAnimations().forEach((animation) => animation.finish()));
+  await expect(menu).toHaveCount(0);
 });
 
 test('메뉴를 연 채로 다음 페이지가 붙어도 메뉴를 같은 자리에 열어 두어야 한다', async ({ page }) => {
