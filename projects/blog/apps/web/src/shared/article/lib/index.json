@@ -54,7 +54,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 12,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -148,13 +148,18 @@
         "level": 2
       },
       {
-        "id": "간접-의존성에-적용한-resolutions",
-        "title": "간접 의존성에 적용한 resolutions",
+        "id": "고른-패키지를-배치하는-nodelinker",
+        "title": "고른 패키지를 배치하는 nodeLinker",
         "level": 3
       },
       {
-        "id": "고른-패키지를-배치하는-nodelinker",
-        "title": "고른 패키지를 배치하는 nodeLinker",
+        "id": "공통-버전-범위를-적는-catalog",
+        "title": "공통 버전 범위를 적는 catalog",
+        "level": 3
+      },
+      {
+        "id": "간접-의존성에-적용한-resolutions",
+        "title": "간접 의존성에 적용한 resolutions",
         "level": 3
       },
       {
@@ -188,7 +193,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -214,13 +219,18 @@
         "level": 2
       },
       {
-        "id": "overriding-a-transitive-dependency-with-resolutions",
-        "title": "Overriding a transitive dependency with resolutions",
+        "id": "placing-the-chosen-packages-with-nodelinker",
+        "title": "Placing the chosen packages with nodeLinker",
         "level": 3
       },
       {
-        "id": "placing-the-chosen-packages-with-nodelinker",
-        "title": "Placing the chosen packages with nodeLinker",
+        "id": "sharing-version-ranges-with-a-catalog",
+        "title": "Sharing version ranges with a catalog",
+        "level": 3
+      },
+      {
+        "id": "overriding-a-transitive-dependency-with-resolutions",
+        "title": "Overriding a transitive dependency with resolutions",
         "level": 3
       },
       {
@@ -254,7 +264,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -2453,7 +2463,7 @@
     "category": "engineering",
     "tags": ["testing", "vitest", "playwright", "react"],
     "publishedAt": "2026-08-08T02:56:20+09:00",
-    "updatedAt": "2026-11-02",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/testing-standards.avif",
     "socialImage": "/images/covers/testing-standards-og.jpg",
     "title": "테스트 코드를 도입하면서 세운 기준",
@@ -2471,6 +2481,11 @@
       {
         "id": "제출은-제품-코드가-해요",
         "title": "제출은 제품 코드가 해요",
+        "level": 2
+      },
+      {
+        "id": "명세와-회귀-테스트를-나눴어요",
+        "title": "명세와 회귀 테스트를 나눴어요",
         "level": 2
       },
       {
@@ -2524,7 +2539,7 @@
     "category": "engineering",
     "tags": ["testing", "vitest", "playwright", "react"],
     "publishedAt": "2026-08-08T02:56:20+09:00",
-    "updatedAt": "2026-11-02",
+    "updatedAt": "2026-11-11",
     "coverImage": "/images/covers/testing-standards.avif",
     "socialImage": "/images/covers/testing-standards-og.jpg",
     "title": "The standards I developed while introducing tests",
@@ -2542,6 +2557,11 @@
       {
         "id": "submission-belongs-to-the-product-code",
         "title": "Submission belongs to the product code",
+        "level": 2
+      },
+      {
+        "id": "separating-specifications-from-regression-tests",
+        "title": "Separating specifications from regression tests",
         "level": 2
       },
       {
@@ -2585,7 +2605,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 14,
     "translations": {
       "ko": "테스트-코드를-도입하면서-세운-기준",
       "en": "testing-standards"

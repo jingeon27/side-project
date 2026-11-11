@@ -99,7 +99,7 @@ await waitFor(() => expect(onCreated).toHaveBeenCalled());
 
 I shared setup such as providers and routers. What gets sent to the server, and when, had to stay with the actual product code. If a test rewrites submission, changing either implementation alone can leave the test passing.
 
-## Assertions that checked nothing
+## Separating specifications from regression tests
 
 Tests live beside their subject, so the tests describing a behavior are right there to read when the file changes.
 
@@ -109,9 +109,15 @@ program-form.spec.tsx
 program-form.test.tsx
 ```
 
-Requirements for a new feature go in BDD style in `*.spec.ts` or `*.spec.tsx`, showing what should appear when someone takes a given action under a given condition, and I check that each component's needed behavior is covered. Functional errors and console warnings found in production or QA are reproduced in `*.test.ts` or `*.test.tsx` so the same problem does not come back. Moving or deleting a file makes its tests visible in the same diff.
+At work, I wrote new feature requirements in BDD style in `*.spec.ts` or `*.spec.tsx`, describing the condition, action, and expected result. I reproduced functional errors and console warnings found in production or QA in `*.test.ts` or `*.test.tsx`. The names distinguished the original specification from problems discovered later.
 
-Sitting next to the code did not make tests follow a moved responsibility, though. Tabs, creation, and the Drawer moved from the global CMS list View up to `page.tsx`, while the tests still rendered only the View. Tests expecting the old DOM broke, but the check that the Drawer stays closed without an ID kept passing. No Drawer existed at all, so "closed" was trivially true. Shortened, such an assertion looks like this.
+That convention also reflected an expectation that I would miss cases in my initial test design. Reproducing those failures helped prevent them from recurring, but a case I had not thought of often got covered only after a problem surfaced.
+
+Reconsidering UI tests made that limitation clearer. Reading the tests of libraries I trusted exposed situations I had missed, such as input while a menu closes and the order of overlapping requests. [Rethinking component tests](/en/blog/testing-infinite-scroll-and-dropdown-states)
+
+## Assertions that checked nothing
+
+Moving code also meant checking which component its tests actually rendered. Tabs, creation, and the Drawer moved from the global CMS list View up to `page.tsx`, while the tests still rendered only the View. Tests expecting the old DOM broke, but the check that the Drawer stays closed without an ID kept passing. No Drawer existed at all, so "closed" was trivially true. Shortened, such an assertion looks like this.
 
 ```tsx
 // A shortened example. queryByRole returns null when nothing matches, so this always passes.

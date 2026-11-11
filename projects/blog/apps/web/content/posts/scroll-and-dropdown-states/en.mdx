@@ -1,20 +1,26 @@
 <Summary>
 
-I tested initial loading, loading the next page, the end of the list, and both kinds of failure separately. For dropdowns, I checked where the menu opens after scrolling and what happens when you click the background, a menu item, or the trigger. Using the tests in TanStack Query, Radix, and Base UI as an answer key, I also checked the order of state changes, keyboard interaction, and input while the menu is closing.
+An interview made me reconsider how little thought I had given to component unit tests. I read the tests of libraries I trusted to find cases I had missed, then checked loading and failures in an infinite list, dropdown position and focus, and input while a menu is closing in Photo Contest.
 
 </Summary>
 
 ![A spinner beneath the existing cards while the next page loads, alongside a dropdown that opens above its trigger near the bottom of the viewport.](/images/covers/scroll-and-dropdown-states.avif)
 
-I used to think tests only needed to confirm that code met specific requirements and that the basic behavior worked. For UI, I trusted proven open source such as Base UI, Radix, and shadcn/ui, so I never gave UI tests much thought of their own. A job interview is what made me start thinking about them more deeply. Logic has a fairly fixed set of cases defined by its inputs and outputs, but even a single menu in the UI has far more cases to consider.
+At work, I wrote unit tests mainly for logic and checked screens through integration and E2E tests. I built those screens with Radix, Base UI, and shadcn/ui, which I trusted for their popularity, high download counts, and quick fixes for reported issues. I had given little thought to how their components were tested.
 
-Common UI such as infinite scroll and dropdowns is no exception. A test that only checks for new cards after scrolling to the end can pass even if the existing list disappears while the request is pending. A dropdown test that only checks whether the menu opens can miss an item clipped by the bottom of the screen.
+When reading library code, I focused on the implementation and type definitions. I opened tests mainly to look up usage, since they showed examples of different inputs and ways to use a feature. Then a question about dropdown menu design in an interview at Karrot made me realize how little thought I had given to UI I used regularly. I felt embarrassed.
+
+That experience also made me reconsider my test file convention at work. New feature specifications went in `*.spec.*` files, and unexpected failures were reproduced in `*.test.*` files. I expected gaps in my own test design and wanted a place to keep adding cases I had missed. Looking back, I was relying on filling those gaps after a failure surfaced. I needed to think more carefully about which situations to cover when writing the initial specification. [My testing standards](/en/blog/testing-standards)
+
+Infinite scrolling and dropdowns have plenty of cases that are easy to miss. A test that only checks for new cards after scrolling to the end can pass even if the existing list disappears while the request is pending. Checking only that a menu opens can miss an item clipped by the bottom of the screen.
 
 Photo Contest already had a [gallery E2E test](https://github.com/jingeon27/side-project/blob/ba263cb1f9a1b09ae2d77a4e1a99229d9b1c2ff6/projects/photo-contest/apps/web/e2e/gallery-pagination.spec.ts) that started with 24 posts and scrolled to the next page. I added cases for delayed and failed responses and for opening a post's menu farther down the list.
 
 ## Library tests as an answer key
 
-Looking back, the tests of the libraries I trusted were a kind of answer key. So I looked at how TanStack Query, Radix, shadcn/ui, and Base UI organize their tests and applied that to Photo Contest.
+This time, I read the tests in TanStack Query, Radix, shadcn/ui, and Base UI by following their starting state, actions, and assertions. I used them as an answer key to find cases I had not thought of.
+
+Reading tests also gave me a glimpse of how the libraries had resolved issues. The reproduction code and assertions showed which input or interaction had caused a problem and what behavior the fix was meant to preserve.
 
 The TanStack Query [`useInfiniteQuery` tests](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx) collect the hook's state on every render and check the order in which the first fetch and next-page fetches change it. They separately check that pages already fetched stay when a next-page request fails, with `isFetchNextPageError` set, and that `hasNextPage` becomes `false` when `getNextPageParam` returns `undefined`.
 
@@ -24,7 +30,7 @@ The Radix [DropdownMenu tests](https://github.com/radix-ui/primitives/blob/fe020
 
 The Photo Contest post menu is built with Base UI, so I also opened the Base UI [menu tests](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/root/MenuRoot.test.tsx). They check that opening with the keyboard focuses the first item, that focus returns to the trigger after the menu closes, and that pressing Tab in an open menu closes it and moves focus to the next element. The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) records the state each time it changes, like TanStack Query, and stretches the CSS transition to 10 seconds to check the state while the menu is still opening. That test is skipped in jsdom and runs only in a real browser.
 
-All three libraries check the points where the state changes, not just the final result. The Photo Contest tests also separate those points: while a response is pending, after a request fails, and after the last page. The sections below cover these state tests first, and the last section covers the tests I added after reading the answer key.
+These tests showed me how much behavior there is to check during a state change. In Photo Contest, I separated the cases for a pending response, a failed request, and the end of the list.
 
 ## Control responses to create each state
 
