@@ -198,7 +198,8 @@ describe('expired admin session', () => {
     const { client, close } = await signedInClient();
     api.reachable = false;
     await client.refetchQueries(sessionOptions());
-    expect(client.getQueryState(sessionKey)?.error).toBeInstanceOf(TypeError);
+    // SDK는 서버에 닿지 못한 fetch 거절을 NETWORK_ERROR로 바꿔 던진다. 만료 전이라 그대로 남는다.
+    expect(client.getQueryState(sessionKey)?.error).toMatchObject({ status: 0, errorCode: 'NETWORK_ERROR' });
 
     api.reachable = true;
     api.signedIn = false;
