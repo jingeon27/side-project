@@ -7,6 +7,7 @@ import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/rea
 import { PostCard, PostCardList } from '@/features/post';
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -38,8 +39,9 @@ function LatestPostList({
   empty: ReactNode;
   postAction?: (postId: string) => ReactNode;
 }) {
+  const observableQuery = useObservableQueryRef(postsRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    postsRef,
+    observableQuery,
     (data) => data.galleryPostsPage.nextOffset,
     (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'latest', offset }),
   );
@@ -101,7 +103,7 @@ export function LatestPosts({
   );
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label={title}>
-      <div className="mb-1 flex min-h-touch items-center justify-between gap-3 border-b border-line pb-3">
+      <div className="flex min-h-touch items-center justify-between gap-3">
         <h2 className="text-title-lg text-ink">{title}</h2>
       </div>
       <AsyncBoundary

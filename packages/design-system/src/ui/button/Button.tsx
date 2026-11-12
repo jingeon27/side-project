@@ -34,6 +34,9 @@ export const buttonVariants = cva(
           'bg-danger text-on-brand [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:brightness-95 active:not-data-disabled:brightness-90',
         accent:
           'bg-accent text-on-accent [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:brightness-95 active:not-data-disabled:brightness-90',
+        /** 브랜드 그라데이션. 밝은 채도 위라 글자는 on-accent(검정)로 둔다. */
+        gradient:
+          'bg-brand-gradient text-on-accent shadow-glow [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:brightness-105 active:not-data-disabled:brightness-95',
       },
       size: {
         /** 44×44 아이콘만 있는 버튼. 이름은 aria-label로 준다(IconButton 권장). */

@@ -1,151 +1,126 @@
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   GalleryPostCardFragmentDoc,
   GroupContestSummaryFragmentDoc,
   MeDocument,
   Phase,
-  PostKind,
-  type GalleryPostCardFragment,
   type GroupContestSummaryFragment,
 } from '@/shared/api/generated';
+import { initAnalytics } from '@/shared/model/analytics';
+import { resetAnalyticsClientForTest } from '@/shared/model/analytics/analytics.store';
 
+import { COMMENT_POST, COMMENT_VIEWER } from '../../../../../test/fixtures/comment-composer.data';
 import { GroupContestVoteButton } from './GroupContestVoteButton';
 
-const CONTEST: GroupContestSummaryFragment = {
+const amplitude = vi.hoisted(() => ({ init: vi.fn(), identify: vi.fn(), track: vi.fn() }));
+vi.mock('@amplitude/analytics-browser', () => ({
+  createInstance: () => amplitude,
+  Identify: class {
+    set() {
+      return this;
+    }
+  },
+}));
+
+const contest: GroupContestSummaryFragment = {
   __typename: 'GroupContest',
   id: 'contest-1',
   groupId: 'group-1',
-  title: '가을 웃음 대회',
+  title: '전송하지 않을 대회 제목',
+  startsAt: '2026-11-01T00:00:00.000Z',
+  submissionEndsAt: '2026-11-10T00:00:00.000Z',
+  endsAt: '2026-11-15T00:00:00.000Z',
   likeLimit: 1,
-  startsAt: '2026-10-01T00:00:00.000Z',
-  submissionEndsAt: '2026-10-10T00:00:00.000Z',
-  endsAt: '2026-10-15T00:00:00.000Z',
   phase: Phase.Voting,
   isAdmin: false,
   canParticipate: false,
   canVote: true,
   votedPostId: null,
-  entryCount: 3,
+  entryCount: 2,
 };
 
-const entry = (id: string, title: string, authorId = 'friend'): GalleryPostCardFragment => ({
-  __typename: 'GalleryPost',
-  id,
-  contestId: 'contest-1',
-  groupId: 'group-1',
-  groupName: '웃음 연구소',
-  title,
-  body: '',
-  kind: PostKind.Photo,
-  mediaUrl: `/backend/media/${id}`,
-  mediaWidth: null,
-  mediaHeight: null,
-  linkUrl: null,
-  createdAt: '2026-10-05T00:00:00.000Z',
-  likeCount: 0,
-  commentCount: 0,
-  likedByMe: false,
-  canDelete: false,
-  canModerate: false,
-  canInteract: true,
-  category: null,
-  contest: {
-    __typename: 'PostContest',
-    id: 'contest-1',
-    groupId: 'group-1',
-    title: '가을 웃음 대회',
-    phase: Phase.Voting,
-    likeLimit: 1,
-  },
-  author: { __typename: 'User', id: authorId, nickname: authorId, avatar: null },
-});
-
-/** 대회 상세처럼 참여작마다 투표 버튼을 그린다. 투표는 바로 성공하고 API처럼 더 투표할 수 없게 답한다. */
-function renderVoteButtons() {
-  const user = userEvent.setup();
-  const votes: unknown[] = [];
+function renderVote(apiKey?: string) {
+  initAnalytics({ apiKey, app: null });
+  const requests: Array<{ succeed: () => void; fail: () => void }> = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
-      (operation) =>
+      () =>
         new Observable((sink) => {
-          votes.push(operation.variables);
-          sink.next({
-            data: {
-              castGroupContestVote: { ...CONTEST, canVote: false, votedPostId: operation.variables.postId },
+          requests.push({
+            succeed: () => {
+              sink.next({
+                data: { castGroupContestVote: { ...contest, canVote: false, votedPostId: COMMENT_POST.id } },
+              });
+              sink.complete();
             },
+            fail: () => sink.error(new Error('투표 실패')),
           });
-          sink.complete();
         }),
     ),
   });
-  client.writeQuery({
-    query: MeDocument,
-    data: {
-      me: {
-        __typename: 'User',
-        id: 'viewer',
-        nickname: '나',
-        avatar: null,
-        isAnonymous: false,
-        needsOnboarding: false,
-      },
-    },
+  client.writeQuery({ query: MeDocument, data: { me: COMMENT_VIEWER } });
+  client.writeFragment({ fragment: GroupContestSummaryFragmentDoc, data: contest });
+  client.writeFragment({
+    fragment: GalleryPostCardFragmentDoc,
+    data: { ...COMMENT_POST, author: { ...COMMENT_VIEWER, id: 'another-member' } },
   });
-  client.writeFragment({ fragment: GroupContestSummaryFragmentDoc, data: CONTEST });
-  const entries = [
-    entry('post-a', '점심의 순간'),
-    entry('post-b', '퇴근길 노을'),
-    entry('post-mine', '내 사진', 'viewer'),
-  ];
-  for (const post of entries)
-    client.writeFragment({
-      fragment: GalleryPostCardFragmentDoc,
-      fragmentName: 'GalleryPostCard',
-      data: post,
-    });
   render(
     <ApolloProvider client={client}>
-      {entries.map((post) => (
-        <GroupContestVoteButton key={post.id} contestId="contest-1" postId={post.id} />
-      ))}
+      <GroupContestVoteButton contestId={contest.id} postId={COMMENT_POST.id} />
     </ApolloProvider>,
   );
-  return { user, votes };
+  return {
+    user: userEvent.setup(),
+    // 이름은 보이는 상태 글자 뒤에 참여작 제목을 붙인다(GroupContestVoteButton.accessibility.test.tsx).
+    button: screen.getByRole('button', { name: `이 참여작에 투표하기 (${COMMENT_POST.title})` }),
+    requests,
+  };
 }
 
-describe('GroupContestVoteButton 접근성 이름 회귀', () => {
-  it('버튼 이름은 보이는 투표 상태로 시작하고 투표한 뒤의 상태도 이름으로 알려야 한다', async () => {
-    const { user } = renderVoteButtons();
-    const lunch = screen.getByRole('button', { name: '이 참여작에 투표하기 (점심의 순간)' });
-    expect(lunch).not.toHaveAttribute('aria-label');
-    expect(screen.getByRole('button', { name: '내가 올린 참여작 (내 사진)' })).toBeInTheDocument();
+beforeEach(() => {
+  vi.clearAllMocks();
+  resetAnalyticsClientForTest();
+});
+afterEach(() => resetAnalyticsClientForTest());
 
-    await user.click(lunch);
-
-    await waitFor(() => expect(lunch).toHaveAccessibleName('내가 투표한 참여작 (점심의 순간)'));
-    expect(screen.getByRole('button', { name: '투표 완료 (퇴근길 노을)' })).toBeInTheDocument();
+describe('GroupContestVoteButton 성공 이벤트', () => {
+  it.each([true, false])('키 사용=%s일 때 서버 성공 뒤에만 대회 ID를 한 번 보내야 한다', async (enabled) => {
+    const { user, button, requests } = renderVote(enabled ? 'test-key' : undefined);
+    await user.click(button);
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(amplitude.track).not.toHaveBeenCalled();
+    await user.click(button);
+    expect(requests).toHaveLength(1);
+    await act(async () => requests[0]?.succeed());
+    await waitFor(() => expect(button).toHaveTextContent('내가 투표한 참여작'));
+    if (!enabled) {
+      expect(amplitude.init).not.toHaveBeenCalled();
+      expect(amplitude.track).not.toHaveBeenCalled();
+      return;
+    }
+    expect(amplitude.track).toHaveBeenCalledExactlyOnceWith('vote_cast', { contest_id: 'contest-1' });
   });
 
-  it('키보드로 투표한 뒤 잠긴 버튼도 포커스를 지키고 Tab으로 다른 참여작의 상태를 들을 수 있어야 한다', async () => {
-    const { user, votes } = renderVoteButtons();
-    const lunch = screen.getByRole('button', { name: '이 참여작에 투표하기 (점심의 순간)' });
-    lunch.focus();
-
-    await user.keyboard('{Enter}');
-
-    await waitFor(() => expect(lunch).toHaveAccessibleName('내가 투표한 참여작 (점심의 순간)'));
-    expect(lunch).toHaveFocus();
-    await user.tab();
-    const sunset = screen.getByRole('button', { name: '투표 완료 (퇴근길 노을)' });
-    expect(sunset).toHaveFocus();
-    expect(sunset).toHaveAttribute('aria-disabled', 'true');
-    await user.keyboard('{Enter}');
-    expect(votes).toEqual([{ contestId: 'contest-1', postId: 'post-a' }]);
+  it('투표 실패에는 이벤트를 보내지 않고 재시도 성공만 기록해야 한다', async () => {
+    const { user, button, requests } = renderVote('test-key');
+    await user.click(button);
+    await waitFor(() => expect(requests).toHaveLength(1));
+    await act(async () => requests[0]?.fail());
+    await waitFor(() => expect(button).not.toHaveAttribute('aria-busy'));
+    expect(amplitude.track).not.toHaveBeenCalled();
+    await user.click(button);
+    await waitFor(() => expect(requests).toHaveLength(2));
+    await act(async () => requests[1]?.succeed());
+    await waitFor(() =>
+      expect(amplitude.track).toHaveBeenCalledExactlyOnceWith('vote_cast', {
+        contest_id: 'contest-1',
+      }),
+    );
   });
 });

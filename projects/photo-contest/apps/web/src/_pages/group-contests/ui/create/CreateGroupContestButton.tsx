@@ -19,7 +19,7 @@ export function CreateGroupContestButton({ groupId }: { groupId: string }) {
   return (
     // 주황 알약은 만들기 진입이고(docs/implementation.md), 시트 안의 같은 이름 제출 버튼은 primary(검정)다.
     <Button
-      variant="accent"
+      variant="gradient"
       size="md"
       shape="pill"
       onClick={() =>

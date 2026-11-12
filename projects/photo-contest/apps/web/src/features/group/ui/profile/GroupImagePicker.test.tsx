@@ -8,12 +8,12 @@ import { GroupImagePicker } from './GroupImagePicker';
 const radius = (element: Element) => [...element.classList].filter((name) => name.startsWith('rounded'));
 
 describe('GroupImagePicker', () => {
-  // 그룹은 둥근 사각형, 사람은 원으로 구분하는데 그룹 만들기의 그룹 프로필 사진 미리보기는 원이었다.
-  it('그룹 프로필 사진은 그룹 아바타와 같은 둥근 사각형으로 미리 보여야 한다', () => {
+  // 그룹은 squircle, 사람은 원으로 구분하는데 그룹 만들기의 그룹 프로필 사진 미리보기는 원이었다.
+  it('그룹 프로필 사진은 그룹 머리글자와 같은 squircle로 미리 보여야 한다', () => {
     const { container } = render(
       <>
         <GroupImagePicker label="그룹 프로필 사진" value={null} onChange={() => undefined} />
-        <Avatar name="웃음 연구소" size="lg" shape="square" tone="outline" />
+        <Avatar name="웃음 연구소" size="lg" shape="squircle" tone="gradient" />
       </>,
     );
     expect(radius(screen.getByLabelText('그룹 프로필 사진 선택').closest('label')!)).toEqual(

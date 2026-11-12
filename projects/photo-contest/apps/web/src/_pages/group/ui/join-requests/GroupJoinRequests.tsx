@@ -17,6 +17,7 @@ import {
   type GroupJoinRequestsQuery,
 } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { formatDateTime } from '@/shared/lib/format.helper';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
@@ -96,8 +97,9 @@ function JoinRequestRow({ id }: { id: string }) {
 }
 
 function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (data) => data.groupJoinRequestsPage.nextOffset,
   );
   return (

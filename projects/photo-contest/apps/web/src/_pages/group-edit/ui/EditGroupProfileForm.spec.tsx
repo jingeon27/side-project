@@ -55,12 +55,12 @@ describe('그룹 프로필 수정 페이지의 폼', () => {
     expect(screen.getByText('그룹 사진')).toBeVisible();
   });
 
-  it('그룹 사진은 그룹 아바타와 같은 둥근 사각형으로 미리 보여야 한다', async () => {
+  it('그룹 사진은 그룹 머리글자와 같은 squircle로 미리 보여야 한다', async () => {
     const { user } = renderForm();
     await user.click(screen.getByText('그룹 사진 변경'));
-    // 그룹은 둥근 사각형, 사람은 원이라는 아바타 규칙(V15)을 사진 선택 미리보기도 따른다.
+    // 그룹은 squircle, 사람은 원이라는 아바타 규칙(V15)을 사진 선택 미리보기도 따른다.
     const preview = screen.getByLabelText('그룹 사진 선택').closest('label');
-    expect(preview).toHaveClass('rounded-card');
+    expect(preview).toHaveClass('rounded-[36%]');
     expect(preview).not.toHaveClass('rounded-full');
   });
 

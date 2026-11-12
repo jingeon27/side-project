@@ -8,14 +8,14 @@ Yarn Workspaces와 Turborepo는 둘 다 모노레포의 의존성을 다루지�
 
 _화살표는 왼쪽 항목이 오른쪽 항목에 의존한다는 뜻이에요. 빌드는 오른쪽의 토큰부터 시작해요._
 
-모노레포에서 '의존성'은 두 가지를 뜻해요. 하나는 패키지 사이의 의존성이에요. 웹이 UI를 import하려면 UI가 설치돼 있고 웹에서 찾을 수 있게 연결돼 있어야 해요. 다른 하나는 작업 사이의 의존성이에요. 웹을 빌드하려면 UI가 먼저 빌드돼 있어야 해요. Yarn Workspaces는 앞의 것을, Turborepo는 뒤의 것을 맡아요.
+모노레포에서 '의존성'은 두 가지를 뜻해요. 하나는 패키지 사이의 의존성이에요. 웹이 UI를 import하려면 UI가 설치돼 있고 웹에서 찾을 수 있게 연결돼 있어야 해요. 다른 하나는 작업 사이의 의존성이에요. 웹이 빌드된 UI 파일을 읽는 구조라면 UI 빌드가 먼저 끝나야 해요. Yarn Workspaces는 앞의 것을, Turborepo는 뒤의 것을 맡아요.
 
 |               | Yarn Workspaces                                                             | Turborepo                                                   |
 | ------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | 다루는 의존성 | 패키지 사이의 의존성                                                        | 작업 사이의 의존성                                          |
 | 답하는 질문   | 어떤 버전을 설치하고, 어디에 연결할까                                       | 어떤 작업을 먼저 실행하고, 무엇을 다시 실행할까             |
-| 적는 곳       | 각 패키지의 `dependencies`와 `workspace:`, `catalog:`, 루트의 `resolutions` | 루트 `turbo.json`의 `dependsOn`, `outputs`, `inputs`, `env` |
-| 남기는 것     | `node_modules`의 링크와 `yarn.lock`                                         | 작업 그래프와 작업 결과 캐시                                |
+| 적는 곳       | 각 패키지의 `dependencies`와 `workspace:`, `catalog:`, 루트의 `resolutions`, `.yarnrc.yml`의 `nodeLinker` | 루트 `turbo.json`의 `dependsOn`, `outputs`, `inputs`, `env` |
+| 남기는 것     | `yarn.lock`과 설치 모드에 따른 패키지 배치                                         | 작업 그래프와 작업 결과 캐시                                |
 
 Turborepo는 패키지 사이의 관계를 따로 적지 않아요. Yarn이 읽는 각 패키지의 `package.json`에서 그대로 가져와 작업 그래프를 만들어요. 그래서 두 도구는 서로를 대신하지 않고, Yarn이 이어 둔 패키지 관계 위에 Turborepo가 작업 순서와 캐시를 얹는 구조예요.
 
@@ -38,7 +38,29 @@ Turborepo는 패키지 사이의 관계를 따로 적지 않아요. Yarn이 읽�
 
 웹은 `dependencies`에 `"@demo/ui": "workspace:*"`를, UI는 `"@demo/tokens": "workspace:*"`를 적어요. `workspace:`는 같은 프로젝트 안에서 그 이름의 워크스페이스를 가리키는 프로토콜이에요. 패키지를 배포할 때는 이 표기가 일반 버전 범위로 바뀌어요. 예제의 토큰 버전을 `1.2.3`으로 두고 UI를 패킹해 보니, `workspace:*`는 정확히 `1.2.3`으로, `workspace:^`는 `^1.2.3`으로 들어갔어요. 저장소 안에서는 두 표기 모두 같은 로컬 토큰을 가리키지만, 배포된 UI를 설치하는 쪽이 받는 버전 범위는 어떤 표기를 썼느냐에 따라 달라져요. [Yarn의 워크스페이스 간 참조](https://yarnpkg.com/features/workspaces#cross-references)
 
-`yarn install`은 이렇게 적어 둔 의존성을 세 단계로 처리해요. 실행하면 출력에도 `Resolution step`, `Fetch step`, `Link step`이 차례로 나와요. Resolution 단계에서는 의존성 요청마다 실제로 쓸 패키지와 버전을 정해요. 웹이 적은 `"@demo/ui": "workspace:*"`는 이 단계에서 같은 저장소의 UI 패키지로 정해져요. 외부 패키지도 요청한 범위에 맞는 버전을 이 단계에서 고르고, 그 결과를 `yarn.lock`에 기록해요. Fetch 단계에서는 고른 패키지를 받아 캐시에 두고, Link 단계에서는 받은 패키지를 Node가 찾을 수 있도록 디스크에 배치해요. 아래에서 다룰 설정도 어느 단계에 작용하는지로 나눌 수 있어요. `catalog:`와 `resolutions`는 Resolution 단계에서 어떤 버전을 고를지 바꾸고, `nodeLinker`는 Link 단계에서 고른 패키지를 어떤 방식으로 배치할지 정해요. [Yarn 설치 과정](https://yarnpkg.com/advanced/architecture)
+`yarn install`은 패키지와 버전을 정하는 Resolution부터 시작해요. 웹이 적은 `"@demo/ui": "workspace:*"`는 같은 저장소의 UI 패키지로 정해지고, 외부 패키지는 요청한 범위에서 버전을 골라 `yarn.lock`에 기록해요. Fetch에서는 패키지를 캐시에 받고, Link에서는 Node가 찾을 수 있도록 배치해요. 마지막 Build에서는 설치에 필요한 스크립트를 실행해요. [Yarn 설치 과정](https://yarnpkg.com/cli/install)
+
+### 고른 패키지를 배치하는 nodeLinker
+
+Link 단계의 방식은 `.yarnrc.yml`의 `nodeLinker`가 정해요. 같은 의존성 선언도 이 값에 따라 디스크에 배치되는 모습과 Node가 패키지를 찾는 방법이 달라져요. 기본값은 `pnp`예요. 아래 표는 Yarn 문서가 설명하는 설치 방식과 선언 누락 검사, 도구 연동 조건을 정리한 것이에요. [Yarn 설치 모드](https://yarnpkg.com/features/linkers)
+
+| 모드 | Node가 패키지를 찾는 방식 | 선언하지 않은 의존성 | 특징과 연동 조건 |
+| --- | --- | --- | --- |
+| `node-modules` | `node_modules` 트리와 로컬 워크스페이스의 심볼릭 링크 | 차단하지 않아요 | 기존 도구와 호환되고 에디터용 SDK가 필요 없어요 |
+| `pnp` | 패키지 위치와 의존 관계를 기록한 `.pnp.cjs` 로더 | 차단해요 | 설치가 빠르고 Zero-installs를 지원해요. 에디터에는 SDK가 필요할 수 있어요 |
+| `pnpm` | 중앙 저장소에서 하드 링크한 `node_modules/.store`와 이를 가리키는 심볼릭 링크 | 일부 차단해요 | 에디터용 SDK가 필요 없고, 도구의 심볼릭 링크 지원 여부를 확인해야 해요 |
+
+`node-modules`에서는 중복 설치를 줄이려고 의존성을 가능한 한 상위 `node_modules`로 끌어올려요. 이를 호이스팅이라고 해요. 그래서 자기 `package.json`에 적지 않은 패키지도 상위 폴더에 있으면 import가 성공할 수 있어요. `pnp`는 패키지가 선언한 의존 관계를 로더에서 확인하므로, 선언하지 않은 패키지를 읽으려 하면 어떤 선언이 빠졌는지 오류로 알려 줘요. [Yarn 설치 모드 비교](https://yarnpkg.com/features/linkers)
+
+패키지마다 쓰는 의존성을 직접 적어 두는 건 설치 모드와 관계없이 필요해요. 특정 워크스페이스의 의존성만 설치하거나 Turborepo가 패키지 관계를 읽을 때도 `package.json`의 선언을 기준으로 삼아요. [Yarn Workspaces](https://yarnpkg.com/features/workspaces)
+
+가져다 쓰는 라이브러리가 의존성 선언을 빠뜨린 경우에도, 그 패키지를 요청하는 코드가 실행될 때 오류가 날 수 있어요. 이때 `.yarnrc.yml`의 `packageExtensions`로 해당 라이브러리의 선언을 보완할 수 있어요. 내가 작성한 코드에서 쓰는 패키지는 그 워크스페이스의 `dependencies`에 적어요. [Yarn packageExtensions 설정](https://yarnpkg.com/configuration/yarnrc#packageExtensions)
+
+이 블로그가 들어 있는 사이드프로젝트 저장소는 `nodeLinker: node-modules`로 시작했어요. 저장소를 만들 때 쓰던 도구의 PnP 연동을 하나씩 맞추는 게 번거로웠고, 캐시를 저장소에 넣어 설치를 생략하는 Zero-installs도 쓸 수 없는 상황이었어요. 지금도 루트의 `node_modules/@side/design-system`은 `packages/design-system`을 가리키는 심볼릭 링크예요. [Yarn 설정](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1), [Yarn Zero-installs](https://yarnpkg.com/features/caching#zero-installs)
+
+대신 `node-modules` 모드가 막지 못하는 선언 누락은 PR 검사에서 걸러요. 블로그 앱은 `graphql`을 의존성에 적지 않았어요. 그런데 피식의 웹과 API가 쓰는 `graphql`이 루트 `node_modules`에 올라가 있어서, 블로그 앱 폴더에서 `import('graphql')`을 실행하니 그대로 성공했어요. 같은 import를 블로그 앱의 테스트 파일에 넣고 `yarn knip`을 실행하자 Knip이 `Unlisted dependencies`로 `graphql`을 보고했어요. 블로그 글과 이미지만 바꾼 PR이 아니면 CI가 이 검사를 실행하므로, PnP에서라면 실행할 때 에러로 드러날 선언 누락을 병합 전에 찾을 수 있어요. [정적 분석 CI](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.github/workflows/static-analysis.yml#L93-L95)
+
+### 공통 버전 범위를 적는 catalog
 
 여러 앱이 같은 외부 패키지의 버전을 맞추려면 Yarn의 `catalog:`를 쓸 수 있어요. `.yarnrc.yml`의 카탈로그에 공통 버전 범위를 두고, 각 앱의 `dependencies`에서 그 카탈로그를 참조해요. 카탈로그는 버전 범위만 정하고, 설치할 때 실제로 고른 버전은 `yarn.lock`에 기록돼요. CI에서 `yarn install --immutable`을 실행하면 lockfile을 바꿔야 하는 경우 설치가 실패하므로, manifest만 바꾸고 lockfile을 빠뜨린 변경을 걸러 낼 수 있어요. [Yarn 카탈로그](https://yarnpkg.com/features/catalogs), [Yarn install](https://yarnpkg.com/cli/install)
 
@@ -62,19 +84,9 @@ Turborepo는 패키지 사이의 관계를 따로 적지 않아요. Yarn이 읽�
 
 `undici`도 같은 방식이에요. `@scalar/json-magic`이 요청한 `7.29.1`만 `7.30.1`로 해석해요. 그래서 `yarn why undici`를 보면 `@sentry/cli`가 쓰는 `6.29.1`과 `node-gyp`가 쓰는 `8.12.3`은 그대로 남아 있어요. 이름 전체를 고정할지 특정 요청만 바꿀지에 따라 영향을 받는 경로가 달라지는 거예요. `resolutions`를 고쳤다면 `yarn install`로 lockfile을 갱신하고, `yarn why`로 바뀐 경로를 확인해요. [yarn why](https://yarnpkg.com/cli/why)
 
-### 고른 패키지를 배치하는 nodeLinker
-
-Link 단계의 방식은 `.yarnrc.yml`의 `nodeLinker`가 정해요. 값은 `pnp`, `pnpm`, `node-modules` 세 가지이고, 따로 적지 않으면 `pnp`를 써요. [Yarn 설치 모드](https://yarnpkg.com/features/linkers)
-
-`node-modules` 모드는 Node가 원래 읽는 `node_modules` 트리를 만들고, 로컬 워크스페이스는 그 안에 심볼릭 링크로 넣어요. 이때 Yarn은 중복을 줄이려고 의존성을 가능한 한 상위 `node_modules`로 끌어올리는데, 이를 호이스팅이라고 해요. 그래서 자기 `package.json`에 적지 않은 패키지도 상위 폴더에 올라가 있으면 import가 성공해요. Yarn 문서도 이 모드의 단점으로 선언하지 않은 의존성을 막지 못한다는 점을 들어요. 패키지마다 쓰는 의존성을 직접 적어 두면 이런 우연에 기대지 않게 되고, 특정 워크스페이스의 의존성만 설치하거나 Turborepo가 의존 관계를 읽을 때도 그 선언을 기준으로 삼아요.
-
-`pnp` 모드는 `node_modules`를 만들지 않아요. 대신 각 패키지의 위치와 의존 관계를 `.pnp.cjs`에 기록하고, Node가 패키지를 찾을 때 이 로더가 기록을 보고 위치를 알려 줘요. 패키지가 자기 `package.json`에 선언하지 않은 의존성을 요청하면 에러가 나므로, 호이스팅 덕분에 우연히 성공하는 import가 생기지 않아요. 다만 Yarn 문서는 이 모드의 단점으로 에디터 연동에 SDK가 필요하다는 점과, 라이브러리가 빠뜨린 의존성 선언을 `packageExtensions`로 채워야 할 때가 있다는 점을 들어요. `pnpm` 모드는 패키지를 `node_modules/.store` 아래에 모아 두고 링크로 연결해요.
-
 ## 링크가 생긴 다음에는 파일을 만들어야 해요
 
-Yarn이 패키지 사이의 의존성을 해결해도, 작업 사이의 의존성까지 맞춰 주지는 않아요. 예제에서 `yarn install`을 마치고 웹 앱만 빌드했더니 `ERR_MODULE_NOT_FOUND`가 났어요. 에러에 나온 경로는 `node_modules/@demo/ui/dist/index.mjs`였어요. `@demo/ui`로 가는 링크는 설치 때 이미 생겼지만, 링크를 따라 들어간 UI 패키지에는 빌드된 파일이 아직 없었어요.
-
-`packages/ui/package.json`에는 토큰에 의존한다는 선언과 UI가 공개하는 경로가 함께 있어요. 앱이 `@demo/ui`를 import하면 `exports`에 적힌 `./dist/index.mjs`를 읽어요.
+예제의 UI 패키지는 빌드한 `dist/index.mjs`를 앱이 읽도록 해 뒀어요. `packages/ui/package.json`의 `exports`가 그 경로를 가리키고, `build` 스크립트가 해당 파일을 만들어요.
 
 ```json
 {
@@ -91,7 +103,7 @@ Yarn이 패키지 사이의 의존성을 해결해도, 작업 사이의 의존�
 }
 ```
 
-토큰도 같은 방식으로 `dist/index.mjs`를 내보내요. 각 빌드가 어떤 파일을 읽고 어떤 파일을 만드는지 따라가면 실행 순서가 보여요.
+토큰도 `dist/index.mjs`를 공개해요. UI 빌드는 이 파일을 읽고, 웹 빌드는 UI가 공개한 파일을 읽어요.
 
 | 패키지         | 빌드가 읽는 것                  | 만드는 파일       |
 | -------------- | ------------------------------- | ----------------- |
@@ -100,7 +112,9 @@ Yarn이 패키지 사이의 의존성을 해결해도, 작업 사이의 의존�
 | `@demo/web`    | `@demo/ui`가 공개한 버튼 CSS    | `dist/page.css`   |
 | `@demo/docs`   | 자체 문서                       | `dist/index.html` |
 
-웹 빌드는 UI가 만든 파일을, UI 빌드는 토큰이 만든 파일을 읽어요. 설치 직후 웹 빌드가 실패한 것도 UI 빌드가 아직 실행되지 않아 `dist/index.mjs`가 없었기 때문이에요. 반대로 이미 빌드한 적이 있는 로컬에서는 같은 명령이 지난번에 만든 UI 파일을 읽고 통과할 수 있어요. 토큰을 고친 뒤에도 웹에서 이전 색이 보이는 건 이 때문이에요.
+이 상태에서 `yarn install` 직후 웹 앱만 빌드했더니 `ERR_MODULE_NOT_FOUND`가 났어요. Node가 찾던 파일은 `node_modules/@demo/ui/dist/index.mjs`였어요. `@demo/ui`의 링크를 따라 UI 패키지까지는 찾았지만, `exports`가 가리키는 파일을 만드는 UI 빌드가 아직 실행되지 않았던 거예요.
+
+설치 과정에서도 `postinstall` 같은 스크립트를 실행할 수 있어요. 이 예제에는 설치할 때 UI와 토큰을 빌드하는 설정이 없어서, 각 `build`를 별도로 실행해야 해요. 이미 빌드한 적이 있는 로컬에서는 웹 빌드가 지난번 UI 파일을 읽고 통과할 수 있지만, 토큰을 고친 뒤에도 이전 색이 남을 수 있어요. [Yarn 설치 스크립트](https://yarnpkg.com/advanced/lifecycle-scripts)
 
 이 예제는 Yarn만으로도 순서대로 빌드할 수 있어요.
 
@@ -187,7 +201,3 @@ TURBO_SCM_BASE=origin/develop TURBO_SCM_HEAD=HEAD \
 이 블로그가 들어 있는 사이드프로젝트 저장소는 Yarn Workspaces만 쓰고, Turborepo는 아직 쓰지 않아요. 루트 빌드는 `workspaces foreach`로 `@side/*` 프로젝트를 고르고, `@side/blog`는 실제 앱인 `@blog/web`에 빌드를 넘겨요. 블로그 웹은 `@side/design-system`을 `workspace:*`로 연결하는데, 디자인 시스템의 `exports`는 `dist` 대신 `src`를 가리켜요. 그래서 블로그를 빌드할 때 필요한 컴포넌트의 소스를 함께 처리하고, 디자인 시스템을 먼저 빌드할 필요가 없어요. 앞의 토큰 예제처럼 의존 패키지의 배포 파일부터 만들어야 하는 구조가 아닌 거예요. [루트 스크립트](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json), [디자인 시스템 exports](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/packages/design-system/package.json)
 
 CI도 블로그와 서비스를 나눠 실행하고, 블로그는 글과 이미지처럼 콘텐츠만 바뀌면 콘텐츠 검증 경로를 타요. 이런 구조에서 Turborepo를 검토한다면 실제로 시간이 드는 단계부터 보면 돼요. 의존성 다운로드가 오래 걸린다면 Yarn 캐시를 먼저 살펴보고, 같은 입력으로 여러 앱을 반복해서 빌드한다면 작업 결과를 복원하는 캐시가 도움이 돼요. 여러 앱이 공유 패키지의 `dist`를 쓰기 시작하면, 그 파일을 어떤 작업이 만들고 누가 기다려야 하는지도 작업 그래프로 드러낼 수 있어요. [블로그 CI 설정](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/.github/workflows/blog.yml)
-
-사이드프로젝트는 `.yarnrc.yml`에서 `nodeLinker: node-modules`를 써요. 그래서 루트의 `node_modules/@side/design-system`은 `packages/design-system`을 가리키는 심볼릭 링크예요. 저장소를 처음 만들 때 PnP를 지원하지 않는 도구가 많아서 하나하나 설정해 주기 번거로웠어요. Yarn 캐시를 저장소에 커밋해 설치 없이 바로 실행하는 Zero-installs도 어차피 쓸 수 없어서, `node-modules`로 시작했고 지금까지 바꾸지 않았어요. [Yarn 설정](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1), [Yarn Zero-installs](https://yarnpkg.com/features/caching#zero-installs)
-
-대신 `node-modules` 모드가 막지 못하는 선언 누락은 PR 검사에서 걸러요. 블로그 앱은 `graphql`을 의존성에 적지 않았어요. 그런데 피식의 웹과 API가 쓰는 `graphql`이 루트 `node_modules`에 올라가 있어서, 블로그 앱 폴더에서 `import('graphql')`을 실행하니 그대로 성공했어요. 같은 import를 블로그 앱의 테스트 파일에 넣고 `yarn knip`을 실행하자 Knip이 `Unlisted dependencies`로 `graphql`을 보고했어요. 블로그 글과 이미지만 바꾼 PR이 아니면 CI가 이 검사를 실행하므로, PnP에서라면 실행할 때 에러로 드러날 선언 누락을 병합 전에 찾을 수 있어요. [정적 분석 CI](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.github/workflows/static-analysis.yml#L93-L95)

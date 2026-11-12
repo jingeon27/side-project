@@ -25,11 +25,15 @@ describe('ArticleSearch callback ref', () => {
   it('검색어·언어가 바뀌어도 연결된 노드의 단축키 구독을 교체하지 않아야 한다', () => {
     const add = vi.spyOn(document, 'addEventListener');
     const remove = vi.spyOn(document, 'removeEventListener');
-    const { rerender } = render(<ArticleSearch locale="ko" value="" onChange={vi.fn()} articles={[]} />);
+    const { rerender } = render(
+      <ArticleSearch locale="ko" value="" onChange={vi.fn()} onTagSelect={vi.fn()} articles={[]} />,
+    );
     const input = screen.getByRole('combobox');
     add.mockClear();
     remove.mockClear();
-    rerender(<ArticleSearch locale="en" value="react" onChange={vi.fn()} articles={[]} />);
+    rerender(
+      <ArticleSearch locale="en" value="react" onChange={vi.fn()} onTagSelect={vi.fn()} articles={[]} />,
+    );
     expect(screen.getByRole('combobox')).toBe(input);
     expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(0);
     expect(remove.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(0);
@@ -42,11 +46,27 @@ describe('ArticleSearch callback ref', () => {
 
   it('입력 노드 교체 후 새 노드만 포커스하고 unmount 뒤에는 단축키를 해제해야 한다', () => {
     const { rerender, unmount } = render(
-      <ArticleSearch key="first" locale="ko" value="" onChange={vi.fn()} articles={[]} />,
+      <ArticleSearch
+        key="first"
+        locale="ko"
+        value=""
+        onChange={vi.fn()}
+        onTagSelect={vi.fn()}
+        articles={[]}
+      />,
     );
     const previous = screen.getByRole('combobox');
     const previousFocus = vi.spyOn(previous, 'focus');
-    rerender(<ArticleSearch key="next" locale="ko" value="" onChange={vi.fn()} articles={[]} />);
+    rerender(
+      <ArticleSearch
+        key="next"
+        locale="ko"
+        value=""
+        onChange={vi.fn()}
+        onTagSelect={vi.fn()}
+        articles={[]}
+      />,
+    );
     const input = screen.getByRole('combobox');
     const focus = vi.spyOn(input, 'focus');
     expect(input).not.toBe(previous);
@@ -64,7 +84,7 @@ describe('ArticleSearch callback ref', () => {
   it('StrictMode 재연결 뒤에도 단축키가 한 번만 동작하고 unmount 때 정리되어야 한다', () => {
     const { unmount } = render(
       <StrictMode>
-        <ArticleSearch locale="ko" value="" onChange={vi.fn()} articles={[]} />
+        <ArticleSearch locale="ko" value="" onChange={vi.fn()} onTagSelect={vi.fn()} articles={[]} />
       </StrictMode>,
     );
     const input = screen.getByRole('combobox');

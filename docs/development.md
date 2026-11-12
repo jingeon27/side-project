@@ -141,4 +141,4 @@ Photo Contest의 Expo Doctor는 Amplitude의 New Architecture 미검증 메타�
 
 WebView 14.0.1의 선언에서 추가 props의 기본값이 `undefined`라 props 전체가 `never`가 되는 문제는 Yarn 패치로 `unknown`을 사용해 보정합니다.
 
-새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
+새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로와 `*.browser.spec.ts` 컴포넌트 레인만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. `@side/design-system`의 `*.browser.spec.ts`는 패키지가 만든 레이아웃처럼 jsdom이 계산하지 않는 동작만 다루며, jsdom unit에서 제외하고 `test:browser`가 Storybook 스토리를 열어 실행합니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.

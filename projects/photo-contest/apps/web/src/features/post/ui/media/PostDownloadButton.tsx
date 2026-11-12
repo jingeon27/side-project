@@ -24,7 +24,7 @@ export function PostDownloadButton({ postId, title, mediaUrl }: IPostDownloadBut
       variant="ghost"
       size="md"
       shape="pill"
-      className="gap-1.5 px-2 text-muted"
+      className="px-2.5 text-ink"
       aria-label={`${title} 파일 저장`}
       loading={loading}
       onClick={async () => {
@@ -51,7 +51,7 @@ export function PostDownloadButton({ postId, title, mediaUrl }: IPostDownloadBut
         }
       }}
     >
-      <Download aria-hidden className="size-4" /> 저장
+      <Download aria-hidden className="size-6" strokeWidth={1.7} />
     </Button>
   );
 }

@@ -10,6 +10,7 @@ import {
   type GroupContestsQuery,
 } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -27,7 +28,8 @@ function ContestRows({
   empty,
   renderContest,
 }: IContestRowsProps & { queryRef: QueryRef<GroupContestsQuery> }) {
-  const pagination = useInfiniteQuery(queryRef, (data) => data.groupContestsPage.nextOffset);
+  const observableQuery = useObservableQueryRef(queryRef);
+  const pagination = useInfiniteQuery(observableQuery, (data) => data.groupContestsPage.nextOffset);
   if (!pagination.data.groupContestsPage.items.length) return empty;
   return (
     <>

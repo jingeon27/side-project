@@ -2,6 +2,7 @@ import { ApiError, ApiResponseValidationError } from '@game-feedback/sdk';
 
 export { ApiError };
 const errorMessages: Record<string, string> = {
+  NETWORK_ERROR: '서버에 연결하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.',
   INVALID_API_RESPONSE: '서버 응답을 확인하지 못했어요. 새로고침 후 내용을 확인해 주세요.',
   AUTH_REQUIRED: '로그인 후 이용할 수 있어요.',
   FORBIDDEN: '이 작업을 할 권한이 없어요.',
@@ -22,6 +23,6 @@ export async function withApiError<T>(request: Promise<T>): Promise<T> {
     if (error instanceof ApiResponseValidationError) throw error;
     if (error instanceof ApiError)
       throw new ApiError(error.status, error.errorCode, errorMessages[error.errorCode] || error.message);
-    throw new Error('서버에 연결하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.');
+    throw new Error('요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.', { cause: error });
   }
 }

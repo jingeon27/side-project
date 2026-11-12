@@ -132,6 +132,27 @@ export function validateMdxNodes(tree: ReturnType<typeof analyzeMdx>['tree'], la
   return sources;
 }
 
+function markdownUrls(tree: ReturnType<typeof analyzeMdx>['tree']) {
+  const definitions = new Map<string, string>();
+  visit(tree, 'definition', (node) => {
+    const identifier = node.identifier.toUpperCase();
+    // CommonMark references use the first definition, regardless of label case.
+    if (!definitions.has(identifier)) definitions.set(identifier, node.url);
+  });
+  const images: string[] = [];
+  const links: string[] = [];
+  visit(tree, (node) => {
+    if (node.type === 'image') images.push(node.url);
+    if (node.type === 'link') links.push(node.url);
+    if (node.type !== 'imageReference' && node.type !== 'linkReference') return;
+    const url = definitions.get(node.identifier.toUpperCase());
+    if (url === undefined) return;
+    if (node.type === 'imageReference') images.push(url);
+    if (node.type === 'linkReference') links.push(url);
+  });
+  return { images, links };
+}
+
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
@@ -187,10 +208,7 @@ export async function readContent(root: string) {
       if (!source.trim()) throw new Error(`${id}/${locale}: empty content`);
       await compile(source, { remarkPlugins: [[remarkGfm, gfmOptions], remarkCjkFriendly] });
       const { toc, readingMinutes, tree } = analyzeMdx(source);
-      const images = validateMdxNodes(tree, `${id}/${locale}`);
-      visit(tree, 'image', (node) => {
-        images.push(node.url);
-      });
+      const images = [...validateMdxNodes(tree, `${id}/${locale}`), ...markdownUrls(tree).images];
       for (const url of images) {
         if (url.startsWith('/images/')) {
           await access(path.join(root, 'public', url));
@@ -210,11 +228,11 @@ export async function readContent(root: string) {
   for (const { id, locale } of imports) {
     const source = await readFile(path.join(postsDir, id, `${locale}.mdx`), 'utf8');
     const { tree } = analyzeMdx(source);
-    visit(tree, 'link', (node) => {
-      const target = decodeURI(node.url.split('#')[0]!.split('?')[0]!);
+    for (const url of markdownUrls(tree).links) {
+      const target = decodeURI(url.split('#')[0]!.split('?')[0]!);
       if (/^\/(ko|en)\/blog\/(?!category\/|tag\/).+/.test(target) && !validPaths.has(target))
-        throw new Error(`${id}/${locale}: broken article link ${node.url}`);
-    });
+        throw new Error(`${id}/${locale}: broken article link ${url}`);
+    }
   }
   return { articles, imports };
 }

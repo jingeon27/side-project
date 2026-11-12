@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-function PhotoForm({ currentUrl, shape }: { currentUrl?: string; shape?: 'circle' | 'square' }) {
+function PhotoForm({ currentUrl, shape }: { currentUrl?: string; shape?: 'circle' | 'square' | 'squircle' }) {
   const form = useZodForm(schema, { defaultValues: { photo: null, removePhoto: false } });
   return (
     <form noValidate onSubmit={form.handleSubmit((values) => submitted(values))}>
@@ -89,7 +89,8 @@ describe('ImageFileField', () => {
 
   it.each([
     ['사람', undefined, 'circle'],
-    ['그룹', 'square', 'square'],
+    ['카드', 'square', 'square'],
+    ['그룹', 'squircle', 'squircle'],
   ] as const)('%s 사진은 그 사진을 보여 줄 아바타와 같은 모서리로 미리 보여야 한다', (_, shape, avatar) => {
     const { container } = render(
       <>

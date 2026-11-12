@@ -32,7 +32,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   return (
-    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body id="top">
         <ThemeInitializer />
         <NextIntlClientProvider messages={messages}>

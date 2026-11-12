@@ -39,7 +39,7 @@ export function GroupImagePicker({
       </label>
       <label
         htmlFor={id}
-        className={`relative flex cursor-pointer items-center justify-center overflow-hidden rounded-card border border-line bg-sunken text-muted has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring ${cover ? 'aspect-[3/1] w-full' : 'size-24'}`}
+        className={`relative flex cursor-pointer items-center justify-center overflow-hidden border border-line bg-sunken text-muted has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring ${cover ? 'aspect-[3/1] w-full rounded-card' : 'size-24 rounded-[36%]'}`}
       >
         <input
           id={id}

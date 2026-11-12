@@ -122,7 +122,8 @@ function verifyResults() {
     'gf-verify': 'yarn check:game-feedback && yarn workspace @side/game-feedback test:unit',
     'gf-integration':
       'yarn workspace @game-feedback/api test:integration && yarn workspace @side/game-feedback test:e2e',
-    'gf-components': 'yarn workspace @game-feedback/admin test:browser',
+    'gf-components':
+      'yarn workspace @game-feedback/admin test:browser && yarn workspace @side/design-system test:browser',
     'pc-verify':
       'yarn workspace @side/photo-contest check && yarn workspace @photo-contest/api test:integration',
     'pc-browser':

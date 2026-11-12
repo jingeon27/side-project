@@ -34,7 +34,7 @@ function NavigationLink({
       className={cn(
         'flex min-h-touch items-center gap-4 rounded-full px-4 py-3 text-body transition-[background-color,color,transform] active:scale-[0.98]',
         active
-          ? 'bg-accent-soft font-bold text-accent-ink hover:bg-accent/20 active:bg-accent/25'
+          ? 'bg-sunken font-bold text-ink hover:bg-neutral-soft active:bg-neutral-soft'
           : 'text-muted hover:bg-sunken hover:text-ink active:bg-neutral-soft',
       )}
     >

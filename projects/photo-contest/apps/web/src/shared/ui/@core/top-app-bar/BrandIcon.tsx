@@ -1,19 +1,18 @@
 import { cn } from '../../../lib/cn.helper';
 
+/** 그라데이션 바탕은 CSS로 칠해 한 화면에 여러 개 그려도 SVG gradient id가 겹치지 않는다. */
 export function BrandIcon({ className }: { className?: string }) {
   return (
-    <svg
+    <span
       aria-hidden
-      focusable="false"
-      viewBox="0 0 64 64"
-      fill="none"
-      className={cn('size-6 shrink-0', className)}
+      className={cn('inline-block size-6 shrink-0 rounded-[36%] bg-brand-gradient', className)}
     >
-      <rect width="64" height="64" rx="23" className="fill-accent" />
-      <g className="stroke-on-accent" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m16 25 5-3 5 3M38 25l5-3 5 3" />
-        <path d="M20 37c7 10 20 10 27-2" />
-      </g>
-    </svg>
+      <svg focusable="false" viewBox="0 0 64 64" fill="none" className="size-full">
+        <g className="stroke-on-gradient" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m16 25 5-3 5 3M38 25l5-3 5 3" />
+          <path d="M20 37c7 10 20 10 27-2" />
+        </g>
+      </svg>
+    </span>
   );
 }

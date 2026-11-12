@@ -5,6 +5,7 @@ import { MessageCircle } from 'lucide-react';
 
 import { GalleryPostCardFragmentDoc, type PostCommentsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 
@@ -17,8 +18,10 @@ export function PostCommentList({
   commentsRef: QueryRef<PostCommentsQuery>;
   postId: string;
 }) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(commentsRef, (data) =>
-    data.postComments.length < data.postCommentCount ? data.postComments.length : null,
+  const observableQuery = useObservableQueryRef(commentsRef);
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
+    observableQuery,
+    (data) => (data.postComments.length < data.postCommentCount ? data.postComments.length : null),
   );
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,

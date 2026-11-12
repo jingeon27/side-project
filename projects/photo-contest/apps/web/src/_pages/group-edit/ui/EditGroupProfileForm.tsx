@@ -141,7 +141,7 @@ export function EditGroupProfileForm({
                 label="그룹 사진"
                 currentUrl={group.avatarUrl}
                 fileSchema={groupProfileSchema.shape.avatar}
-                shape="square"
+                shape="squircle"
               />
             </div>
           </Disclosure>

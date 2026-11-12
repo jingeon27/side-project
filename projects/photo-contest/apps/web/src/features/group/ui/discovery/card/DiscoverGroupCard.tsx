@@ -36,14 +36,14 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
   const privateGroup = group.visibility === GroupVisibility.Private;
   const viewerPending = isSSR || !viewer;
   return (
-    <article className="flex min-w-0 flex-col rounded-card border border-line bg-surface transition-colors hover:border-line-strong">
+    <article className="flex min-w-0 flex-col rounded-sheet bg-sunken">
       <Link
         href={ROUTES.GROUP(id)}
         aria-describedby={detailsId}
         aria-label={group.name}
         aria-disabled={privateGroup && viewerPending}
         inert={privateGroup && viewerPending}
-        className="flex min-w-0 flex-1 flex-col gap-3 rounded-card p-4 transition-colors hover:bg-sunken active:bg-neutral-soft"
+        className="flex min-w-0 flex-1 flex-col gap-3 rounded-sheet p-4 transition-colors hover:bg-neutral-soft active:bg-neutral-soft"
         onClick={(event) => {
           if (!privateGroup) return;
           if (viewerPending) {
@@ -64,8 +64,8 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             name={group.name}
             src={group.avatarUrl}
             size="lg"
-            shape="square"
-            tone="outline"
+            shape="squircle"
+            tone="gradient"
             className="size-12"
           />
           <h3 className="min-w-0 flex-1 wrap-anywhere text-subtitle font-bold text-ink">{group.name}</h3>
@@ -89,7 +89,7 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
         </div>
       </Link>
       {joinable && !group.role ? (
-        <div className="flex justify-end border-t border-line px-4 py-3">
+        <div className="flex justify-end border-t border-line/70 px-4 py-3">
           <GroupMembershipButton groupId={id} />
         </div>
       ) : null}

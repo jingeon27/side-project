@@ -5,13 +5,17 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/cn.helper';
 
-/** 모든 tone은 라이트·다크 모드에서 첫 글자 대비 4.5:1 이상을 유지한다(Avatar.spec.tsx). */
+/**
+ * gradient를 뺀 모든 tone은 라이트·다크 모드에서 첫 글자 대비 4.5:1 이상을 유지한다(Avatar.spec.tsx).
+ * gradient는 브랜드 그라데이션 위 흰 장식 머리글자다. 아바타는 aria-hidden이고 이름은 옆 글자가 읽는다.
+ */
 const avatarVariants = cva('inline-flex shrink-0 items-center justify-center overflow-hidden select-none', {
   variants: {
-    /** 사람은 원, 그룹처럼 사람이 아닌 대상은 둥근 사각형으로 구분한다. */
+    /** 사람은 원, 그룹처럼 사람이 아닌 대상은 둥근 사각형(squircle은 더 둥근 그룹 머리글자)으로 구분한다. */
     shape: {
       circle: 'rounded-full',
       square: 'rounded-card',
+      squircle: 'rounded-[36%]',
     },
     /** 배지와 이름이 같은 tone은 색도 같다. */
     tone: {
@@ -19,6 +23,7 @@ const avatarVariants = cva('inline-flex shrink-0 items-center justify-center ove
       accent: 'bg-accent-soft text-accent-ink',
       /* 배지 outline과 같은 line 테두리·ink 글자이고, 사진이 비는 자리라 바탕만 surface 대신 sunken을 쓴다. */
       outline: 'border border-line bg-sunken text-ink',
+      gradient: 'bg-brand-gradient text-on-gradient',
     },
     size: {
       sm: 'size-8 text-caption',

@@ -29,9 +29,15 @@ export function LocaleSwitch({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [notice, setNotice] = useState(false);
+  const [noticeHref, setNoticeHref] = useState<string | null>(null);
   const next = locale === 'ko' ? 'en' : 'ko';
   const t = labels(locale);
+  const handleNavigate = (targetPathname: string) => {
+    const url = new URL(window.location.href);
+    url.pathname = targetPathname;
+    trackEvent('language_changed', { from_locale: locale, to_locale: next });
+    router.push(`${url.pathname}${url.search}${url.hash}`);
+  };
   return (
     <div className="locale-switch">
       <button
@@ -43,11 +49,12 @@ export function LocaleSwitch({
             const slug = decodeSegment(parts[2] ?? '');
             const translated = translations[slug]?.[next];
             if (!translated) {
-              setNotice(true);
+              const url = new URL(window.location.href);
+              url.pathname = `/${next}/blog`;
+              setNoticeHref(`${url.pathname}${url.search}${url.hash}`);
               return;
             }
-            trackEvent('language_changed', { from_locale: locale, to_locale: next });
-            router.push(`/${next}/blog/${translated}`);
+            handleNavigate(`/${next}/blog/${translated}`);
             return;
           }
           if (
@@ -55,34 +62,32 @@ export function LocaleSwitch({
             parts[2] === 'tag' &&
             !targetTags.includes(decodeSegment(parts[3] ?? ''))
           ) {
-            trackEvent('language_changed', { from_locale: locale, to_locale: next });
-            router.push(`/${next}/blog`);
+            handleNavigate(`/${next}/blog`);
             return;
           }
-          trackEvent('language_changed', { from_locale: locale, to_locale: next });
-          router.push(pathname.replace(/^\/(ko|en)(?=\/|$)/, `/${next}`));
+          handleNavigate(pathname.replace(/^\/(ko|en)(?=\/|$)/, `/${next}`));
         }}
         aria-label={`${t.nav.language}: ${next.toUpperCase()} (${t.nav.languages[next]})`}
-        aria-expanded={notice}
+        aria-expanded={Boolean(noticeHref)}
       >
         {next.toUpperCase()}
       </button>
-      {notice && (
+      {noticeHref && (
         <div className="locale-notice" role="status">
           <p>{t.common.translationMissing}</p>
           <Link
-            href={`/${next}/blog`}
+            href={noticeHref}
             onClick={() => {
               trackEvent('language_changed', { from_locale: locale, to_locale: next });
-              setNotice(false);
             }}
+            onNavigate={() => setNoticeHref(null)}
           >
             {t.common.translationList}
           </Link>
           <button
             type="button"
             className="notice-close"
-            onClick={() => setNotice(false)}
+            onClick={() => setNoticeHref(null)}
             aria-label={t.common.close}
           >
             ×

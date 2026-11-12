@@ -6,9 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Article } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
+import { trackEvent } from '@/shared/lib/analytics/events';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
+vi.mock('@/shared/lib/analytics/events', () => ({ trackEvent: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () =>
@@ -180,6 +182,21 @@ describe('article discovery', () => {
     await user.click(screen.getByRole('button', { name: labels('ko').common.clear }));
     expect(search).toHaveValue('');
     expect(screen.getByRole('link', { name: article.title })).toBeVisible();
+  });
+
+  it('adds history for an explicit tag choice while ordinary typing only replaces the current entry', async () => {
+    const user = userEvent.setup();
+    render(<BlogFeed locale="ko" articles={[other, tagOnly, nestedTag]} />);
+    const before = window.history.length;
+    await user.type(screen.getByRole('combobox'), 'react');
+    expect(window.history.length).toBe(before);
+    expect(window.history.pushState).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('option', { name: '#react' }));
+    expect(window.history.length).toBe(before + 1);
+    expect(window.history.pushState).toHaveBeenCalledOnce();
+    expect(screen.getByRole('combobox')).toHaveValue('#react');
+    expect(new URLSearchParams(window.location.search).get('q')).toBe('#react');
+    expect(trackEvent).toHaveBeenCalledWith('tag_selected', { tag_id: 'react' });
   });
 
   it.each([

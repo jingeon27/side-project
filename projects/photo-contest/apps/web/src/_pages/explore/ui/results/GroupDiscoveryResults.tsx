@@ -6,6 +6,7 @@ import { ArrowUpRight, Compass } from 'lucide-react';
 import { DiscoverGroupCard } from '@/features/group';
 import type { DiscoverGroupsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
@@ -20,8 +21,9 @@ export function GroupDiscoveryResults({
   queryRef: QueryRef<DiscoverGroupsQuery>;
   search: string;
 }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (data) => data.discoverGroupsPage.nextOffset,
   );
   if (!data.discoverGroupsPage.items.length)

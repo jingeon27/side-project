@@ -41,6 +41,15 @@ function isSafeRequestPath(url: string) {
     });
 }
 
+async function fetchResponse(url: string, options: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch (error) {
+    if (options.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;
+    throw new ApiError(0, 'NETWORK_ERROR', '네트워크 요청을 완료하지 못했습니다.');
+  }
+}
+
 export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}): Promise<T> {
   const { schema, baseUrl, ...requestOptions } = options;
   if (!schema) throw new ApiError(0, 'RESPONSE_SCHEMA_REQUIRED', '응답 검증 스키마가 필요합니다.');
@@ -51,7 +60,7 @@ export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}
     headers.delete('Content-Type');
   if (typeof requestOptions.body === 'string' && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json');
-  const response = await fetch(baseUrl ? new URL(url, baseUrl).toString() : url, {
+  const response = await fetchResponse(baseUrl ? new URL(url, baseUrl).toString() : url, {
     ...requestOptions,
     credentials: 'include',
     cache: 'no-store',

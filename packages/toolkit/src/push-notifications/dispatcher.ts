@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import dayjs from 'dayjs';
-import { chunk } from 'es-toolkit';
-import { match, P } from 'ts-pattern';
+import { attemptAsync, chunk } from 'es-toolkit';
 
 import { ExpoPushTransport, PUSH_BATCH_SIZE, PushProviderError, type IPushMessage } from './index';
 
@@ -66,13 +65,23 @@ export class PushDispatcher {
       }
       pending.push({ ...item, message });
     }
+    const persistenceErrors: unknown[] = [];
     // Expo는 요청 하나에 PUSH_BATCH_SIZE개까지 받는다. 저장소가 더 많이 돌려줘도 나눠 보내고,
-    // 한 묶음의 실패는 그 묶음만 재시도한다.
+    // 한 묶음의 공급자 실패는 그 묶음만 재시도한다.
     for (const batch of chunk(pending, PUSH_BATCH_SIZE)) {
-      try {
-        const tickets = await this.transport.send(batch.map((item) => item.message));
-        for (const [index, item] of batch.entries()) {
-          const ticket = tickets[index];
+      // 공급자 실패만 전송 재시도 정책에 넣는다. DB 실패는 다른 작업의 공급자 결과를 바꾸지 않는다.
+      const [error, tickets] = await attemptAsync(() =>
+        this.transport.send(batch.map((item) => item.message)),
+      );
+      // 호출 계약·프로그래밍 오류를 영구 전송 실패로 바꾸지 않는다.
+      if (tickets === null && !(error instanceof PushProviderError)) throw error;
+      for (const [index, item] of batch.entries()) {
+        try {
+          if (error instanceof PushProviderError) {
+            await this.retry(item, now, error.retryable, error.retryAfterMs);
+            continue;
+          }
+          const ticket = tickets?.[index];
           if (ticket?.status === 'ok') {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
@@ -84,22 +93,19 @@ export class PushDispatcher {
           if (ticket?.status === 'error' && ticket.code === 'DeviceNotRegistered')
             await this.store.disable(item.job.deviceId);
           await this.retry(item, now, ticket?.status === 'error' && ticket.code === 'MessageRateExceeded');
+        } catch (error) {
+          persistenceErrors.push(error);
         }
-      } catch (error) {
-        const failure = match(error)
-          .with(P.instanceOf(PushProviderError), ({ retryable, retryAfterMs }) => ({
-            retryable,
-            delay: retryAfterMs,
-          }))
-          .otherwise(() => ({ retryable: false, delay: undefined }));
-        for (const item of batch) await this.retry(item, now, failure.retryable, failure.delay);
       }
     }
     for (const batch of chunk(receipts, PUSH_BATCH_SIZE)) {
-      try {
-        const results = await this.transport.receipts(batch.map((item) => item.ticketId));
-        for (const item of batch) {
-          const result = results[item.ticketId];
+      const [error, results] = await attemptAsync(() =>
+        this.transport.receipts(batch.map((item) => item.ticketId)),
+      );
+      if (results === null && !(error instanceof PushProviderError)) throw error;
+      for (const item of batch) {
+        try {
+          const result = results?.[item.ticketId];
           if (!result) {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
@@ -116,15 +122,14 @@ export class PushDispatcher {
           await this.store.finish(item.job.id, item.lease, {
             status: result.status === 'ok' ? 'DELIVERED' : 'FAILED',
           });
+        } catch (error) {
+          persistenceErrors.push(error);
         }
-      } catch {
-        for (const item of batch)
-          await this.store.finish(item.job.id, item.lease, {
-            status: 'TICKET',
-            nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
-          });
       }
     }
+    // 저장하지 못한 작업은 기존 임대 만료 후 다시 처리하며, 호출자가 DB 장애를 관측할 수 있게 한다.
+    if (persistenceErrors.length)
+      throw new AggregateError(persistenceErrors, 'Push result persistence failed');
   }
 
   private async retry(item: { job: IPushJob; lease: string }, now: Date, retryable: boolean, delay?: number) {

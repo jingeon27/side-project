@@ -18,11 +18,13 @@ export function ArticleSearch({
   locale,
   value,
   onChange,
+  onTagSelect,
   articles,
 }: {
   locale: Locale;
   value: string;
   onChange: (value: string) => void;
+  onTagSelect: (tag: string) => void;
   articles: readonly Article[];
 }) {
   const t = labels(locale);
@@ -83,7 +85,6 @@ export function ArticleSearch({
         <SearchIcon />
         <Autocomplete.Input
           ref={handleInputRef}
-          data-clarity-mask="true"
           type="search"
           aria-label={t.common.search}
           aria-keyshortcuts="Meta+K Control+K"
@@ -122,7 +123,7 @@ export function ArticleSearch({
                       className="search-option search-option-tag"
                       aria-label={`#${tag}`}
                       onClick={() => {
-                        onChange(`#${tag}`);
+                        onTagSelect(tag);
                         trackEvent('tag_selected', { tag_id: tag });
                         setOpen(false);
                       }}

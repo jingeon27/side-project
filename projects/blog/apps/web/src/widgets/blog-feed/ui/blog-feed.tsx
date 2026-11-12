@@ -104,6 +104,7 @@ function BlogFeedContent({
           locale={locale}
           value={query}
           onChange={(next) => updateFilters({ q: next })}
+          onTagSelect={(tag) => updateFilters({ q: `#${tag}` }, true)}
           articles={searchArticles}
         />
       </div>

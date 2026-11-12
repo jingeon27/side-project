@@ -45,7 +45,7 @@ describe('LikeToggle', () => {
 
   it('자리별 밀도는 버튼과 하트 크기를 함께 바꿔야 한다', () => {
     expect(likeToggleVariants({ density: 'inline' })).toContain('text-caption');
-    expect(likeToggleVariants({ density: 'card' })).toContain('aria-pressed:bg-danger-soft');
+    expect(likeToggleVariants({ density: 'card' })).toContain('aria-pressed:[&_svg]:text-danger');
     expect(likeIconVariants({ density: 'inline' })).toBe('size-4');
     expect(likeIconVariants({ density: 'chip' })).toBe('size-5');
   });

@@ -9,7 +9,8 @@ import { Avatar, type IAvatarProps } from './Avatar';
 
 type TAvatarTone = NonNullable<IAvatarProps['tone']>;
 
-const tones: TAvatarTone[] = ['brand', 'accent', 'outline'];
+// gradient는 배지에 없는 장식 머리글자라 배지와 같은 색·대비 검사에서 뺀다(아래 squircle 사례가 따로 확인한다).
+const tones: Exclude<TAvatarTone, 'gradient'>[] = ['brand', 'accent', 'outline'];
 // 아바타 크기(caption·label·title)와 배지(micro)의 글자 크기 클래스는 색이 아니다.
 const textSizes = new Set(['micro', 'caption', 'label', 'title']);
 
@@ -59,6 +60,16 @@ describe('Avatar 모양과 색', () => {
     expect(person).toHaveClass('rounded-full', 'bg-accent-soft', 'text-accent-ink');
     expect(person).not.toHaveClass('border');
     expect(person).not.toHaveClass('bg-brand-soft');
+  });
+
+  it('그룹 머리글자는 브랜드 그라데이션 squircle에 흰 장식 글자로 그려야 한다', () => {
+    const avatar = render(<Avatar name="우리 웃음" shape="squircle" tone="gradient" size="lg" />).container
+      .firstElementChild;
+    expect(avatar).toHaveClass('rounded-[36%]', 'bg-brand-gradient', 'text-on-gradient');
+    expect(avatar).not.toHaveClass('rounded-full');
+    expect(avatar).not.toHaveClass('bg-brand-soft');
+    // 대비 검사에서 빼는 대신 장식임을 보장한다. 이름은 옆 글자가 읽는다.
+    expect(avatar).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('작은 사각형은 원과 구분되도록 card보다 작은 모서리를 써야 한다', () => {

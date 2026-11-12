@@ -14,6 +14,7 @@ import {
 } from '@/features/contest';
 import { CreateGroupContestDocument, GroupContestsDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { useAppRouter } from '@/shared/model/router';
 import { toast } from '@/shared/model/toast';
@@ -35,6 +36,7 @@ export function CreateGroupContestBottomSheet({
   const [create] = useMutation(CreateGroupContestDocument, {
     refetchQueries: [GroupContestsDocument],
     onCompleted: ({ createGroupContest }) => {
+      trackEvent(ANALYTICS_EVENT.ContestCreated, { group_id: groupId, contest_id: createGroupContest.id });
       toast.success('대회를 개최했어요');
       onClose();
       router.push(ROUTES.GROUP_CONTEST(groupId, createGroupContest.id));

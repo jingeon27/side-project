@@ -50,13 +50,16 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
-test('opening an article from a scrolled list reaches the top in its first frame', async ({ page }) => {
+test('article navigation reaches the top and restores the list position without smooth scrolling', async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/ko/blog');
   // Wait for the hydrated feed before scrolling. Its links replace the server fallback.
   const link = page.locator('.blog-feed .article-row h3').getByRole('link').nth(7);
   await link.scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+  const listScrollY = await page.evaluate(() => window.scrollY);
+  expect(listScrollY).toBeGreaterThan(300);
   const timeOrigin = await page.evaluate(() => performance.timeOrigin);
 
   const [firstDetailFrame] = await Promise.all([
@@ -68,7 +71,19 @@ test('opening an article from a scrolled list reaches the top in its first frame
 
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
   expect(await firstDetailFrame.jsonValue()).toEqual({ scrollY: 0 });
-  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'smooth');
+  const [firstListFrame] = await Promise.all([
+    page.waitForFunction(() => {
+      const row = document.querySelector('.blog-feed .article-row');
+      return window.location.pathname === '/ko/blog' && row?.getClientRects().length
+        ? { scrollY: window.scrollY }
+        : null;
+    }),
+    page.goBack(),
+  ]);
+  const restored = await firstListFrame.jsonValue();
+  expect(restored?.scrollY).toBeCloseTo(listScrollY, 0);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
 });
 
 test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
@@ -686,6 +701,35 @@ test('URL filters survive reload and browser history navigation', async ({ page 
   await page.goto('/ko/blog/category/engineering?category=til&q=react');
   await expect(page.getByRole('group', { name: ko.common.category })).toHaveCount(0);
   await expect(search).toHaveValue('react');
+});
+
+test('language switching preserves URL search filters, repeated parameters and hash', async ({ page }) => {
+  const query = '?q=react&category=engineering&ref=mail&ref=sidebar#archive';
+  await page.goto(`/ko/blog${query}`);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+  await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+  await expect(page).toHaveURL(new URL(`/en/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: en.common.search })).toHaveValue('react');
+  await expect(
+    page.getByRole('group', { name: en.common.category }).getByRole('button', { name: /Engineering/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.goBack();
+  await expect(page).toHaveURL(new URL(`/ko/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+});
+
+test('an exact tag selection can be undone and restored through browser history', async ({ page }) => {
+  await page.goto('/ko/blog?q=react&ref=mail#archive');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await search.click();
+  await page.getByRole('option', { name: '#react', exact: true }).click();
+  await expect(search).toHaveValue('#react');
+  await page.goBack();
+  await expect(search).toHaveValue('react');
+  expect(new URL(page.url()).searchParams.get('ref')).toBe('mail');
+  expect(new URL(page.url()).hash).toBe('#archive');
+  await page.goForward();
+  await expect(search).toHaveValue('#react');
 });
 
 test('search popup dismisses through outside click and Tab without clearing the URL query', async ({

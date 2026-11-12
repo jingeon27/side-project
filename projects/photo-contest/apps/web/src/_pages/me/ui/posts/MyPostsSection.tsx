@@ -13,6 +13,7 @@ import {
   type MyGroupsQuery,
 } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
+import { useObservableQueryRef } from '@/shared/api/observable-query-ref.hook';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { replaceSearchParams } from '@/shared/model/router';
@@ -45,8 +46,9 @@ function MyPosts({ groupId }: { groupId: string | null }) {
 }
 
 function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQuery>; filtered: boolean }) {
+  const observableQuery = useObservableQueryRef(queryRef);
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(
-    queryRef,
+    observableQuery,
     (data) => data.myGalleryPostsPage.nextOffset,
     (offset) => trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'my', offset }),
   );

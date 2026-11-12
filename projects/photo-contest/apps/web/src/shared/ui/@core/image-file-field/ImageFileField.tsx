@@ -21,10 +21,11 @@ import { Button } from '../button';
 import { FieldRequirement } from '../text-field';
 
 /** 고른 사진을 보여 줄 아바타와 같은 모서리로 미리 본다. */
-const PREVIEW_SHAPE = { circle: 'rounded-full', square: 'rounded-card' } satisfies Record<
-  NonNullable<IAvatarProps['shape']>,
-  string
->;
+const PREVIEW_SHAPE = {
+  circle: 'rounded-full',
+  square: 'rounded-card',
+  squircle: 'rounded-[36%]',
+} satisfies Record<NonNullable<IAvatarProps['shape']>, string>;
 
 interface IImageFileFieldProps<TInput extends FieldValues, TOutput> {
   control: Control<TInput, unknown, TOutput>;
