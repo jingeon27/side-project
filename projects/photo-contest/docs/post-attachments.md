@@ -12,7 +12,7 @@ Post.uploadId는 nullable로 확장하고 linkUrl을 추가한다. 기존 파일
 
 모든 미디어(게시물·기존 대회 사진·그룹 대표 사진)는 S3 presigned POST로 브라우저가 저장소에 직접 올린다. API는 파일 바이트를 받거나 읽거나 변환하지 않는다.
 
-등록 버튼을 누르면 브라우저가 사진 전송량을 줄이고, 동영상은 메타데이터로 읽은 길이가 5분을 넘으면 요청하지 않는다(길이를 읽지 못하면 막지 않는다). 이어서 `requestPostUpload(groupId, contentType, byteSize)`로 15분짜리 POST 티켓을 받는다. 서버는 권한과 허용 형식(JPEG·PNG·WebP 10MB, MP4·WebM 100MB)을 확인하고 `<prefix><UUID>.<확장자>` 최종 키를 만든다. POST 정책은 그 키·`Content-Type`·정확한 `content-length-range`와 티켓보다 늦지 않은 만료를 서명한다.
+등록 버튼을 누르면 브라우저가 사진 전송량을 줄이고, 동영상은 메타데이터로 읽은 길이가 5분을 넘으면 요청하지 않는다(길이를 읽지 못하면 막지 않는다). 이어서 `requestPostUpload(groupId, contentType, byteSize, width, height)`로 15분짜리 POST 티켓을 받는다. width·height는 브라우저가 읽은 가로·세로로, 둘 다 보내거나 둘 다 비우며 1~20000 정수만 받는다. 하나만 오거나 범위를 벗어나면 거절한다. 서버는 파일을 열어 이 값을 확인하지 않고 `GalleryPost.mediaWidth`·`mediaHeight`로 돌려주어 화면 틀 비율에만 쓴다. 서버는 권한과 허용 형식(JPEG·PNG·WebP 10MB, MP4·WebM 100MB)을 확인하고 `<prefix><UUID>.<확장자>` 최종 키를 만든다. POST 정책은 그 키·`Content-Type`·정확한 `content-length-range`와 티켓보다 늦지 않은 만료를 서명한다.
 
 브라우저는 `fields`를 먼저, `file`을 마지막에 넣은 FormData를 `url`로 POST한다. multipart 경계는 브라우저가 정하고 저장소에 세션 쿠키를 보내지 않는다. 이후 `completePostUpload(uploadId)`가 소유자·만료·용도를 확인하고 저장소 HEAD로 크기·형식이 발급과 같은지 본 다음, 같은 트랜잭션에서 멤버십을 다시 확인해 완료로 표시한다. 완료한 `storageKey`만 createPost에 쓸 수 있으며 완료 후 등록 유효기간은 1시간이다. 완료 재시도와 동시 완료는 같은 결과를 반환한다.
 
@@ -53,7 +53,7 @@ API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S
 
 API 단위 사양은 네트워크 없이 SDK의 POST 서명 정책(최종 키·형식·크기·만료)과 설정 검증을 확인한다. 통합 사양은 실제 S3에서 HEAD·DELETE, 발급 권한, 정책을 벗어난 크기·형식·키·추가 필드 거부, HEAD 불일치 거부, 완료 재시도·동시 완료·커밋 응답 유실, 고정 경로의 307·사진 60초/동영상 10분 서명·Range·한글 파일명과 공개·비공개·숨김 권한을 확인한다.
 
-test-kit은 `<S3_KEY_PREFIX>/tests/<격리 스키마 또는 실행 ID>/`만 사용하고 종료 시 그 경로의 객체만 정리한다. 버킷과 기존 객체는 생성·삭제하지 않는다. 테스트 계정에는 해당 객체의 GetObject·PutObject·DeleteObject와 그 경로로 `s3:prefix`를 제한한 ListBucket 권한이 필요하다. 강제 종료로 정리가 중단되면 해당 실행 ID 경로만 확인해 정리한다. 버킷 CORS에는 로컬 웹과 브라우저 레인 origin(`http://localhost:3320`, `http://localhost:3330`, 캐시·관측 레인의 설정된 origin, 컨테이너 검사 `https://localhost:3382`)을 허용한다.
+test-kit은 `<S3_KEY_PREFIX>/tests/<격리 스키마 또는 실행 ID>/`만 사용하고 종료 시 그 경로의 객체만 정리한다. 버킷과 기존 객체는 생성·삭제하지 않는다. 테스트 계정에는 해당 객체의 GetObject·PutObject·DeleteObject와 그 경로로 `s3:prefix`를 제한한 ListBucket 권한이 필요하다. 강제 종료로 정리가 중단되면 해당 실행 ID 경로만 확인해 정리한다. 운영자가 공용 버킷에 [수명 주기](../../../deploy/shared-instance/README.md#aws에서-먼저-준비할-것)를 적용한 뒤에는 `photo-contest/ci/tests/`·`photo-contest/local/tests/`에 남은 객체가 2일 뒤 만료된다. 버킷 CORS에는 로컬 웹과 브라우저 레인 origin(`http://localhost:3320`, `http://localhost:3330`, 캐시·관측 레인의 설정된 origin, 컨테이너 검사 `https://localhost:3382`)을 허용한다.
 
 CI는 Repository Variables의 `PHOTO_CONTEST_S3_BUCKET`·`PHOTO_CONTEST_S3_KEY_PREFIX`와 Secrets의 `PHOTO_CONTEST_S3_ACCESS_KEY_ID`·`PHOTO_CONTEST_S3_SECRET_ACCESS_KEY`(임시 키라면 `PHOTO_CONTEST_S3_SESSION_TOKEN`도)를 앱의 `S3_BUCKET`·`S3_KEY_PREFIX`·`AWS_*` 환경변수로 전달한다. 공유 배포 검증에는 Game Feedback의 S3 설정도 필요하다. 설정이 없거나 Secrets를 받지 못하는 외부 fork PR의 통합 검사는 대역으로 대체하거나 건너뛴 성공으로 처리하지 않고 실패한다. 운영 객체·IAM 정책 변경과 배포는 별도 작업이다.
 

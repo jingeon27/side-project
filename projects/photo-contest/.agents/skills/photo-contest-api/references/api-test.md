@@ -20,15 +20,15 @@
 - `login(nickname)`은 HTTP 로그인 없이 격리 DB에 `provider: 'testing'` 사용자(같은 닉네임이면 같은 사용자)와 세션 해시를 만들고 `contest_session=…` Cookie 문자열을 돌려준다(운영 모드로 만든 앱의 세션 쿠키 이름은 `__Host-contest_session`이라 `rate-limit.service.integration.spec.ts`처럼 직접 만든다). `signIn(nickname)`은 여기에 `me.id`를 더한다. 익명 계정이 필요하면 `startAnonymousSession`을 부르지 말고(가입과 같은 IP 한도를 파일끼리 나눠 쓴다) `signIn(nickname, { anonymous: true })`를 쓴다. `gql(cookie, query, variables)`는 `Origin`·`Apollo-Require-Preflight: true`를 붙여 `{ data, errors }`를 돌려준다. 그룹·대회·사진 준비와 GraphQL 문자열은 공용 헬퍼에 모으고 파일마다 복사하지 않는다.
 - supertest로 직접 보내는 POST에는 하네스의 `WEB_ORIGIN`을 `Origin`으로 붙인다(없으면 403). 쿠키를 이어 써야 하는 흐름(익명 세션 시작 → 다음 요청)은 `request.agent(app.getHttpServer())`를 쓰거나 받은 `Set-Cookie`의 `name=value`를 다음 `Cookie`로 넘긴다.
 - API가 돌려준 `/backend/…` 경로(업로드 URL, `imageUrl`)는 웹 프록시 경로다 — 접두사를 떼고 부른다.
-- 업로드는 test-kit `createTestImage()`(실제 PNG)를 `Content-Type: image/png`로 보낸다(raw 파서는 jpeg·png·webp에만 붙는다). 성공은 201.
-- 시각: 단계는 서버 시각으로 계산하므로 기다리거나 fake timer를 쓰지 않는다. 대회는 API로 지금 시작하게 만든 뒤(`createContest`는 지난 시작 시각을 거부한다) `createDatabaseClient(inject('databaseUrl'))`로 `startsAt`·`submissionEndsAt`·`endsAt`을 시간 단위로 옮긴다. 정렬·순위는 `createdAt`을 같은 방법으로 고정한다.
+- 업로드는 발급 mutation이 준 서명 POST 필드와 test-kit `createTestImage()`(실제 PNG)를 `uploadToStorage`로 실제 S3에 보내고(성공 204) 완료 mutation을 부른다(`test/support/photos.ts`의 `uploadPhoto`). API에는 JSON 본문 파서만 있고 파일 바이트를 받지 않는다.
+- 시각: 단계는 서버 시각으로 계산하므로 기다리거나 fake timer를 쓰지 않는다. 그룹 대회는 `createGroupContest`(`test/support/group-contest.ts`), 기존 LEGACY 대회는 `/testing/legacy-contests`(`test/support/fixtures.ts`의 `createContest` 헬퍼)로 만든다. 제품의 `createContest` mutation은 권한·입력 검사 뒤 FORBIDDEN을 돌려주므로 준비에 쓰지 않는다. 일정은 `test/support/clock.ts`의 `moveContestTo`가 격리 스키마의 `startsAt`·`submissionEndsAt`·`endsAt`을 시간 단위로 옮기고, 정렬·순위는 `setSubmittedAt`으로 `createdAt`을 고정한다.
 - 바깥 경계: 외부 제공자(Expo 푸시 등) 요청만 `test/support/external-fetch.ts`의 `stubExternalFetch`(`vi.stubGlobal('fetch', …)`)로 대체하고 등록하지 않은 URL은 throw해 실제 네트워크로 나가지 않게 한다. Sentry 보고는 `@sentry/node`를 spy로 지켜본다(구현은 그대로).
 - 앱 내부는 대체하지 않는다. 예외는 `vi.spyOn(app.get(<서비스>), '<메서드>')`로 (1) 일괄 조회가 목록당 한 번인지(N+1) 세거나 (2) `mockRejectedValueOnce`로 예상하지 못한 오류(5xx·INTERNAL)를 만들 때뿐이다.
 - 테스트 안의 env 변경은 `vi.stubEnv`(getter가 호출마다 읽어 바로 반영되고, `test/support/setup.ts`가 테스트마다 되돌린다). 앱을 만들 때 읽는 값(GraphQL introspection, `assertProductionConfig()`)은 앱을 새로 만들어야 반영되고, 운영 모드로 만드는 앱은 https `WEB_ORIGIN`·`S3_BUCKET`이 있어야 뜬다.
 
 ## 쓰는 법
 
-- 파일들이 한 스키마를 공유하고 순서는 보장되지 않는다: 닉네임·그룹 이름에 파일별 접두사를 붙인다. 개발 로그인은 닉네임으로 upsert하므로 같은 닉네임은 다른 파일과 같은 사용자다. 테이블 전체 개수 단언이나 전체 `deleteMany()` 정리를 하지 않고 만든 ID로만 확인한다.
+- 파일들이 한 스키마를 공유하고 순서는 보장되지 않는다: 닉네임·그룹 이름에 파일별 접두사를 붙인다. 하네스의 `login`은 닉네임으로 사용자를 upsert하므로 같은 닉네임은 다른 파일과 같은 사용자다. 테이블 전체 개수 단언이나 전체 `deleteMany()` 정리를 하지 않고 만든 ID로만 확인한다.
 - 동시성: `Promise.all(Array.from({ length: 8 }, () => gql(…)))` → 성공 정확히 1건, 나머지 `CONFLICT`, DB 행 1개를 함께 단언한다. 멱등 요청(좋아요)은 모두 성공 + 행 1개 + `likeCount` = 행 수.
 - 목록: 세 정렬의 순서(같은 `createdAt`이면 `id` — `createdAt`을 같은 값으로 고정해 확인), offset·limit 경계와 잘못된 값(BAD_USER_INPUT), 이어 받은 페이지에 겹침·빠짐이 없는지, 관리자가 아니면 숨긴 사진이 빠지는지 본다.
 - GraphQL은 `errors[0].extensions.code`와 한국어 메시지를, REST는 상태 코드·`{ message }`·`Cache-Control: private, no-store`·`Set-Cookie` 속성을 단언한다. 이벤트는 격리 스키마의 `analyticsEvent`를 id로 찾아 1건인지, `properties`에 닉네임·캡션·토큰이 없는지 본다.

@@ -27,7 +27,7 @@
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
 - 익명 세션은 `startAnonymousSession` mutation으로만 만든다. 세션이 있으면 그 사용자를 돌려주고, 새로 만들 때는 가입과 같은 IP 한도를 센다. 익명 계정은 공개 그룹만 즉시 가입하고 비공개 그룹 생성·가입 신청은 로그인을 안내한다. 익명 상태에서 가입하면 같은 사용자 행을 회원으로 바꾼다.
-- 로그아웃은 `POST /auth/logout`이다. 개발 로그인 엔드포인트는 없고, 격리 테스트만 NODE_ENV=test·ENABLE_TEST_API=true의 `POST /testing/users`로 사용자·세션을 만든다.
+- 로그아웃은 `POST /auth/logout`이다. 개발 로그인 엔드포인트는 없고, 격리 테스트만 `createApp({ testFixtures: true })`로 등록하고 NODE_ENV=test일 때 열리는 `POST /testing/users`로 사용자·세션을 만든다.
 - 현재 API에는 소셜(OAuth) 로그인과 앱 로그인 교환(`/auth/<provider>`, `/auth/app/exchange`)이 없다. 관련 Prisma 모델과 브리지 계약은 제거했다.
 
 ## 상시 그룹 게시물
@@ -35,7 +35,7 @@
 - 현재 제품은 Post·PostUpload·PostLike·PostComment다. 그룹은 종료되지 않으며 대회 없이 여러 번 등록한다.
 - galleryPosts의 groupId가 없으면 로그인 후 가입한 모든 그룹, 있으면 readableGroup으로 공개 범위·멤버십을 검사한다. PUBLIC은 익명 읽기, PRIVATE는 승인된 멤버만 허용한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
 - 작성자와 OWNER·MODERATOR만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
-- 게시물 업로드는 requestPostUpload(groupId, contentType, byteSize) → 저장소 FormData POST → completePostUpload → createPost다. 발급할 때 멤버십·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 크기·만료를 POST 정책으로 고정한다. 완료는 티켓 소유·만료·용도를 확인하고 HEAD로 크기·형식만 본 뒤 같은 트랜잭션에서 권한을 다시 확인해 stagingKey를 storageKey로 옮긴다. 완료한 storageKey만 게시에 쓴다. uploadPostMedia와 /post-uploads는 제공하지 않는다.
+- 게시물 업로드는 requestPostUpload(groupId, contentType, byteSize, width?, height?) → 저장소 FormData POST → completePostUpload → createPost다. width·height는 브라우저가 잰 화면 틀 비율용 값으로 둘 다 보내거나 둘 다 비우며 1~20000 정수만 받는다(`post/media/post-upload.policy.ts`의 `postMediaSize`). 서버는 파일을 열어 크기를 확인하지 않는다. 발급할 때 멤버십·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 크기·만료를 POST 정책으로 고정한다. 완료는 티켓 소유·만료·용도를 확인하고 HEAD로 크기·형식만 본 뒤 같은 트랜잭션에서 권한을 다시 확인해 stagingKey를 storageKey로 옮긴다. 완료한 storageKey만 게시에 쓴다. uploadPostMedia와 /post-uploads는 제공하지 않는다.
 - 게시물 POST 티켓은 15분, 완료 후 등록은 1시간이다. 사진 JPEG/PNG/WebP 10MB, 동영상 MP4/WebM 100MB만 발급한다. 서버는 파일 내용을 읽거나 변환·메타데이터 제거를 하지 않는다(사용자 결정). 동영상 길이는 웹이 올리기 전에만 확인한다. staging 복사가 없으므로 정책 만료 전에는 같은 크기·형식으로 다시 올릴 수 있다. 정리 작업은 만료된 미완료 키와 쓰지 않은 파일을 재시도하며 지운다. 게시물·제출한 대회 사진·현재 그룹 대표·배경 사진에 붙은 PostUpload는 `expiresAt`을 비워(null) 매분 도는 정리의 만료 범위에서 빼고, 글 삭제·사진 삭제·대표 사진 교체 뒤 정리로 떼어 낼 때 지난 시각으로 되돌려 행·용량·파일을 정리한다. 새로 붙이거나 떼는 경로를 더하면 이 규칙을 같이 지킨다.
 - /media/:id·/media/:id/download는 readablePost로 권한을 확인한 뒤 `private, no-store` 307로 서명 GET에 보낸다(사진 60초, 최대 100MB 동영상은 재생·탐색이 끊기지 않게 10분. Range·다운로드 이름은 저장소가 처리). 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
 - 댓글 읽기는 readablePost, 쓰기·삭제는 accessiblePost로 공개 범위·멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.

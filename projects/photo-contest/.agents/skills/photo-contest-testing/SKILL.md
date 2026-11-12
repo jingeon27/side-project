@@ -53,8 +53,8 @@ description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration
 ## DB·서버 격리
 
 - DB를 쓰는 테스트는 `@photo-contest/test-kit`으로 `<레인 접두사>_<uuid 32자>` 스키마를 만들고(마이그레이션 적용) 끝나면 그 스키마만 지운다. 접두사는 `TEST_SCHEMA_PREFIXES`(`api_test`·`web_api`·`web_e2e`·`web_cache`·`mobile_api`·`mobile_e2e`)만 쓰고, 새 레인은 거기에 먼저 추가한다. `public` 등 다른 이름은 만들거나 지우기 전에 거부한다.
-- 테스트 DB는 `TEST_DATABASE_URL` 하나다. loopback(`127.0.0.1`·`localhost`·`[::1]`)·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`만 허용하고, 비어 있어도 개발 `DATABASE_URL`(55432)로 대신하지 않는다. 밖에서 넣은 `PC_E2E_SCHEMA`·`PC_E2E_BASE_DATABASE_URL`·`PC_E2E_STORAGE_DIR`(프로젝트 `.data` 아래만)도 같은 규칙으로 검사한다.
-- 테스트 API는 test-kit이 `apps/api/.e2e-build`로 빌드해 띄운다(개발 서버가 보는 `dist`를 건드리지 않는다). 웹 e2e의 Next dev는 `NEXT_DIST_DIR=.next/e2e`(모바일 e2e는 `.next/e2e-mobile`)로 띄워 개발 서버의 `.next/dev` 잠금과 겹치지 않게 한다.
+- 테스트 DB는 `TEST_DATABASE_URL` 하나다. loopback(`127.0.0.1`·`localhost`·`[::1]`)·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`만 허용하고, 비어 있어도 개발 `DATABASE_URL`(55432)로 대신하지 않는다. 밖에서 `TEST_DATABASE_URL`에 `schema`를 넣으면 그 이름도 해당 레인의 `<접두사>_<32자>` 규칙으로 검사한다(`prepareE2eDatabase`).
+- 테스트 API는 test-kit이 실행마다 `apps/api/.e2e-build`로 빌드해 띄운다(개발 서버가 보는 `dist`를 건드리지 않는다). 웹 e2e는 production build 뒤 `apps/web/scripts/serve-cache-build.ts`로 standalone 서버(3320)를, 모바일 e2e는 웹 `next dev`(3330)를 띄운다. `next.config.ts`가 `WEB_ORIGIN`이 loopback 3300~3399 포트면 `.next/test-<포트>`를 빌드 폴더로 써 개발 서버의 `.next`와 겹치지 않는다.
 - 개발 서버 포트(웹 3200, API 4200, DB 55432)는 테스트에 쓰지 않고, 실행 중인 서버를 재사용하거나 끄지 않는다(`reuseExistingServer: false`).
 - `.env`는 설정 파일이 `process.loadEnvFile`로 읽는다. 테스트에 필요한 환경변수는 설정에서 명시한다.
 - 미디어는 프로젝트 `.env`의 실제 AWS S3를 쓴다. test-kit `s3TestEnvironment`가 기존 버킷의 `<S3_KEY_PREFIX>/tests/<실행 ID>/`로 객체 경로를 격리하고 `cleanupS3TestObjects`가 그 경로만 정리한다. 버킷 생성·삭제나 S3 대역 서버 기동은 하지 않는다. 단위 테스트는 설정·서명만 오프라인으로 확인하고 실제 전송은 integration 레인에 둔다. 정리용 ListBucket도 `s3:prefix`로 테스트 경로만 허용한다.
@@ -64,6 +64,7 @@ description: 피식의 앱별 테스트 레인(Vitest unit·ui·api·integration
 - 모든 spec은 앱의 `e2e/support/test.ts`(웹)·픽스처를 import한다(Next 개발 오버레이 숨김, pageerror 수집, 테스트 API로 만든 세션 `signIn`).
 - 개발 서버 대상은 workers 1. 선택자는 역할·레이블로 찾고, 앱 e2e의 웹 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 화면 캡처는 `.data/`에 남기되 픽셀 비교 단언은 하지 않는다. 휴대폰 화면에서 가로 넘침이 없는지 확인한다.
+- 웹 화면 단위 접근성은 `apps/web/e2e/accessibility.spec.ts`가 axe-core(웹 devDependency)를 `addScriptTag`로 넣어 라이트와 다크에서 WCAG 2.x A·AA의 serious·critical 위반을 검사한다(`mobile-chrome`, `@desktop` 태그로 `desktop-chrome`). 따로 불러오는 영역이 다 그려진 뒤 검사하고, 뺄 결과는 파일 안 허용 목록에 이유와 발견 ID를 함께 둔다. 작성 규칙은 웹 스킬 [e2e](../photo-contest-web/references/e2e.md)를 따른다.
 
 ## 명령 (side 루트, `yarn`)
 
@@ -83,7 +84,7 @@ yarn test:photo-contest                       # 프로젝트 전체 unit
 
 ## 테스트 fixture API
 
-- 격리 API는 NODE_ENV=test·ENABLE_TEST_API=true로 시작한다. 실제 Sentry·푸시 키는 기본값에서 지우고 필요한 경계 테스트만 가짜 값을 지정한다.
+- 격리 API는 NODE_ENV=test에서 `createApp({ testFixtures: true })`로 `/testing` fixture를 등록해 시작한다(test-kit `serve-api.ts`). 실제 Sentry·푸시 키는 기본값에서 지우고 필요한 경계 테스트만 가짜 값을 지정한다.
 - 웹·모바일 준비는 test-kit의 createTestUser·createLegacyTestContest·moveTestContest와 제품 GraphQL·업로드 API를 쓴다. DB를 직접 고치지 않는다.
 - API integration은 제약·만료·실패 조건을 위해 test/support에서 격리 DB를 준비하고 결과를 확인할 수 있다.
 - 모든 레인이 끝난 뒤 `yarn workspace @photo-contest/test-kit check:cleanup`으로 스키마 정리를 확인한다. 실행 중인 레인의 스키마는 정리 대상이 아니다.

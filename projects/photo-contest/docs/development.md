@@ -111,7 +111,7 @@ yarn build:photo-contest
 yarn format:check
 ```
 
-모든 DB 레인은 `TEST_DATABASE_URL`만 사용합니다. loopback·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`가 아니면 거부하고 개발 DB로 대신하지 않습니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 웹 브라우저 E2E는 실제 production build/standalone 서버를 실행합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.
+모든 DB 레인은 `TEST_DATABASE_URL`만 사용합니다. loopback·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`가 아니면 거부하고 개발 DB로 대신하지 않습니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마와 실제 S3의 실행별 테스트 객체를 지웁니다. 웹 브라우저 E2E는 실제 production build/standalone 서버를, 모바일 E2E는 웹 개발 서버를 실행합니다. 검증용 API는 `.e2e-build`를 쓰고, Next는 `WEB_ORIGIN`이 loopback 3300~3399 포트면 `.next/test-<포트>`(웹 E2E 3320, 모바일 E2E 3330)를 써 개발 서버와 겹치지 않습니다.
 
 /testing/users와 /testing/contests/:id/phase는 격리 실행기가 createApp({ testFixtures: true })로 등록할 때만 열립니다. NODE_ENV=test만 설정한 일반 서버에는 없습니다. 테스트 밖에서 등록하면 시작을 거부합니다.
 
