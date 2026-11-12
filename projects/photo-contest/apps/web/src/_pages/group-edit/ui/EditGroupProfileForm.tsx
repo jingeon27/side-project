@@ -117,7 +117,10 @@ export function EditGroupProfileForm({
               그룹 사진 변경
               <FieldRequirement />
               {errors.cover || errors.avatar ? (
-                <span className="ml-2 text-caption text-danger">선택한 사진을 확인해 주세요</span>
+                <>
+                  {/* 공백이 없으면 접근 이름이 '그룹 사진 변경선택한…'으로 붙어 읽힌다. 간격은 공백과 ml-1로 맞춘다. */}{' '}
+                  <span className="ml-1 text-caption text-danger">선택한 사진을 확인해 주세요</span>
+                </>
               ) : null}
             </DisclosureTrigger>
             <div className="flex flex-col gap-6 pt-4">

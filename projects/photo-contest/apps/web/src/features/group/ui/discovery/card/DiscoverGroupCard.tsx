@@ -60,7 +60,7 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
               aria-describedby={detailsId}
               aria-disabled={privateGroup && viewerPending}
               inert={privateGroup && viewerPending}
-              className="inline-block min-h-6 rounded-control after:absolute after:inset-0 after:rounded-sheet"
+              className="inline-block min-h-6 min-w-6 rounded-control after:absolute after:inset-0 after:rounded-sheet"
               onClick={(event) => {
                 if (!privateGroup) return;
                 if (viewerPending) {
