@@ -54,7 +54,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -122,7 +122,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -188,7 +188,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -254,7 +254,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "yarn-workspaces와-turborepo-빌드-그래프와-캐시",
       "en": "yarn-workspaces-turborepo-build-graph-and-cache"
@@ -314,7 +314,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 9,
+    "readingMinutes": 8,
     "translations": {
       "ko": "인지적-항복에-가까웠던-사이드프로젝트",
       "en": "cognitive-surrender-side-project"
@@ -381,7 +381,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 9,
+    "readingMinutes": 8,
     "translations": {
       "ko": "인지적-항복에-가까웠던-사이드프로젝트",
       "en": "cognitive-surrender-side-project"
@@ -457,7 +457,7 @@
         "level": 3
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
@@ -533,7 +533,7 @@
         "level": 3
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 12,
     "translations": {
       "ko": "화면을-읽고-행동하는-디자인-개념",
       "en": "design-concepts-for-reading-and-using-interfaces"
@@ -690,7 +690,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
       "en": "why-i-chose-one-ec2-instance-for-my-side-projects"
@@ -1245,7 +1245,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 5,
     "translations": {
       "ko": "저는-코드를-읽어요",
       "en": "reading-ai-code"
@@ -1301,7 +1301,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 11,
     "translations": {
       "ko": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
       "en": "health-check-program"
@@ -1357,7 +1357,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 10,
     "translations": {
       "ko": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
       "en": "health-check-program"
@@ -1423,7 +1423,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 11,
     "translations": {
       "ko": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
       "en": "bottom-sheet-drag-crash"
@@ -1489,7 +1489,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
       "en": "bottom-sheet-drag-crash"
@@ -1550,7 +1550,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
       "en": "zod-assertion-boundaries"
@@ -1611,7 +1611,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
       "en": "zod-assertion-boundaries"
@@ -1667,7 +1667,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 12,
     "translations": {
       "ko": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
       "en": "plan-gated-ai-workflow"
@@ -1834,7 +1834,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 22,
+    "readingMinutes": 21,
     "translations": {
       "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
       "en": "sentry-observability"
@@ -1945,7 +1945,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 21,
+    "readingMinutes": 20,
     "translations": {
       "ko": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
       "en": "sentry-observability"
@@ -2113,7 +2113,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 18,
+    "readingMinutes": 15,
     "translations": {
       "ko": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
       "en": "error-boundary-recovery"
@@ -2199,7 +2199,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 18,
+    "readingMinutes": 15,
     "translations": {
       "ko": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
       "en": "error-boundary-recovery"
@@ -2250,7 +2250,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 15,
+    "readingMinutes": 14,
     "translations": {
       "ko": "nextjs를-사용하면서-겪었던-이슈들",
       "en": "nextjs-server-client-issues"
@@ -2301,7 +2301,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "nextjs를-사용하면서-겪었던-이슈들",
       "en": "nextjs-server-client-issues"
@@ -2372,7 +2372,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 11,
     "translations": {
       "ko": "선언적으로-코드를-쓰는-기준",
       "en": "declarative-code"
@@ -2443,7 +2443,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 9,
     "translations": {
       "ko": "선언적으로-코드를-쓰는-기준",
       "en": "declarative-code"
@@ -2514,7 +2514,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "테스트-코드를-도입하면서-세운-기준",
       "en": "testing-standards"
@@ -2585,7 +2585,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 12,
     "translations": {
       "ko": "테스트-코드를-도입하면서-세운-기준",
       "en": "testing-standards"
@@ -2631,7 +2631,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 7,
     "translations": {
       "ko": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
       "en": "prototype-working-rules"
@@ -2677,7 +2677,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 7,
     "translations": {
       "ko": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
       "en": "prototype-working-rules"
@@ -2738,7 +2738,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 9,
     "translations": {
       "ko": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
       "en": "payment-coupon-branches"
@@ -2799,7 +2799,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 8,
     "translations": {
       "ko": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
       "en": "payment-coupon-branches"
@@ -2865,7 +2865,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
       "en": "fsd-layer-boundaries"
@@ -2931,7 +2931,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
       "en": "fsd-layer-boundaries"
@@ -2992,7 +2992,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 9,
     "translations": {
       "ko": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
       "en": "chatbot-message-layer"
@@ -3053,7 +3053,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 9,
     "translations": {
       "ko": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
       "en": "chatbot-message-layer"
@@ -3094,7 +3094,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 7,
     "translations": {
       "ko": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
       "en": "sitemap-api-boundaries"
@@ -3135,7 +3135,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 6,
     "translations": {
       "ko": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
       "en": "sitemap-api-boundaries"
@@ -3221,7 +3221,7 @@
         "level": 3
       }
     ],
-    "readingMinutes": 19,
+    "readingMinutes": 15,
     "translations": {
       "ko": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
       "en": "cross-domain-token-handoff"
@@ -3307,7 +3307,7 @@
         "level": 3
       }
     ],
-    "readingMinutes": 17,
+    "readingMinutes": 13,
     "translations": {
       "ko": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
       "en": "cross-domain-token-handoff"
@@ -3368,7 +3368,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 15,
+    "readingMinutes": 11,
     "translations": {
       "ko": "두-관리자-앱의-프로그램-폼을-만드는-과정",
       "en": "typed-program-form"
@@ -3429,7 +3429,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 10,
     "translations": {
       "ko": "두-관리자-앱의-프로그램-폼을-만드는-과정",
       "en": "typed-program-form"
@@ -3495,7 +3495,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 10,
     "translations": {
       "ko": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
       "en": "review-form-funnel"
@@ -3561,7 +3561,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 13,
+    "readingMinutes": 9,
     "translations": {
       "ko": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
       "en": "review-form-funnel"
@@ -3714,7 +3714,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 6,
     "translations": {
       "ko": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
       "en": "review-like-optimistic-update"
@@ -3795,7 +3795,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 6,
     "translations": {
       "ko": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
       "en": "review-like-optimistic-update"
@@ -3851,7 +3851,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 9,
     "translations": {
       "ko": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
       "en": "reservation-form-state"
@@ -3907,7 +3907,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 9,
     "translations": {
       "ko": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
       "en": "reservation-form-state"
@@ -3958,7 +3958,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 5,
     "translations": {
       "ko": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
       "en": "nextjs-tanstack-query-ssr"
@@ -4009,7 +4009,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 5,
     "translations": {
       "ko": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
       "en": "nextjs-tanstack-query-ssr"
@@ -4055,7 +4055,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 4,
     "translations": {
       "ko": "실무에서-자주-쓰는-typescript-패턴-네-가지",
       "en": "typescript-patterns"
@@ -4101,7 +4101,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 4,
     "translations": {
       "ko": "실무에서-자주-쓰는-typescript-패턴-네-가지",
       "en": "typescript-patterns"
@@ -4167,7 +4167,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 9,
+    "readingMinutes": 8,
     "translations": {
       "ko": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
       "en": "query-key-factory"
@@ -4233,7 +4233,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 9,
+    "readingMinutes": 7,
     "translations": {
       "ko": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
       "en": "query-key-factory"
@@ -4304,7 +4304,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 5,
     "translations": {
       "ko": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
       "en": "electron-module-boundaries"
@@ -4374,7 +4374,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 5,
     "translations": {
       "ko": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
       "en": "electron-module-boundaries"
@@ -4405,7 +4405,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 4,
     "translations": {
       "ko": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
       "en": "puppeteer-event-lifecycle"
@@ -4436,7 +4436,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 5,
+    "readingMinutes": 4,
     "translations": {
       "ko": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
       "en": "puppeteer-event-lifecycle"

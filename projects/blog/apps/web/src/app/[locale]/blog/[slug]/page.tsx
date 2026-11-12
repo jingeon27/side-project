@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { isLocale, locales } from '@/i18n/routing';
 import { getArticleBySlug, getArticles } from '@/shared/article/lib/get-articles';
 import { loadArticle } from '@/shared/article/lib/registry';
 import { articleMetadata } from '@/shared/lib/seo/metadata';
@@ -16,20 +17,18 @@ function decodeSlug(slug: string): string {
   }
 }
 export function generateStaticParams() {
-  return (['ko', 'en'] as const).flatMap((locale) =>
-    getArticles(locale).map((article) => ({ locale, slug: article.slug })),
-  );
+  return locales.flatMap((locale) => getArticles(locale).map((article) => ({ locale, slug: article.slug })));
 }
 export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const article = getArticleBySlug(locale, slug) ?? getArticleBySlug(locale, decodeSlug(slug));
   if (!article) notFound();
   return articleMetadata(article);
 }
 export default async function ArticlePage({ params }: Props) {
   const { locale, slug } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const article = getArticleBySlug(locale, slug) ?? getArticleBySlug(locale, decodeSlug(slug));
   if (!article) notFound();
   const { default: Content } = await loadArticle(article.id, locale);

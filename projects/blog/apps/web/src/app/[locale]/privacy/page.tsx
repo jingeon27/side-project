@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { AnalyticsOptOut } from '@/features/analytics-consent/ui/analytics-opt-out';
+import { isLocale } from '@/i18n/routing';
 import { labels } from '@/shared/config/labels';
 import { author } from '@/shared/config/site';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
@@ -8,12 +9,12 @@ import { pageMetadata } from '@/shared/lib/seo/metadata';
 type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   return pageMetadata(locale, 'privacy');
 }
 export default async function PrivacyPage({ params }: Props) {
   const { locale } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const t = labels(locale).privacy;
   return (
     <main id="main-content" className="page-container privacy-page">

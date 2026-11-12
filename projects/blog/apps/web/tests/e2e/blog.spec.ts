@@ -116,7 +116,7 @@ test('privacy notice is linked from the footer in both locales', async ({ page }
   }
 });
 
-test('cover and SVG thumbnails load without breaking title links or mobile layout', async ({ page }) => {
+test('cover thumbnails load without breaking title links or mobile layout', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });
   for (const id of ['reading-ai-code', 'health-check-program', 'bottom-sheet-drag-crash']) {

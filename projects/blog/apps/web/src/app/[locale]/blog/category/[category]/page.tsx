@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { isLocale, locales, type Locale } from '@/i18n/routing';
 import { getArticles, getCategoryLocales, getPublishedCategories } from '@/shared/article/lib/get-articles';
-import type { Category, Locale } from '@/shared/article/model/types';
+import type { Category } from '@/shared/article/model/types';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
@@ -14,13 +15,13 @@ function isPublishedCategory(locale: Locale, value: string): value is Category {
   return getPublishedCategories(locale).some((category) => category === value);
 }
 export function generateStaticParams() {
-  return (['ko', 'en'] as const).flatMap((locale) =>
+  return locales.flatMap((locale) =>
     getPublishedCategories(locale).map((category) => ({ locale, category })),
   );
 }
 export async function generateMetadata({ params }: Props) {
   const { locale, category } = await params;
-  if ((locale !== 'ko' && locale !== 'en') || !isPublishedCategory(locale, category)) notFound();
+  if (!isLocale(locale) || !isPublishedCategory(locale, category)) notFound();
   const t = labels(locale);
   return pageMetadata(
     locale,
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props) {
 }
 export default async function CategoryPage({ params }: Props) {
   const { locale, category } = await params;
-  if ((locale !== 'ko' && locale !== 'en') || !isPublishedCategory(locale, category)) notFound();
+  if (!isLocale(locale) || !isPublishedCategory(locale, category)) notFound();
   const t = labels(locale);
   return (
     <main id="main-content" className="page-container archive-page">

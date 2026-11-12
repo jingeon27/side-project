@@ -12,15 +12,18 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { z } from 'zod';
 
+import { locales, type Locale } from '../src/i18n/routing';
+import { categories } from '../src/shared/article/model/categories';
+import type { Article, TocEntry } from '../src/shared/article/model/types';
 import { parseContentDate } from '../src/shared/lib/date/content-date';
 
-export const locales = ['ko', 'en'] as const;
-export const categories = ['engineering', 'til', 'perspectives', 'misc'] as const;
 export const slugSchema = z
   .string()
   .min(1)
   .regex(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u, 'Use letters, numbers, and single hyphens');
 const dateSchema = z.union([z.iso.date(), z.iso.datetime({ offset: true })]);
+// Share previews such as X cards do not render AVIF, so og:image must be a JPG or PNG.
+const shareableImage = /\.(?:jpe?g|png)$/i;
 export const metaSchema = z
   .object({
     category: z.enum(categories),
@@ -34,33 +37,39 @@ export const metaSchema = z
       .refine((tags) => new Set(tags).size === tags.length, 'Duplicate tags'),
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),
-    coverImage: z.string().startsWith('/images/').optional(),
-    socialImage: z.string().startsWith('/images/').optional(),
+    // Every article has a cover made for its subject: the list thumbnail and the body image.
+    coverImage: z.string().startsWith('/images/'),
+    socialImage: z
+      .string()
+      .startsWith('/images/')
+      .regex(shareableImage, 'Use a JPG or PNG socialImage')
+      .optional(),
   })
   .strict()
   .refine(
     (meta) => !meta.updatedAt || parseContentDate(meta.updatedAt) >= parseContentDate(meta.publishedAt),
     'updatedAt precedes publishedAt',
+  )
+  .refine(
+    (meta) => meta.socialImage !== undefined || shareableImage.test(meta.coverImage),
+    'A coverImage that is not JPG or PNG needs a JPG or PNG socialImage',
   );
 const seoBase = z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) });
 export const seoSchema = z.object({
   site: seoBase.extend({ keywords: z.array(z.string().trim().min(1)) }),
-  pages: z.object({ home: seoBase, blog: seoBase, about: seoBase, privacy: seoBase }),
+  pages: z.object({
+    home: seoBase,
+    blog: seoBase,
+    about: seoBase,
+    privacy: seoBase,
+    // Indexed tag pages each describe their own tag in place of `{tag}`.
+    tag: z.object({ description: z.string().trim().includes('{tag}') }),
+  }),
   posts: z.record(
     z.string(),
     seoBase.extend({ slug: slugSchema, keywords: z.array(z.string().trim().min(1)) }),
   ),
 });
-export type Locale = (typeof locales)[number];
-export type TocEntry = { id: string; title: string; level: 2 | 3 };
-type ContentArticle = z.infer<typeof metaSchema> &
-  z.infer<typeof seoSchema>['posts'][string] & {
-    id: string;
-    locale: Locale;
-    readingMinutes: number;
-    toc: TocEntry[];
-    translations: Partial<Record<Locale, string>>;
-  };
 
 // A single `~` also marks ranges such as 3~5일, so only `~~` may strike through text.
 const gfmOptions = { singleTilde: false };
@@ -74,8 +83,13 @@ export function analyzeMdx(source: string) {
     const id = slugger.slug(title);
     if (node.depth === 2 || node.depth === 3) toc.push({ id, title, level: node.depth });
   });
-  // Use the visible prose for an estimate, excluding code and markup.
-  const text = toString(tree);
+  // Estimate from the visible prose: code blocks and image alt text are left out, while inline
+  // code is read as part of its sentence.
+  const prose: string[] = [];
+  visit(tree, (node) => {
+    if (node.type === 'text' || node.type === 'inlineCode') prose.push(node.value);
+  });
+  const text = prose.join('');
   const korean = (text.match(/[가-힣]/g) ?? []).length;
   const words = text
     .replace(/[가-힣]/g, '')
@@ -121,7 +135,7 @@ export function validateMdxNodes(tree: ReturnType<typeof analyzeMdx>['tree'], la
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
-const articleUrlPath = (article: Pick<ContentArticle, 'locale' | 'slug'>) =>
+const articleUrlPath = (article: Pick<Article, 'locale' | 'slug'>) =>
   `/${article.locale}/blog/${article.slug}`;
 
 export async function readContent(root: string) {
@@ -147,7 +161,10 @@ export async function readContent(root: string) {
       slugs.add(post.slug);
     }
   }
-  const articles: ContentArticle[] = [];
+  // Typed as the app's Article: a schema change that produces values Article cannot hold fails type
+  // checking here instead of hiding behind the index.json cast. The reverse is not checked, so
+  // Article may stay looser than the schema.
+  const articles: Article[] = [];
   const imports: { id: string; locale: Locale }[] = [];
   for (const id of ids) {
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) throw new Error(`Invalid content ID ${id}`);
@@ -163,7 +180,7 @@ export async function readContent(root: string) {
         throw new Error(`${id}/${locale}: MDX and SEO must both exist`);
       if (post) translations[locale] = post.slug;
     }
-    if (meta.coverImage) await access(path.join(root, 'public', meta.coverImage));
+    await access(path.join(root, 'public', meta.coverImage));
     if (meta.socialImage) await access(path.join(root, 'public', meta.socialImage));
     for (const locale of available) {
       const source = await readFile(path.join(dir, `${locale}.mdx`), 'utf8');

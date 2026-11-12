@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 
-type TranslationMap = Record<string, Partial<Record<UiLocale, string>>>;
+type TranslationMap = Record<string, Partial<Record<Locale, string>>>;
 
 function decodeSegment(segment: string) {
   try {
@@ -22,7 +23,7 @@ export function LocaleSwitch({
   translations = {},
   targetTags = [],
 }: {
-  locale: UiLocale;
+  locale: Locale;
   translations?: TranslationMap;
   targetTags?: string[];
 }) {

@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { analyzeMdx, metaSchema, readContent } from './content';
+import { analyzeMdx, metaSchema, readContent, seoSchema } from './content';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -16,18 +16,21 @@ async function fixture() {
   const root = await mkdtemp(path.join(tmpdir(), 'blog-content-'));
   directories.push(root);
   await mkdir(path.join(root, 'content/posts/cache'), { recursive: true });
+  await mkdir(path.join(root, 'public/images'), { recursive: true });
   await mkdir(path.join(root, 'seo'));
   const write = async (file: string, value: unknown) =>
     writeFile(path.join(root, file), JSON.stringify(value));
   const seo = (posts: object) => ({
     site: { ...base, keywords: [] },
-    pages: { home: base, blog: base, about: base, privacy: base },
+    pages: { home: base, blog: base, about: base, privacy: base, tag: { description: 'Posts with {tag}' } },
     posts,
   });
+  await writeFile(path.join(root, 'public/images/cache.png'), 'png');
   await write('content/posts/cache/meta.json', {
     category: 'engineering',
     tags: ['nextjs'],
     publishedAt: '2026-10-01',
+    coverImage: '/images/cache.png',
   });
   await write('seo/ko.json', seo({ cache: post('캐시-설계') }));
   await write('seo/en.json', seo({ cache: post('cache-design') }));
@@ -78,8 +81,6 @@ describe('content registry contract', () => {
   it('allows only registered MDX components with literal or numeric props and checks their src', async () => {
     const { root } = await fixture();
     const file = path.join(root, 'content/posts/cache/en.mdx');
-    await mkdir(path.join(root, 'public/images'), { recursive: true });
-    await writeFile(path.join(root, 'public/images/cache.png'), 'png');
     await writeFile(
       file,
       '<Figure src="/images/cache.png" alt="Cache" width={640} caption="Flow" />\n\n<Callout title="Note">Text</Callout>',
@@ -138,8 +139,22 @@ it('uses the same heading text and duplicate suffixes as github-slugger', () => 
     { id: '같은-제목-1', title: '같은 제목', level: 2 },
   ]);
 });
+it('estimates reading time from prose without code blocks or image alt text', () => {
+  // 500 Korean characters are one minute of reading.
+  const prose = '가'.repeat(500);
+  const codeBlock = `\`\`\`ts\n${'const value = 1;\n'.repeat(400)}\`\`\``;
+  const image = `![${'긴 설명'.repeat(500)}](/images/cache.png)`;
+  expect(analyzeMdx(`${prose}\n\n${codeBlock}\n\n${image}`).readingMinutes).toBe(1);
+  // Inline code is read as part of its sentence, so 220 words of it add a minute.
+  expect(analyzeMdx(`${prose} \`${'word '.repeat(220).trim()}\``).readingMinutes).toBe(2);
+});
 it('validates category IDs, normalized unique tags, and date chronology', () => {
-  const meta = { category: 'engineering', tags: ['nextjs'], publishedAt: '2026-10-01T10:00:00+09:00' };
+  const meta = {
+    category: 'engineering',
+    tags: ['nextjs'],
+    publishedAt: '2026-10-01T10:00:00+09:00',
+    coverImage: '/images/cache.png',
+  };
   expect(metaSchema.safeParse(meta).success).toBe(true);
   for (const invalid of [
     { ...meta, category: 'projects' },
@@ -152,7 +167,7 @@ it('validates category IDs, normalized unique tags, and date chronology', () => 
     expect(metaSchema.safeParse(invalid).success).toBe(false);
 });
 it('compares date-only and offset datetimes on the Asia/Seoul calendar', () => {
-  const base = { category: 'engineering', tags: ['nextjs'] };
+  const base = { category: 'engineering', tags: ['nextjs'], coverImage: '/images/cache.png' };
   // A same-day edit in KST is 23:00 UTC of the previous day; UTC midnight parsing rejected it.
   expect(
     metaSchema.safeParse({ ...base, publishedAt: '2026-10-01', updatedAt: '2026-10-01T08:00:00+09:00' })
@@ -162,4 +177,30 @@ it('compares date-only and offset datetimes on the Asia/Seoul calendar', () => {
     metaSchema.safeParse({ ...base, publishedAt: '2026-10-01T10:00:00+09:00', updatedAt: '2026-10-01' })
       .success,
   ).toBe(false);
+});
+it('requires a cover and a JPG or PNG image for share previews', () => {
+  const meta = { category: 'engineering', tags: ['nextjs'], publishedAt: '2026-10-01' };
+  const accepts = (images: object) => metaSchema.safeParse({ ...meta, ...images }).success;
+  expect(
+    accepts({ coverImage: '/images/covers/cache.avif', socialImage: '/images/covers/cache-og.jpg' }),
+  ).toBe(true);
+  expect(accepts({ coverImage: '/images/covers/cache.png' })).toBe(true);
+  // og:image falls back to the cover, and X cards do not show AVIF.
+  expect(accepts({ coverImage: '/images/covers/cache.avif' })).toBe(false);
+  expect(accepts({ coverImage: '/images/covers/cache.avif', socialImage: '/images/covers/cache.avif' })).toBe(
+    false,
+  );
+  expect(accepts({ socialImage: '/images/covers/cache-og.jpg' })).toBe(false);
+});
+it('requires the tag page description to name its tag', () => {
+  const pages = { home: base, blog: base, about: base, privacy: base };
+  const accepts = (description: string) =>
+    seoSchema.safeParse({
+      site: { ...base, keywords: [] },
+      pages: { ...pages, tag: { description } },
+      posts: {},
+    }).success;
+  expect(accepts('Posts with the {tag} tag.')).toBe(true);
+  // Without the placeholder every indexed tag page would share one description.
+  expect(accepts('Posts with this tag.')).toBe(false);
 });
