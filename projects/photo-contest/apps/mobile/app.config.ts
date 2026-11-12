@@ -54,7 +54,11 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     },
     android: {
       package: APP_ID,
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ff9b42' },
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundImage: './assets/adaptive-icon-background.png',
+        backgroundColor: '#ff9b42',
+      },
       ...(existsSync(googleServicesFile) ? { googleServicesFile } : {}),
       allowBackup: false,
       predictiveBackGestureEnabled: false,

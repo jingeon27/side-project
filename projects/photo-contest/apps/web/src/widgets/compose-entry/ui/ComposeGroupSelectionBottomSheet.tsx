@@ -32,7 +32,7 @@ function GroupChoices({
         <p className="text-body text-muted">게시물을 올릴 그룹을 먼저 만들어 주세요.</p>
         <Button
           ref={firstActionRef}
-          variant="accent"
+          variant="gradient"
           size="lg"
           fullWidth
           onClick={() => {

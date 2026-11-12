@@ -40,7 +40,7 @@ export function GroupIdentity({
           name={group.name}
           src={group.avatarUrl}
           size="lg"
-          className="size-16 rounded-card border border-line bg-sunken text-ink tablet:size-20"
+          className="size-16 rounded-[36%] bg-brand-gradient text-title-lg text-on-gradient tablet:size-20"
         />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

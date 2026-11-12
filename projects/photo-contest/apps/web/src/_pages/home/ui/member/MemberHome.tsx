@@ -41,20 +41,20 @@ function MemberHomeContent({
       {/* 홈의 주인공은 피드다. 그룹은 한 줄로 바로 가기만 두고, 멤버 수·소개는 MY의 그룹 카드에서 본다. */}
       <section aria-label="참여한 그룹" className="flex flex-col gap-3">
         <h2 className="text-title text-ink">참여한 그룹</h2>
-        <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 tablet:-mx-8 tablet:px-8 desktop:mx-0 desktop:flex-wrap desktop:overflow-visible desktop:p-0">
+        <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 py-1 tablet:-mx-8 tablet:px-8 desktop:mx-0 desktop:flex-wrap desktop:overflow-visible desktop:p-0">
           {data.myGroups.map((group) => (
             <li key={group.id} className="shrink-0">
               <Link
                 href={ROUTES.GROUP(group.id)}
-                className="flex min-h-touch max-w-56 items-center gap-2 rounded-full border border-line bg-surface py-1 pr-4 pl-1 text-label text-ink transition-colors hover:border-line-strong hover:bg-sunken active:bg-neutral-soft"
+                className="group flex w-20 flex-col items-center gap-1.5 text-center active:opacity-60"
               >
                 <Avatar
                   name={group.name}
                   src={group.avatarUrl}
-                  size="sm"
-                  className="bg-accent-soft text-accent-ink"
+                  size="lg"
+                  className="size-16 rounded-[36%] bg-brand-gradient text-title text-on-gradient transition-transform group-hover:scale-105"
                 />
-                <span className="truncate">{group.name}</span>
+                <span className="line-clamp-2 w-full text-caption leading-tight text-ink">{group.name}</span>
               </Link>
             </li>
           ))}
