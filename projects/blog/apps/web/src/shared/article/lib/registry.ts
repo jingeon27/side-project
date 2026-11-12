@@ -20,8 +20,6 @@ const loaders = {
     import('../../../../content/posts/design-concepts-for-reading-ui/ko.mdx'),
   'design-concepts-for-reading-ui/en': () =>
     import('../../../../content/posts/design-concepts-for-reading-ui/en.mdx'),
-  'dropdown-test-design/ko': () => import('../../../../content/posts/dropdown-test-design/ko.mdx'),
-  'dropdown-test-design/en': () => import('../../../../content/posts/dropdown-test-design/en.mdx'),
   'electron-module-boundaries/ko': () =>
     import('../../../../content/posts/electron-module-boundaries/ko.mdx'),
   'electron-module-boundaries/en': () =>
