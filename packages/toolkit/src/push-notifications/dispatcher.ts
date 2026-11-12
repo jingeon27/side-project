@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import dayjs from 'dayjs';
+import { chunk } from 'es-toolkit';
 import { match, P } from 'ts-pattern';
 
-import { ExpoPushTransport, PushProviderError, type IPushMessage } from './index';
+import { ExpoPushTransport, PUSH_BATCH_SIZE, PushProviderError, type IPushMessage } from './index';
 
 export interface IPushJob {
   id: string;
@@ -65,10 +66,12 @@ export class PushDispatcher {
       }
       pending.push({ ...item, message });
     }
-    if (pending.length) {
+    // Expo는 요청 하나에 PUSH_BATCH_SIZE개까지 받는다. 저장소가 더 많이 돌려줘도 나눠 보내고,
+    // 한 묶음의 실패는 그 묶음만 재시도한다.
+    for (const batch of chunk(pending, PUSH_BATCH_SIZE)) {
       try {
-        const tickets = await this.transport.send(pending.map((item) => item.message));
-        for (const [index, item] of pending.entries()) {
+        const tickets = await this.transport.send(batch.map((item) => item.message));
+        for (const [index, item] of batch.entries()) {
           const ticket = tickets[index];
           if (ticket?.status === 'ok') {
             await this.store.finish(item.job.id, item.lease, {
@@ -89,13 +92,13 @@ export class PushDispatcher {
             delay: retryAfterMs,
           }))
           .otherwise(() => ({ retryable: false, delay: undefined }));
-        for (const item of pending) await this.retry(item, now, failure.retryable, failure.delay);
+        for (const item of batch) await this.retry(item, now, failure.retryable, failure.delay);
       }
     }
-    if (receipts.length) {
+    for (const batch of chunk(receipts, PUSH_BATCH_SIZE)) {
       try {
-        const results = await this.transport.receipts(receipts.map((item) => item.ticketId));
-        for (const item of receipts) {
+        const results = await this.transport.receipts(batch.map((item) => item.ticketId));
+        for (const item of batch) {
           const result = results[item.ticketId];
           if (!result) {
             await this.store.finish(item.job.id, item.lease, {
@@ -115,7 +118,7 @@ export class PushDispatcher {
           });
         }
       } catch {
-        for (const item of receipts)
+        for (const item of batch)
           await this.store.finish(item.job.id, item.lease, {
             status: 'TICKET',
             nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
