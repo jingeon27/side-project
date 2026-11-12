@@ -34,6 +34,7 @@
 - 넓힌 영역은 다른 누름 대상과 겹치면 안 된다. 게시물 카드 그룹 이름처럼 줄 높이가 낮은 링크는 위아래로 넓힌 영역이 이웃한 비대화형 줄(작성자·시각)을 덮을 수 있다. 카드 머리 높이를 지키려는 의도된 선택이다.
 - Tailwind 4의 `hover:`는 마우스 기기에서만 동작한다. 누르는 요소에는 모두 `active:` 피드백을 준다(`active:not-data-disabled:bg-sunken`, `active:not-data-disabled:scale-[0.98]`).
 - 펼침 영역은 `@side/design-system`의 `Disclosure`·`DisclosureTrigger`를 쓰고 `details`·`summary`를 직접 쓰지 않는다. 기본 ▶ 숨김, 44px 누르는 영역, 열림 화살표 회전, 포커스 링은 공통 컴포넌트가 맡는다.
+- 접근 이름은 보이는 글자를 그대로 담는다(WCAG 2.5.3, `e2e/accessibility.spec.ts`). 보이는 글자를 줄이거나 다르게 쓰는 `aria-label`은 두지 않고, 숫자 뒤 '개'처럼 덧붙일 말은 숨긴 글자로 넣는다(알림·좋아요). 카드 전체를 누르는 링크는 이름만 링크 글자로 두고 링크의 가상 요소(`after:absolute after:inset-0`)로 카드를 덮으며, 나머지 정보는 `aria-describedby`로 읽는다(`DiscoverGroupCard`).
 
 ## 사진
 

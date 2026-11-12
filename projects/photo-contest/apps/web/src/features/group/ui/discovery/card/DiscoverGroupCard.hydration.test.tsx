@@ -69,7 +69,8 @@ it('비공개 그룹은 hydration 뒤 첫 클릭으로 로그인 안내를 연�
   try {
     await waitFor(() => expect(link).toHaveAttribute('aria-disabled', 'false'));
     expect(link).not.toHaveAttribute('inert');
-    await userEvent.setup().click(within(link).getByText('둘러보기', { exact: true }));
+    // 카드 전체를 덮는 영역은 링크의 가상 요소라 jsdom에서는 링크를 직접 누른다(브라우저 레인은 e2e가 본다).
+    await userEvent.setup().click(link);
     expect(promptLogin).toHaveBeenCalledExactlyOnceWith('/groups/private-group');
   } finally {
     await act(async () => root.unmount());
