@@ -21,6 +21,15 @@ export const handlerNamesConfig: Linter.Config = {
   },
 };
 
+/**
+ * 훅 의존성 누락은 recommended의 경고로 두면 lint가 막지 못하므로 오류로 올린다.
+ * 플러그인은 등록하지 않으니 react-hooks를 등록한 설정(Next·Expo·reactDomConfig) 뒤에 둔다.
+ */
+export const hooksDependencyConfig: Linter.Config = {
+  name: 'side/react-hooks-deps',
+  rules: { 'react-hooks/exhaustive-deps': 'error' },
+};
+
 export const reactConfig: Linter.Config[] = [
   ...baseConfig,
   handlerNamesConfig,
