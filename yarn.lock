@@ -3144,7 +3144,6 @@ __metadata:
     expo-notifications: "catalog:"
     expo-status-bar: "catalog:"
     expo-system-ui: "catalog:"
-    expo-web-browser: "catalog:"
     jiti: "catalog:"
     jsdom: "catalog:"
     react: "catalog:"
@@ -6280,6 +6279,7 @@ __metadata:
     "@types/qs": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
+    axe-core: "catalog:"
     class-variance-authority: "catalog:"
     dayjs: "catalog:"
     es-toolkit: "catalog:"
@@ -8167,6 +8167,7 @@ __metadata:
     eslint-config-next: "catalog:"
     eslint-plugin-jsx-a11y: "npm:6.10.2"
     eslint-plugin-react: "npm:7.37.5"
+    eslint-plugin-react-hooks: "npm:7.1.1"
     jiti: "catalog:"
     typescript: "catalog:"
     typescript-eslint: "npm:^8.50.0"
@@ -8195,8 +8196,8 @@ __metadata:
     "@types/node": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
-    axe-core: "npm:^4.10.0"
-    class-variance-authority: "npm:^0.7.1"
+    axe-core: "catalog:"
+    class-variance-authority: "catalog:"
     clsx: "npm:^2.1.1"
     eslint: "catalog:"
     jiti: "catalog:"
@@ -11204,7 +11205,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axe-core@npm:^4.10.0, axe-core@npm:^4.2.0":
+"axe-core@npm:4.14.0, axe-core@npm:^4.10.0, axe-core@npm:^4.2.0":
   version: 4.14.0
   resolution: "axe-core@npm:4.14.0"
   checksum: 10c0/8aaa0bf748e0dcf202e8f837951a37b28b4b62d639bed58c07a6890bf035ed6a11ede9f4006db9ca8041db821dc80476c27cff08fd70afa9195ee58fb995a958
@@ -11778,7 +11779,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"class-variance-authority@npm:0.7.1, class-variance-authority@npm:^0.7.1":
+"class-variance-authority@npm:0.7.1":
   version: 0.7.1
   resolution: "class-variance-authority@npm:0.7.1"
   dependencies:
@@ -13404,7 +13405,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-react-hooks@npm:^7.0.0, eslint-plugin-react-hooks@npm:^7.1.0":
+"eslint-plugin-react-hooks@npm:7.1.1, eslint-plugin-react-hooks@npm:^7.0.0, eslint-plugin-react-hooks@npm:^7.1.0":
   version: 7.1.1
   resolution: "eslint-plugin-react-hooks@npm:7.1.1"
   dependencies:

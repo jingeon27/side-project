@@ -20,7 +20,7 @@
     "./og": "./src/og.tsx"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint --max-warnings 0 .",
     "typecheck": "tsc7 --noEmit",
     "test": "node scripts/test.ts",
     "check": "yarn lint && yarn typecheck && yarn test && yarn build-storybook",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
-    "class-variance-authority": "^0.7.1",
+    "class-variance-authority": "catalog:",
     "clsx": "^2.1.1",
     "lottie-web": "catalog:",
     "lucide-react": "catalog:",
@@ -62,7 +62,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "axe-core": "^4.10.0",
+    "axe-core": "catalog:",
     "eslint": "catalog:",
     "jiti": "catalog:",
     "jsdom": "catalog:",

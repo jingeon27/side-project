@@ -8,7 +8,7 @@
     "build": "tsc7 --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc7 --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint --max-warnings 0 .",
     "test": "node scripts/test.ts",
     "test:e2e": "playwright test",
     "test:browser": "playwright test --config playwright.ui.config.ts"
