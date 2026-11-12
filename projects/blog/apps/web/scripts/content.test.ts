@@ -126,6 +126,38 @@ describe('content registry contract', () => {
     await writeFile(file, '[Missing](/en/blog/nonexistent)');
     await expect(readContent(root)).rejects.toThrow('broken article link');
   });
+  it.each([
+    '[Read][Article]\n\n[article]: /en/blog/missing',
+    '[Article][]\n\n[article]: /en/blog/missing',
+    '[Article]\n\n[article]: /en/blog/missing',
+  ])('checks article destinations in reference-style Markdown: %s', async (source) => {
+    const { root } = await fixture();
+    await writeFile(path.join(root, 'content/posts/cache/en.mdx'), source);
+    await expect(readContent(root)).rejects.toThrow('broken article link /en/blog/missing');
+  });
+  it.each([
+    ['![Preview][Image]\n\n[image]: /images/missing.png', 'ENOENT'],
+    ['![Image][]\n\n[image]: /images/missing.png', 'ENOENT'],
+    ['![Image]\n\n[image]: /images/missing.png', 'ENOENT'],
+    ['![Preview][image]\n\n[image]: http://example.com/image.png', 'unresolved image'],
+  ])('checks reference-style image destinations: %s', async (source, message) => {
+    const { root } = await fixture();
+    await writeFile(path.join(root, 'content/posts/cache/en.mdx'), source);
+    await expect(readContent(root)).rejects.toThrow(message);
+  });
+  it('resolves reference labels with Markdown case and first-definition rules without validating unused definitions', async () => {
+    const { root } = await fixture();
+    await mkdir(path.join(root, 'public/images'), { recursive: true });
+    await writeFile(path.join(root, 'public/images/cache.png'), 'png');
+    const file = path.join(root, 'content/posts/cache/en.mdx');
+    await writeFile(
+      file,
+      '[Read][ARTICLE]\n\n![Preview][Image]\n\n[article]: /en/blog/cache-design?ref=note#cache\n[ARTICLE]: /en/blog/missing\n[image]: /images/cache.png\n[unused]: /images/missing.png',
+    );
+    await expect(readContent(root)).resolves.toBeTruthy();
+    await writeFile(file, '[Read][article]\n\n[Article]: /en/blog/missing\n[article]: /en/blog/cache-design');
+    await expect(readContent(root)).rejects.toThrow('broken article link /en/blog/missing');
+  });
 });
 
 it('uses the same heading text and duplicate suffixes as github-slugger', () => {

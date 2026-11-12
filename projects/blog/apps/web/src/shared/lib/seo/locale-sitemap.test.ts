@@ -5,12 +5,28 @@ import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-ar
 import { categories } from '@/shared/article/model/categories';
 import { siteUrl } from '@/shared/config/site';
 
-import { localeSitemap } from './locale-sitemap';
+import { latestModified, localeSitemap } from './locale-sitemap';
 import { articleMetadata, pageMetadata } from './metadata';
 
 const sitemap = () => locales.flatMap((locale) => localeSitemap(locale));
 
 describe('multilingual SEO', () => {
+  it('treats date-only publication dates as KST midnight when selecting listing lastmod', () => {
+    const [article] = getArticles('ko');
+    if (!article) throw new Error('Expected a published article fixture');
+    expect(
+      latestModified([
+        { ...article, publishedAt: '2026-11-02', updatedAt: undefined },
+        { ...article, publishedAt: '2026-11-01', updatedAt: '2026-11-02T08:00:00+09:00' },
+      ]),
+    ).toBe('2026-11-02T08:00:00+09:00');
+    expect(
+      latestModified([
+        { ...article, publishedAt: '2026-11-02', updatedAt: undefined },
+        { ...article, publishedAt: '2026-11-01T14:59:59Z', updatedAt: undefined },
+      ]),
+    ).toBe('2026-11-02');
+  });
   it('lists only URLs under the directory of each locale sitemap', () => {
     for (const locale of locales) {
       const entries = localeSitemap(locale);

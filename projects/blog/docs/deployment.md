@@ -14,7 +14,6 @@
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | `SITE_URL`                                             | Canonical, sitemap, RSS, OG, JSON-LD의 공개 원점. 운영에서는 실제 HTTPS 도메인을 반드시 설정 |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID`                        | `G-...` 웹 스트림 ID. Production 기본값이 있으므로 수집을 끄려면 명시적 빈 값                |
-| `NEXT_PUBLIC_CLARITY_PROJECT_ID`                       | 선택 사항. Clarity 공개 project ID. 비우면 로드하지 않음                                     |
 | `GOOGLE_SITE_VERIFICATION`                             | 선택 사항. Search Console URL-prefix 방식의 HTML verification 값                             |
 | `NEXT_PUBLIC_SENTRY_DSN`                               | 선택 사항. 브라우저 오류 전송                                                                |
 | `SENTRY_DSN`                                           | 선택 사항. 서버·edge 오류 전송. 없으면 공개 DSN 사용                                         |
@@ -24,6 +23,8 @@
 | `SENTRY_RELEASE`, `NEXT_PUBLIC_SENTRY_RELEASE`         | 동일 빌드의 release 식별자. 업로드와 런타임에서 일치시킬 것                                  |
 
 `SITE_URL` 미설정 시 개발은 `http://localhost:3100`, production은 `https://blog.bambyul.com`을 사용합니다. 운영 설정 예시는 `apps/web/.env.production.example`입니다. URL의 경로·쿼리·fragment는 제거하여 원점 하나를 사용합니다. `NEXT_PUBLIC_*`는 빌드 시 브라우저 번들에 들어가므로 값을 변경하면 재빌드합니다.
+
+Clarity 연동은 중단했습니다. 기존 `NEXT_PUBLIC_CLARITY_PROJECT_ID`가 배포 환경에 남아 있어도 앱은 읽거나 로드하지 않으며, 이 변수는 제거해도 됩니다. 이 변경을 배포한 뒤 새로 연 페이지부터 적용됩니다.
 
 ## Vercel
 
@@ -74,19 +75,19 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - [첫 운영 배포](https://vercel.com/jingeon27s-projects/side-project-vttu/2ku24xMC2tQwDGjK5tEtEWsNkaUD): Ready, main `1d6535fab5968093016ae151eb87b786f74ab3a8`.
 - 빌드 로그에서 Node 24.22.2와 Yarn 4.17.0을 확인했다. 이는 당시 실행 버전이며 고정 패치 요구 사항이 아니다.
 - 실제 도메인의 한영 홈·수정한 글·sitemap·robots·RSS 응답과 HTTPS를 확인했다. Canonical도 `https://blog.bambyul.com`을 사용한다.
-- GA4·Clarity·Sentry의 운영 이벤트 수신과 Search Console 접수는 이 기록에서 완료로 간주하지 않는다. 아래 도구별 절차로 별도 확인한다.
+- GA4·Clarity·Sentry의 운영 이벤트 수신과 Search Console 접수는 이 기록에서 완료로 간주하지 않는다. 현재는 Clarity 연동을 중단했으며, 나머지는 아래 도구별 절차로 별도 확인한다.
 
 ## GA4
 
 1. 운영 빌드는 기본 측정 ID `G-7ZET0K4PSC`를 사용합니다. 다른 스트림을 쓰려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정하고 재빌드합니다. 빈 문자열을 명시하면 GA4를 끕니다. 개발·테스트에서는 ID를 지정하지 않으면 수집하지 않습니다. Vercel Preview는 production 빌드이므로 운영 통계에 포함하지 않으려면 Preview 환경에 빈 문자열을 지정합니다.
 2. **향상된 측정의 Page views → 고급 설정 → 브라우저 방문 기록 이벤트에 기반한 페이지 변경을 끕니다.** 앱은 `send_page_view: false`로 초기화하고 경로 변경마다 수동 `page_view`를 한 번 전송합니다. GA4의 이 설정이 켜져 있으면 중복 페이지뷰가 발생할 수 있습니다. [공식 페이지뷰 문서](https://developers.google.com/analytics/devguides/collection/ga4/views?hl=ko)
 3. 향상된 측정의 사이트 검색 수집도 끕니다. 앱 검색은 로컬 제목·태그 필터이며 `search_performed`에는 `has_query`만 보냅니다. 외부 링크 측정은 링크 URL에 민감한 정보가 포함되지 않는지 확인한 뒤 활성화합니다.
-4. 동의 배너는 두지 않습니다. 모든 방문자에게서 GA4 방문 통계와 Clarity를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈추며 Clarity도 멈춥니다.
+4. 동의 배너는 두지 않습니다. GA4가 설정된 빌드에서는 방문 통계를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈춥니다. 선택을 저장하지 못해도 현재 탭에서는 즉시 멈추며, 저장 실패 시 페이지를 다시 열면 선택이 유지되지 않을 수 있습니다.
 5. DebugView·실시간 보고서에서 첫 진입과 클라이언트 경로 전환마다 한 번만 `page_view`가 발생하는지 확인합니다.
 
 페이지 URL과 referrer는 query·fragment를 제거해 전송합니다. 광고 관련 저장·개인화·Google signals는 비활성화합니다. 커스텀 이벤트는 `language_changed`, `article_shared`, `category_selected`, `tag_selected`, `search_performed`이며 이벤트별 허용 속성만 전송합니다. 브라우저 차단이나 SDK 실패가 글 읽기 기능을 막지 않도록 처리합니다.
 
-수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 푸터에서 연결한 개인정보 처리 안내에 있습니다. 보관 기간은 GA4·Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. GA4는 유럽(EEA·영국·스위스) 방문자에게도 사전 동의 없이 쿠키를 쓰므로 해당 지역 규정상 위반 소지가 남습니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
+수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 푸터에서 연결한 개인정보 처리 안내에 있습니다. 보관 기간은 GA4와 과거 사용한 Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. 연동 제거가 과거 데이터나 기존 브라우저 쿠키의 삭제를 뜻하지는 않습니다. GA4는 유럽(EEA·영국·스위스) 방문자에게도 사전 동의 없이 쿠키를 쓰므로 해당 지역 규정상 위반 소지가 남습니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
 
 ## Search Console
 
@@ -117,7 +118,8 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - `/ko`, `/en`, 글·카테고리·태그·About, 없는 주소의 404
 - Canonical, `hreflang`, OG 이미지, JSON-LD, sitemap, 두 언어의 RSS
 - 모바일 가로 넘침, 테마 유지, 검색, 목차, 공유와 코드 복사
-- 첫 방문부터 단일 페이지뷰와 Clarity 로드, 개인정보 처리 안내의 ‘수집 끄기’ 뒤 전송 중단, ‘다시 켜기’ 뒤 재개
+- 첫 방문부터 단일 GA4 페이지뷰, 개인정보 처리 안내의 ‘수집 끄기’ 뒤 전송 중단, ‘다시 켜기’ 뒤 재개
+- 기존 Clarity ID가 남아 있어도 첫 방문·검색·SPA 이동·수집 다시 켜기에서 Clarity 스크립트와 요청이 없는지 확인
 - Sentry 테스트 이벤트와 source map, Search Console 소유권·sitemap 접수
 
 확인한 날짜·배포 URL·commit·실제 결과를 배포 기록에 남깁니다.
@@ -126,13 +128,12 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 
 현재 프로젝트의 도메인은 Valid Configuration을 확인했다. Cloudflare의 `blog` CNAME은 `ddff7eb52ed2e841.vercel-dns-017.com`을 가리키며 DNS only로 둔다. 이후 프로젝트를 이전할 때는 새 Vercel 화면에서 제공하는 값을 기준으로 확인하고 이 블로그 레코드만 변경한다. 소유권 이전용 TXT 값은 콘솔에서 관리하며 저장소에 복사하지 않는다. 운영 `SITE_URL=https://blog.bambyul.com`으로 canonical·JSON-LD·OG·RSS·사이트맵을 통일한다. 작성자 이름은 김진건, 제품명은 밤별 블로그(Bambyul Blog)다. 별도 API 서버가 없어 `api.blog.bambyul.com`은 현재 연결하지 않는다.
 
-## 클릭·스크롤 히트맵과 글 이탈 분석
+## 히트맵 중단과 글 이탈 분석
 
-행동 분포는 Microsoft Clarity, 참여·이탈 지표는 기존 GA4를 사용한다. Clarity의 Settings → Setup에서 받은 공개 project ID를 Vercel 빌드 환경 `NEXT_PUBLIC_CLARITY_PROJECT_ID`에 넣고 다시 빌드한다. ID를 비우거나 방문자가 개인정보 처리 안내에서 수집을 끄면 스크립트를 로드하지 않는다. 처음에는 동의 신호를 보내지 않아 EEA·영국·스위스 방문자에게는 Clarity의 기본 동의 모드가 쿠키를 만들지 않으며, 끄기를 되돌릴 때만 동의 신호와 함께 재개한다. 동의 신호를 보낼 때 광고 저장은 항상 denied로 보낸다. 수집을 끄면 consentv2 denied와 stop으로 수집을 종료하고 다른 탭의 동의 변경도 반영한다. 검색 입력은 명시적으로 마스킹하고 검색어·사용자 ID·개인 속성을 커스텀 이벤트로 보내지 않는다. SDK 설치 성공을 실제 대시보드 수신으로 취급하지 않는다.
+Clarity의 자동 로더와 커스텀 이벤트 연결을 제거했습니다. 검색 입력을 가려도 SDK가 페이지 URL과 referrer를 따로 수집하므로, URL의 `q`에 있는 검색어를 보내지 않는다는 정책을 보장할 수 없었습니다. 스크립트 로딩 중 검색 주소가 바뀌면 시작 직후 수집을 중단하는 방식도 최초 수집을 막는 보장이 되지 않습니다. 현재 히트맵과 세션 재생은 수집하지 않으며, URL·referrer·클릭 대상 주소와 비동기 시작 경로까지 검색어 비수집을 검증한 뒤 재도입을 검토합니다. [Clarity URL 수집 구현](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/data/metadata.ts), [Clarity FAQ](https://learn.microsoft.com/en-us/clarity/faq)
 
-1. Clarity Heatmaps에서 글 URL별 클릭·스크롤·attention 분포를 모바일/데스크톱으로 나누어 본다. Recordings의 방문·진입·이탈 URL 필터로 중단한 지점을 확인한다.
-2. GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 추가한다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않는다.
-3. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교한다. 적은 표본과 측정 범위(수집을 끄지 않은 방문자, Clarity는 동의 신호가 없는 EEA·영국·스위스 방문자 제외)를 함께 기록한다.
-4. Preview에서 첫 방문의 GA·Clarity 한 번 로드, SPA 이동, ‘수집 끄기’ 뒤 중단과 ‘다시 켜기’ 뒤 재개를 검사하고 운영 대시보드에서 실제 세션을 확인한다. 실제 운영 대시보드의 세션 수신과 글의 이탈 원인은 아직 검증하지 않았다.
+1. 기존 GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 확인합니다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않습니다.
+2. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교합니다. 적은 표본과 수집을 끄지 않은 방문자만 측정한다는 범위를 함께 기록합니다.
+3. 격리된 검토 빌드에서 첫 방문의 GA4 한 번 로드, SPA 이동, ‘수집 끄기’ 뒤 중단과 ‘다시 켜기’ 뒤 재개를 검사하고 운영 대시보드에서 실제 세션을 확인합니다. 실제 운영 대시보드의 세션 수신과 글의 이탈 원인은 아직 검증하지 않았습니다.
 
-공식 문서: [히트맵](https://learn.microsoft.com/en-us/clarity/heatmaps/heatmaps-overview), [설치](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-setup), [Consent V2](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-consent-api-v2), [수집 모듈 stop](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/clarity.ts), [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).
+공식 문서: [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).

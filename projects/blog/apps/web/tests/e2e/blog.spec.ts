@@ -703,6 +703,35 @@ test('URL filters survive reload and browser history navigation', async ({ page 
   await expect(search).toHaveValue('react');
 });
 
+test('language switching preserves URL search filters, repeated parameters and hash', async ({ page }) => {
+  const query = '?q=react&category=engineering&ref=mail&ref=sidebar#archive';
+  await page.goto(`/ko/blog${query}`);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+  await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+  await expect(page).toHaveURL(new URL(`/en/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: en.common.search })).toHaveValue('react');
+  await expect(
+    page.getByRole('group', { name: en.common.category }).getByRole('button', { name: /Engineering/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.goBack();
+  await expect(page).toHaveURL(new URL(`/ko/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+});
+
+test('an exact tag selection can be undone and restored through browser history', async ({ page }) => {
+  await page.goto('/ko/blog?q=react&ref=mail#archive');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await search.click();
+  await page.getByRole('option', { name: '#react', exact: true }).click();
+  await expect(search).toHaveValue('#react');
+  await page.goBack();
+  await expect(search).toHaveValue('react');
+  expect(new URL(page.url()).searchParams.get('ref')).toBe('mail');
+  expect(new URL(page.url()).hash).toBe('#archive');
+  await page.goForward();
+  await expect(search).toHaveValue('#react');
+});
+
 test('search popup dismisses through outside click and Tab without clearing the URL query', async ({
   page,
 }) => {

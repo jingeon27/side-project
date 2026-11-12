@@ -6,6 +6,7 @@ import { locales, type Locale } from '@/i18n/routing';
 import { getArticles, getIndexedTags, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import type { Article } from '@/shared/article/model/types';
 import { absoluteUrl } from '@/shared/config/site';
+import { parseContentDate } from '@/shared/lib/date/content-date';
 
 import { articlePath } from './metadata';
 
@@ -16,7 +17,7 @@ const articleLastModified = (article: Article) => article.updatedAt || article.p
  * datetime formats, so they are compared as instants rather than as strings.
  */
 export function latestModified(articles: readonly Article[]): string | undefined {
-  const latest = maxBy(articles, (article) => Date.parse(articleLastModified(article)));
+  const latest = maxBy(articles, (article) => parseContentDate(articleLastModified(article)));
   return latest && articleLastModified(latest);
 }
 
