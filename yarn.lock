@@ -8182,6 +8182,7 @@ __metadata:
   dependencies:
     "@base-ui/react": "catalog:"
     "@hookform/resolvers": "catalog:"
+    "@playwright/test": "catalog:"
     "@side/config": "workspace:*"
     "@storybook/addon-a11y": "npm:10.6.3"
     "@storybook/addon-docs": "npm:10.6.3"

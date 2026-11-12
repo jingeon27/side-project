@@ -8,6 +8,7 @@ on:
     paths:
       - 'projects/blog/**'
       - 'packages/config/**'
+      - 'packages/design-system/**'
       - 'package.json'
       - 'yarn.lock'
       - '.yarnrc.yml'
@@ -20,6 +21,7 @@ on:
     paths:
       - 'projects/blog/**'
       - 'packages/config/**'
+      - 'packages/design-system/**'
       - 'package.json'
       - 'yarn.lock'
       - '.yarnrc.yml'

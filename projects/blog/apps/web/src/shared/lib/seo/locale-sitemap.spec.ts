@@ -11,13 +11,13 @@ const article = (dates: Pick<Article, 'publishedAt' | 'updatedAt'>) => dates as 
 
 describe('sitemap lastmod', () => {
   it('compares article dates as instants, not as strings', () => {
-    // As strings the datetime sorts last, but it is 23:00 UTC on the previous day.
+    // Date-only values mean KST midnight, so a same-day morning edit is newer.
     expect(
       latestModified([
         article({ publishedAt: '2026-11-02T08:00:00+09:00' }),
         article({ publishedAt: '2026-01-01', updatedAt: '2026-11-02' }),
       ]),
-    ).toBe('2026-11-02');
+    ).toBe('2026-11-02T08:00:00+09:00');
   });
 
   it('prefers the edit date and has no date for an empty listing', () => {

@@ -1,8 +1,6 @@
 import dayjs from 'dayjs';
 import qs from 'qs';
 
-import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
-
 type AnalyticsEventMap = {
   language_changed: { from_locale: string; to_locale: string };
   article_shared: { content_id: string; method: string };
@@ -18,6 +16,7 @@ declare global {
     gtag?: Gtag;
     __blogAnalyticsInitialized?: boolean;
     __blogAnalyticsLastPath?: string;
+    __blogAnalyticsOptedOut?: boolean;
   }
 }
 
@@ -26,15 +25,16 @@ export const consentChangedEvent = 'blog:analytics-consent-changed';
 export const measurementId =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? (process.env.NODE_ENV === 'production' ? 'G-7ZET0K4PSC' : '');
 const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
-export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
+export const analyticsConfigured = googleAnalyticsConfigured;
 
 /**
- * 방문 통계와 히트맵은 개인정보 처리 안내에서 끄기 전까지 수집한다(opt-out). 저장소가 막히면 끄기 선택을 기억할 수 없으므로
+ * 방문 통계는 개인정보 처리 안내에서 끄기 전까지 수집한다(opt-out). 저장소가 막히면 끄기 선택을 기억할 수 없으므로
  * 끈 것으로 본다. 이전 배너가 저장한 granted·statistics는 켜짐으로 읽는다.
  */
 export function analyticsOptedOut(): boolean {
+  if (typeof window === 'undefined' || window.__blogAnalyticsOptedOut) return true;
   try {
-    return typeof window === 'undefined' || window.localStorage.getItem(consentKey) === 'denied';
+    return window.localStorage.getItem(consentKey) === 'denied';
   } catch {
     return true;
   }
@@ -42,10 +42,6 @@ export function analyticsOptedOut(): boolean {
 
 export function statisticsAllowed(): boolean {
   return googleAnalyticsConfigured && !analyticsOptedOut();
-}
-
-export function heatmapsAllowed(): boolean {
-  return heatmapsConfigured && !analyticsOptedOut();
 }
 
 function safeUrl(value: string): string {
@@ -62,8 +58,11 @@ export function setAnalyticsOptOut(optedOut: boolean): void {
   try {
     if (optedOut) window.localStorage.setItem(consentKey, 'denied');
     if (!optedOut) window.localStorage.removeItem(consentKey);
+    delete window.__blogAnalyticsOptedOut;
   } catch {
-    /* Storage can be blocked. */
+    // A failed write must not keep collecting after the visitor asks us to stop.
+    // Keep this tab opted out until a later explicit choice can be saved.
+    window.__blogAnalyticsOptedOut = true;
   }
   applyAnalyticsConsent();
   window.dispatchEvent(new Event(consentChangedEvent));
@@ -74,7 +73,6 @@ export function applyAnalyticsConsent(): void {
   if (typeof window === 'undefined') return;
   const statistics = statisticsAllowed();
   (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !statistics;
-  if (!heatmapsAllowed()) stopHeatmaps();
   try {
     window.gtag?.('consent', 'update', { analytics_storage: statistics ? 'granted' : 'denied' });
   } catch {
@@ -101,7 +99,6 @@ export function applyAnalyticsConsent(): void {
 }
 
 export function initializeAnalytics(): void {
-  if (heatmapsAllowed()) initializeHeatmaps();
   if (!statisticsAllowed()) return;
   try {
     (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = false;
@@ -169,7 +166,6 @@ export function trackEvent<K extends keyof AnalyticsEventMap>(
 ): void {
   if (!analyticsConfigured) return;
   try {
-    if (heatmapsAllowed()) window.clarity?.('event', name);
     if (!statisticsAllowed() || !window.gtag) return;
     const filtered = Object.fromEntries(
       Object.entries(properties).filter(

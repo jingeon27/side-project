@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-import type { Session } from '@/shared/api';
+import { ApiError, type Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { openOverlay } from '@/shared/ui';
 
@@ -55,6 +55,13 @@ export function SessionProvider({ children, onLogin }: ISessionProviderProps) {
     }),
     [session, onLogin],
   );
-  if (error && !isFetching) throw error;
+  // 연결·서버·요청 제한 오류는 기존 초안을 보존하되 인증·요청·응답 계약 오류는 숨기지 않는다.
+  // 캐시 없는 최초 조회 실패는 Suspense가 처리한다.
+  const isTransientError =
+    error instanceof ApiError &&
+    ((error.status === 0 && error.errorCode === 'NETWORK_ERROR') ||
+      [408, 429].includes(error.status) ||
+      (error.status >= 500 && error.status < 600));
+  if (error && !isFetching && !isTransientError) throw error;
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

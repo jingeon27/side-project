@@ -302,11 +302,14 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @game-feedback/contracts build
       - run: yarn workspace @game-feedback/admin test:browser
+      - run: yarn workspace @side/design-system test:browser
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: failure()
         with:
-          name: game-feedback-admin-component-traces
-          path: projects/game-feedback/apps/admin/test-results/
+          name: game-feedback-component-traces
+          path: |
+            projects/game-feedback/apps/admin/test-results/
+            packages/design-system/test-results/
     name: GF components
     needs: selection
     if: needs.selection.outputs['game-feedback'] == 'true'

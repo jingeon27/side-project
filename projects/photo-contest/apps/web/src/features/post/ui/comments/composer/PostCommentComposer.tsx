@@ -27,8 +27,18 @@ export function PostCommentComposer({ postId, form }: { postId: string; form: TC
   });
   const body = useWatch({ control: form.control, name: 'body' });
   const [create] = useMutation(CreatePostCommentDocument, {
-    refetchQueries: [PostCommentsDocument, { query: RefreshPostDocument, variables: { id: postId } }],
-    awaitRefetchQueries: true,
+    refetchQueries: [
+      PostCommentsDocument,
+      { query: RefreshPostDocument, variables: { id: postId }, context: { errorToast: true } },
+    ],
+    onQueryUpdated: async (query) => {
+      if (query.options.query !== PostCommentsDocument && query.options.query !== RefreshPostDocument) return;
+      try {
+        await query.refetch().retain();
+      } catch {
+        // 목록 오류 또는 ErrorLink가 재조회 실패를 알리고, 등록 성공은 유지한다.
+      }
+    },
     onCompleted: () => form.reset(),
   });
   const { errors, isSubmitting } = form.formState;
