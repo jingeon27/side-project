@@ -33,6 +33,10 @@ describe('ContestCompletionService 회귀', () => {
           startsAt: endsAt.subtract(2, 'hour').toDate(),
           submissionEndsAt: endsAt.subtract(1, 'hour').toDate(),
           endsAt: endsAt.toDate(),
+          // 대회 알림 작업이 보낼 대상으로 잡지 않게 알림은 보낸 것으로 둔다. 시작이 2000년보다 이르므로 비워 두면
+          // 같은 DB에서 시작이 가장 이른 대회부터 처리한다고 보는 알림 회귀 테스트의 순서를 앞지른다.
+          startNotifiedAt: endsAt.toDate(),
+          endNotifiedAt: endsAt.toDate(),
         },
       });
     const worker = api.app.get(ContestCompletionService);
