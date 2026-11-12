@@ -16,23 +16,19 @@ export function UserVerificationControls({ user }: { user: Pick<TAdminUser, 'id'
       <div className="admin-actions">
         <Button
           type="button"
-          aria-label="프로필 인증 승인"
-          aria-pressed={user.isVerified}
-          variant={user.isVerified ? undefined : 'secondary'}
+          variant="secondary"
           disabled={verify.isPending || user.isVerified}
           onClick={() => verify.mutate({ id: user.id, isVerified: true })}
         >
-          인증
+          인증 승인
         </Button>
         <Button
           type="button"
-          aria-label="인증 해제"
-          aria-pressed={!user.isVerified}
-          variant={user.isVerified ? 'secondary' : undefined}
+          variant="secondary"
           disabled={verify.isPending || !user.isVerified}
           onClick={() => verify.mutate({ id: user.id, isVerified: false })}
         >
-          미인증
+          인증 해제
         </Button>
       </div>
       <ErrorNotice error={verify.error} />
