@@ -8,14 +8,15 @@ test(
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/me');
     const root = page.locator('html');
-    const surface = page.locator('header:visible');
+    // 상단바는 반투명이라 테마 색을 그대로 칠하는 문서 바탕(canvas)으로 확인한다.
+    const canvas = page.locator('body');
     await expect(root).toHaveAttribute('data-theme', 'system');
-    await expect(surface).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(canvas).toHaveCSS('background-color', 'rgb(20, 19, 18)');
     const select = page.getByRole('combobox', { name: '화면 모드', exact: true });
     await select.click();
     await page.getByRole('option', { name: '라이트 모드', exact: true }).click();
     await expect(root).toHaveAttribute('data-theme', 'light');
-    await expect(surface).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await select.click();
     await page.getByRole('option', { name: '다크 모드', exact: true }).click();
     await page.emulateMedia({ colorScheme: 'light' });
@@ -43,8 +44,8 @@ test(
     await select.click();
     await page.getByRole('option', { name: '기기 설정에 맞춤', exact: true }).click();
     await expect(root).toHaveAttribute('data-theme', 'system');
-    await expect(surface).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect(surface).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(canvas).toHaveCSS('background-color', 'rgb(20, 19, 18)');
   },
 );
