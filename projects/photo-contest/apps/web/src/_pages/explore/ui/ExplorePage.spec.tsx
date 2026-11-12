@@ -145,8 +145,8 @@ describe('그룹 탐색의 공통 작성 진입', () => {
     renderExplore();
     const header = screen.getByRole('heading', { name: '그룹 탐색' }).closest('header');
     if (!header) throw new Error('탐색 앱바가 있어야 한다');
-    // 읽지 않은 알림이 없으면 '알림', 있으면 '알림 N개'로 읽힌다.
-    expect(await within(header).findByRole('link', { name: /^알림(?: [\d+]+개)?$/ })).toHaveAttribute(
+    // 읽지 않은 알림 수와 함께 '알림 N개'로 읽힌다.
+    expect(await within(header).findByRole('link', { name: /^알림 [\d+]+개$/ })).toHaveAttribute(
       'href',
       '/notifications',
     );

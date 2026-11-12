@@ -37,7 +37,8 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
   const viewerPending = isSSR || !viewer;
   return (
     // 링크 글자는 그룹 이름 하나라 보이는 글자가 곧 접근 이름이다(WCAG 2.5.3). 카드 전체를 누르는 영역은
-    // 링크의 가상 요소가 덮고, 공개 범위·멤버 수·행동은 aria-describedby로 함께 읽는다.
+    // 링크의 가상 요소가 덮고, 공개 범위·멤버 수·행동은 aria-describedby로 함께 읽는다. 누름 영역 검사(target-size)는
+    // 가상 요소를 세지 않으므로 링크 상자 자체도 24px 이상으로 둔다.
     <article className="relative flex min-w-0 flex-col rounded-sheet bg-sunken transition-colors has-[a:hover]:bg-neutral-soft has-[a:active]:bg-neutral-soft">
       <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         <p id={detailsId} className="sr-only">
@@ -59,7 +60,7 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
               aria-describedby={detailsId}
               aria-disabled={privateGroup && viewerPending}
               inert={privateGroup && viewerPending}
-              className="rounded-control after:absolute after:inset-0 after:rounded-sheet"
+              className="inline-block min-h-6 rounded-control after:absolute after:inset-0 after:rounded-sheet"
               onClick={(event) => {
                 if (!privateGroup) return;
                 if (viewerPending) {
