@@ -6,7 +6,7 @@
 
 | 파일 | 프로젝트 | 규칙 |
 | --- | --- | --- |
-| `src/**/*.{spec,test}.ts`, `app.config.spec.ts` | `unit`(node) | 순수 함수·class와 `app.config.ts`(운영·개발 빌드 설정). react-native·expo는 `import type`만 |
+| `src/**/*.{spec,test}.ts`, `app.config.{spec,test}.ts` | `unit`(node) | 순수 함수·class와 `app.config.ts`(운영·개발 빌드 설정과, 읽는 루트 키가 프로젝트 `.env.example`에 모두 있는지). react-native·expo는 `import type`만 |
 | `src/**/*.{spec,test}.tsx` | `ui`(jsdom) | `react-native` → `react-native-web` alias, `__DEV__` = true, vitest.setup.ts의 expo-constants extra.webOrigin 대역(https://feedback.example), `vitest.setup.ts` |
 
 - unit에는 `__DEV__` define과 origin env가 없다. `@/shared/config/env`(import 때 `parseWebOrigin` 실행)를 거치는 코드는 ui에서 검사하거나, `parseWebOrigin(value, development)`처럼 값을 인자로 받는 함수로 빼서 unit에서 검사한다.
@@ -14,7 +14,7 @@
 
 ## ui 대역
 
-- `vitest.setup.ts`: `react-native-webview` → `src/test/ui/fake-web-view.tsx` `FakeWebView`, `react-native-safe-area-context` → `View`, `expo-linking`(`getInitialURL` → null, `addEventListener` → `{ remove }`), `expo-web-browser`(`openAuthSessionAsync` → `{ type: 'cancel' }`), `expo-crypto`(0으로 채운 32바이트, `'a'`×43 digest). 테스트마다 `cleanup()`·`resetFakeWebView()`·`vi.clearAllMocks()`·`vi.restoreAllMocks()`. 새 네이티브 모듈 대역은 여기에 더한다. `expo-status-bar`는 전역 대역이 없어 `App`을 그리는 테스트가 직접 `vi.mock`한다(`src/_app/App.spec.tsx`).
+- `vitest.setup.ts`: `react-native-webview` → `src/test/ui/fake-web-view.tsx` `FakeWebView`, `react-native-safe-area-context` → `View`, `expo-linking`(`getInitialURL` → null, `addEventListener` → `{ remove }`), `expo-crypto`(`randomUUID` → 고정 UUID), `expo-device`(`isDevice` → false), `expo-notifications`(빈 모듈), `expo-constants`(`expoConfig.extra.webOrigin` → `https://feedback.example`), `@react-native-async-storage/async-storage`(`getItem` → null, `setItem` → undefined). 테스트마다 `cleanup()`·`resetFakeWebView()`·`vi.clearAllMocks()`·`vi.restoreAllMocks()`. 새 네이티브 모듈 대역은 여기에 더한다. `expo-status-bar`는 전역 대역이 없어 `App`을 그리는 테스트가 직접 `vi.mock`한다(`src/_app/App.spec.tsx`).
 - `fake-web-view.tsx`: `currentWebViewProps()`로 최신 prop을 읽고 핸들러(`onMessage`·`onShouldStartLoadWithRequest`·`onOpenWindow`·`onError`·`onHttpError`·`onLoadStart`·`onNavigationStateChange`·`onRenderProcessGone`·`onContentProcessDidTerminate`)를 `act` 안에서 직접 부른다. `fakeWebView.mounts`는 재생성 횟수, `fakeWebView.handle`의 `injectJavaScript`·`goBack`·`reload`는 명령 기록이다.
 - 웹 → 앱은 `onMessage`에 `nativeEvent: { url, data: JSON.stringify(message) }`, 앱 → 웹은 `injectJavaScript` 인자를 `expect.stringContaining('"path":"/ko/settings"')`처럼 본다. 이벤트 모양은 `src/_pages/web-shell/ui/WebShellPage.spec.tsx`의 `event()` helper(기본 url `https://feedback.example/ko`)를 따른다.
 - react-native-web의 `Platform.OS`는 `'web'`이다. 그대로면 BackHandler 구독과 iOS `onLoadStart` 해제가 꺼진다. 렌더 전에 `Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' })`(또는 `'android'`), `afterEach`에서 `'web'`으로 되돌린다.
@@ -23,14 +23,15 @@
 
 ## Playwright (`playwright.config.ts`)
 
-- 프로젝트 `android-webview`(Pixel 7, chromium)·`ios-webview`(iPhone 13, webkit), `workers: 1`, 직렬, 테스트당 45초, `trace: 'retain-on-failure'`.
-- `webServer` 두 개를 항상 새로 띄운다(`reuseExistingServer: false`). API 4302: `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `test:server`(`GF_DEMO_MODE`·`GF_TEST_AUTH_ENABLED` true, OAuth·Supercell 키 빈 값, 공개 상세 캐시 무효화 콜백은 `http://127.0.0.1:3302/internal/cache/revalidate`). Web 3302: web `build` 뒤 `next start`(`NEXT_DIST_DIR=.next/e2e-mobile`, `GAME_FEEDBACK_API_URL=http://127.0.0.1:4302`). 3302·4302가 비어 있어야 한다.
-- DB: `TEST_DATABASE_URL`(기본 `127.0.0.1:55444/game_feedback_test`, user `game_feedback`)이 아니면 설정 로드에서 throw. 스키마는 `GF_MOBILE_E2E_SCHEMA` 또는 `gf_test_mobile_<uuid>`이고 `^gf_test_[a-z0-9_]+$`만 허용한다. `e2e/teardown.ts`가 URL·스키마를 다시 검사하고 그 스키마만 DROP한다.
+- 프로젝트 `android-webview`(Pixel 7, chromium)·`ios-webview`(iPhone 13, webkit), `workers: 1`, 직렬, 테스트당 45초, `trace: 'retain-on-failure'`. CI에서는 `forbidOnly`가 남은 `test.only`를 실패로 만든다.
+- `webServer` 두 개를 항상 새로 띄운다(`reuseExistingServer: false`). API 4302: `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed --fixtures` → `test:server`(`src/testing/e2e-server.ts`가 데모·테스트 인증을 옵션으로 켠다, OAuth·Supercell 키 빈 값, 공개 상세 캐시 무효화 콜백은 `http://127.0.0.1:3302/internal/cache/revalidate`). Web 3302: `ENVIRONMENT=test`로 web `build` 뒤 `next start`(`GAME_FEEDBACK_API_URL=http://127.0.0.1:4302`). 빌드 폴더는 Web E2E와 같은 `.next/test`라 같은 checkout에서 Web E2E와 동시에 돌리지 않는다. 3302·4302가 비어 있어야 한다.
+- DB: API의 `prepareBrowserDatabase('mobile')`(`src/testing/browser-database.ts`)가 정한다. 물려받은 `DATABASE_URL`이 `/game_feedback_test`를 가리킬 때만 쓰고 아니면 기본 `127.0.0.1:55444/game_feedback_test`(user `game_feedback`)를 쓴다. 스키마는 `gf_test_mobile_<uuid 32자>`이며 URL에 이미 스키마가 있으면 같은 형식일 때만 이어 쓴다. `e2e/teardown.ts`가 URL·스키마를 다시 검사하고 그 스키마만 DROP한다.
 - 하네스: spec은 `./support/fixtures`의 `test`·`expect`와 `nativeHost`를 쓴다. `e2e/support/native-host.ts`가 앱의 실제 `NativeHost`·`toWebPath`를 Node에서 돌리고, `addInitScript`로 bootstrap과 `ReactNativeWebView.postMessage` → `exposeBinding('__gfNativePost', data, location.href)`를 심는다. 출처 검사도 실제로 탄다.
-  - 읽기: `isReady`, `currentPath`, `hasOverlay`, `rootBacks`, `messages`, `authSessions`. 조작: `requestBack()`(실제 800ms), `state('background' | 'active')`, `openDeepLink(url)`(준비된 문서로만, 아니면 `false`), `setLoginResult(result)`.
+  - 읽기: `isReady`, `currentPath`, `hasOverlay`, `rootBacks`, `messages`. 조작: `requestBack()`(실제 800ms), `state('background' | 'active')`, `openDeepLink(url)`(준비된 문서로만, 아니면 `false`).
+  - 푸시: `nativeHost` fixture는 푸시 기능을 알리지 않는다. 푸시를 보는 spec은 `installNativeHost(page, { push: true })`로 직접 설치하고 `finally`에서 `dispose()`한다(`push-notifications.spec.ts`). 이때 bootstrap 기능에 `push`가 실리고 NativeHost에 `getPushRegistration`·`setPushBadge` 대역이 들어간다. 읽기: `pushPermissions`(등록 요청마다 OS 권한을 물었는지), `badges`(웹이 맞춘 배지 수). 조작: `pushReceived()`(준비된 문서에 push-received를 보낸다). 권한을 한 번 물은 뒤부터 granted와 Expo push token을 돌려준다.
   - 조작 전에 `await expect.poll(nativeHost.isReady).toBe(true)`나 `currentPath` 폴링으로 준비를 기다린다.
   - 로그인은 `page.request.post('/api/auth/test-login' | '/api/auth/test-token', { headers: { Origin: ORIGIN }, data: { accountId } })`(`ORIGIN`은 `native-host.ts`). `sample-user-0`·`sample-user-3`·`sample-conversation-0-3`·`sample-post-0`은 `db:seed` 데이터다.
-  - authSessions/setLoginResult 같은 호환 도구가 남아 있어도 현재 앱의 네이티브 로그인 지원을 뜻하지 않는다. 실제 앱은 NativeHost에 login 구현을 연결하지 않는다.
+  - 하네스는 NativeHost에 login을 넘기지 않아 auth-request에는 auth-result failed가 돌아간다. 현재 앱의 네이티브 로그인 지원을 뜻하지 않는다.
 - e2e가 보지 않는 것: `useWebShell` prop·핸들러, `decideNavigation` 적용(브라우저 페이지에는 `onShouldStartLoadWithRequest`가 없다), cold 딥링크의 source 교체, `ShellLifecycle`의 AppState·BackHandler 처리(`state()`는 host를 바로 부른다), LaunchScreen·OfflineView·재생성. 모두 ui 레인 몫이다.
 
 ## 어디서 검증하나
@@ -59,4 +60,4 @@ yarn workspace @side/game-feedback db:test:stop
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link verified 상태, 앱 미설치·검증 실패 때 웹 안내 페이지), 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드와 입력창(채팅 전송 뒤 키보드 유지 포함), 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한, 푸시 권한·토큰·알림 탭(MOBILE_EAS_PROJECT_ID와 FCM/APNs 설정이 있는 빌드). 앱 안 로그인은 WebView 쿠키 세션이며 시스템 브라우저 소셜 로그인·App Link 복귀는 제거됐다. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.

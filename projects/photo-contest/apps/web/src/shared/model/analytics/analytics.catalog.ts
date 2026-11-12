@@ -6,6 +6,8 @@ export const ANALYTICS_EVENT = {
   CategoryCreated: 'category_created',
   CategoryFilterApplied: 'category_filter_applied',
   PostCreated: 'post_created',
+  PostUploadCancelled: 'post_upload_cancelled',
+  PostDraftDiscarded: 'post_draft_discarded',
   PostListPageLoaded: 'post_list_page_loaded',
   PageViewed: 'page_viewed',
   LandingStartClicked: 'landing_start_clicked',
@@ -62,6 +64,10 @@ export type TAnalyticsEventProperties = {
     category_id: string | null;
     kind: 'PHOTO' | 'VIDEO' | 'LINK';
   };
+  /** 게시 요청 전, 파일을 올리는 중에 누른 취소. 입력은 그대로 남는다. */
+  [ANALYTICS_EVENT.PostUploadCancelled]: { group_id: string; kind: 'PHOTO' | 'VIDEO' };
+  /** 입력을 바꾼 글쓰기에서 뒤로 가기를 눌러 묻는 대화상자에서 버리기를 고른 때 */
+  [ANALYTICS_EVENT.PostDraftDiscarded]: { group_id: string };
   [ANALYTICS_EVENT.PostListPageLoaded]: { surface: 'latest' | 'public' | 'my'; offset: number };
   [ANALYTICS_EVENT.PageViewed]: { path_template: string };
   [ANALYTICS_EVENT.LandingStartClicked]: {

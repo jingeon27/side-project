@@ -1,8 +1,8 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
 import {
+  AdminChatMessageListSchema,
   ChatMessageInputSchema,
-  ChatMessageListSchema,
   ChatMessageSchema,
   SessionSchema,
   SupportThreadSchema,
@@ -32,7 +32,9 @@ const session = SessionSchema.parse({
   googleConfigured: false,
   needsOnboarding: false,
 });
-const messages = ChatMessageListSchema.parse({
+// 관리자 메시지 API는 첨부 주소를 관리자 쿠키가 실리는 /api/admin 경로로 바꿔 내려준다.
+const attachmentUrl = `/api/admin/support/${thread.conversationId}/attachments/browser-attachment`;
+const messages = AdminChatMessageListSchema.parse({
   conversation: {
     id: thread.conversationId,
     peer: requester,
@@ -41,7 +43,26 @@ const messages = ChatMessageListSchema.parse({
     updatedAt: timestamp,
     peerLastReadAt: null,
   },
-  items: [],
+  items: [
+    {
+      id: 'browser-message',
+      conversationId: thread.conversationId,
+      sender: requester,
+      body: '인증 자료를 보냅니다.',
+      attachments: [
+        {
+          id: 'browser-attachment',
+          name: 'proof.jpg',
+          mimeType: 'image/jpeg',
+          size: 2048,
+          kind: 'IMAGE',
+          url: attachmentUrl,
+        },
+      ],
+      createdAt: timestamp,
+      clientMessageId: '6f1c2a4e-8d3b-4f5a-9c7e-1b2d3e4f5a6b',
+    },
+  ],
   nextCursor: null,
 });
 
@@ -85,6 +106,35 @@ test('목록 실패와 상태 필터 변경에도 열린 문의·답변 초안·
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(draft).toHaveValue('필터를 바꿔도 남아야 하는 답변');
   await expect(page).toHaveURL(/thread=browser-thread&view=compact$/);
+  expect(unexpected).toEqual([]);
+});
+
+// 응답 계약이 공개 대화 첨부 주소만 받던 때는 SDK 검증이 실패해 대화와 답변 폼이 오류 영역으로 바뀌었다.
+test('첨부가 있는 문의 대화는 관리자 경로의 사진 링크와 답변 폼을 함께 보여야 한다', async ({ page }) => {
+  const unexpected: string[] = [];
+  await page.route(
+    (url) => url.pathname.startsWith('/api/'),
+    async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname === '/api/admin/auth/session') return route.fulfill({ json: session });
+      if (url.pathname === `/api/admin/support/${thread.id}`) return route.fulfill({ json: thread });
+      if (url.pathname === `/api/admin/support/${thread.conversationId}/messages`)
+        return route.fulfill({ json: messages });
+      if (url.pathname === '/api/admin/support')
+        return route.fulfill({ json: { items: [], nextCursor: null } });
+      unexpected.push(url.pathname);
+      return route.abort();
+    },
+  );
+  await page.goto('/#support?thread=browser-thread');
+  const conversation = page.getByRole('region', { name: '문의 대화' });
+  await expect(conversation.getByRole('link', { name: '사진 보기', exact: true })).toHaveAttribute(
+    'href',
+    attachmentUrl,
+  );
+  await expect(conversation.getByRole('textbox', { name: '답변 내용' })).toBeVisible();
+  await expect(conversation.getByRole('button', { name: '답변 보내기', exact: true })).toBeEnabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   expect(unexpected).toEqual([]);
 });
 

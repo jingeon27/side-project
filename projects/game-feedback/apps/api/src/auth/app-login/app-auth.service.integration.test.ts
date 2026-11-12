@@ -140,12 +140,21 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const browser = supertest.agent(app.getHttpServer());
     const start = await browser.get(`/api/auth/google?app_challenge=${challenge}`).expect(302);
     const state = new URL(responseLocation(start)).searchParams.get('state');
-    await browser.get('/api/auth/google/callback').query({ state: 'forged', code: 'failure' }).expect(400);
+    // 쿠키와 묶이지 않은 state는 앱 시도인지 알 수 없으므로 시도를 쓰지 않고 웹 로그인 화면으로 보낸다.
+    const forged = await browser
+      .get('/api/auth/google/callback')
+      .query({ state: 'forged', code: 'failure' })
+      .expect(302);
+    expect(new URL(responseLocation(forged)).searchParams.get('login')).toBe('expired');
     const failed = await browser
       .get('/api/auth/google/callback')
       .query({ state, code: 'failure' })
       .expect(302);
     expect(failed.headers.location).toBe(`${appCallback}?error=login_failed`);
-    await browser.get('/api/auth/google/callback').query({ state, code: 'failure' }).expect(400);
+    const reused = await browser
+      .get('/api/auth/google/callback')
+      .query({ state, code: 'failure' })
+      .expect(302);
+    expect(new URL(responseLocation(reused)).searchParams.get('login')).toBe('expired');
   });
 });

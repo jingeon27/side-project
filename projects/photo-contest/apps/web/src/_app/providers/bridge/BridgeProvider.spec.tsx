@@ -1,7 +1,9 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
-import { render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { decodeWebMessage } from '@photo-contest/bridge';
@@ -9,9 +11,10 @@ import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge
 import { createWebBridge, type IWebBridge, type TBridgeWindow } from '@photo-contest/bridge/web';
 
 import { MeDocument } from '@/shared/api/generated';
-import { routeHistoryStore } from '@/shared/model/router';
+import { registerLeaveGuard, routeHistoryStore } from '@/shared/model/router';
 import { hasOpenOverlay, pushOverlayEntry } from '@/shared/model/router/overlay-history.store';
 import { registerParentRoute } from '@/shared/model/router/parent-route.store';
+import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { BridgeProvider } from './BridgeProvider';
 
@@ -125,6 +128,80 @@ describe('BridgeProvider', () => {
     await expect(fake.router.requestWeb('navigation.back', {})).resolves.toEqual({ handled: true });
     expect(navigation.router.replace).toHaveBeenCalledWith('/groups/g1', undefined);
     release();
+  });
+
+  describe('떠나기 전 확인을 등록한 화면', () => {
+    /** 글쓰기 화면처럼 대화상자로 버릴지 묻는 확인을 등록한다. */
+    function renderGuardedPage(path: string) {
+      goTo(path);
+      render(
+        <ApolloProvider client={new ApolloClient({ cache: new InMemoryCache(), link: new MockLink([]) })}>
+          <BridgeProvider bridge={bridge}>
+            <OverlayProvider>화면</OverlayProvider>
+          </BridgeProvider>
+        </ApolloProvider>,
+      );
+      const release = registerLeaveGuard(path, () =>
+        overlay.openAsync<boolean>(({ isOpen, close, unmount }) => (
+          <ConfirmDialog
+            isOpen={isOpen}
+            onClose={() => close(false)}
+            unmount={unmount}
+            title="작성 중인 글을 버릴까요?"
+            confirmLabel="글 버리고 나가기"
+            cancelLabel="계속 쓰기"
+            tone="danger"
+            onConfirm={() => close(true)}
+          />
+        )),
+      );
+      return { user: userEvent.setup(), release };
+    }
+
+    afterEach(() => act(() => overlay.unmountAll()));
+
+    it('앱 뒤로 가기는 묻는 동안 처리했다고 답하고, 버리기를 고른 뒤에만 이전 화면으로 가야 한다', async () => {
+      const { user, release } = renderGuardedPage('/groups/g1/write');
+      routeHistoryStore.record('/groups/g1/write');
+
+      await expect(fake.router.requestWeb('navigation.back', {})).resolves.toEqual({ handled: true });
+      const dialog = await screen.findByRole('alertdialog', { name: '작성 중인 글을 버릴까요?' });
+      expect(navigation.router.back).not.toHaveBeenCalled();
+
+      await user.click(within(dialog).getByRole('button', { name: '글 버리고 나가기' }));
+      await waitFor(() => expect(navigation.router.back).toHaveBeenCalledOnce());
+      expect(hasOpenOverlay()).toBe(false);
+      release();
+    });
+
+    it('묻는 동안 앱 뒤로 가기를 다시 누르면 대화상자만 닫고 화면에 남아야 한다', async () => {
+      const { release } = renderGuardedPage('/groups/g1/write');
+      routeHistoryStore.record('/groups/g1/write');
+
+      await expect(fake.router.requestWeb('navigation.back', {})).resolves.toEqual({ handled: true });
+      await screen.findByRole('alertdialog', { name: '작성 중인 글을 버릴까요?' });
+      await waitFor(() => expect(hasOpenOverlay()).toBe(true));
+      await expect(fake.router.requestWeb('navigation.back', {})).resolves.toEqual({ handled: true });
+
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+      expect(navigation.router.back).not.toHaveBeenCalled();
+      expect(navigation.router.replace).not.toHaveBeenCalled();
+      release();
+    });
+
+    it('링크로 바로 들어온 화면도 버리기를 고른 뒤에만 상위 화면으로 바꿔야 한다', async () => {
+      const { user, release } = renderGuardedPage('/groups/g1/write');
+      const releaseParent = registerParentRoute('/groups/g1/write', '/groups/g1');
+
+      await expect(fake.router.requestWeb('navigation.back', {})).resolves.toEqual({ handled: true });
+      const dialog = await screen.findByRole('alertdialog', { name: '작성 중인 글을 버릴까요?' });
+      expect(navigation.router.replace).not.toHaveBeenCalled();
+
+      await user.click(within(dialog).getByRole('button', { name: '글 버리고 나가기' }));
+      await waitFor(() => expect(navigation.router.replace).toHaveBeenCalledWith('/groups/g1', undefined));
+      releaseParent();
+      release();
+    });
   });
 
   it('기록 없는 홈이면 앱이 기본 동작(종료)을 하도록 handled false로 답해야 한다', async () => {

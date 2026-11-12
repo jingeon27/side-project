@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
 import dayjs from 'dayjs';
-import { attemptAsync } from 'es-toolkit';
+import { attemptAsync, chunk } from 'es-toolkit';
 
-import { ExpoPushTransport, PushProviderError, type IPushMessage } from './index';
+import { ExpoPushTransport, PUSH_BATCH_SIZE, PushProviderError, type IPushMessage } from './index';
 
 export interface IPushJob {
   id: string;
@@ -66,14 +66,16 @@ export class PushDispatcher {
       pending.push({ ...item, message });
     }
     const persistenceErrors: unknown[] = [];
-    if (pending.length) {
+    // Expo는 요청 하나에 PUSH_BATCH_SIZE개까지 받는다. 저장소가 더 많이 돌려줘도 나눠 보내고,
+    // 한 묶음의 공급자 실패는 그 묶음만 재시도한다.
+    for (const batch of chunk(pending, PUSH_BATCH_SIZE)) {
       // 공급자 실패만 전송 재시도 정책에 넣는다. DB 실패는 다른 작업의 공급자 결과를 바꾸지 않는다.
       const [error, tickets] = await attemptAsync(() =>
-        this.transport.send(pending.map((item) => item.message)),
+        this.transport.send(batch.map((item) => item.message)),
       );
       // 호출 계약·프로그래밍 오류를 영구 전송 실패로 바꾸지 않는다.
       if (tickets === null && !(error instanceof PushProviderError)) throw error;
-      for (const [index, item] of pending.entries()) {
+      for (const [index, item] of batch.entries()) {
         try {
           if (error instanceof PushProviderError) {
             await this.retry(item, now, error.retryable, error.retryAfterMs);
@@ -96,12 +98,12 @@ export class PushDispatcher {
         }
       }
     }
-    if (receipts.length) {
+    for (const batch of chunk(receipts, PUSH_BATCH_SIZE)) {
       const [error, results] = await attemptAsync(() =>
-        this.transport.receipts(receipts.map((item) => item.ticketId)),
+        this.transport.receipts(batch.map((item) => item.ticketId)),
       );
       if (results === null && !(error instanceof PushProviderError)) throw error;
-      for (const item of receipts) {
+      for (const item of batch) {
         try {
           const result = results?.[item.ticketId];
           if (!result) {

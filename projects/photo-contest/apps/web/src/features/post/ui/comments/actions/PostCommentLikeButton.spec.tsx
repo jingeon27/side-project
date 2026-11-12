@@ -38,7 +38,10 @@ function CommitRecorder() {
   useFragment({ fragment: PostCommentCardFragmentDoc, from: { __typename: 'PostComment', id: 'comment-1' } });
   useLayoutEffect(() => {
     const button = document.querySelector('button[aria-pressed]');
-    commits.push(`${button?.getAttribute('aria-label')} / ${button?.getAttribute('aria-pressed')}`);
+    // 접근 이름은 버튼 안의 숨긴 글자 하나가 정한다(LikeToggle).
+    commits.push(
+      `${button?.querySelector('.sr-only')?.textContent} / ${button?.getAttribute('aria-pressed')}`,
+    );
   });
   return null;
 }
@@ -171,6 +174,7 @@ describe('PostCommentLikeButton', () => {
   it('그룹에 가입하지 않았으면 누를 수 있는 버튼 없이 같은 이름으로 수만 보여줘야 한다', async () => {
     await renderButton(comment({ canInteract: false, likeCount: 2, likedByMe: true }));
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('댓글 좋아요 2개')).toHaveTextContent('2');
+    expect(screen.getByText('2', { exact: true })).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('댓글 좋아요 2개').closest('[aria-hidden="true"]')).toBeNull();
   });
 });

@@ -12,7 +12,7 @@ import {
 } from '../../../test/support/app';
 import { createGroup } from '../../../test/support/fixtures';
 import { ERROR_MESSAGE } from '../../common/errors';
-import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../../config/limits';
+import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES, POST_MEDIA_SIDE_MAX } from '../../config/limits';
 
 const REQUEST =
   'mutation($group:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size){id url expiresAt fields{name value}}}';
@@ -133,7 +133,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       { width: 320, height: null },
       { width: null, height: 180 },
       { width: 0, height: 180 },
-      { width: 320, height: 20_001 },
+      { width: 320, height: POST_MEDIA_SIDE_MAX + 1 },
     ])
       expect((await api.gqlFail(member.cookie, SIZED_REQUEST, { ...variables, ...size })).code).toBe(
         'BAD_USER_INPUT',

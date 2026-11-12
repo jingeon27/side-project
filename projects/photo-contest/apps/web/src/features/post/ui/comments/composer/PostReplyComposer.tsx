@@ -76,7 +76,13 @@ export function PostReplyComposer({
         }
       })}
     >
-      <Avatar name={data?.me?.nickname ?? '나'} src={data?.me?.avatar} size="sm" className="mt-2" />
+      <Avatar
+        name={data?.me?.nickname ?? '나'}
+        src={data?.me?.avatar}
+        size="sm"
+        tone="accent"
+        className="mt-2"
+      />
       <Field.Root invalid={Boolean(errors.body)} disabled={isSubmitting} className="group min-w-0 flex-1">
         <div className="flex items-end gap-2 rounded-card border border-line-strong bg-sunken p-1 focus-within:border-ink group-data-invalid:border-danger">
           <Field.Control
@@ -89,7 +95,7 @@ export function PostReplyComposer({
                 rows={1}
                 maxLength={1000}
                 placeholder="답글을 남겨보세요."
-                className="max-h-32 min-h-touch w-full min-w-0 flex-1 resize-none field-sizing-content bg-transparent px-3 py-2.5 text-input text-ink outline-none placeholder:text-subtle"
+                className="max-h-32 min-h-touch w-full min-w-0 flex-1 resize-none field-sizing-content bg-transparent px-3 py-2.5 text-input text-ink outline-none placeholder:text-muted"
               />
             }
           />
@@ -102,7 +108,7 @@ export function PostReplyComposer({
             className="size-touch p-0"
           />
         </div>
-        <div className="mt-1.5 flex items-center justify-between gap-3 px-1 text-micro text-muted">
+        <div className="mt-1.5 flex items-center justify-between gap-3 px-1 text-caption text-muted">
           <div className="flex items-center">
             <Field.Label>답글</Field.Label>
             <FieldRequirement required />

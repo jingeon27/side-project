@@ -59,3 +59,24 @@ export async function seedPost(
     )
   ).createPost.id;
 }
+
+/** 접수 중인 그룹 대회에 사진 게시물로 참여한다. */
+export async function seedContestEntry(
+  cookie: string,
+  { groupId, contestId, title }: { groupId: string; contestId: string; title: string },
+): Promise<string> {
+  const uploadId = await uploadTestPostMedia(API_URL, {
+    cookie,
+    origin: WEB_ORIGIN,
+    groupId,
+    body: await createTestImage(),
+    contentType: 'image/png',
+  });
+  return (
+    await productRequest<{ createPost: { id: string } }>(
+      cookie,
+      'mutation($groupId:ID!,$contestId:ID!,$uploadId:ID!,$title:String!){createPost(groupId:$groupId,contestId:$contestId,uploadId:$uploadId,title:$title,rightsConfirmed:true){id}}',
+      { groupId, contestId, uploadId, title },
+    )
+  ).createPost.id;
+}

@@ -65,6 +65,11 @@ resource "aws_iam_role_policy" "github_cd" {
           aws_instance.host.arn,
           "arn:${data.aws_partition.current.partition}:ssm:${var.region}::document/AWS-StartSSHSession",
         ]
+        # 문서를 지정하지 않은 start-session은 기본 셸 문서(SSM-SessionManagerRunShell)로 열린다.
+        # 이 조건이 있어야 Resource의 SSH 문서만 허용되고 SSH 인증을 거치지 않는 셸 세션이 거부된다.
+        Condition = {
+          BoolIfExists = { "ssm:SessionDocumentAccessCheck" = "true" }
+        }
       },
       {
         Effect   = "Allow"

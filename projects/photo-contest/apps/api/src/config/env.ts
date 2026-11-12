@@ -25,6 +25,12 @@ export interface IS3Settings {
   forcePathStyle: boolean;
 }
 
+export interface IAwsCredentials {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken?: string;
+}
+
 function optional(name: string) {
   const value = process.env[name];
   return value ? value : undefined;
@@ -84,6 +90,15 @@ export function s3Settings(): IS3Settings {
     endpoint: optional('S3_ENDPOINT'),
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
   };
+}
+
+/** 키 쌍이 모두 있을 때만 쓴다. 없으면 AWS SDK의 기본 자격 증명(역할·프로필)에 맡긴다. */
+export function awsCredentials(): IAwsCredentials | undefined {
+  const accessKeyId = optional('AWS_ACCESS_KEY_ID');
+  const secretAccessKey = optional('AWS_SECRET_ACCESS_KEY');
+  if (!accessKeyId || !secretAccessKey) return undefined;
+  const sessionToken = optional('AWS_SESSION_TOKEN');
+  return { accessKeyId, secretAccessKey, ...(sessionToken ? { sessionToken } : {}) };
 }
 
 export function sentryDsn() {

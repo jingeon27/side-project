@@ -8,6 +8,7 @@ import { overlay } from 'overlay-kit';
 import { Button } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
+import { NavigationOverlayContext } from '@/shared/navigation';
 
 import { BottomSheet } from './BottomSheet';
 import { ErrorRecovery } from './ErrorRecovery';
@@ -55,7 +56,7 @@ export function openOverlay(
   Controller: FC<IOverlayControlProps>,
   options?: Parameters<typeof overlay.open>[1],
 ) {
-  return overlay.open(({ isOpen, close, unmount }) => {
+  return overlay.open(({ overlayId, isOpen, close, unmount }) => {
     const control = {
       open: isOpen,
       onOpenChange: (next: boolean) => {
@@ -66,10 +67,13 @@ export function openOverlay(
         if (!next) unmount();
       },
     } satisfies IOverlayControlProps;
+    // 안에서 등록한 초안 가드를 이 오버레이 것으로 남겨, 앱 back이 이 오버레이를 닫을 때만 확인하게 한다.
     return (
-      <OverlayErrorBoundary {...control}>
-        <Controller {...control} />
-      </OverlayErrorBoundary>
+      <NavigationOverlayContext value={overlayId}>
+        <OverlayErrorBoundary {...control}>
+          <Controller {...control} />
+        </OverlayErrorBoundary>
+      </NavigationOverlayContext>
     );
   }, options);
 }

@@ -1,16 +1,16 @@
 import { match, P } from 'ts-pattern';
 
+import type { Locale } from '@/i18n/routing';
 import type { Article } from '@/shared/article/model/types';
-import type { UiLocale } from '@/shared/config/labels';
 
-export function normalizeSearchText(value: string, locale: UiLocale): string {
+export function normalizeSearchText(value: string, locale: Locale): string {
   return value.normalize('NFKC').trim().toLocaleLowerCase(locale);
 }
 
 export function matchesArticleSearch(
   article: Pick<Article, 'title' | 'tags'>,
   query: string,
-  locale: UiLocale,
+  locale: Locale,
 ): boolean {
   const normalized = normalizeSearchText(query, locale);
   return match(normalized)

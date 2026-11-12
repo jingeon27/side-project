@@ -26,6 +26,35 @@ const pause = vi.fn();
 const photo = (name = 'moment.png') => new File(['photo'], name, { type: 'image/png' });
 const video = () => new File(['video'], 'clip.mp4', { type: 'video/mp4' });
 
+/**
+ * 게시물 파일의 저장소 전송(진행률을 받는 XHR) 대역. status를 주면 보낸 직후 그 상태로 응답하고,
+ * 주지 않으면 끊길 때까지 응답하지 않는다.
+ */
+function stubStorage(status?: number) {
+  const requests: StorageRequest[] = [];
+  class StorageRequest extends EventTarget {
+    readonly upload = new EventTarget();
+    status = 0;
+    withCredentials = true;
+    readonly open = vi.fn();
+    readonly abort = vi.fn(() => this.finish('abort'));
+    readonly send = vi.fn(() => {
+      requests.push(this);
+      if (status === undefined) return;
+      queueMicrotask(() => {
+        this.status = status;
+        this.finish('load');
+      });
+    });
+    finish(type: 'load' | 'abort') {
+      this.dispatchEvent(new Event(type));
+      this.dispatchEvent(new Event('loadend'));
+    }
+  }
+  vi.stubGlobal('XMLHttpRequest', StorageRequest);
+  return requests;
+}
+
 beforeEach(() => {
   createUrl.mockReset().mockImplementation(() => `blob:preview-${createUrl.mock.calls.length}`);
   revokeUrl.mockReset();
@@ -208,10 +237,7 @@ async function fillUploadForm({
 
 describe('게시물 업로드 티켓', () => {
   it('서명된 업로드 정책을 Apollo 캐시에 남기지 않아야 한다', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 403 })),
-    );
+    stubStorage(403);
     const { user, client } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     expect(
@@ -229,10 +255,7 @@ describe('게시물 업로드 티켓', () => {
     );
     // jsdom에는 canvas가 없어 다시 그리지 못하고, 디코드한 크기를 지닌 원본으로 보낸다.
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 403 })),
-    );
+    stubStorage(403);
     const { user, uploadRequests } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     await waitFor(() => expect(uploadRequests).toHaveLength(1));
@@ -240,10 +263,7 @@ describe('게시물 업로드 티켓', () => {
   });
 
   it('잴 수 없었던 사진은 크기 없이 올려야 한다', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 403 })),
-    );
+    stubStorage(403);
     const { user, uploadRequests } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     await waitFor(() => expect(uploadRequests).toHaveLength(1));
@@ -255,16 +275,10 @@ describe('게시물 업로드 티켓', () => {
 describe('업로드 중 글쓰기 페이지 떠나기', () => {
   it('저장소로 올리는 중에 닫으면 전송을 끊고 게시하지 않은 사실을 알려야 한다', async () => {
     const info = vi.spyOn(toast, 'info');
-    const send = vi.fn(
-      (_url: string, init?: RequestInit) =>
-        new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
-        }),
-    );
-    vi.stubGlobal('fetch', send);
+    const requests = stubStorage();
     const { user, operationNames, unmount } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
-    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(requests).toHaveLength(1));
 
     unmount();
 
@@ -272,17 +286,14 @@ describe('업로드 중 글쓰기 페이지 떠나기', () => {
       expect(screen.queryByRole('form', { name: '그룹에 글쓰기' })).not.toBeInTheDocument(),
     );
     await waitFor(() => expect(info).toHaveBeenCalledWith('게시물을 올리지 않았어요', expect.anything()));
-    expect(send.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    expect(requests[0]?.abort).toHaveBeenCalledOnce();
     expect(operationNames).not.toContain('CompletePostUpload');
     expect(operationNames).not.toContain('CreatePost');
   });
 
   it('업로드를 마친 뒤 게시 전에 닫았으면 게시물을 만들지 않아야 한다', async () => {
     const info = vi.spyOn(toast, 'info');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 204 })),
-    );
+    stubStorage(204);
     const completeUpload = new Subject<ApolloLink.Result>();
     const { user, operationNames, unmount } = await fillUploadForm({ completeUpload });
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));

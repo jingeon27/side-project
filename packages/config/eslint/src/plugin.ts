@@ -6,6 +6,7 @@ import { noComponentFetch } from './rules/web/no-component-fetch/no-component-fe
 import { noFormStateCopy } from './rules/web/no-form-state-copy/no-form-state-copy';
 import { noOverlayState } from './rules/web/no-overlay-state/no-overlay-state';
 import { noRequestErrorState } from './rules/web/no-request-error-state/no-request-error-state';
+import { noSubtleText } from './rules/web/no-subtle-text/no-subtle-text';
 
 const commonRules = { 'no-else': noElse, 'no-wildcard-exports': noWildcardExports };
 const webRules = {
@@ -13,6 +14,7 @@ const webRules = {
   'no-form-state-copy': noFormStateCopy,
   'no-overlay-state': noOverlayState,
   'no-request-error-state': noRequestErrorState,
+  'no-subtle-text': noSubtleText,
 };
 
 // ESLint flat config는 같은 이름의 플러그인을 다른 객체로 다시 등록하면 `Cannot redefine plugin "side"` 오류를 낸다.

@@ -25,16 +25,14 @@ export function GroupCard({ group }: IGroupCardProps) {
         name={group.name}
         src={group.avatarUrl}
         size="lg"
-        className="size-12 rounded-[36%] bg-brand-gradient text-title text-on-gradient"
+        shape="squircle"
+        tone="gradient"
+        className="size-12"
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-subtitle text-ink">{group.name}</span>
-          {isGroupOwner(group.role) ? (
-            <Badge tone="brand" className="shrink-0">
-              관리자
-            </Badge>
-          ) : null}
+          {isGroupOwner(group.role) ? <Badge tone="brand">관리자</Badge> : null}
         </span>
         <span className="flex items-center gap-1 text-caption text-muted">
           <Users aria-hidden className="size-3.5" />

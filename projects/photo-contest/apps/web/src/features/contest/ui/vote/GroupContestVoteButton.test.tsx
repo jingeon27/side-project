@@ -77,7 +77,8 @@ function renderVote(apiKey?: string) {
   );
   return {
     user: userEvent.setup(),
-    button: screen.getByRole('button', { name: `${COMMENT_POST.title} 대회 투표` }),
+    // 이름은 보이는 상태 글자 뒤에 참여작 제목을 붙인다(GroupContestVoteButton.accessibility.test.tsx).
+    button: screen.getByRole('button', { name: `이 참여작에 투표하기 (${COMMENT_POST.title})` }),
     requests,
   };
 }

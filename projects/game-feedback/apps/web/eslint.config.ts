@@ -51,4 +51,30 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // .ts도 SDK 호출은 도메인 api/와 서버 진입점(index.server)에만 둔다. 응답 타입만 쓰는 import type은 허용한다.
+    files: ['src/{_app,_pages,widgets,features,shared}/**/*.ts'],
+    ignores: [
+      'src/**/api/**',
+      'src/**/index.server.ts',
+      'src/**/*.{spec,test}.ts',
+      // proxy가 가져오는 접근 판정 모듈이다. features의 index.server는 'use cache' 조회를 함께 공개하고
+      // proxy는 'use cache'를 실행하지 못하므로, 이 모듈만 SDK를 직접 부른다.
+      'src/_app/seo/document-access.server.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@game-feedback/sdk',
+              allowTypeImports: true,
+              message: 'REST 호출은 도메인 api/*.api.ts에서 수행하세요.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);

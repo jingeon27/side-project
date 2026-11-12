@@ -18,6 +18,8 @@ export const PAGE_SIZE_MAX = 48;
 export const PAGE_OFFSET_MAX = 10_000;
 // Group.members 한 페이지. 관리자를 먼저 주므로 첫 페이지에 그룹장·부관리자가 들어간다.
 export const MEMBER_PAGE_SIZE_DEFAULT = PAGE_SIZE_MAX;
+// myNotifications 한 페이지. 스키마 기본값(notification.graphql)과 같다.
+export const NOTIFICATION_PAGE_SIZE_DEFAULT = 20;
 export const GROUP_CONTEST_HISTORY = 50;
 export const LEADERBOARD_LIMIT = 100;
 
@@ -63,6 +65,9 @@ export const MEDIA_RATE_LIMIT_WINDOW_MS = MINUTE_MS;
 export const MEDIA_RATE_LIMIT_PER_WINDOW = 1200;
 
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+// 브라우저가 잰 게시물 사진·동영상의 긴 변 상한. 8K 동영상과 줄이지 못한 원본 사진을 받는다.
+// 웹 글쓰기(upload-media-size.helper)가 같은 상한으로 보낼 크기를 고르므로 함께 바꾼다.
+export const POST_MEDIA_SIDE_MAX = 20_000;
 export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
 export const POST_LINK_LIMIT = 2048;

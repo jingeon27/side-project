@@ -14,11 +14,18 @@ const iconButtonShape = cva(
   ],
   {
     variants: {
+      /**
+       * hover 바탕은 Button과 같은 수식어로 써서 비활성(data-disabled)이면 바뀌지 않게 하고, tailwind-merge가 기반인
+       * ghost의 hover·active 바탕을 지우게 한다. accent도 바탕을 다시 정해야 ghost의 회색 바탕이 남지 않는다.
+       */
       variant: {
-        ghost: 'text-ink hover:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
-        soft: 'bg-sunken text-ink hover:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
-        primary: 'bg-brand text-on-brand hover:bg-brand-strong active:not-data-disabled:bg-brand-strong',
-        accent: 'bg-accent text-on-accent hover:brightness-95 active:not-data-disabled:brightness-90',
+        ghost:
+          'text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
+        soft: 'bg-sunken text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
+        primary:
+          'bg-brand text-on-brand [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-brand-strong active:not-data-disabled:bg-brand-strong',
+        accent:
+          'bg-accent text-on-accent [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-accent [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:brightness-95 active:not-data-disabled:bg-accent active:not-data-disabled:brightness-90',
       },
     },
     defaultVariants: { variant: 'ghost' },

@@ -21,7 +21,7 @@ export function MemberList({ members, viewerId, groupId, viewerRole }: IMemberLi
     <ul className="flex flex-col divide-y divide-line">
       {sorted.map((member) => (
         <li key={member.user.id} className="flex min-h-14 flex-wrap items-center gap-3 py-3">
-          <Avatar name={member.user.nickname} src={member.user.avatar} size="sm" />
+          <Avatar name={member.user.nickname} src={member.user.avatar} size="sm" tone="accent" />
           <span className="line-clamp-1 min-w-0 flex-1 text-body text-ink">
             {member.user.nickname}
             {member.user.id === viewerId ? <span className="text-muted"> (나)</span> : null}

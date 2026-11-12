@@ -57,6 +57,15 @@ export const profileMessages: Record<string, readonly [string, string]> = {
     'Choose a JPEG, PNG or WebP photo under 5 MB.',
     '5MB以下のJPEG・PNG・WebP写真を選択してください。',
   ],
+  '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.': [
+    'Could not read the photo. Choose another photo.',
+    '写真を読み込めません。別の写真を選択してください。',
+  ],
+  '4000만 화소 이하의 사진을 선택해주세요.': [
+    'Choose a photo of 40 megapixels or less.',
+    '4000万画素以下の写真を選択してください。',
+  ],
+  '사진을 준비하지 못했습니다.': ['Could not prepare the photo.', '写真を準備できませんでした。'],
   '삭제 취소': ['Undo removal', '削除を取り消す'],
   '저장하면 프로필 사진이 삭제돼요.': [
     'Saving will remove your profile photo.',

@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Autocomplete } from '@base-ui/react/autocomplete';
 import { uniqBy } from 'es-toolkit';
 
+import type { Locale } from '@/i18n/routing';
 import type { Article } from '@/shared/article/model/types';
-import { labels, type UiLocale } from '@/shared/config/labels';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 import { SearchIcon } from '@/shared/ui/icon';
 
@@ -20,7 +21,7 @@ export function ArticleSearch({
   onTagSelect,
   articles,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   value: string;
   onChange: (value: string) => void;
   onTagSelect: (tag: string) => void;

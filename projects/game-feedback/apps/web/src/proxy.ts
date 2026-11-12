@@ -5,16 +5,19 @@ import qs from 'qs';
 
 import { resolveAppRoute } from '@game-feedback/bridge';
 
-import { documentUnavailable } from '@/_app/seo/index.server';
+// seo 배럴은 'use cache' 공개 조회를 쓰는 상세 공유 이미지도 공개한다. proxy는 'use cache'를 실행하지 못하므로
+// 접근 판정 모듈만 가져온다.
+import { documentUnavailable } from '@/_app/seo/document-access.server';
 import { visitorAddress } from '@/shared/api/server';
 import { PUBLIC_LOOKUP_PAGES_PER_MINUTE, VisitorRateLimiter } from '@/shared/api/visitor-rate-limit';
 import { isLocale, LANGUAGE_COOKIE, LOCALE_HEADER, preferredLocale } from '@/shared/i18n/index.server';
 import { parseSearchValues } from '@/shared/lib/query-string';
 
-// 상세 문서·RSC 요청은 URL의 id로 공유 캐시를 채운다. 캐시 안의 API 호출은 방문자를 알 수 없어 내부 예산을
-// 쓰므로, 캐시에 닿기 전에 방문자 주소(Caddy가 덮어쓴 X-Forwarded-For 첫 값)마다 제한한다. 주소가 없는
-// 로컬 직접 요청은 제한하지 않는다.
-const LOOKUP_PAGE = /^\/(?:ko|en|ja)\/(?:posts|users)\/[^/]+$/;
+// 상세 문서·RSC 요청은 URL의 id로 공유 캐시를 채우고, 상세 공유 이미지(`/og/posts|users/:id`)는 같은 id로
+// 공개 조회를 한다. 두 API 호출 모두 방문자를 싣지 않아 내부 예산을 쓰므로, 캐시와 API에 닿기 전에
+// 방문자 주소(Caddy가 덮어쓴 X-Forwarded-For 첫 값)마다 한 예산으로 제한한다. 주소가 없는 로컬 직접
+// 요청은 제한하지 않는다.
+const LOOKUP_PAGE = /^\/(?:ko|en|ja|og)\/(?:posts|users)\/[^/]+$/;
 const lookupPages = new VisitorRateLimiter(PUBLIC_LOOKUP_PAGES_PER_MINUTE);
 
 function publicRequestUrl(request: NextRequest) {
@@ -86,4 +89,7 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-game-feedback-navigation', request.headers.get('rsc') === '1' ? '1' : '0');
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
-export const config = { matcher: ['/api/admin/:path*', '/', '/ko/:path*', '/en/:path*', '/ja/:path*'] };
+// 정적 공유 이미지 `/og`는 공개 응답 그대로 두고, 그 아래의 상세 공유 이미지만 받는다.
+export const config = {
+  matcher: ['/api/admin/:path*', '/', '/ko/:path*', '/en/:path*', '/ja/:path*', '/og/:path+'],
+};

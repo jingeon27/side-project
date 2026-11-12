@@ -1,5 +1,9 @@
-export type Locale = 'ko' | 'en';
-export type Category = 'engineering' | 'til' | 'perspectives' | 'misc';
+import type { Locale } from '@/i18n/routing';
+
+import type { categories } from './categories';
+
+export type { Locale };
+export type Category = (typeof categories)[number];
 export type TocEntry = { id: string; title: string; level: 2 | 3 };
 export type Article = {
   id: string;

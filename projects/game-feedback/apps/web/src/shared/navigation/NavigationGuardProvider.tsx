@@ -5,6 +5,8 @@ import { createContext, use, useEffect, useState, useSyncExternalStore, type Rea
 import { bindNavigationGuard, NavigationGuardRegistry } from './navigation-guard';
 
 const NavigationGuardContext = createContext<NavigationGuardRegistry | null>(null);
+/** openOverlay가 오버레이마다 채운다. 안에서 등록한 초안이 어느 오버레이 것인지 가드에 남긴다. */
+export const NavigationOverlayContext = createContext<string | null>(null);
 
 export function NavigationGuardProvider({ children }: { children: ReactNode }) {
   const [registry] = useState(() => new NavigationGuardRegistry());

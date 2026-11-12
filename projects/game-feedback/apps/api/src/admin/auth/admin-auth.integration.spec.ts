@@ -6,6 +6,8 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { AdminChatMessageListSchema } from '@game-feedback/contracts';
+
 import { createApp } from '../../app';
 import { hash, token } from '../../common/crypto';
 import { assertDatabaseUrl } from '../../database/database-url';
@@ -179,10 +181,12 @@ describe('dedicated administrator credentials and private sessions', () => {
       .send({ body: '인증 자료', attachmentIds: [uploaded.body.id], clientMessageId: randomUUID() })
       .expect(200);
     const history = await request().get(path).set('Cookie', cookie).expect(200);
-    const file = history.body.items
-      .flatMap((message: { attachments: { id: string; url: string }[] }) => message.attachments)
-      .find((attachment: { id: string }) => attachment.id === uploaded.body.id);
-    expect(file.url).toContain('/api/admin/support/');
+    // 관리자 SDK가 검증하는 계약으로 읽어야 첨부가 든 문의가 관리자 화면에서 열린다.
+    const file = AdminChatMessageListSchema.parse(history.body)
+      .items.flatMap((message) => message.attachments ?? [])
+      .find((attachment) => attachment.id === uploaded.body.id);
+    if (!file) throw new Error('Admin support attachment missing');
+    expect(file.url).toBe(`/api/admin/support/${created.body.id}/attachments/${uploaded.body.id}`);
     await request().get(file.url).set('Cookie', cookie).expect(307);
     await user.get(file.url).expect(403);
 

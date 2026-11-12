@@ -13,6 +13,7 @@ import {
   closeTopOverlay,
   getParentRoute,
   hasOpenOverlay,
+  leaveAfterConfirm,
   resolveBackAction,
   routeHistoryStore,
   useAppRouter,
@@ -24,6 +25,7 @@ const currentPath = () => `${window.location.pathname}${window.location.search}`
  * 앱 WebView와 웹의 약속(packages/bridge)을 레이아웃에서 한 번 연결한다. 앱 밖에서는 브리지가 아무것도 하지 않는다.
  * - 알림: 마운트 때 app.ready, 경로가 바뀌면 navigation.changed
  * - 앱 요청 navigation.back: 열린 오버레이 → 앱 안 기록 → 상위 화면 순으로 처리하고, 홈이면 앱에 맡긴다(handled false).
+ *   화면이 떠나기 전 확인을 등록했으면 묻는 동안에도 처리했다고 답하고, 떠나도 될 때만 이동한다.
  * - 앱 이벤트: navigation.open(딥링크) 이동, app.state active면 보이는 쿼리를 다시 불러온다.
  */
 export function useBridgeLifecycle(bridge: IWebBridge | null) {
@@ -55,11 +57,11 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
     return match(action)
       .with({ type: 'close-overlay' }, () => ({ handled: closeTopOverlay() }))
       .with({ type: 'history-back' }, () => {
-        router.back();
+        leaveAfterConfirm(path, () => router.back());
         return { handled: true };
       })
       .with({ type: 'replace' }, ({ href }) => {
-        router.replace(href);
+        leaveAfterConfirm(path, () => router.replace(href));
         return { handled: true };
       })
       .with({ type: 'exit' }, () => ({ handled: false }))

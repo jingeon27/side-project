@@ -96,7 +96,7 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 | Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`          | `/api/auth/social/discord/callback` | `identify`          |
 | Google  | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`            | `/api/auth/google/callback`         | `openid`, PKCE S256 |
 
-제공자별 콜백은 `WEB_ORIGIN`과 위 경로에서 자동으로 정한다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 네이티브 WebView도 선택한 제공자를 시스템 브라우저로 전달하고 기존 일회용 앱 티켓/PKCE 교환으로 복귀한다.
+제공자별 콜백은 `WEB_ORIGIN`과 위 경로에서 자동으로 정한다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 현재 모바일 앱은 네이티브 소셜 로그인을 연결하지 않으며 앱 안 로그인 화면은 웹 브라우저 이용을 안내한다. 서버의 일회용 앱 티켓/PKCE 교환은 호환 계약으로만 남아 있다([아키텍처](architecture.md#mobile-webview-구성)).
 
 구현 기준은 [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [Discord OAuth2](https://docs.discord.com/developers/topics/oauth2)다. 로컬 검증은 가짜 제공자를 사용하며 실제 콘솔 키와 외부 계정 로그인은 별도로 확인해야 한다.
 
@@ -140,7 +140,7 @@ yarn workspace @side/game-feedback mobile:android
 yarn workspace @side/game-feedback mobile:ios
 ```
 
-[모바일 실행·테스트 가이드](../apps/mobile/README.md)에 origin 설정, 시스템 브라우저 Google 로그인, 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
+[모바일 실행·테스트 가이드](../apps/mobile/README.md)에 origin 설정, 앱 로그인 안내(웹 브라우저 이용), 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
 
 ## 데이터 격리
 
@@ -152,7 +152,7 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 ## Next.js와 프리패칭 검증
 
-Game Feedback Web은 Next.js 16.4.3과 React 19.3.1을 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
+Game Feedback Web의 Next.js·React 버전은 루트 `.yarnrc.yml` catalog를 따른다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
 공개 게시글 상세는 `cacheTag`와 `cacheLife`를 사용한다. NestJS가 변경을 커밋하면 Next의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`를 호출하고, 실패는 DB 큐에서 재시도한다. API가 `.data/cache-revalidation.key`를 권한 600으로 원자적으로 생성하고 Next가 같은 파일을 읽는다. 운영 Compose는 API 쓰기·Web 읽기 전용 볼륨을 공유한다. 콜백 주소는 WEB_ORIGIN(운영은 내부 gf-web 주소)에서 정하며 별도 환경변수를 요구하지 않는다.
 

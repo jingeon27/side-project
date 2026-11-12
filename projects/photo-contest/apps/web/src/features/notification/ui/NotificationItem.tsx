@@ -48,7 +48,7 @@ export function NotificationItem({
       {data.postTitle || data.contestTitle ? (
         <span className="text-body text-ink">{data.postTitle ?? data.contestTitle}</span>
       ) : null}
-      <time className="text-micro text-muted" dateTime={data.createdAt}>
+      <time className="text-caption text-muted" dateTime={data.createdAt}>
         {formatDateTime(data.createdAt)}
       </time>
     </Button>

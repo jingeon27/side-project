@@ -17,10 +17,13 @@ function frameRatio(width: number | null | undefined, height: number | null | un
 export function PostMedia({
   postId,
   detail = false,
+  isPriority = false,
   className,
 }: {
   postId: string;
   detail?: boolean;
+  /** 첫 화면의 첫 장만 먼저 불러온다. */
+  isPriority?: boolean;
   /** 놓이는 자리에 맞춘 모서리 등. 카드는 너비를 채우려고 모서리를 없앤다. */
   className?: string;
 }) {
@@ -65,6 +68,8 @@ export function PostMedia({
               ? '(min-width: 1024px) 520px, 1px'
               : '(min-width: 1024px) 640px, (min-width: 768px) 540px, calc(100vw - 32px)'
           }
+          loading={isPriority ? 'eager' : 'lazy'}
+          fetchPriority={isPriority ? 'high' : 'auto'}
           className="object-contain"
         />
       </div>

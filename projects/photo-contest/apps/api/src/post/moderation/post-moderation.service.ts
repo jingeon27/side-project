@@ -8,6 +8,7 @@ import type { IViewer } from '../../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../../common/errors';
 import { offsetPage } from '../../common/offset-page';
 import { pageRange } from '../../common/validation';
+import { PAGE_SIZE_DEFAULT } from '../../config/limits';
 import { Database } from '../../database/database.service';
 import { isAdmin } from '../../group/membership/group-role';
 import { MembershipService } from '../../group/membership/membership.service';
@@ -21,8 +22,8 @@ export class PostModerationService {
     private readonly membership: MembershipService,
   ) {}
 
-  async hidden(viewer: IViewer, groupId: string, offset = 0, limit = 24) {
-    const range = pageRange(offset, limit);
+  async hidden(viewer: IViewer, groupId: string, offset?: number | null, limit?: number | null) {
+    const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
     await this.membership.requireAdmin(viewer.id, groupId);
     const rows = await this.db.post.findMany({
       where: { groupId, OR: [{ hidden: true }, { legacySubmission: { hidden: true } }] },

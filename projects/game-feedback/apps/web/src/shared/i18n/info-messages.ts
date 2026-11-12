@@ -14,14 +14,14 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'スマートフォンで投稿を探し、投稿して、チャットする方法をご案内します。見出しや矢印をタップすると、その画面に移動できます。',
     ],
   '전체와 다섯 분류': ['All posts and five categories', 'すべての投稿と5つの分類'],
-  '화면 아래 홈을 누르면 모든 게임과 분류의 최신 글을 볼 수 있어요. 게임 이름 아래 분류 버튼을 좌우로 밀어 원하는 게시판을 선택하세요. 화면 위 검색 아이콘으로 글을 찾을 수 있어요. 공개 게시글·댓글·프로필은 로그인 없이 볼 수 있어요.':
+  '화면 아래 홈을 누르면 모든 게임과 분류의 최신 글을 볼 수 있어요. 게임 이름 아래 분류 버튼을 좌우로 밀어 원하는 게시판을 선택하세요. 화면 위 검색 아이콘으로 글을 찾을 수 있어요. 공개 게시글, 댓글, 프로필은 로그인 없이 볼 수 있어요.':
     [
       'Tap Home at the bottom to see the latest posts across games and categories. Swipe the category buttons below the game name to choose a board, or tap the search icon at the top to find posts. Public posts, comments and profiles are available without signing in.',
       '画面下のホームをタップすると、すべてのゲーム・分類の新着投稿が見られます。ゲーム名の下の分類ボタンを左右にスワイプして掲示板を選び、画面上の検索アイコンから投稿を探せます。公開投稿・コメント・プロフィールはログインせずに閲覧できます。',
     ],
   전체: ['All', 'すべて'],
-  '글쓰기와 사진·동영상': ['Writing posts and adding photos or videos', '投稿と写真・動画'],
-  '로그인한 뒤 글쓰기 버튼을 누르고 분류를 선택하세요. 제목과 본문을 입력하고, 사진·동영상 버튼으로 휴대폰의 파일을 첨부하거나 링크를 넣을 수 있어요. 분류를 바꿔도 입력한 제목과 본문은 유지돼요.':
+  '글쓰기, 사진과 동영상': ['Writing posts and adding photos or videos', '投稿と写真・動画'],
+  '로그인한 뒤 글쓰기 버튼을 누르고 분류를 선택하세요. 제목과 본문을 입력하고, 사진과 동영상 버튼으로 휴대폰의 파일을 첨부하거나 링크를 넣을 수 있어요. 분류를 바꿔도 입력한 제목과 본문은 유지돼요.':
     [
       'After signing in, tap Write a post and choose a category. Add a title and content, then use the photo and video buttons to attach files from your phone or add a link. Changing the category keeps your title and content.',
       'ログイン後に投稿ボタンをタップし、分類を選んでください。タイトルと本文を入力し、写真・動画ボタンからスマートフォンのファイルやリンクを追加できます。分類を変えてもタイトルと本文は保持されます。',
@@ -37,7 +37,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'For friend slot listings, enter the price and describe the duration and what is included. Leave the price empty to negotiate it in chat.',
       'フレンド枠販売では金額を入力し、利用期間と提供内容を本文に記載してください。金額を空欄にすると価格相談と表示されます。',
     ],
-  '전투 모집은 1:1 또는 팀전을 선택합니다. 가능한 시간, 규칙, 모집 인원과 참가 조건을 적어주세요. 목록의 전체·1:1·팀전 필터에서 원하는 모집만 볼 수 있습니다.':
+  '전투 모집은 1:1 또는 팀전을 선택합니다. 가능한 시간, 규칙, 모집 인원과 참가 조건을 적어주세요. 목록의 전체, 1:1, 팀전 필터에서 원하는 모집만 볼 수 있습니다.':
     [
       'For battle recruitment, choose a duel or team battle. Include your availability, rules, player count and entry requirements. Use the All, Duel and Team battle filters to find a match.',
       '対戦募集では1対1またはチーム戦を選びます。日時、ルール、募集人数、参加条件を記載してください。「すべて」「1対1」「チーム戦」で募集を絞り込めます。',
@@ -59,7 +59,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'コーチング相談から1対1チャットを開始し、レッスン方法、日程、費用を相談してください。サービス内では決済や精算を行いません。',
     ],
   '채팅과 대화내역': ['Chat and conversation history', 'チャットと会話履歴'],
-  '게시글이나 상대 프로필의 채팅하기를 누르면 1:1 대화가 열려요. 화면 아래 채팅 메뉴에서 대화를 다시 찾을 수 있어요. 입력창 옆 첨부 버튼으로 사진·동영상을 고르고, 오른쪽 보내기 버튼을 눌러 전송하세요. 휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고 다음 줄로 내려가요.':
+  '게시글이나 상대 프로필의 채팅하기를 누르면 1:1 대화가 열려요. 화면 아래 채팅 메뉴에서 대화를 다시 찾을 수 있어요. 입력창 옆 첨부 버튼으로 사진이나 동영상을 고르고, 오른쪽 보내기 버튼을 눌러 전송하세요. 휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고 다음 줄로 내려가요.':
     [
       'Tap Chat on a post or another player’s profile to start a private conversation. Find it again in Chat at the bottom. Use the attachment button beside the message field to select photos or videos, then tap Send on the right. The return key on your phone adds a new line without sending.',
       '投稿や相手のプロフィールのチャットボタンで1対1の会話を始められます。画面下のチャットから会話を再開できます。入力欄の横の添付ボタンで写真・動画を選び、右の送信ボタンをタップしてください。スマートフォンの改行キーでは送信されず、次の行に移ります。',
@@ -85,7 +85,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'プロフィールでゲームアカウントを登録',
   ],
   '팔로우와 새 소식': ['Following and notifications', 'フォローとお知らせ'],
-  '상대 프로필에서 팔로우하고 새 글 알림을 설정할 수 있어요. 화면 위 알림 아이콘을 누르면 새 답변·댓글과 구독한 사용자의 새 글을 확인할 수 있어요. 읽지 않은 메시지 수는 화면 아래 채팅 메뉴에 표시돼요.':
+  '상대 프로필에서 팔로우하고 새 글 알림을 설정할 수 있어요. 화면 위 알림 아이콘을 누르면 새 답변과 댓글, 구독한 사용자의 새 글을 확인할 수 있어요. 읽지 않은 메시지 수는 화면 아래 채팅 메뉴에 표시돼요.':
     [
       'Follow players and enable new-post alerts from their profiles. Tap the notification icon at the top for replies, comments and new posts from subscribed players. Your unread message count appears on Chat at the bottom.',
       '相手のプロフィールからフォローし、新着投稿の通知を設定できます。画面上の通知アイコンで回答・コメント・購読中のユーザーの新着投稿を確認できます。未読メッセージ数は画面下のチャットに表示されます。',
@@ -95,12 +95,13 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'フィードバックの投稿者は役立つ回答に「役に立った」を付けられます。',
   ],
   '문의와 신고': ['Support and reports', 'お問い合わせと通報'],
-  '화면 아래 프로필에서 관리자 문의를 누르면 운영 문의와 프로필 인증을 상담할 수 있어요. 게시글·댓글·상대 프로필·채팅에서 신고를 선택하면 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있어요.':
+  '화면 아래 프로필에서 관리자 문의를 누르면 운영 문의와 프로필 인증을 상담할 수 있어요. 게시글, 댓글, 상대 프로필, 채팅에서 신고를 선택하면 욕설과 괴롭힘, 사칭, 사기나 거래 피해 등을 접수할 수 있어요.':
     [
       'Tap Profile at the bottom and open administrator support for service questions or profile verification. Choose Report on posts, comments, other players’ profiles or chats to report abuse, harassment, impersonation, fraud or transaction disputes.',
       '画面下のプロフィールから管理者へのお問い合わせを開くと、運営への相談やプロフィール認証を依頼できます。投稿・コメント・相手のプロフィール・チャットの通報から、暴言・嫌がらせ、なりすまし、詐欺・取引被害などを報告できます。',
     ],
   '문의 안내 보기': ['View support information', 'お問い合わせ案内を見る'],
+  문의하기: ['Contact us', 'お問い合わせ'],
   '홈으로 이동': ['Go to home', 'ホームへ移動'],
   '이 약관은 Game Mate의 이용 조건과 이용자 및 운영자의 권리와 책임을 정합니다.': [
     'These terms set out the conditions for using Game Mate and the rights and responsibilities of users and the operator.',
@@ -395,7 +396,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
   '이용 가이드': ['User guide', '利用ガイド'],
   'Game Mate에 이야기해주세요': ['Contact Game Mate', 'Game Mateへのお問い合わせ'],
   'Game Mate 이용 가이드': ['Game Mate user guide', 'Game Mate利用ガイド'],
-  '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.':
+  '전체 게시글 검색과 다섯 분류, 전투 모집, 코치와 수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.':
     [
       'Learn about search, the five categories, battle recruitment, coaching, chat, game accounts and profile verification.',
       '検索、5つの分類、対戦・コーチ募集、チャット、ゲームアカウント登録、プロフィール認証をご案内します。',

@@ -1,6 +1,6 @@
 # Game Mate Mobile
 
-기존 웹을 여는 Expo 58 + React Native 0.88 WebView 앱이다. 게시글·댓글·1:1 채팅·소셜 로그인·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
+기존 웹을 여는 Expo 58 + React Native 0.88 WebView 앱이다. 게시글·댓글·1:1 채팅·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다. 로그인 화면은 웹 브라우저 이용을 안내한다.
 
 ## 개발 실행
 
@@ -20,7 +20,7 @@ yarn workspace @side/game-feedback mobile:start
 
 Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 웹 브라우저에서는 카카오·Discord·Google 로그인을 제공하고 테스트 계정은 격리 API로 발급한다. 실기기는 접근 가능한 Web origin을 `WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
 
-앱은 프로젝트 루트 `.env`를 읽는다. ENVIRONMENT=development/test에서는 로컬 HTTP, production에서는 HTTPS WEB_ORIGIN만 허용한다. 공개 관측 키도 루트의 NEXT_PUBLIC_* 두 값을 사용한다. 식별자는 dev.side.gamefeedback, 최소 iOS는 17.4다. 별도 App Link·서명 설정과 시스템 브라우저 로그인은 제거했다. 앱 로그인 화면은 웹 브라우저 이용을 안내한다. 운영 스토어 배포는 포함하지 않는다.
+앱은 프로젝트 루트 `.env`를 읽는다. ENVIRONMENT=development/test에서는 로컬 HTTP, production에서는 HTTPS WEB_ORIGIN만 허용한다. 공개 관측 키도 루트의 NEXT_PUBLIC_* 두 값을 사용한다. 앱이 웹에 푸시 기능을 알리려면 선택 키 `MOBILE_EAS_PROJECT_ID`(EAS 프로젝트 UUID)가 있어야 한다. 비우면 앱 푸시를 끄고 형식이 틀리면 빌드를 멈춘다. EAS 원격 빌드에는 Git에서 제외한 루트 .env가 올라가지 않으므로 운영 WEB_ORIGIN, 공개 관측 키, MOBILE_EAS_PROJECT_ID를 EAS 환경변수로 넣는다. 식별자는 dev.side.gamefeedback, 최소 iOS는 17.4다. 별도 App Link·서명 설정과 시스템 브라우저 로그인은 제거했다. 운영 스토어 배포는 포함하지 않는다.
 
 ## 네이티브 연결
 

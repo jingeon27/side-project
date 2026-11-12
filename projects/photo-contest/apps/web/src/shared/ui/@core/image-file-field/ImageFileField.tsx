@@ -13,9 +13,19 @@ import {
 } from 'react-hook-form';
 import type { z } from 'zod';
 
+import type { IAvatarProps } from '@side/design-system';
+
+import { cn } from '../../../lib/cn.helper';
 import { useObjectUrl } from '../../../model/object-url.hook';
 import { Button } from '../button';
 import { FieldRequirement } from '../text-field';
+
+/** 고른 사진을 보여 줄 아바타와 같은 모서리로 미리 본다. */
+const PREVIEW_SHAPE = {
+  circle: 'rounded-full',
+  square: 'rounded-card',
+  squircle: 'rounded-[36%]',
+} satisfies Record<NonNullable<IAvatarProps['shape']>, string>;
 
 interface IImageFileFieldProps<TInput extends FieldValues, TOutput> {
   control: Control<TInput, unknown, TOutput>;
@@ -31,9 +41,11 @@ interface IImageFileFieldProps<TInput extends FieldValues, TOutput> {
   currentUrl?: string | null;
   /** 통과한 파일만 미리 보여 준다(보통 폼 스키마의 사진 필드). */
   fileSchema: z.ZodType;
+  /** 미리보기 모양. 사람(프로필) 사진은 원, 그룹 사진은 그룹 아바타와 같은 둥근 사각형(square)이다. */
+  shape?: keyof typeof PREVIEW_SHAPE;
 }
 
-/** 원형 사진 하나를 고르고 미리 보고 바꾸거나 지우는 선택 입력. 그룹·프로필 사진이 함께 쓴다. */
+/** 사진 하나를 고르고 미리 보고 바꾸거나 지우는 선택 입력. 그룹·프로필 사진이 함께 쓴다. */
 export function ImageFileField<TInput extends FieldValues, TOutput>({
   control,
   trigger,
@@ -42,6 +54,7 @@ export function ImageFileField<TInput extends FieldValues, TOutput>({
   label,
   currentUrl,
   fileSchema,
+  shape = 'circle',
 }: IImageFileFieldProps<TInput, TOutput>) {
   const inputId = useId();
   const errorId = useId();
@@ -69,7 +82,10 @@ export function ImageFileField<TInput extends FieldValues, TOutput>({
       <div className="flex items-center gap-5">
         <label
           htmlFor={inputId}
-          className="relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-line bg-sunken text-muted has-focus-visible:outline-3 has-focus-visible:outline-accent"
+          className={cn(
+            'relative flex size-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden border border-line bg-sunken text-muted has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring',
+            PREVIEW_SHAPE[shape],
+          )}
         >
           <input
             id={inputId}
@@ -107,7 +123,7 @@ export function ImageFileField<TInput extends FieldValues, TOutput>({
         </label>
         <div className="min-w-0">
           <p className="text-caption text-muted">사진을 눌러 선택하거나 바꿔 주세요.</p>
-          <p className="mt-1 text-micro text-muted">
+          <p className="mt-1 text-caption text-muted">
             JPEG, PNG, WebP 형식의 사진을 최대 10MB까지 올릴 수 있어요.
           </p>
           {src ? (

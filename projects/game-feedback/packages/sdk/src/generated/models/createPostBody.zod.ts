@@ -36,6 +36,7 @@ export const createPostBodyFriendSaleOnePriceOneExclusiveMin = 0;
 export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
 
 
+export const createPostBodyClientRequestIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
 
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
@@ -80,7 +81,8 @@ export const CreatePostBody = zod.object({
   "battle": zod.union([zod.object({
   "mode": zod.enum(['DUEL', 'TEAM'])
 }),zod.null()]).optional(),
-  "categoryId": zod.string().min(1)
+  "categoryId": zod.string().min(1),
+  "clientRequestId": zod.uuid().regex(createPostBodyClientRequestIdRegExp).optional()
 })
 
 export type CreatePostBody = zod.input<typeof CreatePostBody>;

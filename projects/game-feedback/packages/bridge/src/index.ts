@@ -9,8 +9,8 @@ export const BRIDGE_EVENT = 'game-feedback:native';
 /** 로그인 밖의 딥링크(`gamefeedback://ko/posts/<id>`)용. 소셜 로그인 코드는 이 스킴으로 받지 않는다. */
 export const APP_SCHEME = 'gamefeedback';
 /**
- * 앱 소셜 로그인 콜백 경로. 웹 origin의 이 경로만 검증된 App Link·Universal Link로 앱에 연결한다(웹 AASA·assetlinks,
- * 앱 associated domains·intent filter, API `APP_AUTH_CALLBACK_PATH`와 같다). 커스텀 스킴은 로그인 밖 딥링크에만 쓴다.
+ * 현재 앱은 연결하지 않는 서버 app-auth 호환 계약 경로다(API `APP_AUTH_CALLBACK_PATH`와 같다). 앱은 App Link를
+ * 등록하지 않으며 navigation-policy가 이 경로를 거부한다. 커스텀 스킴은 로그인 밖 딥링크에만 쓴다.
  */
 export const APP_AUTH_CALLBACK_PATH = '/app-auth/callback';
 /** 예: https://game.example → https://game.example/app-auth/callback */

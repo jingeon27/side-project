@@ -1,5 +1,6 @@
 {
   "nav": {
+    "main": "Main navigation",
     "home": "Home",
     "blog": "Blog",
     "about": "About",
@@ -77,6 +78,7 @@
     "shareFailed": "Could not copy the link.",
     "copyCode": "Copy code",
     "related": "Related articles",
+    "adjacent": "Adjacent articles",
     "previous": "Previous post",
     "next": "Next post"
   },
@@ -97,6 +99,10 @@
     "title": "This page could not be found.",
     "description": "Check the address or return to the blog.",
     "home": "Back to home"
+  },
+  "error": {
+    "title": "Unable to load this page.",
+    "retry": "Try again"
   },
   "analytics": {
     "on": "Visit statistics are being collected in this browser.",

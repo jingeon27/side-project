@@ -52,7 +52,9 @@ function MemberHomeContent({
                   name={group.name}
                   src={group.avatarUrl}
                   size="lg"
-                  className="size-16 rounded-[36%] bg-brand-gradient text-title text-on-gradient transition-transform group-hover:scale-105"
+                  shape="squircle"
+                  tone="gradient"
+                  className="transition-transform group-hover:scale-105"
                 />
                 <span className="line-clamp-2 w-full text-caption leading-tight text-ink">{group.name}</span>
               </Link>

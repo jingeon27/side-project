@@ -25,7 +25,7 @@ function MediaField({ fieldKey }: { fieldKey?: string }) {
 it('파일 선택은 ref와 이벤트가 연결된 뒤 첫 클릭으로 실제 input을 연다', async () => {
   const container = document.body.appendChild(document.createElement('div'));
   container.innerHTML = renderToString(<MediaField />);
-  const button = within(container).getByRole('button', { name: '파일 선택' });
+  const button = within(container).getByRole('button', { name: /^파일 선택/ });
   expect(button).toBeDisabled();
   const root = await act(async () => hydrateRoot(container, <MediaField />));
   try {
@@ -58,7 +58,7 @@ it('StrictMode와 노드 교체 뒤 파일 선택과 폼 포커스가 새 입력
   const click = vi.spyOn(current, 'click');
   try {
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: '파일 선택' }));
+    await user.click(screen.getByRole('button', { name: /^파일 선택/ }));
     expect(click).toHaveBeenCalledOnce();
     await user.click(screen.getByRole('button', { name: '입력으로 이동' }));
     expect(current).toHaveFocus();

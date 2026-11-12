@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
@@ -71,6 +71,35 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .send({ title: '제'.repeat(31) })
       .expect(400);
     expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.title).toBe(input.title);
+  });
+  it('같은 요청 키의 재시도와 동시 전송은 글 하나만 만들고 다른 내용은 거부해야 한다', async () => {
+    const input = {
+      categoryId,
+      board: 'FREE',
+      title: '응답이 끊긴 글쓰기',
+      body: '같은 초안을 다시 보내도 글은 하나만 남아야 합니다.',
+      clientRequestId: randomUUID(),
+    };
+    const before = await db.post.count();
+    const [first, second] = await Promise.all(
+      [0, 1].map(() => author.post('/api/posts').set('Origin', origin).send(input).expect(200)),
+    );
+    expect(second?.body.id).toBe(first?.body.id);
+    const retried = await author.post('/api/posts').set('Origin', origin).send(input).expect(200);
+    expect(retried.body.id).toBe(first?.body.id);
+    expect(await db.post.count()).toBe(before + 1);
+    const changed = await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, title: '내용을 고친 글쓰기' })
+      .expect(409);
+    expect(changed.body.errorCode).toBe('POST_CONFLICT');
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, clientRequestId: randomUUID() })
+      .expect(200);
+    expect(await db.post.count()).toBe(before + 2);
   });
   it('내부 SSR 집계는 첫 페이지 밖 답변까지 세고 차단·숨김·삭제를 제외해야 한다', async () => {
     const post = (

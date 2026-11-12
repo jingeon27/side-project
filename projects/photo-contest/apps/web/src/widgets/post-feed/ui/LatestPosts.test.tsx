@@ -173,3 +173,49 @@ it('스크롤로 다음 페이지가 도착했을 때 목록 종류와 offset만
     client.stop();
   }
 });
+
+it('첫 게시물의 사진만 먼저 불러오고 나머지는 화면에 가까워질 때 불러와야 한다', async () => {
+  const posts = ['첫 번째 순간', '두 번째 순간'].map((title, index): GalleryPostCardFragment => ({
+    __typename: 'GalleryPost',
+    id: `photo-${index}`,
+    groupId: 'group-1',
+    groupName: '그룹',
+    title,
+    body: '',
+    category: null,
+    contestId: null,
+    contest: null,
+    kind: PostKind.Photo,
+    mediaUrl: `/backend/media/upload-${index}`,
+    mediaWidth: 1200,
+    mediaHeight: 900,
+    linkUrl: null,
+    createdAt: '2026-11-01T00:00:00.000Z',
+    likeCount: 0,
+    commentCount: 0,
+    likedByMe: false,
+    canDelete: false,
+    canModerate: false,
+    canInteract: false,
+    author: { __typename: 'User', id: 'author', nickname: '작성자', avatar: null },
+  }));
+  const cache = new InMemoryCache();
+  cache.writeQuery({
+    query: GalleryPostsDocument,
+    variables: { groupId: 'group-1', sort: PostSort.Newest, offset: 0, limit: 24 },
+    data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: posts, nextOffset: null } },
+  });
+  const client = new ApolloClient({ cache, link: new MockLink([]) });
+  render(
+    <ApolloProvider client={client}>
+      <LatestPosts groupId="group-1" title="최신 게시물" empty="게시물이 없어요" />
+    </ApolloProvider>,
+  );
+  const first = await screen.findByRole('img', { name: '첫 번째 순간' });
+  expect(first).toHaveAttribute('loading', 'eager');
+  expect(first).toHaveAttribute('fetchpriority', 'high');
+  const second = screen.getByRole('img', { name: '두 번째 순간' });
+  expect(second).toHaveAttribute('loading', 'lazy');
+  expect(second).not.toHaveAttribute('fetchpriority', 'high');
+  client.stop();
+});

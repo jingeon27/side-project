@@ -3,9 +3,10 @@ import { renderToString } from 'react-dom/server';
 
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { act, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
+import { GroupCard } from '@/features/group';
 import {
   DiscoverGroupsDocument,
   GalleryPostsDocument,
@@ -14,6 +15,7 @@ import {
   MyGroupsDocument,
   PostSort,
   PublicGalleryPostsDocument,
+  type GroupCardFragment,
 } from '@/shared/api/generated';
 
 import { MemberHome } from './MemberHome';
@@ -94,5 +96,54 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
     container.remove();
     client.stop();
     serverClient.stop();
+  }
+});
+
+/** 아바타의 바탕·테두리·글자색 클래스. 크기마다 다른 글자 크기는 뺀다. */
+function toneClasses(avatar: Element | null) {
+  return [...(avatar?.classList ?? [])]
+    .filter((name) => /^(?:bg-|border|text-)/.test(name) && !/^text-(?:caption|label|title)$/.test(name))
+    .sort();
+}
+
+it('그룹 바로 가기 아바타는 MY 그룹 카드와 같은 색의 둥근 사각형이어야 한다', async () => {
+  const group: GroupCardFragment = {
+    __typename: 'Group',
+    description: '',
+    avatarUrl: null,
+    id: 'joined',
+    name: '우리 웃음',
+    role: GroupRole.Member,
+    memberCount: 1,
+  };
+  const cache = new InMemoryCache();
+  cache.writeQuery({ query: MyGroupsDocument, data: { myGroups: [group] } });
+  for (const [sort, limit] of [
+    [PostSort.Newest, 24],
+    [PostSort.MonthlyPopular, 3],
+  ] as const) {
+    cache.writeQuery({
+      query: GalleryPostsDocument,
+      variables: { groupId: null, sort, offset: 0, limit },
+      data: { galleryPostsPage: { __typename: 'GalleryPostPage', items: [], nextOffset: null } },
+    });
+  }
+  const client = new ApolloClient({ cache, link: ApolloLink.empty() });
+  try {
+    render(
+      <ApolloProvider client={client}>
+        <MemberHome initialHasGroups />
+      </ApolloProvider>,
+    );
+    const shortcut = (await screen.findByRole('link', { name: '우리 웃음' })).querySelector(
+      '[data-slot="avatar"]',
+    );
+    const card = render(<GroupCard group={group} />).container.querySelector('[data-slot="avatar"]');
+    expect(shortcut).toBeInTheDocument();
+    expect(toneClasses(card)).not.toEqual([]);
+    expect(toneClasses(shortcut)).toEqual(toneClasses(card));
+    expect(shortcut).not.toHaveClass('rounded-full');
+  } finally {
+    client.stop();
   }
 });

@@ -5,7 +5,7 @@ import { useWatch } from 'react-hook-form';
 import { PROFILE_BIO_MAX_LENGTH } from '@game-feedback/contracts';
 import { Input, Textarea } from '@side/design-system';
 
-import { nicknameLength } from '@/features/user';
+import { nicknameLength, RESERVED_NICKNAME_MESSAGE } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { Field } from '@/shared/ui';
 
@@ -19,16 +19,18 @@ interface IProfileDetailsEditorProps {
 export function ProfileDetailsEditor({ form, disabled }: IProfileDetailsEditorProps) {
   const { t } = useI18n();
   const bio = useWatch({ control: form.control, name: 'bio' });
+  const nicknameError = form.formState.errors.nickname;
+  // 예약어는 형식이 맞아도 막히므로 형식 안내 대신 전용 문구를 보인다.
+  const nicknameErrorMessage =
+    nicknameError?.message === RESERVED_NICKNAME_MESSAGE
+      ? RESERVED_NICKNAME_MESSAGE
+      : '닉네임은 {min}~{max}자의 문자, 숫자, 공백과 _ . -로 입력해주세요.';
   return (
     <>
       <Field
         label={t('서비스 닉네임')}
         hint={t('{min}~{max}자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.', nicknameLength)}
-        error={
-          form.formState.errors.nickname
-            ? t('닉네임은 {min}~{max}자의 문자, 숫자, 공백과 _ . -로 입력해주세요.', nicknameLength)
-            : undefined
-        }
+        error={nicknameError ? t(nicknameErrorMessage, nicknameLength) : undefined}
       >
         <Input
           {...form.register('nickname')}

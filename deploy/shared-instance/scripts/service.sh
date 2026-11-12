@@ -5,19 +5,27 @@ umask 077
 ROOT=${SIDE_DEPLOY_ROOT:-/srv/side-project}
 SERVICE=${1:-}
 ACTION=${2:-}
-[[ "$ROOT" == /* && "$ROOT" != / ]]
-[[ "$SERVICE" == game-feedback || "$SERVICE" == photo-contest ]]
+# 실패 원인은 이름으로만 알리고 값은 출력하지 않는다. 분리된 배포 작업에서는 작업 로그에 남는다.
+fail() {
+  printf '%s\n' "$1" >&2
+  exit "${2:-1}"
+}
+[[ "$ROOT" == /* && "$ROOT" != / ]] || fail 'SIDE_DEPLOY_ROOT must be an absolute directory other than /.'
+[[ "$SERVICE" == game-feedback || "$SERVICE" == photo-contest ]] ||
+  fail 'Usage: service.sh <game-feedback|photo-contest> deploy|rollback|status|operator|prune ...'
 shift 2
 export SIDE_DEPLOY_ROOT="$ROOT"
 SERVICE_ROOT="$ROOT/services/$SERVICE"
-[[ -f "$ROOT/.env" && -f "$ROOT/database/compose.yaml" ]] || exit 2
+[[ -f "$ROOT/.env" && -f "$ROOT/database/compose.yaml" ]] ||
+  fail 'The host .env and database/compose.yaml are missing. Run prepare.sh first.' 2
 chmod 600 "$ROOT/.env"
 if [[ -f "$SERVICE_ROOT/.env" ]]; then chmod 600 "$SERVICE_ROOT/.env"; fi
 exec 9>"$ROOT/.host-operations.lock"
 flock -x 9
 PROJECT="${SIDE_PROJECT_PREFIX:-side}-$SERVICE"
 WAIT=${SIDE_WAIT_SECONDS:-180}
-[[ "$WAIT" =~ ^[1-9][0-9]{0,2}$ && "$PROJECT" =~ ^[a-z0-9-]+$ ]]
+[[ "$WAIT" =~ ^[1-9][0-9]{0,2}$ ]] || fail 'SIDE_WAIT_SECONDS must be between 1 and 999.'
+[[ "$PROJECT" =~ ^[a-z0-9-]+$ ]] || fail 'SIDE_PROJECT_PREFIX must use lowercase letters, digits and hyphens.'
 environment_file="$SERVICE_ROOT/.env"
 pending_environment=''
 previous_environment=''
@@ -41,8 +49,10 @@ cleanup_environment() {
 }
 trap cleanup_environment EXIT
 
+# release와 previous는 $(...) 안에서 호출되며 bash는 그 안에서 set -e를 끈다. 검사 실패를 직접 반환해야
+# 호출한 쪽의 할당이 실패해 스크립트가 멈춘다.
 release() {
-  [[ "$1" =~ ^[a-f0-9]{40}$ && -f "$SERVICE_ROOT/releases/$1/compose.yaml" ]]
+  [[ "$1" =~ ^[a-f0-9]{40}$ && -f "$SERVICE_ROOT/releases/$1/compose.yaml" ]] || return 1
   printf '%s/releases/%s' "$SERVICE_ROOT" "$1"
 }
 compose() {
@@ -84,13 +94,25 @@ previous() {
   local path
   path=$(readlink "$SERVICE_ROOT/$1" 2>/dev/null || true)
   [[ -z "$path" ]] && return 0
-  [[ "$path" == "$SERVICE_ROOT/releases/"* && "$(release "$(basename "$path")")" == "$path" ]]
+  [[ "$path" == "$SERVICE_ROOT/releases/"* && "$(release "$(basename "$path")")" == "$path" ]] || {
+    printf 'The %s link does not point to a prepared release; nothing was changed.\n' "$1" >&2
+    return 1
+  }
   printf '%s' "$path"
 }
 mark() {
   local next=$1 old=$2
   if [[ -n "$old" && "$old" != "$next" ]]; then ln -sfn "$old" "$SERVICE_ROOT/previous"; fi
   ln -sfn "$next" "$SERVICE_ROOT/current"
+}
+# 되돌리는 activate의 --force-recreate가 실패한 컨테이너와 json-file 로그를 함께 지우므로 먼저 남긴다.
+# 앱 로그에는 설정 값이 섞일 수 있어 CI 로그가 아니라 호스트 파일(권한 600)에만 쓰고 경로만 알린다.
+keep_failed_logs() {
+  local file
+  file="$1/.deploy/failed-containers-$(date -u +%Y%m%dT%H%M%SZ).log"
+  mkdir -p "$1/.deploy" &&
+    compose "$1" logs --no-color --timestamps --tail 2000 api web >"$file" 2>&1 &&
+    printf 'Logs of the failed containers are kept on the host: %s\n' "$file" >&2
 }
 
 if [[ "$ACTION" == deploy || "$ACTION" == rollback ]]; then
@@ -102,18 +124,19 @@ if [[ "$ACTION" == deploy || "$ACTION" == rollback ]]; then
 fi
 
 if [[ "$ACTION" == deploy ]]; then
-  [[ $# == 3 || $# == 4 ]] || exit 2
+  [[ $# == 3 || $# == 4 ]] || fail 'Usage: service.sh <service> deploy <sha> <api digest> <web digest> [environment request]' 2
   if [[ $# == 4 ]]; then
-    [[ "$4" == "$SERVICE_ROOT/.env-requests/"* && "$(basename "$4")" =~ ^request-[A-Za-z0-9]{8}$ && -f "$4" && ! -L "$4" ]] || exit 2
+    [[ "$4" == "$SERVICE_ROOT/.env-requests/"* && "$(basename "$4")" =~ ^request-[A-Za-z0-9]{8}$ && -f "$4" && ! -L "$4" ]] ||
+      fail 'The environment request must be a regular file in this service .env-requests directory.' 2
     pending_environment=$4
     chmod 600 "$pending_environment"
     environment_file=$pending_environment
   fi
-  directory=$(release "$1")
+  directory=$(release "$1") || fail 'The release directory with compose.yaml is not prepared on this host.'
   api=$2 web=$3
-  [[ "$api" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]]
-  [[ "$web" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]]
-  [[ "${api%-api@*}" == "${web%-web@*}" ]]
+  [[ "$api" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]] || fail "The API image must be a GHCR digest for $SERVICE."
+  [[ "$web" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]] || fail "The web image must be a GHCR digest for $SERVICE."
+  [[ "${api%-api@*}" == "${web%-web@*}" ]] || fail 'The API and web images must come from the same GHCR repository prefix.'
   if [[ -n "${SIDE_DEPLOY_REQUEST:-}" ]]; then
     # A detached worker can outlive its CI job; only the newest request for this service may proceed.
     [[ "$(cat "$SERVICE_ROOT/.deploy-request" 2>/dev/null)" == "$SIDE_DEPLOY_REQUEST" ]] || {
@@ -174,6 +197,7 @@ if [[ "$ACTION" == deploy ]]; then
     exit 0
   fi
   if [[ -n "$old" ]]; then
+    keep_failed_logs "$directory" || true
     restore_environment
     activate "$old"
     echo 'Previous application images restored. Database migrations remain forward-only.' >&2
@@ -191,6 +215,7 @@ case "$ACTION" in
     target=$(previous previous)
     [[ -n "$target" ]]
     if activate "$target"; then mark "$target" "$current"; exit 0; fi
+    keep_failed_logs "$target" || true
     activate "$current"
     exit 1 ;;
   status) compose "$current" ps ;;

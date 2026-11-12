@@ -40,10 +40,7 @@ const config: NextConfig = {
   },
   async rewrites() {
     const origin = process.env.GAME_FEEDBACK_API_URL || 'http://127.0.0.1:4300';
-    return [
-      { source: '/api/:path*', destination: `${origin}/api/:path*` },
-      // 표준 경로는 바꿀 수 없어 app/에 점 폴더를 만들지 않고 kebab-case 라우트로 보낸다(앱 로그인 App Link·Universal Link 검증).
-    ];
+    return [{ source: '/api/:path*', destination: `${origin}/api/:path*` }];
   },
 };
 export default config;

@@ -14,7 +14,8 @@ const articleLastModified = (article: Article) => article.updatedAt || article.p
 
 /**
  * A listing changes when an article it shows changes. Dates mix date-only and offset
- * datetime formats, so they are compared as instants rather than as strings.
+ * datetime formats, so they are compared as instants rather than as strings, with date-only
+ * values read as midnight in Asia/Seoul like every other content date.
  */
 export function latestModified(articles: readonly Article[]): string | undefined {
   const latest = maxBy(articles, (article) => parseContentDate(articleLastModified(article)));

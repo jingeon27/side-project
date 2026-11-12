@@ -23,15 +23,15 @@
 
 ## api 레인
 
-- `vitest.api-setup.ts`가 test-kit `startIsolatedApi({ port: 4331, webOrigin: 'http://localhost:3331', prefix: 'mobile_api', env })`로 API를 한 번 띄우고 `inject('apiUrl')`·`inject('webOrigin')`을 준다. 앱이 보는 API 설정(`MOBILE_MINIMUM_VERSION` 1.0.0, `MOBILE_LATEST_VERSION` 1.2.0, 가짜 Google client)은 이 `env`에서 바꾼다. 첫 실행은 API 빌드·마이그레이션 때문에 오래 걸린다.
+- `vitest.api-setup.ts`가 test-kit `startIsolatedApi({ port: 4331, webOrigin: 'http://localhost:3331', prefix: 'mobile_api' })`로 API를 한 번 띄우고 `inject('apiUrl')`·`inject('webOrigin')`을 준다. API만 받을 환경변수가 필요하면 `env` 옵션으로 넘긴다. `/app/config`의 최소·최신 버전은 환경변수가 아니라 API 코드 기본값(1.0.0, `apps/api/src/config/env.ts`의 `appVersions`)이다. 첫 실행은 API 빌드·마이그레이션 때문에 오래 걸린다.
 - `apiUrl`은 API 루트라 `/backend` 없이 부른다. POST에는 `Origin: webOrigin`, 302는 `redirect: 'manual'`로 본다. API 자체 규칙은 API 테스트 몫이다.
 
 ## e2e (Playwright `android-webview`·`ios-webview`)
 
-- `playwright.config.ts`가 격리 API :4330(`prepareE2eDatabase('mobile_e2e')`)과 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`)을 새로 띄운다(`reuseExistingServer: false`). 포트·origin·앱 버전·스킴은 `e2e/support/e2e-env.ts`에서만 고친다.
+- `playwright.config.ts`가 격리 API :4330(`prepareE2eDatabase('mobile_e2e')`)과 웹 dev :3330(웹 `next.config.ts`가 포트로 정하는 `.next/test-3330`)을 새로 띄운다(`reuseExistingServer: false`). 포트·origin·앱 버전·스킴은 `e2e/support/e2e-env.ts`에서만 고친다.
 - spec은 `./support/fixtures`의 `test`·`expect`를 쓴다. `nativeHost`가 `page.goto` 전에 앱의 실제 `createCapabilities`·`createNativeRouter`·`buildBootstrapScript`를 붙이고 플랫폼 기능만 기록용 가짜로 바꾼다.
-- 조작 전에 `await nativeHost.waitForEvent('app.ready')`. 단언은 `nativeHost.calls`(웹 요청)·`nativeHost.platform`(공유·복사·진동·브라우저·인증 세션)·`nativeHost.events`로 한다. 앱 → 웹은 `emit`·`requestBack()`·`openDeepLink(url)`, 결과는 `setShareAction`·`setCopySucceeds`·`setAuthSession`으로 조절한다.
-- 데이터는 `e2e/support/seed.ts`(`signUp`·`signInBrowser`·`seedGroup`·`seedContestWithMemberPhoto`·`issueAppLoginTicket`), 닉네임은 `uniqueNickname`. 사용자·단계·세션은 test-kit의 테스트 API helper로 만들고 DB를 직접 수정하지 않는다. 웹 선택자는 `e2e/support/web-screens.ts`의 `webScreens`에만 역할·이름으로 둔다.
+- 조작 전에 `await nativeHost.waitForEvent('app.ready')`. 단언은 `nativeHost.calls`(웹 요청)·`nativeHost.platform`(공유·복사·진동·브라우저)·`nativeHost.events`로 한다. 앱 → 웹은 `emit`·`requestBack()`·`openDeepLink(url)`, 결과는 `setShareAction`·`setCopySucceeds`로 조절한다. 가짜 앱의 푸시 기능 키는 기본으로 꺼져 있다. 푸시 흐름은 spec 파일에서 `test.use({ nativePush: true })`로 켜서 검증한다(`e2e/push-notifications.spec.ts`).
+- 데이터는 `e2e/support/seed.ts`(`signUp`·`signInBrowser`·`seedGroup`·`seedLinkPost`·`joinGroup`·`seedGalleryWithMemberPost`), 닉네임은 `uniqueNickname`. 사용자·단계·세션은 test-kit의 테스트 API helper로 만들고 DB를 직접 수정하지 않는다. 웹 선택자는 `e2e/support/web-screens.ts`의 `webScreens`에만 역할·이름으로 둔다.
 - Android 전용은 `test.skip(testInfo.project.name !== 'android-webview', …)`.
 - e2e는 `useWebShell`의 WebView prop·핸들러, 탐색 정책 적용(브라우저 페이지라 `onShouldStartLoadWithRequest`가 없다), BackHandler·AppState·스플래시·오프라인 화면을 보지 않는다 — ui 레인에서 검증한다.
 

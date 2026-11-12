@@ -4,6 +4,8 @@ import type { RefCallback } from 'react';
 
 import { useQuery, useReadQuery } from '@apollo/client/react';
 
+import { Disclosure, DisclosureTrigger } from '@side/design-system';
+
 import { isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
@@ -30,15 +32,14 @@ export function GroupSidebar({
   if (!group.role || !group.inviteToken) return null;
   return (
     <div className="flex flex-col gap-5">
-      <details
+      <Disclosure
         ref={communityRef}
         id={`group-community-${group.id}`}
         inert={isSSR}
-        className="scroll-mt-24 rounded-card border border-line bg-surface p-4"
+        variant="card"
+        className="scroll-mt-24"
       >
-        <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
-          초대와 그룹 멤버
-        </summary>
+        <DisclosureTrigger>초대와 그룹 멤버</DisclosureTrigger>
         <div className="mt-4 flex flex-col gap-6">
           <InviteCard
             groupId={group.id}
@@ -48,7 +49,7 @@ export function GroupSidebar({
           />
           <GroupCommunity groupRef={groupRef} viewerId={viewer?.me?.id ?? ''} />
         </div>
-      </details>
+      </Disclosure>
       {isGroupAdmin(group.role) ? (
         <>
           <GroupCategoryManager groupId={group.id} />

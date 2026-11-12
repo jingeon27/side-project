@@ -112,14 +112,15 @@ export function UploadPhotoBottomSheet({
             name="photo"
             render={({ field }) => (
               <div className="flex flex-col gap-1.5">
-                <label className="relative flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed border-line-strong bg-sunken text-muted transition-colors has-focus-visible:border-brand has-focus-visible:outline-3 has-focus-visible:outline-accent hover:bg-neutral-soft">
+                <label className="relative flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed border-line-strong bg-sunken text-muted transition-colors has-focus-visible:border-brand has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring hover:bg-neutral-soft">
                   <input
                     ref={field.ref}
                     name={field.name}
                     type="file"
                     aria-required="true"
                     accept={PHOTO_ACCEPT}
-                    aria-label="사진 선택"
+                    // 음성 입력으로 지금 보이는 글자를 불러 누를 수 있게 사진을 고른 뒤에는 '사진 바꾸기'로 부른다.
+                    aria-label={previewUrl ? '사진 바꾸기' : '사진 선택'}
                     aria-invalid={Boolean(form.formState.errors.photo)}
                     aria-describedby={form.formState.errors.photo ? photoErrorId : undefined}
                     disabled={form.formState.isSubmitting}

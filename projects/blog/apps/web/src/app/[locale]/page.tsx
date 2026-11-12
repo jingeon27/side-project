@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ArticleCard } from '@/features/article/ui/article-card';
+import { isLocale } from '@/i18n/routing';
 import { getArticles, getPublishedCategories } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
@@ -9,13 +10,13 @@ import { pageMetadata } from '@/shared/lib/seo/metadata';
 type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   return pageMetadata(locale, 'home');
 }
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const t = labels(locale);
   const articles = getArticles(locale);
   // Empty category pages are not published, so only link categories that have articles.

@@ -116,10 +116,10 @@ export class GroupContestService {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
       const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
       const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-      const created = await (tx ?? this.db).contest.create({
+      const created = await tx.contest.create({
         data: { groupId: input.groupId, title, likeLimit, format: CONTEST_FORMAT.POST, ...dates },
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `contest:${created.id}`,
         type: ANALYTICS_EVENT.CONTEST_CREATED,
         userId: viewer.id,
@@ -134,23 +134,23 @@ export class GroupContestService {
     // 익명 계정은 IP당 바로 여러 개 만들 수 있어 1인 1표를 지키지 못한다.
     if (isAnonymous(viewer)) fail(ERROR_MESSAGE.ANONYMOUS_VOTE_FORBIDDEN, ERROR_CODE.UNAUTHENTICATED);
     await this.transactions.atomic(async (tx) => {
-      const contest = await (tx ?? this.db).contest.findUnique({ where: { id: contestId } });
+      const contest = await tx.contest.findUnique({ where: { id: contestId } });
       if (!contest || contest.format !== CONTEST_FORMAT.POST)
         fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
       await this.membership.requireMemberOf(viewer.id, contest.groupId, ERROR_MESSAGE.CONTEST_NOT_FOUND, tx);
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간에만 투표할 수 있습니다.');
-      const post = await (tx ?? this.db).post.findUnique({ where: { id: postId } });
+      const post = await tx.post.findUnique({ where: { id: postId } });
       if (!post || post.hidden || post.contestId !== contestId || post.groupId !== contest.groupId)
         fail('대회 참여 게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       if (post.authorId === viewer.id) fail('자신의 게시물에는 투표할 수 없습니다.');
       // 숨긴 작품에 던진 표는 결과에서 빠진다. 그 표에 묶여 다시 투표하지 못하는 일이 없도록 새 표로 바꾼다.
-      await (tx ?? this.db).postContestVote.deleteMany({
+      await tx.postContestVote.deleteMany({
         where: { contestId, voterId: viewer.id, post: { hidden: true } },
       });
-      const vote = await (tx ?? this.db).postContestVote.create({
+      const vote = await tx.postContestVote.create({
         data: { contestId, postId, voterId: viewer.id },
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `post-vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,

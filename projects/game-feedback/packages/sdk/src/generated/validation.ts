@@ -87,7 +87,7 @@ export const AdminLogoutResponse = zod.object({
 
 
 export const ListAdminSupportMessagesParams = zod.object({
-  "id": zod.string()
+  "conversationId": zod.string()
 })
 
 export const listAdminSupportMessagesQueryLimitDefault = 12;
@@ -147,7 +147,7 @@ export const listAdminSupportMessagesResponseItemsItemAttachmentsItemNameMax = 2
 export const listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeExclusiveMin = 0;
 export const listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeMax = 26214400;
 
-export const listAdminSupportMessagesResponseItemsItemAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/admin\\/support\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
 export const listAdminSupportMessagesResponseItemsItemAttachmentsMax = 4;
 
 export const listAdminSupportMessagesResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
@@ -222,7 +222,7 @@ export const ListAdminSupportMessagesResponse = zod.object({
 
 
 export const SendAdminSupportMessageParams = zod.object({
-  "id": zod.string()
+  "conversationId": zod.string()
 })
 
 export const sendAdminSupportMessageBodyBodyMax = 2000;
@@ -2026,6 +2026,7 @@ export const createPostBodyFriendSaleOnePriceOneExclusiveMin = 0;
 export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
 
 
+export const createPostBodyClientRequestIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
 
 
 export const CreatePostBody = zod.object({
@@ -2071,7 +2072,8 @@ export const CreatePostBody = zod.object({
   "battle": zod.union([zod.object({
   "mode": zod.enum(['DUEL', 'TEAM'])
 }),zod.null()]).optional(),
-  "categoryId": zod.string().min(1)
+  "categoryId": zod.string().min(1),
+  "clientRequestId": zod.uuid().regex(createPostBodyClientRequestIdRegExp).optional()
 })
 
 export const createPostResponseIdMax = 100;

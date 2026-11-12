@@ -12,7 +12,7 @@ export interface IButtonLinkProps
 }
 
 /** 버튼처럼 보이는 링크(다른 화면으로 가는 행동). 스크린 리더에는 링크로 읽힌다. */
-export function ButtonLink({ variant, size, fullWidth, className, ...props }: IButtonLinkProps) {
+export function ButtonLink({ variant, size, shape, fullWidth, className, ...props }: IButtonLinkProps) {
   return (
     <Link
       {...props}
@@ -20,6 +20,7 @@ export function ButtonLink({ variant, size, fullWidth, className, ...props }: IB
         buttonVariants({
           variant,
           size: size ?? (variant === 'primary' || !variant ? 'lg' : 'md'),
+          shape,
           fullWidth,
         }),
         className,

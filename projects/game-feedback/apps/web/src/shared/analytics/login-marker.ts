@@ -2,6 +2,9 @@ import dayjs from 'dayjs';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
+import { ANALYTICS_EVENT, type TAnalyticsProperties } from './analytics.catalog';
+import { trackEvent } from './analytics.store';
+
 const KEY = 'gf:pending-login';
 export const LOGIN_MARKER_TTL = 30 * 60 * 1000;
 interface ILoginMarker {
@@ -57,4 +60,9 @@ export function consumePendingLogin(now = dayjs().valueOf()) {
     /* 일시 저장소가 막힌 환경이다. */
   }
   return marker;
+}
+/** 이 탭에서 시작한 로그인의 실패만 한 번 집계한다. 표시를 소비하므로 새로고침은 다시 세지 않는다. */
+export function trackLoginFailure(reason: TAnalyticsProperties['login_failed']['reason']) {
+  const marker = consumePendingLogin();
+  if (marker) trackEvent(ANALYTICS_EVENT.LoginFailed, { provider: marker.provider, reason });
 }

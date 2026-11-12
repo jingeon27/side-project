@@ -6,7 +6,6 @@ import { isAnonymous } from '../auth/anonymous/anonymous';
 import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { phase, PHASE } from '../contest/contest.policy';
-import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership/membership.service';
 
@@ -20,7 +19,6 @@ export interface IVoteView {
 @Injectable()
 export class VoteService {
   constructor(
-    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -34,18 +32,18 @@ export class VoteService {
     return this.transactions.atomic(async (tx) => {
       const { contest } = await this.membership.accessibleContest(viewer.id, contestId, { client: tx });
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간이 아닙니다.');
-      const submission = await (tx ?? this.db).submission.findUnique({
+      const submission = await tx.submission.findUnique({
         where: { id: submissionId },
         select: { contestId: true, authorId: true, hidden: true },
       });
       if (!submission || submission.contestId !== contest.id || submission.hidden)
         fail('투표할 수 없는 사진입니다.');
       if (submission.authorId === viewer.id) fail('자신의 사진에는 투표할 수 없습니다.');
-      const vote = await (tx ?? this.db).vote.create({
+      const vote = await tx.vote.create({
         data: { voterId: viewer.id, contestId: contest.id, submissionId },
         select: { id: true, contestId: true, submissionId: true },
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,

@@ -5,7 +5,6 @@ import { recordEvent } from '../../analytics/analytics-event.writer';
 import type { IViewer } from '../../auth/session/session.service';
 import { randomToken } from '../../common/crypto';
 import { ERROR_CODE, fail } from '../../common/errors';
-import { Database } from '../../database/database.service';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { GroupService } from '../group.service';
 import { GROUP_ROLE, isOwner, toGroupRole } from '../membership/group-role';
@@ -22,7 +21,6 @@ const MESSAGE = {
 @Injectable()
 export class GroupAdministrationService {
   constructor(
-    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly groups: GroupService,
@@ -36,11 +34,11 @@ export class GroupAdministrationService {
       if (isOwner(member)) fail('그룹장의 역할은 관리자 양도로만 변경할 수 있습니다.');
       const role = enabled ? GROUP_ROLE.MODERATOR : GROUP_ROLE.MEMBER;
       if (member.role === role) return;
-      await (tx ?? this.db).groupMember.update({
+      await tx.groupMember.update({
         where: { groupId_userId: { groupId, userId } },
         data: { role },
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `moderator:${eventId}`,
         type: ANALYTICS_EVENT.GROUP_MODERATOR_CHANGED,
         userId: viewer.id,
@@ -99,15 +97,15 @@ export class GroupAdministrationService {
       if (viewer.id === userId) fail('다른 멤버에게 관리자 권한을 양도해 주세요.');
       const member = await this.membership.requireMember(userId, groupId, tx);
       if (isOwner(member)) fail('이미 그룹장인 멤버입니다.');
-      await (tx ?? this.db).groupMember.update({
+      await tx.groupMember.update({
         where: { groupId_userId: { groupId, userId: viewer.id } },
         data: { role: GROUP_ROLE.MEMBER },
       });
-      await (tx ?? this.db).groupMember.update({
+      await tx.groupMember.update({
         where: { groupId_userId: { groupId, userId } },
         data: { role: GROUP_ROLE.OWNER },
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `ownership:${eventId}`,
         type: ANALYTICS_EVENT.GROUP_OWNERSHIP_TRANSFERRED,
         userId: viewer.id,

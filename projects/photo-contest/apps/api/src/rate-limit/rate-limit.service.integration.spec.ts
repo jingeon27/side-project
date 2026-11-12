@@ -18,7 +18,7 @@ describe('쓰기 남용 제한', () => {
   let api: ITestApi;
 
   beforeAll(async () => {
-    // 운영에서만 제한하므로 Caddy 한 단계를 신뢰하는 운영 모드 앱을 만든다. 운영은 개발 로그인이 닫혀 있다.
+    // 운영에서만 제한하므로 Caddy 한 단계를 신뢰하는 운영 모드 앱을 만든다.
     api = await createTestApp({ NODE_ENV: 'production', WEB_ORIGIN: ORIGIN });
   });
 

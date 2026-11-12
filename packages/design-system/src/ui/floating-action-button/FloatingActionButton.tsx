@@ -7,8 +7,9 @@ import { cn } from '../../lib/cn.helper';
 import { Button, type IButtonProps } from '../button/Button';
 
 const floatingActionButtonVariants = cva([
-  'group/floating-action h-14 min-w-14 gap-0 overflow-hidden rounded-full border-0 p-0 shadow-toast',
-  'motion-reduce:transition-none motion-reduce:active:translate-y-0 motion-reduce:active:scale-100',
+  'group/floating-action h-14 min-w-14 gap-0 overflow-hidden border-0 p-0 shadow-toast',
+  // Button의 눌림 이동·축소와 같은 조건을 써야 명시도가 같고 생성 CSS에서 뒤에 나와 모션 감소 설정에서 이긴다.
+  'motion-reduce:transition-none motion-reduce:active:not-aria-[haspopup]:translate-y-0 motion-reduce:active:not-data-disabled:scale-100',
 ]);
 
 const labelVariants = cva(
@@ -57,6 +58,7 @@ export function FloatingActionButton({
       type="button"
       variant={variant}
       size="lg"
+      shape="pill"
       aria-label={label}
       data-compact={compact}
       className={cn(floatingActionButtonVariants(), variant === 'gradient' && 'shadow-glow', className)}

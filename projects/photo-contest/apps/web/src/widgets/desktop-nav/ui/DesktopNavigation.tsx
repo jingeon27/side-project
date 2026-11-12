@@ -55,8 +55,9 @@ export function DesktopNavigation() {
     pathname === ROUTES.GROUP_CREATE ||
     pathname === ROUTES.ONBOARDING ||
     /^\/groups\/[^/]+\/(?:edit|write)$/.test(pathname);
+  // main 안에 그려지므로 이름 없는 보조 영역(aside) 대신 안쪽 nav 하나로만 알린다.
   return (
-    <aside
+    <div
       data-desktop-nav
       className="absolute inset-y-0 left-0 z-app-bar hidden w-48 border-r border-line bg-surface desktop:block wide:w-56"
     >
@@ -84,18 +85,18 @@ export function DesktopNavigation() {
           {myMenu.label}
         </NavigationLink>
         <NavigationLink href={ROUTES.NOTIFICATIONS} active={pathname === ROUTES.NOTIFICATIONS}>
-          <Heart aria-hidden className="size-6" strokeWidth={1.7} />
+          <Heart aria-hidden className="size-6" strokeWidth={pathname === ROUTES.NOTIFICATIONS ? 2.5 : 1.7} />
           알림
         </NavigationLink>
         {!isFormPage && (
           <div className="mt-auto px-3 text-caption text-muted">
             <p className="text-label">혼자 보기 아까운 순간.</p>
             <p className="mt-2">우리끼리 모으면 더 피식.</p>
-            <LegalLinks className="mt-3 gap-x-2" />
+            <LegalLinks landmark={false} className="mt-3 gap-x-2" />
             <p className="mt-6">© 피식</p>
           </div>
         )}
       </nav>
-    </aside>
+    </div>
   );
 }

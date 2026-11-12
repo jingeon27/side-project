@@ -58,7 +58,7 @@ export class ModerationService {
         owner: true,
         client: tx,
       });
-      const upload = await (tx ?? this.db).upload.findUnique({
+      const upload = await tx.upload.findUnique({
         where: { id: submission.uploadId },
         select: { imageKey: true },
       });
@@ -72,9 +72,9 @@ export class ModerationService {
           where: { id: migrated.uploadId },
           data: { expiresAt: dayjs(0).toDate() },
         });
-      await (tx ?? this.db).submission.delete({ where: { id: submission.id } });
+      await tx.submission.delete({ where: { id: submission.id } });
       // 업로드 행은 정리 작업이 지우도록 만료시켜 둔다.
-      await (tx ?? this.db).upload.update({
+      await tx.upload.update({
         where: { id: submission.uploadId },
         data: { expiresAt: dayjs().toDate() },
       });

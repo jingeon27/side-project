@@ -1,9 +1,15 @@
+import type { ReactNode } from 'react';
+
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installBrowserNavigation } from './browser-navigation';
-import { confirmNavigation } from './navigation-guard';
-import { NavigationGuardProvider, useNavigationGuardRegistry } from './NavigationGuardProvider';
+import { confirmNavigation, confirmOverlayClose } from './navigation-guard';
+import {
+  NavigationGuardProvider,
+  NavigationOverlayContext,
+  useNavigationGuardRegistry,
+} from './NavigationGuardProvider';
 import { useUnsavedChanges } from './use-unsaved-changes';
 
 const cleanups: Array<() => void> = [];
@@ -15,6 +21,13 @@ function start() {
   window.history.replaceState(null, '', '/ko/users/me');
   cleanups.push(installBrowserNavigation());
   window.history.pushState({ tree: 'profile-edit' }, '', '/ko/settings/profile');
+}
+function InSheet({ children }: { children: ReactNode }) {
+  return (
+    <NavigationGuardProvider>
+      <NavigationOverlayContext value="sheet">{children}</NavigationOverlayContext>
+    </NavigationGuardProvider>
+  );
 }
 
 describe('저장하지 않은 변경의 이탈 확인', () => {
@@ -74,6 +87,26 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
     expect(confirmNavigation()).toBe(true);
     expect(discardProfile).toHaveBeenCalledOnce();
     expect(discardLinks).toHaveBeenCalledOnce();
+  });
+
+  // 앱 back은 시트만 닫고 화면에 남는데, 화면을 떠날 때의 문구로 물었다.
+  it('오버레이만 닫을 때는 닫기 확인으로, 화면을 떠날 때는 이탈 확인으로 물어야 한다', () => {
+    const confirm = vi.fn(() => false);
+    const confirmClose = vi.fn(() => false);
+    renderHook(() => useUnsavedChanges({ hasChanges: true, confirm, confirmClose }), { wrapper: InSheet });
+    expect(confirmOverlayClose('sheet')).toBe(false);
+    expect(confirmClose).toHaveBeenCalledOnce();
+    expect(confirm).not.toHaveBeenCalled();
+    expect(confirmNavigation()).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(confirmClose).toHaveBeenCalledOnce();
+  });
+
+  it('닫기 확인이 없으면 오버레이를 닫을 때도 이탈 확인으로 물어야 한다', () => {
+    const confirm = vi.fn(() => false);
+    renderHook(() => useUnsavedChanges({ hasChanges: true, confirm }), { wrapper: InSheet });
+    expect(confirmOverlayClose('sheet')).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
   });
 
   it('변경이 있을 때만 이동·문서 닫기를 확인하고 저장하거나 언마운트하면 해제해야 한다', () => {

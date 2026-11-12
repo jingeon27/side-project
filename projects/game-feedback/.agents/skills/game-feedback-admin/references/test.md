@@ -10,27 +10,30 @@
 - 바꾼 곳에 따라 고칠 테스트
   - hash 경로·딥링크: `src/shared/lib/admin-route.spec.ts`. 잘못된 hash가 API ID가 되지 않는 사례를 유지한다.
   - 로그인·로그아웃·캐시 정리: `src/features/auth/model/auth.mutation-options.spec.ts`
-  - Vite 프록시 Origin 가드·운영 토큰 주입·설정 검증·`define`: `vite.config.spec.ts`(`localAdminGuard`·`adminServerSettings`를 실제 `IncomingMessage`/`ServerResponse`로 호출)
+  - 세션 만료, 재확인, 재로그인, gcTime: `src/_app/providers/query-client.test.ts`(브라우저 기본 gcTime을 보려면 `environmentManager.setIsServer(() => false)`), `e2e/ui/session-expiry.test.ts`
+  - 신고 숨김·해제 사유와 Enter 미제출: `e2e/ui/report-visibility.test.ts`
+  - 문의 첨부 링크(관리자 경로 `AdminChatMessageListSchema`)와 상태 필터 이동 중 초안 보존: `e2e/ui/support-navigation.test.ts`
+  - Vite 프록시 Origin 가드·프록시 대상 설정 검증·보안 헤더와 브라우저에 자격 증명을 주입하지 않는 것: `vite.config.spec.ts`(`localAdminGuard`·`adminServerSettings`를 실제 `IncomingMessage`/`ServerResponse`로 호출)
   - 화면 문구·흐름: `e2e/admin.spec.ts`
 
 ## Playwright 구성 (`playwright.config.ts`)
 
-- 설정을 읽을 때 `gf_test_admin_<uuid 32자>` 스키마 이름을 만들고, `127.0.0.1:55444/game_feedback_test?schema=<이름>` URL과 함께 `GF_ADMIN_E2E_SCHEMA`·`GF_ADMIN_E2E_DATABASE_URL`로 teardown에 넘긴다. 실행마다 새 스키마다.
-- webServer 1(API): side 루트에서 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`를 실행한다. env는 `NODE_ENV=test`, `PORT=4304`, `WEB_ORIGIN=http://127.0.0.1:3304`, `GF_DEMO_MODE=true`, `GF_TEST_AUTH_ENABLED=true`이고, OAuth·`SUPERCELL_API_TOKEN`은 빈 값이다. 준비 확인 URL은 `http://127.0.0.1:4304/api/session`이다.
-- webServer 2(Admin): `@game-feedback/admin dev`에 `GF_ADMIN_PORT=3304`, `GF_ADMIN_API_ORIGIN=http://127.0.0.1:4304`, `GF_ADMIN_WEB_ORIGIN=http://127.0.0.1:3304`를 준다. 프록시 Origin과 API `WEB_ORIGIN`이 같아야 쓰기 요청이 통과한다.
+- 설정을 읽을 때 API의 `src/testing/browser-database.ts`(`prepareBrowserDatabase('admin')`)가 `gf_test_admin_<uuid 32자>` 스키마를 정하고 `127.0.0.1:55444/game_feedback_test?schema=<이름>` URL을 `DATABASE_URL`에 둔다. API webServer와 teardown이 이 값을 쓴다. 실행마다 새 스키마다.
+- webServer 1(API): side 루트에서 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed --fixtures` → `e2e/seed-admin.ts` → `@game-feedback/api test:server`를 실행한다. env는 `NODE_ENV=test`, `ENVIRONMENT=test`, `GAME_FEEDBACK_API_URL=http://127.0.0.1:4304`, `WEB_ORIGIN=http://127.0.0.1:3304`이고, OAuth·`SUPERCELL_API_TOKEN`은 빈 값이다. 데모·테스트 인증은 `test:server`(`src/testing/e2e-server.ts`)가 옵션으로 켠다. 준비 확인 URL은 `http://127.0.0.1:4304/api/session`이다.
+- webServer 2(Admin): `@game-feedback/admin dev --port 3304`에 `ENVIRONMENT=test`, `GAME_FEEDBACK_API_URL=http://127.0.0.1:4304`, `WEB_ORIGIN=http://127.0.0.1:3304`를 준다. 프록시 Origin과 API `WEB_ORIGIN`이 같아야 쓰기 요청이 통과한다.
 - 두 서버 모두 `reuseExistingServer: false`라서 3304·4304가 사용 중이면 실패한다. 다른 worktree의 실행일 수 있으니 그 프로세스를 종료하지 말고 끝나기를 기다린다.
-- 포트를 바꾸면 `../api/src/testing/e2e-server.ts`의 허용 포트(`4301, 4302, 4304, 4353`)와 `WEB_ORIGIN === http://127.0.0.1:<port-1000>` 조건, `../../scripts/database-guard.ts`의 `gf_test_` 스키마 규칙을 함께 확인한다.
-- `workers: 1`, timeout 45초, `reporter: 'list'`, `trace: 'retain-on-failure'`, project는 `chromium`(Desktop Chrome) 하나다.
+- 포트를 바꾸면 `../api/src/testing/e2e-server.ts`의 허용 포트(`4301, 4302, 4304, 4353, 4354`)와 `WEB_ORIGIN === http://127.0.0.1:<port-1000>` 조건, `../../scripts/database-guard.ts`의 `gf_test_` 스키마 규칙을 함께 확인한다.
+- `workers: 1`, timeout 45초, `reporter: 'list'`, `trace: 'retain-on-failure'`, project는 `chromium`(Desktop Chrome) 하나다. CI에서는 `forbidOnly`가 남은 `test.only`를 실패로 만든다(`playwright.ui.config.ts`도 같다).
 
 ## 스키마 정리 (`e2e/teardown.ts`)
 
-- `globalTeardown`은 스키마가 `^gf_test_[a-z0-9_]+$`이고 URL이 loopback·포트 55444·`/game_feedback_test`·사용자 `game_feedback`·같은 `schema` 파라미터일 때만 `DROP SCHEMA IF EXISTS "<schema>" CASCADE`를 실행한다. 그 외에는 throw한다. 이번 실행의 스키마만 지우며, 중단으로 남은 스키마를 지우려고 조건을 넓히지 않는다.
-- Prisma Client는 `createRequire`로 `../api/src/generated/prisma`에서 읽는다. 생성되지 않았으면 teardown이 실패하므로 처음에는 `codegen`을 실행한다.
+- `globalTeardown`은 API의 `dropBrowserDatabase()`(`src/testing/browser-database.ts`)를 부른다. `DATABASE_URL`이 loopback·포트 55444·`/game_feedback_test`·사용자 `game_feedback`이고 스키마가 `^gf_test_(web|mobile|admin)_[a-f0-9]{32}$`일 때만 `DROP SCHEMA IF EXISTS "<schema>" CASCADE`를 실행한다. 그 외에는 throw한다. 이번 실행의 스키마만 지우며, 중단으로 남은 스키마를 지우려고 조건을 넓히지 않는다.
+- Prisma Client는 API의 `src/generated/prisma`에서 읽는다. 생성되지 않았으면 teardown이 실패하므로 처음에는 `codegen`을 실행한다.
 
 ## spec 작성 (`e2e/admin.spec.ts`)
 
 - 한 실행의 테스트는 같은 스키마와 seed를 공유한다. 본문·닉네임은 `randomUUID()`로 고유하게 만든다. seed 계정(`sample-user-0` 새벽의호그, `sample-user-3`, `sample-test-admin`)의 상태를 바꿨다면 같은 테스트에서 되돌린다(인증 승인→해제, 밴→해제).
-- 관리자 로그인은 e2e/seed-admin.mjs가 격리 스키마에 만든 전용 계정의 ID·비밀번호로 한다. 다른 사용자의 데이터는 `browser.newContext({ baseURL: origin })`의 `request`로 제품 API(`/api/auth/test-login`, `/api/auth/demo`, `/api/support/conversations`, `/api/conversations/:id/messages`, `/api/reports`)를 호출해 준비한다. 이 요청도 3304 프록시를 지나므로 쓰기 요청에는 `headers: { Origin: 'http://127.0.0.1:3304' }`가 필요하다. DB를 직접 수정하지 않는다.
+- 관리자 로그인은 `e2e/seed-admin.ts`가 격리 스키마에 만든 전용 계정의 ID·비밀번호로 한다. 다른 사용자의 데이터는 `browser.newContext({ baseURL: origin })`의 `request`로 제품 API(`/api/auth/test-login`, `/api/auth/demo`, `/api/support/conversations`, `/api/conversations/:id/messages`, `/api/reports`)를 호출해 준비한다. 이 요청도 3304 프록시를 지나므로 쓰기 요청에는 `headers: { Origin: 'http://127.0.0.1:3304' }`가 필요하다. DB를 직접 수정하지 않는다.
 - 실패와 재시도는 `page.route`로 만든다. 일시 실패는 첫 요청만 `route.abort('failed')`하고 이후 `route.continue()`, 조회 실패는 `route.fulfill({ status: 503, … })`로 만든 뒤 메뉴가 남는지 단언한다.
 - 선택자는 `getByRole(…, { name, exact: true })`를 쓰고 영역으로 범위를 좁힌다: `navigation '관리자 메뉴'`, `region '문의 대화'`, `article '사용자 관리'`, `log`, 오류 `alert`, 밴 상태 `status`. 같은 모양의 카드는 `locator('[data-thread-id]')`·`locator('[data-report-id]')`에 `.filter({ hasText })`를 붙인다. class로 찾지 않고 `waitForTimeout` 대신 기다리는 단언을 쓴다.
 - 버튼·라벨·`aria-label` 문구를 바꾸면 이 spec의 이름 선택자를 함께 고친다. `e2e/`와 설정 파일도 Admin `typecheck`·`lint` 대상이다.

@@ -34,7 +34,10 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
         preview.mutate(values, { onSuccess: onSelectionChange });
       })}
     >
-      <Field label={t('플레이어 태그')} hint={t('게임 프로필에 표시된 #과 영문·숫자 태그를 입력해주세요.')}>
+      <Field
+        label={t('플레이어 태그')}
+        hint={t('게임 프로필에 표시된 #과 영문, 숫자로 된 태그를 입력해주세요.')}
+      >
         <div className="input-button-row">
           <Input
             {...tagField}

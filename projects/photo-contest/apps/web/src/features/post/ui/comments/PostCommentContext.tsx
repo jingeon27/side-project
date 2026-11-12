@@ -19,7 +19,7 @@ export function PostCommentContext({ postId }: { postId: string }) {
       className="hidden min-h-0 flex-col gap-4 overflow-y-auto border-r border-line bg-sunken p-6 desktop:flex"
     >
       <div className="flex shrink-0 items-center gap-3">
-        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" />
+        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" tone="accent" />
         <div className="min-w-0">
           <p className="truncate text-label text-ink">{post.groupName}</p>
           <p className="truncate text-caption text-muted">{post.author.nickname}</p>

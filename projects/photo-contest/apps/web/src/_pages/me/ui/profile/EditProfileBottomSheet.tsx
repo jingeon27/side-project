@@ -50,7 +50,8 @@ function ProfileForm({
   if (!data.me) return <BottomSheet.Content>다시 로그인해 주세요.</BottomSheet.Content>;
   return (
     <>
-      <BottomSheet.Content className="px-0">
+      {/* 스크롤 본문은 좌우도 자른다. 시트 여백 안으로 6px 넓혀 폼 폭은 두고 포커스 링(3px, 간격 2px) 자리를 낸다. */}
+      <BottomSheet.Content className="-mx-1.5 px-1.5">
         <form
           id={formId}
           noValidate
@@ -123,7 +124,11 @@ export function EditProfileBottomSheet(controls: IBottomSheetControlProps) {
         description="사진과 닉네임을 원하는 모습으로 바꿔 보세요."
         className="mx-auto w-full max-w-app px-0"
       />
-      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+      {/* 제목·폼과 같은 가로 상자에 두고, 본문 위쪽 여백(6px)을 대신해 제목과 20px 떨어뜨린다. */}
+      <AsyncBoundary
+        onRetry={refetch}
+        fallback={<Skeleton className="mx-auto mt-1.5 h-64 w-full max-w-app" />}
+      >
         <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={controls.onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>

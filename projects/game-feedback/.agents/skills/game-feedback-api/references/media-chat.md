@@ -19,6 +19,11 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 - 전송 `ChatMessageService.send`: 권한 확인을 멱등 조회보다 먼저 한다(다른 대화의 UUID를 드러내지 않게). 대화 행 `FOR UPDATE` 아래에서 같은 `(senderId, clientMessageId)` 재시도는 본문·첨부가 같으면 기존 메시지, 다르면 409 `MESSAGE_CONFLICT`, 내가 지운 경계 이전이면 409 `MESSAGE_HISTORY_CLEARED`. `createdAt`은 `max(now, 최신 + 1ms)`로 대화 안에서 단조 증가한다.
 - 경계는 `(createdAt, id)` 쌍이다: 기록 삭제 `first/secondClearedAt·Id`(`chat-history.ts`의 `historyWhere`·`advancesBoundary`), 읽음 `first/secondReadAt·Id`(`chat-read.policy.ts`). 둘 다 뒤로 가지 않고 상대 쪽 값에 영향을 주지 않는다.
 
+## 글쓰기 재시도 (`src/posts/posts.service.ts` `createPost`)
+
+- 계약 `PostInputSchema`의 선택 필드 `clientRequestId`(UUID, 수정 `PostPatchSchema`에는 없다)는 웹이 초안마다 한 번 만든 요청 키다. DB는 `Post(authorId, clientRequestId)` unique이고 키 없이 만든 글과 기존 행은 NULL이다.
+- 사용자 행 잠금(`lockActiveUser`) 아래에서 같은 작성자의 키를 먼저 찾는다. 처음 글과 내용이 같으면(`post-request.ts`의 `isSamePostRequest`: 게임·게시판·제목·본문·JSON 열) 새 글·미디어 연결·팔로워 알림·캐시 무효화 없이 처음 글을 돌려준다. 내용이 다르거나 처음 글이 숨김·삭제됐으면 409 `POST_CONFLICT`다. 채팅 `clientMessageId`와 같은 방식이며, 웹은 등록에 성공한 뒤에만 키를 바꾼다.
+
 ## SSE (`src/chat/events/chat.events.ts`, `GET /api/chat/events`)
 
 - 프로세스 메모리 구독이다(다중 인스턴스는 미지원). 이벤트는 `invalidate { conversationId }`와 `heartbeat`뿐 — 본문·발신자를 싣지 않고 클라이언트가 REST로 다시 읽는다. 연결 직후 `conversationId: null` 무효화를 한 번 보낸다.
@@ -27,8 +32,8 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/chat/message/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
-- integration: `src/posts/media/post-media-upload.service.integration.spec.ts`·`src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
+- unit: `src/chat/message/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`, `src/posts/post-request.test.ts`·`src/posts/posts.service.test.ts`(글쓰기 요청 키 재시도·충돌).
+- integration: `src/posts/media/post-media-upload.service.integration.spec.ts`·`src/chat/attachment/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단, 같은 요청 키의 재시도·동시 전송·409), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
 - DB 회귀: `src/media-storage/upload-reservation.database.integration.test.ts`는 연결 1개/3개에서 세 업로드의 제한 반복 거절·동시 발급·DB 제약 오류 롤백을 검사한다. 서명만 준비하므로 이 레인은 실제 S3 전송 검증이 아니다.
 - 로컬 fixture 성공을 실제 AWS 버킷·CORS·브라우저 업로드 확인으로 기록하지 않는다.
 

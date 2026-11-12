@@ -38,14 +38,18 @@ export function SegmentedControl({
   );
 }
 
+/**
+ * 다크 모드에서는 고른 칸의 바탕(surface/sunken 1.07:1)과 글자색(ink/muted 1.97:1)만으로 구분되지 않아 테두리를 더한다.
+ * 가상 요소는 테두리 안쪽을 기준으로 놓이므로 위아래로 넓히지 않고 가운데에 44px 높이로 둔다.
+ */
 export function SegmentedControlItem({ value, children }: { value: string; children: ReactNode }) {
   return (
     <Toggle
       value={value}
       className={cn(
-        'relative flex h-9 min-w-0 flex-1 items-center justify-center rounded-control px-3 text-label text-muted transition-colors',
-        "before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
-        'hover:text-ink data-pressed:bg-surface data-pressed:text-ink data-pressed:shadow-card',
+        'relative flex h-9 min-w-0 flex-1 items-center justify-center rounded-control border border-transparent px-3 text-label text-muted transition-colors',
+        "before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-['']",
+        'hover:text-ink data-pressed:border-control-border data-pressed:bg-surface data-pressed:text-ink data-pressed:shadow-card',
       )}
     >
       {children}

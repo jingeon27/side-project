@@ -150,8 +150,9 @@ function renderEntries({
   return { user, requests, votedPostId };
 }
 
-/** 버튼 이름은 참여작 제목이고 투표 상태는 버튼 글자로 보여 준다. */
-const voteButton = (title: string) => screen.getByRole('button', { name: `${title} 대회 투표` });
+/** 버튼 이름은 보이는 투표 상태 뒤에 참여작 제목을 덧붙여 목록에서 구분한다. */
+const voteButton = (title: string) =>
+  screen.getByRole('button', { name: (name) => name.endsWith(`(${title})`) });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -204,12 +205,19 @@ describe('GroupContestVoteButton', () => {
     await waitFor(() => expect(lunch).toHaveTextContent('내가 투표한 참여작'));
   });
 
-  it('내가 올린 참여작과 투표할 수 없는 대회의 참여작은 버튼을 잠가야 한다', () => {
-    renderEntries({ summary: contest({ canVote: false }), entries: ENTRIES.slice(1) });
+  it('내가 올린 참여작과 투표할 수 없는 대회의 참여작은 버튼을 잠가 눌러도 보내지 않아야 한다', async () => {
+    const { user, requests } = renderEntries({
+      summary: contest({ canVote: false }),
+      entries: ENTRIES.slice(1),
+    });
     expect(voteButton('내 사진')).toHaveTextContent('내가 올린 참여작');
-    expect(voteButton('내 사진')).toBeDisabled();
+    expect(voteButton('내 사진')).toHaveAttribute('aria-disabled', 'true');
     expect(voteButton('퇴근길 노을')).toHaveTextContent('이 참여작에 투표하기');
-    expect(voteButton('퇴근길 노을')).toBeDisabled();
+    expect(voteButton('퇴근길 노을')).toHaveAttribute('aria-disabled', 'true');
+
+    await user.click(voteButton('퇴근길 노을'));
+    await user.click(voteButton('내 사진'));
+    expect(requests).toEqual([]);
   });
 
   it.each([
@@ -237,6 +245,6 @@ describe('GroupContestVoteButton', () => {
   ])('$viewer에게는 투표 버튼 대신 "$link" 링크를 보여 줘야 한다', ({ me, entries, link, href }) => {
     renderEntries({ me, entries });
     expect(screen.getByRole('link', { name: link })).toHaveAttribute('href', href);
-    expect(screen.queryByRole('button', { name: '점심의 순간 대회 투표' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

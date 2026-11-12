@@ -4,9 +4,15 @@ set +x
 set -uo pipefail
 umask 077
 trap '' HUP PIPE
-[[ $# == 6 && "$1" =~ ^(game-feedback|photo-contest)$ && "$2" =~ ^[a-f0-9]{40}$ && -d "$5" ]] || exit 2
+[[ $# == 6 && "$1" =~ ^(game-feedback|photo-contest)$ && "$2" =~ ^[a-f0-9]{40}$ && -d "$5" ]] || {
+  echo 'Usage: deploy-job.sh <service> <release sha> <api digest> <web digest> <job directory> <environment request>' >&2
+  exit 2
+}
 configuration=$6
-[[ "$configuration" == "${SIDE_DEPLOY_ROOT:-/srv/side-project}/services/$1/.env-requests/"* && "$(basename "$configuration")" =~ ^request-[A-Za-z0-9]{8}$ ]] || exit 2
+[[ "$configuration" == "${SIDE_DEPLOY_ROOT:-/srv/side-project}/services/$1/.env-requests/"* && "$(basename "$configuration")" =~ ^request-[A-Za-z0-9]{8}$ ]] || {
+  echo 'The environment request must be in this service .env-requests directory.' >&2
+  exit 2
+}
 trap 'rm -f "$configuration"' EXIT
 job=$5
 printf '%s\n' "$$" >"$job/pid"

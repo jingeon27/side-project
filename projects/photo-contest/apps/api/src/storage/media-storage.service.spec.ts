@@ -48,6 +48,22 @@ describe('미디어 저장소 서명 POST', () => {
       );
     await expect(storage.delete('../secret.png')).rejects.toThrow('Invalid media key');
   });
+
+  it('환경변수의 AWS 키로 서명하고 키가 바뀌면 같은 저장소도 새 키와 세션 토큰으로 서명해야 한다', async () => {
+    useSigningConfig();
+    const storage = new MediaStorage();
+    const sign = async () =>
+      (await storage.presignUpload(createMediaKey('png'), 'image/png', 1, new Date(Date.now() + 60_000)))
+        .fields;
+    const issued = await sign();
+    expect(issued['X-Amz-Credential']).toMatch(/^unit-signing-key\//);
+    expect(issued).not.toHaveProperty('X-Amz-Security-Token');
+    vi.stubEnv('AWS_ACCESS_KEY_ID', 'rotated-signing-key');
+    vi.stubEnv('AWS_SESSION_TOKEN', 'unit-session-token');
+    const rotated = await sign();
+    expect(rotated['X-Amz-Credential']).toMatch(/^rotated-signing-key\//);
+    expect(rotated['X-Amz-Security-Token']).toBe('unit-session-token');
+  });
 });
 
 describe('미디어 저장소 서명 GET', () => {
