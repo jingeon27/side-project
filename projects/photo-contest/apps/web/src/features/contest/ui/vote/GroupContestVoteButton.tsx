@@ -12,6 +12,7 @@ import {
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { buildLoginRedirectPath } from '@/shared/lib/login-redirect.helper';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { toast } from '@/shared/model/toast';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
@@ -27,7 +28,10 @@ export function GroupContestVoteButton({ contestId, postId }: { contestId: strin
   });
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const [vote, { loading }] = useMutation(CastGroupContestVoteDocument, {
-    onCompleted: () => toast.success('투표했어요. 종료 후 결과를 확인해 주세요.'),
+    onCompleted: () => {
+      trackEvent(ANALYTICS_EVENT.VoteCast, { contest_id: contestId });
+      toast.success('투표했어요. 종료 후 결과를 확인해 주세요.');
+    },
   });
   if (!complete || !postComplete || contest.phase !== Phase.Voting) return null;
   if (!viewer?.me || !post.canInteract)
