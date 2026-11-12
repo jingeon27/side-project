@@ -21,6 +21,11 @@
   --color-accent: #ff9b42;
   --color-accent-soft: #fff3e8;
   --color-accent-ink: #995014;
+  /* 브랜드 그라데이션(호박색 → accent → 분홍)의 양 끝. 바탕 대비가 낮아 글자색으로 쓰지 않고 표면에만 쓴다. */
+  --color-accent-warm: #ffb547;
+  --color-accent-pink: #ff5c8a;
+  /* 그라데이션 위의 로고·아이콘·장식 머리글자. 바탕이 모드와 관계없이 밝은 채도라 흰색으로 고정한다. 읽어야 하는 글자는 on-accent를 쓴다. */
+  --color-on-gradient: #ffffff;
   /* 키보드 포커스 링. 바탕과 3:1 이상이어야 해서 라이트에서는 accent 대신 accent-ink 값을 쓴다. */
   --color-focus-ring: #995014;
   --color-ink: #101010;
@@ -106,6 +111,8 @@
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.03);
   --shadow-sheet: 0 8px 48px rgb(0 0 0 / 0.16);
   --shadow-toast: 0 8px 24px rgb(0 0 0 / 0.16);
+  /* 그라데이션 표면 아래에 같은 색으로 번지는 그림자 */
+  --shadow-glow: 0 12px 28px -10px rgb(255 92 138 / 0.55), 0 4px 12px -4px rgb(255 155 66 / 0.45);
 
   --z-index-app-bar: 20;
   --z-index-bottom-nav: 20;
@@ -129,4 +136,14 @@
   /* 브라우저에서는 웹이, 앱 WebView에서는 네이티브 SafeAreaView가 안전 영역을 맡는다(이때 env()는 0). */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 로고·주 행동·그룹 아바타처럼 브랜드를 드러내는 표면 */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-accent-warm) 0%,
+    var(--color-accent) 48%,
+    var(--color-accent-pink) 100%
+  );
 }
