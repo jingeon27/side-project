@@ -9,6 +9,7 @@ import type { IAvatarProps } from '@side/design-system/ui/avatar';
 import type { IBadgeProps, TBadgeTone } from '@side/design-system/ui/badge';
 import type { IButtonProps } from '@side/design-system/ui/button';
 import type { IDialogProps } from '@side/design-system/ui/dialog';
+import type { IDisclosureProps, IDisclosureTriggerProps } from '@side/design-system/ui/disclosure';
 import type { IFloatingActionButtonProps } from '@side/design-system/ui/floating-action-button';
 import type { IFormFieldProps } from '@side/design-system/ui/form-field';
 import type { IIconButtonProps } from '@side/design-system/ui/icon-button';
@@ -36,6 +37,8 @@ export type TPublicTypes = [
   TBadgeTone,
   IButtonProps,
   IDialogProps,
+  IDisclosureProps,
+  IDisclosureTriggerProps,
   IFloatingActionButtonProps,
   IFormFieldProps,
   IIconButtonProps,

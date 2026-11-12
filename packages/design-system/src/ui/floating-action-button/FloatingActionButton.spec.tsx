@@ -42,6 +42,17 @@ describe('FloatingActionButton', () => {
     expect(button).toHaveAttribute('data-scrolling', 'true');
   });
 
+  it('펼쳐도 접어도 Button의 알약 모양이어야 한다', () => {
+    const props = { label: '글쓰기', onClick: vi.fn() };
+    const { rerender } = render(<FloatingActionButton {...props} />);
+    const button = screen.getByRole('button', { name: '글쓰기' });
+    expect(button).toHaveClass('rounded-full');
+    expect(button).not.toHaveClass('rounded-control');
+    rerender(<FloatingActionButton {...props} compact />);
+    expect(button).toHaveClass('rounded-full');
+    expect(button).not.toHaveClass('rounded-control');
+  });
+
   it('비활성 상태는 클릭과 키보드 활성화를 막아야 한다', async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
