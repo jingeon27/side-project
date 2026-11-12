@@ -20,6 +20,48 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('notifications.*', () => {
+  it('푸시 기능을 받지 않으면 웹에 알림 기능을 알리지 않아야 한다', () => {
+    expect(Object.keys(createCapabilities(createFakeDependencies()))).toEqual([
+      'share.open',
+      'clipboard.copy',
+      'haptics.impact',
+      'link.open',
+    ]);
+  });
+
+  it('푸시 기능을 받으면 등록·배지·설정 요청을 그 기능으로 처리해야 한다', async () => {
+    const registration = {
+      installationId: '11111111-1111-4111-8111-111111111111',
+      platform: 'android',
+      status: 'undetermined',
+      token: null,
+    } as const;
+    const deps = {
+      ...createFakeDependencies('android'),
+      getPushRegistration: vi.fn<NonNullable<ICapabilityDependencies['getPushRegistration']>>(
+        async () => registration,
+      ),
+      setPushBadge: vi.fn<NonNullable<ICapabilityDependencies['setPushBadge']>>(async () => ({
+        updated: true,
+      })),
+      openPushSettings: vi.fn<NonNullable<ICapabilityDependencies['openPushSettings']>>(async () => ({
+        opened: true,
+      })),
+    };
+    const capabilities = createCapabilities(deps);
+
+    await expect(capabilities['notifications.registration']?.({ requestPermission: false })).resolves.toEqual(
+      registration,
+    );
+    await expect(capabilities['notifications.badge']?.({ count: 3 })).resolves.toEqual({ updated: true });
+    await expect(capabilities['notifications.settings']?.({})).resolves.toEqual({ opened: true });
+    expect(deps.getPushRegistration).toHaveBeenCalledExactlyOnceWith(false);
+    expect(deps.setPushBadge).toHaveBeenCalledExactlyOnceWith(3);
+    expect(deps.openPushSettings).toHaveBeenCalledOnce();
+  });
+});
+
 describe('share.open', () => {
   it('iOS는 url 필드로 공유하고 결과를 그대로 알려야 한다', async () => {
     const deps = createFakeDependencies();

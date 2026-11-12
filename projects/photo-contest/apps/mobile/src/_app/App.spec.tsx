@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
+
 import { track } from '@amplitude/analytics-react-native';
-import { render, screen, waitFor } from '@testing-library/react';
-import { getInitialURL } from 'expo-linking';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getInitialURL, openURL } from 'expo-linking';
 import { hideAsync } from 'expo-splash-screen';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,6 +31,7 @@ function trackedEvents() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'web' });
 });
 
 describe('App', () => {
@@ -116,6 +119,16 @@ describe('App', () => {
         properties: { minimum_version: '1.1.0' },
       }),
     );
+  });
+
+  it('iOS에서 최소 버전보다 낮으면 설정한 App Store ID의 스토어 화면으로 보내야 한다', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'ios' });
+    stubAppConfig(async () => jsonResponse({ minimumVersion: '1.1.0', latestVersion: '1.2.0' }));
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: '업데이트하기' }));
+
+    expect(openURL).toHaveBeenCalledWith('https://apps.apple.com/app/id1000000001');
   });
 
   it('버전 설정을 읽지 못하면 막지 않고 웹을 열어야 한다', async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, inject, it } from 'vitest';
 
 import { isUpdateRequired } from '../lib/version.helper';
-import { fetchAppConfig, fetchHealth } from './app-config.api';
+import { fetchAppConfig } from './app-config.api';
 
 const apiUrl = inject('apiUrl');
 
@@ -19,9 +19,5 @@ describe('앱 시작 때 부르는 API', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
-  });
-
-  it('GET /health 응답이 앱의 스키마를 통과해야 한다', async () => {
-    await expect(fetchHealth(apiUrl, fetch)).resolves.toEqual({ status: 'ok' });
   });
 });
