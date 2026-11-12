@@ -11,6 +11,6 @@ Git 흐름·메시지·hook·merge 방식의 단일 기준은 [루트 AGENTS.md]
 2. 기능·모듈·앱·패키지별로 나눈다. 관련 테스트는 구현과, 계약·스키마와 검토 가능한 codegen 결과는 함께 둔다. 파일 이동만 하는 변경과 동작 변경은 가능한 한 분리한다.
 3. 의존성은 manifest와 lockfile을 함께, 이를 처음 사용하는 코드보다 앞선 커밋으로 둔다. 루트 공통 파일을 바꾼 이유는 PR이나 구현 기록에 남긴다.
 4. `git add -A -- <명시한 경로>`로 선택하고 staged diff를 확인한다. TypeScript·React 변경에는 [변경분 리뷰 기준](../typescript-code-style/SKILL.md#변경분-리뷰)을 적용한다. .env·자격 증명·쿠키·DB·빌드 산출물·생성 Prisma client는 제외한다. 프로젝트가 추적하는 GraphQL/REST SDK codegen은 해당 계약과 포함한다.
-5. 변경 단위에 맞는 타입·lint·테스트와 format을 확인하고 hook을 정상 실행한다. 실패하면 수정하며 기본적으로 우회하지 않는다. 커밋 메시지는 한국어로 무엇을 바꾸는지 쓴다. scope는 `photo-contest`, `game-feedback`, `blog`, 공통 패키지/영역 이름을 사용한다.
+5. 변경 단위에 맞는 타입·lint·테스트와 format을 확인하고 hook을 정상 실행한다. 실패하면 수정하며 기본적으로 우회하지 않는다. 커밋 메시지는 한국어로 무엇을 바꾸는지 쓰고 hook 안내처럼 `~한다`로 끝낸다. scope는 `photo-contest`, `game-feedback`, `blog`, 공통 패키지/영역 이름을 사용하며 어느 프로젝트인지 드러나지 않는 앱 이름(`web`·`mobile`·`api`·`ui`)만 쓰지 않는다.
 6. push 전 원격이 `https://github.com/jingeon27/side-project.git`인지 다시 확인하고 WIP·fixup·squash 이력을 정리한다. 기존 연결/CLI를 먼저 사용하며 실제 인증 실패가 있을 때만 필요한 조치를 설명한다.
 7. PR의 저장소·head·base와 diff를 확인하고 변경·검증·미확인 범위를 적는다. 기능 PR은 develop, main 릴리스는 develop에서만 올린다. PR 요청에는 필요한 기능 브랜치 push가 포함되지만 merge·배포 승인을 임의로 확대하지 않는다.

@@ -2,7 +2,7 @@
 
 - 사용자 행동이나 진입·이동 흐름을 추가하거나 변경할 때는 Amplitude 이벤트와 속성을 항상 함께 설계·구현·검증한다. 기존 이벤트 카탈로그를 사용하고 클릭과 서버 성공을 구분하며, 키가 없는 환경의 전송 생략과 개인정보·검색어·초대 토큰 수집 금지를 유지한다. 적용한 이벤트·속성과 검증 결과를 PR에 기록한다.
 
-Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 필수. 프로젝트는 `projects/<name>` 아래에서 독립적으로 관리한다.
+Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`). 허용 범위는 루트 `package.json`의 `engines`를 따른다. 프로젝트는 `projects/<name>` 아래에서 독립적으로 관리한다.
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 
 ## 작업 전 설계와 범위
@@ -47,7 +47,8 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 - CI workflow는 `Services`, `Blog`, `Static analysis` 세 개로 관리한다. PR·develop은 검증, main은 운영 배포 대상으로 구분하며 블로그 Vercel Git 자동 배포는 main만 허용하고 develop·PR 미리보기를 차단한다. 공용 이미지 검증은 Services가, 커밋·Terraform 검사는 Static analysis가 소유한다.
 - 모든 변경은 기능 브랜치 → develop → main 순서로 반영한다. 기능·수정 PR의 base는 develop이며 main에는 develop에서만 PR을 올린다. 배포 장애 수정도 같은 경로를 따른다.
 - 일반 PR 제목은 `<type>(<scope>): <내용>` 형식을 쓴다. `develop → main` 릴리스 PR 제목은 `Release v<SemVer>` 형식으로 정한다(예: `Release v0.1.1-beta.2`). 릴리스 PR에서도 개별 커밋 메시지는 기존 커밋 컨벤션을 따른다.
-- PR은 squash가 아니라 merge commit으로 합친다(#94까지는 squash였으므로 그 이전 이력은 `gh pr view <번호> --json commits`로 본다). 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Static analysis` 안에 있는 커밋 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.
+- PR은 squash가 아니라 merge commit으로 합친다. #97까지의 PR(규칙은 #98에서 도입)과 그 뒤에도 부모 하나인 커밋으로 들어간 #133·#163·#167·#172·#200·#206·#213·#218은 `gh pr view <번호> --json commits`로 원래 커밋을 본다. 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Static analysis` 안에 있는 커밋 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.
+- 병합은 PR 최신 head에서 필수 검사 `knip`·`Service verification`·`Blog verification`이 모두 성공한 뒤에 한다. 릴리스 PR도 같으며 실패하거나 진행 중인 검사를 두고 병합하지 않는다. 필수 검사 지정은 [개발 가이드의 검증](docs/development.md#검증)을 따른다.
 
 - TypeScript CLI는 공통 `@side/config`의 `tsc7`(7.0.2)을 사용한다. JavaScript compiler API 의존 도구는 `typescript` 6.0.2를 사용하며, `typescript/bin/tsc` 경로를 직접 가정하지 않는다.
 - 설정 파일도 도구가 지원하면 `.ts`를 우선한다. 설치된 로더가 TypeScript 설정을 지원하지 않는 경우에만 `.mjs` 등 지원 형식을 유지한다.
