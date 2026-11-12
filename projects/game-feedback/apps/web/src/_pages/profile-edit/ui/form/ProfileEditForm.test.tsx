@@ -19,7 +19,10 @@ vi.mock('@game-feedback/sdk', async (importOriginal) => ({
   updateProfile: state.updateProfile,
   deleteProfileAvatar: state.deleteAvatar,
 }));
-vi.mock('@/features/user/api/avatar.api', () => ({ uploadAvatar: state.uploadAvatar }));
+vi.mock('@/features/user/api/avatar.api', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  uploadAvatar: state.uploadAvatar,
+}));
 vi.mock('@/features/user/api/user.api', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   fetchPublicProfile: state.fetchProfile,
@@ -232,5 +235,61 @@ describe('unified profile editing', () => {
     save();
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
     expect(state.deleteAvatar).toHaveBeenCalledTimes(2);
+  });
+
+  // 미리보기 ref가 렌더마다 새 함수라서 저장 대기처럼 다시 그릴 때마다 Blob URL을 해제하고 다시 만들었다.
+  it('keeps one preview URL while saving and releases it when the preview goes away', async () => {
+    const upload = Promise.withResolvers<PublicProfile>();
+    state.uploadAvatar.mockReturnValueOnce(upload.promise);
+    const onSaved = renderForm();
+    choosePhoto();
+    save();
+    await waitFor(() => expect(state.uploadAvatar).toHaveBeenCalledOnce());
+    expect(screen.getByLabelText('프로필 사진 선택').matches(':disabled')).toBe(true);
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    await act(async () => upload.resolve(profile));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(URL.revokeObjectURL).toHaveBeenCalledExactlyOnceWith('blob:preview');
+  });
+
+  // 예약어 닉네임이 형식 안내 문구로 거부돼 왜 저장되지 않는지 알 수 없었다.
+  it('explains a reserved nickname instead of the format hint when changing to it', async () => {
+    renderForm();
+    fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
+      target: { value: '관리자' },
+    });
+    save();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      '운영자나 관리자로 보이는 닉네임은 사용할 수 없어요.',
+    );
+    expect(state.updateProfile).not.toHaveBeenCalled();
+  });
+
+  // API는 닉네임을 바꿀 때만 예약어를 막으므로, 규칙 전에 정한 닉네임으로도 다른 내용을 저장할 수 있다.
+  it('saves other details for a user whose existing nickname is now reserved', async () => {
+    const onSaved = renderForm({ ...profile, author: { ...profile.author, nickname: '운영자' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '자기소개' }), {
+      target: { value: '소개를 고쳤어요' },
+    });
+    save();
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(state.updateProfile).toHaveBeenCalledWith({ nickname: '운영자', bio: '소개를 고쳤어요' });
+  });
+
+  // 파일 검증이 저장할 때만 돌아서 지원하지 않는 파일도 저장 전까지 깨진 미리보기로 보였다.
+  it('rejects an unsupported photo as soon as it is chosen without previewing it', async () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('프로필 사진 선택'), {
+      target: { files: [new File(['pdf'], 'me.pdf', { type: 'application/pdf' })] },
+    });
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.',
+    );
+    expect(screen.queryByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeNull();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    choosePhoto();
+    expect(await screen.findByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 });

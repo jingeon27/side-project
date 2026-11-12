@@ -5,7 +5,6 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 import type { Session } from '@/shared/api';
-import { useI18n } from '@/shared/i18n';
 import { openOverlay } from '@/shared/ui';
 
 import { sessionOptions } from '../model/auth.options';
@@ -23,9 +22,9 @@ interface ISessionProviderProps {
 const SessionContext = createContext<ISessionContext | undefined>(undefined);
 
 export function useSession() {
-  const { t } = useI18n();
   const context = useContext(SessionContext);
-  if (!context) throw new Error(t('SessionProvider가 필요합니다.'));
+  // 개발 중 provider 누락을 알리는 오류라 서비스 문구로 번역하지 않는다.
+  if (!context) throw new Error('SessionProvider가 필요합니다.');
   return context;
 }
 export function SessionProvider({ children, onLogin }: ISessionProviderProps) {

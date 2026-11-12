@@ -4,13 +4,20 @@ import { BRIDGE_EVENT, parseNativeMessage, WebPathSchema } from '@game-feedback/
 
 import { isNativeApp, NATIVE_BOOTSTRAP_EVENT, postToNative } from './native-client';
 
+interface INativeBackResult {
+  handled: boolean;
+  atRoot?: boolean;
+  /** back-result를 보낸 뒤에 실행할 이동. 이탈 확인 창을 띄워도 네이티브 응답이 늦지 않는다. */
+  navigate?: () => void;
+}
 interface INativeBridgeBinding {
   path: string;
   overlayOpen: boolean;
   onOpen: (path: string) => void;
   onActive: () => void;
+  /** back-result를 보낸 뒤에 부르므로 이탈 확인 창을 띄워도 된다. */
   onDismissOverlay: () => void;
-  onBack: () => { handled: boolean; atRoot?: boolean };
+  onBack: () => INativeBackResult;
 }
 
 export class NativeBridgeChannel {
@@ -80,12 +87,16 @@ export class NativeBridgeChannel {
       postToNative({ type: 'back-result', id, handled: true });
       return;
     }
+    // 네이티브는 back-result를 800ms만 기다리고, 넘으면 WebView 기록 이동이나 앱 종료로 넘어간다.
+    // 이탈 확인 창(window.confirm)은 답할 때까지 스크립트를 멈추므로 응답을 먼저 보내고 닫거나 이동한다.
     if (this.binding?.overlayOpen) {
-      this.binding.onDismissOverlay();
       postToNative({ type: 'back-result', id, handled: true });
+      this.binding.onDismissOverlay();
       return;
     }
-    postToNative({ type: 'back-result', id, ...(this.binding?.onBack() ?? { handled: false }) });
+    const { navigate, ...result }: INativeBackResult = this.binding?.onBack() ?? { handled: false };
+    postToNative({ type: 'back-result', id, ...result });
+    navigate?.();
   }
 
   private handleMessage = (event: Event) => {

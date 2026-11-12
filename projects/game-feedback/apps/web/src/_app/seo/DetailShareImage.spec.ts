@@ -11,11 +11,8 @@ const mocks = vi.hoisted(() => ({
   image: vi.fn(),
   options: vi.fn(),
 }));
-vi.mock('@game-feedback/sdk', () => ({
-  getPost: mocks.post,
-  getPublicProfile: mocks.profile,
-  ApiError: class extends Error {},
-}));
+vi.mock('@/features/post/index.server', () => ({ getPublicPost: mocks.post }));
+vi.mock('@/features/user/index.server', () => ({ getPublicServerProfile: mocks.profile }));
 vi.mock('@side/design-system/og', () => ({
   createSocialPreview: mocks.render,
   readSocialPreviewImage: mocks.image,
@@ -24,9 +21,8 @@ vi.mock('@/shared/api/server', () => ({ publicServerOptions: mocks.options }));
 afterEach(() => vi.resetAllMocks());
 
 describe('public detail image reads', () => {
-  it('uses the public API options and actual post title and author', async () => {
-    const options = { baseUrl: 'http://127.0.0.1:4301', headers: { 'x-gf-client-ip': 'internal' } };
-    mocks.options.mockReturnValue(options);
+  it('uses the public post lookup and actual post title and author', async () => {
+    mocks.options.mockReturnValue({ baseUrl: 'http://127.0.0.1:4301' });
     mocks.post.mockResolvedValue({
       post: {
         title: '함께 연습해요',
@@ -38,13 +34,12 @@ describe('public detail image reads', () => {
     });
     mocks.render.mockResolvedValue(new Response());
     await createDetailShareImage('posts', 'post-1');
-    expect(mocks.post).toHaveBeenCalledWith('post-1', options);
+    expect(mocks.post).toHaveBeenCalledWith('post-1');
     expect(mocks.render.mock.calls[0]?.[0]).toMatchObject({
       title: '함께 연습해요',
       label: '클래시로얄  /  게임 코칭',
       detail: '코치',
     });
-    expect(options.headers).not.toHaveProperty('Cookie');
   });
   it('rejects arbitrary paths before fetching or generating personalized content', async () => {
     const response = await createDetailShareImage('posts', '../secret');
@@ -65,6 +60,7 @@ describe('public detail image reads', () => {
     mocks.image.mockResolvedValue('data:image/png;base64,AQID');
     mocks.render.mockResolvedValue(new Response());
     await createDetailShareImage('users', 'user-1');
+    expect(mocks.profile).toHaveBeenCalledWith('user-1');
     expect(String(mocks.image.mock.calls[0]?.[0])).toBe(
       'http://127.0.0.1:4301/api/users/user-1/avatar?v=avatar-1',
     );

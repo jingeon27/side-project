@@ -1,10 +1,12 @@
 'use client';
 
+import { useCallback } from 'react';
+
 import { Controller, useWatch } from 'react-hook-form';
 
 import { Button, buttonVariants, cn } from '@side/design-system';
 
-import { avatarAccept } from '@/features/user';
+import { avatarAccept, isAvatarFile } from '@/features/user';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { Avatar, ErrorNotice } from '@/shared/ui';
@@ -13,19 +15,20 @@ import type { TProfileEditForm } from '../../model/profile-edit.schema';
 
 function PhotoPreview({ file }: { file: File }) {
   const { t } = useI18n();
+  // 저장 대기처럼 다시 그려도 같은 파일이면 Blob URL을 유지하고, 파일이 바뀌거나 사라질 때만 해제한다.
+  const handlePreview = useCallback(
+    (node: HTMLImageElement | null) => {
+      if (!node) return;
+      const url = URL.createObjectURL(file);
+      node.src = url;
+      return () => URL.revokeObjectURL(url);
+    },
+    [file],
+  );
   // Blob 미리보기는 서버 이미지 최적화 경로로 보낼 수 없다.
   return (
     // eslint-disable-next-line @next/next/no-img-element -- 로컬 Blob 미리보기
-    <img
-      alt={t('선택한 프로필 사진 미리보기')}
-      className="profile-photo-preview"
-      ref={(node) => {
-        if (!node) return;
-        const url = URL.createObjectURL(file);
-        node.src = url;
-        return () => URL.revokeObjectURL(url);
-      }}
-    />
+    <img alt={t('선택한 프로필 사진 미리보기')} className="profile-photo-preview" ref={handlePreview} />
   );
 }
 export function ProfilePhotoEditor({
@@ -49,7 +52,8 @@ export function ProfilePhotoEditor({
         name="file"
         render={({ field }) => (
           <div className="profile-photo-picker">
-            {file ? (
+            {/* 지원하지 않는 파일은 깨진 미리보기 대신 현재 사진을 둔다. */}
+            {file && isAvatarFile(file) ? (
               <PhotoPreview file={file} />
             ) : (
               <Avatar src={removePhoto ? null : author.avatarUrl} name={author.nickname} size="large" />
@@ -66,7 +70,7 @@ export function ProfilePhotoEditor({
                 onChange={(event) => {
                   const selected = event.target.files?.[0];
                   if (selected) {
-                    field.onChange(selected);
+                    form.setValue('file', selected, { shouldDirty: true, shouldValidate: true });
                     form.setValue('removePhoto', false, { shouldDirty: true });
                   }
                   event.target.value = '';

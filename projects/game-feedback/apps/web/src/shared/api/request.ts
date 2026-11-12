@@ -12,6 +12,7 @@ const errorMessages: Record<string, string> = {
   SUPERCELL_UNAVAILABLE: '게임 프로필을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.',
   GOOGLE_NOT_CONFIGURED: '아직 Google 로그인이 연결되지 않았어요.',
   NICKNAME_TAKEN: '이미 사용 중인 닉네임이에요.',
+  POST_CONFLICT: '이미 등록된 글이에요. 설정의 내가 작성한 글에서 확인해 주세요.',
 };
 export async function withApiError<T>(request: Promise<T>): Promise<T> {
   try {

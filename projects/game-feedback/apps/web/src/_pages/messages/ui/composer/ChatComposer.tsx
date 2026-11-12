@@ -64,7 +64,7 @@ export function ChatComposer({
       )}
       {mutation.isError && (
         <div className="chat-send-error" role="alert">
-          {chatError(mutation.error)}
+          {t(chatError(mutation.error))}
           <span>{t('작성한 내용은 그대로 남아 있어요.')}</span>
         </div>
       )}
@@ -108,7 +108,7 @@ export function ChatComposer({
           placeholder={t('플레이 이야기를 나눠보세요')}
           rows={1}
           maxLength={2000}
-          disabled={mutation.isPending}
+          readOnly={mutation.isPending}
           onKeyDown={handleKeyDown}
         />
         <MotionButton
@@ -119,6 +119,11 @@ export function ChatComposer({
           loading={mutation.isPending}
           icon={<Send aria-hidden />}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}
+          onMouseDown={(event) => {
+            // 모바일은 전송 버튼으로만 보내므로 버튼을 눌러도 포커스를 입력창에 둔다.
+            // pointerdown을 막으면 WebKit에서 탭이 click으로 이어지지 않는다.
+            event.preventDefault();
+          }}
         />
       </form>
       {draft.length >= 1800 && <p className="chat-compose-count">{draft.length.toLocaleString()} / 2,000</p>}

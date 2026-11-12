@@ -21,7 +21,9 @@ export async function getServerPostList(params: TPostListParams) {
 // 쿠키 없이 받은 공개 상세라 모든 사용자가 게시글 id 하나로 같은 캐시를 쓴다. 없는 글은 null로 캐시한다.
 // viewCount는 마지막 내용 변경 때의 값이다. 조회 집계는 이 태그를 만료하지 않고, 화면은 마운트 재조회와
 // 조회 기록 응답(recordPostViewMutationOptions)으로 최신 값을 보여준다.
-async function getPublicPost(id: string) {
+// 상세 공유 이미지도 이 캐시를 읽어, 같은 id를 반복 요청해도 공유 internal 예산을 다시 쓰지 않는다.
+// 캐시 밖으로 던진 오류는 직렬화되어 ApiError가 아닌 Error가 되므로 404는 안에서 null로 바꾼다.
+export async function getPublicPost(id: string) {
   'use cache';
   cacheTag(POSTS_CACHE_TAG, postDetailCacheTag(id));
   cacheLife('max');

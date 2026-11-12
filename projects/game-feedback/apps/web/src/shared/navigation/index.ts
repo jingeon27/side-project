@@ -4,6 +4,6 @@ export { ChildLink } from './ChildLink';
 export { RouteViewport, RouteViewportProvider, useRouteViewportHorizontalScroll } from './RouteViewport';
 export { installBrowserNavigation, backNavigation, subscribeBrowserLocation } from './browser-navigation';
 export { useBrowserSearch } from './use-browser-search';
-export { confirmNavigation } from './navigation-guard';
+export { confirmNavigation, confirmOverlayClose } from './navigation-guard';
 export { useUnsavedChanges } from './use-unsaved-changes';
-export { NavigationGuardProvider } from './NavigationGuardProvider';
+export { NavigationGuardProvider, NavigationOverlayContext } from './NavigationGuardProvider';

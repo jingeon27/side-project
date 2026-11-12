@@ -6,6 +6,7 @@ export { profileOptions } from './model/user.options';
 export { unblockUserMutationOptions } from './model/user.mutation-options';
 
 export { nicknameLength } from './model/nickname-length';
+export { RESERVED_NICKNAME_MESSAGE } from './model/reserved-nickname';
 export {
   updateProfileMutationOptions,
   deleteAvatarMutationOptions,

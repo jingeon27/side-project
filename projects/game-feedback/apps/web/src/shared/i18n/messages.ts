@@ -27,6 +27,15 @@ const messages: Record<string, readonly [string, string]> = {
     'Could not update notifications. Please try again.',
     '通知を設定できませんでした。もう一度お試しください。',
   ],
+  '확인 중…': ['Checking…', '確認中…'],
+  '앱 알림 설정을 확인하지 못했어요.': [
+    'Could not check app notification settings.',
+    'アプリ通知の設定を確認できませんでした。',
+  ],
+  '알림 설정 시간을 초과했어요. 다시 시도해 주세요.': [
+    'Notification setup timed out. Please try again.',
+    '通知の設定がタイムアウトしました。もう一度お試しください。',
+  ],
   '새로운 채팅이 도착했어요': ['New chat message', '新しいチャットメッセージ'],
   '{name}님이 메시지를 보냈어요.': ['{name} sent you a message.', '{name}さんからメッセージが届きました。'],
   '게임 프로필 연결 (선택)': ['Connect a game profile (optional)', 'ゲームプロフィールの連携（任意）'],
@@ -35,6 +44,10 @@ const messages: Record<string, readonly [string, string]> = {
     'タグを検索すると、登録時にゲームプロフィールを連携します。後からの登録も可能です。',
   ],
   '연결하지 않기': ['Skip connection', '連携しない'],
+  '반가워요! 함께 플레이를 나눠봐요.': [
+    "Welcome! Let's share our games.",
+    'ようこそ！一緒にプレイを共有しましょう。',
+  ],
   ...infoMessages,
   '화면 모드를 변경했어요': ['Display mode updated', '画面モードを変更しました'],
   '변경한 화면 모드는 이 기기에 저장돼요.': [
@@ -46,6 +59,55 @@ const messages: Record<string, readonly [string, string]> = {
   '로그인 후 이 기능을 이용할 수 있어요.': [
     'Sign in to use this feature.',
     'この機能を利用するにはログインしてください。',
+  ],
+  '로그인 후 이용할 수 있어요.': ['Sign in to continue.', 'ログインしてからご利用ください。'],
+  '이 작업을 할 권한이 없어요.': [
+    "You don't have permission to do this.",
+    'この操作を行う権限がありません。',
+  ],
+  '요청한 내용을 찾을 수 없어요.': [
+    'We could not find what you requested.',
+    'リクエストした内容が見つかりません。',
+  ],
+  '입력한 내용을 다시 확인해 주세요.': [
+    'Please check what you entered.',
+    '入力内容をもう一度確認してください。',
+  ],
+  '요청이 잠시 많아요. 조금 뒤에 다시 시도해 주세요.': [
+    'Too many requests right now. Please try again in a moment.',
+    'リクエストが集中しています。少し時間をおいてもう一度お試しください。',
+  ],
+  '플레이어를 찾지 못했어요. 태그를 확인해 주세요.': [
+    'Player not found. Check the tag.',
+    'プレイヤーが見つかりませんでした。タグを確認してください。',
+  ],
+  '게임 프로필을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.': [
+    'Could not load the game profile. Please try again in a moment.',
+    'ゲームプロフィールを読み込めませんでした。しばらくしてからもう一度お試しください。',
+  ],
+  '아직 Google 로그인이 연결되지 않았어요.': [
+    'Google sign-in is not connected yet.',
+    'Googleログインはまだ連携されていません。',
+  ],
+  '이미 사용 중인 닉네임이에요.': [
+    'This nickname is already taken.',
+    'このニックネームはすでに使われています。',
+  ],
+  '운영자나 관리자로 보이는 닉네임은 사용할 수 없어요.': [
+    'You cannot use a nickname that looks like an operator or administrator.',
+    '運営者や管理者に見えるニックネームは使用できません。',
+  ],
+  '이미 등록된 글이에요. 설정의 내가 작성한 글에서 확인해 주세요.': [
+    'This post was already published. Check My posts in Settings.',
+    'この投稿はすでに登録されています。設定の自分の投稿で確認してください。',
+  ],
+  '서버 응답을 확인하지 못했어요. 새로고침 후 내용을 확인해 주세요.': [
+    'Could not verify the server response. Refresh and check the content.',
+    'サーバーの応答を確認できませんでした。再読み込みして内容を確認してください。',
+  ],
+  '서버에 연결하지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.': [
+    'Could not connect to the server. Check your connection and try again.',
+    'サーバーに接続できませんでした。接続状況を確認して、もう一度お試しください。',
   ],
   로그인하기: ['Sign in', 'ログインする'],
   '소셜 계정으로 로그인하세요.': [
@@ -59,6 +121,24 @@ const messages: Record<string, readonly [string, string]> = {
   '로그인이 취소됐어요. 다시 선택해주세요.': [
     'Sign-in was cancelled. Choose a method to try again.',
     'ログインがキャンセルされました。もう一度選択してください。',
+  ],
+  '로그인 요청이 만료됐어요. 다시 시도해 주세요.': [
+    'Your sign-in request expired. Please try again.',
+    'ログインのリクエストの有効期限が切れました。もう一度お試しください。',
+  ],
+  '로그인하지 못했어요. 잠시 뒤 다시 시도해 주세요.': [
+    'Could not sign in. Please try again in a moment.',
+    'ログインできませんでした。しばらくしてからもう一度お試しください。',
+  ],
+  '이용이 제한된 소셜 계정으로는 다시 가입할 수 없어요.': [
+    'This social account is restricted and cannot be used to sign up again.',
+    '利用が制限されたソーシャルアカウントでは再登録できません。',
+  ],
+  '앱에서 다시 시도해 주세요.': ['Please try again in the app.', 'アプリでもう一度お試しください。'],
+  '로그인 시간이 초과되었습니다.': ['Sign-in timed out.', 'ログインがタイムアウトしました。'],
+  '로그인하지 못했습니다. 다시 시도해 주세요.': [
+    'Could not sign in. Please try again.',
+    'ログインできませんでした。もう一度お試しください。',
   ],
   '카카오 로그인': ['Login with Kakao', 'カカオでログイン'],
   '준비 중': ['Soon', '準備中'],
@@ -342,6 +422,14 @@ const messages: Record<string, readonly [string, string]> = {
     'Choose a supported image or video.',
     '対応する画像・動画を選択してください。',
   ],
+  '사진이나 동영상을 25MB 이하로 선택해주세요.': [
+    'Choose a photo or video up to 25MB.',
+    '25MB以下の写真または動画を選択してください。',
+  ],
+  '파일 전송에 실패했어요. 파일을 다시 선택해주세요.': [
+    'Could not upload the file. Choose the file again.',
+    'ファイルを送信できませんでした。ファイルを選び直してください。',
+  ],
   '동영상을 보냈어요': ['Sent a video', '動画を送信しました'],
   '이미지를 보냈어요': ['Sent an image', '画像を送信しました'],
   굵게: ['Bold', '太字'],
@@ -371,6 +459,8 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '첨부파일을 찾을 수 없습니다.': ['Attachment not found.', '添付ファイルが見つかりません。'],
   '본문 편집기': ['Post editor', '本文エディター'],
+  '게시글 사진': ['Post photo', '投稿の写真'],
+  '게시글 동영상': ['Post video', '投稿の動画'],
   '제목 2': ['Heading 2', '見出し2'],
   '제목 3': ['Heading 3', '見出し3'],
   '친구 추가 판매 글을 올리고 관심 있는 플레이어와 이야기해보세요.': [
@@ -465,6 +555,30 @@ const messages: Record<string, readonly [string, string]> = {
   '플레이 이야기를 나눠보세요': ['Talk about your game', 'プレイの話をしましょう'],
   '다시 보내기': ['Resend', '再送信'],
   보내기: ['Send', '送信'],
+  '연결을 확인하지 못했어요. 잠시 뒤 다시 시도해 주세요.': [
+    'Could not connect. Please try again in a moment.',
+    '接続を確認できませんでした。しばらくしてからもう一度お試しください。',
+  ],
+  '이 대화를 열 수 없어요. 상대가 탈퇴했거나 차단 상태가 바뀌었을 수 있어요.': [
+    'This conversation is unavailable. The other player may have left, or the block status may have changed.',
+    'この会話は開けません。相手が退会したか、ブロック状態が変わった可能性があります。',
+  ],
+  '현재 이 사용자와 대화를 시작할 수 없어요.': [
+    "You can't start a conversation with this player right now.",
+    '現在このユーザーとは会話を始められません。',
+  ],
+  '전송 내용이 변경되었어요. 내용을 확인하고 새 메시지로 보내주세요.': [
+    'The message has changed. Check it and send it as a new message.',
+    '送信内容が変更されました。内容を確認して、新しいメッセージとして送信してください。',
+  ],
+  '메시지를 너무 빠르게 보내고 있어요. 잠시 뒤 다시 시도해 주세요.': [
+    "You're sending messages too quickly. Please try again in a moment.",
+    'メッセージの送信が速すぎます。しばらくしてからもう一度お試しください。',
+  ],
+  '로그인이 만료되었어요. 다시 로그인해 주세요.': [
+    'Your session has expired. Please sign in again.',
+    'ログインの有効期限が切れました。もう一度ログインしてください。',
+  ],
   'Enter로 보내기, Shift + Enter로 줄바꿈': [
     'Enter to send, Shift + Enter for a new line',
     'Enterで送信、Shift + Enterで改行',
@@ -717,15 +831,21 @@ const messages: Record<string, readonly [string, string]> = {
     'アカウント、ゲームプロフィール、投稿を削除します。取り消すことはできません。',
   ],
   "계속하려면 '탈퇴'를 입력해 주세요": ["Type '탈퇴' to continue", '続けるには「탈퇴」と入力してください'],
+  "계속하려면 '탈퇴'를 입력해 주세요.": [
+    "Type '탈퇴' to continue.",
+    '続けるには「탈퇴」と入力してください。',
+  ],
+  '회원 탈퇴가 완료되었어요.': ['Your account has been deleted.', '退会が完了しました。'],
   탈퇴: ['탈퇴', '탈퇴'],
   '계정 영구 삭제하기': ['Permanently delete account', 'アカウントを完全に削除'],
   '계속 함께하기': ['Keep my account', '利用を続ける'],
   '게임 프로필 연결': ['Connect game profile', 'ゲームプロフィールを連携'],
+  '게임 프로필이 연결되었어요.': ['Game profile connected.', 'ゲームプロフィールを連携しました。'],
   '플레이어 태그로 트로피와 아레나를 확인해요.': [
     'Look up your trophies and arena using your player tag.',
     'プレイヤータグからトロフィーとアリーナを確認します。',
   ],
-  '게임 프로필에 표시된 #과 영문·숫자 태그를 입력해주세요.': [
+  '게임 프로필에 표시된 #과 영문, 숫자로 된 태그를 입력해주세요.': [
     'Enter the # and player tag shown on your game profile.',
     'ゲームプロフィールに表示されている # と英数字のタグを入力してください。',
   ],
@@ -757,9 +877,14 @@ const messages: Record<string, readonly [string, string]> = {
   명: [' people', '人'],
   '차단한 사용자가 없어요.': ['No blocked players.', 'ブロックしたユーザーはいません。'],
   '차단 해제': ['Unblock', 'ブロックを解除'],
+  '차단을 해제했어요.': ['Player unblocked.', 'ブロックを解除しました。'],
   언어: ['Language', '言語'],
   '계정 관리': ['Account', 'アカウント管理'],
   로그아웃: ['Sign out', 'ログアウト'],
+  '로그아웃했어요. 다음 플레이에서 만나요!': [
+    'Signed out. See you next game!',
+    'ログアウトしました。また次のプレイで会いましょう！',
+  ],
   '회원 탈퇴': ['Delete account', '退会'],
   '요청자가 도움받은 피드백': ['Marked helpful by the requester', '依頼者が役に立ったと評価した回答'],
   '요청자 확인': ['Seen by requester', '依頼者が確認済み'],
@@ -1063,8 +1188,17 @@ const messages: Record<string, readonly [string, string]> = {
   '{count}일 전': ['{count} days ago', '{count}日前'],
 };
 
+function messageKey(message: string) {
+  return message.replace(/\s+/g, ' ').trim();
+}
+
+/** 사전에 등록된 서비스 문구인지 확인한다. 없는 문구는 translate가 한국어 원문 그대로 돌려준다. */
+export function hasMessage(message: string) {
+  return Object.hasOwn(messages, messageKey(message));
+}
+
 export function translate(locale: TLocale, message: string, values: Record<string, string | number> = {}) {
-  const key = message.replace(/\s+/g, ' ').trim();
+  const key = messageKey(message);
   const translated = locale === 'ko' ? message : (messages[key]?.[locale === 'en' ? 0 : 1] ?? message);
   return translated.replace(/\{(\w+)\}/g, (token, name: string) => String(values[name] ?? token));
 }

@@ -22,6 +22,7 @@ import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { useUnsavedChanges } from '@/shared/navigation';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
 import {
   focusInvalidPostContent,
@@ -59,6 +60,8 @@ export function CreatePostForm({
     categories.find((category) => category.active && category.slug === 'clash-royale')?.id ?? '';
   const form = useZodForm(postComposerSchema, {
     defaultValues: {
+      // 실패한 초안을 다시 보내도 같은 키를 쓰므로 응답만 끊긴 요청이 글을 하나 더 만들지 않는다.
+      clientRequestId: crypto.randomUUID(),
       title: '',
       body: '',
       editorValid: true,
@@ -69,18 +72,29 @@ export function CreatePostForm({
       battle: { mode: initialBattleMode ?? 'DUEL' },
     },
   });
+  useUnsavedChanges({
+    hasChanges: form.formState.isDirty,
+    confirm: () =>
+      window.confirm(t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?')),
+  });
   const board = useWatch({ control: form.control, name: 'board' }) ?? initialBoard;
   const pending = create.isPending || upload.isPending;
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
       const result = await create.mutateAsync({
-        body: { ...postContentInput(values), categoryId: values.categoryId, board: values.board },
+        body: {
+          ...postContentInput(values),
+          categoryId: values.categoryId,
+          board: values.board,
+          clientRequestId: values.clientRequestId,
+        },
       });
       trackEvent(ANALYTICS_EVENT.PostCreated, {
         board: result.board ?? values.board ?? 'FEEDBACK',
         game: result.category.slug,
       });
-      form.reset();
+      // 등록한 글만 새 요청으로 시작한다. 실패한 요청의 재시도 키는 그대로 둔다.
+      form.reset({ ...form.formState.defaultValues, clientRequestId: crypto.randomUUID() });
       notify(t('게시글을 등록했어요.'));
       router.replace(
         appRoutes.post(locale, result.id, initialCategoryId ? result.board : undefined, result.category.slug),
