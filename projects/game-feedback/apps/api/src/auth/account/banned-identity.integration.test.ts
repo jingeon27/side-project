@@ -132,8 +132,11 @@ describe('banned social identities after account deletion', () => {
     const rejected = await web
       .get('/api/auth/social/kakao/callback')
       .query({ state: webState, code: 'withdrawn-kakao-banned-subject' })
-      .expect(403);
-    expect(rejected.body.errorCode).toBe('USER_BANNED');
+      .expect(302);
+    // 브라우저가 연 콜백이라 JSON 대신 로그인 화면에서 거부 이유를 보여 준다.
+    const destination = new URL(responseLocation(rejected));
+    expect(destination.pathname).toBe('/ko/login');
+    expect(destination.searchParams.get('login')).toBe('banned');
     expect(SessionSchema.parse((await web.get('/api/session')).body).needsOnboarding).toBe(false);
 
     const verifier = randomBytes(32).toString('base64url');

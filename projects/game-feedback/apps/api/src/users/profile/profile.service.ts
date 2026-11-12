@@ -3,13 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 
-import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
+import { NewNicknameSchema, POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
 import { lockActiveUser } from '../../auth/account/user-write';
 import { requireUser } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
+import { parse } from '../../common/validation';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient } from '../../generated/prisma';
 import {
@@ -38,7 +39,9 @@ export class ProfileService {
     const { nickname, bio } = input;
     await this.cache.change(
       async (tx) => {
-        await lockActiveUser({ client: tx, userId: user.id });
+        const current = await lockActiveUser({ client: tx, userId: user.id });
+        // 프로필 저장은 지금 닉네임을 늘 함께 보낸다. 바꾸는 닉네임만 가입과 같은 예약어 규칙으로 검사한다.
+        if (nickname !== undefined && nickname !== current.nickname) parse(NewNicknameSchema, nickname);
         return tx.user.update({
           where: { id: user.id },
           data: {

@@ -31,3 +31,7 @@ export const AuthReturnPathSchema = z
     const nested = languagePath(destinations[0] ?? '');
     return !!nested && nested.locale === parsed.locale && !isAuthPath(nested.destination.pathname);
   }, '로그인 후 돌아갈 서비스 경로를 확인해주세요.');
+
+/** 웹 소셜 로그인 콜백이 실패하면 `login` 쿼리로 넘기는 이유. 취소는 시작한 화면에, 그 밖의 실패는 로그인 화면에 붙인다. */
+export const LoginFailureSchema = z.enum(['cancelled', 'expired', 'failed', 'banned']);
+export type TLoginFailure = z.infer<typeof LoginFailureSchema>;
