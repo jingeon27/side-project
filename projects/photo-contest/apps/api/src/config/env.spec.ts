@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { apiHost, apiPort, assertProductionConfig, trustedProxyHops, webOrigin } from './env';
+import { apiHost, apiPort, assertProductionConfig, awsCredentials, trustedProxyHops, webOrigin } from './env';
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -39,5 +39,19 @@ describe('runtime settings from the project env', () => {
   it('uses the configured web origin without a path', () => {
     vi.stubEnv('WEB_ORIGIN', 'https://contest.example/app/');
     expect(webOrigin()).toBe('https://contest.example');
+  });
+  it('passes AWS keys to the storage client only when both the key id and the secret are set', () => {
+    vi.stubEnv('AWS_ACCESS_KEY_ID', 'unit-key');
+    vi.stubEnv('AWS_SECRET_ACCESS_KEY', '');
+    vi.stubEnv('AWS_SESSION_TOKEN', 'unit-session');
+    expect(awsCredentials()).toBeUndefined();
+    vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'unit-secret');
+    expect(awsCredentials()).toStrictEqual({
+      accessKeyId: 'unit-key',
+      secretAccessKey: 'unit-secret',
+      sessionToken: 'unit-session',
+    });
+    vi.stubEnv('AWS_SESSION_TOKEN', '');
+    expect(awsCredentials()).toStrictEqual({ accessKeyId: 'unit-key', secretAccessKey: 'unit-secret' });
   });
 });

@@ -100,4 +100,20 @@ describe('PostModerationService 회귀', () => {
     });
     expect(await hiddenIds()).toContain(migrated.id);
   });
+
+  it('범위 인자에 명시적인 null을 보내면 기본 범위로 숨긴 목록을 돌려줘야 한다', async () => {
+    // JS 기본 매개변수는 undefined에만 적용돼, 다른 목록과 달리 null이 pageRange까지 가서 BAD_USER_INPUT이 났다.
+    await api.gqlOk(owner.cookie, HIDE, { id: postId, hidden: true });
+    const { hiddenGalleryPosts, hiddenGalleryPostsPage } = await api.gqlOk<{
+      hiddenGalleryPosts: { id: string }[];
+      hiddenGalleryPostsPage: { items: { id: string }[]; nextOffset: number | null };
+    }>(
+      owner.cookie,
+      'query($id:ID!){hiddenGalleryPosts(groupId:$id,offset:null,limit:null){id} hiddenGalleryPostsPage(groupId:$id,offset:null,limit:null){items{id} nextOffset}}',
+      { id: groupId },
+    );
+    expect(hiddenGalleryPosts.map(({ id }) => id)).toContain(postId);
+    expect(hiddenGalleryPostsPage.items).toEqual(hiddenGalleryPosts);
+    expect(hiddenGalleryPostsPage.nextOffset).toBeNull();
+  });
 });

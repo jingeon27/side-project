@@ -271,15 +271,14 @@ export class PostService {
       const { post, admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (!admin && post.authorId !== viewer.id)
         fail('작성자와 그룹 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
-      await (tx ?? this.db).post.delete({ where: { id: postId } });
-      await recordEvent(tx ?? this.db, {
+      await tx.post.delete({ where: { id: postId } });
+      await recordEvent(tx, {
         id: `post-deleted:${postId}`,
         type: ANALYTICS_EVENT.POST_DELETED,
         userId: viewer.id,
         properties: { postId, groupId: post.groupId },
       });
-      if (post.legacySubmissionId)
-        await (tx ?? this.db).submission.deleteMany({ where: { id: post.legacySubmissionId } });
+      if (post.legacySubmissionId) await tx.submission.deleteMany({ where: { id: post.legacySubmissionId } });
       if (post.uploadId) await this.files.releaseUpload(post.uploadId, tx);
       return post.upload;
     });

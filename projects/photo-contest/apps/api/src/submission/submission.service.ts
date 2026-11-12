@@ -109,7 +109,7 @@ export class SubmissionService {
         client: tx,
       });
       if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-      const upload = await (tx ?? this.db).upload.findUnique({ where: { id: input.uploadId } });
+      const upload = await tx.upload.findUnique({ where: { id: input.uploadId } });
       if (
         !upload ||
         upload.userId !== viewer.id ||
@@ -118,7 +118,7 @@ export class SubmissionService {
         upload.expiresAt < dayjs().toDate()
       )
         fail(MESSAGE.UPLOAD_INCOMPLETE);
-      const created = await (tx ?? this.db).submission.create({
+      const created = await tx.submission.create({
         data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
         include: submissionInclude(viewer.id, isAdmin(member)),
       });
@@ -126,14 +126,14 @@ export class SubmissionService {
       if (upload.mediaUploadId)
         await tx.postUpload.update({ where: { id: upload.mediaUploadId }, data: { expiresAt: null } });
       const properties = { contestId: contest.id, groupId: contest.groupId };
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `submission:${created.id}`,
         type: ANALYTICS_EVENT.SUBMISSION_CREATED,
         userId: viewer.id,
         properties,
       });
       // 같은 그룹의 이전 대회에 참여했던 사람이 다시 참여했는지(재참여율)를 본다.
-      const previous = await (tx ?? this.db).submission.findFirst({
+      const previous = await tx.submission.findFirst({
         where: {
           authorId: viewer.id,
           contest: { groupId: contest.groupId, endsAt: { lt: contest.startsAt } },
@@ -141,7 +141,7 @@ export class SubmissionService {
         select: { id: true },
       });
       if (previous)
-        await recordEvent(tx ?? this.db, {
+        await recordEvent(tx, {
           id: `return:${contest.id}:${viewer.id}`,
           type: ANALYTICS_EVENT.NEXT_CONTEST_JOINED,
           userId: viewer.id,

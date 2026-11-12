@@ -19,7 +19,7 @@ function sha256Hex(value: string) {
   return createHash('sha256').update(value).digest('hex');
 }
 
-describe('개발 로그인과 세션', () => {
+describe('로그인 세션', () => {
   let api: ITestApi;
 
   beforeAll(async () => {
@@ -52,7 +52,7 @@ describe('개발 로그인과 세션', () => {
     return me?.id ?? null;
   }
 
-  it('개발 로그인은 HttpOnly·SameSite=Lax·Path=/ 세션 쿠키를 30일짜리로 내려줘야 한다', async () => {
+  it('아이디 가입은 HttpOnly·SameSite=Lax·Path=/ 세션 쿠키를 30일짜리로 내려줘야 한다', async () => {
     const response = await passwordRegistration('세션-쿠키');
     expect(response.status).toBe(200);
     expect(response.body.errors).toBeUndefined();
@@ -61,7 +61,7 @@ describe('개발 로그인과 세션', () => {
     const attributes = cookieAttributes(cookie!);
     expect(attributes).toEqual(expect.arrayContaining(['HttpOnly', 'SameSite=Lax', 'Path=/']));
     expect(attributes).toContain(`Max-Age=${SESSION_MAX_AGE_SECONDS}`);
-    // 개발 모드(http)에서는 Secure를 붙이지 않는다. 운영 모드는 앱 로그인 교환 테스트가 본다.
+    // 개발·테스트(http)에서는 Secure를 붙이지 않는다. 운영(https)은 auth-cookie.integration.spec.ts가 본다.
     expect(attributes).not.toContain('Secure');
     expect(cookieValue(cookie!)).toMatch(/^[A-Za-z0-9_-]{43}$/);
   });
