@@ -1,6 +1,6 @@
 <Summary>
 
-An interview prompted me to revisit the component tests I had given too little thought to. Reading library tests helped me find missing cases in Photo Contest's infinite scroll and dropdown menus, and reconsider how to divide those tests.
+I revisited the component tests I had given too little thought to. Reading library tests helped me find missing cases in Photo Contest's infinite scroll and dropdown menus, and reconsider how to divide those tests.
 
 </Summary>
 
@@ -8,9 +8,9 @@ An interview prompted me to revisit the component tests I had given too little t
 
 At work, I wrote unit tests mainly for logic and checked screens through integration and E2E tests. I built those screens with Radix, Base UI, and shadcn/ui, which I trusted for their popularity, high download counts, and quick fixes for reported issues. I had given little thought to how their components were tested.
 
-When reading library code, I usually started with the implementation and type definitions. Tests were useful as examples of inputs and usage. Then an interview question about dropdown menu design made me realize how little I had considered the UI I used regularly. I felt embarrassed.
+When reading library code, I usually started with the implementation and type definitions. Tests were useful as examples of inputs and usage.
 
-That experience also made me revisit my [test file convention at work](/en/blog/testing-standards). New feature specifications went in `*.spec.*` files, while `*.test.*` files reproduced unexpected failures to prevent regressions. I knew my test design had gaps and wanted to keep filling them as problems surfaced. Looking back, I should have spent more thought on which situations to cover in the initial specification.
+I also revisited my [test file convention at work](/en/blog/testing-standards). New feature specifications went in `*.spec.*` files, while `*.test.*` files reproduced unexpected failures to prevent regressions. I knew my test design had gaps and wanted to keep filling them as problems surfaced. Looking back, I should have spent more thought on which situations to cover in the initial specification.
 
 Infinite scrolling and dropdowns have plenty of cases that are easy to miss. A test that only checks for new cards after scrolling to the end can pass even if the existing list disappears while the request is pending. Checking only that a menu opens can miss an item clipped by the bottom of the screen.
 
