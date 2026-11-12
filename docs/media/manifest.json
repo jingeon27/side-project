@@ -56,8 +56,11 @@
       "route": "/explore",
       "width": 430,
       "height": 860,
-      "sha256": "cb051f3437be589d1225ea8ed9a170cd302ed2592e0009bc331a938e52993cf5",
-      "bytes": 46180
+      "sha256": "c3fa74f21279d445fb8a9525eeee4d2514455baca75d56b0da917286b927d7c9",
+      "bytes": 49089,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "그라데이션 그룹 아바타와 공개 배지, 글쓰기 버튼을 반영한 그룹 탐색 화면 재촬영",
+      "capturedOn": "2026-11-12"
     },
     {
       "service": "pisik",
@@ -65,31 +68,37 @@
       "route": "/",
       "width": 1280,
       "height": 800,
-      "sha256": "353311b7e4883a70d620909cc0a49b7bb4775d871f2fdffe58f0d0405460c894",
-      "bytes": 100818
+      "sha256": "25b65f22f3a2b4b0aa93c86757512b9e712896dbccc7d46ea7f3d05e33deada1",
+      "bytes": 109529,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "참여한 그룹 목록과 그라데이션 글쓰기 버튼을 반영한 데스크톱 홈 재촬영",
+      "capturedOn": "2026-11-12"
     },
     {
       "service": "pisik",
       "file": "pisik-group.png",
-      "route": "/groups/b2ab1b65-d021-4f9a-a377-43bf17967f7c",
+      "route": "/groups/[groupId]",
       "width": 430,
       "height": 860,
-      "sha256": "16731c9e82e74e20e376b98af87098dd30ef560bd786b9c1c6e23179048ab824",
-      "bytes": 38256
+      "sha256": "6e6000807edda5c7fd0e2f53ef845e139025caec680c2bfb8bfd1949a0ebb067",
+      "bytes": 51929,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "테두리 없이 화면 끝까지 넓힌 게시물 피드를 반영한 그룹 화면 재촬영",
+      "capturedOn": "2026-11-12"
     },
     {
       "service": "pisik",
       "file": "pisik-group-comments.gif",
-      "frames": 32,
-      "duration": 7.47,
+      "frames": 21,
+      "duration": 7.34,
       "width": 430,
       "height": 860,
-      "sha256": "2f3af70fc976f39440f85f3c78e2c847d9a54f7693df29628223390a77292991",
+      "sha256": "2f36bcdce1f8e9ee30d829e2cc02e1776cd794879889e83e0203c9d162f3ff1c",
       "kind": "browser-recording",
-      "bytes": 234988,
-      "sourceCommit": "824819b966b3288c4053c94ed7b75a9bcb780fed",
-      "sourceChange": "댓글 전송 버튼을 Send 아이콘과 둥근 사각형으로 바꾸고 상하 여백을 맞춘 댓글 등록 흐름 재촬영",
-      "capturedOn": "2026-11-05"
+      "bytes": 261944,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "브랜드 리디자인을 반영한 그룹 탐색·댓글 등록 흐름 재촬영",
+      "capturedOn": "2026-11-12"
     },
     {
       "service": "blog",
