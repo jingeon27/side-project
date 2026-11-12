@@ -6,6 +6,17 @@ const appEntries = [
   '**/*.{spec,test,e2e}.{ts,tsx}',
 ];
 
+const mobileWorkspace = {
+  entry: appEntries,
+  // 앱 환경을 읽는 Expo 설정은 실행하지 않고 appEntries로 정적 분석한다. Babel 연결은 유지한다.
+  expo: { config: [] },
+  ignoreDependencies: [
+    'expo-build-properties', // app.config.ts의 문자열로 등록하는 네이티브 빌드 플러그인
+    'expo-dev-client', // Expo가 자동 포함하는 개발 클라이언트
+    'expo-system-ui', // userInterfaceStyle·backgroundColor 설정을 적용하는 네이티브 모듈
+  ],
+};
+
 export default defineConfig({
   ignoreExportsUsedInFile: true,
   ignore: ['**/generated/**', '**/__fixtures__/**'],
@@ -29,11 +40,8 @@ export default defineConfig({
     'projects/photo-contest/apps/web': { entry: [...appEntries, 'test/browser/main.tsx'] },
     // k6의 내장 모듈은 npm 의존성이 아니다.
     'projects/*/apps/*/scripts': { entry: ['*.{ts,js}'], ignoreDependencies: ['k6'] },
-    'projects/game-feedback/apps/mobile': {
-      entry: appEntries,
-      // Knip의 Expo 플러그인은 OTA를 쓰지 않아도 expo-updates를 기본 의존성으로 가정한다.
-      ignoreDependencies: ['expo-updates'],
-    },
+    'projects/game-feedback/apps/mobile': mobileWorkspace,
+    'projects/photo-contest/apps/mobile': mobileWorkspace,
     'projects/photo-contest/apps/api': {
       // database 프로젝트는 CLI로 선택할 때만 등록되므로 초기화 진입점을 명시한다.
       entry: [
