@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { match } from 'ts-pattern';
 
@@ -100,7 +102,9 @@ export async function runTask(task: string | undefined) {
     });
 }
 
-if (process.argv[1] === new URL(import.meta.url).pathname) {
+// URL pathname은 공백·한글을 인코딩하고 import.meta.url은 심볼릭 링크를 푼 경로라서, 실제 파일 경로끼리 비교한다.
+// 판정이 어긋나면 check·test·build가 아무것도 실행하지 않고 성공으로 끝난다.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     await runTask(action);
   } catch (error) {
