@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Category, Post } from '@/shared/api';
+import { ApiError, type Category, type Post } from '@/shared/api';
 import { confirmNavigation, NavigationGuardProvider } from '@/shared/navigation';
 import type { PostContentFields } from '@/widgets/post-composer';
 
@@ -81,7 +81,8 @@ beforeEach(() => {
 
 describe('글쓰기 등록 실패와 재시도', () => {
   it('연결이 끊기면 다시 시도할 문구를 보이고, 같은 초안의 재시도는 같은 요청 키로 보낸다', async () => {
-    state.createPost.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    // SDK는 서버에 닿지 못한 fetch 거절을 NETWORK_ERROR로 바꿔 던진다.
+    state.createPost.mockRejectedValueOnce(new ApiError(0, 'NETWORK_ERROR', 'Failed to fetch'));
     renderForm();
     fillDraft();
     submit();

@@ -81,7 +81,8 @@ it('retains the draft and focus during a failed save, then clears only after a s
 });
 
 it('shows reconnect guidance instead of the raw browser error when the request never reaches the server', async () => {
-  state.create.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  // SDK는 서버에 닿지 못한 fetch 거절을 NETWORK_ERROR로 바꿔 던진다.
+  state.create.mockRejectedValueOnce(new ApiError(0, 'NETWORK_ERROR', 'Failed to fetch'));
   renderComposer();
   const input = screen.getByRole<HTMLTextAreaElement>('textbox', { name: '피드백 내용' });
   fireEvent.change(input, { target: { value: '연결이 끊겨도 남아야 하는 피드백이에요.' } });

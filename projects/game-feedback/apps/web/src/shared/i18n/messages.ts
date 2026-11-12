@@ -109,6 +109,10 @@ const messages: Record<string, readonly [string, string]> = {
     'Could not connect to the server. Check your connection and try again.',
     'サーバーに接続できませんでした。接続状況を確認して、もう一度お試しください。',
   ],
+  '요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.': [
+    'Could not process the request. Please try again in a moment.',
+    'リクエストを処理できませんでした。しばらくしてからもう一度お試しください。',
+  ],
   로그인하기: ['Sign in', 'ログインする'],
   '소셜 계정으로 로그인하세요.': [
     'Sign in with your social account.',
