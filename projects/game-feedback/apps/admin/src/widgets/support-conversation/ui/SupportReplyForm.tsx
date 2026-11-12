@@ -13,13 +13,15 @@ export function SupportReplyForm({ conversationId }: { conversationId: string })
   const send = useMutation(replyMutationOptions(client, conversationId));
   const form = useZodForm(supportReplySchema, { defaultValues: { body: '' } });
   const handleSend = form.handleSubmit(async ({ body }) => {
+    const submittedDraft = form.getValues('body');
     const clientMessageId =
       (send.isError || send.isPending) && send.variables?.body === body
         ? send.variables.clientMessageId
         : crypto.randomUUID();
     try {
       await send.mutateAsync({ conversationId, body, clientMessageId });
-      form.reset();
+      // 전송·목록 갱신 중 작성한 다음 답변은 서버가 수락한 초안과 별개다.
+      if (form.getValues('body') === submittedDraft) form.reset();
     } catch {
       // Keep the draft and retry UUID until the server accepts this reply.
     }

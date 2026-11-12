@@ -62,6 +62,6 @@ Slug는 제목을 고쳐도 유지합니다. redirect를 두지 않으므로 slu
 
 ## 환경변수와 외부 서비스
 
-운영 `SITE_URL`은 `https://blog.bambyul.com`입니다. 공개 빌드 변수는 변경 후 재빌드해야 합니다. Sentry·Clarity는 키가 없으면 초기화하지 않습니다. **GA4는 production에서 ID 미설정 시 기본 측정 ID를 사용하므로**, Preview나 검토 빌드에서 수집을 끄려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`를 명시적으로 빈 값으로 설정합니다.
+운영 `SITE_URL`은 `https://blog.bambyul.com`입니다. 공개 빌드 변수는 변경 후 재빌드해야 합니다. Sentry는 키가 없으면 초기화하지 않습니다. Clarity 연동은 검색어가 URL로 수집되는 것을 막기 위해 중단했으며, 이전 project ID가 남아 있어도 로드하지 않습니다. **GA4는 production에서 ID 미설정 시 기본 측정 ID를 사용하므로**, Preview나 검토 빌드에서 수집을 끄려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`를 명시적으로 빈 값으로 설정합니다.
 
 DNS 연결·실제 배포와 분석 도구의 이벤트 수신은 별개입니다. 확인한 운영 상태와 미검증 범위는 [배포 가이드](docs/deployment.md), 변경·검증 이력은 [구현 기록](docs/implementation.md)을 봅니다.

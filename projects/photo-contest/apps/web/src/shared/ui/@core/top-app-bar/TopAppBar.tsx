@@ -9,7 +9,8 @@ import { useBackNavigation } from '../../../model/router';
 import { IconButton } from '../icon-button';
 import { BrandIcon } from './BrandIcon';
 
-const APP_BAR_CLASS_NAME = 'sticky top-0 z-app-bar shrink-0 border-b border-line bg-surface pt-(--safe-top)';
+const APP_BAR_CLASS_NAME =
+  'sticky top-0 z-app-bar shrink-0 border-b border-line/70 bg-surface/85 pt-(--safe-top) backdrop-blur-xl backdrop-saturate-150';
 
 interface ITopAppBarProps {
   /** 화면 제목(h1). 길면 한 줄로 자른다. */

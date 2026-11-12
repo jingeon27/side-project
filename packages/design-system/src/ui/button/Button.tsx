@@ -22,6 +22,9 @@ export const buttonVariants = cva(
         ghost: 'bg-transparent text-ink hover:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
         danger: 'bg-danger text-on-brand hover:brightness-95 active:not-data-disabled:brightness-90',
         accent: 'bg-accent text-on-accent hover:brightness-95 active:not-data-disabled:brightness-90',
+        /** 브랜드 그라데이션. 밝은 채도 위라 글자는 on-accent(검정)로 둔다. */
+        gradient:
+          'bg-brand-gradient text-on-accent shadow-glow hover:brightness-105 active:not-data-disabled:brightness-95',
       },
       size: {
         /** 44×44 아이콘만 있는 버튼. 이름은 aria-label로 준다(IconButton 권장). */

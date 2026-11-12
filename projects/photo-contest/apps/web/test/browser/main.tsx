@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { MotionProvider } from '@side/design-system/ui/motion-provider';
 
 import { PullToRefresh } from '../../src/shared/ui/@core/pull-to-refresh/PullToRefresh';
+import { CommentComposerExample } from './CommentComposerExample';
 import { GalleryInteractionsExample } from './GalleryInteractionsExample';
 import { PostFeedExample } from './PostFeedExample';
 import { StatusAnimationsExample } from './StatusAnimationsExample';
@@ -39,6 +40,7 @@ function PullToRefreshExample() {
 }
 
 const examples = {
+  comments: <CommentComposerExample />,
   feed: <PostFeedExample />,
   gallery: <GalleryInteractionsExample />,
   motion: <StatusAnimationsExample />,

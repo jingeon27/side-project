@@ -30,15 +30,10 @@ function NavItem({
       onClick={onClick}
       className={cn(
         'group flex h-full flex-col items-center justify-center gap-1 text-micro transition-colors active:bg-sunken',
-        isActive ? 'font-bold text-accent-ink' : 'text-muted hover:text-ink',
+        isActive ? 'font-bold text-ink' : 'text-muted hover:text-ink',
       )}
     >
-      <span
-        className={cn(
-          'flex h-8 w-16 items-center justify-center rounded-full transition-[background-color,transform] group-active:scale-90',
-          isActive ? 'bg-accent-soft' : 'group-hover:bg-sunken',
-        )}
-      >
+      <span className="flex h-8 w-16 items-center justify-center transition-transform group-active:scale-90">
         {icon}
       </span>
       {label}
@@ -57,7 +52,7 @@ export function BottomNav() {
     <nav
       aria-label="주요 메뉴"
       data-bottom-nav
-      className="sticky bottom-0 z-bottom-nav mt-auto shrink-0 border-t border-line bg-surface pb-(--safe-bottom) desktop:hidden keyboard-open:invisible"
+      className="sticky bottom-0 z-bottom-nav mt-auto shrink-0 border-t border-line/70 bg-surface/85 pb-(--safe-bottom) backdrop-blur-xl backdrop-saturate-150 desktop:hidden keyboard-open:invisible"
     >
       <ul className="grid h-bottom-nav grid-cols-3">
         <li>

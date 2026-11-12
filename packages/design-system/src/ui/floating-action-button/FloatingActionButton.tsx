@@ -37,6 +37,8 @@ export interface IFloatingActionButtonProps extends Pick<
   compact?: boolean;
   /** 기본 아이콘은 Plus이며 전달한 아이콘도 장식으로 처리한다. */
   icon?: ReactNode;
+  /** 브랜드 그라데이션을 쓰는 서비스는 gradient를 고른다. */
+  variant?: Extract<IButtonProps['variant'], 'accent' | 'gradient'>;
   onClick: NonNullable<IButtonProps['onClick']>;
 }
 
@@ -45,6 +47,7 @@ export function FloatingActionButton({
   label,
   compact = false,
   icon = <Plus className="size-5" />,
+  variant = 'accent',
   className,
   ...props
 }: IFloatingActionButtonProps) {
@@ -52,11 +55,11 @@ export function FloatingActionButton({
     <Button
       {...props}
       type="button"
-      variant="accent"
+      variant={variant}
       size="lg"
       aria-label={label}
       data-compact={compact}
-      className={cn(floatingActionButtonVariants(), className)}
+      className={cn(floatingActionButtonVariants(), variant === 'gradient' && 'shadow-glow', className)}
     >
       <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center">
         {icon}

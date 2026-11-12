@@ -15,6 +15,8 @@ export default defineConfig({
               test: {
                 name: 'database',
                 environment: 'node' as const,
+                // Prisma migration 잠금은 스키마가 달라도 같은 DB에서 공유한다.
+                fileParallelism: false,
                 testTimeout: 30_000,
                 hookTimeout: 60_000,
                 include: [
@@ -44,6 +46,7 @@ export default defineConfig({
         test: {
           name: 'integration',
           environment: 'node',
+          fileParallelism: false,
           testTimeout: 30_000,
           hookTimeout: 60_000,
           include: integrationFiles,

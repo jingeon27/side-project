@@ -103,7 +103,7 @@ export function LatestPosts({
   );
   return (
     <section className="relative flex min-w-0 flex-col gap-3" aria-label={title}>
-      <div className="mb-1 flex min-h-touch items-center justify-between gap-3 border-b border-line pb-3">
+      <div className="flex min-h-touch items-center justify-between gap-3">
         <h2 className="text-title-lg text-ink">{title}</h2>
       </div>
       <AsyncBoundary

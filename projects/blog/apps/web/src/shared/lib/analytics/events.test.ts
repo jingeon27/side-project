@@ -4,15 +4,19 @@ beforeEach(() => {
   vi.resetModules();
   vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', 'G-TEST123');
   localStorage.clear();
+  window.history.replaceState(null, '', '/');
   document.head.querySelector('#blog-google-analytics')?.remove();
   delete window.gtag;
   delete window.dataLayer;
   delete window.__blogAnalyticsInitialized;
   delete window.__blogAnalyticsLastPath;
+  delete window.__blogAnalyticsOptedOut;
 });
 
 afterEach(() => {
+  delete window.__blogAnalyticsOptedOut;
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -52,6 +56,37 @@ describe('opt-out visit statistics', () => {
     analytics.trackPageView('/ko');
     expect(analytics.analyticsConfigured).toBe(false);
     expect(document.querySelector('#blog-google-analytics')).toBeNull();
+  });
+  it.each(['', 'G-TEST123'])('never starts Clarity with a legacy project ID and GA ID %j', async (gaId) => {
+    vi.stubEnv('NEXT_PUBLIC_CLARITY_PROJECT_ID', 'testproject1');
+    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', gaId);
+    vi.spyOn(document, 'referrer', 'get').mockReturnValue('https://example.com/?q=private-referrer');
+    const analytics = await import('@/shared/lib/analytics/events');
+
+    analytics.trackPageView('/ko');
+    expect(Reflect.get(window, 'clarity')).toBeUndefined();
+    const clarity = vi.fn();
+    vi.stubGlobal('clarity', clarity);
+    window.history.replaceState(null, '', '/ko/blog?q=private-query#private-section');
+    analytics.trackPageView(window.location.href);
+    analytics.trackEvent('search_performed', { has_query: true });
+    analytics.setAnalyticsOptOut(true);
+    analytics.setAnalyticsOptOut(false);
+    analytics.initializeAnalytics();
+
+    expect(analytics.analyticsConfigured).toBe(Boolean(gaId));
+    expect(document.querySelector('script[src*="clarity.ms"]')).toBeNull();
+    expect(clarity).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('#blog-google-analytics')).toHaveLength(gaId ? 1 : 0);
+    expect(JSON.stringify(window.dataLayer ?? [])).not.toContain('private');
+    if (gaId) {
+      expect(window.dataLayer).toContainEqual(['event', 'search_performed', { has_query: true }]);
+      expect(window.dataLayer).toContainEqual([
+        'event',
+        'page_view',
+        expect.objectContaining({ page_location: `${window.location.origin}/ko/blog` }),
+      ]);
+    }
   });
   it('sends one sanitized pageview per route without asking first', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
@@ -97,6 +132,28 @@ describe('opt-out visit statistics', () => {
       localStorage.setItem('blog:analytics-consent', value);
       expect(analytics.statisticsAllowed()).toBe(true);
     }
+  });
+  it('stops this tab after an opt-out write fails and resumes only after an explicit choice is saved', async () => {
+    const analytics = await import('@/shared/lib/analytics/events');
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage is full', 'QuotaExceededError');
+    });
+    analytics.setAnalyticsOptOut(true);
+    expect(localStorage.getItem(analytics.consentKey)).toBeNull();
+    expect(analytics.statisticsAllowed()).toBe(false);
+    expect(gtag).toHaveBeenCalledWith('consent', 'update', { analytics_storage: 'denied' });
+    gtag.mockClear();
+    analytics.trackEvent('search_performed', { has_query: true });
+    analytics.trackPageView('/ko/blog');
+    expect(gtag).not.toHaveBeenCalled();
+    expect(document.querySelector('#blog-google-analytics')).toBeNull();
+    write.mockRestore();
+    analytics.setAnalyticsOptOut(false);
+    expect(analytics.statisticsAllowed()).toBe(true);
+    analytics.trackEvent('category_selected', { category_id: 'engineering' });
+    expect(gtag).toHaveBeenCalledWith('event', 'category_selected', { category_id: 'engineering' });
   });
   it('collects nothing when storage is blocked because the opt-out cannot be remembered', async () => {
     const analytics = await import('@/shared/lib/analytics/events');

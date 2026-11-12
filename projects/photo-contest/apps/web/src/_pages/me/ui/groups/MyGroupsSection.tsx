@@ -21,7 +21,7 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
         title="아직 참여한 그룹이 없어요"
         description="탐색에서 그룹을 찾거나 직접 그룹을 만들어 보세요."
         action={
-          <ButtonLink href={ROUTES.EXPLORE} variant="accent" size="lg">
+          <ButtonLink href={ROUTES.EXPLORE} variant="gradient" size="lg">
             그룹 탐색하기 <ArrowUpRight aria-hidden className="size-4" />
           </ButtonLink>
         }

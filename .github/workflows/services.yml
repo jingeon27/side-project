@@ -302,11 +302,14 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @game-feedback/contracts build
       - run: yarn workspace @game-feedback/admin test:browser
+      - run: yarn workspace @side/design-system test:browser
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: failure()
         with:
-          name: game-feedback-admin-component-traces
-          path: projects/game-feedback/apps/admin/test-results/
+          name: game-feedback-component-traces
+          path: |
+            projects/game-feedback/apps/admin/test-results/
+            packages/design-system/test-results/
     name: GF components
     needs: selection
     if: needs.selection.outputs['game-feedback'] == 'true'
@@ -379,9 +382,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app:
-          - web
-          - mobile
+        # 웹 E2E는 shard마다 Postgres, API, 웹 서버를 따로 띄워 파일 단위로 나눈다. 모바일은 짧아서 나누지 않는다.
+        include:
+          - { app: web, shard: 1, shards: 2 }
+          - { app: web, shard: 2, shards: 2 }
+          - { app: mobile, shard: 1, shards: 1 }
     services:
       postgres:
         image: postgres:18-alpine
@@ -413,12 +418,12 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
-      - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e
+      - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e --shard=${{ matrix.shard }}/${{ matrix.shards }}
       - name: Verify Web Vitals with intercepted SDK requests
-        if: matrix.app == 'web'
+        if: matrix.app == 'web' && matrix.shard == 1
         run: yarn workspace @photo-contest/web test:observability
       - name: Verify production public cache
-        if: always() && !cancelled() && matrix.app == 'web'
+        if: always() && !cancelled() && matrix.app == 'web' && matrix.shard == 1
         run: yarn workspace @photo-contest/web test:cache
       - name: Check test schema cleanup
         if: always()
@@ -426,12 +431,12 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
-          name: photo-contest-${{ matrix.app }}-playwright
+          name: photo-contest-${{ matrix.app }}-${{ matrix.shard }}-playwright
           path: |
             projects/photo-contest/apps/${{ matrix.app }}/playwright-report/
             projects/photo-contest/apps/${{ matrix.app }}/test-results/
             projects/photo-contest/apps/${{ matrix.app }}/.data/screens/
-    name: PC browser (${{ matrix.app }})
+    name: PC browser (${{ matrix.app }} ${{ matrix.shard }}/${{ matrix.shards }})
     needs: selection
     if: needs.selection.outputs['photo-contest'] == 'true'
   pc-components:

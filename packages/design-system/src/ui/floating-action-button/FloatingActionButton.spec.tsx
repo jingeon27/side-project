@@ -81,6 +81,16 @@ describe('FloatingActionButton', () => {
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
+  it('gradient 변형은 브랜드 그라데이션과 같은 색 그림자를 쓰고 기본은 accent를 유지해야 한다', () => {
+    const { rerender } = render(<FloatingActionButton label="글쓰기" onClick={vi.fn()} />);
+    const button = screen.getByRole('button', { name: '글쓰기' });
+    expect(button).toHaveClass('bg-accent', 'shadow-toast');
+    expect(button).not.toHaveClass('bg-brand-gradient');
+    rerender(<FloatingActionButton label="글쓰기" variant="gradient" onClick={vi.fn()} />);
+    expect(button).toHaveClass('bg-brand-gradient', 'text-on-accent', 'shadow-glow');
+    expect(button).not.toHaveClass('bg-accent', 'shadow-toast');
+  });
+
   it('React callback ref의 StrictMode 재연결과 제거 cleanup을 보존해야 한다', () => {
     const cleanup = vi.fn();
     const ref = vi.fn((node: HTMLButtonElement | null) => {
