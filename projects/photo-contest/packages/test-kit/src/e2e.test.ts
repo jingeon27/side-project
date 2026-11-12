@@ -20,7 +20,7 @@ describe('prepareE2eDatabase', () => {
   });
 
   it.each([`mobile_e2e_${'a'.repeat(32)}`, 'web_e2e_manual'])(
-    '밖에서 넣은 PC_E2E_SCHEMA=%s는 거부해야 한다',
+    '밖에서 TEST_DATABASE_URL에 넣은 schema=%s가 이 레인 형식이 아니면 거부해야 한다',
     (schema) => {
       vi.stubEnv('TEST_DATABASE_URL', TEST_URL.replace('schema=public', `schema=${schema}`));
       expect(() => prepareE2eDatabase('web_e2e')).toThrow('격리 스키마');
