@@ -21,6 +21,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
   const isSSR = useIsSSR();
   const inputId = useId();
   const errorId = useId();
+  const ruleId = useId();
   const helpId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -44,6 +45,8 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
   const previewUrl = useObjectUrl(media && postSchema.shape.media.safeParse(media).success ? media : null);
   const linkUrl = useWatch({ control, name: 'linkUrl' });
   const required = !linkUrl?.trim();
+  // 파일 없이 난 오류는 첨부가 없다는 오류뿐이고 규칙 문장과 같은 말이라, 그동안은 규칙을 감춰 두 번 보이거나 읽히지 않게 한다.
+  const attachmentMissing = Boolean(error) && !media;
 
   const handleMediaChange = (file: File | null) => {
     onChange(file);
@@ -51,11 +54,17 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-card has-focus-visible:outline-3 has-focus-visible:outline-accent">
+    <div className="flex flex-col gap-2 rounded-card has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring">
       <label htmlFor={inputId} className="text-label text-ink">
         사진 또는 동영상 선택
         <FieldRequirement required={required} />
       </label>
+      {/* 첨부 링크 칸은 모바일 첫 화면 밖이라 링크만 올려도 된다는 규칙을 필수 표시 바로 아래에 둔다. */}
+      {attachmentMissing ? null : (
+        <p id={ruleId} className="text-caption text-muted">
+          사진이나 동영상, 링크 중 하나 이상 첨부해 주세요.
+        </p>
+      )}
       <input
         id={inputId}
         type="file"
@@ -67,7 +76,9 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         onBlur={onBlur}
         disabled={isSSR || isSubmitting}
         aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${helpId} ${errorId}` : helpId}
+        aria-describedby={[attachmentMissing ? undefined : ruleId, helpId, error ? errorId : undefined]
+          .filter(Boolean)
+          .join(' ')}
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = '';
@@ -86,9 +97,9 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
           onRemove={() => handleMediaChange(null)}
         />
       ) : (
+        // 이름은 보이는 글자 전체다. aria-label로 '파일 선택'만 남기면 보이는 안내가 이름에서 빠진다(WCAG 2.5.3).
         <button
           type="button"
-          aria-label="파일 선택"
           disabled={isSSR || isSubmitting}
           onClick={() => fileInputRef.current?.click()}
           className="flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-sunken p-5 text-label text-ink transition-colors hover:bg-neutral-soft active:bg-neutral-soft disabled:cursor-not-allowed disabled:opacity-45 desktop:aspect-square desktop:max-h-[40dvh]"

@@ -19,7 +19,7 @@ export function GroupCategoryFilter({
       <Button
         variant={categoryId ? 'secondary' : 'primary'}
         size="md"
-        className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
+        className="h-auto min-h-touch max-w-full py-2 whitespace-normal wrap-anywhere"
         aria-pressed={!categoryId}
         onClick={() => replaceSearchParams({ category: null })}
       >
@@ -30,7 +30,7 @@ export function GroupCategoryFilter({
           key={category.id}
           variant={categoryId === category.id ? 'primary' : 'secondary'}
           size="md"
-          className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
+          className="h-auto min-h-touch max-w-full py-2 whitespace-normal wrap-anywhere"
           aria-pressed={categoryId === category.id}
           onClick={() => {
             replaceSearchParams({ category: category.id });

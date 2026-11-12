@@ -9,6 +9,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
+import { NotificationBell } from '@/widgets/notification-bell';
 
 import { ExploreComposeEntry } from './ExploreComposeEntry';
 import { ClearExploreSearchButton } from './results/ClearExploreSearchButton';
@@ -21,7 +22,7 @@ export function ExplorePage({ search }: { search: string }) {
   });
   return (
     <div className="flex flex-1 flex-col">
-      <TopAppBar title="그룹 탐색" />
+      <TopAppBar title="그룹 탐색" actions={<NotificationBell />} />
       <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-1 flex-col gap-7 px-4 pt-6 pb-24 tablet:px-8 desktop:pt-10 desktop:pb-28">
         <GroupSearchForm key={search} />
         <section aria-label="탐색할 그룹" className="flex flex-col gap-4">

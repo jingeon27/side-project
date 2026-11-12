@@ -13,7 +13,12 @@ export function SubmissionCardCaption({ viewerId }: { viewerId: string }) {
         {card.submission.caption}
       </h3>
       <p className="flex items-center gap-2 text-caption text-muted">
-        <Avatar name={card.submission.author.nickname} src={card.submission.author.avatar} size="sm" />
+        <Avatar
+          name={card.submission.author.nickname}
+          src={card.submission.author.avatar}
+          size="sm"
+          tone="accent"
+        />
         <span className="line-clamp-1">
           {card.submission.author.nickname}
           {card.submission.author.id === viewerId ? ' (내 사진)' : ''}

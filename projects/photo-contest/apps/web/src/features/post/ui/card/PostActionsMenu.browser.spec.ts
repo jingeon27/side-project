@@ -115,7 +115,11 @@ test('키보드로 연 메뉴는 첫 항목부터 이동하고 Escape로 닫으�
   await expect(menu.getByRole('menuitem', { name: '수정' })).toBeFocused();
   // 구분선은 건너뛰고, 운영자 전용인 숨기기는 보이지 않아야 한다.
   await page.keyboard.press('ArrowDown');
-  await expect(menu.getByRole('menuitem', { name: '삭제' })).toBeFocused();
+  const remove = menu.getByRole('menuitem', { name: '삭제' });
+  await expect(remove).toBeFocused();
+  // 강조 배경은 팝업 바탕과 거의 같아 키보드 위치는 전역 포커스 링으로 보여야 한다.
+  await expect(remove).toHaveCSS('outline-style', 'solid');
+  await expect(remove).toHaveCSS('outline-width', '3px');
   await expect(menu.getByRole('menuitem')).toHaveText(['수정', '삭제']);
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();

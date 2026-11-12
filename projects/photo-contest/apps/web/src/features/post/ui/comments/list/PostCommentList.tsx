@@ -55,8 +55,9 @@ export function PostCommentList({
         <Button
           variant="ghost"
           size="md"
+          shape="pill"
           loading={isFetchingNextPage}
-          className="self-center rounded-full px-5 text-muted"
+          className="self-center px-5 text-muted"
           onClick={fetchNextPage}
         >
           댓글 더 보기

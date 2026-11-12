@@ -27,11 +27,11 @@ export function PostLink({ postId }: { postId: string }) {
   const videoId = youtubeVideoId(url);
   return (
     <div className="mt-3 min-w-0 overflow-hidden rounded-card border border-line bg-sunken">
+      {/* 음성 입력으로 보이는 글자를 불러 누를 수 있게 aria-label 없이 보이는 글자로 이름을 만든다. */}
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer ugc"
-        aria-label={`${videoId ? '유튜브 영상' : '첨부 링크'} 열기: ${hostname}`}
         className="flex min-h-touch min-w-0 items-center gap-3 p-4 text-ink hover:bg-neutral-soft"
         onClick={(event) => {
           if (!bridge?.supports('link.open')) return;
@@ -45,10 +45,11 @@ export function PostLink({ postId }: { postId: string }) {
           <Link2 aria-hidden className="size-5 shrink-0" />
         )}
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-label">{videoId ? 'YouTube' : hostname}</span>
+          <span className="text-label">{videoId ? 'YouTube' : hostname}</span>{' '}
           <span className="truncate text-caption text-muted">{url}</span>
         </span>
-        <ExternalLink aria-hidden className="size-4 shrink-0 text-muted" />
+        <ExternalLink aria-hidden className="size-4 shrink-0 text-muted" />{' '}
+        <span className="sr-only">(새 창에서 열림)</span>
       </a>
       <div className="flex flex-wrap gap-2 px-3 pb-3">
         {videoId && !showPlayer ? (

@@ -64,7 +64,9 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             name={group.name}
             src={group.avatarUrl}
             size="lg"
-            className="size-12 rounded-card border border-line bg-sunken text-ink"
+            shape="square"
+            tone="outline"
+            className="size-12"
           />
           <h3 className="min-w-0 flex-1 wrap-anywhere text-subtitle font-bold text-ink">{group.name}</h3>
           <GroupVisibilityBadge visibility={group.visibility} />

@@ -41,7 +41,7 @@ export function PostCommentRow({ id, replyToName }: { id: string; replyToName?: 
   const isPostAuthor = post.complete && comment.author.id === post.data.author.id;
   return (
     <div id={`comment-${id}`} className="flex scroll-mt-6 items-start gap-3">
-      <Avatar name={comment.author.nickname} src={comment.author.avatar} size="sm" />
+      <Avatar name={comment.author.nickname} src={comment.author.avatar} size="sm" tone="accent" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="flex flex-wrap items-center gap-1.5 text-caption font-semibold text-ink">
           <span className="min-w-0 truncate">{comment.author.nickname}</span>

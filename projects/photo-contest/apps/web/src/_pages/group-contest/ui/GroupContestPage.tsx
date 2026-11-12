@@ -14,6 +14,7 @@ import { match } from 'ts-pattern';
 import { GroupContestVoteButton, PhaseBadge } from '@/features/contest';
 import { GroupContentFrame, GroupMembershipButton } from '@/features/group';
 import { CreatePostButton, PostCard, PostsEmptyState } from '@/features/post';
+import { countByRank, RankBadge } from '@/features/ranking';
 import {
   GroupContestDocument,
   GroupContestResultsDocument,
@@ -100,14 +101,14 @@ function Results({ queryRef }: { queryRef: QueryRef<GroupContestResultsQuery> })
         description="다음 대회에서 함께 웃긴 순간을 나눠보세요."
       />
     );
+  // 득표가 같으면 API가 같은 순위를 준다. 숫자만 두면 0표 대회에서 모두 '1'로 보여 '공동'을 글자로 알린다.
+  const rankCounts = countByRank(data.groupContestResults);
   return (
     <section aria-label="대회 최종 결과" className="mx-auto flex w-full max-w-feed flex-col gap-6">
       {data.groupContestResults.map((result) => (
         <div key={result.post.id} className="flex flex-col gap-3">
           <div className="flex items-center gap-3 px-1">
-            <span className="flex size-10 items-center justify-center rounded-control bg-ink text-title text-surface">
-              {result.rank}
-            </span>
+            <RankBadge rank={result.rank} sameRankCount={rankCounts.get(result.rank) ?? 1} />
             <p className="text-label text-ink">{result.voteCount}표</p>
             {result.winner ? (
               <span className="ml-auto flex items-center gap-2 text-label text-ink">

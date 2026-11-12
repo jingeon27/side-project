@@ -21,7 +21,7 @@ export function EditGroupProfileLink({ groupId, className }: { groupId: string; 
       href={ROUTES.GROUP_EDIT(groupId)}
       variant="secondary"
       size="sm"
-      className={cn('gap-2 rounded-full', className)}
+      className={cn('gap-2', className)}
     >
       <Pencil aria-hidden className="size-3.5" />
       그룹 프로필 수정

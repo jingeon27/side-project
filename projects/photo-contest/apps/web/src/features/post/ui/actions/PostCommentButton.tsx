@@ -20,7 +20,8 @@ export function PostCommentButton({ postId }: { postId: string }) {
     <Button
       variant="ghost"
       size="md"
-      className="gap-1.5 rounded-full bg-sunken px-3 text-ink"
+      shape="pill"
+      className="gap-1.5 bg-sunken px-3 text-ink"
       aria-label={`${post.title} 댓글 ${formatCount(post.commentCount)}개`}
       onClick={() =>
         overlay.open(({ isOpen, close: onClose, unmount }) => (

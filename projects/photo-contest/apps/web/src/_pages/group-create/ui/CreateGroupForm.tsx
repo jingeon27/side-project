@@ -3,6 +3,8 @@
 import { useMutation } from '@apollo/client/react';
 import { useWatch } from 'react-hook-form';
 
+import { Disclosure, DisclosureTrigger } from '@side/design-system';
+
 import { GroupImagePicker, prependMyGroup, uploadGroupImages } from '@/features/group';
 import {
   CompleteGroupAvatarUploadDocument,
@@ -100,7 +102,7 @@ export function CreateGroupForm({
     >
       <div
         data-form-scroll
-        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 scroll-py-6 tablet:px-8"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-6 scroll-py-6 tablet:px-8"
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
           <TextField
@@ -121,14 +123,14 @@ export function CreateGroupForm({
             disabled={form.formState.isSubmitting}
             {...form.register('description')}
           />
-          <details className="border-t border-line pt-3">
-            <summary className="min-h-touch cursor-pointer content-center text-label text-ink active:text-muted">
+          <Disclosure className="border-t border-line pt-3">
+            <DisclosureTrigger>
               그룹 사진 추가
               <FieldRequirement />
               {form.formState.errors.cover || form.formState.errors.avatar ? (
                 <span className="ml-2 text-caption text-danger">선택한 사진을 확인해 주세요</span>
               ) : null}
-            </summary>
+            </DisclosureTrigger>
             <div className="flex flex-col gap-6 pt-4">
               <GroupImagePicker
                 label="그룹 배경 사진"
@@ -146,7 +148,7 @@ export function CreateGroupForm({
                 onChange={(file) => form.setValue('avatar', file, { shouldValidate: true })}
               />
             </div>
-          </details>
+          </Disclosure>
           {form.formState.errors.root?.message ? (
             <p role="alert" className="text-body text-danger">
               {form.formState.errors.root.message}
@@ -154,7 +156,7 @@ export function CreateGroupForm({
           ) : null}
         </div>
       </div>
-      <StickyCta className="px-5 tablet:px-8" contentClassName="max-w-3xl">
+      <StickyCta className="tablet:px-8" contentClassName="max-w-3xl">
         <div className="flex flex-row gap-3 [&>*]:min-w-0 [&>*]:flex-1">
           <Button
             type="button"

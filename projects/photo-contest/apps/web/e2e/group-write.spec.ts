@@ -20,6 +20,19 @@ test(
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
     await expect(page).toHaveURL(path);
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+    // 입력한 뒤의 앱바 뒤로 가기는 버릴지 묻는다. 버리면 묻는 대화상자의 기록 항목을 걷은 뒤 그룹에 도착하고,
+    // 앞으로 가기로 돌아와도 버린 초안을 다시 보여 주지 않는다.
+    await form.getByLabel('제목', { exact: true }).fill('버릴 초안');
+    await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
+    await page
+      .getByRole('alertdialog', { name: '작성 중인 글을 버릴까요?', exact: true })
+      .getByRole('button', { name: '글 버리고 나가기', exact: true })
+      .click();
+    await expect(page).toHaveURL(path);
+    await expect(form).toHaveCount(0);
+    await page.goForward();
+    await expect(page).toHaveURL(`${path}/write`);
+    await expect(form.getByLabel('제목', { exact: true })).toHaveValue('');
     await form.getByLabel('제목', { exact: true }).fill('페이지에서 올린 순간');
     await form.getByLabel('첨부 링크', { exact: true }).fill('https://example.com/moment');
     await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
