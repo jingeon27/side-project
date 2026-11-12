@@ -280,12 +280,6 @@
       "slug": "design-concepts-for-reading-and-using-interfaces",
       "description": "Coaching cards make design concepts concrete: what to read first, what looks related, how to act, and how to recover when something fails.",
       "keywords": ["design concepts", "visual hierarchy", "Gestalt", "signifiers", "UX", "TIL"]
-    },
-    "dropdown-test-design": {
-      "title": "How do you design dropdown tests? Reading issue history in library tests",
-      "slug": "designing-dropdown-tests-from-library-issue-history",
-      "description": "Asked how I would design dropdown tests, I answered with three cases and later realized I first had to decide what kind of dropdown it was. I traced Radix and Base UI tests back to their issues, chose cases by who interacts and in which state, and applied that to a shared menu.",
-      "keywords": ["component testing", "dropdown menus", "test design", "Radix", "Base UI", "Playwright"]
     }
   }
 }

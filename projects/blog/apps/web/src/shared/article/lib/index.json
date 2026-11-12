@@ -1,96 +1,6 @@
 [
   {
     "category": "engineering",
-    "tags": ["testing", "dropdown", "playwright", "reflection"],
-    "publishedAt": "2026-11-11",
-    "coverImage": "/images/covers/dropdown-test-design.avif",
-    "socialImage": "/images/covers/dropdown-test-design-og.jpg",
-    "title": "드롭다운 테스트는 어떻게 설계할까? 라이브러리 테스트에서 이슈 기록을 읽어 봤어요",
-    "description": "드롭다운 테스트를 어떻게 설계하겠냐는 질문에 케이스 세 개로 답했다가, 어떤 드롭다운인지부터 정해야 했다는 걸 알았어요. Radix와 Base UI의 테스트를 이슈까지 따라가 보고, 누가 어떤 상태에서 조작하는지로 케이스를 골라 공용 메뉴에 적용했어요.",
-    "slug": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
-    "keywords": ["컴포넌트 테스트", "드롭다운", "테스트 설계", "Radix", "Base UI", "Playwright"],
-    "id": "dropdown-test-design",
-    "locale": "ko",
-    "toc": [
-      {
-        "id": "드롭다운의-스펙부터-정해야-했어요",
-        "title": "드롭다운의 스펙부터 정해야 했어요",
-        "level": 2
-      },
-      {
-        "id": "라이브러리-테스트를-검증하는-입장에서-다시-읽었어요",
-        "title": "라이브러리 테스트를 검증하는 입장에서 다시 읽었어요",
-        "level": 2
-      },
-      {
-        "id": "누가-어떤-상태에서-조작하는지로-케이스를-골라요",
-        "title": "누가, 어떤 상태에서 조작하는지로 케이스를 골라요",
-        "level": 2
-      },
-      {
-        "id": "실제-브라우저에서-확인할-범위",
-        "title": "실제 브라우저에서 확인할 범위",
-        "level": 2
-      },
-      {
-        "id": "공용-메뉴에-적용해-보니",
-        "title": "공용 메뉴에 적용해 보니",
-        "level": 2
-      }
-    ],
-    "readingMinutes": 9,
-    "translations": {
-      "ko": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
-      "en": "designing-dropdown-tests-from-library-issue-history"
-    }
-  },
-  {
-    "category": "engineering",
-    "tags": ["testing", "dropdown", "playwright", "reflection"],
-    "publishedAt": "2026-11-11",
-    "coverImage": "/images/covers/dropdown-test-design.avif",
-    "socialImage": "/images/covers/dropdown-test-design-og.jpg",
-    "title": "How do you design dropdown tests? Reading issue history in library tests",
-    "description": "Asked how I would design dropdown tests, I answered with three cases and later realized I first had to decide what kind of dropdown it was. I traced Radix and Base UI tests back to their issues, chose cases by who interacts and in which state, and applied that to a shared menu.",
-    "slug": "designing-dropdown-tests-from-library-issue-history",
-    "keywords": ["component testing", "dropdown menus", "test design", "Radix", "Base UI", "Playwright"],
-    "id": "dropdown-test-design",
-    "locale": "en",
-    "toc": [
-      {
-        "id": "i-had-to-define-the-dropdown-first",
-        "title": "I had to define the dropdown first",
-        "level": 2
-      },
-      {
-        "id": "rereading-library-tests-as-a-verifier",
-        "title": "Rereading library tests as a verifier",
-        "level": 2
-      },
-      {
-        "id": "choosing-cases-by-who-interacts-and-in-which-state",
-        "title": "Choosing cases by who interacts and in which state",
-        "level": 2
-      },
-      {
-        "id": "what-needs-a-real-browser",
-        "title": "What needs a real browser",
-        "level": 2
-      },
-      {
-        "id": "applying-it-to-the-shared-menu",
-        "title": "Applying it to the shared menu",
-        "level": 2
-      }
-    ],
-    "readingMinutes": 9,
-    "translations": {
-      "ko": "드롭다운-테스트-설계와-라이브러리-테스트의-이슈-기록",
-      "en": "designing-dropdown-tests-from-library-issue-history"
-    }
-  },
-  {
-    "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
     "updatedAt": "2026-11-12",
@@ -109,57 +19,82 @@
         "level": 2
       },
       {
+        "id": "tanstack-query-기능마다-상태가-바뀌는-순서를-기록해요",
+        "title": "TanStack Query: 기능마다 상태가 바뀌는 순서를 기록해요",
+        "level": 3
+      },
+      {
+        "id": "radix-문제별-회귀-테스트와-부품별-계약-테스트-조작-흐름은-e2e로-나눠요",
+        "title": "Radix: 문제별 회귀 테스트와 부품별 계약 테스트, 조작 흐름은 E2E로 나눠요",
+        "level": 3
+      },
+      {
+        "id": "base-ui-상호작용과-prop별로-묶고-브라우저가-필요한-테스트를-표시해요",
+        "title": "Base UI: 상호작용과 prop별로 묶고, 브라우저가 필요한 테스트를 표시해요",
+        "level": 3
+      },
+      {
+        "id": "무한-스크롤-테스트",
+        "title": "무한 스크롤 테스트",
+        "level": 2
+      },
+      {
         "id": "응답-시점을-제어해-상태-만들기",
         "title": "응답 시점을 제어해 상태 만들기",
-        "level": 2
+        "level": 3
       },
       {
         "id": "마지막-페이지까지-갔을-때",
         "title": "마지막 페이지까지 갔을 때",
-        "level": 2
+        "level": 3
       },
       {
         "id": "요청이-실패했을-때",
         "title": "요청이 실패했을 때",
-        "level": 2
+        "level": 3
       },
       {
         "id": "새로고침과-추가-조회가-겹칠-때",
         "title": "새로고침과 추가 조회가 겹칠 때",
-        "level": 2
+        "level": 3
       },
       {
         "id": "같은-응답을-msw로-만들기",
         "title": "같은 응답을 MSW로 만들기",
+        "level": 3
+      },
+      {
+        "id": "드롭다운-테스트",
+        "title": "드롭다운 테스트",
         "level": 2
       },
       {
         "id": "스크롤한-위치에서-드롭다운-열기",
         "title": "스크롤한 위치에서 드롭다운 열기",
-        "level": 2
+        "level": 3
       },
       {
         "id": "메뉴를-연-뒤-어디를-누르는지-나누기",
         "title": "메뉴를 연 뒤 어디를 누르는지 나누기",
-        "level": 2
+        "level": 3
       },
       {
         "id": "키보드-조작과-포커스-확인하기",
         "title": "키보드 조작과 포커스 확인하기",
-        "level": 2
+        "level": 3
       },
       {
         "id": "메뉴가-닫히는-동안의-입력-확인하기",
         "title": "메뉴가 닫히는 동안의 입력 확인하기",
-        "level": 2
+        "level": 3
       },
       {
-        "id": "목록이-바뀔-때-열린-메뉴는-어떻게-될까",
-        "title": "목록이 바뀔 때 열린 메뉴는 어떻게 될까",
+        "id": "무한-스크롤과-드롭다운이-겹칠-때",
+        "title": "무한 스크롤과 드롭다운이 겹칠 때",
         "level": 2
       }
     ],
-    "readingMinutes": 17,
+    "readingMinutes": 20,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -192,57 +127,82 @@
         "level": 2
       },
       {
+        "id": "tanstack-query-record-the-order-of-state-changes-for-each-feature",
+        "title": "TanStack Query: record the order of state changes for each feature",
+        "level": 3
+      },
+      {
+        "id": "radix-regression-tests-per-problem-contract-tests-per-part-and-user-flows-in-e2e",
+        "title": "Radix: regression tests per problem, contract tests per part, and user flows in E2E",
+        "level": 3
+      },
+      {
+        "id": "base-ui-group-by-interaction-and-prop-and-mark-tests-that-need-a-browser",
+        "title": "Base UI: group by interaction and prop, and mark tests that need a browser",
+        "level": 3
+      },
+      {
+        "id": "infinite-scroll-tests",
+        "title": "Infinite scroll tests",
+        "level": 2
+      },
+      {
         "id": "control-responses-to-create-each-state",
         "title": "Control responses to create each state",
-        "level": 2
+        "level": 3
       },
       {
         "id": "reach-the-final-page",
         "title": "Reach the final page",
-        "level": 2
+        "level": 3
       },
       {
         "id": "recover-from-failed-requests",
         "title": "Recover from failed requests",
-        "level": 2
+        "level": 3
       },
       {
         "id": "when-refresh-and-next-page-requests-overlap",
         "title": "When refresh and next-page requests overlap",
-        "level": 2
+        "level": 3
       },
       {
         "id": "serve-the-same-responses-with-msw",
         "title": "Serve the same responses with MSW",
+        "level": 3
+      },
+      {
+        "id": "dropdown-tests",
+        "title": "Dropdown tests",
         "level": 2
       },
       {
         "id": "open-the-dropdown-from-a-scrolled-position",
         "title": "Open the dropdown from a scrolled position",
-        "level": 2
+        "level": 3
       },
       {
         "id": "click-the-background-a-menu-item-or-the-trigger",
         "title": "Click the background, a menu item, or the trigger",
-        "level": 2
+        "level": 3
       },
       {
         "id": "keyboard-interaction-and-focus",
         "title": "Keyboard interaction and focus",
-        "level": 2
+        "level": 3
       },
       {
         "id": "input-while-the-menu-is-closing",
         "title": "Input while the menu is closing",
-        "level": 2
+        "level": 3
       },
       {
-        "id": "what-happens-to-an-open-menu-when-the-list-changes",
-        "title": "What happens to an open menu when the list changes?",
+        "id": "when-infinite-scroll-and-the-dropdown-overlap",
+        "title": "When infinite scroll and the dropdown overlap",
         "level": 2
       }
     ],
-    "readingMinutes": 15,
+    "readingMinutes": 18,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
