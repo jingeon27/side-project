@@ -9,7 +9,7 @@ export function CreatePostButton({ groupId, contestId }: { groupId: string; cont
   return (
     <ButtonLink
       href={ROUTES.GROUP_WRITE(groupId, contestId)}
-      variant="accent"
+      variant="gradient"
       size="md"
       className="rounded-full"
     >

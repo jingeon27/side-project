@@ -88,7 +88,7 @@ export function VoteButton({
       </Button>
     ))
     .with('open', () => (
-      <Button variant="accent" fullWidth loading={loading} onClick={handleVote}>
+      <Button variant="gradient" fullWidth loading={loading} onClick={handleVote}>
         이 사진에 한 표!
       </Button>
     ))

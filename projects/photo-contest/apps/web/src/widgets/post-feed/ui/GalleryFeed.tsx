@@ -29,7 +29,7 @@ export function GalleryFeed({
           {latest}
         </div>
         <div className="contents desktop:sticky desktop:top-24 desktop:order-2 desktop:block desktop:max-h-[calc(100dvh-112px)] desktop:min-w-0 desktop:overflow-y-auto desktop:overscroll-contain">
-          <aside className="order-1 mx-auto w-full min-w-0 max-w-app rounded-sheet border border-line bg-surface p-4 desktop:max-w-none wide:p-5">
+          <aside className="order-1 mx-auto w-full min-w-0 max-w-app desktop:max-w-none desktop:rounded-sheet desktop:bg-surface desktop:p-5 desktop:shadow-card">
             {popular}
           </aside>
           {sidebar ? (

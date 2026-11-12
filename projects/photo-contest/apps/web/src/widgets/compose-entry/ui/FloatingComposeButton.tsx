@@ -44,6 +44,7 @@ export function FloatingComposeButton({
     <FloatingActionButton
       {...props}
       label={label}
+      variant="gradient"
       disabled={isSSR}
       compact={isScrolling}
       data-compose-entry

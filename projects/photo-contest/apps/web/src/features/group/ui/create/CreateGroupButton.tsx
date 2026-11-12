@@ -10,7 +10,7 @@ export function CreateGroupButton() {
   const router = useAppRouter();
   return (
     <Button
-      variant="accent"
+      variant="gradient"
       size="md"
       className="rounded-full"
       onClick={() => router.push(ROUTES.GROUP_CREATE)}
