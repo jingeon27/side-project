@@ -4,7 +4,7 @@ API는 예상하지 못한 오류와 수동으로 계측한 HTTP·채팅 성능�
 
 ## 설정과 실행
 
-설정은 `projects/game-feedback/.env` 하나에서 읽는다. 웹은 `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_AMPLITUDE_API_KEY`, API는 `SENTRY_DSN`을 사용한다. 환경은 `ENVIRONMENT`, 배포 버전은 `SENTRY_RELEASE`다. 모바일 셸도 이 루트 파일의 공개 키를 Expo 설정으로 전달하며 별도 모바일 env 키를 만들지 않는다.
+설정은 `projects/game-feedback/.env` 하나에서 읽는다. 웹은 `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_AMPLITUDE_API_KEY`, API는 `SENTRY_DSN`을 사용한다. 환경은 `ENVIRONMENT`, 배포 버전은 `SENTRY_RELEASE`다. 모바일 셸도 이 루트 파일의 공개 키와 선택 빌드 키 `MOBILE_EAS_PROJECT_ID`(푸시)를 Expo 설정으로 전달하며 별도 모바일 env 파일을 만들지 않는다.
 
 `@side/game-feedback dev`와 `@game-feedback/web dev` 모두 루트 설정을 읽는다. 웹의 build/start도 같은 실행기를 거친다. 프로세스에서 명시한 값(빈 키 포함)이 파일보다 우선하고 build/start의 프레임워크 `NODE_ENV`는 production이다. 공개 키·환경·release는 빌드에 고정되므로 운영 값을 바꾸면 다시 빌드한다. 로컬에서 이미 실행 중인 서버에는 이후 수정한 값이 자동 반영되지 않는다.
 
@@ -84,7 +84,7 @@ yarn workspace @game-feedback/web monitoring:check
 
 웹 Sentry는 요청·사용자·breadcrumbs·문맥·extra·오류 메시지 원문을 제거한다. 오류 종류, React 오류 번호, 스택 위치, 환경·release와 코드에서 정한 태그를 남긴다. API도 SQL 인자 대신 오류 종류·코드·호출 위치만 보낸다. 이는 SDK가 보내는 본문의 정책이며 수집 서비스 자체의 IP/지역 보관 설정과는 별개다.
 
-Amplitude는 IP·페이지 제목·검색어·fragment를 보내지 않고 화면 이름, client, locale, viewport_bucket을 기록한다. 로그인 성공, 가입, 글쓰기, 채팅 시작, 메시지 성공은 타입 카탈로그에 있고 서버 성공 뒤 집계한다. 입력 원문은 보내지 않는다. 계정 전환과 로그아웃 때 식별자를 초기화한다. 자동 수집한 URL은 enrichment에서 검색어·fragment를 제거한다.
+Amplitude는 IP·페이지 제목·검색어·fragment를 보내지 않고 화면 이름, client, locale, viewport_bucket을 기록한다. 로그인 성공, 가입, 글쓰기, 채팅 시작, 메시지 성공은 타입 카탈로그에 있고 서버 성공 뒤 집계한다. 로그인 실패(`login_failed`)는 이 탭에서 고른 제공자와 API가 붙인 이유(`expired`, `failed`, `banned`)를 로그인 화면에 돌아왔을 때 한 번 보낸다. 취소는 시작한 화면으로 돌아가 로그인 화면이 모두 보지 못하므로 집계하지 않는다. 입력 원문은 보내지 않는다. 계정 전환과 로그아웃 때 식별자를 초기화한다. 자동 수집한 URL은 enrichment에서 검색어·fragment를 제거한다.
 
 ## MCP로 수신 재확인
 
