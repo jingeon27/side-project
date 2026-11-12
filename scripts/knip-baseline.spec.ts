@@ -3,9 +3,12 @@ import { resolve } from 'node:path';
 import type { Issue, IssueType, ReporterOptions } from 'knip';
 import { describe, expect, it } from 'vitest';
 
-import { applyKnipBaseline } from './knip-baseline';
+import { applyKnipBaseline, resolvedKnipBaselineEntries, type TKnipBaselineEntry } from './knip-baseline';
 
-function report(entries: Array<{ type: IssueType; file: string; symbol: string; line?: number }>) {
+function report(
+  entries: Array<{ type: IssueType; file: string; symbol: string; line?: number }>,
+  overrides: Record<string, unknown> = {},
+) {
   const issues = entries.reduce<Record<string, Record<string, Record<string, Issue>>>>((result, row) => {
     const file = resolve(row.file);
     return {
@@ -25,7 +28,14 @@ function report(entries: Array<{ type: IssueType; file: string; symbol: string; 
       },
     };
   }, {});
-  return { cwd: process.cwd(), issues, counters: { processed: 20, total: 30 } } as unknown as ReporterOptions;
+  return {
+    cwd: process.cwd(),
+    issues,
+    counters: { processed: 20, total: 30 },
+    report: { files: true, exports: true, types: true },
+    isProduction: false,
+    ...overrides,
+  } as unknown as ReporterOptions;
 }
 
 describe('Knip 기준선', () => {
@@ -49,10 +59,28 @@ describe('Knip 기준선', () => {
     expect(result.counters.unlisted).toBe(1);
   });
 
-  it('빈 기준선에서는 모든 문제를 유지하고 해결된 기준선 항목은 문제를 만들지 않아야 한다', () => {
+  it('빈 기준선에서는 모든 문제를 유지해야 한다', () => {
     const options = report([{ type: 'files', file: 'src/orphan.ts', symbol: 'src/orphan.ts' }]);
     expect(applyKnipBaseline(options, []).counters.files).toBe(1);
-    const result = applyKnipBaseline(report([]), [['files', 'src/orphan.ts', 'src/orphan.ts']]);
-    expect(Object.keys(result.issues)).toHaveLength(0);
+  });
+
+  it('전체 실행에서 더는 나오지 않는 기준선 항목을 정리 대상으로 알려야 한다', () => {
+    const baseline: TKnipBaselineEntry[] = [
+      ['exports', 'src/a.ts', 'legacy'],
+      ['files', 'src/orphan.ts', 'src/orphan.ts'],
+    ];
+    const options = report([{ type: 'exports', file: 'src/a.ts', symbol: 'legacy', line: 12 }]);
+    expect(resolvedKnipBaselineEntries(options, baseline)).toEqual([
+      ['files', 'src/orphan.ts', 'src/orphan.ts'],
+    ]);
+  });
+
+  it.each([
+    ['workspace를 골라', { selectedWorkspaces: ['packages/toolkit'] }],
+    ['production 모드로', { isProduction: true }],
+    ['해당 종류를 빼고', { report: { files: false, exports: true, types: true } }],
+  ])('%s 실행한 결과로는 기준선 항목이 정리됐다고 판단하지 않아야 한다', (_, overrides) => {
+    const baseline: TKnipBaselineEntry[] = [['files', 'src/orphan.ts', 'src/orphan.ts']];
+    expect(resolvedKnipBaselineEntries(report([], overrides), baseline)).toEqual([]);
   });
 });

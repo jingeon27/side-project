@@ -191,6 +191,10 @@ run "github_ssm_cd" {
     condition     = toset(jsondecode(aws_iam_role_policy.github_cd[0].policy).Statement[0].Resource) == toset([aws_instance.host.arn, "arn:aws:ssm:ap-northeast-2::document/AWS-StartSSHSession"])
     error_message = "CD may start only SSH sessions on this host, not arbitrary SSM commands or shell sessions"
   }
+  assert {
+    condition     = jsondecode(aws_iam_role_policy.github_cd[0].policy).Statement[0].Condition.BoolIfExists["ssm:SessionDocumentAccessCheck"] == "true"
+    error_message = "A session without a document must not fall back to the default SSM shell document"
+  }
 }
 
 run "github_subject_wildcard_rejected" {

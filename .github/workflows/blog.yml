@@ -2,41 +2,59 @@ name: Blog
 run-name: >-
   Blog / ${{ github.event_name == 'pull_request' && format('PR {0}', github.event.pull_request.number) || github.ref_name == 'main' && 'production' || 'development' }} / verify
 
+# 필수 검사가 모든 PR에서 결과를 내도록 경로 필터를 두지 않는다. 검사 여부는 selection이 고르고
+# Blog verification이 항상 판정한다.
 on:
   push:
     branches: [develop, main]
-    paths:
-      - 'projects/blog/**'
-      - 'packages/config/**'
-      - 'package.json'
-      - 'yarn.lock'
-      - '.yarnrc.yml'
-      - '.nvmrc'
-      - '.prettierrc.json'
-      - '.prettierignore'
-      - '.github/workflows/blog.yml'
   pull_request:
     branches: [develop, main]
-    paths:
-      - 'projects/blog/**'
-      - 'packages/config/**'
-      - 'package.json'
-      - 'yarn.lock'
-      - '.yarnrc.yml'
-      - '.nvmrc'
-      - '.prettierrc.json'
-      - '.prettierignore'
-      - '.github/workflows/blog.yml'
 
 permissions:
   contents: read
 
+# push는 자기 diff만 고르므로 다음 push가 이전 실행을 취소하면 그 변경의 검증이 사라진다. PR의 이전 실행만 취소한다.
 concurrency:
-  group: blog-${{ github.ref }}
+  group: blog-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
   cancel-in-progress: true
 
 jobs:
+  selection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      blog: ${{ steps.select.outputs.blog }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      # 공유 패키지는 @blog/web의 workspace 의존과 맞춘다(deploy/shared-instance/scripts/service-ci.test.ts).
+      # 기준 커밋이 없거나 읽을 수 없으면 블로그 검증을 실행한다.
+      - name: Select blog verification
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          paths=(
+            'projects/blog/**'
+            'packages/config/**'
+            'packages/design-system/**'
+            'package.json'
+            'yarn.lock'
+            '.yarnrc.yml'
+            '.nvmrc'
+            '.prettierrc.json'
+            '.prettierignore'
+            '.github/workflows/blog.yml'
+          )
+          blog=true
+          if [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ && ! "$BASE_SHA" =~ ^0+$ ]] &&
+            git diff --quiet "$BASE_SHA" HEAD -- "${paths[@]/#/:(glob)}"; then
+            blog=false
+          fi
+          echo "blog=$blog" >>"$GITHUB_OUTPUT"
   verify:
+    needs: selection
+    if: needs.selection.outputs.blog == 'true'
     runs-on: ubuntu-latest
     # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
     container:
@@ -66,6 +84,10 @@ jobs:
       # Validate the committed registry before anything regenerates it; later steps run content:generate themselves.
       - name: Validate committed content and SEO registry
         run: yarn workspace @blog/web content:validate
+      # Content-only edits still run the article contract tests: translation parity, alt text and Summary.
+      - name: Check article contracts
+        if: steps.scope.outputs.content-only == 'true'
+        run: yarn workspace @blog/web exec vitest run scripts
       - run: yarn workspace @blog/web typecheck
         if: steps.scope.outputs.content-only != 'true'
       - run: yarn workspace @blog/web lint
@@ -86,3 +108,27 @@ jobs:
             projects/blog/apps/web/playwright-report/
             projects/blog/apps/web/test-results/
           if-no-files-found: ignore
+  # 조건 때문에 건너뛴 job은 필수 검사에서 통과로 보인다. 그래서 이 job은 취소된 실행에서도 항상 실행해
+  # 선택과 verify 결과를 직접 판정한다.
+  verification:
+    name: Blog verification
+    needs: [selection, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the selected blog verification
+        env:
+          SELECTION: ${{ needs.selection.result }}
+          SELECTED: ${{ needs.selection.outputs.blog }}
+          VERIFY: ${{ needs.verify.result }}
+        run: |
+          echo "selection=$SELECTION blog=${SELECTED:-missing} verify=$VERIFY"
+          if [[ "$SELECTION" != success || ! "$SELECTED" =~ ^(true|false)$ ]]; then
+            echo '::error::Blog selection did not decide whether the blog needs verification.'
+            exit 1
+          fi
+          if [[ "$SELECTED" == true && "$VERIFY" != success ]]; then
+            echo "::error::The selected Blog verify job finished as $VERIFY."
+            exit 1
+          fi

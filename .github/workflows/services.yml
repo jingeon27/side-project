@@ -2,30 +2,15 @@
 name: Services
 run-name: >-
   Services / ${{ github.event_name == 'pull_request' && format('PR {0}', github.event.pull_request.number) || github.ref_name == 'main' && 'production' || github.ref_name == 'develop' && 'development' || github.ref_name }} / verify
+# 필수 검사가 모든 PR에서 결과를 내도록 경로 필터를 두지 않는다. 검사 범위는 selection이 service-ci.ts의
+# 서비스 경로로 고르며, 서비스와 무관한 변경은 selection과 Service verification만 실행한다.
 on:
   push:
     branches:
       - main
       - develop
-    paths: &service_paths
-      - projects/game-feedback/**
-      - projects/photo-contest/**
-      - packages/**
-      - package.json
-      - yarn.lock
-      - scripts/**
-      - tsconfig.scripts.json
-      - .yarnrc.yml
-      - .nvmrc
-      - .prettierrc.json
-      - .prettierignore
-      - .dockerignore
-      - .github/workflows/services.yml
-      - deploy/shared-instance/**
-  # PR과 push가 같은 경로를 사용해 블로그만 바뀐 실행은 만들지 않는다.
   pull_request:
     branches: [develop, main]
-    paths: *service_paths
   workflow_dispatch:
 permissions:
   contents: read
@@ -262,8 +247,6 @@ jobs:
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Verify telemetry with intercepted SDK requests
         if: always() && !cancelled() && steps.install.outcome == 'success'
-        env:
-          GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: failure()
@@ -350,6 +333,9 @@ jobs:
         run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
+      # 배포 이미지도 빌드 중에 다시 생성하므로, 리뷰한 커밋의 타입이 계약과 같은지 여기서 확인한다.
+      - name: Check generated GraphQL operations
+        run: git diff --exit-code -- projects/photo-contest/apps/web/src/shared/api/generated.ts
       - name: Check deployment scripts
         run: shellcheck -x deploy/shared-instance/scripts/*.sh projects/photo-contest/deploy/scripts/*.sh
           projects/photo-contest/apps/web/test/deployment/containers.sh
@@ -512,6 +498,8 @@ jobs:
           path: projects/photo-contest/apps/web/test-results/deployment/
     name: PC containers and restore
     if: needs.selection.outputs['photo-contest'] == 'true'
+  # 조건 때문에 건너뛴 job은 필수 검사에서 통과로 보인다. 그래서 이 job은 취소된 실행에서도 항상 실행해
+  # 선택 결과와 선택한 검사의 성공을 service-ci.ts verify로 직접 판정한다.
   verification:
     name: Service verification
     needs:
@@ -524,7 +512,7 @@ jobs:
       - pc-browser
       - pc-components
       - pc-containers
-    if: always() && needs.selection.result != 'skipped'
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -539,11 +527,13 @@ jobs:
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
         run: node deploy/shared-instance/scripts/service-ci.ts verify
+  # verification은 선택하지 않은 서비스의 skipped 검사 뒤에도 실행된다. 상태 함수가 없는 if는 암묵적 success()가
+  # 그 skipped까지 이어받아 한 서비스만 바뀐 운영 실행의 발행·배포를 건너뛰므로, 앞 job의 성공을 직접 확인한다.
   gf-publish:
     needs:
       - selection
       - verification
-    if: needs.selection.outputs.production == 'true' && needs.selection.outputs['game-feedback'] == 'true' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
+    if: always() && !cancelled() && needs.verification.result == 'success' && needs.selection.outputs.production == 'true' && needs.selection.outputs['game-feedback'] == 'true' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -582,7 +572,7 @@ jobs:
     name: GF publish
   gf-deploy:
     needs: [selection, gf-publish]
-    if: needs.selection.outputs.production == 'true'
+    if: always() && !cancelled() && needs['gf-publish'].result == 'success' && needs.selection.outputs.production == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: game-feedback-production
@@ -658,7 +648,7 @@ jobs:
     needs:
       - selection
       - verification
-    if: needs.selection.outputs.production == 'true' && needs.selection.outputs['photo-contest'] == 'true' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true'
+    if: always() && !cancelled() && needs.verification.result == 'success' && needs.selection.outputs.production == 'true' && needs.selection.outputs['photo-contest'] == 'true' && vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -704,7 +694,7 @@ jobs:
     name: PC publish
   pc-deploy:
     needs: [selection, pc-publish]
-    if: needs.selection.outputs.production == 'true'
+    if: always() && !cancelled() && needs['pc-publish'].result == 'success' && needs.selection.outputs.production == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: photo-contest-production

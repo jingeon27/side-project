@@ -12,8 +12,10 @@ on:
 permissions:
   contents: read
 
+# push는 자기 diff로 Terraform 검사와 content-only 생략을 정하므로, 다음 push가 이전 실행을 취소하면 그 변경의
+# 검사가 사라진다. PR의 이전 실행만 취소한다.
 concurrency:
-  group: static-analysis-${{ github.ref }}
+  group: static-analysis-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -75,6 +77,10 @@ jobs:
         if: steps.scope.outputs.content-only != 'true'
       - run: yarn install --immutable
         if: steps.scope.outputs.content-only != 'true'
+      # Services·Blog selection이 고르지 않는 문서·설정 변경도 포맷을 검사하도록 저장소 전체를 확인한다.
+      # 블로그 content-only 변경은 Blog verify가 블로그 포맷을 검사한다.
+      - run: yarn format:check
+        if: steps.scope.outputs.content-only != 'true'
       # DB와 앱 서버를 띄우지 않고 import 대상만 준비한다.
       - run: yarn workspace @side/toolkit build
         if: steps.scope.outputs.content-only != 'true'
@@ -90,6 +96,13 @@ jobs:
         if: steps.scope.outputs.content-only != 'true'
       - run: yarn typecheck:scripts
         if: steps.scope.outputs.content-only != 'true'
+      # 이 구조 테스트는 Services의 PC 단위 테스트에도 들어 있지만, blog.yml이나 블로그 앱 의존성만 바뀐 PR에서는
+      # Services가 PC 검사를 고르지 않는다. 그래서 경로 필터·집계 job·발행 조건·concurrency와 Blog 선택 경로를
+      # 여기서 검사한다. 생략되는 content-only 변경은 블로그 콘텐츠·문서와 생성 파일뿐이라 workflow나 이 테스트를
+      # 바꾸지 못한다.
+      - name: Check workflow contracts
+        if: steps.scope.outputs.content-only != 'true'
+        run: yarn workspace @photo-contest/web test:unit ../../../../deploy/shared-instance/scripts/service-ci.test.ts
       - name: Reject new unused files, dependencies and exports
         if: steps.scope.outputs.content-only != 'true'
         run: yarn knip
