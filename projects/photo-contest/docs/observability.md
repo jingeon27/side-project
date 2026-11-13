@@ -1,6 +1,6 @@
 # Sentry·Amplitude 수신 검증
 
-설정은 `projects/photo-contest/.env` 하나에서 읽는다. API는 SENTRY_DSN, 웹은 NEXT_PUBLIC_SENTRY_DSN·NEXT_PUBLIC_AMPLITUDE_API_KEY를 사용한다. Expo 앱도 같은 공개 키를 설정에 담으며 별도 모바일 env 키를 쓰지 않는다. 환경은 기존 NODE_ENV를 사용한다.
+설정은 `projects/photo-contest/.env` 하나에서 읽는다. API는 SENTRY_DSN, 웹은 NEXT_PUBLIC_SENTRY_DSN·NEXT_PUBLIC_AMPLITUDE_API_KEY를 사용한다. Expo 앱도 같은 공개 키를 설정에 담는다. 모바일 전용 관측 키는 만들지 않으며, 앱 빌드만 읽는 MOBILE_EAS_PROJECT_ID(푸시)와 MOBILE_IOS_APP_STORE_ID(강제 업데이트 화면의 App Store 버튼)는 관측과 무관하다. 환경은 기존 NODE_ENV를 사용한다.
 
 프로젝트 집계 명령뿐 아니라 `@photo-contest/web dev/build/start`도 실행 전에 루트 .env를 읽는다. 명시한 프로세스 값(빈 키 포함)이 우선한다. build/start는 프레임워크 NODE_ENV를 production으로 고정한다. 공개 키는 빌드 전에 반영해야 한다.
 

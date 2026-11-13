@@ -41,3 +41,26 @@ describe('sign-up nickname length', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 });
+
+// 예약어 닉네임이 '문자, 숫자, 공백과 _ . -만' 형식 안내로 거부돼 왜 막혔는지 알 수 없었다.
+describe('sign-up reserved nickname', () => {
+  it.each(['운영자', '탈퇴한 사용자'])(
+    'explains why %s cannot be used before submitting',
+    async (nickname) => {
+      const onSubmit = renderForm();
+      fireEvent.change(screen.getByLabelText('서비스 닉네임'), { target: { value: nickname } });
+      fireEvent.click(screen.getByRole('button', { name: '가입 완료하기' }));
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        '운영자나 관리자로 보이는 닉네임은 사용할 수 없어요.',
+      );
+      expect(onSubmit).not.toHaveBeenCalled();
+    },
+  );
+
+  it('accepts a nickname that only contains a reserved word, as the shared contract rule does', async () => {
+    const onSubmit = renderForm();
+    fireEvent.change(screen.getByLabelText('서비스 닉네임'), { target: { value: '운영테스터' } });
+    fireEvent.click(screen.getByRole('button', { name: '가입 완료하기' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+  });
+});

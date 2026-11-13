@@ -45,6 +45,8 @@ describe('그룹 생성 페이지의 폼', () => {
     expect(name.compareDocumentPosition(visibility) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(visibility.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(summary.closest('details')).not.toHaveAttribute('open');
+    // 브라우저 기본 ▶ 대신 공통 펼침 화살표를 쓴다(V18).
+    expect(summary.closest('summary')).toHaveAttribute('data-slot', 'disclosure-trigger');
     expect(screen.getByLabelText('그룹 배경 사진 선택')).not.toBeVisible();
     await user.click(summary);
     expect(summary.closest('details')).toHaveAttribute('open');

@@ -1,9 +1,10 @@
 import Link from 'next/link';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 import { author } from '@/shared/config/site';
 
-export function AboutProfile({ locale }: { locale: UiLocale }) {
+export function AboutProfile({ locale }: { locale: Locale }) {
   const { about } = labels(locale);
   return (
     <>

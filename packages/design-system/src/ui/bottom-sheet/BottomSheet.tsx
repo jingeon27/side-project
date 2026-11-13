@@ -263,7 +263,10 @@ export interface IBottomSheetCloseProps {
   className?: string;
 }
 
-/** 하단 작업 행에 놓는 글자 버튼. dismissible={false}인 시트에서는 그리지 않는다. */
+/**
+ * secondary 글자 버튼. 하단 작업 행(Footer)에 두거나 Header children으로 제목 옆에 둔다(showCloseButton의 배치).
+ * dismissible={false}인 시트에서는 그리지 않는다.
+ */
 function BottomSheetClose({ label, className }: IBottomSheetCloseProps) {
   const { dismissible } = useBottomSheet('Close');
   if (!dismissible) return null;

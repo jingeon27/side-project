@@ -35,6 +35,7 @@ for (const width of [400, 1440]) {
     expect(response.ok()).toBe(true);
     const message = await response.json();
     await expect(input).toBeEmpty();
+    await expect(input).toBeFocused();
     await expect(page.getByTestId(`message-${message.id}`)).toContainText(body);
 
     const nextBody = `${firstLine} 반복 키 확인`;

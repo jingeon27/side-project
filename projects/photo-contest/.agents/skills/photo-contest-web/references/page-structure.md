@@ -42,7 +42,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
 ## 뒤로 가기·이동·하단 탭
 
-- `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.
+- `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `HomeAppBar`(`@/shared/ui/@core/top-app-bar`)를 쓴다.
+- 초안을 잃기 쉬운 전용 폼은 입력이 바뀐 동안(`formState.isDirty`이고 제출 중이 아닐 때) `registerLeaveGuard(pathname, confirmLeave)`(`@/shared/model/router`)를 effect에서 등록한다. 앱바의 `useBackNavigation`과 앱(안드로이드) 뒤로 가기가 이동 전에 이 확인을 부르고, 확인은 `overlay.openAsync`로 연 ConfirmDialog로 묻는다. 버리기를 고르면 Activity에 남는 초안을 `form.reset`으로 비운다. 묻는 대화상자의 history 항목을 걷어 낸 뒤에 이동하는 일은 `leaveAfterConfirm`이 맡는다. 브라우저 뒤로 가기, iOS 스와이프, 링크 이동은 막지 않고 Activity 보존에 맡기며 성공한 제출 뒤의 `replace`도 묻지 않는다. 지금은 그룹 글쓰기만 등록한다.
 - 코드로 이동할 때는 `useAppRouter()`(`@/shared/model/router`)만 쓴다. `next/navigation`의 `useRouter`로 replace하면 push로 세어져 뒤로 가기가 앱 밖으로 나갈 수 있고, 열린 시트의 history 항목도 어긋난다. 단순 링크는 `<Link>`·`ButtonLink`.
 - 정렬 같은 화면 상태는 `replaceSearchParams({ sort })`로 주소에 남긴다(기록을 쌓지 않고 열린 시트 표시를 지킨다). 읽을 때는 `useSearchParams` 값을 `model/*.schema.ts`로 파싱해 잘못된 값은 기본값으로 바꾼다.
 - 기록 깊이는 `RouteHistoryTracker`(`src/_app/providers/navigation`)만 센다. 화면에서 `routeHistoryStore`를 바꾸지 않는다.
@@ -67,7 +68,7 @@ yarn workspace @photo-contest/web typecheck
 yarn workspace @photo-contest/web test
 ```
 
-그룹 만들기는 `/groups/new`의 별도 페이지다. `CreateGroupForm`에서 이름·공개 범위·소개와 프로필·배경 사진을 선택한다. 업로드 실패 후 재시도는 이미 생성한 그룹 ID를 재사용한다. 그룹 페이지 헤더의 알림 진입을 유지하고, 대회 상세는 `그룹명 > 대회명` 헤더와 대회 목록으로 돌아가는 경로를 사용한다. 게시물·대회·명예의 전당 탭은 그룹의 최상위 화면에서만 보여 준다. 홈은 가입한 그룹의 카드 목록과 통합 피드를 보여 주고 그룹명 옆 글쓰기 바로가기를 만들지 않는다.
+그룹 만들기는 `/groups/new`의 별도 페이지다. `CreateGroupForm`에서 이름·공개 범위·소개와 프로필·배경 사진을 선택한다. 업로드 실패 후 재시도는 이미 생성한 그룹 ID를 재사용한다. 그룹 페이지 헤더의 알림 진입을 유지하고, 대회 상세는 `그룹명 > 대회명` 헤더와 대회 목록으로 돌아가는 경로를 사용한다. 게시물·대회·명예의 전당 탭은 그룹의 최상위 화면에서만 보여 준다. 홈은 가입한 그룹의 한 줄 바로 가기와 통합 피드를 보여 주고(그룹 카드 목록은 MY) 그룹명 옆 글쓰기 바로가기를 만들지 않는다.
 
 서버에서 아는 헤더 제목은 `initialTitle`로 전달해 첫 렌더링을 고정한다. hydration 중 Apollo fragment의 완전성으로 제목을 바꾸지 않고, 이후 갱신은 hydration이 끝난 뒤 반영한다.
 

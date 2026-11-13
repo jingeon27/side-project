@@ -7,16 +7,16 @@
 | 파일 | 내용 |
 | --- | --- |
 | `features/<d>/api/<d>.api.ts` | 브라우저 SDK 호출(`fetchX`·`postX`), 같은 origin `/api` |
-| `features/<d>/api/<d>.server.ts` | `import 'server-only'`, `serverRequestOptions()`(세션 쿠키 + 서명된 방문자 IP) 또는 `publicServerOptions()`(쿠키 없는 공유 조회, API `internal` 버킷), React `cache()`, 404·400 → `notFound()`. 쿠키 없는 공개 조회는 `'use cache'`로 감싼다(`getPublicCategories`, 익명 `getServerSession`) |
+| `features/<d>/api/<d>.server.ts` | `import 'server-only'`, `serverRequestOptions()`(세션 쿠키 + 서명된 방문자 IP) 또는 `publicServerOptions()`(쿠키 없는 공유 조회, API `internal` 버킷), React `cache()`, 404·400 → `notFound()`. 쿠키 없는 공개 조회는 `'use cache'`로 감싼다(`getPublicCategories`, 익명 `getServerSession`, 상세 문서와 상세 공유 이미지가 함께 쓰는 `getPublicPost`). 캐시 밖으로 던진 오류는 직렬화되어 `ApiError`가 아니게 되므로 404 같은 판정은 캐시 안에서 값(null)으로 바꾼다 |
 | `features/<d>/model/<d>.options.ts` | `queryOptions`·`infiniteQueryOptions` |
 | `features/<d>/model/<d>.mutation-options.ts` | `xxxMutationOptions(client, …ids)` |
 | 화면·기능 흐름의 호출부 | `useQueryClient()` + `useMutation(xMutationOptions(client, …))` 직접 조립 |
 | `features/<d>/index.ts` / `index.server.ts` | 클라이언트 공개 / 서버 조회 공개 |
 
-- `@game-feedback/sdk` import는 `src/{_app,_pages,widgets,features,shared}/**/*.tsx`에서 lint 오류다(`no-restricted-imports`). `.ts`는 lint가 막지 않지만 같은 이유로 `api/`에만 둔다.
+- `@game-feedback/sdk` import는 `src/{_app,_pages,widgets,features,shared}/**/*.tsx`에서 lint 오류다(`no-restricted-imports`). `.ts`도 `api/`와 `index.server` 밖에서는 lint 오류다(타입 import, `*.spec.ts`·`*.test.ts`, `_app/seo/document-access.server.ts`는 예외).
 - SDK는 `packages/sdk/src/index.ts`의 명시적 export 목록만 공개한다. 새 endpoint는 프로젝트 `codegen` 뒤 그 목록에 있어야 import된다. `packages/sdk/src/generated/*`는 손대지 않는다.
 - SDK `apiFetch`가 모든 응답을 Zod로 검증한다. 검증 실패는 `ApiResponseValidationError`(`INVALID_API_RESPONSE`), HTTP 실패는 `ApiError(status, errorCode, message)`다. 앱에서 응답을 다시 파싱하거나 fallback을 더하지 않는다(표시 필드 fallback은 SDK `src/response/fallback-policy.ts` 소유).
-- 사용자에게 보일 문구를 바꿔야 하는 호출은 `withApiError`(`shared/api/request.ts`)로 감싼다(auth·user·follow·game-profile·support 본보기). AbortError와 응답 검증 오류는 그대로 통과한다. 분기는 `error instanceof ApiError`의 `errorCode`·`status`로 하고 메시지 문자열을 비교하지 않는다(`features/chat/model/chat-error.ts`).
+- 사용자에게 보일 문구를 바꿔야 하는 호출은 `withApiError`(`shared/api/request.ts`)로 감싼다(auth·user·follow·game-profile·support 본보기, post·answer·comment·moderation의 쓰기). 연결 실패(`TypeError: Failed to fetch`)는 번역되는 연결 안내로 바뀐다. AbortError와 응답 검증 오류는 그대로 통과한다. 분기는 `error instanceof ApiError`의 `errorCode`·`status`로 하고 메시지 문자열을 비교하지 않는다(`features/chat/model/chat-error.ts`).
 - 서버 API origin은 `GAME_FEEDBACK_API_URL` → `API_ORIGIN` → `http://127.0.0.1:4300`, 타임아웃 10초, 전달 쿠키는 `gamefeedback_session` 하나다(`shared/api/server.spec.ts`).
 
 ## 쿼리 키
@@ -26,7 +26,7 @@
 - `followStatusOptions`는 오버로드용 내부 함수로 나누지 않은 하나의 factory다. 두 id가 모두 있을 때만 조회하고 나머지는 `skipToken`이며, 인자 없이 부르면 `['user-follow']` 무효화 prefix가 된다. `skipToken`이 섞인 options는 `useSuspenseQuery`가 받지 않으므로 `useQuery`로 읽는다.
 - 로그인 사용자 데이터 키에는 사용자 id를 넣어 다른 계정 캐시를 건드리지 않는다(`chat-cache.spec.ts`, `notification.options.spec.ts`). 조회에 필요한 id가 없으면 `skipToken`(`conversationBadgeOptions`, `notificationSummaryOptions`).
 - 앱 lint(`eslint.config.ts` `no-restricted-syntax`)는 `useQuery`·`useSuspenseQuery`·`useInfiniteQuery`·`useSuspenseInfiniteQuery` 인자의 `queryKey: [...]` 리터럴과 `invalidateQueries`·`refetchQueries`·`cancelQueries`·`removeQueries`·`resetQueries`·`getQueriesData`·`setQueriesData`의 `{ queryKey: [...] }` 리터럴을 막는다. factory를 spread하고 화면별 옵션(`throwOnError`·`initialData`·`refetchInterval`)만 덧붙인다.
-- QueryClient 기본값은 `_app/providers/Providers.tsx`(staleTime 15초, retry 1, 창 포커스 재조회)이고 서버 세션을 `setQueryData(sessionOptions().queryKey, initialSession)`로 심는다.
+- QueryClient 기본값은 `_app/providers/ServiceProviders.tsx`(staleTime 15초, retry 1, 창 포커스 재조회)이고 서버 세션을 `setQueryData(sessionOptions().queryKey, initialSession)`로 심는다.
 
 ## 서버 초기 데이터 연결
 

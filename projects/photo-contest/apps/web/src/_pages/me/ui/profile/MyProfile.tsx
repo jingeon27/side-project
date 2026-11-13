@@ -25,7 +25,8 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
           name={viewer.nickname}
           src={viewer.avatar}
           size="lg"
-          className="size-20 bg-brand-gradient text-display text-on-gradient tablet:size-24"
+          tone="gradient"
+          className="size-20 text-display tablet:size-24"
         />
         <div className="min-w-0 flex-1">
           <div>

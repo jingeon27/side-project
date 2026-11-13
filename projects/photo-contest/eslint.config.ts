@@ -1,6 +1,6 @@
 import { defineConfig } from 'eslint/config';
 
-import { baseConfig, tsconfigRootDir } from '@side/config/eslint/base';
+import { baseConfig, testFiles, tsconfigRootDir } from '@side/config/eslint/base';
 
 // 미디어는 presigned URL로만 오가고 API는 파일 바이트를 읽거나 변환하지 않는다(AGENTS.md 미디어 결정).
 const SERVER_MEDIA_PROCESSING = [
@@ -36,5 +36,13 @@ export default defineConfig([
         },
       ],
     },
+  },
+  {
+    // 트랜잭션 콜백의 (tx ?? this.db)처럼 타입상 도달하지 않는 분기를 막는다. 콜백 시그니처가 바뀌면 쓰기가 조용히 트랜잭션 밖 연결로 간다.
+    name: 'photo-contest/api-typed',
+    files: ['apps/api/src/**/*.ts'],
+    ignores: testFiles,
+    languageOptions: { parserOptions: { projectService: true } },
+    rules: { '@typescript-eslint/no-unnecessary-condition': 'error' },
   },
 ]);

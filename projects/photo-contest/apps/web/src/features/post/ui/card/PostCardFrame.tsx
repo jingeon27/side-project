@@ -23,7 +23,18 @@ const CARD_INSET = 'tablet:px-4 desktop:px-5';
  * 게시물 카드의 공통 틀. 작성자·제목·미디어·본문·작성 시각을 그리고, 머리의 메뉴와 아래쪽 행동은 카드 종류가 넣는다.
  * 여백을 구역마다 주어 미디어가 음수 여백 없이 카드 너비를 채운다.
  */
-export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactNode; actions: ReactNode }) {
+export function PostCardFrame({
+  id,
+  menu,
+  actions,
+  isPriority = false,
+}: {
+  id: string;
+  menu?: ReactNode;
+  actions: ReactNode;
+  /** 목록의 첫 카드만 사진을 먼저 불러온다. */
+  isPriority?: boolean;
+}) {
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id },
@@ -37,18 +48,14 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
       aria-label={post.title}
     >
       <div className={cn('flex items-center gap-3 pb-3', CARD_INSET)}>
-        <Avatar
-          name={post.author.nickname}
-          src={post.author.avatar}
-          size="sm"
-          className="bg-accent-soft text-accent-ink"
-        />
+        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" tone="accent" />
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* 말줄임의 넘침 자르기가 링크에 있으면 위아래로 넓힌 누름 영역까지 잘리므로 안쪽 글자에만 둔다. */}
           <Link
             href={ROUTES.GROUP(post.groupId)}
-            className="relative w-fit max-w-full truncate text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
+            className="relative block w-fit max-w-full text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
           >
-            {post.groupName}
+            <span className="block truncate">{post.groupName}</span>
           </Link>
           <p className="flex min-w-0 flex-wrap items-center gap-x-3 text-caption text-muted">
             <span className="max-w-full truncate">{post.author.nickname}</span>
@@ -81,6 +88,7 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
       </div>
       <PostMedia
         postId={id}
+        isPriority={isPriority}
         className="-mx-4 w-[calc(100%+2rem)] max-w-none rounded-none tablet:mx-0 tablet:w-full"
       />
       <div className={CARD_INSET}>

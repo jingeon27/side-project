@@ -1,6 +1,6 @@
 # Game Feedback 모바일
 
-사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키를 읽고 ENVIRONMENT=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
+사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키와 선택 빌드 키 MOBILE_EAS_PROJECT_ID(푸시)를 읽고 ENVIRONMENT=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
 
 Expo 58 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글·채팅·디자인 시스템은 Web이 소유한다. 네이티브는 안전 영역, 탐색·뒤로 가기·딥링크, 연결 복구와 OS 푸시 권한·토큰·배지·알림 탭을 담당한다.
 
@@ -13,7 +13,7 @@ Expo 58 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글�
 - `originWhitelist=['*']`와 동기 탐색 정책, 모든 메시지의 `nativeEvent.url` 검증을 유지한다. 새 창도 같은 정책을 사용한다. 딥링크는 알려진 locale·화면·안전한 ID만 받는다.
 - Android 뒤로 가기는 웹 overlay를 먼저 닫고, 800ms 내 미처리면 WebView history/종료로 이어진다. 응답을 기다리는 중 중복 누름은 무시한다. foreground는 세션을 먼저 확인하고 계정 변경 시 private cache를 지운다.
 - `WebViewChannel`은 화면 snapshot을 소유하고 `useWebShell`이 useSyncExternalStore로 구독한다. `ShellLifecycle`은 OS 전환·back 중복·초기/후속 링크 경합과 폐기를 관리한다. lifecycle 훅에 가변 let/ref 플래그를 두지 않으며 OS 구독은 셸 마운트 수명으로 유지하고 useEffectEvent로 최신 처리 콜백을 읽는다. 구독 대상이 바뀌는 effect의 reactive 의존성은 유지한다. WebView props는 `satisfies WebViewProps`로 검증해 타입 추론을 유지한다.
-- 테스트 설정·파일은 이 앱이 소유한다. Vitest unit은 순수 함수, UI는 RN Web과 OS 모듈 대역, Playwright는 실제 웹/API + 실제 native host 로직을 쓴다. Web 3302/API 4302, `.next/e2e-mobile`, 전용 55444 DB의 `gf_test_mobile_*`만 사용한다. DB를 reset하지 않는다.
+- 테스트 설정·파일은 이 앱이 소유한다. Vitest unit은 순수 함수, UI는 RN Web과 OS 모듈 대역, Playwright는 실제 웹/API + 실제 native host 로직을 쓴다. Web 3302/API 4302, 전용 55444 DB의 `gf_test_mobile_*`만 사용한다. Web 빌드는 `ENVIRONMENT=test`라 Web E2E와 같은 `.next/test`를 쓰므로 같은 checkout에서 두 E2E를 동시에 돌리지 않는다. DB를 reset하지 않는다.
 - `bundle:check`는 Metro Android/iOS export를 검사한다. Playwright 통과를 dev client·실기기 또는 스토어 빌드 검증으로 표현하지 않는다.
 
 ## 앱 스킬

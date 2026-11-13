@@ -8,7 +8,8 @@ import { userSearchSchema } from '../model/user-search.schema';
 export function UserSearchForm({ initialUserId }: { initialUserId: string }) {
   const form = useZodForm(userSearchSchema, { defaultValues: { id: initialUserId } });
   const handleSearch = form.handleSubmit(({ id }) => {
-    window.location.hash = adminUserPath(id);
+    // 렌더 중 전역을 바꾸는 대입으로 보지 않도록 이동 메서드로 해시를 바꾼다.
+    window.location.assign(adminUserPath(id));
   });
   return (
     <form className="form-stack" onSubmit={handleSearch}>

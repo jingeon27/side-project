@@ -2,6 +2,7 @@
   "extends": "./typescript/tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node", "vitest/globals"],
     "module": "ESNext",
     "moduleResolution": "Bundler"
@@ -11,6 +12,7 @@
     "eslint.config.ts",
     "vitest.config.ts",
     "../../scripts/check-commit-message*.ts",
+    "../../scripts/check-branch-commits*.ts",
     "../../scripts/knip-baseline*.ts"
   ],
   "exclude": ["node_modules", "eslint/src/**/__fixtures__"]

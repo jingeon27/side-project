@@ -19,15 +19,21 @@ fi
 unset SERVICE_ENV_OVERRIDES
 environment_bytes=$(printf '%s' "$SERVICE_ENV" | wc -c | tr -d '[:space:]')
 ((environment_bytes <= 65536)) || { echo 'SERVICE_ENV exceeds the transfer limit.' >&2; exit 2; }
-[[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
-[[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ && "${DEPLOY_PORT:-22}" =~ ^[0-9]{1,5}$ ]]
+# 실패 원인은 변수 이름으로만 알리고 값은 출력하지 않는다.
+[[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]] || { echo 'RELEASE_SHA must be a full commit SHA.' >&2; exit 1; }
+[[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || { echo 'SIDE_DEPLOY_HOST must be a host name or IP address.' >&2; exit 1; }
+[[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo 'SIDE_DEPLOY_SSH_USER must be a lowercase user name.' >&2; exit 1; }
+[[ "${DEPLOY_PORT:-22}" =~ ^[0-9]{1,5}$ ]] || { echo 'SIDE_DEPLOY_SSH_PORT must be a port number.' >&2; exit 1; }
 [[ "$API_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]] || { echo "API_IMAGE must be a fully qualified GHCR digest for $SERVICE." >&2; exit 2; }
 [[ "$WEB_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]] || { echo "WEB_IMAGE must be a fully qualified GHCR digest for $SERVICE." >&2; exit 2; }
-[[ "$REGISTRY_USER" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]]
+[[ "$REGISTRY_USER" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]] || { echo 'REGISTRY_USER must be a GitHub user name.' >&2; exit 1; }
 # The remote deployment runs detached; these only bound how long this job follows it.
 WAIT=${DEPLOY_WAIT_SECONDS:-2400}
 POLL=${DEPLOY_POLL_SECONDS:-5}
-[[ "$WAIT" =~ ^[1-9][0-9]{0,4}$ && "$POLL" =~ ^[0-9]{1,2}(\.[0-9])?$ ]]
+[[ "$WAIT" =~ ^[1-9][0-9]{0,4}$ && "$POLL" =~ ^[0-9]{1,2}(\.[0-9])?$ ]] || {
+  echo 'DEPLOY_WAIT_SECONDS and DEPLOY_POLL_SECONDS must be short positive durations.' >&2
+  exit 1
+}
 temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' EXIT
 printf '%s\n' "$DEPLOY_SSH_KEY" >"$temporary/key"

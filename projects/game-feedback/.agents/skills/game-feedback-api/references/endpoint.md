@@ -23,7 +23,7 @@
 ## 응답
 
 - presenter `src/<domain>/<name>.presenter.ts`에 Prisma `include` 상수와 `responseX(row)`를 둔다. 날짜는 `.toISOString()`. 사용자는 `authorSelect` + `authorDto`/`userDto`(`src/users/user.presenter.ts`)로만 내보낸다 — `demoKey`·`googleSubject`를 싣지 않고, 밴 정보는 `userDto`(본인 세션·관리자 응답)에만 있다.
-- 서버는 응답을 Zod로 검증하지 않는다(`attachmentDto`만 `ChatAttachmentSchema.parse`). SDK transport가 검증하며 선언되지 않은 키는 버린다 — 계약에 없는 필드는 클라이언트에 닿지 않고, 필수 모양이 어긋나면 Web에서 `INVALID_API_RESPONSE`가 된다. 통합 테스트에서 `XSchema.parse(res.body)`로 확인한다.
+- 서버는 응답을 Zod로 검증하지 않는다(채팅 첨부 `attachmentDto`의 `ChatAttachmentSchema.parse`와, 첨부 주소를 `/api/admin/support/<대화 id>/attachments/<id>`로 바꾸는 관리자 문의 메시지 `AdminSupportService.messages`의 `AdminChatAttachmentSchema.parse`만 예외다). SDK transport가 검증하며 선언되지 않은 키는 버린다 — 계약에 없는 필드는 클라이언트에 닿지 않고, 필수 모양이 어긋나면 Web에서 `INVALID_API_RESPONSE`가 된다. 통합 테스트에서 `XSchema.parse(res.body)`로 확인한다.
 
 ## 오류
 

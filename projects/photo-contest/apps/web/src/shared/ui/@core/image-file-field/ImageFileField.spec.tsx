@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { useZodForm } from '../../../model/form';
+import { Avatar } from '../avatar';
 import { ImageFileField } from './ImageFileField';
 
 const schema = z.object({
@@ -23,7 +24,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-function PhotoForm({ currentUrl }: { currentUrl?: string }) {
+function PhotoForm({ currentUrl, shape }: { currentUrl?: string; shape?: 'circle' | 'square' | 'squircle' }) {
   const form = useZodForm(schema, { defaultValues: { photo: null, removePhoto: false } });
   return (
     <form noValidate onSubmit={form.handleSubmit((values) => submitted(values))}>
@@ -35,6 +36,7 @@ function PhotoForm({ currentUrl }: { currentUrl?: string }) {
         label="테스트 사진"
         currentUrl={currentUrl}
         fileSchema={schema.shape.photo}
+        shape={shape}
       />
       <button type="submit">저장</button>
     </form>
@@ -42,6 +44,7 @@ function PhotoForm({ currentUrl }: { currentUrl?: string }) {
 }
 
 const png = () => new File(['png'], 'photo.png', { type: 'image/png' });
+const radius = (element: Element) => [...element.classList].filter((name) => name.startsWith('rounded'));
 
 describe('ImageFileField', () => {
   it('고른 사진을 미리 보여 주고 그 파일로 제출해야 한다', async () => {
@@ -82,5 +85,21 @@ describe('ImageFileField', () => {
     await user.upload(screen.getByLabelText('테스트 사진 선택'), file);
     await user.click(screen.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(submitted).toHaveBeenLastCalledWith({ photo: file, removePhoto: false }));
+  });
+
+  it.each([
+    ['사람', undefined, 'circle'],
+    ['카드', 'square', 'square'],
+    ['그룹', 'squircle', 'squircle'],
+  ] as const)('%s 사진은 그 사진을 보여 줄 아바타와 같은 모서리로 미리 보여야 한다', (_, shape, avatar) => {
+    const { container } = render(
+      <>
+        <PhotoForm shape={shape} />
+        <Avatar name="테스트" size="lg" shape={avatar} tone="outline" />
+      </>,
+    );
+    expect(radius(screen.getByLabelText('테스트 사진 선택').closest('label')!)).toEqual(
+      radius(container.querySelector('[data-slot="avatar"]')!),
+    );
   });
 });

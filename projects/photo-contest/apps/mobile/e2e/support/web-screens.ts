@@ -1,5 +1,10 @@
 import type { Page } from '@playwright/test';
 
+/** 알림함의 앱 알림 설정 영역 */
+function pushSettings(page: Page) {
+  return page.getByRole('region', { name: '앱 알림', exact: true });
+}
+
 /**
  * 웹 화면 요소. 웹(apps/web)은 다시 만드는 중이라 이름이 바뀌면 이 파일만 고친다.
  * 역할과 접근성 이름으로 찾는다.
@@ -32,4 +37,8 @@ export const webScreens = {
   createGroupButton: (page: Page) => page.getByRole('button', { name: /그룹 만들기/ }).first(),
   profileEditButton: (page: Page) => page.getByRole('button', { name: '프로필 수정', exact: true }),
   dialog: (page: Page) => page.getByRole('dialog'),
+  pushSettings,
+  pushEnableButton: (page: Page) =>
+    pushSettings(page).getByRole('button', { name: '알림 켜기', exact: true }),
+  pushStatus: (page: Page) => pushSettings(page).getByRole('status'),
 };

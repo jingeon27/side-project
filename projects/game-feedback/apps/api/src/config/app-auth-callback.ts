@@ -1,7 +1,7 @@
 /**
- * 앱 로그인 일회용 코드를 받는 웹 경로. 웹 안내 페이지와 AASA·assetlinks, 앱 associated domains·intent filter,
- * bridge `APP_AUTH_CALLBACK_PATH`와 같은 값이다. 검증된 App Link·Universal Link만 이 경로를 앱으로 넘기므로
- * 같은 커스텀 스킴을 등록한 다른 앱이 자기 challenge로 시작한 흐름의 코드를 가로채지 못한다.
+ * 앱 로그인 일회용 코드를 받는 웹 경로. 웹 안내 페이지, bridge `APP_AUTH_CALLBACK_PATH`와 같은 값이다.
+ * 서버 호환 계약으로만 남아 있고 현재 앱은 App Link를 등록하지 않아 이 경로를 받지 않는다. 커스텀 스킴이 아닌
+ * WEB_ORIGIN의 https 경로로만 보내므로 같은 스킴을 등록한 다른 앱이 자기 challenge로 시작한 흐름의 코드를 받지 못한다.
  */
 export const APP_AUTH_CALLBACK_PATH = '/app-auth/callback';
 

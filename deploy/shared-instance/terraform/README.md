@@ -15,7 +15,7 @@
 | 모니터링   | 인스턴스 상태 검사가 1분 단위 3번 연속 실패하면 재부팅하는 CloudWatch 알람, CPU 크레딧 부족 알람, 선택적으로 SNS 메일 알림(`alarm_email`)                                                                                     |
 | DNS        | `route53_zone_id`가 있을 때만 네 호스트의 A 레코드                                                                                                                                                                            |
 
-설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-lifecycle.json`](../s3-lifecycle.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)을 backup 버킷과 서비스 IAM 사용자용 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. 공용 미디어 버킷의 차단·수명 주기·CORS(두 프로젝트의 `s3-cors.json`)는 Terraform이 아니라 콘솔에서 적용한다. backup 버킷 수명 주기는 공용 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
+설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)을 backup 버킷과 서비스 IAM 사용자용 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. [`s3-lifecycle.json`](../s3-lifecycle.json)은 공용 미디어 버킷 전용이라 옮기지 않으며, backup 버킷 HCL은 이전 버전·미완료 multipart 정리만 같은 기준으로 둔다. 공용 미디어 버킷의 차단·수명 주기·CORS(두 프로젝트의 `s3-cors.json`)는 Terraform이 아니라 콘솔에서 적용한다. backup 버킷 수명 주기는 공용 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
 
 ## 비용에 영향을 주는 기본값
 
@@ -267,7 +267,7 @@ aws ec2 describe-instance-type-offerings --region ap-northeast-2 --location-type
 
 1. `terraform.tfvars.example`의 `github_oidc_subjects`를 채운다. GitHub API `GET /repos/<owner>/<repo>/actions/oidc/customization/sub`의 `sub_claim_prefix` 뒤에 `:environment:game-feedback-production`와 `:environment:photo-contest-production`을 각각 붙인다. 와일드카드는 허용하지 않는다.
 2. GitHub의 두 운영 Environment에서 배포 브랜치 정책을 **main 브랜치 하나**로 제한한다. Environment subject에는 브랜치가 없으므로 이 제한이 필수다.
-3. Terraform plan에서 기존 EC2·볼륨 교체가 없는지 확인하고 apply한다. CD 역할에는 이 인스턴스의 SSH 세션과 `side-cd-` 이름의 세션 채널만 허용하며 SendCommand, 일반 SSM 셸, S3, DB 권한은 주지 않는다.
+3. Terraform plan에서 기존 EC2·볼륨 교체가 없는지 확인하고 apply한다. CD 역할에는 이 인스턴스의 SSH 세션과 `side-cd-` 이름의 세션 채널만 허용하며 SendCommand, 일반 SSM 셸, S3, DB 권한은 주지 않는다. 문서를 지정하지 않은 세션은 기본 셸 문서로 열리므로 `ssm:SessionDocumentAccessCheck` 조건으로 거부한다. apply 뒤 CD 역할 자격 증명으로 `--document-name` 없이 실행한 `aws ssm start-session --target <인스턴스 ID>`가 AccessDenied로 끝나는지 확인한다.
 4. `github_cd_role_arn`을 두 GitHub Environment의 `SIDE_DEPLOY_AWS_ROLE_ARN`에, `github_cd_instance_id`를 `SIDE_DEPLOY_SSM_INSTANCE_ID`에, AWS 계정 ID를 `SIDE_DEPLOY_AWS_ACCOUNT_ID`에 넣는다. 기존 `SIDE_DEPLOY_HOST`에는 고정 공인 IP, `SIDE_DEPLOY_SSH_USER`에는 `ubuntu`를 유지한다.
 5. 별도의 배포용 SSH 키를 만들고 공개 키를 서버 `ubuntu`의 `~/.ssh/authorized_keys`에 추가한다. 비밀키는 두 Environment의 Secret `SIDE_DEPLOY_SSH_KEY`에만 저장한다. 서버의 SSH 공개 host key를 SSM으로 읽고 고정 IP를 붙여 Variable `SIDE_DEPLOY_SSH_KNOWN_HOSTS`에 넣는다. SSM 터널에서도 이 검증을 생략하지 않는다.
 6. CI는 SHA로 고정한 AWS credentials action과 버전·SHA256으로 고정한 Session Manager plugin을 사용한다. 장기 AWS access key를 CD Secret으로 추가하지 않는다. 서비스 운영 `.env`는 각 Environment의 `SERVICE_ENV` Secret에서 SSH/SSM 표준입력으로 전달한다. 검사·migration 후 서버 파일을 원자 교체하며 시작 실패 시 이전 파일을 복원한다. 공통 호스트·DB 초기화 `.env`는 서버에서 관리한다.

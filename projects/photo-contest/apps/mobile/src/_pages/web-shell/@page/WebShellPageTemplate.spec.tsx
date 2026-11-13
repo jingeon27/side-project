@@ -4,7 +4,9 @@ import { getUserId, reset, setUserId, track } from '@amplitude/analytics-react-n
 import { captureMessage } from '@sentry/react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { setStringAsync } from 'expo-clipboard';
+import Constants from 'expo-constants';
 import { addEventListener as addLinkingListener, openURL } from 'expo-linking';
+import * as Notifications from 'expo-notifications';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { parseNativeAppInfo } from '@photo-contest/bridge';
@@ -22,7 +24,20 @@ import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';
 
 import { WebShellPageTemplate } from './WebShellPageTemplate';
 
+// 푸시 지원은 기기·플랫폼·EAS projectId로 정한다. 기기 조건만 켜 두고 projectId는 푸시 테스트에서만 넣는다.
+vi.mock('expo-device', () => ({ isDevice: true }));
+vi.mock('expo-notifications', () => ({
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  setNotificationHandler: vi.fn(),
+  getLastNotificationResponseAsync: vi.fn(async () => null),
+  clearLastNotificationResponseAsync: vi.fn(async () => undefined),
+  addNotificationResponseReceivedListener: vi.fn(() => ({ remove: vi.fn() })),
+  addNotificationReceivedListener: vi.fn(() => ({ remove: vi.fn() })),
+  addPushTokenListener: vi.fn(() => ({ remove: vi.fn() })),
+}));
+
 const WEB_ORIGIN = 'https://contest.example';
+const PUSH_PROJECT_ID = '22222222-2222-4222-8222-222222222222';
 
 function renderShell(initialPath = '/', analyticsDeviceId: string | null = null) {
   const onReady = vi.fn();
@@ -65,9 +80,43 @@ function readyWeb(path = '/') {
   postFromWeb(webEvent('app.ready', { path }));
 }
 
+function notificationResponse(identifier: string): Notifications.NotificationResponse {
+  return {
+    actionIdentifier: Notifications.DEFAULT_ACTION_IDENTIFIER,
+    notification: {
+      date: 0,
+      request: {
+        identifier,
+        trigger: null,
+        content: {
+          title: null,
+          subtitle: null,
+          body: null,
+          categoryIdentifier: null,
+          sound: null,
+          launchImageName: null,
+          badge: null,
+          attachments: [],
+          threadIdentifier: null,
+          data: { path: '/notifications' },
+        },
+      },
+    },
+  };
+}
+
+function pushMessages() {
+  return dispatchedMessages().filter(
+    (message) =>
+      message.kind === 'event' &&
+      (message.type === 'navigation.open' || message.type === 'notifications.received'),
+  );
+}
+
 afterEach(() => {
   act(() => setAppearance('system'));
   Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'web' });
+  delete Constants.expoConfig!.extra!.eas;
 });
 
 describe('WebShellPageTemplate', () => {
@@ -430,6 +479,45 @@ describe('WebShellPageTemplate', () => {
     expect(
       dispatchedMessages().some((message) => message.kind === 'event' && message.type === 'navigation.open'),
     ).toBe(false);
+  });
+
+  it('앱이 꺼진 상태에서 누른 알림은 app.ready 뒤에 알림함으로 한 번만 보내고, 받은 알림도 준비된 뒤에만 알려야 한다', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'android' });
+    Constants.expoConfig!.extra!.eas = { projectId: PUSH_PROJECT_ID };
+    vi.mocked(Notifications.getLastNotificationResponseAsync).mockResolvedValue(
+      notificationResponse('cold-start'),
+    );
+    renderShell();
+    await act(async () => undefined);
+    const receiveNotification = vi.mocked(Notifications.addNotificationReceivedListener).mock.calls[0]?.[0];
+
+    expect(receiveNotification).toBeDefined();
+    expect(readAppInfo()).toMatchObject({
+      capabilities: expect.arrayContaining([
+        'notifications.registration',
+        'notifications.badge',
+        'notifications.settings',
+      ]),
+    });
+
+    // 문서 로딩이 먼저 끝나 로딩 화면이 닫힌 뒤에도 웹 라우터가 준비되기 전에는 보내지 않는다.
+    act(() => {
+      currentWebViewProps().onLoadEnd?.(nativeEvent(navigationState(`${WEB_ORIGIN}/`)) as never);
+      receiveNotification?.(notificationResponse('foreground').notification);
+    });
+    expect(pushMessages()).toEqual([]);
+    expect(currentWebViewProps().source).toEqual({ uri: `${WEB_ORIGIN}/` });
+    expect(Notifications.clearLastNotificationResponseAsync).not.toHaveBeenCalled();
+
+    readyWeb();
+    act(() => receiveNotification?.(notificationResponse('foreground').notification));
+    readyWeb('/notifications');
+
+    expect(pushMessages()).toEqual([
+      { v: 1, kind: 'event', type: 'navigation.open', payload: { path: '/notifications' } },
+      { v: 1, kind: 'event', type: 'notifications.received', payload: {} },
+    ]);
+    expect(Notifications.clearLastNotificationResponseAsync).toHaveBeenCalledOnce();
   });
 
   it('앱이 background에 다녀오면 웹에 app.state를 알려야 한다', () => {

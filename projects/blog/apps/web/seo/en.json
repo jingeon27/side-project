@@ -20,6 +20,9 @@
     "privacy": {
       "title": "Privacy notice",
       "description": "What visit statistics this blog collects and how to turn them off."
+    },
+    "tag": {
+      "description": "Posts with the {tag} tag."
     }
   },
   "posts": {

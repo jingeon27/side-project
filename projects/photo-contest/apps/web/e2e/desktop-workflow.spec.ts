@@ -74,7 +74,7 @@ test(
     await write.click();
     const composer = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     const title = composer.getByLabel('제목', { exact: true });
-    const picker = await composer.getByRole('button', { name: '파일 선택', exact: true }).boundingBox();
+    const picker = await composer.getByRole('button', { name: /^파일 선택/ }).boundingBox();
     const titleBox = await title.boundingBox();
     if (!picker || !titleBox) throw new Error('미디어와 제목 입력이 보여야 한다');
     expect(titleBox.x).toBeGreaterThan(picker.x + picker.width);

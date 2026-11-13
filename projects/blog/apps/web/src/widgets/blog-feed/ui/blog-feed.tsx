@@ -12,8 +12,9 @@ import { matchesArticleSearch } from '@/features/article-search/lib/matches-arti
 import { ArticleSearch } from '@/features/article-search/ui/article-search';
 import { ArticleCard } from '@/features/article/ui/article-card';
 import { CategoryFilter } from '@/features/category-filter/ui/category-filter';
+import type { Locale } from '@/i18n/routing';
 import type { Article, Category } from '@/shared/article/model/types';
-import { labels, type UiLocale } from '@/shared/config/labels';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 
 import { blogFeedSearchParamsSchema } from '../model/blog-feed-search-params.schema';
@@ -40,7 +41,7 @@ function BlogFeedContent({
   fixedCategory,
   fixedTag,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   articles: Article[];
   fixedCategory?: Category;
   fixedTag?: string;

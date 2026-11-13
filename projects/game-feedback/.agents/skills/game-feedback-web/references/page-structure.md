@@ -9,7 +9,7 @@
 - `[locale]`은 `children`만 받는다. `CommunityShell`은 채팅 연결·읽지 않은 개수·이동 기록·공통 하단 메뉴를 유지한다. 각 `_pages/<screen>`이 `<CommunityPage locale={locale} topbar={<ScreenTopbar ... />}>`로 자신의 상단바와 본문을 조립한다. 공통 Topbar 요소는 widgets에 두고 페이지별 순서·제목·동작은 해당 페이지가 소유한다. 병렬 `@topbar` 라우트와 헤더 전용 공개 export는 만들지 않는다. 글쓰기는 `topbar={null}`이다.
 - 공통 상단바에는 서비스 로고·서비스 이름을 반복하지 않는다. 전체 피드·게시판·채팅·프로필 탭은 `Topbar.Title heading`을 유일한 h1으로 쓰며 본문에 현재 탭 제목이나 빈 heading 래퍼를 추가하지 않는다. 전체 피드의 제목은 `전체`다. 상세·공개 프로필·안내 페이지는 본문의 기존 h1을 유지하고 상단 위치는 일반 문단으로 표시한다. 모바일·태블릿의 게시판 칩은 헤더 아래 sticky이며 아래로 12px 내려가면 숨고 위로 8px 올라가면 복원한다. 맨 위 8px 이내는 표시하고 브라우저 탄성 스크롤 위치는 실제 문서 범위로 제한한다. 포커스나 메뉴 상태의 예외 없이 같은 방향 규칙을 적용하며 숨은 칩은 inert로 탐색 대상에서 제외한다. 홈·게시판에 같은 동작을 사용하고, 데스크톱은 기존 사이드 메뉴를 쓴다. FAB의 180ms 정지 후 문구 복원과 이 칩의 표시 규칙은 구분한다.
 - 글쓰기 FAB의 버튼·아이콘·축소와 키보드 포커스·모션 감소 스타일은 `@side/design-system`의 CVA 기반 `FloatingActionButton`을 사용한다. 앱은 번역한 label·스크롤 compact 상태·onClick을 전달하고, 배치·하단 메뉴/푸터/토스트 간격·인증과 작성 선택 흐름을 소유한다. 이동은 앱의 `router.push()`로 처리한다. sticky 칩은 첫 화면의 헤더 간격을 내부 상단 padding으로 유지하며, 좁은 화면 25px·넓은 모바일 28px 간격이 스크롤 후에도 보존된다.
-- `src/proxy.ts`(matcher `/`, `/ko|en|ja/:path*`): `/` 리다이렉트(`q`·`tab`만 유지), `/<locale>/admin` 404, 문서 요청(`rsc` 헤더 없음)은 `documentUnavailable` 검사 후 `/<locale>/unavailable`로 404 rewrite, 그 외에는 `x-game-feedback-navigation` 헤더(RSC 이동이면 `1`)를 붙인다. 게시글 상세 판정(`features/post/api/post-access.server.ts`)은 렌더의 `getServerPost`와 같은 규칙(공개 상세 + 로그인이면 차단 목록)이다. Proxy는 `'use cache'`를 실행하지 못하므로 공개 조회 결과만 프로세스 안에 30초·500개까지 기억하고, 차단 목록은 매번 받는다. 그 사이 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막는다. Proxy에서는 `'use cache'`가 든 `index.server`가 아니라 이 모듈을 직접 가져온다.
+- `src/proxy.ts`(matcher `/api/admin/:path*`, `/`, `/ko|en|ja/:path*`, `/og/:path+`): `/api/admin`과 `/<locale>/admin`은 404, `/`는 리다이렉트(`q`·`tab`만 유지)한다. 게시글·프로필 상세 문서·RSC 요청과 상세 공유 이미지(`/og/posts|users/:id`)는 방문자 주소마다 한 예산으로 분당 240회 제한한다(429, `private, no-store`). `resolveAppRoute`가 거절한 게시판·글쓰기·검색 주소와 문서 요청(`rsc` 헤더 없음)의 `documentUnavailable` 판정은 `/unavailable`로 404 rewrite(noindex, `private, no-store`)하고, 그 외에는 `x-game-feedback-navigation` 헤더(RSC 이동이면 `1`)를 붙인다. 게시글 상세 판정(`features/post/api/post-access.server.ts`)은 렌더의 `getServerPost`와 같은 규칙(공개 상세 + 로그인이면 차단 목록)이다. Proxy는 `'use cache'`를 실행하지 못하므로 공개 조회 결과만 프로세스 안에 30초·500개까지 기억하고, 차단 목록은 매번 받는다. 그 사이 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막는다. 같은 이유로 proxy는 seo 배럴(`'use cache'` 조회를 쓰는 공유 이미지도 공개한다)이 아니라 `_app/seo/document-access.server.ts`를, 이 모듈은 features의 `index.server`가 아니라 `post-access.server.ts`를 직접 가져온다.
 - `_app/providers/service-context.server.ts`의 `serviceContext()`(`'use cache: private'`)가 세션·테마·언어·`navigation`을 한 번에 읽는다. 요청 쿠키는 여기와 `shared/api/server.ts`의 `serverRequestOptions()`만 읽는다.
 
 ## 첫 문서와 클라이언트 이동
@@ -49,7 +49,7 @@
 ## SEO·발견
 
 - origin은 `GAME_FEEDBACK_SITE_URL`(없으면 `WEB_ORIGIN`)이다. 색인은 production + `GAME_FEEDBACK_INDEXING=true` + 데모 아님 + HTTPS 비로컬일 때만 켠다(`shared/seo/config.ts`). canonical은 guide·terms·privacy·contact만 locale을 유지하고 나머지는 `/ko`다.
-- JSON-LD는 `JsonLd`·`PublicPageJsonLd`(`shared/seo`), `/og`는 `_app/seo/ShareImage.tsx`, 사이트맵은 `dailySitemap`(`'use cache'`)을 `connection()` 뒤에 부른다. 테스트 계정 글·작성자는 사이트맵과 색인에서 빠진다.
+- JSON-LD는 `JsonLd`·`PublicPageJsonLd`(`shared/seo`), `/og`는 `_app/seo/ShareImage.ts`, 사이트맵은 `dailySitemap`(`'use cache'`)을 `connection()` 뒤에 부른다. 테스트 계정 글·작성자는 사이트맵과 색인에서 빠진다.
 - `/health-check/live`는 `src/app/health-check/live/route.ts`다. 배포 compose healthcheck와 공용 인스턴스 배포 스크립트가 쓴다. 라우트 폴더는 `_` 접두나 URL 인코딩 이름 없이 kebab-case로 짓는다(`_` 접두 폴더는 private).
 
 ## 확인 (side 루트)

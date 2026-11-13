@@ -41,6 +41,26 @@ describe('OAuth 로그인 복귀 경로', () => {
     expect(existing.searchParams.get('coachingRole')).toBe('STUDENT');
   });
 
+  it.each(['expired', 'failed', 'banned'] as const)(
+    '%s 실패는 다른 화면에서 시작했어도 그 언어의 로그인 화면에 이유와 복귀 경로를 붙여야 한다',
+    (reason) => {
+      const path = '/ja/boards/coaching?coachingRole=STUDENT';
+      const destination = new URL(loginRedirect('https://feedback.test', path, reason));
+      expect(destination.pathname).toBe('/ja/login');
+      expect(destination.searchParams.get('returnTo')).toBe(path);
+      expect(destination.searchParams.get('login')).toBe(reason);
+    },
+  );
+
+  it('로그인 대화상자에서 시작한 취소는 로그인 화면 대신 시작한 화면으로 돌아가야 한다', () => {
+    const path = '/ja/boards/coaching?coachingRole=STUDENT';
+    const destination = new URL(loginRedirect('https://feedback.test', path, 'cancelled'));
+    expect(destination.pathname).toBe('/ja/boards/coaching');
+    expect(destination.searchParams.get('coachingRole')).toBe('STUDENT');
+    expect(destination.searchParams.get('login')).toBe('cancelled');
+    expect(destination.searchParams.has('returnTo')).toBe(false);
+  });
+
   it.each(['ko', 'en', 'ja'])(
     '신규 %s 사용자는 복귀할 홈을 가진 별도 가입 화면으로 보내야 한다',
     (locale) => {

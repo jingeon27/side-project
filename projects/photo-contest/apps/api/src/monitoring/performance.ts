@@ -89,7 +89,6 @@ export const performancePrivacyIntegration = {
         if (
           header.type !== 'trace_metric' ||
           typeof payload !== 'object' ||
-          !payload ||
           !('items' in payload) ||
           !Array.isArray(payload.items)
         )

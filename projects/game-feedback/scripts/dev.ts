@@ -15,7 +15,7 @@ async function assertPortFree(port: number) {
     server.once('error', () =>
       reject(
         new Error(
-          `Port ${port} is already in use. Stop that service or use a separate worktree port configuration.`,
+          `Port ${port} is already in use. Game Feedback uses fixed local ports, so stop the other development server first (also in other worktrees).`,
         ),
       ),
     );

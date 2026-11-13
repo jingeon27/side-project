@@ -1,5 +1,5 @@
 import { fail } from '../../common/errors';
-import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../../config/limits';
+import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES, POST_MEDIA_SIDE_MAX } from '../../config/limits';
 import type { TMediaExtension } from '../../storage/media-storage.service';
 
 interface IPostMediaPolicy {
@@ -17,11 +17,10 @@ const MEDIA_TYPES = {
 } as const satisfies Record<string, IPostMediaPolicy>;
 export type TMediaType = keyof typeof MEDIA_TYPES;
 
-/** 8K 동영상과 줄이지 못한 원본 사진을 받는 긴 변 상한 */
-const MAX_MEDIA_SIDE = 20_000;
-
 function isMediaSide(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= MAX_MEDIA_SIDE;
+  return (
+    typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= POST_MEDIA_SIDE_MAX
+  );
 }
 
 /** 브라우저가 잰 가로·세로. 화면 틀 비율에만 쓰므로 모르면 둘 다 비우고, 하나만 오거나 범위를 벗어나면 거절한다. */

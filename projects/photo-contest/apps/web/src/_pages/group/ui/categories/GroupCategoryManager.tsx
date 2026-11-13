@@ -9,6 +9,8 @@ import {
 } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 
+import { Disclosure, DisclosureTrigger } from '@side/design-system';
+
 import { isGroupAdmin } from '@/features/group';
 import {
   ArchiveGroupCategoryDocument,
@@ -227,15 +229,13 @@ export function GroupCategoryManager({ groupId }: { groupId: string }) {
   );
   const fallback = <Skeleton className="h-24 w-full" />;
   return (
-    <details className="rounded-card border border-line bg-surface p-4">
-      <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
-        카테고리 관리
-      </summary>
+    <Disclosure variant="card">
+      <DisclosureTrigger>카테고리 관리</DisclosureTrigger>
       <div className="mt-4">
         <AsyncBoundary onRetry={refetch} fallback={fallback}>
           {queryRef ? <CategoryManagement queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>
-    </details>
+    </Disclosure>
   );
 }

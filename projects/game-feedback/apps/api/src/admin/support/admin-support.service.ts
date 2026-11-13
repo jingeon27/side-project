@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { AdminChatAttachmentSchema } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session/session-access';
 import type { SessionRequest } from '../../auth/session/session.types';
 import { ChatAttachmentService } from '../../chat/attachment/chat-attachment.service';
@@ -46,27 +48,30 @@ export class AdminSupportService {
     });
     if (!thread) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
   }
-  async messages(req: SessionRequest, id: string, query: TListQueryDto) {
-    await this.requireThread(req, id);
-    const messages = await this.chat.messages(req, id, query);
+  async messages(req: SessionRequest, conversationId: string, query: TListQueryDto) {
+    await this.requireThread(req, conversationId);
+    const messages = await this.chat.messages(req, conversationId, query);
     return {
       ...messages,
       items: messages.items.map((message) => ({
         ...message,
-        attachments: message.attachments?.map((file) => ({
-          ...file,
-          url: `/api/admin/support/${encodeURIComponent(id)}/attachments/${encodeURIComponent(file.id)}`,
-        })),
+        // 계약의 관리자 첨부 주소와 어긋나면 관리자 화면 대신 여기서 실패하게 한다.
+        attachments: message.attachments?.map((file) =>
+          AdminChatAttachmentSchema.parse({
+            ...file,
+            url: `/api/admin/support/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(file.id)}`,
+          }),
+        ),
       })),
     };
   }
-  async download(req: SessionRequest, id: string, attachmentId: string, res: Response) {
-    await this.requireThread(req, id);
-    return this.attachments.download(req, id, attachmentId, res);
+  async download(req: SessionRequest, conversationId: string, attachmentId: string, res: Response) {
+    await this.requireThread(req, conversationId);
+    return this.attachments.download(req, conversationId, attachmentId, res);
   }
-  async send(req: SessionRequest, id: string, body: TSendMessageDto) {
-    await this.requireThread(req, id);
-    return this.chat.send(req, id, body);
+  async send(req: SessionRequest, conversationId: string, body: TSendMessageDto) {
+    await this.requireThread(req, conversationId);
+    return this.chat.send(req, conversationId, body);
   }
   /** 최근 대화가 위로 오는 문의 목록. 커서는 마지막 문의의 (대화 updatedAt, id)다. */
   async list(req: SessionRequest, query: TAdminSupportListQueryDto) {

@@ -1,13 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
 
-import { __unstable__loadDesignSystem as loadDesignSystem } from 'tailwindcss';
 import { describe, expect, it } from 'vitest';
 
-import { sourceFiles, srcDir, uiDir } from '../test/ui-sources';
-
-const tailwindDir = dirname(createRequire(import.meta.url).resolve('tailwindcss/package.json'));
+import { loadTheme } from '../test/tailwind-theme';
+import { sourceFiles, uiDir } from '../test/ui-sources';
 
 // 클래스 문자열로 보이는 리터럴(공백으로 나뉜 유틸리티 3개 이상)만 고른다. CSS 값(`min(360px, ...)`)은 괄호가 맞지 않아 빠진다.
 const utilityPattern = /^!?-?[a-z*[][a-z0-9\-:[\]()=/.%,'*&>_@#!]*$/;
@@ -27,21 +23,6 @@ function classCandidates(source: string) {
     .filter((tokens) => tokens.length >= 3 && tokens.every((token) => utilityToken.test(token)))
     .flat()
     .filter((token) => !markerClass.test(token));
-}
-
-function loadTheme() {
-  return loadDesignSystem(`@import 'tailwindcss';\n@import './styles.css';`, {
-    base: srcDir,
-    async loadStylesheet(id: string, base: string) {
-      const path =
-        id === 'tailwindcss'
-          ? join(tailwindDir, 'index.css')
-          : id.startsWith('tailwindcss/')
-            ? join(tailwindDir, id.slice('tailwindcss/'.length))
-            : resolve(base, id);
-      return { path, base: dirname(path), content: readFileSync(path, 'utf8') };
-    },
-  });
 }
 
 describe('Tailwind 유틸리티', () => {

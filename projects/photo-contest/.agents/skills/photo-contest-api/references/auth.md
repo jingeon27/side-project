@@ -31,7 +31,7 @@
 
 ## 테스트용 로그인
 
-- 통합 테스트 하네스(`test/support/app.ts`)의 `login(nickname)`은 HTTP 로그인 없이 격리 DB에 `provider: 'testing'` 사용자와 세션 해시를 만들고 Cookie 헤더 값을 돌려준다. 웹·모바일 격리 API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 열리는 `POST /testing/users`로 사용자·세션을 만든다. 운영 제품 API에 테스트 로그인 분기를 넣지 않는다.
+- 통합 테스트 하네스(`test/support/app.ts`)의 `login(nickname)`은 HTTP 로그인 없이 격리 DB에 `provider: 'testing'` 사용자와 세션 해시를 만들고 Cookie 헤더 값을 돌려준다. 웹·모바일 격리 API는 test-kit 실행기가 `createApp({ testFixtures: true })`로 등록하고 NODE_ENV=test일 때만 열리는 `POST /testing/users`로 사용자·세션을 만든다. 운영 제품 API에 테스트 로그인 분기를 넣지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 

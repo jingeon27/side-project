@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { getArticleThumbnail } from '@/shared/article/lib/article-thumbnails';
 import type { Article } from '@/shared/article/model/types';
 
-export function ArticleThumbnail({ article }: { article: Pick<Article, 'id' | 'coverImage'> }) {
+export function ArticleThumbnail({ article }: { article: Pick<Article, 'coverImage'> }) {
   const image = getArticleThumbnail(article);
   return (
     <div className={`article-thumbnail${image.fit === 'contain' ? ' article-thumbnail--contain' : ''}`}>

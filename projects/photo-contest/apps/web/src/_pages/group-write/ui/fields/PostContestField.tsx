@@ -1,10 +1,12 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import Link from 'next/link';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
+
+import { NativeSelect, NativeSelectOption } from '@side/design-system';
 
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
@@ -48,22 +50,21 @@ function ContestSelection({
         참여할 대회
         <FieldRequirement required />
       </label>
-      <select
+      <NativeSelect
         id={id}
         required
         aria-invalid={Boolean(form.formState.errors.contestId)}
         aria-describedby={form.formState.errors.contestId ? `${id}-error` : undefined}
-        className="min-h-touch w-full rounded-control border border-line-strong bg-surface px-3 text-body text-ink"
         disabled={form.formState.isSubmitting}
         {...form.register('contestId')}
       >
-        <option value="">대회를 선택해 주세요</option>
+        <NativeSelectOption value="">대회를 선택해 주세요</NativeSelectOption>
         {data.groupContestsPage.items.map((contest) => (
-          <option key={contest.id} value={contest.id}>
+          <NativeSelectOption key={contest.id} value={contest.id}>
             {contest.title}
-          </option>
+          </NativeSelectOption>
         ))}
-      </select>
+      </NativeSelect>
       {hasNextPage ? (
         <Button size="sm" variant="ghost" loading={isFetchingNextPage} onClick={fetchNextPage}>
           대회 더 불러오기
@@ -77,7 +78,16 @@ function ContestSelection({
     </div>
   );
 }
-export function PostContestField({ form, groupId }: { form: TPostForm; groupId: string }) {
+export function PostContestField({
+  form,
+  groupId,
+  defaultContestId,
+}: {
+  form: TPostForm;
+  groupId: string;
+  /** 대회 화면의 글쓰기 링크로 들어왔을 때 미리 고른 대회 */
+  defaultContestId?: string;
+}) {
   const isSSR = useIsSSR();
   const [queryRef, { refetch }] = useBackgroundQuery(
     GroupContestsDocument,
@@ -91,7 +101,12 @@ export function PostContestField({ form, groupId }: { form: TPostForm; groupId: 
   if (!queryRef) return null;
   return (
     <AsyncBoundary fallback={null} onRetry={refetch}>
-      <AvailableContests form={form} groupId={groupId} queryRef={queryRef} />
+      <AvailableContests
+        form={form}
+        groupId={groupId}
+        queryRef={queryRef}
+        defaultContestId={defaultContestId}
+      />
     </AsyncBoundary>
   );
 }
@@ -99,16 +114,40 @@ function AvailableContests({
   form,
   groupId,
   queryRef,
+  defaultContestId,
 }: {
   form: TPostForm;
   groupId: string;
   queryRef: QueryRef<GroupContestsQuery>;
+  defaultContestId?: string;
 }) {
   const participating = useWatch({ control: form.control, name: 'participateInContest' });
   const { data } = useReadQuery(queryRef);
-  if (!data.groupContestsPage.items.length) return null;
+  const contests = data.groupContestsPage.items;
+  // 다음 페이지가 남아 있으면 아직 받지 않은 대회일 수 있어 마감으로 보지 않는다.
+  const linkedContestClosed =
+    Boolean(defaultContestId) &&
+    data.groupContestsPage.nextOffset === null &&
+    !contests.some((contest) => contest.id === defaultContestId);
+  useEffect(() => {
+    // 마감된 대회 링크의 참여 값이 서버에서 거절돼 게시를 막지 않게 일반 게시물로 되돌린다. 그 뒤 고른 대회는 둔다.
+    if (!linkedContestClosed || form.getValues('contestId') !== defaultContestId) return;
+    form.setValue('participateInContest', false);
+    form.setValue('contestId', '');
+  }, [defaultContestId, form, linkedContestClosed]);
+  if (!contests.length)
+    return linkedContestClosed ? (
+      <p role="status" className="rounded-control border border-line p-4 text-body text-muted">
+        참여하려던 대회는 접수가 끝나서 일반 게시물로 올라가요.
+      </p>
+    ) : null;
   return (
     <section className="flex flex-col gap-3 rounded-control border border-line p-4">
+      {linkedContestClosed ? (
+        <p role="status" className="text-caption text-muted">
+          참여하려던 대회는 접수가 끝났어요.
+        </p>
+      ) : null}
       <label className="flex min-h-touch cursor-pointer items-center gap-3 text-label text-ink">
         <input
           type="checkbox"

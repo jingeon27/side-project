@@ -49,9 +49,9 @@ function LatestPostList({
     <div className="flex flex-col gap-4">
       {data.galleryPostsPage.items.length ? (
         <PostCardList>
-          {data.galleryPostsPage.items.map(({ id }) => (
+          {data.galleryPostsPage.items.map(({ id }, index) => (
             <div key={id} className="flex min-w-0 flex-col gap-3">
-              <PostCard id={id} />
+              <PostCard id={id} isPriority={index === 0} />
               {postAction?.(id)}
             </div>
           ))}

@@ -4,6 +4,7 @@ const webOrigin = 'http://127.0.0.1:3337';
 
 export default defineConfig({
   testDir: './test/observability',
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   retries: 0,
   timeout: 45_000,

@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const repo = fileURLToPath(new URL('../../../../../../', import.meta.url));
 const script = join(repo, 'deploy/shared-instance/scripts/ci-superseded.sh');
+const policy = join(repo, 'deploy/shared-instance/scripts/service-ci.ts');
 const state = {} as { directory: string };
 
 const git = (...args: string[]) =>
@@ -41,18 +42,25 @@ function decide(service: string, release: string) {
   return { output: readFileSync(output, 'utf8').trim(), summary: readFileSync(summary, 'utf8') };
 }
 
-/** PR과 push가 공유하는 경로 목록을 읽는다. 목록은 블록 형식으로 쓴다. */
-function workflowPaths() {
-  const lines = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8').split('\n');
-  const start = lines.indexOf('  push:');
-  const list = lines.indexOf('    paths: &service_paths', start);
-  const paths: string[] = [];
-  for (const line of lines.slice(list + 1)) {
-    const match = /^ {6}- '?([^']+?)'?$/.exec(line);
-    if (!match?.[1]) break;
-    paths.push(match[1]);
-  }
-  return paths;
+/** Services의 selection과 같은 명령으로 base 이후 변경에서 서비스 검사를 하나라도 고르는지 본다. */
+function selectsServices(base: string) {
+  const event = join(state.directory, '.event.json');
+  const output = join(state.directory, '.output');
+  writeFileSync(event, JSON.stringify({ before: base }));
+  writeFileSync(output, '');
+  const result = spawnSync(process.execPath, [policy, 'select'], {
+    cwd: state.directory,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF: 'refs/heads/develop',
+      GITHUB_EVENT_PATH: event,
+      GITHUB_OUTPUT: output,
+    },
+  });
+  expect(result.status, result.stderr).toBe(0);
+  return /^(?:game-feedback|photo-contest)=true$/m.test(readFileSync(output, 'utf8'));
 }
 
 beforeEach(() => {
@@ -63,17 +71,19 @@ beforeEach(() => {
 afterEach(() => rmSync(state.directory, { recursive: true, force: true }));
 
 describe('최신 커밋 배포 판정', () => {
-  it('PR과 push는 두 서비스 배포 판정과 같은 경로 목록을 공유해야 한다', () => {
-    const listed = ['photo-contest', 'game-feedback'].flatMap((service) =>
-      execFileSync('bash', [script, service, '--paths'], { encoding: 'utf8' }).trim().split('\n'),
-    );
-    expect(new Set(workflowPaths())).toEqual(new Set(listed));
-    const pullRequest = readFileSync(join(repo, '.github/workflows/services.yml'), 'utf8')
-      .split(/^  pull_request:/m)[1]
-      ?.split(/^  \S/m)[0];
-    expect(pullRequest).toBeDefined();
-    expect(pullRequest).toMatch(/^    paths: \*service_paths$/m);
-  });
+  // Services는 경로 필터 없이 실행하므로 검사 선택과 배포 생략 판정이 같은 서비스 경로를 써야 한다.
+  it.each(['photo-contest', 'game-feedback'])(
+    '%s 배포 판정은 검사 선택과 같은 경로를 써야 한다',
+    (service) => {
+      const listed = execFileSync('bash', [script, service, '--paths'], { encoding: 'utf8' })
+        .trim()
+        .split('\n');
+      expect(listed).toContain(`projects/${service}/**`);
+      expect(listed).toEqual(
+        execFileSync(process.execPath, [policy, 'paths', service], { encoding: 'utf8' }).trim().split('\n'),
+      );
+    },
+  );
 
   it.each([
     [['projects/blog/apps/web/content/post.mdx', 'projects/blog/apps/web/seo/ko.json'], false],
@@ -86,15 +96,10 @@ describe('최신 커밋 배포 판정', () => {
     [['projects/blog/README.md', 'deploy/shared-instance/Caddyfile'], true],
     [['projects/blog/README.md', 'yarn.lock'], true],
     [['projects/game-feedback/.env.example'], true],
-  ] as const)('%j 변경 시 Services 실행 대상 여부는 %s여야 한다', (files, expected) => {
+  ] as const)('%j 변경 시 Services가 서비스 검사를 고르는지는 %s여야 한다', (files, expected) => {
     const base = git('rev-parse', 'HEAD');
     for (const file of files) commit(file);
-    const diff = spawnSync('git', ['diff', '--quiet', base, 'HEAD', '--', ...workflowPaths()], {
-      cwd: state.directory,
-      encoding: 'utf8',
-    });
-    expect([0, 1], diff.stderr).toContain(diff.status);
-    expect(diff.status === 1).toBe(expected);
+    expect(selectsServices(base)).toBe(expected);
   });
 
   it('브랜치 끝의 커밋은 배포해야 한다', () => {

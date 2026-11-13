@@ -2,12 +2,12 @@ import { NextRequest } from 'next/server';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { documentUnavailable } from '@/_app/seo/index.server';
+import { documentUnavailable } from '@/_app/seo/document-access.server';
 import { PUBLIC_LOOKUP_PAGES_PER_MINUTE } from '@/shared/api/visitor-rate-limit';
 
 import { proxy } from './proxy';
 
-vi.mock('@/_app/seo/index.server', () => ({ documentUnavailable: vi.fn(async () => false) }));
+vi.mock('@/_app/seo/document-access.server', () => ({ documentUnavailable: vi.fn(async () => false) }));
 
 function request(path: string, visitor?: string, rsc = false) {
   return new NextRequest(`https://game.example${path}`, {

@@ -97,6 +97,31 @@ export function hasOpenOverlay() {
   return stack.length > 0;
 }
 
+/** 지금 열린 오버레이 항목의 key. 이 뒤에 열었다 닫은 오버레이의 항목이 걷혔는지 확인할 때 쓴다. */
+export function getOpenOverlayKeys() {
+  return stack.map((entry) => entry.key);
+}
+
+/**
+ * keys 뒤에 열었다 닫은 오버레이(묻는 대화상자 등)의 history 항목이 지금 위치에 남아 있으면 걷어 낼 때까지 기다린다.
+ * 닫기는 back()으로 항목을 지우므로, 그 전에 화면을 뒤로 옮기면 그 back()이 대화상자 항목만 지우고 화면은 그대로 남는다.
+ */
+export function waitForOverlayEntriesAfter(keys: readonly string[]) {
+  const settled = () => {
+    const key = readKey(window.history.state);
+    return key === null || keys.includes(key);
+  };
+  if (settled()) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const handleSettle = () => {
+      if (!settled()) return;
+      window.removeEventListener('popstate', handleSettle);
+      resolve();
+    };
+    window.addEventListener('popstate', handleSettle);
+  });
+}
+
 /** 맨 위 오버레이를 뒤로 가기와 같은 경로로 닫는다. 닫을 것이 없으면 false. */
 export function closeTopOverlay() {
   if (stack.length === 0) return false;

@@ -1,6 +1,8 @@
 import { expect, test } from './support/test';
 
-test('소셜 로그인 버튼은 hover에도 제공자 배경과 읽을 수 있는 문구를 유지해야 한다', async ({ page }) => {
+test('소셜 로그인 버튼은 hover와 누르는 동안에도 제공자 배경과 읽을 수 있는 문구를 유지해야 한다', async ({
+  page,
+}) => {
   await page.route('**/api/session', async (route) => {
     const response = await route.fetch();
     const session = await response.json();
@@ -31,6 +33,13 @@ test('소셜 로그인 버튼은 hover에도 제공자 배경과 읽을 수 있�
     await button.hover();
     await expect(button).toHaveCSS('background-color', background);
     await expect(button).toHaveCSS('text-decoration-line', 'none');
+    // 공통 Button의 누름 바탕(sunken)이 뒤에 나와 이기면서 누르는 동안 회색이 됐다.
+    await page.mouse.down();
+    await expect(button).toHaveCSS('background-color', background);
+    await expect(button).toHaveCSS('box-shadow', /inset/);
+    // 같은 버튼 위에서 떼면 로그인 요청을 보내므로 대화 상자 제목으로 옮긴 뒤 뗀다.
+    await dialog.getByRole('heading', { name: '로그인', exact: true }).hover();
+    await page.mouse.up();
   }
   await page.unrouteAll({ behavior: 'wait' });
 });

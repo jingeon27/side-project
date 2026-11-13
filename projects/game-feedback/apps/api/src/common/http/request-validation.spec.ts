@@ -74,6 +74,21 @@ describe('Zod HTTP requests and generated contract compatibility', () => {
         response: { errorCode: 'VALIDATION_ERROR' },
       });
   });
+  it('accepts a UUID post request key only when creating a post', async () => {
+    const input = { title: '요청 키 확인', body: '본문', categoryId: 'game', board: 'FREE' };
+    const clientRequestId = crypto.randomUUID();
+    await expect(
+      new RequestValidationPipe(PostInputSchema).transform({ ...input, clientRequestId }, metadata),
+    ).resolves.toMatchObject({ clientRequestId });
+    for (const [dto, value] of [
+      [PostInputSchema, { ...input, clientRequestId: 'retry-1' }],
+      [PostInputSchema, { ...input, clientRequestId: '' }],
+      [PostPatchSchema, { title: input.title, clientRequestId }],
+    ] as const)
+      await expect(new RequestValidationPipe(dto).transform(value, metadata)).rejects.toMatchObject({
+        response: { errorCode: 'VALIDATION_ERROR' },
+      });
+  });
   it('preserves tag normalization, nullable negotiation, attachment rules and query defaults', async () => {
     await expect(
       new RequestValidationPipe(GameAccountInputSchema).transform({ playerTag: ' p0lyq829 ' }, metadata),

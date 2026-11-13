@@ -198,7 +198,7 @@ export class GroupService {
     await this.limits.consume('GROUP_CREATE', { userId: viewer.id, address });
     const inviteToken = randomToken();
     const group = await this.transactions.atomic(async (tx) => {
-      const created = await (tx ?? this.db).group.create({
+      const created = await tx.group.create({
         data: {
           // nullable 복합 avatar FK가 기본 id 생성을 덮지 않도록 명시한다.
           id: randomUUID(),
@@ -213,7 +213,7 @@ export class GroupService {
         },
         include: groupCount,
       });
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `group:${created.id}`,
         type: ANALYTICS_EVENT.GROUP_CREATED,
         userId: viewer.id,
@@ -237,9 +237,9 @@ export class GroupService {
   ): Promise<IGroupNode> {
     await this.limits.consume('JOIN_REQUEST', { userId: viewer.id, address });
     await this.transactions.atomic(async (tx) => {
-      const group = await (tx ?? this.db).group.findUnique({ where: { id: groupId } });
+      const group = await tx.group.findUnique({ where: { id: groupId } });
       if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      const existing = await (tx ?? this.db).groupMember.findUnique({
+      const existing = await tx.groupMember.findUnique({
         where: { groupId_userId: { groupId, userId: viewer.id } },
       });
       if (existing) return;
@@ -269,19 +269,19 @@ export class GroupService {
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
-      const joined = await (tx ?? this.db).groupMember.createMany({
+      const joined = await tx.groupMember.createMany({
         data: [{ groupId: group.id, userId: viewer.id }],
         skipDuplicates: true,
       });
       if (joined.count !== 1) return;
       // 나갔다가 다시 가입할 수 있으므로 가입마다 새 id로 기록한다.
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `joined:${group.id}:${viewer.id}:${randomUUID()}`,
         type: ANALYTICS_EVENT.GROUP_JOINED,
         userId: viewer.id,
         properties: { groupId: group.id },
       });
-      await (tx ?? this.db).groupJoinRequest.deleteMany({ where: { groupId, userId: viewer.id } });
+      await tx.groupJoinRequest.deleteMany({ where: { groupId, userId: viewer.id } });
     });
     return this.group(viewer, groupId);
   }

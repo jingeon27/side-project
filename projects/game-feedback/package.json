@@ -18,7 +18,7 @@
     "db:test:start": "node scripts/db.ts start --test",
     "db:test:stop": "node scripts/db.ts stop --test",
     "check": "node scripts/tasks.ts check",
-    "lint": "eslint .",
+    "lint": "eslint --max-warnings 0 .",
     "typecheck": "node scripts/tasks.ts check",
     "test": "node scripts/tasks.ts test",
     "test:unit": "node scripts/tasks.ts test:unit",

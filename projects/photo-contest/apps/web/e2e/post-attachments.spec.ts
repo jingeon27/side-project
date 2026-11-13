@@ -15,7 +15,7 @@ test(
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     const chooser = page.waitForEvent('filechooser');
-    await form.getByRole('button', { name: '파일 선택', exact: true }).click();
+    await form.getByRole('button', { name: /^파일 선택/ }).click();
     await (
       await chooser
     ).setFiles({
@@ -72,7 +72,8 @@ test(
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByRole('article', { name: '함께 볼 유튜브', exact: true });
     await expect(youtube.locator('iframe')).toHaveCount(0);
-    await expect(youtube.getByRole('link', { name: '유튜브 영상 열기: youtu.be' })).toHaveAttribute(
+    // 음성 입력으로 부를 수 있게 링크 이름은 보이는 글자로 시작한다.
+    await expect(youtube.getByRole('link', { name: 'YouTube https://youtu.be/abcdefghijk' })).toHaveAttribute(
       'href',
       'https://youtu.be/abcdefghijk',
     );
@@ -91,10 +92,9 @@ test(
     const ordinary = page
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByRole('article', { name: '읽어볼 링크', exact: true });
-    await expect(ordinary.getByRole('link', { name: '첨부 링크 열기: example.com' })).toHaveAttribute(
-      'rel',
-      'noopener noreferrer ugc',
-    );
+    await expect(
+      ordinary.getByRole('link', { name: 'example.com https://example.com/funny' }),
+    ).toHaveAttribute('rel', 'noopener noreferrer ugc');
     await context.clearCookies();
     await startAnonymousSession(context);
     await page.goto(path);
@@ -128,7 +128,7 @@ for (const video of [false, true]) {
       await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
       const chooser = page.waitForEvent('filechooser');
-      await form.getByRole('button', { name: '파일 선택', exact: true }).click();
+      await form.getByRole('button', { name: /^파일 선택/ }).click();
       await (
         await chooser
       ).setFiles({

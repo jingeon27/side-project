@@ -3,7 +3,8 @@
 import { useLayoutEffect, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 
 type Theme = 'light' | 'dark';
 
@@ -31,7 +32,7 @@ function subscribe(callback: () => void) {
 }
 const getTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
-export function ThemeSwitch({ locale }: { locale: UiLocale }) {
+export function ThemeSwitch({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const theme = useSyncExternalStore(subscribe, getTheme, () => 'light');
   useLayoutEffect(() => {

@@ -29,9 +29,10 @@ export function GalleryFeed({
           {latest}
         </div>
         <div className="contents desktop:sticky desktop:top-24 desktop:order-2 desktop:block desktop:max-h-[calc(100dvh-112px)] desktop:min-w-0 desktop:overflow-y-auto desktop:overscroll-contain">
-          <aside className="order-1 mx-auto w-full min-w-0 max-w-app desktop:max-w-none desktop:rounded-sheet desktop:bg-surface desktop:p-5 desktop:shadow-card">
+          {/* 인기 목록이 이름 있는 영역(section)을 가지므로 이름 없는 보조 영역(aside)으로 다시 감싸지 않는다. */}
+          <div className="order-1 mx-auto w-full min-w-0 max-w-app desktop:max-w-none desktop:rounded-sheet desktop:bg-surface desktop:p-5 desktop:shadow-card">
             {popular}
-          </aside>
+          </div>
           {sidebar ? (
             <div className="order-3 mx-auto w-full min-w-0 max-w-app desktop:mt-5 desktop:max-w-none">
               {sidebar}

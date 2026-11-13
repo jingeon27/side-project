@@ -5,17 +5,23 @@ set +x
 set -euo pipefail
 umask 077
 ROOT=${SIDE_DEPLOY_ROOT:-/srv/side-project}
-[[ $# == 5 && "$1" =~ ^(game-feedback|photo-contest)$ && "$2" =~ ^[a-f0-9]{40}$ ]]
-[[ "$3" =~ ^ghcr\.io/[a-z0-9._/-]+-$1-api@sha256:[a-f0-9]{64}$ ]]
-[[ "$4" =~ ^ghcr\.io/[a-z0-9._/-]+-$1-web@sha256:[a-f0-9]{64}$ ]]
-[[ "$5" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]]
-[[ "$ROOT" == /* && "$ROOT" != / ]]
+# 실패 원인은 인자 이름으로만 알리고 값은 출력하지 않는다.
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+[[ $# == 5 && "$1" =~ ^(game-feedback|photo-contest)$ && "$2" =~ ^[a-f0-9]{40}$ ]] ||
+  fail 'Usage: receive.sh <game-feedback|photo-contest> <release sha> <api digest> <web digest> <registry user>'
+[[ "$3" =~ ^ghcr\.io/[a-z0-9._/-]+-$1-api@sha256:[a-f0-9]{64}$ ]] || fail "The API image must be a GHCR digest for $1."
+[[ "$4" =~ ^ghcr\.io/[a-z0-9._/-]+-$1-web@sha256:[a-f0-9]{64}$ ]] || fail "The web image must be a GHCR digest for $1."
+[[ "$5" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]] || fail 'The registry user must be a GitHub user name.'
+[[ "$ROOT" == /* && "$ROOT" != / ]] || fail 'SIDE_DEPLOY_ROOT must be an absolute directory other than /.'
 host=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 release="$ROOT/services/$1/releases/$2"
-[[ "$host" == "$release/host" ]]
-command -v setsid >/dev/null
+[[ "$host" == "$release/host" ]] || fail 'receive.sh must run from the uploaded release host directory.'
+command -v setsid >/dev/null || fail 'setsid is required to detach the deployment worker.'
 IFS= read -r registry_token
-[[ -n "$registry_token" ]]
+[[ -n "$registry_token" ]] || fail 'The registry token was not received.'
 IFS= read -r environment_bytes
 [[ "$environment_bytes" =~ ^[1-9][0-9]{0,5}$ && "$environment_bytes" -le 65536 ]] || { echo 'Invalid SERVICE_ENV transfer length.' >&2; exit 2; }
 mkdir -p "$ROOT/services/$1/.env-requests"

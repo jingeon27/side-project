@@ -11,7 +11,7 @@ const meta = {
     children: { control: 'text' },
     tone: {
       control: 'select',
-      options: ['brand', 'accent', 'neutral', 'danger', 'info', 'gold', 'silver', 'bronze'],
+      options: ['brand', 'accent', 'neutral', 'outline', 'danger', 'info', 'gold', 'silver', 'bronze'],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -26,6 +26,7 @@ export const Tones: Story = {
       <Badge tone="brand">운영팀</Badge>
       <Badge tone="accent">추천</Badge>
       <Badge tone="neutral">진행 중</Badge>
+      <Badge tone="outline">공개</Badge>
       <Badge tone="danger">마감</Badge>
       <Badge tone="info">안내</Badge>
       <Badge tone="gold">1위</Badge>

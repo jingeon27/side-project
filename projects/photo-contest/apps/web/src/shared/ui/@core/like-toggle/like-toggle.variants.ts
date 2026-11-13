@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 /**
  * 좋아요 토글의 자리별 밀도. 눌림 색은 aria-pressed가 정하므로 liked 같은 켜짐/꺼짐은 variant로 두지 않는다.
+ * 모서리는 LikeToggle이 버튼의 shape로 고른다.
  * - card: 게시물 카드(44px). 배경 없이 눌리면 하트만 칠한다.
  * - chip: 이전 대회 사진(36px 칩)
  * - inline: 댓글 줄 안의 작은 글자
@@ -9,8 +10,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 export const likeToggleVariants = cva('gap-1.5', {
   variants: {
     density: {
-      card: 'rounded-full px-2 aria-pressed:[&_svg]:text-danger',
-      chip: 'rounded-full px-2.5 text-ink aria-pressed:text-danger',
+      card: 'px-2 aria-pressed:[&_svg]:text-danger',
+      chip: 'px-2.5 text-ink aria-pressed:text-danger',
       inline: 'px-2 text-caption text-muted aria-pressed:text-danger',
     },
   },

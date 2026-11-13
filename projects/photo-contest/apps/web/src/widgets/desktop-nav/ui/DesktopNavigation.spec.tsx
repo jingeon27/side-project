@@ -1,6 +1,6 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MeDocument, type MeQuery } from '@/shared/api/generated';
@@ -38,7 +38,7 @@ describe('DesktopNavigation', () => {
       navigation.pathname = pathname;
       renderNav();
       expect(screen.getByRole('navigation', { name: '주요 메뉴' })).toBeInTheDocument();
-      expect(screen.queryByRole('navigation', { name: '서비스 정책' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: '이용약관' })).not.toBeInTheDocument();
       expect(screen.queryByText('© 피식')).not.toBeInTheDocument();
     },
   );
@@ -59,7 +59,34 @@ describe('DesktopNavigation', () => {
     expect(screen.getByRole('link', { name: '홈' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'MY' })).toHaveAttribute('href', '/me');
     expect(screen.getByRole('link', { name: '알림' })).toHaveAttribute('href', '/notifications');
-    expect(screen.getByRole('navigation', { name: '서비스 정책' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: '이용약관' })).toHaveAttribute('href', '/terms');
+  });
+
+  it('main 안의 메뉴는 이름 없는 보조 영역이나 본문과 겹치는 정책 탐색 영역을 만들지 않아야 한다', () => {
+    navigation.pathname = '/me';
+    renderNav();
+    expect(screen.getAllByRole('navigation').map((nav) => nav.getAttribute('aria-label'))).toEqual([
+      '주요 메뉴',
+    ]);
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['/', '홈'],
+    ['/explore', '탐색'],
+    ['/me', 'MY'],
+    ['/notifications', '알림'],
+  ])('%s에서는 %s 아이콘만 굵게 강조해야 한다', (pathname, active) => {
+    navigation.pathname = pathname;
+    renderNav();
+    const nav = screen.getByRole('navigation', { name: '주요 메뉴' });
+    const strokeWidths = Object.fromEntries(
+      ['홈', '탐색', 'MY', '알림'].map((name) => [
+        name,
+        within(nav).getByRole('link', { name }).querySelector('svg')?.getAttribute('stroke-width'),
+      ]),
+    );
+    expect(strokeWidths).toEqual({ 홈: '1.7', 탐색: '1.7', MY: '1.7', 알림: '1.7', [active]: '2.5' });
   });
 
   it('세션이 없으면 메뉴 이름이 로그인으로 바뀌어 인증 화면으로 가고 클릭을 한 번 기록해야 한다', () => {

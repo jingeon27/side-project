@@ -8,17 +8,18 @@
 | --- | --- | --- | --- | --- |
 | `test:e2e` | `playwright.config.ts` | `e2e/**`(test-token-chat·observability 제외) | 3301/4301 | `next build` + `next start`, `.next/test`, demo 켬 |
 | `test:editor` | `playwright.editor.config.ts` | 기존 글 편집·한글 조합·작은 화면 | 3301/4301 | 기본과 같은 운영 빌드, Desktop/Android Chromium·iOS WebKit |
-| `test:test-auth` | `playwright.test-auth.config.ts` | `e2e/test-token-chat.spec.ts` | 3301/4301 | 기본과 같고 `GF_DEMO_MODE=false` |
+| `test:test-auth` | `playwright.test-auth.config.ts` | `e2e/test-token-chat.spec.ts` | 3301/4301 | 기본과 같고 API `test:server`에 `--no-demo`를 붙여 데모만 끈다(테스트 인증은 켠다) |
 | `test:prefetch` | `playwright.prefetch.config.ts` | `e2e-production/**` | 3353/4353 | production build, `ENVIRONMENT=test`, `.next/test` |
-| `test:observability` | `playwright.observability.config.ts` | `e2e/observability.spec.ts` | 3301/4301 | `next dev --webpack`(`.next/observability`), `GF_OBSERVABILITY_PRODUCTION=true`면 production |
+| `test:observability` | `playwright.observability.config.ts` | `e2e/observability.spec.ts`·`e2e/sentry-web-vitals.spec.ts` | 3301/4301 | 기본과 같은 production build(`ENVIRONMENT=test`, `.next/test`)에 가짜 관측 키와 `SENTRY_RELEASE` |
+| `test:chat:dev` | `playwright.chat-dev.config.ts` | `e2e-dev/**`(채팅 왕복의 dev 콘솔 경고) | 3301/4301 | `next dev`(`NODE_ENV=development`, `ENVIRONMENT=test`라 `.next/test/dev`) |
 
 - 공통: chromium(Desktop Chrome) 프로젝트 하나, workers 1, timeout 45초, `trace: 'retain-on-failure'`, `reuseExistingServer: false`. 결과는 `test-results/`(기본) 또는 `.e2e-build/<이름>-results/`다.
-- API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353·4354와 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
-- DB URL은 `TEST_DATABASE_URL`(기본 `postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test`)만 허용하며 실행마다 `gf_test_web_<uuid>` 스키마를 만든다(`GF_E2E_SCHEMA`로 지정 가능, `gf_test_` 접두 필수). `e2e/teardown.ts`가 그 스키마만 DROP한다.
+- API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed --fixtures` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353·4354와 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
+- DB는 API의 `src/testing/browser-database.ts`(`prepareBrowserDatabase('web')`)가 정한다. 물려받은 `DATABASE_URL`이 `/game_feedback_test`를 가리킬 때만 쓰고 아니면 기본 `postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test`를 쓴다. 실행마다 `gf_test_web_<uuid 32자>` 스키마를 만들며, URL에 이미 스키마가 있으면 같은 형식일 때만 이어 쓴다. `e2e/teardown.ts`가 그 스키마만 DROP한다.
 - 기본 설정은 Sentry·Amplitude 키를 빈 값으로 덮는다(`telemetry-disabled.spec.ts`). observability 설정만 가짜 키(`observability-test-key`, `https://test@sentry.invalid/1`)를 넣고 `context.route`로 가로챈다. `GAME_FEEDBACK_SITE_URL=https://feedback.example`, `ENVIRONMENT=test`.
 - `ENVIRONMENT=test`인 격리 빌드에서만 `next.config.ts`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 운영 환경에는 노출하지 않는다.
-- 모든 설정이 실행마다 web production build를 한다(observability dev 모드 제외). 개발 오버레이 같은 dev 동작은 기본 e2e에 없다.
-- 기본 E2E와 prefetch 레인은 `.next/test`를 공유하므로 동시에 build/start하지 않는다. 기존 production artifact를 재검증할 때는 BUILD_ID·runtime hash를 확인하고 전용 포트·새 실행 스키마만 사용한다.
+- `test:chat:dev`를 뺀 설정은 실행마다 web production build를 한다. 개발 오버레이·콘솔 경고 같은 dev 동작은 `test:chat:dev`에서만 본다.
+- 위 web 레인 전부(`test:chat:dev`는 그 아래 `dev` 폴더)와 mobile E2E는 `ENVIRONMENT=test`의 `.next/test`를 쓰고, 3301/4301 레인끼리는 포트도 같으므로 같은 checkout에서 동시에 실행하지 않는다. 기존 production artifact를 재검증할 때는 BUILD_ID·runtime hash를 확인하고 전용 포트·새 실행 스키마만 사용한다.
 
 ## 실행 전
 
@@ -53,7 +54,7 @@ yarn workspace @game-feedback/web test:e2e e2e/compose.spec.ts
 yarn workspace @game-feedback/web test:e2e e2e/chat.spec.ts -g "<테스트 이름 일부>"
 yarn workspace @game-feedback/web test:test-auth
 yarn workspace @game-feedback/web test:prefetch
-GF_OBSERVABILITY_PRODUCTION=true yarn workspace @game-feedback/web test:observability
+yarn workspace @game-feedback/web test:observability
 yarn workspace @side/game-feedback db:test:stop
 ```
 

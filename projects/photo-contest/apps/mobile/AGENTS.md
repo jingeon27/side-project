@@ -1,6 +1,6 @@
 # Mobile (Expo WebView 셸)
 
-사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키를 읽고 NODE_ENV=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
+사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키와 선택 빌드 키 MOBILE_EAS_PROJECT_ID·MOBILE_IOS_APP_STORE_ID를 읽고 NODE_ENV=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
 
 웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 세션 쿠키(운영 `__Host-contest_session`, 개발 http `contest_session`)가 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
 
@@ -14,14 +14,14 @@
 
 ## 구조 (`src`)
 
-- `_app`: `App.tsx`(첫 링크·분석 기기 ID를 읽고 app_opened를 보낸 뒤 웹 셸, 최소 버전 미달이면 업데이트 화면), 스플래시 제어, `providers`(SafeAreaProvider, 오류 경계). `index.ts`가 Sentry를 켜고 루트를 감싼다.
+- `_app`: `App.tsx`(첫 링크·분석 기기 ID·저장한 화면 모드를 읽고 app_opened를 보낸 뒤 웹 셸, 최소 버전 미달이면 업데이트 화면), 스플래시 제어, `providers`(SafeAreaProvider, 오류 경계). `index.ts`가 Sentry를 켜고 루트를 감싼다.
 - `_pages/web-shell`: `@page/WebShellPageTemplate`, `model`(WebView 이벤트·브리지·뒤로 가기·AppState 훅), `ui`(LoadingOverlay, OfflineView), `lib`(순수 판단, `shell-events.ts`는 기능 결과·실패 → 분석 이벤트·Sentry 태그).
 - `_pages/update-required`: 최소 버전보다 낮은 앱. 웹을 열지 않는다.
 - `features/bridge`: `lib/create-capabilities.ts`(순수, 플랫폼 기능 주입, 공유 결과를 `onOutcome`으로 알린다), `model/native-capabilities.ts`(expo 모듈 연결).
 - `features/navigation`: `navigation-policy`(onShouldStartLoadWithRequest), `deep-link`(URL → 웹 경로, path_template), `back-press`, `read-initial-link`.
-- `features/app-config`: `/app/config`·`/health` 호출과 zod 스키마, 버전 비교.
+- `features/app-config`: 시작할 때의 `/app/config` 호출과 zod 스키마, 버전 비교, 스토어 주소. 앱은 `/health`를 부르지 않는다.
 - `features/analytics`: `config/events.ts`(이벤트 카탈로그), `lib/create-analytics.ts`(순수, SDK 주입), `model/analytics.ts`(Amplitude 연결).
-- `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색), `lib`(`monitoring/`은 Sentry 연결).
+- `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색, 라이트·다크), `lib`(`monitoring/`은 Sentry 연결, `push/`는 OS 푸시 권한·토큰·배지·알림 탭과 `PushInbox`), `model/appearance.ts`(웹이 알린 화면 모드를 저장하고 네이티브 화면 색을 고른다).
 - 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다. 공용 FSD lint가 같은 레이어 import는 막지 않으므로 리뷰로 지킨다.
 - slice 간 import는 각 slice의 named export `index.ts`를 통한다(`fsdBoundaries`). 배럴은 네이티브 모듈을 함께 불러오므로 unit 레인(node)이 읽는 `shell-events.ts`만 이유를 적고 순수 모듈을 직접 가져온다.
 
@@ -29,23 +29,29 @@
 
 - 모든 URL은 `navigation-policy`가 판단한다(`originWhitelist={['*']}`). 웹 origin·`about:blank`만 WebView에서 열고, 앱 스킴은 웹 이동으로 바꾸며, 그 밖(다른 사이트·intent·카카오톡·전화)은 `Linking.openURL`로 밖에서 연다. `javascript:`·`data:`·`file:` 등은 막는다.
 - 앱 스킴·유니버설 링크는 `/invite/<토큰>`, `/groups/<id>`, `/contests/<id>`만 받는다. 토큰·ID는 `[A-Za-z0-9_-]`만. 허용한 경로 이외의 링크는 무시한다. 앱 링크 검증 파일과 배포 설정은 사용하지 않는다.
-- 웹이 `app.ready`를 알리기 전에는 딥링크를 문서 이동(첫 URL 교체)으로, 알린 뒤에는 `navigation.open`으로 보낸다. iOS의 새 문서 로드만 준비 상태를 지운다(Android는 pushState에도 onLoadStart를 보낸다).
+- 웹이 `app.ready`를 알리기 전에는 딥링크를 문서 이동(첫 URL 교체)으로, 알린 뒤에는 `navigation.open`으로 보낸다. iOS의 새 문서 로드만 준비 상태를 지운다(Android는 pushState에도 onLoadStart를 보낸다). 준비 전 링크의 주소가 지금 source와 같은데 WebView가 다른 문서를 불러오는 중이면(iOS reload 등) WebView를 새로 만들어 그 주소를 연다.
 - 메인 문서 연결 오류와 5xx는 오프라인 화면(다시 시도 = 보던 주소로 WebView 재생성). 4xx는 웹이 그린 화면을 그대로 둔다. Android 렌더러가 죽으면 재생성, iOS 콘텐츠 프로세스가 끝나면 reload.
 - 버전 검사(`/app/config`, 5초)는 웹 로딩과 함께 돌고, 실패하면 막지 않는다.
+- 푸시 요청 세 개(`notifications.*`)는 실기기 iOS·Android이고 유효한 EAS projectId(로컬은 루트 `.env`, EAS 원격 빌드는 EAS 환경변수의 `MOBILE_EAS_PROJECT_ID`를 `app.config.ts`가 `extra.eas.projectId`로 넘긴다)가 있을 때만 기능 키에 넣는다(`supportsNativePush`). Android FCM은 앱 폴더에 `google-services.json`이 있을 때만 연결한다.
+- 알림을 누르면 `PushInbox`가 데이터의 `path`가 정확히 `/notifications`일 때만 받아 두었다가 웹이 `app.ready`를 알린 뒤 한 번만 연다. 다른 경로와 외부 주소는 무시한다.
 - 브리지 패키지(`packages/bridge`)는 고치지 않는다. 계약이 부족하면 보고한다.
 
 ## 브리지 기능
 
 | 방향 | 이름 | 앱 동작 |
 | --- | --- | --- |
+| 웹 → 앱 요청 | `notifications.registration` | 설치 UUID·플랫폼·권한 상태·Expo 토큰을 돌려준다. `requestPermission: true`일 때만 시스템 권한 창을 연다(웹 대기 2분) |
+| 웹 → 앱 요청 | `notifications.badge` / `notifications.settings` | 앱 아이콘 배지 수(0~9999) / OS 앱 설정 열기 |
 | 웹 → 앱 요청 | `share.open` | RN `Share.share`. iOS는 `url` 필드, Android는 `message`에 문구+URL. 닫으면 `{ shared: false }` |
 | 웹 → 앱 요청 | `clipboard.copy` | expo-clipboard. 실패하면 `FAILED` |
 | 웹 → 앱 요청 | `haptics.impact` | light/medium/heavy는 impact, success/warning/error는 notification |
 | 웹 → 앱 요청 | `link.open` | expo-web-browser `openBrowserAsync`. 0.3초 안에 `{ opened }`로 답한다(iOS는 닫힐 때 끝나서) |
 | 앱 → 웹 요청 | `navigation.back` | Android 뒤로 가기. 800ms 안에 `handled`가 아니면 WebView `goBack`, 기록이 없으면 앱 종료 |
 | 앱 → 웹 알림 | `app.state` | background에 다녀왔을 때만 `background`/`active`(iOS inactive 무시) |
-| 앱 → 웹 알림 | `navigation.open` | 딥링크 경로 |
-| 웹 → 앱 알림 | `app.ready` / `navigation.changed` / `auth.changed` | 로딩·스플래시 닫기 / 재생성할 주소 기억 / 분석 사용자 식별만(세션은 쿠키) |
+| 앱 → 웹 알림 | `navigation.open` | 딥링크·알림 탭 경로 |
+| 앱 → 웹 알림 | `notifications.received` | 앱이 열려 있을 때 알림을 받거나 푸시 토큰이 바뀌면 보낸다(웹 준비 뒤에만). 웹은 등록을 맞추고 활성 쿼리를 다시 받는다 |
+| 웹 → 앱 알림 | `app.ready` / `navigation.changed` / `auth.changed` | 로딩·스플래시 닫기와 대기 중인 알림 열기 / 재생성할 주소 기억 / 분석 사용자 식별만(세션은 쿠키) |
+| 웹 → 앱 알림 | `appearance.changed` | 화면 모드(system·light·dark)를 저장하고 로딩·오프라인·업데이트 화면 색에 쓴다 |
 
 ## 모니터링·분석
 
@@ -71,9 +77,9 @@
 
 | 스크립트 | 내용 | 서버 |
 | --- | --- | --- |
-| `test` | vitest `unit`(node, `src/**/*.{spec,test}.ts`·`app.config.spec.ts`) + `ui`(jsdom, `src/**/*.{spec,test}.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
+| `test` | vitest `unit`(node, `src/**/*.{spec,test}.ts`·루트 `*.{spec,test}.ts`(`app.config.spec.ts`·`app.config.test.ts`)) + `ui`(jsdom, `src/**/*.{spec,test}.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
 | `test:api` | vitest `api`(`src/**/*.api.{spec,test}.ts`). `vitest.api-setup.ts`가 test-kit 격리 API를 띄운다 | API :4331, webOrigin `http://localhost:3331`, 스키마 `mobile_api_*` |
-| `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
+| `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(빌드 폴더는 웹 `next.config.ts`가 포트로 정하는 `.next/test-3330`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
 
 - 개발 서버 포트(3200/4200/55432)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.

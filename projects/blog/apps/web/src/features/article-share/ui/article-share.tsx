@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 
 export function ArticleShare({
@@ -10,7 +11,7 @@ export function ArticleShare({
   contentId,
   title,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   contentId: string;
   title: string;
 }) {

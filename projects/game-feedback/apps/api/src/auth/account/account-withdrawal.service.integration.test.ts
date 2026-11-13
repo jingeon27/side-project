@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
-import supertest from 'supertest';
+import supertest, { type Response } from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
@@ -34,10 +34,16 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
   let app: INestApplication;
   const administrator = { cookie: '' };
 
-  const login = async (agent: TAgent, provider: TSocialProvider, subject: string, status = 302) => {
+  const login = async (agent: TAgent, provider: TSocialProvider, subject: string) => {
     const start = await agent.get(`/api/auth/social/${provider}`).expect(302);
     const state = new URL(responseLocation(start)).searchParams.get('state');
-    await agent.get(`/api/auth/social/${provider}/callback`).query({ state, code: subject }).expect(status);
+    return agent.get(`/api/auth/social/${provider}/callback`).query({ state, code: subject }).expect(302);
+  };
+  // 브라우저가 연 콜백이라 계정 없는 제재 식별자도 JSON 403 대신 로그인 화면에서 거부 이유를 보여 준다.
+  const expectBanned = (callback: Response) => {
+    const destination = new URL(responseLocation(callback));
+    expect(destination.pathname).toBe('/ko/login');
+    expect(destination.searchParams.get('login')).toBe('banned');
   };
   const onboard = (agent: TAgent, nickname = '재가입 사용자') =>
     agent
@@ -208,7 +214,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     expect(restrictions).toHaveLength(1);
     expect(restrictions[0]?.subjectHash).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(restrictions)).not.toContain(user.subject);
-    await login(user.agent, 'google', user.subject, 403);
+    expectBanned(await login(user.agent, 'google', user.subject));
     await user.agent
       .post('/api/auth/onboard')
       .set('Origin', origin)
@@ -225,9 +231,9 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     await ban(user.id, true);
     await withdraw(user.agent);
     expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(2);
-    await login(user.agent, 'google', googleSubject, 403);
+    expectBanned(await login(user.agent, 'google', googleSubject));
     const discord = supertest.agent(app.getHttpServer());
-    await login(discord, 'discord', user.subject, 403);
+    expectBanned(await login(discord, 'discord', user.subject));
     await ban(user.id, false);
     expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(0);
     await login(discord, 'discord', user.subject);
@@ -265,7 +271,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     await ban(user.id, true);
     await withdraw(user.agent);
     expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(1);
-    await login(user.agent, 'google', user.subject, 403);
+    expectBanned(await login(user.agent, 'google', user.subject));
   });
 
   it.each(['post', 'answer', 'comment', 'profile'] as const)(
@@ -367,6 +373,6 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
       spy.mockRestore();
     }
     expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(1);
-    await login(user.agent, 'google', user.subject, 403);
+    expectBanned(await login(user.agent, 'google', user.subject));
   });
 });

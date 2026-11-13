@@ -44,7 +44,7 @@ export class GroupJoinRequestService {
 
   async review(viewer: IViewer, requestId: string, approved: boolean) {
     return this.transactions.atomic(async (tx) => {
-      const request = await (tx ?? this.db).groupJoinRequest.findUnique({
+      const request = await tx.groupJoinRequest.findUnique({
         where: {
           id: requestId,
         },
@@ -52,21 +52,21 @@ export class GroupJoinRequestService {
       if (!request) fail('가입 신청을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       await this.membership.requireAdmin(viewer.id, request.groupId, tx);
       const joined = approved
-        ? await (tx ?? this.db).groupMember.createMany({
+        ? await tx.groupMember.createMany({
             data: [{ groupId: request.groupId, userId: request.userId }],
             skipDuplicates: true,
           })
         : { count: 0 };
       // 나갔다가 다시 승인받을 수 있으므로 실제로 가입한 경우에만 새 id로 기록한다.
       if (joined.count === 1) {
-        await recordEvent(tx ?? this.db, {
+        await recordEvent(tx, {
           id: `joined:${request.groupId}:${request.userId}:${randomUUID()}`,
           type: ANALYTICS_EVENT.GROUP_JOINED,
           userId: request.userId,
           properties: { groupId: request.groupId },
         });
       }
-      await (tx ?? this.db).groupJoinRequest.delete({ where: { id: requestId } });
+      await tx.groupJoinRequest.delete({ where: { id: requestId } });
       await writeNotifications(tx, [
         {
           userId: request.userId,

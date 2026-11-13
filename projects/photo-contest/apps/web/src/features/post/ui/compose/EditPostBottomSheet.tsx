@@ -100,14 +100,9 @@ function EditPostForm({
         </form>
       </BottomSheet.Content>
       <BottomSheet.Footer>
-        <div className="mx-auto flex w-full max-w-app gap-3">
-          <Button variant="secondary" disabled={isSubmitting} onClick={onClose}>
-            취소
-          </Button>
-          <Button type="submit" form={formId} fullWidth loading={isSubmitting}>
-            수정 저장하기
-          </Button>
-        </div>
+        <Button type="submit" form={formId} fullWidth loading={isSubmitting}>
+          수정 저장하기
+        </Button>
       </BottomSheet.Footer>
     </>
   );
@@ -126,7 +121,8 @@ export function EditPostBottomSheet({
   return (
     <BottomSheet.Root {...controls} onClose={onClose}>
       <BottomSheet.Header title="게시물 수정" />
-      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+      {/* 제목·본문과 같이 좌우 24px에 두고, 본문 위쪽 여백(6px)을 대신해 제목과 20px 떨어뜨린다. */}
+      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-6 mt-1.5 h-64" />}>
         <EditPostForm queryRef={queryRef} postId={postId} onClose={onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>

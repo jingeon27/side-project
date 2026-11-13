@@ -56,10 +56,7 @@ export function ArticleReader({
           </div>
           <article className="article-prose">{children}</article>
           {(previous || next) && (
-            <nav
-              className="article-pagination"
-              aria-label={article.locale === 'ko' ? '이전 글과 다음 글' : 'Adjacent articles'}
-            >
+            <nav className="article-pagination" aria-label={t.article.adjacent}>
               {previous ? (
                 <Link href={`/${article.locale}/blog/${previous.slug}`}>
                   <span>{t.article.previous}</span>

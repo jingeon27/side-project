@@ -13,7 +13,7 @@
 
 - 렌더 상태는 frozen snapshot `{ sourceUrl, webViewKey, loading, offline, overlayOpen }` 하나다. `useWebShell`이 `useSyncExternalStore(channel.subscribe, channel.getSnapshot)`로 읽는다. `private update`는 다섯 필드가 모두 같으면 기존 객체를 유지하고 알리지 않는다. 필드를 더하면 이 비교에도 넣는다.
 - 렌더와 무관한 값은 snapshot 밖에 둔다: 복구 주소(`rememberUrl`·`currentUrl`), history(`rememberHistory`·`canGoBack`), iOS 문서 판별(`startsDocument`), WebView 참조(`attach` callback ref). 준비된 문서의 경로 변경은 `rememberUrl`만 하고 `source`를 바꾸지 않는다.
-- 전환: `loadCurrentDocument`(source만 교체), `recreate`(복구 주소·key+1·history 초기화를 한 번에), `reload`(같은 WebView), `fail`(OfflineView), `finishLoading`, `setOverlayOpen`.
+- 전환: `loadCurrentDocument`(source 교체. offline이거나 불러오는 중이 아닌 같은 주소면 `recreate`), `recreate`(복구 주소·key+1·history 초기화를 한 번에), `reload`(같은 WebView), `fail`(OfflineView), `finishLoading`, `setOverlayOpen`.
 - 채널과 `NativeHost`는 `useState(() => new …)`로 셸 인스턴스마다 만든다. `ServiceErrorBoundary`의 "서비스 다시 열기"는 셸을 다시 마운트해 새 채널·호스트·OS 구독으로 `${WEB_ORIGIN}/`을 연다. 쿠키 저장소는 유지된다.
 
 ## ShellLifecycle
@@ -28,9 +28,9 @@
 - `decideNavigation` 순서: `about:blank`·같은 origin → allow / `toWebPath` 성공 → navigate(`handleOpenLink`) / 공백·`\` 없는 `http(s)`·`mailto:`·`tel:` → external / 나머지(`javascript:`·`data:`·`file:`·`content:`·`intent:`·`//`) → block. 같은 origin 새 창은 알려진 경로일 때만 현재 WebView로 연다.
 - `isSameOrigin`은 origin 문자열 바로 뒤가 끝·`/`·`?`·`#`일 때만 참이다. 스킴·포트가 다르거나 `origin.evil`·`origin@evil`이면 외부다. 같은 origin 이동은 경로를 검증하지 않는다.
 - `toWebPath`: 2048자 초과와 소셜 로그인 콜백 경로(`APP_AUTH_CALLBACK_PATH`, 같은 origin이나 스킴 뒤)는 `null`이다(현재 사용하지 않는 인증 콜백의 코드를 일반 탐색으로 웹에 넘기지 않는다). 같은 origin 또는 `gamefeedback://` 뒤를 경로로 만들고 `''`·`/` → `/ko`, `/?…` → `/ko?…`로 바꾼 뒤 bridge `WebPathSchema`(`resolveAppRoute`)로 정규화한다. locale `ko|en|ja`, ID `[A-Za-z0-9_-]{1,100}`, `messages?conversation=`은 중첩 경로로 바꾸고, 경로가 소유하지 않는 query는 버리며 중복 key·제어문자·잘못된 인코딩·`admin`은 거부한다.
-- `handleOpenLink`: 복구 주소를 먼저 기억하고 `host.open(path)`가 `false`(웹 미준비)면 `channel.loadCurrentDocument()`로 문서를 연다. 준비 뒤에는 `open` 메시지 → 웹 `router.push`(현재 경로와 같으면 웹이 무시).
+- `handleOpenLink`: 복구 주소를 먼저 기억하고 `host.open(path)`가 `false`(웹 미준비)면 `channel.loadCurrentDocument()`로 문서를 연다. 준비 뒤에는 `open` 메시지 → 웹 `router.push`(현재 경로와 같으면 웹이 무시). 연결 실패나 같은 주소 재요청이면 WebView를 새로 만들어 연다.
 - `onNavigationStateChange`는 history를 기억하고 origin 루트(`WEB_ORIGIN`, `WEB_ORIGIN/`)는 복구 주소로 삼지 않는다. 언어 리다이렉트 전에 재생성돼도 `/ko`로 덮지 않고 서버 언어 감지를 다시 타게 하는 규칙이다.
-- 앱이 받는 HTTPS 링크는 소셜 로그인 콜백 하나다(`app.config.ts` associated domains·intent filter, 웹 AASA `components`). 게시글 등 다른 https 경로를 앱으로 열려면 AASA·intent filter와 웹 검증 파일을 함께 바꾼다. 경로 추가 절차는 `game-feedback-mobile-bridge`.
+- 현재 앱은 HTTPS App Link·Universal Link를 받지 않는다. `app.config.spec.ts`가 associated domains·intent filter가 없음을 검사하고 웹에도 AASA·assetlinks 파일이 없다. 앱으로 들어오는 링크는 `gamefeedback://` 스킴 딥링크뿐이다. 소셜 로그인 콜백 경로는 서버 호환 계약으로만 남아 `toWebPath`가 거부하며, 제거한 App Link 설정을 다시 들이지 않는다(앱 AGENTS.md). 경로 계약은 [브리지](bridge.md) 문서.
 
 ## 준비 상태·foreground
 
@@ -49,7 +49,7 @@
 
 1. `ShellLifecycle.back`은 항상 `true`를 돌려주고 응답 대기 중 누름은 무시한다.
 2. `NativeHost.back`: 미준비·대기 중이면 즉시 `false`. 아니면 `{ type: 'back', id: 'back-N' }`을 보내고 800ms 타이머(만료 = 미처리)를 건다.
-3. 웹 `apps/web/src/shared/native/native-bridge-channel.ts` `handleBack`: 열린 select·dropdown → overlay → `backNavigation()` 순으로 처리해 `back-result`를 보낸다.
+3. 웹 `apps/web/src/shared/native/native-bridge-channel.ts` `handleBack`: 열린 select·dropdown → overlay → `backNavigation()` 순으로 처리한다. `back-result`는 overlay 닫기와 화면 이동보다 먼저 보낸다. 이탈 확인 창(`window.confirm`)에 답하는 동안 `NativeHost`의 800ms 타이머가 끝나 미처리로 넘어가지 않게 하려는 것이다(웹 `native-bridge-channel.spec.tsx`, `NativeBridge.test.tsx`).
 4. id가 맞는 `back-result`가 `atRoot && !handled`면 `BackHandler.exitApp()`. 미처리·오류·타임아웃이면 `handleFallbackBack`: `canGoBack()`이면 `goBack()`, 아니면 종료.
 - `app.config.ts`의 `android.predictiveBackGestureEnabled: false`를 유지한다. iOS는 `allowsBackForwardNavigationGestures: !overlayOpen`이고 overlay 값은 웹 `navigation-state` 메시지에서 온다.
 

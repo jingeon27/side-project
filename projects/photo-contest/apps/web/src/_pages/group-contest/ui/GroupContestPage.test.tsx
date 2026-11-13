@@ -7,11 +7,14 @@ import {
   GalleryDocument,
   GalleryPostsDocument,
   GroupContestDocument,
+  GroupContestResultsDocument,
   GroupRole,
   GroupVisibility,
   MeDocument,
   Phase,
+  PostKind,
   PostSort,
+  type GroupContestAwardFragment,
 } from '@/shared/api/generated';
 
 import {
@@ -195,5 +198,106 @@ describe('public group membership in the contest', () => {
     const write = await screen.findByRole('link', { name: '글쓰기' });
     expect(write).toHaveAttribute('href', '/groups/group-1/write?contestId=contest-1');
     expect(browser.operations).toContain('GroupContest');
+  });
+});
+
+const award = (
+  id: string,
+  title: string,
+  { rank, voteCount, winner }: { rank: number; voteCount: number; winner: boolean },
+): GroupContestAwardFragment => ({
+  __typename: 'GroupContestResult',
+  rank,
+  voteCount,
+  winner,
+  post: {
+    __typename: 'GalleryPost',
+    id,
+    contestId: 'contest-1',
+    groupId: 'group-1',
+    groupName: '공개 웃음',
+    title,
+    body: '',
+    kind: PostKind.Photo,
+    mediaUrl: `/backend/media/${id}`,
+    mediaWidth: null,
+    mediaHeight: null,
+    linkUrl: null,
+    createdAt: '2026-10-05T00:00:00.000Z',
+    likeCount: 0,
+    commentCount: 0,
+    likedByMe: false,
+    canDelete: false,
+    canModerate: false,
+    canInteract: false,
+    category: null,
+    contest: {
+      __typename: 'PostContest',
+      id: 'contest-1',
+      groupId: 'group-1',
+      title: '가을 웃음 대회',
+      phase: Phase.Completed,
+      likeLimit: 1,
+    },
+    author: { __typename: 'User', id: `author-${id}`, nickname: '참여자', avatar: null },
+  },
+});
+
+/** 라우트가 종료된 대회의 결과까지 사전 조회한 화면 */
+function renderResults(results: GroupContestAwardFragment[]) {
+  const server = createServerClient((cache) => {
+    seedOpenContest(cache);
+    const contest = cache.readQuery({ query: GroupContestDocument, variables: { id: 'contest-1' } });
+    if (!contest) throw new Error('Missing contest fixture');
+    cache.writeQuery({
+      query: GroupContestDocument,
+      variables: { id: 'contest-1' },
+      data: {
+        groupContest: { ...contest.groupContest, phase: Phase.Completed, entryCount: results.length },
+      },
+    });
+    cache.writeQuery({
+      query: GroupContestResultsDocument,
+      variables: { contestId: 'contest-1' },
+      data: { groupContestResults: results },
+    });
+  });
+  const browser = createBrowserClient(server, (name) => {
+    if (name === 'Me') return { me: null };
+    if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
+    return {};
+  });
+  render(
+    <ApolloProvider client={browser.client}>
+      <GroupContestPage id="contest-1" groupId="group-1" resultsPreloaded />
+    </ApolloProvider>,
+  );
+  return screen.findByRole('region', { name: '대회 최종 결과' });
+}
+
+describe('종료된 그룹 대회 결과 회귀', () => {
+  it('득표가 같은 참여작은 공동 순위로, 그다음 순위는 단위와 함께 글자로 알려야 한다', async () => {
+    const results = await renderResults([
+      award('post-a', '점심의 순간', { rank: 1, voteCount: 3, winner: true }),
+      award('post-b', '퇴근길 노을', { rank: 1, voteCount: 3, winner: true }),
+      award('post-c', '아침 산책', { rank: 3, voteCount: 1, winner: false }),
+    ]);
+    expect(
+      within(results)
+        .getAllByText(/^(공동 )?\d+위$/)
+        .map((rank) => rank.textContent),
+    ).toEqual(['공동 1위', '공동 1위', '3위']);
+    expect(within(results).getAllByText('3표')).toHaveLength(2);
+    expect(within(results).getAllByText('우승')).toHaveLength(2);
+  });
+
+  it('아무도 투표하지 않은 대회는 모든 참여작을 공동 1위로 보여 주고 우승을 표시하지 않아야 한다', async () => {
+    const results = await renderResults([
+      award('post-a', '점심의 순간', { rank: 1, voteCount: 0, winner: false }),
+      award('post-b', '퇴근길 노을', { rank: 1, voteCount: 0, winner: false }),
+    ]);
+    expect(within(results).getAllByText('공동 1위')).toHaveLength(2);
+    expect(within(results).getAllByText('0표')).toHaveLength(2);
+    expect(within(results).queryByText('우승')).not.toBeInTheDocument();
   });
 });

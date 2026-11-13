@@ -4,7 +4,7 @@ import type { Linter } from 'eslint';
 import { parser, plugin } from 'typescript-eslint';
 
 import { testFiles, testOverrides } from './base';
-import { reactConfig } from './react';
+import { hooksDependencyConfig, reactConfig } from './react';
 
 // Expo의 flat 설정은 타입 선언이 없는 CommonJS 모듈이다.
 const expo: Linter.Config[] = createRequire(import.meta.url)('eslint-config-expo/flat.js');
@@ -13,6 +13,7 @@ export const expoConfig: Linter.Config[] = [
   { ignores: ['.expo/**', '.expo-export-check/**', 'android/**', 'ios/**'] },
   ...expo,
   ...reactConfig,
+  hooksDependencyConfig,
   {
     files: ['**/*.mts'],
     plugins: { '@typescript-eslint': plugin },

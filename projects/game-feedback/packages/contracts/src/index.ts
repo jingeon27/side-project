@@ -8,12 +8,14 @@ import {
   MediaUploadPlanSchema,
 } from './media-upload';
 import { PostMediaSchema } from './post-media';
-import { NicknameSchema, UpdateProfileInputSchema } from './profile';
+import { NewNicknameSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
 export { LEGAL_POLICY_VERSION } from './legal-policy';
 
 export {
+  isReservedNickname,
+  NewNicknameSchema,
   NicknameSchema,
   PROFILE_BIO_MAX_LENGTH,
   ProfileBioSchema,
@@ -330,6 +332,10 @@ export const ChatAttachmentSchema = z.object({
   url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
 });
 export type TChatAttachment = z.infer<typeof ChatAttachmentSchema>;
+// 관리자 쿠키는 /api/admin에만 실리므로 문의 기록의 첨부는 관리자 경로로 내려받는다.
+export const AdminChatAttachmentSchema = ChatAttachmentSchema.extend({
+  url: z.string().regex(/^\/api\/admin\/support\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
+});
 export const ChatMessageSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
@@ -338,6 +344,9 @@ export const ChatMessageSchema = z.object({
   attachments: z.array(ChatAttachmentSchema).max(4).optional(),
   createdAt: ResponseTimestampSchema,
   clientMessageId: z.uuid(),
+});
+const AdminChatMessageSchema = ChatMessageSchema.extend({
+  attachments: z.array(AdminChatAttachmentSchema).max(4).optional(),
 });
 export const SupportTopicSchema = z.enum(['GENERAL', 'VERIFICATION']);
 export const ConversationSchema = z.object({
@@ -358,6 +367,9 @@ export const ChatMessageListSchema = z.object({
   conversation: ConversationSchema,
   items: z.array(ChatMessageSchema),
   nextCursor: z.string().min(1).nullable(),
+});
+export const AdminChatMessageListSchema = ChatMessageListSchema.extend({
+  items: z.array(AdminChatMessageSchema),
 });
 export const ConversationInputSchema = z.object({ recipientId: z.string().min(1).max(100) }).strict();
 export const ChatMessageInputSchema = z
@@ -383,7 +395,7 @@ export const PlayerTagSchema = z
   .transform((value) => `#${value.replace(/^#/, '').toUpperCase()}`);
 export const OnboardInputSchema = z
   .object({
-    nickname: NicknameSchema,
+    nickname: NewNicknameSchema,
     acceptedTerms: z.literal(true),
     ageConfirmed: z.literal(true),
     playerTag: PlayerTagSchema.optional(),
@@ -395,7 +407,7 @@ export const AppExchangeInputSchema = z
     verifier: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   })
   .strict();
-export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
+export const DemoInputSchema = z.object({ nickname: NewNicknameSchema }).strict();
 export const POST_TITLE_MAX_LENGTH = 30;
 export const PostInputSchema = z
   .object({
@@ -407,9 +419,11 @@ export const PostInputSchema = z
     friendSale: FriendSaleDetailsSchema.nullable().optional(),
     battle: BattleDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
+    /** 같은 초안의 재시도를 작성자별로 한 글에 묶는 키. 응답만 끊긴 뒤 다시 보내도 글이 늘지 않는다. */
+    clientRequestId: z.uuid().optional(),
   })
   .strict();
-export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true })
+export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true, clientRequestId: true })
   .partial()
   .refine((v) => Object.keys(v).length > 0);
 export const AnswerInputSchema = z.object({ body: z.string().trim().min(10).max(10000) }).strict();
@@ -537,6 +551,7 @@ export const schemas = {
   Conversation: ConversationSchema,
   ConversationList: ConversationListSchema,
   ChatMessageList: ChatMessageListSchema,
+  AdminChatMessageList: AdminChatMessageListSchema,
   ConversationInput: ConversationInputSchema,
   ChatMessageInput: ChatMessageInputSchema,
   ChatReadInput: ChatReadInputSchema,
@@ -592,16 +607,17 @@ export const operations: OperationSpec[] = [
     response: SessionSchema,
   },
   { method: 'post', path: '/api/admin/auth/logout', id: 'adminLogout', response: OkSchema },
+  // 메시지 경로는 대화(ChatConversation) id를 받는다. getSupportThread·setSupportStatus의 {id}는 문의 id다.
   {
     method: 'get',
-    path: '/api/admin/support/{id}/messages',
+    path: '/api/admin/support/{conversationId}/messages',
     id: 'listAdminSupportMessages',
     query: true,
-    response: ChatMessageListSchema,
+    response: AdminChatMessageListSchema,
   },
   {
     method: 'post',
-    path: '/api/admin/support/{id}/messages',
+    path: '/api/admin/support/{conversationId}/messages',
     id: 'sendAdminSupportMessage',
     body: ChatMessageInputSchema,
     response: ChatMessageSchema,
@@ -935,4 +951,5 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/admin/hide', id: 'hideContent', body: HideInputSchema, response: OkSchema },
 ];
-export { AuthReturnPathSchema } from './auth-return-path';
+export { AuthReturnPathSchema, LoginFailureSchema } from './auth-return-path';
+export type { TLoginFailure } from './auth-return-path';

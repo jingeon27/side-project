@@ -99,7 +99,7 @@ export class PostCommentService {
           fail('답글을 남길 댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
         if (parent.parentId) fail('원댓글에 답글을 남겨 주세요.');
       }
-      const row = await (tx ?? this.db).postComment.create({
+      const row = await tx.postComment.create({
         data: { postId, parentId: parentId ?? null, authorId: viewer.id, body },
         include: commentInclude(viewer.id),
       });
@@ -117,7 +117,7 @@ export class PostCommentService {
           eventKey: `comment:${row.id}`,
         })),
       );
-      await recordEvent(tx ?? this.db, {
+      await recordEvent(tx, {
         id: `comment-created:${row.id}`,
         type: ANALYTICS_EVENT.COMMENT_CREATED,
         userId: viewer.id,
@@ -164,13 +164,13 @@ export class PostCommentService {
 
   async delete(viewer: IViewer, commentId: string) {
     return this.transactions.atomic(async (tx) => {
-      const row = await (tx ?? this.db).postComment.findUnique({ where: { id: commentId } });
+      const row = await tx.postComment.findUnique({ where: { id: commentId } });
       if (!row) fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       const { admin } = await this.membership.accessiblePost(viewer.id, row.postId, tx);
       if (!admin && row.authorId !== viewer.id)
         fail('작성자와 그룹 관리자만 댓글을 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
-      await (tx ?? this.db).postComment.delete({ where: { id: commentId } });
-      await recordEvent(tx ?? this.db, {
+      await tx.postComment.delete({ where: { id: commentId } });
+      await recordEvent(tx, {
         id: `comment-deleted:${commentId}`,
         type: ANALYTICS_EVENT.COMMENT_DELETED,
         userId: viewer.id,
