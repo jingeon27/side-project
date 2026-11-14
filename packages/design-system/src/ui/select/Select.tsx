@@ -111,8 +111,10 @@ function SelectItem({ className, children, ...props }: TStyledProps<SelectPrimit
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      // 방향키 이동은 실제 포커스를 항목으로 옮긴다. 강조 배경은 팝업 바탕과 약 1.1:1이라 전역 포커스 링을 지우지 않고,
+      // 여백 없는 목록의 overflow에 잘리지 않게 링을 항목 안쪽에 그린다.
       className={cn(
-        "relative flex min-h-touch w-full cursor-default items-center gap-1.5 rounded-control py-2 pr-8 pl-3 text-input outline-hidden select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex min-h-touch w-full cursor-default items-center gap-1.5 rounded-control py-2 pr-8 pl-3 text-input -outline-offset-3 select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}

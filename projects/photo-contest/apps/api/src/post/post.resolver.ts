@@ -24,8 +24,8 @@ export class PostResolver {
   async hiddenGalleryPosts(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
-    @Args('offset') offset: number,
-    @Args('limit') limit: number,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
   ) {
     return (await this.moderation.hidden(viewer, groupId, offset, limit)).items;
   }
@@ -33,8 +33,8 @@ export class PostResolver {
   hiddenGalleryPostsPage(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
-    @Args('offset') offset: number,
-    @Args('limit') limit: number,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
   ) {
     return this.moderation.hidden(viewer, groupId, offset, limit);
   }

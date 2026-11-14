@@ -36,25 +36,11 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
   const privateGroup = group.visibility === GroupVisibility.Private;
   const viewerPending = isSSR || !viewer;
   return (
-    <article className="flex min-w-0 flex-col rounded-card border border-line bg-surface transition-colors hover:border-line-strong">
-      <Link
-        href={ROUTES.GROUP(id)}
-        aria-describedby={detailsId}
-        aria-label={group.name}
-        aria-disabled={privateGroup && viewerPending}
-        inert={privateGroup && viewerPending}
-        className="flex min-w-0 flex-1 flex-col gap-3 rounded-card p-4 transition-colors hover:bg-sunken active:bg-neutral-soft"
-        onClick={(event) => {
-          if (!privateGroup) return;
-          if (viewerPending) {
-            event.preventDefault();
-            return;
-          }
-          if (viewer.me && !viewer.me.isAnonymous) return;
-          event.preventDefault();
-          promptLogin(ROUTES.GROUP(id));
-        }}
-      >
+    // 링크 글자는 그룹 이름 하나라 보이는 글자가 곧 접근 이름이다(WCAG 2.5.3). 카드 전체를 누르는 영역은
+    // 링크의 가상 요소가 덮고, 공개 범위·멤버 수·행동은 aria-describedby로 함께 읽는다. 누름 영역 검사(target-size)는
+    // 가상 요소를 세지 않으므로 링크 상자 자체도 24px 이상으로 둔다.
+    <article className="relative flex min-w-0 flex-col rounded-sheet bg-sunken transition-colors has-[a:hover]:bg-neutral-soft has-[a:active]:bg-neutral-soft">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         <p id={detailsId} className="sr-only">
           {privateGroup ? '비공개 그룹' : '공개 그룹'}. 멤버 {formatCount(group.memberCount)}명. {actionLabel}
           .
@@ -64,9 +50,31 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             name={group.name}
             src={group.avatarUrl}
             size="lg"
-            className="size-12 rounded-card border border-line bg-sunken text-ink"
+            shape="squircle"
+            tone="gradient"
+            className="size-12"
           />
-          <h3 className="min-w-0 flex-1 wrap-anywhere text-subtitle font-bold text-ink">{group.name}</h3>
+          <h3 className="min-w-0 flex-1 wrap-anywhere text-subtitle font-bold text-ink">
+            <Link
+              href={ROUTES.GROUP(id)}
+              aria-describedby={detailsId}
+              aria-disabled={privateGroup && viewerPending}
+              inert={privateGroup && viewerPending}
+              className="inline-block min-h-6 min-w-6 rounded-control after:absolute after:inset-0 after:rounded-sheet"
+              onClick={(event) => {
+                if (!privateGroup) return;
+                if (viewerPending) {
+                  event.preventDefault();
+                  return;
+                }
+                if (viewer.me && !viewer.me.isAnonymous) return;
+                event.preventDefault();
+                promptLogin(ROUTES.GROUP(id));
+              }}
+            >
+              {group.name}
+            </Link>
+          </h3>
           <GroupVisibilityBadge visibility={group.visibility} />
         </div>
         <p className="line-clamp-2 flex-1 wrap-anywhere text-caption text-muted">
@@ -85,9 +93,10 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             <ArrowUpRight aria-hidden className="size-3.5" />
           </span>
         </div>
-      </Link>
+      </div>
       {joinable && !group.role ? (
-        <div className="flex justify-end border-t border-line px-4 py-3">
+        // 링크 가상 요소보다 뒤에 오는 위치 지정 요소라 그 위에 그려져 가입 버튼을 누를 수 있다.
+        <div className="relative flex justify-end border-t border-line/70 px-4 py-3">
           <GroupMembershipButton groupId={id} />
         </div>
       ) : null}

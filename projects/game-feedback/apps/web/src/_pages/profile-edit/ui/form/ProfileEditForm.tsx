@@ -33,7 +33,7 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const update = useMutation(updateProfileMutationOptions(client));
   const upload = useMutation(uploadAvatarMutationOptions(client));
   const remove = useMutation(deleteAvatarMutationOptions(client));
-  const form = useZodForm(profileEditSchema, {
+  const form = useZodForm(profileEditSchema(current.data.author.nickname), {
     defaultValues: {
       nickname: profile.author.nickname,
       bio: profile.bio ?? '',

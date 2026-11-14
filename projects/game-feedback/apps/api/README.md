@@ -44,7 +44,7 @@ yarn workspace @side/game-feedback db:test:stop
 
 DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.ts의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [공통 EC2·RDS·S3 가이드](../../../../deploy/shared-instance/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
 
-서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
+서버 테스트 계정은 명시적 `dev:test`(API를 `--test-auth` 실행 인자로 시작) 또는 격리 E2E 서버(`src/testing/e2e-server.ts`)에서 `POST /api/auth/test-token`으로 발급한다. 환경 변수로는 켜지 않는다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
 
 관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. NestJS 12.2의 StandardSchemaValidationPipe가 요청에 지정한 Zod 스키마를 검증하고 Service에는 파싱된 입력을 전달한다. DTO 타입은 z.output으로 추론하며 데코레이터로 검증 규칙을 중복 선언하지 않는다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.
 

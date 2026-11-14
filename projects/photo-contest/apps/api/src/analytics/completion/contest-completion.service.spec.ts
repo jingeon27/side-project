@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { Database, type TDatabaseClient } from '../../database/database.service';
 import { UnitOfWork } from '../../database/unit-of-work';
+import * as sentry from '../../monitoring/sentry';
 import { AnalyticsModule } from '../analytics.module';
 import { COMPLETION_READERS, type TCompletionReaders } from './completion-reader';
 import { completionReadersProvider } from './completion-readers.provider';
@@ -117,16 +118,42 @@ describe('대회 종료 집계 DI', () => {
     }
   });
 
-  it('조회 실패는 그대로 전파하고 완료 기록과 완료 시각을 쓰지 않아야 한다', async () => {
+  it('한 대회의 조회가 실패해도 뒤 대회는 기록하고 실패한 대회는 기록하지 않은 채 그 실패를 전파해야 한다', async () => {
     const { client, module } = fixture();
     const failure = new Error('query failed');
     client.post.findMany.mockRejectedValueOnce(failure);
+    const report = vi.spyOn(sentry, 'reportUnexpectedError').mockImplementation(() => undefined);
     const app = await NestFactory.createApplicationContext(module, { logger: false });
     try {
       await expect(app.get(ContestCompletionService).recordCompletedContests()).rejects.toBe(failure);
+      expect(client.$executeRaw.mock.calls.map(([, , id]) => id)).toEqual(['completed:legacy']);
+      expect(client.contest.update).toHaveBeenCalledExactlyOnceWith({
+        where: { id: 'legacy' },
+        data: { completionTrackedAt: expect.any(Date) },
+      });
+      // 전파한 실패는 스케줄러가 보고하므로 여기서 다시 보내지 않는다.
+      expect(report).not.toHaveBeenCalled();
+    } finally {
+      report.mockRestore();
+      await app.close();
+    }
+  });
+
+  it('여러 대회가 실패하면 처음 실패만 전파하고 나머지는 보고해야 한다', async () => {
+    const { client, module } = fixture();
+    const first = new Error('post query failed');
+    const second = new Error('legacy query failed');
+    client.post.findMany.mockRejectedValueOnce(first);
+    client.submission.findMany.mockRejectedValueOnce(second);
+    const report = vi.spyOn(sentry, 'reportUnexpectedError').mockImplementation(() => undefined);
+    const app = await NestFactory.createApplicationContext(module, { logger: false });
+    try {
+      await expect(app.get(ContestCompletionService).recordCompletedContests()).rejects.toBe(first);
+      expect(report).toHaveBeenCalledExactlyOnceWith(second, { job: 'maintenance' });
       expect(client.$executeRaw).not.toHaveBeenCalled();
       expect(client.contest.update).not.toHaveBeenCalled();
     } finally {
+      report.mockRestore();
       await app.close();
     }
   });

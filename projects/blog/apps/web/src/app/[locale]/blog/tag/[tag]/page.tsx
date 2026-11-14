@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 
 import { uniq } from 'es-toolkit';
 
+import { isLocale, locales } from '@/i18n/routing';
 import { getArticles, getIndexedTags } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
-import { pageMetadata } from '@/shared/lib/seo/metadata';
+import { pageMetadata, tagDescription } from '@/shared/lib/seo/metadata';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 
 type Props = { params: Promise<{ locale: string; tag: string }> };
@@ -18,23 +19,30 @@ function decodeTag(tag: string): string {
   }
 }
 export function generateStaticParams() {
-  return (['ko', 'en'] as const).flatMap((locale) =>
+  return locales.flatMap((locale) =>
     uniq(getArticles(locale).flatMap((article) => article.tags)).map((tag) => ({ locale, tag })),
   );
 }
 export async function generateMetadata({ params }: Props) {
   const { locale, tag } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const name = getArticles(locale).some((article) => article.tags.includes(tag)) ? tag : decodeTag(tag);
   if (!getArticles(locale).some((article) => article.tags.includes(name))) notFound();
+  const title = `#${name}`;
   return {
-    ...pageMetadata(locale, 'blog', `/blog/tag/${encodeURIComponent(name)}`, `#${name}`),
+    ...pageMetadata(
+      locale,
+      'blog',
+      `/blog/tag/${encodeURIComponent(name)}`,
+      title,
+      tagDescription(locale, title),
+    ),
     robots: { index: getIndexedTags(locale).includes(name), follow: true },
   };
 }
 export default async function TagPage({ params }: Props) {
   const { locale, tag } = await params;
-  if (locale !== 'ko' && locale !== 'en') notFound();
+  if (!isLocale(locale)) notFound();
   const name = getArticles(locale).some((article) => article.tags.includes(tag)) ? tag : decodeTag(tag);
   const articles = getArticles(locale).filter((article) => article.tags.includes(name));
   if (!articles.length) notFound();

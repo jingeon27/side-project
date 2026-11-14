@@ -4,11 +4,7 @@ import path from 'node:path';
 import { imageSize } from 'image-size';
 import { describe, expect, it } from 'vitest';
 
-import {
-  articleThumbnails,
-  defaultArticleThumbnail,
-  getArticleThumbnail,
-} from '@/shared/article/lib/article-thumbnails';
+import { defaultArticleThumbnail, getArticleThumbnail } from '@/shared/article/lib/article-thumbnails';
 import articles from '@/shared/article/lib/index.json';
 
 const publicRoot = path.resolve(process.cwd(), 'public');
@@ -74,25 +70,15 @@ describe('published article thumbnail assets', () => {
     }
   });
 
-  it('uses an explicit cover image ahead of any article-specific artwork', () => {
-    const covered = articles.find((article) => article.coverImage);
-    const [mappedId] = Object.keys(articleThumbnails);
-    if (!covered?.coverImage || !mappedId) throw new Error('Cover and mapped artwork fixtures are required.');
-    expect(getArticleThumbnail({ id: mappedId, coverImage: covered.coverImage })).toEqual({
-      src: covered.coverImage,
-      fit: 'cover',
-    });
+  it('shows each article its own cover image', () => {
+    for (const article of articles)
+      expect(getArticleThumbnail(article), article.id).toEqual({ src: article.coverImage, fit: 'cover' });
   });
 
-  it.each(['a-future-unmapped-article', 'constructor', '__proto__'])(
-    'keeps a usable local fallback for a future article without a mapped image: %s',
-    async (id) => {
-      const thumbnail = getArticleThumbnail({ id });
-      expect(['cover', 'contain']).toContain(thumbnail.fit);
-      await expectLocalImage(thumbnail.src);
-      // Another article's diagram would describe the wrong post, so the fallback is neutral artwork.
-      expect(thumbnail).toEqual(defaultArticleThumbnail);
-      expect(Object.values(articleThumbnails).map(({ src }) => src)).not.toContain(thumbnail.src);
-    },
-  );
+  it('keeps a usable neutral fallback for an article without a cover image', async () => {
+    const thumbnail = getArticleThumbnail({});
+    // Another article's diagram would describe the wrong post, so the fallback is neutral artwork.
+    expect(thumbnail).toEqual(defaultArticleThumbnail);
+    await expectLocalImage(thumbnail.src);
+  });
 });

@@ -6,10 +6,26 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const projectEnv = fileURLToPath(new URL('../../.env', import.meta.url));
 if (existsSync(projectEnv)) process.loadEnvFile(projectEnv);
 const APP_ID = 'dev.side.photocontest';
+/** native-push가 Expo push token을 요청할 때 받는 형식(UUID v4)과 같게 검사한다. */
+const EAS_PROJECT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/** store-url.ts가 스토어 주소를 만들 때 다시 검사하는 형식과 같게 둔다. */
+const APP_STORE_ID = /^[1-9][0-9]{5,14}$/;
 
 export interface IBuildSettings {
   isDevelopment: boolean;
   webOrigin: string;
+  /** 없으면 앱이 푸시 기능을 웹에 알리지 않는다. */
+  easProjectId: string | null;
+  /** App Store 숫자 앱 ID. 없으면 iOS 업데이트 화면에 스토어 버튼이 없다. */
+  iosAppStoreId: string | null;
+}
+
+/** 비어 있으면 설정하지 않은 것으로 본다. 값이 있는데 형식이 틀리면 기능이 조용히 꺼지지 않게 빌드를 멈춘다. */
+function readOptionalSetting(value: string | undefined, format: RegExp, message: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (!format.test(trimmed)) throw new Error(message);
+  return trimmed;
 }
 
 export function readBuildSettings(env: Record<string, string | undefined>): IBuildSettings {
@@ -26,7 +42,20 @@ export function readBuildSettings(env: Record<string, string | undefined>): IBui
     (!isDevelopment && origin.protocol !== 'https:')
   )
     throw new Error('WEB_ORIGIN must be an HTTPS origin for production builds.');
-  return { isDevelopment, webOrigin: origin.origin };
+  return {
+    isDevelopment,
+    webOrigin: origin.origin,
+    easProjectId: readOptionalSetting(
+      env.MOBILE_EAS_PROJECT_ID,
+      EAS_PROJECT_ID,
+      'MOBILE_EAS_PROJECT_ID must be the EAS project UUID.',
+    ),
+    iosAppStoreId: readOptionalSetting(
+      env.MOBILE_IOS_APP_STORE_ID,
+      APP_STORE_ID,
+      'MOBILE_IOS_APP_STORE_ID must be the numeric App Store app ID.',
+    ),
+  };
 }
 
 export default function appConfig({ config }: ConfigContext): ExpoConfig {
@@ -54,7 +83,11 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     },
     android: {
       package: APP_ID,
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#ff9b42' },
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundImage: './assets/adaptive-icon-background.png',
+        backgroundColor: '#ff9b42',
+      },
       ...(existsSync(googleServicesFile) ? { googleServicesFile } : {}),
       allowBackup: false,
       predictiveBackGestureEnabled: false,
@@ -70,6 +103,9 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
       webOrigin: settings.webOrigin,
       sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN || null,
       amplitudeApiKey: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY || null,
+      iosAppStoreId: settings.iosAppStoreId,
+      // native-push는 이 값이 있어야 Expo push token을 받고 웹에 notifications.* 기능을 알린다.
+      ...(settings.easProjectId ? { eas: { projectId: settings.easProjectId } } : {}),
     },
   };
 }

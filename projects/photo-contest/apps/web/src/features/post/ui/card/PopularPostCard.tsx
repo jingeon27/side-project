@@ -25,8 +25,8 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
       >
         <span
           className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded-badge text-caption font-bold',
-            rank === 1 ? 'bg-accent text-on-accent' : 'bg-neutral-soft text-muted',
+            'flex size-7 shrink-0 items-center justify-center rounded-full text-label font-extrabold tabular-nums',
+            rank === 1 ? 'bg-brand-gradient text-on-accent' : 'text-muted',
           )}
         >
           {rank}
@@ -49,7 +49,7 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
           <span className="truncate text-label text-ink">{post.title}</span>
           <span className="truncate text-caption text-muted">{post.groupName}</span>
           <span className="flex items-center gap-1 text-caption text-muted">
-            <Heart aria-hidden className="size-3 text-danger" />
+            <Heart aria-hidden className="size-3 fill-current text-danger" />
             좋아요 {formatCount(post.likeCount)}개
           </span>
         </span>

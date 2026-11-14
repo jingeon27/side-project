@@ -63,6 +63,30 @@ describe('감사에서 재현한 migration 검사 미탐·오탐', () => {
     });
   });
 
+  // 2026-11-11 품질 감사: 작은따옴표 함수 본문과 일부 파괴적 DDL이 빈 결과로 통과했다.
+  it.each([
+    [
+      'CREATE FUNCTION wipe() RETURNS void LANGUAGE sql AS \'DELETE FROM "User"\';\nSELECT wipe();',
+      'DYNAMIC SQL',
+    ],
+    ["CREATE OR REPLACE PROCEDURE wipe() LANGUAGE sql AS E'DELETE FROM p';", 'DYNAMIC SQL'],
+    ["CREATE FUNCTION wipe() RETURNS void LANGUAGE sql AS U&'DELETE FROM p';", 'DYNAMIC SQL'],
+    ["DO U&'BEGIN DELETE FROM p; END';", 'DYNAMIC SQL'],
+    ['DROP OWNED BY app_user;', 'DROP OWNED'],
+    ['DROP POLICY "Post_read" ON "Post";', 'DROP POLICY'],
+    ['DROP RULE "Post_protect" ON "Post";', 'DROP RULE'],
+    ['ALTER TABLE "Post" SET SCHEMA archive;', 'SET SCHEMA'],
+  ])('%s를 차단한다', (sql, rule) => expect(rules(sql)).toContain(rule));
+
+  it.each([["CREATE TYPE \"Role\" AS ENUM ('USER', 'ADMIN');"], ["SELECT CAST('1' AS integer) AS one;"]])(
+    '%s의 문자열은 함수 본문으로 오인하지 않는다',
+    (sql) => expect(checkMigration(sql)).toEqual([]),
+  );
+
+  it('search_path를 바꾸는 세션 SET SCHEMA는 객체를 옮기지 않아 막지 않는다', () => {
+    expect(checkMigration('SET SCHEMA \'public\';\nCREATE TABLE "Note" (id text);')).toEqual([]);
+  });
+
   it('develop 강제 push에서 fallback이 HEAD와 같으면 배포 브랜치와의 merge-base로 검사한다', () => {
     withGitRepo(({ cwd, git, commit }) => {
       const released = commit('released');

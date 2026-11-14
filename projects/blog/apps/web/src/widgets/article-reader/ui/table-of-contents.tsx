@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 
 type Entry = { id: string; title: string; level: 2 | 3 };
 
-export function TableOfContents({ entries, locale }: { entries: Entry[]; locale: UiLocale }) {
+export function TableOfContents({ entries, locale }: { entries: Entry[]; locale: Locale }) {
   const [active, setActive] = useState(entries[0]?.id ?? '');
   useEffect(() => {
     const observer = new IntersectionObserver(

@@ -1,7 +1,10 @@
+import { locales } from '@/i18n/routing';
+
 import { categories } from '../model/categories';
 import type { Article, Category, Locale } from '../model/types';
 import index from './index.json';
 
+// scripts/content.ts builds this index as Article[]; the JSON import only widens unions such as category.
 const articles = index as Article[];
 export function getArticles(locale: Locale): Article[] {
   return articles.filter((article) => article.locale === locale);
@@ -16,7 +19,7 @@ export function getPublishedCategories(locale: Locale): Category[] {
 }
 /** Locales whose category page has articles, for sitemap and hreflang alternates. */
 export function getCategoryLocales(category: Category): Locale[] {
-  return (['ko', 'en'] as const).filter((locale) => getPublishedCategories(locale).includes(category));
+  return locales.filter((locale) => getPublishedCategories(locale).includes(category));
 }
 /**
  * Tags worth offering to search engines. A page for a single article only repeats that

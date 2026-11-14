@@ -9,6 +9,7 @@ import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { pageRange } from '../common/validation';
+import { NOTIFICATION_PAGE_SIZE_DEFAULT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { MembershipService } from '../group/membership/membership.service';
 import { NOTIFICATION_TYPE } from './notification-type';
@@ -66,7 +67,7 @@ export class NotificationService {
   }
 
   async list(viewer: IViewer, offset?: number | null, limit?: number | null) {
-    const range = pageRange(offset ?? 0, limit ?? 20);
+    const range = pageRange(offset ?? 0, limit ?? NOTIFICATION_PAGE_SIZE_DEFAULT);
     const where = await this.visible(viewer.id);
     const [rows, unreadCount] = await Promise.all([
       this.db.notification.findMany({

@@ -1,12 +1,13 @@
 import dayjs from 'dayjs';
 
-/** 방문자 주소마다 분당 받는 게시글·프로필 상세 문서·RSC 요청 수. API의 익명 조회 예산(분당 240)과 같다. */
+/** 방문자 주소마다 분당 받는 게시글·프로필 상세 문서·RSC·공유 이미지 요청 수. API의 익명 조회 예산(분당 240)과 같다. */
 export const PUBLIC_LOOKUP_PAGES_PER_MINUTE = 240;
 
 /**
  * Fixed-window request budget per visitor address in this web process. The proxy uses it for pages whose render
- * fills a shared `'use cache'` entry from a URL id: that cached call cannot carry the visitor, so without this
- * one address could spend the API's shared internal budget with random ids.
+ * fills a shared `'use cache'` entry from a URL id, and for detail share images that read the API with the shared
+ * internal identity: neither call carries the visitor, so without this one address could spend the API's shared
+ * internal budget with random ids.
  */
 export class VisitorRateLimiter {
   private readonly windows = new Map<string, { start: number; count: number }>();

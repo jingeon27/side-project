@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 import dayjs from 'dayjs';
 
 import { NO_STORE } from '../common/http/no-store.middleware';
-import { s3KeyPrefix, s3Settings } from '../config/env';
+import { awsCredentials, s3KeyPrefix, s3Settings } from '../config/env';
 import { MEDIA_IO_TIMEOUT_MS, MEDIA_URL_TTL_SECONDS } from '../config/limits';
 
 const MEDIA_TYPES = {
@@ -102,14 +102,7 @@ export class MediaStorage {
 
   private connection() {
     const settings = s3Settings();
-    const credentials =
-      process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-        ? {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}),
-          }
-        : undefined;
+    const credentials = awsCredentials();
     const signature = JSON.stringify({ settings, credentials });
     // 같은 설정이면 연결을 재사용한다. 테스트가 실행 중에 설정을 바꾸면 새로 만든다.
     if (this.s3?.signature !== signature)

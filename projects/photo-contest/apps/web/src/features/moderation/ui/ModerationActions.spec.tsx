@@ -200,6 +200,18 @@ describe('ModerationActions', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
+  it('관리자는 접힌 신고 내용을 공통 펼침 영역에서 열어 봐야 한다', async () => {
+    const { user } = renderFeed({ isAdmin: true });
+    const card = item('photo-a 캡션');
+    const label = within(card).getByText('신고 내용 확인');
+    // 브라우저 기본 ▶ 대신 공통 펼침 화살표를 쓴다(V18).
+    expect(label.closest('summary')).toHaveAttribute('data-slot', 'disclosure-trigger');
+    expect(within(card).getByText('동의 없이 올린 사진')).not.toBeVisible();
+
+    await user.click(label);
+    expect(within(card).getByText('동의 없이 올린 사진')).toBeVisible();
+  });
+
   it('관리자는 신고 수와 내용을 보고 숨기면 피드에서 바로 빠져야 한다', async () => {
     const { user, client } = renderFeed({
       isAdmin: true,

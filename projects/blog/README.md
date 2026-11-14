@@ -44,15 +44,15 @@ yarn workspace @blog/web test:e2e
 
 ## 콘텐츠 작성
 
-1. `apps/web/content/posts/<content-id>/meta.json`에 대표 카테고리, 태그, 발행일을 작성합니다. 날짜는 시간대를 포함한 ISO 시각이나 `YYYY-MM-DD`로 쓰며, 날짜만 쓰면 한국 시간 자정으로 해석해 시각 값과 비교합니다.
+1. `apps/web/content/posts/<content-id>/meta.json`에 대표 카테고리, 태그, 발행일을 작성합니다. 날짜는 시간대를 포함한 ISO 시각이나 `YYYY-MM-DD`로 쓰며, 날짜만 쓰면 한국 시간 자정으로 해석해 시각 값과 비교합니다. 커버 이미지 `coverImage`는 필수입니다. 커버가 JPG나 PNG가 아니면(AVIF 등) 공유 미리보기용 JPG 또는 PNG `socialImage`도 지정합니다. 두 규칙 모두 콘텐츠 검증이 확인합니다.
 2. `ko.mdx` 또는 `en.mdx`를 작성합니다. 두 언어는 독립적으로 발행할 수 있습니다.
 3. `apps/web/seo/<locale>.json`의 `posts`에 해당 ID의 제목, 고정 slug, 설명, keywords를 추가합니다.
 4. 이미지 파일은 `apps/web/public/images/posts/<content-id>/`에 둡니다.
-5. 콘텐츠 검증과 테스트를 실행하고 생성된 registry, index, redirect 변경을 함께 검토합니다.
+5. 콘텐츠 검증과 테스트를 실행하고 생성된 `index.json`·`registry.ts`(`src/shared/article/lib`)와 `image-sizes.json`(`src/shared/config`) 변경을 함께 검토합니다.
 
 MDX에는 `Summary`, `Decision`, `Callout`, `Figure`, `CodeBlock`을 사용할 수 있습니다. 그 밖의 JSX, `import`·`export`, `{}` 식과 spread prop은 콘텐츠 검증에서 실패합니다. prop의 식은 `width={640}` 같은 숫자만 허용하며 JSX `src`도 Markdown 이미지처럼 `/images/` 파일 존재나 https 주소를 검사합니다. Markdown 코드 블록은 Shiki로 강조됩니다. `##`·`###` 제목으로 목차를 생성하며 heading과 목차에는 같은 anchor 규칙을 적용합니다.
 
-목록 썸네일은 `meta.json`의 `coverImage`를 우선 사용합니다. 별도 커버가 없으면 `apps/web/src/shared/article/lib/article-thumbnails.ts`에서 지정한 본문 그림이나 주제 도해를, 매핑도 없으면 중립 기본 이미지(`thumbnails/default.svg`)를 표시합니다. 새 글에는 주제에 맞게 만든 전용 이미지를 `coverImage`에 지정하고 본문에도 같은 이미지를 의미 있는 alt와 함께 넣습니다. 대체 썸네일은 기존 글을 위한 호환 처리이며 새 글의 커버를 대신하지 않습니다.
+목록 썸네일은 `meta.json`의 `coverImage`를 사용하며, 콘텐츠 검증이 모든 글에 `coverImage`를 요구합니다. 중립 기본 이미지(`thumbnails/default.svg`)는 커버가 없을 때를 위한 코드상 대체값이며 지금 발행된 글에서는 쓰이지 않습니다. `public/images/thumbnails`의 SVG 도해는 보관 중인 원본입니다. 새 글에는 주제에 맞게 만든 전용 이미지를 `coverImage`에 지정하고 본문에도 같은 이미지를 의미 있는 alt와 함께 넣습니다.
 
 Slug는 제목을 고쳐도 유지합니다. redirect를 두지 않으므로 slug를 바꾸거나 글을 내리면 예전 주소는 404가 됩니다.
 

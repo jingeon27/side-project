@@ -71,8 +71,12 @@ test(
     expect(html).toContain(WEB_ORIGIN + profile.avatarUrl);
     await page.goto(`/explore?q=${encodeURIComponent(name)}`);
     await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+    // 탐색 카드의 링크는 그룹 이름만 담고, 소개는 같은 카드에 보인다.
     await expect(
-      page.getByRole('link', { name, exact: true }).getByText(description, { exact: true }),
+      page
+        .getByRole('article')
+        .filter({ has: page.getByRole('link', { name, exact: true }) })
+        .getByText(description, { exact: true }),
     ).toBeVisible();
     await page.goto('/me');
     await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();

@@ -1,5 +1,5 @@
-/** requestPostUpload가 받는 긴 변 상한. API의 post-upload.policy와 같은 값이다. */
-const MAX_MEDIA_SIDE = 20_000;
+/** requestPostUpload가 받는 긴 변 상한. API config/limits.ts의 POST_MEDIA_SIDE_MAX와 같은 값이고 test:api가 맞는지 확인한다. */
+export const MAX_MEDIA_SIDE = 20_000;
 
 function isMediaSide(side: number) {
   return Number.isInteger(side) && side >= 1 && side <= MAX_MEDIA_SIDE;

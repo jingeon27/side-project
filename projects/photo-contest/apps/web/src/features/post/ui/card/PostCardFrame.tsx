@@ -16,14 +16,25 @@ import { PostDownloadButton } from '../media/PostDownloadButton';
 import { PostLink } from '../media/PostLink';
 import { PostMedia } from '../media/PostMedia';
 
-/** 카드의 좌우 여백. 미디어만 이 여백 밖에서 카드 너비를 채운다. */
-const CARD_INSET = 'px-4 desktop:px-5';
+/** 카드의 좌우 여백. 휴대폰은 화면 여백을 그대로 쓰고 미디어만 화면 끝까지 채운다. */
+const CARD_INSET = 'tablet:px-4 desktop:px-5';
 
 /**
  * 게시물 카드의 공통 틀. 작성자·제목·미디어·본문·작성 시각을 그리고, 머리의 메뉴와 아래쪽 행동은 카드 종류가 넣는다.
  * 여백을 구역마다 주어 미디어가 음수 여백 없이 카드 너비를 채운다.
  */
-export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactNode; actions: ReactNode }) {
+export function PostCardFrame({
+  id,
+  menu,
+  actions,
+  isPriority = false,
+}: {
+  id: string;
+  menu?: ReactNode;
+  actions: ReactNode;
+  /** 목록의 첫 카드만 사진을 먼저 불러온다. */
+  isPriority?: boolean;
+}) {
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id },
@@ -33,22 +44,18 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
   return (
     <article
       id={`post-${id}`}
-      className="min-w-0 overflow-hidden rounded-sheet border border-line bg-surface py-4 desktop:py-5"
+      className="min-w-0 bg-surface tablet:overflow-hidden tablet:rounded-sheet tablet:border tablet:border-line/70 tablet:py-4 desktop:py-5"
       aria-label={post.title}
     >
-      <div className={cn('flex items-center gap-3 pb-4', CARD_INSET)}>
-        <Avatar
-          name={post.author.nickname}
-          src={post.author.avatar}
-          size="sm"
-          className="bg-accent-soft text-accent-ink"
-        />
+      <div className={cn('flex items-center gap-3 pb-3', CARD_INSET)}>
+        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" tone="accent" />
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* 말줄임의 넘침 자르기가 링크에 있으면 위아래로 넓힌 누름 영역까지 잘리므로 안쪽 글자에만 둔다. */}
           <Link
             href={ROUTES.GROUP(post.groupId)}
-            className="relative w-fit max-w-full truncate text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
+            className="relative block w-fit max-w-full text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
           >
-            {post.groupName}
+            <span className="block truncate">{post.groupName}</span>
           </Link>
           <p className="flex min-w-0 flex-wrap items-center gap-x-3 text-caption text-muted">
             <span className="max-w-full truncate">{post.author.nickname}</span>
@@ -77,15 +84,19 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
             {post.category.archivedAt ? ' (보관됨)' : ''}
           </p>
         ) : null}
-        <h3 className="mb-4 wrap-break-word text-title-lg leading-snug text-ink">{post.title}</h3>
+        <h3 className="mb-3 wrap-break-word text-title leading-snug text-ink">{post.title}</h3>
       </div>
-      <PostMedia postId={id} className="rounded-none" />
+      <PostMedia
+        postId={id}
+        isPriority={isPriority}
+        className="-mx-4 w-[calc(100%+2rem)] max-w-none rounded-none tablet:mx-0 tablet:w-full"
+      />
       <div className={CARD_INSET}>
         <PostLink postId={id} />
         {post.body ? (
-          <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
+          <p className="pt-3 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
         ) : null}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-line pt-3">
+        <div className="-mx-2 mt-2 flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
           <div className="flex flex-wrap items-center gap-2">{actions}</div>
           {post.mediaUrl ? (
             <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />

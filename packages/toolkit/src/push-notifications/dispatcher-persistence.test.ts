@@ -21,6 +21,7 @@ function setup(status = 'PENDING', jobCount = 3) {
   const persist = vi.fn(async () => undefined);
   const disable = vi.fn(async () => undefined);
   const fetch = vi.fn<typeof globalThis.fetch>();
+  const transport = new ExpoPushTransport({ fetch });
   const dispatcher = new PushDispatcher(
     {
       due: async (date) =>
@@ -49,22 +50,24 @@ function setup(status = 'PENDING', jobCount = 3) {
         channelId: 'activity',
       }),
     },
-    new ExpoPushTransport({ fetch }),
+    transport,
   );
-  return { jobs, persist, disable, fetch, dispatcher };
+  return { jobs, persist, disable, fetch, transport, dispatcher };
 }
 
 describe('공급자 응답 이후 DB 장애 격리', () => {
-  it.each(['PENDING', 'TICKET'])(
-    '%s 작업의 잘못된 배치 크기를 공급자 실패로 처리하지 않는다',
-    async (status) => {
-      const state = setup(status, 101);
-      await expect(state.dispatcher.run(now.toDate())).rejects.toBeInstanceOf(RangeError);
-      expect(state.jobs.every((job) => job.status === status && job.attempts === 0)).toBe(true);
-      expect(state.persist).not.toHaveBeenCalled();
-      expect(state.fetch).not.toHaveBeenCalled();
-    },
-  );
+  // 배치 크기는 dispatcher가 PUSH_BATCH_SIZE로 나눠 지키므로, 전송 계층이 던지는 다른 계약 오류로 같은 경계를 검사한다.
+  it.each([
+    ['PENDING', 'send'],
+    ['TICKET', 'receipts'],
+  ] as const)('%s 작업의 호출 계약 오류를 공급자 실패로 처리하지 않는다', async (status, method) => {
+    const state = setup(status, 101);
+    vi.spyOn(state.transport, method).mockRejectedValueOnce(new TypeError('전송 계약 위반'));
+    await expect(state.dispatcher.run(now.toDate())).rejects.toBeInstanceOf(TypeError);
+    expect(state.jobs.every((job) => job.status === status && job.attempts === 0)).toBe(true);
+    expect(state.persist).not.toHaveBeenCalled();
+    expect(state.fetch).not.toHaveBeenCalled();
+  });
 
   it('티켓 저장 실패를 전송 실패로 덮어쓰지 않고 나머지 결과를 저장한 뒤 임대 만료 후 복구한다', async () => {
     const state = setup();

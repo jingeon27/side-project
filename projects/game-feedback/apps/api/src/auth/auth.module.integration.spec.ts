@@ -140,21 +140,21 @@ describe('auth module strategy wiring without DB or external services', () => {
     expect(session.body.googleConfigured).toBe(false);
   });
 
-  it('keeps OAuth exchange failures in the existing HTTP error envelope', async () => {
+  it('returns web OAuth exchange failures to the login page instead of a JSON error page', async () => {
     const google = fakeIdentity('google');
     google.exchange.mockRejectedValue(OAuthException.exchangeFailed('Google'));
     const { http } = await fixture({ identityProvider: google });
-    const start = await http.get('/api/auth/google').expect(302);
+    const start = await http.get('/api/auth/google').query({ returnTo: '/en/settings' }).expect(302);
     const state = google.authorizationUrl.mock.calls[0]?.[0]?.state;
     const response = await http
       .get('/api/auth/google/callback')
       .query({ state, code: 'code' })
       .set('Cookie', responseCookies(start))
-      .expect(502);
-    expect(response.body).toEqual({
-      errorCode: 'OAUTH_FAILED',
-      message: 'Google 로그인에 실패했습니다. 다시 시도해주세요.',
-    });
+      .expect(302);
+    const destination = new URL(responseLocation(response));
+    expect(destination.pathname).toBe('/en/login');
+    expect(destination.searchParams.get('returnTo')).toBe('/en/settings');
+    expect(destination.searchParams.get('login')).toBe('failed');
     expect(google.exchange).toHaveBeenCalledWith('code', expect.any(String), expect.any(String));
   });
 

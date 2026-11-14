@@ -42,7 +42,7 @@ export class RateLimitService {
     if (!isProduction()) return;
     const rule = WRITE_RATE_LIMIT[action];
     const buckets = [
-      ...(actor.userId && rule.perUser ? [{ key: `user:${actor.userId}`, limit: rule.perUser }] : []),
+      ...(actor.userId ? [{ key: `user:${actor.userId}`, limit: rule.perUser }] : []),
       ...(actor.address ? [{ key: `address:${actor.address}`, limit: rule.perAddress }] : []),
     ];
     for (const bucket of buckets) {

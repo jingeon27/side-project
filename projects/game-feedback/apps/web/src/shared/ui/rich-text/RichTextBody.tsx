@@ -1,9 +1,13 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 
 import { match } from 'ts-pattern';
 
 import type { TRichTextAttributes, TRichTextDocument, TRichTextEmbed } from '@game-feedback/contracts';
+
+import { useI18n } from '@/shared/i18n';
 
 interface ISegment {
   text?: string;
@@ -30,13 +34,13 @@ function lines(document: TRichTextDocument) {
     { lines: [], current: [] },
   ).lines;
 }
-function segmentNode(segment: ISegment, key: number) {
+function segmentNode(segment: ISegment, key: number, t: (message: string) => string) {
   if (segment.media && 'image' in segment.media)
     return (
       <Image
         key={key}
         src={segment.media.image}
-        alt="게시글 사진"
+        alt={t('게시글 사진')}
         width={1200}
         height={900}
         unoptimized
@@ -52,7 +56,7 @@ function segmentNode(segment: ISegment, key: number) {
         controls
         playsInline
         preload="metadata"
-        aria-label="게시글 동영상"
+        aria-label={t('게시글 동영상')}
         className="post-body-media"
       />
     );
@@ -76,7 +80,9 @@ function segmentNode(segment: ISegment, key: number) {
   return <span key={key}>{content}</span>;
 }
 export function RichTextBody({ body, document }: { body: string; document?: TRichTextDocument | null }) {
+  const { t } = useI18n();
   if (!document) return <div className="prose-body">{body}</div>;
+  const segmentNodes = (segments: ISegment[]) => segments.map((segment, key) => segmentNode(segment, key, t));
   const groups = lines(document).reduce<{ list?: 'ordered' | 'bullet'; lines: ILine[] }[]>((result, line) => {
     const list = line.attributes?.list;
     const last = result.at(-1);
@@ -91,7 +97,7 @@ export function RichTextBody({ body, document }: { body: string; document?: TRic
           return (
             <List key={index}>
               {group.lines.map((line, lineIndex) => (
-                <li key={lineIndex}>{line.segments.map(segmentNode)}</li>
+                <li key={lineIndex}>{segmentNodes(line.segments)}</li>
               ))}
             </List>
           );
@@ -103,7 +109,7 @@ export function RichTextBody({ body, document }: { body: string; document?: TRic
           .with({ header: 3 }, () => 'h3' as const)
           .with({ blockquote: true }, () => 'blockquote' as const)
           .otherwise(() => 'p' as const);
-        return <Tag key={index}>{line?.segments.length ? line.segments.map(segmentNode) : <br />}</Tag>;
+        return <Tag key={index}>{line?.segments.length ? segmentNodes(line.segments) : <br />}</Tag>;
       })}
     </div>
   );

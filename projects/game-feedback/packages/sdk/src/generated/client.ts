@@ -9,6 +9,7 @@ import {
 } from 'zod';
 
 import {
+  AdminChatMessageList,
   AdminReportList,
   Answer,
   AnswerPage,
@@ -169,7 +170,7 @@ export const adminLogout = async ( options?: Parameters<typeof apiFetch>[1]): Pr
 
 
 
-export const getListAdminSupportMessagesUrl = (id: string,
+export const getListAdminSupportMessagesUrl = (conversationId: string,
     params?: ListAdminSupportMessagesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -182,33 +183,33 @@ export const getListAdminSupportMessagesUrl = (id: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/admin/support/${encodeURIComponent(String(id))}/messages?${stringifiedParams}` : `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+  return stringifiedParams.length > 0 ? `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages?${stringifiedParams}` : `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages`
 }
 
-export const listAdminSupportMessages = async (id: string,
-    params?: ListAdminSupportMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessageList> => {
+export const listAdminSupportMessages = async (conversationId: string,
+    params?: ListAdminSupportMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<AdminChatMessageList> => {
 
-  return apiFetch<ChatMessageList>(getListAdminSupportMessagesUrl(id,params),
+  return apiFetch<AdminChatMessageList>(getListAdminSupportMessagesUrl(conversationId,params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: ChatMessageList
+    schema: AdminChatMessageList
   }
 );}
 
 
 
-export const getSendAdminSupportMessageUrl = (id: string,) => {
+export const getSendAdminSupportMessageUrl = (conversationId: string,) => {
 
 
 
 
-  return `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+  return `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages`
 }
 
-export const sendAdminSupportMessage = async (id: string,
+export const sendAdminSupportMessage = async (conversationId: string,
     chatMessageInput: ChatMessageInput, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessage> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
@@ -225,7 +226,7 @@ export const sendAdminSupportMessage = async (id: string,
     }
     return headers;
   };
-return apiFetch<ChatMessage>(getSendAdminSupportMessageUrl(id),
+return apiFetch<ChatMessage>(getSendAdminSupportMessageUrl(conversationId),
   {
     ...options,
     method: 'POST',

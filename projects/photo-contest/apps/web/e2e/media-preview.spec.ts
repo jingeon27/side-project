@@ -27,11 +27,11 @@ test(
     const picker = sheet.getByLabel('사진 또는 동영상 선택', { exact: true });
     const image = sheet.getByRole('img', { name: '선택한 사진 미리보기', exact: true });
     const fileChooser = page.waitForEvent('filechooser');
-    await sheet.getByRole('button', { name: '파일 선택', exact: true }).click();
+    await sheet.getByRole('button', { name: /^파일 선택/ }).click();
     await (await fileChooser).setFiles(first);
     await expect.poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(120);
     const firstUrl = await image.getAttribute('src');
-    await expect(sheet.getByRole('button', { name: '파일 선택', exact: true })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: /^파일 선택/ })).toHaveCount(0);
     await expect(sheet.getByRole('button', { name: '파일 바꾸기', exact: true })).toBeVisible();
     await picker.setInputFiles([]);
     await expect(image).toHaveAttribute('src', firstUrl ?? 'missing');
@@ -70,7 +70,7 @@ test(
     await expect(image).toHaveCount(0);
     await expect(sheet.getByRole('button', { name: '파일 바꾸기', exact: true })).toHaveCount(0);
     const selectionChooser = page.waitForEvent('filechooser');
-    await sheet.getByRole('button', { name: '파일 선택', exact: true }).click();
+    await sheet.getByRole('button', { name: /^파일 선택/ }).click();
     await (await selectionChooser).setFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '선택한 파일 제거' }).click();
@@ -79,7 +79,14 @@ test(
     ).toBeVisible();
     await picker.setInputFiles(first);
     await expect(image).toBeVisible();
+    // 앱바 뒤로 가기는 입력을 버릴지 먼저 묻고, 계속 쓰면 화면과 고른 파일을 그대로 둔다.
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
+    const discard = page.getByRole('alertdialog', { name: '작성 중인 글을 버릴까요?', exact: true });
+    await discard.getByRole('button', { name: '계속 쓰기', exact: true }).click();
+    await expect(discard).toHaveCount(0);
+    await expect(image).toBeVisible();
+    // 브라우저 뒤로 가기는 묻지 않고 떠나며, 입력은 Activity가 보존한다.
+    await page.goBack();
     await expect(sheet).toHaveCount(0);
     // 새 탐색의 캐시 사용 여부 대신 기록 복원으로 보존된 파일의 미리보기를 검증한다.
     await page.goForward();

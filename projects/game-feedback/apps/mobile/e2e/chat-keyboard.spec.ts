@@ -43,6 +43,8 @@ for (const width of [400, 1440]) {
     await page.getByRole('button', { name: '보내기', exact: true }).click();
     expect((await sent).ok()).toBe(true);
     await expect(input).toBeEmpty();
+    // 전송 버튼을 눌러도 키보드가 내려가지 않게 포커스가 입력창에 남아야 한다.
+    await expect(input).toBeFocused();
     const history = await (await page.request.get(`/api/conversations/${conversationId}/messages`)).json();
     expect(history.items.filter((item: { body: string }) => item.body === body)).toHaveLength(1);
   });

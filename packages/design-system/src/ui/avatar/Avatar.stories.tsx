@@ -10,11 +10,13 @@ const meta = {
   title: 'Data display/Avatar',
   component: Avatar,
   tags: ['autodocs'],
-  args: { name: '김사이드', size: 'md' },
+  args: { name: '김사이드', size: 'md', shape: 'circle', tone: 'brand' },
   argTypes: {
     name: { control: 'text' },
     src: { control: 'text' },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    shape: { control: 'select', options: ['circle', 'square'] },
+    tone: { control: 'select', options: ['brand', 'accent', 'outline'] },
   },
   render: (args) => (
     <div className="flex items-center gap-3">
@@ -43,6 +45,41 @@ export const Sizes: Story = {
       <div className="flex items-center gap-2">
         <Avatar {...args} size="lg" />
         <span className="text-caption">크게</span>
+      </div>
+    </div>
+  ),
+};
+export const Tones: Story = {
+  render: (args) => (
+    <div className="flex flex-wrap items-center gap-5">
+      <div className="flex items-center gap-2">
+        <Avatar {...args} tone="brand" />
+        <span className="text-caption">brand</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Avatar {...args} tone="accent" />
+        <span className="text-caption">accent</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Avatar {...args} tone="outline" />
+        <span className="text-caption">outline</span>
+      </div>
+    </div>
+  ),
+};
+/** 사람은 원, 그룹처럼 사람이 아닌 대상은 둥근 사각형이다. 작은 사각형은 모서리를 줄여 원과 구분한다. */
+export const Shapes: Story = {
+  render: (args) => (
+    <div className="flex flex-wrap items-center gap-5">
+      <div className="flex items-center gap-2">
+        <Avatar {...args} shape="circle" tone="accent" size="sm" />
+        <Avatar {...args} shape="circle" tone="accent" size="lg" />
+        <span className="text-caption">사람</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Avatar {...args} name="우리 웃음" shape="square" tone="outline" size="sm" />
+        <Avatar {...args} name="우리 웃음" shape="square" tone="outline" size="lg" />
+        <span className="text-caption">그룹</span>
       </div>
     </div>
   ),

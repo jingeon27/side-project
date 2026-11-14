@@ -115,12 +115,13 @@ test(
       },
     ]);
     await page.goto(contestPath);
-    const vote = page.getByRole('button', { name: '우승할 웃긴 순간 대회 투표', exact: true });
-    await vote.click();
-    await expect(vote).toHaveText('내가 투표한 참여작');
-    await expect(vote).toBeDisabled();
+    // 버튼 이름은 보이는 투표 상태로 시작하고 참여작 제목을 덧붙인다.
+    await page.getByRole('button', { name: '이 참여작에 투표하기 (우승할 웃긴 순간)', exact: true }).click();
     await expect(
-      page.getByRole('button', { name: '동영상으로도 참여 대회 투표', exact: true }),
+      page.getByRole('button', { name: '내가 투표한 참여작 (우승할 웃긴 순간)', exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: '투표 완료 (동영상으로도 참여)', exact: true }),
     ).toBeDisabled();
     await moveTestContest(API_URL, { origin: WEB_ORIGIN, contestId, phase: 'COMPLETED' });
     await context.clearCookies();

@@ -66,7 +66,7 @@ export function transactionFailure(error: unknown, attempt: number): TTransactio
   if (
     error instanceof Error &&
     isDriverAdapterError(error) &&
-    error.cause?.kind === 'TransactionWriteConflict'
+    error.cause.kind === 'TransactionWriteConflict'
   )
     return serializationFailure(attempt);
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return { action: 'rethrow', error };

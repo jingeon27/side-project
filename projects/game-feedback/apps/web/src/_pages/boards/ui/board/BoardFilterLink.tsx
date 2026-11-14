@@ -16,7 +16,7 @@ export function BoardFilterLink({ href, active, children }: IBoardFilterLinkProp
       href={href}
       replace
       aria-current={active ? 'page' : undefined}
-      className={cn(buttonVariants({ variant: active ? 'accent' : 'secondary', size: 'sm' }), 'rounded-full')}
+      className={cn(buttonVariants({ variant: active ? 'accent' : 'secondary', size: 'sm', shape: 'pill' }))}
     >
       {children}
     </TabLink>

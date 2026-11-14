@@ -19,22 +19,20 @@ export function GroupCard({ group }: IGroupCardProps) {
   return (
     <Link
       href={ROUTES.GROUP(group.id)}
-      className="group flex items-center gap-3 rounded-card border border-line bg-surface p-4 transition-colors hover:border-line-strong hover:bg-sunken active:bg-neutral-soft"
+      className="group flex items-center gap-3 rounded-sheet bg-sunken p-4 transition-colors hover:bg-neutral-soft active:bg-neutral-soft"
     >
       <Avatar
         name={group.name}
         src={group.avatarUrl}
         size="lg"
-        className="size-12 rounded-card border border-line bg-accent-soft text-accent-ink"
+        shape="squircle"
+        tone="gradient"
+        className="size-12"
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-subtitle text-ink">{group.name}</span>
-          {isGroupOwner(group.role) ? (
-            <Badge tone="brand" className="shrink-0">
-              관리자
-            </Badge>
-          ) : null}
+          {isGroupOwner(group.role) ? <Badge tone="brand">관리자</Badge> : null}
         </span>
         <span className="flex items-center gap-1 text-caption text-muted">
           <Users aria-hidden className="size-3.5" />

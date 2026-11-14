@@ -33,7 +33,7 @@
 - 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. members는 멤버에게도 한 페이지(offset·limit, 기본·최대 48, 그룹장·부관리자 먼저·가입 순)만 주며 목록의 그룹들을 창 함수 쿼리 하나로 자른다. 전체 수가 필요한 화면은 memberCount를 쓴다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
-- 요청 스키마는 strict Zod 객체로 정의하고 DTO 타입은 z.output으로 추론한다. REST는 @Body({ schema })와 전역 StandardSchemaValidationPipe, GraphQL은 @Args(createInputValidationPipe(schema))로 같은 스키마를 명시한다. GraphQL Args는 Nest의 schema 메타데이터를 전달하지 않으므로 파이프에 스키마를 직접 결합한다. 인증 반복 시도는 검증보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
+- Zod 파이프로 검증하는 입력은 요청 스키마를 strict Zod 객체로 정의하고 DTO 타입은 z.output으로 추론한다. REST는 @Body({ schema })와 전역 StandardSchemaValidationPipe, GraphQL은 @Args(createInputValidationPipe(schema))로 같은 스키마를 명시한다. GraphQL Args는 Nest의 schema 메타데이터를 전달하지 않으므로 파이프에 스키마를 직접 결합한다. 지금은 일부 입력만 이 방식이고 나머지는 서비스가 검증한다(적용 범위는 [module](../../.agents/skills/photo-contest-api/references/module.md) 6단계). 새 입력에 어느 방식을 기본으로 쓸지는 아직 정하지 않았다. 인증 반복 시도는 검증보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
 - 닫힌 집합 분기는 ts-pattern `exhaustive()`, 일반 유틸은 es-toolkit.
 - GraphQL 검증 규칙은 depth 8, 조각을 펼친 연산당 필드 300개·alias 10개(`query-cost.rule.ts`)를 넘는 요청을 실행 전에 거절한다. 웹 문서를 늘려 상한에 가까워지면 상한과 근거를 함께 고친다.
@@ -64,7 +64,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 [photo-contest-api](../../.agents/skills/photo-contest-api/SKILL.md)에서 필요한 주제만 읽는다. 공통 TypeScript·React·UI·커밋 규칙은 루트가 소유한다.
 
-테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계를 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
+테스트용 /testing API는 격리 실행기가 `createApp({ testFixtures: true })`로 등록하고 NODE_ENV=test일 때만 동작한다(`testing.guard.ts`). NODE_ENV가 test가 아닌데 testFixtures를 켜면 createApp이 시작을 거부한다. 사용자+세션·대회 단계를 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 
 `test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
 

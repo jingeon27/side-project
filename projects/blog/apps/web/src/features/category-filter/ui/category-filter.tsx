@@ -1,7 +1,8 @@
 'use client';
 
+import type { Locale } from '@/i18n/routing';
 import type { Category } from '@/shared/article/model/types';
-import { labels, type UiLocale } from '@/shared/config/labels';
+import { labels } from '@/shared/config/labels';
 
 export function CategoryFilter({
   locale,
@@ -9,7 +10,7 @@ export function CategoryFilter({
   counts,
   onChange,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   selected: Category | 'all';
   counts: Record<string, number>;
   onChange: (category: Category | 'all') => void;

@@ -1,8 +1,10 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { useApolloClient, useMutation } from '@apollo/client/react';
+import { overlay } from 'overlay-kit';
 
 import { POST_FEED_QUERIES, resetGalleryPosts } from '@/features/post';
 import {
@@ -16,8 +18,10 @@ import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-stor
 import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/shared/lib/image.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
+import { registerLeaveGuard } from '@/shared/model/router';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
+import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
@@ -62,6 +66,40 @@ export function CreatePostForm({
     update: resetGalleryPosts,
   });
   const beginSubmit = useAbortOnClose(true);
+  // 큰 동영상은 몇 분씩 걸려 저장소로 보낸 비율을 보여 준다. 게시 요청 전에 화면을 떠나면 게시가 멈추므로
+  // 파일을 준비할 때부터 게시를 마칠 때까지 머물라는 안내도 이 값으로 보여 준다. 파일을 올리는 중이 아니면 null이다.
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  // 게시 요청 전에 누르는 취소. 이번 제출의 전송을 끊는 함수이며 제출하는 동안 누르기 전까지만 있다.
+  const [cancelUpload, setCancelUpload] = useState<(() => void) | null>(null);
+  // 취소 버튼은 누르면 사라지므로 포커스를 옆의 제출 버튼으로 옮긴다.
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
+  const { errors, isDirty, isSubmitting } = form.formState;
+
+  // 입력을 바꾼 뒤 앱바·앱 뒤로 가기를 누르면 버릴지 묻는다. 게시 중에는 등록하지 않아 성공 뒤 이동을 막지 않는다.
+  useEffect(() => {
+    if (!isDirty || isSubmitting) return;
+    return registerLeaveGuard(pathname, async () => {
+      const discard = await overlay.openAsync<boolean>(({ isOpen, close, unmount }) => (
+        <ConfirmDialog
+          isOpen={isOpen}
+          onClose={() => close(false)}
+          unmount={unmount}
+          title="작성 중인 글을 버릴까요?"
+          description="나가면 입력한 내용과 고른 파일이 사라져요."
+          confirmLabel="글 버리고 나가기"
+          cancelLabel="계속 쓰기"
+          tone="danger"
+          onConfirm={() => close(true)}
+        />
+      ));
+      if (!discard) return false;
+      trackEvent(ANALYTICS_EVENT.PostDraftDiscarded, { group_id: groupId });
+      // 화면은 Activity로 남아 다시 돌아올 수 있으므로 버린 초안을 실제로 비운다.
+      form.reset({ ...form.formState.defaultValues, clientRequestId: crypto.randomUUID() });
+      return true;
+    });
+  }, [form, groupId, isDirty, isSubmitting, pathname]);
 
   const uploadMedia = async (file: File, signal: AbortSignal) => {
     const completedMedia = form.getValues('completedMedia');
@@ -71,6 +109,7 @@ export function CreatePostForm({
       form.setError('media', { message: '5분 이하의 동영상을 선택해 주세요.' }, { shouldFocus: true });
       return;
     }
+    setUploadPercent(0);
     const content = video
       ? { body: file, contentType: file.type, size: video.size }
       : await prepareUploadImage(file, browserImageCodec);
@@ -86,7 +125,12 @@ export function CreatePostForm({
       },
     });
     if (!data) return;
-    await uploadToStorage(data.requestPostUpload, content.body, { signal });
+    await uploadToStorage(data.requestPostUpload, content.body, {
+      signal,
+      onProgress: (ratio) => setUploadPercent(Math.floor(ratio * 100)),
+    });
+    // 마지막 진행 이벤트가 오지 않아도 다 보냈으면 100%로 두고 업로드 완료와 게시를 기다린다.
+    setUploadPercent(100);
     const { data: completed } = await completeUpload({
       variables: { uploadId: data.requestPostUpload.id },
     });
@@ -95,7 +139,6 @@ export function CreatePostForm({
     return data.requestPostUpload.id;
   };
 
-  const { errors, isSubmitting } = form.formState;
   return (
     <form
       id={formId}
@@ -114,11 +157,22 @@ export function CreatePostForm({
           categoryId,
         }) => {
           const signal = beginSubmit();
+          const cancel = new AbortController();
+          signal.addEventListener('abort', () => cancel.abort(), { once: true });
+          // 이미 끊긴 전송(취소했거나 화면을 떠남)은 다시 세지 않아 이벤트가 한 번만 나간다.
+          setCancelUpload(() => () => {
+            if (cancel.signal.aborted) return;
+            trackEvent(ANALYTICS_EVENT.PostUploadCancelled, {
+              group_id: groupId,
+              kind: file?.type.startsWith('video/') ? 'VIDEO' : 'PHOTO',
+            });
+            cancel.abort();
+          });
           try {
-            const uploadId = file ? await uploadMedia(file, signal) : undefined;
+            const uploadId = file ? await uploadMedia(file, cancel.signal) : undefined;
             if (file && !uploadId) return;
-            // 페이지를 떠났으면 업로드 후 게시 요청을 보내지 않는다.
-            throwIfClosed(signal);
+            // 페이지를 떠났거나 취소를 눌렀으면 업로드 후 게시 요청을 보내지 않는다.
+            throwIfClosed(cancel.signal);
             const { data: posted } = await createPost({
               variables: {
                 clientRequestId,
@@ -152,8 +206,13 @@ export function CreatePostForm({
               notifyClosedSubmit('게시물을 올리지 않았어요');
               return;
             }
+            // 직접 취소했으면 알림 없이 입력을 그대로 두어 다시 올리게 한다.
+            if (cancel.signal.aborted) return;
             if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
               form.setError('media', { message: error.message }, { shouldFocus: true });
+          } finally {
+            setCancelUpload(null);
+            setUploadPercent(null);
           }
         },
       )}
@@ -187,7 +246,7 @@ export function CreatePostForm({
           <div className="flex min-w-0 flex-col gap-4 desktop:col-start-2 desktop:row-start-3">
             <PostLinkField form={form} />
             <PostCategoryField form={form} groupId={groupId} />
-            <PostContestField groupId={groupId} form={form} />
+            <PostContestField groupId={groupId} form={form} defaultContestId={defaultContestId} />
             <label className="flex min-h-touch items-start gap-3 text-body text-ink">
               <input
                 type="checkbox"
@@ -211,15 +270,31 @@ export function CreatePostForm({
         </div>
       </div>
       <StickyCta className="tablet:px-8" contentClassName="max-w-5xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-4">
-          <Button
-            type="submit"
-            form={formId}
-            fullWidth
-            loading={isSubmitting}
-            className="desktop:w-auto desktop:min-w-40"
-          >
-            게시물 올리기
+        {uploadPercent === null ? null : (
+          <p role="status" className="mb-3 text-caption text-muted">
+            다 올릴 때까지 이 화면에 머물러 주세요.
+          </p>
+        )}
+        {/* 주 행동 하나면 읽기 폭을 채우고, 올리는 중에는 취소와 같은 너비로 나란히 둔다. */}
+        <div className="flex flex-row gap-3 [&>*]:min-w-0 [&>*]:flex-1">
+          {cancelUpload && uploadPercent !== null && uploadPercent < 100 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                cancelUpload();
+                // 사진 준비나 티켓 요청은 끊어도 그 단계가 끝나야 제출이 끝나므로, 취소와 진행 표시는 기다리지 않고 바로 거둔다.
+                setCancelUpload(null);
+                setUploadPercent(null);
+                submitRef.current?.focus();
+              }}
+            >
+              취소
+            </Button>
+          ) : null}
+          <Button ref={submitRef} type="submit" form={formId} fullWidth loading={isSubmitting}>
+            {uploadPercent === null ? '게시물 올리기' : `올리는 중 ${uploadPercent}%`}
           </Button>
         </div>
       </StickyCta>

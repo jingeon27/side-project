@@ -6,7 +6,7 @@ import { Badge } from '@/shared/ui/@core/badge';
 
 export function GroupVisibilityBadge({ visibility }: { visibility: GroupVisibility }) {
   return (
-    <Badge className="rounded-full border border-line bg-surface text-ink">
+    <Badge tone="outline">
       {match(visibility)
         .with(GroupVisibility.Private, () => (
           <>

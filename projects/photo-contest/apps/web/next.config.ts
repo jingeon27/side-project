@@ -47,7 +47,7 @@ const config: NextConfig = {
   partialPrefetching: true,
   // 배포 커밋 SHA는 공개 값이며 브라우저 오류도 같은 release로 묶는다.
   env: { SENTRY_RELEASE: process.env.SENTRY_RELEASE?.trim() || '' },
-  // Next 16 dev 서버는 distDir마다 잠금을 건다. e2e는 다른 distDir(.next/e2e)로 띄워 사용자의 dev 서버와 겹치지 않게 한다.
+  // Next 16 dev 서버는 distDir마다 잠금을 건다. WEB_ORIGIN이 loopback 3300~3399 포트면 .next/test-<포트>를 distDir로 써 사용자의 dev 서버와 겹치지 않게 한다.
   distDir: isolatedWebPort ? `.next/test-${isolatedWebPort}` : '.next',
   // 격리 API로 다시 실행하는 e2e는 이전 컴파일 상태를 이어받지 않는다.
   experimental: {

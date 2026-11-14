@@ -1,11 +1,12 @@
 import { AvatarUploadInputSchema } from '@game-feedback/contracts';
 import {
   completeProfileAvatarUpload,
+  deleteProfileAvatar,
   deleteProfileAvatarUpload,
   requestProfileAvatarUpload,
 } from '@game-feedback/sdk';
 
-import { uploadMediaFile } from '@/shared/api';
+import { uploadMediaFile, withApiError } from '@/shared/api';
 
 import { prepareAvatar } from '../lib/prepare-avatar';
 
@@ -16,4 +17,7 @@ export async function uploadAvatar(file: File) {
     complete: completeProfileAvatarUpload,
     remove: deleteProfileAvatarUpload,
   });
+}
+export function deleteAvatar() {
+  return withApiError(deleteProfileAvatar());
 }

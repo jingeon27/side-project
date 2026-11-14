@@ -10,7 +10,11 @@ import { PRIVATE_ROBOTS } from '@/shared/lib/seo.helper';
 
 export const metadata: Metadata = { title: '시작하기', robots: PRIVATE_ROBOTS };
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   await connection();
   const { data } = await query({ query: MeDocument });
   if (data?.me && !data.me.isAnonymous && !data.me.needsOnboarding)

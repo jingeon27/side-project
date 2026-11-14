@@ -4,6 +4,8 @@ import { useMutation } from '@apollo/client/react';
 import { EyeOff, Flag, Trash2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
+import { Disclosure, DisclosureTrigger } from '@side/design-system';
+
 import {
   DeleteSubmissionDocument,
   HideSubmissionDocument,
@@ -95,17 +97,17 @@ function AdminModerationActions({
         </Button>
       </div>
       {reports.length > 0 ? (
-        <details className="rounded-control bg-sunken px-3 py-2 text-caption text-ink">
-          <summary className="min-h-touch cursor-pointer content-center text-label">신고 내용 확인</summary>
+        <Disclosure variant="soft" className="text-caption text-ink">
+          <DisclosureTrigger>신고 내용 확인</DisclosureTrigger>
           <ul className="flex flex-col gap-2 pb-2">
             {reports.map((report) => (
               <li key={report.id} className="flex flex-col">
                 <span className="break-words">{report.reason}</span>
-                <span className="text-micro text-muted">{formatDateTime(report.createdAt)}</span>
+                <span className="text-caption text-muted">{formatDateTime(report.createdAt)}</span>
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       ) : null}
     </div>
   );

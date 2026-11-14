@@ -17,11 +17,15 @@ const BUTTON_SIZE = { card: 'md', chip: 'sm', inline: 'sm' } as const satisfies 
   TLikeDensity,
   IButtonProps['size']
 >;
+const BUTTON_SHAPE = { card: 'pill', chip: 'pill', inline: 'rounded' } as const satisfies Record<
+  TLikeDensity,
+  IButtonProps['shape']
+>;
 const STROKE_WIDTH = { card: 1.7, chip: 2, inline: 1.5 } as const satisfies Record<TLikeDensity, number>;
 
 interface ILikeToggleProps extends Omit<
   IButtonProps,
-  'children' | 'variant' | 'size' | 'loading' | 'aria-label' | 'aria-pressed'
+  'children' | 'variant' | 'size' | 'shape' | 'loading' | 'aria-label' | 'aria-pressed'
 > {
   density?: TLikeDensity;
   liked: boolean;
@@ -48,10 +52,15 @@ export function LikeToggle({
       {...props}
       variant="ghost"
       size={BUTTON_SIZE[density]}
-      aria-label={label}
+      shape={BUTTON_SHAPE[density]}
       aria-pressed={liked}
       className={cn(likeToggleVariants({ density }), className)}
     >
+      {/*
+       * 이름은 aria-label 대신 숨긴 글자로 둔다. aria-label이면 보이는 수('0')와 이름의 낱말('0개')이 달라
+       * 보이는 글자가 이름에 들어 있는지(WCAG 2.5.3) 검사에서 어긋난다. 읽는 이름은 같다.
+       */}
+      <span className="sr-only">{label}</span>
       <Heart
         aria-hidden
         strokeWidth={STROKE_WIDTH[density]}
@@ -78,7 +87,6 @@ export function LikeCount({
 }) {
   return (
     <span
-      aria-label={label}
       className={cn(
         'inline-flex min-h-touch items-center',
         likeToggleVariants({ density }),
@@ -86,6 +94,8 @@ export function LikeCount({
         'text-muted',
       )}
     >
+      {/* 역할 없는 span의 aria-label은 화면 낭독기가 읽지 않으므로 이름을 숨긴 글자로 둔다. */}
+      <span className="sr-only">{label}</span>
       <Heart
         aria-hidden
         strokeWidth={STROKE_WIDTH[density]}

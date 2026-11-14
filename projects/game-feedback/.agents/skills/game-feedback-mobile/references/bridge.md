@@ -19,6 +19,6 @@
 
 ## 푸시
 
-push-request/result·push-badge·push-settings·push-received는 OS 권한·등록/탭을 웹의 현재 쿠키 세션과 연결한다. 설치 UUID만 로컬에 보존하고 Expo token·서비스 비밀값은 로그에 남기지 않는다. 공통 푸시 도구의 운영 준비는 packages/toolkit/src/push-notifications/README.md를 따른다.
+push-request/result·push-badge·push-settings·push-received는 OS 권한·등록/탭을 웹의 현재 쿠키 세션과 연결한다. 설치 UUID만 로컬에 보존하고 Expo token·서비스 비밀값은 로그에 남기지 않는다. 앱은 실기기 iOS·Android이고 extra.eas.projectId(app.config.ts가 루트 MOBILE_EAS_PROJECT_ID에서 넘긴다)가 UUID일 때만 푸시 기능을 알린다(src/shared/lib/push/native-push.ts의 supportsNativePush). 공통 푸시 도구의 운영 준비는 packages/toolkit/src/push-notifications/README.md를 따른다.
 
 origin·잘못된 메시지·웹 미준비·800ms back·문서 교체 후 결과 폐기는 unit/UI로, 실제 탭/딥링크는 E2E로 확인한다. OS 권한·알림 탭·하드웨어 back은 실기기 확인 여부를 구분한다.

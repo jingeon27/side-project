@@ -149,7 +149,7 @@ test('a local administrator verifies users and applies and reverses a reasoned b
   await page.getByRole('button', { name: '조회', exact: true }).click();
   const user = page.getByRole('article', { name: '사용자 관리' });
   await expect(user).toContainText('새벽의호그');
-  await user.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+  await user.getByRole('button', { name: '인증 승인', exact: true }).click();
   await expect(user).toContainText('인증된 사용자');
   await user.getByRole('button', { name: '인증 해제', exact: true }).click();
   await expect(user).toContainText('미인증 사용자');
@@ -196,16 +196,22 @@ test('the separate admin answers support chats, resolves inquiries and reviews r
     await expect(conversation.getByRole('log')).toContainText(question);
     const verification = conversation.getByRole('group', { name: '프로필 인증', exact: true });
     await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
+    // 보이는 글자가 곧 접근 이름이고 상태는 status만 알린다.
+    for (const name of ['인증 승인', '인증 해제']) {
+      const button = verification.getByRole('button', { name, exact: true });
+      await expect(button).toHaveText(name);
+      await expect(button).not.toHaveAttribute('aria-pressed');
+    }
     const attempts: string[] = [];
     await page.route('**/api/admin/users/sample-user-0/verification', async (route) => {
       attempts.push(route.request().method());
       if (attempts.length === 1) return route.abort('failed');
       return route.continue();
     });
-    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await verification.getByRole('button', { name: '인증 승인', exact: true }).click();
     await expect(verification.getByRole('alert')).toBeVisible();
     await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
-    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await verification.getByRole('button', { name: '인증 승인', exact: true }).click();
     await expect(verification.getByRole('status')).toHaveText('인증된 사용자');
     await expect(thread.getByText('프로필 인증', { exact: true })).toBeVisible();
     expect((await (await viewer.request.get('/api/session')).json()).user.isVerified).toBe(true);

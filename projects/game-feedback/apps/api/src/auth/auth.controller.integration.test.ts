@@ -533,7 +533,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const start = await agent.get('/api/auth/social/discord').query({ app_challenge: challenge }).expect(302);
     const oauthState = new URL(responseLocation(start)).searchParams.get('state');
-    await agent.get('/api/auth/social/kakao/callback').query({ state: oauthState, code: 'fake' }).expect(400);
+    // 다른 제공자의 콜백은 시도를 쓰지 않고 앱 콜백에 실패만 알린다.
+    const mismatched = await agent
+      .get('/api/auth/social/kakao/callback')
+      .query({ state: oauthState, code: 'fake' })
+      .expect(302);
+    expect(responseLocation(mismatched)).toBe(`${origin}/app-auth/callback?error=login_failed`);
     const callback = await agent
       .get('/api/auth/social/discord/callback')
       .query({ state: oauthState, code: 'fake' })

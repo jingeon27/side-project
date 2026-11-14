@@ -42,15 +42,15 @@ yarn workspace @side/photo-contest dev
 
 ## 자주 쓰는 명령
 
-| 명령                                          | 용도                                |
-| --------------------------------------------- | ----------------------------------- |
-| `yarn workspace @side/photo-contest check`    | 프로젝트 타입·lint·계약 검사        |
-| `yarn workspace @photo-contest/web test:unit` | 웹 단위·컴포넌트·배포 스크립트 검사 |
-| `yarn test:photo-contest:api`                 | 웹·모바일이 소비하는 API 계약 검사  |
-| `yarn test:photo-contest:e2e`                 | 격리 환경의 브라우저 검사           |
-| `yarn build:photo-contest`                    | 프로덕션 빌드                       |
+| 명령                                       | 용도                                |
+| ------------------------------------------ | ----------------------------------- |
+| `yarn workspace @side/photo-contest check` | 프로젝트 lint·타입과 단위·UI 테스트 |
+| `yarn workspace @photo-contest/web test`   | 웹 단위·컴포넌트·배포 스크립트 검사 |
+| `yarn test:photo-contest:api`              | 웹·모바일이 소비하는 API 계약 검사  |
+| `yarn test:photo-contest:e2e`              | 격리 환경의 브라우저 검사           |
+| `yarn build:photo-contest`                 | 프로덕션 빌드                       |
 
-앱별 테스트 레인, 테스트 DB·포트와 정리 정책은 [개발 가이드](docs/development.md#앱별-테스트)에 있습니다. 실행 중인 다른 서버나 개발 DB를 테스트용으로 사용하지 않습니다.
+웹·모바일의 `test:unit`은 unit 프로젝트만 실행해 컴포넌트(ui) 테스트가 빠집니다. 앱별 테스트 레인, 테스트 DB·포트와 정리 정책은 [개발 가이드](docs/development.md#앱별-테스트)에 있습니다. 실행 중인 다른 서버나 개발 DB를 테스트용으로 사용하지 않습니다.
 
 웹의 페이지 전용 폼·관리 섹션·조회 조합은 `apps/web/src/_pages`에 둡니다. 도메인 카드·동작은 features에 유지하고, 상태 모션은 [공통 디자인 시스템](../../packages/design-system/README.md#상태-모션)을 사용합니다.
 

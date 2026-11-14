@@ -159,6 +159,7 @@ model Post {
   battle Json?
   hidden Boolean @default(false)
   viewCount Int @default(0)
+  clientRequestId String?
   deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -167,6 +168,7 @@ model Post {
   notifications Notification[]
   media PostMedia[]
   views PostView[]
+  @@unique([authorId,clientRequestId])
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
   @@index([board,createdAt,id])

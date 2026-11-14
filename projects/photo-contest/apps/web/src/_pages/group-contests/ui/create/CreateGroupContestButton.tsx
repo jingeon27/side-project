@@ -17,7 +17,11 @@ export function CreateGroupContestButton({ groupId }: { groupId: string }) {
   });
   if (!complete || !isGroupAdmin(data.role)) return null;
   return (
+    // 주황 알약은 만들기 진입이고(docs/implementation.md), 시트 안의 같은 이름 제출 버튼은 primary(검정)다.
     <Button
+      variant="gradient"
+      size="md"
+      shape="pill"
       onClick={() =>
         overlay.open(({ isOpen, close: onClose, unmount }) => (
           <CreateGroupContestBottomSheet

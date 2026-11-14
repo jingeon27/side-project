@@ -5,9 +5,10 @@ FSD 레이어·명명·폼·React Query 일반 규칙은 프로젝트 [game-feed
 ## 화면 한 장의 경로
 
 - `src/main.tsx` → `src/_app/App.tsx`(`QueryProvider` → 최상위 `AsyncBoundary`) → `src/_app/AdminRouter.tsx`.
-- `AdminRouter`는 `useSuspenseQuery(sessionOptions())`의 `session.user?.role !== 'ADMIN'`이면 `LoginPage`만 그린다. 화면 분기일 뿐 권한 검사가 아니다. 모든 `/api/admin/*`는 API controller의 `@UseGuards(AdminGuard)`(`../api/src/common/http/session.guard.ts`)와 서비스의 `requireAdmin(req)`가 401/403으로 막는다. 화면에 role 기반 권한 로직을 더하지 않는다.
+- `AdminRouter`는 `useSuspenseQuery(sessionOptions())`의 `session.user?.role !== 'ADMIN'`이면 `LoginPage`만 그린다. 관리자로 쓰던 중 세션이 끝나면(`AdminSessionExpiredError`) 작업 화면을 `Activity` hidden으로 숨긴 채 `LoginPage`를 함께 그린다([세션](session.md)). 화면 분기일 뿐 권한 검사가 아니다. 모든 `/api/admin/*`는 API controller의 `@UseGuards(AdminGuard)`(`../api/src/common/http/session.guard.ts`)와 서비스의 `requireAdmin(req)`가 401/403으로 막는다. 화면에 role 기반 권한 로직을 더하지 않는다.
+  - 세션 재조회에서 관리자가 사라지면 `sessionOptions`가 `AdminSessionExpiredError`를 남기고 이전 세션 데이터를 유지한다. 만료 뒤의 재확인이 연결 오류나 서버 오류로 실패해도 같은 오류로 남는다. 라우터는 이때 `LoginPage` children에 만료 안내(`role="alert"`)를 넣고, 안내가 있으면 `LoginPage`가 아이디 입력으로 포커스를 옮긴다. 셸은 `<Activity key={session.user.id} mode="hidden">`으로 숨겨 초안을 보존한다. 같은 관리자로 다시 로그인하면 초안이 돌아오고, 다른 관리자면 key가 바뀌어 초안이 지워진다. 직접 로그아웃하면 셸을 지운다.
 - 관리자면 `AdminShell`(`src/widgets/admin-shell`) 안에서 `match(route.tab)…exhaustive()`로 화면을 고르고 `AsyncBoundary key={route.tab}`로 감싼다.
-- REST는 `@game-feedback/sdk` → 같은 Origin `/api` → Vite 프록시 → API다(`game-feedback-admin-session`).
+- REST는 `@game-feedback/sdk` → 같은 Origin `/api` → Vite 프록시 → API다([세션](session.md)).
 
 ## hash 경로 (`src/shared/lib/admin-route.ts`)
 
@@ -33,7 +34,7 @@ FSD 레이어·명명·폼·React Query 일반 규칙은 프로젝트 [game-feed
    - `src/widgets/admin-shell/ui/AdminNavigation.tsx`에 `AdminNavigationLink`를 JSX로 명시한다.
    - `AdminRouter.tsx`에 `.with('<tab>', …)`를 더한다. 빠지면 `exhaustive()`가 타입 오류를 낸다.
 5. 화면 안의 독립 조회는 선택 ID를 key로 한 `AsyncBoundary`로 나눈다(`SupportPage`의 `key={selected.id}`, `UsersPage`의 `key={userId}`). mutation 오류는 카드·폼마다 `ErrorNotice`(`role="alert"`)로 보인다.
-6. `game-feedback-admin-test`대로 단위·E2E 테스트를 고친다.
+6. [테스트](test.md) 문서대로 단위·E2E 테스트를 고친다.
 
 ## 지킬 것
 

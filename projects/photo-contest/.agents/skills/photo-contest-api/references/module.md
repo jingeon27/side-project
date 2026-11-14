@@ -9,7 +9,7 @@
 3. **리졸버**: `@Resolver('<Type>')` + `@Query()`·`@Mutation()`·`@ResolveField()`, 메서드 이름 = 필드 이름(겹치면 `@ResolveField('phase') currentPhase`). 로그인 필수는 `@Viewer() viewer: IViewer`, 공개는 `@OptionalViewer() viewer: IViewer | null`. 규칙·쿼리는 서비스로 넘긴다.
 4. **응답 모양**: schema-first라 TS가 `.graphql`과 맞는지 검사하지 않는다. 서비스의 `I<Type>View`(필드 리졸버가 있으면 `I<Type>Node`) 인터페이스로 모양을 고정하고, 스키마의 모든 필드를 같은 이름 속성이나 `@ResolveField`로 채운다 — 빠진 non-null 필드는 INTERNAL_SERVER_ERROR로 가려진다. User는 `USER_VIEW_SELECT`로 고른다.
 5. **다른 모듈의 타입에 필드**: 의존하는 쪽 모듈에 `@Resolver('<그 타입>')` 필드 리졸버를 둔다(`src/contest/group-contest/group-contests.resolver.ts`가 `Group.contests`). 모듈 순환 import를 만들지 않는다.
-6. **서비스**: 검증할 입력은 `unknown`으로 받아(`ICreateContestInput`) `textValue(value, TEXT_LIMIT.X, '라벨')`·`pageRange(offset, limit)`·zod `safeParse` + `fail()`로 좁힌다. 기본값이 있는 인자에도 명시적 `null`이 올 수 있으니 `?? 기본값`. 권한은 `MembershipService`의 `requireMember`·`requireAdmin`·`requireOwner`·`accessibleContest(userId, id, { owner, client })`·`accessibleSubmission(…)`으로만 확인한다 — `groupMember`를 직접 조회해 판단하지 않는다.
+6. **서비스**: 검증할 입력은 `unknown`으로 받아(`ICreateContestInput`) `textValue(value, TEXT_LIMIT.X, '라벨')`·`pageRange(offset, limit)`·zod `safeParse` + `fail()`로 좁힌다. 기본값이 있는 인자에도 명시적 `null`이 올 수 있으니 `?? 기본값`. 권한은 `MembershipService`의 `requireMember`·`requireAdmin`·`requireOwner`·`accessibleContest(userId, id, { owner, client })`·`accessibleSubmission(…)`으로만 확인한다 — `groupMember`를 직접 조회해 판단하지 않는다. 지금 Zod 파이프(`createInputValidationPipe`·`@Body({ schema })`)는 인증(`auth.resolver.ts`)·프로필(`profile.resolver.ts`) GraphQL 입력과 `push`·`testing` 컨트롤러의 REST 본문에만 쓴다. 게시물·그룹·대회 등 나머지 GraphQL 인자(예: `requestPostUpload`의 width·height)는 일반 `@Args`로 받고 이 단계에서 서비스가 검증한다.
 
 ## 오류
 
@@ -27,7 +27,7 @@
 
 ## 이벤트·설정
 
-- 데이터를 바꾸는 트랜잭션 안에서 `recordEvent(tx, { id, type, userId, properties })`(`src/analytics/analytics-event.ts`)를 부르고, 새 이름은 `ANALYTICS_EVENT`에 snake_case로 더한다. `id`는 같은 사실이면 같은 값(`like:<submissionId>:<userId>`, `joined:<groupId>:<userId>`)이라 재시도·동시 요청에도 한 행만 남는다. `properties`는 ID와 숫자만. 읽기 이벤트(`result_viewed`)는 `this.db`로 남긴다.
+- 데이터를 바꾸는 트랜잭션 안에서 `recordEvent(tx, { id, type, userId, properties })`(`src/analytics/analytics-event.writer.ts`)를 부르고, 새 이름은 `src/analytics/analytics-event.ts`의 `ANALYTICS_EVENT`에 snake_case로 더한다. `id`는 같은 사실이면 같은 값(`like:<submissionId>:<userId>`, `joined:<groupId>:<userId>`)이라 재시도·동시 요청에도 한 행만 남는다. `properties`는 ID와 숫자만. 읽기 이벤트(`result_viewed`)는 `this.db`로 남긴다.
 - 환경변수는 `src/config/env.ts`에 getter 함수로 더해 호출할 때마다 `process.env`를 읽는다(모듈 최상위 상수로 잡지 않는다 — 테스트가 실행 중에 바꾼다). 운영 필수 값은 `assertProductionConfig()`에, 키는 `../../.env.example`에 더한다. 숫자는 `src/config/limits.ts`(`*_MS`는 `MINUTE_MS`·`DAY_MS`로 조합, 글자 수는 `TEXT_LIMIT`).
 
 ## REST

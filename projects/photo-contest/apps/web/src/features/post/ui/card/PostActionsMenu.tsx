@@ -23,8 +23,10 @@ import { OverlayPortal } from '@/shared/ui/@core/overlay-portal';
 import { POST_FEED_QUERIES, resetGalleryPosts } from '../../model/post.cache';
 import { EditPostBottomSheet } from '../compose/EditPostBottomSheet';
 
+// 방향키 이동은 실제 포커스를 항목으로 옮긴다. 강조 배경은 팝업 바탕과 약 1.04:1이라 전역 포커스 링을 지우지 않고,
+// 팝업 안쪽 여백에 잘리지 않게 링을 항목 안쪽에 그린다.
 const ITEM_CLASS =
-  'flex min-h-touch cursor-pointer items-center gap-3 rounded-control px-3 text-label text-ink outline-none data-highlighted:bg-sunken data-disabled:opacity-45 active:bg-neutral-soft';
+  'flex min-h-touch cursor-pointer items-center gap-3 rounded-control px-3 text-label text-ink -outline-offset-3 data-highlighted:bg-sunken data-disabled:opacity-45 active:bg-neutral-soft';
 
 export function PostActionsMenu({ postId }: { postId: string }) {
   const { data: post, complete } = useFragment({

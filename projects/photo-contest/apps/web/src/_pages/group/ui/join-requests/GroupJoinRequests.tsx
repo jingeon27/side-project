@@ -54,7 +54,7 @@ function JoinRequestRow({ id }: { id: string }) {
   if (!complete) return null;
   return (
     <li className="flex flex-wrap items-center gap-3 border-b border-line py-4 last:border-0">
-      <Avatar name={request.user.nickname} src={request.user.avatar} size="sm" />
+      <Avatar name={request.user.nickname} src={request.user.avatar} size="sm" tone="accent" />
       <div className="min-w-0 flex-1">
         <p className="wrap-break-word text-label text-ink">{request.user.nickname}</p>
         <p className="text-caption text-muted">{formatDateTime(request.createdAt)}</p>

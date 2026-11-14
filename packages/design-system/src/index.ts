@@ -38,6 +38,8 @@ export type { IMotionProviderProps } from './ui/motion-provider/MotionProvider';
 export { m, AnimatePresence, useAnimate, useMotionValue, useSpring } from './lib/motion';
 export { Mention } from './ui/mention/Mention';
 export type { IMentionProps } from './ui/mention/Mention';
+export { Disclosure, DisclosureTrigger } from './ui/disclosure/Disclosure';
+export type { IDisclosureProps, IDisclosureTriggerProps } from './ui/disclosure/Disclosure';
 
 export { Input } from './ui/input/Input';
 export { Textarea } from './ui/textarea/Textarea';

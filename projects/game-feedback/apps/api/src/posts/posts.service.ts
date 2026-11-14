@@ -20,6 +20,7 @@ import { UserVisibilityService } from '../users/visibility/user-visibility.servi
 import { PostMediaService } from './media/post-media.service';
 import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
+import { isSamePostRequest } from './post-request';
 import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()
@@ -98,13 +99,32 @@ export class PostsService {
       where: { id: input.categoryId, active: true },
     });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
-    const p = await this.cache.change(
+    const result = await this.cache.change(
       async (tx) => {
         await lockActiveUser({ client: tx, userId: u.id });
+        // 사용자 잠금 아래에서 요청 키를 먼저 찾는다. 응답만 끊긴 재시도는 처음 만든 글을 그대로 돌려준다.
+        const previous = input.clientRequestId
+          ? await tx.post.findUnique({
+              where: {
+                authorId_clientRequestId: { authorId: u.id, clientRequestId: input.clientRequestId },
+              },
+              include: postInclude,
+            })
+          : null;
+        if (previous) {
+          if (!isSamePostRequest(previous, input, category.id))
+            throw new ApiError(
+              409,
+              'POST_CONFLICT',
+              '이미 등록된 글입니다. 설정의 내가 작성한 글에서 확인해주세요.',
+            );
+          return { post: previous, created: false };
+        }
         const created = await (tx ?? this.db).post.create({
           data: {
             authorId: u.id,
             categoryId: category.id,
+            clientRequestId: input.clientRequestId ?? null,
             title: input.title,
             body: input.body,
             board: input.board ?? 'FEEDBACK',
@@ -146,11 +166,11 @@ export class PostsService {
               type: 'FOLLOWED_POST',
             })),
           );
-        return created;
+        return { post: created, created: true };
       },
-      (created) => [postCacheTag(created.id), DISCOVERY_CACHE_TAG],
+      ({ post, created }) => (created ? [postCacheTag(post.id), DISCOVERY_CACHE_TAG] : []),
     );
-    return responsePost(p, NO_ANSWERS);
+    return responsePost(result.post, NO_ANSWERS);
   }
   async updatePost(req: SessionRequest, id: string, input: TUpdatePostDto) {
     const u = requireUser(req),

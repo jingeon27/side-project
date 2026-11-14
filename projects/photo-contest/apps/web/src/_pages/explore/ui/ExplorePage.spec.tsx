@@ -141,6 +141,17 @@ describe('그룹 탐색의 공통 작성 진입', () => {
     expect(screen.getByRole('textbox', { name: '그룹 검색' })).toHaveValue('산책');
   });
 
+  it('홈·MY와 같이 앱바에서 알림으로 이동할 수 있어야 한다', async () => {
+    renderExplore();
+    const header = screen.getByRole('heading', { name: '그룹 탐색' }).closest('header');
+    if (!header) throw new Error('탐색 앱바가 있어야 한다');
+    // 읽지 않은 알림 수와 함께 '알림 N개'로 읽힌다.
+    expect(await within(header).findByRole('link', { name: /^알림 [\d+]+개$/ })).toHaveAttribute(
+      'href',
+      '/notifications',
+    );
+  });
+
   it('세션이 없는 상태에는 작성 행동을 표시하지 않아야 한다', async () => {
     renderExplore({ signedIn: false });
     await screen.findByRole('heading', { name: '검색 결과' });

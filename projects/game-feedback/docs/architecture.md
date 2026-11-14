@@ -72,11 +72,11 @@ Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, 
 
 ## Mobile WebView 구성
 
-`apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host와 PKCE 시스템 인증을 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
+`apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host를, `shared/lib/push`는 OS 푸시를 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
 
-세션 쿠키는 WebView에만 남는다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급한다. WebView가 verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한다. 그 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 앱 교환으로 세션을 바꾸면 이전 SSE도 종료한다. OAuthAttempt와 AppLoginTicket은 현재 Prisma 스키마에서 관리한다.
+세션 쿠키는 WebView에만 남는다. 현재 앱은 네이티브 소셜 로그인을 제공하지 않으며 앱 안의 로그인 화면은 웹 브라우저 이용을 안내한다. 서버에는 이전 앱 로그인의 호환 계약이 남아 있다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급하며, verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 교환으로 세션을 바꾸면 이전 SSE도 종료한다. OAuthAttempt와 AppLoginTicket은 현재 Prisma 스키마에서 관리한다. 이 계약을 현재 앱의 로그인 방식으로 설명하지 않는다([프로젝트 AGENTS.md](../AGENTS.md)).
 
-API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E의 3302/4302·`.next/e2e-mobile`·`gf_test_mobile_*`는 Web E2E의 3301/4301과 분리한다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
+API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E는 3302/4302와 `gf_test_mobile_*` 스키마로 Web E2E(3301/4301)와 분리한다. 다만 두 E2E의 Web 빌드는 모두 `ENVIRONMENT=test`의 `.next/test`를 쓰므로 같은 checkout에서 동시에 실행하지 않는다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
 
 ## API 모듈 구성
 
@@ -151,7 +151,7 @@ Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 �
 
 ## 외부 서비스 경계
 
-실제 Google·Supercell 구현과 가짜 제공자를 분리한다. 테스트는 가짜 제공자를 강제하며 데모는 명시적 `GF_DEMO_MODE`와 개발 실행에서만 허용한다. production은 데모를 거부한다. Supercell 키·등록 IP가 없거나 제공자 조회가 실패하면 실제 데이터가 조회된 것처럼 성공 처리하지 않는다. 번역·이메일·분석 연동은 후속 범위다.
+실제 Google·Supercell 구현과 가짜 제공자를 분리한다. 테스트는 가짜 제공자를 강제하며 데모는 명시적 실행 인자(`dev:demo`의 `--demo`)나 격리 E2E 서버의 `createApp` 옵션으로만 켜고 환경 변수로는 켜지 않는다. production은 데모와 테스트 인증을 거부한다. Supercell 키·등록 IP가 없거나 제공자 조회가 실패하면 실제 데이터가 조회된 것처럼 성공 처리하지 않는다. 번역·이메일·분석 연동은 후속 범위다.
 
 ## 페이지 조립과 별도 관리자
 

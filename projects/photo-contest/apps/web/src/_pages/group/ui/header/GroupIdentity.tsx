@@ -40,7 +40,9 @@ export function GroupIdentity({
           name={group.name}
           src={group.avatarUrl}
           size="lg"
-          className="size-16 rounded-card border border-line bg-sunken text-ink tablet:size-20"
+          shape="squircle"
+          tone="gradient"
+          className="text-title-lg tablet:size-20"
         />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -55,7 +57,7 @@ export function GroupIdentity({
             <Button
               variant="secondary"
               size="md"
-              className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
+              className="h-auto min-h-touch max-w-full py-2 whitespace-normal wrap-anywhere"
               aria-controls={`group-community-${group.id}`}
               onClick={onOpenCommunity}
             >
@@ -64,7 +66,7 @@ export function GroupIdentity({
           ) : null}
           <EditGroupProfileLink
             groupId={group.id}
-            className="h-auto min-h-touch max-w-full rounded-control py-2 whitespace-normal wrap-anywhere"
+            className="h-auto min-h-touch max-w-full py-2 whitespace-normal wrap-anywhere"
           />
         </div>
       </div>

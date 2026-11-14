@@ -58,8 +58,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
               replace
               aria-current={!selected ? 'page' : undefined}
               className={cn(
-                buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
-                'rounded-full',
+                buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm', shape: 'pill' }),
               )}
             >
               {t('전체')}
@@ -124,7 +123,7 @@ function GameBoardChip({ kind, locale, game, selected, currentChip }: IGameBoard
       href={gameBoardPath(locale, kind, game)}
       replace
       aria-current={active ? 'page' : undefined}
-      className={cn(buttonVariants({ variant: active ? 'accent' : 'secondary', size: 'sm' }), 'rounded-full')}
+      className={cn(buttonVariants({ variant: active ? 'accent' : 'secondary', size: 'sm', shape: 'pill' }))}
     >
       {t(board.name)}
     </TabLink>

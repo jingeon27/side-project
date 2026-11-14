@@ -186,6 +186,17 @@ describe('공유 호스트 원격 배포', () => {
     expect(existsSync(releaseDirectory())).toBe(false);
   });
 
+  it.each([
+    ['DEPLOY_USER', 'Deploy.User', 'SIDE_DEPLOY_SSH_USER'],
+    ['DEPLOY_PORT', '22a', 'SIDE_DEPLOY_SSH_PORT'],
+  ])('%s 형식이 틀리면 원격 업로드 전에 값 없이 변수 이름만 알려야 한다', (key, value, name) => {
+    const result = upload({ [key]: value });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(name);
+    expect(`${result.stdout}${result.stderr}`).not.toContain(value);
+    expect(existsSync(releaseDirectory())).toBe(false);
+  });
+
   it('SERVICE_ENV를 그대로 권한 600으로 반영하고 릴리스·로그·임시 파일에 남기지 않아야 한다', () => {
     const argumentsFile = join(state.root, 'ssh-arguments');
     const result = upload({ FAKE_SSH_ARGS: argumentsFile });
@@ -291,6 +302,18 @@ describe('공유 호스트 원격 배포', () => {
     );
     expect(readlinkSync(join(state.root, 'services/photo-contest/current'))).toBe(previous);
     expect(dockerCalls().some((call) => call.includes(`${previous}/compose.yaml up -d`))).toBe(true);
+    // 이전 릴리스를 다시 만들면 실패한 컨테이너와 로그가 지워지므로 그 전에 권한 600 파일로 남긴다.
+    const calls = dockerCalls();
+    const logs = calls.findIndex((call) => call.includes(`${sha}/compose.yaml logs`));
+    expect(logs).toBeGreaterThan(-1);
+    expect(logs).toBeLessThan(calls.findIndex((call) => call.includes(`${previous}/compose.yaml up -d`)));
+    const kept = readdirSync(join(releaseDirectory(), '.deploy')).filter((name) =>
+      name.startsWith('failed-containers-'),
+    );
+    expect(kept.map((name) => statSync(join(releaseDirectory(), '.deploy', name)).mode & 0o777)).toEqual([
+      0o600,
+    ]);
+    expect(result.stdout).toContain('Logs of the failed containers are kept on the host');
     expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
     expect(`${result.stdout}${result.stderr}`).not.toContain('secret:$literal');
   }, 60_000);
@@ -415,6 +438,25 @@ describe('공유 호스트 원격 배포', () => {
     expect(dockerCalls().some((call) => call.includes('caddy reload'))).toBe(applied);
   });
 
+  it('prepare.sh를 다시 실행해도 호스트 프록시 파일은 덮어쓰지 않고 반영 방법만 알려야 한다', () => {
+    for (const file of ['Caddyfile', 'compose.yaml'])
+      writeFileSync(join(state.root, 'proxy', file), '# host only\n');
+    const result = spawnSync('bash', [join(scripts, 'prepare.sh')], {
+      encoding: 'utf8',
+      env: environment({ SIDE_DEPLOY_ROOT: state.root }),
+    });
+    expect(result.status, result.stderr).toBe(0);
+    for (const file of ['Caddyfile', 'compose.yaml']) {
+      expect(readFileSync(join(state.root, 'proxy', file), 'utf8')).toBe('# host only\n');
+      expect(result.stderr).toContain(`host proxy ${file}`);
+    }
+    expect(result.stderr).toContain('proxy.sh sync');
+    // DB 구성은 다시 실행할 때마다 저장소 버전으로 맞춘다.
+    expect(readFileSync(join(state.root, 'database/compose.yaml'), 'utf8')).toBe(
+      readFileSync(join(repo, 'deploy/shared-instance/database/compose.yaml'), 'utf8'),
+    );
+  });
+
   it('SSH 세션이 끝난 뒤에도 분리된 작업이 배포를 마쳐야 한다', async () => {
     prepareRelease();
     const receive = spawn(
@@ -456,6 +498,64 @@ describe('공유 호스트 원격 배포', () => {
     expect(dockerCalls().filter((call) => call.startsWith('compose'))).toEqual([]);
     expect(existsSync(join(releaseDirectory(), '.release.env'))).toBe(false);
   });
+
+  it('compose.yaml이 없는 릴리스는 이미지 정보를 쓰거나 Compose를 호출하기 전에 거부해야 한다', () => {
+    const release = prepareRelease();
+    rmSync(join(release, 'compose.yaml'));
+    const result = spawnSync(
+      'bash',
+      [join(release, 'host/service.sh'), 'photo-contest', 'deploy', sha, apiImage, webImage],
+      { encoding: 'utf8', env: environment({ SIDE_DEPLOY_ROOT: state.root }) },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('release directory with compose.yaml is not prepared');
+    expect(dockerCalls().filter((call) => call.startsWith('compose'))).toEqual([]);
+    expect(existsSync(join(release, '.release.env'))).toBe(false);
+  });
+
+  it.each([
+    ['current', 'previous'],
+    ['previous', 'current'],
+  ])('%s가 지워진 릴리스를 가리키면 rollback은 컨테이너와 링크를 바꾸지 않아야 한다', (broken, valid) => {
+    const service = join(state.root, 'services/photo-contest');
+    const deleted = join(service, 'releases', 'd'.repeat(40));
+    symlinkSync(deleted, join(service, broken));
+    symlinkSync(prepareRelease(), join(service, valid));
+    const result = spawnSync(
+      'bash',
+      [join(releaseDirectory(), 'host/service.sh'), 'photo-contest', 'rollback'],
+      { encoding: 'utf8', env: environment({ SIDE_DEPLOY_ROOT: state.root }) },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(`The ${broken} link does not point to a prepared release`);
+    expect(dockerCalls().filter((call) => call.startsWith('compose'))).toEqual([]);
+    expect(readlinkSync(join(service, broken))).toBe(deleted);
+    expect(readlinkSync(join(service, valid))).toBe(releaseDirectory());
+  });
+
+  it('rollback 대상 교체에 실패하면 로그를 남긴 뒤 현재 릴리스를 다시 실행하고 링크는 그대로 둬야 한다', () => {
+    const service = join(state.root, 'services/photo-contest');
+    const current = prepareRelease();
+    const target = join(service, 'releases', 'd'.repeat(40));
+    mkdirSync(target, { recursive: true });
+    cpSync(join(current, 'compose.yaml'), join(target, 'compose.yaml'));
+    symlinkSync(current, join(service, 'current'));
+    symlinkSync(target, join(service, 'previous'));
+    const result = spawnSync('bash', [join(current, 'host/service.sh'), 'photo-contest', 'rollback'], {
+      encoding: 'utf8',
+      env: environment({ SIDE_DEPLOY_ROOT: state.root, FAKE_DOCKER_FAIL: `${target}/compose.yaml up -d` }),
+    });
+    expect(result.status).toBe(1);
+    const calls = dockerCalls();
+    const logs = calls.findIndex((call) => call.includes(`${target}/compose.yaml logs`));
+    expect(logs).toBeGreaterThan(-1);
+    expect(logs).toBeLessThan(calls.findIndex((call) => call.includes(`${current}/compose.yaml up -d`)));
+    expect(
+      readdirSync(join(target, '.deploy')).filter((name) => name.startsWith('failed-containers-')),
+    ).toHaveLength(1);
+    expect(readlinkSync(join(service, 'current'))).toBe(current);
+    expect(readlinkSync(join(service, 'previous'))).toBe(target);
+  }, 60_000);
 
   it('상태를 남기지 않고 멈춘 작업은 실패로 보고해야 한다', async () => {
     const job = join(prepareRelease(), '.deploy/run-stopped1');

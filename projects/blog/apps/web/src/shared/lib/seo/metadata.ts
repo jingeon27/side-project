@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { locales, type Locale } from '@/i18n/routing';
+import type { Article } from '@/shared/article/model/types';
 import imageSizes from '@/shared/config/image-sizes.json';
 import { absoluteUrl, author, siteUrl } from '@/shared/config/site';
 
@@ -9,20 +10,12 @@ import ko from '../../../../seo/ko.json';
 
 const seo = { ko, en };
 
-export interface ArticleSeo {
-  id: string;
-  locale: Locale;
-  title: string;
-  slug: string;
-  description: string;
-  keywords: string[];
-  category: string;
-  tags: string[];
-  publishedAt: string;
-  updatedAt?: string;
-  coverImage?: string;
-  socialImage?: string;
-  translations: Partial<Record<Locale, string>>;
+/** The article fields that metadata, structured data and RSS read. */
+export type ArticleSeo = Omit<Article, 'readingMinutes' | 'toc'>;
+
+/** Indexed tag pages each describe their own tag rather than repeating the blog description. */
+export function tagDescription(locale: Locale, tag: string): string {
+  return seo[locale].pages.tag.description.replace('{tag}', tag);
 }
 
 export function articlePath(locale: Locale, slug: string): string {
@@ -90,10 +83,18 @@ export function pageMetadata(
   };
 }
 
+/**
+ * The image that represents an article in share previews and structured data. Content
+ * validation keeps it a JPG or PNG: an AVIF cover always comes with a socialImage.
+ */
+export function articleImagePath(article: ArticleSeo): string {
+  return article.socialImage ?? article.coverImage ?? `/og/${article.locale}/${article.id}`;
+}
+
 export function articleMetadata(article: ArticleSeo): Metadata {
   const url = absoluteUrl(articlePath(article.locale, article.slug));
-  const imagePath = article.socialImage ?? article.coverImage;
-  const image = absoluteUrl(imagePath ?? `/og/${article.locale}/${article.id}`);
+  const imagePath = articleImagePath(article);
+  const image = absoluteUrl(imagePath);
   const size = imageSizes[imagePath as keyof typeof imageSizes] ?? { width: 1200, height: 630 };
   const base = pageMetadata(article.locale, 'blog');
   return {

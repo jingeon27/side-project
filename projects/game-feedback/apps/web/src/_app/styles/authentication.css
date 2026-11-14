@@ -212,7 +212,8 @@
     color: #fff;
     border-color: transparent;
   }
-  &:not(:disabled, [data-disabled]):hover {
+  /* 공통 Button의 누름 바탕(:active:not([data-disabled]), 0,3,0)보다 구체적이어야 누르는 동안에도 공급자 색이 남는다. */
+  &[data-provider]:not(:disabled, [data-disabled]):is(:hover, :active) {
     background: var(--social-login-background);
     box-shadow: inset 0 0 0 100px rgb(0 0 0 / 5%);
   }

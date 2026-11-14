@@ -1,7 +1,7 @@
 import type { Request } from 'express';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
-import { AuthReturnPathSchema } from '@game-feedback/contracts';
+import { AuthReturnPathSchema, type TLoginFailure } from '@game-feedback/contracts';
 
 import { cookies } from '../../common/http/cookies';
 import { parse } from '../../common/validation';
@@ -28,13 +28,22 @@ function loginDestination(url: URL) {
   return { locale, returnTo };
 }
 
-export function loginRedirect(origin: string, path: string, state?: 'cancelled' | 'onboarding') {
+export function loginRedirect(origin: string, path: string, state?: TLoginFailure | 'onboarding') {
   const parsed = AuthReturnPathSchema.safeParse(path);
   const url = new URL(parsed.success ? parsed.data : '/ko', origin);
   return match(state)
     .with('cancelled', () => {
+      // 사용자가 직접 취소했으므로 시작한 화면으로 돌아간다. 로그인 화면에서 시작했다면 그 화면이 안내한다.
       url.searchParams.set('login', 'cancelled');
       return url.toString();
+    })
+    .with(P.union('expired', 'failed', 'banned'), (reason) => {
+      // 복귀 쿠키가 없거나 다른 화면에서 시작했어도 실패 이유는 로그인 화면에서 보여 준다.
+      const { locale, returnTo } = loginDestination(url);
+      const login = new URL(`/${locale}/login`, origin);
+      login.searchParams.set('returnTo', returnTo);
+      login.searchParams.set('login', reason);
+      return login.toString();
     })
     .with('onboarding', () => {
       const { locale, returnTo } = loginDestination(url);

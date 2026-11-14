@@ -1,6 +1,7 @@
 export { useAppRouter } from './app-router.hook';
 export { useBackNavigation } from './back-navigation.hook';
 export { resolveBackAction } from './back-navigation.helper';
+export { leaveAfterConfirm, registerLeaveGuard } from './leave-guard.store';
 
 export { useOverlayHistory } from './overlay-history.hook';
 export { closeTopOverlay, hasOpenOverlay } from './overlay-history.store';

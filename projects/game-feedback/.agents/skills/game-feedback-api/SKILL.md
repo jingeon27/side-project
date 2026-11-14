@@ -10,7 +10,7 @@ description: Game Mate Nest REST API의 Zod/OpenAPI/SDK 계약·인증·Prisma·
 - Zod → OpenAPI → Orval·DTO·권한·오류·SDK: [엔드포인트](references/endpoint.md).
 - 세션·Origin·OAuth·데모/테스트 인증·밴: [인증](references/auth.md).
 - schema·migration·UnitOfWork·잠금: [Prisma](references/prisma.md).
-- 실제 S3·업로드 티켓·채팅 멱등성·읽음·SSE: [미디어와 채팅](references/media-chat.md).
+- 실제 S3·업로드 티켓·채팅과 글쓰기 멱등성·읽음·SSE: [미디어와 채팅](references/media-chat.md).
 - 격리 PostgreSQL·Supertest·하네스·정리: [통합 테스트](references/test.md).
 - 프로젝트 명령과 검증 범위: [프로젝트 테스트](../game-feedback-testing/SKILL.md).
 

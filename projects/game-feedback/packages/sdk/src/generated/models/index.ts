@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminChatMessageList.zod';
 export * from './adminLoginBody.zod';
 export * from './adminLoginInput.zod';
 export * from './adminReport.zod';

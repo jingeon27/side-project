@@ -3,7 +3,6 @@ import { join } from 'node:path';
 
 import { ImageResponse } from 'next/og';
 
-import { labels } from '@/shared/config/labels';
 import { BrandMark } from '@/shared/ui/brand-mark';
 
 const size = { width: 1200, height: 630 };
@@ -12,6 +11,7 @@ const brandImage = `data:image/png;base64,${readFileSync(
 ).toString('base64')}`;
 export const dynamic = 'force-static';
 
+// Korean and English pages share this one image, so it shows the brand mark without any text.
 export function GET() {
   return new ImageResponse(
     <div
@@ -19,16 +19,12 @@ export function GET() {
         width: '100%',
         height: '100%',
         background: '#21354d',
-        color: '#ffffff',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        padding: '74px',
+        alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <BrandMark size={130} imageHref={brandImage} />
-      <div style={{ fontSize: 84, fontWeight: 700 }}>{labels('en').home.title}</div>
+      <BrandMark size={256} imageHref={brandImage} />
     </div>,
     size,
   );

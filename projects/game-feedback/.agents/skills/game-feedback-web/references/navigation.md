@@ -12,7 +12,8 @@
 ## 뒤로 가기·탭
 
 - `instrumentation-client.ts`가 hydration 전에 `installBrowserNavigation()`을 동기 실행한다. Next의 `popstate` 처리보다 먼저 초안 이탈을 확인해야 하므로 Provider effect로 옮기지 않는다. `history.pushState`/`replaceState`를 감싸 `{ index, previous, feed, parent? }`를 state에 남긴다. 화면에서 history state를 직접 만지지 않는다.
-- 초안 가드는 `NavigationGuardProvider`가 생성한 레지스트리에 둔다. 모듈 전역에 가변 레지스트리나 인스턴스를 만들지 않는다. 폼은 `useUnsavedChanges({ hasChanges, confirm, onDiscard })`로 등록하며 문구·확인 UI는 boolean을 반환하는 `confirm` 함수가 소유한다. 모든 가드가 승인한 뒤에만 `onDiscard`를 실행한다. hydration 전 탐색 감시는 동기 브라우저 이벤트로 Provider에 확인을 요청하며 가드 상태를 보관하지 않는다.
+- 초안 가드는 `NavigationGuardProvider`가 생성한 레지스트리에 둔다. 모듈 전역에 가변 레지스트리나 인스턴스를 만들지 않는다. 폼은 `useUnsavedChanges({ hasChanges, confirm, confirmClose?, onDiscard })`로 등록하며 문구·확인 UI는 boolean을 반환하는 `confirm`(오버레이만 닫을 때는 `confirmClose`) 함수가 소유한다. 모든 가드가 승인한 뒤에만 `onDiscard`를 실행한다. hydration 전 탐색 감시는 동기 브라우저 이벤트로 Provider에 확인을 요청하며 가드 상태를 보관하지 않는다.
+- `openOverlay` 안에서 등록한 가드는 `NavigationOverlayContext`로 그 오버레이 id를 함께 남긴다. 화면 이동(`confirmNavigation`)은 모든 가드를, 앱 back의 오버레이 닫기(`confirmOverlayClose(id)`)는 그 오버레이의 가드만 확인한다. 아래 화면의 초안이나 위에 겹친 다른 창 때문에 묻지 않는다(`_app/providers/NativeBridge.test.tsx`). 오버레이를 닫을 때는 가드의 `confirmClose`로 묻고, 없으면 `confirm`으로 묻는다. 수정 시트는 화면을 떠나지 않으므로 취소 버튼과 같은 닫기 문구를 `confirmClose`로 준다(`EditPostSheet`).
 - 화면의 돌아가기는 `BackLink`(`@/shared/navigation`)다. `backNavigation()`은 상세류(`post`·`compose`·`profile`·`conversation`)에 앱 안 이전 기록이 있으면 `router.back()`, 없으면(콜드 링크) `parent`로 `router.replace`한다. 피드로 돌아갈 때는 `feedDestination`이 마지막 피드 필터를 복원한다.
 - 라우트 정의보다 정확한 상위(글쓰기를 연 게시판·필터)는 `<BackLink logicalParent={parent}>`로 등록한다(`registerLogicalParent`, 언마운트 때 해제). `parentOnly`는 이전 기록이 그 parent일 때만 back한다.
 - 링크를 누른 화면이 상위인 목적지(프로필 → 가이드)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
@@ -29,7 +30,7 @@
 
 - 지원 locale `ko`·`en`·`ja`는 여러 곳에 고정돼 있다: `shared/i18n/locale.ts`, `[locale]/layout.tsx`의 `generateStaticParams`, `proxy.ts`(matcher·admin 정규식), `_app/seo/document-access.server.ts`, `_app/seo/discovery.server.ts`, `shared/seo/config.ts`·`metadata.ts`, bridge `routes.ts`. 하나만 바꾸지 않는다.
 - 첫 진입 언어는 `gf_language` 쿠키(`LANGUAGE_COOKIE`) → `Accept-Language` → en(`preferredLocale`)이다. 선택은 `setLanguagePreference`, 경로 전환은 `localePath(path, locale)`로 상세 경로·query·cursor를 보존한다.
-- 문구는 `useI18n().t('<한국어 원문>', { name })`이다. 한국어 원문이 키이며 `shared/i18n/messages.ts`(안내 `info-messages.ts`, 프로필 `profile-messages.ts`)에 `[en, ja]`를 더한다. 빠지면 한국어로 보인다. 서버 메타데이터는 `translate(locale, …)`(`@/shared/i18n/index.server`). 닉네임·글·메시지 원문은 번역하지 않는다.
+- 문구는 `useI18n().t('<한국어 원문>', { name })`이다. 한국어 원문이 키이며 `shared/i18n/messages.ts`(안내 `info-messages.ts`, 프로필 `profile-messages.ts`)에 `[en, ja]`를 더한다. 빠지면 한국어로 보인다. 서버 메타데이터는 `translate(locale, …)`(`@/shared/i18n/index.server`). 닉네임·글·메시지 원문은 번역하지 않는다. `shared/i18n/messages.test.ts`가 세 가지를 검사한다. `t()`·`translate()`에 넘긴 한국어 리터럴과 `api`·`model`·`lib`·`native` 폴더의 한국어 문구가 사전에 있어야 하고, `.tsx`의 문자열·JSX 텍스트와 번역 사전에 가운데 점(·)과 긴 줄표(—)가 없어야 한다(일본어 `・`는 허용, 템플릿 리터럴은 검사하지 않는다). 개발자용 invariant 오류는 `t()`에 넣지 않는다.
 - 공통 UI(`BottomSheet`의 title·description, `ErrorNotice`, `LoadingState`, `ErrorRecovery`·경계의 title, `useNotify()`)는 받은 문구를 그대로 그린다. 문구 키는 호출부가 `t()`로 한 번만 번역한다. 오류는 `message={error && t(error.message)}`처럼 표시하는 곳에서 번역하고, 파일 이름·닉네임 같은 사용자 콘텐츠는 `t()`에 넣지 않는다. 계정 전환 뒤 알림은 mutation options의 `afterSuccess`로 호출부가 번역한 문구를 넘긴다.
 - e2e는 한국어 접근성 이름으로 찾는다. 원문을 바꾸면 `e2e/*.spec.ts`와 `apps/mobile/e2e/*.spec.ts`(같은 웹 화면을 연다)를 함께 고친다.
 
@@ -37,10 +38,12 @@
 
 - `src/instrumentation-client.ts`가 `nativeBridgeChannel.start()`를 문서 시작 때 부르고 `_app/providers/NativeBridge.tsx`가 경로·overlay 상태와 핸들러를 `bind()`한다. bind 전에 온 `open`·`active`는 보관했다가 처리한다.
 - `isNativeApp()`은 `window.__GAME_FEEDBACK_APP__.protocol === 1`과 `ReactNativeWebView`가 모두 있을 때만 true다. 메시지는 bridge의 `WebMessageSchema`·`NativeMessageSchema`로만 주고받는다.
-- 네이티브 back 처리 순서: 열린 Select·DropdownMenu 팝업에 Escape → 열린 overlay 닫기(`needsOnboarding`이면 닫지 않음) → `backNavigation()` 결과(back/replace/root/unhandled). 새 팝업 종류를 만들면 `shared/native/native-bridge-channel.ts`의 `data-slot` 선택자에 걸리는지 확인한다.
-- 앱 복귀(`state: active`)는 `useRefreshSession`으로 세션을 다시 읽고 계정이 바뀌었으면 캐시를 교체한다. 앱 소셜 로그인은 `requestNativeLogin`(auth-request → auth-result, 180초 제한) → `postAppExchange`다. 앱은 코드를 검증된 https 앱 링크 `/app-auth/callback`으로 받는다. 이 경로는 화면 경로(`appRoutes`)가 아니며 웹에서 링크하지 않는다.
+- 네이티브 back 처리 순서: 열린 Select·DropdownMenu 팝업에 Escape → 열린 overlay 닫기(그 오버레이 안의 초안은 `confirmOverlayClose`로 확인하고 취소하면 그대로 둔다) → `backNavigation()` 결과(back/replace/root/unhandled). 새 팝업 종류를 만들면 `shared/native/native-bridge-channel.ts`의 `data-slot` 선택자에 걸리는지 확인한다.
+- 네이티브 셸은 back-result를 800ms만 기다리고, 넘으면 미처리로 보고 WebView 기록 이동이나 앱 종료로 넘어간다(`apps/mobile`의 `NativeHost.back`). `window.confirm`은 답할 때까지 스크립트를 멈추므로 채널이 back-result를 먼저 보낸 뒤 `onDismissOverlay`와 `onBack`이 돌려준 `navigate`를 실행한다. 이탈 확인을 거치는 이동은 `onBack` 안에서 바로 하지 않고 `navigate`에 둔다.
+- 앱 복귀(`state: active`)는 `NativeBridge`가 `refreshSessionMutationOptions`(`features/auth/model/session-cache.ts`의 `refreshSession`)로 세션을 다시 읽고 계정이 바뀌었으면 캐시를 교체한다.
+- 현재 앱은 네이티브 소셜 로그인을 제공하지 않는다. 앱 안의 `SocialLoginForm`은 웹 브라우저에서 로그인하라는 안내만 보인다. 남아 있는 `requestNativeLogin`(auth-request → auth-result, 180초 제한) → `postAppExchange`와 `/app-auth/callback` 안내 페이지는 서버의 app-auth 호환 계약이며 현재 앱이 지원하는 로그인으로 설명하지 않는다([프로젝트 AGENTS.md](../../../../AGENTS.md)). 이 경로는 화면 경로(`appRoutes`)가 아니며 웹에서 링크하지 않는다.
 - 데스크톱 키보드 판정(`useDesktopKeyboard`)은 앱 안에서 항상 false다. 앱 Enter는 줄바꿈이다.
-- 단위 테스트는 `src/shared/native/native-bridge-channel.spec.tsx`, 실제 WebView 흐름은 `apps/mobile` e2e(Web 3302)가 검증한다.
+- 단위 테스트는 `src/shared/native/native-bridge-channel.spec.tsx`와 `src/_app/providers/NativeBridge.test.tsx`, 실제 WebView 흐름은 `apps/mobile` e2e(Web 3302)가 검증한다. Playwright는 확인 창에 바로 답하므로 800ms 응답 순서는 두 단위 테스트가 지킨다.
 
 ## 확인 (side 루트)
 

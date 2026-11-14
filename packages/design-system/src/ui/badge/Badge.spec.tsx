@@ -20,3 +20,17 @@ it('native span props와 ref를 전달하고 tone 클래스 뒤에 className을 
   expect(badge).toHaveClass('bg-accent-soft', 'px-3');
   expect(badge).not.toHaveClass('px-2');
 });
+
+it('tone이 없으면 기존 neutral 배지를, outline이면 같은 모양에 surface 바탕과 line 테두리를 그려야 한다', () => {
+  render(
+    <>
+      <Badge>진행 중</Badge>
+      <Badge tone="outline">공개</Badge>
+    </>,
+  );
+  const neutral = screen.getByText('진행 중');
+  expect(neutral).toHaveClass('rounded-badge', 'bg-neutral-soft', 'text-muted');
+  expect(neutral).not.toHaveClass('border');
+  const outline = screen.getByText('공개');
+  expect(outline).toHaveClass('rounded-badge', 'border', 'border-line', 'bg-surface', 'text-ink');
+});

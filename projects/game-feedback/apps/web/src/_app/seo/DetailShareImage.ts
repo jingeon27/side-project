@@ -6,9 +6,10 @@ import { join } from 'node:path';
 import { captureException } from '@sentry/nextjs';
 
 import { richTextMediaReferences } from '@game-feedback/contracts';
-import { ApiError, getPost, getPublicProfile } from '@game-feedback/sdk';
 import { createSocialPreview, readSocialPreviewImage } from '@side/design-system/og';
 
+import { getPublicPost } from '@/features/post/index.server';
+import { getPublicServerProfile } from '@/features/user/index.server';
 import { publicServerOptions } from '@/shared/api/server';
 import { profileDescription } from '@/shared/seo';
 
@@ -34,10 +35,12 @@ export async function createDetailShareImage(kind: string, id: string) {
   };
   if (!['posts', 'users'].includes(kind) || !/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fallback();
   try {
-    const options = publicServerOptions();
+    const { baseUrl } = publicServerOptions();
+    // 게시글은 상세 문서와 같은 공개 캐시를 읽는다. 없는 글·사용자는 null이라 기본 이미지로 대신한다.
     const data = await (async () => {
       if (kind === 'users') {
-        const profile = await getPublicProfile(id, options);
+        const profile = await getPublicServerProfile(id);
+        if (!profile) return null;
         return {
           title: profile.author.nickname,
           description: profile.bio || profileDescription(profile),
@@ -46,7 +49,8 @@ export async function createDetailShareImage(kind: string, id: string) {
           media: profile.author.avatarUrl,
         };
       }
-      const { post } = await getPost(id, options);
+      const post = (await getPublicPost(id))?.post;
+      if (!post) return null;
       const price = post.friendSale?.price;
       return {
         title: post.title,
@@ -58,10 +62,11 @@ export async function createDetailShareImage(kind: string, id: string) {
           post.author.avatarUrl,
       };
     })();
-    const media = data.media ? URL.parse(data.media, options.baseUrl) : null;
+    if (!data) return fallback();
+    const media = data.media ? URL.parse(data.media, baseUrl) : null;
     const image =
       media &&
-      media.origin === new URL(options.baseUrl).origin &&
+      media.origin === new URL(baseUrl).origin &&
       /^\/api\/(?:users\/[A-Za-z0-9_-]{1,100}\/avatar|post-media\/[A-Za-z0-9_-]{1,100})$/.test(
         media.pathname,
       ) &&
@@ -80,7 +85,8 @@ export async function createDetailShareImage(kind: string, id: string) {
       new Uint8Array(font).buffer,
     );
   } catch (error) {
-    if (!(error instanceof ApiError && [403, 404].includes(error.status))) captureException(error);
+    // 없는 대상은 위에서 null로 끝나므로 여기 오는 오류(429·5xx·연결 실패)는 모두 보고한다.
+    captureException(error);
     return fallback();
   }
 }

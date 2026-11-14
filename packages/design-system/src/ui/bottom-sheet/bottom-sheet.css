@@ -72,7 +72,8 @@
     align-items: flex-start;
     gap: 8px;
     flex-shrink: 0;
-    padding: 0 24px 20px;
+    /* 제목 아래 간격 20px은 본문 위쪽 여백 6px과 나눠 갖는다. */
+    padding: 0 24px 14px;
   }
   .ds-sheet-heading {
     flex: 1;
@@ -95,18 +96,20 @@
   .ds-sheet-handle:active {
     cursor: grabbing;
   }
+  /* 높이 조절 slider를 알아보는 유일한 표시라 시트 바탕과 3:1 이상인 control-border로 그린다. */
   .ds-sheet-grip {
     width: 40px;
     height: 4px;
     border-radius: var(--radius-control);
-    background: var(--color-subtle);
+    background: var(--color-control-border);
   }
   .ds-sheet-body {
     min-height: 0;
     flex: 1;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0 24px max(24px, env(safe-area-inset-bottom, 0px));
+    /* 스크롤 영역은 안쪽 여백 밖을 자르므로, 맨 위 포커스 대상의 링(3px, 간격 2px)이 그려질 자리를 위쪽에 둔다. */
+    padding: 6px 24px max(24px, env(safe-area-inset-bottom, 0px));
     scroll-padding-block: 16px;
   }
   .ds-sheet-footer {
