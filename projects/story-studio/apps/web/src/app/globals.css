@@ -312,6 +312,26 @@ textarea {
   padding: 0;
   min-width: 0;
 }
+.voice-recorder {
+  margin: 24px 0;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.voice-recorder > p {
+  margin: 14px 0;
+  max-width: 660px;
+  color: var(--muted);
+  line-height: 1.8;
+  font-size: 13px;
+}
+.voice-recorder .button {
+  min-width: 190px;
+}
+.voice-action-bar .recording-clock {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
 .voice-file-picker {
   display: flex;
   flex-direction: column;

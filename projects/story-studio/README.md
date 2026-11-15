@@ -51,6 +51,8 @@ yarn workspace @story-studio/web local:setup:voice
 3. 녹음과 대본을 저장하고 반복 횟수를 정한 뒤 **새 학습 시작**을 누릅니다
 4. 완료 후 작업실의 장면에서 목소리를 선택하고 한국어 음성을 생성합니다
 
+음성 파일이 없으면 같은 화면의 **마이크로 녹음 시작**을 사용합니다. 처음에는 브라우저에서 이 사이트의 마이크 사용을 허용합니다. 하단의 **녹음 마치기**를 누르면 미리듣기와 대본 입력 항목이 추가됩니다. 30초가 되면 자동으로 마치며 WAV는 24kHz 모노로 준비합니다. **녹음과 대본 저장**을 누를 때 기존 로컬 저장 API로 전송하고, 취소하거나 화면을 나가면 마이크 트랙과 타이머를 해제합니다. 마이크를 지원하지 않거나 권한이 거부된 환경에서도 기존 파일 선택을 사용할 수 있습니다. [브라우저 녹음 API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
+
 각 녹음은 1~30초, 10MB 이하입니다. WAV, MP3, M4A, FLAC, OGG와 WebM을 로컬에서 24kHz 모노 WAV로 변환합니다. 긴 녹음을 자동으로 자르지 않으므로 대본과 음성이 어긋나지 않습니다. 배경 음악과 다른 화자가 없는 자료를 사용하세요. 파일 저장이 일부 실패해도 대본과 녹음 ID를 유지하고 같은 요청을 재시도해 중복을 피합니다.
 
 이 기능은 샘플 음성을 참조하기만 하는 복제가 아닌 **실제 QLoRA 가중치 미세학습**입니다. 4비트 기본 모델은 고정하고, talker와 code predictor의 attention q/v에 rank 8, alpha 16 어댑터 1,810,432개 파라미터를 학습합니다. 전체 17억 파라미터를 재학습하는 방식은 아닙니다. 화자 특징도 함께 저장해 이후 합성에서는 참조 녹음을 다시 넣지 않습니다. 한국어 추론 prefix, 이전 프레임의 16개 코드와 잔여 코드 teacher forcing을 사용하며, MLX Audio 0.6.5 인터페이스에 맞춘 앱 자체 학습 구현입니다. [공식 Qwen SFT 구현](https://github.com/QwenLM/Qwen3-TTS/tree/main/finetuning)과 실행 환경은 다릅니다.
@@ -132,3 +134,5 @@ Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 �
 로컬 기본 설정은 측정 키가 없어 SDK를 로드하거나 이벤트를 전송하지 않습니다. 측정을 명시적으로 구성한 경우에만 `landing_start_clicked`, `studio_opened`, `studio_request_clicked`, `studio_request_succeeded`를 보냅니다. 속성은 고정된 진입 종류와 작업 종류뿐이며 원고, 제목, 인물, 파일명, 경로와 사용자 ID를 수집하지 않습니다. 영상의 HTTP 제출 성공은 영상 계산 완료와 구분합니다.
 
 이 앱은 127.0.0.1에 바인딩된 개인용 도구입니다. 네트워크 공개, 공동 작업과 로그인은 이번 범위에 포함하지 않습니다. 공개 서비스로 전환하려면 인증과 작품 소유권을 별도로 설계해야 합니다.
+
+직접 녹음은 `studio_recording_clicked`의 고정된 `action`(start, stop, cancel), `studio_recording_started`와 `studio_recording_completed`의 고정된 `source`(microphone)로만 측정합니다. 클릭, 실제 마이크 시작, 로컬 WAV 준비 완료를 구분하며 서버 저장 성공은 기존 `studio_request_succeeded`의 `voice-upload`입니다. 녹음 내용, 대본, 파일명과 장치 정보는 보내지 않습니다.
