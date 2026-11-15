@@ -4,8 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import worker
-from voice_job import atomic_json
+from . import worker
+from .voice_job import atomic_json
 
 
 class WorkerStatusTests(unittest.TestCase):

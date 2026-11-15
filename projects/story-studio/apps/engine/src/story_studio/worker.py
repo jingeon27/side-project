@@ -44,7 +44,7 @@ def save_task(status, **fields):
     if not STATE.get('taskId'):
         return
     if STATE.get('training'):
-        from voice_job import atomic_json, run_folder, checkpoint_path
+        from .voice_job import atomic_json, run_folder, checkpoint_path
         folder = run_folder(STATE['root'], STATE['taskId'])
         target = folder / 'status.json'
         previous = json.loads(target.read_text())
@@ -84,7 +84,7 @@ def owned_asset(root, url, extension):
         raise ValueError("지원하지 않는 로컬 파일 경로입니다")
     path = root / "assets" / url.split("/")[-1]
     if not path.is_file():
-        path = Path(__file__).resolve().parents[2] / "public/examples" / url.split("/")[-1]
+        path = STATE['examples'] / url.split("/")[-1]
         if not path.is_file():
             raise ValueError("원본 파일을 찾을 수 없습니다")
     return path
@@ -118,7 +118,7 @@ def generate_voice(root, request):
     progress("한국어 음성 모델을 불러오는 중")
     settings = request.get('settings', {'kind': 'preset', 'speaker': 'sohee', 'style': 'calm'})
     if settings['kind'] == 'trained':
-        from voice_job import load_trained
+        from .voice_job import load_trained
         model = load_trained(root, settings['runId'])
         voice = 'studio_voice'
         instruct = None
@@ -247,10 +247,12 @@ def compose(root, request):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", required=True)
+    parser.add_argument("--examples-dir", required=True)
     args = parser.parse_args()
     root = Path(args.data_dir).resolve()
     os.nice(10)
     STATE['root'] = root
+    STATE['examples'] = Path(args.examples_dir).resolve()
     signal.signal(signal.SIGTERM, stop_worker)
     os.environ["HF_HOME"] = str(root / "local/cache")
     (root / "local").mkdir(parents=True, exist_ok=True)
@@ -278,10 +280,10 @@ def main():
             elif request["action"] == "compose":
                 result = compose(root, request)
             elif request['action'] == 'normalize-voice':
-                from voice_job import normalize
+                from .voice_job import normalize
                 result = normalize(root, request, ffmpeg, asset_path, asset_url)
             elif request['action'] == 'train-voice':
-                from voice_job import train
+                from .voice_job import train
                 result = train(root, request, progress, save_task)
             else:
                 raise ValueError("지원하지 않는 작업입니다")
@@ -294,7 +296,7 @@ def main():
         clear_active()
 
 
-if __name__ == "__main__":
+def run_cli():
     try:
         main()
     except Exception:
@@ -307,3 +309,7 @@ if __name__ == "__main__":
         emit({"error": "로컬 모델 실행에 실패했습니다. 프로젝트의 로컬 로그를 확인해 주세요."})
         clear_active()
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    run_cli()

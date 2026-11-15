@@ -8,9 +8,9 @@
     "build": "yarn workspace @story-studio/web build",
     "start": "yarn workspace @story-studio/web start",
     "typecheck": "yarn workspace @story-studio/web typecheck",
-    "test": "yarn workspace @story-studio/web test",
+    "test": "yarn workspace @story-studio/web test && yarn workspace @story-studio/engine test",
     "test:e2e": "yarn workspace @story-studio/web test:e2e",
-    "check": "yarn workspace @story-studio/web check",
+    "check": "yarn workspace @story-studio/web check && yarn workspace @story-studio/engine check",
     "local:setup": "yarn workspace @story-studio/web local:setup"
   }
 }

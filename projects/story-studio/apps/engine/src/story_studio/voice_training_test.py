@@ -1,15 +1,20 @@
-"""Native MLX verification: python -m unittest discover -s scripts/local -p '*_test.py'."""
+"""Native MLX verification for adapter updates and checkpoint recovery."""
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import mlx.core as mx
-import mlx.nn as nn
-from mlx.utils import tree_flatten
+try:
+    import mlx.core as mx
+    import mlx.nn as nn
+    from mlx.utils import tree_flatten
+except ModuleNotFoundError as error:
+    if error.name and error.name.startswith('mlx'):
+        raise unittest.SkipTest('Native training verification requires Apple Silicon and the MLX extra') from error
+    raise
 
-import voice_training as training
+from . import voice_training as training
 
 
 class TinyTalker(nn.Module):

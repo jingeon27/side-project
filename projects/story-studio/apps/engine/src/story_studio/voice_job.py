@@ -65,7 +65,7 @@ def train(root, request, progress, save_task):
     import mlx.core as mx
     import soundfile as sf
     from mlx_audio.tts.utils import load_model
-    from voice_training import attach_adapters, set_speaker, prepare_sample, train_steps
+    from .voice_training import attach_adapters, set_speaker, prepare_sample, train_steps
     folder = run_folder(root, request['runId'])
     config = json.loads((folder / 'config.json').read_text())
     if config['id'] != request['runId'] or request.get('taskId') != config['id']:
@@ -123,7 +123,7 @@ def train(root, request, progress, save_task):
 
 def load_trained(root, run_id):
     from mlx_audio.tts.utils import load_model
-    from voice_training import attach_adapters, load_checkpoint
+    from .voice_training import attach_adapters, load_checkpoint
     folder = run_folder(root, run_id)
     status = json.loads((folder / 'status.json').read_text())
     if status['status'] != 'SUCCEEDED':
