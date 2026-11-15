@@ -125,7 +125,7 @@ Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식�
 yarn workspace @side/clash-bot qwen:setup
 yarn workspace @side/clash-bot counterpush:setup
 yarn workspace @side/clash-bot counterpush login
-yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 8 --tabs 2
+yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 8 --tabs 1
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush audit
 yarn workspace @side/clash-bot counterpush stop
@@ -133,7 +133,7 @@ yarn workspace @side/clash-bot counterpush stop
 
 `login` 창에서 직접 로그인하고 양쪽 덱을 **GY GobHut Evo Furnace**로 설정합니다. 로그인은 프로젝트 전용 프로필에 보존합니다. 시스템에 설치된 Google Chrome을 사용하므로 별도 Chromium을 다운로드하지 않습니다. `--background`는 대화와 독립된 실행이고, `stop`은 현재 경기와 학습을 끝낸 뒤 종료합니다. 로그인 만료·다른 덱·불명확한 결과·3회 연속 입력 미확인·디스크 8GiB 미만이면 멈춥니다.
 
-`--tabs 2`는 같은 전용 Chrome에서 2경기를 동시에 진행합니다. 기본값 `--tabs 1`로 한 경기만 돌릴 수도 있습니다. Qwen과 CPU 인식기는 하나씩 공유하고 탭별 필드·FIFO·엘릭서·스킬·입력 기록은 격리합니다. 추론 차례를 기다리는 동안에도 상대를 관찰하고, 차례가 오면 새 화면으로 판단합니다. 두 경기의 정책 버전을 고정한 뒤 모두 끝나면 각자의 승패 보상으로 한 번의 공동 PPO 업데이트를 실행하고, 이어서 상대 모방학습을 순서대로 합니다. `--matches`는 두 탭을 합한 경기 수이며 `stop`은 현재 진행 중인 경기들을 마친 뒤 적용합니다. 추론은 공유하므로 수집 속도가 두 배가 된다고 보장하지 않습니다.
+현재 로그인 계정에서는 **1개 탭으로 실행**합니다. 2026-11-15 실제 화면에서 사이트가 “다른 탭/창에서 게임을 시작해 이 경기가 닫혔다”고 안내했습니다. 2개 탭의 첫 경기와 공동 학습은 확인했지만 재매칭에서 한 탭이 종료됐으므로 지속 가능한 동시 실행으로 보지 않습니다. CLI와 실행기에서 `--tabs 2`를 거부합니다. 모델 공유·추론 순서·공동 PPO 코드는 별도 검증된 기반으로 보존하며 이 제한을 우회하는 데 쓰지 않습니다. 결과가 확인되지 않은 종료 경기는 학습하지 않습니다. `stop`은 현재 경기와 학습을 마친 뒤 적용합니다.
 
 인식 준비는 고정 revision·SHA-256의 DINOv2 분류기와 박스 제안용 공개 모델을 다운로드합니다. 약 119MB의 원본 모델과 ONNX 변환본, 한 번의 변환용 PyTorch 설치 공간이 추가로 필요합니다. 실시간 인식은 ONNX CPU 1스레드를 사용합니다. 참조 스프라이트는 카드 종류 확인용이며 전략을 학습한 자료가 아닙니다.
 

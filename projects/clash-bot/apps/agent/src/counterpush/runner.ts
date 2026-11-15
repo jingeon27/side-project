@@ -26,7 +26,10 @@ export async function runCounterpush(options: {
   const control = join(dataDir, 'counterpush/control');
   await mkdir(control, { recursive: true, mode: 0o700 });
   const tabs = options.tabs ?? 1;
-  if (![1, 2].includes(tabs)) throw new Error('동시 대전 탭은 1개 또는 2개로 설정합니다.');
+  if (tabs !== 1)
+    throw new Error(
+      '현재 Counterpush 계정은 다른 탭의 게임이 시작되면 기존 경기를 닫습니다. --tabs 1로 실행하세요.',
+    );
   const lock = await acquireLearningLock(join(dataDir, 'qwen/selfplay'));
   const workers: Record<string, unknown>[] = Array.from({ length: tabs }, (_, tab) => ({
     tab: tab + 1,
@@ -68,7 +71,6 @@ export async function runCounterpush(options: {
     resources.patterns = patterns;
     const browser = await CounterpushBrowser.open(dataDir);
     resources.browsers.push(browser);
-    if (tabs === 2) resources.browsers.push(await browser.newTab());
     await report({ phase: 'ready', policy: await client.status() });
     const decisionGate = new DecisionGate();
     const result = await parallelLearningLoop({

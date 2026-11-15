@@ -111,7 +111,8 @@ const main = async () => {
   const hours = Number(values.hours ?? 8),
     matches = Number(values.matches ?? 0);
   const tabs = Number(values.tabs ?? 1);
-  if (![1, 2].includes(tabs)) throw new Error('tabs는 1 또는 2입니다.');
+  if (tabs !== 1)
+    throw new Error('현재 Counterpush 계정은 동시 대전을 허용하지 않습니다. --tabs 1로 실행하세요.');
   if (
     !Number.isFinite(hours) ||
     hours <= 0 ||
