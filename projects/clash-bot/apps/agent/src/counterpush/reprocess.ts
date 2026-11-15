@@ -8,6 +8,7 @@ import { analyze, loadTemplates } from '../vision.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
 import { COUNTERPUSH_DECK } from './browser.ts';
 import { counterpushElixir } from './elixir.ts';
+import { FieldDynamics } from './field-dynamics.ts';
 import { OpponentTracker } from './tracker.ts';
 import { type CounterpushVisionClient } from './vision-client.ts';
 
@@ -59,6 +60,7 @@ export async function reprocessEpisode(
   const applied = new Set<number>();
   const tracker = new OpponentTracker();
   const memory = new BattleMemory([...COUNTERPUSH_DECK]);
+  const dynamics = new FieldDynamics(directory);
   const situations = new Map<string, BattleSituation>();
   const templates = await loadTemplates(dataDir, profile);
   const observations: OpponentObservation[] = [];
@@ -69,6 +71,7 @@ export async function reprocessEpisode(
     const cards = raw.hand.map((slot) => slot.card);
     const elixir = counterpushElixir(raw, profile);
     const scan = await vision.scan(frame.image);
+    const field = dynamics.observe(scan, frame.capturedAt);
     for (const input of inputs.filter(
       (entry) => entry.check && entry.check.at <= frame.capturedAt && !applied.has(entry.frame),
     )) {
@@ -88,20 +91,10 @@ export async function reprocessEpisode(
       elixirRange: elixir.range,
       elixirReliable: raw.elixirConfidence >= 0.9,
       inputPending,
-      allies: scan.allies.map((unit) => ({
-        card: unit.confidence >= 0.85 ? unit.card : null,
-        x: unit.x,
-        y: unit.y,
-        confidence: unit.confidence,
-      })),
-      enemies: scan.entities
-        .filter((unit) => !['graveyard', 'poison'].includes(unit.card))
-        .map((unit) => ({
-          card: unit.confidence >= 0.85 ? unit.card : null,
-          x: unit.x,
-          y: unit.y,
-          confidence: unit.confidence,
-        })),
+      allies: field.allies,
+      enemies: field.enemies,
+      effects: field.effects,
+      spawners: field.spawners,
     });
     situations.set(frame.image, situation);
     for (const [key, value] of situations) if (frame.capturedAt - value.at > 12_000) situations.delete(key);

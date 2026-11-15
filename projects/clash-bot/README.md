@@ -199,6 +199,7 @@ yarn workspace @side/clash-bot check
 yarn workspace @side/clash-bot test:learning
 yarn workspace @side/clash-bot test:learning:model
 yarn workspace @side/clash-bot test:perception
+yarn workspace @side/clash-bot test:perception:model
 python3.11 -m compileall -q projects/clash-bot/apps/agent/src/qwen
 ```
 
@@ -206,7 +207,7 @@ python3.11 -m compileall -q projects/clash-bot/apps/agent/src/qwen
 
 Python 학습 검사는 양·음 보상에 따른 확률 방향, 가중치 변경, 체크포인트 재적용, 이전 정책/다른 모델/미확인 결과 거부, 모든 가중치 분할 파일 검증, 출력층 선택, 비정상 수치 복구와 KL 초과 시 작은 학습률 재시도를 확인합니다. 실전 기록과 자동 테스트를 구분하며, 학습에 따른 성능 개선은 검증하지 않았습니다.
 
-Counterpush 반복 실행 경로의 추가 검증은 공유 재생·10 상한·4장 FIFO, 과거 상태의 미래 정보 누출 방지, 실제 엘릭서 막대, 지출 애니메이션, 레벨 표식 누락, 중복 유닛/효과, 기존 무덤의 새 묘비, 독의 진영, 연장전 결과와 실제 학습 건수 분리를 다룹니다. 잘못된 과거 사례는 격리 목록으로 자료 준비와 실제 학습에서 거부합니다. 자세한 자료 감사·모델 복구·구현과 미구현 구분은 [학습 설계](docs/learning-design.md)에 남깁니다. 타입 검사·Vitest 66개, Python 학습 19개(실모델 통합 1개 별도 건너뜀), CPU 인식 4개를 확인합니다. 실모델 전체 통합 검사는 이번 추가 변경에서 다시 실행하지 않았으며, 별도로 운영 Qwen3.8의 감사된 4사례 모방학습과 실제 가중치 변경을 확인했습니다. 인식 준비는 현재 캐시를 재사용해 SHA-256을 확인했고, 완전히 빈 환경의 최초 설치 전체는 이번에 재현하지 않았습니다.
+Counterpush 반복 실행 경로의 추가 검증은 공유 재생·10 상한·4장 FIFO, 과거 상태의 미래 정보 누출 방지, 실제 엘릭서 막대, 지출 애니메이션, 레벨 표식 누락, 중복 유닛/효과, 기존 무덤의 새 묘비, 독의 진영, 연장전 결과와 실제 학습 건수 분리를 다룹니다. 잘못된 과거 사례는 격리 목록으로 자료 준비와 실제 학습에서 거부합니다. 자세한 자료 감사·모델 복구·구현과 미구현 구분은 [학습 설계](docs/learning-design.md)에 남깁니다. 타입 검사·Vitest 72개, Python 학습 19개(실모델 통합 1개 별도 건너뜀), CPU 인식 4개를 확인합니다. 실모델 전체 통합 검사는 이번 추가 변경에서 다시 실행하지 않았으며, 별도로 운영 Qwen3.8의 감사된 4사례 모방학습과 실제 가중치 변경을 확인했습니다. 인식 준비는 현재 캐시를 재사용해 SHA-256을 확인했고, 완전히 빈 환경의 최초 설치 전체는 이번에 재현하지 않았습니다.
 
 `test:learning`은 일반 Python 검사이며 실제 모델 통합 검사를 건너뜁니다. `test:learning:model`은 기본으로 설치된 **Qwen3.8-27B**를 실제로 읽고 Qwen 내부 어댑터·캐시 학습·원래 출력층의 확률 비교와 실제 가중치 갱신·재적용을 별도 임시 폴더에서 확인합니다. `QWEN_TEST_MODEL=4b`로 이전 모델도 선택할 수 있습니다. 운영 중인 학습 체크포인트는 변경하지 않습니다.
 

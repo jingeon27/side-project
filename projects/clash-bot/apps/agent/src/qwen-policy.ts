@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CARD_INFO, cardIdSchema, HEIGHT, WIDTH, type CardId, type Point, type Profile } from './config.ts';
+import { blockedDeployment } from './placement.ts';
 import { difference } from './vision.ts';
 
 const normalizeCard = (value: unknown) => {
@@ -105,6 +106,7 @@ export function validateQwenAction(
     target.x >= arena.x + arena.width ||
     target.y < arena.y ||
     target.y >= arena.y + arena.height ||
+    blockedDeployment(profile, card, target) ||
     (CARD_INFO[card].role !== 'spell' && target.y <= profile.riverY + 8)
   )
     return null;

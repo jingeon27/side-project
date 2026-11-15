@@ -36,9 +36,21 @@ export class OpponentTracker {
     const events: OpponentObservation[] = [];
     for (const marker of scan.markers) {
       const kind = marker.kind ?? 'unit';
+      if (
+        kind === 'unit' &&
+        scan.spawnedUnits?.some(
+          (unit) =>
+            unit.side === 'red' &&
+            unit.confidence >= 0.85 &&
+            Math.hypot((unit.marker_x ?? unit.x) - marker.x, (unit.marker_y ?? unit.y) - marker.y) < 16,
+        )
+      )
+        continue;
       const detection = scan.entities
         .filter((entity) => ['graveyard', 'poison'].includes(entity.card) === (kind === 'effect'))
-        .filter((entity) => Math.hypot(entity.x - marker.x, entity.marker_y - marker.y) < 16)
+        .filter(
+          (entity) => Math.hypot((entity.marker_x ?? entity.x) - marker.x, entity.marker_y - marker.y) < 16,
+        )
         .toSorted((first, second) => second.confidence - first.confidence)[0];
       const existing = this.tracks
         .filter((track) => track.kind === kind)
@@ -128,9 +140,9 @@ export class OpponentTracker {
       this.state.rejected++;
       return null;
     }
-    const lane = track.x < 158 ? 'left' : track.x > 210 ? 'right' : 'center';
+    const lane = detection.x < 158 ? 'left' : detection.x > 210 ? 'right' : 'center';
     // Canonical unit intents have left/right candidates; central buildings are supported.
-    if (lane === 'center' && detection.card !== 'goblin_hut') return null;
+    if (lane === 'center' && !['goblin_hut', 'graveyard', 'poison'].includes(detection.card)) return null;
     const key = `${detection.card}:${lane}`;
     if (frame.capturedAt - (this.recent.get(key) ?? 0) < 8000) {
       track.suppressed = true;

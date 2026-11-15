@@ -25,6 +25,7 @@
     "counterpush": "yarn workspace @clash-bot/agent counterpush",
     "counterpush:setup": "yarn workspace @clash-bot/agent counterpush:setup",
     "test:perception": "yarn workspace @clash-bot/agent test:perception",
+    "test:perception:model": "yarn workspace @clash-bot/agent test:perception:model",
     "test:learning": "yarn workspace @clash-bot/agent test:learning",
     "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model"
   }

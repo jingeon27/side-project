@@ -6,9 +6,10 @@ import sharp from 'sharp';
 import { z } from 'zod';
 
 import { atomicWrite } from './assets.ts';
-import { cardIdSchema, DEFAULT_PROFILE, HEIGHT, WIDTH, type CardId } from './config.ts';
+import { cardIdSchema, HEIGHT, WIDTH, type CardId } from './config.ts';
 import { battleSituationSchema, type BattleSituation } from './counterpush/battle-state.ts';
-import { actionCandidates, deckGuidance, type QwenAction } from './qwen-actions.ts';
+import { policyContext } from './policy-context.ts';
+import { deckGuidance, type QwenAction } from './qwen-actions.ts';
 
 export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1';
 const frameSchema = z
@@ -94,14 +95,31 @@ export function observationExclusion(item: OpponentObservation): string | null {
 export function opponentActions(deck: CardId[]): QwenAction[] {
   // A deck-wide intent list is used only for demonstrations. Hidden hands and
   // elixir are never presented as known or sent to a live input controller.
-  const profile = { ...DEFAULT_PROFILE, riverY: 276, arena: { x: 15, y: 80, width: 338, height: 385 } };
+  const intents = deck.flatMap((card) =>
+    (card === 'goblin_hut'
+      ? [184, 143, 225]
+      : ['graveyard', 'poison'].includes(card)
+        ? [95, 273, 184]
+        : [95, 273]
+    ).map((x) => ({
+      slot: 0,
+      card,
+      target: {
+        x,
+        y: ['graveyard', 'poison'].includes(card)
+          ? x === 184
+            ? 466
+            : 406
+          : card === 'goblin_hut'
+            ? 211
+            : 200,
+      },
+      description: `RED ${card} ${x === 184 ? 'center' : x < 184 ? 'left' : 'right'} intent; exact deployment unknown`,
+    })),
+  );
   return [
     { id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' },
-    ...actionCandidates(profile, deck, 10, []).map((action) => ({
-      ...action,
-      slot: 0,
-      target: { x: action.target.x, y: profile.riverY * 2 - action.target.y },
-    })),
+    ...intents.map((intent, index) => ({ id: index + 1, ...intent })),
   ];
 }
 
@@ -118,7 +136,7 @@ export function macroMatches(action: QwenAction, card: CardId, lane: OpponentObs
 
 export function opponentPrompt(deck: CardId[], actions: QwenAction[], situation?: BattleSituation): string {
   const state = situation
-    ? `Structured BEFORE state uses own=BLUE bottom and opponent=RED top: ${JSON.stringify(situation)}. Predict RED's response to BLUE's unit types, positions and recent plays. Exact RED hand/elixir remain hidden: use the provided ranges and FIFO hypotheses within their uncertainty. Both regenerate equally and cap at 10 with no stored overflow. Each deck has 8 cards, a 4-card hand and 4-card FIFO draw queue; a played card returns after 4 subsequent plays.`
+    ? `Structured BEFORE state uses own=BLUE bottom and opponent=RED top: ${JSON.stringify(policyContext(situation))}. Predict RED's response to BLUE's unit types, positions and recent plays. Exact RED hand/elixir remain hidden: use the provided ranges and FIFO hypotheses within their uncertainty. Both regenerate equally and cap at 10 with no stored overflow. Each deck has 8 cards, a 4-card hand and 4-card FIFO draw queue; a played card returns after 4 subsequent plays.`
     : '';
   return (
     state +

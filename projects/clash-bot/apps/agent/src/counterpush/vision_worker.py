@@ -22,6 +22,13 @@ def canonical(label):
             'graveyard': 'graveyard', 'poison': 'poison'}.get(name)
 
 
+def unit_kind(label):
+    name = label.removesuffix('-evolution').removesuffix('-hero')
+    return {'furnace': 'furnace', 'ice-wizard': 'ice_wizard', 'knight': 'knight',
+            'goblin-hut': 'goblin_hut', 'skeleton': 'skeleton', 'barbarian': 'barbarian',
+            'fire-spirit': 'fire_spirit', 'spear-goblin': 'spear_goblin', 'barbarian-barrel': 'barrel'}.get(name)
+
+
 def poison_rings(pixels):
     """Find the opponent's orange/red outline, excluding global crown flashes.
 
@@ -76,6 +83,8 @@ def red_markers(image, badges=None, side='red'):
             for y, x in zip(rows, columns):
                 if not 18 <= x <= 350 - width or not 40 <= y <= 510 - height:
                     continue
+                if x > 306 and y > 454:
+                    continue
                 patch = image[y:y + height, x:x + width]
                 means = patch.mean(axis=(0, 1))
                 valid = (means[0] >= means[1] * 1.25 and means[0] >= means[2] * 1.1
@@ -113,6 +122,7 @@ def red_markers(image, badges=None, side='red'):
     mask[515:] = 0
     mask[:, :18] = 0
     mask[:, 350:] = 0
+    mask[454:, 306:] = 0
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((2, 3), np.uint8))
     count, _, components, _ = cv2.connectedComponentsWithStats(mask)
     markers = []
@@ -130,7 +140,9 @@ class VisionWorker:
         self.directory = Path(directory)
         manifest = json.loads((self.directory / 'crop-export.json').read_text())
         model = self.directory / 'crop-classifier.onnx'
-        if hashlib.file_digest(model.open('rb'), 'sha256').hexdigest() != manifest['onnx_sha256']:
+        with model.open('rb') as handle:
+            actual_sha = hashlib.file_digest(handle, 'sha256').hexdigest()
+        if actual_sha != manifest['onnx_sha256']:
             raise ValueError('Crop classifier ONNX checksum mismatch')
         options = ort.SessionOptions()
         options.intra_op_num_threads = 1
@@ -190,6 +202,28 @@ class VisionWorker:
                 for ring, box, classification in zip(rings, boxes, classifications)
                 if classification['card_scores']['poison'] >= .65]
 
+    def graveyard_areas(self, image):
+        pixels = np.asarray(image)
+        region = pixels[300:490, 18:350]
+        red, green, blue = [region[:, :, index].astype(float) for index in range(3)]
+        mask = ((red > 90) & (blue > 135) & (red > green * 1.35)
+                & (blue > green * 1.45) & (blue > red * .85)).astype(np.uint8)
+        joined = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((17, 17), np.uint8))
+        count, _, components, _ = cv2.connectedComponentsWithStats(joined)
+        boxes = []
+        for index in range(1, count):
+            x, y, width, height, area = map(int, components[index])
+            if (55 <= width <= 175 and 50 <= height <= 175 and area >= 350
+                    and np.count_nonzero(mask[y:y + height, x:x + width]) >= 350):
+                boxes.append([x + 13, y + 295, x + width + 23, y + height + 305])
+        classifications = self.classify(image, boxes)
+        return [{'card': 'graveyard', 'label': 'graveyard_purple_area_and_crop',
+                 'confidence': .93 + .05 * result['card_scores']['graveyard'],
+                 'x': (box[0] + box[2]) / 2, 'y': (box[1] + box[3]) / 2,
+                 'marker_y': (box[1] + box[3]) / 2, 'box': box, 'side': 'red'}
+                for box, result in zip(boxes, classifications)
+                if result['card'] == 'graveyard' and result['card_scores']['graveyard'] >= .3]
+
     def proposals(self, image):
         if self.detector is None:
             return []
@@ -220,10 +254,15 @@ class VisionWorker:
         results = []
         for row, feature in zip(probabilities, features):
             card = canonical(self.classes[int(row.argmax())])
+            kind = unit_kind(self.classes[int(row.argmax())])
             # Normal, evolution and hero variants may split probability mass.
             confidence = sum(float(value) for label, value in zip(self.classes, row) if card is not None and canonical(label) == card)
+            if card is None and kind is not None:
+                confidence = sum(float(value) for label, value in zip(self.classes, row) if unit_kind(label) == kind)
+            label = self.classes[int(row.argmax())]
+            variant = ('evolution' if label.endswith('-evolution') else 'hero' if label.endswith('-hero') else 'base') if row.max() >= .8 else 'unknown'
             result = {'label': self.classes[int(row.argmax())], 'confidence': confidence,
-                      'card': card, 'raw_confidence': float(row.max()), 'recognition': 'pretrained_crop'}
+                      'card': card, 'kind': kind, 'variant': variant, 'raw_confidence': float(row.max()), 'recognition': 'pretrained_crop'}
             result['card_scores'] = {name: sum(float(value) for label, value in zip(self.classes, row) if canonical(label) == name)
                                      for name in ('furnace', 'ice_wizard', 'knight', 'goblin_hut', 'skeletons', 'barbarian_barrel', 'graveyard', 'poison')}
             if self.atlas_features is not None:
@@ -236,7 +275,8 @@ class VisionWorker:
                 result['atlas_scores'] = grouped
                 if similarity >= .92 and margin >= .04 and name != 'background' and (confidence < .9 or card == name):
                     result.update({'card': name, 'label': f'atlas:{name}', 'confidence': min(1.0, max(0.0, similarity)),
-                                   'recognition': 'counterpush_atlas', 'atlas_margin': margin})
+                                   'kind': {'skeletons': 'skeleton', 'barbarian_barrel': 'barbarian'}.get(name, name),
+                                   'variant': 'unknown', 'recognition': 'counterpush_atlas', 'atlas_margin': margin})
             results.append(result)
         return results
 
@@ -248,13 +288,19 @@ class VisionWorker:
         proposals = self.proposals(image)
         markers = red_markers(pixels, self.badges)
         blue_markers = red_markers(pixels, self.blue_badges or self.badges, 'blue')
-        graveyards = self.graveyard_markers(pixels)
+        graveyards = self.graveyard_areas(image)
         poisons = self.poison_markers(image)
-        units = self.scan_markers(image, markers, proposals, 'red')
+        red_units = self.scan_markers(image, markers, proposals, 'red')
+        blue_units = self.scan_markers(image, blue_markers, proposals, 'blue')
         markers.extend([{'x': item['x'], 'y': item['marker_y'], 'bottom': item['box'][3],
                          'width': item['box'][2] - item['box'][0], 'kind': 'effect'} for item in graveyards + poisons])
-        return {'entities': units + graveyards + poisons, 'markers': markers,
-                'allies': self.scan_markers(image, blue_markers, proposals, 'blue')}
+        effects = [{'card': item['card'], 'side': item['side'], 'x': item['x'], 'y': item['y'],
+                    'radius': max(item['box'][2] - item['box'][0], item['box'][3] - item['box'][1]) / 2,
+                    'confidence': item['confidence']} for item in graveyards + poisons]
+        children = [{**unit, 'sourceCard': 'furnace' if unit['kind'] == 'fire_spirit' else 'goblin_hut'}
+                    for unit in red_units + blue_units if unit['card'] is None and unit['kind'] in ('fire_spirit', 'spear_goblin')]
+        return {'entities': [unit for unit in red_units if unit['card']] + graveyards + poisons, 'markers': markers,
+                'allies': [unit for unit in blue_units if unit['card']], 'spawnedUnits': children, 'effects': effects}
 
     def scan_markers(self, image, markers, proposals, side):
         boxes, associations = [], []
@@ -278,9 +324,9 @@ class VisionWorker:
             if not candidates:
                 continue
             result, box = max(candidates, key=lambda item: item[0]['confidence'])
-            if result['card'] and result['confidence'] >= .65:
-                entities.append({**result, 'x': marker['x'], 'y': marker['bottom'] + 18,
-                                 'marker_y': marker['y'], 'box': box, 'side': side})
+            if (result['card'] or result['kind']) and result['confidence'] >= .65:
+                entities.append({**result, 'x': (box[0] + box[2]) / 2, 'y': (box[1] + box[3]) / 2,
+                                 'marker_x': marker['x'], 'marker_y': marker['y'], 'box': box, 'side': side})
         return entities
 
     def absent(self, request):

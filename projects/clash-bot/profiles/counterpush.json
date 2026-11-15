@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "viewport": null,
+  "deck": [
+    "furnace",
+    "ice_wizard",
+    "knight",
+    "graveyard",
+    "skeletons",
+    "poison",
+    "goblin_hut",
+    "barbarian_barrel"
+  ],
+  "hand": [
+    {
+      "x": 84,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 153,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 222,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 291,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    }
+  ],
+  "elixir": {
+    "x": 117,
+    "y": 628,
+    "width": 236,
+    "height": 9
+  },
+  "marker": {
+    "x": 76,
+    "y": 639,
+    "width": 7,
+    "height": 10
+  },
+  "arena": {
+    "x": 15,
+    "y": 80,
+    "width": 338,
+    "height": 425
+  },
+  "riverY": 276,
+  "thresholds": {
+    "cardDistance": 29,
+    "cardMargin": 3,
+    "markerDistance": 27
+  }
+}

@@ -55,12 +55,14 @@ describe('opponent visual demonstrations', () => {
   it('keeps screen-left/right when reflecting the top player and labels only the card/lane', () => {
     const actions = opponentActions([...deck]);
     const target = actions.find((action) => macroMatches(action, 'furnace', 'left'));
-    expect(target?.target).toEqual({ x: 95, y: 132 });
+    expect(target?.target.x).toBe(95);
+    expect(target?.target.y).toBeLessThan(276);
     expect(target?.slot).toBe(0);
     expect(actions.find((action) => macroMatches(action, 'graveyard', 'right'))?.target.y).toBeGreaterThan(
       276,
     );
     expect(actions.some((action) => action.card === 'minipekka')).toBe(false);
+    expect(actions.length).toBeLessThanOrEqual(26);
   });
 
   it('rejects cards outside the known opponent deck', () => {

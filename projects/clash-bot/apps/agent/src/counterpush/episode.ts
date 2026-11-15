@@ -14,6 +14,8 @@ import { readEpisodeCoverage } from './audit.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
 import { COUNTERPUSH_DECK, CounterpushBrowser } from './browser.ts';
 import { counterpushElixir, plausibleSpend } from './elixir.ts';
+import { FieldDynamics } from './field-dynamics.ts';
+import type { SpawnPatterns } from './spawn-patterns.ts';
 import { OpponentTracker } from './tracker.ts';
 import { type CounterpushVisionClient, type UnitScan } from './vision-client.ts';
 
@@ -36,6 +38,7 @@ export async function playCounterpushEpisode(options: {
   profile: Profile;
   signal: AbortSignal;
   report: (status: Record<string, unknown>) => Promise<void>;
+  patterns?: SpawnPatterns;
 }) {
   const { browser, client, vision, dataDir, profile, signal } = options;
   const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
@@ -44,6 +47,7 @@ export async function playCounterpushEpisode(options: {
   const tracker = new OpponentTracker();
   const observations: OpponentObservation[] = [];
   const memory = new BattleMemory([...COUNTERPUSH_DECK]);
+  const dynamics = new FieldDynamics(directory, options.patterns);
   const situations = new Map<string, BattleSituation>();
   const state = {
     frames: 0,
@@ -74,6 +78,7 @@ export async function playCounterpushEpisode(options: {
     const observation = await analyze(screenshot.image, profile, templates, screenshot.capturedAt);
     const elixir = counterpushElixir(observation, profile);
     const scan = await vision.scan(path);
+    const field = dynamics.observe(scan, screenshot.capturedAt);
     await appendFile(
       join(directory, 'vision.jsonl'),
       JSON.stringify({
@@ -104,20 +109,10 @@ export async function playCounterpushEpisode(options: {
       inputPending: state.inputPending,
       elixirReliable: observation.elixirConfidence >= 0.9,
       elixirRange: elixir.range,
-      allies: scan.allies.map((unit) => ({
-        card: unit.confidence >= 0.85 ? unit.card : null,
-        x: unit.x,
-        y: unit.y,
-        confidence: unit.confidence,
-      })),
-      enemies: scan.entities
-        .filter((unit) => unit.card !== 'graveyard' && unit.card !== 'poison')
-        .map((unit) => ({
-          card: unit.confidence >= 0.85 ? unit.card : null,
-          x: unit.x,
-          y: unit.y,
-          confidence: unit.confidence,
-        })),
+      allies: field.allies,
+      enemies: field.enemies,
+      effects: field.effects,
+      spawners: field.spawners,
     });
     situation.own.elixir =
       !state.inputPending && observation.elixirConfidence >= 0.9 ? elixir.range : { min: 0, max: 10 };
@@ -194,6 +189,17 @@ export async function playCounterpushEpisode(options: {
         confirmed: state.confirmed,
         opponentActions: observations.length,
         visionMs: scan.elapsed_ms,
+        spawnedUnitsVisible: scan.spawnedUnits?.length ?? 0,
+        learnedSpawnCasts: dynamics.patterns.casts.length,
+        graveyardPhases: field.effects
+          .filter((effect) => effect.card === 'graveyard')
+          .map((effect) => ({
+            x: effect.x,
+            y: effect.y,
+            visibleAgeMs: effect.visibleAgeMs,
+            onsetCertain: effect.onsetCertain,
+            predictedAppearances: effect.predictions?.length ?? 0,
+          })),
       });
     return {
       ...screenshot,
@@ -253,8 +259,8 @@ export async function playCounterpushEpisode(options: {
         await delay(200, undefined, { signal });
         continue;
       }
-      const threats = before.scan.entities
-        .filter((unit) => unit.y > profile.riverY && unit.card !== 'graveyard' && unit.card !== 'poison')
+      const threats = before.situation.opponent.units
+        .filter((unit) => unit.y > profile.riverY)
         .map(({ x, y }) => ({ x, y }));
       const candidates = actionCandidates(
         profile,
@@ -327,6 +333,21 @@ export async function playCounterpushEpisode(options: {
       });
       if ((await browser.phase()) !== 'battle') continue;
       const latest = await capture();
+      const newEffect = latest.situation.effects?.some(
+        (effect) =>
+          effect.side === 'red' &&
+          effect.card === 'graveyard' &&
+          !before.situation.effects?.some(
+            (old) =>
+              old.side === effect.side &&
+              old.card === effect.card &&
+              Math.hypot(old.x - effect.x, old.y - effect.y) < 55,
+          ),
+      );
+      if (newEffect) {
+        await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
+        continue;
+      }
       if (selected.slot === 0) {
         await log({
           type: 'wait_check',
@@ -399,6 +420,8 @@ export async function playCounterpushEpisode(options: {
       state.errors = 0;
     }
   } finally {
+    dynamics.finishOldEffects(Date.now(), true);
+    await options.patterns?.save();
     const selected = [...COUNTERPUSH_DECK].flatMap((card) =>
       observations
         .filter((item) => item.card === card)

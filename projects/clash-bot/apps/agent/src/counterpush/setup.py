@@ -94,9 +94,9 @@ def main():
             if not target.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, target)
-        profile = DATA / 'profile.json'
+        profile = DATA / 'counterpush/profile.json'
         if not profile.exists():
-            shutil.copyfile(HERE.parents[3] / 'profiles/bluestacks-trophy.json', profile)
+            shutil.copyfile(HERE.parents[3] / 'profiles/counterpush.json', profile)
     manifest = json.loads((directory / 'crop-export.json').read_text())
     if any(manifest.get(key) != value for key, value in CROP.items()):
         raise ValueError('Unexpected crop model revision')

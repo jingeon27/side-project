@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CARD_INFO, DEFAULT_PROFILE } from './config.ts';
 import { BattleMemory } from './counterpush/battle-state.ts';
+import { blockedDeployment } from './placement.ts';
 import { actionCandidates } from './qwen-actions.ts';
 
 describe('legal actions proposed to Qwen', () => {
@@ -34,9 +35,11 @@ describe('legal actions proposed to Qwen', () => {
       own: { ...situation.own, units: [{ card: 'knight' as const, confidence: 0.99, x: 95, y: 290 }] },
     };
     const counterattack = actionCandidates(DEFAULT_PROFILE, [...cards], 10, [], supported);
-    expect(
-      counterattack.filter((action) => action.card === 'graveyard').map((action) => action.target.x),
-    ).toEqual([95]);
+    const graveyards = counterattack.filter((action) => action.card === 'graveyard');
+    expect(graveyards.every((action) => action.target.x < 184)).toBe(true);
+    expect(new Set(graveyards.map((action) => `${action.target.x}:${action.target.y}`)).size).toBeGreaterThan(
+      1,
+    );
     expect(
       counterattack.some(
         (action) => action.card === 'furnace' && action.description.includes('behind advancing'),
@@ -86,7 +89,8 @@ describe('legal actions proposed to Qwen', () => {
   it('prioritizes a nearby defensive placement and forces a response to a threat', () => {
     const threat = { x: 260, y: 410 };
     const actions = actionCandidates(DEFAULT_PROFILE, ['knight', null, null, null], 3, [threat]);
-    expect(actions[0]?.target).toEqual({ x: 260, y: 428 });
+    expect(Math.hypot(actions[0]!.target.x - threat.x, actions[0]!.target.y - threat.y)).toBeLessThan(70);
+    expect(blockedDeployment(DEFAULT_PROFILE, 'knight', actions[0]!.target)).toBe(false);
     expect(actions.some((a) => a.id === 0)).toBe(false);
   });
   it('treats furnace as a ranged support troop and preserves mini pekka as another card', () => {
@@ -94,7 +98,10 @@ describe('legal actions proposed to Qwen', () => {
       { x: 95, y: 360 },
     ]);
     expect(CARD_INFO.furnace).toMatchObject({ cost: 4, role: 'support' });
-    expect(actions.find((action) => action.card === 'furnace')?.target).toEqual({ x: 95, y: 405 });
-    expect(actions.find((action) => action.card === 'minipekka')?.target).toEqual({ x: 95, y: 378 });
+    const furnace = actions.find((action) => action.card === 'furnace')!;
+    const melee = actions.find((action) => action.card === 'minipekka')!;
+    expect(furnace.target.y).toBeGreaterThan(melee.target.y);
+    expect(blockedDeployment(DEFAULT_PROFILE, 'furnace', furnace.target)).toBe(false);
+    expect(blockedDeployment(DEFAULT_PROFILE, 'minipekka', melee.target)).toBe(false);
   });
 });

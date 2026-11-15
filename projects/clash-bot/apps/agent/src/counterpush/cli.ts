@@ -5,11 +5,12 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { DATA_DIR, loadProfile } from '../config.ts';
+import { DATA_DIR } from '../config.ts';
 import { selectModel } from '../model-options.ts';
 import { requestLearningStop } from '../selfplay.ts';
 import { activeOpponentCoverage, learningAudit } from './audit.ts';
 import { CounterpushBrowser } from './browser.ts';
+import { loadCounterpushProfile } from './profile.ts';
 import { reprocessEpisode } from './reprocess.ts';
 import { runCounterpush } from './runner.ts';
 import { CounterpushVisionClient } from './vision-client.ts';
@@ -48,7 +49,7 @@ const main = async () => {
             vision,
             DATA_DIR,
             resolve(positionals[1]),
-            await loadProfile(resolve(values.profile ?? join(DATA_DIR, 'profile.json'))),
+            await loadCounterpushProfile(DATA_DIR, values.profile),
           ),
           null,
           2,
@@ -150,7 +151,7 @@ const main = async () => {
   process.once('SIGTERM', () => abort.abort());
   await runCounterpush({
     dataDir: DATA_DIR,
-    profile: await loadProfile(resolve(values.profile ?? join(DATA_DIR, 'profile.json'))),
+    profile: await loadCounterpushProfile(DATA_DIR, values.profile),
     model,
     hours,
     matches,

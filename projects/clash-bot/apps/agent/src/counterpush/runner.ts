@@ -9,6 +9,7 @@ import { acquireLearningLock, learningLoop } from '../selfplay.ts';
 import { learningAudit } from './audit.ts';
 import { CounterpushBrowser } from './browser.ts';
 import { learnCounterpushEpisode, playCounterpushEpisode } from './episode.ts';
+import { SpawnPatterns } from './spawn-patterns.ts';
 import { CounterpushVisionClient } from './vision-client.ts';
 
 export async function runCounterpush(options: {
@@ -48,6 +49,7 @@ export async function runCounterpush(options: {
     await report({ phase: 'loading' });
     await client.ready();
     await vision.ready();
+    const patterns = await SpawnPatterns.open(join(dataDir, 'counterpush/patterns/graveyard.json'));
     const browser = await CounterpushBrowser.open(dataDir);
     resources.browser = browser;
     await report({ phase: 'ready', policy: await client.status() });
@@ -73,6 +75,7 @@ export async function runCounterpush(options: {
           client,
           vision,
           report,
+          patterns,
         });
         episodes.set(episode.directory, episode);
         return episode;

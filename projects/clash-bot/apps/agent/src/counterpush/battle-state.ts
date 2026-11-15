@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CARD_INFO, cardIdSchema, type CardId, type Point } from '../config.ts';
+import { UNIT_KINDS } from '../game-knowledge.ts';
 
 type CycleState = { hand: CardId[]; queue: CardId[] };
 const permutations = (cards: CardId[]): CardId[][] =>
@@ -181,7 +182,40 @@ const unitSchema = z.object({
   x: z.number(),
   y: z.number(),
   confidence: z.number().min(0).max(1),
+  kind: z.enum(UNIT_KINDS).optional(),
+  variant: z.enum(['base', 'evolution', 'hero', 'unknown']).optional(),
+  trackId: z.string().optional(),
+  velocity: z
+    .object({ xPerSecond: z.number(), yPerSecond: z.number(), speedPixelsPerSecond: z.number() })
+    .optional(),
+  sourceCard: cardIdSchema.optional(),
+  possibleParent: z.string().nullable().optional(),
 });
+export type FieldUnit = z.infer<typeof unitSchema>;
+const effectSchema = z.object({
+  card: z.enum(['graveyard', 'poison']),
+  side: z.enum(['red', 'blue']),
+  x: z.number(),
+  y: z.number(),
+  radius: z.number().positive(),
+  confidence: z.number().min(0).max(1),
+  visibleAgeMs: z.number().nonnegative(),
+  onsetCertain: z.boolean(),
+  source: z.enum(['visual', 'confirmed_input_estimate']),
+  predictions: z
+    .array(
+      z.object({
+        x: z.number(),
+        y: z.number(),
+        inMs: z.number(),
+        supportingCasts: z.number(),
+        uncertaintyPx: z.number(),
+        source: z.literal('empirical_first_visibility'),
+      }),
+    )
+    .optional(),
+});
+export type FieldEffect = z.infer<typeof effectSchema>;
 const rangeSchema = z.object({ min: z.number().min(0).max(10), max: z.number().min(0).max(10) });
 const cycleSchema = z.object({
   exact: z.boolean(),
@@ -197,6 +231,18 @@ const cycleSchema = z.object({
 export const battleSituationSchema = z.object({
   at: z.number(),
   visibility: z.literal('partial'),
+  effects: z.array(effectSchema).optional(),
+  spawners: z
+    .array(
+      z.object({
+        trackId: z.string(),
+        card: cardIdSchema,
+        side: z.enum(['red', 'blue']),
+        observedChildren: z.number(),
+        lastChildSeenAgoMs: z.number().nullable(),
+      }),
+    )
+    .optional(),
   own: z.object({
     elixir: rangeSchema,
     hand: z.array(cardIdSchema.nullable()).length(4),
@@ -256,6 +302,8 @@ export class BattleMemory {
     inputPending: boolean;
     elixirReliable?: boolean;
     elixirRange?: { min: number; max: number };
+    effects?: FieldEffect[];
+    spawners?: BattleSituation['spawners'];
   }): BattleSituation {
     // The spend animation briefly hides the bar. Those pixels are not a new
     // resource balance and must not inflate the shared-regeneration estimate.
@@ -270,6 +318,8 @@ export class BattleMemory {
     return {
       at: input.at,
       visibility: 'partial',
+      effects: input.effects ?? [],
+      spawners: input.spawners ?? [],
       own: {
         elixir: input.inputPending || input.elixirReliable === false ? { min: 0, max: 10 } : ledger.own,
         hand: input.hand,

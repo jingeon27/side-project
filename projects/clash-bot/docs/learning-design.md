@@ -25,6 +25,8 @@
 
 ## 현재 데이터 흐름과 소유자
 
+추가 사용자 요구: 빈 필드에서 모든 유닛을 타워 뒤로 고정하지 않는다. 생성형 건물·생성형 유닛과 그 자식 유닛의 상호작용, 이동 속도·사거리·공격/배치 지연을 고려한다. 무덤 수비는 고정된 해골 생성 순서와 경과 시간을 다룬다. 이 요구를 단순한 카드 사용 횟수로 충족했다고 보고하지 않는다.
+
 ```mermaid
 flowchart LR
     A[전용 Chrome 화면과 공개 UI] --> B[CPU 화면 인식]
@@ -51,6 +53,17 @@ flowchart LR
 경기 원본은 `.data/counterpush/runs/<시각>/`, 모델 입력 자료는 `datasets/`, 실행 상태와 경기 목록은 `control/`에 둔다. 재인식은 `reprocessed-observations.json`을 만들며 원본을 덮어쓰지 않는다. 기존에 관찰한 같은 시간대의 행동은 재인식에서 제외한다. 새로운 데이터셋 해시만으로 의미상 중복이 완전히 제거되는 것은 아니므로 향후 안정된 이벤트 ID가 필요하다.
 
 ## 지금 구조가 비효율적인 이유
+
+2026-11-15 추가 적용:
+
+- 타워 뒤 2점만 주던 일반 유닛 후보를 후방 안쪽·중앙·전진·아군 지원·접근 적 대응으로 바꿨다. 타워와 영웅 UI 영역을 피하고 Counterpush 보정을 ADB 보정과 별도 프로필로 분리했다. 한 손패의 후보는 26개 이하여야 한다. 아직 모든 합법 타일을 직접 출력하는 자유 좌표 정책은 아니다.
+- `game-knowledge.ts`에 레벨 11의 사거리·공격 주기·배치/첫 타격 지연·이동 분류·스폰 주기와 진화/영웅 조건을 출처와 함께 기록했다. 2026-11-14 현재 수치 자료와 Supercell 변경 공지를 대조했다. Counterpush와 모든 수치가 일치한다고 검증한 것은 아니다. 이동 수치 60/90/120을 타일/초로 잘못 사용하지 않는다.
+- `FieldDynamics`가 양쪽 본체와 파이어 스피릿·창 고블린을 별개로 추적하고 화면상 속도를 추정한다. 자식 유닛은 새 카드 지출이나 FIFO 이동을 만들지 않는다. 부모가 여러 개면 정확한 부모를 꾸며내지 않는다. 관측된 자식 트랙 수는 실제 총 생성 수나 확정된 쿨다운이 아니다. 진화/영웅은 실제 분류가 뒷받침할 때만 표시한다.
+- 무덤은 새 묘비 개수 대신 활성 영역을 추적한다. 수비 후보는 현재 해골/반복 관측에서 얻은 예측, 사거리, 얼음 마법사의 **이미 존재하는 해골에 대한 배치 피해**, 독 위험을 고려해 격자에서 고른다. 바바리안 통 한 번이나 단일 근접 유닛이 전체 무덤을 지운다고 가정하지 않는다.
+- `SpawnPatterns`는 경과 시간과 상대 오프셋을 독립된 시전마다 모은다. 3개 이상의 시전에서 반복 관측돼야 미래 등장 후보를 제공한다. 첫 확실한 시각 인식 시점은 실제 생성 시점과 다르므로 이를 구분한다. 공격/수비 방향을 검증 없이 합치지 않고 짧은 관찰·이미 진행 중이던 효과·관찰 공백·겹친 시전은 정확한 패턴 근거로 쓰지 않는다. 아직 충분한 실제 패턴을 배웠다는 주장은 하지 않는다.
+- 원본 `states.jsonl`은 유지하고 Qwen에는 표 형태로 압축한 상태를 전달한다. 상대 카드·방향 모방 후보와 내 실제 위치 후보를 분리해 위치 확장이 상대 학습의 토큰 한도를 넘기지 않도록 했다. 판단 중 새 무덤이 나타나면 이전 상황에서 고른 행동을 버리고 다시 판단한다.
+
+정확한 충돌/경로·타워 체력·타깃 재선정·모든 스킬 효과를 재현하는 전투 시뮬레이터는 아니다. 특히 영웅 능력 수치는 참고 자료에 있지만 영웅 버튼 자동 조작은 이 단계에 포함되지 않았다. 피해량과 무덤 수비 성공을 직접 측정하기 전에는 학습 완료나 성능 향상을 선언하지 않는다.
 
 1. **정답 품질이 먼저다.** 작은 레벨 표식 누락, 애니메이션을 0 엘릭서로 읽는 현상, 기존 유닛의 재등장은 잘못된 학습으로 이어진다. 데이터가 적을 때에는 모델을 크게 만드는 것보다 이를 고치는 편이 우선이다.
 2. Qwen의 판단에는 초기 실측 약 1~2초와 캡처·입력 시간이 든다. 게임의 빠른 수비 반응마다 큰 시각 모델을 실행하는 구조에는 한계가 있다. CPU 인식은 Qwen 판단 대기 중에도 계속되지만 행동 결정 자체는 느리다.
@@ -100,6 +113,10 @@ flowchart LR
 - **승률이나 보지 않은 상황의 판단이 검증되기 전에는 ‘실력이 개선됐다’고 보고하지 않는다.**
 
 ## 설계 참고
+
+[Supercell 2026년 1월 공지](https://supercell.com/en/games/clashroyale/blog/release-notes/january-balance-changes-26/)는 무덤의 무작위 생성을 고정 순서로 바꿨고, [2월 공지](https://supercell.com/en/games/clashroyale/blog/news/february-balance-changes-26/)는 생성 위치를 다시 조정했다. [6월 공지](https://supercell.com/en/games/clashroyale/blog/release-notes/june-balance-changes-2026/)에서 무덤은 12마리, 용광로 사거리는 5.5타일로 바뀌었다. 이전 패턴 도표를 최신 게임에 그대로 대입하지 않는다.
+
+현재 레벨 11 참고 수치: [용광로](https://www.royaletools.com/cards/furnace), [얼음 마법사](https://www.royaletools.com/cards/ice-wizard), [기사](https://www.royaletools.com/cards/knight), [해골](https://www.royaletools.com/cards/skeletons), [오두막](https://www.royaletools.com/cards/goblin-hut), [무덤](https://www.royaletools.com/cards/graveyard), [독](https://www.royaletools.com/cards/poison), [바바리안 통](https://www.royaletools.com/cards/barbarian-barrel). 이는 제3자 게임 수치 자료이며 Counterpush의 실측으로 표시하지 않는다. 용광로 페이지의 오래된 건물 분류 문구 대신 Supercell의 [이동 유닛 개편 공지](https://supercell.com/en/games/clashroyale/blog/release-notes/new-season-fired-up/)를 따른다.
 
 [Ross와 Bagnell의 모방학습 연구](https://proceedings.mlr.press/v9/ross10a.html)는 학습한 정책이 이후 만나게 될 상태를 바꾸므로 고정 자료 모방의 오류가 누적될 수 있음을 다룬다. 자신의 실제 플레이에서 생긴 상황을 수집·평가해야 한다는 설계 근거이며, 여기서 논문의 알고리즘을 구현했다는 뜻은 아니다.
 

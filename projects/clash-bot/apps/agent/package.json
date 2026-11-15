@@ -24,6 +24,7 @@
     "counterpush": "node src/counterpush/cli.ts",
     "counterpush:setup": "python3.11 src/counterpush/setup.py",
     "test:perception": "../../.data/qwen/.venv/bin/python -m unittest discover -s src/counterpush -p '*_test.py'",
+    "test:perception:model": "RUN_COUNTERPUSH_INTEGRATION=1 ../../.data/qwen/.venv/bin/python -m unittest discover -s src/counterpush -p 'vision_model_test.py'",
     "test:learning": "../../.data/qwen/.venv/bin/python -m unittest discover -s src/qwen -p '*_test.py'",
     "test:learning:model": "RUN_QWEN_INTEGRATION=1 ../../.data/qwen/.venv/bin/python -m unittest discover -s src/qwen -p 'learning_model_test.py'"
   },

@@ -4,7 +4,7 @@ import { DEFAULT_PROFILE } from './config.ts';
 import { parsePrediction, validateQwenAction, type FreshBattle } from './qwen-policy.ts';
 
 const prediction = parsePrediction(
-  '{"phase":"battle","hand":["knight",null,null,null],"elixir":8,"slot":1,"x":0.3,"y":0.65}',
+  '{"phase":"battle","hand":["knight",null,null,null],"elixir":8,"slot":1,"x":0.4,"y":0.55}',
 );
 const frame: FreshBattle = { battle: true, elixir: 8, capturedAt: 1000, hand: [[10, 20, 30], [], [], []] };
 
@@ -33,6 +33,12 @@ describe('local Qwen action validation', () => {
   it('rejects opponent-side units and points outside the arena', () => {
     expect(validateQwenAction({ ...prediction, y: 0.2 }, frame, frame, DEFAULT_PROFILE, 1100)).toBeNull();
     expect(validateQwenAction({ ...prediction, y: 0.95 }, frame, frame, DEFAULT_PROFILE, 1100)).toBeNull();
+    expect(
+      validateQwenAction({ ...prediction, x: 95 / 368, y: 406 / 652 }, frame, frame, DEFAULT_PROFILE, 1100),
+    ).toBeNull();
+    expect(
+      validateQwenAction({ ...prediction, x: 329 / 368, y: 480 / 652 }, frame, frame, DEFAULT_PROFILE, 1100),
+    ).toBeNull();
   });
   it('parses fenced JSON and rejects malformed model outputs', () => {
     expect(parsePrediction('```json\n' + JSON.stringify(prediction) + '\n```').slot).toBe(1);
