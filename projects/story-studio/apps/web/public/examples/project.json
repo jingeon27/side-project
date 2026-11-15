@@ -1,0 +1,40 @@
+{
+  "id": "3c3ddbc1-793c-4f0d-ac99-ba77460ffc2f",
+  "version": 1,
+  "title": "별빛을 안은 고양이",
+  "logline": "작은 고양이가 길 잃은 별을 따뜻하게 안아 주는 짧은 한국어 애니메이션",
+  "synopsis": "아기 고양이가 차갑게 떨리는 작은 별을 품에 안았다. 숲은 이내 따뜻한 별빛으로 환하게 물들었다.",
+  "characters": "초록 눈의 작은 주황 고양이와 빛나는 황금색 별",
+  "brief": {
+    "format": "animation",
+    "premise": "밤의 숲에서 아기 고양이가 길 잃은 작은 별을 만난다. 따뜻한 결말.",
+    "genre": "판타지",
+    "style": "따뜻한 2D 동화 애니메이션",
+    "count": 1,
+    "ratio": "16:9",
+    "quality": "standard"
+  },
+  "scenes": [
+    {
+      "id": "2f53631e-644d-4c15-88d8-66cecdee4548",
+      "title": "별빛을 품에 안다",
+      "narration": "아기 고양이가 차갑게 떨리는 작은 별을 품에 안았다. 숲은 이내 따뜻한 별빛으로 환하게 물들었다.",
+      "dialogue": "",
+      "visual": "Dark forest, cute 2D kitten hugging a small glowing star, warm golden light, cozy atmosphere",
+      "duration": 13,
+      "video": {
+        "id": "local-86040fcf-fc3e-40fe-be7e-2784e587347c",
+        "status": "SUCCEEDED",
+        "asset": "/api/assets/453f2aef-6450-4dbc-8304-144953d41729.mp4"
+      },
+      "voice": {
+        "asset": "/api/assets/c76a40c2-d655-4be9-9be1-9f67f958c175.wav",
+        "duration": 12.96
+      }
+    }
+  ],
+  "createdAt": "2026-11-15T11:00:14.549420Z",
+  "updatedAt": "2026-11-15T11:00:14.549420Z",
+  "sample": false,
+  "renderedVideo": "/api/assets/73bee1e7-75c0-4cb8-809a-1a99f2976cd2.mp4"
+}

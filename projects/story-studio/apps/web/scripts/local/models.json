@@ -1,0 +1,12 @@
+{
+  "text": {
+    "repo": "mlx-community/Qwen3.8-27B-4bit",
+    "revision": "b935172e4bb5dcd0543774a34748fb92422e3027"
+  },
+  "voice": {
+    "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-4bit",
+    "revision": "f35faf19b0cc2160865af64ecf0f22f83d335135"
+  },
+  "wan-source": { "repo": "Wan-AI/Wan2.1-T2V-1.3B", "revision": "37ec512624d61f7aa208f7ea8140a131f93afc9a" },
+  "tokenizer": { "repo": "google/umt5-xxl", "revision": "66cb9e7e85526fe440a945569e42c72fb6cbc0ad" }
+}
