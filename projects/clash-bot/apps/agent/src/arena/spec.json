@@ -1,0 +1,32 @@
+{
+  "engine": "royalesim",
+  "version": "0.1.53",
+  "source": "https://github.com/RoyaleGym/RoyaleSim",
+  "commit": "a849c29ae632e12f81442c45b0d9b2d2f2f99f15",
+  "wheel": "royalesim-0.1.53-cp310-abi3-macosx_11_0_arm64.whl",
+  "sha256": "d13a251e6e13ea027e0407bb79605c9ed4aeac9f9c9b47e65bce765af9d4558a",
+  "table": "client160635007_20261103",
+  "tableFile": "cards-160635007-20261103.json",
+  "tableVersion": "cards-160635007-20261103.1",
+  "tableFNV": "69896771bed51201",
+  "cards": [
+    "BarbLog",
+    "FirespiritHut",
+    "GoblinHut",
+    "Graveyard",
+    "IceWizard",
+    "Knight",
+    "Poison",
+    "Skeletons"
+  ],
+  "forms": [0, 1, 0, 0, 2, 1, 0, 0],
+  "level": 11,
+  "referenceProjects": [
+    "https://github.com/itzik123/ClashRoyaleAi",
+    "https://www.reddit.com/r/MachineLearning/comments/1wrj0t3/clashroyaleai_an_opensource_deterministic_clash/",
+    "https://github.com/voonhous/crforge",
+    "https://github.com/vegetableleaf/ClashAI"
+  ],
+  "tableSHA256": "31ef8141a4b83534fc85c4aeb2b6437a5855d82dc741cb637e406c6df2fe6700",
+  "sourceSHA256": "43b38daeac4ffc0d883798bc8bb64a67924d705b5381c695230e028a85ed5687"
+}
