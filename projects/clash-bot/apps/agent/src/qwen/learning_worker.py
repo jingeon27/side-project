@@ -20,6 +20,7 @@ from learning_policy import FORMAT, MODEL_SHA256, FinalMLPLoRA, Learner, atomic_
 from model_specs import detect_model, verify_model
 from opponent_data import load_demonstrations
 from search_data import load_search_targets
+from promotion import parent_sha, publish
 
 
 def verified_result(row):
@@ -121,6 +122,73 @@ class LearningWorker:
         core.norm = AdaptedFinalNorm(norm, self.learner.adapter, self.sink)
         self.directory = Path(directory)
         self.evaluation_backup = None
+        self.champion_learner = self.learner
+
+    def candidate_active(self):
+        return self.learner.directory.resolve() != self.directory.resolve()
+
+    def bind(self, learner):
+        self.learner = learner
+        self.model.language_model.model.norm.adapter = learner.adapter
+
+    def status(self):
+        champion = self.evaluation_backup['metadata'] if self.evaluation_backup else getattr(self, 'champion_learner', self.learner).metadata
+        return {**self.learner.metadata, 'model': self.spec['name'], 'weights_sha256': weights_digest(self.learner.adapter),
+                'role': 'evaluation' if self.evaluation_backup else 'candidate_training' if self.candidate_active() else 'champion',
+                'champion_version': champion['version'],
+                'champion_sha256': champion.get('weights_sha256', weights_digest(getattr(self, 'champion_learner', self.learner).adapter)),
+                'directory': str(self.learner.directory),
+                'checkpoint': str(self.learner.directory / 'checkpoints' / f'v{self.learner.metadata["version"]:06d}')}
+
+    def begin_candidate(self, directory):
+        if self.evaluation_backup:
+            raise ValueError('Frozen evaluation cannot switch to training')
+        champion = getattr(self, 'champion_learner', self.learner)
+        self.champion_learner = champion
+        root = Path(directory).resolve()
+        allowed = self.directory.resolve().parents[1] / 'arena/qwen'
+        if not root.is_relative_to(allowed):
+            raise ValueError('Training candidate must stay in the owned arena directory')
+        parent = champion.metadata['weights_sha256']
+        if not (root / 'current.json').exists():
+            base = self.directory / 'checkpoints' / f'v{champion.metadata["version"]:06d}'
+            destination = root / 'checkpoints' / base.name
+            shutil.copytree(base, destination, dirs_exist_ok=True)
+            atomic_json(destination / 'metadata.json', {**champion.metadata, 'candidate_parent_sha256': parent,
+                                                        'deployment_role': 'candidate'})
+            atomic_json(root / 'current.json', {'version': champion.metadata['version'], 'weights_sha256': parent})
+        candidate = Learner(FinalMLPLoRA(self.spec['input_size'], self.spec['hidden_size']), champion.norm_weight,
+                            champion.norm_eps, champion.token_rows, root, self.spec['identity'], champion.metadata['target'])
+        if parent_sha(candidate.metadata) != parent:
+            raise ValueError('Training candidate was made against a stale champion')
+        self.bind(candidate)
+        return self.status()
+
+    def end_candidate(self):
+        if self.evaluation_backup:
+            raise ValueError('Restore frozen evaluation before leaving training')
+        self.bind(getattr(self, 'champion_learner', self.learner))
+        return self.status()
+
+    def promote(self, request):
+        if self.evaluation_backup or self.candidate_active():
+            raise ValueError('Restore the champion before publishing')
+        checkpoint = Path(request['checkpoint']).resolve()
+        if not checkpoint.is_relative_to(self.directory.resolve().parents[1] / 'arena/qwen'):
+            raise ValueError('Candidate checkpoint escaped the arena directory')
+        metadata = json.loads((checkpoint / 'metadata.json').read_text())
+        if metadata['format'] != FORMAT or metadata['model_sha256'] != self.spec['identity']:
+            raise ValueError('Candidate belongs to another base model')
+        fresh = FinalMLPLoRA(self.spec['input_size'], self.spec['hidden_size'])
+        fresh.load_weights(str(checkpoint / 'adapter.safetensors'), strict=True)
+        mx.load(str(checkpoint / 'optimizer.safetensors'))  # Verify readable optimizer before publication.
+        result = publish(self.directory, checkpoint, request['report'], weights_digest(fresh))
+        if result['promoted']:
+            old = self.learner
+            self.champion_learner = Learner(FinalMLPLoRA(self.spec['input_size'], self.spec['hidden_size']), old.norm_weight,
+                                            old.norm_eps, old.token_rows, self.directory, self.spec['identity'], old.metadata['target'])
+            self.bind(self.champion_learner)
+        return {**result, 'champion': self.status()}
 
     def choose(self, request):
         choices = request["choices"]
@@ -130,7 +198,8 @@ class LearningWorker:
         if len(choices) == 1:
             return {"choice": choices[0], "behavior": {"format": FORMAT, "version": version,
                     "model_identity": self.spec['identity'], "model": self.spec['name'],
-                    "trainable": False, "reason": "single_legal_action"}}
+                    "trainable": False, "reason": "single_legal_action", "read_only_evaluation": self.evaluation_backup is not None,
+                    "selection": "categorical_as_live", "adapter_sha256": weights_digest(self.learner.adapter)}}
         prompt = apply_chat_template(self.processor, self.model.config, request["prompt"], num_images=1, enable_thinking=False)
         inputs = prepare_inputs(self.processor, images=request["images"], prompts=prompt,
                                 image_token_index=self.model.config.image_token_index)
@@ -156,7 +225,8 @@ class LearningWorker:
         mx.savez(str(destination), features=features, base=base)
         return {"choice": choices[chosen], "behavior": {"format": FORMAT, "version": version,
                 "model_identity": self.spec['identity'], "model": self.spec['name'],
-                "trainable": self.evaluation_backup is None, "read_only_evaluation": self.evaluation_backup is not None,
+                "trainable": self.evaluation_backup is None and (self.candidate_active() or not (self.directory / 'promotion-policy.json').exists()),
+                "read_only_evaluation": self.evaluation_backup is not None,
                 "selection": "categorical_as_live",
                 "choices": choices, "chosen": chosen, "labels": sample["labels"],
                 "old_log_probs": log_probs.tolist(), "feature_path": str(destination),
@@ -165,6 +235,8 @@ class LearningWorker:
 
     def checkout(self, checkpoint=None):
         """Frozen A/B weights in one resident model, without moving current.json."""
+        if self.candidate_active():
+            raise ValueError('Leave candidate training before frozen evaluation')
         if checkpoint is None:
             if self.evaluation_backup:
                 self.learner.adapter.load_weights(str(self.evaluation_backup['path'] / 'adapter.safetensors'), strict=True)
@@ -194,6 +266,15 @@ class LearningWorker:
         if self.evaluation_backup:
             raise ValueError('Frozen evaluation cannot train')
         dataset, identity, path = load_search_targets(request['dataset'])
+        if request.get('candidate'):
+            if not self.candidate_active():
+                raise ValueError('Search training requires a private candidate')
+            report = self.distill_dataset(dataset, identity, path)
+            return {**report, 'candidate_checkpoint': self.status()['checkpoint'],
+                    'candidate_sha256': weights_digest(self.learner.adapter), 'deployed': False,
+                    'baseline_sha256': getattr(self, 'champion_learner', self.learner).metadata['weights_sha256']}
+        if self.candidate_active():
+            raise ValueError('Use candidate search training in the private context')
         original = self.learner
         parent = weights_digest(original.adapter)
         root = self.directory.parents[1] / 'arena/qwen/candidates' / f'{identity[:16]}-{parent[:12]}'
@@ -214,14 +295,7 @@ class LearningWorker:
             if identity in candidate.metadata.get('search_datasets', []):
                 report = {'updated': False, 'reason': 'already_trained', 'version': candidate.metadata['version']}
             else:
-                samples = []
-                for row in dataset['samples']:
-                    feature = root / 'features' / identity / f'{len(samples):03d}.npz'
-                    behavior = self.choose({'images': [str(path.parent / row['image'])], 'prompt': row['prompt'],
-                                            'choices': row['choices'], 'feature_path': str(feature)})['behavior']
-                    samples.append({**mx.load(str(feature)), 'labels': behavior['labels'], 'version': behavior['version'],
-                                    'old_log_probs': mx.array(behavior['old_log_probs']), 'search_target': row['target']})
-                report = candidate.distill_search(samples, identity, dataset['rulesID'])
+                report = self.distill_dataset(dataset, identity, path)
             checkpoint = root / 'checkpoints' / f'v{candidate.metadata["version"]:06d}'
             result = {**report, 'candidate_checkpoint': str(checkpoint), 'baseline_sha256': parent,
                       'candidate_sha256': weights_digest(candidate.adapter), 'dataset': str(path),
@@ -233,6 +307,18 @@ class LearningWorker:
             self.model.language_model.model.norm.adapter = original.adapter
             if weights_digest(original.adapter) != parent:
                 raise RuntimeError('Isolated study modified the active adapter')
+
+    def distill_dataset(self, dataset, identity, path):
+        if identity in self.learner.metadata.get('search_datasets', []):
+            return {'updated': False, 'reason': 'already_trained', 'version': self.learner.metadata['version']}
+        samples = []
+        for row in dataset['samples']:
+            feature = self.learner.directory / 'features' / identity / f'{len(samples):03d}.npz'
+            behavior = self.choose({'images': [str(path.parent / row['image'])], 'prompt': row['prompt'],
+                                    'choices': row['choices'], 'feature_path': str(feature)})['behavior']
+            samples.append({**mx.load(str(feature)), 'labels': behavior['labels'], 'version': behavior['version'],
+                            'old_log_probs': mx.array(behavior['old_log_probs']), 'search_target': row['target']})
+        return self.learner.distill_search(samples, identity, dataset['rulesID'])
 
     def episode_samples(self, episode):
         directory = Path(episode).resolve()
@@ -271,6 +357,9 @@ class LearningWorker:
         return {'samples': samples, 'reward': reward, 'episode': str(directory)}
 
     def train(self, request):
+        path = str(Path(request['episode']).resolve())
+        if path in getattr(self.learner, 'metadata', {}).get('episodes', []):
+            return {'updated': False, 'reason': 'already_trained', 'version': self.learner.metadata['version']}
         episode = self.episode_samples(request['episode'])
         if episode is None:
             return {'updated': False, 'reason': 'no_verified_result'}
@@ -283,6 +372,8 @@ class LearningWorker:
         paths = request.get('episodes', [])
         if not 1 <= len(paths) <= 2 or len({str(Path(path).resolve()) for path in paths}) != len(paths):
             raise ValueError('Expected one or two distinct episode directories')
+        if all(str(Path(path).resolve()) in getattr(self.learner, 'metadata', {}).get('episodes', []) for path in paths):
+            return {'updated': False, 'reason': 'already_trained', 'version': self.learner.metadata['version']}
         # Resolve every behavior checksum before the first weight update.
         episodes = [self.episode_samples(path) for path in paths]
         if any(episode is None for episode in episodes):
@@ -345,8 +436,11 @@ def main():
         try:
             request = json.loads(line)
             with contextlib.redirect_stdout(sys.stderr):
-                if worker.evaluation_backup and request['op'] in ('train', 'train_batch', 'imitate', 'study'):
+                if worker.evaluation_backup and request['op'] in ('train', 'train_batch', 'imitate', 'study', 'begin_candidate', 'promote'):
                     raise ValueError('Frozen evaluation cannot train')
+                if (request['op'] in ('train', 'train_batch', 'imitate') and not worker.candidate_active()
+                        and (worker.directory / 'promotion-policy.json').exists()):
+                    raise ValueError('The deployed champion is frozen; train a private candidate')
                 if request["op"] == "choose":
                     result = worker.choose(request)
                 elif request["op"] == "train":
@@ -359,11 +453,16 @@ def main():
                     result = worker.study(request)
                 elif request["op"] == "checkout":
                     result = worker.checkout(request.get('checkpoint'))
+                elif request['op'] == 'begin_candidate':
+                    result = worker.begin_candidate(request['directory'])
+                elif request['op'] == 'end_candidate':
+                    result = worker.end_candidate()
+                elif request['op'] == 'promote':
+                    result = worker.promote(request)
                 elif request["op"] == "observe":
                     result = worker.observe(request)
                 elif request["op"] == "status":
-                    result = {**worker.learner.metadata, "model": worker.spec['name'],
-                              "weights_sha256": weights_digest(worker.learner.adapter)}
+                    result = worker.status()
                 else:
                     raise ValueError("Unsupported learning operation")
             emit({"type": "result", **result, "elapsed_ms": round((time.monotonic() - started) * 1000),

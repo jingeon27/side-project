@@ -346,6 +346,8 @@ class Learner:
             raise
 
     def save(self, metadata):
+        if (self.directory / 'promotion-policy.json').exists():
+            raise ValueError('The deployed champion is frozen; publish only a qualified candidate')
         checkpoint = self.directory / "checkpoints" / f"v{metadata['version']:06d}"
         checkpoint.mkdir(parents=True, exist_ok=True)
         mx.save_safetensors(str(checkpoint / "adapter.safetensors"), dict(tree_flatten(self.adapter.trainable_parameters())))

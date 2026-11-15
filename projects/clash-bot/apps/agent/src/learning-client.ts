@@ -74,6 +74,18 @@ export class LearningClient extends QwenClient {
   async study(dataset: string): Promise<TrainingReport> {
     return trainingSchema.parse(await this.request({ op: 'study', dataset }, 240_000));
   }
+  async studyCandidate(dataset: string): Promise<TrainingReport> {
+    return trainingSchema.parse(await this.request({ op: 'study', dataset, candidate: true }, 240_000));
+  }
+  async beginCandidate(directory: string): Promise<Record<string, unknown>> {
+    return this.request({ op: 'begin_candidate', directory });
+  }
+  async endCandidate(): Promise<Record<string, unknown>> {
+    return this.request({ op: 'end_candidate' });
+  }
+  async promote(checkpoint: string, report: string): Promise<Record<string, unknown>> {
+    return this.request({ op: 'promote', checkpoint, report });
+  }
   async checkout(checkpoint: string | null): Promise<Record<string, unknown>> {
     return this.request({ op: 'checkout', checkpoint });
   }
