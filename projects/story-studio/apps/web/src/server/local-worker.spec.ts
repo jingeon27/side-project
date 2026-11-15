@@ -1,0 +1,93 @@
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+
+import { dataPath, readTask, storeTask } from './assets';
+import { cancelLocalVideo, isLocalMode, localConfiguration, localWorkerBusy, runLocal } from './local-worker';
+
+const state = { directory: '' };
+beforeEach(async () => {
+  state.directory = await mkdtemp(path.join(os.tmpdir(), 'story-studio-worker-'));
+  vi.stubEnv('STORY_STUDIO_DATA_DIR', state.directory);
+  vi.stubEnv('STORY_STUDIO_PROVIDER', '');
+  vi.stubEnv('DASHSCOPE_API_KEY', 'must-not-reach-a-local-worker');
+  await mkdir(dataPath('local', '.venv', 'bin'), { recursive: true });
+  for (const model of ['text', 'voice', 'video'])
+    await mkdir(dataPath('local', 'models', model), { recursive: true });
+  await writeFile(dataPath('local', 'models', 'text', 'model.safetensors.index.json'), '{}');
+  await writeFile(dataPath('local', 'models', 'voice', 'model.safetensors'), 'fixture');
+  await writeFile(dataPath('local', 'models', 'video', 'ready.json'), '{}');
+  const shim = `#!${process.execPath}
+const fs = require('node:fs');
+const path = require('node:path');
+const root = process.argv.at(-1);
+const chunks = [];
+process.stdin.on('data', chunk => chunks.push(chunk));
+process.stdin.on('end', () => {
+  const input = JSON.parse(Buffer.concat(chunks).toString());
+  fs.appendFileSync(path.join(root, 'started.log'), input.action + '\\n');
+  if (input.taskId) fs.writeFileSync(path.join(root, 'local/active.json'), JSON.stringify({ pid: process.pid, taskId: input.taskId }));
+  console.log(JSON.stringify({ progress: 'started' }));
+  if (input.text === 'fail') return process.exit(2);
+  setTimeout(() => {
+    console.log(JSON.stringify({ result: { offline: process.env.HF_HUB_OFFLINE, threads: process.env.OMP_NUM_THREADS, key: process.env.DASHSCOPE_API_KEY } }));
+  }, input.text === 'slow' ? 30000 : 30);
+});
+`;
+  await writeFile(dataPath('local', '.venv', 'bin', 'python'), shim);
+  await chmod(dataPath('local', '.venv', 'bin', 'python'), 0o700);
+});
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  await rm(state.directory, { recursive: true, force: true });
+});
+
+it('설정 없이 로컬 모드를 고르고 키를 전달하지 않으며 오프라인·스레드 제한을 적용한다', async () => {
+  expect(isLocalMode()).toBe(true);
+  expect(localConfiguration()).toMatchObject({
+    provider: 'local',
+    textReady: true,
+    videoReady: true,
+    voiceReady: true,
+  });
+  expect(await runLocal({ action: 'voice', text: '안녕하세요' })).toEqual({ offline: '1', threads: '2' });
+});
+
+it('동시에 들어온 생성 요청을 모델 로딩 전에 거절하고 완료 후 다시 실행한다', async () => {
+  const first = runLocal({ action: 'voice', text: 'first' });
+  await expect(runLocal({ action: 'text' })).rejects.toMatchObject({ status: 409 });
+  await first;
+  expect((await readFile(dataPath('started.log'), 'utf8')).trim()).toBe('voice');
+  expect(localWorkerBusy()).toBe(false);
+  await expect(runLocal({ action: 'voice', text: 'retry' })).resolves.toBeDefined();
+});
+
+it('중단된 요청은 자식 프로세스와 실행 잠금을 정리한다', async () => {
+  const controller = new AbortController();
+  const job = runLocal({ action: 'voice', text: 'slow' }, controller.signal, () => controller.abort());
+  await expect(job).rejects.toMatchObject({ name: 'AbortError' });
+  expect(localWorkerBusy()).toBe(false);
+  await expect(runLocal({ action: 'voice', text: 'retry' })).resolves.toBeDefined();
+});
+
+it('실패 후 잠금을 해제하고 로컬 로그 위치로 복구를 안내한다', async () => {
+  await expect(runLocal({ action: 'voice', text: 'fail' })).rejects.toThrow('로컬 로그');
+  expect(localWorkerBusy()).toBe(false);
+  await expect(runLocal({ action: 'voice', text: 'retry' })).resolves.toBeDefined();
+});
+
+it('실제 스튜디오 자식 프로세스만 중단하고 종료 상태를 보관한다', async () => {
+  const id = `local-${crypto.randomUUID()}`;
+  await storeTask({ id, status: 'RUNNING' });
+  const ready = Promise.withResolvers<void>();
+  const job = runLocal({ action: 'video', taskId: id, text: 'slow' }, undefined, () => ready.resolve());
+  const ended = expect(job).rejects.toThrow();
+  await ready.promise;
+  expect((await cancelLocalVideo(id)).status).toBe('FAILED');
+  expect(localWorkerBusy()).toBe(false);
+  await ended;
+  expect((await readTask(id)).error).toContain('사용자가');
+  await expect(cancelLocalVideo('cloud-task-1234')).rejects.toMatchObject({ status: 400 });
+});

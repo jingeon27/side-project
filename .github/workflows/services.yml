@@ -26,6 +26,7 @@ jobs:
     outputs:
       game-feedback: ${{ steps.select.outputs.game-feedback }}
       photo-contest: ${{ steps.select.outputs.photo-contest }}
+      story-studio: ${{ steps.select.outputs.story-studio }}
       production: ${{ steps.select.outputs.production }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -37,6 +38,33 @@ jobs:
           node-version: '24'
       - id: select
         run: node deploy/shared-instance/scripts/service-ci.ts select
+  story-studio:
+    name: Story Studio local workflow
+    needs: selection
+    if: needs.selection.outputs['story-studio'] == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      - run: yarn workspace @side/story-studio check
+      - run: python3 -m py_compile projects/story-studio/apps/web/scripts/local/*.py
+      - run: python3 -m unittest discover -s projects/story-studio/apps/web/scripts/local -p worker_test.py
+      - run: yarn workspace @side/story-studio build
+      - run: yarn workspace @story-studio/web exec playwright install --with-deps chromium
+      - run: yarn workspace @side/story-studio test:e2e --workers=2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: failure()
+        with:
+          name: story-studio-browser-traces
+          path: projects/story-studio/apps/web/test-results/
   shared-contract:
     name: Shared container contract
     needs: selection
@@ -524,6 +552,7 @@ jobs:
     name: Service verification
     needs:
       - selection
+      - story-studio
       - shared-contract
       - gf-verify
       - gf-integration

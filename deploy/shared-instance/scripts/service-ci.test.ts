@@ -146,7 +146,7 @@ describe('숨김 경로의 검사 선택과 배포 생략', () => {
       writeFileSync(join(state.directory, '.event.json'), JSON.stringify({ before: release }));
 
       expect(run(process.execPath, [policy, 'select'], release)).toBe(
-        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nproduction=true`,
+        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nstory-studio=${file.startsWith('packages/')}\nproduction=true`,
       );
       const selected = service === 'game-feedback' ? gameFeedback : photoContest;
       expect(run('bash', [superseded, service, 'main'], release)).toBe(`deploy=${!selected}`);
@@ -231,7 +231,12 @@ describe('필수 검사로 지정하는 집계 job', () => {
           CI_NEEDS: JSON.stringify({
             selection: {
               result: selection,
-              outputs: { 'game-feedback': 'false', 'photo-contest': 'false', production: 'false' },
+              outputs: {
+                'game-feedback': 'false',
+                'photo-contest': 'false',
+                'story-studio': 'false',
+                production: 'false',
+              },
             },
             ...Object.fromEntries((lanes ?? []).map((name) => [name, { result: 'skipped', outputs: {} }])),
           }),
