@@ -1,6 +1,17 @@
 import type { TFormat } from './story';
 
-export type TStudioAction = 'draft' | 'continue' | 'image' | 'video' | 'voice' | 'compose';
+export type TStudioAction =
+  | 'draft'
+  | 'continue'
+  | 'image'
+  | 'video'
+  | 'voice'
+  | 'compose'
+  | 'voice-create'
+  | 'voice-upload'
+  | 'voice-train'
+  | 'voice-resume'
+  | 'voice-cancel';
 export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };

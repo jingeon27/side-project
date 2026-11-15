@@ -54,6 +54,7 @@ type TConfiguration = {
   provider?: 'local' | 'cloud';
   voiceModel?: string;
   voiceReady?: boolean;
+  voiceTrainingReady?: boolean;
   imageReady?: boolean;
   videoReady?: boolean;
   demoReady?: boolean;
@@ -119,6 +120,7 @@ export function Studio({
     image: config?.imageReady ?? connected,
     video: config?.videoReady ?? connected,
     voice: config?.voiceReady === true,
+    voiceTraining: config?.voiceTrainingReady === true,
   };
   const videoTasks = projects.flatMap((item) =>
     item.scenes.flatMap((scene) =>
@@ -329,7 +331,9 @@ export function Studio({
   function voice(scene: TScene) {
     if (!project) return;
     void work('한국어 음성 생성 중', async (signal) => {
-      const result = voiceSchema.parse(await request('voice', { text: caption(scene) }, signal));
+      const result = voiceSchema.parse(
+        await request('voice', { text: caption(scene), settings: scene.voiceSettings }, signal),
+      );
       patchScene(project.id, scene.id, {
         voice: result,
         ...(!scene.video ? { duration: Math.min(15, Math.max(2, Math.ceil(result.duration + 0.4))) } : {}),
@@ -460,6 +464,15 @@ export function Studio({
             </div>
           )}
         </nav>
+        <Link
+          className="voice-nav-link"
+          href="/studio/voices"
+          onClick={(event) => {
+            if (busy) event.preventDefault();
+          }}
+        >
+          목소리 학습 <ArrowRight size={15} />
+        </Link>
         <div className="sidebar-footer">
           <button
             className="text-button"

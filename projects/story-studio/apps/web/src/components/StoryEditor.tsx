@@ -13,13 +13,14 @@ import {
   type TProject,
   type TScene,
 } from '../lib/story';
+import { VoiceSelector } from './voice/VoiceSelector';
 
 type TProps = {
   project: TProject;
   busy: boolean;
   connected: boolean;
   local: boolean;
-  capabilities: { image: boolean; video: boolean; voice: boolean };
+  capabilities: { image: boolean; video: boolean; voice: boolean; voiceTraining: boolean };
   patch: (patch: Partial<TProject>) => void;
   patchScene: (id: string, patch: Partial<TScene>) => void;
   media: (scene: TScene, type: 'image' | 'video') => void;
@@ -430,9 +431,18 @@ function SceneCard({
           </>
         )}
         <div className="voice-section">
+          <VoiceSelector
+            id={prefix}
+            value={scene.voiceSettings}
+            onChange={(value) => patch({ voiceSettings: value })}
+          />
           <button
             className="button secondary small"
-            disabled={busy || !capabilities.voice || !caption(scene).trim()}
+            disabled={
+              busy ||
+              !(scene.voiceSettings?.kind === 'trained' ? capabilities.voiceTraining : capabilities.voice) ||
+              !caption(scene).trim()
+            }
             onClick={voice}
           >
             <Volume2 size={15} /> {scene.voice ? '한국어 음성 다시 생성' : '한국어 음성 생성'}

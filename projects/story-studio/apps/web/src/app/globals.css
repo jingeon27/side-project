@@ -113,6 +113,354 @@ textarea {
 .connection-button {
   word-break: keep-all;
 }
+.voice-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 10px;
+  margin-top: 12px;
+  color: var(--accent);
+  font-size: 13px;
+}
+.voice-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
+}
+.voice-controls .voice-control {
+  flex: 1;
+  min-width: 140px;
+}
+.voice-controls label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.voice-controls select {
+  margin-top: 6px;
+  min-height: 44px;
+}
+.voice-controls > a {
+  padding: 12px 0;
+  color: var(--accent);
+  font-size: 12px;
+}
+.voice-controls > span {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+.voice-page {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.voice-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 64px;
+  padding: 12px max(24px, calc((100vw - 912px) / 2));
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+.voice-page-header a {
+  color: var(--text);
+  padding: 10px 0;
+}
+.voice-page-content {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 42px 24px 60px;
+}
+.voice-page-content h1 {
+  margin: 8px 0 16px;
+  font-size: clamp(26px, 5vw, 36px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.voice-page-content h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 18px;
+}
+.voice-intro {
+  max-width: 660px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.85;
+  margin-bottom: 32px;
+}
+.voice-page-content label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.voice-create {
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.voice-create > div {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.voice-create input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.voice-create button {
+  flex-shrink: 0;
+}
+.voice-page [role='alert'] {
+  color: #f2ac99;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.voice-library {
+  margin-top: 32px;
+}
+.voice-library > p {
+  color: var(--muted);
+  font-size: 14px;
+}
+.voice-library-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.voice-library-item strong {
+  overflow-wrap: anywhere;
+}
+.voice-library-item span {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.learning-page {
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.learning-page > main {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.voice-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.voice-section-heading h2 {
+  margin: 0;
+}
+.voice-section-heading > span {
+  color: var(--muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.voice-section-heading > strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.voice-recordings {
+  margin: 32px 0;
+}
+.voice-recordings > p {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.voice-clip {
+  margin: 16px 0;
+  padding: 18px;
+  background: var(--panel);
+  border-radius: 8px;
+}
+.voice-clip audio {
+  display: block;
+  width: 100%;
+  height: 40px;
+  margin: 14px 0;
+}
+.voice-clip p {
+  font-size: 14px;
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+.voice-clip small {
+  display: block;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.voice-clip textarea {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.voice-upload-fields {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.voice-file-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px dashed #6a625a;
+  border-radius: 8px;
+  padding: 18px;
+}
+.voice-file-picker:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.voice-file-picker > span:first-child {
+  color: var(--accent);
+  font-weight: 600;
+}
+.voice-file-picker > span + span {
+  font-size: 12px;
+}
+.voice-setup {
+  padding: 20px;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-dark);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.voice-setup p {
+  margin: 8px 0 12px;
+  color: var(--muted);
+}
+.voice-setup code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--accent);
+  font-size: 12px;
+}
+.voice-training-settings {
+  margin-top: 36px;
+  border-top: 1px solid var(--line);
+  padding-top: 32px;
+}
+.voice-training-settings > p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.voice-training-settings form {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.voice-training-settings input {
+  max-width: 90px;
+  margin: 0;
+}
+.voice-training-progress {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--panel);
+  border-radius: 8px;
+}
+.voice-training-progress progress {
+  width: 100%;
+  accent-color: var(--accent);
+  height: 8px;
+  margin: 16px 0 8px;
+}
+.voice-training-progress p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.voice-training-progress small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.voice-training-progress a {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--accent);
+  font-size: 13px;
+}
+.voice-action-bar {
+  padding: 16px 24px max(16px, env(safe-area-inset-bottom));
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+.voice-action-bar > div {
+  max-width: 912px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.voice-action-bar span {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+.voice-action-bar .button {
+  min-width: 150px;
+}
+@media (max-width: 600px) {
+  .sidebar .voice-nav-link {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 8px 2px;
+  }
+  .voice-page-header {
+    min-height: 56px;
+    padding: 8px 20px;
+  }
+  .voice-page-content {
+    padding: 28px 20px 40px;
+  }
+  .voice-create > div {
+    flex-direction: column;
+  }
+  .voice-library-item {
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .voice-library-item span {
+    margin-left: auto;
+  }
+  .voice-clip {
+    padding: 14px;
+  }
+  .voice-action-bar {
+    padding: 12px 20px max(12px, env(safe-area-inset-bottom));
+  }
+  .voice-action-bar > div {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .voice-action-bar span {
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+  .voice-action-bar .button {
+    flex: 1;
+    min-width: 0;
+  }
+}
 @media (min-width: 601px) and (max-width: 1000px) {
   .studio-shell .brief-options {
     display: grid;
