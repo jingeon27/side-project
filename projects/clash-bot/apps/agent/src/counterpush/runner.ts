@@ -1,6 +1,7 @@
 import { appendFile, mkdir, readFile, statfs } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { studyNext } from '../arena-study.ts';
 import { atomicWrite } from '../assets.ts';
 import { type Profile } from '../config.ts';
 import { LearningClient } from '../learning-client.ts';
@@ -144,10 +145,16 @@ export async function runCounterpush(options: {
           );
         }
         const training = trained.at(-1)!.training;
+        await report({ phase: 'studying_search_targets' });
+        const searchStudy = await studyNext(client, dataDir).catch((error: unknown) => ({
+          updated: false,
+          error: String(error),
+        }));
         await report({
           phase: 'trained',
           policy: training.policy,
           training,
+          searchStudy,
           lastResult: episodes.at(-1)!.result,
           lastEpisode: episodes.at(-1)!.directory,
           lastBatch: episodes,

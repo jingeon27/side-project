@@ -27,6 +27,9 @@
     "test:perception": "yarn workspace @clash-bot/agent test:perception",
     "test:perception:model": "yarn workspace @clash-bot/agent test:perception:model",
     "test:learning": "yarn workspace @clash-bot/agent test:learning",
-    "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model"
+    "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model",
+    "arena": "yarn workspace @clash-bot/agent arena",
+    "arena:setup": "yarn workspace @clash-bot/agent arena:setup",
+    "test:arena": "yarn workspace @clash-bot/agent test:arena"
   }
 }

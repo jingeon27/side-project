@@ -5,6 +5,7 @@ import json
 import re
 from pathlib import Path
 import secrets
+import shutil
 import sys
 import time
 import traceback
@@ -18,6 +19,7 @@ from mlx_vlm.utils import prepare_inputs
 from learning_policy import FORMAT, MODEL_SHA256, FinalMLPLoRA, Learner, atomic_json, weights_digest
 from model_specs import detect_model, verify_model
 from opponent_data import load_demonstrations
+from search_data import load_search_targets
 
 
 def verified_result(row):
@@ -118,6 +120,7 @@ class LearningWorker:
                                f'language_model.model.layers.{config.num_hidden_layers - 1}.mlp.down_proj')
         core.norm = AdaptedFinalNorm(norm, self.learner.adapter, self.sink)
         self.directory = Path(directory)
+        self.evaluation_backup = None
 
     def choose(self, request):
         choices = request["choices"]
@@ -144,6 +147,8 @@ class LearningWorker:
         hidden = output.hidden_states[-1][0, -1]
         logits = hidden @ self.learner.token_rows[mx.array(sample["labels"])].astype(mx.float32).T
         log_probs = logits - mx.logsumexp(logits)
+        # Frozen evaluation uses the same categorical action policy as live
+        # play; freezing prevents learning, not stochastic action sampling.
         chosen = int(mx.random.categorical(log_probs).item())
         mx.eval(features, base, log_probs)
         destination = Path(request["feature_path"])
@@ -151,10 +156,83 @@ class LearningWorker:
         mx.savez(str(destination), features=features, base=base)
         return {"choice": choices[chosen], "behavior": {"format": FORMAT, "version": version,
                 "model_identity": self.spec['identity'], "model": self.spec['name'],
-                "trainable": True, "choices": choices, "chosen": chosen, "labels": sample["labels"],
+                "trainable": self.evaluation_backup is None, "read_only_evaluation": self.evaluation_backup is not None,
+                "selection": "categorical_as_live",
+                "choices": choices, "chosen": chosen, "labels": sample["labels"],
                 "old_log_probs": log_probs.tolist(), "feature_path": str(destination),
                 "adapter_applied_inside_qwen": True,
                 "adapter_sha256": weights_digest(self.learner.adapter)}}
+
+    def checkout(self, checkpoint=None):
+        """Frozen A/B weights in one resident model, without moving current.json."""
+        if checkpoint is None:
+            if self.evaluation_backup:
+                self.learner.adapter.load_weights(str(self.evaluation_backup['path'] / 'adapter.safetensors'), strict=True)
+                self.learner.metadata = self.evaluation_backup['metadata']
+                self.evaluation_backup = None
+            return {'restored': True, **self.learner.metadata, 'weights_sha256': weights_digest(self.learner.adapter)}
+        checkpoint = Path(checkpoint).resolve()
+        metadata = json.loads((checkpoint / 'metadata.json').read_text())
+        if metadata['format'] != FORMAT or metadata['model_sha256'] != self.spec['identity']:
+            raise ValueError('Evaluation checkpoint belongs to another base model')
+        fresh = FinalMLPLoRA(self.spec['input_size'], self.spec['hidden_size'])
+        fresh.load_weights(str(checkpoint / 'adapter.safetensors'), strict=True)
+        if weights_digest(fresh) != metadata['weights_sha256']:
+            raise ValueError('Evaluation checkpoint checksum mismatch')
+        if self.evaluation_backup is None:
+            current = self.directory / 'checkpoints' / f'v{self.learner.metadata["version"]:06d}'
+            if not current.exists():
+                raise ValueError('Save a baseline checkpoint before frozen evaluation')
+            self.evaluation_backup = {'path': current, 'metadata': self.learner.metadata}
+        from mlx.utils import tree_flatten, tree_unflatten
+        self.learner.adapter.update(tree_unflatten(tree_flatten(fresh.trainable_parameters())))
+        self.learner.metadata = metadata
+        return {'readOnly': True, 'checkpoint': str(checkpoint), 'version': metadata['version'],
+                'weights_sha256': weights_digest(self.learner.adapter)}
+
+    def study(self, request):
+        if self.evaluation_backup:
+            raise ValueError('Frozen evaluation cannot train')
+        dataset, identity, path = load_search_targets(request['dataset'])
+        original = self.learner
+        parent = weights_digest(original.adapter)
+        root = self.directory.parents[1] / 'arena/qwen/candidates' / f'{identity[:16]}-{parent[:12]}'
+        if not (root / 'current.json').exists():
+            base = self.directory / 'checkpoints' / f'v{original.metadata["version"]:06d}'
+            if not base.exists():
+                raise ValueError('Search study requires a saved real-play baseline')
+            destination = root / 'checkpoints' / base.name
+            shutil.copytree(base, destination, dirs_exist_ok=True)
+            atomic_json(destination / 'metadata.json', {**original.metadata, 'study_parent': parent,
+                                                        'study_rules_id': dataset['rulesID']})
+            atomic_json(root / 'current.json', {'version': original.metadata['version'], 'weights_sha256': parent})
+        candidate = Learner(FinalMLPLoRA(self.spec['input_size'], self.spec['hidden_size']), original.norm_weight,
+                            original.norm_eps, original.token_rows, root, self.spec['identity'], original.metadata['target'])
+        self.learner = candidate
+        self.model.language_model.model.norm.adapter = candidate.adapter
+        try:
+            if identity in candidate.metadata.get('search_datasets', []):
+                report = {'updated': False, 'reason': 'already_trained', 'version': candidate.metadata['version']}
+            else:
+                samples = []
+                for row in dataset['samples']:
+                    feature = root / 'features' / identity / f'{len(samples):03d}.npz'
+                    behavior = self.choose({'images': [str(path.parent / row['image'])], 'prompt': row['prompt'],
+                                            'choices': row['choices'], 'feature_path': str(feature)})['behavior']
+                    samples.append({**mx.load(str(feature)), 'labels': behavior['labels'], 'version': behavior['version'],
+                                    'old_log_probs': mx.array(behavior['old_log_probs']), 'search_target': row['target']})
+                report = candidate.distill_search(samples, identity, dataset['rulesID'])
+            checkpoint = root / 'checkpoints' / f'v{candidate.metadata["version"]:06d}'
+            result = {**report, 'candidate_checkpoint': str(checkpoint), 'baseline_sha256': parent,
+                      'candidate_sha256': weights_digest(candidate.adapter), 'dataset': str(path),
+                      'model': self.spec['name'], 'deployed': False}
+            atomic_json(root / 'study.json', result)
+            return result
+        finally:
+            self.learner = original
+            self.model.language_model.model.norm.adapter = original.adapter
+            if weights_digest(original.adapter) != parent:
+                raise RuntimeError('Isolated study modified the active adapter')
 
     def episode_samples(self, episode):
         directory = Path(episode).resolve()
@@ -267,6 +345,8 @@ def main():
         try:
             request = json.loads(line)
             with contextlib.redirect_stdout(sys.stderr):
+                if worker.evaluation_backup and request['op'] in ('train', 'train_batch', 'imitate', 'study'):
+                    raise ValueError('Frozen evaluation cannot train')
                 if request["op"] == "choose":
                     result = worker.choose(request)
                 elif request["op"] == "train":
@@ -275,6 +355,10 @@ def main():
                     result = worker.train_batch(request)
                 elif request["op"] == "imitate":
                     result = worker.imitate(request)
+                elif request["op"] == "study":
+                    result = worker.study(request)
+                elif request["op"] == "checkout":
+                    result = worker.checkout(request.get('checkpoint'))
                 elif request["op"] == "observe":
                     result = worker.observe(request)
                 elif request["op"] == "status":

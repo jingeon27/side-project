@@ -71,6 +71,12 @@ export class LearningClient extends QwenClient {
   async imitate(dataset: string): Promise<TrainingReport> {
     return trainingSchema.parse(await this.request({ op: 'imitate', dataset }, 120_000));
   }
+  async study(dataset: string): Promise<TrainingReport> {
+    return trainingSchema.parse(await this.request({ op: 'study', dataset }, 240_000));
+  }
+  async checkout(checkpoint: string | null): Promise<Record<string, unknown>> {
+    return this.request({ op: 'checkout', checkpoint });
+  }
   async observe(
     images: string[],
     prompt: string,

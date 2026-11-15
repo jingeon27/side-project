@@ -10,6 +10,7 @@ import { selectModel } from '../model-options.ts';
 import { requestLearningStop } from '../selfplay.ts';
 import { activeOpponentCoverage, learningAudit } from './audit.ts';
 import { CounterpushBrowser } from './browser.ts';
+import { runCounterpushEvaluation } from './evaluation.ts';
 import { loadCounterpushProfile } from './profile.ts';
 import { reprocessEpisode } from './reprocess.ts';
 import { runCounterpush } from './runner.ts';
@@ -24,6 +25,9 @@ const { positionals, values } = parseArgs({
     model: { type: 'string' },
     profile: { type: 'string' },
     background: { type: 'boolean' },
+    candidate: { type: 'string' },
+    pairs: { type: 'string' },
+    resume: { type: 'boolean' },
   },
 });
 const command = positionals[0] ?? 'status';
@@ -107,7 +111,8 @@ const main = async () => {
     console.log('이번 Counterpush 대전과 학습 후 중지합니다.');
     return;
   }
-  if (command !== 'start') throw new Error('counterpush login|start|status|audit|rescan|stop');
+  if (!['start', 'evaluate'].includes(command))
+    throw new Error('counterpush login|start|evaluate|status|audit|rescan|stop');
   const hours = Number(values.hours ?? 8),
     matches = Number(values.matches ?? 0);
   const tabs = Number(values.tabs ?? 1);
@@ -123,6 +128,9 @@ const main = async () => {
   )
     throw new Error('hours는 0 초과 24 이하, matches는 0~10000 정수입니다. 0회는 반복입니다.');
   const model = selectModel(values.model, true).id;
+  const pairs = Number(values.pairs ?? 16);
+  if (command === 'evaluate' && (!values.candidate || !Number.isInteger(pairs) || pairs < 1 || pairs > 128))
+    throw new Error('evaluate --candidate <후보 체크포인트 폴더> --pairs <1~128>');
   if (values.background) {
     const output = openSync(join(control, 'console.log'), 'a', 0o600);
     try {
@@ -130,7 +138,7 @@ const main = async () => {
         process.execPath,
         [
           fileURLToPath(import.meta.url),
-          'start',
+          command,
           '--hours',
           String(hours),
           '--matches',
@@ -140,6 +148,9 @@ const main = async () => {
           '--tabs',
           String(tabs),
           ...(values.profile ? ['--profile', resolve(values.profile)] : []),
+          ...(values.candidate ? ['--candidate', resolve(values.candidate)] : []),
+          ...(values.pairs ? ['--pairs', String(pairs)] : []),
+          ...(values.resume ? ['--resume'] : []),
         ],
         { detached: true, stdio: ['ignore', output, output], cwd: process.cwd() },
       );
@@ -162,6 +173,30 @@ const main = async () => {
   const abort = new AbortController();
   process.once('SIGINT', () => abort.abort());
   process.once('SIGTERM', () => abort.abort());
+  if (command === 'evaluate') {
+    const result = await runCounterpushEvaluation({
+      dataDir: DATA_DIR,
+      profile: await loadCounterpushProfile(DATA_DIR, values.profile),
+      model,
+      pairs,
+      hours,
+      candidate: resolve(values.candidate!),
+      signal: abort.signal,
+    });
+    console.log(
+      JSON.stringify(
+        {
+          complete: result.complete,
+          gate: result.gate,
+          promoted: result.promoted,
+          baselineUnchanged: result.baselineUnchanged,
+        },
+        null,
+        2,
+      ),
+    );
+    if (!values.resume || abort.signal.aborted || !result.complete) return;
+  }
   await runCounterpush({
     dataDir: DATA_DIR,
     profile: await loadCounterpushProfile(DATA_DIR, values.profile),
