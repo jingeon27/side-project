@@ -233,12 +233,14 @@ export async function playCounterpushEpisode(options: {
       situation,
     };
   };
+  const initialPhase = await browser.phase();
   await browser.startMatch();
   await log({
     type: 'match_start',
     source: 'counterpush_visible_browser',
     deck: COUNTERPUSH_DECK,
     tab: options.tab,
+    initialPhase,
   });
   const deadline = Date.now() + 900_000;
   try {

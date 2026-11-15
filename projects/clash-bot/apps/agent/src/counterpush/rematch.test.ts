@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CounterpushBrowser } from './browser.ts';
 
-describe('restarting a completed concurrent game', () => {
-  it('opens the public setup, revalidates the deck and starts Battle instead of a stranded result transition', async () => {
+describe('restarting a completed single-tab game', () => {
+  it('uses visible Play again while the setup Battle button is hidden by the persisted result', async () => {
     const calls: string[] = [];
     const page = {
       goto: vi.fn(async () => {
@@ -15,6 +15,7 @@ describe('restarting a completed concurrent game', () => {
       }),
       locator: (selector: string) => ({
         click: async () => {
+          if (selector !== '#again') throw new Error('setup Battle is hidden by the result overlay');
           calls.push(selector);
         },
       }),
@@ -25,7 +26,7 @@ describe('restarting a completed concurrent game', () => {
       calls.push('deck');
     });
     await browser.startMatch();
-    expect(calls).toEqual(['setup', 'ready', 'deck', '#battle']);
+    expect(calls).toEqual(['#again']);
   });
 
   it('does not reset an active game to recover a result transition', async () => {
