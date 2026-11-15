@@ -85,6 +85,31 @@ class NativeArenaTest(unittest.TestCase):
         self.assertEqual([row[1] for row in charges], [1, 2, 0])
         self.assertEqual([row[2] for row in charges], [False, True, False])
 
+    def test_hut_children_respond_to_an_approaching_unit_without_new_spending(self):
+        own, enemy = [2, 7, 0, 4, 1, 5, 3, 6], [5, 7, 0, 4, 1, 2, 3, 6]
+        arena = Arena(1, [own, enemy])
+        arena.play([Action(-1)] * 2, 100)
+        results = arena.play([Action(2, 7*TILE, 12*TILE), Action(5, round(3.5*TILE), 18*TILE)], 1)
+        self.assertTrue(all(row[1] == 0 for row in results))
+        kinds = json.loads(arena.battle.unit_types_json())
+        children = set()
+        for _ in range(24):
+            arena.play([Action(-1)] * 2, 20)
+            children.update(kinds[row[FIELDS['unit_type']]] for row in arena.state()['entities'] if row[FIELDS['card_id']] == 2)
+        self.assertTrue(any('SpearGoblin' in name for name in children), children)
+        self.assertEqual(len(arena.history), 1)
+        self.assertEqual([play['cost'] for play in arena.history[0]['plays']], [4, 3])
+
+    def test_poison_defense_reduces_graveyard_damage_in_the_native_field(self):
+        own, enemy = [6, 7, 0, 4, 1, 5, 2, 3], [3, 7, 0, 4, 1, 5, 2, 6]
+        arena = Arena(1, [own, enemy])
+        arena.play([Action(-1)] * 2, 100)
+        defended = arena.clone()
+        x, y = round(14.5*TILE), round(6.5*TILE)
+        arena.play([Action(-1), Action(3, x, y)], 240)
+        defended.play([Action(6, x, y), Action(3, x, y)], 240)
+        self.assertGreater(sum(defended.state()['players'][0]['tower_hp']), sum(arena.state()['players'][0]['tower_hp']))
+
     def test_graveyard_has_repeatable_spawn_sequence_across_hidden_random_seeds(self):
         def sequence(seed):
             arena = Arena(seed, [list(range(8))] * 2)
