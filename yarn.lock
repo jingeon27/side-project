@@ -1760,6 +1760,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clash-bot/agent@workspace:projects/clash-bot/apps/agent":
+  version: 0.0.0-use.local
+  resolution: "@clash-bot/agent@workspace:projects/clash-bot/apps/agent"
+  dependencies:
+    "@side/config": "workspace:*"
+    "@types/node": "npm:24.19.2"
+    sharp: "npm:0.35.5"
+    vitest: "npm:4.1.11"
+    zod: "npm:4.6.7"
+  languageName: unknown
+  linkType: soft
+
 "@commander-js/extra-typings@npm:^15.0.0":
   version: 15.0.0
   resolution: "@commander-js/extra-typings@npm:15.0.0"
@@ -8241,6 +8253,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@side/clash-bot@workspace:projects/clash-bot":
+  version: 0.0.0-use.local
+  resolution: "@side/clash-bot@workspace:projects/clash-bot"
+  languageName: unknown
+  linkType: soft
+
 "@side/config@workspace:*, @side/config@workspace:packages/config":
   version: 0.0.0-use.local
   resolution: "@side/config@workspace:packages/config"
@@ -9407,7 +9425,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^24.0.0":
+"@types/node@npm:24.19.2, @types/node@npm:^24.0.0":
   version: 24.19.2
   resolution: "@types/node@npm:24.19.2"
   dependencies:
@@ -20710,7 +20728,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.35.5":
+"sharp@npm:0.35.5, sharp@npm:^0.35.5":
   version: 0.35.5
   resolution: "sharp@npm:0.35.5"
   dependencies:
@@ -22640,7 +22658,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest@npm:^4.0.0, vitest@npm:^4.1.0":
+"vitest@npm:4.1.11, vitest@npm:^4.0.0, vitest@npm:^4.1.0":
   version: 4.1.11
   resolution: "vitest@npm:4.1.11"
   dependencies:

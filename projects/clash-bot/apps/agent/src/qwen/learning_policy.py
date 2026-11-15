@@ -1,0 +1,268 @@
+"""Small, trainable Qwen final-MLP LoRA; frozen visual/language features.
+
+The adapter changes the model's last MLP down projection.
+Native Qwen normalization and token output projection produce action logits.
+No trainable external classifier, vector store, or full-model backward pass.
+"""
+
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+
+import mlx.core as mx
+import mlx.nn as nn
+import mlx.optimizers as optim
+from mlx.utils import tree_flatten, tree_unflatten
+
+FORMAT = "qwen-final-mlp-lora-ppo-v1"
+MODEL_SHA256 = "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+
+
+class KLExceeded(ValueError):
+    pass
+
+
+def atomic_json(path, value):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(f".{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n")
+    temporary.replace(path)
+
+
+def weights_digest(adapter):
+    digest = hashlib.sha256()
+    for name, value in tree_flatten(adapter.trainable_parameters()):
+        digest.update(name.encode())
+        digest.update(memoryview(value.astype(mx.float32).__array__()).tobytes())
+    return digest.hexdigest()
+
+
+class FinalMLPLoRA(nn.Module):
+    def __init__(self, input_size, hidden_size, rank=4, alpha=8):
+        super().__init__()
+        self.scale = alpha / rank
+        self.a = mx.random.normal((input_size, rank)) / math.sqrt(input_size)
+        self.b = mx.zeros((rank, hidden_size))
+
+    def __call__(self, features):
+        return ((features.astype(mx.float32) @ self.a) @ self.b) * self.scale
+
+
+def action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows, temperature=1.0):
+    hidden = sample["base"].astype(mx.float32) + adapter(sample["features"])
+    hidden = mx.fast.rms_norm(hidden, norm_weight.astype(mx.float32), norm_eps)
+    logits = hidden @ token_rows[mx.array(sample["labels"])].astype(mx.float32).T / temperature
+    return logits - mx.logsumexp(logits, axis=-1, keepdims=True)
+
+
+def clipped_loss(adapter, sample, advantage, norm_weight, norm_eps, token_rows):
+    logp = action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
+    old = sample["old_log_probs"]
+    ratio = mx.exp(logp[sample["chosen"]] - old[sample["chosen"]])
+    surrogate = mx.minimum(ratio * advantage, mx.clip(ratio, 0.8, 1.2) * advantage)
+    probs = mx.exp(logp)
+    entropy = -mx.sum(probs * logp)
+    kl = mx.sum(probs * (logp - old))
+    return -surrogate - 0.01 * entropy + 0.02 * kl
+
+
+def imitation_loss(adapter, sample, norm_weight, norm_eps, token_rows):
+    logp = action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
+    # Supervise only the observed card/lane. Sum probability over all compatible
+    # candidate placements instead of inventing an exact deployment coordinate.
+    target_logp = mx.logsumexp(logp[mx.array(sample['targets'])])
+    old = sample['old_log_probs']
+    kl = mx.sum(mx.exp(old) * (old - logp))
+    return -sample['confidence'] * target_logp + 0.1 * kl
+
+
+class Learner:
+    def __init__(self, adapter, norm_weight, norm_eps, token_rows, directory,
+                 model_identity=MODEL_SHA256, target="language_model.model.layers.31.mlp.down_proj"):
+        self.adapter = adapter
+        self.norm_weight = norm_weight
+        self.norm_eps = norm_eps
+        self.token_rows = token_rows
+        self.directory = Path(directory)
+        self.optimizer = optim.Adam(learning_rate=3e-5)
+        self.metadata = {"format": FORMAT, "model_sha256": model_identity,
+                         "target": target, "rank": 4, "alpha": 8,
+                         "input_size": adapter.a.shape[0], "hidden_size": adapter.b.shape[1],
+                         "version": 0, "baseline": 0.0, "episodes": [], "updates": 0}
+        pointer = self.directory / "current.json"
+        if pointer.exists():
+            selected = json.loads(pointer.read_text())
+            checkpoint = self.directory / "checkpoints" / f"v{int(selected['version']):06d}"
+            metadata = json.loads((checkpoint / "metadata.json").read_text())
+            if metadata["format"] != FORMAT or metadata["model_sha256"] != model_identity:
+                raise ValueError("Adapter is incompatible with this Qwen model")
+            self.adapter.load_weights(str(checkpoint / "adapter.safetensors"), strict=True)
+            if weights_digest(self.adapter) != metadata["weights_sha256"]:
+                raise ValueError("Adapter checksum mismatch")
+            self.optimizer.state = tree_unflatten(list(mx.load(str(checkpoint / "optimizer.safetensors")).items()))
+            self.metadata = {**self.metadata, **metadata}
+
+    def log_probs(self, sample):
+        return action_log_probs(self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows)
+
+    def imitate(self, samples, dataset):
+        if dataset in self.metadata.get('demonstrations', []):
+            return {'updated': False, 'reason': 'already_trained', 'version': self.metadata['version']}
+        if not samples:
+            return {'updated': False, 'reason': 'no_verified_demonstrations'}
+        if len(samples) > 24:
+            raise ValueError('Too many demonstration samples')
+        for sample in samples:
+            if sample['version'] != self.metadata['version']:
+                raise ValueError('Demonstration features use an old adapter version')
+            if (not sample['targets'] or len(set(sample['targets'])) != len(sample['targets'])
+                    or any(index < 0 or index >= len(sample['labels']) for index in sample['targets'])
+                    or not math.isfinite(sample['confidence']) or not 0.9 <= sample['confidence'] <= 1):
+                raise ValueError('Invalid imitation target or confidence')
+        original_rate = float(self.optimizer.learning_rate.item())
+        try:
+            for attempt in range(4):
+                try:
+                    return self._imitate_once(samples, dataset, min(original_rate, 1e-5) * 0.25 ** attempt,
+                                              original_rate, attempt)
+                except KLExceeded:
+                    continue
+            return {'updated': False, 'reason': 'imitation_kl_limit_after_backtracking',
+                    'version': self.metadata['version']}
+        finally:
+            self.optimizer.learning_rate = original_rate
+
+    def _imitate_once(self, samples, dataset, learning_rate, original_rate, attempt):
+        before = {name: mx.array(value) for name, value in tree_flatten(self.adapter.trainable_parameters())}
+        optimizer_before = {name: mx.array(value) for name, value in tree_flatten(self.optimizer.state)}
+        before_hash = weights_digest(self.adapter)
+        probability = lambda sample: float(mx.sum(mx.exp(self.log_probs(sample))[mx.array(sample['targets'])]).item())
+        before_probabilities = [probability(sample) for sample in samples]
+        self.optimizer.learning_rate = learning_rate
+        grad_fn = nn.value_and_grad(self.adapter, imitation_loss)
+        losses = []
+        try:
+            for sample in samples:
+                loss, gradients = grad_fn(self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows)
+                mx.eval(loss, gradients)
+                flat = tree_flatten(gradients)
+                norm = mx.sqrt(sum(mx.sum(gradient * gradient) for _, gradient in flat))
+                if not math.isfinite(float(loss.item())) or not math.isfinite(float(norm.item())):
+                    raise ValueError('Nonfinite imitation loss or gradient')
+                scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
+                self.optimizer.update(self.adapter, tree_unflatten([(name, gradient * scale) for name, gradient in flat]))
+                mx.eval(self.adapter.parameters(), self.optimizer.state)
+                losses.append(float(loss.item()))
+            kls = [float(mx.sum(mx.exp(sample['old_log_probs']) * (sample['old_log_probs'] - self.log_probs(sample))).item())
+                   for sample in samples]
+            after_probabilities = [probability(sample) for sample in samples]
+            if (not all(math.isfinite(kl) for kl in kls) or max(kls) > 0.02
+                    or sum(after_probabilities) <= sum(before_probabilities)):
+                raise KLExceeded('Imitation update exceeded KL limit or did not improve observed likelihood')
+            after_hash = weights_digest(self.adapter)
+            if before_hash == after_hash:
+                raise ValueError('No imitation adapter weights changed')
+            report = {'updated': True, 'algorithm': 'coarse_opponent_behavior_cloning',
+                      'version': self.metadata['version'] + 1, 'dataset_sha256': dataset,
+                      'samples': len(samples), 'learning_rate': learning_rate, 'backtrack_attempts': attempt,
+                      'before_sha256': before_hash, 'after_sha256': after_hash,
+                      'mean_loss': sum(losses) / len(losses), 'max_kl': max(kls),
+                      'probability_before': sum(before_probabilities) / len(samples),
+                      'probability_after': sum(after_probabilities) / len(samples),
+                      'observations': [{'id': sample['id'], 'probability_before': before_probability,
+                                        'probability_after': after_probability}
+                                       for sample, before_probability, after_probability
+                                       in zip(samples, before_probabilities, after_probabilities)]}
+            metadata = {**self.metadata, 'version': report['version'],
+                        'demonstrations': self.metadata.get('demonstrations', []) + [dataset],
+                        'updates': self.metadata['updates'] + len(samples),
+                        'weights_sha256': after_hash, 'last_training': report}
+            self.optimizer.learning_rate = original_rate
+            self.save(metadata)
+            self.metadata = metadata
+            return report
+        except Exception:
+            self.adapter.update(tree_unflatten(list(before.items())))
+            self.optimizer.state = tree_unflatten(list(optimizer_before.items()))
+            raise
+
+    def train(self, samples, reward, episode):
+        rate = float(self.optimizer.learning_rate.item())
+        for attempt in range(4):
+            try:
+                return self._train_once(samples, reward, episode, rate * (0.25 ** attempt), attempt)
+            except KLExceeded:
+                # _train_once restores both parameters and optimizer state first.
+                continue
+        return {"updated": False, "reason": "kl_limit_after_backtracking", "version": self.metadata["version"]}
+
+    def _train_once(self, samples, reward, episode, learning_rate, attempt):
+        if episode in self.metadata["episodes"]:
+            return {"updated": False, "reason": "already_trained", "version": self.metadata["version"]}
+        if reward not in (-1, 0, 1) or not samples:
+            return {"updated": False, "reason": "no_verified_reward_or_actions"}
+        if any(sample["version"] != self.metadata["version"] for sample in samples):
+            raise ValueError("Off-policy episode: adapter version changed")
+        # A single bounded pass over uniformly spaced on-policy decisions.
+        indices = sorted(set(round(i * (len(samples) - 1) / max(1, min(24, len(samples)) - 1))
+                             for i in range(min(24, len(samples)))))
+        selected = [samples[i] for i in indices]
+        before = {name: mx.array(value) for name, value in tree_flatten(self.adapter.trainable_parameters())}
+        optimizer_before = {name: mx.array(value) for name, value in tree_flatten(self.optimizer.state)}
+        before_hash = weights_digest(self.adapter)
+        self.optimizer.learning_rate = learning_rate
+        before_probabilities = [float(mx.exp(self.log_probs(s)[s["chosen"]]).item()) for s in selected]
+        grad_fn = nn.value_and_grad(self.adapter, clipped_loss)
+        losses = []
+        try:
+            for sample in selected:
+                advantage = (reward - self.metadata["baseline"]) * (0.995 ** sample["remaining"])
+                loss, gradients = grad_fn(self.adapter, sample, advantage, self.norm_weight, self.norm_eps, self.token_rows)
+                mx.eval(loss, gradients)
+                flat = tree_flatten(gradients)
+                norm = mx.sqrt(sum(mx.sum(g * g) for _, g in flat))
+                scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
+                gradients = tree_unflatten([(name, g * scale) for name, g in flat])
+                if not math.isfinite(float(loss.item())) or not math.isfinite(float(norm.item())):
+                    raise ValueError("Nonfinite learning loss or gradient")
+                self.optimizer.update(self.adapter, gradients)
+                mx.eval(self.adapter.parameters(), self.optimizer.state)
+                losses.append(float(loss.item()))
+            kls = [float(mx.sum(mx.exp(s["old_log_probs"]) * (s["old_log_probs"] - self.log_probs(s))).item()) for s in selected]
+            if not all(math.isfinite(k) for k in kls) or max(kls) > 0.15:
+                raise KLExceeded("Learning step exceeded KL limit")
+            after_hash = weights_digest(self.adapter)
+            if before_hash == after_hash:
+                raise ValueError("No adapter weights changed")
+            report = {"updated": True, "algorithm": "clipped_on_policy_policy_gradient",
+                      "version": self.metadata["version"] + 1, "episode": episode,
+                      "reward": reward, "samples": len(selected), "confirmed_decisions": len(samples),
+                      "learning_rate": learning_rate, "backtrack_attempts": attempt,
+                      "before_sha256": before_hash, "after_sha256": after_hash,
+                      "mean_loss": sum(losses) / len(losses), "max_kl": max(kls),
+                      "probability_before": before_probabilities[0],
+                      "probability_after": float(mx.exp(self.log_probs(selected[0])[selected[0]["chosen"]]).item())}
+            metadata = {**self.metadata, "version": report["version"],
+                        "baseline": self.metadata["baseline"] * 0.9 + reward * 0.1,
+                        "episodes": self.metadata["episodes"] + [episode],
+                        "updates": self.metadata["updates"] + len(selected),
+                        "weights_sha256": after_hash, "last_training": report}
+            self.save(metadata)
+            self.metadata = metadata
+            return report
+        except Exception:
+            self.adapter.update(tree_unflatten(list(before.items())))
+            self.optimizer.state = tree_unflatten(list(optimizer_before.items()))
+            raise
+
+    def save(self, metadata):
+        checkpoint = self.directory / "checkpoints" / f"v{metadata['version']:06d}"
+        checkpoint.mkdir(parents=True, exist_ok=True)
+        mx.save_safetensors(str(checkpoint / "adapter.safetensors"), dict(tree_flatten(self.adapter.trainable_parameters())))
+        mx.save_safetensors(str(checkpoint / "optimizer.safetensors"), dict(tree_flatten(self.optimizer.state)))
+        atomic_json(checkpoint / "metadata.json", metadata)
+        # Publish only after all checksummed checkpoint files have been written.
+        atomic_json(self.directory / "current.json", {"version": metadata["version"], "weights_sha256": metadata["weights_sha256"]})

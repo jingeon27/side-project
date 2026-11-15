@@ -1,0 +1,28 @@
+{
+  "name": "@side/clash-bot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "doctor": "yarn workspace @clash-bot/agent doctor",
+    "connect": "yarn workspace @clash-bot/agent connect",
+    "setup": "yarn workspace @clash-bot/agent setup",
+    "capture": "yarn workspace @clash-bot/agent capture",
+    "observe": "yarn workspace @clash-bot/agent observe",
+    "play": "yarn workspace @clash-bot/agent play",
+    "analyze": "yarn workspace @clash-bot/agent analyze",
+    "learn": "yarn workspace @clash-bot/agent learn",
+    "calibrate": "yarn workspace @clash-bot/agent calibrate",
+    "help": "yarn workspace @clash-bot/agent help",
+    "emulator": "yarn workspace @clash-bot/agent emulator",
+    "typecheck": "yarn workspace @clash-bot/agent typecheck",
+    "test": "yarn workspace @clash-bot/agent test",
+    "check": "yarn typecheck && yarn test",
+    "qwen": "yarn workspace @clash-bot/agent qwen",
+    "qwen:setup": "yarn workspace @clash-bot/agent qwen:setup",
+    "selfplay": "yarn workspace @clash-bot/agent selfplay",
+    "opponent": "yarn workspace @clash-bot/agent opponent",
+    "test:learning": "yarn workspace @clash-bot/agent test:learning",
+    "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model"
+  }
+}

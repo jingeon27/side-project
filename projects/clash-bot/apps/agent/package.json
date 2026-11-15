@@ -1,0 +1,36 @@
+{
+  "name": "@clash-bot/agent",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "doctor": "node src/cli.ts doctor",
+    "connect": "node src/cli.ts connect",
+    "setup": "node src/cli.ts setup",
+    "capture": "node src/cli.ts capture",
+    "observe": "node src/cli.ts observe",
+    "play": "node src/cli.ts play",
+    "analyze": "node src/cli.ts analyze",
+    "learn": "node src/cli.ts learn",
+    "calibrate": "node src/cli.ts calibrate",
+    "help": "node src/cli.ts --help",
+    "emulator": "node src/cli.ts emulator",
+    "typecheck": "tsc7 --noEmit",
+    "test": "vitest run",
+    "qwen": "node src/qwen-cli.ts",
+    "qwen:setup": "python3.11 src/qwen/setup.py",
+    "selfplay": "node src/selfplay-cli.ts",
+    "opponent": "node src/opponent-cli.ts",
+    "test:learning": "../../.data/qwen/.venv/bin/python -m unittest discover -s src/qwen -p '*_test.py'",
+    "test:learning:model": "RUN_QWEN_INTEGRATION=1 ../../.data/qwen/.venv/bin/python -m unittest discover -s src/qwen -p 'learning_model_test.py'"
+  },
+  "dependencies": {
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@side/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "vitest": "4.1.11"
+  }
+}

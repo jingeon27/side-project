@@ -1,0 +1,55 @@
+{
+  "2b": {
+    "name": "Qwen3.5-2B",
+    "repo": "mlx-community/Qwen3.5-2B-4bit",
+    "revision": "674aaa7240b91e8012fcad5d791b7dfe5ba90207",
+    "directory": "model",
+    "checkpoint_directory": "learning-2b",
+    "identity": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5",
+    "files": {
+      "model.safetensors": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5"
+    },
+    "input_size": 6144,
+    "hidden_size": 2048,
+    "layers": 24,
+    "tied_output": true,
+    "memory_gib": 12,
+    "learning": false
+  },
+  "4b": {
+    "name": "Qwen3.5-4B",
+    "repo": "mlx-community/Qwen3.5-4B-4bit",
+    "revision": "0e7ffd5c629ef7719d4cbc04069232580bfa9d9c",
+    "directory": "model-4b",
+    "checkpoint_directory": "learning",
+    "identity": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+    "files": {
+      "model.safetensors": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+    },
+    "input_size": 9216,
+    "hidden_size": 2560,
+    "layers": 32,
+    "tied_output": true,
+    "memory_gib": 12,
+    "learning": true
+  },
+  "3.8-27b": {
+    "name": "Qwen3.8-27B",
+    "repo": "mlx-community/Qwen3.8-27B-4bit",
+    "revision": "b935172e4bb5dcd0543774a34748fb92422e3027",
+    "directory": "model-3.8-27b",
+    "checkpoint_directory": "learning-3.8-27b",
+    "identity": "a91742bafd250befe5eb771ca9b08379d17f5a1ff0c250b7f6fa34b5fc2ea2ab",
+    "files": {
+      "model-00001-of-00003.safetensors": "6cc1508e96fb5d0865dfd5753a79f4ec60651bf3e2a82844a7e8ae9c60528c0d",
+      "model-00002-of-00003.safetensors": "83f2a20ca8058f486a3634a27faf99587f4cd3c156a83dee34fb99e6ac178670",
+      "model-00003-of-00003.safetensors": "31b8c91ef899f79efaaa69e3d2c096f6e2ebeb2ff20e29222abbd9ebc79e560a"
+    },
+    "input_size": 17408,
+    "hidden_size": 5120,
+    "layers": 64,
+    "tied_output": false,
+    "memory_gib": 30,
+    "learning": true
+  }
+}
