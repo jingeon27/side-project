@@ -13,9 +13,10 @@ import { analyze, crop, difference, fingerprint, loadTemplates } from '../vision
 import { readEpisodeCoverage } from './audit.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
-import { counterpushElixir, plausibleSpend } from './elixir.ts';
+import { counterpushBarReading, counterpushElixir, plausibleSpend } from './elixir.ts';
 import { FieldDynamics } from './field-dynamics.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from './hero-ability.ts';
+import type { DecisionGate } from './parallel-loop.ts';
 import type { SpawnPatterns } from './spawn-patterns.ts';
 import { OpponentTracker } from './tracker.ts';
 import { type CounterpushVisionClient, type UnitScan } from './vision-client.ts';
@@ -40,9 +41,17 @@ export async function playCounterpushEpisode(options: {
   signal: AbortSignal;
   report: (status: Record<string, unknown>) => Promise<void>;
   patterns?: SpawnPatterns;
+  decisionGate?: DecisionGate;
+  tab?: number;
+  persistPatterns?: boolean;
 }) {
   const { browser, client, vision, dataDir, profile, signal } = options;
-  const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
+  const directory = join(
+    dataDir,
+    'counterpush/runs',
+    new Date().toISOString().replaceAll(':', '-') +
+      (options.tab === undefined ? '' : `-tab${options.tab + 1}`),
+  );
   await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
   const templates = await loadTemplates(dataDir, profile);
   const tracker = new OpponentTracker();
@@ -79,7 +88,10 @@ export async function playCounterpushEpisode(options: {
     const screenshot = await browser.capture();
     const path = join(directory, 'frames', `${String(++state.frames).padStart(6, '0')}.png`);
     await atomicWrite(path, screenshot.image);
-    const observation = await analyze(screenshot.image, profile, templates, screenshot.capturedAt);
+    const observation = {
+      ...(await analyze(screenshot.image, profile, templates, screenshot.capturedAt)),
+      ...(await counterpushBarReading(screenshot.image, profile)),
+    };
     const ability = await abilityButton.read(screenshot.image, screenshot.capturedAt);
     const elixir = counterpushElixir(observation, profile);
     const scan = await vision.scan(path);
@@ -222,7 +234,12 @@ export async function playCounterpushEpisode(options: {
     };
   };
   await browser.startMatch();
-  await log({ type: 'match_start', source: 'counterpush_visible_browser', deck: COUNTERPUSH_DECK });
+  await log({
+    type: 'match_start',
+    source: 'counterpush_visible_browser',
+    deck: COUNTERPUSH_DECK,
+    tab: options.tab,
+  });
   const deadline = Date.now() + 900_000;
   try {
     while (Date.now() < deadline) {
@@ -264,241 +281,272 @@ export async function playCounterpushEpisode(options: {
         await delay(300, undefined, { signal });
         continue;
       }
-      const before = await capture();
-      if (!before.state.battle || before.elixirConfidence < 0.9) {
-        await delay(200, undefined, { signal });
-        continue;
-      }
-      const threats = before.situation.opponent.units
-        .filter((unit) => unit.y > profile.riverY)
-        .map(({ x, y }) => ({ x, y }));
-      const candidates = actionCandidates(
-        profile,
-        before.cards,
-        before.state.elixir,
-        threats,
-        before.situation,
-      )
-        .map((action) => ({ action, order: randomInt(2 ** 32) }))
-        .toSorted((first, second) => first.order - second.order)
-        .map(({ action }) => action);
-      if (candidates.length === 1 && candidates[0]!.id === 0) {
-        await delay(300, undefined, { signal });
-        continue;
-      }
-      const frame = ++state.decisions;
-      const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
-      await atomicWrite(imagePath, before.image);
-      const prompt = choicePrompt(
-        before.cards,
-        before.state.elixir,
-        threats,
-        candidates,
-        'letter',
-        before.situation,
+      // Acquire the shared model before taking the decision image, so waiting
+      // for another tab cannot age an image past its input validation deadline.
+      const lease = { release: null as (() => void) | null, error: null as unknown };
+      const pendingLease = options.decisionGate?.acquire(signal).then(
+        (release) => {
+          lease.release = release;
+        },
+        (error: unknown) => {
+          lease.error = error;
+        },
       );
-      const prediction = {
-        done: false,
-        output: null as Awaited<ReturnType<LearningClient['choose']>> | null,
-        error: null as unknown,
-      };
-      const pending = client
-        .choose({
-          imagePath,
-          prompt,
+      try {
+        if (pendingLease) {
+          while (!lease.release) {
+            if (lease.error) throw lease.error;
+            signal.throwIfAborted();
+            if ((await browser.phase()) === 'battle') await capture();
+            await delay(100, undefined, { signal });
+          }
+          await pendingLease;
+        }
+        const before = await capture();
+        if (!before.state.battle || before.elixirConfidence < 0.9) {
+          await delay(200, undefined, { signal });
+          continue;
+        }
+        const threats = before.situation.opponent.units
+          .filter((unit) => unit.y > profile.riverY)
+          .map(({ x, y }) => ({ x, y }));
+        const candidates = actionCandidates(
+          profile,
+          before.cards,
+          before.state.elixir,
+          threats,
+          before.situation,
+        )
+          .map((action) => ({ action, order: randomInt(2 ** 32) }))
+          .toSorted((first, second) => first.order - second.order)
+          .map(({ action }) => action);
+        if (candidates.length === 1 && candidates[0]!.id === 0) {
+          await delay(300, undefined, { signal });
+          continue;
+        }
+        const frame = ++state.decisions;
+        const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
+        await atomicWrite(imagePath, before.image);
+        const prompt = choicePrompt(
+          before.cards,
+          before.state.elixir,
+          threats,
           candidates,
-          featurePath: join(directory, 'features', String(frame).padStart(4, '0') + '.npz'),
-        })
-        .then((output) => {
-          prediction.output = output;
-        })
-        .catch((error: unknown) => {
-          prediction.error = error;
-        })
-        .finally(() => {
-          prediction.done = true;
+          'letter',
+          before.situation,
+        );
+        const prediction = {
+          done: false,
+          output: null as Awaited<ReturnType<LearningClient['choose']>> | null,
+          error: null as unknown,
+        };
+        const pending = client
+          .choose({
+            imagePath,
+            prompt,
+            candidates,
+            featurePath: join(directory, 'features', String(frame).padStart(4, '0') + '.npz'),
+          })
+          .then((output) => {
+            prediction.output = output;
+          })
+          .catch((error: unknown) => {
+            prediction.error = error;
+          })
+          .finally(() => {
+            prediction.done = true;
+          });
+        // Continue visual tracking while Qwen decides. There is only one policy
+        // request at a time, and no browser input occurs until it is validated.
+        while (!prediction.done && (await browser.phase()) === 'battle') {
+          await delay(350, undefined, { signal });
+          if (!prediction.done) await capture();
+        }
+        await pending;
+        lease.release?.();
+        if (prediction.error) {
+          if (++state.errors >= 3) throw prediction.error;
+          continue;
+        }
+        const output = prediction.output!;
+        const selected = candidates.find((action) => action.id === Number(JSON.parse(output.text).choice));
+        if (!selected) throw new Error('Counterpush 정책이 후보 밖의 행동을 반환했습니다.');
+        await log({
+          type: 'prediction',
+          frame,
+          image: imagePath,
+          candidates,
+          prompt,
+          situation: before.situation,
+          ...output,
         });
-      // Continue visual tracking while Qwen decides. There is only one policy
-      // request at a time, and no browser input occurs until it is validated.
-      while (!prediction.done && (await browser.phase()) === 'battle') {
-        await delay(350, undefined, { signal });
-        if (!prediction.done) await capture();
-      }
-      await pending;
-      if (prediction.error) {
-        if (++state.errors >= 3) throw prediction.error;
-        continue;
-      }
-      const output = prediction.output!;
-      const selected = candidates.find((action) => action.id === Number(JSON.parse(output.text).choice));
-      if (!selected) throw new Error('Counterpush 정책이 후보 밖의 행동을 반환했습니다.');
-      await log({
-        type: 'prediction',
-        frame,
-        image: imagePath,
-        candidates,
-        prompt,
-        situation: before.situation,
-        ...output,
-      });
-      if ((await browser.phase()) !== 'battle') continue;
-      const latest = await capture();
-      const newEffect = latest.situation.effects?.some(
-        (effect) =>
-          effect.side === 'red' &&
-          effect.card === 'graveyard' &&
-          !before.situation.effects?.some(
-            (old) =>
-              old.side === effect.side &&
-              old.card === effect.card &&
-              Math.hypot(old.x - effect.x, old.y - effect.y) < 55,
-          ),
-      );
-      if (newEffect) {
-        await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
-        continue;
-      }
-      if (selected.kind === 'ability') {
-        const beforeAbility = before.situation.own.ability;
-        const latestAbility = latest.situation.own.ability;
-        if (
-          !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
-          latest.elixirConfidence < 0.9
-        ) {
-          await log({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
+        if ((await browser.phase()) !== 'battle') continue;
+        const latest = await capture();
+        const newEffect = latest.situation.effects?.some(
+          (effect) =>
+            effect.side === 'red' &&
+            effect.card === 'graveyard' &&
+            !before.situation.effects?.some(
+              (old) =>
+                old.side === effect.side &&
+                old.card === effect.card &&
+                Math.hypot(old.x - effect.x, old.y - effect.y) < 55,
+            ),
+        );
+        if (newEffect) {
+          await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
+          continue;
+        }
+        if (selected.kind === 'ability') {
+          const beforeAbility = before.situation.own.ability;
+          const latestAbility = latest.situation.own.ability;
+          if (
+            !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
+            latest.elixirConfidence < 0.9
+          ) {
+            await log({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
+            continue;
+          }
+          state.inputPending = true;
+          const sentAt = Date.now();
+          if (!(await browser.activateAbility())) {
+            state.inputPending = false;
+            continue;
+          }
+          state.actions++;
+          state.abilityActions++;
+          await log({ type: 'ability_sent', frame, action: selected, sentAt });
+          await delay(300, undefined, { signal });
+          const checks: Array<{
+            changed: boolean;
+            handUnchanged: boolean;
+            confirmed: boolean;
+            spent: number;
+          }> = [];
+          for (const attempt of [0, 1, 2, 3]) {
+            if (attempt) await delay(200, undefined, { signal });
+            if ((await browser.phase()) !== 'battle') break;
+            const after = await capture();
+            const spent = latest.state.elixir - after.state.elixir;
+            checks.push({
+              ...abilityInputCheck({
+                before: latestAbility!,
+                after: after.situation.own.ability!,
+                beforeCards: latest.cards,
+                afterCards: after.cards,
+                spent,
+                elixirReliable: after.elixirConfidence >= 0.9,
+              }),
+              spent,
+            });
+            if (checks.at(-1)!.confirmed) break;
+          }
+          const check = checks.at(-1);
+          if (check?.confirmed) {
+            abilityButton.markUsed(latestAbility!.instance);
+            memory.ownAbility(sentAt, latestAbility!.instance);
+            state.confirmed++;
+            state.abilityConfirmed++;
+            state.unconfirmed = 0;
+          } else state.unconfirmed++;
+          state.inputPending = false;
+          await log({
+            type: 'ability_check',
+            frame,
+            ...check,
+            confirmed: check?.confirmed ?? false,
+            expectedCost: 2,
+            checks: checks.length,
+            action: selected,
+          });
+          if (state.unconfirmed >= 3)
+            throw new Error('입력이 세 번 연속 확인되지 않아 스킬 버튼과 화면을 확인해야 합니다.');
+          state.errors = 0;
+          continue;
+        }
+        if (selected.slot === 0) {
+          await log({
+            type: 'wait_check',
+            frame,
+            valid: latest.state.battle && Date.now() - before.capturedAt < 8000,
+          });
+          continue;
+        }
+        const choice: QwenPrediction = {
+          phase: 'battle',
+          hand: before.cards,
+          elixir: before.state.elixir,
+          slot: selected.slot,
+          x: selected.target.x / 368,
+          y: selected.target.y / 652,
+          outcome: 'unknown',
+        };
+        const action = validateQwenAction(choice, before.state, latest.state, profile, Date.now());
+        if (!action || latest.elixirConfidence < 0.9) {
+          await log({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
           continue;
         }
         state.inputPending = true;
         const sentAt = Date.now();
-        if (!(await browser.activateAbility())) {
+        if (!(await browser.play(profile, selected.slot, selected.target))) {
           state.inputPending = false;
           continue;
         }
         state.actions++;
-        state.abilityActions++;
-        await log({ type: 'ability_sent', frame, action: selected, sentAt });
+        await log({ type: 'input_sent', frame, action, sentAt });
         await delay(300, undefined, { signal });
-        const checks: Array<{ changed: boolean; handUnchanged: boolean; confirmed: boolean; spent: number }> =
-          [];
+        const checks: Array<{ after: OwnFrame; changed: boolean; spent: number; confirmed: boolean }> = [];
         for (const attempt of [0, 1, 2, 3]) {
           if (attempt) await delay(200, undefined, { signal });
           if ((await browser.phase()) !== 'battle') break;
           const after = await capture();
+          const changed = difference(latest.state.hand[action.slot]!, after.state.hand[action.slot]!) > 15;
           const spent = latest.state.elixir - after.state.elixir;
-          checks.push({
-            ...abilityInputCheck({
-              before: latestAbility!,
-              after: after.situation.own.ability!,
-              beforeCards: latest.cards,
-              afterCards: after.cards,
-              spent,
-              elixirReliable: after.elixirConfidence >= 0.9,
-            }),
-            spent,
-          });
-          if (checks.at(-1)!.confirmed) break;
+          const cost = CARD_INFO[selected.card!].cost;
+          // A dark animation frame can look like a loss of all elixir. Require a
+          // recognizable replacement card and a spend compatible with its cost.
+          const confirmed =
+            changed &&
+            after.elixirConfidence >= 0.9 &&
+            after.cards[action.slot] !== null &&
+            after.cards[action.slot] !== selected.card &&
+            plausibleSpend(spent, cost, after.capturedAt - latest.capturedAt);
+          checks.push({ after, changed, spent, confirmed });
+          if (confirmed) break;
         }
         const check = checks.at(-1);
         if (check?.confirmed) {
-          abilityButton.markUsed(latestAbility!.instance);
-          memory.ownAbility(sentAt, latestAbility!.instance);
           state.confirmed++;
-          state.abilityConfirmed++;
           state.unconfirmed = 0;
-        } else state.unconfirmed++;
+          memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
+          if (selected.card === 'ice_wizard') abilityButton.newDeployment();
+        } else {
+          state.unconfirmed++;
+          memory.ownEvolutions.uncertain();
+        }
         state.inputPending = false;
         await log({
-          type: 'ability_check',
+          type: 'input_check',
           frame,
-          ...check,
+          changed: check?.changed ?? false,
+          spent: check?.spent ?? 0,
           confirmed: check?.confirmed ?? false,
-          expectedCost: 2,
+          expectedCost: CARD_INFO[selected.card!].cost,
           checks: checks.length,
-          action: selected,
+          action,
         });
         if (state.unconfirmed >= 3)
-          throw new Error('입력이 세 번 연속 확인되지 않아 스킬 버튼과 화면을 확인해야 합니다.');
+          throw new Error('카드 사용이 세 번 연속 확인되지 않아 좌표와 화면을 확인해야 합니다.');
         state.errors = 0;
-        continue;
+      } finally {
+        // Also release if a tab ends, an input fails or shutdown interrupts it.
+        if (pendingLease) await pendingLease.catch(() => {});
+        lease.release?.();
       }
-      if (selected.slot === 0) {
-        await log({
-          type: 'wait_check',
-          frame,
-          valid: latest.state.battle && Date.now() - before.capturedAt < 8000,
-        });
-        continue;
-      }
-      const choice: QwenPrediction = {
-        phase: 'battle',
-        hand: before.cards,
-        elixir: before.state.elixir,
-        slot: selected.slot,
-        x: selected.target.x / 368,
-        y: selected.target.y / 652,
-        outcome: 'unknown',
-      };
-      const action = validateQwenAction(choice, before.state, latest.state, profile, Date.now());
-      if (!action || latest.elixirConfidence < 0.9) {
-        await log({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
-        continue;
-      }
-      state.inputPending = true;
-      const sentAt = Date.now();
-      if (!(await browser.play(profile, selected.slot, selected.target))) {
-        state.inputPending = false;
-        continue;
-      }
-      state.actions++;
-      await log({ type: 'input_sent', frame, action, sentAt });
-      await delay(300, undefined, { signal });
-      const checks: Array<{ after: OwnFrame; changed: boolean; spent: number; confirmed: boolean }> = [];
-      for (const attempt of [0, 1, 2, 3]) {
-        if (attempt) await delay(200, undefined, { signal });
-        if ((await browser.phase()) !== 'battle') break;
-        const after = await capture();
-        const changed = difference(latest.state.hand[action.slot]!, after.state.hand[action.slot]!) > 15;
-        const spent = latest.state.elixir - after.state.elixir;
-        const cost = CARD_INFO[selected.card!].cost;
-        // A dark animation frame can look like a loss of all elixir. Require a
-        // recognizable replacement card and a spend compatible with its cost.
-        const confirmed =
-          changed &&
-          after.elixirConfidence >= 0.9 &&
-          after.cards[action.slot] !== null &&
-          after.cards[action.slot] !== selected.card &&
-          plausibleSpend(spent, cost, after.capturedAt - latest.capturedAt);
-        checks.push({ after, changed, spent, confirmed });
-        if (confirmed) break;
-      }
-      const check = checks.at(-1);
-      if (check?.confirmed) {
-        state.confirmed++;
-        state.unconfirmed = 0;
-        memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
-        if (selected.card === 'ice_wizard') abilityButton.newDeployment();
-      } else {
-        state.unconfirmed++;
-        memory.ownEvolutions.uncertain();
-      }
-      state.inputPending = false;
-      await log({
-        type: 'input_check',
-        frame,
-        changed: check?.changed ?? false,
-        spent: check?.spent ?? 0,
-        confirmed: check?.confirmed ?? false,
-        expectedCost: CARD_INFO[selected.card!].cost,
-        checks: checks.length,
-        action,
-      });
-      if (state.unconfirmed >= 3)
-        throw new Error('카드 사용이 세 번 연속 확인되지 않아 좌표와 화면을 확인해야 합니다.');
-      state.errors = 0;
     }
   } finally {
     dynamics.finishOldEffects(Date.now(), true);
-    await options.patterns?.save();
+    if (options.persistPatterns !== false) await options.patterns?.save();
     const selected = [...COUNTERPUSH_DECK].flatMap((card) =>
       observations
         .filter((item) => item.card === card)
@@ -547,20 +595,35 @@ export async function learnCounterpushEpisode(
   dataDir: string,
   episode: { directory: string; opponentActions: number },
 ) {
+  return (await learnCounterpushEpisodes(client, dataDir, [episode]))[0]!.training;
+}
+
+export async function learnCounterpushEpisodes(
+  client: LearningClient,
+  dataDir: string,
+  episodes: Array<{ directory: string; opponentActions: number }>,
+) {
   // PPO consumes the exact behavior policy first. Demonstration features are
   // computed only afterwards, using the newly current adapter.
-  const own = await client.train(episode.directory);
-  const dataset = episode.opponentActions
-    ? await prepareOpponentDataset(join(episode.directory, 'observations.json'), dataDir)
-    : null;
-  const opponent = dataset?.samples
-    ? await client.imitate(dataset.path)
-    : { updated: false, reason: 'no_confirmed_opponent_actions' };
-  const policy = await client.status();
-  const summaryPath = join(episode.directory, 'summary.json');
-  const summary = JSON.parse(await readFile(summaryPath, 'utf8')) as Record<string, unknown>;
-  const coverage = await readEpisodeCoverage(episode.directory, { opponent, dataset });
-  const training = { updated: own.updated || opponent.updated, own, opponent, policy, dataset, coverage };
-  await atomicWrite(summaryPath, JSON.stringify({ ...summary, training }, null, 2) + '\n');
-  return training;
+  const own =
+    episodes.length === 1
+      ? await client.train(episodes[0]!.directory)
+      : await client.trainBatch(episodes.map((episode) => episode.directory));
+  const trained = [];
+  for (const episode of episodes) {
+    const dataset = episode.opponentActions
+      ? await prepareOpponentDataset(join(episode.directory, 'observations.json'), dataDir)
+      : null;
+    const opponent = dataset?.samples
+      ? await client.imitate(dataset.path)
+      : { updated: false, reason: 'no_confirmed_opponent_actions' };
+    const policy = await client.status();
+    const summaryPath = join(episode.directory, 'summary.json');
+    const summary = JSON.parse(await readFile(summaryPath, 'utf8')) as Record<string, unknown>;
+    const coverage = await readEpisodeCoverage(episode.directory, { opponent, dataset });
+    const training = { updated: own.updated || opponent.updated, own, opponent, policy, dataset, coverage };
+    await atomicWrite(summaryPath, JSON.stringify({ ...summary, training }, null, 2) + '\n');
+    trained.push({ episode, training });
+  }
+  return trained;
 }

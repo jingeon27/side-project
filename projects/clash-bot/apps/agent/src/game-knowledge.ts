@@ -247,3 +247,50 @@ export const mechanicSummary = (card: CardId) => {
       }
     : null;
 };
+
+// The complete registry remains versioned above. Send each body/child's numeric
+// row only once, rather than repeating long stat keys inside every card entry.
+export function compactMechanics(cards: CardId[]) {
+  const bodies = [
+    ...new Set(
+      cards.flatMap((card) => {
+        const info = CARD_MECHANICS[card];
+        return [info?.body, info?.spawn?.unit].filter(
+          (kind): kind is keyof typeof UNIT_MECHANICS => !!kind && kind in UNIT_MECHANICS,
+        );
+      }),
+    ),
+  ];
+  return {
+    unitColumns: [
+      'kind',
+      'hp',
+      'damage',
+      'rangeTiles',
+      'hitS',
+      'firstHitS',
+      'movement',
+      'splashTiles',
+      'targets',
+    ],
+    units: bodies.map((kind) => {
+      const unit = UNIT_MECHANICS[kind];
+      return [
+        kind,
+        unit.hp,
+        unit.damage,
+        unit.rangeTiles,
+        unit.hitSeconds,
+        unit.firstHitSeconds,
+        unit.movement,
+        unit.splashTiles,
+        unit.targets,
+      ];
+    }),
+    iceWizardExtra: bodies.includes('ice_wizard')
+      ? { deployDamage: 84, deployRadius: 3, slowPercent: 30, slowS: 2.5 }
+      : undefined,
+    fireSpiritExtra: bodies.includes('fire_spirit') ? { selfDestructsOnHit: true } : undefined,
+    cards: cards.map((card) => ({ card, ...CARD_MECHANICS[card] })),
+  };
+}

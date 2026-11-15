@@ -156,12 +156,12 @@ class LearningWorker:
                 "adapter_applied_inside_qwen": True,
                 "adapter_sha256": weights_digest(self.learner.adapter)}}
 
-    def train(self, request):
-        directory = Path(request["episode"]).resolve()
+    def episode_samples(self, episode):
+        directory = Path(episode).resolve()
         rows = [json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line]
         results = [row for row in rows if verified_result(row)]
         if not results:
-            return {"updated": False, "reason": "no_verified_result"}
+            return None
         result = results[-1]
         blue, red = result["blue"], result["red"]
         if not all(isinstance(value, int) and 0 <= value <= 3 for value in (blue, red)):
@@ -190,8 +190,28 @@ class LearningWorker:
             if behavior["adapter_sha256"] != weights_digest(self.learner.adapter):
                 raise ValueError("Episode adapter checksum does not match current policy")
             samples.append(sample)
-        report = self.learner.train(samples, reward, str(directory))
+        return {'samples': samples, 'reward': reward, 'episode': str(directory)}
+
+    def train(self, request):
+        episode = self.episode_samples(request['episode'])
+        if episode is None:
+            return {'updated': False, 'reason': 'no_verified_result'}
+        report = self.learner.train(episode['samples'], episode['reward'], episode['episode'])
+        directory = Path(episode['episode'])
         atomic_json(directory / "training.json", report)
+        return report
+
+    def train_batch(self, request):
+        paths = request.get('episodes', [])
+        if not 1 <= len(paths) <= 2 or len({str(Path(path).resolve()) for path in paths}) != len(paths):
+            raise ValueError('Expected one or two distinct episode directories')
+        # Resolve every behavior checksum before the first weight update.
+        episodes = [self.episode_samples(path) for path in paths]
+        if any(episode is None for episode in episodes):
+            return {'updated': False, 'reason': 'no_verified_result'}
+        report = self.learner.train_batch(episodes)
+        for episode in episodes:
+            atomic_json(Path(episode['episode']) / 'training.json', report)
         return report
 
     def observe(self, request):
@@ -251,6 +271,8 @@ def main():
                     result = worker.choose(request)
                 elif request["op"] == "train":
                     result = worker.train(request)
+                elif request["op"] == "train_batch":
+                    result = worker.train_batch(request)
                 elif request["op"] == "imitate":
                     result = worker.imitate(request)
                 elif request["op"] == "observe":

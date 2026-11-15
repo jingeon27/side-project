@@ -20,6 +20,7 @@ const { positionals, values } = parseArgs({
   options: {
     hours: { type: 'string' },
     matches: { type: 'string' },
+    tabs: { type: 'string' },
     model: { type: 'string' },
     profile: { type: 'string' },
     background: { type: 'boolean' },
@@ -109,6 +110,8 @@ const main = async () => {
   if (command !== 'start') throw new Error('counterpush login|start|status|audit|rescan|stop');
   const hours = Number(values.hours ?? 8),
     matches = Number(values.matches ?? 0);
+  const tabs = Number(values.tabs ?? 1);
+  if (![1, 2].includes(tabs)) throw new Error('tabs는 1 또는 2입니다.');
   if (
     !Number.isFinite(hours) ||
     hours <= 0 ||
@@ -133,13 +136,22 @@ const main = async () => {
           String(matches),
           '--model',
           model,
+          '--tabs',
+          String(tabs),
           ...(values.profile ? ['--profile', resolve(values.profile)] : []),
         ],
         { detached: true, stdio: ['ignore', output, output], cwd: process.cwd() },
       );
       child.unref();
       console.log(
-        JSON.stringify({ started: true, pid: child.pid, hours, matches, log: join(control, 'console.log') }),
+        JSON.stringify({
+          started: true,
+          pid: child.pid,
+          hours,
+          matches,
+          tabs,
+          log: join(control, 'console.log'),
+        }),
       );
     } finally {
       closeSync(output);
@@ -155,6 +167,7 @@ const main = async () => {
     model,
     hours,
     matches,
+    tabs,
     signal: abort.signal,
   });
 };

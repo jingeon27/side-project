@@ -7,7 +7,7 @@ import { type OpponentObservation } from '../opponent-data.ts';
 import { analyze, loadTemplates } from '../vision.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from './browser.ts';
-import { counterpushElixir } from './elixir.ts';
+import { counterpushBarReading, counterpushElixir } from './elixir.ts';
 import { FieldDynamics } from './field-dynamics.ts';
 import { HeroAbilityButton } from './hero-ability.ts';
 import { OpponentTracker } from './tracker.ts';
@@ -73,7 +73,10 @@ export async function reprocessEpisode(
   const rejected: Array<{ id: string; reason: string }> = [];
   for (const frame of frames) {
     const image = await readFile(frame.image);
-    const raw = await analyze(image, profile, templates, frame.capturedAt);
+    const raw = {
+      ...(await analyze(image, profile, templates, frame.capturedAt)),
+      ...(await counterpushBarReading(image, profile)),
+    };
     const cards = raw.hand.map((slot) => slot.card);
     const elixir = counterpushElixir(raw, profile);
     const scan = await vision.scan(frame.image);

@@ -166,11 +166,16 @@ function colorAt(pixels: Pixels, x: number, y: number): [number, number, number]
 export function readElixir(
   pixels: Pixels,
   rect: Rect,
+  allowWhiteFill = false,
 ): { value: number; amount: number; confidence: number } {
   const columns = Array.from({ length: rect.width }, (_, offset) => {
     const colored = Array.from({ length: rect.height - 4 }, (_, row) => {
       const [r, g, b] = colorAt(pixels, rect.x + offset, rect.y + row + 2);
-      return r > 100 && b > 90 && r > g * 1.35 && b > g * 1.2;
+      const purple = r > 100 && b > 90 && r > g * 1.35 && b > g * 1.2;
+      // Counterpush's full bar has a traveling white highlight. This option is
+      // used only on its narrow, calibrated bar ROI, never general field pixels.
+      const white = allowWhiteFill && r > 150 && b > 150 && r >= g * 0.95 && b >= g * 0.95;
+      return purple || white;
     }).filter(Boolean).length;
     return colored >= (rect.height - 4) * 0.4;
   });

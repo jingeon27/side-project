@@ -189,20 +189,35 @@ class Learner:
             self.optimizer.state = tree_unflatten(list(optimizer_before.items()))
             raise
 
-    def train(self, samples, reward, episode):
+    def train_batch(self, episodes):
+        if not episodes or len(episodes) > 2 or len({item['episode'] for item in episodes}) != len(episodes):
+            raise ValueError('Expected one or two distinct episodes')
+        samples = [{**sample, 'episode_reward': item['reward'], 'episode_id': item['episode']}
+                   for item in episodes for sample in item['samples']]
+        batch = {'episodes': [item['episode'] for item in episodes],
+                 'rewards': [item['reward'] for item in episodes]}
+        reward = sum(batch['rewards']) / len(episodes) if all(value in (-1, 0, 1) for value in batch['rewards']) else None
+        return self.train(samples, reward, episodes[0]['episode'], batch=batch)
+
+    def train(self, samples, reward, episode, batch=None):
         rate = float(self.optimizer.learning_rate.item())
         for attempt in range(4):
             try:
-                return self._train_once(samples, reward, episode, rate * (0.25 ** attempt), attempt)
+                return self._train_once(samples, reward, episode, rate * (0.25 ** attempt), attempt, batch)
             except KLExceeded:
                 # _train_once restores both parameters and optimizer state first.
                 continue
         return {"updated": False, "reason": "kl_limit_after_backtracking", "version": self.metadata["version"]}
 
-    def _train_once(self, samples, reward, episode, learning_rate, attempt):
-        if episode in self.metadata["episodes"]:
+    def _train_once(self, samples, reward, episode, learning_rate, attempt, batch=None):
+        episode_ids = batch['episodes'] if batch else [episode]
+        trained = [value in self.metadata['episodes'] for value in episode_ids]
+        if all(trained):
             return {"updated": False, "reason": "already_trained", "version": self.metadata["version"]}
-        if reward not in (-1, 0, 1) or not samples:
+        if any(trained):
+            raise ValueError('Partially trained batch; do not replay an episode')
+        rewards = batch['rewards'] if batch else [reward]
+        if any(value not in (-1, 0, 1) for value in rewards) or reward is None or not samples:
             return {"updated": False, "reason": "no_verified_reward_or_actions"}
         if any(sample["version"] != self.metadata["version"] for sample in samples):
             raise ValueError("Off-policy episode: adapter version changed")
@@ -219,7 +234,7 @@ class Learner:
         losses = []
         try:
             for sample in selected:
-                advantage = (reward - self.metadata["baseline"]) * (0.995 ** sample["remaining"])
+                advantage = (sample.get('episode_reward', reward) - self.metadata["baseline"]) * (0.995 ** sample["remaining"])
                 loss, gradients = grad_fn(self.adapter, sample, advantage, self.norm_weight, self.norm_eps, self.token_rows)
                 mx.eval(loss, gradients)
                 flat = tree_flatten(gradients)
@@ -245,9 +260,12 @@ class Learner:
                       "mean_loss": sum(losses) / len(losses), "max_kl": max(kls),
                       "probability_before": before_probabilities[0],
                       "probability_after": float(mx.exp(self.log_probs(selected[0])[selected[0]["chosen"]]).item())}
+            if batch:
+                report.update({'episodes': episode_ids, 'rewards': rewards,
+                               'selected_per_episode': {value: sum(s.get('episode_id') == value for s in selected) for value in episode_ids}})
             metadata = {**self.metadata, "version": report["version"],
                         "baseline": self.metadata["baseline"] * 0.9 + reward * 0.1,
-                        "episodes": self.metadata["episodes"] + [episode],
+                        "episodes": self.metadata["episodes"] + episode_ids,
                         "updates": self.metadata["updates"] + len(selected),
                         "weights_sha256": after_hash, "last_training": report}
             self.save(metadata)

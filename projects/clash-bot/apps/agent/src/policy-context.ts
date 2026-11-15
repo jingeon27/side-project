@@ -3,6 +3,30 @@ import type { BattleSituation, FieldUnit } from './counterpush/battle-state.ts';
 // Keep full evidence in states.jsonl, but avoid repeating long field names and
 // historical timestamps for every visible skeleton in each expensive VLM call.
 export function policyContext(situation: BattleSituation) {
+  const cycle = (value: BattleSituation['own']['cycle']) =>
+    value
+      ? {
+          exact: value.exact,
+          missed: value.mayHaveMissed,
+          hypotheses: value.hypotheses,
+          couldHold: value.couldHold,
+          nextDraw: value.nextDraw,
+          returnWaitColumns: ['card', 'minPlays', 'maxPlays'],
+          returnWait: Object.entries(value.returnsAfterPlays).map(([card, wait]) => [
+            card,
+            wait.min,
+            wait.max,
+          ]),
+        }
+      : null;
+  const evolutions = (value: BattleSituation['own']['evolutions']) =>
+    value?.map((entry) => [
+      entry.card,
+      entry.normalPlaysBeforeEvolved.min,
+      entry.normalPlaysBeforeEvolved.max,
+      entry.nextDeploy,
+      entry.counterExact,
+    ]);
   const row = (unit: FieldUnit) => [
     unit.trackId ?? '',
     unit.kind ?? unit.card ?? '?',
@@ -19,6 +43,8 @@ export function policyContext(situation: BattleSituation) {
   return {
     at: situation.at,
     visibility: situation.visibility,
+    evolutionColumns: ['card', 'normalUsesMin', 'normalUsesMax', 'nextDeployEstimate', 'counterExact'],
+    evolutionBasis: 'reference cycles + confirmed card uses; engine cycle not yet verified',
     unitColumns: [
       'id',
       'kind_hypothesis',
@@ -35,9 +61,16 @@ export function policyContext(situation: BattleSituation) {
     own: {
       elixir: situation.own.elixir,
       hand: situation.own.hand,
-      cycle: situation.own.cycle,
-      evolutions: situation.own.evolutions ?? [],
-      ability: situation.own.ability,
+      cycle: cycle(situation.own.cycle),
+      evolutions: evolutions(situation.own.evolutions),
+      ability: situation.own.ability
+        ? {
+            card: situation.own.ability.card,
+            cost: situation.own.ability.cost,
+            state: situation.own.ability.availability,
+            instance: situation.own.ability.instance,
+          }
+        : undefined,
       recentAbilities: situation.own.recentAbilities?.map((entry) => ({
         card: entry.card,
         cost: entry.cost,
@@ -51,8 +84,8 @@ export function policyContext(situation: BattleSituation) {
     },
     opponent: {
       elixir: situation.opponent.elixir,
-      cycle: situation.opponent.cycle,
-      evolutions: situation.opponent.evolutions ?? [],
+      cycle: cycle(situation.opponent.cycle),
+      evolutions: evolutions(situation.opponent.evolutions),
       ability: 'unobserved; availability and previous activation are unknown',
       units: situation.opponent.units.slice(0, 24).map(row),
       seenSpent: situation.opponent.seenSpent,

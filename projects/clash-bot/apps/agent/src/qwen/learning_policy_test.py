@@ -71,6 +71,44 @@ class LearningPolicyTest(unittest.TestCase):
                 Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.ones((3, 8)), directory,
                         model_identity='different-model')
 
+    def test_parallel_games_update_once_with_their_own_rewards_and_checkpoint_both(self):
+        from unittest.mock import patch
+        from learning_policy import clipped_loss
+        with tempfile.TemporaryDirectory() as directory:
+            learner = self.make_learner(directory)
+            advantages = []
+            def measured(adapter, sample, advantage, *args):
+                advantages.append(advantage)
+                return clipped_loss(adapter, sample, advantage, *args)
+            games = [{'episode': 'tab-1', 'reward': 1, 'samples': [self.sample(learner)]},
+                     {'episode': 'tab-2', 'reward': -1, 'samples': [self.sample(learner)]}]
+            with patch('learning_policy.clipped_loss', new=measured):
+                report = learner.train_batch(games)
+            self.assertTrue(report['updated'])
+            self.assertEqual(advantages, [1, -1])
+            self.assertEqual(report['version'], 1)
+            self.assertEqual(report['rewards'], [1, -1])
+            self.assertEqual(report['selected_per_episode'], {'tab-1': 1, 'tab-2': 1})
+            restored = self.make_learner(directory)
+            self.assertEqual(restored.metadata['episodes'], ['tab-1', 'tab-2'])
+            self.assertEqual(restored.train_batch(games)['reason'], 'already_trained')
+
+    def test_parallel_batch_rejects_mixed_versions_and_partial_replay_atomically(self):
+        with tempfile.TemporaryDirectory() as directory:
+            learner = self.make_learner(directory)
+            sample = self.sample(learner)
+            original = weights_digest(learner.adapter)
+            games = [{'episode': 'tab-1', 'reward': -1, 'samples': [sample]},
+                     {'episode': 'tab-2', 'reward': 1, 'samples': [{**sample, 'version': 2}]}]
+            with self.assertRaisesRegex(ValueError, 'Off-policy'):
+                learner.train_batch(games)
+            self.assertEqual(weights_digest(learner.adapter), original)
+            learner.train([sample], -1, 'tab-1')
+            current = weights_digest(learner.adapter)
+            with self.assertRaisesRegex(ValueError, 'Partially trained'):
+                learner.train_batch(games)
+            self.assertEqual(weights_digest(learner.adapter), current)
+
     def test_imitation_increases_observed_card_lane_probability_and_reloads(self):
         with tempfile.TemporaryDirectory() as directory:
             learner = self.make_learner(directory)

@@ -65,6 +65,9 @@ export class LearningClient extends QwenClient {
   async train(episode: string): Promise<TrainingReport> {
     return trainingSchema.parse(await this.request({ op: 'train', episode }, 120_000));
   }
+  async trainBatch(episodes: string[]): Promise<TrainingReport> {
+    return trainingSchema.parse(await this.request({ op: 'train_batch', episodes }, 120_000));
+  }
   async imitate(dataset: string): Promise<TrainingReport> {
     return trainingSchema.parse(await this.request({ op: 'imitate', dataset }, 120_000));
   }

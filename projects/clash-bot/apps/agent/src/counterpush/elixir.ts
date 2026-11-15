@@ -1,5 +1,17 @@
+import sharp from 'sharp';
+
 import type { Profile } from '../config.ts';
-import type { Observation } from '../vision.ts';
+import { readElixir, type Observation } from '../vision.ts';
+
+export async function counterpushBarReading(image: Buffer, profile: Profile) {
+  const { data, info } = await sharp(image).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const reading = readElixir(
+    { data, width: info.width, height: info.height, channels: info.channels },
+    profile.elixir,
+    true,
+  );
+  return { elixir: reading.value, elixirAmount: reading.amount, elixirConfidence: reading.confidence };
+}
 
 // Read only the established, unobstructed section of the bar. The left edge is
 // covered by the number bubble; including it makes the gap detector read zero.

@@ -101,6 +101,21 @@ class LearningEpisodeTest(unittest.TestCase):
                 worker.train({'episode': directory})
             worker.learner.train.assert_not_called()
 
+    def test_parallel_training_reads_both_episodes_before_one_learner_update(self):
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            worker = self.worker()
+            worker.learner.train_batch = Mock(return_value={'updated': True, 'version': 1})
+            self.write_episode(first, worker)
+            self.write_episode(second, worker)
+            report = worker.train_batch({'episodes': [first, second]})
+            self.assertTrue(report['updated'])
+            games = worker.learner.train_batch.call_args.args[0]
+            self.assertEqual([len(game['samples']) for game in games], [2, 2])
+            self.assertEqual([game['reward'] for game in games], [-1, -1])
+            worker.learner.train.assert_not_called()
+            with self.assertRaises(ValueError):
+                worker.train_batch({'episodes': [first, first]})
+
     def test_uses_separate_lm_head_when_embeddings_are_untied(self):
         embedding = nn.Embedding(8, 4)
         embedding.weight = mx.full((8, 4), 2.0)

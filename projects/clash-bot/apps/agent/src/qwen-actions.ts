@@ -1,6 +1,6 @@
 import { CARD_INFO, type CardId, type Point, type Profile } from './config.ts';
 import type { BattleSituation } from './counterpush/battle-state.ts';
-import { ABILITY_RULES, KNOWLEDGE_VERSION, mechanicSummary } from './game-knowledge.ts';
+import { compactMechanics, KNOWLEDGE_VERSION, mechanicSummary } from './game-knowledge.ts';
 import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from './placement.ts';
 import { policyContext } from './policy-context.ts';
 
@@ -219,19 +219,35 @@ export function choicePrompt(
     ...new Set(
       [
         ...cards,
+        ...(situation?.own.units.flatMap((unit) => [unit.card, unit.sourceCard ?? null]) ?? []),
+        ...(situation?.opponent.units.flatMap((unit) => [unit.card, unit.sourceCard ?? null]) ?? []),
         ...actions.filter((action) => action.kind === 'ability').map((action) => action.card),
       ].filter((card): card is CardId => card !== null),
     ),
   ];
   const reply =
-    `Ability rules: ${JSON.stringify(ABILITY_RULES)}. ` +
-    `Mechanics ${KNOWLEDGE_VERSION} are level-11 Clash Royale reference values, not fully calibrated Counterpush physics. Engine speed is NOT tiles/sec. Use measured pixel velocities and observed variants; an unknown variant grants no assumed evolution/hero bonus. Spawner children do not cost another card. Compare arrival, deploy/first-hit delay, range and splash. Graveyard has a fixed order; predictions are uncertain first-visibility estimates only after repeated casts. ` +
-    `Card knowledge: ${JSON.stringify(deckGuidance(knownCards))}. ` +
-    (format === 'letter'
-      ? 'Reply with exactly ONE action letter, no explanation.'
-      : 'Return ONLY {"choice":ACTION_ID}.') +
-    (situation
-      ? ` Both players regenerate equally and cap at 10; overflow is lost. A deck has 8 cards, 4 in hand and a 4-card FIFO draw queue; a played card returns after 4 subsequent plays. Ability activation spends its own cost and does NOT draw or advance either card/evolution cycle. Evolution charges advance only when that same card is deployed; configured cycles are reference estimates until visually verified. An evolved Knight is not always shielded; an evolved Furnace is not always spawning faster. Enemy abilities are unobserved, not known unused. Use enemy elixir ranges and cycle hypotheses as partial estimates. Current field state: ${JSON.stringify(policyContext(situation))}.`
-      : '');
-  return `You play BLUE bottom in Clash Royale. Enemy RED top. Current hand left to right: ${cards.join(', ')}. Elixir=${elixir}. Invading enemy positions in 368x652 coordinates: ${JSON.stringify(threats)}. Choose the best ONE action from this legal list. Compare timely defense, forward pressure and patient buildup. Use unit speed, deploy/first-hit delay, attack range, splash, child spawns and visible hazards. Keep ranged support behind protection; place spawners where their children can reach relevant targets. Under Graveyard, consider the observed spawn phase and Poison overlap; a single melee unit or Barrel does not guarantee full coverage. Counterattack Graveyard needs tank arrival and a placement that accounts for defenders. Do not wait at full elixir. ${reply} Actions: ${JSON.stringify(actions.map((a, i) => ({ id: format === 'letter' ? String.fromCharCode(65 + i) : a.id, kind: a.kind ?? (a.card ? 'card' : 'wait'), cost: a.cost ?? (a.card ? CARD_INFO[a.card].cost : 0), card: a.card, description: a.description, target: a.target })))}.`;
+    format === 'letter' ? 'Reply exactly ONE action letter.' : 'Return ONLY {"choice":ACTION_ID}.';
+  const rows = actions.map((action, index) => [
+    format === 'letter' ? String.fromCharCode(65 + index) : action.id,
+    action.kind ?? (action.card ? 'card' : 'wait'),
+    action.card,
+    action.cost ?? (action.card ? CARD_INFO[action.card].cost : 0),
+    action.target.x,
+    action.target.y,
+    action.description,
+  ]);
+  return [
+    'Play BLUE bottom vs RED top, 368x652 pixels. Choose one legal action. ' + reply,
+    'Both regenerate equally, cap 10, lose overflow. Deck8/hand4/FIFO4; a card returns after4 subsequent plays. Enemy resources and cycle are partial ranges.',
+    'Skill does NOT draw a card or charge evolution. Only the latest deployed hero/champion owns its skill; normally once per deployment, Boss Bandit is the exception. Enemy skill state is unknown.',
+    'Evolution charges only by deploying that SAME card. Predicted next form is not an observed active form. Knight reduction requires not attacking; Furnace fast spawning requires hot+attacking. Unknown variants have no assumed bonus.',
+    'Compare travel velocity, deploy/first-hit delay, range, splash, child spawns and Poison. Protect ranged support and spawners. Graveyard defense needs spawn phase/area coverage; one melee unit or Barrel cannot cover all. Attack Graveyard with tank arrival and consider defenders. Do not wait at full elixir.',
+    'Knowledge ' +
+      KNOWLEDGE_VERSION +
+      ' is a level11 reference, not verified Counterpush physics. Movement class is not tiles/sec. Fixed Graveyard predictions estimate first visibility only. ' +
+      JSON.stringify(compactMechanics(knownCards)),
+    'Hand=' + cards.join(',') + '; elixir=' + elixir + '; threats=' + JSON.stringify(threats),
+    situation ? 'BEFORE state=' + JSON.stringify(policyContext(situation)) : '',
+    'Action columns=[id,kind,card,cost,x,y,intent]. Actions=' + JSON.stringify(rows),
+  ].join('\n');
 }

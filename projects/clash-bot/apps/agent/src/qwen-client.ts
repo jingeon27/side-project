@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline';
 
 export class QwenClient {
   readonly state = { closed: false, ready: false };
+  readonly queue = { tail: Promise.resolve() as Promise<unknown> };
   startup: Record<string, unknown> = {};
   readonly child: ChildProcessWithoutNullStreams;
   readonly lines: AsyncIterator<string>;
@@ -49,17 +50,20 @@ export class QwenClient {
     this.state.ready = true;
   }
   async request(payload: Record<string, unknown>, timeoutMs = 20_000): Promise<Record<string, unknown>> {
-    if (this.state.closed) throw new Error('Qwen 실행기가 닫혔습니다.');
-    this.child.stdin.write(JSON.stringify(payload) + '\n');
-    return this.read(timeoutMs);
+    const result = this.queue.tail.then(async () => {
+      if (this.state.closed) throw new Error('Qwen 실행기가 닫혔습니다.');
+      this.child.stdin.write(JSON.stringify(payload) + '\n');
+      return this.read(timeoutMs);
+    });
+    this.queue.tail = result.catch(() => {});
+    return result;
   }
   async infer(
     images: string[],
     prompt: string,
     schema?: unknown,
   ): Promise<{ text: string; elapsedMs: number; peakGb: number }> {
-    this.child.stdin.write(JSON.stringify({ images, prompt, schema, max_tokens: 160 }) + '\n');
-    const response = await this.read(20_000);
+    const response = await this.request({ images, prompt, schema, max_tokens: 160 });
     return {
       text: String(response.text),
       elapsedMs: Number(response.elapsed_ms),

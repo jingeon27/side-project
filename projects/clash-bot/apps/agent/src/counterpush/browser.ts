@@ -54,13 +54,19 @@ export class CounterpushBrowser {
       channel: 'chrome',
       chromiumSandbox: true,
       headless: false,
-      args: ['--mute-audio'],
+      args: [
+        '--mute-audio',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
+      ],
       viewport: { width: 1100, height: 940 },
       deviceScaleFactor: 1,
       timeout: 30_000,
     });
     try {
       const page = context.pages()[0] ?? (await context.newPage());
+      for (const extra of context.pages().filter((other) => other !== page)) await extra.close();
       page.setDefaultTimeout(5000);
       page.on('dialog', (dialog) => {
         void dialog.dismiss();
@@ -106,6 +112,29 @@ export class CounterpushBrowser {
           'Counterpush의 양쪽 덱을 GY GobHut Evo Furnace로 맞춰주세요. 다른 덱으로 매칭하지 않았습니다.',
         );
     }
+  }
+
+  async newTab() {
+    const page = await this.context.newPage();
+    page.setDefaultTimeout(5000);
+    page.on('dialog', (dialog) => {
+      void dialog.dismiss();
+    });
+    await page.goto('https://app.playcounterpush.com/play', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30_000,
+    });
+    await page.waitForFunction(
+      () => {
+        const button = document.querySelector('#battle');
+        return button instanceof HTMLButtonElement && !button.disabled;
+      },
+      {},
+      { timeout: 30_000 },
+    );
+    const browser = new CounterpushBrowser(this.context, page);
+    await browser.assertDecks();
+    return browser;
   }
 
   async phase(): Promise<BrowserPhase> {
