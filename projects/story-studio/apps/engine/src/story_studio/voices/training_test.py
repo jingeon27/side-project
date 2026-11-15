@@ -14,7 +14,7 @@ except ModuleNotFoundError as error:
         raise unittest.SkipTest('Native training verification requires Apple Silicon and the MLX extra') from error
     raise
 
-from . import voice_training as training
+from . import training
 
 
 class TinyTalker(nn.Module):

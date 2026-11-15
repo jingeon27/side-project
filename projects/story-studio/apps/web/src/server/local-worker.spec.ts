@@ -32,7 +32,7 @@ process.stdin.on('end', () => {
   console.log(JSON.stringify({ progress: 'started' }));
   if (input.text === 'fail') return process.exit(2);
   setTimeout(() => {
-    console.log(JSON.stringify({ result: { offline: process.env.HF_HUB_OFFLINE, threads: process.env.OMP_NUM_THREADS, key: process.env.DASHSCOPE_API_KEY } }));
+    console.log(JSON.stringify({ result: { offline: process.env.HF_HUB_OFFLINE, threads: process.env.OMP_NUM_THREADS, module: process.argv.slice(2, 4), source: process.env.PYTHONPATH, examples: process.argv[process.argv.indexOf('--examples-dir') + 1], key: process.env.DASHSCOPE_API_KEY } }));
   }, input.text === 'slow' ? 30000 : 30);
 });
 `;
@@ -52,7 +52,13 @@ it('설정 없이 로컬 모드를 고르고 키를 전달하지 않으며 오�
     videoReady: true,
     voiceReady: true,
   });
-  expect(await runLocal({ action: 'voice', text: '안녕하세요' })).toEqual({ offline: '1', threads: '2' });
+  expect(await runLocal({ action: 'voice', text: '안녕하세요' })).toEqual({
+    offline: '1',
+    threads: '2',
+    module: ['-m', 'story_studio'],
+    source: path.resolve(process.cwd(), '../engine/src'),
+    examples: path.join(process.cwd(), 'public/examples'),
+  });
 });
 
 it('동시에 들어온 생성 요청을 모델 로딩 전에 거절하고 완료 후 다시 실행한다', async () => {

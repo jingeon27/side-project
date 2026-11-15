@@ -36,6 +36,8 @@ export default defineConfig({
     'packages/design-system': { entry: ['playwright.config.ts'] },
     'projects/photo-contest': { entry: ['scripts/*.ts'] },
     'projects/*/apps/*': { entry: appEntries },
+    // Python 엔진은 자체 패키지와 검사로 관리하며 JavaScript 진입점이 없다.
+    'projects/story-studio/apps/engine': { entry: [] },
     'projects/blog/apps/web': { entry: [...appEntries, 'vercel.ts'] },
     'projects/photo-contest/apps/web': { entry: [...appEntries, 'test/browser/main.tsx'] },
     // k6의 내장 모듈은 npm 의존성이 아니다.

@@ -1,71 +1,18 @@
-"""Private recording normalization and durable local QLoRA jobs."""
+"""Dataset snapshots, resumable QLoRA execution and completed voice loading."""
 import hashlib
 import json
 from pathlib import Path
 import re
-
-
-def identifier(value):
-    if not isinstance(value, str) or not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', value):
-        raise ValueError('올바른 음성 ID가 아닙니다')
-    return value
-
-
-def run_folder(root, run_id):
-    if not isinstance(run_id, str) or not run_id.startswith('local-'):
-        raise ValueError('올바른 학습 작업이 아닙니다')
-    identifier(run_id[6:])
-    return root / 'voice-training/runs' / run_id
-
-
-def checkpoint_path(folder):
-    checkpoint = (folder / 'checkpoints/latest').read_text()
-    if not re.fullmatch(r'step-\d{6}', checkpoint):
-        raise ValueError('학습 체크포인트가 올바르지 않습니다')
-    return folder / 'checkpoints' / checkpoint
-
-
-def atomic_json(target, value):
-    import os
-    import uuid
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(target.name + '.' + str(uuid.uuid4()) + '.partial')
-    try:
-        with temporary.open('x') as output:
-            os.chmod(temporary, 0o600)
-            json.dump(value, output, ensure_ascii=False)
-        temporary.replace(target)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
-def normalize(root, request, ffmpeg, asset_path, asset_url):
-    import numpy as np
-    import soundfile as sf
-    upload_id = identifier(request['uploadId'])
-    audio_format = request['format']
-    if audio_format not in ('wav', 'flac', 'ogg', 'mov', 'matroska', 'mp3'):
-        raise ValueError('지원하지 않는 녹음 형식입니다')
-    source = root / 'voice-uploads' / upload_id / 'source'
-    output = asset_path(root, 'wav')
-    try:
-        # Force a real media demuxer and disallow network protocols/playlists.
-        ffmpeg('-protocol_whitelist', 'file,pipe', '-f', audio_format, '-i', source,
-               '-map', '0:a:0', '-vn', '-ac', '1', '-ar', '24000', '-t', '30.1', '-c:a', 'pcm_s16le', output)
-        audio, rate = sf.read(output, dtype='float32')
-        if not 1 <= len(audio) / rate <= 30 or not np.isfinite(audio).all() or float(np.max(np.abs(audio))) < 0.0001:
-            raise ValueError('1초 이상의 소리가 있는 녹음이 필요합니다')
-        return {'asset': asset_url(output), 'duration': round(len(audio) / rate, 3)}
-    except BaseException:
-        output.unlink(missing_ok=True)
-        raise
+from ..catalog import model_specs
+from ..storage import atomic_json
+from .store import identifier, run_folder, checkpoint_path
 
 
 def train(root, request, progress, save_task):
     import mlx.core as mx
     import soundfile as sf
     from mlx_audio.tts.utils import load_model
-    from .voice_training import attach_adapters, set_speaker, prepare_sample, train_steps
+    from .training import attach_adapters, set_speaker, prepare_sample, train_steps
     folder = run_folder(root, request['runId'])
     config = json.loads((folder / 'config.json').read_text())
     if config['id'] != request['runId'] or request.get('taskId') != config['id']:
@@ -87,7 +34,7 @@ def train(root, request, progress, save_task):
         if hashlib.sha256(filename.read_bytes()).hexdigest() != sample['audioHash']:
             raise ValueError('저장된 녹음 파일이 변경되거나 손상되었습니다')
         paths.append(filename)
-    revision = json.loads((Path(__file__).parent / 'models.json').read_text())['voice-train']['revision']
+    revision = model_specs()['voice-train']['revision']
     metadata = {'datasetHash': config['datasetHash'], 'modelRevision': revision}
     resume = checkpoint_path(folder) if request.get('resume') else None
     if resume:
@@ -123,14 +70,14 @@ def train(root, request, progress, save_task):
 
 def load_trained(root, run_id):
     from mlx_audio.tts.utils import load_model
-    from .voice_training import attach_adapters, load_checkpoint
+    from .training import attach_adapters, load_checkpoint
     folder = run_folder(root, run_id)
     status = json.loads((folder / 'status.json').read_text())
     if status['status'] != 'SUCCEEDED':
         raise ValueError('완료된 학습 가중치가 필요합니다')
     checkpoint = checkpoint_path(folder)
     saved = json.loads((checkpoint / 'state.json').read_text())
-    revision = json.loads((Path(__file__).parent / 'models.json').read_text())['voice-train']['revision']
+    revision = model_specs()['voice-train']['revision']
     if saved.get('modelRevision') != revision:
         raise ValueError('학습한 기본 모델 버전이 다릅니다. 같은 버전으로 복원하거나 새로 학습해 주세요')
     model = load_model(root / 'local/models/voice-train')

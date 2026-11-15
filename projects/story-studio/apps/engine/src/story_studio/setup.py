@@ -4,6 +4,7 @@ import fcntl
 import gc
 import hashlib
 import json
+from .catalog import model_specs
 from pathlib import Path
 
 
@@ -15,7 +16,7 @@ def main():
     from huggingface_hub import model_info, snapshot_download
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
-    specs = json.loads(Path(__file__).with_name('models.json').read_text())
+    specs = model_specs()
     selected = ['voice-train'] if args.only == 'voice-training' else ['text', 'voice', 'voice-train', 'wan-source']
     for name in selected:
         spec = specs[name]
