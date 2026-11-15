@@ -11,15 +11,19 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "check": "yarn typecheck && yarn test",
-    "local:setup": "node --env-file-if-exists=.env.local scripts/setup-local.ts"
+    "local:setup": "node --env-file-if-exists=.env.local scripts/setup-local.ts",
+    "local:setup:voice": "node --env-file-if-exists=.env.local scripts/setup-local.ts --voice-training"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "catalog:",
+    "@hookform/resolvers": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "dayjs": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
     "ts-pattern": "catalog:",
     "zod": "catalog:"
   },
