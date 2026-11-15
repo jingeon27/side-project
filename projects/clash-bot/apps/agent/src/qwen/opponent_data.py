@@ -8,7 +8,7 @@ from pathlib import Path
 DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1'
 
 
-def load_demonstrations(path):
+def load_demonstrations(path, quarantine_path=None):
     path = Path(path).resolve()
     raw = path.read_bytes()
     dataset = json.loads(raw)
@@ -19,7 +19,15 @@ def load_demonstrations(path):
         raise ValueError('Expected 1 to 24 visually verified demonstrations')
     if len({sample['id'] for sample in samples}) != len(samples):
         raise ValueError('Duplicate demonstration IDs')
+    blocked = set()
+    if quarantine_path is not None and Path(quarantine_path).exists():
+        quarantine = json.loads(Path(quarantine_path).read_text())
+        if quarantine.get('version') != 1 or not isinstance(quarantine.get('entries'), list):
+            raise ValueError('Invalid demonstration quarantine')
+        blocked = {(entry['card'], entry['before_sha256']) for entry in quarantine['entries']}
     for sample in samples:
+        if (sample['card'], sample.get('source_before_sha256', sample.get('image_sha256'))) in blocked:
+            raise ValueError('Quarantined demonstration; re-prepare the dataset: ' + sample['id'])
         if (sample.get('actor') != 'red_top' or sample.get('verified_actor') is not True
                 or sample.get('absent_before') is not True):
             raise ValueError('Opponent action was not visually verified')

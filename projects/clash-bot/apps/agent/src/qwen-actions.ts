@@ -9,13 +9,43 @@ export type QwenAction = {
   description: string;
 };
 
+const CARD_TACTICS: Partial<Record<CardId, string>> = {
+  knight: 'Ground tank: absorb damage and protect ranged support before a counterattack.',
+  barbarian_barrel: 'Roll toward ground swarms and leave a Barbarian; does not answer air troops.',
+  skeletons: 'Cheap ground distraction and cycle; vulnerable to splash damage.',
+  graveyard: 'Attack an enemy tower while an ally tanks; react to visible defenders.',
+  poison: 'Area damage for clustered defenders or to support Graveyard in the SAME lane.',
+  goblin_hut: 'Defensive pull and Spear Goblin pressure over time.',
+  furnace:
+    'Walking ranged support that spawns Fire Spirits; protect it rather than treating it as a building.',
+  ice_wizard: 'Ranged slowing support behind a tank; hero ability state and exact ranges are unverified.',
+};
+
+export const deckGuidance = (cards: CardId[]) =>
+  cards.map((card) => ({
+    card,
+    cost: CARD_INFO[card].cost,
+    tactics: CARD_TACTICS[card] ?? CARD_INFO[card].role,
+  }));
+
 export function actionCandidates(
   profile: Profile,
   cards: Array<CardId | null>,
   elixir: number,
   threats: Point[],
+  situation?: BattleSituation,
 ): QwenAction[] {
   const nearest = threats.toSorted((a, b) => b.y - a.y)[0];
+  const cluster = threats
+    .map((point) => threats.filter((other) => Math.hypot(other.x - point.x, other.y - point.y) <= 60))
+    .toSorted((first, second) => second.length - first.length)[0];
+  const poisonDefense =
+    situation && cluster?.length
+      ? {
+          x: cluster.reduce((sum, point) => sum + point.x, 0) / cluster.length,
+          y: cluster.reduce((sum, point) => sum + point.y, 0) / cluster.length,
+        }
+      : nearest;
   const own = (point: Point): Point => ({
     x: Math.max(profile.arena.x + 10, Math.min(profile.arena.x + profile.arena.width - 10, point.x)),
     y: Math.max(profile.riverY + 20, Math.min(profile.arena.y + profile.arena.height - 25, point.y)),
@@ -24,21 +54,69 @@ export function actionCandidates(
     if (!card || CARD_INFO[card].cost > elixir) return [];
     const targets: Array<{ target: Point; description: string }> =
       card === 'graveyard'
-        ? [95, 273].map((x) => ({
-            target: { x, y: profile.arena.y + 45 },
-            description: `graveyard on ${x < 184 ? 'left' : 'right'} enemy tower`,
-          }))
+        ? [95, 273]
+            .filter(
+              (x) =>
+                !situation ||
+                situation.own.units.some(
+                  (ally) =>
+                    ['knight', 'furnace'].includes(ally.card ?? '') &&
+                    ally.confidence >= 0.85 &&
+                    ally.y < profile.riverY + 65 &&
+                    ally.x < 184 === x < 184,
+                ) ||
+                (threats.length === 0 && elixir >= 8 && situation.opponent.elixir.max <= 3),
+            )
+            .map((x) => ({
+              target: { x, y: profile.arena.y + 45 },
+              description: `graveyard on ${x < 184 ? 'left' : 'right'} enemy tower`,
+            }))
         : card === 'goblin_hut'
-          ? [{ target: { x: 184, y: profile.riverY + 65 }, description: 'center defensive goblin hut' }]
+          ? [184, 143, 225].map((x) => ({
+              target: { x, y: profile.riverY + 65 },
+              description: `${x === 184 ? 'center' : x < 184 ? 'left pull' : 'right pull'} defensive goblin hut`,
+            }))
           : card === 'poison'
             ? [
-                ...(nearest ? [{ target: own(nearest), description: 'poison invading enemy troops' }] : []),
-                ...[95, 273].map((x) => ({
-                  target: { x, y: profile.arena.y + 45 },
-                  description: `poison ${x < 184 ? 'left' : 'right'} enemy tower`,
-                })),
+                ...(poisonDefense && (!situation || (cluster?.length ?? 0) >= 3)
+                  ? [{ target: own(poisonDefense), description: 'poison clustered invading enemy troops' }]
+                  : []),
+                ...[95, 273]
+                  .filter(
+                    (x) =>
+                      !situation ||
+                      situation.own.recentPlays.some(
+                        (play) =>
+                          play.card === 'graveyard' &&
+                          situation.at - play.at < 12_000 &&
+                          play.target.x < 184 === x < 184,
+                      ) ||
+                      situation.own.units.some(
+                        (ally) =>
+                          ally.y < profile.riverY - 30 && ally.confidence >= 0.85 && ally.x < 184 === x < 184,
+                      ),
+                  )
+                  .map((x) => ({
+                    target: { x, y: profile.arena.y + 45 },
+                    description: `poison ${x < 184 ? 'left' : 'right'} enemy tower`,
+                  })),
               ]
             : [
+                ...((card === 'furnace' || card === 'ice_wizard') && situation
+                  ? situation.own.units
+                      .filter(
+                        (ally) =>
+                          ['knight', 'furnace'].includes(ally.card ?? '') &&
+                          ally.confidence >= 0.85 &&
+                          ally.y < profile.riverY + 80,
+                      )
+                      .toSorted((first, second) => first.y - second.y)
+                      .slice(0, 1)
+                      .map((ally) => ({
+                        target: own({ x: ally.x, y: ally.y + 45 }),
+                        description: `${card} behind advancing ${ally.card}`,
+                      }))
+                  : []),
                 ...(nearest
                   ? [
                       {
@@ -81,6 +159,7 @@ export function choicePrompt(
   situation?: BattleSituation,
 ): string {
   const reply =
+    `Card knowledge: ${JSON.stringify(deckGuidance(cards.filter((card): card is CardId => card !== null)))}. ` +
     (format === 'letter'
       ? 'Reply with exactly ONE action letter, no explanation.'
       : 'Return ONLY {"choice":ACTION_ID}.') +

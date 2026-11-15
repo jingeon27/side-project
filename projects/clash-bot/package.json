@@ -22,6 +22,9 @@
     "qwen:setup": "yarn workspace @clash-bot/agent qwen:setup",
     "selfplay": "yarn workspace @clash-bot/agent selfplay",
     "opponent": "yarn workspace @clash-bot/agent opponent",
+    "counterpush": "yarn workspace @clash-bot/agent counterpush",
+    "counterpush:setup": "yarn workspace @clash-bot/agent counterpush:setup",
+    "test:perception": "yarn workspace @clash-bot/agent test:perception",
     "test:learning": "yarn workspace @clash-bot/agent test:learning",
     "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model"
   }

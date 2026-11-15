@@ -4,6 +4,8 @@ Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 �
 
 [Counterpush](https://playcounterpush.com/)는 사용자가 지정한 참고 서비스입니다. 이 프로젝트에 Counterpush의 모델·게임 엔진은 포함되지 않습니다.
 
+현재는 **Counterpush AI와 전용 Chrome에서 자동 대전하면서 상대 행동을 학습**합니다. 사용자가 설명한 필드 상황, 엘릭서 10 상한과 공유 재생, 8장 덱/4장 손패/FIFO, 8장 각각의 역할과 확인한 구현 범위는 [학습 요구사항과 구조](docs/learning-design.md)에 보존했습니다. 학습 가중치 갱신과 실력 향상은 별도로 판단합니다.
+
 ## 현재 확인한 동작 — 2026-11-15
 
 - Apple Silicon M5 Pro / RAM 48GB / macOS 26에서 BlueStacks Air **5.21.790.7505**, Android 13 ARM64로 실제 게임 로그인과 트로피 대전을 실행했습니다.
@@ -73,7 +75,7 @@ yarn workspace @side/clash-bot selfplay stop
 
 ## 학습 없는 Qwen 단일 경기
 
-현재 Mac에는 실제 덱의 참조 이미지와 보정한 `.data/profile.json`이 준비되어 있습니다. 덱은 **미니 P.E.K.K.A / 얼음 마법사 / 기사 / 무덤 / 해골 병사 / 독 / 고블린 오두막 / 바바리안 통**입니다. 보정 좌표는 `profiles/bluestacks-trophy.json`에 보존했습니다. 새 환경에서는 이 프로필에 맞는 카드 그림도 등록해야 합니다. 기본 다운로드에는 추가 카드 5장의 이미지가 없습니다.
+현재 Mac에는 실제 덱의 참조 이미지와 보정한 `.data/profile.json`이 준비되어 있습니다. 덱은 **용광로 / 얼음 마법사 / 기사 / 무덤 / 해골 병사 / 독 / 고블린 오두막 / 바바리안 통**입니다. 보정 좌표는 `profiles/bluestacks-trophy.json`에 보존했습니다. `counterpush:setup`은 이 8장의 계정 정보 없는 손패 참조를 준비하며 기존 사용자 참조를 덮어쓰지 않습니다.
 
 이미 시작한 대전에서 실제 입력을 허용하려면:
 
@@ -117,7 +119,31 @@ yarn workspace @side/clash-bot qwen --model 3.8-27b \
 
 ### Counterpush 상대 플레이 모방학습
 
-Counterpush의 **실시간 대전 화면**에서 상대 행동을 관찰한 뒤 `opponent` 명령으로 카드·방향 수준의 모방학습을 실행합니다. 하루 제한이 있는 AI 복기 기능을 사용하지 않습니다. 화면 수집과 행동 표시는 현재 Codex의 브라우저 조작·시각 확인으로 진행하며, 상시 자동 상대 행동 인식기나 Counterpush용 무인 자가대전 실행기는 아직 없습니다.
+Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식하며 Qwen으로 조작·학습·다음 대전을 반복합니다. 하루 제한이 있는 AI 복기 기능을 사용하지 않습니다. 전용 Chrome은 음소거하며 일반 Chrome 프로필과 분리합니다. 아래 명령은 저장소 루트에서 실행합니다.
+
+```sh
+yarn workspace @side/clash-bot qwen:setup
+yarn workspace @side/clash-bot counterpush:setup
+yarn workspace @side/clash-bot counterpush login
+yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 8
+yarn workspace @side/clash-bot counterpush status
+yarn workspace @side/clash-bot counterpush audit
+yarn workspace @side/clash-bot counterpush stop
+```
+
+`login` 창에서 직접 로그인하고 양쪽 덱을 **GY GobHut Evo Furnace**로 설정합니다. 로그인은 프로젝트 전용 프로필에 보존합니다. 시스템에 설치된 Google Chrome을 사용하므로 별도 Chromium을 다운로드하지 않습니다. `--background`는 대화와 독립된 실행이고, `stop`은 현재 경기와 학습을 끝낸 뒤 종료합니다. 로그인 만료·다른 덱·불명확한 결과·3회 연속 입력 미확인·디스크 8GiB 미만이면 멈춥니다.
+
+인식 준비는 고정 revision·SHA-256의 DINOv2 분류기와 박스 제안용 공개 모델을 다운로드합니다. 약 119MB의 원본 모델과 ONNX 변환본, 한 번의 변환용 PyTorch 설치 공간이 추가로 필요합니다. 실시간 인식은 ONNX CPU 1스레드를 사용합니다. 참조 스프라이트는 카드 종류 확인용이며 전략을 학습한 자료가 아닙니다.
+
+`audit`은 **이번 실행 시작 이후** 카드별 내 확인된 사용, 상대 발견, 행동 전 상태 포함, 학습 선별, 실제 가중치 학습 건수와 승패를 분리해 보여줍니다. 인식되지 않은 카드나 학습되지 않은 카드는 0으로 표시하며 승률 개선을 자동 선언하지 않습니다. 전체 원본 경기 목록은 `.data/counterpush/control/matches.jsonl`에 계속 보존합니다.
+
+추가 자료를 직접 준비하거나 저장된 완료 경기를 다시 인식할 수도 있습니다. `rescan`은 사이트에 접속하지 않으며 원본 기록을 덮어쓰지 않습니다. 명령의 경기 경로는 절대 경로를 사용합니다.
+
+```sh
+yarn workspace @side/clash-bot counterpush rescan /absolute/path/to/completed-run
+```
+
+이때 `reprocessed-observations.json`은 새로 발견한 사례이며 **아직 학습하지 않은 자료**입니다. 아래 명령으로 선별·학습할 수 있습니다. 내 행동의 과거 PPO 자료를 다시 학습하는 명령은 아닙니다.
 
 ```sh
 yarn workspace @side/clash-bot opponent prepare --observations /absolute/path/observations.json
@@ -136,7 +162,7 @@ yarn workspace @side/clash-bot opponent train --dataset /absolute/path/dataset.j
 
 첫 Counterpush 관찰 대전은 0–3 패배였습니다. 용광로 왼쪽 전개, 얼음 마법사 왼쪽 지원, 바바리안 통 왼쪽 압박의 세 장면을 모방학습해 **Qwen3.8 v6 → v7**을 저장했습니다. 무덤 오른쪽 공격은 화면 간격이 19초여서 제외했습니다. 갱신 전 해시는 `990d0fb4b90b592237d6234754122ce33f8760965f29a48bf85e3ee5ecf7e655`, 갱신 후 해시는 `5283f44749a4b2f703dc82657540db5683e0e1db291848704924a159b617de05`입니다. 선택 확률 평균은 약 1.3903% → 1.3995%로 소폭 변했으며, 이 값은 해당 학습 입력에서 정답 카드·방향을 고를 확률이지 승률이 아닙니다. 별도 프로세스로 v7을 다시 읽고 Qwen 내부 적용·같은 입력의 확률 재현·같은 자료의 재학습 거부를 확인했습니다. 자료와 확인 결과는 `.data/counterpush/datasets/995f2eb7ea78036f03c09db9/`에 보존했습니다. 실시간 플레이를 항상 Qwen이 조작한 것은 아니며 이번 브라우저 플레이와 화면 수집은 Codex가 수행했습니다.
 
-이번 변경 검증: `yarn workspace @side/clash-bot check`의 타입 검사와 Vitest **49개**, `test:learning`의 Python **16개**가 통과했고 기존 실모델 통합 검사 1개는 일반 검사에서 건너뛰었습니다. 대신 운영 Qwen3.8으로 세 장면의 실제 모방학습과 별도 프로세스의 v7 재적용·확률 재현·중복 학습 거부를 직접 확인했습니다. Python 컴파일과 변경 파일의 포맷 검사도 통과했습니다. 실제 프로필에서 용광로 참조 3개가 읽히고 기존 미니 P.E.K.K.A 원본 이미지가 보존된 것을 확인했습니다. 브라우저 관찰 자료를 준비한 첫 명령은 상대 경로가 워크스페이스 기준으로 해석돼 실패했고 절대 경로로 다시 실행해 성공했습니다. 로컬 수정 상태이며 커밋·push·PR·배포는 하지 않았습니다.
+초기 수동 관찰 단계의 검증: `yarn workspace @side/clash-bot check`의 타입 검사와 Vitest **49개**, `test:learning`의 Python **16개**가 통과했고 기존 실모델 통합 검사 1개는 일반 검사에서 건너뛰었습니다. 대신 운영 Qwen3.8으로 세 장면의 실제 모방학습과 별도 프로세스의 v7 재적용·확률 재현·중복 학습 거부를 직접 확인했습니다. Python 컴파일과 변경 파일의 포맷 검사도 통과했습니다. 실제 프로필에서 용광로 참조 3개가 읽히고 기존 미니 P.E.K.K.A 원본 이미지가 보존된 것을 확인했습니다. 브라우저 관찰 자료를 준비한 첫 명령은 상대 경로가 워크스페이스 기준으로 해석돼 실패했고 절대 경로로 다시 실행해 성공했습니다.
 
 모든 분석 좌표는 368×652이고 실제 터치는 캡처 원본 크기로 변환합니다. `.data/profile.json`은 덱 8장, 손패 네 영역, 엘릭서, 대전 표시, 강과 아레나 영역을 소유합니다. 화면 비율이 다른 경우 원본 게임 영역을 지정합니다.
 
@@ -172,6 +198,7 @@ Qwen3.8-27B는 저장된 실제 경기 화면 세 장에서 추론 **1.32~1.65�
 yarn workspace @side/clash-bot check
 yarn workspace @side/clash-bot test:learning
 yarn workspace @side/clash-bot test:learning:model
+yarn workspace @side/clash-bot test:perception
 python3.11 -m compileall -q projects/clash-bot/apps/agent/src/qwen
 ```
 
@@ -179,9 +206,11 @@ python3.11 -m compileall -q projects/clash-bot/apps/agent/src/qwen
 
 Python 학습 검사는 양·음 보상에 따른 확률 방향, 가중치 변경, 체크포인트 재적용, 이전 정책/다른 모델/미확인 결과 거부, 모든 가중치 분할 파일 검증, 출력층 선택, 비정상 수치 복구와 KL 초과 시 작은 학습률 재시도를 확인합니다. 실전 기록과 자동 테스트를 구분하며, 학습에 따른 성능 개선은 검증하지 않았습니다.
 
+Counterpush 반복 실행 경로의 추가 검증은 공유 재생·10 상한·4장 FIFO, 과거 상태의 미래 정보 누출 방지, 실제 엘릭서 막대, 지출 애니메이션, 레벨 표식 누락, 중복 유닛/효과, 기존 무덤의 새 묘비, 독의 진영, 연장전 결과와 실제 학습 건수 분리를 다룹니다. 잘못된 과거 사례는 격리 목록으로 자료 준비와 실제 학습에서 거부합니다. 자세한 자료 감사·모델 복구·구현과 미구현 구분은 [학습 설계](docs/learning-design.md)에 남깁니다. 타입 검사·Vitest 66개, Python 학습 19개(실모델 통합 1개 별도 건너뜀), CPU 인식 4개를 확인합니다. 실모델 전체 통합 검사는 이번 추가 변경에서 다시 실행하지 않았으며, 별도로 운영 Qwen3.8의 감사된 4사례 모방학습과 실제 가중치 변경을 확인했습니다. 인식 준비는 현재 캐시를 재사용해 SHA-256을 확인했고, 완전히 빈 환경의 최초 설치 전체는 이번에 재현하지 않았습니다.
+
 `test:learning`은 일반 Python 검사이며 실제 모델 통합 검사를 건너뜁니다. `test:learning:model`은 기본으로 설치된 **Qwen3.8-27B**를 실제로 읽고 Qwen 내부 어댑터·캐시 학습·원래 출력층의 확률 비교와 실제 가중치 갱신·재적용을 별도 임시 폴더에서 확인합니다. `QWEN_TEST_MODEL=4b`로 이전 모델도 선택할 수 있습니다. 운영 중인 학습 체크포인트는 변경하지 않습니다.
 
-2026-11-15 로컬 검사: 타입 검사·Vitest **44개**, Python **11개** 통과. 실제 모델 검사는 일반 Python 검사에서 별도로 1개 건너뜁니다. 3.8 실모델의 첫 출력층 비교는 BF16 가중치 복원 시 반올림 차이로 실패했고, FP32로 복원하도록 수정한 뒤 통합 검사에서 Qwen 내부 계산·캐시 학습·원래 출력층의 확률 비교와 가중치 변경·저장·재적용이 통과했습니다. 같은 통합 검사를 `QWEN_TEST_MODEL=4b`로 실행한 이전 모델 호환 검사도 통과했습니다. 기본 `qwen:setup` 명령의 다운로드 캐시 재사용과 세 파일 SHA-256 검증도 통과했습니다. 수정은 로컬 작업 상태이며 커밋·push·PR은 진행하지 않았습니다. 장시간 연속 운영과 승률 개선은 아직 검증하지 않았습니다.
+2026-11-15 로컬 검사: 타입 검사·Vitest **44개**, Python **11개** 통과. 실제 모델 검사는 일반 Python 검사에서 별도로 1개 건너뜁니다. 3.8 실모델의 첫 출력층 비교는 BF16 가중치 복원 시 반올림 차이로 실패했고, FP32로 복원하도록 수정한 뒤 통합 검사에서 Qwen 내부 계산·캐시 학습·원래 출력층의 확률 비교와 가중치 변경·저장·재적용이 통과했습니다. 같은 통합 검사를 `QWEN_TEST_MODEL=4b`로 실행한 이전 모델 호환 검사도 통과했습니다. 기본 `qwen:setup` 명령의 다운로드 캐시 재사용과 세 파일 SHA-256 검증도 통과했습니다. 장시간 연속 운영과 승률 개선은 아직 검증하지 않았습니다.
 
 ## 이전 실행 오류와 대안
 

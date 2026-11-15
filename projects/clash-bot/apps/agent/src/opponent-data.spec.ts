@@ -117,6 +117,23 @@ describe('opponent visual demonstrations', () => {
       expect(dataset.samples[0].prompt).not.toContain(observation.context);
       expect(dataset.samples[0].image_sha256).not.toBe(dataset.samples[0].evidence_sha256);
       expect(await prepareOpponentDataset(path, directory)).toEqual(result);
+      await writeFile(
+        join(directory, 'counterpush/quarantine.json'),
+        JSON.stringify({
+          version: 1,
+          entries: [
+            {
+              before_sha256: dataset.samples[0].source_before_sha256,
+              card: 'furnace',
+              reason: 'before_frame_already_contains_unit',
+            },
+          ],
+        }),
+      );
+      const quarantined = await prepareOpponentDataset(path, directory);
+      expect(quarantined.samples).toBe(0);
+      expect(quarantined.path).not.toBe(result.path);
+      expect(quarantined.excluded[0]?.reason).toBe('quarantined:before_frame_already_contains_unit');
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

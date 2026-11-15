@@ -96,11 +96,11 @@ export class CardCycle {
 
 const clamp = (amount: number) => Math.max(0, Math.min(10, amount));
 export class ElixirLedger {
-  readonly samples: Array<{ at: number; amount: number }> = [];
+  readonly samples: Array<{ at: number; amount: number; range?: { min: number; max: number } }> = [];
   readonly own: Array<{ at: number; card: CardId }> = [];
   readonly opponent: Array<{ earliest: number; latest: number; card: CardId }> = [];
-  observeOwn(at: number, amount: number) {
-    this.samples.push({ at, amount: clamp(amount) });
+  observeOwn(at: number, amount: number, range?: { min: number; max: number }) {
+    this.samples.push({ at, amount: clamp(amount), range });
   }
   spendOwn(at: number, card: CardId) {
     this.own.push({ at, card });
@@ -136,7 +136,10 @@ export class ElixirLedger {
         const totalOwnSpent = state.ownSpent + ownSpent;
         const sharedUpper = Math.max(
           state.sharedUpper,
-          sample.amount + totalOwnSpent + leakUpper - first.amount + 0.2,
+          (sample.range?.max ?? sample.amount + 0.2) +
+            totalOwnSpent +
+            leakUpper -
+            (first.range?.min ?? first.amount),
         );
         const cost = this.opponent
           .filter((play) => play.earliest + 0.001 > state.previous.at && play.earliest + 0.001 <= sample.at)
@@ -149,10 +152,19 @@ export class ElixirLedger {
           enemyUpper: clamp(Math.max(0, state.enemyUpper - cost) + sharedUpper - state.sharedUpper),
         };
       },
-      { previous: first, ownSpent: 0, sharedUpper: 0.2, leakUpper: 0, enemyUpper: clamp(first.amount + 0.2) },
+      {
+        previous: first,
+        ownSpent: 0,
+        sharedUpper: 0.2,
+        leakUpper: 0,
+        enemyUpper: clamp(first.range?.max ?? first.amount + 0.2),
+      },
     );
     return {
-      own: { min: clamp(result.previous.amount - 0.2), max: clamp(result.previous.amount + 0.2) },
+      own: result.previous.range ?? {
+        min: clamp(result.previous.amount - 0.2),
+        max: clamp(result.previous.amount + 0.2),
+      },
       opponent: { min: 0, max: result.enemyUpper },
       ownSpent: result.ownSpent,
       opponentSeenSpent: this.opponent
@@ -242,8 +254,13 @@ export class BattleMemory {
     allies: z.infer<typeof unitSchema>[];
     enemies: z.infer<typeof unitSchema>[];
     inputPending: boolean;
+    elixirReliable?: boolean;
+    elixirRange?: { min: number; max: number };
   }): BattleSituation {
-    this.elixir.observeOwn(input.at, input.amount);
+    // The spend animation briefly hides the bar. Those pixels are not a new
+    // resource balance and must not inflate the shared-regeneration estimate.
+    if (!input.inputPending && input.elixirReliable !== false)
+      this.elixir.observeOwn(input.at, input.amount, input.elixirRange);
     const known = input.hand.filter((card): card is CardId => card !== null);
     if (!this.state.ownCycle && known.length === 4 && new Set(known).size === 4)
       this.state.ownCycle = new CardCycle(this.deck, known);
@@ -254,14 +271,14 @@ export class BattleMemory {
       at: input.at,
       visibility: 'partial',
       own: {
-        elixir: ledger.own,
+        elixir: input.inputPending || input.elixirReliable === false ? { min: 0, max: 10 } : ledger.own,
         hand: input.hand,
         cycle: ownCycle && input.inputPending ? { ...ownCycle, exact: false, mayHaveMissed: true } : ownCycle,
         units: input.allies,
         recentPlays: this.ownPlays.filter((play) => input.at - play.at < 15_000),
       },
       opponent: {
-        elixir: input.inputPending ? { min: 0, max: 10 } : ledger.opponent,
+        elixir: input.inputPending || input.elixirReliable === false ? { min: 0, max: 10 } : ledger.opponent,
         cycle: this.opponentCycle.snapshot(),
         units: input.enemies,
         seenSpent: ledger.opponentSeenSpent,

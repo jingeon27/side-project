@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { atomicWrite } from './assets.ts';
 import { cardIdSchema, DEFAULT_PROFILE, HEIGHT, WIDTH, type CardId } from './config.ts';
 import { battleSituationSchema, type BattleSituation } from './counterpush/battle-state.ts';
-import { actionCandidates, type QwenAction } from './qwen-actions.ts';
+import { actionCandidates, deckGuidance, type QwenAction } from './qwen-actions.ts';
 
 export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1';
 const frameSchema = z
@@ -122,6 +122,7 @@ export function opponentPrompt(deck: CardId[], actions: QwenAction[], situation?
     : '';
   return (
     state +
+    `Card knowledge: ${JSON.stringify(deckGuidance(deck))}. ` +
     `Observe Clash Royale from RED top's perspective. BLUE bottom is the opponent. Predict ONE next card-and-lane intent from RED's publicly visible board. RED hand=UNKNOWN; RED elixir=UNKNOWN. Known RED deck: ${deck.join(', ')}. The list contains deck-wide possibilities, not a verified legal hand. Coordinates are in a ${WIDTH}x${HEIGHT} image. Targets are lane exemplars; exact deployment time and position are unknown. Learn the observed behavior without assuming it is optimal. Reply with exactly ONE action letter, no explanation. Actions: ${JSON.stringify(actions.map((action, index) => ({ id: String.fromCharCode(65 + index), card: action.card, description: action.description, target: action.target })))}.`
   );
 }
@@ -130,6 +131,26 @@ const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).di
 
 export async function prepareOpponentDataset(observationsPath: string, dataDir: string) {
   const input = opponentObservationsSchema.parse(JSON.parse(await readFile(observationsPath, 'utf8')));
+  const quarantineText = await readFile(join(dataDir, 'counterpush/quarantine.json'), 'utf8').catch(
+    (error) => {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw error;
+    },
+  );
+  const quarantine = quarantineText
+    ? z
+        .object({
+          version: z.literal(1),
+          entries: z.array(
+            z.object({
+              before_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+              card: cardIdSchema,
+              reason: z.string().min(1).max(200),
+            }),
+          ),
+        })
+        .parse(JSON.parse(quarantineText)).entries
+    : [];
   const root = await realpath(dirname(observationsPath));
   const readFrame = async (path: string) => {
     const full = await realpath(resolve(root, path));
@@ -157,12 +178,24 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
   for (const observation of input.observations) {
     const before = await readFrame(observation.before.image);
     const after = await readFrame(observation.after.image);
-    records.push({ observation, before, after, excluded: observationExclusion(observation) });
+    const blocked = quarantine.find(
+      (entry) => entry.card === observation.card && entry.before_sha256 === before.source_sha256,
+    );
+    records.push({
+      observation,
+      before,
+      after,
+      excluded: blocked ? `quarantined:${blocked.reason}` : observationExclusion(observation),
+    });
   }
+  const intentPool = opponentActions(input.deck);
   const identity = digest(
     JSON.stringify({
       input,
       images: records.map((record) => [record.before.source_sha256, record.after.source_sha256]),
+      exclusions: records.map((record) => record.excluded),
+      intents: intentPool,
+      prompts: records.map((record) => opponentPrompt(input.deck, intentPool, record.observation.situation)),
     }),
   );
   const directory = join(dataDir, 'counterpush/datasets', identity.slice(0, 24));
@@ -171,7 +204,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
   for (const record of records) {
     if (record.excluded) continue;
     const item = record.observation;
-    const actions = opponentActions(input.deck)
+    const actions = intentPool
       .map((action) => ({ action, order: digest(`${identity}:${item.id}:${action.id}`) }))
       .toSorted((first, second) => first.order.localeCompare(second.order))
       .map(({ action }) => action);

@@ -1766,6 +1766,7 @@ __metadata:
   dependencies:
     "@side/config": "workspace:*"
     "@types/node": "npm:24.19.2"
+    playwright: "npm:1.64.0"
     sharp: "npm:0.35.5"
     vitest: "npm:4.1.11"
     zod: "npm:4.6.7"

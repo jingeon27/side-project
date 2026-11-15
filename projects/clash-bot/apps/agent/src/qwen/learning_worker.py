@@ -28,9 +28,20 @@ def verified_result(row):
     if row.get('source') != 'counterpush_result_dom_verified2':
         return False
     readings = row.get('readings', [])
-    expected = f"Crowns: you {row.get('blue')}, the opponent {row.get('red')}"
-    return (len(readings) == 2 and all(reading == expected for reading in readings)
-            and re.fullmatch(r'Crowns: you [0-3], the opponent [0-3]', expected) is not None)
+    if len(readings) != 2 or readings[0] != readings[1] or not isinstance(readings[0], str):
+        return False
+    match = re.fullmatch(r'Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?', readings[0])
+    return match is not None and [int(match[1]), int(match[2])] == [row.get('blue'), row.get('red')]
+
+
+def confirmed_input(row):
+    if row.get('type') != 'input_check':
+        return False
+    # Counterpush records explicit confirmation after the spend animation has
+    # settled. Legacy Android episodes retain their hand-change/spend contract.
+    if 'confirmed' in row:
+        return row['confirmed'] is True and row.get('changed') is True
+    return row.get('changed') is True and row.get('spent', 0) >= 1
 
 
 def output_token_rows(language_model, token_ids, tied_output):
@@ -152,7 +163,7 @@ class LearningWorker:
             raise ValueError("Invalid crown result")
         reward = (blue > red) - (blue < red)
         confirmed = {int(row["frame"]) for row in rows if
-                     (row.get("type") == "input_check" and row.get("changed") and row.get("spent", 0) >= 1)
+                     confirmed_input(row)
                      or (row.get("type") == "wait_check" and row.get("valid") is True)}
         decisions = [row for row in rows if row.get("type") == "prediction" and
                      row.get("behavior", {}).get("format") == FORMAT and row["behavior"].get("trainable") and
@@ -193,7 +204,7 @@ class LearningWorker:
         return {'text': output.text}
 
     def imitate(self, request):
-        dataset, identity, path = load_demonstrations(request['dataset'])
+        dataset, identity, path = load_demonstrations(request['dataset'], self.directory.parents[1] / 'counterpush/quarantine.json')
         if identity in self.learner.metadata.get('demonstrations', []):
             return {'updated': False, 'reason': 'already_trained', 'version': self.learner.metadata['version']}
         samples = []

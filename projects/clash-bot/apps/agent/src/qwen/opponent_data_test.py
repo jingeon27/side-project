@@ -35,6 +35,17 @@ class OpponentDataTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'checksum'):
                 load_demonstrations(path)
 
+    def test_quarantine_also_blocks_an_already_prepared_dataset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_hash = hashlib.sha256(b'original-before').hexdigest()
+            path = self.fixture(directory, source_before_sha256=source_hash)
+            quarantine = Path(directory) / 'quarantine.json'
+            quarantine.write_text(json.dumps({'version': 1, 'entries': [
+                {'card': 'furnace', 'before_sha256': source_hash, 'reason': 'already_present'}]}))
+            load_demonstrations(path)
+            with self.assertRaisesRegex(ValueError, 'Quarantined demonstration'):
+                load_demonstrations(path, quarantine)
+
     def test_rejects_hidden_state_guesses_wrong_actor_and_label_mismatches(self):
         with tempfile.TemporaryDirectory() as directory:
             for overrides in ({'elixir': 8}, {'verified_actor': False}, {'target_ids': [0]},

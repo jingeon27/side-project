@@ -1,0 +1,200 @@
+[
+  {
+    "card": "furnace",
+    "image": "sprite-00-furnace",
+    "box": [4, 4, 44, 59],
+    "source_sha256": "b754582706edb9ba429bfb05b4cc9d18c2f6396c8ced8d4f3dbe20e141b16d93"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-01-furnace",
+    "box": [4, 4, 45, 67],
+    "source_sha256": "50459625b9e5fe10a9417db152958a06dfa7a9ba1e57d2a3f5aeb1769fa78b87"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-02-furnace",
+    "box": [4, 4, 45, 69],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-03-ice_wizard",
+    "box": [4, 4, 42, 54],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-04-ice_wizard",
+    "box": [4, 4, 39, 50],
+    "source_sha256": "0420d23111f437d641f966e90db47b8d643758d62bff0a0306d390a9113adf59"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-05-knight",
+    "box": [4, 4, 41, 49],
+    "source_sha256": "18a579afba6d4150bf2f06fb4aa7286ba008cde19ed1828cfc254ed0a0bc7e13"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-06-knight",
+    "box": [4, 4, 41, 49],
+    "source_sha256": "ebff93e9e83564ac06ba1bae1e1fcb8c66198c8794c114124bfacfe4958c893e"
+  },
+  {
+    "card": "skeletons",
+    "image": "sprite-07-skeletons",
+    "box": [4, 4, 26, 26],
+    "source_sha256": "b754582706edb9ba429bfb05b4cc9d18c2f6396c8ced8d4f3dbe20e141b16d93"
+  },
+  {
+    "card": "background",
+    "image": "sprite-08-background",
+    "box": [4, 4, 37, 49],
+    "source_sha256": "59185b21c7ff8ada84ed9b59cb65c314f93fe51f50cf848fcea067470fdcf9d8"
+  },
+  {
+    "card": "background",
+    "image": "sprite-09-background",
+    "box": [4, 4, 78, 64],
+    "source_sha256": "59185b21c7ff8ada84ed9b59cb65c314f93fe51f50cf848fcea067470fdcf9d8"
+  },
+  {
+    "card": "background",
+    "image": "sprite-10-background",
+    "box": [4, 4, 46, 54],
+    "source_sha256": "59185b21c7ff8ada84ed9b59cb65c314f93fe51f50cf848fcea067470fdcf9d8"
+  },
+  {
+    "card": "background",
+    "image": "sprite-11-background",
+    "box": [4, 4, 44, 59],
+    "source_sha256": "59185b21c7ff8ada84ed9b59cb65c314f93fe51f50cf848fcea067470fdcf9d8"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-12-furnace",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "b754582706edb9ba429bfb05b4cc9d18c2f6396c8ced8d4f3dbe20e141b16d93"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-13-furnace",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "b754582706edb9ba429bfb05b4cc9d18c2f6396c8ced8d4f3dbe20e141b16d93"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-14-furnace",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "b754582706edb9ba429bfb05b4cc9d18c2f6396c8ced8d4f3dbe20e141b16d93"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-15-furnace",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "50459625b9e5fe10a9417db152958a06dfa7a9ba1e57d2a3f5aeb1769fa78b87"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-16-furnace",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "50459625b9e5fe10a9417db152958a06dfa7a9ba1e57d2a3f5aeb1769fa78b87"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-17-furnace",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "50459625b9e5fe10a9417db152958a06dfa7a9ba1e57d2a3f5aeb1769fa78b87"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-18-furnace",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-19-furnace",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "furnace",
+    "image": "sprite-20-furnace",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-21-ice_wizard",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-22-ice_wizard",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-23-ice_wizard",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "c307f39b13971475cb2af269eb8f2d2565abb1153d85f5f0173599c5ba4d4c83"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-24-ice_wizard",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "0420d23111f437d641f966e90db47b8d643758d62bff0a0306d390a9113adf59"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-25-ice_wizard",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "0420d23111f437d641f966e90db47b8d643758d62bff0a0306d390a9113adf59"
+  },
+  {
+    "card": "ice_wizard",
+    "image": "sprite-26-ice_wizard",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "0420d23111f437d641f966e90db47b8d643758d62bff0a0306d390a9113adf59"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-27-knight",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "18a579afba6d4150bf2f06fb4aa7286ba008cde19ed1828cfc254ed0a0bc7e13"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-28-knight",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "18a579afba6d4150bf2f06fb4aa7286ba008cde19ed1828cfc254ed0a0bc7e13"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-29-knight",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "18a579afba6d4150bf2f06fb4aa7286ba008cde19ed1828cfc254ed0a0bc7e13"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-30-knight",
+    "box": [4, 4, 32, 44],
+    "source_sha256": "ebff93e9e83564ac06ba1bae1e1fcb8c66198c8794c114124bfacfe4958c893e"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-31-knight",
+    "box": [4, 4, 40, 52],
+    "source_sha256": "ebff93e9e83564ac06ba1bae1e1fcb8c66198c8794c114124bfacfe4958c893e"
+  },
+  {
+    "card": "knight",
+    "image": "sprite-32-knight",
+    "box": [4, 4, 50, 64],
+    "source_sha256": "ebff93e9e83564ac06ba1bae1e1fcb8c66198c8794c114124bfacfe4958c893e"
+  }
+]

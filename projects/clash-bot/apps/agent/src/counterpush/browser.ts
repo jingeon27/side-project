@@ -1,0 +1,149 @@
+import { join } from 'node:path';
+
+import { chromium, type BrowserContext, type Page } from 'playwright';
+import sharp from 'sharp';
+
+import { center, HEIGHT, WIDTH, type Point, type Profile } from '../config.ts';
+
+export const COUNTERPUSH_DECK = [
+  'barbarian_barrel',
+  'furnace',
+  'goblin_hut',
+  'graveyard',
+  'ice_wizard',
+  'knight',
+  'poison',
+  'skeletons',
+] as const;
+const DECK_ART = [
+  'BarbLog',
+  'FirespiritHut',
+  'GoblinHut',
+  'Graveyard',
+  'IceWizard',
+  'Knight',
+  'Poison',
+  'Skeletons',
+];
+export type BrowserPhase = 'setup' | 'loading' | 'battle' | 'result' | 'unknown';
+export type BrowserResult = { blue: number; red: number; outcome: 'win' | 'loss' | 'draw'; label: string };
+
+export function parseBrowserResult(label: string): BrowserResult | null {
+  const match = /^Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?$/.exec(label);
+  if (!match) return null;
+  const blue = Number(match[1]),
+    red = Number(match[2]);
+  return { blue, red, outcome: blue > red ? 'win' : blue < red ? 'loss' : 'draw', label };
+}
+
+export class CounterpushBrowser {
+  readonly context: BrowserContext;
+  readonly page: Page;
+  constructor(context: BrowserContext, page: Page) {
+    this.context = context;
+    this.page = page;
+  }
+
+  static async open(dataDir: string, loginTimeoutMs = 30_000) {
+    const context = await chromium.launchPersistentContext(join(dataDir, 'counterpush/chrome'), {
+      channel: 'chrome',
+      chromiumSandbox: true,
+      headless: false,
+      args: ['--mute-audio'],
+      viewport: { width: 1100, height: 940 },
+      deviceScaleFactor: 1,
+      timeout: 30_000,
+    });
+    try {
+      const page = context.pages()[0] ?? (await context.newPage());
+      page.setDefaultTimeout(5000);
+      page.on('dialog', (dialog) => {
+        void dialog.dismiss();
+      });
+      await page.goto('https://app.playcounterpush.com/play', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30_000,
+      });
+      await page.waitForFunction(
+        () => {
+          const button = document.querySelector('#battle');
+          return button instanceof HTMLButtonElement && !button.disabled;
+        },
+        {},
+        { timeout: loginTimeoutMs },
+      );
+      const browser = new CounterpushBrowser(context, page);
+      if (await page.locator('#leave').isVisible()) await page.locator('#leave').click();
+      await browser.assertDecks();
+      return browser;
+    } catch (error) {
+      await context.close();
+      throw error;
+    }
+  }
+
+  async assertDecks() {
+    for (const selector of ['#sideMine', '#sideVs']) {
+      const deck = await this.page
+        .locator(`${selector} img`)
+        .evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''));
+      if (deck.length !== 8 || !deck.every((image, index) => image.includes(`/ui/card/${DECK_ART[index]}`)))
+        throw new Error(
+          'Counterpush의 양쪽 덱을 GY GobHut Evo Furnace로 맞춰주세요. 다른 덱으로 매칭하지 않았습니다.',
+        );
+    }
+  }
+
+  async phase(): Promise<BrowserPhase> {
+    if (!this.page.url().startsWith('https://app.playcounterpush.com/play'))
+      throw new Error('Counterpush 로그인 또는 화면 확인이 필요합니다.');
+    if (await this.page.locator('#result').isVisible()) return 'result';
+    if (await this.page.locator('#loading').isVisible()) return 'loading';
+    if (await this.page.locator('#leaveX').isVisible()) return 'battle';
+    if (await this.page.locator('#setup').isVisible()) return 'setup';
+    return 'unknown';
+  }
+
+  async startMatch() {
+    const phase = await this.phase();
+    if (phase === 'setup') {
+      await this.assertDecks();
+      await this.page.locator('#battle').click();
+    } else if (phase === 'result') await this.page.locator('#again').click();
+    else throw new Error(`새 매칭을 시작할 화면이 아닙니다: ${phase}`);
+  }
+
+  async capture(): Promise<{ image: Buffer; capturedAt: number }> {
+    const capturedAt = Date.now();
+    const bytes = await this.page.locator('#touch').screenshot({ type: 'png', timeout: 5000 });
+    const image = await sharp(bytes).resize(WIDTH, HEIGHT, { fit: 'fill' }).removeAlpha().png().toBuffer();
+    return { image, capturedAt };
+  }
+
+  async play(profile: Profile, slot: number, target: Point) {
+    if ((await this.phase()) !== 'battle') return false;
+    const box = await this.page.locator('#touch').boundingBox();
+    if (!box) throw new Error('Counterpush 아레나 위치를 확인하지 못했습니다.');
+    const source = center(profile.hand[slot - 1]!);
+    const from = { x: box.x + (source.x / WIDTH) * box.width, y: box.y + (source.y / HEIGHT) * box.height };
+    const to = { x: box.x + (target.x / WIDTH) * box.width, y: box.y + (target.y / HEIGHT) * box.height };
+    await this.page.mouse.move(from.x, from.y);
+    await this.page.mouse.down();
+    await this.page.waitForTimeout(100);
+    await this.page.mouse.move(to.x, to.y, { steps: 8 });
+    await this.page.waitForTimeout(100);
+    await this.page.mouse.up();
+    return true;
+  }
+
+  async result(): Promise<BrowserResult | null> {
+    if ((await this.phase()) !== 'result') return null;
+    return parseBrowserResult((await this.page.locator('#resultScore').getAttribute('aria-label')) ?? '');
+  }
+  async screenshot(path: string) {
+    await this.page.screenshot({ path });
+  }
+  async close() {
+    await this.context.close();
+  }
+}

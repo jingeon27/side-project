@@ -8,21 +8,30 @@ from unittest.mock import Mock
 import mlx.core as mx
 
 from learning_policy import FORMAT, FinalMLPLoRA, weights_digest
-from learning_worker import LearningWorker, output_token_rows, verified_result
+from learning_worker import LearningWorker, output_token_rows, verified_result, confirmed_input
 from model_specs import MODELS
 import mlx.nn as nn
 
 
 class LearningEpisodeTest(unittest.TestCase):
+    def test_explicit_input_confirmation_does_not_trust_a_dark_bar_animation(self):
+        self.assertFalse(confirmed_input({'type': 'input_check', 'changed': True, 'spent': 8, 'confirmed': False}))
+        self.assertTrue(confirmed_input({'type': 'input_check', 'changed': True, 'spent': 0, 'confirmed': True}))
+        self.assertTrue(confirmed_input({'type': 'input_check', 'changed': True, 'spent': 3}))
+        self.assertFalse(confirmed_input({'type': 'input_check', 'changed': False, 'spent': 3}))
+
     def test_counterpush_rewards_require_two_identical_visible_crown_labels(self):
         result = {'type': 'result', 'source': 'counterpush_result_dom_verified2', 'blue': 0, 'red': 3,
                   'readings': ['Crowns: you 0, the opponent 3'] * 2}
         self.assertTrue(verified_result(result))
         self.assertFalse(verified_result({**result, 'readings': result['readings'][:1]}))
         self.assertFalse(verified_result({**result, 'blue': 3, 'red': 0}))
+        self.assertTrue(verified_result({**result, 'readings': ['Crowns: you 0, the opponent 3, overtime'] * 2}))
+        self.assertFalse(verified_result({**result, 'readings': ['Crowns: you 0, the opponent 3, still playing'] * 2}))
     def worker(self):
         worker = object.__new__(LearningWorker)
         worker.spec = MODELS['4b']
+        worker.directory = Path('/nonexistent/clash-test/qwen/learning')
         worker.learner = SimpleNamespace(adapter=FinalMLPLoRA(1, 1), train=Mock(return_value={"updated": False}))
         return worker
 

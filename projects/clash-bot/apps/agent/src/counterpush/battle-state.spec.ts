@@ -76,4 +76,30 @@ describe('shared regeneration and capped elixir', () => {
     expect(before.own.recentPlays).toEqual([]);
     expect(before.own.cycle?.returnsAfterPlays.knight?.min).toBe(0);
   });
+  it('ignores the temporarily dark bar during input and preserves quantized uncertainty', () => {
+    const memory = new BattleMemory(deck);
+    const input = { hand, allies: [], enemies: [] };
+    memory.observe({
+      ...input,
+      at: 1000,
+      amount: 8,
+      elixirRange: { min: 7.9, max: 9.1 },
+      inputPending: false,
+    });
+    const pending = memory.observe({ ...input, at: 1500, amount: 0, inputPending: true });
+    expect(pending.own.elixir).toEqual({ min: 0, max: 10 });
+    expect(pending.opponent.elixir).toEqual({ min: 0, max: 10 });
+    expect(memory.elixir.samples).toHaveLength(1);
+    memory.ownPlay('skeletons', 1200, { x: 95, y: 420 }, hand);
+    const settled = memory.observe({
+      ...input,
+      at: 2000,
+      amount: 7,
+      elixirRange: { min: 6.9, max: 8.1 },
+      inputPending: false,
+    });
+    expect(settled.own.elixir).toEqual({ min: 6.9, max: 8.1 });
+    expect(settled.elixirAccounting.ownSpent).toBe(1);
+    expect(memory.elixir.samples).toHaveLength(2);
+  });
 });
