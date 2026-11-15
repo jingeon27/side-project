@@ -1,8 +1,8 @@
 # Crown Bot
 
-로컬 자가대국, 미래 수읽기, 후보 버전 평가와 밸런스 수치 변경 추적은 [자가대국 구현·실행 방법](docs/arena-learning.md)을 참고하세요. Qwen 3.8은 실전 화면 모델로 유지하고, 빠른 전투 탐색 결과는 별도 Qwen 후보가 학습합니다.
+로컬 자가대국, 미래 수읽기, 후보 버전 평가와 밸런스 수치 변경 추적은 [자가대국 구현·실행 방법](docs/arena-learning.md)을 참고하세요. Qwen 3.8은 실전 화면 모델로 유지하고, 빠른 전투 탐색 결과는 별도 후보가 학습합니다. **Counterpush에서 32판 이상의 비교 평가를 통과한 후보만 자동 적용**하며, 그 전까지 기존 적용 모델을 유지합니다.
 
-Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 로컬 봇입니다. BlueStacks Air의 화면과 터치를 ADB로 연결하고, **Qwen3.8-27B 4bit**가 제한된 배치 후보 중 다음 행동을 고릅니다. 경기 결과로 LoRA 가중치를 갱신하고 다음 대전에 적용합니다. 더 가벼운 Qwen3.5-4B와 규칙 기반 실행 모드도 남겨두었습니다.
+Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 로컬 봇입니다. BlueStacks Air의 화면과 터치를 ADB로 연결하고, **Qwen3.8-27B 4bit**가 제한된 배치 후보 중 다음 행동을 고릅니다. 현재 자동 학습·실전 평가·채택은 Counterpush에서 수행합니다. 더 가벼운 Qwen3.5-4B와 규칙 기반 실행 모드도 남겨두었습니다.
 
 [Counterpush](https://playcounterpush.com/)는 사용자가 지정한 참고 서비스입니다. 이 프로젝트에 Counterpush의 모델·게임 엔진은 포함되지 않습니다.
 
@@ -46,6 +46,8 @@ yarn workspace @side/clash-bot connect --adb /Applications/BlueStacks.app/Conten
 진단 시 `hd-adb logcat`이 기기 대기를 반복하면 시간 제한을 두고 `hd-adb -s 127.0.0.1:5555 shell logcat -d -b crash`를 사용합니다. Google·Supercell 로그인은 사용자가 진행합니다.
 
 ## 자가학습 반복 실행
+
+아래는 BlueStacks 초기 학습 실행기의 설명입니다. 현재 보호 정책이 활성화된 적용 모델은 이 경로에서 직접 가중치를 저장할 수 없습니다. 검증 후 자동 적용하는 반복 실행은 아래의 Counterpush 명령을 사용합니다. BlueStacks 트로피 경기의 분리 평가·자동 채택은 아직 연결하지 않았습니다.
 
 현재 Mac에는 실제 덱의 참조 이미지·프로필·로비 버튼 참조가 준비되어 있습니다. BlueStacks에서 클래시로얄을 열고 트로피 모드 로비에 둔 뒤 실행합니다. 다른 봇 실행과 동시에 사용하지 않습니다.
 
@@ -119,7 +121,7 @@ yarn workspace @side/clash-bot qwen --model 3.8-27b \
 
 ## 인식 보정과 가벼운 모드
 
-### Counterpush 상대 플레이 모방학습
+### Counterpush 후보 학습과 자동 채택
 
 Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식하며 Qwen으로 조작·학습·다음 대전을 반복합니다. 하루 제한이 있는 AI 복기 기능을 사용하지 않습니다. 전용 Chrome은 음소거하며 일반 Chrome 프로필과 분리합니다. 아래 명령은 저장소 루트에서 실행합니다.
 
@@ -127,13 +129,15 @@ Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식�
 yarn workspace @side/clash-bot qwen:setup
 yarn workspace @side/clash-bot counterpush:setup
 yarn workspace @side/clash-bot counterpush login
-yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 8 --tabs 1
+yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 0 --training-matches 2 --pairs 16 --tabs 1
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush audit
 yarn workspace @side/clash-bot counterpush stop
 ```
 
 `login` 창에서 직접 로그인하고 양쪽 덱을 **GY GobHut Evo Furnace**로 설정합니다. 로그인은 프로젝트 전용 프로필에 보존합니다. 시스템에 설치된 Google Chrome을 사용하므로 별도 Chromium을 다운로드하지 않습니다. `--background`는 대화와 독립된 실행이고, `stop`은 현재 경기와 학습을 끝낸 뒤 종료합니다. 로그인 만료·다른 덱·불명확한 결과·3회 연속 입력 미확인·디스크 8GiB 미만이면 멈춥니다.
+
+`--hours 0`은 정지 요청까지 반복합니다. 실전 PPO·상대 모방·자가대국 자료는 별도 후보에 학습하고, 고정한 기준·후보를 최소 16쌍/32판으로 비교합니다. 충분한 우위를 보인 후보만 원본 증거를 재검사해 적용합니다. 평가가 중단되면 다음 `start`에서 같은 후보와 기록을 이어갑니다. 자세한 판정·복구·저장 규칙은 [자동 채택 정책](docs/arena-learning.md#검증을-통과한-qwen만-자동-채택)에 있습니다.
 
 현재 로그인 계정에서는 **1개 탭으로 실행**합니다. 2026-11-15 실제 화면에서 사이트가 “다른 탭/창에서 게임을 시작해 이 경기가 닫혔다”고 안내했습니다. 2개 탭의 첫 경기와 공동 학습은 확인했지만 재매칭에서 한 탭이 종료됐으므로 지속 가능한 동시 실행으로 보지 않습니다. CLI와 실행기에서 `--tabs 2`를 거부합니다. 모델 공유·추론 순서·공동 PPO 코드는 별도 검증된 기반으로 보존하며 이 제한을 우회하는 데 쓰지 않습니다. 결과가 확인되지 않은 종료 경기는 학습하지 않습니다. `stop`은 현재 경기와 학습을 마친 뒤 적용합니다.
 
@@ -147,7 +151,7 @@ yarn workspace @side/clash-bot counterpush stop
 yarn workspace @side/clash-bot counterpush rescan /absolute/path/to/completed-run
 ```
 
-이때 `reprocessed-observations.json`은 새로 발견한 사례이며 **아직 학습하지 않은 자료**입니다. 아래 명령으로 선별·학습할 수 있습니다. 내 행동의 과거 PPO 자료를 다시 학습하는 명령은 아닙니다.
+이때 `reprocessed-observations.json`은 새로 발견한 사례이며 **아직 학습하지 않은 자료**입니다. 아래는 자료 준비와 초기 직접 학습 명령입니다. 현재 보호된 적용 모델의 직접 학습은 거부되며, 자동 반복기가 별도 후보에 학습합니다. 내 행동의 과거 PPO 자료를 재사용하지 않습니다.
 
 ```sh
 yarn workspace @side/clash-bot opponent prepare --observations /absolute/path/observations.json

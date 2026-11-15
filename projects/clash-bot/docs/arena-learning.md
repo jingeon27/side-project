@@ -16,6 +16,8 @@ flowchart LR
   V -->|통과| C[로컬 기준 모델 교체]
   R --> Q[Qwen 3.8 별도 후보에 지도학습]
   Q --> A[Counterpush 고정 모델 A/B 평가]
+  A -->|실전 통과| D[Qwen 적용 모델 교체]
+  A -->|미통과| Q
 ```
 
 화면을 조작하는 모델은 계속 **Qwen3.8-27B**다. 가상 전투마다 27B 모델을 실행하는 대신 약 5만 파라미터의 정책·가치 모델이 수읽기를 담당한다. 현재 Qwen의 마지막 MLP LoRA를 복제한 별도 후보가 공개 전투 그림과 수읽기 분포를 배운다. 같은 상주 Qwen 본체에 후보 어댑터만 연결하므로 27B 모델을 두 개 올리지 않는다. 학습 후 실전 어댑터와 버전이 유지됐는지 검사한다.
@@ -43,9 +45,25 @@ RoyaleSim에도 충돌·일부 효과의 미검증 가정이 남아 있다. [보
 
 로컬 평가는 학습과 다른 시드로 같은 환경을 두 번 실행하고 진영을 교환한다. 탐색 잡음과 학습을 끈다. 최소 **16쌍/32판**, 점수 55% 이상, 신뢰 구간 하한 50% 초과, 단측 부호 검정을 요구한다. 반복 평가에는 유의수준 지출을 적용한다. 통과한 후보만 `champion`이 되며 최신 학습 모델 `learner`는 따로 보존한다.
 
-Qwen에는 결과나 숨은 패를 입력하지 않는다. 공개된 **행동 전** 그림과 합법 후보만 주고 탐색 분포로 지도학습한다. 이를 on-policy PPO로 표시하지 않는다. 낮은 학습률, KL 제한, 손실 감소와 실제 가중치 변경을 검사하며 실전 체크포인트는 유지한다. Counterpush 반복 실행은 경기 사이에 새 로컬 자료를 하나씩 소비해 후보를 만든다.
+Qwen에는 결과나 숨은 패를 입력하지 않는다. 공개된 **행동 전** 그림과 합법 후보만 주고 탐색 분포로 지도학습한다. 이를 on-policy PPO로 표시하지 않는다. 낮은 학습률, KL 제한, 손실 감소와 실제 가중치 변경을 검사한다. Counterpush 반복 실행은 **별도 후보에서 실전 PPO·상대 행동 모방·자가대국 수읽기 학습**을 진행한다. 적용 모델의 `current.json`은 학습 때문에 바뀌지 않는다.
 
-Counterpush A/B는 고정한 기준·후보를 한 브라우저에서 AB/BA 순서로 대전시킨다. 평가 중 PPO·상대 모방·수읽기 학습을 금지하며 `current.json`은 바뀌지 않는다. 현재 평가의 행동 선택 분포는 실전과 같은 categorical 정책이다. 사이트에서 시작 패/상대 RNG를 지정할 수 없으므로 같은 시드의 쌍이라고 보고하지 않는다. 최소 16쌍과 보수적인 Hoeffding 구간 하한을 요구하고 반복 평가의 유의수준 지출, 원본 경기·버전·해시를 보존한다. 현재 명령은 결과를 기록하며 실전 후보를 자동 배포하지 않는다. 같은 계정의 여러 탭 동시 대전은 쓰지 않는다.
+Counterpush A/B는 고정한 기준·후보를 한 브라우저에서 AB/BA 순서로 대전시킨다. 평가 중 PPO·상대 모방·수읽기 학습을 금지하며 `current.json`은 바뀌지 않는다. 행동 선택 분포는 실전과 같은 categorical 정책이다. 사이트에서 시작 패/상대 RNG를 지정할 수 없으므로 같은 시드의 쌍이라고 보고하지 않는다. 같은 계정의 여러 탭 동시 대전은 쓰지 않는다.
+
+### 검증을 통과한 Qwen만 자동 채택
+
+2026-11-16부터 `counterpush start`는 다음 과정을 반복한다.
+
+1. 적용 모델을 고정하고 별도 후보를 준비한다. 기본적으로 후보 실전 학습 2판과 새 자가대국 자료 학습을 한다.
+2. 후보의 특정 체크포인트를 고정하고 **최소 16쌍/32판**으로 기준 모델과 비교한다. 양쪽 모두 학습을 끄고, 별도로 새로 시작한 경기만 평가한다.
+3. 승리 1·무승부 0.5·패배 0으로 점수를 매긴다. 쌍 점수는 `0.5 + (후보 점수 - 기준 점수)/2`다. 평균 0.55 이상이며 보수적인 Hoeffding 구간 하한이 0.5를 넘어야 한다. 이는 후보의 관측 평균 점수가 기준보다 최소 10%p 높다는 조건도 포함한다. 반복 평가는 총 0.05의 유의수준 예산을 나눠 쓴다. 불확실하거나 둘 다 계속 패배하면 채택하지 않는다.
+4. 통과하면 Python 학습기가 **원본 경기의 두 번 일치한 왕관, 실제 사용 어댑터 해시, 평가 중 학습 금지, 중복·학습 자료 유출 부재, 평가 시도 등록, 현재 기준 모델**을 다시 검사한다. 통과 플래그만으로 교체하지 않는다.
+5. 검증된 가중치와 optimizer를 새 적용 버전으로 복사한 뒤 `current.json`을 원자적으로 교체한다. 이전 버전은 보존한다. 미통과하면 기준 모델을 유지하고 후보를 더 학습한다.
+
+적용 폴더의 `promotion-policy.json`은 일반 `Learner.save`와 직접 PPO/모방 쓰기를 막는다. 실제 정책 교체는 위 검증을 수행하는 게시 경로만 사용한다. 학습·평가용으로 후보가 게임을 플레이하는 것과 적용 모델 포인터를 교체하는 것을 구분한다. 새 버전 번호나 학습 손실 감소를 실력 향상으로 보지 않는다.
+
+`evolution.json`이 현재 후보, 대기 중 학습 경기, 평가 파일과 채택 결과를 소유한다. PPO 후 프로세스가 종료돼도 receipt를 읽어 같은 갱신을 재적용하지 않는다. 평가를 재개할 때에는 같은 기준·후보·시도 번호와 이미 끝낸 경기를 유지한다. 게시 후 실행 기록을 쓰기 전에 종료된 경우도 이미 검증된 게시를 인식해 두 번 적용하지 않는다. `counterpush evaluate` 단독 명령은 비교 결과만 기록하고, 자동 채택은 `counterpush start`가 담당한다.
+
+현재 판정은 **이 덱과 Counterpush 상대**에 대한 것이다. 실제 클래시로얄 트로피 상대나 모든 덱에서의 우위를 검증한 것으로 확대하지 않는다. 통계적 판정이며 모든 후속 경기의 승리를 보장하지 않는다.
 
 ## 명령
 
@@ -53,9 +71,14 @@ Counterpush A/B는 고정한 기준·후보를 한 브라우저에서 AB/BA 순�
 
 ```sh
 yarn workspace @side/clash-bot arena:setup
-yarn workspace @side/clash-bot arena start --background --hours 8 --games 4 --simulations 16 --depth 8 --pairs 16 --evaluate-every 2
+yarn workspace @side/clash-bot arena start --background --hours 0 --games 4 --simulations 16 --depth 8 --pairs 16 --evaluate-every 2
 yarn workspace @side/clash-bot arena status
 yarn workspace @side/clash-bot arena stop
+
+# 학습 → 실전 분리 평가 → 통과한 후보만 적용을 계속 반복한다.
+yarn workspace @side/clash-bot counterpush start --background --hours 0 --matches 0 --training-matches 2 --pairs 16 --tabs 1
+yarn workspace @side/clash-bot counterpush status
+yarn workspace @side/clash-bot counterpush stop
 
 # 작은 전체 흐름 확인. 2쌍으로는 채택하지 않는다.
 yarn workspace @side/clash-bot arena start --generations 1 --games 2 --simulations 8 --depth 6 --pairs 2
@@ -68,9 +91,9 @@ yarn workspace @side/clash-bot arena study
 yarn workspace @side/clash-bot counterpush evaluate --candidate /absolute/path/to/candidate/checkpoints/v000067 --pairs 16 --hours 8 --background --resume
 ```
 
-`--resume`은 평가를 모두 마친 뒤 기존 Counterpush 학습을 재개한다. 중단·실패하면 자동 재개하지 않는다. `counterpush stop`은 현재 평가에도 적용된다. `arena stop`은 현재 게임/평가 쌍과 저장을 마치고 멈춘다. 두 실행은 독립된 상태·정지 요청·저장 위치를 가진다. Mac 절전 해제나 프로세스 자동 재시작 기능은 없다.
+`counterpush start`의 기본 시간 제한은 없다. 두 실행 모두 `--hours 0`은 정지 요청까지 반복하고 양수는 최대 24시간의 실행 한도다. `--resume`은 단독 평가를 마친 뒤 자동 채택 학습 루프를 시작한다. `counterpush stop`은 현재 경기를 마치고 후보·평가 진행을 저장한다. 다시 `start`하면 같은 평가를 이어간다. 불명확한 결과·검증 오류는 기준 모델을 유지하고 실행을 중단하며 정상적인 성적 미달은 후보 학습을 계속한다. `arena stop`은 현재 게임/평가 쌍과 저장을 마치고 멈춘다. 두 실행은 독립된 상태·정지 요청·저장 위치를 가진다. Mac 절전 해제나 프로세스 자동 재시작 기능은 없다.
 
-자료는 `.data/arena/leagues/<rulesID>/`의 `episodes/`, `checkpoints/`, `evaluations/`, `league.json`에 둔다. Qwen 입력은 `exports/`, 후보는 `qwen/candidates/`, 소비 기록은 `qwen/studies.jsonl`이다. 실전 원본은 기존 `counterpush/runs/`, 비교 결과는 `counterpush/control/evaluations/`다.
+자료는 `.data/arena/leagues/<rulesID>/`의 `episodes/`, `checkpoints/`, `evaluations/`, `league.json`에 둔다. Qwen 입력은 `exports/`, 후보는 `qwen/candidates/` 또는 `qwen/training/`, 소비 기록은 `qwen/studies.jsonl`이다. 실전 원본은 `counterpush/runs/`, 비교 결과는 `counterpush/control/evaluations/`, 반복 실행 상태는 `counterpush/control/evolution.json`, 게시 이력은 `promotions.jsonl`이다.
 
 ## 밸런스 패치
 
@@ -93,5 +116,7 @@ yarn workspace @side/clash-bot arena rules --stage-version 0.1.53
 - 초기 실전 연결 확인은 고정한 두 모델의 greedy 선택으로 각 1판씩 수행했다. 기준 14회·후보 11회의 카드 입력이 확인됐고 둘 다 패배했다. 평가 후 기준 가중치는 유지됐다. 현재 categorical 평가의 충분한 표본 승률로 이 결과를 표시하지 않는다.
 - 타입 검사와 Vitest 89개, Python 학습 검사 27개, 로컬 전투 검사 18개가 통과했다. 별도 전체 Qwen 통합 검사 1개는 기본 검사에서 건너뛰었고 위의 운영 모델 지도학습·재적용·실전 고정 어댑터 교환을 직접 확인했다. 추가 전투 검사에서 접근 적에 대한 오두막 자식 생성·추가 지출 부재, 독 수비 시 무덤의 타워 피해 감소를 확인했다. 오두막 비용 검사의 오래된 기대값 5를 현재 표·실전 설정과 일치하는 4로 고쳐 재실행했다.
 - 초기 학습 실행에서 MLX의 예약 속성 `state`와 충돌한 이름을 수정한 뒤 학습을 다시 성공시켰다. 첫 실전 비교 명령은 상대 경로 해석 때문에 실패했으며 절대 경로로 재실행해 완료했다.
+- 자동 채택 추가 후 타입 검사·Vitest **97개**, Python 학습 검사 **30개**, 로컬 전투 검사 **18개**가 통과했다. 전체 Qwen 통합 검사 1개는 기본 검사에서 건너뛰었다. 격리된 작은 어댑터와 검사 자료로 통과 시 게시·재로딩, 불충분/변조/중복/학습 중 평가 자료 거절, 보호된 적용 모델 쓰기 차단, 실패 시 유지, 학습·평가·게시 복구를 검사했다. 초기 타입 오류와 기존 단일 탭 오류 메시지 회귀는 수정한 뒤 재실행했다.
+- 운영 Qwen에서는 **실제 후보 학습 1판 + 자가대국 자료 학습**으로 별도 후보 v72를 저장했고 적용 v68의 해시는 유지됐다. 기존 실행을 종료하는 동안 기록된 미검증 v69/v70도 삭제하지 않았으며 요청 시점 v68을 기준으로 고정했다(`qualification-cutover.json`). 실제 비교 2판의 결과를 저장한 뒤 같은 후보·평가 시도 번호로 재개한 것을 확인했다. 운영 실전에서 충분한 평가를 통과해 새 모델을 채택한 결과는 아직 없다.
 
 참고 저장소·라이선스는 [THIRD_PARTY.md](../THIRD_PARTY.md)에 기록했다. 다른 프로젝트의 결과·속도를 이 봇의 성능으로 사용하지 않는다.
