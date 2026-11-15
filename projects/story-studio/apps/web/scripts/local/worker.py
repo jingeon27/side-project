@@ -131,6 +131,7 @@ def generate_voice(root, request):
     chunks = []
     sample_rate = 24000
     for result in model.generate(text=text, voice=voice, lang_code="Korean",
+                                 temperature=0.7 if settings['kind'] == 'trained' else None,
                                  instruct=instruct, max_tokens=4096,
                                  split_pattern=r"\n+", verbose=False):
         chunks.append(np.asarray(result.audio))
