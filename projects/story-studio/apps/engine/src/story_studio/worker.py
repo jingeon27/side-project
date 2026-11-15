@@ -14,6 +14,7 @@ import traceback
 from .generation.speech import generate_voice
 from .generation.text import generate_text
 from .generation.visual import generate_visual
+from .generation.verified_speech import IncompleteSpeechError
 from .media import compose
 from .runtime import JobContext
 from .voices.jobs import train
@@ -79,13 +80,13 @@ def run_cli():
             job.task_id = request['taskId']
             job.training = request['action'] == 'train-voice'
         run_request(request, job, Path(args.examples_dir).resolve())
-    except Exception:
+    except Exception as error:
         traceback.print_exc(file=sys.stderr)
         if job.training:
             job.save_task('CANCELLED' if job.cancelled else 'FAILED', error='학습을 중단했습니다. 저장된 가중치부터 이어서 학습할 수 있습니다.' if job.cancelled else '음성 학습이 중단되었습니다. 로컬 로그를 확인해 주세요. 녹음과 직전 가중치는 보존했습니다.')
         else:
             job.save_task('FAILED', error='사용자가 영상 생성을 중단했습니다. 원고는 보존됩니다.' if job.cancelled else '로컬 영상 생성이 중단되었습니다. 로컬 로그를 확인한 뒤 다시 시도해 주세요.')
-        job.emit({'error': '로컬 모델 실행에 실패했습니다. 프로젝트의 로컬 로그를 확인해 주세요.'})
+        job.emit({'error': str(error) if isinstance(error, IncompleteSpeechError) else '로컬 모델 실행에 실패했습니다. 프로젝트의 로컬 로그를 확인해 주세요.'})
         sys.exit(1)
     finally:
         job.clear_active()

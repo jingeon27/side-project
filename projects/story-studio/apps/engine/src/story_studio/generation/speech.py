@@ -11,7 +11,18 @@ def generate_voice(root, request, progress):
     mx.set_cache_limit(256 * 1024**2)
     progress("한국어 음성 모델을 불러오는 중")
     settings = request.get('settings', {'kind': 'preset', 'speaker': 'sohee', 'style': 'calm'})
+    text = re.sub(r"(?m)^[^\n:]{1,24}:\s*", "", request["text"]).strip()
     if settings['kind'] == 'trained':
+        from ..voices.synthesis_profile import read_synthesis_profile
+        profile = read_synthesis_profile(root, settings['runId'])
+        if profile is not None:
+            from .speech_quality import spoken_text
+            from .verified_speech import synthesize_verified
+            text = spoken_text(request['text'])
+            audio = synthesize_verified(root, settings['runId'], profile, text, progress)
+            path = asset_path(root, 'wav')
+            sf.write(path, audio, 24000)
+            return {'asset': asset_url(path), 'duration': round(len(audio) / 24000, 3)}
         from ..voices.jobs import load_trained
         model = load_trained(root, settings['runId'])
         voice = 'studio_voice'
@@ -20,7 +31,6 @@ def generate_voice(root, request, progress):
         model = load_model(root / "local/models/voice")
         voice = settings['speaker']
         instruct = {'calm': '차분하고 따뜻한 한국어 이야기 내레이션', 'neutral': '자연스럽고 또렷한 한국어 발음', 'bright': '밝고 활기찬 한국어 말투', 'firm': '단호하고 힘 있는 한국어 말투'}[settings['style']]
-    text = re.sub(r"(?m)^[^\n:]{1,24}:\s*", "", request["text"]).strip()
     progress("한국어 목소리를 만드는 중")
     chunks = []
     sample_rate = 24000

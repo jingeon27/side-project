@@ -71,6 +71,7 @@ def train(root, request, progress, save_task):
 def load_trained(root, run_id):
     from mlx_audio.tts.utils import load_model
     from .training import attach_adapters, load_checkpoint
+    from .synthesis_profile import read_synthesis_profile, apply_synthesis_profile
     folder = run_folder(root, run_id)
     status = json.loads((folder / 'status.json').read_text())
     if status['status'] != 'SUCCEEDED':
@@ -80,7 +81,10 @@ def load_trained(root, run_id):
     revision = model_specs()['voice-train']['revision']
     if saved.get('modelRevision') != revision:
         raise ValueError('학습한 기본 모델 버전이 다릅니다. 같은 버전으로 복원하거나 새로 학습해 주세요')
+    profile = read_synthesis_profile(root, run_id)
     model = load_model(root / 'local/models/voice-train')
     attach_adapters(model)
     load_checkpoint(model, checkpoint)
+    if profile is not None:
+        apply_synthesis_profile(model, profile)
     return model

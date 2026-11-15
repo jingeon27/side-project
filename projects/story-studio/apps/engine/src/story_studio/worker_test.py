@@ -33,6 +33,22 @@ class WorkerLifecycleTests(unittest.TestCase):
             self.assertIn('model diagnostic', diagnostics.getvalue())
             self.assertFalse((root / 'local/active.json').exists())
 
+    def test_voice_coverage_errors_are_actionable_but_unexpected_errors_stay_private(self):
+        from .generation.verified_speech import IncompleteSpeechError
+        for error in [IncompleteSpeechError('대사를 확인하지 못했습니다. 다시 시도해 주세요.'), RuntimeError('private-internal-detail')]:
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                protocol = io.StringIO()
+                arguments = ['story_studio', '--data-dir', str(root), '--examples-dir', str(root / 'examples')]
+                with patch.object(sys, 'argv', arguments), patch.object(sys, 'stdin', io.StringIO('{"action":"voice"}')), patch.object(worker, 'generate_voice', side_effect=error), patch.object(signal, 'signal'), patch.object(os, 'nice'), patch.dict(os.environ), contextlib.redirect_stdout(protocol), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    worker.run_cli()
+                result = json.loads(protocol.getvalue().splitlines()[-1])
+                if isinstance(error, IncompleteSpeechError):
+                    self.assertEqual(result['error'], str(error))
+                else:
+                    self.assertNotIn('private-internal-detail', result['error'])
+                self.assertFalse((root / 'local/active.json').exists())
+
     def test_training_cancellation_preserves_checkpoint_and_reports_cancelled(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

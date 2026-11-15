@@ -42,6 +42,21 @@ def tiny_loss(talker, sample):
 
 
 class VoiceTrainingTests(unittest.TestCase):
+    def test_inference_strength_is_idempotent_and_preserves_the_frozen_base(self):
+        mx.random.seed(19)
+        adapter = training.VoiceLoRA(nn.Linear(8, 8))
+        adapter.lora_b = mx.full(adapter.lora_b.shape, .2)
+        inputs = mx.ones((2, 8))
+        base = adapter.base(inputs)
+        original = mx.array(adapter.base.weight)
+        full_delta = adapter(inputs) - base
+        adapter.set_inference_strength(.5)
+        adapter.set_inference_strength(.5)
+        self.assertTrue(bool(mx.allclose(adapter(inputs) - base, full_delta * .5, atol=1e-6).item()))
+        self.assertTrue(bool(mx.array_equal(adapter.base.weight, original).item()))
+        with self.assertRaises(ValueError):
+            adapter.set_inference_strength(0)
+
     def test_zero_adapter_preserves_base_and_resumed_optimizer_matches_uninterrupted_training(self):
         mx.random.seed(17)
         model = TinyModel()

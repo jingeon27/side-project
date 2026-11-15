@@ -11,18 +11,18 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', required=True)
-    parser.add_argument('--only', choices=['all', 'voice-training'], default='all')
+    parser.add_argument('--only', choices=['all', 'voice-training', 'voice-verification'], default='all')
     args = parser.parse_args()
     from huggingface_hub import model_info, snapshot_download
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
     specs = model_specs()
-    selected = ['voice-train'] if args.only == 'voice-training' else ['text', 'voice', 'voice-train', 'wan-source']
+    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'voice', 'voice-train', 'wan-source'])
     for name in selected:
         spec = specs[name]
         print(f'모델 준비: {name} ({spec["repo"]})', flush=True)
         patterns = ['*.json', '*.safetensors', '*.pth', 'google/umt5-xxl/*'] if name == 'wan-source' else None
-        folder = root / 'models' / name
+        folder = root / 'models' / spec.get('directory', name)
         info = model_info(spec['repo'], revision=spec['revision'], files_metadata=True)
         # Adopt an existing identical local copy without re-downloading large files.
         wanted = [entry for entry in info.siblings if entry.rfilename.endswith(('.safetensors', '.json'))]
@@ -37,6 +37,9 @@ def main():
                     raise ValueError(f'모델 파일 검증 실패: {entry.rfilename}')
     if args.only == 'voice-training':
         print('로컬 음성 학습 모델 준비 완료', flush=True)
+        return
+    if args.only == 'voice-verification':
+        print('로컬 대사 확인 모델 준비 완료', flush=True)
         return
     spec = specs['tokenizer']
     snapshot_download(spec['repo'], revision=spec['revision'], local_dir=root / 'models/tokenizer',

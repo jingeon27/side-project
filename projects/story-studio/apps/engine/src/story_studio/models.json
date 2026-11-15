@@ -11,6 +11,11 @@
     "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-4bit",
     "revision": "37e955a1deb861c088ae5f3a67043185f3d1a60c"
   },
+  "voice-asr": {
+    "repo": "mlx-community/Qwen3-ASR-1.7B-4bit",
+    "revision": "78a389c776a5483b2d0d4ea5494e11012e0d6159",
+    "directory": "asr-qwen3-1.7b"
+  },
   "wan-source": { "repo": "Wan-AI/Wan2.1-T2V-1.3B", "revision": "37ec512624d61f7aa208f7ea8140a131f93afc9a" },
   "tokenizer": { "repo": "google/umt5-xxl", "revision": "66cb9e7e85526fe440a945569e42c72fb6cbc0ad" }
 }
