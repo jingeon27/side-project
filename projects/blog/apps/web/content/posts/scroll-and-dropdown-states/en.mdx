@@ -1,12 +1,12 @@
 <Summary>
 
-I revisited the component tests I had given too little thought to. Reading library tests helped me find missing cases in Photo Contest's infinite scroll and dropdown menus, and reconsider how to divide those tests.
+I looked at how libraries test their components, then used those tests to fill gaps in Photo Contest's infinite scroll and dropdown tests. I also reconsidered which interactions to test separately.
 
 </Summary>
 
 ![A spinner beneath the existing cards while the next page loads, alongside a dropdown that opens above its trigger near the bottom of the viewport.](/images/covers/scroll-and-dropdown-states.avif)
 
-At work, I wrote unit tests mainly for logic and checked screens through integration and E2E tests. I built those screens with Radix, Base UI, and shadcn/ui, which I trusted for their popularity, high download counts, and quick fixes for reported issues. I had given little thought to how their components were tested.
+At work, I wrote unit tests mainly for logic and checked screens with integration and E2E tests. I often used Radix, Base UI, and shadcn/ui to build the UI. They were widely used, had high download counts, and fixed reported issues quickly, so I trusted them. I had spent little time looking at how their components were tested.
 
 When reading library code, I usually started with the implementation and type definitions. Tests were useful as examples of inputs and usage.
 
@@ -18,39 +18,39 @@ Photo Contest already had a [gallery E2E test](https://github.com/jingeon27/side
 
 ## Library tests as an answer key
 
-This time, I read tests in TanStack Query, Radix, and Base UI by following their starting conditions, actions, and expected results. A single test file in these libraries runs from about 1,300 to 4,900 lines. Before picking out cases, I looked at how each file is divided as a whole.
+I read tests in TanStack Query, Radix, and Base UI, following the starting state, actions, and expected results in each one. The files I examined ranged from about 1,300 to 4,900 lines. Before choosing individual tests to learn from, I looked at how each file was organized.
 
 ### TanStack Query: record the order of state changes for each feature
 
-The [`useInfiniteQuery` tests](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx) hold 28 tests in an 1,839-line file. There is one test per feature or situation: a successful query, fetching previous and next pages, options such as `select`, `placeholderData`, and `initialData`, failures for each kind of fetch, cancellation when an ongoing fetch overlaps a new one, and several ways of computing whether a next page exists (`hasNextPage`).
+The [`useInfiniteQuery` test file](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx) is 1,839 lines long and contains 28 tests. They cover successful queries and fetching previous and next pages. Options such as `select`, `placeholderData`, and `initialData` have separate tests, as do failures for different kinds of fetch and cancellation when requests overlap. Several tests check how `hasNextPage` is calculated under different conditions.
 
-Many tests collect the hook's state on every render and compare the whole sequence with the expected one. If you only look at the final result, you can't tell that the list was briefly emptied and filled again, but a recorded sequence keeps that moment. Failures are checked separately for each kind of fetch: when a next-page request fails, pages already fetched stay and `isFetchNextPageError` is set, and a failed full refetch has its own expected states. [Each test creates a new QueryClient and clears it afterward](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx#L31-L46), so data fetched in an earlier test can't skip the next test's initial loading.
+Many tests collect the hook's state on every render and compare the recorded sequence with the expected one. Checking only the final result could miss a list that briefly emptied before filling again. Recording each state makes that interruption visible. Failures are also checked by fetch type. A next-page failure should leave existing pages in place and set `isFetchNextPageError` to `true`; a failed full refetch has its own expected states. [Each test creates a new QueryClient and clears it afterward](https://github.com/TanStack/query/blob/d7c0418f871052e45afc866f4520c062ebd5561a/packages/react-query/src/__tests__/useInfiniteQuery.test.tsx#L31-L46), so cached data from an earlier test cannot cause the next one to skip initial loading.
 
-I brought three of these into Photo Contest. The infinite scroll hook tests also collect rendered states in order, and that is how I found a bug where an overlapping refresh and next-page fetch requested the same offset again. Just as TanStack checks the `hasNextPage` computation case by case, I gave the last page its own test that checks only the end condition. I also create a fresh client for every test. On the other hand, I didn't adopt keeping existing pages when a next-page fetch fails, because Photo Contest currently behaves differently. That difference is covered in the failure section below.
+I recorded rendered states in Photo Contest's infinite scroll hook tests too. This helped me find a bug where overlapping refresh and next-page requests fetched the same offset twice. The tests for `hasNextPage` also prompted a separate check that fetching stops at the last page. Each test gets a fresh client. Photo Contest handles next-page failures differently, though: it does not keep the existing pages visible. I explain that behavior in the section on failed requests below.
 
 ### Radix: regression tests per problem, contract tests per part, and user flows in E2E
 
 For the dropdown, I started with shadcn/ui, which I had been using regularly. It offers dropdown implementations based on Radix, Base UI, and React Aria, and the [Base UI version](https://github.com/shadcn-ui/ui/blob/8ab27715521cbd4f87ae6886cd989cbb678f6de7/apps/v4/registry/bases/base/ui/dropdown-menu.tsx) composes Base UI components and adds styles. I followed opening, closing, and focus behavior to the tests in the underlying Radix and Base UI libraries.
 
-The Radix [DropdownMenu unit tests](https://github.com/radix-ui/primitives/blob/fe02008f49834d7421427fe532e5b11f13c7bcac/packages/react/dropdown-menu/src/dropdown-menu.test.tsx) run 1,286 lines in two broad parts. The first part gives each problem its own `describe`, with groups such as `aria-controls` on a closed menu, losing window focus, Space and Enter typed into an input rendered inside the menu, pointer movement while closing, and ref stability. The remaining 1,000 or so lines are contract tests for each part. For all thirteen parts from Trigger to SubContent, they check in the same format that props a part doesn't use are passed to the element it renders, and to the child element when `asChild` is set.
+The Radix [DropdownMenu unit test file](https://github.com/radix-ui/primitives/blob/fe02008f49834d7421427fe532e5b11f13c7bcac/packages/react/dropdown-menu/src/dropdown-menu.test.tsx) is 1,286 lines long and has two main sections. The first groups tests by problem using `describe`. These cover `aria-controls` on a closed menu, loss of window focus, Space and Enter in an input inside the menu, pointer movement while closing, and ref stability. The remaining 1,000 or so lines check prop forwarding for each component. All thirteen components, from Trigger to SubContent, get the same checks: unused props must reach the rendered element, or the child element when `asChild` is set.
 
-Most groups in the first part came in while fixing issues. The file's commit history shows `aria-controls` ([#3922](https://github.com/radix-ui/primitives/pull/3922)), window focus ([#3938](https://github.com/radix-ui/primitives/pull/3938)), ref stability ([#3968](https://github.com/radix-ui/primitives/pull/3968)), keys typed into an input ([#3999](https://github.com/radix-ui/primitives/pull/3999)), and pointer movement while closing ([#4196](https://github.com/radix-ui/primitives/pull/4196)) each arriving with its pull request, while the contract tests were added together in July 2026. Of these, the `aria-controls` problem ([#3013](https://github.com/radix-ui/primitives/issues/3013)) and the submenu problem ([#3257](https://github.com/radix-ui/primitives/issues/3257)) were reported in 2024 and fixed in June 2026, and the pointer problem during dismissal, first reported in March 2022 as [#1266](https://github.com/radix-ui/primitives/issues/1266), was fixed only in October 2026.
+Most tests in the first section were added with bug fixes. The commit history links them to the fixes for `aria-controls` ([#3922](https://github.com/radix-ui/primitives/pull/3922)), window focus ([#3938](https://github.com/radix-ui/primitives/pull/3938)), ref stability ([#3968](https://github.com/radix-ui/primitives/pull/3968)), keys typed into an input ([#3999](https://github.com/radix-ui/primitives/pull/3999)), and pointer movement while closing ([#4196](https://github.com/radix-ui/primitives/pull/4196)). The component contract tests were added together in July 2026. The `aria-controls` issue ([#3013](https://github.com/radix-ui/primitives/issues/3013)) and submenu issue ([#3257](https://github.com/radix-ui/primitives/issues/3257)) were reported in 2024 and fixed in June 2026. The pointer issue during dismissal was first reported in March 2022 as [#1266](https://github.com/radix-ui/primitives/issues/1266) and fixed in October 2026.
 
-User flows are checked not in the unit tests but in [Playwright E2E tests](https://github.com/radix-ui/primitives/blob/eb3a2b7091293e27df8f9ba906632d8daa3d81a3/e2e/dropdown-menu.spec.ts). They open Storybook stories, split a user working with submenus into pointer and keyboard groups, and group narrow viewports, right-to-left (RTL) layouts, and a menu inside a Dialog separately.
+The [Playwright E2E tests](https://github.com/radix-ui/primitives/blob/eb3a2b7091293e27df8f9ba906632d8daa3d81a3/e2e/dropdown-menu.spec.ts) check how people use the menu. They open Storybook stories and separate pointer interactions with submenus from keyboard interactions. Narrow viewports, right-to-left (RTL) layouts, and menus inside a Dialog have separate groups too.
 
-What was worth bringing into Photo Contest is this split: behaviors that came from issues get their own tests per problem, and the flow of using the menu is checked in a real browser. As cases, I brought in two checks: the closed menu's trigger must not keep `aria-controls`, and a closing menu must not accept pointer input. The Photo Contest more menu has no submenus, so the window focus and submenu cases did not apply, and passing props through each part is a contract the library keeps, so I didn't check it again in Photo Contest.
+In Photo Contest, I also separated regression tests for individual problems from tests of menu interactions. I added checks that a closed menu's trigger has no `aria-controls` attribute and that a closing menu does not accept pointer input. Photo Contest's more menu has no submenus, so I did not apply the window-focus and submenu tests. I also left prop-forwarding checks to the library.
 
 ### Base UI: group by interaction and prop, and mark tests that need a browser
 
-Base UI's [menu tests](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/root/MenuRoot.test.tsx) run 4,899 lines. They split `describe` blocks by interaction area, such as opening, keyboard navigation, submenus, focus management, scroll locking, and mouse interaction, and give each prop such as `modal`, `openOnHover`, and `disabled` its own group. Each behavior gets a small `it`, so moving the highlight with the arrow keys and jumping to the first and last items with Home and End are checked separately. A failed interaction does not prevent the other tests from running.
+Base UI's [menu test file](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/root/MenuRoot.test.tsx) is 4,899 lines long. It uses `describe` blocks for opening, keyboard navigation, submenus, focus management, scroll locking, and mouse interactions. Props such as `modal`, `openOnHover`, and `disabled` also get their own groups. Within each group, individual behaviors have separate `it` blocks. Moving the highlight with the arrow keys is tested separately from jumping to the first or last item with Home and End. One failed test does not stop the others from running.
 
-The same tests run in both jsdom and real browsers, and groups that need a real browser, such as opening on hover, scroll locking, mouse interaction, and opening a dialog from a menu item, are marked with `describe.skipIf(isJSDOM)` so jsdom skips them. The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) does the opposite: it runs opening, closing, and reopening during dismissal in one test and records the state, because an earlier transition can affect the next one. To observe intermediate states, it stretches the transition to ten seconds, then calls `finish()` on the animations returned by `getAnimations()` to decide when it ends.
+The tests run in jsdom and real browsers. Groups that need a browser, such as opening on hover, scroll locking, mouse interactions, and opening a dialog from a menu item, use `describe.skipIf(isJSDOM)` to skip jsdom. The [popup transition state test](https://github.com/mui/base-ui/blob/5aacdbb7852487518b982ea397885c8322a3ebc6/packages/react/src/menu/popup/MenuPopupTransitionState.test.tsx) keeps opening, closing, and reopening during dismissal in one test, recording the state throughout. Those steps need to stay together because an earlier transition can affect the next one. To check intermediate states, it extends the transition to ten seconds, then calls `finish()` on the animations returned by `getAnimations()` to end them when the checks are done.
 
-What I brought into Photo Contest is the rule for splitting. Interactions that can be checked independently get separate tests, and connected state changes stay in one test. I split the keyboard tests into opening with Enter, moving with the down arrow, and closing with Escape, and the infinite scroll tests now check keeping the list and preventing duplicate requests separately. Input during dismissal is checked the same way as Base UI does, by stretching the transition and controlling when it ends. Photo Contest also checks two situations Base UI groups separately, opening a dialog from a menu item and scroll locking: focus must return to the more icon after the delete dialog closes, and the scroll lock the menu set must be released when the list turns into an error screen.
+In Photo Contest, independent interactions now have separate tests, while sequences that depend on earlier states stay together. I split the keyboard tests into opening with Enter, moving with ArrowDown, and closing with Escape. The infinite scroll tests also check list retention separately from duplicate requests. To test input during dismissal, I extended the transition and controlled when it ends, as Base UI does. I also checked that focus returns to the more icon after closing the deletion dialog and that the page can scroll again when an error screen replaces the list.
 
 ## Infinite scroll tests
 
-For infinite scroll, you can assume the following. The Photo Contest gallery loads posts 24 at a time by offset, and when the server sends `nextOffset: null`, that is the last page. The next page is requested without a button as soon as the end of the list enters the viewport, and the new page is appended to the existing list. The first fetch and the next-page fetch can each fail, and some screens, such as the contest feed, refresh their list on their own.
+The Photo Contest gallery loads 24 posts at a time using an offset. The server returns `nextOffset: null` for the last page. When the end of the list enters the viewport, the gallery requests the next page and appends its posts to the list. Initial and next-page requests can fail independently, and some screens, such as the contest feed, refresh the list automatically.
 
 ### Control responses to create each state
 
@@ -98,7 +98,7 @@ test('keeps the list during loading and appends the next page', async ({ page })
 });
 ```
 
-Check that loading is visible before releasing the response, so the test cannot pass by inspecting only the completed screen. The card count, first card's visibility, and spinner all establish that the list remains usable during loading. These assertions describe the same behavior and can stay together.
+Check that loading is visible before releasing the response, so the test cannot pass by inspecting only the completed screen. The test checks the card count, the first card's visibility, and the spinner to verify that the existing list stays on screen during loading. These checks cover the same sequence, so they stay in one test.
 
 The duplicate-request case also holds the next response, then scrolls up and returns to the end. The existing `expectNoGalleryRequest` helper waits one second for a gallery request and passes if none arrives.
 
@@ -150,11 +150,11 @@ A retry that also fails could have its own test. Two consecutive failure respons
 
 ### When refresh and next-page requests overlap
 
-I also examined the query states behind the screen. Following TanStack Query's tests, I recorded the states committed to the UI in order. A next-page request should keep the list visible with a loading state, then append the page and end loading. The record exposes any intermediate state that replaces the whole list with a loading screen.
+I also looked at how the hook's query state changes. Following TanStack Query's tests, I recorded the states committed to the UI in order. A next-page request should keep the list visible while marking the query as loading. The response should append the page and end loading. Recording each state lets me check whether a loading screen briefly replaces the whole list.
 
 Testing an overlap between refresh and next-page requests revealed a bug. If refresh finished first, a later call to fetch more requested the pending offset again and ran the page-loaded callback twice. The latest-posts feed uses that callback to send analytics events, so those could be duplicated too.
 
-The hook remembered only one pending request. Refresh completion cleared that record, making the hook accept another request while the next page was still loading.
+The hook stored only one pending request. When the refresh finished, it cleared that value and allowed another request even though the next page was still loading.
 
 The screen did not reveal this immediately because it stops observing the end during next-page loading. But the contest feed refreshes when its photo count changes, so the requests can overlap. The [first fix](https://github.com/jingeon27/side-project/commit/4830f074859ade4126f7d0a93c7bad9148bc9e92) tracked every pending request. The hook [now reads Apollo ObservableQuery's current state](https://github.com/jingeon27/side-project/blob/d5f35d7b06857ee519f3868d70f530980c66b3a2/projects/photo-contest/apps/web/src/shared/api/infinite-query.hook.ts) to decide whether it can fetch the next page, without maintaining a separate request log.
 
@@ -228,7 +228,7 @@ Prepare handlers and client state separately for each test. `resetHandlers()` cl
 
 The error handler above keeps failing until replaced. Restore the success handler after checking the error, then click Retry.
 
-MSW changes how the response is prepared. The UI assertions still need to check whether the existing cards remain and when the spinner or error appears.
+Using MSW does not change what the screen needs to show. The tests still need to check whether existing cards remain and when the spinner or error appears.
 
 ## Dropdown tests
 
@@ -236,13 +236,13 @@ A dropdown can also behave differently depending on the library underneath. When
 
 What people usually call a dropdown is split into several patterns by the [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/patterns/): a menu button for choosing an action, a listbox for choosing a value, and a combobox for narrowing options by typing. Each pattern needs different keyboard behavior and ARIA attributes.
 
-For the dropdown, you can assume the following. The more menu in Photo Contest is a menu button for choosing an action, not a select for choosing a value, and it is built with Base UI's Menu. Choosing an item closes the menu. Edit opens an edit sheet, while hide and delete go through a confirmation dialog first. The menu opens from a card in a scrolled list, and page scrolling is locked while it is open. It also has to open and work with the keyboard, not just the mouse.
+Photo Contest's more menu is built with Base UI's Menu. Choosing an item closes the menu. Edit opens an edit sheet; Hide and Delete open a confirmation dialog first. The menu can open from a card after scrolling down the list, and the page cannot scroll while it is open. People must also be able to open the menu and choose an item with the keyboard.
 
 ### Open the dropdown from a scrolled position
 
 I scrolled to the eighth post, which starts below the visible part of the page. With its trigger on screen, I compared [where the menu opens](https://base-ui.com/react/components/menu) with two amounts of space below the trigger. With 300 pixels, the menu opens beneath it. With 20 pixels, it opens above the trigger and both Edit and Delete remain reachable. The test compares `scrollY` before and after opening so it also catches a jump in the list.
 
-For a menu opening upward, the test checks that its bottom edge sits above the trigger and that its horizontal edges fit within the viewport. Playwright's [viewport assertion](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport) checks item visibility.
+For a menu opening upward, the test checks that its bottom edge sits above the trigger and that both sides fit within the viewport. It uses Playwright's [`toBeInViewport`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport) to check that the menu items are on screen.
 
 Requiring an exact visible ratio of `1` failed when the browser returned `0.99999988`. This was a small rounding difference, so the tests allow a little tolerance for visibility and use coordinates to verify the opening direction.
 
@@ -281,7 +281,7 @@ An Escape test still needs to prepare an open menu with focus on an item. Testin
 
 A menu can remain visible briefly while closing. Moving or clicking the pointer over it must not activate an item. Checking only after the transition ends would miss this interval.
 
-The Photo Contest test controls completion the same way Base UI does. It stretches the exit transition to ten seconds, presses Escape, and checks both `data-ending-style` and the presence of actual animations. It then calls `pause()` before moving the pointer over Delete and clicking. An empty animation list can also mean the transition has not started, so the start check comes first.
+The Photo Contest test also controls when the animation ends. It extends the exit transition to ten seconds, presses Escape, and checks for `data-ending-style` and running animations. It then calls `pause()` before moving the pointer over Delete and clicking. Since `getAnimations()` can return an empty array before the transition starts, the test first checks that it has started.
 
 During those interactions, the menu must remain in the DOM, the item must stay unhighlighted, and no deletion confirmation should open. Afterward, `finish()` ends the transition and the test checks that the menu is removed. Deliberately allowing pointer input during dismissal makes this test fail.
 
