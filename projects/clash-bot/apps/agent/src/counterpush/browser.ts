@@ -4,6 +4,7 @@ import { chromium, type BrowserContext, type Page } from 'playwright';
 import sharp from 'sharp';
 
 import { center, HEIGHT, WIDTH, type Point, type Profile } from '../config.ts';
+import { HERO_ABILITY_TARGET } from './hero-ability.ts';
 
 export const COUNTERPUSH_DECK = [
   'barbarian_barrel',
@@ -15,6 +16,10 @@ export const COUNTERPUSH_DECK = [
   'poison',
   'skeletons',
 ] as const;
+// Visible deck portraits are verified by assertDecks; charge counts are the
+// versioned reference rules, not a read of the site's internal game state.
+export const COUNTERPUSH_EVOLUTIONS = { knight: 2, furnace: 2 } as const;
+const DECK_FORMS = ['', 'evo', '', '', 'hero', 'evo', '', ''];
 const DECK_ART = [
   'BarbLog',
   'FirespiritHut',
@@ -87,7 +92,16 @@ export class CounterpushBrowser {
       const deck = await this.page
         .locator(`${selector} img`)
         .evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''));
-      if (deck.length !== 8 || !deck.every((image, index) => image.includes(`/ui/card/${DECK_ART[index]}`)))
+      if (
+        deck.length !== 8 ||
+        !deck.every((image, index) => {
+          const url = new URL(image, 'https://app.playcounterpush.com');
+          return (
+            url.pathname === `/ui/card/${DECK_ART[index]}` &&
+            (url.searchParams.get('form') ?? '') === DECK_FORMS[index]
+          );
+        })
+      )
         throw new Error(
           'Counterpush의 양쪽 덱을 GY GobHut Evo Furnace로 맞춰주세요. 다른 덱으로 매칭하지 않았습니다.',
         );
@@ -139,6 +153,16 @@ export class CounterpushBrowser {
   async result(): Promise<BrowserResult | null> {
     if ((await this.phase()) !== 'result') return null;
     return parseBrowserResult((await this.page.locator('#resultScore').getAttribute('aria-label')) ?? '');
+  }
+  async activateAbility() {
+    if ((await this.phase()) !== 'battle') return false;
+    const box = await this.page.locator('#touch').boundingBox();
+    if (!box) return false;
+    await this.page.mouse.click(
+      box.x + (HERO_ABILITY_TARGET.x / WIDTH) * box.width,
+      box.y + (HERO_ABILITY_TARGET.y / HEIGHT) * box.height,
+    );
+    return true;
   }
   async screenshot(path: string) {
     await this.page.screenshot({ path });

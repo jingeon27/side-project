@@ -2,6 +2,13 @@ import { z } from 'zod';
 
 import { CARD_INFO, cardIdSchema, type CardId, type Point } from '../config.ts';
 import { UNIT_KINDS } from '../game-knowledge.ts';
+import {
+  abilitySchema,
+  EvolutionCycles,
+  evolutionSchema,
+  type EvolutionDeck,
+  type HeroAbility,
+} from './special-state.ts';
 
 type CycleState = { hand: CardId[]; queue: CardId[] };
 const permutations = (cards: CardId[]): CardId[][] =>
@@ -98,13 +105,16 @@ export class CardCycle {
 const clamp = (amount: number) => Math.max(0, Math.min(10, amount));
 export class ElixirLedger {
   readonly samples: Array<{ at: number; amount: number; range?: { min: number; max: number } }> = [];
-  readonly own: Array<{ at: number; card: CardId }> = [];
+  readonly own: Array<{ at: number; card: CardId; cost: number; kind: 'card' | 'ability' }> = [];
   readonly opponent: Array<{ earliest: number; latest: number; card: CardId }> = [];
   observeOwn(at: number, amount: number, range?: { min: number; max: number }) {
     this.samples.push({ at, amount: clamp(amount), range });
   }
   spendOwn(at: number, card: CardId) {
-    this.own.push({ at, card });
+    this.own.push({ at, card, cost: CARD_INFO[card].cost, kind: 'card' });
+  }
+  spendOwnAbility(at: number) {
+    this.own.push({ at, card: 'ice_wizard', cost: 2, kind: 'ability' });
   }
   spendOpponent(earliest: number, latest: number, card: CardId) {
     this.opponent.push({ earliest, latest, card });
@@ -125,7 +135,7 @@ export class ElixirLedger {
       (state, sample) => {
         const ownSpent = this.own
           .filter((play) => play.at > state.previous.at && play.at <= sample.at)
-          .reduce((sum, play) => sum + CARD_INFO[play.card].cost, 0);
+          .reduce((sum, play) => sum + play.cost, 0);
         const observableGain = sample.amount - state.previous.amount + ownSpent;
         // At our cap, shared regeneration cannot be reconstructed from the bar.
         // Keep a conservative upper bound, rather than crediting overflow as usable elixir.
@@ -247,6 +257,18 @@ export const battleSituationSchema = z.object({
     elixir: rangeSchema,
     hand: z.array(cardIdSchema.nullable()).length(4),
     cycle: cycleSchema.nullable(),
+    evolutions: z.array(evolutionSchema).optional(),
+    ability: abilitySchema.optional(),
+    recentAbilities: z
+      .array(
+        z.object({
+          card: z.literal('ice_wizard'),
+          cost: z.literal(2),
+          at: z.number(),
+          instance: z.int().positive(),
+        }),
+      )
+      .optional(),
     units: z.array(unitSchema),
     recentPlays: z.array(
       z.object({ card: cardIdSchema, at: z.number(), target: z.object({ x: z.number(), y: z.number() }) }),
@@ -255,6 +277,7 @@ export const battleSituationSchema = z.object({
   opponent: z.object({
     elixir: rangeSchema,
     cycle: cycleSchema,
+    evolutions: z.array(evolutionSchema).optional(),
     units: z.array(unitSchema),
     seenSpent: z.number().nonnegative(),
   }),
@@ -272,12 +295,19 @@ export class BattleMemory {
   readonly opponentCycle: CardCycle;
   readonly state = { ownCycle: null as CardCycle | null };
   readonly ownPlays: Array<{ card: CardId; at: number; target: Point }> = [];
-  constructor(deck: CardId[]) {
+  readonly ownAbilities: Array<{ card: 'ice_wizard'; cost: 2; at: number; instance: number }> = [];
+  readonly ownEvolutions: EvolutionCycles;
+  readonly opponentEvolutions: EvolutionCycles;
+  constructor(deck: CardId[], evolutions: EvolutionDeck = {}) {
     this.deck = deck;
     this.opponentCycle = new CardCycle(deck);
+    this.ownEvolutions = new EvolutionCycles(evolutions);
+    this.opponentEvolutions = new EvolutionCycles(evolutions);
+    this.opponentEvolutions.uncertain();
   }
   ownPlay(card: CardId, at: number, target: Point, hand: Array<CardId | null>) {
     this.elixir.spendOwn(at, card);
+    this.ownEvolutions.play(card);
     this.ownPlays.push({ card, at, target });
     try {
       this.state.ownCycle?.play(card);
@@ -289,9 +319,19 @@ export class BattleMemory {
     }
     this.state.ownCycle?.observeHand(hand);
   }
+  ownAbility(at: number, instance: number) {
+    if (instance <= 0 || this.ownAbilities.some((entry) => entry.instance === instance)) return false;
+    this.elixir.spendOwnAbility(at);
+    this.ownAbilities.push({ card: 'ice_wizard', cost: 2, at, instance });
+    return true;
+  }
   opponentPlay(card: CardId, earliest: number, latest: number) {
     this.elixir.spendOpponent(earliest, latest, card);
     this.opponentCycle.play(card, true);
+    // Missed enemy plays may include other evolution charges. Preserve every
+    // phase instead of presenting an exact enemy evolution counter.
+    this.opponentEvolutions.uncertain();
+    this.opponentEvolutions.play(card);
   }
   observe(input: {
     at: number;
@@ -304,6 +344,7 @@ export class BattleMemory {
     elixirRange?: { min: number; max: number };
     effects?: FieldEffect[];
     spawners?: BattleSituation['spawners'];
+    ability?: HeroAbility;
   }): BattleSituation {
     // The spend animation briefly hides the bar. Those pixels are not a new
     // resource balance and must not inflate the shared-regeneration estimate.
@@ -324,12 +365,16 @@ export class BattleMemory {
         elixir: input.inputPending || input.elixirReliable === false ? { min: 0, max: 10 } : ledger.own,
         hand: input.hand,
         cycle: ownCycle && input.inputPending ? { ...ownCycle, exact: false, mayHaveMissed: true } : ownCycle,
+        evolutions: this.ownEvolutions.snapshot(),
+        ...(input.ability ? { ability: input.ability } : {}),
+        recentAbilities: this.ownAbilities.filter((entry) => input.at - entry.at < 15_000),
         units: input.allies,
         recentPlays: this.ownPlays.filter((play) => input.at - play.at < 15_000),
       },
       opponent: {
         elixir: input.inputPending || input.elixirReliable === false ? { min: 0, max: 10 } : ledger.opponent,
         cycle: this.opponentCycle.snapshot(),
+        evolutions: this.opponentEvolutions.snapshot(),
         units: input.enemies,
         seenSpent: ledger.opponentSeenSpent,
       },

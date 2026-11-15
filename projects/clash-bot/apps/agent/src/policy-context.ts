@@ -36,6 +36,14 @@ export function policyContext(situation: BattleSituation) {
       elixir: situation.own.elixir,
       hand: situation.own.hand,
       cycle: situation.own.cycle,
+      evolutions: situation.own.evolutions ?? [],
+      ability: situation.own.ability,
+      recentAbilities: situation.own.recentAbilities?.map((entry) => ({
+        card: entry.card,
+        cost: entry.cost,
+        ageMs: situation.at - entry.at,
+        instance: entry.instance,
+      })),
       units: situation.own.units.slice(0, 18).map(row),
       recentPlays: situation.own.recentPlays
         .slice(-8)
@@ -44,6 +52,8 @@ export function policyContext(situation: BattleSituation) {
     opponent: {
       elixir: situation.opponent.elixir,
       cycle: situation.opponent.cycle,
+      evolutions: situation.opponent.evolutions ?? [],
+      ability: 'unobserved; availability and previous activation are unknown',
       units: situation.opponent.units.slice(0, 24).map(row),
       seenSpent: situation.opponent.seenSpent,
     },

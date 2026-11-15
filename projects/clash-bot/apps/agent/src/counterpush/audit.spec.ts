@@ -6,6 +6,13 @@ describe('opponent learning coverage', () => {
   it('keeps our inputs, opponent observations, selected cases and actual training distinct', () => {
     const events = [
       {
+        type: 'ability_check',
+        action: { card: 'ice_wizard' as const },
+        changed: true,
+        spent: 2,
+        confirmed: true,
+      },
+      {
         type: 'input_check',
         action: { card: 'furnace' as const },
         changed: true,
@@ -44,6 +51,7 @@ describe('opponent learning coverage', () => {
     expect(result.poison.opponentRecognized).toBe(1);
     expect(result.poison.opponentTrained).toBe(0);
     expect(result.knight.opponentTrained).toBe(0);
+    expect(result.ice_wizard.ownConfirmed).toBe(0);
     expect(
       episodeCoverage(events, selected, { updated: false, observations: [{ id: 'red-furnace' }] }).furnace
         .opponentTrained,

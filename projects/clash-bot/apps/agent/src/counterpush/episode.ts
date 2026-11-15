@@ -12,9 +12,10 @@ import { validateQwenAction, type FreshBattle, type QwenPrediction } from '../qw
 import { analyze, crop, difference, fingerprint, loadTemplates } from '../vision.ts';
 import { readEpisodeCoverage } from './audit.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
-import { COUNTERPUSH_DECK, CounterpushBrowser } from './browser.ts';
+import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
 import { counterpushElixir, plausibleSpend } from './elixir.ts';
 import { FieldDynamics } from './field-dynamics.ts';
+import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from './hero-ability.ts';
 import type { SpawnPatterns } from './spawn-patterns.ts';
 import { OpponentTracker } from './tracker.ts';
 import { type CounterpushVisionClient, type UnitScan } from './vision-client.ts';
@@ -46,13 +47,16 @@ export async function playCounterpushEpisode(options: {
   const templates = await loadTemplates(dataDir, profile);
   const tracker = new OpponentTracker();
   const observations: OpponentObservation[] = [];
-  const memory = new BattleMemory([...COUNTERPUSH_DECK]);
+  const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
+  const abilityButton = await HeroAbilityButton.load();
   const dynamics = new FieldDynamics(directory, options.patterns);
   const situations = new Map<string, BattleSituation>();
   const state = {
     frames: 0,
     actions: 0,
     confirmed: 0,
+    abilityActions: 0,
+    abilityConfirmed: 0,
     decisions: 0,
     errors: 0,
     seenBattle: false,
@@ -76,6 +80,7 @@ export async function playCounterpushEpisode(options: {
     const path = join(directory, 'frames', `${String(++state.frames).padStart(6, '0')}.png`);
     await atomicWrite(path, screenshot.image);
     const observation = await analyze(screenshot.image, profile, templates, screenshot.capturedAt);
+    const ability = await abilityButton.read(screenshot.image, screenshot.capturedAt);
     const elixir = counterpushElixir(observation, profile);
     const scan = await vision.scan(path);
     const field = dynamics.observe(scan, screenshot.capturedAt);
@@ -113,6 +118,7 @@ export async function playCounterpushEpisode(options: {
       enemies: field.enemies,
       effects: field.effects,
       spawners: field.spawners,
+      ability,
     });
     situation.own.elixir =
       !state.inputPending && observation.elixirConfidence >= 0.9 ? elixir.range : { min: 0, max: 10 };
@@ -166,6 +172,7 @@ export async function playCounterpushEpisode(options: {
         elixir:
           state.inputPending || observation.elixirConfidence < 0.9 ? { min: 0, max: 10 } : ledger.opponent,
         cycle: memory.opponentCycle.snapshot(),
+        evolutions: memory.opponentEvolutions.snapshot(),
         seenSpent: ledger.opponentSeenSpent,
       });
     }
@@ -187,6 +194,9 @@ export async function playCounterpushEpisode(options: {
         frames: state.frames,
         actions: state.actions,
         confirmed: state.confirmed,
+        abilityActions: state.abilityActions,
+        abilityConfirmed: state.abilityConfirmed,
+        ability: situation.own.ability,
         opponentActions: observations.length,
         visionMs: scan.elapsed_ms,
         spawnedUnitsVisible: scan.spawnedUnits?.length ?? 0,
@@ -348,6 +358,69 @@ export async function playCounterpushEpisode(options: {
         await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
         continue;
       }
+      if (selected.kind === 'ability') {
+        const beforeAbility = before.situation.own.ability;
+        const latestAbility = latest.situation.own.ability;
+        if (
+          !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
+          latest.elixirConfidence < 0.9
+        ) {
+          await log({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
+          continue;
+        }
+        state.inputPending = true;
+        const sentAt = Date.now();
+        if (!(await browser.activateAbility())) {
+          state.inputPending = false;
+          continue;
+        }
+        state.actions++;
+        state.abilityActions++;
+        await log({ type: 'ability_sent', frame, action: selected, sentAt });
+        await delay(300, undefined, { signal });
+        const checks: Array<{ changed: boolean; handUnchanged: boolean; confirmed: boolean; spent: number }> =
+          [];
+        for (const attempt of [0, 1, 2, 3]) {
+          if (attempt) await delay(200, undefined, { signal });
+          if ((await browser.phase()) !== 'battle') break;
+          const after = await capture();
+          const spent = latest.state.elixir - after.state.elixir;
+          checks.push({
+            ...abilityInputCheck({
+              before: latestAbility!,
+              after: after.situation.own.ability!,
+              beforeCards: latest.cards,
+              afterCards: after.cards,
+              spent,
+              elixirReliable: after.elixirConfidence >= 0.9,
+            }),
+            spent,
+          });
+          if (checks.at(-1)!.confirmed) break;
+        }
+        const check = checks.at(-1);
+        if (check?.confirmed) {
+          abilityButton.markUsed(latestAbility!.instance);
+          memory.ownAbility(sentAt, latestAbility!.instance);
+          state.confirmed++;
+          state.abilityConfirmed++;
+          state.unconfirmed = 0;
+        } else state.unconfirmed++;
+        state.inputPending = false;
+        await log({
+          type: 'ability_check',
+          frame,
+          ...check,
+          confirmed: check?.confirmed ?? false,
+          expectedCost: 2,
+          checks: checks.length,
+          action: selected,
+        });
+        if (state.unconfirmed >= 3)
+          throw new Error('입력이 세 번 연속 확인되지 않아 스킬 버튼과 화면을 확인해야 합니다.');
+        state.errors = 0;
+        continue;
+      }
       if (selected.slot === 0) {
         await log({
           type: 'wait_check',
@@ -403,7 +476,11 @@ export async function playCounterpushEpisode(options: {
         state.confirmed++;
         state.unconfirmed = 0;
         memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
-      } else state.unconfirmed++;
+        if (selected.card === 'ice_wizard') abilityButton.newDeployment();
+      } else {
+        state.unconfirmed++;
+        memory.ownEvolutions.uncertain();
+      }
       state.inputPending = false;
       await log({
         type: 'input_check',
@@ -458,6 +535,8 @@ export async function playCounterpushEpisode(options: {
     result: state.result,
     actions: state.actions,
     confirmed: state.confirmed,
+    abilityActions: state.abilityActions,
+    abilityConfirmed: state.abilityConfirmed,
     seenBattle: state.seenBattle,
     opponentActions: observations.length,
   };

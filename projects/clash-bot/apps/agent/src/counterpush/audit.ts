@@ -109,11 +109,18 @@ export async function learningAudit(dataDir: string, since?: string) {
     .filter((match) => !since || match.at >= since);
   const cards = emptyCardCoverage();
   const results = { wins: 0, losses: 0, draws: 0, unknown: 0 };
+  const abilities = { ice_wizard: { attempted: 0, confirmed: 0, opponentAvailability: 'unobserved' } };
   for (const match of matches) {
     const coverage = await readEpisodeCoverage(match.directory, match.training);
     for (const card of COUNTERPUSH_DECK)
       for (const key of Object.keys(cards[card]) as Array<keyof (typeof cards)[typeof card]>)
         cards[card][key] += coverage[card][key];
+    const summary = JSON.parse(await readFile(join(match.directory, 'summary.json'), 'utf8')) as {
+      abilityActions?: number;
+      abilityConfirmed?: number;
+    };
+    abilities.ice_wizard.attempted += summary.abilityActions ?? 0;
+    abilities.ice_wizard.confirmed += summary.abilityConfirmed ?? 0;
     if (match.result === 'win') results.wins++;
     else if (match.result === 'loss') results.losses++;
     else if (match.result === 'draw') results.draws++;
@@ -124,6 +131,7 @@ export async function learningAudit(dataDir: string, since?: string) {
     completedMatches: matches.length,
     results,
     cards,
+    abilities,
     improvement: 'unproven',
     meaning: 'Recognition and weight updates do not establish better play.',
   };

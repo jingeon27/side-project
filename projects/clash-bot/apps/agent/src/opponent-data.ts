@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { atomicWrite } from './assets.ts';
 import { cardIdSchema, HEIGHT, WIDTH, type CardId } from './config.ts';
 import { battleSituationSchema, type BattleSituation } from './counterpush/battle-state.ts';
+import { ABILITY_RULES } from './game-knowledge.ts';
 import { policyContext } from './policy-context.ts';
 import { deckGuidance, type QwenAction } from './qwen-actions.ts';
 
@@ -140,7 +141,7 @@ export function opponentPrompt(deck: CardId[], actions: QwenAction[], situation?
     : '';
   return (
     state +
-    `Card knowledge: ${JSON.stringify(deckGuidance(deck))}. ` +
+    `Card knowledge: ${JSON.stringify(deckGuidance(deck))}. Ability rules: ${JSON.stringify(ABILITY_RULES)}. Activating a skill does not draw a card or charge an evolution. This training label predicts card-and-lane only; enemy skill activation and cooldown/used state remain unobserved. ` +
     `Observe Clash Royale from RED top's perspective. BLUE bottom is the opponent. Predict ONE next card-and-lane intent from RED's publicly visible board. RED hand=UNKNOWN; RED elixir=UNKNOWN. Known RED deck: ${deck.join(', ')}. The list contains deck-wide possibilities, not a verified legal hand. Coordinates are in a ${WIDTH}x${HEIGHT} image. Targets are lane exemplars; exact deployment time and position are unknown. Learn the observed behavior without assuming it is optimal. Reply with exactly ONE action letter, no explanation. Actions: ${JSON.stringify(actions.map((action, index) => ({ id: String.fromCharCode(65 + index), card: action.card, description: action.description, target: action.target })))}.`
   );
 }

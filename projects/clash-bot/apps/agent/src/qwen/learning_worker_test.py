@@ -28,6 +28,28 @@ class LearningEpisodeTest(unittest.TestCase):
         self.assertFalse(verified_result({**result, 'blue': 3, 'red': 0}))
         self.assertTrue(verified_result({**result, 'readings': ['Crowns: you 0, the opponent 3, overtime'] * 2}))
         self.assertFalse(verified_result({**result, 'readings': ['Crowns: you 0, the opponent 3, still playing'] * 2}))
+
+    def test_ability_learning_requires_explicit_cost_button_and_hand_confirmation(self):
+        event = {'type': 'ability_check', 'confirmed': True, 'changed': True, 'handUnchanged': True,
+                 'expectedCost': 2, 'action': {'kind': 'ability', 'card': 'ice_wizard'}}
+        self.assertTrue(confirmed_input(event))
+        for key, value in [('confirmed', False), ('changed', False), ('handUnchanged', False), ('expectedCost', 3)]:
+            self.assertFalse(confirmed_input({**event, key: value}))
+        self.assertFalse(confirmed_input({'type': 'ability_check', 'changed': True, 'spent': 2}))
+
+    def test_confirmed_hero_activation_participates_in_the_actual_episode_training(self):
+        with tempfile.TemporaryDirectory() as directory:
+            worker = self.worker()
+            self.write_episode(directory, worker)
+            path = Path(directory) / 'events.jsonl'
+            rows = [json.loads(line) for line in path.read_text().splitlines()]
+            rows = [({'type': 'ability_check', 'frame': 1, 'confirmed': True, 'changed': True,
+                      'handUnchanged': True, 'expectedCost': 2,
+                      'action': {'kind': 'ability', 'card': 'ice_wizard'}}
+                     if row.get('type') == 'input_check' and row.get('frame') == 1 else row) for row in rows]
+            path.write_text('\n'.join(json.dumps(row) for row in rows))
+            worker.train({'episode': directory})
+            self.assertEqual(len(worker.learner.train.call_args.args[0]), 2)
     def worker(self):
         worker = object.__new__(LearningWorker)
         worker.spec = MODELS['4b']

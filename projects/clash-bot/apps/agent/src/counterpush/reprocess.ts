@@ -6,9 +6,10 @@ import { type CardId, type Point, type Profile } from '../config.ts';
 import { type OpponentObservation } from '../opponent-data.ts';
 import { analyze, loadTemplates } from '../vision.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
-import { COUNTERPUSH_DECK } from './browser.ts';
+import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from './browser.ts';
 import { counterpushElixir } from './elixir.ts';
 import { FieldDynamics } from './field-dynamics.ts';
+import { HeroAbilityButton } from './hero-ability.ts';
 import { OpponentTracker } from './tracker.ts';
 import { type CounterpushVisionClient } from './vision-client.ts';
 
@@ -20,7 +21,7 @@ type RecordedEvent = {
   changed?: boolean;
   spent?: number;
   sentAt?: number;
-  action?: { card: CardId; target: Point };
+  action?: { card: CardId; target: Point; abilityInstance?: number };
 };
 
 // Reuses local recordings, never the site's daily review feature. This produces
@@ -52,14 +53,19 @@ export async function reprocessEpisode(
     observations: OpponentObservation[];
   };
   const inputs = events
-    .filter((event) => event.type === 'input_sent')
+    .filter((event) => ['input_sent', 'ability_sent'].includes(event.type))
     .map((event) => ({
       ...event,
-      check: events.find((check) => check.type === 'input_check' && check.frame === event.frame),
+      check: events.find(
+        (check) =>
+          check.type === (event.type === 'ability_sent' ? 'ability_check' : 'input_check') &&
+          check.frame === event.frame,
+      ),
     }));
   const applied = new Set<number>();
   const tracker = new OpponentTracker();
-  const memory = new BattleMemory([...COUNTERPUSH_DECK]);
+  const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
+  const abilityButton = await HeroAbilityButton.load();
   const dynamics = new FieldDynamics(directory);
   const situations = new Map<string, BattleSituation>();
   const templates = await loadTemplates(dataDir, profile);
@@ -77,8 +83,18 @@ export async function reprocessEpisode(
     )) {
       applied.add(input.frame);
       const confirmed = input.check!.confirmed ?? (input.check!.changed && (input.check!.spent ?? 0) >= 1);
-      if (confirmed && input.action)
-        memory.ownPlay(input.action.card, input.sentAt ?? input.at, input.action.target, cards);
+      if (confirmed && input.action) {
+        if (input.type === 'ability_sent') {
+          const instance = input.action.abilityInstance;
+          if (instance) {
+            memory.ownAbility(input.sentAt ?? input.at, instance);
+            abilityButton.markUsed(instance);
+          }
+        } else {
+          memory.ownPlay(input.action.card, input.sentAt ?? input.at, input.action.target, cards);
+          if (input.action.card === 'ice_wizard') abilityButton.newDeployment();
+        }
+      } else if (input.type === 'input_sent') memory.ownEvolutions.uncertain();
     }
     const inputPending = inputs.some(
       (entry) =>
@@ -95,6 +111,7 @@ export async function reprocessEpisode(
       enemies: field.enemies,
       effects: field.effects,
       spawners: field.spawners,
+      ability: await abilityButton.read(image, frame.capturedAt),
     });
     situations.set(frame.image, situation);
     for (const [key, value] of situations) if (frame.capturedAt - value.at > 12_000) situations.delete(key);

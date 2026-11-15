@@ -35,6 +35,11 @@ def verified_result(row):
 
 
 def confirmed_input(row):
+    if row.get('type') == 'ability_check':
+        return (row.get('confirmed') is True and row.get('changed') is True
+                and row.get('handUnchanged') is True and row.get('expectedCost') == 2
+                and row.get('action', {}).get('kind') == 'ability'
+                and row.get('action', {}).get('card') == 'ice_wizard')
     if row.get('type') != 'input_check':
         return False
     # Counterpush records explicit confirmation after the spend animation has

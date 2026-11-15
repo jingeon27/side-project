@@ -13,7 +13,22 @@ export const KNOWLEDGE_SOURCES = {
   hutSpawn: 'https://supercell.com/en/games/clashroyale/blog/release-notes/april26-balance-changes/',
   singleUseAbilities:
     'https://supercell.com/en/games/clashroyale/blog/news/final-august-balance-changes-826/',
+  iceWizardHero: 'https://support.clashroyale.com/hc/en-us/articles/54836231287963-What-s-New-September-2026',
+  championCycle: 'https://supercell.com/en/games/clashroyale/blog/release-notes/october-update-2025/',
+  championAbilityOwner: 'https://support.clashroyale.com/hc/en-us/articles/49484915467291-Champions',
 };
+
+export const ABILITY_RULES = {
+  version: '2026-08-04',
+  default: 'single_use_per_deployment',
+  exception: 'boss_bandit; do not apply the single-use rule to her consecutive activations',
+  accounting: 'separate elixir cost; no card draw or evolution charge',
+  owner:
+    'most recently deployed unit of that hero/champion type; an older surviving unit does not inherit it',
+  championCycle: 'normal card cycle since October 2025; do not assume the historical 3-card cycle',
+  implementedController: ['hero_ice_wizard'],
+  otherChampionControllers: 'not_implemented',
+} as const;
 
 export const UNIT_MECHANICS = {
   knight: {
