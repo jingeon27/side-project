@@ -1,0 +1,35 @@
+{
+  "name": "@story-studio/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3400",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3400",
+    "typecheck": "tsc7 --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "yarn typecheck && yarn test",
+    "local:setup": "node --env-file-if-exists=.env.local scripts/setup-local.ts"
+  },
+  "dependencies": {
+    "@amplitude/analytics-browser": "catalog:",
+    "dayjs": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "ts-pattern": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

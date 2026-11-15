@@ -8257,6 +8257,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@side/story-studio@workspace:projects/story-studio":
+  version: 0.0.0-use.local
+  resolution: "@side/story-studio@workspace:projects/story-studio"
+  languageName: unknown
+  linkType: soft
+
 "@side/toolkit@workspace:*, @side/toolkit@workspace:packages/toolkit":
   version: 0.0.0-use.local
   resolution: "@side/toolkit@workspace:packages/toolkit"
@@ -8363,6 +8369,28 @@ __metadata:
   checksum: 10c0/6eb74cd13e52d5fc74054df51e37d947ef53f3ab9e02c085665dcca3c38c60ece8d735cebbdf18fbb13c775fbcb9becb3f53109b0e092a63f0f7389ce0993fd0
   languageName: node
   linkType: hard
+
+"@story-studio/web@workspace:projects/story-studio/apps/web":
+  version: 0.0.0-use.local
+  resolution: "@story-studio/web@workspace:projects/story-studio/apps/web"
+  dependencies:
+    "@amplitude/analytics-browser": "catalog:"
+    "@playwright/test": "catalog:"
+    "@side/config": "workspace:*"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    dayjs: "catalog:"
+    lucide-react: "catalog:"
+    next: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
 
 "@storybook/addon-a11y@npm:10.6.3":
   version: 10.6.3
