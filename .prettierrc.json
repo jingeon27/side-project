@@ -11,7 +11,7 @@
     "",
     "<THIRD_PARTY_MODULES>",
     "",
-    "^@(side|blog|game-feedback|photo-contest)/",
+    "^@(side|blog|game-feedback|photo-contest|story-studio)/",
     "",
     "^[@~]/",
     "",
