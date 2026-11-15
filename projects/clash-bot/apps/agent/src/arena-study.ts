@@ -5,7 +5,12 @@ import { join, resolve } from 'node:path';
 import { LearningClient } from './learning-client.ts';
 import { acquireLearningLock } from './selfplay.ts';
 
-export async function studyNext(client: LearningClient, dataDir: string, dataset?: string) {
+export async function studyNext(
+  client: LearningClient,
+  dataDir: string,
+  dataset?: string,
+  mode: 'isolated' | 'candidate' = 'isolated',
+) {
   const root = join(dataDir, 'arena/qwen');
   await mkdir(root, { recursive: true, mode: 0o700 });
   const journal = join(root, 'studies.jsonl');
@@ -38,13 +43,20 @@ export async function studyNext(client: LearningClient, dataDir: string, dataset
     const identity = createHash('sha256').update(raw).digest('hex');
     if (learned.has(identity)) continue;
     const before = await client.status();
-    const result = await client.study(path);
+    const result = mode === 'candidate' ? await client.studyCandidate(path) : await client.study(path);
     const after = await client.status();
-    if (before.weights_sha256 !== after.weights_sha256 || before.version !== after.version)
+    if (
+      before.champion_sha256 !== after.champion_sha256 ||
+      before.champion_version !== after.champion_version ||
+      (mode === 'isolated' &&
+        (before.weights_sha256 !== after.weights_sha256 || before.version !== after.version))
+    )
       throw new Error('수읽기 자료 학습이 현재 실전 모델을 바꿨습니다.');
     const report = {
       ...result,
-      activeUnchanged: true,
+      activeUnchanged: mode === 'isolated',
+      championUnchanged: true,
+      mode,
       datasetSHA256: identity,
       dataset: path,
       at: new Date().toISOString(),

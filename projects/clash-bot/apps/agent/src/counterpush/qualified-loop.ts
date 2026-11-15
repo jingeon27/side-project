@@ -1,0 +1,157 @@
+import type { EvaluatedGame } from './evaluation.ts';
+
+export type PolicySnapshot = {
+  version: number;
+  weightsSHA256: string;
+  directory: string;
+  checkpoint: string;
+  qualificationReport?: string;
+};
+export type TrainingEpisode = {
+  directory: string;
+  result: string;
+  actions: number;
+  confirmed: number;
+  opponentActions: number;
+};
+export type EvolutionState = {
+  format: 'counterpush-qualified-learning-v1';
+  phase: string;
+  champion: PolicySnapshot;
+  candidateDirectory: string | null;
+  candidate: PolicySnapshot | null;
+  pendingEpisode: TrainingEpisode | null;
+  trainingGames: number;
+  trainingEpisodes: number;
+  comparisons: number;
+  promotions: number;
+  evaluationFile: string | null;
+  lastDecision?: Record<string, unknown>;
+};
+export type Qualification = {
+  complete: boolean;
+  gate: { passed: boolean; reason: string };
+  reportPath: string;
+  games: EvaluatedGame[];
+};
+
+// Owns the durable phase order. All match/model/file operations are supplied
+// by the runner, which owns the single browser, learner and process lock.
+export async function qualifiedLearningLoop(options: {
+  state: EvolutionState;
+  trainingMatches: number;
+  stopped: () => Promise<boolean>;
+  newCandidateDirectory: () => string;
+  newEvaluationFile: () => string;
+  begin: (directory: string) => Promise<PolicySnapshot>;
+  restore: () => Promise<PolicySnapshot>;
+  play: () => Promise<TrainingEpisode>;
+  learn: (episode: TrainingEpisode) => Promise<void>;
+  study: () => Promise<void>;
+  evaluate: (candidate: PolicySnapshot, file: string) => Promise<Qualification>;
+  promote: (candidate: PolicySnapshot, report: string) => Promise<PolicySnapshot>;
+  save: (state: EvolutionState) => Promise<void>;
+}) {
+  const state = options.state;
+  const persist = async (phase: string) => {
+    state.phase = phase;
+    await options.save(state);
+  };
+  const actual = await options.restore();
+  if (
+    state.phase === 'promoting' &&
+    state.candidate?.weightsSHA256 === actual.weightsSHA256 &&
+    actual.qualificationReport === state.evaluationFile
+  ) {
+    // Publication succeeded before a crash, but the loop receipt did not.
+    state.promotions++;
+    state.comparisons++;
+    state.candidate = null;
+    state.candidateDirectory = null;
+    state.evaluationFile = null;
+    state.trainingGames = 0;
+    state.phase = 'promoted';
+    state.pendingEpisode = null;
+    state.lastDecision = { accepted: true, reason: 'recovered_qualified_publication' };
+  } else if (state.champion.weightsSHA256 !== actual.weightsSHA256) {
+    state.lastDecision = {
+      accepted: false,
+      reason: 'champion_changed_restart_candidate',
+      staleCandidate: state.candidate,
+    };
+    state.candidate = null;
+    state.candidateDirectory = null;
+    state.evaluationFile = null;
+    state.trainingGames = 0;
+    state.pendingEpisode = null;
+  }
+  state.champion = actual;
+  await options.save(state);
+  while (!(await options.stopped())) {
+    if (!state.evaluationFile) {
+      state.candidateDirectory ??= options.newCandidateDirectory();
+      await persist('preparing_candidate');
+      state.candidate = await options.begin(state.candidateDirectory);
+      await options.save(state);
+      while (state.trainingGames < options.trainingMatches || state.pendingEpisode) {
+        if (!state.pendingEpisode) {
+          if (await options.stopped()) break;
+          await persist('candidate_training');
+          const episode = await options.play();
+          if (!['win', 'loss', 'draw'].includes(episode.result))
+            throw new Error('학습 경기의 승패가 확인되지 않았습니다.');
+          state.pendingEpisode = episode;
+          await persist('candidate_learning');
+        }
+        await options.learn(state.pendingEpisode);
+        state.pendingEpisode = null;
+        state.trainingGames++;
+        state.trainingEpisodes++;
+        await options.save(state);
+      }
+      if (state.trainingGames < options.trainingMatches) {
+        await options.restore();
+        break;
+      }
+      await persist('candidate_study');
+      await options.study();
+      // begin reloads only the small private adapter and returns its newest
+      // checkpoint after PPO/BC/search learning, never publishing it.
+      state.candidate = await options.begin(state.candidateDirectory);
+      await options.restore();
+      if (state.candidate.weightsSHA256 === state.champion.weightsSHA256) {
+        state.trainingGames = 0;
+        state.lastDecision = { accepted: false, reason: 'candidate_weights_unchanged' };
+        await persist('training_more');
+        continue;
+      }
+      state.evaluationFile = options.newEvaluationFile();
+      await persist('evaluating');
+    }
+    if (await options.stopped()) break;
+    if (!state.candidate) throw new Error('평가 후보 체크포인트가 없습니다.');
+    const evaluation = await options.evaluate(state.candidate, state.evaluationFile);
+    if (!evaluation.complete) {
+      await persist('evaluation_pending');
+      break;
+    }
+    if (evaluation.gate.passed) {
+      await persist('promoting');
+      state.champion = await options.promote(state.candidate, evaluation.reportPath);
+      state.promotions++;
+      state.candidate = null;
+      state.candidateDirectory = null;
+    }
+    state.comparisons++;
+    state.lastDecision = {
+      accepted: evaluation.gate.passed,
+      gate: evaluation.gate,
+      report: evaluation.reportPath,
+    };
+    state.evaluationFile = null;
+    state.trainingGames = 0;
+    await persist(evaluation.gate.passed ? 'promoted' : 'rejected');
+  }
+  await options.restore();
+  return state;
+}

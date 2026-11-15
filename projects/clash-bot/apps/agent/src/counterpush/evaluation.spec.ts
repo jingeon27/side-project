@@ -3,6 +3,34 @@ import { describe, expect, it, vi } from 'vitest';
 import { frozenComparison, realEvaluationGate } from './evaluation.ts';
 
 describe('frozen Counterpush comparison', () => {
+  it('continues a partially completed pair without replaying its baseline game', async () => {
+    const play = vi.fn(async () => ({
+      result: 'win',
+      directory: '/new-candidate',
+      actions: 2,
+      confirmed: 2,
+    }));
+    const result = await frozenComparison({
+      pairs: 1,
+      play,
+      stopped: async () => false,
+      report: async () => {},
+      existingGames: [
+        {
+          pair: 0,
+          variant: 'baseline',
+          result: 'loss',
+          score: 0,
+          directory: '/old-baseline',
+          actions: 2,
+          confirmed: 2,
+        },
+      ],
+    });
+    expect(play).toHaveBeenCalledExactlyOnceWith('candidate', 0);
+    expect(result.games.map((game) => game.directory)).toEqual(['/old-baseline', '/new-candidate']);
+    expect(result.pairs).toEqual([1]);
+  });
   it('balances play order, scores verified games and refuses a small apparent improvement', async () => {
     const play = vi.fn(async (variant: 'baseline' | 'candidate') => ({
       result: variant === 'candidate' ? 'win' : 'loss',

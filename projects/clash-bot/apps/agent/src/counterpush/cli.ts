@@ -28,6 +28,7 @@ const { positionals, values } = parseArgs({
     candidate: { type: 'string' },
     pairs: { type: 'string' },
     resume: { type: 'boolean' },
+    'training-matches': { type: 'string' },
   },
 });
 const command = positionals[0] ?? 'status';
@@ -108,27 +109,38 @@ const main = async () => {
     };
     if (state.id !== lock.id) throw new Error('현재 Counterpush 실행이 없습니다.');
     await requestLearningStop(join(DATA_DIR, 'qwen/selfplay'));
-    console.log('이번 Counterpush 대전과 학습 후 중지합니다.');
+    console.log('현재 경기와 후보 저장 후 중지합니다. 평가 기록은 다음 실행에서 이어집니다.');
     return;
   }
   if (!['start', 'evaluate'].includes(command))
     throw new Error('counterpush login|start|evaluate|status|audit|rescan|stop');
-  const hours = Number(values.hours ?? 8),
+  const hours = Number(values.hours ?? (command === 'start' ? 0 : 8)),
     matches = Number(values.matches ?? 0);
   const tabs = Number(values.tabs ?? 1);
   if (tabs !== 1)
     throw new Error('현재 Counterpush 계정은 동시 대전을 허용하지 않습니다. --tabs 1로 실행하세요.');
   if (
     !Number.isFinite(hours) ||
-    hours <= 0 ||
+    hours < 0 ||
     hours > 24 ||
     !Number.isInteger(matches) ||
     matches < 0 ||
     matches > 10000
   )
-    throw new Error('hours는 0 초과 24 이하, matches는 0~10000 정수입니다. 0회는 반복입니다.');
+    throw new Error('hours는 0~24, matches는 0~10000 정수입니다. 0은 중지 요청까지 반복합니다.');
   const model = selectModel(values.model, true).id;
   const pairs = Number(values.pairs ?? 16);
+  const trainingMatches = Number(values['training-matches'] ?? 2);
+  if (
+    command === 'start' &&
+    (!Number.isInteger(pairs) ||
+      pairs < 16 ||
+      pairs > 128 ||
+      !Number.isInteger(trainingMatches) ||
+      trainingMatches < 1 ||
+      trainingMatches > 32)
+  )
+    throw new Error('자동 채택은 pairs 16~128, training-matches 1~32를 사용합니다.');
   if (command === 'evaluate' && (!values.candidate || !Number.isInteger(pairs) || pairs < 1 || pairs > 128))
     throw new Error('evaluate --candidate <후보 체크포인트 폴더> --pairs <1~128>');
   if (values.background) {
@@ -151,6 +163,7 @@ const main = async () => {
           ...(values.candidate ? ['--candidate', resolve(values.candidate)] : []),
           ...(values.pairs ? ['--pairs', String(pairs)] : []),
           ...(values.resume ? ['--resume'] : []),
+          ...(values['training-matches'] ? ['--training-matches', String(trainingMatches)] : []),
         ],
         { detached: true, stdio: ['ignore', output, output], cwd: process.cwd() },
       );
@@ -204,6 +217,8 @@ const main = async () => {
     hours,
     matches,
     tabs,
+    pairs,
+    trainingMatches,
     signal: abort.signal,
   });
 };

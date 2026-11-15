@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
     control = DATA / 'arena/control'
     if args.command == 'start':
-        if not (0 < args.hours <= 24 and 0 <= args.generations <= 10000 and 1 <= args.games <= 64
+        if not (0 <= args.hours <= 24 and 0 <= args.generations <= 10000 and 1 <= args.games <= 64
                 and 2 <= args.simulations <= 512 and 2 <= args.depth <= 32 and 1 <= args.pairs <= 256
                 and 1 <= args.evaluate_every <= 100):
             parser.error('Invalid run bounds')

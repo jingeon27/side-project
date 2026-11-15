@@ -63,7 +63,7 @@ def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pair
     state = {**owner, 'phase': 'initializing', 'completedGenerations': 0, 'completedGames': 0}
     interrupted = []
     previous = {sig: signal.signal(sig, lambda *_: interrupted.append(True)) for sig in (signal.SIGINT, signal.SIGTERM)}
-    deadline = time.monotonic() + hours * 3600
+    deadline = time.monotonic() + hours * 3600 if hours else float('inf')
     def report(values):
         state.update(values); state['updatedAt'] = time.time()
         atomic_json(control / 'status.json', state)
