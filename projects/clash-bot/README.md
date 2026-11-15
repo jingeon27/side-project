@@ -129,7 +129,7 @@ Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식�
 yarn workspace @side/clash-bot qwen:setup
 yarn workspace @side/clash-bot counterpush:setup
 yarn workspace @side/clash-bot counterpush login
-yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 0 --training-matches 2 --pairs 16 --tabs 1
+yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 0 --training-matches 8 --pairs 16 --tabs 1
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush audit
 yarn workspace @side/clash-bot counterpush stop
@@ -138,6 +138,8 @@ yarn workspace @side/clash-bot counterpush stop
 `login` 창에서 직접 로그인하고 양쪽 덱을 **GY GobHut Evo Furnace**로 설정합니다. 로그인은 프로젝트 전용 프로필에 보존합니다. 시스템에 설치된 Google Chrome을 사용하므로 별도 Chromium을 다운로드하지 않습니다. `--background`는 대화와 독립된 실행이고, `stop`은 현재 경기와 학습을 끝낸 뒤 종료합니다. 로그인 만료·다른 덱·불명확한 결과·3회 연속 입력 미확인·디스크 8GiB 미만이면 멈춥니다.
 
 `--hours 0`은 정지 요청까지 반복합니다. 실전 PPO·상대 모방·자가대국 자료는 별도 후보에 학습하고, 고정한 기준·후보를 최소 16쌍/32판으로 비교합니다. 충분한 우위를 보인 후보만 원본 증거를 재검사해 적용합니다. 평가가 중단되면 다음 `start`에서 같은 후보와 기록을 이어갑니다. 자세한 판정·복구·저장 규칙은 [자동 채택 정책](docs/arena-learning.md#검증을-통과한-qwen만-자동-채택)에 있습니다.
+
+2026-11-16 패배 분석에 따라 새 후보는 무덤을 포함한 모든 지불 가능한 손패를 비교하고, 짧은 공유 입력과 측정된 수비·공격 전술 자료로 시작합니다. 기본 후보 학습은 8판이며 미학습 점검 자료와 실전 고정 평가는 분리합니다. [확인한 원인·수정·한계](docs/failure-learning.md)를 참고하세요.
 
 현재 로그인 계정에서는 **1개 탭으로 실행**합니다. 2026-11-15 실제 화면에서 사이트가 “다른 탭/창에서 게임을 시작해 이 경기가 닫혔다”고 안내했습니다. 2개 탭의 첫 경기와 공동 학습은 확인했지만 재매칭에서 한 탭이 종료됐으므로 지속 가능한 동시 실행으로 보지 않습니다. CLI와 실행기에서 `--tabs 2`를 거부합니다. 모델 공유·추론 순서·공동 PPO 코드는 별도 검증된 기반으로 보존하며 이 제한을 우회하는 데 쓰지 않습니다. 결과가 확인되지 않은 종료 경기는 학습하지 않습니다. `stop`은 현재 경기와 학습을 마친 뒤 적용합니다.
 
