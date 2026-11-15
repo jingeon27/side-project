@@ -122,8 +122,8 @@ class Learner:
             self.optimizer = optim.Adam(learning_rate=float(previous.learning_rate.item()))
         return previous
 
-    def distill_search(self, samples, dataset, rules_id, epochs=1):
-        if dataset in self.metadata.get('search_datasets', []):
+    def distill_search(self, samples, dataset, rules_id, epochs=1, rehearsal=False):
+        if not rehearsal and dataset in self.metadata.get('search_datasets', []):
             return {'updated': False, 'reason': 'already_trained', 'version': self.metadata['version']}
         if not 1 <= len(samples) <= 16:
             raise ValueError('Expected 1..16 search-supervised positions')
@@ -166,7 +166,7 @@ class Learner:
                 after_hash = weights_digest(self.adapter)
                 if after_hash == before_hash:
                     continue
-                report = {'updated': True, 'algorithm': 'soft_search_policy_distillation',
+                report = {'updated': True, 'algorithm': 'prioritized_cached_tactical_rehearsal' if rehearsal else 'soft_search_policy_distillation',
                           'source': 'local_simulation', 'rules_id': rules_id, 'dataset_sha256': dataset,
                           'version': self.metadata['version'] + 1, 'samples': len(samples),
                           'epochs':epochs,'steps':len(samples)*epochs,
@@ -176,7 +176,9 @@ class Learner:
                 metadata = {**self.metadata, 'version': report['version'], 'weights_sha256': after_hash,
                             'optimizer_objective': 'search_distillation',
                             'updates': self.metadata['updates'] + len(samples), 'last_training': report,
-                            'search_datasets': self.metadata.get('search_datasets', []) + [dataset]}
+                            'search_datasets': self.metadata.get('search_datasets', []) + ([] if rehearsal else [dataset]),
+                            'tactical_rehearsals':self.metadata.get('tactical_rehearsals',0)+int(rehearsal),
+                            'tactical_gradient_steps':self.metadata.get('tactical_gradient_steps',0)+len(samples)*epochs}
                 self.optimizer.learning_rate = original_rate
                 self.save(metadata); self.metadata = metadata
                 return report

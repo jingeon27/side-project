@@ -13,6 +13,18 @@ import search_data_test as fixtures
 
 
 class IsolatedSearchStudyTest(unittest.TestCase):
+    def test_warmup_does_not_train_or_publish_synthetic_examples(self):
+        with tempfile.TemporaryDirectory() as directory:
+            worker=self.worker(directory)
+            worker.begin_candidate(worker.directory.parents[1]/'arena/qwen/training/warmup')
+            worker.configure_candidate(3)
+            metadata=json.loads(json.dumps(worker.learner.metadata))
+            pointer=(worker.directory/'current.json').read_bytes()
+            self.assertEqual(worker.warmup()['training_samples_added'],0)
+            self.assertTrue(worker.warmup()['already_warm'])
+            self.assertEqual(worker.learner.metadata,metadata)
+            self.assertEqual((worker.directory/'current.json').read_bytes(),pointer)
+
     def test_controller_configuration_requires_private_training_and_does_not_change_champion(self):
         with tempfile.TemporaryDirectory() as directory:
             worker = self.worker(directory)

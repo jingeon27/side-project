@@ -10,12 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
-from .engine import Action, Arena, BeliefSampler, CARDS, FIELDS, TILE, canonical, digest, legal_actions, public_board, rules_identity
+from .engine import Action, Arena, BeliefSampler, FIELDS, TILE, canonical, digest, legal_actions, public_board, rules_identity
 from .export import render
 from .storage import atomic_json, seed_for
+from qwen.decision_input import serialize_decision
 
 ALIASES = ['barbarian_barrel', 'furnace', 'goblin_hut', 'graveyard', 'ice_wizard', 'knight', 'poison', 'skeletons']
-CONTRACT = json.loads((Path(__file__).parents[1] / 'counterpush/decision-contract.json').read_text())
 
 
 def body(kind):
@@ -49,7 +49,7 @@ def prompt(observation, actions, types):
                                None if a.card == -1 else 'ice_wizard' if a.card == -2 else ALIASES[a.card],
                                0 if a.card == -1 else 2 if a.card == -2 else [2,4,4,5,3,3,4,1][a.card],
                                *[round(v,1) for v in canonical(a.x/TILE,a.y/TILE,team)]] for i,a in enumerate(actions)]}
-    return CONTRACT['header'] + json.dumps(description,separators=(',',':'))
+    return serialize_decision(description)
 
 
 class Teacher:
@@ -102,29 +102,29 @@ class Teacher:
                             'objective':'own_tower_preservation' if defensive else 'tower_damage_difference',
                             'futureEnemyDeployments':0,'towerImprovement':values.tolist(),'bestImprovement':best,
                             'baselineTowerScore':baseline,'rootPublicHash':digest(public_board(observation['state']))},
-                'prompt':prompt(observation,actions,self.types),'controllerVersion':2}
+                'prompt':prompt(observation,actions,self.types),'controllerVersion':3}
 
 
 def scenario(seed, family):
-    left = seed % 2 == 0
-    x = 3.5 if left else 14.5
     rng = np.random.default_rng(seed)
+    left = bool(rng.integers(2))
+    x = 3.5 if left else 14.5
     hands = ([6,4,3,7] if family == 0 else [4,0,3,5] if family == 1 else [2,7,5,4] if family == 2 else [5,3,6,1])
     if (seed//4)%2:
         hands = [6,0,3,7] if family == 0 else [2,6,3,0] if family == 2 else [5,1,4,2] if family == 3 else hands
     own = hands + [card for card in range(8) if card not in hands]
     enemy = [3,5,4,6,0,1,2,7]
     arena = Arena(seed,[own,enemy])
-    arena.play([Action(-1)]*2,300)
+    arena.play([Action(-1)]*2,int(rng.integers(220,361)))
     if family in (0,1):
         arena.play([Action(-1),Action(3,round(x*TILE),round(6.5*TILE))],1)
         if seed % 3 == 0:
             arena.play([Action(-1),Action(6,round(x*TILE),round(6.5*TILE))],1)
-        arena.play([Action(-1)]*2,int(rng.choice([15,30,50,75])))
+        arena.play([Action(-1)]*2,int(rng.integers(12,90)))
     elif family == 2:
-        arena.play([Action(-1),Action(5,round(x*TILE),18*TILE)],int(rng.choice([30,65,100,140])))
+        arena.play([Action(-1),Action(5,round(x*TILE),18*TILE)],int(rng.integers(25,150)))
     else:
-        arena.play([Action(5,round(x*TILE),14*TILE),Action(-1)],int(rng.choice([140,170,200])))
+        arena.play([Action(5,round(x*TILE),14*TILE),Action(-1)],int(rng.integers(130,211)))
         if seed % 3 == 0:
             arena.play([Action(-1),Action(4,round(x*TILE),round(25.5*TILE))],20)
     return arena.observe(0)
@@ -134,7 +134,8 @@ def write_batches(data_dir, labels, rules_id, batch_size=8, split='train'):
     outputs=[]
     for begin in range(0,len(labels),batch_size):
         group=labels[begin:begin+batch_size]
-        identity=digest({'format':2,'ids':[row['id'] for row in group],'proof':[row['evidence'] for row in group]})
+        identity=digest({'format':3,'ids':[row['id'] for row in group],'proof':[row['evidence'] for row in group],
+                         'prompts':[row['prompt'] for row in group]})
         root=Path(data_dir)/('arena/exports' if split == 'train' else 'arena/tactical-holdout')/identity
         path=root/'dataset.json'
         if path.exists():
@@ -146,8 +147,8 @@ def write_batches(data_dir, labels, rules_id, batch_size=8, split='train'):
             rows.append({key:value for key,value in label.items() if key not in ('observation','actions')})
             rows[-1].update({'image':name,'imageSHA256':hashlib.sha256((root/name).read_bytes()).hexdigest(),
                              'choices':list(range(len(label['actions'])))})
-        atomic_json(path,{'format':'counterpush-tactical-targets-v2','source':'local_native_counterfactual_v2',
-                         'controllerVersion':2,'rulesID':rules_id,'teacherQualifiedForRealGame':False,
+        atomic_json(path,{'format':'counterpush-tactical-targets-v3','source':'local_native_counterfactual_v2',
+                         'controllerVersion':3,'rulesID':rules_id,'teacherQualifiedForRealGame':False,
                          'trainingEpochs':3,'split':split,'samples':rows})
         outputs.append(str(path))
     return outputs

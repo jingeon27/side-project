@@ -9,9 +9,10 @@ def load_search_targets(path):
     path = Path(path).resolve()
     raw = path.read_bytes()
     data = json.loads(raw)
-    tactical = data.get('format') == 'counterpush-tactical-targets-v2'
+    tactical = data.get('format') in ('counterpush-tactical-targets-v2','counterpush-tactical-targets-v3')
+    controller = 3 if data.get('format') == 'counterpush-tactical-targets-v3' else 2
     if (not ((data.get('format') == 'clash-arena-qwen-search-v1' and data.get('source') == 'local_native_selfplay_public_before_state')
-             or (tactical and data.get('source') == 'local_native_counterfactual_v2' and data.get('controllerVersion') == 2))
+             or (tactical and data.get('source') == 'local_native_counterfactual_v2' and data.get('controllerVersion') == controller))
             or data.get('teacherQualifiedForRealGame') is not False):
         raise ValueError('Unknown or misrepresented simulation dataset')
     rows = data['samples']
@@ -30,7 +31,7 @@ def load_search_targets(path):
             raise ValueError('Unverified self-play outcome or search')
         if tactical:
             evidence = row['evidence']; gains = evidence['towerImprovement']
-            if (row.get('controllerVersion') != 2 or evidence.get('kind') != 'paired_passive_future_rollout'
+            if (row.get('controllerVersion') != controller or evidence.get('kind') != 'paired_passive_future_rollout'
                     or evidence.get('actionOrder') != 'seeded_permutation'
                     or evidence.get('futureEnemyDeployments') != 0 or evidence.get('horizonTicks',0) < 160
                     or len(gains) != len(choices) or any(not math.isfinite(value) for value in gains)

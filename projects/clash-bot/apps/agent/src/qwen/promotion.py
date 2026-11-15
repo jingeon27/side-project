@@ -46,6 +46,8 @@ def verified_game(game, expected_sha, model_identity, runs, method, controller):
     if directory.parent != runs.resolve() or game.get('weightsSHA256') != expected_sha:
         raise ValueError('Evaluation game path or frozen policy differs')
     rows = [json.loads(line) for line in (directory / 'events.jsonl').read_text().splitlines() if line]
+    if any(row.get('type')=='input_recovery' for row in rows):
+        raise ValueError('Input recovery games cannot qualify a policy')
     starts = [row for row in rows if row.get('type') == 'match_start']
     if (len(starts) != 1 or starts[0].get('source') != 'counterpush_visible_browser'
             or starts[0].get('initialPhase') not in ('setup', 'result')):
@@ -72,6 +74,8 @@ def verified_game(game, expected_sha, model_identity, runs, method, controller):
         raise ValueError('Evaluation used changing, trainable or unverified action weights')
     if starts[0].get('controllerVersion', 1) != controller or any(row.get('controller_version', 1) != controller for row in predictions):
         raise ValueError('Evaluation decision controller differs from the checkpoint')
+    if controller>=3 and any(row.get('policy_input')!='public_text_v3' for row in predictions):
+        raise ValueError('Fast evaluation did not use the frozen text input contract')
     return .5 if outcome == 'draw' and method == 'hoeffding_score' else float(outcome == 'win')
 
 

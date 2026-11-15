@@ -21,6 +21,9 @@ from model_specs import detect_model, verify_model
 from opponent_data import load_demonstrations
 from search_data import load_search_targets
 from promotion import parent_sha, publish
+from feature_cache import FeatureCache
+from replay import remember, rehearse
+from decision_input import opponent_prompt, CONTRACT
 
 
 def verified_result(row):
@@ -123,6 +126,7 @@ class LearningWorker:
         self.directory = Path(directory)
         self.evaluation_backup = None
         self.champion_learner = self.learner
+        self.feature_cache = FeatureCache(self.directory.parents[1]/'qwen/feature-cache',self.spec['input_size'],self.spec['hidden_size'])
 
     def candidate_active(self):
         return self.learner.directory.resolve() != self.directory.resolve()
@@ -171,14 +175,14 @@ class LearningWorker:
         return self.status()
 
     def configure_candidate(self, version):
-        if self.evaluation_backup or not self.candidate_active() or version != 2:
-            raise ValueError('Only a private training candidate can select controller 2')
+        if self.evaluation_backup or not self.candidate_active() or version not in (2,3):
+            raise ValueError('Only a private training candidate can select a new controller')
         if self.learner.metadata.get('controller_version', 1) == version:
             return self.status()
         metadata = {**self.learner.metadata, 'controller_version': version,
                     'version': self.learner.metadata['version'] + 1,
                     'warmup_base_datasets':len(self.learner.metadata.get('search_datasets',[])),
-                    'last_configuration': 'failure-analysis: full affordable hand, body identities, compact shared prompt'}
+                    'last_configuration': 'compact public text + frozen feature replay' if version == 3 else 'full affordable hand, compact visual prompt'}
         self.learner.save(metadata); self.learner.metadata = metadata
         return self.status()
 
@@ -216,22 +220,34 @@ class LearningWorker:
                     "trainable": False, "reason": "single_legal_action", "read_only_evaluation": self.evaluation_backup is not None,
                     "selection": "categorical_as_live", "controller_version": controller,
                     "adapter_sha256": weights_digest(self.learner.adapter)}}
-        prompt = apply_chat_template(self.processor, self.model.config, request["prompt"], num_images=1, enable_thinking=False)
-        inputs = prepare_inputs(self.processor, images=request["images"], prompts=prompt,
-                                image_token_index=self.model.config.image_token_index)
-        token_ids = inputs.pop("input_ids")
-        pixels = inputs.pop("pixel_values", None)
-        mask = inputs.pop("attention_mask", None)
-        embeddings = self.model.get_input_embeddings(token_ids, pixels, mask=mask, **inputs)
-        output = self.model.language_model(token_ids, mask=mask, **embeddings.to_dict(), skip_logits=True, return_hidden=True)
-        features = mx.stop_gradient(self.sink["features"].astype(mx.float32))
-        base = mx.stop_gradient(self.sink["base"].astype(mx.float32))
+        text_only = controller >= 3
+        prompt = apply_chat_template(self.processor, self.model.config, request["prompt"], num_images=0 if text_only else 1, enable_thinking=False)
+        key = self.feature_cache.key(self.spec['identity'],prompt,controller) if text_only else None
+        cached = self.feature_cache.get(key) if key and not request.get('cache_bypass') else None
+        if cached is None:
+            inputs = prepare_inputs(self.processor, images=[] if text_only else request["images"], prompts=prompt,
+                                    image_token_index=self.model.config.image_token_index)
+            token_ids = inputs.pop("input_ids")
+            pixels = inputs.pop("pixel_values", None)
+            mask = inputs.pop("attention_mask", None)
+            embeddings = self.model.get_input_embeddings(token_ids, pixels, mask=mask, **inputs)
+            output = self.model.language_model(token_ids, mask=mask, **embeddings.to_dict(), skip_logits=True, return_hidden=True)
+            features = mx.stop_gradient(self.sink["features"].astype(mx.float32))
+            base = mx.stop_gradient(self.sink["base"].astype(mx.float32))
+            mx.eval(features,base)
+            if key:
+                self.feature_cache.put(key,{'features':features,'base':base})
+        else:
+            features,base = cached['features'],cached['base']
         sample = {"features": features, "base": base, "labels": list(range(len(choices)))}
         # Score the hidden state returned by the adapted Qwen itself. Training uses
         # the equivalent cached-feature computation to avoid a full-model backward.
-        hidden = output.hidden_states[-1][0, -1]
-        logits = hidden @ self.learner.token_rows[mx.array(sample["labels"])].astype(mx.float32).T
-        log_probs = logits - mx.logsumexp(logits)
+        if text_only:
+            log_probs = self.learner.log_probs(sample)
+        else:
+            hidden = output.hidden_states[-1][0, -1]
+            logits = hidden @ self.learner.token_rows[mx.array(sample["labels"])].astype(mx.float32).T
+            log_probs = logits - mx.logsumexp(logits)
         # Frozen evaluation uses the same categorical action policy as live
         # play; freezing prevents learning, not stochastic action sampling.
         chosen = int(mx.random.categorical(log_probs).item())
@@ -247,7 +263,8 @@ class LearningWorker:
                 "controller_version": controller,
                 "choices": choices, "chosen": chosen, "labels": sample["labels"],
                 "old_log_probs": log_probs.tolist(), "feature_path": str(destination),
-                "adapter_applied_inside_qwen": True,
+                "adapter_applied_inside_qwen": cached is None,
+                'feature_cache_hit':cached is not None,'policy_input':'public_text_v3' if text_only else 'image_and_text',
                 "adapter_sha256": weights_digest(self.learner.adapter)}}
 
     def checkout(self, checkpoint=None):
@@ -309,8 +326,8 @@ class LearningWorker:
         self.learner = candidate
         self.model.language_model.model.norm.adapter = candidate.adapter
         try:
-            if dataset.get('controllerVersion') == 2:
-                self.configure_candidate(2)
+            if dataset.get('controllerVersion') in (2,3):
+                self.configure_candidate(dataset['controllerVersion'])
             if identity in candidate.metadata.get('search_datasets', []):
                 report = {'updated': False, 'reason': 'already_trained', 'version': candidate.metadata['version']}
             else:
@@ -339,15 +356,41 @@ class LearningWorker:
             samples.append({**mx.load(str(feature)), 'labels': behavior['labels'], 'version': behavior['version'],
                             'old_log_probs': mx.array(behavior['old_log_probs']), 'search_target': row['target']})
         report = self.learner.distill_search(samples, identity, dataset['rulesID'],epochs=dataset.get('trainingEpochs',1))
-        if report.get('updated') and dataset.get('controllerVersion') == 2:
+        remember(self.learner,dataset,identity,samples)
+        if report.get('updated') and dataset.get('controllerVersion') in (2,3):
             atomic_json(self.learner.directory / 'actor-anchors.json', {'version':2,'samples':[
                 {'path':str(self.learner.directory/'features'/identity/f'{index:03d}.npz'),
                  'labels':sample['labels'],'search_target':sample['search_target']} for index,sample in enumerate(samples)]})
         return report
 
+    def rehearse(self, request):
+        if self.evaluation_backup or not self.candidate_active():
+            raise ValueError('Replay requires a private training candidate')
+        return rehearse(self.learner,request.get('rounds',4))
+
+    def warmup(self):
+        if self.evaluation_backup or not self.candidate_active() or self.learner.metadata.get('controller_version')!=3:
+            raise ValueError('Warmup requires the private fast controller')
+        if getattr(self,'fast_warmed',False):
+            return {'warmed':True,'already_warm':True,'training_samples_added':0}
+        before=weights_digest(self.learner.adapter)
+        prompt=CONTRACT['header']+'mana=10;enemyMana=0-10;hand=KIFG;next=P;own=;enemy=;effects=;skill=0\n'
+        # Exercise the actual frozen backbone before starting a timed match.
+        # These synthetic warmup inputs are never episodes or learning labels.
+        for count in (12,22):
+            actions=' '.join(f'{chr(65+i)}:'+('W' if i==0 else 'K3.5,14' if i%2 else 'G14.5,25.5') for i in range(count))
+            self.choose({'images':[],'prompt':prompt+actions,'choices':list(range(count)),'controller_version':3,
+                         'cache_bypass':True,'feature_path':str(self.learner.directory/'features/session-warmup.npz')})
+        if weights_digest(self.learner.adapter)!=before:
+            raise RuntimeError('Warmup modified adapter weights')
+        self.fast_warmed=True
+        return {'warmed':True,'already_warm':False,'training_samples_added':0}
+
     def episode_samples(self, episode):
         directory = Path(episode).resolve()
         rows = [json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line]
+        if any(row.get('type')=='input_recovery' for row in rows):
+            return None
         results = [row for row in rows if verified_result(row)]
         if not results:
             return None
@@ -432,7 +475,7 @@ class LearningWorker:
             # external visual annotation and is never a leaked inference input.
             feature_path = path.parent / 'features' / f"{observation['id']}.npz"
             prediction = self.choose({'images': [str(path.parent / observation['image'])],
-                                      'prompt': observation['prompt'], 'choices': observation['choices'],
+                                      'prompt': opponent_prompt(observation) if self.learner.metadata.get('controller_version',1)>=3 else observation['prompt'], 'choices': observation['choices'],
                                       'feature_path': str(feature_path),
                                       'controller_version': self.learner.metadata.get('controller_version', 1)})
             behavior = prediction['behavior']
@@ -485,6 +528,10 @@ def main():
                     result = worker.end_candidate()
                 elif request['op'] == 'configure_candidate':
                     result = worker.configure_candidate(request['controller_version'])
+                elif request['op'] == 'rehearse':
+                    result = worker.rehearse(request)
+                elif request['op'] == 'warmup':
+                    result = worker.warmup()
                 elif request['op'] == 'promote':
                     result = worker.promote(request)
                 elif request["op"] == "observe":

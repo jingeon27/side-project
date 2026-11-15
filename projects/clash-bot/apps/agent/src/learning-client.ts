@@ -26,7 +26,7 @@ export type LearningDecisionRequest = {
   prompt: string;
   candidates: QwenAction[];
   featurePath: string;
-  controllerVersion?: 1 | 2;
+  controllerVersion?: 1 | 2 | 3;
 };
 export type DecisionOutput = {
   text: string;
@@ -85,8 +85,14 @@ export class LearningClient extends QwenClient {
   async endCandidate(): Promise<Record<string, unknown>> {
     return this.request({ op: 'end_candidate' });
   }
-  async configureCandidate(controllerVersion: 2): Promise<Record<string, unknown>> {
+  async configureCandidate(controllerVersion: 2 | 3): Promise<Record<string, unknown>> {
     return this.request({ op: 'configure_candidate', controller_version: controllerVersion });
+  }
+  async rehearse(rounds = 4): Promise<TrainingReport> {
+    return trainingSchema.parse(await this.request({ op: 'rehearse', rounds }, 240_000));
+  }
+  async warmup() {
+    return this.request({ op: 'warmup' }, 60_000);
   }
   async promote(checkpoint: string, report: string): Promise<Record<string, unknown>> {
     return this.request({ op: 'promote', checkpoint, report });
