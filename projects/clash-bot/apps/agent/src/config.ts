@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-export const PROJECT_DIR = fileURLToPath(new URL('../../../', import.meta.url));
-export const DATA_DIR = fileURLToPath(new URL('../../../.data/', import.meta.url));
+export const PROJECT_DIR = fileURLToPath(new URL('../../..', import.meta.url));
+export const DATA_DIR = fileURLToPath(new URL('../../../.data', import.meta.url));
 export const WIDTH = 368;
 export const HEIGHT = 652;
 

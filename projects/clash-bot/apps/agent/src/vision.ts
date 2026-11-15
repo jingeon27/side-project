@@ -60,6 +60,9 @@ export function matchCard(
   margin: number,
 ): { card: CardId | null; distance: number; margin: number } {
   const mean = (values: number[]) => values.reduce((sum, item) => sum + item, 0) / values.length;
+  const level = mean(sample);
+  if (!sample.length || sample.reduce((sum, value) => sum + Math.abs(value - level), 0) / sample.length < 6)
+    return { card: null, distance: 255, margin: 0 };
   const matches = templates.map((template) => {
     const offset = Math.max(-45, Math.min(45, mean(sample) - mean(template.fingerprint)));
     const distance = difference(
@@ -251,6 +254,7 @@ export async function analyze(
   profile: Profile,
   templates: Templates,
   capturedAt: number,
+  options: { fieldMarkers?: boolean } = {},
 ): Promise<Observation> {
   const { image, viewport } = await normalize(bytes, profile);
   const { data, info } = await sharp(image).raw().toBuffer({ resolveWithObject: true });
@@ -290,7 +294,7 @@ export async function analyze(
     elixirAmount: elixir.amount,
     elixirConfidence: elixir.confidence,
     hand,
-    enemies: healthMarkers(pixels, profile, 'enemy'),
-    allies: healthMarkers(pixels, profile, 'ally'),
+    enemies: options.fieldMarkers === false ? [] : healthMarkers(pixels, profile, 'enemy'),
+    allies: options.fieldMarkers === false ? [] : healthMarkers(pixels, profile, 'ally'),
   };
 }

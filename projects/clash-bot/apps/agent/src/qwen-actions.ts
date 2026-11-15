@@ -1,5 +1,5 @@
 import { CARD_INFO, type CardId, type Point, type Profile } from './config.ts';
-import type { BattleSituation } from './counterpush/battle-state.ts';
+import type { BattleSituation } from './counterpush/domain/battle-state.ts';
 import { compactMechanics, KNOWLEDGE_VERSION, mechanicSummary } from './game-knowledge.ts';
 import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from './placement.ts';
 import { policyContext } from './policy-context.ts';

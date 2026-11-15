@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CARD_INFO, DEFAULT_PROFILE } from './config.ts';
-import { BattleMemory } from './counterpush/battle-state.ts';
+import { BattleMemory } from './counterpush/domain/battle-state.ts';
 import { blockedDeployment } from './placement.ts';
 import { actionCandidates } from './qwen-actions.ts';
 

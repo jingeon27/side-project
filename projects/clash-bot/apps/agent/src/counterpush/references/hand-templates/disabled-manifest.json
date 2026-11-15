@@ -1,0 +1,104 @@
+{
+  "format": 1,
+  "refs": [
+    {
+      "card": "goblin_hut",
+      "file": "variants/goblin_hut/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000030.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "furnace",
+      "file": "variants/furnace/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000030.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "goblin_hut",
+      "file": "variants/goblin_hut/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "graveyard",
+      "file": "variants/graveyard/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "furnace",
+      "file": "variants/furnace/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "ice_wizard",
+      "file": "variants/ice_wizard/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000040.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "graveyard",
+      "file": "variants/graveyard/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000047.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "barbarian_barrel",
+      "file": "variants/barbarian_barrel/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000054.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "knight",
+      "file": "variants/knight/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000086.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "knight",
+      "file": "variants/knight/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000089.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "barbarian_barrel",
+      "file": "variants/barbarian_barrel/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000120.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "poison",
+      "file": "variants/poison/unaffordable-0.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000134.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "poison",
+      "file": "variants/poison/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000137.png",
+      "sameHandWithoutInterveningCardInput": true
+    },
+    {
+      "card": "ice_wizard",
+      "file": "variants/ice_wizard/unaffordable-1.png",
+      "annotation": "visually_verified_grayscale_disabled_card",
+      "sourceFrame": "2026-11-15T17-38-20.294Z/frames/000164.png",
+      "sameHandWithoutInterveningCardInput": true
+    }
+  ],
+  "missing": ["skeletons"]
+}

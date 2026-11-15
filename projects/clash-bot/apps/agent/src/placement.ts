@@ -1,5 +1,5 @@
 import { CARD_INFO, type CardId, type Point, type Profile } from './config.ts';
-import type { BattleSituation, FieldEffect } from './counterpush/battle-state.ts';
+import type { BattleSituation, FieldEffect } from './counterpush/domain/battle-state.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from './game-knowledge.ts';
 
 export type PlacementOption = { target: Point; description: string };

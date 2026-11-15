@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_PROFILE, type CardId } from './config.ts';
-import { BattleMemory, type FieldEffect } from './counterpush/battle-state.ts';
+import { BattleMemory, type FieldEffect } from './counterpush/domain/battle-state.ts';
 import { blockedDeployment } from './placement.ts';
 import { actionCandidates } from './qwen-actions.ts';
 

@@ -6,6 +6,15 @@ import { fixture } from './testing/fixture.ts';
 import { analyze, matchCard, normalize } from './vision.ts';
 
 describe('extracting battle state from screen pixels', () => {
+  it('skips the generic field scan when a separate detector owns it, preserving hand and resource reads', async () => {
+    const { image, templates } = await fixture({ elixir: 8, enemies: 3 });
+    const complete = await analyze(image, DEFAULT_PROFILE, templates, 1000);
+    const ownOnly = await analyze(image, DEFAULT_PROFILE, templates, 1000, { fieldMarkers: false });
+    expect(ownOnly.hand).toEqual(complete.hand);
+    expect(ownOnly.elixir).toBe(complete.elixir);
+    expect(ownOnly.enemies).toEqual([]);
+    expect(complete.enemies).toHaveLength(3);
+  });
   it('finds four unique hand cards, elixir and separate enemy health bars', async () => {
     const { image, templates } = await fixture({ elixir: 8, enemies: 3 });
     const observation = await analyze(image, DEFAULT_PROFILE, templates, 1000);

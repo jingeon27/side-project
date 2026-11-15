@@ -8,13 +8,13 @@ import { parseArgs } from 'node:util';
 import { DATA_DIR } from '../config.ts';
 import { selectModel } from '../model-options.ts';
 import { requestLearningStop } from '../selfplay.ts';
-import { activeOpponentCoverage, learningAudit } from './audit.ts';
-import { CounterpushBrowser } from './browser.ts';
-import { runCounterpushEvaluation } from './evaluation.ts';
-import { loadCounterpushProfile } from './profile.ts';
-import { reprocessEpisode } from './reprocess.ts';
-import { runCounterpush } from './runner.ts';
-import { CounterpushVisionClient } from './vision-client.ts';
+import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
+import { runCounterpushEvaluation } from './learning/evaluation.ts';
+import { reprocessEpisode } from './learning/reprocess.ts';
+import { CounterpushVisionClient } from './perception/vision-client.ts';
+import { CounterpushBrowser } from './runtime/browser.ts';
+import { loadCounterpushProfile } from './runtime/profile.ts';
+import { runCounterpush } from './runtime/runner.ts';
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
@@ -29,6 +29,7 @@ const { positionals, values } = parseArgs({
     pairs: { type: 'string' },
     resume: { type: 'boolean' },
     'training-matches': { type: 'string' },
+    'training-goal': { type: 'string' },
   },
 });
 const command = positionals[0] ?? 'status';
@@ -131,6 +132,12 @@ const main = async () => {
   const model = selectModel(values.model, true).id;
   const pairs = Number(values.pairs ?? 16);
   const trainingMatches = Number(values['training-matches'] ?? 8);
+  const trainingGoal = values['training-goal'] ? Number(values['training-goal']) : undefined;
+  if (
+    trainingGoal !== undefined &&
+    (!Number.isInteger(trainingGoal) || trainingGoal < 1 || trainingGoal > 10000)
+  )
+    throw new Error('training-goal은 1~10000판입니다.');
   if (
     command === 'start' &&
     (!Number.isInteger(pairs) ||
@@ -138,9 +145,9 @@ const main = async () => {
       pairs > 128 ||
       !Number.isInteger(trainingMatches) ||
       trainingMatches < 1 ||
-      trainingMatches > 32)
+      trainingMatches > 128)
   )
-    throw new Error('자동 채택은 pairs 16~128, training-matches 1~32를 사용합니다.');
+    throw new Error('자동 채택은 pairs 16~128, training-matches 1~128를 사용합니다.');
   if (command === 'evaluate' && (!values.candidate || !Number.isInteger(pairs) || pairs < 1 || pairs > 128))
     throw new Error('evaluate --candidate <후보 체크포인트 폴더> --pairs <1~128>');
   if (values.background) {
@@ -164,6 +171,7 @@ const main = async () => {
           ...(values.pairs ? ['--pairs', String(pairs)] : []),
           ...(values.resume ? ['--resume'] : []),
           ...(values['training-matches'] ? ['--training-matches', String(trainingMatches)] : []),
+          ...(trainingGoal ? ['--training-goal', String(trainingGoal)] : []),
         ],
         { detached: true, stdio: ['ignore', output, output], cwd: process.cwd() },
       );
@@ -216,6 +224,7 @@ const main = async () => {
     model,
     hours,
     matches,
+    trainingGoal,
     tabs,
     pairs,
     trainingMatches,

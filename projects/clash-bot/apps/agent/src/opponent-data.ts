@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { atomicWrite } from './assets.ts';
 import { cardIdSchema, HEIGHT, WIDTH, type CardId } from './config.ts';
-import { battleSituationSchema, type BattleSituation } from './counterpush/battle-state.ts';
+import { battleSituationSchema, type BattleSituation } from './counterpush/domain/battle-state.ts';
 import { ABILITY_RULES } from './game-knowledge.ts';
 import { policyContext } from './policy-context.ts';
 import { deckGuidance, type QwenAction } from './qwen-actions.ts';
