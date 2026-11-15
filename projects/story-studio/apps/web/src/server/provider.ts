@@ -10,9 +10,11 @@ import {
   type TMediaRequest,
   type TVideoTask,
 } from '../lib/story';
+import { defaultVoiceSettings, type TVoiceSettings } from '../lib/voice-training';
 import { readTask, saveAsset, storeTask } from './assets';
 import { StudioError } from './errors';
 import { isLocalMode, localConfiguration, runLocal } from './local-worker';
+import { resolveTrainedVoice } from './voice-store';
 
 export function configuration() {
   if (isLocalMode()) return localConfiguration();
@@ -307,8 +309,16 @@ export async function videoStatus(id: string) {
   }
 }
 
-export async function generateVoice(text: string, signal?: AbortSignal) {
-  return voiceSchema.parse(await runLocal({ action: 'voice', text }, signal));
+export async function generateVoice(
+  text: string,
+  signal?: AbortSignal,
+  settings: TVoiceSettings = defaultVoiceSettings,
+) {
+  if (settings.kind === 'trained') await resolveTrainedVoice(settings.runId);
+  return voiceSchema.parse({
+    ...voiceSchema.parse(await runLocal({ action: 'voice', text, settings }, signal)),
+    settings,
+  });
 }
 
 export async function composeLocal(

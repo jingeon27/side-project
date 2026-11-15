@@ -86,6 +86,7 @@ it('실제 스튜디오 자식 프로세스만 중단하고 종료 상태를 보
   const ended = expect(job).rejects.toThrow();
   await ready.promise;
   expect((await cancelLocalVideo(id)).status).toBe('FAILED');
+  expect(localWorkerBusy()).toBe(false);
   await ended;
   expect((await readTask(id)).error).toContain('사용자가');
   await expect(cancelLocalVideo('cloud-task-1234')).rejects.toMatchObject({ status: 400 });

@@ -10,12 +10,14 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', required=True)
+    parser.add_argument('--only', choices=['all', 'voice-training'], default='all')
     args = parser.parse_args()
     from huggingface_hub import model_info, snapshot_download
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
     specs = json.loads(Path(__file__).with_name('models.json').read_text())
-    for name in ['text', 'voice', 'wan-source']:
+    selected = ['voice-train'] if args.only == 'voice-training' else ['text', 'voice', 'voice-train', 'wan-source']
+    for name in selected:
         spec = specs[name]
         print(f'모델 준비: {name} ({spec["repo"]})', flush=True)
         patterns = ['*.json', '*.safetensors', '*.pth', 'google/umt5-xxl/*'] if name == 'wan-source' else None
@@ -32,6 +34,9 @@ def main():
                     digest = hashlib.file_digest(file, 'sha256').hexdigest()
                 if digest != entry.lfs.sha256:
                     raise ValueError(f'모델 파일 검증 실패: {entry.rfilename}')
+    if args.only == 'voice-training':
+        print('로컬 음성 학습 모델 준비 완료', flush=True)
+        return
     spec = specs['tokenizer']
     snapshot_download(spec['repo'], revision=spec['revision'], local_dir=root / 'models/tokenizer',
                       allow_patterns=['tokenizer*.json', 'special_tokens_map.json', 'spiece.model', 'config.json'])

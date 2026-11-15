@@ -1,5 +1,6 @@
 mlx-vlm==0.7.12
 mlx-audio==0.6.5
+mlx==0.32.4
 mlx-video @ git+https://github.com/Blaizzy/mlx-video.git@87db56a51758fefb748a359b90a5283bb8ba4837
 imageio-ffmpeg==0.8.1
 Pillow==13.0.0

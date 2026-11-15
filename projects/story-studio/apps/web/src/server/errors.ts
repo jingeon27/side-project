@@ -33,28 +33,32 @@ export function requireLocalRequest(request: Request, mutation = false) {
     throw new StudioError('스튜디오 화면에서 다시 요청해 주세요.', 403);
   }
 }
-export async function readJson(request: Request) {
-  if (!request.headers.get('content-type')?.startsWith('application/json')) {
-    throw new StudioError('JSON 형식의 요청이 필요합니다.', 415);
-  }
+export async function readBody(request: Request, limit = 1_500_000) {
   const reader = request.body?.getReader();
   if (!reader) throw new StudioError('입력한 내용을 확인해 주세요.', 400);
   const chunks: Uint8Array[] = [];
-  const size = { bytes: 0 };
+  async function readNext(bytes: number): Promise<ReturnType<typeof Buffer.concat>> {
+    const next = await reader?.read();
+    if (!next || next.done) return Buffer.concat(chunks, bytes);
+    const total = bytes + next.value.byteLength;
+    if (total > limit) throw new StudioError('요청이 너무 큽니다. 파일이나 작품을 나누어 주세요.', 413);
+    chunks.push(next.value);
+    return readNext(total);
+  }
   try {
-    for (;;) {
-      const next = await reader.read();
-      if (next.done) break;
-      size.bytes += next.value.byteLength;
-      if (size.bytes > 1_500_000) throw new StudioError('요청이 너무 큽니다. 작품을 나누어 주세요.', 413);
-      chunks.push(next.value);
-    }
-    return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
-  } catch (error) {
-    if (error instanceof StudioError) throw error;
-    throw new StudioError('입력한 내용을 확인해 주세요.', 400);
+    return await readNext(0);
   } finally {
     await reader.cancel().catch(() => undefined);
     reader.releaseLock();
+  }
+}
+export async function readJson(request: Request) {
+  if (!request.headers.get('content-type')?.startsWith('application/json'))
+    throw new StudioError('JSON 형식의 요청이 필요합니다.', 415);
+  try {
+    return JSON.parse((await readBody(request)).toString('utf8')) as unknown;
+  } catch (error) {
+    if (error instanceof StudioError) throw error;
+    throw new StudioError('입력한 내용을 확인해 주세요.', 400);
   }
 }

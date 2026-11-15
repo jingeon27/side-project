@@ -18,4 +18,5 @@ if (process.platform !== 'darwin' || process.arch !== 'arm64')
 if (!existsSync(python))
   await run(process.env.PYTHON || 'python3.11', ['-m', 'venv', path.join(local, '.venv')]);
 await run(python, ['-m', 'pip', 'install', '-r', 'scripts/local/requirements.txt']);
-await run(python, ['scripts/local/setup.py', '--data-dir', data]);
+const options = process.argv.includes('--voice-training') ? ['--only', 'voice-training'] : [];
+await run(python, ['scripts/local/setup.py', '--data-dir', data, ...options]);

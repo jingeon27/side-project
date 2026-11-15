@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
+import { defaultVoiceSettings, voiceSettingsSchema } from './voice-training';
+
 export const formats = [
   { id: 'film', name: '영화', description: '한 장면에서 시작하는 영화', symbol: '01' },
   { id: 'drama', name: '드라마', description: '다음 화가 궁금한 이야기', symbol: '02' },
@@ -38,8 +40,12 @@ export type TDraft = z.infer<typeof draftSchema>;
 export const voiceSchema = z.object({
   asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.wav$/),
   duration: z.number().positive().max(1800),
+  settings: voiceSettingsSchema.optional(),
 });
-export const voiceRequestSchema = z.object({ text: z.string().trim().min(1).max(4000) });
+export const voiceRequestSchema = z.object({
+  text: z.string().trim().min(1).max(4000),
+  settings: voiceSettingsSchema.default(defaultVoiceSettings),
+});
 export const taskSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9_-]{8,128}$/),
   status: z.enum(['PENDING', 'RUNNING', 'SUCCEEDED', 'FAILED']),
@@ -59,6 +65,7 @@ export const sceneSchema = sceneContentSchema.extend({
     .optional(),
   video: taskSchema.optional(),
   voice: voiceSchema.optional(),
+  voiceSettings: voiceSettingsSchema.optional(),
 });
 export type TScene = z.infer<typeof sceneSchema>;
 export const projectSchema = z.object({

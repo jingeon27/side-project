@@ -43,6 +43,19 @@ def stop_worker(signum, frame):
 def save_task(status, **fields):
     if not STATE.get('taskId'):
         return
+    if STATE.get('training'):
+        from voice_job import atomic_json, run_folder, checkpoint_path
+        folder = run_folder(STATE['root'], STATE['taskId'])
+        target = folder / 'status.json'
+        previous = json.loads(target.read_text())
+        # The checkpoint pointer is committed before progress; recover that narrow crash window.
+        try:
+            fields.setdefault('checkpoint', checkpoint_path(folder).name)
+        except OSError:
+            pass
+        values = {**previous, 'status': status, 'ownerPid': os.getpid(), **fields}
+        atomic_json(target, {key: value for key, value in values.items() if value is not None})
+        return
     folder = STATE['root'] / 'tasks'
     folder.mkdir(parents=True, exist_ok=True)
     target = folder / (STATE['taskId'] + '.json')
@@ -103,13 +116,22 @@ def generate_voice(root, request):
     from mlx_audio.tts.utils import load_model
     mx.set_cache_limit(256 * 1024**2)
     progress("한국어 음성 모델을 불러오는 중")
-    model = load_model(root / "local/models/voice")
+    settings = request.get('settings', {'kind': 'preset', 'speaker': 'sohee', 'style': 'calm'})
+    if settings['kind'] == 'trained':
+        from voice_job import load_trained
+        model = load_trained(root, settings['runId'])
+        voice = 'studio_voice'
+        instruct = None
+    else:
+        model = load_model(root / "local/models/voice")
+        voice = settings['speaker']
+        instruct = {'calm': '차분하고 따뜻한 한국어 이야기 내레이션', 'neutral': '자연스럽고 또렷한 한국어 발음', 'bright': '밝고 활기찬 한국어 말투', 'firm': '단호하고 힘 있는 한국어 말투'}[settings['style']]
     text = re.sub(r"(?m)^[^\n:]{1,24}:\s*", "", request["text"]).strip()
     progress("한국어 목소리를 만드는 중")
     chunks = []
     sample_rate = 24000
-    for result in model.generate(text=text, voice="Sohee", lang_code="Korean",
-                                 instruct="차분하고 따뜻한 한국어 이야기 내레이션", max_tokens=4096,
+    for result in model.generate(text=text, voice=voice, lang_code="Korean",
+                                 instruct=instruct, max_tokens=4096,
                                  split_pattern=r"\n+", verbose=False):
         chunks.append(np.asarray(result.audio))
         sample_rate = result.sample_rate
@@ -235,14 +257,15 @@ def main():
     if request.get('taskId'):
         if not re.fullmatch(r'local-[a-f0-9-]{36}', request['taskId']):
             raise ValueError('올바른 로컬 작업이 아닙니다')
-        STATE.update(root=root, taskId=request['taskId'], running=False)
+        STATE.update(root=root, taskId=request['taskId'], running=False, training=request['action'] == 'train-voice')
     started = time.monotonic()
     with (root / "local/gpu.lock").open("a") as lock:
         progress("로컬 모델 실행 순서를 기다리는 중")
-        if request['action'] != 'compose':
+        uses_model = request['action'] not in ('compose', 'normalize-voice')
+        if uses_model:
             fcntl.flock(lock, fcntl.LOCK_EX)
         STATE['running'] = True
-        if request['action'] != 'compose':
+        if uses_model:
             (root / 'local/active.json').write_text(json.dumps({'pid': os.getpid(), 'action': request['action'], 'taskId': request.get('taskId')}))
         with contextlib.redirect_stdout(sys.stderr):
             if request["action"] == "text":
@@ -253,9 +276,16 @@ def main():
                 result = generate_visual(root, request, request["action"] == "image")
             elif request["action"] == "compose":
                 result = compose(root, request)
+            elif request['action'] == 'normalize-voice':
+                from voice_job import normalize
+                result = normalize(root, request, ffmpeg, asset_path, asset_url)
+            elif request['action'] == 'train-voice':
+                from voice_job import train
+                result = train(root, request, progress, save_task)
             else:
                 raise ValueError("지원하지 않는 작업입니다")
-        save_task('SUCCEEDED', asset=result['asset']) if STATE.get('taskId') else None
+        if STATE.get('taskId') and not STATE.get('training'):
+            save_task('SUCCEEDED', asset=result['asset'])
         stats = {"elapsedSeconds": round(time.monotonic() - started, 2)}
         if 'mlx.core' in sys.modules:
             stats['peakMemoryGiB'] = round(sys.modules['mlx.core'].get_peak_memory() / 1024**3, 2)
@@ -269,7 +299,10 @@ if __name__ == "__main__":
     except Exception:
         import traceback
         traceback.print_exc(file=sys.stderr)
-        save_task('FAILED', error='사용자가 영상 생성을 중단했습니다. 원고는 보존됩니다.' if STATE.get('cancelled') else '로컬 영상 생성이 중단되었습니다. 로컬 로그를 확인한 뒤 다시 시도해 주세요.')
+        if STATE.get('training'):
+            save_task('CANCELLED' if STATE.get('cancelled') else 'FAILED', error='학습을 중단했습니다. 저장된 가중치부터 이어서 학습할 수 있습니다.' if STATE.get('cancelled') else '음성 학습이 중단되었습니다. 로컬 로그를 확인해 주세요. 녹음과 직전 가중치는 보존했습니다.')
+        else:
+            save_task('FAILED', error='사용자가 영상 생성을 중단했습니다. 원고는 보존됩니다.' if STATE.get('cancelled') else '로컬 영상 생성이 중단되었습니다. 로컬 로그를 확인한 뒤 다시 시도해 주세요.')
         emit({"error": "로컬 모델 실행에 실패했습니다. 프로젝트의 로컬 로그를 확인해 주세요."})
         clear_active()
         sys.exit(1)

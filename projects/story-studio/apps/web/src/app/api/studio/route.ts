@@ -58,7 +58,9 @@ export async function POST(request: Request) {
     const data = await match(result.data)
       .with({ action: 'draft' }, (action) => generateDraft(action.input, request.signal))
       .with({ action: 'continue' }, (action) => continueStory(action.input, request.signal))
-      .with({ action: 'voice' }, (action) => generateVoice(action.input.text, request.signal))
+      .with({ action: 'voice' }, (action) =>
+        generateVoice(action.input.text, request.signal, action.input.settings),
+      )
       .with({ action: 'compose' }, (action) => composeLocal(action.input.scenes, request.signal))
       .with({ action: 'image' }, (action) => generateImage(action.input, request.signal))
       .with({ action: 'video' }, (action) => generateVideo(action.input, request.signal))
