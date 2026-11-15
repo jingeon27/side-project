@@ -18,6 +18,7 @@ from .engine import rules_identity
 from .evaluation import evaluate, pfsp_weights
 from .export import export
 from .curriculum import from_selfplay
+from .parallel import play_frozen_games
 from .policy import Policy
 from .selfplay import play_game, replay_samples
 from .storage import atomic_json, read_episode, seed_for, write_episode
@@ -49,7 +50,7 @@ def checkpoint(root, version):
     return Path(root) / 'checkpoints' / f'v{version:06d}'
 
 
-def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pairs=16, evaluate_every=1):
+def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pairs=16, evaluate_every=1, workers=1):
     data_dir = Path(data_dir)
     control = data_dir / 'arena/control'
     control.mkdir(parents=True, exist_ok=True)
@@ -77,7 +78,7 @@ def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pair
         league = initialize(root, rules)
         atomic_json(control / 'active.json', {'root': str(root), 'rulesID': rules['id']})
         report({'root': str(root), 'rulesID': rules['id'], 'champion': league['champion'], 'learner': league['learner'],
-                'settings': {'games': games, 'simulations': simulations, 'depth': depth, 'pairs': pairs, 'evaluateEvery': evaluate_every}})
+                'settings': {'games': games, 'simulations': simulations, 'depth': depth, 'pairs': pairs, 'evaluateEvery': evaluate_every, 'workers':workers}})
         while not stopped() and (not generations or state['completedGenerations'] < generations):
             if shutil.disk_usage(data_dir).free < 8 * 1024 ** 3:
                 raise RuntimeError('Less than 8 GB disk space; stopping before another game')
@@ -88,33 +89,35 @@ def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pair
             version = max([league['learner'], *saved]) + 1
             pending = []
             rng = np.random.default_rng(seed_for('opponent_pool', rules['id'], version))
-            for index in range(games):
+            for begin in range(0,games,workers):
                 if stopped():
                     break
-                # Half self-play, half historical opponents. Freeze both seats
-                # throughout a game, and emphasize opponents we often lose to.
-                rates = [(row['wins'] + 1) / (row['games'] + 2) for row in league['opponents']]
-                selected = None if index % 2 == 0 else league['opponents'][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
-                other = current if selected is None else Policy.load(checkpoint(root, selected['version']), rules['id'])
-                seat = (version + index // 2) % 2
-                policies = [other, other]; policies[seat] = current
-                identity = f'train-{version}-{index}-{uuid.uuid4().hex[:8]}'
-                report({'phase': 'selfplay', 'game': index + 1, 'candidate': version, 'opponent': other.metadata['version']})
-                game = play_game(policies, identity, rules['id'], simulations=simulations, depth=depth,
-                                 report=lambda update: report({**update, 'phase': 'selfplay'}))
-                path = root / 'episodes' / f'{identity}.json.gz'
-                write_episode(path, game)
-                if not game['completed'] or game['rejectedCommands']:
-                    raise ValueError('Self-play produced an incomplete game or rejected input; not training it')
-                league['episodes'].append(str(path))
-                pending.append(game)
-                state['completedGames'] += 1
-                if selected is not None:
-                    selected['games'] += 1
-                    selected['wins'] += .5 if game['winner'] == 2 else int(game['winner'] == seat)
-                # Commit the game index before training; crash recovery retains
-                # completed data and never publishes half-written model files.
-                atomic_json(root / 'league.json', league)
+                jobs=[]
+                for index in range(begin,min(games,begin+workers)):
+                    rates = [(row['wins'] + 1) / (row['games'] + 2) for row in league['opponents']]
+                    selected = None if index % 2 == 0 else league['opponents'][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
+                    opponent = league['learner'] if selected is None else selected['version']
+                    jobs.append({'current':str(checkpoint(root,league['learner'])),'opponent':str(checkpoint(root,opponent)),
+                                 'selected':None if selected is None else opponent,'index':index,
+                                 'seat':(version+index//2)%2,'id':f'train-{version}-{index}-{uuid.uuid4().hex[:8]}',
+                                 'rulesID':rules['id'],'simulations':simulations,'depth':depth})
+                report({'phase':'selfplay','game':begin+1,'candidate':version,'activeWorkers':len(jobs)})
+                # Each process has a separate native battle and frozen policy.
+                # Only this owner writes episodes, counters and checkpoints.
+                for job,game in zip(jobs,play_frozen_games(jobs,workers)):
+                    path = root / 'episodes' / f"{job['id']}.json.gz"
+                    write_episode(path, game)
+                    if not game['completed'] or game['rejectedCommands']:
+                        raise ValueError('Self-play produced an incomplete game or rejected input; not training it')
+                    league['episodes'].append(str(path))
+                    pending.append(game)
+                    state['completedGames'] += 1
+                    if job['selected'] is not None:
+                        selected = next(row for row in league['opponents'] if row['version']==job['selected'])
+                        selected['games'] += 1
+                        selected['wins'] += .5 if game['winner']==2 else int(game['winner']==job['seat'])
+                    atomic_json(root / 'league.json', league)
+                    report({'game':job['index']+1,'completedGames':state['completedGames']})
             if not pending:
                 break
             report({'phase': 'training', 'candidate': version})

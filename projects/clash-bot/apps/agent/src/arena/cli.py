@@ -30,14 +30,15 @@ def main():
     curriculum.add_argument('--positions',type=int,default=64)
     curriculum.add_argument('--seed',type=int,default=1000)
     curriculum.add_argument('--split',choices=['train','holdout'],default='train')
+    start.add_argument('--workers',type=int,default=1)
     args = parser.parse_args()
     control = DATA / 'arena/control'
     if args.command == 'start':
         if not (0 <= args.hours <= 24 and 0 <= args.generations <= 10000 and 1 <= args.games <= 64
                 and 2 <= args.simulations <= 512 and 2 <= args.depth <= 32 and 1 <= args.pairs <= 256
-                and 1 <= args.evaluate_every <= 100):
+                and 1 <= args.evaluate_every <= 100 and 1 <= args.workers <= 4):
             parser.error('Invalid run bounds')
-        result = run(DATA, args.hours, args.generations, args.games, args.simulations, args.depth, args.pairs, args.evaluate_every)
+        result = run(DATA, args.hours, args.generations, args.games, args.simulations, args.depth, args.pairs, args.evaluate_every, args.workers)
     elif args.command == 'curriculum':
         if not 1 <= args.positions <= 256:
             parser.error('Generate 1..256 tactical positions per run')
