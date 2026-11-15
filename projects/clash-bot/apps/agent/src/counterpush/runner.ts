@@ -84,6 +84,18 @@ export async function runCounterpush(options: {
         return stop !== null && JSON.parse(stop).id === lock.owner.id;
       },
       play: async (tab) => {
+        workers[tab] = {
+          tab: tab + 1,
+          phase: 'starting',
+          frames: 0,
+          actions: 0,
+          confirmed: 0,
+          abilityActions: 0,
+          abilityConfirmed: 0,
+          opponentActions: 0,
+          waitingMs: 0,
+        };
+        await report({ workers: workers.map((worker) => ({ ...worker })) });
         const disk = await statfs(dataDir);
         if (disk.bavail * disk.bsize < 8 * 1024 ** 3)
           throw new Error('남은 디스크가 8GB 미만이어서 다음 대전을 멈췄습니다.');
@@ -100,6 +112,10 @@ export async function runCounterpush(options: {
           persistPatterns: false,
           decisionGate,
           tab,
+        }).catch(async (error: unknown) => {
+          Object.assign(workers[tab]!, { phase: 'failed', error: String(error) });
+          await report({ workers: workers.map((worker) => ({ ...worker })) });
+          throw error;
         });
         Object.assign(workers[tab]!, {
           phase: 'waiting_for_training',

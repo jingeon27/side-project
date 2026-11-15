@@ -149,11 +149,26 @@ export class CounterpushBrowser {
 
   async startMatch() {
     const phase = await this.phase();
-    if (phase === 'setup') {
+    if (phase === 'setup' || phase === 'result') {
+      // Re-enter the public setup page after a completed game. The result
+      // page's Again transition can strand one of the concurrent tabs.
+      if (phase === 'result') {
+        await this.page.goto('https://app.playcounterpush.com/play', {
+          waitUntil: 'domcontentloaded',
+          timeout: 30_000,
+        });
+        await this.page.waitForFunction(
+          () => {
+            const button = document.querySelector('#battle');
+            return button instanceof HTMLButtonElement && !button.disabled;
+          },
+          {},
+          { timeout: 30_000 },
+        );
+      }
       await this.assertDecks();
       await this.page.locator('#battle').click();
-    } else if (phase === 'result') await this.page.locator('#again').click();
-    else throw new Error(`새 매칭을 시작할 화면이 아닙니다: ${phase}`);
+    } else throw new Error(`새 매칭을 시작할 화면이 아닙니다: ${phase}`);
   }
 
   async capture(): Promise<{ image: Buffer; capturedAt: number }> {
