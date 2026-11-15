@@ -20,11 +20,26 @@ type Result = {
   checkpoint?: string;
 };
 export type EvaluatedGame = Result & { variant: 'baseline' | 'candidate'; pair: number; score: number };
-const scoreOf = (result: string) => (result === 'win' ? 1 : result === 'draw' ? 0.5 : 0);
+export type EvaluationMethod = 'paired_exact_wins_v1' | 'hoeffding_score';
+const scoreOf = (result: string, method: EvaluationMethod) =>
+  result === 'win' ? 1 : result === 'draw' && method === 'hoeffding_score' ? 0.5 : 0;
 const orderOf = (pair: number) =>
   pair % 2 ? (['candidate', 'baseline'] as const) : (['baseline', 'candidate'] as const);
 
-export function realEvaluationGate(pairScores: number[], alpha = 0.05) {
+export function requiredEvaluationPairs(minimum: number, alpha: number, method: EvaluationMethod) {
+  if (minimum < 16) return minimum; // Small manual smoke runs cannot qualify.
+  const feasible =
+    method === 'paired_exact_wins_v1'
+      ? Math.ceil(-Math.log2(alpha)) + 1
+      : Math.ceil(2 * Math.log(2 / alpha)) + 1;
+  return Math.max(minimum, feasible);
+}
+
+export function realEvaluationGate(
+  pairScores: number[],
+  alpha = 0.05,
+  method: EvaluationMethod = 'paired_exact_wins_v1',
+) {
   if (
     !pairScores.length ||
     !Number.isFinite(alpha) ||
@@ -34,6 +49,32 @@ export function realEvaluationGate(pairScores: number[], alpha = 0.05) {
   )
     return { passed: false, reason: 'invalid_or_missing_pairs' };
   const mean = pairScores.reduce((sum, value) => sum + value, 0) / pairScores.length;
+  if (method === 'paired_exact_wins_v1') {
+    if (pairScores.some((value) => ![0, 0.5, 1].includes(value)))
+      return { passed: false, reason: 'invalid_win_pair_score' };
+    const wins = pairScores.filter((value) => value > 0.5).length,
+      losses = pairScores.filter((value) => value < 0.5).length;
+    const decisive = wins + losses;
+    const sum = { combination: 1, tail: 0 };
+    for (const count of Array.from({ length: decisive + 1 }, (_, index) => index)) {
+      if (count >= wins) sum.tail += sum.combination;
+      sum.combination *= (decisive - count) / (count + 1);
+    }
+    const probability = decisive ? sum.tail / 2 ** decisive : 1;
+    const passed = pairScores.length >= 16 && mean >= 0.55 && probability <= alpha;
+    return {
+      passed,
+      reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
+      pairs: pairScores.length,
+      score: mean,
+      deltaWinRate: 2 * mean - 1,
+      pairWins: wins,
+      pairLosses: losses,
+      oneSidedP: probability,
+      test: 'exact_paired_binomial',
+      alpha,
+    };
+  }
   const radius = Math.sqrt(Math.log(2 / alpha) / (2 * pairScores.length));
   const lower = Math.max(0, mean - radius),
     upper = Math.min(1, mean + radius);
@@ -55,9 +96,11 @@ export async function frozenComparison(options: {
   stopped: () => Promise<boolean>;
   report: (state: Record<string, unknown>) => Promise<void>;
   alpha?: number;
+  method?: EvaluationMethod;
   existingGames?: EvaluatedGame[];
 }) {
   const games: EvaluatedGame[] = [...(options.existingGames ?? [])];
+  const method = options.method ?? 'paired_exact_wins_v1';
   if (games.length > options.pairs * 2 || new Set(games.map((game) => game.directory)).size !== games.length)
     throw new Error('중복되거나 범위를 벗어난 평가 경기입니다.');
   for (const [index, game] of games.entries()) {
@@ -66,7 +109,7 @@ export async function frozenComparison(options: {
       game.pair !== pair ||
       game.variant !== orderOf(pair)[index % 2] ||
       !['win', 'loss', 'draw'].includes(game.result) ||
-      game.score !== scoreOf(game.result)
+      game.score !== scoreOf(game.result, method)
     )
       throw new Error('평가 재개 기록의 순서 또는 승패가 맞지 않습니다.');
   }
@@ -78,7 +121,7 @@ export async function frozenComparison(options: {
       const result = await options.play(variant, pair);
       if (!['win', 'loss', 'draw'].includes(result.result))
         throw new Error('평가 경기의 승패를 확인하지 못했습니다.');
-      games.push({ ...result, variant, pair, score: scoreOf(result.result) });
+      games.push({ ...result, variant, pair, score: scoreOf(result.result, method) });
       await options.report({
         pair: pair + 1,
         variant,
@@ -97,7 +140,7 @@ export async function frozenComparison(options: {
     );
   }
   const complete = scores.length === options.pairs;
-  const gate = realEvaluationGate(scores, options.alpha);
+  const gate = realEvaluationGate(scores, options.alpha, method);
   return {
     format: 'counterpush-frozen-ab-evaluation-v1',
     games,
@@ -107,6 +150,7 @@ export async function frozenComparison(options: {
     order: 'AB_BA_blocks',
     trainingDuringEvaluation: false,
     selection: 'categorical_as_live',
+    method,
     gate: complete ? gate : { ...gate, passed: false, reason: 'interrupted_evaluation' },
     promoted: false,
   };
@@ -120,6 +164,8 @@ type Trial = {
   baseline: Record<string, unknown>;
   candidate: Record<string, unknown>;
   games: EvaluatedGame[];
+  minimumPairs?: number;
+  method?: EvaluationMethod;
 };
 
 export async function evaluateWithResources(options: {
@@ -168,6 +214,9 @@ export async function evaluateWithResources(options: {
         throw new Error('평가 횟수 기록이 잘못되었습니다.');
       const id = randomUUID();
       const index = attempts.count;
+      const alpha = 0.05 / ((index + 1) * (index + 2));
+      const method: EvaluationMethod = 'paired_exact_wins_v1';
+      const requestedPairs = requiredEvaluationPairs(options.pairs, alpha, method);
       await atomicWrite(
         path,
         JSON.stringify(
@@ -180,6 +229,9 @@ export async function evaluateWithResources(options: {
                 file: options.file,
                 baselineSHA256: baseline.weights_sha256,
                 candidateSHA256: candidate.weights_sha256,
+                method,
+                minimumPairs: options.pairs,
+                requestedPairs,
               },
             },
           },
@@ -189,9 +241,11 @@ export async function evaluateWithResources(options: {
       );
       const created = {
         trialID: id,
-        requestedPairs: options.pairs,
+        requestedPairs,
+        minimumPairs: options.pairs,
+        method,
         alphaSpendingAttempt: index,
-        alpha: 0.05 / ((index + 1) * (index + 2)),
+        alpha,
         baseline,
         candidate,
         games: [],
@@ -200,13 +254,14 @@ export async function evaluateWithResources(options: {
       return created;
     })());
   if (
-    trial.requestedPairs !== options.pairs ||
+    (trial.minimumPairs ?? trial.requestedPairs) !== options.pairs ||
     trial.baseline.weights_sha256 !== baseline.weights_sha256 ||
     trial.candidate.weights_sha256 !== candidate.weights_sha256
   )
     throw new Error('평가 재개 시 기준·후보 또는 경기 수가 달라졌습니다.');
   const result = await frozenComparison({
-    pairs: options.pairs,
+    pairs: trial.requestedPairs,
+    method: trial.method ?? 'hoeffding_score',
     alpha: trial.alpha,
     existingGames: trial.games,
     stopped: options.stopped,

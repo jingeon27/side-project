@@ -29,8 +29,12 @@ def evaluate(challenger, champion, rules_id, generation, pairs=16, simulations=1
     for model in (challenger, champion):
         if model.metadata.get('rulesID', rules_id) != rules_id:
             raise ValueError('Evaluation policy belongs to another rule set')
+    # Fixed sample budgets eventually cannot pass an alpha-spent exact test,
+    # even with all wins. Increase the minimum before drawing holdout games.
+    alpha = .05 / ((generation + 1) * (generation + 2))
+    required_pairs = max(pairs, math.ceil(-math.log2(alpha)) + 1) if pairs >= 16 else pairs
     results, pair_scores = [], []
-    for pair in range(pairs):
+    for pair in range(required_pairs):
         if should_stop and should_stop():
             break
         identity = f'holdout-{generation}-{pair}'
@@ -49,8 +53,7 @@ def evaluate(challenger, champion, rules_id, generation, pairs=16, simulations=1
                 report({'phase': 'evaluating', 'generation': generation, 'pair': pair + 1, 'seat': seat, 'score': score})
         pair_scores.append(sum(scores) / 2)
     # Alpha spending bounds false promotion probability over repeated generations.
-    alpha = .05 / ((generation + 1) * (generation + 2))
-    complete = len(pair_scores) == pairs
+    complete = len(pair_scores) == required_pairs
     gate = paired_gate(pair_scores, alpha=alpha)
     if not complete:
         gate = {**gate, 'passed': False, 'reason': 'interrupted_evaluation'}
@@ -58,6 +61,7 @@ def evaluate(challenger, champion, rules_id, generation, pairs=16, simulations=1
             'challenger': {'version': challenger.metadata['version'], 'weightsSHA256': challenger.checksum()},
             'champion': {'version': champion.metadata['version'], 'weightsSHA256': champion.checksum()},
             'seedDomain': 'holdout', 'trainingGamesIncluded': False, 'pairs': pair_scores, 'games': results,
+            'minimumPairs': pairs, 'requestedPairs': required_pairs,
             'gate': gate}
 
 

@@ -1,8 +1,57 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { frozenComparison, realEvaluationGate } from './evaluation.ts';
+import { frozenComparison, realEvaluationGate, requiredEvaluationPairs } from './evaluation.ts';
 
 describe('frozen Counterpush comparison', () => {
+  it('uses the exact discordant-win test and keeps late evaluations capable of qualifying', () => {
+    expect(realEvaluationGate([...Array(6).fill(1), ...Array(10).fill(0.5)], 0.025)).toMatchObject({
+      passed: true,
+      oneSidedP: 1 / 64,
+    });
+    expect(realEvaluationGate([...Array(5).fill(1), ...Array(11).fill(0.5)], 0.025).passed).toBe(false);
+    const alpha = 0.05 / (100001 * 100002);
+    for (const method of ['paired_exact_wins_v1', 'hoeffding_score'] as const) {
+      const count = requiredEvaluationPairs(16, alpha, method);
+      expect(count).toBeGreaterThan(16);
+      expect(realEvaluationGate(Array(16).fill(1), alpha, method).passed).toBe(false);
+      expect(realEvaluationGate(Array(count).fill(1), alpha, method).passed).toBe(true);
+    }
+  });
+  it('does not count draws as wins in new trials and preserves an old trial method on resume', async () => {
+    const newTrial = await frozenComparison({
+      pairs: 16,
+      stopped: async () => false,
+      report: async () => {},
+      play: async (variant, pair) => ({
+        directory: `/${variant}-${pair}`,
+        result: variant === 'candidate' ? 'draw' : 'loss',
+        actions: 1,
+        confirmed: 1,
+      }),
+    });
+    expect(newTrial.pairs).toEqual(Array(16).fill(0.5));
+    expect(newTrial.gate.passed).toBe(false);
+    const oldTrial = await frozenComparison({
+      pairs: 1,
+      method: 'hoeffding_score',
+      stopped: async () => false,
+      report: async () => {},
+      existingGames: [
+        {
+          pair: 0,
+          variant: 'baseline',
+          result: 'draw',
+          score: 0.5,
+          directory: '/old',
+          actions: 1,
+          confirmed: 1,
+        },
+      ],
+      play: async () => ({ directory: '/new', result: 'win', actions: 1, confirmed: 1 }),
+    });
+    expect(oldTrial.pairs).toEqual([0.75]);
+    expect(oldTrial.method).toBe('hoeffding_score');
+  });
   it('continues a partially completed pair without replaying its baseline game', async () => {
     const play = vi.fn(async () => ({
       result: 'win',

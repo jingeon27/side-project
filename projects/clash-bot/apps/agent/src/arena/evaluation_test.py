@@ -6,6 +6,17 @@ from arena.policy import Policy
 
 
 class QualificationTest(unittest.TestCase):
+    def test_late_alpha_spending_increases_the_budget_instead_of_permanently_blocking_promotion(self):
+        challenger = Policy(seed=1, metadata={'version': 1, 'rulesID': 'rules-a'})
+        champion = Policy(seed=2, metadata={'version': 0, 'rulesID': 'rules-a'})
+        def game(models, *args, **kwargs):
+            return {'completed': True, 'rejectedCommands': 0, 'winner': 0 if models[0] is challenger else 1, 'samples': []}
+        with patch('arena.evaluation.play_game', side_effect=game):
+            result = evaluate(challenger, champion, 'rules-a', 10000, pairs=16)
+        self.assertGreater(result['requestedPairs'], 16)
+        self.assertEqual(len(result['games']), 2*result['requestedPairs'])
+        self.assertTrue(result['gate']['passed'])
+
     def test_ties_small_samples_and_nonfinite_results_cannot_promote(self):
         for scores in ([1] * 4, [.5] * 64, [0] * 32, [float('nan')]):
             self.assertFalse(paired_gate(scores)['passed'])

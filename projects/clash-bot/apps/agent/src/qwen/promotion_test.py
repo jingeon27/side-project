@@ -12,7 +12,7 @@ from learning_worker import LearningWorker
 from promotion import publish
 
 
-def fixture(directory, tied=False):
+def fixture(directory, tied=False, wins=16, method='hoeffding_score'):
     mx.random.seed(7)
     data = Path(directory) / 'data'
     root = data / 'qwen/learning'
@@ -39,7 +39,7 @@ def fixture(directory, tied=False):
         order = ('baseline', 'candidate') if pair % 2 == 0 else ('candidate', 'baseline')
         for variant in order:
             meta = candidate.metadata if variant == 'candidate' else learner.metadata
-            win = variant == 'candidate' and not tied
+            win = variant == 'candidate' and not tied and pair < wins
             blue, red = (3, 0) if win else (0, 3)
             episode = data / 'counterpush/runs' / f'pair-{pair}-{variant}'
             episode.mkdir(parents=True)
@@ -52,16 +52,18 @@ def fixture(directory, tied=False):
             (episode / 'events.jsonl').write_text('\n'.join(json.dumps(row) for row in rows))
             games.append({'directory': str(episode), 'variant': variant, 'pair': pair,
                           'weightsSHA256': meta['weights_sha256'], 'result': 'win' if win else 'loss', 'score': int(win)})
-    mean = .5 if tied else 1.
-    report = {'format': 'counterpush-frozen-ab-evaluation-v1', 'complete': True, 'requestedPairs': 16,
+    pair_scores = [.5 + .5 * (not tied and pair < wins) for pair in range(16)]
+    mean = sum(pair_scores) / 16
+    report = {'format': 'counterpush-frozen-ab-evaluation-v1', 'complete': True, 'requestedPairs': 16, 'minimumPairs': 16,
               'trainingDuringEvaluation': False, 'selection': 'categorical_as_live', 'baselineUnchanged': True,
               'order': 'AB_BA_blocks', 'baseline': learner.metadata, 'candidate': candidate.metadata,
-              'games': games, 'pairs': [mean] * 16, 'gate': {'passed': True, 'score': mean, 'alpha': .025},
+              'games': games, 'pairs': pair_scores, 'gate': {'passed': True, 'score': mean, 'alpha': .025}, 'method': method,
               'trialID': 'reserved-trial', 'alphaSpendingAttempt': 0}
     atomic_json(report_path, report)
     atomic_json(data / 'counterpush/control/evaluation-attempts.json', {'count': 1, 'trials': {
         'reserved-trial': {'index': 0, 'file': str(report_path), 'baselineSHA256': learner.metadata['weights_sha256'],
-                           'candidateSHA256': candidate.metadata['weights_sha256']}}})
+                           'candidateSHA256': candidate.metadata['weights_sha256'], 'method': method,
+                           'minimumPairs': 16, 'requestedPairs': 16}}})
     worker = object.__new__(LearningWorker)
     worker.directory, worker.learner, worker.champion_learner, worker.evaluation_backup = root, learner, learner, None
     worker.spec = {'input_size': 12, 'hidden_size': 8, 'identity': learner.metadata['model_sha256'], 'name': 'fixture'}
@@ -70,6 +72,23 @@ def fixture(directory, tied=False):
 
 
 class QualifiedPromotionTest(unittest.TestCase):
+    def test_exact_win_assessment_is_recomputed_and_its_preregistered_method_cannot_change(self):
+        for wins in (5, 6):
+            with self.subTest(wins=wins), tempfile.TemporaryDirectory() as directory:
+                worker, checkpoint, path, _ = fixture(directory, wins=wins, method='paired_exact_wins_v1')
+                original = (worker.directory / 'current.json').read_bytes()
+                if wins == 6:
+                    self.assertTrue(worker.promote({'checkpoint': str(checkpoint), 'report': str(path)})['promoted'])
+                else:
+                    with self.assertRaisesRegex(ValueError, 'improvement'):
+                        worker.promote({'checkpoint': str(checkpoint), 'report': str(path)})
+                    self.assertEqual((worker.directory / 'current.json').read_bytes(), original)
+        with tempfile.TemporaryDirectory() as directory:
+            worker, checkpoint, path, report = fixture(directory)
+            report['method'] = 'paired_exact_wins_v1'; atomic_json(path, report)
+            with self.assertRaisesRegex(ValueError, 'method changed'):
+                worker.promote({'checkpoint': str(checkpoint), 'report': str(path)})
+
     def test_full_raw_evidence_publishes_once_reloads_and_keeps_the_previous_champion(self):
         with tempfile.TemporaryDirectory() as directory:
             worker, checkpoint, path, report = fixture(directory)

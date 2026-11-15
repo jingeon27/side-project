@@ -140,10 +140,11 @@ def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pair
             if version % evaluate_every == 0 and not stopped():
                 baseline = Policy.load(checkpoint(root, league['champion']), rules['id'])
                 number = league['evaluations']
+                league['evaluations'] += 1
+                atomic_json(root / 'league.json', league)  # Spend before play, including crashes.
                 result = evaluate(current, baseline, rules['id'], number, pairs=pairs, simulations=simulations,
                                   depth=depth, report=report, should_stop=stopped)
                 atomic_json(root / 'evaluations' / f'v{version:06d}-e{number:06d}.json', result)
-                league['evaluations'] += 1
                 if result['gate']['passed']:
                     league['champion'] = version
                 atomic_json(root / 'league.json', league)
