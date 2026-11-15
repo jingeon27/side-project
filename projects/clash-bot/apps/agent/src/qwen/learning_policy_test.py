@@ -9,6 +9,40 @@ from learning_policy import FinalMLPLoRA, Learner, weights_digest
 
 
 class LearningPolicyTest(unittest.TestCase):
+    def test_worsened_episode_objective_rolls_back_the_update(self):
+        from unittest.mock import patch
+        from learning_policy import clipped_loss, KLExceeded
+        with tempfile.TemporaryDirectory() as directory:
+            learner = self.make_learner(directory)
+            sample = self.sample(learner)
+            original = weights_digest(learner.adapter)
+            calls = []
+            def worsened(*args):
+                calls.append(True)
+                return clipped_loss(*args) + (1 if len(calls) >= 3 else 0)
+            with patch('learning_policy.clipped_loss', side_effect=worsened):
+                with self.assertRaisesRegex(KLExceeded, 'full episode objective'):
+                    learner._train_once([sample], -1, 'worse', 3e-5, 0)
+            self.assertEqual(weights_digest(learner.adapter), original)
+            self.assertEqual(learner.metadata['version'], 0)
+
+    def test_learning_objectives_do_not_share_adam_momentum(self):
+        with tempfile.TemporaryDirectory() as directory:
+            learner = self.make_learner(directory)
+            self.assertTrue(learner.train([self.sample(learner)], 1, 'actor')['updated'])
+            actor_optimizer = learner.optimizer
+            sample = {**self.sample(learner), 'version': learner.metadata['version'],
+                      'targets': [1], 'confidence': .95, 'id': 'red'}
+            self.assertTrue(learner.imitate([sample], 'opponent')['updated'])
+            self.assertIsNot(actor_optimizer, learner.optimizer)
+            self.assertEqual(learner.metadata['optimizer_objective'], 'opponent_imitation')
+            opponent_optimizer = learner.optimizer
+            sample = {**sample, 'version': learner.metadata['version']}
+            sample['old_log_probs'] = mx.stop_gradient(learner.log_probs(sample))
+            self.assertTrue(learner.train([sample], -1, 'actor-again')['updated'])
+            self.assertIsNot(opponent_optimizer, learner.optimizer)
+            self.assertEqual(learner.metadata['optimizer_objective'], 'on_policy_ppo')
+
     def test_opponent_update_rolls_back_if_actor_tactical_anchor_is_degraded(self):
         from unittest.mock import patch
         from learning_policy import KLExceeded
@@ -115,7 +149,8 @@ class LearningPolicyTest(unittest.TestCase):
             with patch('learning_policy.clipped_loss', new=measured):
                 report = learner.train_batch(games)
             self.assertTrue(report['updated'])
-            self.assertEqual(advantages, [1, -1])
+            self.assertGreaterEqual(len(advantages), 2)
+            self.assertEqual(advantages, [1, -1] * (len(advantages) // 2))
             self.assertEqual(report['version'], 1)
             self.assertEqual(report['rewards'], [1, -1])
             self.assertEqual(report['selected_per_episode'], {'tab-1': 1, 'tab-2': 1})

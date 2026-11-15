@@ -114,6 +114,14 @@ class Learner:
     def log_probs(self, sample):
         return action_log_probs(self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows)
 
+    def enter_objective(self, objective):
+        previous = self.optimizer
+        if self.metadata.get('optimizer_objective') != objective:
+            # Adam momentum from opponent imitation must not dictate the next
+            # actor/reward gradient (or vice versa). Keep weights, reset moments.
+            self.optimizer = optim.Adam(learning_rate=float(previous.learning_rate.item()))
+        return previous
+
     def distill_search(self, samples, dataset, rules_id, epochs=1):
         if dataset in self.metadata.get('search_datasets', []):
             return {'updated': False, 'reason': 'already_trained', 'version': self.metadata['version']}
@@ -126,6 +134,7 @@ class Learner:
             if (sample['version'] != self.metadata['version'] or len(target) != len(sample['labels'])
                     or any(not math.isfinite(p) or p < 0 for p in target) or abs(sum(target)-1) > 1e-4):
                 raise ValueError('Invalid search distribution or feature version')
+        previous_optimizer = self.enter_objective('search_distillation')
         original_rate = float(self.optimizer.learning_rate.item())
         before = {name: mx.array(value) for name, value in tree_flatten(self.adapter.trainable_parameters())}
         optimizer_before = {name: mx.array(value) for name, value in tree_flatten(self.optimizer.state)}
@@ -165,6 +174,7 @@ class Learner:
                           'cross_entropy_before': initial_loss, 'cross_entropy_after': final_loss,
                           'max_kl': max(kls), 'backtrack_attempts': attempt, 'requires_real_game_evaluation': True}
                 metadata = {**self.metadata, 'version': report['version'], 'weights_sha256': after_hash,
+                            'optimizer_objective': 'search_distillation',
                             'updates': self.metadata['updates'] + len(samples), 'last_training': report,
                             'search_datasets': self.metadata.get('search_datasets', []) + [dataset]}
                 self.optimizer.learning_rate = original_rate
@@ -179,6 +189,8 @@ class Learner:
             raise
         finally:
             self.optimizer.learning_rate = original_rate
+            if self.metadata.get('optimizer_objective') != 'search_distillation':
+                self.optimizer = previous_optimizer
 
     def imitate(self, samples, dataset):
         if dataset in self.metadata.get('demonstrations', []):
@@ -194,6 +206,7 @@ class Learner:
                     or any(index < 0 or index >= len(sample['labels']) for index in sample['targets'])
                     or not math.isfinite(sample['confidence']) or not 0.9 <= sample['confidence'] <= 1):
                 raise ValueError('Invalid imitation target or confidence')
+        previous_optimizer = self.enter_objective('opponent_imitation')
         original_rate = float(self.optimizer.learning_rate.item())
         try:
             for attempt in range(4):
@@ -206,6 +219,8 @@ class Learner:
                     'version': self.metadata['version']}
         finally:
             self.optimizer.learning_rate = original_rate
+            if self.metadata.get('optimizer_objective') != 'opponent_imitation':
+                self.optimizer = previous_optimizer
 
     def _imitate_once(self, samples, dataset, learning_rate, original_rate, attempt):
         anchor_file = self.directory / 'actor-anchors.json'
@@ -267,6 +282,7 @@ class Learner:
                                        for sample, before_probability, after_probability
                                        in zip(samples, before_probabilities, after_probabilities)]}
             metadata = {**self.metadata, 'version': report['version'],
+                        'optimizer_objective': 'opponent_imitation',
                         'demonstrations': self.metadata.get('demonstrations', []) + [dataset],
                         'updates': self.metadata['updates'] + len(samples),
                         'weights_sha256': after_hash, 'last_training': report}
@@ -290,14 +306,20 @@ class Learner:
         return self.train(samples, reward, episodes[0]['episode'], batch=batch)
 
     def train(self, samples, reward, episode, batch=None):
+        previous_optimizer = self.enter_objective('on_policy_ppo')
         rate = float(self.optimizer.learning_rate.item())
-        for attempt in range(4):
-            try:
-                return self._train_once(samples, reward, episode, rate * (0.25 ** attempt), attempt, batch)
-            except KLExceeded:
-                # _train_once restores both parameters and optimizer state first.
-                continue
-        return {"updated": False, "reason": "kl_limit_after_backtracking", "version": self.metadata["version"]}
+        try:
+            for attempt in range(4):
+                try:
+                    return self._train_once(samples, reward, episode, rate * (0.25 ** attempt), attempt, batch)
+                except KLExceeded:
+                    # _train_once restores parameters and optimizer state first.
+                    continue
+            return {"updated": False, "reason": "kl_or_objective_gate_after_backtracking", "version": self.metadata["version"]}
+        finally:
+            self.optimizer.learning_rate = rate
+            if self.metadata.get('optimizer_objective') != 'on_policy_ppo':
+                self.optimizer = previous_optimizer
 
     def _train_once(self, samples, reward, episode, learning_rate, attempt, batch=None):
         episode_ids = batch['episodes'] if batch else [episode]
@@ -320,11 +342,14 @@ class Learner:
         before_hash = weights_digest(self.adapter)
         self.optimizer.learning_rate = learning_rate
         before_probabilities = [float(mx.exp(self.log_probs(s)[s["chosen"]]).item()) for s in selected]
+        advantage_of = lambda sample: (sample.get('episode_reward', reward) - self.metadata['baseline']) * (0.995 ** sample['remaining'])
+        objective = lambda: sum(float(clipped_loss(self.adapter, sample, advantage_of(sample), self.norm_weight, self.norm_eps, self.token_rows).item()) for sample in selected) / len(selected)
+        objective_before = objective()
         grad_fn = nn.value_and_grad(self.adapter, clipped_loss)
         losses = []
         try:
             for sample in selected:
-                advantage = (sample.get('episode_reward', reward) - self.metadata["baseline"]) * (0.995 ** sample["remaining"])
+                advantage = advantage_of(sample)
                 loss, gradients = grad_fn(self.adapter, sample, advantage, self.norm_weight, self.norm_eps, self.token_rows)
                 mx.eval(loss, gradients)
                 flat = tree_flatten(gradients)
@@ -339,6 +364,9 @@ class Learner:
             kls = [float(mx.sum(mx.exp(s["old_log_probs"]) * (s["old_log_probs"] - self.log_probs(s))).item()) for s in selected]
             if not all(math.isfinite(k) for k in kls) or max(kls) > 0.15:
                 raise KLExceeded("Learning step exceeded KL limit")
+            objective_after = objective()
+            if not math.isfinite(objective_after) or objective_after >= objective_before - 1e-8:
+                raise KLExceeded('Actor update did not improve the full episode objective')
             after_hash = weights_digest(self.adapter)
             if before_hash == after_hash:
                 raise ValueError("No adapter weights changed")
@@ -348,12 +376,14 @@ class Learner:
                       "learning_rate": learning_rate, "backtrack_attempts": attempt,
                       "before_sha256": before_hash, "after_sha256": after_hash,
                       "mean_loss": sum(losses) / len(losses), "max_kl": max(kls),
+                      "objective_before": objective_before, "objective_after": objective_after,
                       "probability_before": before_probabilities[0],
                       "probability_after": float(mx.exp(self.log_probs(selected[0])[selected[0]["chosen"]]).item())}
             if batch:
                 report.update({'episodes': episode_ids, 'rewards': rewards,
                                'selected_per_episode': {value: sum(s.get('episode_id') == value for s in selected) for value in episode_ids}})
             metadata = {**self.metadata, "version": report["version"],
+                        'optimizer_objective': 'on_policy_ppo',
                         "baseline": self.metadata["baseline"] * 0.9 + reward * 0.1,
                         "episodes": self.metadata["episodes"] + episode_ids,
                         "updates": self.metadata["updates"] + len(selected),
