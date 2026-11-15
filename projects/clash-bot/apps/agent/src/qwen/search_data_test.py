@@ -8,6 +8,24 @@ from search_data import load_search_targets
 
 
 class SearchDataTest(unittest.TestCase):
+    def test_tactical_targets_require_measured_gains_and_reject_heldout_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path, data = self.write(directory)
+            row = {**data['samples'][0], 'controllerVersion': 2, 'target': [0, 1, 0],
+                   'evidence': {'kind': 'paired_passive_future_rollout', 'actionOrder': 'seeded_permutation',
+                                'horizonTicks': 240, 'futureEnemyDeployments': 0,
+                                'towerImprovement': [0, 200, 80], 'bestImprovement': 200}}
+            data = {**data, 'format': 'counterpush-tactical-targets-v2', 'source': 'local_native_counterfactual_v2',
+                    'controllerVersion': 2, 'split': 'train', 'trainingEpochs': 3, 'samples': [row]}
+            path.write_text(json.dumps(data))
+            self.assertEqual(load_search_targets(path)[0], data)
+            for changed in ({'split': 'holdout'}, {'trainingEpochs': 20},
+                            {'samples': [{**row, 'target': [0, 0, 1]}]},
+                            {'samples': [{**row, 'evidence': {**row['evidence'], 'futureEnemyDeployments': 1}}]}):
+                path.write_text(json.dumps({**data, **changed}))
+                with self.assertRaises(ValueError):
+                    load_search_targets(path)
+
     def write(self, directory):
         root = Path(directory)
         image = root / 'before.png'; image.write_bytes(b'public before image')

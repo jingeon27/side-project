@@ -26,6 +26,7 @@ export type LearningDecisionRequest = {
   prompt: string;
   candidates: QwenAction[];
   featurePath: string;
+  controllerVersion?: 1 | 2;
 };
 export type DecisionOutput = {
   text: string;
@@ -51,6 +52,7 @@ export class LearningClient extends QwenClient {
       prompt: request.prompt,
       choices: request.candidates.map((c) => c.id),
       feature_path: request.featurePath,
+      controller_version: request.controllerVersion ?? 1,
     });
     const choice = z.int().parse(response.choice);
     if (!request.candidates.some((c) => c.id === choice))
@@ -82,6 +84,9 @@ export class LearningClient extends QwenClient {
   }
   async endCandidate(): Promise<Record<string, unknown>> {
     return this.request({ op: 'end_candidate' });
+  }
+  async configureCandidate(controllerVersion: 2): Promise<Record<string, unknown>> {
+    return this.request({ op: 'configure_candidate', controller_version: controllerVersion });
   }
   async promote(checkpoint: string, report: string): Promise<Record<string, unknown>> {
     return this.request({ op: 'promote', checkpoint, report });

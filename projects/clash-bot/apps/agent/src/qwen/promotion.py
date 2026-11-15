@@ -41,7 +41,7 @@ def qualification_scores(scores, alpha, method='hoeffding_score'):
     return {'pairs': len(scores), 'score': mean, 'lowerBound': max(0, lower), 'alpha': alpha}
 
 
-def verified_game(game, expected_sha, model_identity, runs, method):
+def verified_game(game, expected_sha, model_identity, runs, method, controller):
     directory = Path(game['directory']).resolve()
     if directory.parent != runs.resolve() or game.get('weightsSHA256') != expected_sha:
         raise ValueError('Evaluation game path or frozen policy differs')
@@ -70,6 +70,8 @@ def verified_game(game, expected_sha, model_identity, runs, method):
                               or row.get('trainable') is not False or row.get('read_only_evaluation') is not True
                               or row.get('selection') != 'categorical_as_live' for row in predictions):
         raise ValueError('Evaluation used changing, trainable or unverified action weights')
+    if starts[0].get('controllerVersion', 1) != controller or any(row.get('controller_version', 1) != controller for row in predictions):
+        raise ValueError('Evaluation decision controller differs from the checkpoint')
     return .5 if outcome == 'draw' and method == 'hoeffding_score' else float(outcome == 'win')
 
 
@@ -92,6 +94,8 @@ def validate_report(report_path, candidate, champion, data_dir):
             or report['candidate']['model_sha256'] != champion['model_sha256']
             or candidate['weights_sha256'] == champion['weights_sha256']):
         raise ValueError('Candidate/evaluation was made against a different champion')
+    if report['candidate'].get('controller_version', 1) != candidate.get('controller_version', 1):
+        raise ValueError('Candidate controller changed after evaluation')
     attempts = json.loads((data_dir / 'counterpush/control/evaluation-attempts.json').read_text())
     reserved = attempts.get('trials', {}).get(report.get('trialID'))
     index = report.get('alphaSpendingAttempt')
@@ -120,7 +124,8 @@ def validate_report(report_path, candidate, champion, data_dir):
                 raise ValueError('Duplicated games or unbalanced A/B order')
             directories.add(directory)
             expected = candidate['weights_sha256'] if variant == 'candidate' else champion['weights_sha256']
-            values[variant] = verified_game(game, expected, champion['model_sha256'], data_dir / 'counterpush/runs', method)
+            controller = (candidate if variant == 'candidate' else champion).get('controller_version', 1)
+            values[variant] = verified_game(game, expected, champion['model_sha256'], data_dir / 'counterpush/runs', method, controller)
         scores.append(.5 + (values['candidate']-values['baseline']) / 2)
     trained = {str(Path(path).resolve()) for meta in (candidate, champion) for path in meta.get('episodes', [])}
     if trained & directories:

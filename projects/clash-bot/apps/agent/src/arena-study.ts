@@ -34,12 +34,17 @@ export async function studyNext(
       )
         .sort()
         .map((directory) => join(dataDir, 'arena/exports', directory, 'dataset.json'));
+  const controller = mode === 'candidate' ? (await client.status()).controller_version : undefined;
   for (const path of entries) {
     const raw = await readFile(path).catch((error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') return null; // A self-play export is still being written.
       throw error;
     });
     if (!raw) continue;
+    if (mode === 'candidate') {
+      const body = JSON.parse(raw.toString()) as { format: string; controllerVersion?: number };
+      if (controller === 2 && body.controllerVersion !== 2) continue;
+    }
     const identity = createHash('sha256').update(raw).digest('hex');
     if (learned.has(identity)) continue;
     const before = await client.status();

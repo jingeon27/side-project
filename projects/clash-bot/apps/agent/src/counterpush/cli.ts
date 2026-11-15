@@ -130,7 +130,7 @@ const main = async () => {
     throw new Error('hours는 0~24, matches는 0~10000 정수입니다. 0은 중지 요청까지 반복합니다.');
   const model = selectModel(values.model, true).id;
   const pairs = Number(values.pairs ?? 16);
-  const trainingMatches = Number(values['training-matches'] ?? 2);
+  const trainingMatches = Number(values['training-matches'] ?? 8);
   if (
     command === 'start' &&
     (!Number.isInteger(pairs) ||

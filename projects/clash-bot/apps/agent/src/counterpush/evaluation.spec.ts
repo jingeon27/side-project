@@ -3,6 +3,44 @@ import { describe, expect, it, vi } from 'vitest';
 import { frozenComparison, realEvaluationGate, requiredEvaluationPairs } from './evaluation.ts';
 
 describe('frozen Counterpush comparison', () => {
+  it('returns to learning when even winning every remaining pair cannot qualify, without qualifying early', async () => {
+    const losing = await frozenComparison({
+      pairs: 16,
+      alpha: 0.025,
+      rejectFutile: true,
+      stopped: async () => false,
+      report: async () => {},
+      play: async (variant, pair) => ({
+        directory: `/${variant}-${pair}`,
+        result: 'loss',
+        actions: 1,
+        confirmed: 1,
+      }),
+    });
+    expect(losing.rejectedEarly).toBe(true);
+    expect(losing.complete).toBe(false);
+    expect(losing.games.length).toBeLessThan(32);
+    expect(losing.gate).toMatchObject({ passed: false, reason: 'cannot_qualify_with_remaining_pairs' });
+    expect(
+      realEvaluationGate([...losing.pairs, ...Array(16 - losing.pairs.length).fill(1)], 0.025).passed,
+    ).toBe(false);
+    const winning = await frozenComparison({
+      pairs: 16,
+      alpha: 0.025,
+      rejectFutile: true,
+      stopped: async () => false,
+      report: async () => {},
+      play: async (variant, pair) => ({
+        directory: `/${variant}-${pair}`,
+        result: variant === 'candidate' ? 'win' : 'loss',
+        actions: 1,
+        confirmed: 1,
+      }),
+    });
+    expect(winning.complete).toBe(true);
+    expect(winning.games).toHaveLength(32);
+    expect(winning.gate.passed).toBe(true);
+  });
   it('uses the exact discordant-win test and keeps late evaluations capable of qualifying', () => {
     expect(realEvaluationGate([...Array(6).fill(1), ...Array(10).fill(0.5)], 0.025)).toMatchObject({
       passed: true,

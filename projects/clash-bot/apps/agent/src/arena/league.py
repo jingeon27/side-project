@@ -17,6 +17,7 @@ import numpy as np
 from .engine import rules_identity
 from .evaluation import evaluate, pfsp_weights
 from .export import export
+from .curriculum import from_selfplay
 from .policy import Policy
 from .selfplay import play_game, replay_samples
 from .storage import atomic_json, read_episode, seed_for, write_episode
@@ -137,6 +138,9 @@ def run(data_dir, hours=8, generations=0, games=4, simulations=16, depth=6, pair
             dataset = export(data_dir, pending)
             if dataset:
                 report({'qwenSearchDataset': dataset})
+            tactical = from_selfplay(data_dir, pending)
+            if tactical:
+                report({'qwenTacticalDatasets': tactical})
             if version % evaluate_every == 0 and not stopped():
                 baseline = Policy.load(checkpoint(root, league['champion']), rules['id'])
                 number = league['evaluations']

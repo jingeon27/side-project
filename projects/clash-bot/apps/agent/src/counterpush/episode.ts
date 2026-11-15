@@ -13,6 +13,7 @@ import { analyze, crop, difference, fingerprint, loadTemplates } from '../vision
 import { readEpisodeCoverage } from './audit.ts';
 import { BattleMemory, type BattleSituation } from './battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
+import { candidatesV2, compactPrompt } from './decision-v2.ts';
 import { counterpushBarReading, counterpushElixir, plausibleSpend } from './elixir.ts';
 import { FieldDynamics } from './field-dynamics.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from './hero-ability.ts';
@@ -46,6 +47,8 @@ export async function playCounterpushEpisode(options: {
   persistPatterns?: boolean;
 }) {
   const { browser, client, vision, dataDir, profile, signal } = options;
+  const policy = await client.status();
+  const controllerVersion: 1 | 2 = policy.controller_version === 2 ? 2 : 1;
   const directory = join(
     dataDir,
     'counterpush/runs',
@@ -241,6 +244,7 @@ export async function playCounterpushEpisode(options: {
     deck: COUNTERPUSH_DECK,
     tab: options.tab,
     initialPhase,
+    controllerVersion,
   });
   const deadline = Date.now() + 900_000;
   try {
@@ -312,7 +316,7 @@ export async function playCounterpushEpisode(options: {
         const threats = before.situation.opponent.units
           .filter((unit) => unit.y > profile.riverY)
           .map(({ x, y }) => ({ x, y }));
-        const candidates = actionCandidates(
+        const candidates = (controllerVersion === 2 ? candidatesV2 : actionCandidates)(
           profile,
           before.cards,
           before.state.elixir,
@@ -329,14 +333,17 @@ export async function playCounterpushEpisode(options: {
         const frame = ++state.decisions;
         const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
         await atomicWrite(imagePath, before.image);
-        const prompt = choicePrompt(
-          before.cards,
-          before.state.elixir,
-          threats,
-          candidates,
-          'letter',
-          before.situation,
-        );
+        const prompt =
+          controllerVersion === 2
+            ? compactPrompt(profile, before.cards, before.state.elixir, candidates, before.situation)
+            : choicePrompt(
+                before.cards,
+                before.state.elixir,
+                threats,
+                candidates,
+                'letter',
+                before.situation,
+              );
         const prediction = {
           done: false,
           output: null as Awaited<ReturnType<LearningClient['choose']>> | null,
@@ -348,6 +355,7 @@ export async function playCounterpushEpisode(options: {
             prompt,
             candidates,
             featurePath: join(directory, 'features', String(frame).padStart(4, '0') + '.npz'),
+            controllerVersion,
           })
           .then((output) => {
             prediction.output = output;

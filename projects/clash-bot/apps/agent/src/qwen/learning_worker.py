@@ -170,6 +170,18 @@ class LearningWorker:
         self.bind(getattr(self, 'champion_learner', self.learner))
         return self.status()
 
+    def configure_candidate(self, version):
+        if self.evaluation_backup or not self.candidate_active() or version != 2:
+            raise ValueError('Only a private training candidate can select controller 2')
+        if self.learner.metadata.get('controller_version', 1) == version:
+            return self.status()
+        metadata = {**self.learner.metadata, 'controller_version': version,
+                    'version': self.learner.metadata['version'] + 1,
+                    'warmup_base_datasets':len(self.learner.metadata.get('search_datasets',[])),
+                    'last_configuration': 'failure-analysis: full affordable hand, body identities, compact shared prompt'}
+        self.learner.save(metadata); self.learner.metadata = metadata
+        return self.status()
+
     def promote(self, request):
         if self.evaluation_backup or self.candidate_active():
             raise ValueError('Restore the champion before publishing')
@@ -191,6 +203,9 @@ class LearningWorker:
         return {**result, 'champion': self.status()}
 
     def choose(self, request):
+        controller = self.learner.metadata.get('controller_version', 1)
+        if request.get('controller_version', 1) != controller:
+            raise ValueError('Decision controller does not match the frozen policy')
         choices = request["choices"]
         if not 1 <= len(choices) <= 26 or len(set(choices)) != len(choices):
             raise ValueError("Invalid legal action list")
@@ -199,7 +214,8 @@ class LearningWorker:
             return {"choice": choices[0], "behavior": {"format": FORMAT, "version": version,
                     "model_identity": self.spec['identity'], "model": self.spec['name'],
                     "trainable": False, "reason": "single_legal_action", "read_only_evaluation": self.evaluation_backup is not None,
-                    "selection": "categorical_as_live", "adapter_sha256": weights_digest(self.learner.adapter)}}
+                    "selection": "categorical_as_live", "controller_version": controller,
+                    "adapter_sha256": weights_digest(self.learner.adapter)}}
         prompt = apply_chat_template(self.processor, self.model.config, request["prompt"], num_images=1, enable_thinking=False)
         inputs = prepare_inputs(self.processor, images=request["images"], prompts=prompt,
                                 image_token_index=self.model.config.image_token_index)
@@ -228,6 +244,7 @@ class LearningWorker:
                 "trainable": self.evaluation_backup is None and (self.candidate_active() or not (self.directory / 'promotion-policy.json').exists()),
                 "read_only_evaluation": self.evaluation_backup is not None,
                 "selection": "categorical_as_live",
+                "controller_version": controller,
                 "choices": choices, "chosen": chosen, "labels": sample["labels"],
                 "old_log_probs": log_probs.tolist(), "feature_path": str(destination),
                 "adapter_applied_inside_qwen": True,
@@ -292,6 +309,8 @@ class LearningWorker:
         self.learner = candidate
         self.model.language_model.model.norm.adapter = candidate.adapter
         try:
+            if dataset.get('controllerVersion') == 2:
+                self.configure_candidate(2)
             if identity in candidate.metadata.get('search_datasets', []):
                 report = {'updated': False, 'reason': 'already_trained', 'version': candidate.metadata['version']}
             else:
@@ -315,10 +334,16 @@ class LearningWorker:
         for row in dataset['samples']:
             feature = self.learner.directory / 'features' / identity / f'{len(samples):03d}.npz'
             behavior = self.choose({'images': [str(path.parent / row['image'])], 'prompt': row['prompt'],
-                                    'choices': row['choices'], 'feature_path': str(feature)})['behavior']
+                                    'choices': row['choices'], 'feature_path': str(feature),
+                                    'controller_version': row.get('controllerVersion', 1)})['behavior']
             samples.append({**mx.load(str(feature)), 'labels': behavior['labels'], 'version': behavior['version'],
                             'old_log_probs': mx.array(behavior['old_log_probs']), 'search_target': row['target']})
-        return self.learner.distill_search(samples, identity, dataset['rulesID'])
+        report = self.learner.distill_search(samples, identity, dataset['rulesID'],epochs=dataset.get('trainingEpochs',1))
+        if report.get('updated') and dataset.get('controllerVersion') == 2:
+            atomic_json(self.learner.directory / 'actor-anchors.json', {'version':2,'samples':[
+                {'path':str(self.learner.directory/'features'/identity/f'{index:03d}.npz'),
+                 'labels':sample['labels'],'search_target':sample['search_target']} for index,sample in enumerate(samples)]})
+        return report
 
     def episode_samples(self, episode):
         directory = Path(episode).resolve()
@@ -408,7 +433,8 @@ class LearningWorker:
             feature_path = path.parent / 'features' / f"{observation['id']}.npz"
             prediction = self.choose({'images': [str(path.parent / observation['image'])],
                                       'prompt': observation['prompt'], 'choices': observation['choices'],
-                                      'feature_path': str(feature_path)})
+                                      'feature_path': str(feature_path),
+                                      'controller_version': self.learner.metadata.get('controller_version', 1)})
             behavior = prediction['behavior']
             samples.append({**mx.load(str(feature_path)), 'id': observation['id'],
                             'labels': behavior['labels'], 'version': behavior['version'],
@@ -457,6 +483,8 @@ def main():
                     result = worker.begin_candidate(request['directory'])
                 elif request['op'] == 'end_candidate':
                     result = worker.end_candidate()
+                elif request['op'] == 'configure_candidate':
+                    result = worker.configure_candidate(request['controller_version'])
                 elif request['op'] == 'promote':
                     result = worker.promote(request)
                 elif request["op"] == "observe":

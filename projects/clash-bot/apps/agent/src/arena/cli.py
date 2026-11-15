@@ -6,6 +6,7 @@ from pathlib import Path
 from . import balance
 from .league import run
 from .export import export
+from .curriculum import build
 from .storage import atomic_json, read_episode
 
 DATA = Path(__file__).resolve().parents[4] / '.data'
@@ -25,6 +26,10 @@ def main():
     commands.add_parser('status'); commands.add_parser('stop')
     exported = commands.add_parser('export'); exported.add_argument('--samples', type=int, default=8)
     rules = commands.add_parser('rules'); rules.add_argument('--stage-version')
+    curriculum = commands.add_parser('curriculum')
+    curriculum.add_argument('--positions',type=int,default=64)
+    curriculum.add_argument('--seed',type=int,default=1000)
+    curriculum.add_argument('--split',choices=['train','holdout'],default='train')
     args = parser.parse_args()
     control = DATA / 'arena/control'
     if args.command == 'start':
@@ -33,6 +38,10 @@ def main():
                 and 1 <= args.evaluate_every <= 100):
             parser.error('Invalid run bounds')
         result = run(DATA, args.hours, args.generations, args.games, args.simulations, args.depth, args.pairs, args.evaluate_every)
+    elif args.command == 'curriculum':
+        if not 1 <= args.positions <= 256:
+            parser.error('Generate 1..256 tactical positions per run')
+        result = build(DATA,args.positions,args.seed,args.split)
     elif args.command == 'export':
         if not 1 <= args.samples <= 16:
             parser.error('Export 1..16 positions per Qwen study batch')

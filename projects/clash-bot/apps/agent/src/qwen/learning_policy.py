@@ -114,11 +114,13 @@ class Learner:
     def log_probs(self, sample):
         return action_log_probs(self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows)
 
-    def distill_search(self, samples, dataset, rules_id):
+    def distill_search(self, samples, dataset, rules_id, epochs=1):
         if dataset in self.metadata.get('search_datasets', []):
             return {'updated': False, 'reason': 'already_trained', 'version': self.metadata['version']}
         if not 1 <= len(samples) <= 16:
             raise ValueError('Expected 1..16 search-supervised positions')
+        if type(epochs) is not int or not 1 <= epochs <= 4:
+            raise ValueError('Expected 1..4 explicit supervised epochs')
         for sample in samples:
             target = sample['search_target']
             if (sample['version'] != self.metadata['version'] or len(target) != len(sample['labels'])
@@ -136,7 +138,7 @@ class Learner:
                 self.adapter.update(tree_unflatten(list(before.items())))
                 self.optimizer.state = tree_unflatten(list(optimizer_before.items()))
                 self.optimizer.learning_rate = min(original_rate, 1e-5) * .25 ** attempt
-                for sample in samples:
+                for sample in samples * epochs:
                     loss, gradients = grad_fn(self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows)
                     flat = tree_flatten(gradients)
                     norm = mx.sqrt(sum(mx.sum(g*g) for _, g in flat))
@@ -158,6 +160,7 @@ class Learner:
                 report = {'updated': True, 'algorithm': 'soft_search_policy_distillation',
                           'source': 'local_simulation', 'rules_id': rules_id, 'dataset_sha256': dataset,
                           'version': self.metadata['version'] + 1, 'samples': len(samples),
+                          'epochs':epochs,'steps':len(samples)*epochs,
                           'before_sha256': before_hash, 'after_sha256': after_hash,
                           'cross_entropy_before': initial_loss, 'cross_entropy_after': final_loss,
                           'max_kl': max(kls), 'backtrack_attempts': attempt, 'requires_real_game_evaluation': True}
@@ -205,6 +208,18 @@ class Learner:
             self.optimizer.learning_rate = original_rate
 
     def _imitate_once(self, samples, dataset, learning_rate, original_rate, attempt):
+        anchor_file = self.directory / 'actor-anchors.json'
+        anchors = []
+        if self.metadata.get('controller_version',1) >= 2 and anchor_file.exists():
+            for row in json.loads(anchor_file.read_text())['samples']:
+                feature = Path(row['path']).resolve()
+                if not feature.is_relative_to(self.directory.resolve() / 'features'):
+                    raise ValueError('Actor anchor escaped the candidate directory')
+                sample = {**mx.load(str(feature)), 'labels':row['labels'],'search_target':row['search_target']}
+                sample['old_log_probs'] = mx.stop_gradient(self.log_probs(sample))
+                anchors.append(sample)
+        anchor_loss = lambda: sum(float((-mx.sum(mx.array(row['search_target'])*self.log_probs(row))).item()) for row in anchors)/max(1,len(anchors))
+        anchor_before = anchor_loss()
         before = {name: mx.array(value) for name, value in tree_flatten(self.adapter.trainable_parameters())}
         optimizer_before = {name: mx.array(value) for name, value in tree_flatten(self.optimizer.state)}
         before_hash = weights_digest(self.adapter)
@@ -228,6 +243,10 @@ class Learner:
             kls = [float(mx.sum(mx.exp(sample['old_log_probs']) * (sample['old_log_probs'] - self.log_probs(sample))).item())
                    for sample in samples]
             after_probabilities = [probability(sample) for sample in samples]
+            anchor_after = anchor_loss()
+            anchor_kl = max([float(mx.sum(mx.exp(row['old_log_probs'])*(row['old_log_probs']-self.log_probs(row))).item()) for row in anchors] or [0])
+            if anchors and (anchor_after > anchor_before + .001 or anchor_kl > .005):
+                raise KLExceeded('Opponent imitation degraded the actor tactical anchors')
             if (not all(math.isfinite(kl) for kl in kls) or max(kls) > 0.02
                     or sum(after_probabilities) <= sum(before_probabilities)):
                 raise KLExceeded('Imitation update exceeded KL limit or did not improve observed likelihood')
@@ -241,6 +260,8 @@ class Learner:
                       'mean_loss': sum(losses) / len(losses), 'max_kl': max(kls),
                       'probability_before': sum(before_probabilities) / len(samples),
                       'probability_after': sum(after_probabilities) / len(samples),
+                      'actor_anchor_samples':len(anchors),'actor_loss_before':anchor_before,
+                      'actor_loss_after':anchor_after,'actor_max_kl':anchor_kl,
                       'observations': [{'id': sample['id'], 'probability_before': before_probability,
                                         'probability_after': after_probability}
                                        for sample, before_probability, after_probability

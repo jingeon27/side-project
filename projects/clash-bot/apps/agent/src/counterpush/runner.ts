@@ -72,7 +72,7 @@ export async function runCounterpush(options: {
 }) {
   const { dataDir, model, signal } = options;
   const pairs = options.pairs ?? 16,
-    trainingMatches = options.trainingMatches ?? 2;
+    trainingMatches = options.trainingMatches ?? 8;
   if ((options.tabs ?? 1) !== 1)
     throw new Error(
       '현재 Counterpush 계정은 다른 탭의 게임이 시작되면 기존 경기를 닫습니다. --tabs 1로 실행하세요.',
@@ -205,7 +205,21 @@ export async function runCounterpush(options: {
       newCandidateDirectory: () => join(dataDir, 'arena/qwen/training', randomUUID()),
       newEvaluationFile: () =>
         join(control, 'evaluations', `${new Date().toISOString().replaceAll(':', '-')}-${randomUUID()}.json`),
-      begin: async (directory) => snapshot(await client.beginCandidate(directory)),
+      begin: async (directory) => {
+        await client.beginCandidate(directory);
+        const configured = await client.configureCandidate(2);
+        const base = Number(configured.warmup_base_datasets ?? 0);
+        for (const _ of [0, 1, 2, 3]) {
+          const current = await client.status();
+          if ((Array.isArray(current.search_datasets) ? current.search_datasets.length : 0) >= base + 4)
+            break;
+          await report({ phase: 'curriculum_warmup' });
+          const study = await studyNext(client, dataDir, undefined, 'candidate');
+          if (!study.updated) break;
+          await report({ searchStudy: study });
+        }
+        return snapshot(await client.status());
+      },
       restore: async () => {
         const current = await client.endCandidate();
         await report({ policy: current });
@@ -259,13 +273,14 @@ export async function runCounterpush(options: {
         const searchStudy = await studyNext(client, dataDir, undefined, 'candidate');
         await report({ searchStudy, candidatePolicy: await client.status() });
       },
-      evaluate: async (candidate, evaluationFile) =>
-        evaluateWithResources({
+      evaluate: async (candidate, evaluationFile) => {
+        const evaluation = await evaluateWithResources({
           ...options,
           client,
           vision,
           browser,
           pairs,
+          rejectFutile: true,
           candidate: candidate.checkpoint,
           file: evaluationFile,
           stopped,
@@ -280,7 +295,11 @@ export async function runCounterpush(options: {
               activeRole: 'heldout_evaluation',
               evaluationFile,
             }),
-        }),
+        });
+        // The raw report stays incomplete and cannot publish a model. A
+        // mathematically futile rejection can still return to training.
+        return { ...evaluation, complete: evaluation.complete || evaluation.rejectedEarly };
+      },
       promote: async (candidate, evaluationFile) => {
         const publication = await client.promote(candidate.checkpoint, evaluationFile);
         await appendFile(

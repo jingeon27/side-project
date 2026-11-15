@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import json
+from pathlib import Path
 
 import mlx.core as mx
 
@@ -7,6 +9,34 @@ from learning_policy import FinalMLPLoRA, Learner, weights_digest
 
 
 class LearningPolicyTest(unittest.TestCase):
+    def test_opponent_update_rolls_back_if_actor_tactical_anchor_is_degraded(self):
+        from unittest.mock import patch
+        from learning_policy import KLExceeded
+        with tempfile.TemporaryDirectory() as directory:
+            learner = self.make_learner(directory)
+            learner.metadata['controller_version'] = 2
+            sample = {**self.sample(learner), 'targets': [1], 'confidence': .95, 'id': 'opponent'}
+            feature = Path(directory) / 'features/anchor.npz'
+            feature.parent.mkdir()
+            mx.savez(str(feature), features=sample['features'], base=sample['base'])
+            (Path(directory) / 'actor-anchors.json').write_text(json.dumps({'samples': [
+                {'path': str(feature), 'labels': [0, 1, 2], 'search_target': [0, 1, 0]}]}))
+            original = weights_digest(learner.adapter)
+            real_log_probs = learner.log_probs
+            checks = []
+            def measured(row):
+                logp = real_log_probs(row)
+                if 'search_target' in row:
+                    checks.append(True)
+                    if len(checks) >= 3:
+                        return logp + mx.array([0., -50., 0.])
+                return logp
+            with patch.object(learner, 'log_probs', side_effect=measured):
+                with self.assertRaisesRegex(KLExceeded, 'actor tactical anchors'):
+                    learner._imitate_once([sample], 'opponent', 1e-5, 1e-5, 0)
+            self.assertEqual(weights_digest(learner.adapter), original)
+            self.assertEqual(learner.metadata['version'], 0)
+
     def make_learner(self, directory):
         mx.random.seed(7)
         return Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.random.normal((3, 8)), directory)

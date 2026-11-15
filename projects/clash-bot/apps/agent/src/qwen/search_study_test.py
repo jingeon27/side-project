@@ -13,6 +13,22 @@ import search_data_test as fixtures
 
 
 class IsolatedSearchStudyTest(unittest.TestCase):
+    def test_controller_configuration_requires_private_training_and_does_not_change_champion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            worker = self.worker(directory)
+            before = worker.status()
+            pointer = (worker.directory / 'current.json').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'private'):
+                worker.configure_candidate(2)
+            worker.begin_candidate(worker.directory.parents[1] / 'arena/qwen/training/new')
+            configured = worker.configure_candidate(2)
+            self.assertEqual(configured['controller_version'], 2)
+            self.assertEqual(configured['champion_sha256'], before['weights_sha256'])
+            self.assertEqual(worker.configure_candidate(2)['version'], configured['version'])
+            worker.end_candidate()
+            self.assertEqual((worker.directory / 'current.json').read_bytes(), pointer)
+            self.assertNotIn('controller_version', worker.status())
+
     def worker(self, directory):
         root = Path(directory) / 'data/qwen/learning'
         learner = Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.random.normal((3, 8)), root)

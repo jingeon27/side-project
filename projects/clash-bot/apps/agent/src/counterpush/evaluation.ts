@@ -98,6 +98,7 @@ export async function frozenComparison(options: {
   alpha?: number;
   method?: EvaluationMethod;
   existingGames?: EvaluatedGame[];
+  rejectFutile?: boolean;
 }) {
   const games: EvaluatedGame[] = [...(options.existingGames ?? [])];
   const method = options.method ?? 'paired_exact_wins_v1';
@@ -114,6 +115,16 @@ export async function frozenComparison(options: {
       throw new Error('평가 재개 기록의 순서 또는 승패가 맞지 않습니다.');
   }
   const scores: number[] = [];
+  const cannotQualify = () =>
+    Boolean(options.rejectFutile) &&
+    scores.length > 0 &&
+    games.length === scores.length * 2 &&
+    options.pairs >= 16 &&
+    !realEvaluationGate(
+      [...scores, ...Array<number>(options.pairs - scores.length).fill(1)],
+      options.alpha,
+      method,
+    ).passed;
   for (const pair of Array.from({ length: options.pairs }, (_, index) => index)) {
     for (const variant of orderOf(pair)) {
       if (games.some((game) => game.pair === pair && game.variant === variant)) continue;
@@ -138,20 +149,31 @@ export async function frozenComparison(options: {
           block.find((game) => game.variant === 'baseline')!.score) /
           2,
     );
+    // Rejection only: even winning every remaining pair could not pass the
+    // original full-sample gate. Never accept early or recycle its alpha.
+    if (cannotQualify()) break;
   }
   const complete = scores.length === options.pairs;
+  const rejectedEarly = !complete && cannotQualify();
   const gate = realEvaluationGate(scores, options.alpha, method);
   return {
     format: 'counterpush-frozen-ab-evaluation-v1',
     games,
     pairs: scores,
     complete,
+    rejectedEarly,
     sameEnvironmentSeed: false,
     order: 'AB_BA_blocks',
     trainingDuringEvaluation: false,
     selection: 'categorical_as_live',
     method,
-    gate: complete ? gate : { ...gate, passed: false, reason: 'interrupted_evaluation' },
+    gate: complete
+      ? gate
+      : {
+          ...gate,
+          passed: false,
+          reason: rejectedEarly ? 'cannot_qualify_with_remaining_pairs' : 'interrupted_evaluation',
+        },
     promoted: false,
   };
 }
@@ -166,6 +188,7 @@ type Trial = {
   games: EvaluatedGame[];
   minimumPairs?: number;
   method?: EvaluationMethod;
+  futilityStopping?: boolean;
 };
 
 export async function evaluateWithResources(options: {
@@ -181,6 +204,7 @@ export async function evaluateWithResources(options: {
   stopped: () => Promise<boolean>;
   report: (state: Record<string, unknown>) => Promise<void>;
   onGame?: () => void;
+  rejectFutile?: boolean;
 }) {
   const { dataDir, client } = options;
   const baseline = await client.status();
@@ -244,6 +268,7 @@ export async function evaluateWithResources(options: {
         requestedPairs,
         minimumPairs: options.pairs,
         method,
+        futilityStopping: options.rejectFutile ?? false,
         alphaSpendingAttempt: index,
         alpha,
         baseline,
@@ -264,6 +289,7 @@ export async function evaluateWithResources(options: {
     method: trial.method ?? 'hoeffding_score',
     alpha: trial.alpha,
     existingGames: trial.games,
+    rejectFutile: trial.futilityStopping ?? false,
     stopped: options.stopped,
     play: async (variant, pair) => {
       const checkpoint = variant === 'baseline' ? String(baseline.checkpoint) : options.candidate;

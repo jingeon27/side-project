@@ -72,6 +72,16 @@ def fixture(directory, tied=False, wins=16, method='hoeffding_score'):
 
 
 class QualifiedPromotionTest(unittest.TestCase):
+    def test_raw_games_cannot_claim_another_decision_controller(self):
+        with tempfile.TemporaryDirectory() as directory:
+            worker, checkpoint, path, report = fixture(directory)
+            game = Path(report['games'][0]['directory']) / 'events.jsonl'
+            rows = [json.loads(line) for line in game.read_text().splitlines()]
+            rows[0]['controllerVersion'] = 2
+            game.write_text('\n'.join(json.dumps(row) for row in rows))
+            with self.assertRaisesRegex(ValueError, 'controller'):
+                worker.promote({'checkpoint': str(checkpoint), 'report': str(path)})
+
     def test_exact_win_assessment_is_recomputed_and_its_preregistered_method_cannot_change(self):
         for wins in (5, 6):
             with self.subTest(wins=wins), tempfile.TemporaryDirectory() as directory:
