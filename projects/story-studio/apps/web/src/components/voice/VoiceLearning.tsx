@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,8 @@ import {
   voiceSampleSchema,
   type TVoiceRun,
 } from '../../lib/voice-training';
+import { MicrophoneRecorder } from './microphone-recorder';
+import { RecordingControls, VoiceRecorder } from './VoiceRecorder';
 
 const uploadSchema = z.object({
   samples: z
@@ -36,6 +38,8 @@ const uploadSchema = z.object({
 const learningSchema = voiceRunInputSchema.required();
 
 export function VoiceLearning({ id }: { id: string }) {
+  const [recorder] = useState(() => new MicrophoneRecorder());
+  const recording = useSyncExternalStore(recorder.subscribe, recorder.getSnapshot, recorder.getSnapshot);
   const client = useQueryClient();
   const detail = useQuery({
     ...voiceDetailQuery(id),
@@ -113,7 +117,7 @@ export function VoiceLearning({ id }: { id: string }) {
     if (run?.status === 'SUCCEEDED') void client.invalidateQueries({ queryKey: voiceCatalogQuery.queryKey });
   }, [client, run?.id, run?.status]);
   const pending = upload.isPending || remove.isPending || train.isPending || control.isPending;
-  const locked = Boolean(active || pending);
+  const locked = Boolean(active || pending || recording.phase !== 'idle');
   const unsaved = clips.fields.length > 0;
   const handleFilesChange = (files: FileList | null) => {
     if (!files) return;
@@ -189,6 +193,14 @@ export function VoiceLearning({ id }: { id: string }) {
               ))}
               {remove.error && <p role="alert">{remove.error.message}</p>}
             </section>
+            <VoiceRecorder
+              recorder={recorder}
+              disabled={Boolean(active || pending || detail.data.samples.length + clips.fields.length >= 50)}
+              onRecorded={(file) => {
+                clips.append({ clipId: crypto.randomUUID(), file, transcript: '' });
+                uploadForm.clearErrors('root.files');
+              }}
+            />
             <form id="voice-upload" onSubmit={uploadForm.handleSubmit((input) => upload.mutate(input))}>
               <fieldset disabled={locked} className="voice-upload-fields">
                 <label className="voice-file-picker">
@@ -278,7 +290,10 @@ export function VoiceLearning({ id }: { id: string }) {
       {detail.data && (
         <div className="voice-action-bar">
           <div>
-            {match({ unsaved, run })
+            {match({ unsaved, run, recording })
+              .with({ recording: { phase: P.union('requesting', 'recording', 'processing') } }, () => (
+                <RecordingControls recorder={recorder} />
+              ))
               .with({ unsaved: true }, () => (
                 <>
                   <span>선택한 녹음 {clips.fields.length}개</span>
@@ -309,7 +324,7 @@ export function VoiceLearning({ id }: { id: string }) {
                   {run && ['FAILED', 'CANCELLED'].includes(run.status) && run.checkpoint && (
                     <button
                       className="button secondary"
-                      disabled={pending || !detail.data?.trainingReady}
+                      disabled={locked || !detail.data?.trainingReady}
                       onClick={() => control.mutate({ runId: run.id, action: 'resume' })}
                     >
                       이어서 학습
@@ -318,9 +333,7 @@ export function VoiceLearning({ id }: { id: string }) {
                   <button
                     className="button primary"
                     form="voice-train"
-                    disabled={
-                      pending || !detail.data?.trainingReady || (detail.data?.samples.length ?? 0) < 2
-                    }
+                    disabled={locked || !detail.data?.trainingReady || (detail.data?.samples.length ?? 0) < 2}
                   >
                     {train.isPending ? '학습을 시작하는 중' : '새 학습 시작'}
                   </button>
