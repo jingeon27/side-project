@@ -11,6 +11,9 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
     canvas.width = 160;
     canvas.height = 90;
     const context = canvas.getContext('2d')!;
+    // The recording fixture must contain a painted frame before its stream starts.
+    context.fillStyle = '#5d8590';
+    context.fillRect(0, 0, 160, 90);
     const stream = canvas.captureStream(15);
     const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
     const chunks: Blob[] = [];
@@ -63,6 +66,8 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
   const metadata = await page.evaluate(
     async ({ value, type }) => {
       const element = document.createElement('video');
+      element.muted = true;
+      element.playsInline = true;
       const loaded = new Promise<{
         width: number;
         height: number;
@@ -70,16 +75,22 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
         pixel: number[];
         captionPixels: number;
       }>((resolve, reject) => {
-        element.onloadeddata = () => {
-          element.onloadeddata = null;
-          element.currentTime = 0.3;
+        element.onloadeddata = async () => {
+          try {
+            await element.play();
+          } catch {
+            reject(new Error('합본 재생 시작 실패'));
+          }
         };
-        element.onseeked = () => {
+        // loadeddata/seeked can fire before drawImage can read the decoded surface.
+        // Sample an actual presented frame instead of seeking to an arbitrary time.
+        element.requestVideoFrameCallback(() => {
           const canvas = document.createElement('canvas');
           canvas.width = element.videoWidth;
           canvas.height = element.videoHeight;
           const context = canvas.getContext('2d')!;
           context.drawImage(element, 0, 0);
+          element.pause();
           const pixels = context.getImageData(0, 520, canvas.width, 180).data;
           const captionPixels = Array.from({ length: pixels.length / 4 }, (_, index) => index * 4).filter(
             (index) => pixels[index]! > 210 && pixels[index + 1]! > 210 && pixels[index + 2]! > 210,
@@ -91,7 +102,7 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
             pixel: Array.from(context.getImageData(100, 100, 1, 1).data).slice(0, 3),
             captionPixels,
           });
-        };
+        });
         element.onerror = () => reject(new Error('합본 재생 실패'));
       });
       element.src = `data:${type};base64,${value}`;
@@ -99,10 +110,10 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
     },
     { value: video, type: download.suggestedFilename().endsWith('.mp4') ? 'video/mp4' : 'video/webm' },
   );
+  await writeFile(testInfo.outputPath('합본-첫-장면.png'), Buffer.from(metadata.frame, 'base64'));
+  await download.saveAs(testInfo.outputPath(download.suggestedFilename()));
   expect({ width: metadata.width, height: metadata.height }).toEqual({ width: 1280, height: 720 });
   expect(metadata.pixel[0]).toBeGreaterThan(60);
   expect(metadata.captionPixels).toBeGreaterThan(50);
-  await writeFile(testInfo.outputPath('합본-첫-장면.png'), Buffer.from(metadata.frame, 'base64'));
-  await download.saveAs(testInfo.outputPath(download.suggestedFilename()));
   expect(errors).toEqual([]);
 });
