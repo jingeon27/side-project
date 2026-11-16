@@ -370,7 +370,17 @@ export async function runCounterpush(options: {
         await atomicWrite(file, JSON.stringify(current, null, 2) + '\n');
         const progress = goal ? goalProgress(goal, current) : null;
         if (progress) await atomicWrite(goalFile, JSON.stringify(progress, null, 2) + '\n');
+        // 상태 파일을 먼저 쓴 뒤, 진행 중인 트로피 경기가 끝날 때까지 후보 공유를 닫는 단계 보고를 미룬다.
+        if (
+          status.phase === 'candidate_training' &&
+          current.phase !== 'candidate_training' &&
+          resources.shared?.activeMatch()
+        ) {
+          await report({ waitingFor: 'trophy_match' });
+          await resources.shared.matchFinished(signal);
+        }
         await report({
+          waitingFor: null,
           phase: current.phase,
           champion: current.champion,
           candidate: current.candidate,

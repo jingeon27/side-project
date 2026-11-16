@@ -62,72 +62,85 @@ export async function runTrophy(options: {
     await report({});
     while (!(await stopped())) {
       await report({ phase: 'waiting_model' });
-      const policy = await client.policy().catch(async (error: NodeJS.ErrnoException) => {
+      // 경기 임대를 여는 동안 Counterpush는 후보 공유를 닫는 학습·평가 단계로 넘어가지 않는다.
+      const match = await client.beginMatch().catch(async (error: NodeJS.ErrnoException) => {
         if (!['ENOENT', 'ECONNREFUSED', 'ECONNRESET'].includes(error.code ?? '')) throw error;
         await report({ stopReason: 'model_owner_unavailable' });
         return undefined;
       });
-      if (policy === undefined) break;
-      if (!policy) {
+      if (match === undefined) break;
+      if (!match) {
         await delay(1000, undefined, { signal });
         continue;
       }
-      const disk = await statfs(dataDir);
-      if (disk.bavail * disk.bsize < 8 * 1024 ** 3) throw new Error('남은 디스크가 8GB 미만입니다.');
-      const directory = join(dataDir, 'trophy/runs', new Date().toISOString().replaceAll(':', '-'));
-      await atomicWrite(
-        join(directory, 'qualification.json'),
-        JSON.stringify({
-          role: 'trophy_observation',
-          usedForTraining: false,
-          usedForQualification: false,
+      const policy = match.policy;
+      try {
+        const disk = await statfs(dataDir);
+        if (disk.bavail * disk.bsize < 8 * 1024 ** 3) throw new Error('남은 디스크가 8GB 미만입니다.');
+        const directory = join(dataDir, 'trophy/runs', new Date().toISOString().replaceAll(':', '-'));
+        await atomicWrite(
+          join(directory, 'qualification.json'),
+          JSON.stringify({
+            role: 'trophy_observation',
+            usedForTraining: false,
+            usedForQualification: false,
+            policy,
+          }) + '\n',
+        );
+        await report({
+          phase: 'playing',
+          directory,
           policy,
-        }) + '\n',
-      );
-      await report({
-        phase: 'playing',
-        directory,
-        policy,
-        progress: { frames: 0, actions: 0, confirmed: 0 },
-      });
-      const episode = await runQwen({
-        device,
-        profile,
-        dataDir,
-        signal,
-        client: {
-          ready: async () => {},
-          infer: async () => {
-            throw new Error('공유 모델은 대전 판단만 지원합니다.');
+          progress: { frames: 0, actions: 0, confirmed: 0 },
+        });
+        const episode = await runQwen({
+          device,
+          profile,
+          dataDir,
+          signal,
+          client: {
+            ready: async () => {},
+            infer: async () => {
+              throw new Error('공유 모델은 대전 판단만 지원합니다.');
+            },
           },
-        },
-        seconds: 600,
-        maxActions: 200,
-        live: true,
-        startMatch: true,
-        runDirectory: directory,
-        maxDecisionMs: 1000,
-        readOnlyDecisions: true,
-        decisionPrompt: (cards, elixir, actions, threats) =>
-          trophyPrompt(profile, cards, elixir, actions, threats),
-        decision: (request) => client.choose(request, policy.checkpoint),
-        onProgress: (progress) => report({ progress }),
-      });
-      if (!episode || !['win', 'loss', 'draw'].includes(episode.result))
-        throw new Error('트로피 경기 결과를 확인하지 못해 다음 매칭을 중단했습니다.');
-      state.completed++;
-      state.actions += episode.actions;
-      state.confirmed += episode.confirmed;
-      if (episode.result === 'win') state.wins++;
-      if (episode.result === 'loss') state.losses++;
-      if (episode.result === 'draw') state.draws++;
-      await appendFile(
-        join(control, 'matches.jsonl'),
-        JSON.stringify({ ...episode, policy, learning: false, at: new Date().toISOString() }) + '\n',
-        { mode: 0o600 },
-      );
-      await report({ phase: 'returning', lastResult: episode.result });
-      await returnToLobby(device, profile, dataDir, signal);
+          seconds: 600,
+          maxActions: 200,
+          live: true,
+          startMatch: true,
+          runDirectory: directory,
+          maxDecisionMs: 1000,
+          readOnlyDecisions: true,
+          decisionPrompt: (cards, elixir, actions, threats) =>
+            trophyPrompt(profile, cards, elixir, actions, threats),
+          decision: (request) => client.choose(request, policy.checkpoint),
+          onProgress: (progress) => report({ progress }),
+        });
+        if (!episode || !['win', 'loss', 'draw'].includes(episode.result))
+          throw new Error('트로피 경기 결과를 확인하지 못해 다음 매칭을 중단했습니다.');
+        state.completed++;
+        state.actions += episode.actions;
+        state.confirmed += episode.confirmed;
+        if (episode.result === 'win') state.wins++;
+        if (episode.result === 'loss') state.losses++;
+        if (episode.result === 'draw') state.draws++;
+        await appendFile(
+          join(control, 'matches.jsonl'),
+          JSON.stringify({ ...episode, policy, learning: false, at: new Date().toISOString() }) + '\n',
+          { mode: 0o600 },
+        );
+        await report({ phase: 'returning', lastResult: episode.result });
+        await returnToLobby(device, profile, dataDir, signal);
+      } finally {
+        // 모델 소유자가 없거나 응답이 늦어 닫지 못한 임대는 만료 시간이 지나면 풀린다.
+        await client.endMatch(match.id).catch((error: NodeJS.ErrnoException) => {
+          if (
+            !['ENOENT', 'ECONNREFUSED', 'ECONNRESET'].includes(error.code ?? '') &&
+            error.message !== 'Shared model decision deadline'
+          )
+            throw error;
+        });
+      }
     }
     await report({ phase: 'stopped' });
   } catch (error) {
