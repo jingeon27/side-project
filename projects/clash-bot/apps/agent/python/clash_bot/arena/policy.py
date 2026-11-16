@@ -101,7 +101,7 @@ class Policy:
         from mlx.utils import tree_flatten
 
         mx.set_default_device(mx.cpu)
-        hidden, attention = SPEC["hidden"], SPEC["attention"]
+        hidden, attention = SPEC.hidden, SPEC.attention
 
         class Network(nn.Module):
             def __init__(self):
