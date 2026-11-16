@@ -69,7 +69,7 @@ yarn workspace @side/clash-bot check
 
 실모델 검사는 따로 선택한다. `test:learning`, `test:arena`, `test:perception`은 설치된 실행 환경을 사용한다. `test:learning:model`, `test:perception:model`, `test:arena:model`은 각각 실제 Qwen·CPU 인식·병렬 전투를 명시적으로 검사한다. 이 검사·예열 경기는 학습 목표에 더하지 않는다.
 
-작업 공간을 옮길 때 `CLASH_BOT_DATA_DIR`로 기존 데이터 경로를, `CLASH_BOT_PYTHON`으로 기존 Python 실행 파일을 명시할 수 있다. Node와 Python이 같은 설정을 사용한다. `.data/active-runtime.json`이 있으면 기존 프로세스의 소유 위치부터 확인하며 중복 학습기를 띄우지 않는다.
+작업 공간을 옮길 때 `CLASH_BOT_DATA_DIR`로 기존 데이터 경로를, `CLASH_BOT_PYTHON`으로 기존 Python 실행 파일을 명시할 수 있다. Node(`src/shared/python.ts`)와 Python setup(`clash_bot.paths.QWEN_PYTHON`)이 같은 규칙을 사용한다. 중복 실행은 같은 데이터 경로 안에서만 막는다. 학습기는 `qwen/selfplay/lock.json`, 자가대국은 `arena/control/lock.json`을 쓰며, `qwen:setup`·`arena:setup`·`counterpush:setup`은 둘 중 하나가 실행 중이면 환경을 바꾸지 않는다. 서로 다른 데이터 경로를 쓰는 작업 공간끼리는 확인하지 않는다.
 
 재개는 `evolution.json`, `candidate-learning.json`, `candidate-rehearsal.json`, `training-goal.json`이 담당한다. 구조 변경으로 학습 목표를 초기화하거나 기존 가중치를 덮어쓰지 않는다. 새 판단 계약이 필요할 때만 controller 버전을 올리고 실제 평가로 채택한다.
 

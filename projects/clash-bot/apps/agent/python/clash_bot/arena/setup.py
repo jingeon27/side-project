@@ -8,18 +8,21 @@ import sys
 import tarfile
 import urllib.request
 
-from clash_bot.paths import CONTRACTS_DIR, DATA_DIR
+from clash_bot.downloads import download
+from clash_bot.paths import CONTRACTS_DIR, DATA_DIR, QWEN_PYTHON
+from clash_bot.runtime_guard import refuse_while_running
 
 
 def main():
     spec = json.loads((CONTRACTS_DIR / "arena.json").read_text())
     if sys.platform != "darwin" or platform.machine() != "arm64":
         raise RuntimeError("The pinned engine wheel currently supports Apple Silicon macOS.")
-    python = DATA_DIR / "qwen/.venv/bin/python"
+    python = QWEN_PYTHON
     if not python.exists():
         raise RuntimeError(
             "Run qwen:setup first; the local arena uses the project Python environment."
         )
+    refuse_while_running("자가대국 엔진을 준비")
     metadata = json.load(
         urllib.request.urlopen(
             f"https://pypi.org/pypi/royalesim/{spec['version']}/json", timeout=20
@@ -30,16 +33,13 @@ def main():
         raise ValueError("Pinned wheel identity changed")
     path = DATA_DIR / "arena/vendor" / spec["wheel"]
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        path.write_bytes(urllib.request.urlopen(asset["url"], timeout=30).read())
-    if hashlib.sha256(path.read_bytes()).hexdigest() != spec["sha256"]:
-        raise ValueError("Local engine wheel checksum mismatch")
+    # A partial earlier download is replaced instead of failing its checksum on every run.
+    download(asset["url"], path, spec["sha256"], asset["size"])
     source_asset = next(row for row in metadata["urls"] if row["filename"].endswith(".tar.gz"))
+    if source_asset["digests"]["sha256"] != spec["sourceSHA256"]:
+        raise ValueError("Pinned engine source identity changed")
     source = path.parent / source_asset["filename"]
-    if not source.exists():
-        source.write_bytes(urllib.request.urlopen(source_asset["url"], timeout=30).read())
-    if hashlib.sha256(source.read_bytes()).hexdigest() != spec["sourceSHA256"]:
-        raise ValueError("Engine source archive checksum mismatch")
+    download(source_asset["url"], source, spec["sourceSHA256"], source_asset["size"])
     with tarfile.open(source) as archive:
         name = f"royalesim-{spec['version']}/data/derived/{spec['tableFile']}"
         table = archive.extractfile(name).read()

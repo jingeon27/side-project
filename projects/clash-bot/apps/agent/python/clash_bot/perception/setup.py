@@ -1,14 +1,13 @@
 """Reproducible, project-local CPU perception setup. No account data is copied."""
 
 import argparse
-import hashlib
 import json
-import os
 import shutil
 import subprocess
-import urllib.request
 
-from clash_bot.paths import ASSETS_DIR, DATA_DIR, PROJECT_DIR, REQUIREMENTS_DIR
+from clash_bot.downloads import digest, download
+from clash_bot.paths import ASSETS_DIR, DATA_DIR, PROJECT_DIR, QWEN_PYTHON, REQUIREMENTS_DIR
+from clash_bot.runtime_guard import refuse_while_running
 
 DATA = DATA_DIR
 CROP = {
@@ -21,48 +20,16 @@ CROP = {
 PROPOSAL_SHA = "4cf422370650b1d18647cffc05e02bf75fdc2fbdb1f8ef983f4b8d6f8ea908b3"
 
 
-def digest(path):
-    with path.open("rb") as handle:
-        return hashlib.file_digest(handle, "sha256").hexdigest()
-
-
-def download(url, target, expected, size):
-    if target.exists() and target.stat().st_size == size and digest(target) == expected:
-        return
-    temporary = target.with_suffix(target.suffix + ".download")
-    try:
-        with urllib.request.urlopen(url, timeout=30) as response, temporary.open("wb") as output:
-            total = 0
-            while chunk := response.read(1024 * 1024):
-                total += len(chunk)
-                if total > size:
-                    raise ValueError("Unexpected model size")
-                output.write(chunk)
-        if total != size or digest(temporary) != expected:
-            raise ValueError("Model checksum mismatch: " + target.name)
-        temporary.replace(target)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
 def main():
     args = argparse.ArgumentParser()
     args.add_argument("--verify-only", action="store_true")
     options = args.parse_args()
     directory = DATA / "counterpush/detector"
-    python = DATA / "qwen/.venv/bin/python"
+    python = QWEN_PYTHON
     if not python.exists():
         raise SystemExit("먼저 yarn workspace @side/clash-bot qwen:setup 을 실행해주세요.")
-    lock = DATA / "qwen/selfplay/lock.json"
-    if lock.exists() and not options.verify_only:
-        owner = json.loads(lock.read_text())
-        try:
-            os.kill(owner["pid"], 0)
-        except ProcessLookupError:
-            pass
-        else:
-            raise SystemExit("실행 중인 봇을 stop으로 종료한 뒤 인식 모델을 준비해주세요.")
     if not options.verify_only:
+        refuse_while_running("인식 모델을 준비")
         directory.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             [str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS_DIR / "perception.lock")],

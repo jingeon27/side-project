@@ -4,7 +4,8 @@ import subprocess
 import sys
 import venv
 
-from clash_bot.paths import DATA_DIR, REQUIREMENTS_DIR
+from clash_bot.paths import DATA_DIR, DEFAULT_QWEN_PYTHON, QWEN_PYTHON, REQUIREMENTS_DIR
+from clash_bot.runtime_guard import refuse_while_running
 
 from .model_specs import DEFAULT_MODEL, MODELS
 
@@ -15,12 +16,14 @@ def main():
     choice = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MODEL
     if choice not in MODELS:
         raise SystemExit("모델은 2b, 4b 또는 3.8-27b입니다.")
+    refuse_while_running("Qwen 환경과 모델을 준비")
     root = DATA_DIR / "qwen"
     root.mkdir(parents=True, exist_ok=True)
-    environment = root / ".venv"
-    python = environment / "bin/python"
+    python = QWEN_PYTHON
     if not python.exists():
-        venv.EnvBuilder(with_pip=True).create(environment)
+        if python != DEFAULT_QWEN_PYTHON:
+            raise SystemExit("CLASH_BOT_PYTHON이 가리키는 Python이 없습니다.")
+        venv.EnvBuilder(with_pip=True).create(root / ".venv")
     subprocess.run(
         [str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS_DIR / "qwen.lock")], check=True
     )
