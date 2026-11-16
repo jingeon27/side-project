@@ -72,7 +72,7 @@ async function battleScreen(profile: Profile, screen: Screen) {
     .toBuffer();
 }
 
-type Decision = { pick: 'wait' | 'ability' | CardId; elapsedMs?: number; show?: string };
+type Decision = { pick: 'wait' | 'ability' | CardId; elapsedMs?: number; show?: string; delayMs?: number };
 type Scenario = {
   controllerVersion: 1 | 3;
   screens: Record<string, Screen>;
@@ -98,6 +98,8 @@ function scenarioMatch(profile: Profile, scenario: Scenario) {
     plays: [] as Array<{ slot: number; target: Point }>,
     abilities: 0,
     requests: [] as LearningDecisionRequest[],
+    pendingDecision: false,
+    scansWhileDeciding: 0,
   };
   const afterInput = (screen: string | undefined) => {
     if (screen) match.screen = screen;
@@ -129,7 +131,10 @@ function scenarioMatch(profile: Profile, scenario: Scenario) {
     screenshot: async (path: string) => writeFile(path, 'result'),
   } as unknown as CounterpushBrowser;
   const vision = {
-    scan: async () => EMPTY_SCAN,
+    scan: async () => {
+      if (match.pendingDecision) match.scansWhileDeciding++;
+      return EMPTY_SCAN;
+    },
     absent: async () => ({ absent: false }),
     guard: async () => ({ graveyardPresence: [0, 0] }),
   } as unknown as CounterpushVisionClient;
@@ -149,6 +154,9 @@ function scenarioMatch(profile: Profile, scenario: Scenario) {
     choose: async (request: LearningDecisionRequest) => {
       match.requests.push(request);
       const decision = scenario.decisions[match.requests.length - 1];
+      match.pendingDecision = true;
+      if (decision?.delayMs) await new Promise((resolve) => setTimeout(resolve, decision.delayMs));
+      match.pendingDecision = false;
       if (!decision) match.capturesUntilResult = 1;
       if (decision?.show) match.screen = decision.show;
       return {
@@ -203,6 +211,16 @@ it('reads the synthetic screens like a real battle', async () => {
   );
   expect(counterpushElixir(reading, profile).value).toBe(7);
   expect(reading.elixirConfidence).toBeGreaterThanOrEqual(0.9);
+});
+
+it('keeps public-field perception running while controller 3 waits for a model decision', async () => {
+  const played = await play({
+    controllerVersion: 3,
+    screens: { start: { hand: START, elixir: 7 } },
+    decisions: [{ pick: 'wait', delayMs: 650 }],
+  });
+  expect(played.fake.match.scansWhileDeciding).toBeGreaterThan(0);
+  expect(played.outcome.result).toBe('loss');
 });
 
 describe.each([

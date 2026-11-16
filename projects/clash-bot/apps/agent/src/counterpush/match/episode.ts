@@ -34,7 +34,9 @@ async function decide(context: InputContext, controller: Controller, request: De
       prediction.done = true;
     });
   while (controller.tracksWhileDeciding && !prediction.done && (await context.browser.phase()) === 'battle') {
-    await delay(350, undefined, { signal: context.signal });
+    // A completed prediction wakes immediately instead of waiting for another
+    // 350ms polling interval. Perception never owns the action choice.
+    await Promise.race([pending, delay(350, undefined, { signal: context.signal })]);
     if (!prediction.done) await context.sensor.capture();
   }
   await pending;

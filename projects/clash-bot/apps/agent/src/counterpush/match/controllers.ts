@@ -100,7 +100,9 @@ export function qwenController(version: ControllerVersion, client: LearningClien
       prompt: (input, candidates) =>
         decisionPrompt(input.profile, input.cards, input.elixir, candidates, input.situation),
       choose,
-      tracksWhileDeciding: false,
+      // Keep observing public plays while the GPU scores actions. Otherwise
+      // short-lived spawns disappear from opponent mana/cycle and imitation.
+      tracksWhileDeciding: true,
       deadlineMs: 1000,
       latestFrame: (sensor, before) => sensor.recheck(before),
       newGraveyard: graveyardPixelsAppeared,
