@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { analyze, loadCounterpushTemplates } from '../../android/perception/vision.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type CardId, type Point, type Profile } from '../../shared/config.ts';
+import { inside } from '../../shared/paths.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
 import { FieldDynamics } from '../domain/field-dynamics.ts';
 import { counterpushBarReading, counterpushElixir } from '../perception/elixir.ts';
@@ -32,9 +33,7 @@ export async function reprocessEpisode(
   directory: string,
   profile: Profile,
 ) {
-  const root = resolve(dataDir, 'counterpush/runs');
-  const location = relative(root, resolve(directory));
-  if (!location || location.startsWith('../..') || resolve(root, location) !== resolve(directory))
+  if (!inside(resolve(dataDir, 'counterpush/runs'), resolve(directory)))
     throw new Error('Counterpush 경기 기록 폴더가 필요합니다.');
   const summary = JSON.parse(await readFile(join(directory, 'summary.json'), 'utf8'));
   if (!summary.seenBattle || !['win', 'loss', 'draw'].includes(summary.result))

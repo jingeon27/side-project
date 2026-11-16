@@ -133,7 +133,7 @@ export class AdbDevice {
       .some(
         (line) =>
           /mCurrentFocus=/.test(line) &&
-          new RegExp(`(?:^|\\s)${GAME_PACKAGE.replaceAll('../..', '\\.')}\/`).test(line),
+          new RegExp(`(?:^|\\s)${GAME_PACKAGE.replaceAll('.', '\\.')}\/`).test(line),
       );
   }
 

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, realpath } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import sharp from 'sharp';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { policyContext } from '../../game/context.ts';
 import { ABILITY_RULES } from '../../game/knowledge.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { cardIdSchema, HEIGHT, WIDTH, type CardId } from '../../shared/config.ts';
+import { inside } from '../../shared/paths.ts';
 import { battleSituationSchema, type BattleSituation } from '../domain/battle-state.ts';
 
 export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1';
@@ -173,9 +174,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
   const root = await realpath(dirname(observationsPath));
   const readFrame = async (path: string) => {
     const full = await realpath(resolve(root, path));
-    const local = relative(root, full);
-    if (isAbsolute(local) || local.startsWith('../../..'))
-      throw new Error('관찰 폴더 밖의 이미지는 허용하지 않습니다.');
+    if (!inside(root, full)) throw new Error('관찰 폴더 밖의 이미지는 허용하지 않습니다.');
     const bytes = await readFile(full);
     const metadata = await sharp(bytes, { limitInputPixels: 16_000_000 }).metadata();
     if (

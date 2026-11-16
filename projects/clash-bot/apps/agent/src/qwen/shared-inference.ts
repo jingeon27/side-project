@@ -2,11 +2,12 @@ import { createHash, randomUUID } from 'node:crypto';
 import { chmod, mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import { z } from 'zod';
 
 import { atomicWrite } from '../shared/assets.ts';
+import { inside } from '../shared/paths.ts';
 import type { DecisionOutput, LearningClient, LearningDecisionRequest } from './learning-client.ts';
 
 export type SharedPolicy = { checkpoint: string; version: number; weightsSHA256: string };
@@ -32,12 +33,6 @@ const payloadSchema = z
       .max(26),
   })
   .strict();
-const inside = (root: string, path: string) => {
-  const difference = relative(root, path);
-  return (
-    difference !== '' && !isAbsolute(difference) && difference !== '..' && !difference.startsWith('..' + sep)
-  );
-};
 
 export async function startSharedInference(options: {
   dataDir: string;
