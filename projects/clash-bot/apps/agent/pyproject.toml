@@ -3,6 +3,7 @@ name = "clash-bot-python"
 version = "0.0.0"
 requires-python = ">=3.11"
 dependencies = [
+  "more-itertools==11.2.1",
   "numpy==2.4.6",
   "pydantic==2.14.3",
   "scipy==1.17.1",

@@ -1,4 +1,5 @@
 annotated-types==0.8.0
+more-itertools==11.2.1
 numpy==2.4.6
 pydantic==2.14.3
 pydantic_core==2.50.4
