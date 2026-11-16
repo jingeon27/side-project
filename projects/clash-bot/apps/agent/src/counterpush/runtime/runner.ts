@@ -20,7 +20,7 @@ import {
   type EvolutionState,
   type PolicySnapshot,
 } from '../learning/qualified-loop.ts';
-import { goalProgress, trainingGoal, type TrainingGoal } from '../learning/training-goal.ts';
+import { goalProgress, resumeTrainingGoal, type TrainingGoal } from '../learning/training-goal.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { CounterpushBrowser } from './browser.ts';
 import { playCounterpushEpisode } from './episode.ts';
@@ -207,13 +207,19 @@ export async function runCounterpush(options: {
             throw error;
           })
       : null;
-    if (
-      previousGoal &&
-      (previousGoal.format !== 'counterpush-training-goal-v1' ||
-        previousGoal.requestedTrainingGames !== options.trainingGoal)
-    )
-      throw new Error('저장된 학습 목표가 다릅니다. 기존 목표 기록을 먼저 확인하세요.');
-    const goal = options.trainingGoal ? (previousGoal ?? trainingGoal(options.trainingGoal, state)) : null;
+    const resumed = options.trainingGoal
+      ? resumeTrainingGoal(previousGoal, options.trainingGoal, state)
+      : null;
+    if (resumed?.completed) {
+      // 완료된 목표를 보관한 뒤 새 목표를 기록해, 같은 판수로 다시 실행해도 학습 없이 끝나지 않게 한다.
+      const completedAt = resumed.completed.completedAt ?? resumed.completed.createdAt;
+      await atomicWrite(
+        join(control, 'training-goals', `${completedAt.replaceAll(':', '-')}.json`),
+        JSON.stringify(resumed.completed, null, 2) + '\n',
+      );
+      await atomicWrite(goalFile, JSON.stringify(resumed.goal, null, 2) + '\n');
+    }
+    const goal = resumed?.goal ?? null;
     const stopped = async () => {
       if (
         signal.aborted ||
