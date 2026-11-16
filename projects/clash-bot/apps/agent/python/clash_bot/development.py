@@ -12,7 +12,16 @@ def main():
     if not python.exists():
         venv.EnvBuilder(with_pip=True).create(environment)
     subprocess.run(
-        [str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS_DIR / "development.lock")],
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            str(REQUIREMENTS_DIR / "core.lock"),
+            "-r",
+            str(REQUIREMENTS_DIR / "development.lock"),
+        ],
         check=True,
     )
 
