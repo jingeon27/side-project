@@ -2,7 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
 export class QwenClient {
-  readonly state = { closed: false, ready: false };
+  readonly state = { closed: false, ready: false, pending: 0 };
   readonly queue = { tail: Promise.resolve() as Promise<unknown> };
   startup: Record<string, unknown> = {};
   readonly child: ChildProcessWithoutNullStreams;
@@ -50,13 +50,16 @@ export class QwenClient {
     this.state.ready = true;
   }
   async request(payload: Record<string, unknown>, timeoutMs = 20_000): Promise<Record<string, unknown>> {
+    this.state.pending++;
     const result = this.queue.tail.then(async () => {
       if (this.state.closed) throw new Error('Qwen 실행기가 닫혔습니다.');
       this.child.stdin.write(JSON.stringify(payload) + '\n');
       return this.read(timeoutMs);
     });
     this.queue.tail = result.catch(() => {});
-    return result;
+    return result.finally(() => {
+      this.state.pending--;
+    });
   }
   async infer(
     images: string[],

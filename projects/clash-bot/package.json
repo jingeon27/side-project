@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "trophy": "yarn workspace @clash-bot/agent trophy",
     "doctor": "yarn workspace @clash-bot/agent doctor",
     "connect": "yarn workspace @clash-bot/agent connect",
     "setup": "yarn workspace @clash-bot/agent setup",

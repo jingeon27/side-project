@@ -27,7 +27,9 @@ createInterface({input:process.stdin}).on('line', line => {
       client.request({ name: 'second' }),
     ]);
     expect(results.map((result) => result.name)).toEqual(['first', 'second']);
+    expect(client.state.pending).toBe(0);
     await expect(client.request({ fail: true })).rejects.toThrow('test failure');
+    expect(client.state.pending).toBe(0);
     expect((await client.request({ name: 'after-error' })).name).toBe('after-error');
   } finally {
     client.close();

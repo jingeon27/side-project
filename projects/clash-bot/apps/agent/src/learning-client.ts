@@ -46,6 +46,7 @@ export class LearningClient extends QwenClient {
     );
   }
   async choose(request: LearningDecisionRequest): Promise<DecisionOutput> {
+    const started = performance.now();
     const response = await this.request({
       op: 'choose',
       images: [request.imagePath],
@@ -57,6 +58,26 @@ export class LearningClient extends QwenClient {
     const choice = z.int().parse(response.choice);
     if (!request.candidates.some((c) => c.id === choice))
       throw new Error('학습 모델이 후보 밖의 행동을 반환했습니다.');
+    return {
+      text: JSON.stringify({ choice }),
+      elapsedMs: Math.round(performance.now() - started),
+      peakGb: Number(response.peak_gb),
+      behavior: z.record(z.string(), z.unknown()).parse(response.behavior),
+    };
+  }
+  async chooseExternal(request: LearningDecisionRequest, checkpoint: string): Promise<DecisionOutput> {
+    const response = await this.request({
+      op: 'choose_external',
+      checkpoint,
+      images: [request.imagePath],
+      prompt: request.prompt,
+      choices: request.candidates.map((candidate) => candidate.id),
+      feature_path: request.featurePath,
+      controller_version: 3,
+    });
+    const choice = z.int().parse(response.choice);
+    if (!request.candidates.some((candidate) => candidate.id === choice))
+      throw new Error('공유 모델이 후보 밖의 행동을 반환했습니다.');
     return {
       text: JSON.stringify({ choice }),
       elapsedMs: Number(response.elapsed_ms),

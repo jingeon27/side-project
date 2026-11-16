@@ -24,6 +24,7 @@ from promotion import parent_sha, publish
 from feature_cache import FeatureCache
 from replay import remember, rehearse
 from decision_input import opponent_prompt, CONTRACT
+from external_policy import choose_external
 
 
 def verified_result(row):
@@ -389,7 +390,7 @@ class LearningWorker:
     def episode_samples(self, episode):
         directory = Path(episode).resolve()
         rows = [json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line]
-        if any(row.get('type')=='input_recovery' for row in rows):
+        if any(row.get('type')=='input_recovery' or row.get('behavior', {}).get('read_only_external') for row in rows):
             return None
         results = [row for row in rows if verified_result(row)]
         if not results:
@@ -512,6 +513,8 @@ def main():
                     raise ValueError('The deployed champion is frozen; train a private candidate')
                 if request["op"] == "choose":
                     result = worker.choose(request)
+                elif request['op'] == 'choose_external':
+                    result = choose_external(worker, request)
                 elif request["op"] == "train":
                     result = worker.train(request)
                 elif request["op"] == "train_batch":

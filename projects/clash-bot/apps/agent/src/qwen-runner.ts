@@ -7,9 +7,9 @@ import sharp from 'sharp';
 
 import { sourcePoint, type AdbDevice } from './adb.ts';
 import { atomicWrite } from './assets.ts';
-import { center, type CardId, type Profile } from './config.ts';
+import { center, type CardId, type Point, type Profile } from './config.ts';
 import type { DecisionOutput, LearningDecisionRequest } from './learning-client.ts';
-import { actionCandidates, choicePrompt } from './qwen-actions.ts';
+import { actionCandidates, choicePrompt, type QwenAction } from './qwen-actions.ts';
 import { QwenClient } from './qwen-client.ts';
 import { exportEpisode } from './qwen-dataset.ts';
 import {
@@ -69,7 +69,7 @@ export async function inspectQwenFrame(
 
 export async function runQwen(options: {
   device: AdbDevice;
-  client: QwenClient;
+  client: Pick<QwenClient, 'ready' | 'infer'>;
   profile: Profile;
   dataDir: string;
   seconds: number;
@@ -78,13 +78,23 @@ export async function runQwen(options: {
   maxActions: number;
   signal: AbortSignal;
   image?: string;
-  decision?: (request: LearningDecisionRequest) => Promise<DecisionOutput>;
+  decision?: (request: LearningDecisionRequest) => Promise<DecisionOutput | null>;
+  decisionPrompt?: (
+    cards: Array<CardId | null>,
+    elixir: number,
+    actions: QwenAction[],
+    threats: Point[],
+  ) => string;
+  maxDecisionMs?: number;
+  runDirectory?: string;
+  readOnlyDecisions?: boolean;
   onProgress?: (progress: { frames: number; actions: number; confirmed: number }) => Promise<void>;
 }): Promise<
   { directory: string; result: string; actions: number; confirmed: number; seenBattle: boolean } | undefined
 > {
   const { device, client, profile, dataDir, signal } = options;
-  const directory = join(dataDir, 'qwen/runs', new Date().toISOString().replaceAll(':', '-'));
+  const directory =
+    options.runDirectory ?? join(dataDir, 'qwen/runs', new Date().toISOString().replaceAll(':', '-'));
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const log = async (entry: Record<string, unknown>) =>
     appendFile(join(directory, 'events.jsonl'), JSON.stringify(entry) + '\n', { mode: 0o600 });
@@ -119,7 +129,8 @@ export async function runQwen(options: {
           .map((item) => item.action)
       : legal;
     const instruction = battle
-      ? choicePrompt(cards, elixir, threats, candidates, options.decision ? 'letter' : 'json')
+      ? (options.decisionPrompt?.(cards, elixir, candidates, threats) ??
+        choicePrompt(cards, elixir, threats, candidates, options.decision ? 'letter' : 'json'))
       : 'Classify this game screen. Only a live battle has a bottom row of FOUR playable hand cards and a purple elixir bar. Home lobby has a large yellow Battle button. Collection, trophy road rewards, loading and menus are unknown. Return ONLY JSON: {"phase":"lobby|result|unknown|battle","hand":[null,null,null,null],"elixir":0,"slot":0,"x":0,"y":0,"outcome":"unknown"}. On a result read win/loss/draw; no other actions.';
     const schema = battle
       ? {
@@ -138,6 +149,16 @@ export async function runQwen(options: {
             featurePath: join(directory, 'features', index + '.npz'),
           })
         : await client.infer([path], instruction, schema);
+    if (!output || (options.maxDecisionMs && output.elapsedMs > options.maxDecisionMs)) {
+      await log({
+        type: 'decision_unavailable',
+        frame: index,
+        reason: output ? 'deadline' : 'model_busy',
+        elapsedMs: output?.elapsedMs,
+      });
+      await delay(250, undefined, { signal });
+      return null;
+    }
     await log({ type: 'raw_prediction', frame: index, ...output });
     const selected = battle ? candidates.find((a) => a.id === Number(JSON.parse(output.text).choice)) : null;
     if (battle && !selected) throw new Error('Qwen이 제안 목록 밖의 행동을 골랐습니다.');
@@ -303,9 +324,11 @@ export async function runQwen(options: {
         {
           ...state,
           elapsedMs: Date.now() - started,
-          learning: options.decision
-            ? 'on-policy episode; post-match adapter update is recorded in training.json'
-            : 'recorded trajectories only; model weights unchanged',
+          learning: options.readOnlyDecisions
+            ? 'read-only trophy observations; excluded from training and qualification'
+            : options.decision
+              ? 'on-policy episode; post-match adapter update is recorded in training.json'
+              : 'recorded trajectories only; model weights unchanged',
         },
         null,
         2,
@@ -313,9 +336,11 @@ export async function runQwen(options: {
     );
     const exported = await exportEpisode(directory, state.result);
     console.log(
-      options.decision
-        ? `경기 기록 ${exported}개 저장. 결과에 따른 학습 대기 중.`
-        : `학습용 실전 기록 ${exported}개 저장 (가중치 변경 없음).`,
+      options.readOnlyDecisions
+        ? `트로피 플레이 기록 ${exported}개 저장 (모델 갱신 없음).`
+        : options.decision
+          ? `경기 기록 ${exported}개 저장. 결과에 따른 학습 대기 중.`
+          : `학습용 실전 기록 ${exported}개 저장 (가중치 변경 없음).`,
     );
     console.log(JSON.stringify(state));
   }

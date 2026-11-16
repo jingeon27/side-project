@@ -77,6 +77,24 @@ yarn workspace @side/clash-bot selfplay stop
 
 벡터 DB는 사용하지 않습니다. 현재 학습에는 로컬 화면 특징·행동 확률·경기 결과 파일이면 충분합니다. 비슷한 과거 장면을 검색하는 기억 기능은 구현 범위에 포함하지 않았습니다.
 
+## Counterpush와 BlueStacks 동시 실행
+
+Counterpush의 `start`가 올라가 있는 동안 아래 명령으로 BlueStacks의 현재 트로피 모드에서 반복 플레이할 수 있습니다. 큰 Qwen 본체는 하나만 올리고, 트로피전은 경기 시작 시점의 **개인 학습 후보 체크포인트**를 읽기 전용으로 고정합니다. 배포 모델을 교체하는 동작은 아니며 트로피 결과는 별도 기록합니다. 기존 `selfplay start`와 동시에 실행하지 않습니다.
+
+```sh
+yarn workspace @side/clash-bot trophy start --background --hours 8 --matches 0 \
+  --adb /Applications/BlueStacks.app/Contents/MacOS/hd-adb \
+  --serial 127.0.0.1:5555
+yarn workspace @side/clash-bot trophy status
+yarn workspace @side/clash-bot trophy stop
+```
+
+설치된 `.data/profile.json`을 사용합니다. 다른 프로필을 지정할 때는 `--profile`에 절대 경로를 전달합니다. 화면과 로비 버튼 참조가 일치할 때만 현재 선택 모드의 매칭을 시작하며, 결과의 왕관 수를 두 번 확인한 뒤 로비로 복귀합니다. `stop`은 진행 중인 경기 종료 후 중지합니다. Counterpush의 고정 평가 중에는 트로피 판단과 새 매칭을 기다립니다.
+
+트로피 실행기는 자체 학습 잠금과 `.data/trophy/` 기록을 소유합니다. 공유 연결은 이 컴퓨터의 사용자 전용 소켓이며 대전 판단만 허용합니다. 모델이 사용 중이면 요청을 쌓지 않고 대기하고, 통신 대기를 포함해 1초를 넘긴 판단은 입력하지 않습니다. Counterpush 판단도 공유 요청의 대기 시간을 포함해 지연을 측정합니다. 트로피 기록은 실전 PPO·상대 모방·채택 평가·Counterpush 100판 목표에서 제외합니다.
+
+BlueStacks 인식은 기존 손패·엘릭서·체력 막대 참조를 사용합니다. 상대 유닛 이름·숨은 손패·엘릭서는 모르는 상태로 전달하고, 트로피 UI의 영웅 스킬과 진화는 아직 별도 검증하지 않았습니다. Counterpush의 유닛 분류기를 그대로 정답처럼 재사용하지 않습니다. 병렬 실행 시 모든 판단의 최대 지연을 보장하지는 않습니다.
+
 ## 학습 없는 Qwen 단일 경기
 
 현재 Mac에는 실제 덱의 참조 이미지와 보정한 `.data/profile.json`이 준비되어 있습니다. 덱은 **용광로 / 얼음 마법사 / 기사 / 무덤 / 해골 병사 / 독 / 고블린 오두막 / 바바리안 통**입니다. 보정 좌표는 `profiles/bluestacks-trophy.json`에 보존했습니다. `counterpush:setup`은 이 8장의 계정 정보 없는 손패 참조를 준비하며 기존 사용자 참조를 덮어쓰지 않습니다.

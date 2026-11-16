@@ -9,6 +9,7 @@ import { atomicWrite } from '../../assets.ts';
 import { type Profile } from '../../config.ts';
 import { LearningClient } from '../../learning-client.ts';
 import { selectModel, type ModelId } from '../../model-options.ts';
+import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { acquireLearningLock } from '../../selfplay.ts';
 import { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { learnCounterpushEpisodes } from '../learning/episode-learning.ts';
@@ -115,11 +116,13 @@ export async function runCounterpush(options: {
     vision: CounterpushVisionClient | null;
     browser: CounterpushBrowser | null;
     patterns: SpawnPatterns | null;
+    shared: Awaited<ReturnType<typeof startSharedInference>> | null;
   } = {
     client: null,
     vision: null,
     browser: null,
     patterns: null,
+    shared: null,
   };
   const writes = { tail: Promise.resolve() };
   const report = (update: Record<string, unknown>) => {
@@ -188,6 +191,11 @@ export async function runCounterpush(options: {
       promotions: 0,
       evaluationFile: null,
     };
+    resources.shared = await startSharedInference({
+      dataDir,
+      client,
+      policy: () => (status.phase === 'candidate_training' && state.candidate ? state.candidate : null),
+    });
     const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
     const goalFile = join(control, 'training-goal.json');
     const previousGoal = options.trainingGoal
@@ -378,6 +386,7 @@ export async function runCounterpush(options: {
     throw error;
   } finally {
     signal.removeEventListener('abort', abort);
+    await resources.shared?.close().catch(() => {});
     resources.client?.close();
     resources.vision?.close();
     await resources.patterns?.save().catch(() => {});

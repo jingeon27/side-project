@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "trophy": "node src/trophy/cli.ts",
     "doctor": "node src/cli.ts doctor",
     "connect": "node src/cli.ts connect",
     "setup": "node src/cli.ts setup",
