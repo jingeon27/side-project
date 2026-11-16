@@ -1,13 +1,13 @@
 import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import { AdbDevice, findAdb, listDevices, selectDevice } from '../android/device/adb.ts';
 import { DATA_DIR, loadProfile } from '../shared/config.ts';
-import { requestLearningStop } from '../shared/runtime-lock.ts';
+import { readRunStatus, requestLearningStop } from '../shared/runtime-lock.ts';
 import { runTrophy } from './runtime.ts';
 
 const { values, positionals } = parseArgs({
@@ -32,19 +32,7 @@ const main = async () => {
   const command = positionals[0] ?? 'start';
   const control = join(DATA_DIR, 'trophy/control');
   if (command === 'status') {
-    const status = JSON.parse(await readFile(join(control, 'status.json'), 'utf8')) as {
-      pid: number;
-      phase: string;
-    };
-    const running = () => {
-      try {
-        process.kill(status.pid, 0);
-        return !['stopped', 'failed', 'interrupted'].includes(status.phase);
-      } catch {
-        return false;
-      }
-    };
-    console.log(JSON.stringify({ ...status, running: running() }, null, 2));
+    console.log(JSON.stringify(await readRunStatus(control), null, 2));
     return;
   }
   if (command === 'stop') {

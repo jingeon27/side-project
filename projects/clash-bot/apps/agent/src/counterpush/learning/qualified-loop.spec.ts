@@ -1,11 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  evolutionStateSchema,
   qualifiedLearningLoop,
   type EvolutionState,
   type PolicySnapshot,
   type Qualification,
+  type TrainingEpisode,
 } from './qualified-loop.ts';
+
+const episode = (directory: string, changes: Partial<TrainingEpisode> = {}): TrainingEpisode => ({
+  directory,
+  result: 'loss',
+  actions: 1,
+  confirmed: 1,
+  abilityActions: 0,
+  abilityConfirmed: 0,
+  seenBattle: true,
+  opponentActions: 0,
+  learningEligible: true,
+  ...changes,
+});
 
 const model = (version: number, hash: string): PolicySnapshot => ({
   version,
@@ -36,13 +51,7 @@ function harness() {
     newEvaluationFile: () => '/evaluation',
     begin: vi.fn(async () => ({ ...world.candidate })),
     restore: vi.fn(async () => ({ ...world.champion })),
-    play: vi.fn(async () => ({
-      directory: '/training-episode',
-      result: 'loss',
-      actions: 1,
-      confirmed: 1,
-      opponentActions: 1,
-    })),
+    play: vi.fn(async () => episode('/training-episode', { opponentActions: 1 })),
     learn: vi.fn(async () => {
       world.candidate = model(3, 'c');
     }),
@@ -66,16 +75,31 @@ function harness() {
 }
 
 describe('qualified model lifecycle', () => {
+  it('saves only states that the resume schema reads back', async () => {
+    const { options } = harness();
+    const saved: unknown[] = [];
+    options.save.mockImplementation(async (state: EvolutionState) => {
+      saved.push(JSON.parse(JSON.stringify(state)));
+    });
+    options.play.mockResolvedValueOnce(episode('/input-recovery', { confirmed: 0, learningEligible: false }));
+    await qualifiedLearningLoop(options);
+    expect(new Set(saved.map((state) => (state as EvolutionState).phase))).toEqual(
+      new Set([
+        'initializing',
+        'preparing_candidate',
+        'candidate_training',
+        'input_recovery',
+        'candidate_learning',
+        'candidate_study',
+        'evaluating',
+        'rejected',
+      ]),
+    );
+    for (const state of saved) evolutionStateSchema.parse(state);
+  });
   it('excludes a recovered input failure from the learning goal and retries a fresh game', async () => {
     const { state, options } = harness();
-    const invalid = {
-      directory: '/input-recovery',
-      result: 'loss',
-      actions: 3,
-      confirmed: 0,
-      opponentActions: 0,
-      learningEligible: false,
-    };
+    const invalid = episode('/input-recovery', { actions: 3, confirmed: 0, learningEligible: false });
     options.play.mockResolvedValueOnce(invalid);
     await qualifiedLearningLoop(options);
     expect(options.play).toHaveBeenCalledTimes(2);
@@ -162,13 +186,7 @@ describe('qualified model lifecycle', () => {
   });
   it('recovers a completed training episode instead of playing or learning another match first', async () => {
     const { state, options } = harness();
-    state.pendingEpisode = {
-      directory: '/pending',
-      result: 'loss',
-      actions: 1,
-      confirmed: 1,
-      opponentActions: 0,
-    };
+    state.pendingEpisode = episode('/pending');
     await qualifiedLearningLoop(options);
     expect(options.play).not.toHaveBeenCalled();
     expect(options.learn).toHaveBeenCalledWith(expect.objectContaining({ directory: '/pending' }));

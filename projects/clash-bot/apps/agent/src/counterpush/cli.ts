@@ -1,12 +1,15 @@
 import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
+import { z } from 'zod';
+
 import { DATA_DIR } from '../shared/config.ts';
-import { readLockOwner, requestLearningStop } from '../shared/runtime-lock.ts';
+import { readJsonFile } from '../shared/json-file.ts';
+import { readLockOwner, readRunStatus, requestLearningStop } from '../shared/runtime-lock.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
 import { runCounterpushEvaluation } from './learning/evaluation.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
@@ -66,10 +69,10 @@ const main = async () => {
     return;
   }
   if (command === 'audit') {
-    const state = JSON.parse(await readFile(join(control, 'status.json'), 'utf8')) as {
-      startedAt: string;
-      policy: Record<string, unknown>;
-    };
+    const state = await readJsonFile(
+      join(control, 'status.json'),
+      z.looseObject({ startedAt: z.iso.datetime(), policy: z.record(z.string(), z.unknown()) }),
+    );
     console.log(
       JSON.stringify(
         {
@@ -83,26 +86,11 @@ const main = async () => {
     return;
   }
   if (command === 'status') {
-    const state = JSON.parse(await readFile(join(control, 'status.json'), 'utf8')) as Record<string, unknown>;
-    const alive = () => {
-      try {
-        process.kill(Number(state.pid), 0);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-    console.log(
-      JSON.stringify(
-        { ...state, running: !['stopped', 'failed', 'interrupted'].includes(String(state.phase)) && alive() },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify(await readRunStatus(control), null, 2));
     return;
   }
   if (command === 'stop') {
-    const state = JSON.parse(await readFile(join(control, 'status.json'), 'utf8')) as { id: string };
+    const state = await readRunStatus(control);
     const lock = await readLockOwner(join(DATA_DIR, 'qwen/selfplay'));
     if (state.id !== lock?.id) throw new Error('현재 Counterpush 실행이 없습니다.');
     await requestLearningStop(join(DATA_DIR, 'qwen/selfplay'));

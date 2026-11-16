@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { chmod, mkdir, readFile, realpath, rm } from 'node:fs/promises';
+import { chmod, mkdir, realpath, rm } from 'node:fs/promises';
 import { createServer, request as httpRequest, type IncomingMessage } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
 
 import { atomicWrite } from '../shared/assets.ts';
+import { readJsonFile, readOptionalJsonFile } from '../shared/json-file.ts';
 import { inside } from '../shared/paths.ts';
 import type { DecisionOutput, ExternalDecisionRequest, LearningClient } from './learning-client.ts';
 
@@ -36,6 +37,8 @@ const payloadSchema = z
   .strict();
 
 const matchEndSchema = z.object({ id: z.string().uuid() }).strict();
+// qwen/shared-inference.json: 지금 모델을 가진 Counterpush 실행의 소켓 위치다.
+const registrySchema = z.strictObject({ id: z.string().uuid(), pid: z.int().positive(), socket: z.string() });
 
 async function readBody(request: IncomingMessage): Promise<string | null> {
   const chunks: Buffer[] = [];
@@ -139,9 +142,8 @@ export async function startSharedInference(options: {
     close: async () => {
       server.closeAllConnections();
       await new Promise<void>((accept) => server.close(() => accept()));
-      const current = (await readFile(registry, 'utf8')
-        .then(JSON.parse)
-        .catch(() => null)) as { id?: string } | null;
+      // 등록 파일을 읽지 못하면 다른 실행의 것일 수 있으므로 지우지 않는다.
+      const current = await readOptionalJsonFile(registry, registrySchema).catch(() => null);
       if (current?.id === id) await rm(registry, { force: true });
       await rm(socket, { force: true });
     },
@@ -154,9 +156,7 @@ export class SharedInferenceClient {
     this.dataDir = dataDir;
   }
   async call(route: string, payload?: unknown): Promise<unknown | null> {
-    const registry = JSON.parse(await readFile(join(this.dataDir, 'qwen/shared-inference.json'), 'utf8')) as {
-      socket: string;
-    };
+    const registry = await readJsonFile(join(this.dataDir, 'qwen/shared-inference.json'), registrySchema);
     return new Promise((accept, reject) => {
       const request = httpRequest(
         { socketPath: registry.socket, path: route, method: payload ? 'POST' : 'GET' },

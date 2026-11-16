@@ -1,17 +1,21 @@
+import { z } from 'zod';
+
 import type { EvolutionState } from './qualified-loop.ts';
 
-export type TrainingGoal = {
-  format: 'counterpush-training-goal-v1';
-  requestedTrainingGames: number;
-  startTrainingEpisodes: number;
-  startComparisons: number;
-  createdAt: string;
-  completedTrainingGames: number;
-  learningComplete: boolean;
-  complete: boolean;
-  evaluationReport?: unknown;
-  completedAt?: string;
-};
+// counterpush/control/training-goal.json의 현재 형식이다.
+export const trainingGoalSchema = z.strictObject({
+  format: z.literal('counterpush-training-goal-v1'),
+  requestedTrainingGames: z.int().min(1).max(10000),
+  startTrainingEpisodes: z.int().nonnegative(),
+  startComparisons: z.int().nonnegative(),
+  createdAt: z.iso.datetime(),
+  completedTrainingGames: z.int().nonnegative(),
+  learningComplete: z.boolean(),
+  complete: z.boolean(),
+  evaluationReport: z.unknown().optional(),
+  completedAt: z.iso.datetime().optional(),
+});
+export type TrainingGoal = z.infer<typeof trainingGoalSchema>;
 export const trainingGoal = (count: number, state: EvolutionState): TrainingGoal => {
   if (!Number.isInteger(count) || count < 1 || count > 10000) throw new Error('학습 목표는 1~10000판입니다.');
   return {
@@ -32,8 +36,6 @@ export function resumeTrainingGoal(
   state: EvolutionState,
 ): { goal: TrainingGoal; completed: TrainingGoal | null } {
   if (!previous) return { goal: trainingGoal(requested, state), completed: null };
-  if (previous.format !== 'counterpush-training-goal-v1')
-    throw new Error('저장된 학습 목표 형식이 다릅니다. 기존 목표 기록을 먼저 확인하세요.');
   if (previous.complete) return { goal: trainingGoal(requested, state), completed: previous };
   if (previous.requestedTrainingGames !== requested)
     throw new Error('저장된 학습 목표가 다릅니다. 기존 목표 기록을 먼저 확인하세요.');

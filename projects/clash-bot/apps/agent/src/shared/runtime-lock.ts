@@ -6,10 +6,18 @@ import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { atomicWrite } from './assets.ts';
-import { readOptionalJsonFile } from './json-file.ts';
+import { readJsonFile, readOptionalJsonFile } from './json-file.ts';
 
 const ownerSchema = z.object({ pid: z.int().positive(), id: z.string().min(1) });
 const stopRequestSchema = z.strictObject({ id: z.string().min(1), requestedAt: z.iso.datetime() });
+// status.json은 진행 보고가 필드를 덧붙이는 열린 기록이다. 실행 여부 판단에 쓰는 필드만 검사한다.
+const runStatusSchema = z.looseObject({
+  id: z.string().min(1),
+  pid: z.int().positive(),
+  phase: z.string(),
+  startedAt: z.iso.datetime(),
+});
+const FINISHED_PHASES = ['stopped', 'failed', 'interrupted'];
 type LockOwner = z.infer<typeof ownerSchema>;
 
 const alive = (pid: number) => {
@@ -106,4 +114,9 @@ export async function requestLearningStop(directory: string) {
 export async function stopRequested(directory: string, ownerId: string): Promise<boolean> {
   const request = await readOptionalJsonFile(join(directory, 'stop.json'), stopRequestSchema);
   return request?.id === ownerId;
+}
+
+export async function readRunStatus(directory: string) {
+  const status = await readJsonFile(join(directory, 'status.json'), runStatusSchema);
+  return { ...status, running: alive(status.pid) && !FINISHED_PHASES.includes(status.phase) };
 }

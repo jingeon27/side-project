@@ -10,16 +10,18 @@ import { MODEL } from '../../qwen/model.ts';
 import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
+import { readOptionalJsonFile } from '../../shared/json-file.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { learnCounterpushEpisodes } from '../learning/episode-learning.ts';
 import { evaluateWithResources } from '../learning/evaluation.ts';
 import {
+  evolutionStateSchema,
   qualifiedLearningLoop,
   type EvolutionState,
   type PolicySnapshot,
 } from '../learning/qualified-loop.ts';
-import { goalProgress, resumeTrainingGoal, type TrainingGoal } from '../learning/training-goal.ts';
+import { goalProgress, resumeTrainingGoal, trainingGoalSchema } from '../learning/training-goal.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { CounterpushBrowser } from './browser.ts';
 import { playCounterpushEpisode } from './episode.ts';
@@ -152,14 +154,7 @@ export async function runCounterpush(options: {
     const policy = await client.status();
     const champion = snapshot(policy);
     const file = join(control, 'evolution.json');
-    const stored = await readFile(file, 'utf8')
-      .then((raw) => JSON.parse(raw) as EvolutionState)
-      .catch((error: NodeJS.ErrnoException) => {
-        if (error.code === 'ENOENT') return null;
-        throw error;
-      });
-    if (stored && stored.format !== 'counterpush-qualified-learning-v1')
-      throw new Error('알 수 없는 학습 실행 기록입니다.');
+    const stored = await readOptionalJsonFile(file, evolutionStateSchema);
     const state: EvolutionState = stored ?? {
       format: 'counterpush-qualified-learning-v1',
       phase: 'initializing',
@@ -181,12 +176,7 @@ export async function runCounterpush(options: {
     const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
     const goalFile = join(control, 'training-goal.json');
     const previousGoal = options.trainingGoal
-      ? await readFile(goalFile, 'utf8')
-          .then((raw) => JSON.parse(raw) as TrainingGoal)
-          .catch((error: NodeJS.ErrnoException) => {
-            if (error.code === 'ENOENT') return null;
-            throw error;
-          })
+      ? await readOptionalJsonFile(goalFile, trainingGoalSchema)
       : null;
     const resumed = options.trainingGoal
       ? resumeTrainingGoal(previousGoal, options.trainingGoal, state)

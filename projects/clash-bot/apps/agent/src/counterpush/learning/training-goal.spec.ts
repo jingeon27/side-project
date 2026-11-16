@@ -15,7 +15,7 @@ it('counts completed learned games rather than evaluation games and finishes onl
     ...state,
     trainingEpisodes: 109,
     comparisons: 3,
-    phase: 'rejected',
+    phase: 'rejected' as const,
     lastDecision: { report: '/frozen-trial' },
   };
   const finished = goalProgress(goal, assessed);

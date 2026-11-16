@@ -1,6 +1,8 @@
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { z } from 'zod';
+
 import type { EvaluatedGame } from './evaluation.ts';
 
 // Python 게시 기록은 Path.resolve()로 심볼릭 링크를 푼 경로라서 같은 기준으로 비교한다.
@@ -13,36 +15,58 @@ async function canonicalPath(path: string): Promise<string> {
   }
 }
 
-export type PolicySnapshot = {
-  version: number;
-  weightsSHA256: string;
-  directory: string;
-  checkpoint: string;
-  qualificationReport?: string;
-};
-export type TrainingEpisode = {
-  directory: string;
-  result: string;
-  actions: number;
-  confirmed: number;
-  opponentActions: number;
-  learningEligible?: boolean;
-};
-export type EvolutionState = {
-  format: 'counterpush-qualified-learning-v1';
-  phase: string;
-  champion: PolicySnapshot;
-  candidateDirectory: string | null;
-  candidate: PolicySnapshot | null;
-  pendingEpisode: TrainingEpisode | null;
-  trainingGames: number;
-  trainingEpisodes: number;
-  comparisons: number;
-  promotions: number;
-  evaluationFile: string | null;
-  lastDecision?: Record<string, unknown>;
-  consecutiveInputFailures?: number;
-};
+const policySnapshotSchema = z.strictObject({
+  version: z.int().nonnegative(),
+  weightsSHA256: z.string().length(64),
+  directory: z.string(),
+  checkpoint: z.string(),
+  qualificationReport: z.string().optional(),
+});
+export type PolicySnapshot = z.infer<typeof policySnapshotSchema>;
+// playCounterpushEpisode의 결과 그대로다. 학습 전에 멈추면 pendingEpisode로 저장된다.
+const trainingEpisodeSchema = z.strictObject({
+  directory: z.string(),
+  result: z.string(),
+  actions: z.int().nonnegative(),
+  confirmed: z.int().nonnegative(),
+  abilityActions: z.int().nonnegative(),
+  abilityConfirmed: z.int().nonnegative(),
+  seenBattle: z.boolean(),
+  opponentActions: z.int().nonnegative(),
+  learningEligible: z.boolean(),
+});
+export type TrainingEpisode = z.infer<typeof trainingEpisodeSchema>;
+const EVOLUTION_PHASES = [
+  'initializing',
+  'preparing_candidate',
+  'candidate_training',
+  'input_recovery',
+  'candidate_learning',
+  'candidate_study',
+  'training_more',
+  'evaluating',
+  'evaluation_pending',
+  'promoting',
+  'promoted',
+  'rejected',
+] as const;
+// counterpush/control/evolution.json의 현재 형식이다. 재개는 evaluationFile·pendingEpisode·trainingGames로 판단한다.
+export const evolutionStateSchema = z.strictObject({
+  format: z.literal('counterpush-qualified-learning-v1'),
+  phase: z.enum(EVOLUTION_PHASES),
+  champion: policySnapshotSchema,
+  candidateDirectory: z.string().nullable(),
+  candidate: policySnapshotSchema.nullable(),
+  pendingEpisode: trainingEpisodeSchema.nullable(),
+  trainingGames: z.int().nonnegative(),
+  trainingEpisodes: z.int().nonnegative(),
+  comparisons: z.int().nonnegative(),
+  promotions: z.int().nonnegative(),
+  evaluationFile: z.string().nullable(),
+  lastDecision: z.record(z.string(), z.unknown()).optional(),
+  consecutiveInputFailures: z.int().nonnegative().optional(),
+});
+export type EvolutionState = z.infer<typeof evolutionStateSchema>;
 export type Qualification = {
   complete: boolean;
   gate: { passed: boolean; reason: string };
@@ -68,7 +92,7 @@ export async function qualifiedLearningLoop(options: {
   save: (state: EvolutionState) => Promise<void>;
 }) {
   const state = options.state;
-  const persist = async (phase: string) => {
+  const persist = async (phase: EvolutionState['phase']) => {
     state.phase = phase;
     await options.save(state);
   };
