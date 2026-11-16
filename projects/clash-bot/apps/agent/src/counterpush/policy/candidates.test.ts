@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { actionCandidates } from '../../game/actions.ts';
 import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
 import { BattleMemory } from '../domain/battle-state.ts';
-import { bodyCard, candidatesV2, compactPrompt, tilePoint } from './decision-v2.ts';
+import { affordableCandidates, bodyCard } from './candidates.ts';
 
 const cards: CardId[] = ['graveyard', 'poison', 'goblin_hut', 'furnace'];
 const situation = () =>
@@ -21,7 +21,7 @@ describe('candidate controller repairs', () => {
     const before = situation();
     const baseline = actionCandidates(DEFAULT_PROFILE, cards, 10, [], before);
     expect(baseline.some((a) => a.card === 'graveyard')).toBe(false);
-    const actions = candidatesV2(DEFAULT_PROFILE, cards, 10, [], before);
+    const actions = affordableCandidates(DEFAULT_PROFILE, cards, 10, [], before);
     expect(new Set(actions.map((a) => a.card))).toEqual(new Set([null, ...cards]));
     expect(actions.length).toBeLessThanOrEqual(26);
     expect(new Set(actions.map((a) => a.id)).size).toBe(actions.length);
@@ -33,7 +33,7 @@ describe('candidate controller repairs', () => {
         .filter((a) => a.card === 'furnace' || a.card === 'goblin_hut')
         .every((a) => a.target.y > DEFAULT_PROFILE.riverY),
     ).toBe(true);
-    expect(candidatesV2(DEFAULT_PROFILE, cards, 3, [], before).map((a) => a.card)).toEqual([null]);
+    expect(affordableCandidates(DEFAULT_PROFILE, cards, 3, [], before).map((a) => a.card)).toEqual([null]);
     expect(actionCandidates(DEFAULT_PROFILE, cards, 10, [], before)).toEqual(baseline);
   });
   it('recognizes a tracked body without fabricating a new card spend and keeps child identities', () => {
@@ -45,7 +45,7 @@ describe('candidate controller repairs', () => {
       y: DEFAULT_PROFILE.riverY + 14,
       confidence: 0.98,
     });
-    const actions = candidatesV2(DEFAULT_PROFILE, cards, 10, [], before);
+    const actions = affordableCandidates(DEFAULT_PROFILE, cards, 10, [], before);
     expect(actions.some((a) => a.card === 'furnace' && a.description.includes('behind advancing'))).toBe(
       true,
     );
@@ -53,9 +53,5 @@ describe('candidate controller repairs', () => {
     expect(bodyCard({ card: 'graveyard', kind: 'skeleton', x: 90, y: 400, confidence: 0.95 })).toBe(
       'skeleton',
     );
-    const text = compactPrompt(DEFAULT_PROFILE, cards, 10, actions, before);
-    expect(text).toContain('knight');
-    expect(text.length).toBeLessThan(2700);
-    expect(tilePoint(DEFAULT_PROFILE, { x: 184, y: DEFAULT_PROFILE.riverY })).toEqual([9, 16]);
   });
 });

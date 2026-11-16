@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { expect, it, vi } from 'vitest';
 
-import type { LearningDecisionRequest } from './learning-client.ts';
+import type { ExternalDecisionRequest } from './learning-client.ts';
 import { SharedInferenceClient, startSharedInference } from './shared-inference.ts';
 
 // 처음 이어받은 후보가 격리 학습 폴더(arena/qwen/candidates)에 있으면 training 폴더 기준 검사가 트로피 판단을 모두 거부했다.
@@ -28,12 +28,11 @@ it('serves the shared candidate wherever it lives and refuses any other checkpoi
     policy: () => ({ checkpoint: shared, version: 2, weightsSHA256: 'b'.repeat(64) }),
   });
   const client = new SharedInferenceClient(root);
-  const request: LearningDecisionRequest = {
+  const request: ExternalDecisionRequest = {
     imagePath: join(run, '0001.png'),
     featurePath: join(run, 'features/0001.npz'),
     prompt: 'public state',
     candidates: [{ id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' }],
-    controllerVersion: 3,
   };
   try {
     expect((await client.choose(request, shared))?.text).toBe('{"choice":0}');

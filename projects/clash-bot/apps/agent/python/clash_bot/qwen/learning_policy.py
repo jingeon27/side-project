@@ -317,7 +317,7 @@ class Learner:
     def _imitate_once(self, samples, dataset, learning_rate, original_rate, attempt):
         anchor_file = self.directory / "actor-anchors.json"
         anchors = []
-        if self.metadata.get("controller_version", 1) >= 2 and anchor_file.exists():
+        if self.metadata.get("controller_version") == 3 and anchor_file.exists():
             for row in json.loads(anchor_file.read_text())["samples"]:
                 feature = Path(row["path"]).resolve()
                 if not feature.is_relative_to(self.directory.resolve() / "features"):

@@ -13,7 +13,7 @@ class SearchDataTest(unittest.TestCase):
             path, data = self.write(directory)
             row = {
                 **data["samples"][0],
-                "controllerVersion": 2,
+                "controllerVersion": 3,
                 "target": [0, 1, 0],
                 "evidence": {
                     "kind": "paired_passive_future_rollout",
@@ -26,9 +26,9 @@ class SearchDataTest(unittest.TestCase):
             }
             data = {
                 **data,
-                "format": "counterpush-tactical-targets-v2",
+                "format": "counterpush-tactical-targets-v3",
                 "source": "local_native_counterfactual_v2",
-                "controllerVersion": 2,
+                "controllerVersion": 3,
                 "split": "train",
                 "trainingEpochs": 3,
                 "samples": [row],

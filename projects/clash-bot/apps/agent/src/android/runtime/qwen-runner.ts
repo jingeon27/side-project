@@ -6,7 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import sharp from 'sharp';
 
 import { actionCandidates, choicePrompt, type QwenAction } from '../../game/actions.ts';
-import type { DecisionOutput, LearningDecisionRequest } from '../../qwen/learning-client.ts';
+import type { DecisionOutput, ExternalDecisionRequest } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { center, type CardId, type Point, type Profile } from '../../shared/config.ts';
 import { JsonLineClient } from '../../shared/json-lines-client.ts';
@@ -77,7 +77,7 @@ export async function runQwen(options: {
   maxActions: number;
   signal: AbortSignal;
   image?: string;
-  decision?: (request: LearningDecisionRequest) => Promise<DecisionOutput | null>;
+  decision?: (request: ExternalDecisionRequest) => Promise<DecisionOutput | null>;
   decisionPrompt?: (
     cards: Array<CardId | null>,
     elixir: number,

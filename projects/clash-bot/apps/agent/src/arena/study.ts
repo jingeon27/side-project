@@ -63,8 +63,7 @@ export async function studyNext(
     if (!raw) continue;
     if (target.mode === 'candidate') {
       const body = JSON.parse(raw.toString()) as { format: string; controllerVersion?: number };
-      if (typeof controller === 'number' && controller >= 2 && body.controllerVersion !== controller)
-        continue;
+      if (controller === 3 && body.controllerVersion !== controller) continue;
     }
     const identity = createHash('sha256').update(raw).digest('hex');
     if (learned.has(identity)) continue;

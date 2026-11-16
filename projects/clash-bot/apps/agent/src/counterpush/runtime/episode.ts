@@ -16,7 +16,7 @@ import {
   type QwenPrediction,
 } from '../../android/policy/qwen-policy.ts';
 import { actionCandidates, choicePrompt } from '../../game/actions.ts';
-import { type LearningClient } from '../../qwen/learning-client.ts';
+import { controllerVersionOf, type LearningClient } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { CARD_INFO, type Profile } from '../../shared/config.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
@@ -27,8 +27,8 @@ import { counterpushBarReading, counterpushElixir, plausibleSpend } from '../per
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';
 import { type CounterpushVisionClient, type UnitScan } from '../perception/vision-client.ts';
-import { candidatesV2, compactPrompt } from '../policy/decision-v2.ts';
-import { fastPrompt } from '../policy/decision-v3.ts';
+import { affordableCandidates } from '../policy/candidates.ts';
+import { decisionPrompt } from '../policy/decision-v3.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
 import { abilityCheckEvent, inputCheckEvent, resultEvent, waitCheckEvent } from './episode-events.ts';
 
@@ -58,8 +58,7 @@ export async function playCounterpushEpisode(options: {
 }) {
   const { browser, client, vision, dataDir, profile, signal } = options;
   const policy = await client.status();
-  const controllerVersion: 1 | 2 | 3 =
-    policy.controller_version === 3 ? 3 : policy.controller_version === 2 ? 2 : 1;
+  const controllerVersion = controllerVersionOf(policy);
   const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
   await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
   const templates = await loadCounterpushTemplates(dataDir, profile);
@@ -337,7 +336,7 @@ export async function playCounterpushEpisode(options: {
       const threats = before.situation.opponent.units
         .filter((unit) => unit.y > profile.riverY)
         .map(({ x, y }) => ({ x, y }));
-      const candidates = (controllerVersion >= 2 ? candidatesV2 : actionCandidates)(
+      const candidates = (controllerVersion === 3 ? affordableCandidates : actionCandidates)(
         profile,
         before.cards,
         before.state.elixir,
@@ -355,14 +354,8 @@ export async function playCounterpushEpisode(options: {
       const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
       await atomicWrite(imagePath, before.image);
       const prompt =
-        controllerVersion >= 2
-          ? (controllerVersion === 3 ? fastPrompt : compactPrompt)(
-              profile,
-              before.cards,
-              before.state.elixir,
-              candidates,
-              before.situation,
-            )
+        controllerVersion === 3
+          ? decisionPrompt(profile, before.cards, before.state.elixir, candidates, before.situation)
           : choicePrompt(before.cards, before.state.elixir, threats, candidates, 'letter', before.situation);
       const prediction = {
         done: false,

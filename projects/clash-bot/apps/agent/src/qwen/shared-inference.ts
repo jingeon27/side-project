@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { atomicWrite } from '../shared/assets.ts';
 import { inside } from '../shared/paths.ts';
-import type { DecisionOutput, LearningClient, LearningDecisionRequest } from './learning-client.ts';
+import type { DecisionOutput, ExternalDecisionRequest, LearningClient } from './learning-client.ts';
 
 export type SharedPolicy = { checkpoint: string; version: number; weightsSHA256: string };
 const payloadSchema = z
@@ -117,7 +117,7 @@ export async function startSharedInference(options: {
           ...input,
           imagePath: image,
           featurePath: join(features, basename(input.featurePath)),
-        } as LearningDecisionRequest,
+        } as ExternalDecisionRequest,
         checkpoint,
       );
       return reply(200, { ...output, elapsedMs: Math.round(performance.now() - started) });
@@ -191,10 +191,9 @@ export class SharedInferenceClient {
   async endMatch(id: string): Promise<void> {
     await this.call('/match/end', { id });
   }
-  async choose(input: LearningDecisionRequest, checkpoint: string): Promise<DecisionOutput | null> {
+  async choose(input: ExternalDecisionRequest, checkpoint: string): Promise<DecisionOutput | null> {
     const started = performance.now();
-    // 공유 서버 계약에는 controllerVersion이 없다. undefined 값은 JSON에서 빠진다.
-    const result = (await this.call('/choose', { ...input, controllerVersion: undefined, checkpoint }).catch(
+    const result = (await this.call('/choose', { ...input, checkpoint }).catch(
       (error: NodeJS.ErrnoException) => {
         if (
           ['ECONNREFUSED', 'ENOENT', 'ECONNRESET'].includes(error.code ?? '') ||

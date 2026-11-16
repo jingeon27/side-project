@@ -27,9 +27,17 @@ class ChooseRequest(Request):
     prompt: str
     choices: list[int] = Field(min_length=1, max_length=26)
     feature_path: str = Field(min_length=1)
-    controller_version: int = Field(default=1, ge=1, le=3)
+    controller_version: int
     cache_bypass: bool = False
     checkpoint: str | None = None
+
+    @field_validator("controller_version")
+    @classmethod
+    def known_controller(cls, value):
+        # The champion keeps controller 1; private candidates use controller 3.
+        if value not in (1, 3):
+            raise ValueError("Unknown decision controller")
+        return value
 
     @field_validator("choices")
     @classmethod
@@ -80,7 +88,14 @@ class CandidateRequest(Request):
 
 class ControllerRequest(Request):
     op: Literal["configure_candidate"]
-    controller_version: int = Field(ge=2, le=3)
+    controller_version: int
+
+    @field_validator("controller_version")
+    @classmethod
+    def fast_controller(cls, value):
+        if value != 3:
+            raise ValueError("Candidates use the fast controller")
+        return value
 
 
 class RehearsalRequest(Request):

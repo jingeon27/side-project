@@ -231,7 +231,7 @@ export async function runCounterpush(options: {
         join(control, 'evaluations', `${new Date().toISOString().replaceAll(':', '-')}-${randomUUID()}.json`),
       begin: async (directory) => {
         await client.beginCandidate(directory);
-        const configured = await client.configureCandidate(3);
+        const configured = await client.configureCandidate();
         await report({ phase: 'warming_fast_policy' });
         await client.warmup();
         const base = Number(configured.warmup_base_datasets ?? 0);

@@ -59,7 +59,7 @@ class LearningPolicyTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             learner = self.make_learner(directory)
-            learner.metadata["controller_version"] = 2
+            learner.metadata["controller_version"] = 3
             sample = {**self.sample(learner), "targets": [1], "confidence": 0.95, "id": "opponent"}
             feature = Path(directory) / "features/anchor.npz"
             feature.parent.mkdir()

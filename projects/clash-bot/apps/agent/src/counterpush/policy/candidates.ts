@@ -1,33 +1,20 @@
-import { readFileSync } from 'node:fs';
-
 import { actionCandidates, type QwenAction } from '../../game/actions.ts';
 import { ownPoint } from '../../game/placement.ts';
 import { CARD_INFO, type CardId, type Point, type Profile } from '../../shared/config.ts';
 import type { BattleSituation, FieldUnit } from '../domain/battle-state.ts';
 
-const contract = JSON.parse(
-  readFileSync(new URL('../../../contracts/decision-v2.json', import.meta.url), 'utf8'),
-) as {
-  header: string;
-};
 export function bodyCard(unit: FieldUnit): string | null {
   if (unit.kind) return unit.kind;
   return unit.card;
 }
-export const tilePoint = (profile: Profile, point: Point) => [
-  Math.round((9 + ((point.x - 184) * 11) / 178) * 10) / 10,
-  Math.round((16 - ((point.y - profile.riverY) * 9.5) / 130) * 10) / 10,
-];
-
-export function candidatesV2(
+export function affordableCandidates(
   profile: Profile,
   cards: Array<CardId | null>,
   elixir: number,
   threats: Point[],
   situation: BattleSituation,
 ): QwenAction[] {
-  // Preserve the old controller for the deployed baseline. V2 admits every
-  // affordable card; uncertain unit identity cannot remove the win condition.
+  // 후보 판단 계약(controller 3)은 지불 가능한 모든 손패를 비교한다. 유닛 이름이 불확실해도 승리 카드를 지우지 않는다.
   const normalize = (unit: FieldUnit) => ({
     ...unit,
     card: (['knight', 'furnace', 'ice_wizard', 'goblin_hut'].includes(bodyCard(unit) ?? '')
@@ -72,44 +59,4 @@ export function candidatesV2(
       id: index + 1,
     })),
   ];
-}
-
-export function compactPrompt(
-  profile: Profile,
-  cards: Array<CardId | null>,
-  elixir: number,
-  actions: QwenAction[],
-  situation: BattleSituation,
-) {
-  const row = (unit: FieldUnit) => [bodyCard(unit) ?? '?', ...tilePoint(profile, unit), unit.variant ?? '?'];
-  const own = situation.own.units
-    .toSorted((a, b) => a.y - b.y)
-    .slice(0, 5)
-    .map(row);
-  const enemy = situation.opponent.units
-    .toSorted((a, b) => b.y - a.y)
-    .slice(0, 8)
-    .map(row);
-  return (
-    contract.header +
-    JSON.stringify({
-      hand: cards,
-      elixir: Math.round(elixir * 10) / 10,
-      enemyElixir: situation.opponent.elixir,
-      next: situation.own.cycle?.nextDraw,
-      own,
-      enemy,
-      effects: situation.effects
-        ?.slice(0, 4)
-        .map((e) => [e.side, e.card, ...tilePoint(profile, e), Math.round(e.visibleAgeMs / 1000)]),
-      skill: situation.own.ability?.availability,
-      actions: actions.map((a, i) => [
-        String.fromCharCode(65 + i),
-        a.kind ?? (a.card ? 'card' : 'wait'),
-        a.card,
-        a.cost ?? (a.card ? CARD_INFO[a.card].cost : 0),
-        ...tilePoint(profile, a.target),
-      ]),
-    })
-  );
 }

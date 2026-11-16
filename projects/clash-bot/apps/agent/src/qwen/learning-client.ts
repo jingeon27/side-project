@@ -21,13 +21,20 @@ const trainingSchema = z
   })
   .passthrough();
 export type TrainingReport = z.infer<typeof trainingSchema>;
+// 챔피언(v68)은 처음 계약(controller 1)으로, 학습 후보는 controller 3으로 판단한다.
+// 체크포인트에 판단 계약이 없으면 처음 계약이다.
+export type ControllerVersion = 1 | 3;
+export const controllerVersionOf = (status: Record<string, unknown>): ControllerVersion =>
+  z.union([z.literal(1), z.literal(3)]).parse(status.controller_version ?? 1);
 export type LearningDecisionRequest = {
   imagePath: string;
   prompt: string;
   candidates: QwenAction[];
   featurePath: string;
-  controllerVersion?: 1 | 2 | 3;
+  controllerVersion: ControllerVersion;
 };
+// 트로피가 빌리는 읽기 전용 후보 판단은 항상 controller 3이다.
+export type ExternalDecisionRequest = Omit<LearningDecisionRequest, 'controllerVersion'>;
 export type DecisionOutput = {
   text: string;
   elapsedMs: number;
@@ -53,7 +60,7 @@ export class LearningClient extends JsonLineClient {
       prompt: request.prompt,
       choices: request.candidates.map((c) => c.id),
       feature_path: request.featurePath,
-      controller_version: request.controllerVersion ?? 1,
+      controller_version: request.controllerVersion,
     });
     const choice = z.int().parse(response.choice);
     if (!request.candidates.some((c) => c.id === choice))
@@ -65,7 +72,7 @@ export class LearningClient extends JsonLineClient {
       behavior: z.record(z.string(), z.unknown()).parse(response.behavior),
     };
   }
-  async chooseExternal(request: LearningDecisionRequest, checkpoint: string): Promise<DecisionOutput> {
+  async chooseExternal(request: ExternalDecisionRequest, checkpoint: string): Promise<DecisionOutput> {
     const response = await this.request({
       op: 'choose_external',
       checkpoint,
@@ -106,8 +113,8 @@ export class LearningClient extends JsonLineClient {
   async endCandidate(): Promise<Record<string, unknown>> {
     return this.request({ op: 'end_candidate' });
   }
-  async configureCandidate(controllerVersion: 2 | 3): Promise<Record<string, unknown>> {
-    return this.request({ op: 'configure_candidate', controller_version: controllerVersion });
+  async configureCandidate(): Promise<Record<string, unknown>> {
+    return this.request({ op: 'configure_candidate', controller_version: 3 });
   }
   async rehearse(rounds = 4): Promise<TrainingReport> {
     return trainingSchema.parse(await this.request({ op: 'rehearse', rounds }, 240_000));

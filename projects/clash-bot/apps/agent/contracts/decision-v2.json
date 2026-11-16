@@ -1,4 +1,0 @@
-{
-  "version": 2,
-  "header": "Play BLUE bottom against RED top. Choose ONE action letter. Positions are tiles: x=0..18, BLUE back y=0, river y=16, RED back y=32. Both regenerate equally; cap10 discards overflow. Deck8/hand4/FIFO4. Enemy hand is unknown. Unit detections are partial: missing is not dead. Compare the image and listed bodies. Knight tanks, Furnace walks and spawns Spirits, Hut spawns Spear Goblins, Ice Wizard slows/splashes. Graveyard attacks towers; compare tank arrival and defenders. Poison covers an area over time. Barrel rolls through ground troops. Skills spend2 without a draw. Preserve towers, build a counterpush, avoid leaking elixir. Every listed affordable card is available; tactical risk is not a legality rule. Return one letter.\n"
-}

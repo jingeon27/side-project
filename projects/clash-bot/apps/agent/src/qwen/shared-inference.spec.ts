@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import type { LearningDecisionRequest } from './learning-client.ts';
+import type { ExternalDecisionRequest } from './learning-client.ts';
 import { SharedInferenceClient, startSharedInference } from './shared-inference.ts';
 
 it('shares only inference, rejects busy/evaluation work and confines writes to trophy runs', async () => {
@@ -37,12 +37,11 @@ it('shares only inference, rejects busy/evaluation work and confines writes to t
     policy: () => (state.available ? policy : null),
   });
   const client = new SharedInferenceClient(root);
-  const request: LearningDecisionRequest = {
+  const request: ExternalDecisionRequest = {
     imagePath: join(run, '0001.png'),
     featurePath: join(run, 'features/0001.npz'),
     prompt: 'public state',
     candidates: [{ id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' }],
-    controllerVersion: 3,
   };
   try {
     expect(await client.policy()).toEqual(policy);

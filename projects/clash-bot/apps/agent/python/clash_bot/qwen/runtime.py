@@ -163,8 +163,8 @@ class LearningWorker:
         return self.status()
 
     def configure_candidate(self, version):
-        if self.evaluation_backup or not self.candidate_active() or version not in (2, 3):
-            raise ValueError("Only a private training candidate can select a new controller")
+        if self.evaluation_backup or not self.candidate_active() or version != 3:
+            raise ValueError("Only a private training candidate can select the fast controller")
         if self.learner.metadata.get("controller_version", 1) == version:
             return self.status()
         metadata = {
@@ -172,9 +172,7 @@ class LearningWorker:
             "controller_version": version,
             "version": self.learner.metadata["version"] + 1,
             "warmup_base_datasets": len(self.learner.metadata.get("search_datasets", [])),
-            "last_configuration": "compact public text + frozen feature replay"
-            if version == 3
-            else "full affordable hand, compact visual prompt",
+            "last_configuration": "compact public text + frozen feature replay",
         }
         self.learner.save(metadata)
         self.learner.metadata = metadata
@@ -212,7 +210,7 @@ class LearningWorker:
 
     def choose(self, request):
         controller = self.learner.metadata.get("controller_version", 1)
-        if request.get("controller_version", 1) != controller:
+        if request["controller_version"] != controller:
             raise ValueError("Decision controller does not match the frozen policy")
         choices = request["choices"]
         if not 1 <= len(choices) <= 26 or len(set(choices)) != len(choices):
@@ -398,8 +396,8 @@ class LearningWorker:
         self.learner = candidate
         self.model.language_model.model.norm.adapter = candidate.adapter
         try:
-            if dataset.get("controllerVersion") in (2, 3):
-                self.configure_candidate(dataset["controllerVersion"])
+            if dataset.get("controllerVersion") == 3:
+                self.configure_candidate(3)
             if identity in candidate.metadata.get("search_datasets", []):
                 report = {
                     "updated": False,
@@ -458,7 +456,7 @@ class LearningWorker:
             samples, identity, dataset["rulesID"], epochs=dataset.get("trainingEpochs", 1)
         )
         remember(self.learner, dataset, identity, samples)
-        if report.get("updated") and dataset.get("controllerVersion") in (2, 3):
+        if report.get("updated") and dataset.get("controllerVersion") == 3:
             atomic_json(
                 self.learner.directory / "actor-anchors.json",
                 {

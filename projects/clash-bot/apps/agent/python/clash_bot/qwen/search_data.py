@@ -10,11 +10,7 @@ def load_search_targets(path):
     path = Path(path).resolve()
     raw = path.read_bytes()
     data = json.loads(raw)
-    tactical = data.get("format") in (
-        "counterpush-tactical-targets-v2",
-        "counterpush-tactical-targets-v3",
-    )
-    controller = 3 if data.get("format") == "counterpush-tactical-targets-v3" else 2
+    tactical = data.get("format") == "counterpush-tactical-targets-v3"
     if (
         not (
             (
@@ -24,7 +20,7 @@ def load_search_targets(path):
             or (
                 tactical
                 and data.get("source") == "local_native_counterfactual_v2"
-                and data.get("controllerVersion") == controller
+                and data.get("controllerVersion") == 3
             )
         )
         or data.get("teacherQualifiedForRealGame") is not False
@@ -56,7 +52,7 @@ def load_search_targets(path):
             evidence = row["evidence"]
             gains = evidence["towerImprovement"]
             if (
-                row.get("controllerVersion") != controller
+                row.get("controllerVersion") != 3
                 or evidence.get("kind") != "paired_passive_future_rollout"
                 or evidence.get("actionOrder") != "seeded_permutation"
                 or evidence.get("futureEnemyDeployments") != 0
