@@ -8171,6 +8171,10 @@ __metadata:
 "@side/clash-bot@workspace:projects/clash-bot":
   version: 0.0.0-use.local
   resolution: "@side/clash-bot@workspace:projects/clash-bot"
+  dependencies:
+    "@side/config": "workspace:*"
+    eslint: "catalog:"
+    jiti: "catalog:"
   languageName: unknown
   linkType: soft
 
