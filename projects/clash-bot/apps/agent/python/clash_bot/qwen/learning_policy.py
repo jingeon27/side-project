@@ -50,8 +50,17 @@ def action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows, tempera
     return logits - mx.logsumexp(logits, axis=-1, keepdims=True)
 
 
+def policy_log_probs(adapter, sample, norm_weight, norm_eps, token_rows):
+    raw = action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
+    bias = sample["policy_bias"]
+    if bias.shape != raw.shape:
+        raise ValueError("Categorical policy bias does not match the action labels")
+    adjusted = raw + bias
+    return adjusted - mx.logsumexp(adjusted, axis=-1, keepdims=True)
+
+
 def clipped_loss(adapter, sample, advantage, norm_weight, norm_eps, token_rows):
-    logp = action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
+    logp = policy_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
     old = sample["old_log_probs"]
     ratio = mx.exp(logp[sample["chosen"]] - old[sample["chosen"]])
     surrogate = mx.minimum(ratio * advantage, mx.clip(ratio, 0.8, 1.2) * advantage)
@@ -62,7 +71,7 @@ def clipped_loss(adapter, sample, advantage, norm_weight, norm_eps, token_rows):
 
 
 def imitation_loss(adapter, sample, norm_weight, norm_eps, token_rows):
-    logp = action_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
+    logp = policy_log_probs(adapter, sample, norm_weight, norm_eps, token_rows)
     # Supervise only the observed card/lane. Sum probability over all compatible
     # candidate placements instead of inventing an exact deployment coordinate.
     target_logp = mx.logsumexp(logp[mx.array(sample["targets"])])
@@ -130,6 +139,11 @@ class Learner:
 
     def log_probs(self, sample):
         return action_log_probs(
+            self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
+        )
+
+    def policy_log_probs(self, sample):
+        return policy_log_probs(
             self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
         )
 
@@ -346,7 +360,7 @@ class Learner:
         }
         before_hash = weights_digest(self.adapter)
         probability = lambda sample: float(
-            mx.sum(mx.exp(self.log_probs(sample))[mx.array(sample["targets"])]).item()
+            mx.sum(mx.exp(self.policy_log_probs(sample))[mx.array(sample["targets"])]).item()
         )
         before_probabilities = [probability(sample) for sample in samples]
         self.optimizer.learning_rate = learning_rate
@@ -373,7 +387,7 @@ class Learner:
                 float(
                     mx.sum(
                         mx.exp(sample["old_log_probs"])
-                        * (sample["old_log_probs"] - self.log_probs(sample))
+                        * (sample["old_log_probs"] - self.policy_log_probs(sample))
                     ).item()
                 )
                 for sample in samples
@@ -531,7 +545,7 @@ class Learner:
         before_hash = weights_digest(self.adapter)
         self.optimizer.learning_rate = learning_rate
         before_probabilities = [
-            float(mx.exp(self.log_probs(s)[s["chosen"]]).item()) for s in selected
+            float(mx.exp(self.policy_log_probs(s)[s["chosen"]]).item()) for s in selected
         ]
         # A run of identical losses must not turn the outcome gradient into zero
         # and leave entropy as the only objective. This is a past-data, action-
@@ -584,7 +598,7 @@ class Learner:
             kls = [
                 float(
                     mx.sum(
-                        mx.exp(s["old_log_probs"]) * (s["old_log_probs"] - self.log_probs(s))
+                        mx.exp(s["old_log_probs"]) * (s["old_log_probs"] - self.policy_log_probs(s))
                     ).item()
                 )
                 for s in selected
@@ -618,7 +632,7 @@ class Learner:
                 "objective_after": objective_after,
                 "probability_before": before_probabilities[0],
                 "probability_after": float(
-                    mx.exp(self.log_probs(selected[0])[selected[0]["chosen"]]).item()
+                    mx.exp(self.policy_log_probs(selected[0])[selected[0]["chosen"]]).item()
                 ),
             }
             if batch:

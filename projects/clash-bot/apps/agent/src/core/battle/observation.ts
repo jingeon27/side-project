@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { cardIdSchema } from '../cards.ts';
 import { UNIT_KINDS } from '../knowledge.ts';
-import { battleSituationSchema } from './battle-state.ts';
+import { battleSituationSchema, healthSchema } from './battle-state.ts';
 
 // CPU 인식 워커가 화면 한 장에서 읽은 결과다. Python(clash_bot.perception.vision_worker)이 같은 형태로 응답한다.
 export const unitScanSchema = z.object({
@@ -19,6 +19,7 @@ export const unitScanSchema = z.object({
       kind: z.enum(UNIT_KINDS).nullable().optional(),
       variant: z.enum(['base', 'evolution', 'hero', 'unknown']).optional(),
       box: z.array(z.number()).length(4),
+      health: healthSchema.optional(),
       side: z.literal('red'),
     }),
   ),
@@ -43,6 +44,7 @@ export const unitScanSchema = z.object({
         x: z.number(),
         y: z.number(),
         side: z.literal('blue'),
+        health: healthSchema.optional(),
       }),
     )
     .default([]),
@@ -57,6 +59,7 @@ export const unitScanSchema = z.object({
         side: z.enum(['red', 'blue']),
         marker_x: z.number().optional(),
         marker_y: z.number().optional(),
+        health: healthSchema.optional(),
       }),
     )
     .optional(),

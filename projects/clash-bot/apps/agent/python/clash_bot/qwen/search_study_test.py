@@ -61,6 +61,7 @@ class IsolatedSearchStudyTest(unittest.TestCase):
             "version": 0,
             "chosen": 1,
             "remaining": 0,
+            "policy_bias": mx.zeros(3),
         }
         sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
         learner.train([sample], 1, "real-baseline")

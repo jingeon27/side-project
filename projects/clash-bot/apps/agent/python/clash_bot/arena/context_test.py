@@ -4,9 +4,36 @@ import unittest
 
 from clash_bot.arena.context import decision_context
 from clash_bot.arena.curriculum import scenario
+from clash_bot.arena.engine import FIELDS, TILE
 
 
 class PublicSpellPhaseTest(unittest.TestCase):
+    def test_body_motion_uses_prior_public_positions_and_ignores_future_positions(self):
+        observation = scenario(1004, 2)
+        row = next(
+            entity for entity in observation["state"]["entities"] if entity[FIELDS["card_id"]] >= 0
+        )
+        tick = observation["state"]["tick"]
+        observation["history"].append(
+            {
+                "tick": tick - 10,
+                "plays": [],
+                "positions": [[row[FIELDS["uid"]], row[FIELDS["x"]] - TILE, row[FIELDS["y"]]]],
+            }
+        )
+        before = decision_context(observation, [])["bodies"]
+        self.assertTrue(
+            any(body["velocity"] == [2, 0] for bodies in before.values() for body in bodies)
+        )
+        observation["history"].append(
+            {
+                "tick": tick + 1,
+                "plays": [],
+                "positions": [[row[FIELDS["uid"]], 0, 0]],
+            }
+        )
+        self.assertEqual(before, decision_context(observation, [])["bodies"])
+
     def test_training_context_keeps_graveyard_phase_from_the_public_cast_history(self):
         observation = scenario(1004, 0)
         context = decision_context(observation, [])

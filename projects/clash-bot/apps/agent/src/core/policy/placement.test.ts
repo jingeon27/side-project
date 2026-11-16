@@ -51,8 +51,12 @@ describe('placement constraints and Graveyard defense regressions', () => {
       expect(actions.length).toBeLessThanOrEqual(26);
       for (const card of cards) {
         const positions = actions.filter((action) => action.card === card);
-        for (const tile of DEPLOYMENT.kingBackTiles)
+        for (const tile of situation === threatened && card === 'ice_wizard'
+          ? DEPLOYMENT.kingBackTiles.slice(0, 1)
+          : DEPLOYMENT.kingBackTiles)
           expect(positions.map((action) => tilePoint(profile, action.target))).toContainEqual(tile);
+        if (situation === threatened && card === 'ice_wizard')
+          expect(positions.filter((action) => tilePoint(profile, action.target)[1] > 2)).toHaveLength(4);
         expect(positions.every((action) => !blockedDeployment(profile, card, action.target, situation))).toBe(
           true,
         );

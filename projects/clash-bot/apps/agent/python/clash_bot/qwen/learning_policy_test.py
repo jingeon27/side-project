@@ -125,6 +125,7 @@ class LearningPolicyTest(unittest.TestCase):
             "chosen": 1,
             "version": 0,
             "remaining": 0,
+            "policy_bias": mx.zeros(3),
         }
         sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
         mx.eval(sample["old_log_probs"])

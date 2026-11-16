@@ -10,6 +10,7 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
+from clash_bot.perception.health import health_bar
 from clash_bot.perception.protocol import protocol_channel, serve
 
 cv2.setNumThreads(1)
@@ -589,6 +590,7 @@ class VisionWorker:
                 continue
             result, box = max(candidates, key=lambda item: item[0]["confidence"])
             if (result["card"] or result["kind"]) and result["confidence"] >= 0.65:
+                health = health_bar(np.asarray(image), marker, side)
                 entities.append(
                     {
                         **result,
@@ -598,6 +600,7 @@ class VisionWorker:
                         "marker_y": marker["y"],
                         "box": box,
                         "side": side,
+                        **({"health": health} if health is not None else {}),
                     }
                 )
         # A badge and its health-bar marker can select the very same proposal.

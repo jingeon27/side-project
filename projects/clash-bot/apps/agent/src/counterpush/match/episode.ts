@@ -5,6 +5,7 @@ import { match } from 'ts-pattern';
 
 import type { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
 import { COUNTERPUSH_DECK } from '../../core/deck.ts';
+import { decisionContext, decisionProjection } from '../../core/policy/decision-v3.ts';
 import type { Profile } from '../../core/profile.ts';
 import type { DecisionOutput } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
@@ -83,6 +84,19 @@ async function decideAndAct(context: InputContext, controller: Controller, befor
   const output = prediction.output!;
   const selected = candidates.find((action) => action.id === Number(JSON.parse(output.text).choice));
   if (!selected) throw new Error('Counterpush 정책이 후보 밖의 행동을 반환했습니다.');
+  const projection = () => {
+    if (controller.version !== 3) return null;
+    const description = decisionContext(
+      profile,
+      before.cards,
+      before.state.elixir,
+      candidates,
+      before.situation,
+    );
+    const action = description.actions[candidates.indexOf(selected)];
+    if (!action) throw new Error('선택한 행동의 피해 예측 문맥이 없습니다.');
+    return decisionProjection(description, action);
+  };
   await recorder.event({
     type: 'prediction',
     frame,
@@ -90,6 +104,7 @@ async function decideAndAct(context: InputContext, controller: Controller, befor
     candidates,
     prompt,
     situation: before.situation,
+    projection: projection(),
     perceptionMs: before.perceptionMs,
     captureToDecisionMs: Date.now() - before.capturedAt,
     ...output,

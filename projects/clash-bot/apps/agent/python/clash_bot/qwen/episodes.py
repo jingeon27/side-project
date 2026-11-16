@@ -47,6 +47,11 @@ def episode_samples(episode, learner, spec):
             spec["hidden_size"],
         ):
             raise ValueError("Invalid frozen Qwen feature shape")
+        if (
+            feature["policy_bias"].shape != (len(behavior["labels"]),)
+            or not mx.array_equal(feature["policy_bias"], mx.array(behavior["policy_bias"])).item()
+        ):
+            raise ValueError("Saved policy prior does not match executed behavior")
         sample = {
             **feature,
             "labels": behavior["labels"],

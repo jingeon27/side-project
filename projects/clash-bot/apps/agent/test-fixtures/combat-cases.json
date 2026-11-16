@@ -1,0 +1,337 @@
+[
+  {
+    "name": "spawn kills a stationary observed skeleton",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "moving target leaves before deployment",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [6, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0],
+      "kills": [0, 0]
+    }
+  },
+  {
+    "name": "rolling corridor hits once",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 12,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "roll does not hit a unit behind its start",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 5,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0]
+    }
+  },
+  {
+    "name": "Poison kills a stationary observed skeleton",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "moving out of Poison is not eight seconds",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "knight",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [2, 0],
+          "hp": [1000, 1000]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damageUpperBelow": 736,
+      "kills": [0, 0]
+    }
+  },
+  {
+    "name": "unseen HP stays unknown",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 84],
+      "kills": [0, 0],
+      "unknownHealth": 1
+    }
+  },
+  {
+    "name": "no observed skill opportunity",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "ability",
+      "x": 9,
+      "y": 10,
+      "own": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemy": [],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "nearby hero fight is an opportunity, not a verified mark",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "ability",
+      "x": 9,
+      "y": 10,
+      "own": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 12,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "opportunity": 1
+    }
+  },
+  {
+    "name": "available Goblin Barrel reserves our roll",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [],
+      "enemyCycle": [["goblin_barrel", 0, 0]],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "reserveBarrel": true
+    }
+  },
+  {
+    "name": "out of cycle Goblin Barrel does not lock our roll",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [],
+      "enemyCycle": [["goblin_barrel", 4, 4]],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "reserveBarrel": false
+    }
+  },
+  {
+    "name": "unknown movement does not promise a hit",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": null,
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 81],
+      "kills": [0, 1]
+    }
+  }
+]

@@ -9,6 +9,7 @@ import { tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
 import { bodyCard } from './candidates.ts';
+import { combatBody, forecastEffect, forecastText, type CombatBody } from './combat-projection.ts';
 import { observedContacts } from './effects.ts';
 
 // 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.decision_input)도 같은 파일을 읽는다.
@@ -44,6 +45,7 @@ export type DecisionContext = {
   next?: string[];
   own: DecisionUnit[];
   enemy: DecisionUnit[];
+  bodies: { own: CombatBody[]; enemy: CombatBody[] };
   effects?: DecisionEffect[];
   skill?: string;
   actions: DecisionAction[];
@@ -81,6 +83,10 @@ export function decisionContext(
       .toSorted((a, b) => b.y - a.y)
       .slice(0, 8)
       .map(row),
+    bodies: {
+      own: situation.own.units.toSorted((a, b) => a.y - b.y).map((unit) => combatBody(profile, unit)),
+      enemy: situation.opponent.units.toSorted((a, b) => b.y - a.y).map((unit) => combatBody(profile, unit)),
+    },
     effects: situation.effects
       ?.slice(0, 4)
       .map((effect): DecisionEffect => [
@@ -105,6 +111,21 @@ export function decisionContext(
 export type PublicDecisionContext = Omit<DecisionContext, 'elixir'> & {
   elixir: number | { min: number; max: number };
 };
+export function decisionProjection(
+  context: Pick<DecisionContext, 'bodies' | 'enemyCycle' | 'enemyElixir'>,
+  action: DecisionAction,
+) {
+  return forecastEffect({
+    card: action[2],
+    kind: action[1],
+    x: action[4],
+    y: action[5],
+    own: context.bodies.own,
+    enemy: context.bodies.enemy,
+    enemyCycle: context.enemyCycle ?? [],
+    enemyMana: context.enemyElixir,
+  });
+}
 export function serializeDecision(context: PublicDecisionContext) {
   const code = (name: string | null) => contract.codes[name ?? ''] ?? '?';
   const units = (rows: DecisionContext['own']) =>
@@ -140,17 +161,17 @@ export function serializeDecision(context: PublicDecisionContext) {
     contract.header +
     `mana=${mana};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};enemyCycle=${enemyCycle};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${skill}\n` +
     context.actions
-      .map(
-        ([letter, kind, card, , x, y]) =>
-          `${letter}:${match(kind)
-            .with('ability', () => 'U')
-            .with('wait', () => 'W')
-            .with('card', () => {
-              const hits = contacts ? observedContacts(card, [x, y], context.enemy) : null;
-              return `${code(card)}${x},${y}${hits === null ? '' : `h${hits}`}`;
-            })
-            .exhaustive()}`,
-      )
+      .map((action) => {
+        const [letter, kind, card, , x, y] = action;
+        return `${letter}:${match(kind)
+          .with('ability', () => 'U')
+          .with('wait', () => 'W')
+          .with('card', () => {
+            const hits = contacts ? observedContacts(card, [x, y], context.enemy) : null;
+            return `${code(card)}${x},${y}${hits === null ? '' : `h${hits}`}`;
+          })
+          .exhaustive()}${forecastText(decisionProjection(context, action), kind, card)}`;
+      })
       .join(' ')
   );
 }

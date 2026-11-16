@@ -120,6 +120,7 @@ class LearningEpisodeTest(unittest.TestCase):
                 "labels": [0, 1],
                 "chosen": 0,
                 "old_log_probs": [-0.6, -0.7],
+                "policy_bias": [0.0, 0.0],
                 "version": 0,
                 "adapter_sha256": weights_digest(worker.learner.adapter),
                 "feature_path": str(features / f"{frame:04d}.npz"),
@@ -130,6 +131,7 @@ class LearningEpisodeTest(unittest.TestCase):
                 str(features / f"{frame:04d}.npz"),
                 features=mx.zeros(MODEL["input_size"]),
                 base=mx.zeros(MODEL["hidden_size"]),
+                policy_bias=mx.zeros(2),
             )
         rows = [
             prediction(1),
@@ -242,7 +244,12 @@ class LearningEpisodeTest(unittest.TestCase):
             def choose(request):
                 feature_path = Path(request["feature_path"])
                 feature_path.parent.mkdir(parents=True)
-                mx.savez(str(feature_path), features=mx.ones(12), base=mx.ones(8))
+                mx.savez(
+                    str(feature_path),
+                    features=mx.ones(12),
+                    base=mx.ones(8),
+                    policy_bias=mx.zeros(3),
+                )
                 return {
                     "behavior": {
                         "labels": [0, 1, 2],

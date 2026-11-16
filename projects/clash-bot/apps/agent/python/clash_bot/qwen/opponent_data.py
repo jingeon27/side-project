@@ -5,10 +5,11 @@ import json
 import math
 from pathlib import Path
 
+from .combat_projection import COMBAT
 from .decision_input import CONTRACT, mirror_actor_prompt
 from .episode_events import verified_result
 
-DEMONSTRATION_FORMAT = "counterpush-mirror-actor-demonstrations-v3"
+DEMONSTRATION_FORMAT = "counterpush-mirror-actor-demonstrations-v4"
 
 
 def load_demonstrations(path, quarantine_path=None):
@@ -94,12 +95,27 @@ def load_demonstrations(path, quarantine_path=None):
                     * 0.35,
                 ),
             )
-            if sample["card"] not in ("poison", "graveyard", "goblin_hut") or region != {
+            stationary = sample["card"] in ("poison", "graveyard", "goblin_hut")
+            moving = (
+                sample["card"] in ("ice_wizard", "furnace", "knight", "skeletons")
+                and sample["after_at"] - sample["before_at"] <= 1200
+            )
+            if moving:
+                body = "skeleton" if sample["card"] == "skeletons" else sample["card"]
+                radius += (
+                    COMBAT["bodies"][body]["speed"]
+                    * 17
+                    * (sample["after_at"] - sample["before_at"])
+                    / 1000
+                )
+            if not (stationary or moving) or region != {
                 "x": grounding["x"],
                 "y": 2 * sample["river_y"] - grounding["y"],
                 "radius": radius,
             }:
-                raise ValueError("Placement region is not the observed stationary effect/building")
+                raise ValueError(
+                    "Placement region is not supported by the observed effect or fresh-unit movement envelope"
+                )
         elif region is not None:
             raise ValueError("Card/lane supervision cannot claim a precise region")
         expected = []

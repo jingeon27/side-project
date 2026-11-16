@@ -149,7 +149,7 @@ describe('opponent visual demonstrations', () => {
         elixir: null,
         exact_target: null,
       });
-      expect(dataset.format).toBe('counterpush-mirror-actor-demonstrations-v3');
+      expect(dataset.format).toBe('counterpush-mirror-actor-demonstrations-v4');
       expect(dataset.samples[0].situation).toEqual(situation);
       expect(dataset.samples[0].image_sha256).not.toBe(dataset.samples[0].evidence_sha256);
       expect(await prepareOpponentDataset(path, directory, { ...DEFAULT_PROFILE, deck: [...deck] })).toEqual(

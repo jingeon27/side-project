@@ -3,7 +3,7 @@ import { CARD_INFO, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import { actionCandidates, type QwenAction } from './actions.ts';
-import { ownPoint } from './placement.ts';
+import { ownPoint, predictivePlacements } from './placement.ts';
 
 export function bodyCard(unit: FieldUnit): string | null {
   if (unit.kind) return unit.kind;
@@ -31,21 +31,23 @@ export function affordableCandidates(
   const old = actionCandidates(profile, cards, elixir, threats, observed);
   const byCard = cards.flatMap((card, index) => {
     if (!card || CARD_INFO[card].cost > elixir) return [];
-    const existing = old.filter((action) => action.card === card && action.kind !== 'ability');
-    const fallback =
-      card === 'graveyard' || card === 'poison'
-        ? [95, 273].map((x) => ({
-            target: { x, y: profile.arena.y + 60 },
-            description: `${card} tower; compare support and defense`,
-          }))
-        : [95, 273]
-            .map((x) => ({
-              target: ownPoint(profile, card, { x, y: profile.riverY + 85 }, observed)!,
-              description: `${card} lane support`,
-            }))
-            .filter((row) => row.target);
+    const existing = ['ice_wizard', 'barbarian_barrel'].includes(card)
+      ? predictivePlacements(profile, card, threats, observed)
+      : old.filter((action) => action.card === card && action.kind !== 'ability');
+    const fallback = () => {
+      if (card === 'barbarian_barrel') return [];
+      if (card === 'graveyard' || card === 'poison')
+        return [95, 273].map((x) => ({
+          target: { x, y: profile.arena.y + 60 },
+          description: `${card} tower; compare support and defense`,
+        }));
+      return [95, 273].flatMap((x) => {
+        const target = ownPoint(profile, card, { x, y: profile.riverY + 85 }, observed);
+        return target ? [{ target, description: `${card} lane support` }] : [];
+      });
+    };
     const unique = new Map(
-      [...existing, ...fallback].map((row) => [
+      [...existing, ...fallback()].map((row) => [
         `${Math.round(row.target.x)}:${Math.round(row.target.y)}`,
         row,
       ]),

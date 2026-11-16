@@ -188,6 +188,13 @@ export class ElixirLedger {
   }
 }
 
+export const healthSchema = z
+  .object({
+    minFraction: z.number().min(0).max(1),
+    maxFraction: z.number().min(0).max(1),
+    source: z.literal('visible_hp_bar'),
+  })
+  .refine((value) => value.minFraction <= value.maxFraction, 'HP fraction interval is reversed');
 const unitSchema = z.object({
   card: cardIdSchema.nullable(),
   x: z.number(),
@@ -196,6 +203,8 @@ const unitSchema = z.object({
   kind: z.enum(UNIT_KINDS).optional(),
   variant: z.enum(['base', 'evolution', 'hero', 'unknown']).optional(),
   trackId: z.string().optional(),
+  health: healthSchema.optional(),
+  motion: z.object({ samples: z.int().nonnegative(), elapsedMs: z.number().nonnegative() }).optional(),
   velocity: z
     .object({ xPerSecond: z.number(), yPerSecond: z.number(), speedPixelsPerSecond: z.number() })
     .optional(),

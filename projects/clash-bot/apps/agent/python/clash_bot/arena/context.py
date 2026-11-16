@@ -104,7 +104,7 @@ def decision_context(observation, actions, types=None):
         for index, card in enumerate(reversed(public_plays[-4:]))
     ]
     bodies = [row for row in state["entities"] if row[FIELDS["card_id"]] >= 0]
-    theirs, ours = partition(lambda row: row[FIELDS["team"]] == team, bodies)
+    theirs, ours = map(list, partition(lambda row: row[FIELDS["team"]] == team, bodies))
 
     def units(rows):
         return [
@@ -115,6 +115,44 @@ def decision_context(observation, actions, types=None):
             ]
             for row in rows
         ]
+
+    def detailed(rows, reverse):
+        result = []
+        for row in sorted(
+            rows,
+            key=lambda entity: canonical(
+                entity[FIELDS["x"]] / TILE, entity[FIELDS["y"]] / TILE, team
+            )[1],
+            reverse=reverse,
+        ):
+            uid = row[FIELDS["uid"]]
+            seen = [
+                (event["tick"], point)
+                for event in observation["history"]
+                if 0 < state["tick"] - event["tick"] <= 60
+                for point in event.get("positions", [])
+                if point[0] == uid
+            ]
+            old = max(seen, key=lambda value: value[0]) if seen else None
+            point = tile(row[FIELDS["x"]], row[FIELDS["y"]], team)
+            previous = tile(old[1][1], old[1][2], team) if old else None
+            seconds = (state["tick"] - old[0]) / 20 if old else None
+            result.append(
+                {
+                    "kind": body(types[row[FIELDS["unit_type"]]]),
+                    "x": point[0],
+                    "y": point[1],
+                    "variant": "?",
+                    "velocity": [
+                        (point[0] - previous[0]) / seconds,
+                        (point[1] - previous[1]) / seconds,
+                    ]
+                    if previous and seconds
+                    else None,
+                    "hp": [row[FIELDS["hp"]], row[FIELDS["hp"]]],
+                }
+            )
+        return result
 
     effects = [
         [
@@ -134,6 +172,7 @@ def decision_context(observation, actions, types=None):
         "next": [ALIASES[own["next_card"]]],
         "own": sorted(units(ours), key=lambda row: -row[2])[:5],
         "enemy": sorted(units(theirs), key=lambda row: row[2])[:8],
+        "bodies": {"own": detailed(ours, True), "enemy": detailed(theirs, False)},
         "effects": effects[:4],
         "skill": "ready" if own["abilities"] and own["abilities"][0][0] else "not_visible",
         "actions": [action_row(index, action, team) for index, action in enumerate(actions)],

@@ -6,7 +6,9 @@ import { CARD_INFO, type CardId } from '../../core/cards.ts';
 import { screenPoint, tilePoint, type Point } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
 import { bodyCard } from '../../core/policy/candidates.ts';
+import { combatBody } from '../../core/policy/combat-projection.ts';
 import type { DecisionUnit, PublicDecisionContext } from '../../core/policy/decision-v3.ts';
+import { predictivePlacements } from '../../core/policy/placement.ts';
 import type { Profile } from '../../core/profile.ts';
 
 export const reflectPoint = (profile: Pick<Profile, 'riverY'>, point: Point): Point => ({
@@ -43,6 +45,26 @@ export function mirrorContext(
       .toSorted((a, b) => a.y - b.y)
       .slice(0, 8)
       .map(row),
+    bodies: {
+      own: situation.opponent.units
+        .toSorted((a, b) => b.y - a.y)
+        .map((unit) =>
+          combatBody(profile, {
+            ...unit,
+            ...reflectPoint(profile, unit),
+            velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+          }),
+        ),
+      enemy: situation.own.units
+        .toSorted((a, b) => a.y - b.y)
+        .map((unit) =>
+          combatBody(profile, {
+            ...unit,
+            ...reflectPoint(profile, unit),
+            velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+          }),
+        ),
+    },
     effects: situation.effects
       ?.slice(0, 4)
       .map((effect) => [
@@ -65,6 +87,21 @@ export function mirrorContext(
 // The pool depends only on the BEFORE board, never on the demonstrated target.
 // Unseen hand slots stay unknown: these are possible intents, not live inputs.
 export function mirrorActions(profile: Profile, deck: CardId[], situation: BattleSituation): QwenAction[] {
+  const reflectUnit = (unit: FieldUnit) => ({
+    ...unit,
+    ...reflectPoint(profile, unit),
+    velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+  });
+  const field = {
+    own: { units: situation.opponent.units.map(reflectUnit) },
+    opponent: { units: situation.own.units.map(reflectUnit) },
+    effects: situation.effects?.map((effect) => ({
+      ...effect,
+      ...reflectPoint(profile, effect),
+      side: effect.side === 'red' ? ('blue' as const) : ('red' as const),
+      predictions: effect.predictions?.map((point) => ({ ...point, ...reflectPoint(profile, point) })),
+    })),
+  };
   const invaders = situation.own.units
     .filter((unit) => unit.confidence >= 0.85)
     .map((unit) => reflectPoint(profile, unit))
@@ -81,14 +118,13 @@ export function mirrorActions(profile: Profile, deck: CardId[], situation: Battl
           [3.5, 25.5],
           [14.5, 25.5],
         ]),
-        ...invaders.slice(0, 2),
+        ...invaders.slice(0, 1),
       ])
       .with('graveyard', () =>
         points([
           [3.5, 25.5],
           [2.5, 25],
           [14.5, 25.5],
-          [15.5, 25],
         ]),
       )
       .with('goblin_hut', () =>
@@ -97,8 +133,15 @@ export function mirrorActions(profile: Profile, deck: CardId[], situation: Battl
           [6.5, 11.25],
           [11.5, 11.25],
           [3.5, 10],
-          [14.5, 10],
         ]),
+      )
+      .with('ice_wizard', () =>
+        predictivePlacements(
+          profile,
+          'ice_wizard',
+          invaders.filter((point) => point.y > profile.riverY),
+          field,
+        ).map((option) => option.target),
       )
       .otherwise(() =>
         invaders[0]

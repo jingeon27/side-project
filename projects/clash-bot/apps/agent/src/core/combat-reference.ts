@@ -22,3 +22,53 @@ export const PLACEMENT_EFFECTS = z
   .parse(
     JSON.parse(readFileSync(new URL('../../contracts/placement-effects.json', import.meta.url), 'utf8')),
   );
+
+const bodySchema = z.object({
+  hp: z.number().positive(),
+  speed: z.number().nonnegative(),
+  ground: z.boolean(),
+});
+const parameters = z
+  .object({
+    format: z.literal('observed-motion-damage-v1'),
+    referenceLevel: z.number(),
+    counterpushCalibrated: z.boolean(),
+    inputDelaySeconds: z.number(),
+    inputDelayUncertainty: z.number(),
+    positionUncertaintyTiles: z.number(),
+    turnUncertaintyTilesPerSecond: z.number(),
+    stepSeconds: z.number(),
+    ice_wizard: z.object({ deploySeconds: z.number() }),
+    barbarian_barrel: z.object({
+      deploySeconds: z.number(),
+      speed: z.number(),
+    }),
+    poison: z.object({
+      deploySeconds: z.number(),
+      tickSeconds: z.number(),
+      slowMultiplier: z.number(),
+    }),
+    ability: z.object({
+      markRange: z.number(),
+      freezeSeconds: z.number(),
+      damage: z.number(),
+      radius: z.number(),
+    }),
+    bodies: z.record(z.string(), bodySchema),
+    policy: z.object({
+      noObservedSkillOpportunity: z.number(),
+      emptyRoll: z.number(),
+      reservedRoll: z.number(),
+    }),
+  })
+  .parse(
+    JSON.parse(readFileSync(new URL('../../contracts/combat-projection.json', import.meta.url), 'utf8')),
+  );
+
+export const COMBAT = {
+  ...parameters,
+  ice_wizard: { ...PLACEMENT_EFFECTS.ice_wizard, ...parameters.ice_wizard },
+  barbarian_barrel: { ...PLACEMENT_EFFECTS.barbarian_barrel, ...parameters.barbarian_barrel },
+  poison: { ...PLACEMENT_EFFECTS.poison, ...parameters.poison },
+};
+export const referenceBodyHp = (kind: string) => bodySchema.parse(COMBAT.bodies[kind]).hp;

@@ -16,14 +16,14 @@ class VisionModelTest(unittest.TestCase):
             with self.subTest(name=name):
                 scan = worker.scan({"image": str(here / (name + ".png"))})
                 self.assertTrue(any(effect["card"] == "graveyard" for effect in scan["effects"]))
-        poison = worker.scan({"image": str(here.parent / "testing/poison-red.png")})
+        poison = worker.scan({"image": str(here / "poison-red.png")})
         self.assertTrue(
             any(
                 effect["card"] == "poison" and effect["side"] == "red"
                 for effect in poison["effects"]
             )
         )
-        units = worker.scan({"image": str(here.parent / "testing/unit-badges.png")})
+        units = worker.scan({"image": str(here / "unit-badges.png")})
         self.assertFalse(units["effects"])
         spirits = [unit for unit in units["spawnedUnits"] if unit["kind"] == "fire_spirit"]
         self.assertTrue(spirits)

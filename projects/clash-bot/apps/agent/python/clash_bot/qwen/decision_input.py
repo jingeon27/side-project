@@ -4,6 +4,7 @@ import json
 import math
 
 from clash_bot.paths import CONTRACTS_DIR
+from clash_bot.qwen.combat_projection import forecast_effect, forecast_text, screen_body
 
 CONTRACT = json.loads((CONTRACTS_DIR / "decision-v3.json").read_text())
 EFFECTS = json.loads((CONTRACTS_DIR / "placement-effects.json").read_text())
@@ -67,12 +68,40 @@ def serialize_decision(context):
     def action_text(row):
         letter, kind, card, _cost, x, y = row
         if kind == "ability":
-            return f"{letter}:U"
+            return f"{letter}:U" + forecast_text(
+                forecast_effect(
+                    card,
+                    kind,
+                    x,
+                    y,
+                    context["bodies"]["own"],
+                    context["bodies"]["enemy"],
+                    context.get("enemyCycle", []),
+                    enemy,
+                ),
+                kind,
+                card,
+            )
         if kind == "wait":
             return f"{letter}:W"
         hits = observed_contacts(card, [x, y], context["enemy"]) if contacts else None
-        return f"{letter}:{code(card)}{number(x)},{number(y)}" + (
-            f"h{hits}" if hits is not None else ""
+        return (
+            f"{letter}:{code(card)}{number(x)},{number(y)}"
+            + (f"h{hits}" if hits is not None else "")
+            + forecast_text(
+                forecast_effect(
+                    card,
+                    kind,
+                    x,
+                    y,
+                    context["bodies"]["own"],
+                    context["bodies"]["enemy"],
+                    context.get("enemyCycle", []),
+                    enemy,
+                ),
+                kind,
+                card,
+            )
         )
 
     actions = " ".join(action_text(row) for row in context["actions"])
@@ -126,6 +155,16 @@ def mirror_actor_prompt(observation):
             unit(row) for row in sorted(state["opponent"]["units"], key=lambda row: -row["y"])[:5]
         ],
         "enemy": [unit(row) for row in sorted(state["own"]["units"], key=lambda row: row["y"])[:8]],
+        "bodies": {
+            "own": [
+                screen_body(row, river, True)
+                for row in sorted(state["opponent"]["units"], key=lambda row: -row["y"])[:5]
+            ],
+            "enemy": [
+                screen_body(row, river, True)
+                for row in sorted(state["own"]["units"], key=lambda row: row["y"])[:8]
+            ],
+        },
         "effects": [
             [
                 "blue" if row["side"] == "red" else "red",

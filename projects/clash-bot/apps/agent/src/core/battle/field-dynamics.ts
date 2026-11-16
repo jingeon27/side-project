@@ -15,6 +15,8 @@ type UnitTrack = {
   at: number;
   vx: number;
   vy: number;
+  samples: number;
+  firstAt: number;
 };
 type EffectTrack = {
   id: string;
@@ -86,6 +88,8 @@ export class FieldDynamics {
         at,
         vx: 0,
         vy: 0,
+        samples: 0,
+        firstAt: at,
       };
       if (!existing) this.units.push(track);
       const seconds = (at - track.at) / 1000;
@@ -96,7 +100,7 @@ export class FieldDynamics {
               vy: 0.7 * track.vy + (0.3 * (unit.y - track.y)) / seconds,
             }
           : { vx: 0, vy: 0 };
-      Object.assign(track, { x: unit.x, y: unit.y, at, ...velocity });
+      Object.assign(track, { x: unit.x, y: unit.y, at, ...velocity, samples: track.samples + 1 });
       matched.add(track.id);
       const body: FieldUnit & { side: 'red' | 'blue'; born: boolean } = {
         card: unit.confidence >= 0.85 ? unit.card : null,
@@ -110,6 +114,8 @@ export class FieldDynamics {
         born: !existing,
         sourceCard: unit.confidence >= 0.8 ? unit.sourceCard : undefined,
         possibleParent: this.origins.get(track.id) ?? null,
+        health: unit.health,
+        motion: { samples: track.samples, elapsedMs: at - track.firstAt },
         velocity: {
           xPerSecond: Math.round(velocity.vx * 10) / 10,
           yPerSecond: Math.round(velocity.vy * 10) / 10,

@@ -9,6 +9,30 @@ from clash_bot.qwen.opponent_data import DEMONSTRATION_FORMAT, load_demonstratio
 
 
 class OpponentDataTest(unittest.TestCase):
+    def test_fresh_ice_wizard_teaches_a_buildup_region_but_a_long_gap_does_not(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(
+                directory,
+                card="ice_wizard",
+                after_at=1800,
+                label_kind="placement_region",
+                target_region={"x": 168, "y": 488, "radius": 37.6},
+                grounding={"x": 168, "y": 64, "box": [145, 40, 191, 88]},
+                choices=[0, 1, 2],
+                target_ids=[1],
+                candidates=[
+                    {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 1, "card": "ice_wizard", "cost": 3, "target": {"x": 168, "y": 488}},
+                    {"id": 2, "card": "ice_wizard", "cost": 3, "target": {"x": 95, "y": 366}},
+                ],
+            )
+            load_demonstrations(path)
+            data = json.loads(path.read_text())
+            data["samples"][0]["after_at"] = 2201
+            path.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, "supported by the observed"):
+                load_demonstrations(path)
+
     def fixture(self, directory, **overrides):
         directory = Path(directory)
         (directory / "images").mkdir(exist_ok=True)
@@ -99,7 +123,7 @@ class OpponentDataTest(unittest.TestCase):
             changed = json.loads(json.dumps(original))
             changed["samples"][0]["target_region"]["y"] = 164
             path.write_text(json.dumps(changed))
-            with self.assertRaisesRegex(ValueError, "observed stationary"):
+            with self.assertRaisesRegex(ValueError, "supported by the observed"):
                 load_demonstrations(path)
             changed = json.loads(json.dumps(original))
             changed["teacher_result"] = {

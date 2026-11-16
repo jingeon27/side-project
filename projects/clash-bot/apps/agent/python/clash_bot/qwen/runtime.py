@@ -11,6 +11,7 @@ from mlx_vlm.prompt_utils import apply_chat_template
 from mlx_vlm.utils import prepare_inputs
 
 from clash_bot.files import atomic_json
+from clash_bot.qwen.action_prior import action_prior
 from clash_bot.qwen.decision_input import CONTRACT, mirror_actor_prompt
 from clash_bot.qwen.feature_cache import FeatureCache
 from clash_bot.qwen.learning_policy import (
@@ -289,11 +290,21 @@ class LearningWorker:
                 self.feature_cache.put(key, {"features": features, "base": base})
         else:
             features, base = cached["features"], cached["base"]
-        sample = {"features": features, "base": base, "labels": list(range(len(choices)))}
+        policy_bias = (
+            mx.array(action_prior(request["prompt"], len(choices)))
+            if text_only
+            else mx.zeros(len(choices))
+        )
+        sample = {
+            "features": features,
+            "base": base,
+            "labels": list(range(len(choices))),
+            "policy_bias": policy_bias,
+        }
         # Score the hidden state returned by the adapted Qwen itself. Training uses
         # the equivalent cached-feature computation to avoid a full-model backward.
         if text_only:
-            log_probs = self.learner.log_probs(sample)
+            log_probs = self.learner.policy_log_probs(sample)
         else:
             hidden = output.hidden_states[-1][0, -1]
             logits = (
@@ -306,7 +317,7 @@ class LearningWorker:
         mx.eval(features, base, log_probs)
         destination = Path(request["feature_path"])
         destination.parent.mkdir(parents=True, exist_ok=True)
-        mx.savez(str(destination), features=features, base=base)
+        mx.savez(str(destination), features=features, base=base, policy_bias=policy_bias)
         return {
             "choice": choices[chosen],
             "behavior": {
@@ -328,6 +339,8 @@ class LearningWorker:
                 "prefix_cache_hit": prefix_hit,
                 "prefix_tokens": prefix_length,
                 "prefix_cache_bytes": self.text_prefix.nbytes,
+                "policy_bias": policy_bias.tolist(),
+                "action_prior": "grouped_forecast_v1" if text_only else "none",
                 "policy_input": "public_text_v3" if text_only else "image_and_text",
                 "adapter_sha256": weights_digest(self.learner.adapter),
             },
@@ -479,6 +492,9 @@ class LearningWorker:
                     "search_target": row["target"],
                 }
             )
+            # Search targets supervise the raw head; their KL anchor is not
+            # the mechanics-adjusted categorical behavior distribution.
+            samples[-1]["old_log_probs"] = mx.stop_gradient(self.learner.log_probs(samples[-1]))
         report = self.learner.distill_search(
             samples, identity, dataset["rulesID"], epochs=dataset.get("trainingEpochs", 1)
         )

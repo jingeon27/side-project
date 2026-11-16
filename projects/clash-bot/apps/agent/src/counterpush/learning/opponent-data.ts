@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { opponentObservationSchema, type OpponentObservation } from '../../core/battle/observation.ts';
 import { cardIdSchema, type CardId } from '../../core/cards.ts';
+import { COMBAT } from '../../core/combat-reference.ts';
 import { HEIGHT, WIDTH } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
 import { serializeDecision } from '../../core/policy/decision-v3.ts';
@@ -17,7 +18,7 @@ import { RESULT_LABEL } from '../../shared/qualification.ts';
 import { mirrorActions, mirrorContext, reflectPoint } from './mirror-policy.ts';
 
 // 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
-export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v3';
+export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v4';
 export const opponentObservationsSchema = z
   .object({
     version: z.literal(1),
@@ -79,6 +80,15 @@ const placementRegion = (profile: Profile, grounding: NonNullable<OpponentObserv
     ...reflectPoint(profile, grounding),
     radius: Math.max(24, Math.min(45, Math.max(right - left, bottom - top) * 0.35)),
   };
+};
+const observedRegion = (profile: Profile, item: OpponentObservation) => {
+  if (!item.grounding) return null;
+  const region = placementRegion(profile, item.grounding);
+  if (['poison', 'graveyard', 'goblin_hut'].includes(item.card)) return region;
+  const gap = item.after.capturedAt - item.before.capturedAt;
+  if (!['ice_wizard', 'furnace', 'knight', 'skeletons'].includes(item.card) || gap > 1200) return null;
+  const kind = item.card === 'skeletons' ? 'skeleton' : item.card;
+  return { ...region, radius: region.radius + ((COMBAT.bodies[kind]?.speed ?? 2) * 17 * gap) / 1000 };
 };
 
 export async function prepareOpponentDataset(observationsPath: string, dataDir: string, profile: Profile) {
@@ -187,10 +197,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       .map((action) => ({ action, order: digest(`${record.before.source_sha256}:${action.id}`) }))
       .toSorted((first, second) => first.order.localeCompare(second.order))
       .map(({ action }) => action);
-    const region =
-      item.grounding && ['poison', 'graveyard', 'goblin_hut'].includes(item.card)
-        ? placementRegion(profile, item.grounding)
-        : null;
+    const region = observedRegion(profile, item);
     const positionTargets = region
       ? actions.filter(
           (action) =>

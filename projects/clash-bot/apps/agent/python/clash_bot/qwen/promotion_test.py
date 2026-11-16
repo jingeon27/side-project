@@ -33,6 +33,7 @@ def fixture(directory, tied=False, wins=16):
         "version": 0,
         "chosen": 1,
         "remaining": 0,
+        "policy_bias": mx.zeros(3),
     }
     sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
     learner.train([sample], 1, "bootstrap")
@@ -284,6 +285,7 @@ class QualifiedPromotionTest(unittest.TestCase):
                 "version": learner.metadata["version"],
                 "chosen": 1,
                 "remaining": 0,
+                "policy_bias": mx.zeros(3),
             }
             sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
             original = weights_digest(learner.adapter)

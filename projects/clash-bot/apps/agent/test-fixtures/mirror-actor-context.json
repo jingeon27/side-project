@@ -252,17 +252,6 @@
       },
       {
         "slot": 0,
-        "card": "goblin_hut",
-        "cost": 4,
-        "target": {
-          "x": 273,
-          "y": 376.10526315789474
-        },
-        "description": "BLUE mirrored public-before intent; hidden hand unknown",
-        "id": 9
-      },
-      {
-        "slot": 0,
         "card": "graveyard",
         "cost": 5,
         "target": {
@@ -270,7 +259,7 @@
           "y": 164
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
-        "id": 10
+        "id": 9
       },
       {
         "slot": 0,
@@ -281,7 +270,7 @@
           "y": 170.8421052631579
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
-        "id": 11
+        "id": 10
       },
       {
         "slot": 0,
@@ -292,15 +281,26 @@
           "y": 164
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
+        "id": 11
+      },
+      {
+        "slot": 0,
+        "card": "ice_wizard",
+        "cost": 3,
+        "target": {
+          "x": 135,
+          "y": 428
+        },
+        "description": "BLUE mirrored public-before intent; hidden hand unknown",
         "id": 12
       },
       {
         "slot": 0,
-        "card": "graveyard",
-        "cost": 5,
+        "card": "ice_wizard",
+        "cost": 3,
         "target": {
-          "x": 289.1818181818182,
-          "y": 170.8421052631579
+          "x": 66,
+          "y": 445
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
         "id": 13
@@ -310,8 +310,8 @@
         "card": "ice_wizard",
         "cost": 3,
         "target": {
-          "x": 95,
-          "y": 473
+          "x": 124,
+          "y": 445
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
         "id": 14
@@ -321,8 +321,8 @@
         "card": "ice_wizard",
         "cost": 3,
         "target": {
-          "x": 130,
-          "y": 453
+          "x": 95,
+          "y": 462
         },
         "description": "BLUE mirrored public-before intent; hidden hand unknown",
         "id": 15
@@ -428,5 +428,5 @@
       }
     ]
   },
-  "prompt": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.\nh=observed contacts,not future damage.I spawn84/r3;B ground roll215/length4.5/width2.6;P92/s for8s/r3.5.Reference only. G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. enemyCycle=card:min-max further plays,?unknown. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana. H triggers within6tiles;compare enemies,existing H,defense mana,W.\nmana=0-9.2?;enemyMana=0-10;enemyCycle=?;hand=????;next=;own=I14.5,10.6H;enemy=K3.5,6.2;effects=;skill=?\nA:W B:B3.5,4.9h1 C:B5.7,4.4h0 D:F3.5,2.9 E:F5.7,4.4 F:H9,11.3 G:H6.5,11.3 H:H11.5,11.3 I:H3.5,10 J:H14.5,10 K:G3.5,25.5 L:G2.5,25 M:G14.5,25.5 N:G15.5,25 O:I3.5,2.9h0 P:I5.7,4.4h1 Q:K3.5,4.9 R:K5.7,4.4 S:P3.5,6.5h1 T:P14.5,6.5h0 U:P3.5,25.5h0 V:P14.5,25.5h0 W:P3.5,6.2h1 X:S3.5,4.9 Y:S5.7,4.4"
+  "prompt": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.\nh=observed contacts,not future damage.I spawn84/r3;B ground roll215/length4.5/width2.6;P92/s for8s/r3.5.Reference only. G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. enemyCycle=card:min-max further plays,?unknown. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana. H triggers within6tiles;compare enemies,existing H,defense mana,W.\nForecast d=min-max HP damage,k=min-max predicted kills,?=HP unseen,e=total target exposure seconds,q=observed skill/roll opportunity,r1=reserve Barrel for known GoblinBarrel. Motion/deploy delay/tick/HP bounds are reference estimates,not confirmed outcomes. Ready is not a reason to spend. Save Barrel+2 mana against available enemy t=GoblinBarrel.\nForecast single value=equal bounds;z=no observed damage opportunity.\nmana=0-9.2?;enemyMana=0-10;enemyCycle=?;hand=????;next=;own=I14.5,10.6H;enemy=K3.5,6.2;effects=;skill=?\nA:W B:B3.5,4.9h1d0-215k0?q1r0 C:B5.7,4.4h0d0-215k0?q1r0 D:F3.5,2.9 E:F5.7,4.4 F:H9,11.3 G:H6.5,11.3 H:H11.5,11.3 I:H3.5,10 J:G3.5,25.5 K:G2.5,25 L:G14.5,25.5 M:I6,6.2h1d0-84k0? N:I1.7,5h1d0-84k0? O:I5.3,5h1d0-84k0? P:I3.5,3.7h1d0-84k0? Q:K3.5,4.9 R:K5.7,4.4 S:P3.5,6.5h1d0-736k0?e1.5-8 T:P14.5,6.5h0d0-276k0?e0-2.3 U:P3.5,25.5h0z V:P14.5,25.5h0z W:P3.5,6.2h1d0-736k0?e1.8-8 X:S3.5,4.9 Y:S5.7,4.4"
 }

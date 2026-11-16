@@ -1,12 +1,12 @@
 import type { CardId } from './cards.ts';
-import { PLACEMENT_EFFECTS } from './combat-reference.ts';
+import { COMBAT, PLACEMENT_EFFECTS, referenceBodyHp } from './combat-reference.ts';
 
 // Level-11 reference values checked 2026-11-15. Counterpush's physics have not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
 export const KNOWLEDGE_VERSION = 'cr-level11-2026-11-14';
 export const UNIT_MECHANICS = {
   knight: {
-    hp: 1766,
+    hp: referenceBodyHp('knight'),
     damage: 202,
     rangeTiles: 1.2,
     hitSeconds: 1.2,
@@ -17,7 +17,7 @@ export const UNIT_MECHANICS = {
     splashTiles: 0,
   },
   furnace: {
-    hp: 727,
+    hp: referenceBodyHp('furnace'),
     damage: 179,
     rangeTiles: 5.5,
     hitSeconds: 1.7,
@@ -28,7 +28,7 @@ export const UNIT_MECHANICS = {
     splashTiles: 0,
   },
   ice_wizard: {
-    hp: 688,
+    hp: referenceBodyHp('ice_wizard'),
     damage: 89,
     spawnDamage: PLACEMENT_EFFECTS.ice_wizard.damage,
     spawnRadiusTiles: PLACEMENT_EFFECTS.ice_wizard.radius,
@@ -43,7 +43,7 @@ export const UNIT_MECHANICS = {
     slowSeconds: 2.5,
   },
   skeleton: {
-    hp: 81,
+    hp: referenceBodyHp('skeleton'),
     damage: 81,
     rangeTiles: 0.5,
     hitSeconds: 1.1,
@@ -54,7 +54,7 @@ export const UNIT_MECHANICS = {
     splashTiles: 0,
   },
   barbarian: {
-    hp: 716,
+    hp: referenceBodyHp('barbarian'),
     damage: 192,
     rangeTiles: 0.7,
     hitSeconds: 1.4,
@@ -65,7 +65,7 @@ export const UNIT_MECHANICS = {
     splashTiles: 0,
   },
   fire_spirit: {
-    hp: 215,
+    hp: referenceBodyHp('fire_spirit'),
     damage: 215,
     rangeTiles: 2.5,
     hitSeconds: null,
@@ -77,7 +77,7 @@ export const UNIT_MECHANICS = {
     selfDestructsOnHit: true,
   },
   spear_goblin: {
-    hp: 133,
+    hp: referenceBodyHp('spear_goblin'),
     damage: 81,
     rangeTiles: 5,
     hitSeconds: 1.6,
@@ -156,8 +156,8 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
       abilityCost: 2,
       singleUse: true,
       snowmanHp: 266,
-      freezeSeconds: 5,
-      radiusTiles: 2.5,
+      freezeSeconds: COMBAT.ability.freezeSeconds,
+      radiusTiles: COMBAT.ability.radius,
       condition:
         'freezes slowed enemies; destroying the snowman releases them; availability must be observed',
     },
@@ -183,7 +183,7 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     spawn: { unit: 'barbarian', intervalSeconds: null, count: 1, condition: 'after the ground-only roll' },
   },
   goblin_hut: {
-    structure: { hp: 1180, triggerRangeTiles: 6, lifetimeSeconds: 30 },
+    structure: { hp: referenceBodyHp('goblin_hut'), triggerRangeTiles: 6, lifetimeSeconds: 30 },
     deploySeconds: 1,
     spawn: {
       unit: 'spear_goblin',

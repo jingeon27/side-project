@@ -19,7 +19,29 @@
           ["A", "wait", null, 0, 0, 0],
           ["B", "card", "graveyard", 5, 3.5, 25.5],
           ["C", "ability", "ice_wizard", 2, 9, 0]
-        ]
+        ],
+        "bodies": {
+          "own": [
+            {
+              "kind": "knight",
+              "x": 3.5,
+              "y": 17,
+              "variant": "evolution",
+              "velocity": null,
+              "hp": null
+            }
+          ],
+          "enemy": [
+            {
+              "kind": "ice_wizard",
+              "x": 3.5,
+              "y": 22,
+              "variant": "hero",
+              "velocity": null,
+              "hp": null
+            }
+          ]
+        }
       },
       "features": [
         [1, 0.7],
@@ -74,6 +96,60 @@
         "towers": {
           "own": [1, 0.62, 1],
           "enemy": [1, 1, 0.31]
+        },
+        "bodies": {
+          "own": [
+            {
+              "kind": "furnace",
+              "x": 6,
+              "y": 3.5,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            },
+            {
+              "kind": "fire_spirit",
+              "x": 7.2,
+              "y": 9.1,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            },
+            {
+              "kind": "fire_spirit",
+              "x": 7.4,
+              "y": 9.0,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            }
+          ],
+          "enemy": [
+            {
+              "kind": "knight",
+              "x": 14.5,
+              "y": 18.2,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            },
+            {
+              "kind": "skeleton",
+              "x": 13,
+              "y": 14.9,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            },
+            {
+              "kind": "?",
+              "x": 4,
+              "y": 30,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            }
+          ]
         }
       },
       "features": [
@@ -129,7 +205,28 @@
           ["B", "card", "ice_wizard", 3, 9, 2],
           ["C", "card", "barbarian_barrel", 2, 3.5, 17]
         ],
-        "clock": 312
+        "clock": 312,
+        "bodies": {
+          "own": [],
+          "enemy": [
+            {
+              "kind": "barbarian",
+              "x": -0.4,
+              "y": 33,
+              "variant": "base",
+              "velocity": null,
+              "hp": null
+            },
+            {
+              "kind": "spear_goblin",
+              "x": 18.3,
+              "y": 16.5,
+              "variant": "?",
+              "velocity": null,
+              "hp": null
+            }
+          ]
+        }
       },
       "features": [
         [0, 1.0],

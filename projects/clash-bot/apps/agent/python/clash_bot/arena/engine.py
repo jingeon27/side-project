@@ -238,7 +238,17 @@ class Arena:
             )
             accepted.append({"team": team, "action": action.row(), "cost": cost})
         if accepted:
-            self.history.append({"tick": before["tick"], "plays": accepted})
+            self.history.append(
+                {
+                    "tick": before["tick"],
+                    "plays": accepted,
+                    "positions": [
+                        [row[FIELDS[key]] for key in ("uid", "x", "y")]
+                        for row in before["entities"]
+                        if row[FIELDS["card_id"]] >= 0
+                    ],
+                }
+            )
         return results
 
 

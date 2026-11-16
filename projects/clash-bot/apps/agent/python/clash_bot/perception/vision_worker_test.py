@@ -28,7 +28,7 @@ class PoisonOutlineTest(unittest.TestCase):
                 for box in boxes
             ]
         )
-        markers = [{"x": x, "y": 100, "bottom": 110} for x in (100, 101, 180)]
+        markers = [{"x": x, "y": 100, "bottom": 110, "width": 10} for x in (100, 101, 180)]
         bodies = worker.scan_markers(Image.new("RGB", (368, 652)), markers, proposals, "blue")
         self.assertEqual(len(bodies), 2)
         self.assertEqual([body["box"] for body in bodies], proposals)
