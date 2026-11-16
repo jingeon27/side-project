@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
-import { analyze, loadTemplates } from '../../android/perception/vision.ts';
+import { analyze, loadCounterpushTemplates } from '../../android/perception/vision.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type CardId, type Point, type Profile } from '../../shared/config.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
@@ -68,7 +68,7 @@ export async function reprocessEpisode(
   const abilityButton = await HeroAbilityButton.load();
   const dynamics = new FieldDynamics(directory);
   const situations = new Map<string, BattleSituation>();
-  const templates = await loadTemplates(dataDir, profile);
+  const templates = await loadCounterpushTemplates(dataDir, profile);
   const observations: OpponentObservation[] = [];
   const rejected: Array<{ id: string; reason: string }> = [];
   for (const frame of frames) {

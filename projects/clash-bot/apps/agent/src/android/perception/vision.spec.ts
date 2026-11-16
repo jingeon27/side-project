@@ -1,9 +1,23 @@
-import sharp from 'sharp';
-import { describe, expect, it } from 'vitest';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_PROFILE } from '../../shared/config.ts';
+import sharp from 'sharp';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { DEFAULT_PROFILE, loadProfile } from '../../shared/config.ts';
+import { HAND_REFERENCE_DIRECTORY, loadHandReferences } from '../../shared/hand-references.ts';
 import { fixture } from '../testing/fixture.ts';
-import { analyze, matchCard, normalize } from './vision.ts';
+import {
+  analyze,
+  fingerprint,
+  loadCounterpushTemplates,
+  loadTemplates,
+  matchCard,
+  normalize,
+  type Templates,
+} from './vision.ts';
 
 describe('extracting battle state from screen pixels', () => {
   it('skips the generic field scan when a separate detector owns it, preserving hand and resource reads', async () => {
@@ -83,5 +97,80 @@ describe('extracting battle state from screen pixels', () => {
     expect(observation.inBattle).toBe(true);
     expect(observation.hand[0]?.card).toBe('knight');
     expect(observation.viewport).toEqual(profile.viewport);
+  });
+});
+
+describe('loading hand reference images', () => {
+  const directories: string[] = [];
+  afterEach(async () => {
+    await Promise.all(
+      directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
+    );
+  });
+  const counterpushProfile = () =>
+    loadProfile(fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)));
+  const gray = (level: string) =>
+    sharp({ create: { width: 61, height: 73, channels: 3, background: level } })
+      .png()
+      .toBuffer();
+  async function dataDirectory(files: Record<string, Buffer>): Promise<string> {
+    const directory = await mkdtemp(join(tmpdir(), 'clash-bot-templates-'));
+    directories.push(directory);
+    await Promise.all(
+      Object.entries({ 'templates/battle.png': await gray('#606060'), ...files }).map(
+        async ([path, bytes]) => {
+          await mkdir(dirname(join(directory, path)), { recursive: true });
+          await writeFile(join(directory, path), bytes);
+        },
+      ),
+    );
+    return directory;
+  }
+  const cardsMatching = async (templates: Templates, image: Buffer) => {
+    const target = (await fingerprint(image)).join();
+    return templates.cards
+      .filter((template) => template.fingerprint.join() === target)
+      .map((template) => template.card);
+  };
+
+  it('keeps the repository card for a device copy of a repository image stored under another card', async () => {
+    const poison = await readFile(join(HAND_REFERENCE_DIRECTORY, 'variants/poison/disabled-2.png'));
+    const directory = await dataDirectory({ 'templates/variants/goblin_hut/0070.png': poison });
+    const templates = await loadTemplates(directory, await counterpushProfile());
+    expect(await cardsMatching(templates, poison)).toEqual(['poison']);
+    expect(templates.cards).toHaveLength((await loadHandReferences()).references.length);
+  });
+
+  it('adds images learned on the device and uses a downloaded default only until the device has its own', async () => {
+    const learned = await gray('#303030');
+    const downloadedKnight = await gray('#909090');
+    const downloadedSkeletons = await gray('#d0d0d0');
+    const directory = await dataDirectory({
+      'templates/knight.png': learned,
+      'assets/cards/knight.jpg': downloadedKnight,
+      'assets/cards/skeletons.jpg': downloadedSkeletons,
+    });
+    const templates = await loadTemplates(directory, await counterpushProfile());
+    expect(await cardsMatching(templates, learned)).toEqual(['knight']);
+    expect(await cardsMatching(templates, downloadedKnight)).toEqual([]);
+    expect(await cardsMatching(templates, downloadedSkeletons)).toEqual(['skeletons']);
+  });
+
+  it('names the deck cards that have no reference image', async () => {
+    const directory = await dataDirectory({});
+    await expect(loadTemplates(directory, DEFAULT_PROFILE)).rejects.toThrow(
+      'archers, giant, musketeer, minipekka, fireball, arrows',
+    );
+  });
+
+  it('reads Counterpush hand cards only from the repository images', async () => {
+    const learned = await gray('#303030');
+    const directory = await dataDirectory({
+      'templates/knight.png': learned,
+      'templates/variants/knight/learned.png': learned,
+    });
+    const templates = await loadCounterpushTemplates(directory, await counterpushProfile());
+    expect(await cardsMatching(templates, learned)).toEqual([]);
+    expect(templates.cards).toHaveLength((await loadHandReferences()).references.length);
   });
 });

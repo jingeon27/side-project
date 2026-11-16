@@ -109,7 +109,7 @@ BlueStacks 인식은 기존 손패·엘릭서·체력 막대 참조를 사용합
 
 ## 학습 없는 Qwen 단일 경기
 
-현재 Mac에는 실제 덱의 참조 이미지와 보정한 `.data/profile.json`이 준비되어 있습니다. 덱은 **용광로 / 얼음 마법사 / 기사 / 무덤 / 해골 병사 / 독 / 고블린 오두막 / 바바리안 통**입니다. 보정 좌표는 `profiles/bluestacks-trophy.json`에 보존했습니다. `counterpush:setup`은 이 8장의 계정 정보 없는 손패 참조를 준비하며 기존 사용자 참조를 덮어쓰지 않습니다.
+현재 Mac에는 실제 덱의 참조 이미지와 보정한 `.data/profile.json`이 준비되어 있습니다. 덱은 **용광로 / 얼음 마법사 / 기사 / 무덤 / 해골 병사 / 독 / 고블린 오두막 / 바바리안 통**입니다. 보정 좌표는 `profiles/bluestacks-trophy.json`에 보존했습니다. 이 8장의 계정 정보 없는 손패 참조는 저장소 그림을 실행 시 직접 읽으며, 관리 방법은 아래 `learn` 설명 다음에 있습니다.
 
 이미 시작한 대전에서 실제 입력을 허용하려면:
 
@@ -215,7 +215,11 @@ yarn workspace @side/clash-bot learn --card knight --variant evolved --slot 1 --
 yarn workspace @side/clash-bot learn --marker --image /absolute/path/battle.png
 ```
 
-`learn`은 카드/대전 표시의 **참조 이미지만 저장**하며 Qwen을 훈련하지 않습니다. 추가 그림은 `.data/templates/variants/<card>/<variant>.png`에 저장합니다. 선택한 손패 번호 1~4에 실제 해당 카드가 있는지 확인한 이미지로 등록합니다.
+`learn`은 카드/대전 표시의 **참조 이미지만 저장**하며 Qwen을 훈련하지 않습니다. 추가 그림은 `.data/templates/variants/<card>/<variant>.png`에 저장합니다. 선택한 손패 번호 1~4에 실제 해당 카드가 있는지 확인한 이미지로 등록합니다. 이렇게 등록한 그림은 이 기기의 Android·BlueStacks 실행에만 더해집니다.
+
+Counterpush 손패 참조는 저장소의 `apps/agent/assets/counterpush/hand-templates`가 소유하며 실행 시 직접 읽습니다. `manifest.json`은 그림마다 카드, 상태(`normal`·`evolution`·`disabled`), SHA-256과 확인한 원본 프레임을 기록하고, 파일은 `<카드>.png` 또는 `variants/<카드>/<상태>-<번호>.png`로 둡니다. 해시가 다르면 실행을 시작하지 않습니다. Counterpush는 이 그림만 쓰고, Android·BlueStacks는 여기에 `.data/templates`의 등록 그림과 내려받은 기본 그림을 더합니다. 이전 `counterpush:setup`이 `.data/templates`에 복사한 그림은 바이트가 같으면 건너뛰고 저장소의 카드 이름을 따르므로 지워도 됩니다.
+
+손패 참조를 추가하거나 바꾸면 manifest를 함께 고치고 `check`를 실행합니다. 검사는 모든 그림의 등재·해시·이름 규칙, 덱 8장의 일반·회색 그림(기록한 공백 제외), 각 그림이 같은 카드의 그림과 가장 가까운지를 확인합니다. 회색 독 그림이 고블린 오두막으로 등록돼 있던 오류를 마지막 검사가 다시 막습니다. 회색 카드는 위에 덮이는 밝은 영역이 카드 그림보다 지문을 크게 바꿔, 같은 프레임의 회색 고블린 오두막과 용광로가 같은 카드의 다른 그림보다 서로 더 가깝습니다. 이 5개 그림은 테스트에 인식 약점으로 기록했으며, 저장된 그림과 덮개 위치가 다른 회색 카드는 다른 카드로 읽힐 수 있습니다.
 
 Qwen 없이 더 가볍게 실행하려면:
 

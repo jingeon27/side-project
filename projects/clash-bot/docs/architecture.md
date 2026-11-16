@@ -37,7 +37,7 @@ apps/agent/
       perception/              CPU 인식·ONNX 변환
     requirements/              공통·모델·인식·변환·개발 의존성 고정
   contracts/                   양쪽 언어가 읽는 모델·규칙·판단 JSON
-  assets/counterpush/           계정 정보가 없는 시각 참조
+  assets/counterpush/           계정 정보가 없는 시각 참조, 손패는 manifest로 검증해 직접 읽음
   test-fixtures/               녹화 화면·공유 계약 회귀 자료
   pyproject.toml                Python 직접 의존성·Ruff 설정
 ```

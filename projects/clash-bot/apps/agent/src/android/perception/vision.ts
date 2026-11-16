@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { access, readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import sharp from 'sharp';
@@ -14,6 +14,7 @@ import {
   type Profile,
   type Rect,
 } from '../../shared/config.ts';
+import { loadHandReferences } from '../../shared/hand-references.ts';
 
 // Keep libvips' worker pool and image cache bounded. No GPU, OCR or inference server.
 sharp.concurrency(1);
@@ -88,51 +89,78 @@ export function matchCard(
   };
 }
 
-export async function loadTemplates(dataDir: string, profile: Profile): Promise<Templates> {
-  const customOrAsset = async (custom: string, fallback: string) => {
-    try {
-      await access(custom);
-      return await readFile(custom);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      return await readFile(fallback);
-    }
-  };
+async function ifPresent<T>(read: Promise<T>): Promise<T | null> {
   try {
-    const cards = (
-      await Promise.all(
-        profile.deck.map(async (card) => {
-          const primary = await fingerprint(
-            await customOrAsset(
-              join(dataDir, 'templates', `${card}.png`),
-              join(dataDir, 'assets/cards', `${card}.jpg`),
-            ),
-          );
-          const directory = join(dataDir, 'templates/variants', card);
-          const files = await readdir(directory).catch((error) => {
-            if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
-            throw error;
-          });
-          const variants = await Promise.all(
-            files
-              .filter((file) => file.endsWith('.png'))
-              .toSorted()
-              .map(async (file) => ({
-                card,
-                fingerprint: await fingerprint(await readFile(join(directory, file))),
-              })),
-          );
-          return [{ card, fingerprint: primary }, ...variants];
-        }),
-      )
-    ).flat();
-    const marker = await fingerprint(
-      await customOrAsset(join(dataDir, 'templates/battle.png'), join(dataDir, 'assets/screen/in_game.jpg')),
-    );
-    return { cards, marker };
+    return await read;
   } catch (error) {
-    throw new Error('참조 이미지를 읽지 못했습니다. setup을 먼저 실행하세요.', { cause: error });
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
+}
+
+const toTemplates = (images: Array<{ card: CardId; bytes: Buffer }>): Promise<Template[]> =>
+  Promise.all(
+    images.map(async (image) => ({ card: image.card, fingerprint: await fingerprint(image.bytes) })),
+  );
+
+// 참조가 없는 카드가 손패에 오면 다른 카드로 읽힐 수 있으므로 시작하지 않는다.
+const missingCards = (profile: Profile, cards: Template[]) =>
+  profile.deck.filter((card) => !cards.some((template) => template.card === card));
+
+const repositoryHandImages = async (profile: Profile) =>
+  (await loadHandReferences()).references.filter((reference) => profile.deck.includes(reference.card));
+
+async function loadBattleMarker(dataDir: string): Promise<number[]> {
+  const image =
+    (await ifPresent(readFile(join(dataDir, 'templates/battle.png')))) ??
+    (await ifPresent(readFile(join(dataDir, 'assets/screen/in_game.jpg'))));
+  if (!image) throw new Error('대전 표시 참조 이미지가 없습니다. setup을 먼저 실행하세요.');
+  return fingerprint(image);
+}
+
+// Counterpush는 고정된 웹 게임 하나이므로 손패는 저장소에서 검토한 그림만 쓴다.
+export async function loadCounterpushCards(profile: Profile): Promise<Template[]> {
+  const cards = await toTemplates(await repositoryHandImages(profile));
+  const missing = missingCards(profile, cards);
+  if (missing.length > 0) throw new Error(`저장소 손패 참조가 없는 카드가 있습니다: ${missing.join(', ')}`);
+  return cards;
+}
+
+export async function loadCounterpushTemplates(dataDir: string, profile: Profile): Promise<Templates> {
+  return { cards: await loadCounterpushCards(profile), marker: await loadBattleMarker(dataDir) };
+}
+
+// Android·BlueStacks는 저장소 그림에 이 기기에서 learn으로 등록한 그림과 내려받은 기본 그림을 더한다.
+// 이전 setup이 .data/templates에 복사한 저장소 그림은 바이트가 같으므로 건너뛰고 저장소의 카드 이름을 따른다.
+export async function loadTemplates(dataDir: string, profile: Profile): Promise<Templates> {
+  const repository = await repositoryHandImages(profile);
+  const repositoryHashes = new Set(repository.map((reference) => reference.sha256));
+  const device = await Promise.all(
+    profile.deck.map(async (card) => {
+      const primary = await ifPresent(readFile(join(dataDir, 'templates', `${card}.png`)));
+      const directory = join(dataDir, 'templates/variants', card);
+      const files = ((await ifPresent(readdir(directory))) ?? [])
+        .filter((file) => file.endsWith('.png'))
+        .toSorted();
+      const variants = await Promise.all(files.map((file) => readFile(join(directory, file))));
+      // 내려받은 기본 그림은 이 기기의 대표 그림을 등록하기 전까지만 쓴다.
+      const fallback = primary
+        ? null
+        : await ifPresent(readFile(join(dataDir, 'assets/cards', `${card}.jpg`)));
+      return [primary, ...variants, fallback].flatMap((bytes) =>
+        bytes && !repositoryHashes.has(createHash('sha256').update(bytes).digest('hex'))
+          ? [{ card, bytes }]
+          : [],
+      );
+    }),
+  );
+  const cards = await toTemplates([...repository, ...device.flat()]);
+  const missing = missingCards(profile, cards);
+  if (missing.length > 0)
+    throw new Error(
+      `손패 참조 이미지가 없는 카드가 있습니다: ${missing.join(', ')}. setup을 실행하거나 learn으로 이 기기의 그림을 등록하세요.`,
+    );
+  return { cards, marker: await loadBattleMarker(dataDir) };
 }
 
 export async function normalize(bytes: Buffer, profile: Profile): Promise<{ image: Buffer; viewport: Rect }> {

@@ -121,12 +121,6 @@ def main():
             subprocess.run(
                 [str(python), "-m", "clash_bot.perception.build_atlas", str(directory)], check=True
             )
-        hand = ASSETS_DIR / "counterpush/hand-templates"
-        for source in hand.rglob("*.png"):
-            target = DATA / "templates" / source.relative_to(hand)
-            if not target.exists():
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
         profile = DATA / "counterpush/profile.json"
         if not profile.exists():
             shutil.copyfile(PROJECT_DIR / "profiles/counterpush.json", profile)

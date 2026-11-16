@@ -1,69 +1,248 @@
 {
+  "format": 2,
   "source": "account_free_hand_crops",
-  "files": [
+  "references": [
+    {
+      "path": "barbarian_barrel.png",
+      "card": "barbarian_barrel",
+      "state": "normal",
+      "sha256": "1a80e207d79583bbff3eba168acaab87ea82e4b5d531a19961060e0033cee841"
+    },
+    {
+      "path": "variants/barbarian_barrel/disabled-0.png",
+      "card": "barbarian_barrel",
+      "state": "disabled",
+      "sha256": "c1af1b86281c74bf25ce841118a45778147ce45309bf437eb89d403a02149084",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000054.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/barbarian_barrel/disabled-1.png",
+      "card": "barbarian_barrel",
+      "state": "disabled",
+      "sha256": "b82bf08d2fd942915477d2d11269667410281e11cff1b384f67ed4d8fe818c64",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000120.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
     {
       "path": "furnace.png",
+      "card": "furnace",
+      "state": "normal",
       "sha256": "eb01715da72d4cb2a168ea976274703b6e338608637ecac909154cd27f98ade7"
     },
     {
-      "path": "variants/furnace/disabled-2.png",
-      "sha256": "d9c9ae07815cc25b2c3d5a9c4616dd3543ccbf8dcfa5f87a72573f1c768731b6"
-    },
-    {
       "path": "variants/furnace/evolution-0.png",
+      "card": "furnace",
+      "state": "evolution",
       "sha256": "16a8df6b16f6dcfc4166483f18261941553f35c109f099355466c5abc9e9377c"
     },
     {
+      "path": "variants/furnace/disabled-0.png",
+      "card": "furnace",
+      "state": "disabled",
+      "sha256": "23f429c3a9c1de51d9c64081f8c75ae7022232a731c09c4088c19735a449835d",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000030.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/furnace/disabled-1.png",
+      "card": "furnace",
+      "state": "disabled",
+      "sha256": "900cfbfaec02d7bdc5a6f088e072a54176ef634fb5a8fc98b2eafa863323f38a",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/furnace/disabled-2.png",
+      "card": "furnace",
+      "state": "disabled",
+      "sha256": "d9c9ae07815cc25b2c3d5a9c4616dd3543ccbf8dcfa5f87a72573f1c768731b6"
+    },
+    {
+      "path": "goblin_hut.png",
+      "card": "goblin_hut",
+      "state": "normal",
+      "sha256": "3bce5b535e63b82e71729c0f57fb46916ae5d16b8ca44523da6118d836475e0c"
+    },
+    {
+      "path": "variants/goblin_hut/disabled-0.png",
+      "card": "goblin_hut",
+      "state": "disabled",
+      "sha256": "4264b056e0f54bfe29233ba493e531422724dd1a028dc3d9fecc400d63c82679",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000030.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/goblin_hut/disabled-1.png",
+      "card": "goblin_hut",
+      "state": "disabled",
+      "sha256": "9c0e5b5b17371fb5b0b14ce4a0c012ecbc5b1164202b9f2a3a2356ea6c1bf88a",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "graveyard.png",
+      "card": "graveyard",
+      "state": "normal",
+      "sha256": "95bf8640f4113942a22a25e82de006cb9e352fc44e9c29b558a31a13b663831a"
+    },
+    {
+      "path": "variants/graveyard/normal-0.png",
+      "card": "graveyard",
+      "state": "normal",
+      "sha256": "d82dc750d21cc1c212626e33727273482415044df71e9bf8952eca5c7747bca3"
+    },
+    {
+      "path": "variants/graveyard/disabled-0.png",
+      "card": "graveyard",
+      "state": "disabled",
+      "sha256": "e9f1033625980e4931af6a39ad2ee60cbdb2faf6f416822d752a5485d6210bcf",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000037.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/graveyard/disabled-1.png",
+      "card": "graveyard",
+      "state": "disabled",
+      "sha256": "bd48cbe9e2a593eea1a45d7da690273eb367834cab4bf460eac176bdc2b1a743",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000047.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/graveyard/disabled-2.png",
+      "card": "graveyard",
+      "state": "disabled",
+      "sha256": "e71a70f21fd9f1c0704b803bd6db630f2b6c7c5bfbbcc12642165da4a47469b7"
+    },
+    {
       "path": "ice_wizard.png",
+      "card": "ice_wizard",
+      "state": "normal",
       "sha256": "6427cbf73855bf3266e928f5e49a6707c9062e113340d662d632774bd11b1f1f"
     },
     {
+      "path": "variants/ice_wizard/disabled-0.png",
+      "card": "ice_wizard",
+      "state": "disabled",
+      "sha256": "0e0a0682b7fca194db1a64cc928e884ca06f41aea52fa241c6b364dce31ef681",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000040.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/ice_wizard/disabled-1.png",
+      "card": "ice_wizard",
+      "state": "disabled",
+      "sha256": "c9235a636807e81a510eacdd2659fc9f295c9cae63bb6b04effd383d3e5abebd",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000164.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
       "path": "knight.png",
+      "card": "knight",
+      "state": "normal",
       "sha256": "dee304cf81855f1fc98b8a104bcdd76ff844b9e9b95fda25885a6b443a3c31be"
     },
     {
       "path": "variants/knight/evolution-0.png",
+      "card": "knight",
+      "state": "evolution",
       "sha256": "9f8c504d4cc7e2e6c354f8ea5f0e545b54d5f9e42ddd6fb8a6dfbe3b4bbd108f"
     },
     {
       "path": "variants/knight/evolution-1.png",
+      "card": "knight",
+      "state": "evolution",
       "sha256": "81d55c0849a2da6c3cc2c207e664088a4a346aeab6a272766ddc6f3fef3e4086"
     },
     {
-      "path": "graveyard.png",
-      "sha256": "95bf8640f4113942a22a25e82de006cb9e352fc44e9c29b558a31a13b663831a"
+      "path": "variants/knight/disabled-0.png",
+      "card": "knight",
+      "state": "disabled",
+      "sha256": "ef1a6f2b875de306d5f4c92bac19d536d65394315a727d5bd2588b5df72e3821",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000086.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
     },
     {
-      "path": "variants/graveyard/disabled-2.png",
-      "sha256": "e71a70f21fd9f1c0704b803bd6db630f2b6c7c5bfbbcc12642165da4a47469b7"
+      "path": "variants/knight/disabled-1.png",
+      "card": "knight",
+      "state": "disabled",
+      "sha256": "4d5abdf754ca6d2a9d755edf8d813782904449337acd7c4937c84fabe3a389d7",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000089.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
     },
     {
-      "path": "variants/graveyard/normal-0.png",
-      "sha256": "d82dc750d21cc1c212626e33727273482415044df71e9bf8952eca5c7747bca3"
+      "path": "poison.png",
+      "card": "poison",
+      "state": "normal",
+      "sha256": "6039438a5341dd16a42e7257d202cefcb04bc8c3b8c62b9ef97c9af2ad4ca27e"
+    },
+    {
+      "path": "variants/poison/disabled-0.png",
+      "card": "poison",
+      "state": "disabled",
+      "sha256": "ff548e78526a60964f612438c781366582478e2e1eeac4c5e4c91cd10b8d8378",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000134.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/poison/disabled-1.png",
+      "card": "poison",
+      "state": "disabled",
+      "sha256": "6a1a36e91e357fd46df235cd473078cecef7396971cee547632a8f3ce670ec3a",
+      "source": {
+        "frame": "2026-11-15T17-38-20.294Z/frames/000137.png",
+        "sameHandWithoutInterveningCardInput": true
+      }
+    },
+    {
+      "path": "variants/poison/disabled-2.png",
+      "card": "poison",
+      "state": "disabled",
+      "sha256": "2f17234195945c2efbc19bdd7ba2f3374221f5bd89886f7ef73d20e3a6dd23e8"
     },
     {
       "path": "skeletons.png",
+      "card": "skeletons",
+      "state": "normal",
       "sha256": "6ac37806fb69e4921ac6a8eefa706f12db1cbc6f2523581d7cfc52d556159178"
     },
     {
       "path": "variants/skeletons/normal-0.png",
+      "card": "skeletons",
+      "state": "normal",
       "sha256": "8677897483bcca323374a6abebabea8099f8cbe5b1ed3b29cb9a6e88f80cd6fe"
-    },
+    }
+  ],
+  "missing": [
     {
-      "path": "poison.png",
-      "sha256": "6039438a5341dd16a42e7257d202cefcb04bc8c3b8c62b9ef97c9af2ad4ca27e"
-    },
-    {
-      "path": "goblin_hut.png",
-      "sha256": "3bce5b535e63b82e71729c0f57fb46916ae5d16b8ca44523da6118d836475e0c"
-    },
-    {
-      "path": "variants/poison/disabled-2.png",
-      "sha256": "2f17234195945c2efbc19bdd7ba2f3374221f5bd89886f7ef73d20e3a6dd23e8"
-    },
-    {
-      "path": "barbarian_barrel.png",
-      "sha256": "1a80e207d79583bbff3eba168acaab87ea82e4b5d531a19961060e0033cee841"
+      "card": "skeletons",
+      "state": "disabled"
     }
   ]
 }

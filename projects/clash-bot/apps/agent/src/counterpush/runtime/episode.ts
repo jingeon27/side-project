@@ -3,7 +3,13 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { analyze, crop, difference, fingerprint, loadTemplates } from '../../android/perception/vision.ts';
+import {
+  analyze,
+  crop,
+  difference,
+  fingerprint,
+  loadCounterpushTemplates,
+} from '../../android/perception/vision.ts';
 import {
   validateQwenAction,
   type FreshBattle,
@@ -63,7 +69,7 @@ export async function playCounterpushEpisode(options: {
       (options.tab === undefined ? '' : `-tab${options.tab + 1}`),
   );
   await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
-  const templates = await loadTemplates(dataDir, profile);
+  const templates = await loadCounterpushTemplates(dataDir, profile);
   const tracker = new OpponentTracker();
   const observations: OpponentObservation[] = [];
   const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
