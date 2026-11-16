@@ -16,6 +16,7 @@ import { CounterpushBrowser } from '../browser/browser.ts';
 import { controllerFor } from '../match/controllers.ts';
 import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
+import { behaviorIdentity } from './behavior-identity.ts';
 import { learnCounterpushEpisodes } from './episode-learning.ts';
 import { evaluateWithResources } from './evaluation.ts';
 import {
@@ -90,6 +91,7 @@ export async function runCounterpush(options: {
     trainingMatches > 128
   )
     throw new Error('자동 채택은 최소 16쌍 평가와 1~128판의 후보 학습을 요구합니다.');
+  const behaviorSHA256 = await behaviorIdentity(options.profile);
   const control = join(dataDir, 'counterpush/control');
   await mkdir(control, { recursive: true, mode: 0o700 });
   const lock = await acquireLearningLock(join(dataDir, 'qwen/selfplay'));
@@ -103,6 +105,7 @@ export async function runCounterpush(options: {
     updates: 0,
     promotions: 0,
     qualificationRequired: true,
+    behaviorSHA256,
     settings: { hours: options.hours, pairs, trainingMatches },
   };
   const runtime = { completed: 0, updates: 0 };
@@ -284,6 +287,7 @@ export async function runCounterpush(options: {
       evaluate: async (candidate, evaluationFile) => {
         const evaluation = await evaluateWithResources({
           ...options,
+          behaviorSHA256,
           client,
           vision,
           browser,

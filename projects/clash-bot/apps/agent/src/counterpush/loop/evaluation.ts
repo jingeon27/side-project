@@ -15,6 +15,7 @@ import { CounterpushBrowser } from '../browser/browser.ts';
 import { controllerFor } from '../match/controllers.ts';
 import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
+import { behaviorIdentity } from './behavior-identity.ts';
 
 type Result = {
   result: string;
@@ -148,7 +149,7 @@ export async function frozenComparison(options: {
   const rejectedEarly = !complete && cannotQualify();
   const gate = realEvaluationGate(scores, options.alpha);
   return {
-    format: 'counterpush-frozen-ab-evaluation-v1',
+    format: 'counterpush-frozen-ab-evaluation-v2',
     games,
     pairs: scores,
     complete,
@@ -194,6 +195,7 @@ const evaluatedGameSchema = z.looseObject({
 // counterpush/control/evaluations/*.json은 시작·진행·완료 보고서가 같은 파일이다.
 // 재개에 쓰는 필드만 여기서 검사하고, 보고서 필드는 Python 게시 검사가 확인한다.
 const trialSchema = z.looseObject({
+  behaviorSHA256: z.string().regex(/^[a-f0-9]{64}$/),
   trialID: z.uuid(),
   requestedPairs: z.int().positive(),
   minimumPairs: z.int().positive(),
@@ -214,6 +216,7 @@ const attemptsSchema = z.strictObject({
 
 export async function evaluateWithResources(options: {
   dataDir: string;
+  behaviorSHA256: string;
   profile: Profile;
   candidate: string;
   pairs: number;
@@ -237,6 +240,9 @@ export async function evaluateWithResources(options: {
   )
     throw new Error('후보가 현재 기준 모델에서 만들어지지 않았거나 가중치가 같습니다.');
   const previous = await readOptionalJsonFile(options.file, trialSchema);
+  const behaviorSHA256 = options.behaviorSHA256;
+  if ((await behaviorIdentity(options.profile)) !== behaviorSHA256)
+    throw new Error('실행 시작 뒤 코드나 계약이 바뀌어 새 프로세스에서 평가해야 합니다.');
   const trial =
     previous ??
     (await (async (): Promise<Trial> => {
@@ -258,6 +264,7 @@ export async function evaluateWithResources(options: {
                 file: options.file,
                 baselineSHA256: baseline.weights_sha256,
                 candidateSHA256: candidate.weights_sha256,
+                behaviorSHA256,
                 method: EVALUATION_METHOD,
                 minimumPairs: options.pairs,
                 requestedPairs,
@@ -269,6 +276,7 @@ export async function evaluateWithResources(options: {
         ) + '\n',
       );
       const created = {
+        behaviorSHA256,
         trialID: id,
         requestedPairs,
         minimumPairs: options.pairs,
@@ -284,11 +292,12 @@ export async function evaluateWithResources(options: {
       return created;
     })());
   if (
+    trial.behaviorSHA256 !== behaviorSHA256 ||
     trial.minimumPairs !== options.pairs ||
     trial.baseline.weights_sha256 !== baseline.weights_sha256 ||
     trial.candidate.weights_sha256 !== candidate.weights_sha256
   )
-    throw new Error('평가 재개 시 기준·후보 또는 경기 수가 달라졌습니다.');
+    throw new Error('평가 재개 시 코드·프로필·기준·후보 또는 경기 수가 달라졌습니다.');
   const result = await frozenComparison({
     pairs: trial.requestedPairs,
     alpha: trial.alpha,
@@ -296,6 +305,8 @@ export async function evaluateWithResources(options: {
     rejectFutile: trial.futilityStopping,
     stopped: options.stopped,
     play: async (variant, pair) => {
+      if ((await behaviorIdentity(options.profile)) !== behaviorSHA256)
+        throw new Error('평가 도중 실행 코드나 계약이 바뀌었습니다.');
       const checkpoint = variant === 'baseline' ? baseline.checkpoint : options.candidate;
       const selected = await client.checkout(checkpoint);
       await options.report({ phase: 'evaluating', pair: pair + 1, variant, policy: selected });
@@ -320,6 +331,8 @@ export async function evaluateWithResources(options: {
         const after = await client.status();
         if (selected.weights_sha256 !== after.weights_sha256)
           throw new Error('평가 도중 모델 가중치가 바뀌었습니다.');
+        if ((await behaviorIdentity(options.profile)) !== behaviorSHA256)
+          throw new Error('평가 도중 실행 코드나 계약이 바뀌었습니다.');
         await atomicWrite(
           join(episode.directory, 'qualification.json'),
           JSON.stringify({
@@ -328,6 +341,7 @@ export async function evaluateWithResources(options: {
             variant,
             pair,
             weightsSHA256: selected.weights_sha256,
+            behaviorSHA256,
           }) + '\n',
         );
         options.onGame?.();
@@ -363,6 +377,7 @@ export async function runCounterpushEvaluation(options: {
   signal: AbortSignal;
 }) {
   const { dataDir, signal } = options;
+  const behaviorSHA256 = await behaviorIdentity(options.profile);
   await readJsonFile(join(options.candidate, 'metadata.json'), candidateMetadataSchema);
   const lock = await acquireLearningLock(join(dataDir, 'qwen/selfplay'));
   const control = join(dataDir, 'counterpush/control');
@@ -375,6 +390,7 @@ export async function runCounterpushEvaluation(options: {
     pid: process.pid,
     startedAt: new Date().toISOString(),
     phase: 'evaluation_loading',
+    behaviorSHA256,
     model: MODEL.name,
     completed: 0,
     updates: 0,
@@ -398,6 +414,7 @@ export async function runCounterpushEvaluation(options: {
     const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
     const result = await evaluateWithResources({
       ...options,
+      behaviorSHA256,
       client,
       vision,
       browser,

@@ -51,10 +51,16 @@ def qualification_scores(scores, alpha):
     }
 
 
-def verified_game(game, expected_sha, model_identity, runs, controller):
+def verified_game(game, expected_sha, model_identity, runs, controller, behavior_sha):
     directory = Path(game["directory"]).resolve()
     if directory.parent != runs.resolve() or game.get("weightsSHA256") != expected_sha:
         raise ValueError("Evaluation game path or frozen policy differs")
+    qualification = json.loads((directory / "qualification.json").read_text())
+    if (
+        qualification.get("role") != "heldout_evaluation"
+        or qualification.get("behaviorSHA256") != behavior_sha
+    ):
+        raise ValueError("Evaluation behavior identity differs from its source evidence")
     rows = [
         json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line
     ]
@@ -115,7 +121,7 @@ def validate_report(report_path, candidate, champion, data_dir):
     report = json.loads(report_path.read_text())
     count = report.get("requestedPairs")
     if (
-        report.get("format") != "counterpush-frozen-ab-evaluation-v1"
+        report.get("format") != "counterpush-frozen-ab-evaluation-v2"
         or report.get("complete") is not True
         or report.get("trainingDuringEvaluation") is not False
         or report.get("selection") != "categorical_as_live"
@@ -140,6 +146,7 @@ def validate_report(report_path, candidate, champion, data_dir):
         raise ValueError("Candidate controller changed after evaluation")
     attempts = json.loads((data_dir / "counterpush/control/evaluation-attempts.json").read_text())
     reserved = attempts.get("trials", {}).get(report.get("trialID"))
+    behavior_sha = report.get("behaviorSHA256")
     index = report.get("alphaSpendingAttempt")
     if (
         not reserved
@@ -149,6 +156,9 @@ def validate_report(report_path, candidate, champion, data_dir):
         or Path(reserved["file"]).resolve() != report_path
         or reserved["baselineSHA256"] != champion["weights_sha256"]
         or reserved["candidateSHA256"] != candidate["weights_sha256"]
+        or not isinstance(behavior_sha, str)
+        or len(behavior_sha) != 64
+        or reserved.get("behaviorSHA256") != behavior_sha
     ):
         raise ValueError("Unreserved or mismatched qualification trial")
     if report.get("method") != METHOD or reserved.get("method") != METHOD:
@@ -186,6 +196,7 @@ def validate_report(report_path, candidate, champion, data_dir):
                 champion["model_sha256"],
                 data_dir / "counterpush/runs",
                 controller,
+                behavior_sha,
             )
         scores.append(0.5 + (values["candidate"] - values["baseline"]) / 2)
     trained = {

@@ -68,6 +68,10 @@ def fixture(directory, tied=False, wins=16):
             blue, red = (3, 0) if win else (0, 3)
             episode = data / "counterpush/runs" / f"pair-{pair}-{variant}"
             episode.mkdir(parents=True)
+            atomic_json(
+                episode / "qualification.json",
+                {"role": "heldout_evaluation", "behaviorSHA256": "a" * 64},
+            )
             rows = [
                 {
                     "type": "match_start",
@@ -108,8 +112,9 @@ def fixture(directory, tied=False, wins=16):
     pair_scores = [0.5 + 0.5 * (not tied and pair < wins) for pair in range(16)]
     mean = sum(pair_scores) / 16
     report = {
-        "format": "counterpush-frozen-ab-evaluation-v1",
+        "format": "counterpush-frozen-ab-evaluation-v2",
         "complete": True,
+        "behaviorSHA256": "a" * 64,
         "requestedPairs": 16,
         "minimumPairs": 16,
         "trainingDuringEvaluation": False,
@@ -133,6 +138,7 @@ def fixture(directory, tied=False, wins=16):
             "trials": {
                 "reserved-trial": {
                     "index": 0,
+                    "behaviorSHA256": "a" * 64,
                     "file": str(report_path),
                     "baselineSHA256": learner.metadata["weights_sha256"],
                     "candidateSHA256": candidate.metadata["weights_sha256"],
@@ -236,6 +242,8 @@ class QualifiedPromotionTest(unittest.TestCase):
             "unreserved",
             "duplicate",
             "resumed_match",
+            "changed_behavior",
+            "changed_episode_behavior",
         )
         for case in cases:
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
@@ -244,6 +252,13 @@ class QualifiedPromotionTest(unittest.TestCase):
                 original = current.read_bytes()
                 meta_path = checkpoint / "metadata.json"
                 metadata = json.loads(meta_path.read_text())
+                if case == "changed_behavior":
+                    report["behaviorSHA256"] = "b" * 64
+                if case == "changed_episode_behavior":
+                    atomic_json(
+                        Path(report["games"][0]["directory"]) / "qualification.json",
+                        {"role": "heldout_evaluation", "behaviorSHA256": "b" * 64},
+                    )
                 if case == "partial":
                     report["complete"] = False
                 if case == "wrong_parent":
