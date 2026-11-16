@@ -6,6 +6,7 @@ import re
 from clash_bot.paths import CONTRACTS_DIR
 
 QUALIFICATION = json.loads((CONTRACTS_DIR / "qualification.json").read_text())
+METHOD = QUALIFICATION["method"]
 MINIMUM_PAIRS = QUALIFICATION["minimumPairs"]
 MINIMUM_MEAN_SCORE = QUALIFICATION["minimumMeanScore"]
 FAMILY_ALPHA = QUALIFICATION["familyAlpha"]

@@ -6,6 +6,7 @@ import { z } from 'zod';
 export const QUALIFICATION = z
   .object({
     version: z.literal(1),
+    method: z.literal('paired_exact_wins_v1'),
     minimumPairs: z.int().positive(),
     minimumMeanScore: z.number().gt(0.5).lt(1),
     familyAlpha: z.number().gt(0).max(0.05),

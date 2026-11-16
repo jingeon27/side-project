@@ -1,5 +1,4 @@
 {
-  "method": "paired_exact_wins_v1",
   "gates": [
     {
       "name": "fifteen pairs",
@@ -66,9 +65,25 @@
     }
   ],
   "resultLabels": [
-    { "label": "Crowns: you 3, the opponent 1", "blue": 3, "red": 1 },
-    { "label": "Crowns: you 1, the opponent 1, overtime", "blue": 1, "red": 1 },
-    { "label": "Crowns: you 4, the opponent 1", "blue": null, "red": null },
-    { "label": "Crowns: you 1, the opponent 0, rematch", "blue": null, "red": null }
+    {
+      "label": "Crowns: you 3, the opponent 1",
+      "blue": 3,
+      "red": 1
+    },
+    {
+      "label": "Crowns: you 1, the opponent 1, overtime",
+      "blue": 1,
+      "red": 1
+    },
+    {
+      "label": "Crowns: you 4, the opponent 1",
+      "blue": null,
+      "red": null
+    },
+    {
+      "label": "Crowns: you 1, the opponent 0, rematch",
+      "blue": null,
+      "red": null
+    }
   ]
 }

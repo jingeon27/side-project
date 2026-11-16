@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import { z } from 'zod';
 
 import { LearningClient } from '../../qwen/learning-client.ts';
 import { MODEL } from '../../qwen/model.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import type { Profile } from '../../shared/config.ts';
+import { readJsonFile, readOptionalJsonFile } from '../../shared/json-file.ts';
 import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
@@ -21,9 +24,9 @@ type Result = {
   checkpoint?: string;
 };
 export type EvaluatedGame = Result & { variant: 'baseline' | 'candidate'; pair: number; score: number };
-export type EvaluationMethod = 'paired_exact_wins_v1' | 'hoeffding_score';
-const scoreOf = (result: string, method: EvaluationMethod) =>
-  result === 'win' ? 1 : result === 'draw' && method === 'hoeffding_score' ? 0.5 : 0;
+// 평가는 쌍마다 이긴 쪽만 세는 정확 이항 검정 하나다. 무승부는 이긴 판으로 세지 않는다.
+const EVALUATION_METHOD = QUALIFICATION.method;
+const scoreOf = (result: string) => (result === 'win' ? 1 : 0);
 const orderOf = (pair: number) =>
   pair % 2 ? (['candidate', 'baseline'] as const) : (['baseline', 'candidate'] as const);
 
@@ -39,20 +42,12 @@ export async function retryInputRecovery<T extends { learningEligible?: boolean 
   return retryInputRecovery(play, excluded, attemptsLeft - 1);
 }
 
-export function requiredEvaluationPairs(minimum: number, alpha: number, method: EvaluationMethod) {
+export function requiredEvaluationPairs(minimum: number, alpha: number) {
   if (minimum < QUALIFICATION.minimumPairs) return minimum; // Small manual smoke runs cannot qualify.
-  const feasible =
-    method === 'paired_exact_wins_v1'
-      ? Math.ceil(-Math.log2(alpha)) + 1
-      : Math.ceil(2 * Math.log(2 / alpha)) + 1;
-  return Math.max(minimum, feasible);
+  return Math.max(minimum, Math.ceil(-Math.log2(alpha)) + 1);
 }
 
-export function realEvaluationGate(
-  pairScores: number[],
-  alpha = QUALIFICATION.familyAlpha,
-  method: EvaluationMethod = 'paired_exact_wins_v1',
-) {
+export function realEvaluationGate(pairScores: number[], alpha = QUALIFICATION.familyAlpha) {
   const enough = (mean: number) =>
     pairScores.length >= QUALIFICATION.minimumPairs && mean >= QUALIFICATION.minimumMeanScore;
   if (
@@ -64,43 +59,28 @@ export function realEvaluationGate(
   )
     return { passed: false, reason: 'invalid_or_missing_pairs' };
   const mean = pairScores.reduce((sum, value) => sum + value, 0) / pairScores.length;
-  if (method === 'paired_exact_wins_v1') {
-    if (pairScores.some((value) => ![0, 0.5, 1].includes(value)))
-      return { passed: false, reason: 'invalid_win_pair_score' };
-    const wins = pairScores.filter((value) => value > 0.5).length,
-      losses = pairScores.filter((value) => value < 0.5).length;
-    const decisive = wins + losses;
-    const sum = { combination: 1, tail: 0 };
-    for (const count of Array.from({ length: decisive + 1 }, (_, index) => index)) {
-      if (count >= wins) sum.tail += sum.combination;
-      sum.combination *= (decisive - count) / (count + 1);
-    }
-    const probability = decisive ? sum.tail / 2 ** decisive : 1;
-    const passed = enough(mean) && probability <= alpha;
-    return {
-      passed,
-      reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
-      pairs: pairScores.length,
-      score: mean,
-      deltaWinRate: 2 * mean - 1,
-      pairWins: wins,
-      pairLosses: losses,
-      oneSidedP: probability,
-      test: 'exact_paired_binomial',
-      alpha,
-    };
+  if (pairScores.some((value) => ![0, 0.5, 1].includes(value)))
+    return { passed: false, reason: 'invalid_win_pair_score' };
+  const wins = pairScores.filter((value) => value > 0.5).length,
+    losses = pairScores.filter((value) => value < 0.5).length;
+  const decisive = wins + losses;
+  const sum = { combination: 1, tail: 0 };
+  for (const count of Array.from({ length: decisive + 1 }, (_, index) => index)) {
+    if (count >= wins) sum.tail += sum.combination;
+    sum.combination *= (decisive - count) / (count + 1);
   }
-  const radius = Math.sqrt(Math.log(2 / alpha) / (2 * pairScores.length));
-  const lower = Math.max(0, mean - radius),
-    upper = Math.min(1, mean + radius);
-  const passed = enough(mean) && lower > 0.5;
+  const probability = decisive ? sum.tail / 2 ** decisive : 1;
+  const passed = enough(mean) && probability <= alpha;
   return {
     passed,
     reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
     pairs: pairScores.length,
     score: mean,
-    confidenceInterval: [lower, upper],
-    bound: 'Hoeffding',
+    deltaWinRate: 2 * mean - 1,
+    pairWins: wins,
+    pairLosses: losses,
+    oneSidedP: probability,
+    test: 'exact_paired_binomial',
     alpha,
   };
 }
@@ -111,12 +91,10 @@ export async function frozenComparison(options: {
   stopped: () => Promise<boolean>;
   report: (state: Record<string, unknown>) => Promise<void>;
   alpha?: number;
-  method?: EvaluationMethod;
   existingGames?: EvaluatedGame[];
   rejectFutile?: boolean;
 }) {
   const games: EvaluatedGame[] = [...(options.existingGames ?? [])];
-  const method = options.method ?? 'paired_exact_wins_v1';
   if (games.length > options.pairs * 2 || new Set(games.map((game) => game.directory)).size !== games.length)
     throw new Error('중복되거나 범위를 벗어난 평가 경기입니다.');
   for (const [index, game] of games.entries()) {
@@ -125,7 +103,7 @@ export async function frozenComparison(options: {
       game.pair !== pair ||
       game.variant !== orderOf(pair)[index % 2] ||
       !['win', 'loss', 'draw'].includes(game.result) ||
-      game.score !== scoreOf(game.result, method)
+      game.score !== scoreOf(game.result)
     )
       throw new Error('평가 재개 기록의 순서 또는 승패가 맞지 않습니다.');
   }
@@ -135,11 +113,8 @@ export async function frozenComparison(options: {
     scores.length > 0 &&
     games.length === scores.length * 2 &&
     options.pairs >= QUALIFICATION.minimumPairs &&
-    !realEvaluationGate(
-      [...scores, ...Array<number>(options.pairs - scores.length).fill(1)],
-      options.alpha,
-      method,
-    ).passed;
+    !realEvaluationGate([...scores, ...Array<number>(options.pairs - scores.length).fill(1)], options.alpha)
+      .passed;
   for (const pair of Array.from({ length: options.pairs }, (_, index) => index)) {
     for (const variant of orderOf(pair)) {
       if (games.some((game) => game.pair === pair && game.variant === variant)) continue;
@@ -147,7 +122,7 @@ export async function frozenComparison(options: {
       const result = await options.play(variant, pair);
       if (!['win', 'loss', 'draw'].includes(result.result))
         throw new Error('평가 경기의 승패를 확인하지 못했습니다.');
-      games.push({ ...result, variant, pair, score: scoreOf(result.result, method) });
+      games.push({ ...result, variant, pair, score: scoreOf(result.result) });
       await options.report({
         pair: pair + 1,
         variant,
@@ -170,7 +145,7 @@ export async function frozenComparison(options: {
   }
   const complete = scores.length === options.pairs;
   const rejectedEarly = !complete && cannotQualify();
-  const gate = realEvaluationGate(scores, options.alpha, method);
+  const gate = realEvaluationGate(scores, options.alpha);
   return {
     format: 'counterpush-frozen-ab-evaluation-v1',
     games,
@@ -181,7 +156,7 @@ export async function frozenComparison(options: {
     order: 'AB_BA_blocks',
     trainingDuringEvaluation: false,
     selection: 'categorical_as_live',
-    method,
+    method: EVALUATION_METHOD,
     gate: complete
       ? gate
       : {
@@ -193,18 +168,48 @@ export async function frozenComparison(options: {
   };
 }
 
-type Trial = {
-  trialID: string;
-  requestedPairs: number;
-  alphaSpendingAttempt: number;
-  alpha: number;
-  baseline: Record<string, unknown>;
-  candidate: Record<string, unknown>;
-  games: EvaluatedGame[];
-  minimumPairs?: number;
-  method?: EvaluationMethod;
-  futilityStopping?: boolean;
-};
+// 학습기 status와 후보 체크포인트 metadata.json에서 평가가 쓰는 필드다.
+const policyStatusSchema = z.looseObject({
+  role: z.string(),
+  weights_sha256: z.string().length(64),
+  checkpoint: z.string(),
+});
+const candidateMetadataSchema = z.looseObject({
+  weights_sha256: z.string().length(64),
+  candidate_parent_sha256: z.string().length(64).optional(),
+  study_parent: z.string().length(64).optional(),
+});
+const evaluatedGameSchema = z.looseObject({
+  result: z.enum(['win', 'loss', 'draw']),
+  directory: z.string(),
+  actions: z.int().nonnegative(),
+  confirmed: z.int().nonnegative(),
+  weightsSHA256: z.string().length(64),
+  checkpoint: z.string(),
+  variant: z.enum(['baseline', 'candidate']),
+  pair: z.int().nonnegative(),
+  score: z.union([z.literal(0), z.literal(1)]),
+});
+// counterpush/control/evaluations/*.json은 시작·진행·완료 보고서가 같은 파일이다.
+// 재개에 쓰는 필드만 여기서 검사하고, 보고서 필드는 Python 게시 검사가 확인한다.
+const trialSchema = z.looseObject({
+  trialID: z.uuid(),
+  requestedPairs: z.int().positive(),
+  minimumPairs: z.int().positive(),
+  method: z.literal(EVALUATION_METHOD),
+  futilityStopping: z.boolean(),
+  alphaSpendingAttempt: z.int().nonnegative(),
+  alpha: z.number().positive(),
+  baseline: policyStatusSchema,
+  candidate: candidateMetadataSchema,
+  games: z.array(evaluatedGameSchema),
+});
+type Trial = z.infer<typeof trialSchema>;
+// counterpush/control/evaluation-attempts.json은 유의수준 예산을 정하는 누적 장부다. 지난 시도 항목은 Python 게시 검사만 읽는다.
+const attemptsSchema = z.strictObject({
+  count: z.int().nonnegative(),
+  trials: z.record(z.string(), z.unknown()),
+});
 
 export async function evaluateWithResources(options: {
   dataDir: string;
@@ -222,40 +227,24 @@ export async function evaluateWithResources(options: {
   rejectFutile?: boolean;
 }) {
   const { dataDir, client } = options;
-  const baseline = await client.status();
+  const baseline = policyStatusSchema.parse(await client.status());
   if (baseline.role !== 'champion') throw new Error('기준 모델로 복귀한 뒤 평가해야 합니다.');
-  const candidate = JSON.parse(await readFile(join(options.candidate, 'metadata.json'), 'utf8')) as Record<
-    string,
-    unknown
-  >;
+  const candidate = await readJsonFile(join(options.candidate, 'metadata.json'), candidateMetadataSchema);
   if (
     (candidate.candidate_parent_sha256 ?? candidate.study_parent) !== baseline.weights_sha256 ||
     candidate.weights_sha256 === baseline.weights_sha256
   )
     throw new Error('후보가 현재 기준 모델에서 만들어지지 않았거나 가중치가 같습니다.');
-  const previous = await readFile(options.file, 'utf8')
-    .then((raw) => JSON.parse(raw) as Trial)
-    .catch((error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return null;
-      throw error;
-    });
+  const previous = await readOptionalJsonFile(options.file, trialSchema);
   const trial =
     previous ??
     (await (async (): Promise<Trial> => {
       const path = join(dataDir, 'counterpush/control/evaluation-attempts.json');
-      const attempts = await readFile(path, 'utf8')
-        .then((raw) => JSON.parse(raw) as { count: number; trials?: Record<string, unknown> })
-        .catch((error: NodeJS.ErrnoException) => {
-          if (error.code === 'ENOENT') return { count: 0, trials: {} };
-          throw error;
-        });
-      if (!Number.isSafeInteger(attempts.count) || attempts.count < 0)
-        throw new Error('평가 횟수 기록이 잘못되었습니다.');
+      const attempts = (await readOptionalJsonFile(path, attemptsSchema)) ?? { count: 0, trials: {} };
       const id = randomUUID();
       const index = attempts.count;
       const alpha = attemptAlpha(index);
-      const method: EvaluationMethod = 'paired_exact_wins_v1';
-      const requestedPairs = requiredEvaluationPairs(options.pairs, alpha, method);
+      const requestedPairs = requiredEvaluationPairs(options.pairs, alpha);
       await atomicWrite(
         path,
         JSON.stringify(
@@ -268,7 +257,7 @@ export async function evaluateWithResources(options: {
                 file: options.file,
                 baselineSHA256: baseline.weights_sha256,
                 candidateSHA256: candidate.weights_sha256,
-                method,
+                method: EVALUATION_METHOD,
                 minimumPairs: options.pairs,
                 requestedPairs,
               },
@@ -282,7 +271,7 @@ export async function evaluateWithResources(options: {
         trialID: id,
         requestedPairs,
         minimumPairs: options.pairs,
-        method,
+        method: EVALUATION_METHOD,
         futilityStopping: options.rejectFutile ?? false,
         alphaSpendingAttempt: index,
         alpha,
@@ -294,20 +283,19 @@ export async function evaluateWithResources(options: {
       return created;
     })());
   if (
-    (trial.minimumPairs ?? trial.requestedPairs) !== options.pairs ||
+    trial.minimumPairs !== options.pairs ||
     trial.baseline.weights_sha256 !== baseline.weights_sha256 ||
     trial.candidate.weights_sha256 !== candidate.weights_sha256
   )
     throw new Error('평가 재개 시 기준·후보 또는 경기 수가 달라졌습니다.');
   const result = await frozenComparison({
     pairs: trial.requestedPairs,
-    method: trial.method ?? 'hoeffding_score',
     alpha: trial.alpha,
     existingGames: trial.games,
-    rejectFutile: trial.futilityStopping ?? false,
+    rejectFutile: trial.futilityStopping,
     stopped: options.stopped,
     play: async (variant, pair) => {
-      const checkpoint = variant === 'baseline' ? String(baseline.checkpoint) : options.candidate;
+      const checkpoint = variant === 'baseline' ? baseline.checkpoint : options.candidate;
       const selected = await client.checkout(checkpoint);
       await options.report({ phase: 'evaluating', pair: pair + 1, variant, policy: selected });
       try {
@@ -373,7 +361,7 @@ export async function runCounterpushEvaluation(options: {
   signal: AbortSignal;
 }) {
   const { dataDir, signal } = options;
-  await readFile(join(options.candidate, 'metadata.json'), 'utf8');
+  await readJsonFile(join(options.candidate, 'metadata.json'), candidateMetadataSchema);
   const lock = await acquireLearningLock(join(dataDir, 'qwen/selfplay'));
   const control = join(dataDir, 'counterpush/control');
   await mkdir(control, { recursive: true, mode: 0o700 });

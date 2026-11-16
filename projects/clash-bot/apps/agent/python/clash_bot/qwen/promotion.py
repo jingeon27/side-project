@@ -10,6 +10,7 @@ from pathlib import Path
 from clash_bot.files import atomic_json
 from clash_bot.qwen.qualification import (
     FAMILY_ALPHA,
+    METHOD,
     MINIMUM_MEAN_SCORE,
     MINIMUM_PAIRS,
     RESULT_LABEL,
@@ -26,7 +27,7 @@ def parent_sha(metadata):
     return metadata.get("candidate_parent_sha256", metadata.get("study_parent"))
 
 
-def qualification_scores(scores, alpha, method="hoeffding_score"):
+def qualification_scores(scores, alpha):
     if (
         len(scores) < MINIMUM_PAIRS
         or not 0 < alpha <= FAMILY_ALPHA
@@ -34,30 +35,23 @@ def qualification_scores(scores, alpha, method="hoeffding_score"):
     ):
         raise ValueError("Insufficient or invalid heldout evaluation")
     mean = sum(scores) / len(scores)
-    if method == "paired_exact_wins_v1":
-        if any(value not in (0, 0.5, 1) for value in scores):
-            raise ValueError("Invalid win-rate pair scores")
-        won, lost = sum(value > 0.5 for value in scores), sum(value < 0.5 for value in scores)
-        probability = paired_win_probability(won, lost)
-        if mean < MINIMUM_MEAN_SCORE or probability > alpha:
-            raise ValueError("Candidate has not demonstrated a win-rate improvement")
-        return {
-            "pairs": len(scores),
-            "score": mean,
-            "deltaWinRate": 2 * mean - 1,
-            "oneSidedP": probability,
-            "test": "exact_paired_binomial",
-            "alpha": alpha,
-        }
-    if method != "hoeffding_score":
-        raise ValueError("Unknown qualification method")
-    lower = mean - math.sqrt(math.log(2 / alpha) / (2 * len(scores)))
-    if mean < MINIMUM_MEAN_SCORE or lower <= 0.5:
-        raise ValueError("Candidate has not demonstrated improvement")
-    return {"pairs": len(scores), "score": mean, "lowerBound": max(0, lower), "alpha": alpha}
+    if any(value not in (0, 0.5, 1) for value in scores):
+        raise ValueError("Invalid win-rate pair scores")
+    won, lost = sum(value > 0.5 for value in scores), sum(value < 0.5 for value in scores)
+    probability = paired_win_probability(won, lost)
+    if mean < MINIMUM_MEAN_SCORE or probability > alpha:
+        raise ValueError("Candidate has not demonstrated a win-rate improvement")
+    return {
+        "pairs": len(scores),
+        "score": mean,
+        "deltaWinRate": 2 * mean - 1,
+        "oneSidedP": probability,
+        "test": "exact_paired_binomial",
+        "alpha": alpha,
+    }
 
 
-def verified_game(game, expected_sha, model_identity, runs, method, controller):
+def verified_game(game, expected_sha, model_identity, runs, controller):
     directory = Path(game["directory"]).resolve()
     if directory.parent != runs.resolve() or game.get("weightsSHA256") != expected_sha:
         raise ValueError("Evaluation game path or frozen policy differs")
@@ -105,13 +99,13 @@ def verified_game(game, expected_sha, model_identity, runs, method, controller):
         for row in predictions
     ):
         raise ValueError("Evaluation used changing, trainable or unverified action weights")
-    if starts[0].get("controllerVersion", 1) != controller or any(
-        row.get("controller_version", 1) != controller for row in predictions
+    if starts[0].get("controllerVersion") != controller or any(
+        row.get("controller_version") != controller for row in predictions
     ):
         raise ValueError("Evaluation decision controller differs from the checkpoint")
-    if controller >= 3 and any(row.get("policy_input") != "public_text_v3" for row in predictions):
+    if controller == 3 and any(row.get("policy_input") != "public_text_v3" for row in predictions):
         raise ValueError("Fast evaluation did not use the frozen text input contract")
-    return 0.5 if outcome == "draw" and method == "hoeffding_score" else float(outcome == "win")
+    return float(outcome == "win")
 
 
 def validate_report(report_path, candidate, champion, data_dir):
@@ -157,10 +151,9 @@ def validate_report(report_path, candidate, champion, data_dir):
         or reserved["candidateSHA256"] != candidate["weights_sha256"]
     ):
         raise ValueError("Unreserved or mismatched qualification trial")
-    method = report.get("method", "hoeffding_score")
-    if method != reserved.get("method", "hoeffding_score"):
-        raise ValueError("Qualification method changed after registration")
-    if method == "paired_exact_wins_v1" and (
+    if report.get("method") != METHOD or reserved.get("method") != METHOD:
+        raise ValueError("Unknown qualification method")
+    if (
         reserved.get("requestedPairs") != count
         or reserved.get("minimumPairs") != report.get("minimumPairs")
         or reserved.get("minimumPairs", 0) < MINIMUM_PAIRS
@@ -192,7 +185,6 @@ def validate_report(report_path, candidate, champion, data_dir):
                 expected,
                 champion["model_sha256"],
                 data_dir / "counterpush/runs",
-                method,
                 controller,
             )
         scores.append(0.5 + (values["candidate"] - values["baseline"]) / 2)
@@ -207,7 +199,7 @@ def validate_report(report_path, candidate, champion, data_dir):
         abs(a - b) > 1e-9 for a, b in zip(scores, report["pairs"])
     ):
         raise ValueError("Pair scores disagree with raw results")
-    gate = qualification_scores(scores, alpha, method)
+    gate = qualification_scores(scores, alpha)
     if abs(report["gate"]["score"] - gate["score"]) > 1e-9:
         raise ValueError("Qualification score changed")
     return {

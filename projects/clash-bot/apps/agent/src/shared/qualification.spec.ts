@@ -10,7 +10,6 @@ import { attemptAlpha, QUALIFICATION } from './qualification.ts';
 const cases = JSON.parse(
   await readFile(new URL('../../test-fixtures/qualification-cases.json', import.meta.url), 'utf8'),
 ) as {
-  method: 'paired_exact_wins_v1';
   gates: Array<{
     name: string;
     wins: number;
@@ -41,7 +40,7 @@ describe('qualification contract shared with the Python promotion gate', () => {
       ...Array<number>(gate.losses).fill(0),
       ...Array<number>(gate.invalid).fill(0.7),
     ];
-    expect(realEvaluationGate(scores, attemptAlpha(gate.attempt), cases.method).passed).toBe(gate.qualifies);
+    expect(realEvaluationGate(scores, attemptAlpha(gate.attempt)).passed).toBe(gate.qualifies);
   });
 
   it.each(cases.resultLabels)('reads the result label "$label" as the Python verifier does', (row) => {

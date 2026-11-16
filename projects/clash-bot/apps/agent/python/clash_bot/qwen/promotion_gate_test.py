@@ -25,12 +25,10 @@ class PromotionGateTests(unittest.TestCase):
                 )
                 alpha = attempt_alpha(gate["attempt"])
                 if gate["qualifies"]:
-                    self.assertLessEqual(
-                        qualification_scores(scores, alpha, CASES["method"])["oneSidedP"], alpha
-                    )
+                    self.assertLessEqual(qualification_scores(scores, alpha)["oneSidedP"], alpha)
                     continue
                 with self.assertRaises(ValueError):
-                    qualification_scores(scores, alpha, CASES["method"])
+                    qualification_scores(scores, alpha)
 
     def test_reads_result_labels_as_the_typescript_browser_does(self):
         for row in CASES["resultLabels"]:

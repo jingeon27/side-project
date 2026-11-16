@@ -13,7 +13,7 @@ from clash_bot.qwen.promotion import publish
 from clash_bot.qwen.runtime import LearningWorker
 
 
-def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
+def fixture(directory, tied=False, wins=16):
     mx.random.seed(7)
     data = Path(directory) / "data"
     root = data / "qwen/learning"
@@ -70,6 +70,7 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
                     "type": "match_start",
                     "source": "counterpush_visible_browser",
                     "initialPhase": "result",
+                    "controllerVersion": 1,
                 },
                 {
                     "type": "prediction",
@@ -79,6 +80,7 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
                         "trainable": False,
                         "read_only_evaluation": True,
                         "selection": "categorical_as_live",
+                        "controller_version": 1,
                     },
                 },
                 {
@@ -116,7 +118,7 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
         "games": games,
         "pairs": pair_scores,
         "gate": {"passed": True, "score": mean, "alpha": 0.025},
-        "method": method,
+        "method": "paired_exact_wins_v1",
         "trialID": "reserved-trial",
         "alphaSpendingAttempt": 0,
     }
@@ -131,7 +133,7 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
                     "file": str(report_path),
                     "baselineSHA256": learner.metadata["weights_sha256"],
                     "candidateSHA256": candidate.metadata["weights_sha256"],
-                    "method": method,
+                    "method": "paired_exact_wins_v1",
                     "minimumPairs": 16,
                     "requestedPairs": 16,
                 }
@@ -165,17 +167,15 @@ class QualifiedPromotionTest(unittest.TestCase):
             worker, checkpoint, path, report = fixture(directory)
             game = Path(report["games"][0]["directory"]) / "events.jsonl"
             rows = [json.loads(line) for line in game.read_text().splitlines()]
-            rows[0]["controllerVersion"] = 2
+            rows[0]["controllerVersion"] = 3
             game.write_text("\n".join(json.dumps(row) for row in rows))
             with self.assertRaisesRegex(ValueError, "controller"):
                 worker.promote({"checkpoint": str(checkpoint), "report": str(path)})
 
-    def test_exact_win_assessment_is_recomputed_and_its_preregistered_method_cannot_change(self):
+    def test_exact_win_assessment_is_recomputed_and_an_unregistered_method_is_rejected(self):
         for wins in (5, 6):
             with self.subTest(wins=wins), tempfile.TemporaryDirectory() as directory:
-                worker, checkpoint, path, _ = fixture(
-                    directory, wins=wins, method="paired_exact_wins_v1"
-                )
+                worker, checkpoint, path, _ = fixture(directory, wins=wins)
                 original = (worker.directory / "current.json").read_bytes()
                 if wins == 6:
                     self.assertTrue(
@@ -189,9 +189,9 @@ class QualifiedPromotionTest(unittest.TestCase):
                     self.assertEqual((worker.directory / "current.json").read_bytes(), original)
         with tempfile.TemporaryDirectory() as directory:
             worker, checkpoint, path, report = fixture(directory)
-            report["method"] = "paired_exact_wins_v1"
+            report["method"] = "hoeffding_score"
             atomic_json(path, report)
-            with self.assertRaisesRegex(ValueError, "method changed"):
+            with self.assertRaisesRegex(ValueError, "Unknown qualification method"):
                 worker.promote({"checkpoint": str(checkpoint), "report": str(path)})
 
     def test_full_raw_evidence_publishes_once_reloads_and_keeps_the_previous_champion(self):
