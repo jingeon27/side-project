@@ -3,7 +3,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { LearningClient } from '../../qwen/learning-client.ts';
-import { selectModel, type ModelId } from '../../qwen/model-options.ts';
+import { MODEL } from '../../qwen/model.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import type { Profile } from '../../shared/config.ts';
 import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
@@ -367,18 +367,17 @@ export async function evaluateWithResources(options: {
 export async function runCounterpushEvaluation(options: {
   dataDir: string;
   profile: Profile;
-  model: ModelId;
   candidate: string;
   pairs: number;
   hours: number;
   signal: AbortSignal;
 }) {
-  const { dataDir, model, signal } = options;
+  const { dataDir, signal } = options;
   await readFile(join(options.candidate, 'metadata.json'), 'utf8');
   const lock = await acquireLearningLock(join(dataDir, 'qwen/selfplay'));
   const control = join(dataDir, 'counterpush/control');
   await mkdir(control, { recursive: true, mode: 0o700 });
-  const client = new LearningClient(dataDir, model),
+  const client = new LearningClient(dataDir),
     vision = new CounterpushVisionClient(dataDir);
   const resources: { browser: CounterpushBrowser | null } = { browser: null };
   const status = {
@@ -386,7 +385,7 @@ export async function runCounterpushEvaluation(options: {
     pid: process.pid,
     startedAt: new Date().toISOString(),
     phase: 'evaluation_loading',
-    model: selectModel(model, true).name,
+    model: MODEL.name,
     completed: 0,
     updates: 0,
     tabs: 1,

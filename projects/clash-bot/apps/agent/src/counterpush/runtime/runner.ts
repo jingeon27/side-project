@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { studyNext } from '../../arena/study.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
-import { selectModel, type ModelId } from '../../qwen/model-options.ts';
+import { MODEL } from '../../qwen/model.ts';
 import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
@@ -69,7 +69,6 @@ async function initialCandidate(dataDir: string, champion: PolicySnapshot) {
 export async function runCounterpush(options: {
   dataDir: string;
   profile: Profile;
-  model: ModelId;
   hours: number;
   matches: number;
   tabs?: number;
@@ -78,7 +77,7 @@ export async function runCounterpush(options: {
   trainingGoal?: number;
   signal: AbortSignal;
 }) {
-  const { dataDir, model, signal } = options;
+  const { dataDir, signal } = options;
   const pairs = options.pairs ?? 16,
     trainingMatches = options.trainingMatches ?? 8;
   if ((options.tabs ?? 1) !== 1)
@@ -101,7 +100,7 @@ export async function runCounterpush(options: {
     id: lock.owner.id,
     pid: process.pid,
     startedAt: new Date().toISOString(),
-    model: selectModel(model, true).name,
+    model: MODEL.name,
     phase: 'loading',
     completed: 0,
     updates: 0,
@@ -140,7 +139,7 @@ export async function runCounterpush(options: {
   signal.addEventListener('abort', abort, { once: true });
   try {
     await report({ phase: 'loading' });
-    const client = new LearningClient(dataDir, model),
+    const client = new LearningClient(dataDir),
       vision = new CounterpushVisionClient(dataDir);
     resources.client = client;
     resources.vision = vision;

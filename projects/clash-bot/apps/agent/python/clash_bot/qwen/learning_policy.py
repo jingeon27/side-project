@@ -18,7 +18,6 @@ from mlx.utils import tree_flatten, tree_unflatten
 from clash_bot.files import atomic_json
 
 FORMAT = "qwen-final-mlp-lora-ppo-v1"
-MODEL_SHA256 = "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
 
 
 class KLExceeded(ValueError):
@@ -88,8 +87,8 @@ class Learner:
         norm_eps,
         token_rows,
         directory,
-        model_identity=MODEL_SHA256,
-        target="language_model.model.layers.31.mlp.down_proj",
+        model_identity,
+        target,
         *,
         frozen=False,
     ):

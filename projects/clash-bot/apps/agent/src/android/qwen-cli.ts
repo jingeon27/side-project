@@ -1,7 +1,7 @@
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { selectModel } from '../qwen/model-options.ts';
+import { MODEL } from '../qwen/model.ts';
 import { DATA_DIR, loadProfile } from '../shared/config.ts';
 import { JsonLineClient } from '../shared/json-lines-client.ts';
 import { pythonExecutable } from '../shared/python.ts';
@@ -18,7 +18,6 @@ const { values } = parseArgs({
     seconds: { type: 'string' },
     image: { type: 'string' },
     'max-actions': { type: 'string' },
-    model: { type: 'string' },
   },
 });
 const bounded = (raw: string | undefined, fallback: number, max: number) => {
@@ -27,11 +26,10 @@ const bounded = (raw: string | undefined, fallback: number, max: number) => {
   return value;
 };
 const abort = new AbortController();
-const model = selectModel(values.model);
 const client = new JsonLineClient(
   pythonExecutable(),
   ['-m', 'clash_bot.qwen.worker'],
-  join(DATA_DIR, 'qwen', model.directory),
+  join(DATA_DIR, 'qwen', MODEL.directory),
 );
 process.once('SIGINT', () => {
   abort.abort();

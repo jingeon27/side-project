@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { QwenAction } from '../game/actions.ts';
 import { JsonLineClient } from '../shared/json-lines-client.ts';
 import { pythonEnvironment, pythonExecutable } from '../shared/python.ts';
-import { DEFAULT_MODEL, selectModel, type ModelId } from './model-options.ts';
+import { MODEL } from './model.ts';
 
 const trainingSchema = z
   .object({
@@ -36,13 +36,12 @@ export type DecisionOutput = {
 };
 
 export class LearningClient extends JsonLineClient {
-  constructor(dataDir: string, model: ModelId = DEFAULT_MODEL) {
-    const spec = selectModel(model, true);
+  constructor(dataDir: string) {
     super(
       pythonExecutable(dataDir),
       ['-m', 'clash_bot.qwen.learning_worker'],
-      join(dataDir, 'qwen', spec.directory),
-      [join(dataDir, 'qwen', spec.checkpoint_directory)],
+      join(dataDir, 'qwen', MODEL.directory),
+      [join(dataDir, 'qwen', MODEL.checkpoint_directory)],
       pythonEnvironment(dataDir),
     );
   }

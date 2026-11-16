@@ -15,7 +15,6 @@ it('rejects a second game tab before acquiring the learner lock or launching a m
         dataDir,
         tabs: 2,
         profile: DEFAULT_PROFILE,
-        model: '3.8-27b',
         hours: 1,
         matches: 2,
         signal: new AbortController().signal,

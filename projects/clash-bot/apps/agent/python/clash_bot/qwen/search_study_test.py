@@ -43,7 +43,15 @@ class IsolatedSearchStudyTest(unittest.TestCase):
 
     def worker(self, directory):
         root = Path(directory) / "data/qwen/learning"
-        learner = Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.random.normal((3, 8)), root)
+        learner = Learner(
+            FinalMLPLoRA(12, 8),
+            mx.ones(8),
+            1e-6,
+            mx.random.normal((3, 8)),
+            root,
+            "test-model",
+            "test.layer",
+        )
         sample = {
             "features": mx.ones(12),
             "base": mx.arange(8).astype(mx.float32),

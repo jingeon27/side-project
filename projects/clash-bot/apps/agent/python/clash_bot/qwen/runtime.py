@@ -19,7 +19,7 @@ from clash_bot.qwen.learning_policy import (
     Learner,
     weights_digest,
 )
-from clash_bot.qwen.model_specs import detect_model, verify_model
+from clash_bot.qwen.model_specs import MODEL, require_model_directory, verify_model
 from clash_bot.qwen.opponent_data import load_demonstrations
 from clash_bot.qwen.promotion import parent_sha, publish
 from clash_bot.qwen.replay import rehearse, remember
@@ -31,9 +31,8 @@ from .features import AdaptedFinalNorm, Capture, output_token_rows
 
 class LearningWorker:
     def __init__(self, model_path, directory):
-        self.spec = detect_model(model_path)
-        if not self.spec["learning"]:
-            raise ValueError("This model does not support the learning controller")
+        require_model_directory(model_path)
+        self.spec = MODEL
         mx.set_cache_limit(256 * 1024 * 1024)
         mx.set_memory_limit(self.spec["memory_gib"] * 1024**3)
         mx.random.seed(secrets.randbits(32))
@@ -44,7 +43,7 @@ class LearningWorker:
             config.hidden_size != self.spec["hidden_size"]
             or config.intermediate_size != self.spec["input_size"]
             or config.num_hidden_layers != self.spec["layers"]
-            or config.tie_word_embeddings != self.spec["tied_output"]
+            or config.tie_word_embeddings
         ):
             raise ValueError("Model architecture does not match the pinned specification")
         self.model.freeze()
@@ -62,9 +61,7 @@ class LearningWorker:
         if any(len(token) != 1 for token in self.tokens):
             raise ValueError("Action labels must encode as one Qwen token")
         token_ids = mx.array([token[0] for token in self.tokens])
-        token_rows = output_token_rows(
-            self.model.language_model, token_ids, config.tie_word_embeddings
-        )
+        token_rows = output_token_rows(self.model.language_model, token_ids)
         mx.eval(token_rows)
         self.learner = Learner(
             FinalMLPLoRA(config.intermediate_size, config.hidden_size),

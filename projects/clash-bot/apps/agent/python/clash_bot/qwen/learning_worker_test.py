@@ -11,7 +11,7 @@ import mlx.nn as nn
 from clash_bot.qwen.episode_events import confirmed_input, verified_result
 from clash_bot.qwen.features import output_token_rows
 from clash_bot.qwen.learning_policy import FORMAT, FinalMLPLoRA, weights_digest
-from clash_bot.qwen.model_specs import MODELS
+from clash_bot.qwen.model_specs import MODEL
 from clash_bot.qwen.runtime import LearningWorker
 
 
@@ -99,7 +99,7 @@ class LearningEpisodeTest(unittest.TestCase):
 
     def worker(self):
         worker = object.__new__(LearningWorker)
-        worker.spec = MODELS["4b"]
+        worker.spec = MODEL
         worker.directory = Path("/nonexistent/clash-test/qwen/learning")
         worker.learner = SimpleNamespace(
             adapter=FinalMLPLoRA(1, 1), train=Mock(return_value={"updated": False})
@@ -115,6 +115,7 @@ class LearningEpisodeTest(unittest.TestCase):
             "image": str(directory / f"{frame:04d}.png"),
             "behavior": {
                 "format": FORMAT,
+                "model_identity": MODEL["identity"],
                 "trainable": True,
                 "labels": [0, 1],
                 "chosen": 0,
@@ -126,7 +127,9 @@ class LearningEpisodeTest(unittest.TestCase):
         }
         for frame in (1, 3):
             mx.savez(
-                str(features / f"{frame:04d}.npz"), features=mx.zeros(9216), base=mx.zeros(2560)
+                str(features / f"{frame:04d}.npz"),
+                features=mx.zeros(MODEL["input_size"]),
+                base=mx.zeros(MODEL["hidden_size"]),
             )
         rows = [
             prediction(1),
@@ -178,7 +181,7 @@ class LearningEpisodeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             worker = self.worker()
             self.write_episode(directory, worker)
-            worker.spec = MODELS["3.8-27b"]
+            worker.spec = {**MODEL, "identity": "0" * 64}
             with self.assertRaisesRegex(ValueError, "different base model"):
                 worker.train({"episode": directory})
             worker.learner.train.assert_not_called()
@@ -198,18 +201,13 @@ class LearningEpisodeTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 worker.train_batch({"episodes": [first, first]})
 
-    def test_uses_separate_lm_head_when_embeddings_are_untied(self):
+    def test_reads_action_rows_from_the_separate_lm_head(self):
         embedding = nn.Embedding(8, 4)
         embedding.weight = mx.full((8, 4), 2.0)
         head = nn.Linear(4, 8, bias=False)
         head.weight = mx.full((8, 4), 7.0)
         language = SimpleNamespace(model=SimpleNamespace(embed_tokens=embedding), lm_head=head)
-        self.assertEqual(
-            output_token_rows(language, mx.array([1, 3]), False).tolist(), [[7.0] * 4] * 2
-        )
-        self.assertEqual(
-            output_token_rows(language, mx.array([1, 3]), True).tolist(), [[2.0] * 4] * 2
-        )
+        self.assertEqual(output_token_rows(language, mx.array([1, 3])).tolist(), [[7.0] * 4] * 2)
 
     def test_quantized_output_rows_preserve_native_projection_precision(self):
         mx.random.seed(321)
@@ -219,7 +217,7 @@ class LearningEpisodeTest(unittest.TestCase):
         language = SimpleNamespace(lm_head=head)
         labels = mx.array([1, 3, 7])
         features = mx.random.normal((256,)).astype(mx.float32)
-        rows = output_token_rows(language, labels, False)
+        rows = output_token_rows(language, labels)
         self.assertTrue(
             mx.allclose(rows @ features, head(features)[labels], atol=1e-5, rtol=1e-5).item()
         )

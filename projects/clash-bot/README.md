@@ -2,7 +2,7 @@
 
 로컬 자가대국, 미래 수읽기, 후보 버전 평가와 밸런스 수치 변경 추적은 [자가대국 구현·실행 방법](docs/arena-learning.md)을 참고하세요. Qwen 3.8은 실전 화면 모델로 유지하고, 빠른 전투 탐색 결과는 별도 후보가 학습합니다. **Counterpush에서 32판 이상의 비교 평가를 통과한 후보만 자동 적용**하며, 그 전까지 기존 적용 모델을 유지합니다.
 
-Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 로컬 봇입니다. BlueStacks Air의 화면과 터치를 ADB로 연결하고, **Qwen3.8-27B 4bit**가 제한된 배치 후보 중 다음 행동을 고릅니다. 현재 자동 학습·실전 평가·채택은 Counterpush에서 수행합니다. 더 가벼운 Qwen3.5-4B와 규칙 기반 실행 모드도 남겨두었습니다.
+Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 로컬 봇입니다. BlueStacks Air의 화면과 터치를 ADB로 연결하고, **Qwen3.8-27B 4bit**가 제한된 배치 후보 중 다음 행동을 고릅니다. 현재 자동 학습·실전 평가·채택은 Counterpush에서 수행합니다. 규칙 기반 실행 모드도 남겨두었습니다.
 
 [Counterpush](https://playcounterpush.com/)는 사용자가 지정한 참고 서비스입니다. 이 프로젝트에 Counterpush의 모델·게임 엔진은 포함되지 않습니다.
 
@@ -39,7 +39,7 @@ yarn workspace @side/clash-bot setup
 yarn workspace @side/clash-bot qwen:setup
 ```
 
-`setup`은 작은 참조 이미지와 기본 프로필을 준비하며 기존 설정을 덮어쓰지 않습니다. `qwen:setup`은 `.data/qwen/.venv`에 고정된 Python 의존성을 설치하고, 고정 revision의 **3.8-27B** 모델을 내려받아 모든 가중치 파일의 SHA-256을 검증합니다. 모델 파일은 약 **16.1GB**이며 실행 메모리·Python 의존성·게임 기록은 별도입니다. `qwen:setup 4b`는 이전 3.5-4B(약 3.03GB)를 준비하며 `qwen:setup 2b`는 관찰용 소형 모델을 준비합니다. 모델 사양은 `apps/agent/contracts/models.json`에서 공유합니다.
+`setup`은 작은 참조 이미지와 기본 프로필을 준비하며 기존 설정을 덮어쓰지 않습니다. `qwen:setup`은 `.data/qwen/.venv`에 고정된 Python 의존성을 설치하고, 고정 revision의 **3.8-27B** 모델을 내려받아 모든 가중치 파일의 SHA-256을 검증합니다. 모델 파일은 약 **16.1GB**이며 실행 메모리·Python 의존성·게임 기록은 별도입니다. 모델 사양은 `apps/agent/contracts/model.json` 하나를 TS와 Python이 함께 읽습니다.
 
 BlueStacks에서 CPU 2개, RAM 2048MB, Balanced, 30 FPS를 설정했습니다. 로컬 ADB 접근을 켜고 BlueStacks를 완전히 종료 후 다시 엽니다. 현재 기기는 `127.0.0.1:5555`입니다. 원격 ADB 접근은 켜지 않습니다.
 
@@ -59,7 +59,7 @@ yarn workspace @side/clash-bot connect --adb /Applications/BlueStacks.app/Conten
 
 ## Qwen 후보 학습 방식
 
-3.8의 학습 대상은 마지막 MLP 출력 투영 `language_model.model.layers.63.mlp.down_proj`에 해당하는 **rank 4 / alpha 8 LoRA, 90,112개 매개변수**입니다. 낮은 랭크의 변화량을 Qwen 내부에서 마지막 정규화 직전에 더하고, 원래 Qwen 출력층으로 합법 행동의 확률을 계산합니다. 3.8은 입력 임베딩과 출력층이 분리되어 있어 `lm_head`를 사용합니다. 3.5-4B의 공유 임베딩 경로와 구별합니다. 마지막 층의 입력을 저장하므로 전체 모델을 역전파하지 않고도 이 변화량을 학습할 수 있습니다. 원본 4bit 모델은 고정하며 어댑터를 별도 파일로 보존합니다. 이 프로젝트의 전용 어댑터 형식이며 Counterpush 후보 학습이 읽고 씁니다. 적용 모델(챔피언)의 어댑터는 항상 고정하고, 검증을 통과한 후보만 게시합니다.
+3.8의 학습 대상은 마지막 MLP 출력 투영 `language_model.model.layers.63.mlp.down_proj`에 해당하는 **rank 4 / alpha 8 LoRA, 90,112개 매개변수**입니다. 낮은 랭크의 변화량을 Qwen 내부에서 마지막 정규화 직전에 더하고, 원래 Qwen 출력층으로 합법 행동의 확률을 계산합니다. 3.8은 입력 임베딩과 출력층이 분리되어 있어 `lm_head`를 사용합니다. 마지막 층의 입력을 저장하므로 전체 모델을 역전파하지 않고도 이 변화량을 학습할 수 있습니다. 원본 4bit 모델은 고정하며 어댑터를 별도 파일로 보존합니다. 이 프로젝트의 전용 어댑터 형식이며 Counterpush 후보 학습이 읽고 씁니다. 적용 모델(챔피언)의 어댑터는 항상 고정하고, 검증을 통과한 후보만 게시합니다.
 
 경기 중에는 합법 후보에 한 글자씩 붙여 Qwen의 확률 분포에서 선택하고, 그 분포와 학습 버전을 저장합니다. 후보 순서를 섞어 고정된 첫 번째 글자에 대한 편향을 줄입니다. 결과는 결과 화면의 왕관 표시를 0.6초 간격으로 두 번 읽어 같을 때만 보상으로 사용합니다. 승리 1 / 패배 -1 / 무승부 0이며, 선택 시점이 같은 정책의 데이터만 학습합니다. 실제 사용이 확인된 카드와 유효한 대기 행동을 대상으로 한 경기 최대 24개 지점에서 업데이트합니다.
 
@@ -92,7 +92,7 @@ BlueStacks 인식은 기존 손패·엘릭서·체력 막대 참조를 사용합
 이미 시작한 대전에서 실제 입력을 허용하려면:
 
 ```sh
-yarn workspace @side/clash-bot qwen --model 3.8-27b \
+yarn workspace @side/clash-bot qwen \
   --adb /Applications/BlueStacks.app/Contents/MacOS/hd-adb \
   --serial 127.0.0.1:5555 --live --seconds 360 --max-actions 180
 ```
@@ -124,7 +124,7 @@ yarn workspace @side/clash-bot qwen --model 3.8-27b \
 
 학습 없는 Qwen 경기와 트로피 경기는 가중치를 바꾸지 않습니다. Counterpush 후보 학습 경기 폴더(`.data/counterpush/runs/<시각>/`)에는 `features/NNNN.npz`와 `training.json`이 추가됩니다. 특징 파일에는 고정된 Qwen의 마지막 MLP 입력과 정규화 전 상태를 저장하며, `training.json`에는 실제 갱신 여부·보상·학습률·확률 변화·전후 가중치 해시를 기록합니다.
 
-`.data/qwen/learning-3.8-27b/checkpoints/vNNNNNN/`에는 어댑터·Adam 상태·검증 정보를 함께 저장하고, 모두 기록한 뒤 `current.json`을 교체합니다. 3.5-4B의 기존 폴더는 `.data/qwen/learning`입니다. 프로세스 재시작 시 원본 모델의 모든 가중치 파일과 어댑터를 검증합니다. 3.8의 모델 식별자는 세 파일의 이름·SHA-256 목록을 합친 지문입니다. `.data/qwen/selfplay/`는 학습 실행의 잠금과 중지 요청을 둡니다. 전체 모델·어댑터·원시 플레이 기록은 Git에 포함하지 않습니다.
+`.data/qwen/learning-3.8-27b/checkpoints/vNNNNNN/`에는 어댑터·Adam 상태·검증 정보를 함께 저장하고, 모두 기록한 뒤 `current.json`을 교체합니다. 프로세스 재시작 시 원본 모델의 모든 가중치 파일과 어댑터를 검증합니다. 3.8의 모델 식별자는 세 파일의 이름·SHA-256 목록을 합친 지문입니다. `.data/qwen/selfplay/`는 학습 실행의 잠금과 중지 요청을 둡니다. 전체 모델·어댑터·원시 플레이 기록은 Git에 포함하지 않습니다.
 
 ## 인식 보정과 가벼운 모드
 
@@ -136,7 +136,7 @@ Counterpush의 **실시간 대전 화면**에서 상대 행동을 자동 인식�
 yarn workspace @side/clash-bot qwen:setup
 yarn workspace @side/clash-bot counterpush:setup
 yarn workspace @side/clash-bot counterpush login
-yarn workspace @side/clash-bot counterpush start --background --model 3.8-27b --matches 0 --hours 0 --training-matches 8 --pairs 16 --tabs 1
+yarn workspace @side/clash-bot counterpush start --background --matches 0 --hours 0 --training-matches 8 --pairs 16 --tabs 1
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush audit
 yarn workspace @side/clash-bot counterpush stop
@@ -210,9 +210,9 @@ yarn workspace @side/clash-bot play --adb /Applications/BlueStacks.app/Contents/
 
 Counterpush의 현재 덱은 진화 기사·진화 용광로·히어로 얼음 마법사까지 확인합니다. 기사/용광로 충전 횟수는 카드 FIFO와 별도로 추정하고, 얼음 마법사 스킬은 화면 버튼이 준비됐을 때 Qwen의 별도 2 엘릭서 행동으로 제공합니다. 버튼 변화·지출·손패 유지가 확인된 사용만 학습에 넣으며 FIFO나 진화 횟수를 진행시키지 않습니다. 상대 능력 사용 시점과 다른 챔피언들의 개별 스킬 조작은 미지원입니다. 진화 주기의 Counterpush 실측 일치 여부, 스킬 사용 타이밍의 성능 향상은 아직 검증되지 않았습니다. 상세 상태와 출처는 [설계 기록](docs/learning-design.md)에 있습니다.
 
-Qwen3.8-27B는 저장된 실제 경기 화면 세 장에서 추론 **1.32~1.65초**, MLX 최대 메모리 약 **16GiB**였습니다. 초기 실행과 화면 내용에 따라 달라지며, 캡처·재확인·터치·배치 확인 시간은 별도입니다. BlueStacks의 게스트 RAM 2GB는 Mac 전체 사용량의 상한이 아닙니다. 모델 메모리 한도는 3.8에 30GiB, 3.5에 12GiB로 설정합니다. 이는 실제 사용량을 미리 할당한다는 뜻이 아닙니다.
+Qwen3.8-27B는 저장된 실제 경기 화면 세 장에서 추론 **1.32~1.65초**, MLX 최대 메모리 약 **16GiB**였습니다. 초기 실행과 화면 내용에 따라 달라지며, 캡처·재확인·터치·배치 확인 시간은 별도입니다. BlueStacks의 게스트 RAM 2GB는 Mac 전체 사용량의 상한이 아닙니다. 모델 메모리 한도는 30GiB로 설정합니다. 이는 실제 사용량을 미리 할당한다는 뜻이 아닙니다.
 
-학습 실행기는 JSON 전체 생성 대신 합법 행동 토큰을 직접 평가합니다. 이전 3.5-4B 실전의 후보 선택은 보통 **0.25~0.45초**, MLX 최대 메모리는 약 **3.7GiB**였고 9개 지점의 학습은 약 **0.36초**였습니다. 모델 추론과 학습을 같은 프로세스에서 순차 실행합니다. 합법 행동이 하나뿐이면 추가 모델 추론을 생략합니다. 이 측정은 제한된 초기 경기이며 장시간 사용량 측정은 아닙니다.
+학습 실행기는 JSON 전체 생성 대신 합법 행동 토큰을 직접 평가합니다. 모델 추론과 학습을 같은 프로세스에서 순차 실행합니다. 합법 행동이 하나뿐이면 추가 모델 추론을 생략합니다. 이 측정은 제한된 초기 경기이며 장시간 사용량 측정은 아닙니다.
 
 체력 막대는 유닛 종류·공중/지상 상성을 판별하지 않습니다. 정확한 타워 체력, 상대 엘릭서, 챔피언 능력, 타워 파괴 후 확장 배치 영역도 지원하지 않습니다. 손패 애니메이션·스킨·화면 효과·색상 변화는 여전히 인식을 흐릴 수 있습니다. 후보를 제한해 잘못된 좌표를 줄였지만 좋은 전략을 보장하지 않습니다. LoRA의 실제 가중치 변경은 검증했으며, 학습 전후 승률 향상은 아직 측정하지 않았습니다. 경기 종결 보상만으로는 학습이 느리거나 성능이 나빠질 수 있습니다.
 
@@ -235,7 +235,7 @@ Python 학습 검사는 양·음 보상에 따른 확률 방향, 가중치 변�
 
 Counterpush 반복 실행 경로의 추가 검증은 공유 재생·10 상한·4장 FIFO, 과거 상태의 미래 정보 누출 방지, 실제 엘릭서 막대, 지출 애니메이션, 레벨 표식 누락, 중복 유닛/효과, 기존 무덤의 새 묘비, 독의 진영, 연장전 결과와 실제 학습 건수 분리를 다룹니다. 잘못된 과거 사례는 격리 목록으로 자료 준비와 실제 학습에서 거부합니다. 자세한 자료 감사·모델 복구·구현과 미구현 구분은 [학습 설계](docs/learning-design.md)에 남깁니다. 타입 검사·Vitest 72개, Python 학습 19개(실모델 통합 1개 별도 건너뜀), CPU 인식 4개를 확인합니다. 실모델 전체 통합 검사는 이번 추가 변경에서 다시 실행하지 않았으며, 별도로 운영 Qwen3.8의 감사된 4사례 모방학습과 실제 가중치 변경을 확인했습니다. 인식 준비는 현재 캐시를 재사용해 SHA-256을 확인했고, 완전히 빈 환경의 최초 설치 전체는 이번에 재현하지 않았습니다.
 
-`test:learning`은 일반 Python 검사이며 실제 모델 통합 검사를 건너뜁니다. `test:learning:model`은 기본으로 설치된 **Qwen3.8-27B**를 실제로 읽고 Qwen 내부 어댑터·캐시 학습·원래 출력층의 확률 비교와 실제 가중치 갱신·재적용을 별도 임시 폴더에서 확인합니다. `QWEN_TEST_MODEL=4b`로 이전 모델도 선택할 수 있습니다. 운영 중인 학습 체크포인트는 변경하지 않습니다.
+`test:learning`은 일반 Python 검사이며 실제 모델 통합 검사를 건너뜁니다. `test:learning:model`은 기본으로 설치된 **Qwen3.8-27B**를 실제로 읽고 Qwen 내부 어댑터·캐시 학습·원래 출력층의 확률 비교와 실제 가중치 갱신·재적용을 별도 임시 폴더에서 확인합니다. 운영 중인 학습 체크포인트는 변경하지 않습니다.
 
 2026-11-15 로컬 검사: 타입 검사·Vitest **44개**, Python **11개** 통과. 실제 모델 검사는 일반 Python 검사에서 별도로 1개 건너뜁니다. 3.8 실모델의 첫 출력층 비교는 BF16 가중치 복원 시 반올림 차이로 실패했고, FP32로 복원하도록 수정한 뒤 통합 검사에서 Qwen 내부 계산·캐시 학습·원래 출력층의 확률 비교와 가중치 변경·저장·재적용이 통과했습니다. 같은 통합 검사를 `QWEN_TEST_MODEL=4b`로 실행한 이전 모델 호환 검사도 통과했습니다. 기본 `qwen:setup` 명령의 다운로드 캐시 재사용과 세 파일 SHA-256 검증도 통과했습니다. 장시간 연속 운영과 승률 개선은 아직 검증하지 않았습니다.
 

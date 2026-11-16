@@ -1,4 +1,4 @@
-"""Pinned model identities shared by installer, inference and learning."""
+"""Pinned model identity shared by installer, inference and learning."""
 
 import hashlib
 import json
@@ -6,16 +6,13 @@ from pathlib import Path
 
 from clash_bot.paths import CONTRACTS_DIR
 
-MODELS = json.loads((CONTRACTS_DIR / "models.json").read_text())
-DEFAULT_MODEL = "3.8-27b"
+MODEL = json.loads((CONTRACTS_DIR / "model.json").read_text())
 
 
-def detect_model(directory):
+def require_model_directory(directory):
     name = Path(directory).name
-    for key, spec in MODELS.items():
-        if spec["directory"] == name:
-            return {**spec, "id": key}
-    raise ValueError("Unknown pinned Qwen model directory: " + name)
+    if name != MODEL["directory"]:
+        raise ValueError("Unknown pinned Qwen model directory: " + name)
 
 
 def verify_model(directory, spec):

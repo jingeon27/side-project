@@ -11,17 +11,29 @@ from PIL import Image
 
 from clash_bot.paths import DATA_DIR
 from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
-from clash_bot.qwen.model_specs import DEFAULT_MODEL, MODELS
+from clash_bot.qwen.model_specs import MODEL
 from clash_bot.qwen.runtime import LearningWorker
 
 
 @unittest.skipUnless(os.environ.get("RUN_QWEN_INTEGRATION") == "1", "real-model check is opt-in")
 class LearningModelTest(unittest.TestCase):
     def test_qwen_internal_adapter_matches_cached_feature_training(self):
-        spec = MODELS[os.environ.get("QWEN_TEST_MODEL", DEFAULT_MODEL)]
+        spec = MODEL
         model = DATA_DIR / "qwen" / spec["directory"]
         with tempfile.TemporaryDirectory() as directory:
-            worker = LearningWorker(str(model), str(Path(directory) / "checkpoints"))
+            worker = LearningWorker(str(model), str(Path(directory) / "champion"))
+            # The resident champion stays frozen; a private learner trains inside the same Qwen.
+            worker.bind(
+                Learner(
+                    FinalMLPLoRA(spec["input_size"], spec["hidden_size"]),
+                    worker.learner.norm_weight,
+                    worker.learner.norm_eps,
+                    worker.learner.token_rows,
+                    str(Path(directory) / "candidate"),
+                    spec["identity"],
+                    worker.learner.metadata["target"],
+                )
+            )
             worker.learner.adapter.b = mx.random.normal((4, spec["hidden_size"])) * 0.001
             image = Path(directory) / "scene.png"
             Image.new("RGB", (368, 652), "#375f48").save(image)
@@ -32,6 +44,7 @@ class LearningModelTest(unittest.TestCase):
                     "prompt": "Choose A: wait, B: defend, C: attack. Reply one letter.",
                     "choices": [0, 1, 2],
                     "feature_path": str(feature_path),
+                    "controller_version": 1,
                 }
             )
             sample = {**mx.load(str(feature_path)), "labels": [0, 1, 2]}
@@ -52,11 +65,7 @@ class LearningModelTest(unittest.TestCase):
                 sample["base"].astype(mx.float32) + worker.learner.adapter(sample["features"])
             )
             language = worker.model.language_model
-            native = (
-                language.model.embed_tokens.as_linear(hidden)
-                if spec["tied_output"]
-                else language.lm_head(hidden)
-            )
+            native = language.lm_head(hidden)
             labels = mx.array([token[0] for token in worker.tokens[:3]])
             native = native[labels].astype(mx.float32)
             native = native - mx.logsumexp(native)
@@ -76,7 +85,7 @@ class LearningModelTest(unittest.TestCase):
                 worker.learner.norm_weight,
                 worker.learner.norm_eps,
                 worker.learner.token_rows,
-                str(Path(directory) / "checkpoints"),
+                str(Path(directory) / "candidate"),
                 spec["identity"],
                 worker.learner.metadata["target"],
             )

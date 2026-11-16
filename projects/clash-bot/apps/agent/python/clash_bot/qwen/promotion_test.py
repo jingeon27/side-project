@@ -17,7 +17,15 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
     mx.random.seed(7)
     data = Path(directory) / "data"
     root = data / "qwen/learning"
-    learner = Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.random.normal((3, 8)), root)
+    learner = Learner(
+        FinalMLPLoRA(12, 8),
+        mx.ones(8),
+        1e-6,
+        mx.random.normal((3, 8)),
+        root,
+        "test-model",
+        "test.layer",
+    )
     sample = {
         "features": mx.ones(12),
         "base": mx.arange(8).astype(mx.float32),
@@ -33,7 +41,13 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
     shutil.copytree(source, private / "checkpoints/v000001")
     atomic_json(private / "current.json", json.loads((root / "current.json").read_text()))
     candidate = Learner(
-        FinalMLPLoRA(12, 8), learner.norm_weight, learner.norm_eps, learner.token_rows, private
+        FinalMLPLoRA(12, 8),
+        learner.norm_weight,
+        learner.norm_eps,
+        learner.token_rows,
+        private,
+        "test-model",
+        "test.layer",
     )
     candidate.metadata["candidate_parent_sha256"] = learner.metadata["weights_sha256"]
     supervised = {**sample, "version": 1, "search_target": [0.0, 1.0, 0.0]}

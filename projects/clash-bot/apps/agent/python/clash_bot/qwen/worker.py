@@ -6,7 +6,7 @@ import sys
 import time
 import traceback
 
-from clash_bot.qwen.model_specs import detect_model
+from clash_bot.qwen.model_specs import MODEL, require_model_directory
 
 from .protocol import parse_inference_request
 
@@ -23,7 +23,8 @@ def main():
         from mlx_vlm.structured import build_json_schema_logits_processor
 
         mx.set_cache_limit(256 * 1024 * 1024)
-        mx.set_memory_limit(detect_model(sys.argv[1])["memory_gib"] * 1024**3)
+        require_model_directory(sys.argv[1])
+        mx.set_memory_limit(MODEL["memory_gib"] * 1024**3)
         model, processor = load(sys.argv[1], trust_remote_code=False)
     emit({"type": "ready"})
     for line in sys.stdin:

@@ -93,7 +93,15 @@ class LearningPolicyTest(unittest.TestCase):
 
     def make_learner(self, directory):
         mx.random.seed(7)
-        return Learner(FinalMLPLoRA(12, 8), mx.ones(8), 1e-6, mx.random.normal((3, 8)), directory)
+        return Learner(
+            FinalMLPLoRA(12, 8),
+            mx.ones(8),
+            1e-6,
+            mx.random.normal((3, 8)),
+            directory,
+            "test-model",
+            "test.layer",
+        )
 
     def sample(self, learner):
         sample = {
@@ -174,7 +182,8 @@ class LearningPolicyTest(unittest.TestCase):
                     1e-6,
                     mx.ones((3, 8)),
                     directory,
-                    model_identity="different-model",
+                    "different-model",
+                    "test.layer",
                 )
 
     def test_parallel_games_update_once_with_their_own_rewards_and_checkpoint_both(self):

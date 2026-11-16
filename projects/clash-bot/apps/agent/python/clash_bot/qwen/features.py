@@ -4,9 +4,9 @@ import mlx.core as mx
 import mlx.nn as nn
 
 
-def output_token_rows(language_model, token_ids, tied_output):
-    projection = language_model.model.embed_tokens if tied_output else language_model.lm_head
-    if isinstance(projection, (nn.QuantizedEmbedding, nn.QuantizedLinear)):
+def output_token_rows(language_model, token_ids):
+    projection = language_model.lm_head
+    if isinstance(projection, nn.QuantizedLinear):
         return mx.dequantize(
             projection.weight[token_ids],
             projection.scales[token_ids].astype(mx.float32),

@@ -5,7 +5,6 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR } from '../shared/config.ts';
 import { readLockOwner, requestLearningStop } from '../shared/runtime-lock.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
@@ -22,7 +21,6 @@ const { positionals, values } = parseArgs({
     hours: { type: 'string' },
     matches: { type: 'string' },
     tabs: { type: 'string' },
-    model: { type: 'string' },
     profile: { type: 'string' },
     background: { type: 'boolean' },
     candidate: { type: 'string' },
@@ -127,7 +125,6 @@ const main = async () => {
     matches > 10000
   )
     throw new Error('hours는 0~24, matches는 0~10000 정수입니다. 0은 중지 요청까지 반복합니다.');
-  const model = selectModel(values.model, true).id;
   const pairs = Number(values.pairs ?? 16);
   const trainingMatches = Number(values['training-matches'] ?? 8);
   const trainingGoal = values['training-goal'] ? Number(values['training-goal']) : undefined;
@@ -160,8 +157,6 @@ const main = async () => {
           String(hours),
           '--matches',
           String(matches),
-          '--model',
-          model,
           '--tabs',
           String(tabs),
           ...(values.profile ? ['--profile', resolve(values.profile)] : []),
@@ -196,7 +191,6 @@ const main = async () => {
     const result = await runCounterpushEvaluation({
       dataDir: DATA_DIR,
       profile: await loadCounterpushProfile(DATA_DIR, values.profile),
-      model,
       pairs,
       hours,
       candidate: resolve(values.candidate!),
@@ -219,7 +213,6 @@ const main = async () => {
   await runCounterpush({
     dataDir: DATA_DIR,
     profile: await loadCounterpushProfile(DATA_DIR, values.profile),
-    model,
     hours,
     matches,
     trainingGoal,

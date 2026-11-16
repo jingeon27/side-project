@@ -6,7 +6,7 @@ from pathlib import Path
 import mlx.core as mx
 
 from .episode_events import confirmed_input, confirmed_wait, verified_result
-from .learning_policy import FORMAT, MODEL_SHA256, weights_digest
+from .learning_policy import FORMAT, weights_digest
 
 
 def episode_samples(episode, learner, spec):
@@ -40,7 +40,7 @@ def episode_samples(episode, learner, spec):
     samples = []
     for index, decision in enumerate(decisions):
         behavior = decision["behavior"]
-        if behavior.get("model_identity", MODEL_SHA256) != spec["identity"]:
+        if behavior["model_identity"] != spec["identity"]:
             raise ValueError("Episode belongs to a different base model")
         feature_path = Path(behavior["feature_path"]).resolve()
         if feature_path.parent != directory / "features":
