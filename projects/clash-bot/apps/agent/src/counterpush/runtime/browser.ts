@@ -4,6 +4,7 @@ import { chromium, type BrowserContext, type Page } from 'playwright';
 import sharp from 'sharp';
 
 import { center, HEIGHT, WIDTH, type Point, type Profile } from '../../shared/config.ts';
+import { RESULT_LABEL } from '../../shared/qualification.ts';
 import { HERO_ABILITY_TARGET } from '../perception/hero-ability.ts';
 
 export const COUNTERPUSH_DECK = [
@@ -34,7 +35,7 @@ export type BrowserPhase = 'setup' | 'loading' | 'battle' | 'result' | 'unknown'
 export type BrowserResult = { blue: number; red: number; outcome: 'win' | 'loss' | 'draw'; label: string };
 
 export function parseBrowserResult(label: string): BrowserResult | null {
-  const match = /^Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?$/.exec(label);
+  const match = RESULT_LABEL.exec(label);
   if (!match) return null;
   const blue = Number(match[1]),
     red = Number(match[2]);

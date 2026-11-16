@@ -10,6 +10,7 @@ import { selectModel, type ModelId } from '../../qwen/model-options.ts';
 import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
+import { QUALIFICATION } from '../../shared/qualification.ts';
 import { acquireLearningLock } from '../../shared/runtime-lock.ts';
 import { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { learnCounterpushEpisodes } from '../learning/episode-learning.ts';
@@ -152,8 +153,8 @@ export async function runCounterpush(options: {
         JSON.stringify({
           format: 'qualified-champion-only-v1',
           enabled: true,
-          minimumPairs: 16,
-          confidenceBudget: 0.05,
+          minimumPairs: QUALIFICATION.minimumPairs,
+          confidenceBudget: QUALIFICATION.familyAlpha,
         }) + '\n',
       );
     await report({ phase: 'loading' });

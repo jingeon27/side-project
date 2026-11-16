@@ -1,31 +1,43 @@
-"""The promotion gate without MLX, so CI checks it on every change."""
+"""The promotion gate without MLX, so CI checks it on every change.
 
+The TypeScript evaluation gate (src/shared/qualification.spec.ts) reads the same cases and must agree.
+"""
+
+import json
 import unittest
 
+from clash_bot.paths import FIXTURES_DIR
 from clash_bot.qwen.promotion import qualification_scores
+from clash_bot.qwen.qualification import RESULT_LABEL, attempt_alpha
 
-METHOD = "paired_exact_wins_v1"
-# The second qualification attempt spends 0.05 / (2 * 3) of the family-wise budget.
-SECOND_ATTEMPT_ALPHA = 0.05 / 6
+CASES = json.loads((FIXTURES_DIR / "qualification-cases.json").read_text())
 
 
 class PromotionGateTests(unittest.TestCase):
-    def test_requires_sixteen_valid_pair_scores(self):
-        with self.assertRaises(ValueError):
-            qualification_scores([1.0] * 15, 0.025, METHOD)
-        with self.assertRaises(ValueError):
-            qualification_scores([1.0] * 15 + [0.7], 0.025, METHOD)
+    def test_decides_each_shared_case_as_the_typescript_gate_does(self):
+        for gate in CASES["gates"]:
+            with self.subTest(gate["name"]):
+                scores = (
+                    [1.0] * gate["wins"]
+                    + [0.5] * gate["ties"]
+                    + [0.0] * gate["losses"]
+                    + [0.7] * gate["invalid"]
+                )
+                alpha = attempt_alpha(gate["attempt"])
+                if gate["qualifies"]:
+                    self.assertLessEqual(
+                        qualification_scores(scores, alpha, CASES["method"])["oneSidedP"], alpha
+                    )
+                    continue
+                with self.assertRaises(ValueError):
+                    qualification_scores(scores, alpha, CASES["method"])
 
-    def test_needs_seven_decisive_wins_within_the_second_attempt_budget(self):
-        result = qualification_scores([1.0] * 7 + [0.5] * 9, SECOND_ATTEMPT_ALPHA, METHOD)
-        self.assertEqual(result["test"], "exact_paired_binomial")
-        self.assertLessEqual(result["oneSidedP"], SECOND_ATTEMPT_ALPHA)
-        with self.assertRaises(ValueError):
-            qualification_scores([1.0] * 6 + [0.5] * 10, SECOND_ATTEMPT_ALPHA, METHOD)
-
-    def test_rejects_an_even_split_below_the_mean_score_floor(self):
-        with self.assertRaises(ValueError):
-            qualification_scores([1.0] * 8 + [0.0] * 8, 0.025, METHOD)
+    def test_reads_result_labels_as_the_typescript_browser_does(self):
+        for row in CASES["resultLabels"]:
+            with self.subTest(row["label"]):
+                match = RESULT_LABEL.fullmatch(row["label"])
+                parsed = (int(match[1]), int(match[2])) if match else (None, None)
+                self.assertEqual(parsed, (row["blue"], row["red"]))
 
 
 if __name__ == "__main__":

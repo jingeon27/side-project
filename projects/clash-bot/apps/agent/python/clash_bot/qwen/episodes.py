@@ -1,12 +1,12 @@
 """Read verified, on-policy episode evidence without owning the live model."""
 
 import json
-import re
 from pathlib import Path
 
 import mlx.core as mx
 
 from .learning_policy import FORMAT, MODEL_SHA256, weights_digest
+from .qualification import RESULT_LABEL
 
 
 def verified_result(row):
@@ -19,7 +19,7 @@ def verified_result(row):
     readings = row.get("readings", [])
     if len(readings) != 2 or readings[0] != readings[1] or not isinstance(readings[0], str):
         return False
-    match = re.fullmatch(r"Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?", readings[0])
+    match = RESULT_LABEL.fullmatch(readings[0])
     return match is not None and [int(match[1]), int(match[2])] == [row.get("blue"), row.get("red")]
 
 

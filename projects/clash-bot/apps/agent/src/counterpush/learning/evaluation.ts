@@ -6,6 +6,7 @@ import { LearningClient } from '../../qwen/learning-client.ts';
 import { selectModel, type ModelId } from '../../qwen/model-options.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import type { Profile } from '../../shared/config.ts';
+import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
 import { acquireLearningLock } from '../../shared/runtime-lock.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { CounterpushBrowser } from '../runtime/browser.ts';
@@ -39,7 +40,7 @@ export async function retryInputRecovery<T extends { learningEligible?: boolean 
 }
 
 export function requiredEvaluationPairs(minimum: number, alpha: number, method: EvaluationMethod) {
-  if (minimum < 16) return minimum; // Small manual smoke runs cannot qualify.
+  if (minimum < QUALIFICATION.minimumPairs) return minimum; // Small manual smoke runs cannot qualify.
   const feasible =
     method === 'paired_exact_wins_v1'
       ? Math.ceil(-Math.log2(alpha)) + 1
@@ -49,14 +50,16 @@ export function requiredEvaluationPairs(minimum: number, alpha: number, method: 
 
 export function realEvaluationGate(
   pairScores: number[],
-  alpha = 0.05,
+  alpha = QUALIFICATION.familyAlpha,
   method: EvaluationMethod = 'paired_exact_wins_v1',
 ) {
+  const enough = (mean: number) =>
+    pairScores.length >= QUALIFICATION.minimumPairs && mean >= QUALIFICATION.minimumMeanScore;
   if (
     !pairScores.length ||
     !Number.isFinite(alpha) ||
     alpha <= 0 ||
-    alpha > 0.05 ||
+    alpha > QUALIFICATION.familyAlpha ||
     pairScores.some((score) => !Number.isFinite(score) || score < 0 || score > 1)
   )
     return { passed: false, reason: 'invalid_or_missing_pairs' };
@@ -73,7 +76,7 @@ export function realEvaluationGate(
       sum.combination *= (decisive - count) / (count + 1);
     }
     const probability = decisive ? sum.tail / 2 ** decisive : 1;
-    const passed = pairScores.length >= 16 && mean >= 0.55 && probability <= alpha;
+    const passed = enough(mean) && probability <= alpha;
     return {
       passed,
       reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
@@ -90,7 +93,7 @@ export function realEvaluationGate(
   const radius = Math.sqrt(Math.log(2 / alpha) / (2 * pairScores.length));
   const lower = Math.max(0, mean - radius),
     upper = Math.min(1, mean + radius);
-  const passed = pairScores.length >= 16 && mean >= 0.55 && lower > 0.5;
+  const passed = enough(mean) && lower > 0.5;
   return {
     passed,
     reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
@@ -131,7 +134,7 @@ export async function frozenComparison(options: {
     Boolean(options.rejectFutile) &&
     scores.length > 0 &&
     games.length === scores.length * 2 &&
-    options.pairs >= 16 &&
+    options.pairs >= QUALIFICATION.minimumPairs &&
     !realEvaluationGate(
       [...scores, ...Array<number>(options.pairs - scores.length).fill(1)],
       options.alpha,
@@ -250,7 +253,7 @@ export async function evaluateWithResources(options: {
         throw new Error('평가 횟수 기록이 잘못되었습니다.');
       const id = randomUUID();
       const index = attempts.count;
-      const alpha = 0.05 / ((index + 1) * (index + 2));
+      const alpha = attemptAlpha(index);
       const method: EvaluationMethod = 'paired_exact_wins_v1';
       const requestedPairs = requiredEvaluationPairs(options.pairs, alpha, method);
       await atomicWrite(

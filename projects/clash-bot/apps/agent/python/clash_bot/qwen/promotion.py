@@ -3,12 +3,18 @@
 import hashlib
 import json
 import math
-import re
 import shutil
 import uuid
 from pathlib import Path
 
 from clash_bot.files import atomic_json
+from clash_bot.qwen.qualification import (
+    FAMILY_ALPHA,
+    MINIMUM_MEAN_SCORE,
+    MINIMUM_PAIRS,
+    RESULT_LABEL,
+    attempt_alpha,
+)
 from clash_bot.statistics import paired_win_probability
 
 
@@ -22,8 +28,8 @@ def parent_sha(metadata):
 
 def qualification_scores(scores, alpha, method="hoeffding_score"):
     if (
-        len(scores) < 16
-        or not 0 < alpha <= 0.05
+        len(scores) < MINIMUM_PAIRS
+        or not 0 < alpha <= FAMILY_ALPHA
         or any(not math.isfinite(value) or not 0 <= value <= 1 for value in scores)
     ):
         raise ValueError("Insufficient or invalid heldout evaluation")
@@ -33,7 +39,7 @@ def qualification_scores(scores, alpha, method="hoeffding_score"):
             raise ValueError("Invalid win-rate pair scores")
         won, lost = sum(value > 0.5 for value in scores), sum(value < 0.5 for value in scores)
         probability = paired_win_probability(won, lost)
-        if mean < 0.55 or probability > alpha:
+        if mean < MINIMUM_MEAN_SCORE or probability > alpha:
             raise ValueError("Candidate has not demonstrated a win-rate improvement")
         return {
             "pairs": len(scores),
@@ -46,7 +52,7 @@ def qualification_scores(scores, alpha, method="hoeffding_score"):
     if method != "hoeffding_score":
         raise ValueError("Unknown qualification method")
     lower = mean - math.sqrt(math.log(2 / alpha) / (2 * len(scores)))
-    if mean < 0.55 or lower <= 0.5:
+    if mean < MINIMUM_MEAN_SCORE or lower <= 0.5:
         raise ValueError("Candidate has not demonstrated improvement")
     return {"pairs": len(scores), "score": mean, "lowerBound": max(0, lower), "alpha": alpha}
 
@@ -83,7 +89,7 @@ def verified_game(game, expected_sha, model_identity, runs, method, controller):
         or not 0 <= red <= 3
     ):
         raise ValueError("Terminal crowns were not verified twice")
-    label = re.fullmatch(r"Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?", readings[0])
+    label = RESULT_LABEL.fullmatch(readings[0])
     if label is None or [int(label[1]), int(label[2])] != [blue, red]:
         raise ValueError("Visible crowns disagree with the recorded result")
     outcome = "win" if blue > red else "loss" if blue < red else "draw"
@@ -122,7 +128,7 @@ def validate_report(report_path, candidate, champion, data_dir):
         or report.get("baselineUnchanged") is not True
         or report.get("order") != "AB_BA_blocks"
         or type(count) is not int
-        or count < 16
+        or count < MINIMUM_PAIRS
         or len(report["games"]) != count * 2
         or report.get("gate", {}).get("passed") is not True
     ):
@@ -157,10 +163,10 @@ def validate_report(report_path, candidate, champion, data_dir):
     if method == "paired_exact_wins_v1" and (
         reserved.get("requestedPairs") != count
         or reserved.get("minimumPairs") != report.get("minimumPairs")
-        or reserved.get("minimumPairs", 0) < 16
+        or reserved.get("minimumPairs", 0) < MINIMUM_PAIRS
     ):
         raise ValueError("Qualification sample count changed after registration")
-    alpha = 0.05 / ((index + 1) * (index + 2))
+    alpha = attempt_alpha(index)
     if not math.isclose(report["gate"]["alpha"], alpha, rel_tol=1e-12):
         raise ValueError("Repeated evaluation confidence budget differs")
     directories, scores = set(), []
