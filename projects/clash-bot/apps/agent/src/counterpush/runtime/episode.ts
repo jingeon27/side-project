@@ -30,7 +30,6 @@ import { type CounterpushVisionClient, type UnitScan } from '../perception/visio
 import { candidatesV2, compactPrompt } from '../policy/decision-v2.ts';
 import { fastPrompt } from '../policy/decision-v3.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
-import type { DecisionGate } from './parallel-loop.ts';
 
 type OwnFrame = {
   image: Buffer;
@@ -54,20 +53,13 @@ export async function playCounterpushEpisode(options: {
   signal: AbortSignal;
   report: (status: Record<string, unknown>) => Promise<void>;
   patterns?: SpawnPatterns;
-  decisionGate?: DecisionGate;
-  tab?: number;
   persistPatterns?: boolean;
 }) {
   const { browser, client, vision, dataDir, profile, signal } = options;
   const policy = await client.status();
   const controllerVersion: 1 | 2 | 3 =
     policy.controller_version === 3 ? 3 : policy.controller_version === 2 ? 2 : 1;
-  const directory = join(
-    dataDir,
-    'counterpush/runs',
-    new Date().toISOString().replaceAll(':', '-') +
-      (options.tab === undefined ? '' : `-tab${options.tab + 1}`),
-  );
+  const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
   await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
   const templates = await loadCounterpushTemplates(dataDir, profile);
   const tracker = new OpponentTracker();
@@ -294,7 +286,6 @@ export async function playCounterpushEpisode(options: {
     type: 'match_start',
     source: 'counterpush_visible_browser',
     deck: COUNTERPUSH_DECK,
-    tab: options.tab,
     initialPhase,
     controllerVersion,
   });
@@ -344,306 +335,272 @@ export async function playCounterpushEpisode(options: {
         await delay(500, undefined, { signal });
         continue;
       }
-      // Acquire the shared model before taking the decision image, so waiting
-      // for another tab cannot age an image past its input validation deadline.
-      const lease = { release: null as (() => void) | null, error: null as unknown };
-      const pendingLease = options.decisionGate?.acquire(signal).then(
-        (release) => {
-          lease.release = release;
-        },
-        (error: unknown) => {
-          lease.error = error;
-        },
-      );
-      try {
-        if (pendingLease) {
-          while (!lease.release) {
-            if (lease.error) throw lease.error;
-            signal.throwIfAborted();
-            if ((await browser.phase()) === 'battle') await capture();
-            await delay(100, undefined, { signal });
-          }
-          await pendingLease;
-        }
-        const before = await capture();
-        if (!before.state.battle || before.elixirConfidence < 0.9) {
-          await delay(200, undefined, { signal });
-          continue;
-        }
-        const threats = before.situation.opponent.units
-          .filter((unit) => unit.y > profile.riverY)
-          .map(({ x, y }) => ({ x, y }));
-        const candidates = (controllerVersion >= 2 ? candidatesV2 : actionCandidates)(
-          profile,
-          before.cards,
-          before.state.elixir,
-          threats,
-          before.situation,
-        )
-          .map((action) => ({ action, order: randomInt(2 ** 32) }))
-          .toSorted((first, second) => first.order - second.order)
-          .map(({ action }) => action);
-        if (candidates.length === 1 && candidates[0]!.id === 0) {
-          await delay(300, undefined, { signal });
-          continue;
-        }
-        const frame = ++state.decisions;
-        const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
-        await atomicWrite(imagePath, before.image);
-        const prompt =
-          controllerVersion >= 2
-            ? (controllerVersion === 3 ? fastPrompt : compactPrompt)(
-                profile,
-                before.cards,
-                before.state.elixir,
-                candidates,
-                before.situation,
-              )
-            : choicePrompt(
-                before.cards,
-                before.state.elixir,
-                threats,
-                candidates,
-                'letter',
-                before.situation,
-              );
-        const prediction = {
-          done: false,
-          output: null as Awaited<ReturnType<LearningClient['choose']>> | null,
-          error: null as unknown,
-        };
-        const pending = client
-          .choose({
-            imagePath,
-            prompt,
-            candidates,
-            featurePath: join(directory, 'features', String(frame).padStart(4, '0') + '.npz'),
-            controllerVersion,
-          })
-          .then((output) => {
-            prediction.output = output;
-          })
-          .catch((error: unknown) => {
-            prediction.error = error;
-          })
-          .finally(() => {
-            prediction.done = true;
-          });
-        // Continue visual tracking while Qwen decides. There is only one policy
-        // request at a time, and no browser input occurs until it is validated.
-        while (controllerVersion < 3 && !prediction.done && (await browser.phase()) === 'battle') {
-          await delay(350, undefined, { signal });
-          if (!prediction.done) await capture();
-        }
-        await pending;
-        lease.release?.();
-        if (prediction.error) {
-          if (++state.errors >= 3) throw prediction.error;
-          continue;
-        }
-        const output = prediction.output!;
-        const selected = candidates.find((action) => action.id === Number(JSON.parse(output.text).choice));
-        if (!selected) throw new Error('Counterpush 정책이 후보 밖의 행동을 반환했습니다.');
-        await log({
-          type: 'prediction',
-          frame,
-          image: imagePath,
-          candidates,
+      const before = await capture();
+      if (!before.state.battle || before.elixirConfidence < 0.9) {
+        await delay(200, undefined, { signal });
+        continue;
+      }
+      const threats = before.situation.opponent.units
+        .filter((unit) => unit.y > profile.riverY)
+        .map(({ x, y }) => ({ x, y }));
+      const candidates = (controllerVersion >= 2 ? candidatesV2 : actionCandidates)(
+        profile,
+        before.cards,
+        before.state.elixir,
+        threats,
+        before.situation,
+      )
+        .map((action) => ({ action, order: randomInt(2 ** 32) }))
+        .toSorted((first, second) => first.order - second.order)
+        .map(({ action }) => action);
+      if (candidates.length === 1 && candidates[0]!.id === 0) {
+        await delay(300, undefined, { signal });
+        continue;
+      }
+      const frame = ++state.decisions;
+      const imagePath = join(directory, String(frame).padStart(4, '0') + '.png');
+      await atomicWrite(imagePath, before.image);
+      const prompt =
+        controllerVersion >= 2
+          ? (controllerVersion === 3 ? fastPrompt : compactPrompt)(
+              profile,
+              before.cards,
+              before.state.elixir,
+              candidates,
+              before.situation,
+            )
+          : choicePrompt(before.cards, before.state.elixir, threats, candidates, 'letter', before.situation);
+      const prediction = {
+        done: false,
+        output: null as Awaited<ReturnType<LearningClient['choose']>> | null,
+        error: null as unknown,
+      };
+      const pending = client
+        .choose({
+          imagePath,
           prompt,
-          situation: before.situation,
-          perceptionMs: before.perceptionMs,
-          captureToDecisionMs: Date.now() - before.capturedAt,
-          ...output,
+          candidates,
+          featurePath: join(directory, 'features', String(frame).padStart(4, '0') + '.npz'),
+          controllerVersion,
+        })
+        .then((output) => {
+          prediction.output = output;
+        })
+        .catch((error: unknown) => {
+          prediction.error = error;
+        })
+        .finally(() => {
+          prediction.done = true;
         });
-        if ((await browser.phase()) !== 'battle') continue;
-        if (controllerVersion === 3 && output.elapsedMs > 1000) {
-          await log({
-            type: 'rejected',
-            frame,
-            reason: 'decision_deadline_exceeded',
-            elapsedMs: output.elapsedMs,
-          });
-          continue;
-        }
-        const latest = controllerVersion === 3 ? await inputFrame(before) : await capture();
-        const newEffect =
-          controllerVersion === 3
-            ? latest.graveyardPresence.some(
-                (pixels, index) => pixels >= 350 && before.graveyardPresence[index]! < 350,
-              )
-            : latest.situation.effects?.some(
-                (effect) =>
-                  effect.side === 'red' &&
-                  effect.card === 'graveyard' &&
-                  !before.situation.effects?.some(
-                    (old) =>
-                      old.side === effect.side &&
-                      old.card === effect.card &&
-                      Math.hypot(old.x - effect.x, old.y - effect.y) < 55,
-                  ),
-              );
-        if (newEffect) {
-          await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
-          continue;
-        }
-        if (selected.kind === 'ability') {
-          const beforeAbility = before.situation.own.ability;
-          const latestAbility = latest.situation.own.ability;
-          if (
-            !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
-            latest.elixirConfidence < 0.9
-          ) {
-            await log({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
-            continue;
-          }
-          state.inputPending = true;
-          const sentAt = Date.now();
-          if (!(await browser.activateAbility())) {
-            state.inputPending = false;
-            continue;
-          }
-          state.actions++;
-          state.abilityActions++;
-          await log({ type: 'ability_sent', frame, action: selected, sentAt });
-          await delay(300, undefined, { signal });
-          const checks: Array<{
-            changed: boolean;
-            handUnchanged: boolean;
-            confirmed: boolean;
-            spent: number;
-          }> = [];
-          for (const attempt of [0, 1, 2, 3]) {
-            if (attempt) await delay(200, undefined, { signal });
-            if ((await browser.phase()) !== 'battle') break;
-            const after = await capture();
-            const spent = latest.state.elixir - after.state.elixir;
-            checks.push({
-              ...abilityInputCheck({
-                before: latestAbility!,
-                after: after.situation.own.ability!,
-                beforeCards: latest.cards,
-                afterCards: after.cards,
-                spent,
-                elixirReliable: after.elixirConfidence >= 0.9,
-              }),
-              spent,
-            });
-            if (checks.at(-1)!.confirmed) break;
-          }
-          const check = checks.at(-1);
-          if (check?.confirmed) {
-            abilityButton.markUsed(latestAbility!.instance);
-            memory.ownAbility(sentAt, latestAbility!.instance);
-            state.confirmed++;
-            state.abilityConfirmed++;
-            state.unconfirmed = 0;
-          } else state.unconfirmed++;
-          state.inputPending = false;
-          await log({
-            type: 'ability_check',
-            frame,
-            ...check,
-            confirmed: check?.confirmed ?? false,
-            expectedCost: 2,
-            checks: checks.length,
-            action: selected,
-          });
-          if (state.unconfirmed >= 3) {
-            state.inputSuspended = true;
-            await log({
-              type: 'input_recovery',
-              reason: 'three_unconfirmed_ability_inputs',
-              learningEligible: false,
-            });
-          }
-          state.errors = 0;
-          continue;
-        }
-        if (selected.slot === 0) {
-          await log({
-            type: 'wait_check',
-            frame,
-            valid: latest.state.battle && Date.now() - before.capturedAt < 8000,
-          });
-          continue;
-        }
-        const choice: QwenPrediction = {
-          phase: 'battle',
-          hand: before.cards,
-          elixir: before.state.elixir,
-          slot: selected.slot,
-          x: selected.target.x / 368,
-          y: selected.target.y / 652,
-          outcome: 'unknown',
-        };
-        const action = validateQwenAction(choice, before.state, latest.state, profile, Date.now());
-        if (!action || latest.elixirConfidence < 0.9) {
-          await log({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
+      // Continue visual tracking while Qwen decides. There is only one policy
+      // request at a time, and no browser input occurs until it is validated.
+      while (controllerVersion < 3 && !prediction.done && (await browser.phase()) === 'battle') {
+        await delay(350, undefined, { signal });
+        if (!prediction.done) await capture();
+      }
+      await pending;
+      if (prediction.error) {
+        if (++state.errors >= 3) throw prediction.error;
+        continue;
+      }
+      const output = prediction.output!;
+      const selected = candidates.find((action) => action.id === Number(JSON.parse(output.text).choice));
+      if (!selected) throw new Error('Counterpush 정책이 후보 밖의 행동을 반환했습니다.');
+      await log({
+        type: 'prediction',
+        frame,
+        image: imagePath,
+        candidates,
+        prompt,
+        situation: before.situation,
+        perceptionMs: before.perceptionMs,
+        captureToDecisionMs: Date.now() - before.capturedAt,
+        ...output,
+      });
+      if ((await browser.phase()) !== 'battle') continue;
+      if (controllerVersion === 3 && output.elapsedMs > 1000) {
+        await log({
+          type: 'rejected',
+          frame,
+          reason: 'decision_deadline_exceeded',
+          elapsedMs: output.elapsedMs,
+        });
+        continue;
+      }
+      const latest = controllerVersion === 3 ? await inputFrame(before) : await capture();
+      const newEffect =
+        controllerVersion === 3
+          ? latest.graveyardPresence.some(
+              (pixels, index) => pixels >= 350 && before.graveyardPresence[index]! < 350,
+            )
+          : latest.situation.effects?.some(
+              (effect) =>
+                effect.side === 'red' &&
+                effect.card === 'graveyard' &&
+                !before.situation.effects?.some(
+                  (old) =>
+                    old.side === effect.side &&
+                    old.card === effect.card &&
+                    Math.hypot(old.x - effect.x, old.y - effect.y) < 55,
+                ),
+            );
+      if (newEffect) {
+        await log({ type: 'rejected', frame, reason: 'new_graveyard_since_decision_frame' });
+        continue;
+      }
+      if (selected.kind === 'ability') {
+        const beforeAbility = before.situation.own.ability;
+        const latestAbility = latest.situation.own.ability;
+        if (
+          !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
+          latest.elixirConfidence < 0.9
+        ) {
+          await log({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
           continue;
         }
         state.inputPending = true;
         const sentAt = Date.now();
-        if (!(await browser.play(profile, selected.slot, selected.target))) {
+        if (!(await browser.activateAbility())) {
           state.inputPending = false;
           continue;
         }
         state.actions++;
-        await log({ type: 'input_sent', frame, action, sentAt });
+        state.abilityActions++;
+        await log({ type: 'ability_sent', frame, action: selected, sentAt });
         await delay(300, undefined, { signal });
-        const checks: Array<{ after: OwnFrame; changed: boolean; spent: number; confirmed: boolean }> = [];
+        const checks: Array<{
+          changed: boolean;
+          handUnchanged: boolean;
+          confirmed: boolean;
+          spent: number;
+        }> = [];
         for (const attempt of [0, 1, 2, 3]) {
           if (attempt) await delay(200, undefined, { signal });
           if ((await browser.phase()) !== 'battle') break;
           const after = await capture();
-          const changed = difference(latest.state.hand[action.slot]!, after.state.hand[action.slot]!) > 15;
           const spent = latest.state.elixir - after.state.elixir;
-          const cost = CARD_INFO[selected.card!].cost;
-          // A dark animation frame can look like a loss of all elixir. Require a
-          // recognizable replacement card and a spend compatible with its cost.
-          const confirmed =
-            changed &&
-            after.elixirConfidence >= 0.9 &&
-            after.cards[action.slot] !== null &&
-            after.cards[action.slot] !== selected.card &&
-            plausibleSpend(spent, cost, after.capturedAt - latest.capturedAt);
-          checks.push({ after, changed, spent, confirmed });
-          if (confirmed) break;
+          checks.push({
+            ...abilityInputCheck({
+              before: latestAbility!,
+              after: after.situation.own.ability!,
+              beforeCards: latest.cards,
+              afterCards: after.cards,
+              spent,
+              elixirReliable: after.elixirConfidence >= 0.9,
+            }),
+            spent,
+          });
+          if (checks.at(-1)!.confirmed) break;
         }
         const check = checks.at(-1);
         if (check?.confirmed) {
+          abilityButton.markUsed(latestAbility!.instance);
+          memory.ownAbility(sentAt, latestAbility!.instance);
           state.confirmed++;
+          state.abilityConfirmed++;
           state.unconfirmed = 0;
-          memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
-          if (selected.card === 'ice_wizard') abilityButton.newDeployment();
-        } else {
-          state.unconfirmed++;
-          memory.ownEvolutions.uncertain();
-        }
+        } else state.unconfirmed++;
         state.inputPending = false;
         await log({
-          type: 'input_check',
+          type: 'ability_check',
           frame,
-          changed: check?.changed ?? false,
-          spent: check?.spent ?? 0,
+          ...check,
           confirmed: check?.confirmed ?? false,
-          expectedCost: CARD_INFO[selected.card!].cost,
+          expectedCost: 2,
           checks: checks.length,
-          action,
+          action: selected,
         });
         if (state.unconfirmed >= 3) {
           state.inputSuspended = true;
           await log({
             type: 'input_recovery',
-            reason: 'three_unconfirmed_card_inputs',
+            reason: 'three_unconfirmed_ability_inputs',
             learningEligible: false,
           });
         }
         state.errors = 0;
-      } finally {
-        // Also release if a tab ends, an input fails or shutdown interrupts it.
-        if (pendingLease) await pendingLease.catch(() => {});
-        lease.release?.();
+        continue;
       }
+      if (selected.slot === 0) {
+        await log({
+          type: 'wait_check',
+          frame,
+          valid: latest.state.battle && Date.now() - before.capturedAt < 8000,
+        });
+        continue;
+      }
+      const choice: QwenPrediction = {
+        phase: 'battle',
+        hand: before.cards,
+        elixir: before.state.elixir,
+        slot: selected.slot,
+        x: selected.target.x / 368,
+        y: selected.target.y / 652,
+        outcome: 'unknown',
+      };
+      const action = validateQwenAction(choice, before.state, latest.state, profile, Date.now());
+      if (!action || latest.elixirConfidence < 0.9) {
+        await log({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
+        continue;
+      }
+      state.inputPending = true;
+      const sentAt = Date.now();
+      if (!(await browser.play(profile, selected.slot, selected.target))) {
+        state.inputPending = false;
+        continue;
+      }
+      state.actions++;
+      await log({ type: 'input_sent', frame, action, sentAt });
+      await delay(300, undefined, { signal });
+      const checks: Array<{ after: OwnFrame; changed: boolean; spent: number; confirmed: boolean }> = [];
+      for (const attempt of [0, 1, 2, 3]) {
+        if (attempt) await delay(200, undefined, { signal });
+        if ((await browser.phase()) !== 'battle') break;
+        const after = await capture();
+        const changed = difference(latest.state.hand[action.slot]!, after.state.hand[action.slot]!) > 15;
+        const spent = latest.state.elixir - after.state.elixir;
+        const cost = CARD_INFO[selected.card!].cost;
+        // A dark animation frame can look like a loss of all elixir. Require a
+        // recognizable replacement card and a spend compatible with its cost.
+        const confirmed =
+          changed &&
+          after.elixirConfidence >= 0.9 &&
+          after.cards[action.slot] !== null &&
+          after.cards[action.slot] !== selected.card &&
+          plausibleSpend(spent, cost, after.capturedAt - latest.capturedAt);
+        checks.push({ after, changed, spent, confirmed });
+        if (confirmed) break;
+      }
+      const check = checks.at(-1);
+      if (check?.confirmed) {
+        state.confirmed++;
+        state.unconfirmed = 0;
+        memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
+        if (selected.card === 'ice_wizard') abilityButton.newDeployment();
+      } else {
+        state.unconfirmed++;
+        memory.ownEvolutions.uncertain();
+      }
+      state.inputPending = false;
+      await log({
+        type: 'input_check',
+        frame,
+        changed: check?.changed ?? false,
+        spent: check?.spent ?? 0,
+        confirmed: check?.confirmed ?? false,
+        expectedCost: CARD_INFO[selected.card!].cost,
+        checks: checks.length,
+        action,
+      });
+      if (state.unconfirmed >= 3) {
+        state.inputSuspended = true;
+        await log({
+          type: 'input_recovery',
+          reason: 'three_unconfirmed_card_inputs',
+          learningEligible: false,
+        });
+      }
+      state.errors = 0;
     }
   } finally {
     dynamics.finishOldEffects(Date.now(), true);
