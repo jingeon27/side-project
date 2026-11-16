@@ -27,8 +27,10 @@
   },
   "dependencies": {
     "dayjs": "catalog:",
+    "es-toolkit": "catalog:",
     "playwright": "1.64.0",
     "sharp": "catalog:",
+    "ts-pattern": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

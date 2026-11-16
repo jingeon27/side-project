@@ -1774,8 +1774,10 @@ __metadata:
     "@side/config": "workspace:*"
     "@types/node": "catalog:"
     dayjs: "catalog:"
+    es-toolkit: "catalog:"
     playwright: "npm:1.64.0"
     sharp: "catalog:"
+    ts-pattern: "catalog:"
     vitest: "catalog:"
     zod: "catalog:"
   languageName: unknown
