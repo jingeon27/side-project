@@ -5,9 +5,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation, type FieldUnit } from '../battle/battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../deck.ts';
+import { screenPoint, tilePoint } from '../geometry.ts';
 import { loadProfile, type Profile } from '../profile.ts';
-import { tilePoint } from './decision-v3.ts';
-import { fastCandidates, screenPoint } from './fast-candidates.ts';
+import { fastCandidates } from './fast-candidates.ts';
 
 const state = { profile: undefined as Profile | undefined };
 beforeAll(async () => {
@@ -50,12 +50,12 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
     const profile = state.profile!;
     const calm = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 5, situation());
     expect(tiles(profile, calm, 'knight')).toEqual([
-      [6, 3.5],
-      [12, 3.5],
       [3.5, 10],
       [14.5, 10],
       [3.5, 14],
       [14.5, 14],
+      [8, 0.5],
+      [10, 0.5],
     ]);
     expect(tiles(profile, calm, 'graveyard')).toHaveLength(6);
     expect(calm[0]).toMatchObject({ id: 0, slot: 0, card: null });
@@ -69,6 +69,10 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
     expect(tiles(profile, invaded, 'knight').slice(0, 2)).toEqual([
       [14.5, 11],
       [9, 11],
+    ]);
+    expect(tiles(profile, invaded, 'knight').slice(-2)).toEqual([
+      [8, 0.5],
+      [10, 0.5],
     ]);
     expect(tiles(profile, invaded, 'furnace')[0]).toEqual([14.5, 9]);
     expect(tiles(profile, invaded, 'poison')[0]).toEqual([14.5, 12]);

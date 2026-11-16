@@ -1,6 +1,9 @@
+import { uniqBy } from 'es-toolkit';
+
 import type { BattleSituation, FieldEffect } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
-import type { Point } from '../geometry.ts';
+import { DEPLOYMENT } from '../deployment.ts';
+import { screenPoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
 import type { Profile } from '../profile.ts';
 
@@ -12,12 +15,14 @@ export function blockedDeployment(profile: Profile, card: CardId, point: Point, 
   if (point.x > 306 && point.y > 454) return true; // visible hero-control overlay
   if (CARD_INFO[card].role === 'spell') return false;
   const towers = [
-    { x: 95, y: profile.riverY + 130 },
-    { x: 273, y: profile.riverY + 130 },
-    { x: 184, y: profile.riverY + 190 },
+    { x: 95, y: profile.riverY + 130, halfHeight: 31 },
+    { x: 273, y: profile.riverY + 130, halfHeight: 31 },
+    { ...screenPoint(profile, DEPLOYMENT.kingTowerTile), halfHeight: 27 },
   ];
   return (
-    towers.some((tower) => Math.abs(point.x - tower.x) < 27 && Math.abs(point.y - tower.y) < 31) ||
+    towers.some(
+      (tower) => Math.abs(point.x - tower.x) < 27 && Math.abs(point.y - tower.y) < tower.halfHeight,
+    ) ||
     (situation?.own.units.some(
       (unit) =>
         unit.card === 'goblin_hut' &&
@@ -40,7 +45,7 @@ export function ownPoint(
       Math.max(profile.arena.x + 10, Math.min(profile.arena.x + profile.arena.width - 10, candidate.x)),
     ),
     y: Math.round(
-      Math.max(profile.riverY + 20, Math.min(profile.arena.y + profile.arena.height - 25, candidate.y)),
+      Math.max(profile.riverY + 20, Math.min(profile.arena.y + profile.arena.height - 8, candidate.y)),
     ),
   });
   const target = clamp(point);
@@ -191,22 +196,22 @@ export function unitPlacements(
         : card === 'skeletons'
           ? [
               { target: { x: 184, y: rearY - 25 }, description: 'center Skeletons cycle and split' },
-              ...[140, 228].map((x) => ({ target: { x, y: rearY }, description: 'cheap inside-lane cycle' })),
               ...[95, 273].map((x) => ({
                 target: { x, y: profile.riverY + 40 },
                 description: 'Skeletons forward lane pressure',
               })),
+              ...[140, 228].map((x) => ({ target: { x, y: rearY }, description: 'cheap inside-lane cycle' })),
             ]
           : [
-              ...[140, 228].map((x) => ({
-                target: { x, y: rearY },
-                description: `${card} rear inside-lane build`,
-              })),
               ...[95, 273].map((x) => ({
                 target: { x, y: profile.riverY + (support ? 90 : 40) },
                 description: `${card} ${support ? 'midfield support' : 'forward lane pressure'}`,
               })),
               { target: { x: 184, y: profile.riverY + 92 }, description: `${card} central positioning` },
+              ...[140, 228].map((x) => ({
+                target: { x, y: rearY },
+                description: `${card} rear inside-lane build`,
+              })),
             ];
   const graveyard = graveyardThreat(profile, situation);
   const dynamic: PlacementOption[] = [
@@ -248,13 +253,22 @@ export function unitPlacements(
         ]
       : []),
   ];
-  const seen = new Set<string>();
-  return [...dynamic, ...opening]
-    .flatMap((option) => {
-      const target = ownPoint(profile, card, option.target, situation);
-      if (!target || seen.has(`${target.x}:${target.y}`)) return [];
-      seen.add(`${target.x}:${target.y}`);
-      return [{ ...option, target }];
-    })
-    .slice(0, 5);
+  const legal = (option: PlacementOption): PlacementOption[] => {
+    const target = ownPoint(profile, card, option.target, situation);
+    return target ? [{ ...option, target }] : [];
+  };
+  const key = (option: PlacementOption) => `${option.target.x}:${option.target.y}`;
+  // Reserve rear choices inside the five-candidate budget, including under a visible threat.
+  const rear = uniqBy(
+    card !== 'goblin_hut' && CARD_INFO[card].role !== 'spell'
+      ? DEPLOYMENT.kingBackTiles.flatMap((tile) =>
+          legal({ target: screenPoint(profile, tile), description: `${card} build behind the King Tower` }),
+        )
+      : [],
+    key,
+  );
+  const options = uniqBy([...dynamic, ...opening].flatMap(legal), key).filter(
+    (option) => !rear.some((back) => key(back) === key(option)),
+  );
+  return [...options.slice(0, 5 - rear.length), ...rear];
 }

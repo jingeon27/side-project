@@ -10,12 +10,28 @@ import json
 import random
 from dataclasses import dataclass
 from fractions import Fraction
+from typing import Annotated, Literal
 
 import royalesim
+from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.paths import CONTRACTS_DIR
 
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
+
+
+class DeploymentSpec(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    format: Literal["clash-deployment-v1"]
+    kingTowerTile: tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]]
+    kingBackTiles: tuple[
+        tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]],
+        tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]],
+    ]
+
+
+DEPLOYMENT = DeploymentSpec.model_validate_json((CONTRACTS_DIR / "deployment.json").read_text())
 CARDS = SPEC["cards"]
 FORMS = SPEC["forms"]
 TILE = 1000 * royalesim.SUBTILE_PER_MILLITILE
@@ -265,7 +281,7 @@ def legal_actions(battle, team, state=None):
         elif card == 2:
             points = [(9, 9), (7, 12), (11, 12), (3.5, 10), (14.5, 10), (9, 6)]
         else:
-            points = [(6, 3.5), (12, 3.5), (3.5, 10), (14.5, 10), (3.5, 14), (14.5, 14)]
+            points = [(3.5, 10), (14.5, 10), (3.5, 14), (14.5, 14), *DEPLOYMENT.kingBackTiles]
             if threat:
                 x, y = threat
                 gap = 3 if card in (1, 4) else 1

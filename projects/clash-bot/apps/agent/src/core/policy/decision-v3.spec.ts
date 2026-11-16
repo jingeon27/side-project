@@ -4,9 +4,10 @@ import { expect, it } from 'vitest';
 
 import { BattleMemory } from '../battle/battle-state.ts';
 import type { CardId } from '../cards.ts';
+import { tilePoint } from '../geometry.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { affordableCandidates } from './candidates.ts';
-import { decisionPrompt, serializeDecision, tilePoint, type DecisionContext } from './decision-v3.ts';
+import { decisionPrompt, serializeDecision, type DecisionContext } from './decision-v3.ts';
 
 const profile = DEFAULT_PROFILE;
 const deck: CardId[] = [
@@ -94,5 +95,5 @@ A:W B:G3.5,27.3 C:G2.3,26.5 D:G3.5,25.4 E:G14.5,27.3 F:P3.5,7.2 G:P3.5,27.3 H:P1
   expect(decisionPrompt(profile, hand, 5, affordableCandidates(profile, hand, 5, [], sparse), sparse))
     .toBe(`ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown.
 mana=5;enemyMana=0-5.2;hand=K?P?;next=;own=;enemy=;effects=;skill=0
-A:W B:K6.3,3.9 C:K11.7,3.9 D:K3.5,13.1 E:K14.5,13.1 F:K9,9.3 G:P3.5,27.3 H:P14.5,27.3`);
+A:W B:K3.5,13.1 C:K14.5,13.1 D:K9,9.3 E:K6.3,3.9 F:K11.7,3.9 G:P3.5,27.3 H:P14.5,27.3`);
 });

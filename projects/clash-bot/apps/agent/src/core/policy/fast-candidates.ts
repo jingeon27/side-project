@@ -4,10 +4,10 @@ import { match } from 'ts-pattern';
 import type { BattleSituation } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import { COUNTERPUSH_DECK } from '../deck.ts';
-import type { Point } from '../geometry.ts';
+import { DEPLOYMENT } from '../deployment.ts';
+import { screenPoint, tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
-import { tilePoint } from './decision-v3.ts';
 import { blockedDeployment } from './placement.ts';
 
 type DeckCard = (typeof COUNTERPUSH_DECK)[number];
@@ -15,20 +15,7 @@ type Tile = readonly [x: number, y: number];
 
 const deckCard = (card: CardId | null) => COUNTERPUSH_DECK.find((name) => name === card) ?? null;
 
-// tilePoint의 역변환이다. 타일 좌표(가로 0~18, 강 16)를 368×652 화면 좌표로 바꾼다.
-export const screenPoint = (profile: Profile, [x, y]: Tile): Point => ({
-  x: 184 + ((x - 9) * 178) / 11,
-  y: profile.riverY + ((16 - y) * 130) / 9.5,
-});
-
-const LANES: Tile[] = [
-  [6, 3.5],
-  [12, 3.5],
-  [3.5, 10],
-  [14.5, 10],
-  [3.5, 14],
-  [14.5, 14],
-];
+const LANES: Tile[] = [[3.5, 10], [14.5, 10], [3.5, 14], [14.5, 14], ...DEPLOYMENT.kingBackTiles];
 
 // 시뮬레이터(clash_bot.arena.engine.legal_actions)와 같은 카드별 배치 지점이다. 각 카드는 앞의 6곳까지만 쓴다.
 const cardTiles = (card: DeckCard, threat: Tile | null, enemies: Tile[]): Tile[] =>

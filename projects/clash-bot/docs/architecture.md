@@ -68,3 +68,9 @@ yarn workspace @side/clash-bot check
 작업 공간을 옮길 때 `CLASH_BOT_DATA_DIR`로 기존 데이터 경로를, `CLASH_BOT_PYTHON`으로 기존 Python 실행 파일을 명시할 수 있다. Node(`src/shared/python.ts`)와 Python setup(`clash_bot.paths.QWEN_PYTHON`)이 같은 규칙을 사용한다. 중복 실행은 같은 데이터 경로 안에서만 막는다. 학습기는 `qwen/selfplay/lock.json`, 자가대국은 `arena/control/lock.json`을 쓰며, `qwen:setup`·`arena:setup`·`counterpush:setup`은 둘 중 하나가 실행 중이면 환경을 바꾸지 않는다. 서로 다른 데이터 경로를 쓰는 작업 공간끼리는 확인하지 않는다.
 
 재개는 `evolution.json`, `candidate-learning.json`, `candidate-rehearsal.json`, `training-goal.json`이 담당한다. 구조 변경으로 학습 목표를 초기화하거나 기존 가중치를 덮어쓰지 않는다. 새 판단 계약이 필요할 때만 controller 버전을 올리고 실제 평가로 채택한다.
+
+## 킹타워 뒤 배치
+
+`contracts/deployment.json`이 킹타워 중심과 뒤쪽 두 배치 지점을 소유한다. 화면 좌표 변환은 `core/geometry.ts`가 소유하며 TS 후보와 Python 자가대국이 같은 뒤쪽 타일을 사용한다. 킹타워 몸체는 계속 차단하고 뒤쪽 바닥을 손패 UI처럼 잘라내지 않는다.
+
+Qwen은 카드당 최대 5개 후보 안에 뒤쪽 선택지를 유지하고 전방·중앙·수비 후보도 비교한다. 빠른 정책과 자가대국은 카드당 6개 제한을 유지한다. 배치 후보만 넓히며 특징 차원·체크포인트 형식·가중치는 바꾸지 않아 기존 학습을 이어간다. 뒤쪽에 반드시 내도록 강제하지 않는다. 개별 배치의 장기 효과를 별도로 보상하는 학습은 이번 수정에 포함하지 않는다.

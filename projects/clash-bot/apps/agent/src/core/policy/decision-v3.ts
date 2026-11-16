@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import type { BattleSituation, FieldUnit } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
-import type { Point } from '../geometry.ts';
+import { tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
 import { bodyCard } from './candidates.ts';
@@ -45,12 +45,6 @@ export type DecisionContext = {
   clock?: number;
   towers?: { own: number[]; enemy: number[] };
 };
-
-// 화면 좌표를 시뮬레이터와 같은 타일 좌표(가로 0~18, 강 16)로 바꾼다.
-export const tilePoint = (profile: Profile, point: Point): [number, number] => [
-  Math.round((9 + ((point.x - 184) * 11) / 178) * 10) / 10,
-  Math.round((16 - ((point.y - profile.riverY) * 9.5) / 130) * 10) / 10,
-];
 
 export function decisionContext(
   profile: Profile,

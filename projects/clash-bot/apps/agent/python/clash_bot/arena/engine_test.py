@@ -2,11 +2,13 @@ import json
 import unittest
 
 from clash_bot.arena.engine import (
+    DEPLOYMENT,
     FIELDS,
     TILE,
     Action,
     Arena,
     BeliefSampler,
+    canonical,
     legal_actions,
     public_mana,
     rules_identity,
@@ -14,6 +16,32 @@ from clash_bot.arena.engine import (
 
 
 class NativeArenaTest(unittest.TestCase):
+    def test_both_sides_can_choose_and_deploy_troops_behind_the_king_tower(self):
+        deck = [5, 1, 4, 7, 0, 2, 3, 6]
+        arena = Arena(42, [deck, deck])
+        arena.play([Action(-1)] * 2, 100)
+        for team in (0, 1):
+            for card in deck[:4]:
+                actions = [
+                    action for action in legal_actions(arena.battle, team) if action.card == card
+                ]
+                for tile in DEPLOYMENT.kingBackTiles:
+                    with self.subTest(team=team, card=card, tile=tile):
+                        action = next(
+                            (
+                                action
+                                for action in actions
+                                if canonical(action.x / TILE, action.y / TILE, team) == tile
+                            ),
+                            None,
+                        )
+                        self.assertIsNotNone(action)
+                        clone = arena.clone()
+                        result = clone.play(
+                            [action if side == team else Action(-1) for side in (0, 1)], 1
+                        )
+                        self.assertEqual(result[0][1], 0)
+
     def test_current_eight_card_deck_forms_and_exact_snapshot_branching(self):
         arena = Arena(13)
         self.assertEqual(arena.state()["players"][0]["forms"], [0, 1, 0, 0, 2, 1, 0, 0])
@@ -98,7 +126,11 @@ class NativeArenaTest(unittest.TestCase):
         for count in range(3):
             while 5 not in arena.state()["players"][0]["hand"]:
                 arena.play([Action(-1)] * 2, 200)
-                other = next(a for a in legal_actions(arena.battle, 0) if a.card >= 0)
+                # Cycle safely in the rear; first-candidate ordering must not end this fixture early.
+                other = min(
+                    (a for a in legal_actions(arena.battle, 0) if a.card >= 0),
+                    key=lambda action: canonical(action.x / TILE, action.y / TILE, 0)[1],
+                )
                 arena.play([other, Action(-1)], 1)
             arena.play([Action(-1)] * 2, 200)
             result = arena.play([Action(5, 6 * TILE, 2 * TILE), Action(-1)], 1)

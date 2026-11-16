@@ -1,0 +1,8 @@
+{
+  "format": "clash-deployment-v1",
+  "kingTowerTile": [9, 3],
+  "kingBackTiles": [
+    [8, 0.5],
+    [10, 0.5]
+  ]
+}
