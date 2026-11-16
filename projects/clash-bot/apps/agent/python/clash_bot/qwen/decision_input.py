@@ -76,20 +76,7 @@ def serialize_decision(context):
         )
 
     actions = " ".join(action_text(row) for row in context["actions"])
-    hints = (
-        [CONTRACT["hints"]["graveyard"]]
-        if any(
-            side == "red" and card == "graveyard" for side, card, *_ in context.get("effects", [])
-        )
-        else []
-    )
-    if contacts:
-        hints.insert(0, CONTRACT["hints"]["contacts"])
-    if context.get("skill") == "ready":
-        hints.append(CONTRACT["hints"]["ability"])
-    if "goblin_hut" in context["hand"] or any(row[0] == "goblin_hut" for row in context["own"]):
-        hints.append(CONTRACT["hints"]["goblin_hut"])
-    return CONTRACT["header"] + (" ".join(hints) + "\n" if hints else "") + before + actions
+    return CONTRACT["header"] + before + actions
 
 
 def mirror_actor_prompt(observation):

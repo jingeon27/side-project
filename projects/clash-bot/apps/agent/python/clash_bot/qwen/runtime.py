@@ -24,6 +24,7 @@ from clash_bot.qwen.opponent_data import load_demonstrations
 from clash_bot.qwen.promotion import parent_sha, publish
 from clash_bot.qwen.replay import rehearse, remember
 from clash_bot.qwen.search_data import load_search_targets
+from clash_bot.qwen.text_prefix import FrozenTextPrefix, common_prefix_length
 
 from .episodes import episode_samples
 from .features import AdaptedFinalNorm, Capture, output_token_rows
@@ -82,6 +83,7 @@ class LearningWorker:
             self.spec["input_size"],
             self.spec["hidden_size"],
         )
+        self.text_prefix = FrozenTextPrefix()
 
     def candidate_active(self):
         return self.learner.directory.resolve() != self.directory.resolve()
@@ -244,6 +246,7 @@ class LearningWorker:
             self.feature_cache.key(self.spec["identity"], prompt, controller) if text_only else None
         )
         cached = self.feature_cache.get(key) if key and not request.get("cache_bypass") else None
+        prefix_hit, prefix_length = False, 0
         if cached is None:
             inputs = prepare_inputs(
                 self.processor,
@@ -255,9 +258,30 @@ class LearningWorker:
             pixels = inputs.pop("pixel_values", None)
             mask = inputs.pop("attention_mask", None)
             embeddings = self.model.get_input_embeddings(token_ids, pixels, mask=mask, **inputs)
-            output = self.model.language_model(
-                token_ids, mask=mask, **embeddings.to_dict(), skip_logits=True, return_hidden=True
-            )
+            if text_only and request["prompt"].startswith(CONTRACT["header"]):
+                prefix_prompt = apply_chat_template(
+                    self.processor,
+                    self.model.config,
+                    CONTRACT["header"],
+                    num_images=0,
+                    enable_thinking=False,
+                )
+                prefix_length = common_prefix_length(
+                    token_ids[0].tolist(),
+                    self.processor.tokenizer.encode(prefix_prompt, add_special_tokens=False),
+                )
+            if prefix_length:
+                output, prefix_hit = self.text_prefix.forward(
+                    self.model.language_model, token_ids, embeddings, prefix_length
+                )
+            else:
+                output = self.model.language_model(
+                    token_ids,
+                    mask=mask,
+                    **embeddings.to_dict(),
+                    skip_logits=True,
+                    return_hidden=True,
+                )
             features = mx.stop_gradient(self.sink["features"].astype(mx.float32))
             base = mx.stop_gradient(self.sink["base"].astype(mx.float32))
             mx.eval(features, base)
@@ -301,6 +325,9 @@ class LearningWorker:
                 "feature_path": str(destination),
                 "adapter_applied_inside_qwen": cached is None,
                 "feature_cache_hit": cached is not None,
+                "prefix_cache_hit": prefix_hit,
+                "prefix_tokens": prefix_length,
+                "prefix_cache_bytes": self.text_prefix.nbytes,
                 "policy_input": "public_text_v3" if text_only else "image_and_text",
                 "adapter_sha256": weights_digest(self.learner.adapter),
             },

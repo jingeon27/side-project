@@ -17,7 +17,7 @@ class FeatureCache:
     def key(self, model, prompt, controller):
         return hashlib.sha256(
             json.dumps(
-                ["frozen-qwen-last-mlp-text-v1", model, controller, prompt], ensure_ascii=False
+                ["frozen-qwen-causal-prefix-text-v2", model, controller, prompt], ensure_ascii=False
             ).encode()
         ).hexdigest()
 

@@ -10,6 +10,7 @@ from mlx.utils import tree_flatten
 from PIL import Image
 
 from clash_bot.paths import DATA_DIR
+from clash_bot.qwen.decision_input import CONTRACT
 from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
 from clash_bot.qwen.model_specs import MODEL
 from clash_bot.qwen.runtime import LearningWorker
@@ -93,6 +94,35 @@ class LearningModelTest(unittest.TestCase):
             self.assertEqual(
                 restored.log_probs(sample).tolist(), worker.learner.log_probs(sample).tolist()
             )
+            worker.configure_candidate(3)
+            request = {
+                "images": [],
+                "prompt": CONTRACT["header"]
+                + "mana=8;enemyMana=0-10;enemyCycle=P4-4;hand=KIPG;next=;own=;"
+                "enemy=s3.5,6.5;effects=rG3.5,6.5@2s;skill=0\n"
+                "A:W B:I3.5,6.5h1 C:P3.5,6.5h1",
+                "choices": [0, 1, 2],
+                "feature_path": str(feature_path),
+                "controller_version": 3,
+                "cache_bypass": True,
+            }
+            first = worker.choose(request)
+            reference = mx.load(str(feature_path))
+            self.assertFalse(first["behavior"]["prefix_cache_hit"])
+            self.assertGreater(first["behavior"]["prefix_tokens"], 0)
+            # A final-MLP adapter change must not invalidate earlier attention
+            # or recurrent state, nor reuse cached action probabilities.
+            worker.learner.adapter.b = worker.learner.adapter.b * 1.2
+            second = worker.choose(request)
+            current = mx.load(str(feature_path))
+            self.assertTrue(second["behavior"]["prefix_cache_hit"])
+            self.assertFalse(second["behavior"]["feature_cache_hit"])
+            for name in ("features", "base"):
+                self.assertTrue(mx.array_equal(reference[name], current[name]).item())
+            expected = worker.learner.log_probs({**current, "labels": [0, 1, 2]})
+            actual = mx.array(second["behavior"]["old_log_probs"])
+            self.assertTrue(mx.allclose(actual, expected, atol=1e-4).item())
+            self.assertLessEqual(worker.text_prefix.nbytes, worker.text_prefix.maximum_bytes)
 
 
 if __name__ == "__main__":

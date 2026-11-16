@@ -114,6 +114,7 @@ A:W B:G3.5,27.3 C:G2.3,26.5 D:G3.5,25.4 E:G14.5,27.3 F:P3.5,7.2h0 G:P3.5,27.3h0 
   });
   expect(decisionPrompt(profile, hand, 5, affordableCandidates(profile, hand, 5, [], sparse), sparse))
     .toBe(`ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.
+h=observed contacts,not future damage.I spawn84/r3;B ground roll215/length4.5/width2.6;P92/s for8s/r3.5.Reference only. G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. enemyCycle=card:min-max further plays,?unknown. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana. H triggers within6tiles;compare enemies,existing H,defense mana,W.
 mana=5;enemyMana=0-5.2;enemyCycle=?;hand=K?P?;next=;own=;enemy=;effects=;skill=0
 A:W B:K3.5,13.1 C:K14.5,13.1 D:K9,9.3 E:K6.3,3.9 F:K11.7,3.9 G:P3.5,27.3 H:P14.5,27.3`);
 });

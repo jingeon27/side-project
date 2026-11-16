@@ -16,12 +16,6 @@ const contract = z
   .strictObject({
     version: z.literal(3),
     header: z.string(),
-    hints: z.strictObject({
-      graveyard: z.string(),
-      ability: z.string(),
-      goblin_hut: z.string(),
-      contacts: z.string(),
-    }),
     codes: z.record(z.string(), z.string()),
   })
   .parse(JSON.parse(readFileSync(new URL('../../../contracts/decision-v3.json', import.meta.url), 'utf8')));
@@ -132,16 +126,6 @@ export function serializeDecision(context: PublicDecisionContext) {
   const contacts =
     context.enemy.length > 0 &&
     context.actions.some(([, kind, card]) => kind === 'card' && observedContacts(card, [0, 0], []) !== null);
-  const hints = [
-    ...(contacts ? [contract.hints.contacts] : []),
-    ...(context.effects?.some(([side, card]) => side === 'red' && card === 'graveyard')
-      ? [contract.hints.graveyard]
-      : []),
-    ...(context.skill === 'ready' ? [contract.hints.ability] : []),
-    ...(context.hand.includes('goblin_hut') || context.own.some(([card]) => card === 'goblin_hut')
-      ? [contract.hints.goblin_hut]
-      : []),
-  ];
   const mana =
     typeof context.elixir === 'number'
       ? context.elixir
@@ -154,7 +138,6 @@ export function serializeDecision(context: PublicDecisionContext) {
     .otherwise(() => '0');
   return (
     contract.header +
-    (hints.length ? hints.join(' ') + '\n' : '') +
     `mana=${mana};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};enemyCycle=${enemyCycle};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${skill}\n` +
     context.actions
       .map(
