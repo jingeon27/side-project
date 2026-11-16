@@ -69,10 +69,10 @@ export async function startSharedInference(options: {
       const root = await realpath(join(options.dataDir, 'trophy/runs'));
       const image = await realpath(input.imagePath);
       const checkpoint = await realpath(input.checkpoint);
-      const training = await realpath(join(options.dataDir, 'arena/qwen/training'));
+      // 트로피는 지금 공유 중인 후보 체크포인트만 읽는다. 후보가 격리 학습 폴더에서 왔어도 같은 파일이면 허용한다.
       if (
         !inside(root, image) ||
-        !inside(training, checkpoint) ||
+        checkpoint !== (await realpath(policy.checkpoint)) ||
         dirname(resolve(input.featurePath)) !== join(dirname(resolve(input.imagePath)), 'features') ||
         !/^\d{4}\.npz$/.test(basename(input.featurePath))
       )
@@ -81,8 +81,9 @@ export async function startSharedInference(options: {
       await mkdir(features, { recursive: true, mode: 0o700 });
       if ((await realpath(features)) !== features) return reply(400, { reason: 'invalid_owned_path' });
       // External work never queues behind a game decision or a long update.
-      // Recheck after reading the body because the main loop may have advanced.
-      if (!options.policy() || options.client.state.pending > 0) return reply(503, { reason: 'model_busy' });
+      // Recheck after reading the body because the main loop may have advanced or moved to another candidate.
+      if (options.policy()?.checkpoint !== policy.checkpoint || options.client.state.pending > 0)
+        return reply(503, { reason: 'model_busy' });
       const started = performance.now();
       const output = await options.client.chooseExternal(
         {
