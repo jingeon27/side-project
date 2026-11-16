@@ -7,7 +7,7 @@ import { parseArgs } from 'node:util';
 
 import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR } from '../shared/config.ts';
-import { requestLearningStop } from '../shared/runtime-lock.ts';
+import { readLockOwner, requestLearningStop } from '../shared/runtime-lock.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
 import { runCounterpushEvaluation } from './learning/evaluation.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
@@ -105,10 +105,8 @@ const main = async () => {
   }
   if (command === 'stop') {
     const state = JSON.parse(await readFile(join(control, 'status.json'), 'utf8')) as { id: string };
-    const lock = JSON.parse(await readFile(join(DATA_DIR, 'qwen/selfplay/lock.json'), 'utf8')) as {
-      id: string;
-    };
-    if (state.id !== lock.id) throw new Error('현재 Counterpush 실행이 없습니다.');
+    const lock = await readLockOwner(join(DATA_DIR, 'qwen/selfplay'));
+    if (state.id !== lock?.id) throw new Error('현재 Counterpush 실행이 없습니다.');
     await requestLearningStop(join(DATA_DIR, 'qwen/selfplay'));
     console.log('현재 경기와 후보 저장 후 중지합니다. 평가 기록은 다음 실행에서 이어집니다.');
     return;
