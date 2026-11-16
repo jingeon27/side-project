@@ -14,10 +14,7 @@ def episode_samples(episode, learner, spec):
     rows = [
         json.loads(line) for line in (directory / "events.jsonl").read_text().splitlines() if line
     ]
-    if any(
-        row.get("type") == "input_recovery" or row.get("behavior", {}).get("read_only_external")
-        for row in rows
-    ):
+    if any(row.get("type") == "input_recovery" for row in rows):
         return None
     results = [row for row in rows if verified_result(row)]
     if not results:

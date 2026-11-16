@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { studyNext } from '../../arena/study.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
 import { MODEL } from '../../qwen/model.ts';
-import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
 import { readOptionalJsonFile } from '../../shared/json-file.ts';
@@ -117,13 +116,11 @@ export async function runCounterpush(options: {
     vision: CounterpushVisionClient | null;
     browser: CounterpushBrowser | null;
     patterns: SpawnPatterns | null;
-    shared: Awaited<ReturnType<typeof startSharedInference>> | null;
   } = {
     client: null,
     vision: null,
     browser: null,
     patterns: null,
-    shared: null,
   };
   const writes = { tail: Promise.resolve() };
   const report = (update: Record<string, unknown>) => {
@@ -168,11 +165,6 @@ export async function runCounterpush(options: {
       promotions: 0,
       evaluationFile: null,
     };
-    resources.shared = await startSharedInference({
-      dataDir,
-      client,
-      policy: () => (status.phase === 'candidate_training' && state.candidate ? state.candidate : null),
-    });
     const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
     const goalFile = join(control, 'training-goal.json');
     const previousGoal = options.trainingGoal
@@ -335,17 +327,7 @@ export async function runCounterpush(options: {
         await atomicWrite(file, JSON.stringify(current, null, 2) + '\n');
         const progress = goal ? goalProgress(goal, current) : null;
         if (progress) await atomicWrite(goalFile, JSON.stringify(progress, null, 2) + '\n');
-        // 상태 파일을 먼저 쓴 뒤, 진행 중인 트로피 경기가 끝날 때까지 후보 공유를 닫는 단계 보고를 미룬다.
-        if (
-          status.phase === 'candidate_training' &&
-          current.phase !== 'candidate_training' &&
-          resources.shared?.activeMatch()
-        ) {
-          await report({ waitingFor: 'trophy_match' });
-          await resources.shared.matchFinished(signal);
-        }
         await report({
-          waitingFor: null,
           phase: current.phase,
           champion: current.champion,
           candidate: current.candidate,
@@ -372,7 +354,6 @@ export async function runCounterpush(options: {
     throw error;
   } finally {
     signal.removeEventListener('abort', abort);
-    await resources.shared?.close().catch(() => {});
     // 워커가 끝난 뒤에 잠금을 풀어, 이전 학습기가 체크포인트를 쓰는 중에 새 실행이 시작되지 않게 한다.
     await Promise.all([resources.client?.close(), resources.vision?.close()]);
     await resources.patterns?.save().catch(() => {});

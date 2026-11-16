@@ -9,9 +9,7 @@ clash-bot은 지금 저장소에 있는 코드와 현재 형식의 기록만으�
 
 ## 현재 운영 경로
 
-- Counterpush 후보 학습·고정 평가·채택. 모델은 Qwen3.8-27B 하나다. 챔피언은 자기 체크포인트의 판단 계약으로(`controller_version`이 없으면 controller 1), 후보는 controller 3으로 둔다.
-- BlueStacks 트로피 관찰 플레이. 학습·평가에 넣지 않는다.
-- Android 기기 설정·인식 확인 명령, 규칙 봇(`observe`·`play`), 학습 없는 Qwen 단일 경기(`qwen`).
+- Counterpush 전용 Chrome 플레이와 후보 학습·고정 평가·채택. 모델은 Qwen3.8-27B 하나다. 챔피언은 자기 체크포인트의 판단 계약으로(`controller_version`이 없으면 controller 1), 후보는 controller 3으로 둔다.
 - arena 자가대국과 `arena study`.
 
 이 목록에 없는 경로를 새로 만들거나 지운 경로를 되살리려면 먼저 사용자에게 확인한다.

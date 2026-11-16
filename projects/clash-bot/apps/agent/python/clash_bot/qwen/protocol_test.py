@@ -8,7 +8,7 @@ from unittest.mock import Mock
 from pydantic import ValidationError
 
 from .learning_worker import serve
-from .protocol import parse_inference_request, parse_learning_request
+from .protocol import parse_learning_request
 
 
 class WorkerProtocolTests(unittest.TestCase):
@@ -28,7 +28,6 @@ class WorkerProtocolTests(unittest.TestCase):
             {"op": "warmup"},
             {"op": "end_candidate"},
             self.choice(),
-            {**self.choice(), "op": "choose_external", "checkpoint": "/private/v000001"},
             {"op": "train", "episode": "/episode"},
             {"op": "train_batch", "episodes": ["/first", "/second"]},
             {"op": "imitate", "dataset": "/dataset.json"},
@@ -38,24 +37,10 @@ class WorkerProtocolTests(unittest.TestCase):
             {"op": "configure_candidate", "controller_version": 3},
             {"op": "rehearse", "rounds": 4},
             {"op": "promote", "checkpoint": "/private/v000001", "report": "/heldout.json"},
-            {
-                "op": "observe",
-                "images": ["/before.png"],
-                "prompt": "observe",
-                "schema": {"type": "object"},
-                "max_tokens": 160,
-            },
         ]
         for request in requests:
             with self.subTest(request=request):
                 self.assertEqual(parse_learning_request(json.dumps(request)), request)
-        inference = {
-            "images": ["/screen.png"],
-            "prompt": "classify",
-            "schema": {"type": "object"},
-            "max_tokens": 160,
-        }
-        self.assertEqual(parse_inference_request(json.dumps(inference)), inference)
 
     def test_rejects_invalid_types_bounds_duplicates_and_unknown_operations(self):
         requests = [
@@ -66,6 +51,8 @@ class WorkerProtocolTests(unittest.TestCase):
             {**self.choice(), "controller_version": True},
             {**self.choice(), "controller_version": 4},
             {**self.choice(), "op": "choose_external"},
+            {**self.choice(), "checkpoint": "/private/v000001"},
+            {"op": "observe", "images": ["/before.png"], "prompt": "observe", "schema": {}},
             {"op": "train_batch", "episodes": ["/same", "/same"]},
             {"op": "train_batch", "episodes": ["/one", "/two", "/three"]},
             {"op": "rehearse", "rounds": 65},

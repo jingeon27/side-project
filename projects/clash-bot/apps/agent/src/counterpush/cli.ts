@@ -57,7 +57,7 @@ const main = async () => {
             vision,
             DATA_DIR,
             resolve(positionals[1]),
-            await loadCounterpushProfile(DATA_DIR, values.profile),
+            await loadCounterpushProfile(values.profile),
           ),
           null,
           2,
@@ -178,7 +178,7 @@ const main = async () => {
   if (command === 'evaluate') {
     const result = await runCounterpushEvaluation({
       dataDir: DATA_DIR,
-      profile: await loadCounterpushProfile(DATA_DIR, values.profile),
+      profile: await loadCounterpushProfile(values.profile),
       pairs,
       hours,
       candidate: resolve(values.candidate!),
@@ -200,7 +200,7 @@ const main = async () => {
   }
   await runCounterpush({
     dataDir: DATA_DIR,
-    profile: await loadCounterpushProfile(DATA_DIR, values.profile),
+    profile: await loadCounterpushProfile(values.profile),
     hours,
     matches,
     trainingGoal,

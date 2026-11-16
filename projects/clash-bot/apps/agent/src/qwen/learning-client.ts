@@ -33,8 +33,6 @@ export type LearningDecisionRequest = {
   featurePath: string;
   controllerVersion: ControllerVersion;
 };
-// 트로피가 빌리는 읽기 전용 후보 판단은 항상 controller 3이다.
-export type ExternalDecisionRequest = Omit<LearningDecisionRequest, 'controllerVersion'>;
 export type DecisionOutput = {
   text: string;
   elapsedMs: number;
@@ -68,26 +66,6 @@ export class LearningClient extends JsonLineClient {
     return {
       text: JSON.stringify({ choice }),
       elapsedMs: Math.round(performance.now() - started),
-      peakGb: Number(response.peak_gb),
-      behavior: z.record(z.string(), z.unknown()).parse(response.behavior),
-    };
-  }
-  async chooseExternal(request: ExternalDecisionRequest, checkpoint: string): Promise<DecisionOutput> {
-    const response = await this.request({
-      op: 'choose_external',
-      checkpoint,
-      images: [request.imagePath],
-      prompt: request.prompt,
-      choices: request.candidates.map((candidate) => candidate.id),
-      feature_path: request.featurePath,
-      controller_version: 3,
-    });
-    const choice = z.int().parse(response.choice);
-    if (!request.candidates.some((candidate) => candidate.id === choice))
-      throw new Error('공유 모델이 후보 밖의 행동을 반환했습니다.');
-    return {
-      text: JSON.stringify({ choice }),
-      elapsedMs: Number(response.elapsed_ms),
       peakGb: Number(response.peak_gb),
       behavior: z.record(z.string(), z.unknown()).parse(response.behavior),
     };
@@ -127,14 +105,6 @@ export class LearningClient extends JsonLineClient {
   }
   async checkout(checkpoint: string | null): Promise<Record<string, unknown>> {
     return this.request({ op: 'checkout', checkpoint });
-  }
-  async observe(
-    images: string[],
-    prompt: string,
-    schema: unknown,
-  ): Promise<{ text: string; elapsedMs: number }> {
-    const response = await this.request({ op: 'observe', images, prompt, schema, max_tokens: 160 }, 60_000);
-    return { text: z.string().parse(response.text), elapsedMs: Number(response.elapsed_ms) };
   }
   async status(): Promise<Record<string, unknown>> {
     return this.request({ op: 'status' });

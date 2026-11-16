@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { analyze, loadCounterpushTemplates } from '../../android/perception/vision.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type CardId, type Point, type Profile } from '../../shared/config.ts';
 import { inside } from '../../shared/paths.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
 import { FieldDynamics } from '../domain/field-dynamics.ts';
 import { counterpushBarReading, counterpushElixir } from '../perception/elixir.ts';
+import { loadHandCards, readHand } from '../perception/hand.ts';
 import { HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';
 import { type CounterpushVisionClient } from '../perception/vision-client.ts';
@@ -67,17 +67,14 @@ export async function reprocessEpisode(
   const abilityButton = await HeroAbilityButton.load();
   const dynamics = new FieldDynamics(directory);
   const situations = new Map<string, BattleSituation>();
-  const templates = await loadCounterpushTemplates(dataDir, profile);
+  const handCards = await loadHandCards(profile);
   const observations: OpponentObservation[] = [];
   const rejected: Array<{ id: string; reason: string }> = [];
   for (const frame of frames) {
     const image = await readFile(frame.image);
-    const raw = {
-      ...(await analyze(image, profile, templates, frame.capturedAt)),
-      ...(await counterpushBarReading(image, profile)),
-    };
-    const cards = raw.hand.map((slot) => slot.card);
-    const elixir = counterpushElixir(raw, profile);
+    const cards = await readHand(image, profile, handCards);
+    const bar = await counterpushBarReading(image, profile);
+    const elixir = counterpushElixir(bar, profile);
     const scan = await vision.scan(frame.image);
     const field = dynamics.observe(scan, frame.capturedAt);
     for (const input of inputs.filter(
@@ -109,7 +106,7 @@ export async function reprocessEpisode(
       amount: elixir.amount,
       hand: cards,
       elixirRange: elixir.range,
-      elixirReliable: raw.elixirConfidence >= 0.9,
+      elixirReliable: bar.elixirConfidence >= 0.9,
       inputPending,
       allies: field.allies,
       enemies: field.enemies,

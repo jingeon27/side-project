@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { loadProfile } from './config.ts';
+import { loadProfile } from '../../shared/config.ts';
 import { HAND_REFERENCE_DIRECTORY, loadHandReferences } from './hand-references.ts';
 
 const copies: string[] = [];
@@ -34,7 +34,7 @@ describe('repository hand references for Counterpush', () => {
 
   it('covers the normal and grayed-out look of every deck card except the recorded gaps', async () => {
     const profile = await loadProfile(
-      fileURLToPath(new URL('../../../../profiles/counterpush.json', import.meta.url)),
+      fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
     );
     const manifest = await loadHandReferences();
     const gaps = profile.deck.flatMap((card) =>

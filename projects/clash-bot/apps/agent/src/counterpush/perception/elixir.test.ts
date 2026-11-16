@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { expect, it } from 'vitest';
 
-import { readElixir } from '../../android/perception/vision.ts';
 import { DEFAULT_PROFILE } from '../../shared/config.ts';
 import { counterpushBarReading, counterpushElixir, plausibleSpend } from './elixir.ts';
 
@@ -13,14 +12,11 @@ it('reads actual Counterpush bars without mistaking the number bubble for an emp
     const bytes = await readFile(
       new URL(`../../../test-fixtures/counterpush/elixir-${expected}.png`, import.meta.url),
     );
-    const { data, info } = await sharp(bytes)
+    const image = await sharp(bytes)
       .extend({ top: 624, bottom: 0, left: 0, right: 0, background: '#000' })
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const pixels = { data, width: info.width, height: info.height, channels: info.channels };
-    const read = readElixir(pixels, profile.elixir);
-    const result = counterpushElixir({ elixir: read.value, elixirAmount: read.amount }, profile);
+      .png()
+      .toBuffer();
+    const result = counterpushElixir(await counterpushBarReading(image, profile), profile);
     expect(result.value).toBe(expected);
     expect(result.range.min).toBeLessThanOrEqual(expected + 0.2);
     expect(result.range.max).toBeGreaterThanOrEqual(expected - 0.2);

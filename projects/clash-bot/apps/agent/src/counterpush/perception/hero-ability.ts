@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises';
 
 import sharp from 'sharp';
 
-import { difference, fingerprint } from '../../android/perception/vision.ts';
 import type { CardId } from '../../shared/config.ts';
 import type { HeroAbility } from '../domain/special-state.ts';
 import { plausibleSpend } from './elixir.ts';
+import { difference, fingerprint } from './hand.ts';
 
 const PORTRAIT = { left: 317, top: 477, width: 30, height: 30 };
 export const HERO_ABILITY_TARGET = { x: 330, y: 489 };

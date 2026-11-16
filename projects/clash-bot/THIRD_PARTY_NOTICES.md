@@ -1,6 +1,6 @@
 # Third-party notices
 
-## Local Qwen runtime and game fixtures
+## Local Qwen runtime
 
 The optional Qwen runtime downloads MLX-VLM and its dependencies into a project-local Python environment. Their licenses remain in the installed packages. Qwen model weights are downloaded separately, pinned by revision and SHA-256, and are not included in this repository.
 
@@ -8,7 +8,7 @@ The optional Qwen runtime downloads MLX-VLM and its dependencies into a project-
 - Base model: https://huggingface.co/Qwen/Qwen3.8-27B
 - MLX conversion: https://huggingface.co/mlx-community/Qwen3.8-27B-4bit
 
-`apps/agent/test-fixtures/android/arena-health.png` and `result-loss.png` contain limited crops from observed game screens for visual regression tests. Account names and clan details have been removed. Game artwork and marks belong to their respective owners. This project is not affiliated with Supercell, Counterpush, or Qwen.
+This project is not affiliated with Supercell, Counterpush, or Qwen.
 
 ## Counterpush perception
 
@@ -24,7 +24,7 @@ Source: https://github.com/Pbatch/ClashRoyaleBuildABot
 
 Revision: `f89ecbf309e698cb9fccdfb64a6ff2a930e6541e`.
 
-The setup command downloads selected card and battle-marker reference images from this revision. Default image crop coordinates are adapted from its constants. Game artwork and marks retain their respective owners' rights. This project is not affiliated with Supercell or Counterpush.
+`counterpush:setup` downloads only the `units_M_480x352.onnx` box-proposal model from this revision. This project is not affiliated with Supercell or Counterpush.
 
 MIT License
 

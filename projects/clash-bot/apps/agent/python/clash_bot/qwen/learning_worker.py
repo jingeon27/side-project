@@ -27,23 +27,10 @@ def handle_request(worker, request):
     if operation in ("train", "train_batch", "imitate") and not worker.candidate_active():
         raise ValueError("The deployed champion is frozen; train a private candidate")
     match operation:
-        case (
-            "choose"
-            | "train"
-            | "train_batch"
-            | "imitate"
-            | "study"
-            | "rehearse"
-            | "promote"
-            | "observe"
-        ):
+        case "choose" | "train" | "train_batch" | "imitate" | "study" | "rehearse" | "promote":
             return getattr(worker, operation)(request)
         case "status" | "warmup" | "end_candidate":
             return getattr(worker, operation)()
-        case "choose_external":
-            from .external_policy import choose_external
-
-            return choose_external(worker, request)
         case "checkout":
             return worker.checkout(request.get("checkpoint"))
         case "begin_candidate":

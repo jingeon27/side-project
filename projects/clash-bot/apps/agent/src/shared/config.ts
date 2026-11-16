@@ -48,20 +48,17 @@ const referenceRect = rectSchema.refine(
 export const profileSchema = z
   .object({
     version: z.literal(1),
-    viewport: rectSchema.nullable(),
     deck: z
       .array(cardIdSchema)
       .length(8)
       .refine((deck) => new Set(deck).size === 8, '덱에는 서로 다른 카드 8장이 필요합니다.'),
     hand: z.array(referenceRect).length(4),
     elixir: referenceRect,
-    marker: referenceRect,
     arena: referenceRect,
     riverY: z.number().min(100).max(500),
     thresholds: z.object({
       cardDistance: z.number().min(1).max(100),
       cardMargin: z.number().min(0).max(50),
-      markerDistance: z.number().min(1).max(60),
     }),
   })
   .strict()
@@ -72,14 +69,12 @@ export const profileSchema = z
 export type Profile = z.infer<typeof profileSchema>;
 export const DEFAULT_PROFILE: Profile = {
   version: 1,
-  viewport: null,
   deck: ['knight', 'archers', 'giant', 'musketeer', 'minipekka', 'skeletons', 'fireball', 'arrows'],
   hand: [84, 153, 222, 291].map((x) => ({ x, y: 543, width: 61, height: 73 })),
   elixir: { x: 100, y: 628, width: 250, height: 15 },
-  marker: { x: 76, y: 639, width: 7, height: 10 },
   arena: { x: 15, y: 80, width: 338, height: 425 },
   riverY: 294,
-  thresholds: { cardDistance: 29, cardMargin: 3, markerDistance: 27 },
+  thresholds: { cardDistance: 29, cardMargin: 3 },
 };
 
 export async function loadProfile(path: string): Promise<Profile> {
@@ -87,7 +82,7 @@ export async function loadProfile(path: string): Promise<Profile> {
     return profileSchema.parse(JSON.parse(await readFile(path, 'utf8')));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      throw new Error('초기 설정이 없습니다. 먼저 yarn workspace @side/clash-bot setup을 실행하세요.');
+      throw new Error(`프로필 파일이 없습니다: ${path}`);
     throw error;
   }
 }

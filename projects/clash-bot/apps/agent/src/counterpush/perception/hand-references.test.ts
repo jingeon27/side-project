@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 
-import { fingerprint, matchCard } from '../android/perception/vision.ts';
 import { loadHandReferences } from './hand-references.ts';
+import { fingerprint, matchCard } from './hand.ts';
 
 // 라벨이 맞지만 회색 카드 위 밝은 덮개가 그림보다 지문을 크게 바꿔, 같은 프레임의 다른 회색 카드와 더 가까운 그림이다.
 // 인식 약점의 기록이며 허용 기준이 아니다. 참조를 추가하거나 비교 방식을 바꾸면 이 목록도 함께 확인한다.

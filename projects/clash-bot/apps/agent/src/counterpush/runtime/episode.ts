@@ -3,18 +3,6 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import {
-  analyze,
-  crop,
-  difference,
-  fingerprint,
-  loadCounterpushTemplates,
-} from '../../android/perception/vision.ts';
-import {
-  validateQwenAction,
-  type FreshBattle,
-  type QwenPrediction,
-} from '../../android/policy/qwen-policy.ts';
 import { actionCandidates, choicePrompt } from '../../game/actions.ts';
 import { controllerVersionOf, type LearningClient } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
@@ -24,11 +12,13 @@ import { FieldDynamics } from '../domain/field-dynamics.ts';
 import type { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { type OpponentObservation } from '../learning/opponent-data.ts';
 import { counterpushBarReading, counterpushElixir, plausibleSpend } from '../perception/elixir.ts';
+import { crop, difference, fingerprint, loadHandCards, readHand } from '../perception/hand.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';
 import { type CounterpushVisionClient, type UnitScan } from '../perception/vision-client.ts';
 import { affordableCandidates } from '../policy/candidates.ts';
 import { decisionPrompt } from '../policy/decision-v3.ts';
+import { confirmPlacement, type FreshBattle } from '../policy/placement-check.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
 import { abilityCheckEvent, inputCheckEvent, resultEvent, waitCheckEvent } from './episode-events.ts';
 
@@ -61,7 +51,7 @@ export async function playCounterpushEpisode(options: {
   const controllerVersion = controllerVersionOf(policy);
   const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
   await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
-  const templates = await loadCounterpushTemplates(dataDir, profile);
+  const handCards = await loadHandCards(profile);
   const tracker = new OpponentTracker();
   const observations: OpponentObservation[] = [];
   const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
@@ -98,15 +88,12 @@ export async function playCounterpushEpisode(options: {
     const screenshot = await browser.capture(controllerVersion === 3);
     const path = join(directory, 'frames', `${String(++state.frames).padStart(6, '0')}.png`);
     await atomicWrite(path, screenshot.image);
-    const [analyzed, bar, ability] = await Promise.all([
-      analyze(screenshot.image, profile, templates, screenshot.capturedAt, {
-        fieldMarkers: controllerVersion < 3,
-      }),
+    const [cards, bar, ability] = await Promise.all([
+      readHand(screenshot.image, profile, handCards),
       counterpushBarReading(screenshot.image, profile),
       abilityButton.read(screenshot.image, screenshot.capturedAt),
     ]);
-    const observation = { ...analyzed, ...bar };
-    const elixir = counterpushElixir(observation, profile);
+    const elixir = counterpushElixir(bar, profile);
     const fresh = {
       battle: (await browser.phase()) === 'battle',
       elixir: elixir.value,
@@ -115,19 +102,10 @@ export async function playCounterpushEpisode(options: {
         profile.hand.map(async (rectangle) => fingerprint(await crop(screenshot.image, rectangle))),
       ),
     };
-    return {
-      started,
-      screenshot,
-      path,
-      observation,
-      ability,
-      elixir,
-      fresh,
-      cards: observation.hand.map((card) => card.card),
-    };
+    return { started, screenshot, path, bar, ability, elixir, fresh, cards };
   };
   const capture = async (): Promise<OwnFrame> => {
-    const { started, screenshot, path, observation, ability, elixir, fresh, cards } = await readOwn();
+    const { started, screenshot, path, bar, ability, elixir, fresh, cards } = await readOwn();
     const scan = await vision.scan(path);
     const field = dynamics.observe(scan, screenshot.capturedAt);
     await appendFile(
@@ -136,11 +114,11 @@ export async function playCounterpushEpisode(options: {
         image: path,
         capturedAt: screenshot.capturedAt,
         scan,
-        hand: observation.hand.map((card) => card.card),
+        hand: cards,
         elixir: elixir.value,
         elixirAmount: elixir.amount,
-        rawElixir: observation.elixir,
-        elixirConfidence: observation.elixirConfidence,
+        rawElixir: bar.elixir,
+        elixirConfidence: bar.elixirConfidence,
       }) + '\n',
       { mode: 0o600 },
     );
@@ -149,7 +127,7 @@ export async function playCounterpushEpisode(options: {
       amount: elixir.amount,
       hand: cards,
       inputPending: state.inputPending,
-      elixirReliable: observation.elixirConfidence >= 0.9,
+      elixirReliable: bar.elixirConfidence >= 0.9,
       elixirRange: elixir.range,
       allies: field.allies,
       enemies: field.enemies,
@@ -158,8 +136,8 @@ export async function playCounterpushEpisode(options: {
       ability,
     });
     situation.own.elixir =
-      !state.inputPending && observation.elixirConfidence >= 0.9 ? elixir.range : { min: 0, max: 10 };
-    if (observation.elixirConfidence < 0.9) situation.opponent.elixir = { min: 0, max: 10 };
+      !state.inputPending && bar.elixirConfidence >= 0.9 ? elixir.range : { min: 0, max: 10 };
+    if (bar.elixirConfidence < 0.9) situation.opponent.elixir = { min: 0, max: 10 };
     situations.set(path, situation);
     for (const [key, value] of situations)
       if (screenshot.capturedAt - value.at > 12_000) situations.delete(key);
@@ -206,8 +184,7 @@ export async function playCounterpushEpisode(options: {
       // snapshots stay unchanged for training without future information.
       const ledger = memory.elixir.snapshot(screenshot.capturedAt);
       Object.assign(situation.opponent, {
-        elixir:
-          state.inputPending || observation.elixirConfidence < 0.9 ? { min: 0, max: 10 } : ledger.opponent,
+        elixir: state.inputPending || bar.elixirConfidence < 0.9 ? { min: 0, max: 10 } : ledger.opponent,
         cycle: memory.opponentCycle.snapshot(),
         evolutions: memory.opponentEvolutions.snapshot(),
         seenSpent: ledger.opponentSeenSpent,
@@ -253,7 +230,7 @@ export async function playCounterpushEpisode(options: {
       path,
       state: fresh,
       cards,
-      elixirConfidence: observation.elixirConfidence,
+      elixirConfidence: bar.elixirConfidence,
       scan,
       situation,
       perceptionMs: Math.round(performance.now() - started),
@@ -261,7 +238,7 @@ export async function playCounterpushEpisode(options: {
     };
   };
   const inputFrame = async (before: OwnFrame): Promise<OwnFrame> => {
-    const { started, screenshot, path, observation, ability, elixir, fresh, cards } = await readOwn();
+    const { started, screenshot, path, bar, ability, elixir, fresh, cards } = await readOwn();
     const guard = await vision.guard(path);
     // Recheck input legality and new Graveyard pixels, without pretending a
     // repeated unit classification is a newly observed field.
@@ -270,7 +247,7 @@ export async function playCounterpushEpisode(options: {
       path,
       state: fresh,
       cards,
-      elixirConfidence: observation.elixirConfidence,
+      elixirConfidence: bar.elixirConfidence,
       scan: before.scan,
       perceptionMs: Math.round(performance.now() - started),
       graveyardPresence: guard.graveyardPresence,
@@ -507,16 +484,14 @@ export async function playCounterpushEpisode(options: {
         );
         continue;
       }
-      const choice: QwenPrediction = {
-        phase: 'battle',
-        hand: before.cards,
-        elixir: before.state.elixir,
-        slot: selected.slot,
-        x: selected.target.x / 368,
-        y: selected.target.y / 652,
-        outcome: 'unknown',
-      };
-      const action = validateQwenAction(choice, before.state, latest.state, profile, Date.now());
+      const action = confirmPlacement(
+        selected,
+        before.cards,
+        before.state,
+        latest.state,
+        profile,
+        Date.now(),
+      );
       if (!action || latest.elixirConfidence < 0.9) {
         await log({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
         continue;

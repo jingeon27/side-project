@@ -7,6 +7,6 @@
 - `policy/`는 합법 후보와 모델 입력 계약을 소유한다. 전략적 선호로 사용 가능한 손패를 지우지 않는다. Python 시뮬레이션과 입력 형식을 바꾸면 공유 계약 검사도 갱신한다.
 - `learning/`은 경기 후 학습·평가·채택·100판 목표 집계를 소유한다. 평가 경기는 학습 자료나 학습 목표 수에 넣지 않는다. 입력 복구 경기도 제외한다.
 - 테스트는 구현 옆에 둔다. 앱의 `assets/counterpush/`와 `test-fixtures/counterpush/`는 시각 자료를 소유하며 모델 가중치나 계정 정보는 넣지 않는다.
-- 손패 참조는 `assets/counterpush/hand-templates/manifest.json`이 카드·상태·SHA-256을 소유하고 실행기는 그 폴더를 직접 읽는다. `.data`로 복사하지 않는다. 그림을 바꾸면 manifest와 `src/shared/hand-references.*` 검사를 함께 갱신하고, 라벨은 그림을 직접 확인해 정한다.
+- 손패 참조는 `assets/counterpush/hand-templates/manifest.json`이 카드·상태·SHA-256을 소유하고 실행기는 그 폴더를 직접 읽는다. `.data`로 복사하지 않는다. 그림을 바꾸면 manifest와 `perception/hand-references.*` 검사를 함께 갱신하고, 라벨은 그림을 직접 확인해 정한다.
 - `../qwen/`은 모델 클라이언트, `../arena/`는 자가대국 실행 연결을 소유한다. Python 계산·캐시·기울기 갱신은 앱의 `python/clash_bot/qwen/`, 네이티브 환경은 `python/clash_bot/arena/`, CPU 인식은 `python/clash_bot/perception/`이 소유한다. 캐시에는 고정 특징만 저장하고 현재 정책 확률은 매번 다시 계산한다.
 - 배포 포인터는 원본 증거를 재검사한 채택 경로에서만 바꾼다. 학습 횟수·손실 개선·빠른 응답을 실전 실력 향상으로 보고하지 않는다.

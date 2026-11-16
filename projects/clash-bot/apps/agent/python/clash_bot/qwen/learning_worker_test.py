@@ -166,17 +166,6 @@ class LearningEpisodeTest(unittest.TestCase):
             self.assertEqual(worker.train({"episode": directory})["reason"], "no_verified_result")
             worker.learner.train.assert_not_called()
 
-    def test_external_trophy_observations_cannot_be_reused_as_on_policy_training(self):
-        with tempfile.TemporaryDirectory() as directory:
-            worker = self.worker()
-            self.write_episode(directory, worker)
-            path = Path(directory) / "events.jsonl"
-            rows = [json.loads(line) for line in path.read_text().splitlines()]
-            rows[0]["behavior"]["read_only_external"] = True
-            path.write_text("\n".join(json.dumps(row) for row in rows))
-            self.assertEqual(worker.train({"episode": directory})["reason"], "no_verified_result")
-            worker.learner.train.assert_not_called()
-
     def test_rejects_features_from_a_different_model(self):
         with tempfile.TemporaryDirectory() as directory:
             worker = self.worker()

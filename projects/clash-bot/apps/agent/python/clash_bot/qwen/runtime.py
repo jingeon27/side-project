@@ -556,35 +556,6 @@ class LearningWorker:
             atomic_json(Path(episode["episode"]) / "training.json", report)
         return report
 
-    def observe(self, request):
-        from mlx_vlm import generate
-        from mlx_vlm.structured import build_json_schema_logits_processor
-
-        images = request["images"]
-        if not 1 <= len(images) <= 3:
-            raise ValueError("Expected 1 to 3 opponent observation frames")
-        prompt = apply_chat_template(
-            self.processor,
-            self.model.config,
-            request["prompt"],
-            num_images=len(images),
-            enable_thinking=False,
-        )
-        output = generate(
-            self.model,
-            self.processor,
-            prompt,
-            image=images,
-            max_tokens=min(256, int(request.get("max_tokens", 128))),
-            temperature=0,
-            verbose=False,
-            enable_thinking=False,
-            logits_processors=[
-                build_json_schema_logits_processor(self.processor.tokenizer, request["schema"])
-            ],
-        )
-        return {"text": output.text}
-
     def imitate(self, request):
         if self.learner.metadata.get("controller_version") != 3:
             raise ValueError("Opponent imitation requires the private fast controller")
@@ -599,8 +570,8 @@ class LearningWorker:
             }
         samples = []
         for observation in dataset["samples"]:
-            # Only the BEFORE image is fed to Qwen. The after frame validates the
-            # external visual annotation and is never a leaked inference input.
+            # The fast controller reads only the BEFORE situation text. The after
+            # frame validated the tracked label and is never an inference input.
             feature_path = path.parent / "features" / f"{observation['id']}.npz"
             prediction = self.choose(
                 {

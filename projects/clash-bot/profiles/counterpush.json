@@ -1,6 +1,5 @@
 {
   "version": 1,
-  "viewport": null,
   "deck": [
     "furnace",
     "ice_wizard",
@@ -43,12 +42,6 @@
     "width": 236,
     "height": 9
   },
-  "marker": {
-    "x": 76,
-    "y": 639,
-    "width": 7,
-    "height": 10
-  },
   "arena": {
     "x": 15,
     "y": 80,
@@ -58,7 +51,6 @@
   "riverY": 276,
   "thresholds": {
     "cardDistance": 29,
-    "cardMargin": 3,
-    "markerDistance": 27
+    "cardMargin": 3
   }
 }

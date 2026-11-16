@@ -6,10 +6,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,
     TypeAdapter,
     field_validator,
-    model_validator,
 )
 
 
@@ -22,14 +20,13 @@ class EmptyRequest(Request):
 
 
 class ChooseRequest(Request):
-    op: Literal["choose", "choose_external"]
+    op: Literal["choose"]
     images: list[str] = Field(max_length=3)
     prompt: str
     choices: list[int] = Field(min_length=1, max_length=26)
     feature_path: str = Field(min_length=1)
     controller_version: int
     cache_bypass: bool = False
-    checkpoint: str | None = None
 
     @field_validator("controller_version")
     @classmethod
@@ -45,12 +42,6 @@ class ChooseRequest(Request):
         if len(set(values)) != len(values):
             raise ValueError("Action IDs must be distinct")
         return values
-
-    @model_validator(mode="after")
-    def external_snapshot(self):
-        if self.op == "choose_external" and not self.checkpoint:
-            raise ValueError("External inference requires an immutable checkpoint")
-        return self
 
 
 class EpisodeRequest(Request):
@@ -109,20 +100,6 @@ class PromotionRequest(Request):
     report: str = Field(min_length=1)
 
 
-class InferenceRequest(Request):
-    images: list[str] = Field(max_length=3)
-    prompt: str
-    json_schema: dict[str, JsonValue] | None = Field(default=None, alias="schema")
-    max_tokens: int = Field(default=128, ge=1, le=4096)
-
-
-class ObservationRequest(InferenceRequest):
-    op: Literal["observe"]
-    images: list[str] = Field(min_length=1, max_length=3)
-    json_schema: dict[str, JsonValue] = Field(alias="schema")
-    max_tokens: int = Field(default=128, ge=1, le=256)
-
-
 LEARNING_REQUEST = TypeAdapter(
     Annotated[
         EmptyRequest
@@ -134,8 +111,7 @@ LEARNING_REQUEST = TypeAdapter(
         | CandidateRequest
         | ControllerRequest
         | RehearsalRequest
-        | PromotionRequest
-        | ObservationRequest,
+        | PromotionRequest,
         Field(discriminator="op"),
     ]
 )
@@ -143,14 +119,6 @@ LEARNING_REQUEST = TypeAdapter(
 
 def parse_learning_request(message):
     return LEARNING_REQUEST.validate_json(message).model_dump(
-        mode="json",
-        by_alias=True,
-        exclude_unset=True,
-    )
-
-
-def parse_inference_request(message):
-    return InferenceRequest.model_validate_json(message).model_dump(
         mode="json",
         by_alias=True,
         exclude_unset=True,
