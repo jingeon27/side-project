@@ -1,4 +1,17 @@
+import { realpath } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import type { EvaluatedGame } from './evaluation.ts';
+
+// Python 게시 기록은 Path.resolve()로 심볼릭 링크를 푼 경로라서 같은 기준으로 비교한다.
+async function canonicalPath(path: string): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return resolve(path);
+    throw error;
+  }
+}
 
 export type PolicySnapshot = {
   version: number;
@@ -63,7 +76,9 @@ export async function qualifiedLearningLoop(options: {
   if (
     state.phase === 'promoting' &&
     state.candidate?.weightsSHA256 === actual.weightsSHA256 &&
-    actual.qualificationReport === state.evaluationFile
+    actual.qualificationReport !== undefined &&
+    state.evaluationFile !== null &&
+    (await canonicalPath(actual.qualificationReport)) === (await canonicalPath(state.evaluationFile))
   ) {
     // Publication succeeded before a crash, but the loop receipt did not.
     state.promotions++;
