@@ -14,6 +14,7 @@ import { CounterpushBrowser } from './browser/browser.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
 import { runCounterpushEvaluation } from './loop/evaluation.ts';
+import { championPolicyPath, playFastMatches } from './loop/fast-play.ts';
 import { runCounterpush } from './loop/runner.ts';
 import { CounterpushVisionClient } from './perception/vision-client.ts';
 import { loadCounterpushProfile } from './profile.ts';
@@ -24,6 +25,7 @@ const { positionals, values } = parseArgs({
     hours: { type: 'string' },
     matches: { type: 'string' },
     profile: { type: 'string' },
+    policy: { type: 'string' },
     background: { type: 'boolean' },
     candidate: { type: 'string' },
     pairs: { type: 'string' },
@@ -96,9 +98,9 @@ const main = async () => {
     console.log('현재 경기와 후보 저장 후 중지합니다. 평가 기록은 다음 실행에서 이어집니다.');
     return;
   }
-  if (!['start', 'evaluate'].includes(command))
-    throw new Error('counterpush login|start|evaluate|status|audit|rescan|stop');
-  const hours = Number(values.hours ?? (command === 'start' ? 0 : 8)),
+  if (!['start', 'evaluate', 'play'].includes(command))
+    throw new Error('counterpush login|start|evaluate|play|status|audit|rescan|stop');
+  const hours = Number(values.hours ?? (command === 'evaluate' ? 8 : 0)),
     matches = Number(values.matches ?? 0);
   if (
     !Number.isFinite(hours) ||
@@ -142,6 +144,7 @@ const main = async () => {
           '--matches',
           String(matches),
           ...(values.profile ? ['--profile', resolve(values.profile)] : []),
+          ...(values.policy ? ['--policy', resolve(values.policy)] : []),
           ...(values.candidate ? ['--candidate', resolve(values.candidate)] : []),
           ...(values.pairs ? ['--pairs', String(pairs)] : []),
           ...(values.resume ? ['--resume'] : []),
@@ -190,6 +193,24 @@ const main = async () => {
       ),
     );
     if (!values.resume || abort.signal.aborted || !result.complete) return;
+  }
+  if (command === 'play') {
+    const status = await playFastMatches({
+      dataDir: DATA_DIR,
+      profile: await loadCounterpushProfile(values.profile),
+      policyPath: values.policy ? resolve(values.policy) : await championPolicyPath(DATA_DIR),
+      matches,
+      hours,
+      signal: abort.signal,
+    });
+    console.log(
+      JSON.stringify(
+        { completed: status.completed, results: status.results, policy: status.policy },
+        null,
+        2,
+      ),
+    );
+    return;
   }
   await runCounterpush({
     dataDir: DATA_DIR,

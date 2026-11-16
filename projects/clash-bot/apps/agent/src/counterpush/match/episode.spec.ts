@@ -10,12 +10,20 @@ import type { UnitScan } from '../../core/battle/observation.ts';
 import type { CardId } from '../../core/cards.ts';
 import type { Point } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
+import {
+  ACTION_SIZE,
+  FAST_POLICY,
+  FastPolicy,
+  STATE_SIZE,
+  type FastWeights,
+} from '../../core/policy/fast-policy.ts';
 import { loadProfile, type Profile } from '../../core/profile.ts';
 import type { LearningClient, LearningDecisionRequest } from '../../qwen/learning-client.ts';
 import { parseBrowserResult, type BrowserPhase, type CounterpushBrowser } from '../browser/browser.ts';
 import { counterpushBarReading, counterpushElixir } from '../perception/elixir.ts';
 import { loadHandReferences } from '../perception/hand-references.ts';
 import type { CounterpushVisionClient } from '../perception/vision-client.ts';
+import { controllerFor, fastController, type Controller } from './controllers.ts';
 import { playCounterpushEpisode } from './episode.ts';
 
 const PURPLE = { r: 170, g: 60, b: 210 };
@@ -171,11 +179,11 @@ afterEach(async () => {
   await rm(fixture.dataDir, { recursive: true, force: true });
 });
 
-async function play(scenario: Scenario) {
+async function play(scenario: Scenario, controller?: Controller) {
   const fake = scenarioMatch(fixture.profile!, scenario);
   const outcome = await playCounterpushEpisode({
     browser: fake.browser,
-    client: fake.client,
+    controller: controller ?? (await controllerFor(fake.client)),
     vision: fake.vision,
     dataDir: fixture.dataDir,
     profile: fixture.profile!,
@@ -360,5 +368,50 @@ describe('card and ability inputs', () => {
       expectedCost: 2,
     });
     expect(outcome).toMatchObject({ actions: 2, confirmed: 2, abilityActions: 1, abilityConfirmed: 1 });
+  });
+});
+
+// 빠른 정책이 기사 카드만 강하게 고르도록 직접 만든 가중치다. 판단은 Qwen 없이 이 프로세스에서 한다.
+function knightPolicy() {
+  const zeros = (size: number) => new Float64Array(size);
+  const weights: FastWeights = {
+    'action.bias': zeros(FAST_POLICY.attention),
+    'action.weight': zeros(FAST_POLICY.attention * ACTION_SIZE),
+    'encoder.bias': zeros(FAST_POLICY.hidden),
+    'encoder.weight': zeros(FAST_POLICY.hidden * STATE_SIZE),
+    'query.bias': zeros(FAST_POLICY.attention),
+    'query.weight': zeros(FAST_POLICY.attention * FAST_POLICY.hidden),
+    'value.bias': zeros(1),
+    'value.weight': zeros(FAST_POLICY.hidden),
+  };
+  weights['query.bias'][0] = 1;
+  weights['action.weight'][FAST_POLICY.cards.indexOf('knight')] = 10;
+  return new FastPolicy(weights, 7);
+}
+
+describe('the fast policy controller', () => {
+  it('decides locally within the deadline and confirms its card input', { timeout: 30_000 }, async () => {
+    const { fake, outcome, types, events } = await play(
+      {
+        controllerVersion: 3,
+        screens: {
+          start: { hand: START, elixir: 7 },
+          after: { hand: ['goblin_hut', 'furnace', 'poison', 'skeletons'], elixir: 4 },
+        },
+        decisions: [],
+        afterPlay: { 1: 'after' },
+        end: { inputs: 1, captures: 1 },
+      },
+      fastController(knightPolicy()),
+    );
+    expect(fake.match.requests).toEqual([]);
+    expect(types).toEqual(['match_start', 'prediction', 'input_sent', 'input_check', 'result']);
+    expect(events[0]).toMatchObject({ controllerVersion: 4 });
+    const prediction = events[1]!;
+    expect(prediction.elapsedMs).toBeLessThan(100);
+    expect(prediction.behavior).toMatchObject({ policy: 'fast', version: 7 });
+    expect(events[2]!.action).toMatchObject({ card: 'knight' });
+    expect(events[3]).toMatchObject({ confirmed: true, spent: 3 });
+    expect(outcome).toMatchObject({ result: 'loss', actions: 1, confirmed: 1, learningEligible: true });
   });
 });

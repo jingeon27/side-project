@@ -1,35 +1,28 @@
 import { randomInt } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 
+import { match } from 'ts-pattern';
+
 import type { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
 import { COUNTERPUSH_DECK } from '../../core/deck.ts';
 import type { Profile } from '../../core/profile.ts';
-import { controllerVersionOf, type LearningClient } from '../../qwen/learning-client.ts';
+import type { DecisionOutput } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import type { CounterpushBrowser } from '../browser/browser.ts';
 import type { CounterpushVisionClient } from '../perception/vision-client.ts';
-import { CONTROLLERS, type Controller } from './controllers.ts';
+import type { Controller, DecisionRequest } from './controllers.ts';
 import { resultEvent, waitCheckEvent } from './episode-events.ts';
 import { playCard, useHeroAbility, type InputContext } from './inputs.ts';
 import { MatchRecorder } from './recorder.ts';
 import { MatchSensor, type OwnFrame } from './sensor.ts';
 import { newMatchState } from './state.ts';
 
-type Prediction = {
-  done: boolean;
-  output: Awaited<ReturnType<LearningClient['choose']>> | null;
-  error: unknown;
-};
+type Prediction = { done: boolean; output: DecisionOutput | null; error: unknown };
 
 // 모델 판단을 기다리는 동안 controller 1은 화면을 계속 추적한다. 입력은 판단이 검증된 뒤에만 한다.
-async function decide(
-  context: InputContext,
-  controller: Controller,
-  client: LearningClient,
-  request: Parameters<LearningClient['choose']>[0],
-) {
+async function decide(context: InputContext, controller: Controller, request: DecisionRequest) {
   const prediction: Prediction = { done: false, output: null, error: null };
-  const pending = client
+  const pending = controller
     .choose(request)
     .then((output) => {
       prediction.output = output;
@@ -48,12 +41,7 @@ async function decide(
   return prediction;
 }
 
-async function decideAndAct(
-  context: InputContext,
-  controller: Controller,
-  client: LearningClient,
-  before: OwnFrame,
-) {
+async function decideAndAct(context: InputContext, controller: Controller, before: OwnFrame) {
   const { browser, recorder, state, profile, signal } = context;
   const input = {
     profile,
@@ -63,6 +51,7 @@ async function decideAndAct(
       .filter((unit) => unit.y > profile.riverY)
       .map(({ x, y }) => ({ x, y })),
     situation: before.situation,
+    clock: Math.max(0, before.capturedAt - state.firstBattleAt) / 1000,
   };
   // 후보 순서를 매번 섞어 첫 번째 토큰에 대한 편향을 줄인다.
   const candidates = controller
@@ -78,12 +67,12 @@ async function decideAndAct(
   const imagePath = recorder.decisionImagePath(frame);
   await atomicWrite(imagePath, before.image);
   const prompt = controller.prompt(input, candidates);
-  const prediction = await decide(context, controller, client, {
-    imagePath,
-    prompt,
+  const prediction = await decide(context, controller, {
+    input,
     candidates,
+    prompt,
+    imagePath,
     featurePath: recorder.featurePath(frame),
-    controllerVersion: controller.version,
   });
   if (prediction.error) {
     if (++state.errors >= 3) throw prediction.error;
@@ -119,19 +108,19 @@ async function decideAndAct(
     return;
   }
   const decision = { frame, selected, before, latest };
-  if (selected.kind === 'ability') return useHeroAbility(context, decision);
-  if (selected.slot === 0) {
-    await recorder.event(
-      waitCheckEvent({ frame, valid: latest.state.battle && Date.now() - before.capturedAt < 8000 }),
-    );
-    return;
-  }
-  return playCard(context, decision);
+  await match(selected)
+    .with({ kind: 'ability' }, () => useHeroAbility(context, decision))
+    .with({ slot: 0 }, () =>
+      recorder.event(
+        waitCheckEvent({ frame, valid: latest.state.battle && Date.now() - before.capturedAt < 8000 }),
+      ),
+    )
+    .otherwise(() => playCard(context, decision));
 }
 
 export async function playCounterpushEpisode(options: {
   browser: CounterpushBrowser;
-  client: LearningClient;
+  controller: Controller;
   vision: CounterpushVisionClient;
   dataDir: string;
   profile: Profile;
@@ -140,8 +129,7 @@ export async function playCounterpushEpisode(options: {
   patterns?: SpawnPatterns;
   persistPatterns?: boolean;
 }) {
-  const { browser, client, profile, signal } = options;
-  const controller = CONTROLLERS[controllerVersionOf(await client.status())];
+  const { browser, controller, profile, signal } = options;
   const recorder = await MatchRecorder.create(options.dataDir);
   const state = newMatchState();
   const sensor = await MatchSensor.open({
@@ -209,7 +197,7 @@ export async function playCounterpushEpisode(options: {
         await delay(200, undefined, { signal });
         continue;
       }
-      await decideAndAct(context, controller, client, before);
+      await decideAndAct(context, controller, before);
     }
   } finally {
     sensor.dynamics.finishOldEffects(Date.now(), true);
@@ -238,6 +226,8 @@ export async function playCounterpushEpisode(options: {
   return {
     directory: recorder.directory,
     result: state.result,
+    blue: state.blue,
+    red: state.red,
     actions: state.actions,
     confirmed: state.confirmed,
     abilityActions: state.abilityActions,

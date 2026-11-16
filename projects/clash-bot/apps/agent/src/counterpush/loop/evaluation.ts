@@ -12,6 +12,7 @@ import { readJsonFile, readOptionalJsonFile } from '../../shared/json-file.ts';
 import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushBrowser } from '../browser/browser.ts';
+import { controllerFor } from '../match/controllers.ts';
 import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 
@@ -300,9 +301,10 @@ export async function evaluateWithResources(options: {
       await options.report({ phase: 'evaluating', pair: pair + 1, variant, policy: selected });
       try {
         const episode = await retryInputRecovery(
-          () =>
+          async () =>
             playCounterpushEpisode({
               ...options,
+              controller: await controllerFor(client),
               report: async (state) =>
                 options.report({ ...state, phase: 'evaluating', variant, pair: pair + 1 }),
               persistPatterns: false,

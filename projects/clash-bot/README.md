@@ -46,11 +46,26 @@ yarn workspace @side/clash-bot counterpush stop
 
 `audit`은 이번 실행 시작 이후 카드별 내 확인된 사용, 상대 발견, 행동 전 상태 포함, 학습 선별, 실제 가중치 학습 건수와 승패를 나눠 보여줍니다. 인식되지 않았거나 학습되지 않은 카드는 0으로 표시하며 승률 개선을 자동 선언하지 않습니다.
 
+## 실시간 빠른 정책
+
+자가대국 리그의 정책·가치 네트워크(약 11만 매개변수)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습하고, 챔피언이 바뀔 때마다 실시간 실행용 `champion-policy.json`을 게시합니다. `counterpush play`는 이 정책으로 실제 Counterpush 경기를 controller 4로 둡니다. 판단은 실행기 Node 프로세스 안에서 하며 이 Mac에서 한 번에 약 0.14ms였습니다(후보 4개, 화면 판독 시간 제외). Qwen 모델을 올리지 않고 학습하지도 않으며, 경기 기록과 결과 한 줄을 `.data/counterpush/control/fast-play.jsonl`에 남깁니다.
+
+```sh
+yarn workspace @side/clash-bot arena start --background --hours 0
+yarn workspace @side/clash-bot counterpush play --background --matches 20
+yarn workspace @side/clash-bot counterpush status
+yarn workspace @side/clash-bot counterpush stop
+```
+
+`--policy <파일>`로 다른 체크포인트의 `policy.json`을 지정할 수 있습니다. 후보는 시뮬레이터의 합법 행동과 같은 규칙(카드별 최대 6곳, 엘릭서 8 이상이면 대기 제외)으로 만듭니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다. 화면에서 아직 타워 체력을 읽지 않으므로 학습 표본의 절반에서 타워 체력을 가려, 타워 체력 없이도 판단하게 합니다.
+
+정책 형식이 바뀌어 자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast1`에서 새로 시작합니다. 이전 리그 폴더는 읽지 않습니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
+
 ## 한 경기의 판단
 
 1. 전용 Chrome 화면을 캡처해 저장소 손패 참조로 손패를, 막대 색으로 엘릭서를, CPU 인식 프로세스로 필드 유닛·효과를 읽습니다.
 2. 4장 손패·8장 덱 FIFO·엘릭서·진화와 영웅 능력 상태를 추적하고 합법 배치 후보를 만듭니다. 후보(controller 3)는 무덤을 포함해 지불 가능한 모든 손패를 비교합니다.
-3. 메모리에 상주한 Qwen이 후보마다 대응하는 토큰의 확률을 계산해 그 분포에서 하나를 고릅니다. 후보 순서를 매번 섞어 첫 번째 토큰에 대한 편향을 줄이고, 대기 외에 합법 행동이 없으면 모델을 호출하지 않습니다. 챔피언은 자기 체크포인트의 판단 계약(controller 1)을, 후보는 짧은 공개 상태 입력(controller 3)을 씁니다.
+3. 메모리에 상주한 Qwen이 후보마다 대응하는 토큰의 확률을 계산해 그 분포에서 하나를 고릅니다. 빠른 정책(controller 4)은 같은 판단 문맥으로 가장 높은 확률의 후보를 고릅니다. 후보 순서를 매번 섞어 첫 번째 토큰에 대한 편향을 줄이고, 대기 외에 합법 행동이 없으면 모델을 호출하지 않습니다. 챔피언은 자기 체크포인트의 판단 계약(controller 1)을, 후보는 짧은 공개 상태 입력(controller 3)을 씁니다.
 4. 새 화면에서 같은 카드·충분한 엘릭서·대전 화면을 다시 확인한 뒤 입력하고, 손패 교체와 엘릭서 감소로 실제 사용을 확인합니다.
 5. 결과 화면의 점수 라벨을 0.6초 간격으로 두 번 읽어 같을 때만 승패로 씁니다. Qwen이 추측한 승패는 쓰지 않습니다.
 

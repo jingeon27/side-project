@@ -10,7 +10,8 @@ clash-bot은 지금 저장소에 있는 코드와 현재 형식의 기록만으�
 ## 현재 운영 경로
 
 - Counterpush 전용 Chrome 플레이와 후보 학습·고정 평가·채택. 모델은 Qwen3.8-27B 하나다. 챔피언은 자기 체크포인트의 판단 계약으로(`controller_version`이 없으면 controller 1), 후보는 controller 3으로 둔다.
-- arena 자가대국과 `arena study`.
+- arena 자가대국과 `arena study`. 리그는 정책 형식마다 새 폴더(`<규칙 ID>-<형식 키>`)에서 시작한다.
+- 자가대국 챔피언 정책의 실시간 Counterpush 플레이(`counterpush play`, controller 4). 학습·채택 평가에 넣지 않는다.
 
 이 목록에 없는 경로를 새로 만들거나 지운 경로를 되살리려면 먼저 사용자에게 확인한다.
 

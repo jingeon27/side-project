@@ -10,13 +10,13 @@ apps/agent/
       geometry.ts, profile.ts  368×652 화면 좌표와 보정 프로필
       knowledge.ts             카드 수치·진화와 영웅 조건
       battle/                  FIFO, 엘릭서, 필드·생성물·진화 상태, 인식 결과와 상대 관찰 형식
-      policy/                  합법 후보, Qwen 판단 계약(controller 1·3)
+      policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 빠른 정책 특징·추론·후보(controller 4)
     counterpush/
       browser/                 전용 Chrome 캡처·입력·결과 판독
       perception/              인식 클라이언트, 손패·엘릭서·스킬 판독, 손패 참조 검증
       match/                   경기 한 판: 캡처·판단·입력 확인·기록
       learning/                저장된 기록의 상대 모방 자료·재인식·감사
-      loop/                    후보 학습 → 고정 평가 → 채택, 학습 목표
+      loop/                    후보 학습 → 고정 평가 → 채택, 학습 목표, 빠른 정책 실전(play)
     qwen/                      모델 사양·학습 클라이언트
     arena/                     자가대국 실행·Qwen 감독 자료 연결
     shared/                    데이터 경로, 파일, 실행 잠금, JSON 통신·Python 실행
@@ -31,10 +31,10 @@ apps/agent/
         features.py            고정 특징과 마지막 MLP 어댑터 연결
         episodes.py            결과·사용 확인·학습 자료 검증
         learning_policy.py     LoRA, 목적 함수, 체크포인트
-      arena/                   네이티브 전투·탐색·리그
+      arena/                   네이티브 전투·탐색·리그, 판단 문맥(context)·빠른 정책 특징(fast_features)·표본 검증(samples)
       perception/              CPU 인식·ONNX 변환
     requirements/              공통·모델·인식·변환·개발 의존성 고정
-  contracts/                   양쪽 언어가 읽는 모델·규칙·판단 JSON
+  contracts/                   양쪽 언어가 읽는 모델·규칙·판단·빠른 정책(fast-policy.json) JSON
   assets/counterpush/          계정 정보가 없는 시각 참조, 손패는 manifest로 검증해 직접 읽음
   test-fixtures/               녹화 화면·공유 계약 회귀 자료
   pyproject.toml               Python 직접 의존성·Ruff 설정
@@ -44,7 +44,7 @@ apps/agent/
 
 ## 상태와 자원의 소유자
 
-Counterpush 실행기 하나가 브라우저·CPU 인식 프로세스·큰 Qwen 본체를 소유한다. 한 경기 동안 모델을 고정하고 경기 종료 후 확인된 입력과 결과로 학습한다. 실행 잠금과 중지 요청은 `shared/runtime-lock.ts`가 소유한다.
+Counterpush 실행기 하나가 브라우저·CPU 인식 프로세스·큰 Qwen 본체를 소유한다. 빠른 정책(controller 4)은 Qwen 프로세스 없이 실행기 안에서 판단하며, 자가대국 리그가 게시한 챔피언 정책 파일을 읽기만 한다. 한 경기 동안 모델을 고정하고 경기 종료 후 확인된 입력과 결과로 학습한다. 실행 잠금과 중지 요청은 `shared/runtime-lock.ts`가 소유한다.
 
 Python의 입력 형식 검증은 Pydantic(strict, 정의하지 않은 필드 거부), 가중치·경기 증거·모델 소유권 검증은 엔진이 담당한다. 잘못된 JSON 뒤에도 다음 정상 요청에 응답한다. 타입을 느슨하게 변환하지 않는다. 승격 확률은 SciPy의 단측 `binomtest`로 계산하며 무승부는 승리로 세지 않는다. 판정 방법·최소 쌍 수·평균 점수 하한·유의수준과 결과 라벨은 `contracts/qualification.json`을 따른다. SciPy 초기화는 실시간 추론 시작 경로에서 제외한다.
 

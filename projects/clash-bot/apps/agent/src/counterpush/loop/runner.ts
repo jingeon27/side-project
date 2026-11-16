@@ -13,6 +13,7 @@ import { atomicWrite } from '../../shared/assets.ts';
 import { readOptionalJsonFile } from '../../shared/json-file.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushBrowser } from '../browser/browser.ts';
+import { controllerFor } from '../match/controllers.ts';
 import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { learnCounterpushEpisodes } from './episode-learning.ts';
@@ -226,7 +227,7 @@ export async function runCounterpush(options: {
         if (disk.bavail * disk.bsize < 8 * 1024 ** 3) throw new Error('남은 디스크가 8GB 미만입니다.');
         const episode = await playCounterpushEpisode({
           ...options,
-          client,
+          controller: await controllerFor(client),
           vision,
           browser,
           patterns,
