@@ -55,8 +55,6 @@ jobs:
       - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
       - run: yarn install --immutable
       - run: yarn workspace @side/story-studio check
-      - run: python3 -m py_compile projects/story-studio/apps/web/scripts/local/*.py
-      - run: python3 -m unittest discover -s projects/story-studio/apps/web/scripts/local -p worker_test.py
       - run: yarn workspace @side/story-studio build
       - run: yarn workspace @story-studio/web exec playwright install --with-deps chromium
       - run: yarn workspace @side/story-studio test:e2e --workers=2

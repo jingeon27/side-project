@@ -19,6 +19,13 @@ yarn workspace @side/story-studio dev
 
 예시 원고 편집과 이미 생성한 예시 영상 재생에는 모델 설치가 필요하지 않습니다. 모델 준비 전에는 생성 버튼이 비활성화됩니다. 운영용 빌드는 `yarn workspace @side/story-studio build`, 실행은 `yarn workspace @side/story-studio start`입니다.
 
+## 코드 구성
+
+- `apps/web`: 한국어 작업실, HTTP 계약, 브라우저 상태와 생성 요청
+- `apps/engine`: Python 패키지, 모델 준비·생성·음성 가중치 학습, 작업 상태와 GPU 실행 수명
+
+Python의 설치 의존성과 모델 revision, 테스트는 엔진이 소유합니다. 웹은 `python -m story_studio`에 JSON 작업을 전달하고 결과·진행 상태만 받습니다. 현재 체크아웃의 엔진을 실행하도록 경로를 명시하므로 공유 데이터 폴더의 가상환경이 다른 worktree에 설치되어 있어도 코드를 혼동하지 않습니다. 데이터·모델·가상환경의 기존 경로는 그대로 사용합니다. 자세한 구조와 독립 실행은 [엔진 안내](apps/engine/README.md)를 참고하세요.
+
 ## 모델과 제작 순서
 
 | 역할                                  | 로컬 모델                                          | 실행 방식                 |
@@ -36,7 +43,7 @@ yarn workspace @side/story-studio dev
 
 한 번에 1~8개 장면, 컷, 장을 작성하고 이어쓰기로 작품당 최대 80개까지 확장합니다. 장편은 회차별로 쓰는 방식입니다. 영화 수준의 인물 일관성, 립싱크, 긴 연속 영상이나 전문 편집 타임라인은 포함하지 않습니다. 한국어 글자와 말풍선은 앱이 합성하므로 시각 모델의 문자 생성에 의존하지 않습니다.
 
-모델과 런타임은 [모델 revision](apps/web/scripts/local/models.json), [Python 의존성](apps/web/scripts/local/requirements.txt)에 고정했습니다. 공식 모델 설명: [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [Wan2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B). MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다.
+모델과 런타임은 [모델 revision](apps/engine/src/story_studio/models.json), [Python 패키지와 의존성](apps/engine/pyproject.toml)에 고정했습니다. 공식 모델 설명: [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [Wan2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B). MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다.
 
 ## 목소리 학습
 
@@ -60,6 +67,10 @@ yarn workspace @story-studio/web local:setup:voice
 첫 단계, 5단계마다, 마지막 단계에 어댑터와 AdamW 계산 상태를 원자적으로 저장하고 마지막 체크포인트 두 개를 보관합니다. 화면을 나가거나 웹 서버를 재시작해도 시작한 Python 학습은 계속될 수 있습니다. **학습 중단** 후 **이어서 학습**을 선택하면 저장된 지점부터 진행합니다. 컴퓨터가 종료되면 자동으로 계산을 재시작하지 않습니다. 녹음이나 대본이 바뀌었거나 기본 모델 revision이 다르면 이어서 학습하지 않고 새 학습을 요구합니다. 학습 중에는 다른 로컬 모델 생성을 동시에 실행하지 않습니다.
 
 실제 M5 Pro 48GB에서 합성 음성 두 개로 학습, 중단, 체크포인트 재개, 총 6단계 완료 후 새 프로세스에서 8.64초 한국어 합성을 확인했습니다. 이 실행의 MLX 최대 할당은 5.69GiB였습니다. 이 수치는 이 두 짧은 녹음의 결과이며 큰 데이터셋의 상한이 아닙니다. 합성 자료의 동작 검증이며 사용자의 목소리 유사도나 발음 품질을 검증한 결과는 아닙니다. 손실 값은 서로 다른 녹음 사이의 품질 비교 지표로 사용하지 않습니다.
+
+완료된 학습본에 보정 프로필을 적용한 경우 로컬 Qwen3-ASR로 대사의 포함 여부를 확인합니다. 빠진 구간만 제한된 횟수로 다시 생성하고, 확인되지 않는 결과는 새 음성으로 저장하지 않습니다. 이 기능은 보정한 실행에만 적용되며 [엔진 안내](apps/engine/README.md)의 선택 설치 모델을 사용합니다. 다른 컴퓨터로 옮긴 보정 학습본도 대사 확인 모델을 함께 준비해야 합니다.
+
+말투 보정은 학습한 음색과 함께 원음·대본을 문맥으로 사용해 말 빠르기와 억양을 참고합니다. 기준 원음은 해당 실행 폴더에서 해시로 검증하며, 요청한 대사에도 같은 누락 검사를 적용합니다. 사람과 똑같은 억양을 보장하는 기능은 아니므로 원음과 생성 음성을 함께 비교해야 합니다.
 
 기본 음색 9종은 소희, 라이언, 에이든, 세레나, 비비안, 푸, 안나, 에릭, 딜런입니다. 차분함, 자연스러움, 밝음, 단호함의 말투를 선택할 수 있습니다. 한국어 기본값은 소희이며 다른 언어 기반 음색의 한국어 품질은 같다고 보장하지 않습니다.
 
@@ -121,7 +132,7 @@ yarn workspace @side/story-studio test:e2e --workers=2
 yarn workspace @side/story-studio build
 ```
 
-모델 없는 Python 작업 상태 검사는 `python3 -m unittest discover -s projects/story-studio/apps/web/scripts/local -p worker_test.py`로 실행합니다. Apple Silicon에서는 앱 폴더에서 `.data/local/.venv/bin/python -m unittest discover -s scripts/local -p '*_test.py'`로 실제 MLX 어댑터의 가중치 변경, 기본 가중치 보존, 옵티마이저 복원과 재개 결과 일치까지 검증합니다. 별도 데이터 경로를 쓴다면 가상환경 경로도 맞춰 주세요.
+Python 엔진의 모델 없는 검사도 위 `check`에 포함됩니다. 별도 실행은 `yarn workspace @story-studio/engine check`입니다. 실제 MLX 가중치 변경·기본 가중치 보존·옵티마이저 복원 검사는 [엔진 개발 안내](apps/engine/README.md)의 Apple Silicon 명령을 사용합니다. MLX가 없는 환경의 검사는 이 한 가지 네이티브 검사를 명시적으로 건너뜁니다.
 
 Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 차단, 프로세스 중단, 실패 후 재시도, 원고 검증, 자산 범위 요청과 상태 변경 시의 참조 보존을 확인합니다. 모델 계산은 가벼운 자식 프로세스나 모의 응답으로 대체합니다. Playwright는 별도 포트 3411, `.e2e-build`, 별도 저장 폴더에서 모바일과 데스크톱의 편집, 백업, 실패 복구, 영상 및 음성 재생을 확인합니다.
 
