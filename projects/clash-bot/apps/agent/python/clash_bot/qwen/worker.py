@@ -8,6 +8,8 @@ import traceback
 
 from clash_bot.qwen.model_specs import detect_model
 
+from .protocol import parse_inference_request
+
 
 def emit(value):
     print(json.dumps(value), flush=True)
@@ -21,29 +23,45 @@ def main():
         from mlx_vlm.structured import build_json_schema_logits_processor
 
         mx.set_cache_limit(256 * 1024 * 1024)
-        mx.set_memory_limit(detect_model(sys.argv[1])['memory_gib'] * 1024 ** 3)
+        mx.set_memory_limit(detect_model(sys.argv[1])["memory_gib"] * 1024**3)
         model, processor = load(sys.argv[1], trust_remote_code=False)
     emit({"type": "ready"})
     for line in sys.stdin:
-        request = json.loads(line)
         started = time.monotonic()
         try:
+            request = parse_inference_request(line)
             images = request["images"]
             with contextlib.redirect_stdout(sys.stderr):
                 prompt = apply_chat_template(
-                    processor, model.config, request["prompt"],
-                    num_images=len(images), enable_thinking=False,
+                    processor,
+                    model.config,
+                    request["prompt"],
+                    num_images=len(images),
+                    enable_thinking=False,
                 )
                 output = generate(
-                    model, processor, prompt, image=images,
+                    model,
+                    processor,
+                    prompt,
+                    image=images,
                     max_tokens=request.get("max_tokens", 128),
-                    temperature=0.1, verbose=False, enable_thinking=False,
-                    logits_processors=[build_json_schema_logits_processor(processor.tokenizer, request["schema"])]
-                    if request.get("schema") else None,
+                    temperature=0.1,
+                    verbose=False,
+                    enable_thinking=False,
+                    logits_processors=[
+                        build_json_schema_logits_processor(processor.tokenizer, request["schema"])
+                    ]
+                    if request.get("schema")
+                    else None,
                 )
-            emit({"type": "result", "text": output.text,
-                  "elapsed_ms": round((time.monotonic() - started) * 1000),
-                  "peak_gb": mx.get_peak_memory() / 1024 ** 3})
+            emit(
+                {
+                    "type": "result",
+                    "text": output.text,
+                    "elapsed_ms": round((time.monotonic() - started) * 1000),
+                    "peak_gb": mx.get_peak_memory() / 1024**3,
+                }
+            )
         except Exception as error:
             traceback.print_exc(file=sys.stderr)
             emit({"type": "error", "message": str(error)})
