@@ -55,7 +55,7 @@ export async function stopLocalWorker(id: string) {
   // Verify the PID still belongs to this exact studio worker before signalling it.
   if (
     !running.stdout.includes(
-      `${path.join(process.cwd(), 'scripts/local/worker.py')} --data-dir ${dataPath()}`,
+      `-m story_studio --data-dir ${dataPath()} --examples-dir ${path.join(process.cwd(), 'public/examples')}`,
     )
   )
     throw new StudioError('현재 스튜디오의 실행 작업을 확인하지 못했습니다.', 409);
@@ -133,7 +133,14 @@ export async function runLocal(
       const descriptor = openSync(dataPath('local', 'logs', `${logId}.log`), 'w', 0o600);
       const child = spawn(
         python,
-        [path.join(process.cwd(), 'scripts/local/worker.py'), '--data-dir', dataPath()],
+        [
+          '-m',
+          'story_studio',
+          '--data-dir',
+          dataPath(),
+          '--examples-dir',
+          path.join(process.cwd(), 'public/examples'),
+        ],
         {
           shell: false,
           stdio: ['pipe', 'pipe', descriptor],
@@ -149,6 +156,7 @@ export async function runLocal(
             HF_HUB_DISABLE_TELEMETRY: '1',
             DO_NOT_TRACK: '1',
             PYTHONUNBUFFERED: '1',
+            PYTHONPATH: path.resolve(process.cwd(), '../engine/src'),
             OMP_NUM_THREADS: '2',
             VECLIB_MAXIMUM_THREADS: '2',
             OPENBLAS_NUM_THREADS: '2',

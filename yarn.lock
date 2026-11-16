@@ -8370,6 +8370,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@story-studio/engine@workspace:projects/story-studio/apps/engine":
+  version: 0.0.0-use.local
+  resolution: "@story-studio/engine@workspace:projects/story-studio/apps/engine"
+  languageName: unknown
+  linkType: soft
+
 "@story-studio/web@workspace:projects/story-studio/apps/web":
   version: 0.0.0-use.local
   resolution: "@story-studio/web@workspace:projects/story-studio/apps/web"

@@ -1,0 +1,9 @@
+{
+  "name": "@story-studio/engine",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "python3 -m unittest discover -s src -p '*_test.py'",
+    "check": "python3 -m compileall -q src && yarn test"
+  }
+}

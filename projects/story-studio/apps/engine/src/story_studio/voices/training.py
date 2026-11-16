@@ -20,7 +20,8 @@ class VoiceLoRA(nn.Module):
     def __init__(self, base, rank=8, alpha=16):
         super().__init__()
         self.base = base
-        self.scale = alpha / rank
+        self.base_scale = alpha / rank
+        self.scale = self.base_scale
         output_size, packed_input_size = base.weight.shape
         input_size = packed_input_size * (32 // base.bits) if isinstance(base, nn.QuantizedLinear) else packed_input_size
         self.lora_a = mx.random.normal((input_size, rank)) * 0.01
@@ -30,6 +31,11 @@ class VoiceLoRA(nn.Module):
         original = self.base(x)
         delta = x.astype(mx.float32) @ self.lora_a @ self.lora_b
         return original + (delta * self.scale).astype(original.dtype)
+
+    def set_inference_strength(self, strength):
+        if not 0 < strength <= 1.5:
+            raise ValueError('학습 가중치 적용 강도가 올바르지 않습니다')
+        self.scale = self.base_scale * strength
 
 
 def attach_adapters(model, rank=8, alpha=16):
