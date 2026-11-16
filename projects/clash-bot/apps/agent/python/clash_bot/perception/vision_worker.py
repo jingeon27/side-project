@@ -600,7 +600,14 @@ class VisionWorker:
                         "side": side,
                     }
                 )
-        return entities
+        # A badge and its health-bar marker can select the very same proposal.
+        # Count that body once; nearby skeletons with distinct boxes stay separate.
+        unique = {}
+        for entity in entities:
+            key = (entity["side"], entity["kind"], *entity["box"])
+            if key not in unique or entity["confidence"] > unique[key]["confidence"]:
+                unique[key] = entity
+        return list(unique.values())
 
     def absent(self, request):
         image = Image.open(request["image"]).convert("RGB")

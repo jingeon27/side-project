@@ -1,10 +1,12 @@
 import unittest
+from unittest.mock import Mock
 
 import numpy as np
 from PIL import Image
 
 from clash_bot.paths import ASSETS_DIR, FIXTURES_DIR
 from clash_bot.perception.vision_worker import (
+    VisionWorker,
     graveyard_presence,
     input_guard,
     poison_rings,
@@ -13,6 +15,24 @@ from clash_bot.perception.vision_worker import (
 
 
 class PoisonOutlineTest(unittest.TestCase):
+    def test_duplicate_markers_of_one_proposal_do_not_create_two_ice_wizards(self):
+        worker = object.__new__(VisionWorker)
+        proposals = [[90, 102, 110, 142], [170, 102, 190, 142]]
+        worker.classify = Mock(
+            side_effect=lambda image, boxes: [
+                {
+                    "card": "ice_wizard",
+                    "kind": "ice_wizard",
+                    "confidence": 0.99 if box in proposals else 0.7,
+                }
+                for box in boxes
+            ]
+        )
+        markers = [{"x": x, "y": 100, "bottom": 110} for x in (100, 101, 180)]
+        bodies = worker.scan_markers(Image.new("RGB", (368, 652)), markers, proposals, "blue")
+        self.assertEqual(len(bodies), 2)
+        self.assertEqual([body["box"] for body in bodies], proposals)
+
     def test_fast_input_guard_preserves_recorded_graveyard_warning_without_a_classifier(self):
         root = FIXTURES_DIR / "counterpush"
         self.assertGreaterEqual(

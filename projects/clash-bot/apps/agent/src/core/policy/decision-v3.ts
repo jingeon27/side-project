@@ -12,7 +12,12 @@ import { bodyCard } from './candidates.ts';
 
 // 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.decision_input)도 같은 파일을 읽는다.
 const contract = z
-  .strictObject({ version: z.literal(3), header: z.string(), codes: z.record(z.string(), z.string()) })
+  .strictObject({
+    version: z.literal(3),
+    header: z.string(),
+    hints: z.strictObject({ graveyard: z.string(), ability: z.string(), goblin_hut: z.string() }),
+    codes: z.record(z.string(), z.string()),
+  })
   .parse(JSON.parse(readFileSync(new URL('../../../contracts/decision-v3.json', import.meta.url), 'utf8')));
 
 export type DecisionUnit = [body: string, x: number, y: number, variant: string];
@@ -78,7 +83,7 @@ export function decisionContext(
         effect.side,
         effect.card,
         ...tilePoint(profile, effect),
-        Math.round(effect.visibleAgeMs / 1000),
+        effect.onsetCertain ? Math.round(effect.visibleAgeMs / 1000) : null,
       ]),
     skill: situation.own.ability?.availability,
     actions: actions.map((action, index): DecisionAction => [
@@ -105,10 +110,23 @@ export function serializeDecision(context: DecisionContext) {
       )
       .join(' ');
   const effects = (context.effects ?? [])
-    .map(([side, card, x, y]) => `${side === 'blue' ? 'b' : 'r'}${code(card)}${x},${y}`)
+    .map(
+      ([side, card, x, y, age]) =>
+        `${side === 'blue' ? 'b' : 'r'}${code(card)}${x},${y}@${age === null ? '?' : age}s`,
+    )
     .join(' ');
+  const hints = [
+    ...(context.effects?.some(([side, card]) => side === 'red' && card === 'graveyard')
+      ? [contract.hints.graveyard]
+      : []),
+    ...(context.skill === 'ready' ? [contract.hints.ability] : []),
+    ...(context.hand.includes('goblin_hut') || context.own.some(([card]) => card === 'goblin_hut')
+      ? [contract.hints.goblin_hut]
+      : []),
+  ];
   return (
     contract.header +
+    (hints.length ? hints.join(' ') + '\n' : '') +
     `mana=${context.elixir};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${context.skill === 'ready' ? 1 : 0}\n` +
     context.actions
       .map(

@@ -23,8 +23,8 @@ def serialize_decision(context):
         )
 
     effects = " ".join(
-        f"{'b' if side == 'blue' else 'r'}{code(card)}{number(x)},{number(y)}"
-        for side, card, x, y, *_ in context.get("effects", [])
+        f"{'b' if side == 'blue' else 'r'}{code(card)}{number(x)},{number(y)}@{'?' if age is None else number(age)}s"
+        for side, card, x, y, age in context.get("effects", [])
     )
     enemy = context["enemyElixir"]
     before = (
@@ -42,7 +42,18 @@ def serialize_decision(context):
         )
         for letter, kind, card, cost, x, y in context["actions"]
     )
-    return CONTRACT["header"] + before + actions
+    hints = (
+        [CONTRACT["hints"]["graveyard"]]
+        if any(
+            side == "red" and card == "graveyard" for side, card, *_ in context.get("effects", [])
+        )
+        else []
+    )
+    if context.get("skill") == "ready":
+        hints.append(CONTRACT["hints"]["ability"])
+    if "goblin_hut" in context["hand"] or any(row[0] == "goblin_hut" for row in context["own"]):
+        hints.append(CONTRACT["hints"]["goblin_hut"])
+    return CONTRACT["header"] + (" ".join(hints) + "\n" if hints else "") + before + actions
 
 
 def opponent_prompt(observation):

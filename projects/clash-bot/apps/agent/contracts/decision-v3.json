@@ -1,6 +1,11 @@
 {
   "version": 3,
-  "header": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown.\n",
+  "header": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.\n",
+  "hints": {
+    "graveyard": "G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial.",
+    "ability": "U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana.",
+    "goblin_hut": "H triggers within6tiles;compare enemies,existing H,defense mana,W."
+  },
   "codes": {
     "barbarian_barrel": "B",
     "furnace": "F",
