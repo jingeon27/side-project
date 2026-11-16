@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 
 import {
-  CARD_INFO,
   center,
   HEIGHT,
   WIDTH,

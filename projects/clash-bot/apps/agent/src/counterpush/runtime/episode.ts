@@ -295,7 +295,7 @@ export async function playCounterpushEpisode(options: {
       signal.throwIfAborted();
       const phase = await browser.phase();
       if (phase === 'battle') state.waitingSince = 0;
-      else {
+      if (phase !== 'battle') {
         if (!state.waitingSince) state.waitingSince = Date.now();
         if (Date.now() - state.waitingSince > 45_000)
           throw new Error(`대전/결과 화면을 45초 동안 확인하지 못했습니다: ${phase}`);
@@ -499,7 +499,8 @@ export async function playCounterpushEpisode(options: {
           state.confirmed++;
           state.abilityConfirmed++;
           state.unconfirmed = 0;
-        } else state.unconfirmed++;
+        }
+        if (!check?.confirmed) state.unconfirmed++;
         state.inputPending = false;
         await log({
           type: 'ability_check',
@@ -577,7 +578,8 @@ export async function playCounterpushEpisode(options: {
         state.unconfirmed = 0;
         memory.ownPlay(selected.card!, sentAt, action.target, check.after.cards);
         if (selected.card === 'ice_wizard') abilityButton.newDeployment();
-      } else {
+      }
+      if (!check?.confirmed) {
         state.unconfirmed++;
         memory.ownEvolutions.uncertain();
       }

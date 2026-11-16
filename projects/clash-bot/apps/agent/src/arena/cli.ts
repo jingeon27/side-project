@@ -37,16 +37,16 @@ const main = async () => {
     if (background) {
       child.unref();
       console.log(JSON.stringify({ started: true, pid: child.pid, log: join(directory, 'console.log') }));
-    } else {
-      process.once('SIGINT', () => child.kill('SIGINT'));
-      process.once('SIGTERM', () => child.kill('SIGTERM'));
-      await new Promise<void>((resolve) =>
-        child.once('exit', (code) => {
-          process.exitCode = code ?? 1;
-          resolve();
-        }),
-      );
+      return;
     }
+    process.once('SIGINT', () => child.kill('SIGINT'));
+    process.once('SIGTERM', () => child.kill('SIGTERM'));
+    await new Promise<void>((resolve) =>
+      child.once('exit', (code) => {
+        process.exitCode = code ?? 1;
+        resolve();
+      }),
+    );
   } finally {
     if (output !== null) closeSync(output);
   }

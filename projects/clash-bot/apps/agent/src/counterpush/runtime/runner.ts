@@ -254,11 +254,11 @@ export async function runCounterpush(options: {
         await report({ phase: 'warming_fast_policy' });
         await client.warmup();
         const base = Number(configured.warmup_base_datasets ?? 0);
-        for (const _ of [0, 1, 2, 3]) {
+        for (const round of [1, 2, 3, 4]) {
           const current = await client.status();
           if ((Array.isArray(current.search_datasets) ? current.search_datasets.length : 0) >= base + 4)
             break;
-          await report({ phase: 'curriculum_warmup' });
+          await report({ phase: 'curriculum_warmup', warmupRound: round });
           const study = await studyNext(client, dataDir, { mode: 'candidate', learner: directory });
           if (!study.updated) break;
           await report({ searchStudy: study });

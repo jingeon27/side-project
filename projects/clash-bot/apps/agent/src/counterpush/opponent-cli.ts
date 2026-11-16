@@ -12,9 +12,17 @@ const { values, positionals } = parseArgs({
   options: { observations: { type: 'string' }, dataset: { type: 'string' }, model: { type: 'string' } },
 });
 const command = positionals[0];
-if (command === 'prepare' && values.observations) {
-  console.log(JSON.stringify(await prepareOpponentDataset(resolve(values.observations), DATA_DIR), null, 2));
-} else if (command === 'train' && values.dataset) {
+const main = async () => {
+  if (command === 'prepare' && values.observations) {
+    console.log(
+      JSON.stringify(await prepareOpponentDataset(resolve(values.observations), DATA_DIR), null, 2),
+    );
+    return;
+  }
+  if (command !== 'train' || !values.dataset)
+    throw new Error(
+      'opponent prepare --observations <관찰.json> 또는 opponent train --dataset <dataset.json> [--model 3.8-27b]',
+    );
   const lock = await acquireLearningLock(join(DATA_DIR, 'qwen/selfplay'));
   const client = new LearningClient(DATA_DIR, selectModel(values.model, true).id);
   const close = () => void client.close();
@@ -29,8 +37,5 @@ if (command === 'prepare' && values.observations) {
     await client.close();
     await lock.release();
   }
-} else {
-  throw new Error(
-    'opponent prepare --observations <관찰.json> 또는 opponent train --dataset <dataset.json> [--model 3.8-27b]',
-  );
-}
+};
+await main();

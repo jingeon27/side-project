@@ -31,7 +31,8 @@ export function updateObservation(state: RuntimeState, observation: Observation,
     if (observation.inBattle && current?.card && current.card !== state.pending.card) {
       state.pending = null;
       return true;
-    } else if (!observation.inBattle || now - state.pending.since > 6000)
+    }
+    if (!observation.inBattle || now - state.pending.since > 6000)
       throw new Error('카드 사용 후 손패 변경을 확인하지 못했습니다. 반복 입력을 멈췄습니다.');
   }
   return false;

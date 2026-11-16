@@ -153,11 +153,12 @@ export class CounterpushBrowser {
     if (phase === 'setup') {
       await this.assertDecks();
       await this.page.locator('#battle').click();
-    } else if (phase === 'result') {
-      // Reloading preserves the result overlay and leaves #battle hidden.
-      // Only the visible Play again control starts the next single-tab game.
-      await this.page.locator('#again').click();
-    } else throw new Error(`새 매칭을 시작할 화면이 아닙니다: ${phase}`);
+      return;
+    }
+    // Reloading preserves the result overlay and leaves #battle hidden.
+    // Only the visible Play again control starts the next single-tab game.
+    if (phase !== 'result') throw new Error(`새 매칭을 시작할 화면이 아닙니다: ${phase}`);
+    await this.page.locator('#again').click();
   }
 
   async capture(fast = false): Promise<{ image: Buffer; capturedAt: number }> {

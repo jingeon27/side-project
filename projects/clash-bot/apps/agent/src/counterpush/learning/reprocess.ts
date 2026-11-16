@@ -85,18 +85,20 @@ export async function reprocessEpisode(
     )) {
       applied.add(input.frame);
       const confirmed = input.check!.confirmed ?? (input.check!.changed && (input.check!.spent ?? 0) >= 1);
-      if (confirmed && input.action) {
-        if (input.type === 'ability_sent') {
-          const instance = input.action.abilityInstance;
-          if (instance) {
-            memory.ownAbility(input.sentAt ?? input.at, instance);
-            abilityButton.markUsed(instance);
-          }
-        } else {
-          memory.ownPlay(input.action.card, input.sentAt ?? input.at, input.action.target, cards);
-          if (input.action.card === 'ice_wizard') abilityButton.newDeployment();
+      if (!confirmed || !input.action) {
+        if (input.type === 'input_sent') memory.ownEvolutions.uncertain();
+        continue;
+      }
+      if (input.type === 'ability_sent') {
+        const instance = input.action.abilityInstance;
+        if (instance) {
+          memory.ownAbility(input.sentAt ?? input.at, instance);
+          abilityButton.markUsed(instance);
         }
-      } else if (input.type === 'input_sent') memory.ownEvolutions.uncertain();
+        continue;
+      }
+      memory.ownPlay(input.action.card, input.sentAt ?? input.at, input.action.target, cards);
+      if (input.action.card === 'ice_wizard') abilityButton.newDeployment();
     }
     const inputPending = inputs.some(
       (entry) =>

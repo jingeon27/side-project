@@ -5,6 +5,13 @@ import { join } from 'node:path';
 import { type CardId } from '../../shared/config.ts';
 import { COUNTERPUSH_DECK } from '../runtime/browser.ts';
 
+// 확인된 경기 결과를 집계 칸으로 옮긴다. 그 밖의 결과는 unknown으로 센다.
+const RESULT_COUNTERS: Record<string, 'wins' | 'losses' | 'draws'> = {
+  win: 'wins',
+  loss: 'losses',
+  draw: 'draws',
+};
+
 type Event = {
   type: string;
   confirmed?: boolean;
@@ -121,10 +128,7 @@ export async function learningAudit(dataDir: string, since?: string) {
     };
     abilities.ice_wizard.attempted += summary.abilityActions ?? 0;
     abilities.ice_wizard.confirmed += summary.abilityConfirmed ?? 0;
-    if (match.result === 'win') results.wins++;
-    else if (match.result === 'loss') results.losses++;
-    else if (match.result === 'draw') results.draws++;
-    else results.unknown++;
+    results[RESULT_COUNTERS[match.result] ?? 'unknown']++;
   }
   return {
     since: since ?? null,

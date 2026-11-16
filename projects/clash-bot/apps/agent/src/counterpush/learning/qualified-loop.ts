@@ -73,13 +73,13 @@ export async function qualifiedLearningLoop(options: {
     await options.save(state);
   };
   const actual = await options.restore();
-  if (
+  const recoveredPublication =
     state.phase === 'promoting' &&
     state.candidate?.weightsSHA256 === actual.weightsSHA256 &&
     actual.qualificationReport !== undefined &&
     state.evaluationFile !== null &&
-    (await canonicalPath(actual.qualificationReport)) === (await canonicalPath(state.evaluationFile))
-  ) {
+    (await canonicalPath(actual.qualificationReport)) === (await canonicalPath(state.evaluationFile));
+  if (recoveredPublication) {
     // Publication succeeded before a crash, but the loop receipt did not.
     state.promotions++;
     state.comparisons++;
@@ -90,7 +90,8 @@ export async function qualifiedLearningLoop(options: {
     state.phase = 'promoted';
     state.pendingEpisode = null;
     state.lastDecision = { accepted: true, reason: 'recovered_qualified_publication' };
-  } else if (state.champion.weightsSHA256 !== actual.weightsSHA256) {
+  }
+  if (!recoveredPublication && state.champion.weightsSHA256 !== actual.weightsSHA256) {
     state.lastDecision = {
       accepted: false,
       reason: 'champion_changed_restart_candidate',

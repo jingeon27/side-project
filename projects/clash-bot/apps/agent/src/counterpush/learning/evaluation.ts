@@ -30,13 +30,13 @@ const orderOf = (pair: number) =>
 export async function retryInputRecovery<T extends { learningEligible?: boolean }>(
   play: () => Promise<T>,
   excluded: (episode: T) => Promise<void>,
-) {
-  for (const _ of [0, 1, 2]) {
-    const episode = await play();
-    if (episode.learningEligible !== false) return episode;
-    await excluded(episode);
-  }
-  throw new Error('입력 확인이 3경기 연속 실패해 평가를 중단했습니다.');
+  attemptsLeft = 3,
+): Promise<T> {
+  if (attemptsLeft < 1) throw new Error('입력 확인이 3경기 연속 실패해 평가를 중단했습니다.');
+  const episode = await play();
+  if (episode.learningEligible !== false) return episode;
+  await excluded(episode);
+  return retryInputRecovery(play, excluded, attemptsLeft - 1);
 }
 
 export function requiredEvaluationPairs(minimum: number, alpha: number, method: EvaluationMethod) {

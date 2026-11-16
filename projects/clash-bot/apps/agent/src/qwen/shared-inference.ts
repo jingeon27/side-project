@@ -193,8 +193,8 @@ export class SharedInferenceClient {
   }
   async choose(input: LearningDecisionRequest, checkpoint: string): Promise<DecisionOutput | null> {
     const started = performance.now();
-    const { controllerVersion: _, ...payload } = input;
-    const result = (await this.call('/choose', { ...payload, checkpoint }).catch(
+    // 공유 서버 계약에는 controllerVersion이 없다. undefined 값은 JSON에서 빠진다.
+    const result = (await this.call('/choose', { ...input, controllerVersion: undefined, checkpoint }).catch(
       (error: NodeJS.ErrnoException) => {
         if (
           ['ECONNREFUSED', 'ENOENT', 'ECONNRESET'].includes(error.code ?? '') ||

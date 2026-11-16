@@ -18,7 +18,7 @@
     "emulator": "yarn workspace @clash-bot/agent emulator",
     "typecheck": "yarn workspace @clash-bot/agent typecheck",
     "test": "yarn workspace @clash-bot/agent test",
-    "check": "yarn typecheck && yarn test",
+    "check": "yarn lint && yarn typecheck && yarn test",
     "qwen": "yarn workspace @clash-bot/agent qwen",
     "qwen:setup": "yarn workspace @clash-bot/agent qwen:setup",
     "selfplay": "yarn workspace @clash-bot/agent selfplay",
@@ -38,7 +38,8 @@
     "format:python:check": "yarn workspace @clash-bot/agent format:python:check",
     "check:python": "yarn workspace @clash-bot/agent check:python",
     "test:python": "yarn workspace @clash-bot/agent test:python",
-    "test:arena:model": "yarn workspace @clash-bot/agent test:arena:model"
+    "test:arena:model": "yarn workspace @clash-bot/agent test:arena:model",
+    "lint": "eslint --max-warnings 0 ."
   },
   "devDependencies": {
     "@side/config": "workspace:*",
