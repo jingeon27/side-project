@@ -72,7 +72,6 @@ export async function runCounterpush(options: {
   profile: Profile;
   hours: number;
   matches: number;
-  tabs?: number;
   pairs?: number;
   trainingMatches?: number;
   trainingGoal?: number;
@@ -81,10 +80,6 @@ export async function runCounterpush(options: {
   const { dataDir, signal } = options;
   const pairs = options.pairs ?? 16,
     trainingMatches = options.trainingMatches ?? 8;
-  if ((options.tabs ?? 1) !== 1)
-    throw new Error(
-      '현재 Counterpush 계정은 다른 탭의 게임이 시작되면 기존 경기를 닫습니다. --tabs 1로 실행하세요.',
-    );
   if (
     !Number.isInteger(pairs) ||
     pairs < 16 ||
@@ -106,7 +101,6 @@ export async function runCounterpush(options: {
     completed: 0,
     updates: 0,
     promotions: 0,
-    tabs: 1,
     qualificationRequired: true,
     settings: { hours: options.hours, pairs, trainingMatches },
   };
@@ -349,7 +343,7 @@ export async function runCounterpush(options: {
     });
     return result;
   } catch (error) {
-    await resources.browser?.screenshot(join(control, 'last-error-tab1.png')).catch(() => {});
+    await resources.browser?.screenshot(join(control, 'last-error.png')).catch(() => {});
     await report({ phase: signal.aborted ? 'interrupted' : 'failed', error: String(error) });
     throw error;
   } finally {

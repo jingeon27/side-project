@@ -115,29 +115,6 @@ export class CounterpushBrowser {
     }
   }
 
-  async newTab() {
-    const page = await this.context.newPage();
-    page.setDefaultTimeout(5000);
-    page.on('dialog', (dialog) => {
-      void dialog.dismiss();
-    });
-    await page.goto('https://app.playcounterpush.com/play', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30_000,
-    });
-    await page.waitForFunction(
-      () => {
-        const button = document.querySelector('#battle');
-        return button instanceof HTMLButtonElement && !button.disabled;
-      },
-      {},
-      { timeout: 30_000 },
-    );
-    const browser = new CounterpushBrowser(this.context, page);
-    await browser.assertDecks();
-    return browser;
-  }
-
   async phase(): Promise<BrowserPhase> {
     if (!this.page.url().startsWith('https://app.playcounterpush.com/play'))
       throw new Error('Counterpush 로그인 또는 화면 확인이 필요합니다.');

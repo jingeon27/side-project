@@ -376,7 +376,6 @@ export async function runCounterpushEvaluation(options: {
     model: MODEL.name,
     completed: 0,
     updates: 0,
-    tabs: 1,
     candidate: options.candidate,
   };
   const report = async (update: Record<string, unknown>) => {

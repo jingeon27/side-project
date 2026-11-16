@@ -23,7 +23,6 @@ const { positionals, values } = parseArgs({
   options: {
     hours: { type: 'string' },
     matches: { type: 'string' },
-    tabs: { type: 'string' },
     profile: { type: 'string' },
     background: { type: 'boolean' },
     candidate: { type: 'string' },
@@ -101,9 +100,6 @@ const main = async () => {
     throw new Error('counterpush login|start|evaluate|status|audit|rescan|stop');
   const hours = Number(values.hours ?? (command === 'start' ? 0 : 8)),
     matches = Number(values.matches ?? 0);
-  const tabs = Number(values.tabs ?? 1);
-  if (tabs !== 1)
-    throw new Error('현재 Counterpush 계정은 동시 대전을 허용하지 않습니다. --tabs 1로 실행하세요.');
   if (
     !Number.isFinite(hours) ||
     hours < 0 ||
@@ -145,8 +141,6 @@ const main = async () => {
           String(hours),
           '--matches',
           String(matches),
-          '--tabs',
-          String(tabs),
           ...(values.profile ? ['--profile', resolve(values.profile)] : []),
           ...(values.candidate ? ['--candidate', resolve(values.candidate)] : []),
           ...(values.pairs ? ['--pairs', String(pairs)] : []),
@@ -163,7 +157,6 @@ const main = async () => {
           pid: child.pid,
           hours,
           matches,
-          tabs,
           log: join(control, 'console.log'),
         }),
       );
@@ -204,7 +197,6 @@ const main = async () => {
     hours,
     matches,
     trainingGoal,
-    tabs,
     pairs,
     trainingMatches,
     signal: abort.signal,

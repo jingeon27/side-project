@@ -34,7 +34,7 @@ Qwen의 고정 본체 특징은 모델 지문·정확한 입력·controller 버�
 이 100판의 모델 판단 3,322개는 중앙값 **564ms**, 95백분위 **703ms**였고 1초 초과 1개는 실행하지 않았다. 추가 학습 요청은 완료된 목표를 보관하고 시작 누적 수 105를 기준으로 새 **100판** 목표를 만들었다. 현재 진행은 `training-goal.json`에서 확인하며 프로세스 재시작으로 목표를 초기화하지 않는다.
 
 ```sh
-yarn workspace @side/clash-bot counterpush start --background --hours 0 --matches 0 --training-matches 100 --training-goal 100 --pairs 16 --tabs 1
+yarn workspace @side/clash-bot counterpush start --background --hours 0 --matches 0 --training-matches 100 --training-goal 100 --pairs 16
 yarn workspace @side/clash-bot counterpush status
 ```
 

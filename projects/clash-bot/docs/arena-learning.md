@@ -78,7 +78,7 @@ yarn workspace @side/clash-bot arena status
 yarn workspace @side/clash-bot arena stop
 
 # 학습 → 실전 분리 평가 → 통과한 후보만 적용을 계속 반복한다.
-yarn workspace @side/clash-bot counterpush start --background --hours 0 --matches 0 --training-matches 2 --pairs 16 --tabs 1
+yarn workspace @side/clash-bot counterpush start --background --hours 0 --matches 0 --training-matches 2 --pairs 16
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush stop
 
