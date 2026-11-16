@@ -220,18 +220,19 @@ class LearningEpisodeTest(unittest.TestCase):
             worker.learner.imitate = Mock(return_value={"updated": True, "version": 4})
             observation = {
                 "id": "red-support",
+                "river_y": 276,
                 "image": "images/before.png",
                 "evidence_image": "images/after.png",
                 "before_at": 1000,
                 "situation": {
                     "at": 1000,
-                    "own": {"units": []},
+                    "own": {"units": [], "recentPlays": []},
                     "opponent": {"units": [], "elixir": {"min": 0, "max": 10}},
                 },
                 "candidates": [
-                    {"id": 7, "card": None, "target": {"x": 0}},
-                    {"id": 2, "card": "furnace", "target": {"x": 95}},
-                    {"id": 9, "card": "furnace", "target": {"x": 90}},
+                    {"id": 7, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 2, "card": "furnace", "cost": 4, "target": {"x": 95, "y": 350}},
+                    {"id": 9, "card": "furnace", "cost": 4, "target": {"x": 90, "y": 360}},
                 ],
                 "choices": [7, 2, 9],
                 "target_ids": [2, 9],

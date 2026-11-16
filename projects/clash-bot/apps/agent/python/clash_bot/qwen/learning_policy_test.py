@@ -58,7 +58,7 @@ class LearningPolicyTest(unittest.TestCase):
             }
             self.assertTrue(learner.imitate([sample], "opponent")["updated"])
             self.assertIsNot(actor_optimizer, learner.optimizer)
-            self.assertEqual(learner.metadata["optimizer_objective"], "opponent_imitation")
+            self.assertEqual(learner.metadata["optimizer_objective"], "mirror_actor_imitation")
             opponent_optimizer = learner.optimizer
             sample = {**sample, "version": learner.metadata["version"]}
             sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
@@ -258,7 +258,7 @@ class LearningPolicyTest(unittest.TestCase):
             }
             report = learner.imitate([sample], "dataset-sha")
             self.assertTrue(report["updated"])
-            self.assertEqual(report["algorithm"], "coarse_opponent_behavior_cloning")
+            self.assertEqual(report["algorithm"], "mirror_actor_behavior_cloning")
             self.assertGreater(report["probability_after"], report["probability_before"])
             self.assertNotEqual(report["before_sha256"], report["after_sha256"])
             self.assertEqual(learner.metadata["baseline"], 0)

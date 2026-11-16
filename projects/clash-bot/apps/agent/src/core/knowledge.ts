@@ -1,4 +1,5 @@
 import type { CardId } from './cards.ts';
+import { PLACEMENT_EFFECTS } from './combat-reference.ts';
 
 // Level-11 reference values checked 2026-11-15. Counterpush's physics have not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
@@ -29,8 +30,8 @@ export const UNIT_MECHANICS = {
   ice_wizard: {
     hp: 688,
     damage: 89,
-    spawnDamage: 84,
-    spawnRadiusTiles: 3,
+    spawnDamage: PLACEMENT_EFFECTS.ice_wizard.damage,
+    spawnRadiusTiles: PLACEMENT_EFFECTS.ice_wizard.radius,
     rangeTiles: 5.5,
     hitSeconds: 1.7,
     firstHitSeconds: 0.5,
@@ -174,7 +175,11 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
   },
   barbarian_barrel: {
     body: 'barbarian',
-    spell: { damage: 215, rollTiles: 4.5, widthTiles: 2.6 },
+    spell: {
+      damage: PLACEMENT_EFFECTS.barbarian_barrel.damage,
+      rollTiles: PLACEMENT_EFFECTS.barbarian_barrel.length,
+      widthTiles: PLACEMENT_EFFECTS.barbarian_barrel.width,
+    },
     spawn: { unit: 'barbarian', intervalSeconds: null, count: 1, condition: 'after the ground-only roll' },
   },
   goblin_hut: {
@@ -203,7 +208,14 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
       condition: 'spell-generated units are not a new one-elixir Skeletons card',
     },
   },
-  poison: { spell: { radiusTiles: 3.5, durationSeconds: 8, dps: 92, slowPercent: 15 } },
+  poison: {
+    spell: {
+      radiusTiles: PLACEMENT_EFFECTS.poison.radius,
+      durationSeconds: PLACEMENT_EFFECTS.poison.duration,
+      dps: PLACEMENT_EFFECTS.poison.dps,
+      slowPercent: 15,
+    },
+  },
 };
 
 // The complete registry remains versioned above. Send each body/child's numeric

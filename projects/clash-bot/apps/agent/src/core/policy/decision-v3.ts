@@ -9,13 +9,19 @@ import { tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
 import { bodyCard } from './candidates.ts';
+import { observedContacts } from './effects.ts';
 
 // 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.decision_input)도 같은 파일을 읽는다.
 const contract = z
   .strictObject({
     version: z.literal(3),
     header: z.string(),
-    hints: z.strictObject({ graveyard: z.string(), ability: z.string(), goblin_hut: z.string() }),
+    hints: z.strictObject({
+      graveyard: z.string(),
+      ability: z.string(),
+      goblin_hut: z.string(),
+      contacts: z.string(),
+    }),
     codes: z.record(z.string(), z.string()),
   })
   .parse(JSON.parse(readFileSync(new URL('../../../contracts/decision-v3.json', import.meta.url), 'utf8')));
@@ -40,6 +46,7 @@ export type DecisionContext = {
   hand: Array<string | null>;
   elixir: number;
   enemyElixir: { min: number; max: number };
+  enemyCycle?: Array<[card: string, minimumPlays: number, maximumPlays: number]>;
   next?: string[];
   own: DecisionUnit[];
   enemy: DecisionUnit[];
@@ -68,6 +75,9 @@ export function decisionContext(
     hand: cards,
     elixir: Math.round(elixir * 10) / 10,
     enemyElixir: situation.opponent.elixir,
+    enemyCycle: Object.entries(situation.opponent.cycle.returnsAfterPlays)
+      .filter(([, wait]) => wait.min > 0 || wait.max < 4)
+      .map(([card, wait]) => [card, wait.min, wait.max]),
     next: situation.own.cycle?.nextDraw,
     own: situation.own.units
       .toSorted((a, b) => a.y - b.y)
@@ -97,7 +107,11 @@ export function decisionContext(
   };
 }
 
-export function serializeDecision(context: DecisionContext) {
+// Mirrored demonstrations keep the demonstrator's unseen mana as a range.
+export type PublicDecisionContext = Omit<DecisionContext, 'elixir'> & {
+  elixir: number | { min: number; max: number };
+};
+export function serializeDecision(context: PublicDecisionContext) {
   const code = (name: string | null) => contract.codes[name ?? ''] ?? '?';
   const units = (rows: DecisionContext['own']) =>
     rows
@@ -115,7 +129,11 @@ export function serializeDecision(context: DecisionContext) {
         `${side === 'blue' ? 'b' : 'r'}${code(card)}${x},${y}@${age === null ? '?' : age}s`,
     )
     .join(' ');
+  const contacts =
+    context.enemy.length > 0 &&
+    context.actions.some(([, kind, card]) => kind === 'card' && observedContacts(card, [0, 0], []) !== null);
   const hints = [
+    ...(contacts ? [contract.hints.contacts] : []),
     ...(context.effects?.some(([side, card]) => side === 'red' && card === 'graveyard')
       ? [contract.hints.graveyard]
       : []),
@@ -124,17 +142,30 @@ export function serializeDecision(context: DecisionContext) {
       ? [contract.hints.goblin_hut]
       : []),
   ];
+  const mana =
+    typeof context.elixir === 'number'
+      ? context.elixir
+      : `${Math.floor(context.elixir.min * 10) / 10}-${Math.ceil(context.elixir.max * 10) / 10}?`;
+  const enemyCycle =
+    context.enemyCycle?.map(([card, min, max]) => `${code(card)}${min}-${max}`).join(' ') || '?';
+  const skill = match(context.skill)
+    .with('ready', () => '1')
+    .with('unknown', () => '?')
+    .otherwise(() => '0');
   return (
     contract.header +
     (hints.length ? hints.join(' ') + '\n' : '') +
-    `mana=${context.elixir};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${context.skill === 'ready' ? 1 : 0}\n` +
+    `mana=${mana};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};enemyCycle=${enemyCycle};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${skill}\n` +
     context.actions
       .map(
         ([letter, kind, card, , x, y]) =>
           `${letter}:${match(kind)
             .with('ability', () => 'U')
             .with('wait', () => 'W')
-            .with('card', () => `${code(card)}${x},${y}`)
+            .with('card', () => {
+              const hits = contacts ? observedContacts(card, [x, y], context.enemy) : null;
+              return `${code(card)}${x},${y}${hits === null ? '' : `h${hits}`}`;
+            })
             .exhaustive()}`,
       )
       .join(' ')

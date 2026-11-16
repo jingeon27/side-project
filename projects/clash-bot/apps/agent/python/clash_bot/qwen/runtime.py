@@ -11,7 +11,7 @@ from mlx_vlm.prompt_utils import apply_chat_template
 from mlx_vlm.utils import prepare_inputs
 
 from clash_bot.files import atomic_json
-from clash_bot.qwen.decision_input import CONTRACT, opponent_prompt
+from clash_bot.qwen.decision_input import CONTRACT, mirror_actor_prompt
 from clash_bot.qwen.feature_cache import FeatureCache
 from clash_bot.qwen.learning_policy import (
     FORMAT,
@@ -576,7 +576,7 @@ class LearningWorker:
             prediction = self.choose(
                 {
                     "images": [str(path.parent / observation["image"])],
-                    "prompt": opponent_prompt(observation),
+                    "prompt": mirror_actor_prompt(observation),
                     "choices": observation["choices"],
                     "feature_path": str(feature_path),
                     "controller_version": 3,
@@ -602,7 +602,7 @@ class LearningWorker:
                 "model": self.spec["name"],
                 "model_identity": self.spec["identity"],
                 "source": "counterpush_live_screen",
-                "observed_label": "card_and_lane_only",
+                "observed_label": "mirror_actor_card_lane_or_placement_region",
             }
         )
         atomic_json(path.parent / "training.json", report)

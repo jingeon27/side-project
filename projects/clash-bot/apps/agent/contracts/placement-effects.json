@@ -1,0 +1,15 @@
+{
+  "format": "level11-placement-reference-v1",
+  "ice_wizard": { "damage": 84, "radius": 3 },
+  "barbarian_barrel": { "damage": 215, "length": 4.5, "width": 2.6 },
+  "poison": { "dps": 92, "duration": 8, "radius": 3.5 },
+  "knownGroundBodies": [
+    "knight",
+    "furnace",
+    "ice_wizard",
+    "skeleton",
+    "barbarian",
+    "fire_spirit",
+    "spear_goblin"
+  ]
+}

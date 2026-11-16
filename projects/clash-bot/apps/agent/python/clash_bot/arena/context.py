@@ -92,6 +92,17 @@ def decision_context(observation, actions, types=None):
     types = types or unit_types()
     state, team = observation["state"], observation["team"]
     own, enemy = state["players"][team], state["players"][1 - team]
+    public_plays = [
+        play["action"][0]
+        for event in observation["history"]
+        if event["tick"] <= state["tick"]
+        for play in event["plays"]
+        if play["team"] != team and play["action"][0] >= 0
+    ]
+    cycle = [
+        [ALIASES[card], 4 - index, 4 - index]
+        for index, card in enumerate(reversed(public_plays[-4:]))
+    ]
     bodies = [row for row in state["entities"] if row[FIELDS["card_id"]] >= 0]
     theirs, ours = partition(lambda row: row[FIELDS["team"]] == team, bodies)
 
@@ -119,6 +130,7 @@ def decision_context(observation, actions, types=None):
         "hand": [ALIASES[card] for card in own["hand"]],
         "elixir": round(own["elixir_milli"] / 1000, 1),
         "enemyElixir": {"min": enemy["elixir_range"][0], "max": enemy["elixir_range"][1]},
+        "enemyCycle": cycle,
         "next": [ALIASES[own["next_card"]]],
         "own": sorted(units(ours), key=lambda row: -row[2])[:5],
         "enemy": sorted(units(theirs), key=lambda row: row[2])[:8],

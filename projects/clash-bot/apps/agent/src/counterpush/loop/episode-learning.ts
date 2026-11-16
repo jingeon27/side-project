@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import type { Profile } from '../../core/profile.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { readEpisodeCoverage } from '../learning/audit.ts';
@@ -10,6 +11,7 @@ export async function learnCounterpushEpisodes(
   client: LearningClient,
   dataDir: string,
   episodes: Array<{ directory: string; opponentActions: number }>,
+  profile: Profile,
 ) {
   const owner = await client.status();
   const receiptPath =
@@ -45,10 +47,12 @@ export async function learnCounterpushEpisodes(
   const trained = [];
   for (const episode of episodes) {
     const dataset = episode.opponentActions
-      ? await prepareOpponentDataset(join(episode.directory, 'observations.json'), dataDir)
+      ? await prepareOpponentDataset(join(episode.directory, 'observations.json'), dataDir, profile)
       : null;
+    const matchingOpponentReceipt =
+      dataset && receipt?.opponent?.dataset_sha256 === dataset.sha256 ? receipt.opponent : null;
     const opponent =
-      receipt?.opponent ??
+      matchingOpponentReceipt ??
       (dataset?.samples
         ? await client.imitate(dataset.path)
         : { updated: false, reason: 'no_confirmed_opponent_actions' });

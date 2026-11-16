@@ -17,5 +17,5 @@
       ["C", "ability", "ice_wizard", 2, 9, 0]
     ]
   },
-  "prompt": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.\nG9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana.\nmana=7.5;enemyMana=3.1-7.8;hand=GPFB;next=K;own=K3.5,17E;enemy=I3.5,22H;effects=rG14.5,6.5@1s;skill=1\nA:W B:G3.5,25.5 C:U"
+  "prompt": "ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.\nG9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. enemyCycle=card:min-max further plays,?unknown. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana.\nmana=7.5;enemyMana=3.1-7.8;enemyCycle=?;hand=GPFB;next=K;own=K3.5,17E;enemy=I3.5,22H;effects=rG14.5,6.5@1s;skill=1\nA:W B:G3.5,25.5 C:U"
 }

@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { expect, it } from 'vitest';
 
 import { BattleMemory } from '../../core/battle/battle-state.ts';
+import { DEFAULT_PROFILE } from '../../core/profile.ts';
 import { prepareOpponentDataset } from './opponent-data.ts';
 
 const deck = [
@@ -68,9 +69,12 @@ it.each(['../other-run/frames/000001.png', '../../evaluations/run/frames/000001.
           ],
         }),
       );
-      await expect(prepareOpponentDataset(join(run, 'observations.json'), dataDir)).rejects.toThrow(
-        '관찰 폴더 밖의 이미지는 허용하지 않습니다.',
-      );
+      await expect(
+        prepareOpponentDataset(join(run, 'observations.json'), dataDir, {
+          ...DEFAULT_PROFILE,
+          deck: [...deck],
+        }),
+      ).rejects.toThrow('관찰 폴더 밖의 이미지는 허용하지 않습니다.');
     } finally {
       await rm(dataDir, { recursive: true, force: true });
     }

@@ -244,7 +244,7 @@ export async function runCounterpush(options: {
       },
       learn: async (episode) => {
         await report({ phase: 'candidate_learning', activeRole: 'candidate_training' });
-        const trained = (await learnCounterpushEpisodes(client, dataDir, [episode]))[0]!;
+        const trained = (await learnCounterpushEpisodes(client, dataDir, [episode], options.profile))[0]!;
         if (trained.training.updated) runtime.updates++;
         await appendFile(
           join(control, 'matches.jsonl'),

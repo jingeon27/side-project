@@ -5,7 +5,10 @@ import json
 import math
 from pathlib import Path
 
-DEMONSTRATION_FORMAT = "counterpush-card-lane-demonstrations-v2"
+from .decision_input import CONTRACT, mirror_actor_prompt
+from .episode_events import verified_result
+
+DEMONSTRATION_FORMAT = "counterpush-mirror-actor-demonstrations-v3"
 
 
 def load_demonstrations(path, quarantine_path=None):
@@ -17,6 +20,12 @@ def load_demonstrations(path, quarantine_path=None):
         or dataset.get("source") != "counterpush_live_screen"
     ):
         raise ValueError("Unsupported opponent demonstration source")
+    expected_deck = {name for name, code in CONTRACT["codes"].items() if code.isupper()}
+    if len(dataset["deck"]) != 8 or set(dataset["deck"]) != expected_deck:
+        raise ValueError("Mirror teacher must use the same fixed deck")
+    result = dataset["teacher_result"]
+    if not verified_result(result) or result["red"] <= result["blue"]:
+        raise ValueError("Mirror teacher must be the verified winner")
     samples = dataset.get("samples", [])
     if not isinstance(samples, list) or not 1 <= len(samples) <= 24:
         raise ValueError("Expected 1 to 24 visually verified demonstrations")
@@ -66,15 +75,48 @@ def load_demonstrations(path, quarantine_path=None):
         ):
             raise ValueError("Invalid demonstration action labels")
         candidates = {candidate["id"]: candidate for candidate in sample["candidates"]}
+        if sample["prompt"] != mirror_actor_prompt(sample):
+            raise ValueError("Mirror prompt disagrees with public BEFORE facts")
+        region = sample["target_region"]
+        positional = sample["label_kind"] == "placement_region"
+        if sample["label_kind"] not in ("placement_region", "card_lane"):
+            raise ValueError("Unknown mirror supervision")
+        if positional:
+            grounding = sample["grounding"]
+            radius = max(
+                24,
+                min(
+                    45,
+                    max(
+                        grounding["box"][2] - grounding["box"][0],
+                        grounding["box"][3] - grounding["box"][1],
+                    )
+                    * 0.35,
+                ),
+            )
+            if sample["card"] not in ("poison", "graveyard", "goblin_hut") or region != {
+                "x": grounding["x"],
+                "y": 2 * sample["river_y"] - grounding["y"],
+                "radius": radius,
+            }:
+                raise ValueError("Placement region is not the observed stationary effect/building")
+        elif region is not None:
+            raise ValueError("Card/lane supervision cannot claim a precise region")
         expected = []
         for choice in choices:
             candidate = candidates[choice]
             x = candidate["target"]["x"]
             lane = "left" if x < 184 else "right" if x > 184 else "center"
-            if candidate["card"] == sample["card"] and lane == sample["lane"]:
+            matches = (
+                math.hypot(x - region["x"], candidate["target"]["y"] - region["y"])
+                <= region["radius"]
+                if positional
+                else lane == sample["lane"]
+            )
+            if candidate["card"] == sample["card"] and matches:
                 expected.append(choice)
         if set(targets) != set(expected):
-            raise ValueError("Target label disagrees with observed card and lane")
+            raise ValueError("Target label disagrees with observed card, lane or placement region")
         for image_key, hash_key in (
             ("image", "image_sha256"),
             ("evidence_image", "evidence_sha256"),

@@ -2,6 +2,7 @@ import { uniqBy } from 'es-toolkit';
 
 import type { BattleSituation, FieldEffect } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
+import { PLACEMENT_EFFECTS } from '../combat-reference.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { screenPoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
@@ -136,7 +137,14 @@ function graveyardDefense(profile: Profile, card: CardId, situation?: BattleSitu
             (hazard) =>
               hazard.side === 'red' && hazard.card === 'poison' && distance(point, hazard) < hazard.radius,
           )
-          .reduce((sum, hazard) => sum + (92 * Math.max(1, 8 - hazard.visibleAgeMs / 1000)) / hp, 0) ?? 0;
+          .reduce(
+            (sum, hazard) =>
+              sum +
+              (PLACEMENT_EFFECTS.poison.dps *
+                Math.max(1, PLACEMENT_EFFECTS.poison.duration - hazard.visibleAgeMs / 1000)) /
+                hp,
+            0,
+          ) ?? 0;
       const meleeRisk = situation.opponent.units
         .filter((unit) => unit.confidence >= 0.85 && ['knight', 'barbarian_barrel'].includes(unit.card ?? ''))
         .reduce((sum, unit) => sum + (distance(point, unit) < 35 && range > 3 ? 0.7 : 0), 0);

@@ -16,6 +16,21 @@ class PublicSpellPhaseTest(unittest.TestCase):
         self.assertEqual(context["effects"][0][4], expected)
         self.assertGreater(expected, 0)
 
+    def test_enemy_return_count_uses_public_plays_and_ignores_future_actions(self):
+        observation = scenario(1004, 0)
+        self.assertIn(["graveyard", 4, 4], decision_context(observation, [])["enemyCycle"])
+        future = copy.deepcopy(observation)
+        future["history"].append(
+            {
+                "tick": future["state"]["tick"] + 1,
+                "plays": [{"team": 1, "action": [6, 0, 0], "cost": 4}],
+            }
+        )
+        self.assertEqual(
+            decision_context(future, [])["enemyCycle"],
+            decision_context(observation, [])["enemyCycle"],
+        )
+
     def test_missing_future_or_overlapping_casts_do_not_fabricate_a_phase(self):
         observation = scenario(1004, 0)
         missing = {**observation, "history": []}

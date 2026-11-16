@@ -9,11 +9,15 @@ import { opponentObservationSchema, type OpponentObservation } from '../../core/
 import { cardIdSchema, type CardId } from '../../core/cards.ts';
 import { HEIGHT, WIDTH } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
+import { serializeDecision } from '../../core/policy/decision-v3.ts';
+import type { Profile } from '../../core/profile.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { inside } from '../../shared/paths.ts';
+import { RESULT_LABEL } from '../../shared/qualification.ts';
+import { mirrorActions, mirrorContext, reflectPoint } from './mirror-policy.ts';
 
 // 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
-export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v2';
+export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v3';
 export const opponentObservationsSchema = z
   .object({
     version: z.literal(1),
@@ -55,37 +59,6 @@ export function observationExclusion(item: OpponentObservation): string | null {
   return null;
 }
 
-export function opponentActions(deck: CardId[]): QwenAction[] {
-  // A deck-wide intent list is used only for demonstrations. Hidden hands and
-  // elixir are never presented as known or sent to a live input controller.
-  const intents = deck.flatMap((card) =>
-    (card === 'goblin_hut'
-      ? [184, 143, 225]
-      : ['graveyard', 'poison'].includes(card)
-        ? [95, 273, 184]
-        : [95, 273]
-    ).map((x) => ({
-      slot: 0,
-      card,
-      target: {
-        x,
-        y: ['graveyard', 'poison'].includes(card)
-          ? x === 184
-            ? 466
-            : 406
-          : card === 'goblin_hut'
-            ? 211
-            : 200,
-      },
-      description: `RED ${card} ${x === 184 ? 'center' : x < 184 ? 'left' : 'right'} intent; exact deployment unknown`,
-    })),
-  );
-  return [
-    { id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' },
-    ...intents.map((intent, index) => ({ id: index + 1, ...intent })),
-  ];
-}
-
 export function macroMatches(action: QwenAction, card: CardId, lane: OpponentObservation['lane']): boolean {
   return (
     action.card === card &&
@@ -98,9 +71,20 @@ export function macroMatches(action: QwenAction, card: CardId, lane: OpponentObs
 }
 
 const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
+const placementRegion = (profile: Profile, grounding: NonNullable<OpponentObservation['grounding']>) => {
+  const [left, top, right, bottom] = z
+    .tuple([z.number(), z.number(), z.number(), z.number()])
+    .parse(grounding.box);
+  return {
+    ...reflectPoint(profile, grounding),
+    radius: Math.max(24, Math.min(45, Math.max(right - left, bottom - top) * 0.35)),
+  };
+};
 
-export async function prepareOpponentDataset(observationsPath: string, dataDir: string) {
+export async function prepareOpponentDataset(observationsPath: string, dataDir: string, profile: Profile) {
   const input = opponentObservationsSchema.parse(JSON.parse(await readFile(observationsPath, 'utf8')));
+  if (input.deck.toSorted().join(',') !== profile.deck.toSorted().join(','))
+    throw new Error('미러전과 다른 덱은 상대 행동 교사로 사용할 수 없습니다.');
   const quarantineText = await readFile(join(dataDir, 'counterpush/quarantine.json'), 'utf8').catch(
     (error) => {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
@@ -156,33 +140,76 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       excluded: blocked ? `quarantined:${blocked.reason}` : observationExclusion(observation),
     });
   }
-  const intentPool = opponentActions(input.deck);
-  const identity = digest(
-    JSON.stringify({
-      input,
-      images: records.map((record) => [record.before.source_sha256, record.after.source_sha256]),
-      exclusions: records.map((record) => record.excluded),
-      intents: intentPool,
-    }),
-  );
-  const directory = join(dataDir, 'counterpush/datasets', identity.slice(0, 24));
-  await mkdir(join(directory, 'images'), { recursive: true, mode: 0o700 });
+  const resultSchema = z.object({
+    type: z.literal('result'),
+    source: z.literal('counterpush_result_dom_verified2'),
+    blue: z.int().min(0).max(3),
+    red: z.int().min(0).max(3),
+    readings: z.array(z.string()).length(2),
+  });
+  const qualification = z
+    .object({ role: z.string() })
+    .parse(JSON.parse(await readFile(join(root, 'qualification.json'), 'utf8')));
+  if (qualification.role !== 'candidate_training')
+    throw new Error('평가 경기는 상대 모방 학습에 사용할 수 없습니다.');
+  const events = (await readFile(join(root, 'events.jsonl'), 'utf8'))
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => z.looseObject({ type: z.string() }).parse(JSON.parse(line)));
+  if (events.some((event) => event.type === 'input_recovery'))
+    records.forEach((record) => {
+      record.excluded ??= 'input_recovery_episode';
+    });
+  const teacherResult =
+    events
+      .map((event) => resultSchema.safeParse(event))
+      .filter((result) => result.success)
+      .map((result) => result.data)
+      .findLast((result) => {
+        const label = RESULT_LABEL.exec(result.readings[0] ?? '');
+        return (
+          result.readings[0] === result.readings[1] &&
+          label &&
+          Number(label[1]) === result.blue &&
+          Number(label[2]) === result.red &&
+          result.red > result.blue
+        );
+      }) ?? null;
   const samples = [];
   for (const record of records) {
     if (record.excluded) continue;
+    if (!teacherResult) {
+      record.excluded = 'teacher_not_verified_winner';
+      continue;
+    }
     const item = record.observation;
-    const actions = intentPool
-      .map((action) => ({ action, order: digest(`${identity}:${item.id}:${action.id}`) }))
+    const actions = mirrorActions(profile, input.deck, item.situation)
+      .map((action) => ({ action, order: digest(`${record.before.source_sha256}:${action.id}`) }))
       .toSorted((first, second) => first.order.localeCompare(second.order))
       .map(({ action }) => action);
-    const targetIds = actions
-      .filter((action) => macroMatches(action, item.card, item.lane))
-      .map((action) => action.id);
-    if (!targetIds.length) throw new Error(`${item.id}: 관찰 행동에 맞는 카드·방향 후보가 없습니다.`);
+    const region =
+      item.grounding && ['poison', 'graveyard', 'goblin_hut'].includes(item.card)
+        ? placementRegion(profile, item.grounding)
+        : null;
+    const positionTargets = region
+      ? actions.filter(
+          (action) =>
+            action.card === item.card &&
+            Math.hypot(action.target.x - region.x, action.target.y - region.y) <= region.radius,
+        )
+      : [];
+    const labelKind = positionTargets.length ? 'placement_region' : 'card_lane';
+    const targetIds = (
+      positionTargets.length
+        ? positionTargets
+        : actions.filter((action) => macroMatches(action, item.card, item.lane))
+    ).map((action) => action.id);
+    if (!targetIds.length) {
+      record.excluded = 'observed_action_inconsistent_with_before_candidates';
+      continue;
+    }
     const image = `images/${item.id}-before.png`;
     const evidenceImage = `images/${item.id}-after.png`;
-    await atomicWrite(join(directory, image), record.before.normalized);
-    await atomicWrite(join(directory, evidenceImage), record.after.normalized);
     samples.push({
       id: item.id,
       image,
@@ -206,22 +233,39 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       context: item.context,
       grounding: item.grounding,
       situation: item.situation,
+      river_y: profile.riverY,
+      label_kind: labelKind,
+      target_region: labelKind === 'placement_region' ? region : null,
+      prompt: serializeDecision(mirrorContext(profile, item.situation, actions)),
       choices: actions.map((action) => action.id),
       candidates: actions,
       target_ids: targetIds,
     });
   }
-  const dataset = {
+  const payload = {
     format: DEMONSTRATION_FORMAT,
     source: input.source,
-    id: identity,
+    teacher_result: teacherResult,
+    deck: input.deck,
     annotation: input.annotation,
     samples,
     excluded: records
       .filter((record) => record.excluded)
       .map((record) => ({ id: record.observation.id, reason: record.excluded })),
   };
+  const identity = digest(JSON.stringify(payload));
+  const dataset = { ...payload, id: identity };
+  const directory = join(dataDir, 'counterpush/datasets', identity.slice(0, 24));
+  await mkdir(join(directory, 'images'), { recursive: true, mode: 0o700 });
+  const frames = new Map(records.map((record) => [record.observation.id, record]));
+  for (const sample of samples) {
+    const record = frames.get(sample.id);
+    if (!record) throw new Error('미러 학습 표본의 원본 프레임이 없습니다.');
+    await atomicWrite(join(directory, sample.image), record.before.normalized);
+    await atomicWrite(join(directory, sample.evidence_image), record.after.normalized);
+  }
   const path = join(directory, 'dataset.json');
-  await atomicWrite(path, JSON.stringify(dataset, null, 2) + '\n');
-  return { path, samples: samples.length, excluded: dataset.excluded };
+  const serialized = JSON.stringify(dataset, null, 2) + '\n';
+  await atomicWrite(path, serialized);
+  return { path, sha256: digest(serialized), samples: samples.length, excluded: dataset.excluded };
 }

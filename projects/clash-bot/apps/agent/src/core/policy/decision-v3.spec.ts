@@ -81,14 +81,27 @@ it('builds the candidate input from a live battle situation', () => {
       blueCoverage: 0.6,
     },
   });
+  const knownCycle = {
+    ...rich,
+    opponent: {
+      ...rich.opponent,
+      cycle: {
+        ...rich.opponent.cycle,
+        returnsAfterPlays: { ...rich.opponent.cycle.returnsAfterPlays, poison: { min: 4, max: 4 } },
+      },
+    },
+  };
+  const cycleContext = decisionContext(profile, cards, 7.4, [], knownCycle);
+  expect(cycleContext.enemyCycle).toContainEqual(['poison', 4, 4]);
+  expect(serializeDecision(cycleContext)).toContain('enemyCycle=P4-4');
   const threats = rich.opponent.units.filter((unit) => unit.y > profile.riverY).map(({ x, y }) => ({ x, y }));
   const uncertain = { ...rich, effects: rich.effects?.map((effect) => ({ ...effect, onsetCertain: false })) };
   expect(decisionContext(profile, cards, 7.4, [], uncertain).effects?.[0]?.[4]).toBeNull();
   expect(decisionPrompt(profile, cards, 7.4, affordableCandidates(profile, cards, 7.4, threats, rich), rich))
     .toBe(`ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.
-G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana. H triggers within6tiles;compare enemies,existing H,defense mana,W.
-mana=7.4;enemyMana=0-7.6;hand=GPHF;next=KISB;own=K3.5,15E I5,9.4H;enemy=B13.1,13.8 s14.5,18.9;effects=rG3.5,7.2@2s;skill=1
-A:W B:G3.5,27.3 C:G2.3,26.5 D:G3.5,25.4 E:G14.5,27.3 F:P3.5,7.2 G:P3.5,27.3 H:P14.5,27.3 I:H3.5,9.4 J:H1.4,6.9 K:H5.6,6.9 L:H13.1,12.5 M:H10.7,13.4 N:F3.5,9.4 O:F1.4,6.9 P:F5.6,6.9 Q:F3.5,11 R:F13.1,10.5 S:U`);
+h=observed contacts,not future damage.I spawn84/r3;B ground roll215/length4.5/width2.6;P92/s for8s/r3.5.Reference only. G9s area spawns;@age seconds,?=onset unknown.Defend that lane:P8s,I splash,B/melee partial. enemyCycle=card:min-max further plays,?unknown. U once,no draw,freezes slowed enemies;ready!=useful targets.W saves mana. H triggers within6tiles;compare enemies,existing H,defense mana,W.
+mana=7.4;enemyMana=0-7.6;enemyCycle=?;hand=GPHF;next=KISB;own=K3.5,15E I5,9.4H;enemy=B13.1,13.8 s14.5,18.9;effects=rG3.5,7.2@2s;skill=1
+A:W B:G3.5,27.3 C:G2.3,26.5 D:G3.5,25.4 E:G14.5,27.3 F:P3.5,7.2h0 G:P3.5,27.3h0 H:P14.5,27.3h0 I:H3.5,9.4 J:H1.4,6.9 K:H5.6,6.9 L:H13.1,12.5 M:H10.7,13.4 N:F3.5,9.4 O:F1.4,6.9 P:F5.6,6.9 Q:F3.5,11 R:F13.1,10.5 S:U`);
 
   const hand: Array<CardId | null> = ['knight', null, 'poison', null];
   const sparse = new BattleMemory(deck).observe({
@@ -101,6 +114,6 @@ A:W B:G3.5,27.3 C:G2.3,26.5 D:G3.5,25.4 E:G14.5,27.3 F:P3.5,7.2 G:P3.5,27.3 H:P1
   });
   expect(decisionPrompt(profile, hand, 5, affordableCandidates(profile, hand, 5, [], sparse), sparse))
     .toBe(`ClashRoyale:choose BLUE action letter. Tiles:x0-18,y0BLUE,16river,32RED. Equal mana,cap10,FIFO4. B=Barrel2 F=Furnace4 H=Hut4 G=Graveyard5 I=IceWizard3 K=Knight3 P=Poison4 S=Skeletons1 W=wait U=skill2. Missing bodies unknown. Reference physics unverified.
-mana=5;enemyMana=0-5.2;hand=K?P?;next=;own=;enemy=;effects=;skill=0
+mana=5;enemyMana=0-5.2;enemyCycle=?;hand=K?P?;next=;own=;enemy=;effects=;skill=0
 A:W B:K3.5,13.1 C:K14.5,13.1 D:K9,9.3 E:K6.3,3.9 F:K11.7,3.9 G:P3.5,27.3 H:P14.5,27.3`);
 });

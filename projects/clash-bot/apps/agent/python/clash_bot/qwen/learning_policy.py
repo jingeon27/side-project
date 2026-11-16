@@ -290,7 +290,7 @@ class Learner:
                 or not 0.9 <= sample["confidence"] <= 1
             ):
                 raise ValueError("Invalid imitation target or confidence")
-        previous_optimizer = self.enter_objective("opponent_imitation")
+        previous_optimizer = self.enter_objective("mirror_actor_imitation")
         original_rate = float(self.optimizer.learning_rate.item())
         try:
             for attempt in range(4):
@@ -311,7 +311,7 @@ class Learner:
             }
         finally:
             self.optimizer.learning_rate = original_rate
-            if self.metadata.get("optimizer_objective") != "opponent_imitation":
+            if self.metadata.get("optimizer_objective") != "mirror_actor_imitation":
                 self.optimizer = previous_optimizer
 
     def _imitate_once(self, samples, dataset, learning_rate, original_rate, attempt):
@@ -407,7 +407,7 @@ class Learner:
                 raise ValueError("No imitation adapter weights changed")
             report = {
                 "updated": True,
-                "algorithm": "coarse_opponent_behavior_cloning",
+                "algorithm": "mirror_actor_behavior_cloning",
                 "version": self.metadata["version"] + 1,
                 "dataset_sha256": dataset,
                 "samples": len(samples),
@@ -437,7 +437,7 @@ class Learner:
             metadata = {
                 **self.metadata,
                 "version": report["version"],
-                "optimizer_objective": "opponent_imitation",
+                "optimizer_objective": "mirror_actor_imitation",
                 "demonstrations": self.metadata.get("demonstrations", []) + [dataset],
                 "updates": self.metadata["updates"] + len(samples),
                 "weights_sha256": after_hash,
