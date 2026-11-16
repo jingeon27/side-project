@@ -16,6 +16,12 @@ from clash_bot.arena.engine import (
 
 
 class NativeArenaTest(unittest.TestCase):
+    def test_wait_remains_available_at_high_elixir_instead_of_forcing_a_card_or_skill(self):
+        arena = Arena(41)
+        arena.play([Action(-1)] * 2, 320)
+        self.assertGreaterEqual(arena.state()["players"][0]["elixir_milli"], 8000)
+        self.assertIn(Action(-1), legal_actions(arena.battle, 0))
+
     def test_both_sides_can_choose_and_deploy_troops_behind_the_king_tower(self):
         deck = [5, 1, 4, 7, 0, 2, 3, 6]
         arena = Arena(42, [deck, deck])

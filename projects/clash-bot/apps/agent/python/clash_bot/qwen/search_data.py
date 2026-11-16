@@ -6,6 +6,23 @@ import math
 from pathlib import Path
 
 
+def conservation_frontier(gains, elixir):
+    """Keep moves not dominated on measured tower HP and retained elixir.
+
+    The existing 35-HP equivalence band is shared with tactical damage labels.
+    No fixed exchange rate claims that one elixir is worth some invented HP.
+    """
+    return [
+        not any(
+            other_gain >= gain - 35
+            and other_elixir >= mana
+            and (other_elixir > mana or other_gain > gain + 35)
+            for other_gain, other_elixir in zip(gains, elixir)
+        )
+        for gain, mana in zip(gains, elixir)
+    ]
+
+
 def load_search_targets(path):
     path = Path(path).resolve()
     raw = path.read_bytes()
@@ -53,18 +70,43 @@ def load_search_targets(path):
             gains = evidence["towerImprovement"]
             if (
                 row.get("controllerVersion") != 3
-                or evidence.get("kind") != "paired_passive_future_rollout"
+                or evidence.get("kind")
+                not in ("paired_passive_future_rollout", "paired_elixir_conservation_rollout")
                 or evidence.get("actionOrder") != "seeded_permutation"
                 or evidence.get("futureEnemyDeployments") != 0
                 or evidence.get("horizonTicks", 0) < 160
                 or len(gains) != len(choices)
                 or any(not math.isfinite(value) for value in gains)
-                or max(gains) < 80
                 or abs(max(gains) - evidence["bestImprovement"]) > 1e-5
-                or any(
-                    probability > 0 and gain < max(gains) - 35
-                    for probability, gain in zip(target, gains)
-                )
+            ):
+                raise ValueError("Unverified tactical improvement target")
+            if evidence["kind"] == "paired_elixir_conservation_rollout":
+                costs = evidence["elixirCosts"]
+                elixir = evidence["retainedElixirMilli"]
+                baseline = evidence["baselineElixirMilli"]
+                if (
+                    len(costs) != len(choices)
+                    or any(type(cost) is not int or not 0 <= cost <= 10 for cost in costs)
+                    or type(baseline) is not int
+                    or not 0 <= baseline <= 10000
+                    or len(elixir) != len(choices)
+                    or any(type(mana) is not int or not 0 <= mana <= 10000 for mana in elixir)
+                    or any(
+                        not baseline - cost * 1000 <= mana <= baseline
+                        for cost, mana in zip(costs, elixir)
+                    )
+                    or all(conservation_frontier(gains, elixir))
+                    or any(
+                        probability > 0 and not nondominated
+                        for probability, nondominated in zip(
+                            target, conservation_frontier(gains, elixir)
+                        )
+                    )
+                ):
+                    raise ValueError("Unverified elixir conservation target")
+            elif max(gains) < 80 or any(
+                probability > 0 and gain < max(gains) - 35
+                for probability, gain in zip(target, gains)
             ):
                 raise ValueError("Unverified tactical improvement target")
         image = (path.parent / row["image"]).resolve()

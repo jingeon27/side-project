@@ -95,7 +95,7 @@ export function fastCandidates(
         ]
       : [];
   const moves = [...plays, ...abilities].map((move, index) => ({ id: index + 1, ...move }));
-  // 시뮬레이터처럼 엘릭서 8 이상에서 다른 행동이 있으면 대기를 후보에서 뺀다.
+  // 잔량이 높아도 지출을 강제하지 않는다. 대기의 소실 비용도 정책이 비교한다.
   const wait = { id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' };
-  return elixir >= 8 && moves.length > 0 ? moves : [wait, ...moves];
+  return [wait, ...moves];
 }

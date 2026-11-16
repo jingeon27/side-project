@@ -9,6 +9,20 @@ from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
 
 
 class LearningPolicyTest(unittest.TestCase):
+    def test_repeated_losses_still_penalize_the_chosen_action_instead_of_only_adding_entropy(self):
+        for reward in (-1, 1):
+            with self.subTest(reward=reward), tempfile.TemporaryDirectory() as directory:
+                learner = self.make_learner(directory)
+                learner.metadata["baseline"] = reward * (1 - 1e-9)
+                sample = self.sample(learner)
+                report = learner.train([sample], reward, "same-outcome-again")
+                self.assertTrue(report["updated"])
+                self.assertEqual(report["outcome_baseline"], reward * 0.5)
+                self.assertGreaterEqual(abs(report["advantage_min"]), 0.5)
+                self.assertGreater(
+                    reward * (report["probability_after"] - report["probability_before"]), 0
+                )
+
     def test_worsened_episode_objective_rolls_back_the_update(self):
         from unittest.mock import patch
 

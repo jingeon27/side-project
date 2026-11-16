@@ -533,8 +533,12 @@ class Learner:
         before_probabilities = [
             float(mx.exp(self.log_probs(s)[s["chosen"]]).item()) for s in selected
         ]
+        # A run of identical losses must not turn the outcome gradient into zero
+        # and leave entropy as the only objective. This is a past-data, action-
+        # independent control variate; keep it away from the outcome endpoints.
+        outcome_baseline = max(-0.5, min(0.5, self.metadata["baseline"]))
         advantage_of = lambda sample: (
-            (sample.get("episode_reward", reward) - self.metadata["baseline"])
+            (sample.get("episode_reward", reward) - outcome_baseline)
             * (0.995 ** sample["remaining"])
         )
         objective = lambda: (
@@ -599,6 +603,9 @@ class Learner:
                 "version": self.metadata["version"] + 1,
                 "episode": episode,
                 "reward": reward,
+                "outcome_baseline": outcome_baseline,
+                "advantage_min": min(advantage_of(sample) for sample in selected),
+                "advantage_max": max(advantage_of(sample) for sample in selected),
                 "samples": len(selected),
                 "confirmed_decisions": len(samples),
                 "learning_rate": learning_rate,

@@ -298,8 +298,6 @@ def legal_actions(battle, team, state=None):
     ability = Action(-2)
     if battle.check_deploy(team, royalesim.HAND_SIZE, 0, 0) == 0:
         actions.append(ability)
-    if player["elixir_milli"] >= 8000 and len(actions) > 1:
-        actions.remove(Action(-1))
     return actions
 
 

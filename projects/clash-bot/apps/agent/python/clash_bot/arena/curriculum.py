@@ -1,8 +1,8 @@
 """Counterfactual tactical supervision, not invented full-match win labels.
 
 Compare legal moves against waiting from the SAME public field. No future enemy
-deployments are supplied. Keep only large measured tower-HP improvements, and
-record this limited horizon explicitly; real-game qualification is still needed.
+deployments are supplied. Keep measured tower-HP improvements and resource
+tradeoffs; this limited horizon still needs real-game qualification.
 """
 
 import hashlib
@@ -13,6 +13,7 @@ import numpy as np
 
 from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import serialize_decision
+from clash_bot.qwen.search_data import conservation_frontier
 
 from .context import ALIASES, decision_context
 from .engine import (
@@ -79,13 +80,17 @@ class Teacher:
             weights = np.array([2.0, 1.0, 1.0])
             own = np.array(end["players"][team]["tower_hp"]) @ weights
             enemy = np.array(end["players"][1 - team]["tower_hp"]) @ weights
-            return float(own if defensive else own - enemy)
+            return (
+                float(own if defensive else own - enemy),
+                end["players"][team]["elixir_milli"],
+                end["tick"],
+            )
 
-        baseline = finish(Action(-1))
-        values = np.array([finish(action) - baseline for action in actions])
+        baseline, baseline_elixir, end_tick = finish(Action(-1))
+        ends = [finish(action) for action in actions]
+        values = np.array([score - baseline for score, _, _ in ends])
+        elixir = [mana for _, mana, _ in ends]
         best = float(values.max())
-        if best < 80:
-            return None
         viable = values >= best - 35
         costs = np.array(
             [
@@ -93,7 +98,18 @@ class Teacher:
                 for a in actions
             ]
         )
-        target = np.where(viable, np.exp((values - best) / 50 - 0.15 * costs), 0)
+        # Keep resource tradeoffs instead of discarding every position without
+        # a large tower gain. Mana is measured after the SAME rollout, including
+        # regeneration and the ten-elixir cap, not accumulated nominal savings.
+        conserving = family in ("scenario-4", "scenario-5") or best < 80
+        frontier = conservation_frontier(values, elixir)
+        if conserving and (all(frontier) or any(tick != end_tick for _, _, tick in ends)):
+            return None
+        target = (
+            np.array(frontier, dtype=float)
+            if conserving
+            else np.where(viable, np.exp((values - best) / 50 - 0.15 * costs), 0)
+        )
         target /= target.sum()
         return {
             "id": identity,
@@ -102,16 +118,33 @@ class Teacher:
             "actions": [action.row() for action in actions],
             "target": target.tolist(),
             "evidence": {
-                "kind": "paired_passive_future_rollout",
+                "kind": "paired_elixir_conservation_rollout"
+                if conserving
+                else "paired_passive_future_rollout",
                 "family": family,
                 "horizonTicks": horizon,
                 "actionOrder": "seeded_permutation",
-                "objective": "own_tower_preservation" if defensive else "tower_damage_difference",
+                "objective": "own_tower_preservation_and_retained_elixir"
+                if conserving and defensive
+                else "tower_damage_and_retained_elixir"
+                if conserving
+                else "own_tower_preservation"
+                if defensive
+                else "tower_damage_difference",
                 "futureEnemyDeployments": 0,
                 "towerImprovement": values.tolist(),
                 "bestImprovement": best,
                 "baselineTowerScore": baseline,
                 "rootPublicHash": digest(public_board(observation["state"])),
+                **(
+                    {
+                        "elixirCosts": costs.tolist(),
+                        "retainedElixirMilli": elixir,
+                        "baselineElixirMilli": baseline_elixir,
+                    }
+                    if conserving
+                    else {}
+                ),
             },
             "prompt": prompt(observation, actions, self.types),
             "controllerVersion": 3,
@@ -129,6 +162,10 @@ def scenario(seed, family):
         if family == 1
         else [2, 7, 5, 4]
         if family == 2
+        else [4, 2, 6, 3]
+        if family == 4
+        else [0, 4, 1, 3]
+        if family == 5
         else [5, 3, 6, 1]
     )
     if (seed // 4) % 2:
@@ -141,10 +178,12 @@ def scenario(seed, family):
             if family == 3
             else hands
         )
-    own = hands + [card for card in range(8) if card not in hands]
+    own = hands + (
+        [6, 2, 5, 7] if family == 5 else [card for card in range(8) if card not in hands]
+    )
     enemy = [3, 5, 4, 6, 0, 1, 2, 7]
     arena = Arena(seed, [own, enemy])
-    arena.play([Action(-1)] * 2, int(rng.integers(220, 361)))
+    arena.play([Action(-1)] * 2, 100 if family == 5 else int(rng.integers(220, 361)))
     if family in (0, 1):
         arena.play([Action(-1), Action(3, round(x * TILE), round(6.5 * TILE))], 1)
         if seed % 3 == 0:
@@ -152,10 +191,21 @@ def scenario(seed, family):
         arena.play([Action(-1)] * 2, int(rng.integers(12, 90)))
     elif family == 2:
         arena.play([Action(-1), Action(5, round(x * TILE), 18 * TILE)], int(rng.integers(25, 150)))
-    else:
+    elif family == 3:
         arena.play([Action(5, round(x * TILE), 14 * TILE), Action(-1)], int(rng.integers(130, 211)))
         if seed % 3 == 0:
             arena.play([Action(-1), Action(4, round(x * TILE), round(25.5 * TILE))], 20)
+    elif family == 4:
+        # A ready button with no combat: include the real hero and legal skill,
+        # Hut and spells, so conserving elixir is learned against those moves.
+        arena.play([Action(4, round(x * TILE), 3 * TILE), Action(-1)], 40)
+    elif family == 5:
+        # At low mana the only alternatives are the ready hero skill and wait.
+        # The back-row Barrel is an earlier, public spend, not a hidden balance edit.
+        arena.play([Action(0, round(x * TILE), 3 * TILE), Action(-1)], 20)
+        arena.play([Action(4, round(x * TILE), 3 * TILE), Action(-1)], 40)
+    else:
+        raise ValueError("Unknown tactical scenario family")
     return arena.observe(0)
 
 
@@ -220,7 +270,7 @@ def build(data_dir, count=64, seed=0, split="train"):
     teacher = Teacher()
     labels = []
     for index in range(count):
-        family = index % 4
+        family = index % 6
         obs = scenario(seed + index, family)
         row = teacher.label(obs, f"curriculum-{seed}-{index}", f"scenario-{family}")
         if row:
@@ -232,9 +282,11 @@ def build(data_dir, count=64, seed=0, split="train"):
         "attempted": count,
         "targetCards": {
             name: sum(
-                ALIASES[row["actions"][int(np.argmax(row["target"]))][0]] == name for row in labels
+                ("wait" if card == -1 else "ability" if card == -2 else ALIASES[card]) == name
+                for row in labels
+                for card in [row["actions"][int(np.argmax(row["target"]))][0]]
             )
-            for name in ALIASES
+            for name in (*ALIASES, "wait", "ability")
         },
     }
 

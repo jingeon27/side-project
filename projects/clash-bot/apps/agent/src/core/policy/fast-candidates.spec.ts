@@ -78,12 +78,13 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
     expect(tiles(profile, invaded, 'poison')[0]).toEqual([14.5, 12]);
   });
 
-  it('skips unaffordable cards and drops waiting from eight elixir like the simulator', () => {
+  it('skips unaffordable cards and keeps waiting available at high elixir like the simulator', () => {
     const profile = state.profile!;
     const poor = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 3, situation());
     expect(countBy(poor, (action) => action.card ?? 'wait')).toEqual({ wait: 1, knight: 6 });
     const full = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 8, situation());
-    expect(full.some((action) => action.id === 0)).toBe(false);
-    expect(full.map((action) => action.id)).toEqual(full.map((_, index) => index + 1));
+    expect(full.some((action) => action.id === 0)).toBe(true);
+    expect(full.map((action) => action.id)).toEqual(full.map((_, index) => index));
+    expect(full.length).toBeLessThanOrEqual(26);
   });
 });
