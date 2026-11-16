@@ -5,9 +5,9 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { AdbDevice, findAdb, listDevices, selectDevice } from '../adb.ts';
-import { DATA_DIR, loadProfile } from '../config.ts';
-import { requestLearningStop } from '../selfplay.ts';
+import { AdbDevice, findAdb, listDevices, selectDevice } from '../android/device/adb.ts';
+import { requestLearningStop } from '../android/runtime/selfplay.ts';
+import { DATA_DIR, loadProfile } from '../shared/config.ts';
 import { runTrophy } from './runtime.ts';
 
 const { values, positionals } = parseArgs({

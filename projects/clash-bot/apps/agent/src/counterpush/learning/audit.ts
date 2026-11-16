@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { type CardId } from '../../config.ts';
+import { type CardId } from '../../shared/config.ts';
 import { COUNTERPUSH_DECK } from '../runtime/browser.ts';
 
 type Event = {

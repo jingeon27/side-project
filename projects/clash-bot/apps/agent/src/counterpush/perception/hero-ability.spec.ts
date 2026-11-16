@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE, type CardId } from '../../config.ts';
-import { actionCandidates, choicePrompt } from '../../qwen-actions.ts';
+import { actionCandidates, choicePrompt } from '../../android/policy/qwen-actions.ts';
+import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
 import { BattleMemory } from '../domain/battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../runtime/browser.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from './hero-ability.ts';
@@ -14,7 +14,9 @@ const image = async (name: string) =>
   sharp({ create: { width: 368, height: 652, channels: 3, background: '#000' } })
     .composite([
       {
-        input: await readFile(new URL(`../testing/abilities/${name}.png`, import.meta.url)),
+        input: await readFile(
+          new URL(`../../../test-fixtures/counterpush/abilities/${name}.png`, import.meta.url),
+        ),
         left: 317,
         top: 477,
       },

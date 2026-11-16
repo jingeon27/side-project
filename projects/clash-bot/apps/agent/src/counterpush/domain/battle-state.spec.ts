@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CardId } from '../../config.ts';
+import type { CardId } from '../../shared/config.ts';
 import { BattleMemory, CardCycle, ElixirLedger } from './battle-state.ts';
 
 const hand: CardId[] = ['knight', 'furnace', 'ice_wizard', 'graveyard'];

@@ -6,8 +6,8 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 
 import { z } from 'zod';
 
-import { atomicWrite } from '../assets.ts';
-import type { DecisionOutput, LearningClient, LearningDecisionRequest } from '../learning-client.ts';
+import { atomicWrite } from '../shared/assets.ts';
+import type { DecisionOutput, LearningClient, LearningDecisionRequest } from './learning-client.ts';
 
 export type SharedPolicy = { checkpoint: string; version: number; weightsSHA256: string };
 const payloadSchema = z

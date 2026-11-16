@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 
-import type { CardId, Profile } from '../../config.ts';
-import type { QwenAction } from '../../qwen-actions.ts';
+import type { QwenAction } from '../../android/policy/qwen-actions.ts';
+import type { CardId, Profile } from '../../shared/config.ts';
 import type { BattleSituation } from '../domain/battle-state.ts';
 import { compactPrompt } from './decision-v2.ts';
 
 const contract = JSON.parse(
-  readFileSync(new URL('./decision-contract-v3.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../../contracts/decision-v3.json', import.meta.url), 'utf8'),
 ) as {
   header: string;
   codes: Record<string, string>;

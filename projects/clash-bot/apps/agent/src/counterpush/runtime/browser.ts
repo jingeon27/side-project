@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import sharp from 'sharp';
 
-import { center, HEIGHT, WIDTH, type Point, type Profile } from '../../config.ts';
+import { center, HEIGHT, WIDTH, type Point, type Profile } from '../../shared/config.ts';
 import { HERO_ABILITY_TARGET } from '../perception/hero-ability.ts';
 
 export const COUNTERPUSH_DECK = [

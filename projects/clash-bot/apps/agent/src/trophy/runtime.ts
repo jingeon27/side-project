@@ -2,12 +2,12 @@ import { appendFile, mkdir, readFile, statfs } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import type { AdbDevice } from '../adb.ts';
-import { atomicWrite } from '../assets.ts';
-import type { Profile } from '../config.ts';
-import { runQwen } from '../qwen-runner.ts';
+import type { AdbDevice } from '../android/device/adb.ts';
+import { runQwen } from '../android/runtime/qwen-runner.ts';
+import { acquireLearningLock, returnToLobby } from '../android/runtime/selfplay.ts';
 import { SharedInferenceClient } from '../qwen/shared-inference.ts';
-import { acquireLearningLock, returnToLobby } from '../selfplay.ts';
+import { atomicWrite } from '../shared/assets.ts';
+import type { Profile } from '../shared/config.ts';
 import { trophyPrompt } from './decision.ts';
 
 export async function runTrophy(options: {

@@ -2,11 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { atomicWrite } from '../../assets.ts';
-import type { Profile } from '../../config.ts';
-import { LearningClient } from '../../learning-client.ts';
-import { selectModel, type ModelId } from '../../model-options.ts';
-import { acquireLearningLock } from '../../selfplay.ts';
+import { acquireLearningLock } from '../../android/runtime/selfplay.ts';
+import { LearningClient } from '../../qwen/learning-client.ts';
+import { selectModel, type ModelId } from '../../qwen/model-options.ts';
+import { atomicWrite } from '../../shared/assets.ts';
+import type { Profile } from '../../shared/config.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { CounterpushBrowser } from '../runtime/browser.ts';
 import { playCounterpushEpisode } from '../runtime/episode.ts';

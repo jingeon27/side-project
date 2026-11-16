@@ -3,16 +3,20 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { atomicWrite } from '../../assets.ts';
-import { CARD_INFO, type Profile } from '../../config.ts';
-import { type LearningClient } from '../../learning-client.ts';
-import { type OpponentObservation } from '../../opponent-data.ts';
-import { actionCandidates, choicePrompt } from '../../qwen-actions.ts';
-import { validateQwenAction, type FreshBattle, type QwenPrediction } from '../../qwen-policy.ts';
-import { analyze, crop, difference, fingerprint, loadTemplates } from '../../vision.ts';
+import { analyze, crop, difference, fingerprint, loadTemplates } from '../../android/perception/vision.ts';
+import { actionCandidates, choicePrompt } from '../../android/policy/qwen-actions.ts';
+import {
+  validateQwenAction,
+  type FreshBattle,
+  type QwenPrediction,
+} from '../../android/policy/qwen-policy.ts';
+import { type LearningClient } from '../../qwen/learning-client.ts';
+import { atomicWrite } from '../../shared/assets.ts';
+import { CARD_INFO, type Profile } from '../../shared/config.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
 import { FieldDynamics } from '../domain/field-dynamics.ts';
 import type { SpawnPatterns } from '../domain/spawn-patterns.ts';
+import { type OpponentObservation } from '../learning/opponent-data.ts';
 import { counterpushBarReading, counterpushElixir, plausibleSpend } from '../perception/elixir.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';

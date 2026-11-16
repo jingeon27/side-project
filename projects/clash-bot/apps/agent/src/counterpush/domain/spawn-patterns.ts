@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { z } from 'zod';
 
-import { atomicWrite } from '../../assets.ts';
+import { atomicWrite } from '../../shared/assets.ts';
 
 const castSchema = z.object({
   id: z.string(),

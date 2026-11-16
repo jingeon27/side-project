@@ -1,10 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
-import { atomicWrite } from '../../assets.ts';
-import { type CardId, type Point, type Profile } from '../../config.ts';
-import { type OpponentObservation } from '../../opponent-data.ts';
-import { analyze, loadTemplates } from '../../vision.ts';
+import { analyze, loadTemplates } from '../../android/perception/vision.ts';
+import { atomicWrite } from '../../shared/assets.ts';
+import { type CardId, type Point, type Profile } from '../../shared/config.ts';
 import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
 import { FieldDynamics } from '../domain/field-dynamics.ts';
 import { counterpushBarReading, counterpushElixir } from '../perception/elixir.ts';
@@ -12,6 +11,7 @@ import { HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';
 import { type CounterpushVisionClient } from '../perception/vision-client.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../runtime/browser.ts';
+import { type OpponentObservation } from './opponent-data.ts';
 
 type RecordedEvent = {
   type: string;

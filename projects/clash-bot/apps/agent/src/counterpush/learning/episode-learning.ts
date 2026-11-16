@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { atomicWrite } from '../../assets.ts';
-import { LearningClient } from '../../learning-client.ts';
-import { prepareOpponentDataset } from '../../opponent-data.ts';
+import { LearningClient } from '../../qwen/learning-client.ts';
+import { atomicWrite } from '../../shared/assets.ts';
 import { readEpisodeCoverage } from './audit.ts';
+import { prepareOpponentDataset } from './opponent-data.ts';
 
 export async function learnCounterpushEpisodes(
   client: LearningClient,

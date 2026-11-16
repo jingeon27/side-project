@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
-import { loadProfile } from '../../config.ts';
-import { crop, fingerprint, matchCard, type Template } from '../../vision.ts';
+import { crop, fingerprint, matchCard, type Template } from '../../android/perception/vision.ts';
+import { loadProfile } from '../../shared/config.ts';
 
 it('recognizes disabled hand artwork without claiming it is affordable or matching a blank animation', async () => {
   const profile = await loadProfile(
     fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
   );
-  const root = fileURLToPath(new URL('../references/hand-templates/', import.meta.url));
+  const root = fileURLToPath(new URL('../../../assets/counterpush/hand-templates', import.meta.url));
   const groups = await Promise.all(
     profile.deck.map(async (card) => {
       const directory = join(root, 'variants', card),
@@ -25,7 +25,9 @@ it('recognizes disabled hand artwork without claiming it is affordable or matchi
     }),
   );
   const templates: Template[] = groups.flat();
-  const image = await readFile(new URL('../testing/disabled-hand.png', import.meta.url));
+  const image = await readFile(
+    new URL('../../../test-fixtures/counterpush/disabled-hand.png', import.meta.url),
+  );
   const cards = await Promise.all(
     profile.hand.map(
       async (rect) =>

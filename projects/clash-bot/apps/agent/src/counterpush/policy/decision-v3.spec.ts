@@ -6,7 +6,7 @@ import { serializeDecision, type DecisionContext } from './decision-v3.ts';
 
 it('shares the simulation contract while keeping resource uncertainty and special forms', () => {
   const example = JSON.parse(
-    readFileSync(new URL('./testing/decision-context.json', import.meta.url), 'utf8'),
+    readFileSync(new URL('../../../test-fixtures/decision-context.json', import.meta.url), 'utf8'),
   ) as { context: DecisionContext; prompt: string };
   expect(serializeDecision(example.context)).toBe(example.prompt);
   expect(example.prompt).toContain('enemyMana=3.1-7.8');

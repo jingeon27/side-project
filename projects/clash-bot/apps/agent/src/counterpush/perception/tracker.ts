@@ -1,5 +1,5 @@
-import type { CardId } from '../../config.ts';
-import type { OpponentObservation } from '../../opponent-data.ts';
+import type { CardId } from '../../shared/config.ts';
+import type { OpponentObservation } from '../learning/opponent-data.ts';
 import type { UnitDetection, UnitScan } from './vision-client.ts';
 
 export type VisualFrame = { path: string; capturedAt: number };

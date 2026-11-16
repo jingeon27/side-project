@@ -3,9 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-import { cardIdSchema, type CardId } from '../../config.ts';
-import { UNIT_KINDS } from '../../game-knowledge.ts';
-import { QwenClient } from '../../qwen-client.ts';
+import { cardIdSchema, type CardId } from '../../shared/config.ts';
+import { UNIT_KINDS } from '../../shared/game-knowledge.ts';
+import { JsonLineClient } from '../../shared/json-lines-client.ts';
+import { pythonEnvironment, pythonExecutable } from '../../shared/python.ts';
 
 const scanSchema = z.object({
   graveyardPresence: z.tuple([z.number(), z.number()]).optional(),
@@ -78,20 +79,23 @@ const scanSchema = z.object({
 export type UnitScan = z.infer<typeof scanSchema>;
 export type UnitDetection = UnitScan['entities'][number];
 
-export class CounterpushVisionClient extends QwenClient {
+export class CounterpushVisionClient extends JsonLineClient {
   readonly warmState = { done: false };
   constructor(dataDir: string) {
     super(
-      join(dataDir, 'qwen/.venv/bin/python'),
-      fileURLToPath(new URL('./vision_worker.py', import.meta.url)),
+      pythonExecutable(dataDir),
+      ['-m', 'clash_bot.perception.vision_worker'],
       join(dataDir, 'counterpush/detector'),
       ['3'],
+      pythonEnvironment(dataDir),
     );
   }
   override async ready() {
     await super.ready();
     if (!this.warmState.done) {
-      await this.scan(fileURLToPath(new URL('../testing/unit-badges.png', import.meta.url)));
+      await this.scan(
+        fileURLToPath(new URL('../../../test-fixtures/counterpush/unit-badges.png', import.meta.url)),
+      );
       this.warmState.done = true;
     }
   }

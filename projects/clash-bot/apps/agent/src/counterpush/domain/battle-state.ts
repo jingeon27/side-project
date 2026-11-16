@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { CARD_INFO, cardIdSchema, type CardId, type Point } from '../../config.ts';
-import { UNIT_KINDS } from '../../game-knowledge.ts';
+import { CARD_INFO, cardIdSchema, type CardId, type Point } from '../../shared/config.ts';
+import { UNIT_KINDS } from '../../shared/game-knowledge.ts';
 import {
   abilitySchema,
   EvolutionCycles,

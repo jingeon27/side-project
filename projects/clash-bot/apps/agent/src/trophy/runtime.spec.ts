@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import { AdbDevice } from '../adb.ts';
-import { DEFAULT_PROFILE } from '../config.ts';
+import { AdbDevice } from '../android/device/adb.ts';
+import { DEFAULT_PROFILE } from '../shared/config.ts';
 import { runTrophy } from './runtime.ts';
 
 it('stops without a new match and releases its lock when the model owner is gone', async () => {

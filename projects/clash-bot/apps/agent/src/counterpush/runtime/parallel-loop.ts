@@ -1,4 +1,4 @@
-import type { Episode } from '../../selfplay.ts';
+import type { Episode } from '../../android/runtime/selfplay.ts';
 
 // All actors finish under one frozen policy. The learner runs only at the
 // barrier, so a finished actor cannot invalidate another actor's PPO features.

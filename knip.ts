@@ -38,8 +38,6 @@ export default defineConfig({
     'projects/*/apps/*': { entry: appEntries },
     'projects/clash-bot/apps/agent': {
       entry: ['*.config.{ts,mts,cts,js,mjs,cjs}', '**/*.{spec,test,e2e}.{ts,tsx}'],
-      // Python 3.11 is an OS prerequisite for local MLX and ONNX setup, not an npm binary.
-      ignoreBinaries: ['python3.11'],
     },
     'projects/blog/apps/web': { entry: [...appEntries, 'vercel.ts'] },
     'projects/photo-contest/apps/web': { entry: [...appEntries, 'test/browser/main.tsx'] },

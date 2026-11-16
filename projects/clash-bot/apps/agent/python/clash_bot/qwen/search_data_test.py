@@ -1,0 +1,57 @@
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+from clash_bot.qwen.search_data import load_search_targets
+
+
+class SearchDataTest(unittest.TestCase):
+    def test_tactical_targets_require_measured_gains_and_reject_heldout_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path, data = self.write(directory)
+            row = {**data['samples'][0], 'controllerVersion': 2, 'target': [0, 1, 0],
+                   'evidence': {'kind': 'paired_passive_future_rollout', 'actionOrder': 'seeded_permutation',
+                                'horizonTicks': 240, 'futureEnemyDeployments': 0,
+                                'towerImprovement': [0, 200, 80], 'bestImprovement': 200}}
+            data = {**data, 'format': 'counterpush-tactical-targets-v2', 'source': 'local_native_counterfactual_v2',
+                    'controllerVersion': 2, 'split': 'train', 'trainingEpochs': 3, 'samples': [row]}
+            path.write_text(json.dumps(data))
+            self.assertEqual(load_search_targets(path)[0], data)
+            for changed in ({'split': 'holdout'}, {'trainingEpochs': 20},
+                            {'samples': [{**row, 'target': [0, 0, 1]}]},
+                            {'samples': [{**row, 'evidence': {**row['evidence'], 'futureEnemyDeployments': 1}}]}):
+                path.write_text(json.dumps({**data, **changed}))
+                with self.assertRaises(ValueError):
+                    load_search_targets(path)
+
+    def write(self, directory):
+        root = Path(directory)
+        image = root / 'before.png'; image.write_bytes(b'public before image')
+        row = {'id': 'game-1-t100', 'image': image.name, 'imageSHA256': hashlib.sha256(image.read_bytes()).hexdigest(),
+               'rulesID': 'rules-a', 'terminalOutcome': 1, 'choices': [0, 1, 2], 'target': [.1, .8, .1],
+               'search': {'source': 'public_history_information_set_puct', 'simulations': 16}, 'prompt': 'A B C'}
+        data = {'format': 'clash-arena-qwen-search-v1', 'rulesID': 'rules-a', 'samples': [row],
+                'source': 'local_native_selfplay_public_before_state', 'teacherQualifiedForRealGame': False}
+        path = root / 'dataset.json'; path.write_text(json.dumps(data))
+        return path, data
+
+    def test_validates_before_image_rule_terminal_and_normalized_search_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path, data = self.write(directory)
+            self.assertEqual(load_search_targets(path)[0], data)
+            for replacement in ({'target': [.1, .9, .9]}, {'terminalOutcome': None}, {'rulesID': 'rules-b'},
+                                {'target': [float('nan'), 0, 0]}, {'image': '../before.png'}):
+                invalid = {**data, 'samples': [{**data['samples'][0], **replacement}]}
+                path.write_text(json.dumps(invalid))
+                with self.assertRaises((ValueError, FileNotFoundError)):
+                    load_search_targets(path)
+            path.write_text(json.dumps(data))
+            (path.parent / 'before.png').write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError, 'changed'):
+                load_search_targets(path)
+
+
+if __name__ == '__main__':
+    unittest.main()

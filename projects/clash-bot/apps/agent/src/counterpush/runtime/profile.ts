@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { atomicWrite } from '../../assets.ts';
-import { loadProfile } from '../../config.ts';
+import { atomicWrite } from '../../shared/assets.ts';
+import { loadProfile } from '../../shared/config.ts';
 import { COUNTERPUSH_DECK } from './browser.ts';
 
 export async function loadCounterpushProfile(dataDir: string, override?: string) {

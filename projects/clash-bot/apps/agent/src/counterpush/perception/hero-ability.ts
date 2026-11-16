@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import sharp from 'sharp';
 
-import type { CardId } from '../../config.ts';
-import { difference, fingerprint } from '../../vision.ts';
+import { difference, fingerprint } from '../../android/perception/vision.ts';
+import type { CardId } from '../../shared/config.ts';
 import type { HeroAbility } from '../domain/special-state.ts';
 import { plausibleSpend } from './elixir.ts';
 
@@ -18,7 +18,9 @@ export class HeroAbilityButton {
   }
   static async load() {
     return new HeroAbilityButton(
-      await fingerprint(await readFile(new URL('../references/ice-wizard-ability.png', import.meta.url))),
+      await fingerprint(
+        await readFile(new URL('../../../assets/counterpush/ice-wizard-ability.png', import.meta.url)),
+      ),
     );
   }
   newDeployment() {

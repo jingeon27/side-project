@@ -4,10 +4,10 @@ import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import type { LearningClient } from '../../learning-client.ts';
+import type { LearningClient } from '../../qwen/learning-client.ts';
 import { learnCounterpushEpisodes } from './episode-learning.ts';
 
-vi.mock('../../opponent-data.ts', () => ({
+vi.mock('./opponent-data.ts', () => ({
   prepareOpponentDataset: vi.fn(async () => ({ path: '/dataset', samples: 1 })),
 }));
 vi.mock('./audit.ts', () => ({ readEpisodeCoverage: vi.fn(async () => ({})) }));

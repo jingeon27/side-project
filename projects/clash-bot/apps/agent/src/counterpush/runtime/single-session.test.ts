@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE } from '../../config.ts';
+import { DEFAULT_PROFILE } from '../../shared/config.ts';
 import { runCounterpush } from './runner.ts';
 
 it('rejects a second game tab before acquiring the learner lock or launching a model', async () => {

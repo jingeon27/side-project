@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CardId } from '../../config.ts';
+import type { CardId } from '../../shared/config.ts';
 import { parseBrowserResult } from '../runtime/browser.ts';
 import { OpponentTracker } from './tracker.ts';
 import type { UnitScan } from './vision-client.ts';

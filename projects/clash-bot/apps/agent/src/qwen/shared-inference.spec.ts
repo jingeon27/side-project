@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import type { LearningDecisionRequest } from '../learning-client.ts';
+import type { LearningDecisionRequest } from './learning-client.ts';
 import { SharedInferenceClient, startSharedInference } from './shared-inference.ts';
 
 it('shares only inference, rejects busy/evaluation work and confines writes to trophy runs', async () => {

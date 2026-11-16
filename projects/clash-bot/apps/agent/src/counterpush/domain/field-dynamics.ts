@@ -1,5 +1,5 @@
-import { type CardId } from '../../config.ts';
-import { CARD_MECHANICS, type UnitKind } from '../../game-knowledge.ts';
+import { type CardId } from '../../shared/config.ts';
+import { CARD_MECHANICS, type UnitKind } from '../../shared/game-knowledge.ts';
 import { type UnitScan } from '../perception/vision-client.ts';
 import { type FieldEffect, type FieldUnit } from './battle-state.ts';
 import { SpawnPatterns, type SpawnCast } from './spawn-patterns.ts';

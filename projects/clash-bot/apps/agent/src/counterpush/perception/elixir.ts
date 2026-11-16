@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 
-import type { Profile } from '../../config.ts';
-import { readElixir, type Observation } from '../../vision.ts';
+import { readElixir, type Observation } from '../../android/perception/vision.ts';
+import type { Profile } from '../../shared/config.ts';
 
 export async function counterpushBarReading(image: Buffer, profile: Profile) {
   const { data, info } = await sharp(image).removeAlpha().raw().toBuffer({ resolveWithObject: true });

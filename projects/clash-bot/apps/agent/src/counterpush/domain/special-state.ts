@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { CardId } from '../../config.ts';
+import type { CardId } from '../../shared/config.ts';
 
 export const evolutionSchema = z.object({
   card: z.enum(['knight', 'furnace']),

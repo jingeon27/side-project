@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
 
-import { CARD_INFO, type CardId, type Point, type Profile } from '../../config.ts';
-import { ownPoint } from '../../placement.ts';
-import { actionCandidates, type QwenAction } from '../../qwen-actions.ts';
+import { ownPoint } from '../../android/policy/placement.ts';
+import { actionCandidates, type QwenAction } from '../../android/policy/qwen-actions.ts';
+import { CARD_INFO, type CardId, type Point, type Profile } from '../../shared/config.ts';
 import type { BattleSituation, FieldUnit } from '../domain/battle-state.ts';
 
-const contract = JSON.parse(readFileSync(new URL('./decision-contract.json', import.meta.url), 'utf8')) as {
+const contract = JSON.parse(
+  readFileSync(new URL('../../../contracts/decision-v2.json', import.meta.url), 'utf8'),
+) as {
   header: string;
 };
 export function bodyCard(unit: FieldUnit): string | null {

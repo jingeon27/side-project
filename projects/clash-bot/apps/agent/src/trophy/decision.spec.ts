@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE } from '../config.ts';
+import { DEFAULT_PROFILE } from '../shared/config.ts';
 import { trophyPrompt } from './decision.ts';
 
 it('keeps unknown enemy identities/resources unknown while using the shared tile contract', () => {
