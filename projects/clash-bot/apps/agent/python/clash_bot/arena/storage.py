@@ -18,6 +18,26 @@ def write_episode(path, episode):
         file.write(json.dumps(episode, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 
+# Training reads only these fields; the full episode keeps observations for exports.
+REPLAY_FIELDS = ("features", "actions", "actionFeatures", "target", "outcome", "value")
+
+
+def replay_path(path):
+    path = Path(path)
+    return path.with_name(path.name.removesuffix(".json.gz") + ".replay.json.gz")
+
+
+def write_replay(path, episode):
+    write_episode(
+        replay_path(path),
+        {
+            "completed": episode["completed"],
+            "rulesID": episode["rulesID"],
+            "samples": [{key: row[key] for key in REPLAY_FIELDS} for row in episode["samples"]],
+        },
+    )
+
+
 def read_episode(path):
     with gzip.open(path, "rt", encoding="utf8") as file:
         return json.load(file)

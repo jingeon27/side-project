@@ -6,8 +6,15 @@ import numpy as np
 
 from .engine import Arena, legal_actions
 from .policy import features
+from .samples import SparseFeatures, value_target
 from .search import Workspace, search
 from .storage import seed_for
+
+
+def tower_damage(player):
+    """Share of this side's total tower hit points destroyed by the end of the game."""
+    hp = np.asarray(player["tower_hp"], np.float64)
+    return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
 def play_game(
@@ -66,7 +73,7 @@ def play_game(
                         "team": team,
                         "policyVersion": policy.metadata["version"],
                         "observation": observation,
-                        "features": state_features.tolist(),
+                        "features": SparseFeatures.of(state_features).model_dump(),
                         "actions": [action.row() for action in result["actions"]],
                         "actionFeatures": action_vectors.tolist(),
                         "target": result["target"].tolist(),
@@ -92,9 +99,15 @@ def play_game(
             )
     state = arena.state()
     completed = bool(state["game_over"])
+    damage = [tower_damage(player) for player in state["players"]]
     for sample in samples:
         sample["outcome"] = (
             (0 if state["winner"] == 2 else 1 if state["winner"] == sample["team"] else -1)
+            if completed
+            else None
+        )
+        sample["value"] = (
+            value_target(sample["outcome"], damage[1 - sample["team"]] - damage[sample["team"]])
             if completed
             else None
         )

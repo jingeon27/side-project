@@ -7,6 +7,7 @@ import numpy as np
 
 from clash_bot.arena.engine import Action, Arena
 from clash_bot.arena.policy import Policy, features
+from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import play_game, replay_samples
 
 
@@ -18,11 +19,12 @@ class ExpertIterationTest(unittest.TestCase):
         actions = [Action(*row) for row in obs["legalActions"]]
         state, action_vectors = features(obs, actions)
         row = {
-            "features": state.tolist(),
+            "features": SparseFeatures.of(state).model_dump(),
             "actions": [a.row() for a in actions],
             "actionFeatures": action_vectors.tolist(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "outcome": 1,
+            "value": 0.8,
         }
         policy = Policy(metadata={"version": 1, "rulesID": "rules-a"})
         report = policy.train([row], 7, epochs=2)

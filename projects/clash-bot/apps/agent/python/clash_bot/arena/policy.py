@@ -27,7 +27,7 @@ from .samples import PolicyMetadata, TrainingSample
 
 FORMAT = "clash-arena-policy-value-v2"
 # Leagues are kept per policy format; a new format starts its own league directory.
-LEAGUE_KEY = "fast1"
+LEAGUE_KEY = "fast2"
 INITIAL_SCALE = {"encoder.weight": 0.04, "query.weight": 0.04, "action.weight": 0.1}
 
 
@@ -124,11 +124,12 @@ class Policy:
         )
         optimizer = optim.Adam(learning_rate=3e-4)
 
-        def loss(model, states, actions, masks, targets, outcomes):
+        def loss(model, states, actions, masks, targets, value_targets):
             logits, values = model(states, actions)
             logits = mx.where(masks, logits, -1e9)
             logp = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
-            return -mx.mean(mx.sum(targets * logp, axis=-1)) + mx.mean((values - outcomes) ** 2)
+            policy_loss = -mx.mean(mx.sum(targets * logp, axis=-1))
+            return policy_loss + mx.mean((values - value_targets) ** 2)
 
         gradient = nn.value_and_grad(model, loss)
         rng = np.random.default_rng(seed)
@@ -140,9 +141,9 @@ class Policy:
                 # The live screen does not read tower hit points yet; learn both with and without them.
                 states = np.stack(
                     [
-                        hide_towers(np.asarray(row.features, np.float32))
+                        hide_towers(row.features.dense())
                         if rng.random() < 0.5
-                        else np.asarray(row.features, np.float32)
+                        else row.features.dense()
                         for row in batch
                     ]
                 )
@@ -154,9 +155,10 @@ class Policy:
                     acts[index, :count] = row.actionFeatures
                     masks[index, :count] = True
                     targets[index, :count] = row.target
-                outcomes = np.array([row.outcome for row in batch], np.float32)
+                # The value head learns the terminal result blended with the tower margin.
+                value_targets = np.array([row.value for row in batch], np.float32)
                 value, grads = gradient(
-                    model, *map(mx.array, (states, acts, masks, targets, outcomes))
+                    model, *map(mx.array, (states, acts, masks, targets, value_targets))
                 )
                 mx.eval(value, grads)
                 if not np.isfinite(float(value.item())):

@@ -10,6 +10,7 @@ from . import balance
 from .curriculum import build
 from .export import export
 from .league import run
+from .parallel import MAX_WORKERS
 from .storage import read_episode
 
 DATA = DATA_DIR
@@ -50,7 +51,7 @@ def main():
             and 2 <= args.depth <= 32
             and 1 <= args.pairs <= 256
             and 1 <= args.evaluate_every <= 100
-            and 1 <= args.workers <= 4
+            and 1 <= args.workers <= MAX_WORKERS
         ):
             parser.error("Invalid run bounds")
         result = run(

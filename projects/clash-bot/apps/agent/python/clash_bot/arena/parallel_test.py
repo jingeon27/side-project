@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import patch
 
-from clash_bot.arena.parallel import play_frozen_games
+from clash_bot.arena.parallel import MAX_WORKERS, play_frozen_games
 
 
 class ParallelSelfplayTest(unittest.TestCase):
     def test_workers_are_bounded_and_single_worker_keeps_order(self):
-        for workers in (0, 5):
+        for workers in (0, MAX_WORKERS + 1):
             with self.assertRaises(ValueError):
                 play_frozen_games([], workers)
         with self.assertRaises(ValueError):

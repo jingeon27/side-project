@@ -1,5 +1,5 @@
 {
-  "format": "clash-fast-policy-v1",
+  "format": "clash-fast-policy-v2",
   "cards": [
     "barbarian_barrel",
     "furnace",
@@ -28,8 +28,13 @@
     "?"
   ],
   "effects": ["graveyard", "poison"],
-  "grid": { "columns": 3, "rows": 8, "width": 18, "height": 32 },
+  "grid": {
+    "columns": 6,
+    "rows": 16,
+    "width": 18,
+    "height": 32
+  },
   "clockSeconds": 300,
-  "hidden": 128,
-  "attention": 32
+  "hidden": 256,
+  "attention": 64
 }

@@ -11,7 +11,7 @@ import type { DecisionAction, DecisionContext } from './decision-v3.ts';
 // 판단 문맥의 특징 배치다. Python(clash_bot.arena.fast_features)이 같은 계약으로 같은 숫자를 만든다.
 export const FAST_POLICY = z
   .strictObject({
-    format: z.literal('clash-fast-policy-v1'),
+    format: z.literal('clash-fast-policy-v2'),
     cards: z.array(z.string()).length(8),
     spells: z.array(z.string()),
     bodies: z.array(z.string()).min(1),

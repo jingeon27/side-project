@@ -29,7 +29,7 @@ class FastPolicySpec(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    format: Literal["clash-fast-policy-v1"]
+    format: Literal["clash-fast-policy-v2"]
     cards: tuple[str, ...] = Field(min_length=8, max_length=8)
     spells: tuple[str, ...]
     bodies: tuple[str, ...] = Field(min_length=1)

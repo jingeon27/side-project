@@ -26,7 +26,7 @@ from .export import export
 from .parallel import play_frozen_games
 from .policy import LEAGUE_KEY, Policy
 from .selfplay import replay_samples
-from .storage import read_episode, seed_for, write_episode
+from .storage import read_episode, replay_path, seed_for, write_episode, write_replay
 
 
 class Opponent(BaseModel):
@@ -50,6 +50,10 @@ class LeagueState(BaseModel):
     evaluations: int = Field(ge=0)
     episodes: list[str]
     opponents: list[Opponent] = Field(min_length=1)
+
+
+REPLAY_EPISODES = 256
+REPLAY_SAMPLES = 16384
 
 
 def initialize(root, rules):
@@ -211,6 +215,7 @@ def run(
                 for job, game in zip(jobs, play_frozen_games(jobs, workers)):
                     path = root / "episodes" / f"{job['id']}.json.gz"
                     write_episode(path, game)
+                    write_replay(path, game)
                     if not game["completed"] or game["rejectedCommands"]:
                         raise ValueError(
                             "Self-play produced an incomplete game or rejected input; not training it"
@@ -231,8 +236,14 @@ def run(
             if not pending:
                 break
             report({"phase": "training", "candidate": version})
-            history = [read_episode(path) for path in league["episodes"][-32:]]
-            samples = replay_samples(history, rules["id"], seed=seed_for("replay", version))
+            # A wide window of compact replays reuses many games per update without reading
+            # the full episodes, which keep observations only for exports.
+            history = [
+                read_episode(replay_path(path)) for path in league["episodes"][-REPLAY_EPISODES:]
+            ]
+            samples = replay_samples(
+                history, rules["id"], max_samples=REPLAY_SAMPLES, seed=seed_for("replay", version)
+            )
             training = current.train(samples, seed=seed_for("optimizer", version))
             if not training["updated"]:
                 raise ValueError("Completed self-play data did not change policy weights")

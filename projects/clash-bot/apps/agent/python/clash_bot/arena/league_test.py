@@ -7,9 +7,13 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from clash_bot.arena.engine import Action, Arena
 from clash_bot.arena.fast_features import checksum
 from clash_bot.arena.league import checkpoint, initialize, publish_champion
-from clash_bot.arena.policy import Policy
+from clash_bot.arena.policy import Policy, features
+from clash_bot.arena.samples import SparseFeatures
+from clash_bot.arena.selfplay import replay_samples
+from clash_bot.arena.storage import read_episode, replay_path, write_episode, write_replay
 
 RULES = {"id": "r" * 64}
 
@@ -48,6 +52,36 @@ class LeagueTest(unittest.TestCase):
                     (root / "league.json").write_text(json.dumps({**league, **change}))
                     with self.assertRaises(ValidationError):
                         initialize(root, RULES)
+
+
+class CompactReplayTest(unittest.TestCase):
+    def test_training_reads_compact_replays_without_full_observations(self):
+        arena = Arena(1)
+        arena.play([Action(-1)] * 2, 100)
+        observation = arena.observe(0)
+        actions = [Action(*row) for row in observation["legalActions"]]
+        state, action_vectors = features(observation, actions)
+        sample = {
+            "observation": observation,
+            "features": SparseFeatures.of(state).model_dump(),
+            "actions": [action.row() for action in actions],
+            "actionFeatures": action_vectors.tolist(),
+            "target": [1.0] + [0.0] * (len(actions) - 1),
+            "outcome": -1,
+            "value": -0.7,
+        }
+        episode = {"completed": True, "rulesID": RULES["id"], "samples": [sample]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "episodes" / "game.json.gz"
+            write_episode(path, episode)
+            write_replay(path, episode)
+            compact = read_episode(replay_path(path))
+            self.assertNotIn("observation", compact["samples"][0])
+            rows = replay_samples([compact], RULES["id"])
+            policy = Policy(metadata={"version": 1, "rulesID": RULES["id"]})
+            report = policy.train(rows, 3, epochs=1)
+        self.assertTrue(report["updated"])
+        self.assertEqual(report["samples"], 1)
 
 
 if __name__ == "__main__":

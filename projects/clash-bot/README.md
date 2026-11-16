@@ -48,7 +48,7 @@ yarn workspace @side/clash-bot counterpush stop
 
 ## 실시간 빠른 정책
 
-자가대국 리그의 정책·가치 네트워크(약 11만 매개변수)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습하고, 챔피언이 바뀔 때마다 실시간 실행용 `champion-policy.json`을 게시합니다. `counterpush play`는 이 정책으로 실제 Counterpush 경기를 controller 4로 둡니다. 판단은 실행기 Node 프로세스 안에서 하며 이 Mac에서 한 번에 약 0.14ms였습니다(후보 4개, 화면 판독 시간 제외). Qwen 모델을 올리지 않고 학습하지도 않으며, 경기 기록과 결과 한 줄을 `.data/counterpush/control/fast-play.jsonl`에 남깁니다.
+자가대국 리그의 정책·가치 네트워크(약 82만 매개변수, 6×16 격자)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습하고, 챔피언이 바뀔 때마다 실시간 실행용 `champion-policy.json`을 게시합니다. `counterpush play`는 이 정책으로 실제 Counterpush 경기를 controller 4로 둡니다. 판단은 실행기 Node 프로세스 안에서 하며 이 Mac에서 한 번에 약 0.14ms였습니다(후보 4개, 화면 판독 시간 제외). Qwen 모델을 올리지 않고 학습하지도 않으며, 경기 기록과 결과 한 줄을 `.data/counterpush/control/fast-play.jsonl`에 남깁니다.
 
 ```sh
 yarn workspace @side/clash-bot arena start --background --hours 0
@@ -59,7 +59,7 @@ yarn workspace @side/clash-bot counterpush stop
 
 `--policy <파일>`로 다른 체크포인트의 `policy.json`을 지정할 수 있습니다. 후보는 시뮬레이터의 합법 행동과 같은 규칙(카드별 최대 6곳, 엘릭서 8 이상이면 대기 제외)으로 만듭니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다. 화면에서 아직 타워 체력을 읽지 않으므로 학습 표본의 절반에서 타워 체력을 가려, 타워 체력 없이도 판단하게 합니다.
 
-정책 형식이 바뀌어 자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast1`에서 새로 시작합니다. 이전 리그 폴더는 읽지 않습니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
+정책 형식이 바뀌어 자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast2`에서 새로 시작합니다. 이전 리그 폴더는 읽지 않습니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
 
 ## 한 경기의 판단
 

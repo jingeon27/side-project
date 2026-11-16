@@ -1,5 +1,6 @@
 """Stored self-play rows and checkpoint metadata, validated without the native battle engine."""
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .fast_features import ACTION_SIZE, STATE_SIZE
@@ -16,16 +17,51 @@ class PolicyMetadata(BaseModel):
     weightsSHA256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
+class SparseFeatures(BaseModel):
+    """A state vector stored by its nonzero cells; most of the field grid is empty."""
+
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+    index: list[int]
+    value: list[float]
+
+    @model_validator(mode="after")
+    def cells(self):
+        if len(self.index) != len(self.value):
+            raise ValueError("every stored cell needs one value")
+        if self.index != sorted(set(self.index)) or (self.index and self.index[0] < 0):
+            raise ValueError("cells must be unique and increasing")
+        if self.index and self.index[-1] >= STATE_SIZE:
+            raise ValueError("cell outside the state vector")
+        return self
+
+    @classmethod
+    def of(cls, vector):
+        index = np.flatnonzero(vector)
+        return cls(index=index.tolist(), value=np.asarray(vector)[index].astype(float).tolist())
+
+    def dense(self):
+        vector = np.zeros(STATE_SIZE, np.float32)
+        vector[self.index] = self.value
+        return vector
+
+
+def value_target(outcome, margin):
+    """Half the terminal result, half the tower hit-point margin; separates a 0:3 from a 2:3 loss."""
+    return 0.5 * outcome + 0.5 * float(np.clip(margin, -1, 1))
+
+
 class TrainingSample(BaseModel):
     """One searched position of a completed self-play game."""
 
     model_config = ConfigDict(extra="ignore", allow_inf_nan=False)
 
-    features: list[float] = Field(min_length=STATE_SIZE, max_length=STATE_SIZE)
+    features: SparseFeatures
     actions: list[list[int]] = Field(min_length=1)
     actionFeatures: list[list[float]]
     target: list[float]
     outcome: int
+    value: float = Field(ge=-1, le=1)
 
     @field_validator("outcome")
     @classmethod

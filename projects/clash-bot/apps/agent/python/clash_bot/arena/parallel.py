@@ -1,6 +1,7 @@
 """Bounded CPU self-play; workers never train, publish or share a battle."""
 
 import multiprocessing
+import os
 from concurrent.futures import ProcessPoolExecutor
 
 from .policy import Policy
@@ -17,8 +18,12 @@ def play_frozen_game(job):
     )
 
 
+# One game per core; each worker holds its own battle and a small policy.
+MAX_WORKERS = max(1, min(16, os.cpu_count() or 1))
+
+
 def play_frozen_games(jobs, workers):
-    if not 1 <= workers <= 4 or len(jobs) > workers:
+    if not 1 <= workers <= MAX_WORKERS or len(jobs) > workers:
         raise ValueError("Schedule at most one game per owned CPU worker")
     if workers == 1:
         return [play_frozen_game(job) for job in jobs]
