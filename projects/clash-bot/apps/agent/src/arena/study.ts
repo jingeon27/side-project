@@ -105,7 +105,7 @@ export async function runStudy(dataDir: string, args: string[]) {
       JSON.stringify(await studyNext(client, dataDir, { mode: 'isolated' }, args[index + 1]), null, 2),
     );
   } finally {
-    client.close();
+    await client.close();
     await lock.release();
   }
 }

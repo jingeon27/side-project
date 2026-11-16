@@ -397,8 +397,8 @@ export async function runCounterpushEvaluation(options: {
     await atomicWrite(join(control, 'status.json'), JSON.stringify(status, null, 2) + '\n');
   };
   const abort = () => {
-    client.close();
-    vision.close();
+    void client.close();
+    void vision.close();
   };
   signal.addEventListener('abort', abort, { once: true });
   try {
@@ -439,8 +439,7 @@ export async function runCounterpushEvaluation(options: {
     throw error;
   } finally {
     signal.removeEventListener('abort', abort);
-    client.close();
-    vision.close();
+    await Promise.all([client.close(), vision.close()]);
     await resources.browser?.close().catch(() => {});
     await lock.release();
   }

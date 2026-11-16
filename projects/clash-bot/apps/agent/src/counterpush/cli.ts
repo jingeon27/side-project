@@ -63,7 +63,7 @@ const main = async () => {
         ),
       );
     } finally {
-      vision.close();
+      await vision.close();
     }
     return;
   }

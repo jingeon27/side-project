@@ -135,8 +135,8 @@ export async function runCounterpush(options: {
     return write;
   };
   const abort = () => {
-    resources.client?.close();
-    resources.vision?.close();
+    void resources.client?.close();
+    void resources.vision?.close();
   };
   signal.addEventListener('abort', abort, { once: true });
   try {
@@ -408,8 +408,8 @@ export async function runCounterpush(options: {
   } finally {
     signal.removeEventListener('abort', abort);
     await resources.shared?.close().catch(() => {});
-    resources.client?.close();
-    resources.vision?.close();
+    // 워커가 끝난 뒤에 잠금을 풀어, 이전 학습기가 체크포인트를 쓰는 중에 새 실행이 시작되지 않게 한다.
+    await Promise.all([resources.client?.close(), resources.vision?.close()]);
     await resources.patterns?.save().catch(() => {});
     await resources.browser?.close().catch(() => {});
     await lock.release();

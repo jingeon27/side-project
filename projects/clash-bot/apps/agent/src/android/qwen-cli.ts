@@ -35,11 +35,11 @@ const client = new JsonLineClient(
 );
 process.once('SIGINT', () => {
   abort.abort();
-  client.close();
+  void client.close();
 });
 process.once('SIGTERM', () => {
   abort.abort();
-  client.close();
+  void client.close();
 });
 try {
   const adb = await findAdb(values.adb);
@@ -61,5 +61,5 @@ try {
     process.exitCode = 1;
   }
 } finally {
-  client.close();
+  await client.close();
 }

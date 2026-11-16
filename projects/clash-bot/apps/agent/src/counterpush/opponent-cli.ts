@@ -17,7 +17,7 @@ if (command === 'prepare' && values.observations) {
 } else if (command === 'train' && values.dataset) {
   const lock = await acquireLearningLock(join(DATA_DIR, 'qwen/selfplay'));
   const client = new LearningClient(DATA_DIR, selectModel(values.model, true).id);
-  const close = () => client.close();
+  const close = () => void client.close();
   process.once('SIGINT', close);
   process.once('SIGTERM', close);
   try {
@@ -26,7 +26,7 @@ if (command === 'prepare' && values.observations) {
   } finally {
     process.removeListener('SIGINT', close);
     process.removeListener('SIGTERM', close);
-    client.close();
+    await client.close();
     await lock.release();
   }
 } else {

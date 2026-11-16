@@ -108,7 +108,7 @@ export async function runSelfPlay(options: {
       mode: 0o600,
     });
   };
-  const abort = () => client.close();
+  const abort = () => void client.close();
   options.signal.addEventListener('abort', abort, { once: true });
   try {
     await report({ phase: 'loading' });
@@ -164,7 +164,7 @@ export async function runSelfPlay(options: {
     throw error;
   } finally {
     options.signal.removeEventListener('abort', abort);
-    client.close();
+    await client.close();
     await lock.release();
   }
 }
