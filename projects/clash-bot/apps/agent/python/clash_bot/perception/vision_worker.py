@@ -3,14 +3,14 @@
 import hashlib
 import json
 import sys
-import time
-import traceback
 from pathlib import Path
 
 import cv2
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
+
+from clash_bot.perception.protocol import protocol_channel, serve
 
 cv2.setNumThreads(1)
 
@@ -680,32 +680,10 @@ class VisionWorker:
 
 
 def main():
+    emit = protocol_channel()
     worker = VisionWorker(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 1)
-    print(json.dumps({"type": "ready"}), flush=True)
-    for line in sys.stdin:
-        started = time.monotonic()
-        try:
-            request = json.loads(line)
-            result = (
-                input_guard(request)
-                if request.get("op") == "guard"
-                else worker.absent(request)
-                if request.get("op") == "absent"
-                else worker.scan(request)
-            )
-            print(
-                json.dumps(
-                    {
-                        "type": "result",
-                        **result,
-                        "elapsed_ms": round((time.monotonic() - started) * 1000),
-                    }
-                ),
-                flush=True,
-            )
-        except Exception as error:
-            traceback.print_exc(file=sys.stderr)
-            print(json.dumps({"type": "error", "message": str(error)}), flush=True)
+    emit({"type": "ready"})
+    serve({"scan": worker.scan, "guard": input_guard, "absent": worker.absent}, sys.stdin, emit)
 
 
 if __name__ == "__main__":
