@@ -3,7 +3,8 @@ import { CARD_INFO, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 import { actionCandidates, type QwenAction } from './actions.ts';
-import { ownPoint, predictivePlacements } from './placement.ts';
+import { ownPoint } from './placement.ts';
+import { predictivePlacements } from './predictive-placement.ts';
 
 export function bodyCard(unit: FieldUnit): string | null {
   if (unit.kind) return unit.kind;
@@ -31,16 +32,11 @@ export function affordableCandidates(
   const old = actionCandidates(profile, cards, elixir, threats, observed);
   const byCard = cards.flatMap((card, index) => {
     if (!card || CARD_INFO[card].cost > elixir) return [];
-    const existing = ['ice_wizard', 'barbarian_barrel'].includes(card)
+    const existing = ['ice_wizard', 'barbarian_barrel', 'goblin_hut', 'poison', 'graveyard'].includes(card)
       ? predictivePlacements(profile, card, threats, observed)
       : old.filter((action) => action.card === card && action.kind !== 'ability');
     const fallback = () => {
-      if (card === 'barbarian_barrel') return [];
-      if (card === 'graveyard' || card === 'poison')
-        return [95, 273].map((x) => ({
-          target: { x, y: profile.arena.y + 60 },
-          description: `${card} tower; compare support and defense`,
-        }));
+      if (['barbarian_barrel', 'goblin_hut', 'poison', 'graveyard'].includes(card)) return [];
       return [95, 273].flatMap((x) => {
         const target = ownPoint(profile, card, { x, y: profile.riverY + 85 }, observed);
         return target ? [{ target, description: `${card} lane support` }] : [];

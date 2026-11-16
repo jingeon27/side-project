@@ -75,6 +75,20 @@
   "policy": {
     "noObservedSkillOpportunity": -9,
     "emptyRoll": -5,
-    "reservedRoll": -9
+    "reservedRoll": -9,
+    "emptyPoison": -6,
+    "kingDamage": -7,
+    "kingFootprintRadius": 1.8,
+    "graveyardSpawnRadius": 4,
+    "unsupportedGraveyard": -3,
+    "defenseReserve": -4,
+    "earlyHut": -3,
+    "redundantHut": -4,
+    "redundantPoison": -6,
+    "graveyardCounters": {
+      "P": 4,
+      "I": 3,
+      "H": 4
+    }
   }
 }

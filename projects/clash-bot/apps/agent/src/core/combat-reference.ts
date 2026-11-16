@@ -59,6 +59,16 @@ const parameters = z
       noObservedSkillOpportunity: z.number(),
       emptyRoll: z.number(),
       reservedRoll: z.number(),
+      emptyPoison: z.number(),
+      kingDamage: z.number(),
+      kingFootprintRadius: z.number(),
+      graveyardSpawnRadius: z.number(),
+      unsupportedGraveyard: z.number(),
+      graveyardCounters: z.record(z.string(), z.number().positive()),
+      defenseReserve: z.number(),
+      earlyHut: z.number(),
+      redundantHut: z.number(),
+      redundantPoison: z.number(),
     }),
   })
   .parse(

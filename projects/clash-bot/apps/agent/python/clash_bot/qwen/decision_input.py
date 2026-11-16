@@ -56,8 +56,16 @@ def serialize_decision(context):
         " ".join(f"{code(card)}{low}-{high}" for card, low, high in context.get("enemyCycle", []))
         or "?"
     )
+    tower_state = context.get("towers")
+    towers = (
+        "|".join(
+            ",".join(number(value) for value in tower_state[side]) for side in ("own", "enemy")
+        )
+        if tower_state
+        else "?"
+    )
     before = (
-        f"mana={mana_text};enemyMana={number(math.floor(enemy['min'] * 10) / 10)}-{number(math.ceil(enemy['max'] * 10) / 10)};enemyCycle={cycle};hand={''.join(map(code, context['hand']))};"
+        f"mana={mana_text};enemyMana={number(math.floor(enemy['min'] * 10) / 10)}-{number(math.ceil(enemy['max'] * 10) / 10)};enemyCycle={cycle};towers={towers};hand={''.join(map(code, context['hand']))};"
         f"next={''.join(map(code, context.get('next') or []))};own={units(context['own'])};enemy={units(context['enemy'])};effects={effects};skill={'?' if context.get('skill') == 'unknown' else int(context.get('skill') == 'ready')}\n"
     )
     contacts = bool(context["enemy"]) and any(

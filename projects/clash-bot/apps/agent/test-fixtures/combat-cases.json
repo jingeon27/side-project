@@ -333,5 +333,93 @@
       "damage": [0, 81],
       "kills": [0, 1]
     }
+  },
+  {
+    "name": "immobile Hut cannot walk into a distant Poison after eight seconds",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 14.5,
+      "y": 25.9,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 8.6,
+          "y": 23.2,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0],
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "a wide possible roll interval is not a trajectory hit",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 5.4,
+      "y": 13.3,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "barbarian",
+          "x": 3,
+          "y": 13.7,
+          "variant": "unknown",
+          "velocity": [0.006, 0.219],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "unseen movement towards a distant Poison is not projected value",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 3.5,
+      "y": 25.9,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 1.6,
+          "y": 14.5,
+          "variant": "unknown",
+          "velocity": null,
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
   }
 ]

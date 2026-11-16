@@ -21,6 +21,7 @@ export type EffectForecast = {
   unknownHealth: number;
   opportunity: number;
   reserveBarrel: boolean;
+  trajectoryDamage: number;
   targets: Array<{
     index: number;
     damage: [number, number];
@@ -28,6 +29,7 @@ export type EffectForecast = {
     exposureSeconds: [number, number];
     hp: [number, number] | null;
     kill: 'yes' | 'no' | 'possible' | 'unknown';
+    trajectoryDamage: number;
   }>;
 };
 
@@ -87,9 +89,11 @@ function poisonPosition(unit: CombatBody, time: number, x: number, y: number, de
     time <= until ? enter + (time - enter) * COMBAT.poison.slowMultiplier : exit + time - until,
   );
 }
-const uncertainty = (unit: CombatBody, time: number) =>
-  COMBAT.positionUncertaintyTiles +
-  time * (unit.velocity ? COMBAT.turnUncertaintyTilesPerSecond : (COMBAT.bodies[unit.kind]?.speed ?? 2));
+const uncertainty = (unit: CombatBody, time: number) => {
+  if (COMBAT.bodies[unit.kind]?.speed === 0) return COMBAT.positionUncertaintyTiles;
+  const speed = unit.velocity ? COMBAT.turnUncertaintyTilesPerSecond : (COMBAT.bodies[unit.kind]?.speed ?? 2);
+  return COMBAT.positionUncertaintyTiles + time * speed;
+};
 
 // Model intervals describe movement/aim scenarios, not a calibrated probability
 // or a claim that an unseen body is stationary, alive, marked or at full health.
@@ -125,6 +129,7 @@ export function forecastEffect(input: {
     unknownHealth: 0,
     opportunity,
     reserveBarrel,
+    trajectoryDamage: 0,
     targets: [],
   };
   if (input.kind === 'ability' || !['ice_wizard', 'barbarian_barrel', 'poison'].includes(input.card ?? ''))
@@ -173,6 +178,32 @@ export function forecastEffect(input: {
         ),
       ];
     });
+    const central = times.map((time) => {
+      const point =
+        input.card === 'poison' ? poisonPosition(unit, time, input.x, input.y, delay) : position(unit, time);
+      if (input.card === 'barbarian_barrel')
+        return (
+          Math.abs(point.x - input.x) <= COMBAT.barbarian_barrel.width / 2 &&
+          Math.abs(point.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) <=
+            COMBAT.barbarian_barrel.width / 2
+        );
+      return (
+        Math.hypot(point.x - input.x, point.y - input.y) <=
+        (input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius)
+      );
+    });
+    const trajectoryPotential = () => {
+      if (input.card === 'poison')
+        return (
+          Math.min(
+            8,
+            Math.floor((central.filter(Boolean).length * COMBAT.stepSeconds) / COMBAT.poison.tickSeconds),
+          ) * COMBAT.poison.dps
+        );
+      if (!central.some(Boolean)) return 0;
+      return input.card === 'ice_wizard' ? COMBAT.ice_wizard.damage : COMBAT.barbarian_barrel.damage;
+    };
+    const trajectoryDamage = trajectoryPotential();
     const exposure: [number, number] =
       input.card === 'poison'
         ? [
@@ -211,6 +242,7 @@ export function forecastEffect(input: {
         exposureSeconds: exposure.map(round) as [number, number],
         hp: unit.hp,
         kill,
+        trajectoryDamage,
       },
     ];
   });
@@ -230,7 +262,8 @@ export function forecastEffect(input: {
       targets.filter((t) => t.kill === 'yes' || t.kill === 'possible').length,
     ],
     unknownHealth: targets.filter((t) => t.kill === 'unknown').length,
-    opportunity: targets.length,
+    opportunity: targets.filter((target) => target.trajectoryDamage > 0).length,
+    trajectoryDamage: targets.reduce((sum, target) => sum + target.trajectoryDamage, 0),
   };
 }
 
@@ -243,6 +276,7 @@ export function forecastText(forecast: EffectForecast, kind: string, card: strin
       ? 'z'
       : `d${interval(forecast.damage)}k${interval(forecast.kills)}${forecast.unknownHealth ? '?' : ''}`) +
     (card === 'poison' && forecast.damage[1] > 0 ? `e${interval(forecast.exposureSeconds)}` : '') +
+    (card === 'poison' ? `n${forecast.trajectoryDamage}` : '') +
     (card === 'barbarian_barrel' ? `q${forecast.opportunity}r${Number(forecast.reserveBarrel)}` : '')
   );
 }

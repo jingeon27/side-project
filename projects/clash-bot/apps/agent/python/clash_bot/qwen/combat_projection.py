@@ -92,6 +92,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
         "unknownHealth": 0,
         "opportunity": opportunity,
         "reserveBarrel": reserve,
+        "trajectoryDamage": 0,
         "targets": [],
     }
     if kind == "ability" or card not in ("ice_wizard", "barbarian_barrel", "poison"):
@@ -127,7 +128,11 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 COMBAT["positionUncertaintyTiles"]
                 + time
                 * (
-                    COMBAT["turnUncertaintyTilesPerSecond"]
+                    (
+                        0
+                        if reference and reference["speed"] == 0
+                        else COMBAT["turnUncertaintyTilesPerSecond"]
+                    )
                     if unit["velocity"] is not None
                     else speed
                 )
@@ -158,6 +163,28 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                     any(math.hypot(ax - x, ay - y) - uncertainty <= radius for ax, ay in points),
                 ]
             )
+        central = []
+        for time in times:
+            velocity = unit["velocity"] or [0, 0]
+            px, py = unit["x"] + velocity[0] * time, unit["y"] + velocity[1] * time
+            if card == "poison":
+                px, py = poison_position(unit, time, x, y, delay)
+            if card == "barbarian_barrel":
+                central.append(
+                    abs(px - x) <= COMBAT[card]["width"] / 2
+                    and abs(py - y - (time - delay) * COMBAT[card]["speed"])
+                    <= COMBAT[card]["width"] / 2
+                )
+                continue
+            central.append(math.hypot(px - x, py - y) <= COMBAT[card]["radius"])
+        trajectory_damage = (
+            min(8, math.floor(sum(central) * COMBAT["stepSeconds"] / COMBAT[card]["tickSeconds"]))
+            * COMBAT[card]["dps"]
+            if card == "poison"
+            else COMBAT[card]["damage"]
+            if any(central)
+            else 0
+        )
         exposure = (
             [min(8, sum(hit[column] for hit in hits) * COMBAT["stepSeconds"]) for column in (0, 1)]
             if card == "poison"
@@ -197,6 +224,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 "exposureSeconds": [rounded(value) for value in exposure],
                 "hp": hp,
                 "kill": kill,
+                "trajectoryDamage": trajectory_damage,
             }
         )
     targets = result["targets"]
@@ -210,7 +238,8 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
             sum(row["kill"] in ("yes", "possible") for row in targets),
         ],
         unknownHealth=sum(row["kill"] == "unknown" for row in targets),
-        opportunity=len(targets),
+        opportunity=sum(row["trajectoryDamage"] > 0 for row in targets),
+        trajectoryDamage=sum(row["trajectoryDamage"] for row in targets),
     )
     return result
 
@@ -234,4 +263,6 @@ def forecast_text(forecast, kind, card):
         text += f"e{interval(forecast['exposureSeconds'])}"
     if card == "barbarian_barrel":
         text += f"q{forecast['opportunity']}r{int(forecast['reserveBarrel'])}"
+    if card == "poison":
+        text += f"n{forecast['trajectoryDamage']}"
     return text

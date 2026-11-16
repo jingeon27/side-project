@@ -8,7 +8,7 @@ import type { QwenAction } from '../../core/policy/actions.ts';
 import { bodyCard } from '../../core/policy/candidates.ts';
 import { combatBody } from '../../core/policy/combat-projection.ts';
 import type { DecisionUnit, PublicDecisionContext } from '../../core/policy/decision-v3.ts';
-import { predictivePlacements } from '../../core/policy/placement.ts';
+import { predictivePlacements } from '../../core/policy/predictive-placement.ts';
 import type { Profile } from '../../core/profile.ts';
 
 export const reflectPoint = (profile: Pick<Profile, 'riverY'>, point: Point): Point => ({
@@ -106,42 +106,29 @@ export function mirrorActions(profile: Profile, deck: CardId[], situation: Battl
     .filter((unit) => unit.confidence >= 0.85)
     .map((unit) => reflectPoint(profile, unit))
     .toSorted((a, b) => b.y - a.y);
-  const points = (tiles: ReadonlyArray<readonly [number, number]>) =>
-    tiles.map((tile) => screenPoint(profile, tile));
   const plays = deck.flatMap((card) => {
     if (CARD_INFO[card].cost > situation.opponent.elixir.max) return [];
     const targets = match(card)
-      .with('poison', () => [
-        ...points([
-          [3.5, 6.5],
-          [14.5, 6.5],
-          [3.5, 25.5],
-          [14.5, 25.5],
-        ]),
-        ...invaders.slice(0, 1),
-      ])
-      .with('graveyard', () =>
-        points([
-          [3.5, 25.5],
-          [2.5, 25],
-          [14.5, 25.5],
-        ]),
-      )
-      .with('goblin_hut', () =>
-        points([
-          [9, 11.25],
-          [6.5, 11.25],
-          [11.5, 11.25],
-          [3.5, 10],
-        ]),
-      )
-      .with('ice_wizard', () =>
+      .with('poison', 'graveyard', 'goblin_hut', 'ice_wizard', () =>
         predictivePlacements(
           profile,
-          'ice_wizard',
+          card,
           invaders.filter((point) => point.y > profile.riverY),
           field,
-        ).map((option) => option.target),
+        )
+          .slice(
+            0,
+            match(card)
+              .with('ice_wizard', () => 4)
+              .with('goblin_hut', () => 3)
+              .otherwise(() => 5),
+          )
+          .map((option) => option.target),
+      )
+      .with('barbarian_barrel', () =>
+        predictivePlacements(profile, card, invaders, field)
+          .slice(0, 2)
+          .map((option) => option.target),
       )
       .otherwise(() =>
         invaders[0]
@@ -158,10 +145,7 @@ export function mirrorActions(profile: Profile, deck: CardId[], situation: Battl
                 y: Math.min(profile.arena.y + profile.arena.height - 15, invaders[0].y + 25),
               },
             ]
-          : points([
-              [3.5, 10],
-              [14.5, 10],
-            ]),
+          : [screenPoint(profile, [3.5, 10]), screenPoint(profile, [14.5, 10])],
       );
     return uniqBy(targets, (point) => `${Math.round(point.x)}:${Math.round(point.y)}`).map((target) => ({
       slot: 0,

@@ -34,7 +34,7 @@ it('shares the simulation contract while keeping resource uncertainty and specia
     serializeDecision({ ...example.context, effects: [['red', 'graveyard', 14.5, 6.5, null]] }),
   ).toContain('rG14.5,6.5@?s');
   expect(example.prompt).toContain('A:W B:G3.5,25.5 C:U');
-  expect(example.prompt.length).toBeLessThan(1500);
+  expect(example.prompt.length).toBeLessThan(1800);
   expect(tilePoint(profile, { x: 184, y: profile.riverY })).toEqual([9, 16]);
 });
 
