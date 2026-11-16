@@ -231,6 +231,10 @@ export async function runCounterpush(options: {
       return stop !== null && (JSON.parse(stop) as { id: string }).id === lock.owner.id;
     };
     await report({ phase: 'ready', policy, champion });
+    const studyCurrentCandidate = () => {
+      if (!state.candidateDirectory) throw new Error('후보 없이 탐색 자료를 학습할 수 없습니다.');
+      return studyNext(client, dataDir, { mode: 'candidate', learner: state.candidateDirectory });
+    };
     const result = await qualifiedLearningLoop({
       state,
       trainingMatches,
@@ -249,7 +253,7 @@ export async function runCounterpush(options: {
           if ((Array.isArray(current.search_datasets) ? current.search_datasets.length : 0) >= base + 4)
             break;
           await report({ phase: 'curriculum_warmup' });
-          const study = await studyNext(client, dataDir, undefined, 'candidate');
+          const study = await studyNext(client, dataDir, { mode: 'candidate', learner: directory });
           if (!study.updated) break;
           await report({ searchStudy: study });
         }
@@ -308,7 +312,7 @@ export async function runCounterpush(options: {
           throw error;
         });
         if (!previousReplay) {
-          const searchStudy = await studyNext(client, dataDir, undefined, 'candidate');
+          const searchStudy = await studyCurrentCandidate();
           const rehearsal = await client.rehearse(4);
           await atomicWrite(replayReceipt, JSON.stringify({ searchStudy, rehearsal }) + '\n');
           await report({ searchStudy, rehearsal, candidatePolicy: await client.status() });
@@ -316,7 +320,7 @@ export async function runCounterpush(options: {
       },
       study: async () => {
         await report({ phase: 'candidate_study' });
-        const searchStudy = await studyNext(client, dataDir, undefined, 'candidate');
+        const searchStudy = await studyCurrentCandidate();
         await report({ searchStudy, candidatePolicy: await client.status() });
       },
       evaluate: async (candidate, evaluationFile) => {
