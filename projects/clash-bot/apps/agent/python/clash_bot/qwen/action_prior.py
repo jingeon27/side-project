@@ -93,8 +93,12 @@ def contextual_prior(code, facts, state):
             and (age is None or age < 8)
             for side, card, x, y, age in active
         )
-        if re.search(r"n0(?:\D|$)", facts) and not defending:
-            total += POLICY["emptyPoison"]
+        potential = re.search(r"n(\d+)", facts)
+        if potential is not None and not defending:
+            if int(potential[1]) == 0:
+                total += POLICY["emptyPoison"]
+            elif int(potential[1]) < 276:
+                total += POLICY["thinPoison"]
         if any(
             side == "b"
             and card == "P"
@@ -139,3 +143,32 @@ def contextual_prior(code, facts, state):
         if any(card == "H" and math.hypot(point[0] - x, point[1] - y) < 6 for card, x, y in own):
             total += POLICY["redundantHut"]
     return total
+
+
+def main():
+    """CPU-only mechanics scores for a read-only external policy observer."""
+    import sys
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class Input(BaseModel):
+        model_config = ConfigDict(strict=True, extra="forbid")
+        prompt: str
+        count: int = Field(ge=1, le=26)
+
+    if sys.argv[1:] != ["serve"]:
+        raise ValueError("Use action_prior serve")
+    print(json.dumps({"type": "ready"}), flush=True)
+    for line in sys.stdin:
+        try:
+            request = Input.model_validate_json(line)
+            print(
+                json.dumps({"type": "result", "bias": action_prior(request.prompt, request.count)}),
+                flush=True,
+            )
+        except (ValueError, KeyError) as error:
+            print(json.dumps({"type": "error", "message": str(error)}), flush=True)
+
+
+if __name__ == "__main__":
+    main()

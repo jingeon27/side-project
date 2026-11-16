@@ -165,6 +165,16 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
             )
         central = []
         for time in times:
+            if (
+                card == "poison"
+                and (not reference or reference["speed"] != 0)
+                and (
+                    unit["velocity"] is None
+                    or time > delay + COMBAT["poison"]["trajectoryHorizonSeconds"]
+                )
+            ):
+                central.append(False)
+                continue
             velocity = unit["velocity"] or [0, 0]
             px, py = unit["x"] + velocity[0] * time, unit["y"] + velocity[1] * time
             if card == "poison":

@@ -17,7 +17,8 @@
   "poison": {
     "deploySeconds": 0.5,
     "tickSeconds": 1,
-    "slowMultiplier": 0.85
+    "slowMultiplier": 0.85,
+    "trajectoryHorizonSeconds": 2
   },
   "ability": {
     "markRange": 5.5,
@@ -89,6 +90,7 @@
       "P": 4,
       "I": 3,
       "H": 4
-    }
+    },
+    "thinPoison": -2
   }
 }

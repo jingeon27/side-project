@@ -179,6 +179,12 @@ export function forecastEffect(input: {
       ];
     });
     const central = times.map((time) => {
+      if (
+        input.card === 'poison' &&
+        reference?.speed !== 0 &&
+        (unit.velocity === null || time > delay + COMBAT.poison.trajectoryHorizonSeconds)
+      )
+        return false;
       const point =
         input.card === 'poison' ? poisonPosition(unit, time, input.x, input.y, delay) : position(unit, time);
       if (input.card === 'barbarian_barrel')

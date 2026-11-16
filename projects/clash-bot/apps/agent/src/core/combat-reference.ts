@@ -47,6 +47,7 @@ const parameters = z
       deploySeconds: z.number(),
       tickSeconds: z.number(),
       slowMultiplier: z.number(),
+      trajectoryHorizonSeconds: z.number().positive(),
     }),
     ability: z.object({
       markRange: z.number(),
@@ -60,6 +61,7 @@ const parameters = z
       emptyRoll: z.number(),
       reservedRoll: z.number(),
       emptyPoison: z.number(),
+      thinPoison: z.number(),
       kingDamage: z.number(),
       kingFootprintRadius: z.number(),
       graveyardSpawnRadius: z.number(),

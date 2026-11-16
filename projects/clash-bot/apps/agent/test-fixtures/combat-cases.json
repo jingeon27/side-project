@@ -421,5 +421,89 @@
       "trajectoryDamage": 0,
       "opportunity": 0
     }
+  },
+  {
+    "name": "untracked mobile has no eight-second trajectory value",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": null,
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0
+    }
+  },
+  {
+    "name": "tracked mobile Poison trajectory uses a short horizon",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 184
+    }
+  },
+  {
+    "name": "immobile Hut keeps full reference Poison exposure",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 736
+    }
   }
 ]

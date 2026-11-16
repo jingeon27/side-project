@@ -10,8 +10,8 @@ from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner
 class ActionPriorTest(unittest.TestCase):
     def test_empty_poison_is_not_rewarded_by_a_possible_movement_upper_bound(self):
         state = "mana=6;enemyMana=0-10;own=;enemy=I1.6,14.5;effects=;towers=?\n"
-        empty = action_prior(state + "A:P3.5,25.9d0-184k0?e0-1.7n0 B:W", 2)
-        hit = action_prior(state + "A:P3.5,25.9d0-184k0?e0-1.7n184 B:W", 2)
+        empty = action_prior(state + "A:P3.5,25.9d0-368k0?e0-4n0 B:W", 2)
+        hit = action_prior(state + "A:P3.5,25.9d0-368k0?e0-4n368 B:W", 2)
         self.assertLess(empty[0], hit[0] - 5)
 
     def test_king_guard_uses_known_tower_state_and_does_not_treat_unknown_as_awake(self):
