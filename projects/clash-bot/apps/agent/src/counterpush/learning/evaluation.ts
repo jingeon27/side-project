@@ -7,7 +7,7 @@ import { MODEL } from '../../qwen/model.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import type { Profile } from '../../shared/config.ts';
 import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
-import { acquireLearningLock } from '../../shared/runtime-lock.ts';
+import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { CounterpushBrowser } from '../runtime/browser.ts';
 import { playCounterpushEpisode } from '../runtime/episode.ts';
@@ -416,13 +416,7 @@ export async function runCounterpushEvaluation(options: {
       report,
       stopped: async () => {
         if (signal.aborted || Date.now() >= deadline) return true;
-        const stop = await readFile(join(dataDir, 'qwen/selfplay/stop.json'), 'utf8').catch(
-          (error: NodeJS.ErrnoException) => {
-            if (error.code === 'ENOENT') return null;
-            throw error;
-          },
-        );
-        return stop !== null && (JSON.parse(stop) as { id: string }).id === lock.owner.id;
+        return stopRequested(join(dataDir, 'qwen/selfplay'), lock.owner.id);
       },
     });
     await report({

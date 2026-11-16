@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, statfs } from 'node:fs/promises';
+import { appendFile, mkdir, statfs } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -8,7 +8,7 @@ import { runQwen } from '../android/runtime/qwen-runner.ts';
 import { SharedInferenceClient } from '../qwen/shared-inference.ts';
 import { atomicWrite } from '../shared/assets.ts';
 import type { Profile } from '../shared/config.ts';
-import { acquireLearningLock } from '../shared/runtime-lock.ts';
+import { acquireLearningLock, stopRequested } from '../shared/runtime-lock.ts';
 import { trophyPrompt } from './decision.ts';
 
 export async function runTrophy(options: {
@@ -44,20 +44,11 @@ export async function runTrophy(options: {
     await atomicWrite(join(control, 'status.json'), JSON.stringify(state, null, 2) + '\n');
   };
   const until = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
-  const stopped = async () => {
-    const stop = (await readFile(join(control, 'stop.json'), 'utf8')
-      .then(JSON.parse)
-      .catch((error: NodeJS.ErrnoException) => {
-        if (error.code === 'ENOENT') return null;
-        throw error;
-      })) as { id?: string } | null;
-    return (
-      signal.aborted ||
-      Date.now() >= until ||
-      (options.matches > 0 && state.completed >= options.matches) ||
-      stop?.id === lock.owner.id
-    );
-  };
+  const stopped = async () =>
+    signal.aborted ||
+    Date.now() >= until ||
+    (options.matches > 0 && state.completed >= options.matches) ||
+    (await stopRequested(control, lock.owner.id));
   try {
     await report({});
     while (!(await stopped())) {

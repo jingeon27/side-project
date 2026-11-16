@@ -6,8 +6,10 @@ import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { atomicWrite } from './assets.ts';
+import { readOptionalJsonFile } from './json-file.ts';
 
 const ownerSchema = z.object({ pid: z.int().positive(), id: z.string().min(1) });
+const stopRequestSchema = z.strictObject({ id: z.string().min(1), requestedAt: z.iso.datetime() });
 type LockOwner = z.infer<typeof ownerSchema>;
 
 const alive = (pid: number) => {
@@ -98,4 +100,10 @@ export async function requestLearningStop(directory: string) {
     join(directory, 'stop.json'),
     JSON.stringify({ id: owner.id, requestedAt: dayjs().toISOString() }),
   );
+}
+
+// 중지 요청은 요청 당시의 실행에만 적용한다. 이전 실행이 남긴 요청은 새 실행을 멈추지 않는다.
+export async function stopRequested(directory: string, ownerId: string): Promise<boolean> {
+  const request = await readOptionalJsonFile(join(directory, 'stop.json'), stopRequestSchema);
+  return request?.id === ownerId;
 }

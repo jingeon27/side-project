@@ -10,7 +10,7 @@ import { MODEL } from '../../qwen/model.ts';
 import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
-import { acquireLearningLock } from '../../shared/runtime-lock.ts';
+import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { learnCounterpushEpisodes } from '../learning/episode-learning.ts';
 import { evaluateWithResources } from '../learning/evaluation.ts';
@@ -209,13 +209,7 @@ export async function runCounterpush(options: {
       )
         return true;
       if (goal && goalProgress(goal, state).complete) return true;
-      const stop = await readFile(join(dataDir, 'qwen/selfplay/stop.json'), 'utf8').catch(
-        (error: NodeJS.ErrnoException) => {
-          if (error.code === 'ENOENT') return null;
-          throw error;
-        },
-      );
-      return stop !== null && (JSON.parse(stop) as { id: string }).id === lock.owner.id;
+      return stopRequested(join(dataDir, 'qwen/selfplay'), lock.owner.id);
     };
     await report({ phase: 'ready', policy, champion });
     const studyCurrentCandidate = () => {
