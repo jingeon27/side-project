@@ -5,6 +5,7 @@ clock and leaves `towers` out until tower hit points are read from the screen.
 """
 
 import json
+import math
 from functools import cache
 
 import numpy as np
@@ -66,6 +67,27 @@ def action_row(index, action, team):
     return [chr(65 + index), kind, card, cost, *tile(action.x, action.y, team)]
 
 
+def public_spell_age(observation, spell):
+    def same_cast(team, card, x, y):
+        return (
+            team == spell[0]
+            and card == spell[1]
+            and math.hypot(x - spell[3], y - spell[4]) < TILE / 2
+        )
+
+    # Overlapping effects at the same point cannot be assigned a public cast
+    # time confidently. Never consult private spell timers or internal ids.
+    if sum(same_cast(row[0], row[1], row[3], row[4]) for row in observation["state"]["spells"]) > 1:
+        return None
+    ticks = [
+        event["tick"]
+        for event in observation["history"]
+        if event["tick"] <= observation["state"]["tick"]
+        and any(same_cast(play["team"], *play["action"]) for play in event["plays"])
+    ]
+    return math.floor((observation["state"]["tick"] - max(ticks)) / 20 + 0.5) if ticks else None
+
+
 def decision_context(observation, actions, types=None):
     types = types or unit_types()
     state, team = observation["state"], observation["team"]
@@ -84,7 +106,12 @@ def decision_context(observation, actions, types=None):
         ]
 
     effects = [
-        ["blue" if row[0] == team else "red", ALIASES[row[1]], *tile(row[3], row[4], team), None]
+        [
+            "blue" if row[0] == team else "red",
+            ALIASES[row[1]],
+            *tile(row[3], row[4], team),
+            public_spell_age(observation, row),
+        ]
         for row in state["spells"]
         if row[1] in (3, 6)
     ]
