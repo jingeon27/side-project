@@ -1,9 +1,7 @@
 import contextlib
 import io
 import json
-import tempfile
 import unittest
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -92,19 +90,16 @@ class WorkerProtocolTests(unittest.TestCase):
         worker.status.assert_called_once()
 
     def test_typed_requests_cannot_bypass_frozen_or_deployed_model_guards(self):
-        with tempfile.TemporaryDirectory() as directory:
-            worker = SimpleNamespace(
-                evaluation_backup={"frozen": True},
-                candidate_active=lambda: False,
-                directory=Path(directory),
-                train=Mock(),
-            )
-            request = json.dumps({"op": "train", "episode": "/episode"})
-            replies = []
-            with contextlib.redirect_stderr(io.StringIO()):
-                serve(worker, [request], replies.append)
-                worker.evaluation_backup = None
-                (Path(directory) / "promotion-policy.json").write_text("{}")
-                serve(worker, [request], replies.append)
-            self.assertTrue(all(row["type"] == "error" for row in replies))
-            worker.train.assert_not_called()
+        worker = SimpleNamespace(
+            evaluation_backup={"frozen": True},
+            candidate_active=lambda: False,
+            train=Mock(),
+        )
+        request = json.dumps({"op": "train", "episode": "/episode"})
+        replies = []
+        with contextlib.redirect_stderr(io.StringIO()):
+            serve(worker, [request], replies.append)
+            worker.evaluation_backup = None
+            serve(worker, [request], replies.append)
+        self.assertEqual([row["type"] for row in replies], ["error", "error"])
+        worker.train.assert_not_called()

@@ -28,7 +28,6 @@ def fixture(directory, tied=False, wins=16, method="hoeffding_score"):
     }
     sample["old_log_probs"] = mx.stop_gradient(learner.log_probs(sample))
     learner.train([sample], 1, "bootstrap")
-    atomic_json(root / "promotion-policy.json", {"enabled": True})
     private = data / "arena/qwen/training/private"
     source = root / "checkpoints/v000001"
     shutil.copytree(source, private / "checkpoints/v000001")

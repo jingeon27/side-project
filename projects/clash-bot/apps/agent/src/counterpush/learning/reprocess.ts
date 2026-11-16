@@ -84,7 +84,7 @@ export async function reprocessEpisode(
       (entry) => entry.check && entry.check.at <= frame.capturedAt && !applied.has(entry.frame),
     )) {
       applied.add(input.frame);
-      const confirmed = input.check!.confirmed ?? (input.check!.changed && (input.check!.spent ?? 0) >= 1);
+      const confirmed = input.check!.confirmed === true;
       if (!confirmed || !input.action) {
         if (input.type === 'input_sent') memory.ownEvolutions.uncertain();
         continue;

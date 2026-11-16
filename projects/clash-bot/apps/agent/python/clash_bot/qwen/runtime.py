@@ -74,6 +74,7 @@ class LearningWorker:
             directory,
             self.spec["identity"],
             f"language_model.model.layers.{config.num_hidden_layers - 1}.mlp.down_proj",
+            frozen=True,
         )
         core.norm = AdaptedFinalNorm(norm, self.learner.adapter, self.sink)
         self.directory = Path(directory)
@@ -207,6 +208,7 @@ class LearningWorker:
                 self.directory,
                 self.spec["identity"],
                 old.metadata["target"],
+                frozen=True,
             )
             self.bind(self.champion_learner)
         return {**result, "champion": self.status()}
@@ -293,11 +295,7 @@ class LearningWorker:
                 "version": version,
                 "model_identity": self.spec["identity"],
                 "model": self.spec["name"],
-                "trainable": self.evaluation_backup is None
-                and (
-                    self.candidate_active()
-                    or not (self.directory / "promotion-policy.json").exists()
-                ),
+                "trainable": self.evaluation_backup is None and self.candidate_active(),
                 "read_only_evaluation": self.evaluation_backup is not None,
                 "selection": "categorical_as_live",
                 "controller_version": controller,

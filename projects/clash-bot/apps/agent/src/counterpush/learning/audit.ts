@@ -15,8 +15,6 @@ const RESULT_COUNTERS: Record<string, 'wins' | 'losses' | 'draws'> = {
 type Event = {
   type: string;
   confirmed?: boolean;
-  changed?: boolean;
-  spent?: number;
   action?: { card: CardId };
   observation?: { id: string; card: CardId; situation?: unknown };
 };
@@ -54,13 +52,7 @@ export function episodeCoverage(
 ) {
   const cards = emptyCardCoverage();
   for (const event of events) {
-    if (
-      event.type === 'input_check' &&
-      event.action &&
-      cards[event.action.card] &&
-      (event.confirmed === true ||
-        (event.confirmed === undefined && event.changed && (event.spent ?? 0) >= 1))
-    )
+    if (event.type === 'input_check' && event.action && cards[event.action.card] && event.confirmed === true)
       cards[event.action.card].ownConfirmed++;
     if (event.type === 'opponent_action' && event.observation && cards[event.observation.card]) {
       cards[event.observation.card].opponentRecognized++;

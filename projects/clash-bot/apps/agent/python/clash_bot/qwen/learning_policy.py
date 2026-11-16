@@ -90,7 +90,11 @@ class Learner:
         directory,
         model_identity=MODEL_SHA256,
         target="language_model.model.layers.31.mlp.down_proj",
+        *,
+        frozen=False,
     ):
+        # The deployed champion only changes through the qualified publication path.
+        self.frozen = frozen
         self.adapter = adapter
         self.norm_weight = norm_weight
         self.norm_eps = norm_eps
@@ -641,7 +645,7 @@ class Learner:
             raise
 
     def save(self, metadata):
-        if (self.directory / "promotion-policy.json").exists():
+        if self.frozen:
             raise ValueError("The deployed champion is frozen; publish only a qualified candidate")
         checkpoint = self.directory / "checkpoints" / f"v{metadata['version']:06d}"
         checkpoint.mkdir(parents=True, exist_ok=True)

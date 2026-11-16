@@ -24,7 +24,7 @@ async function lockDirectory(): Promise<string> {
 it('reclaims a lock file left empty by a crash between creating and writing it', async () => {
   const directory = await lockDirectory();
   await writeFile(join(directory, 'lock.json'), '');
-  await expect(requestLearningStop(directory)).rejects.toThrow('현재 실행 중인 자가학습이 없습니다.');
+  await expect(requestLearningStop(directory)).rejects.toThrow('현재 실행 중인 작업이 없습니다.');
   const lock = await acquireLearningLock(directory);
   expect(await readLockOwner(directory)).toEqual(lock.owner);
   await lock.release();
@@ -38,7 +38,7 @@ it('lets only one of two simultaneous takeovers of a dead owner lock succeed', a
   const results = await Promise.allSettled([acquireLearningLock(directory), acquireLearningLock(directory)]);
   expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
   expect(results.filter((result) => result.status === 'rejected')).toEqual([
-    { status: 'rejected', reason: new Error('이미 자가학습 실행이 있습니다. selfplay status로 확인하세요.') },
+    { status: 'rejected', reason: new Error('이미 실행 중인 작업이 있습니다. status 명령으로 확인하세요.') },
   ]);
   expect(await readdir(directory)).toEqual(['lock.json']);
 });

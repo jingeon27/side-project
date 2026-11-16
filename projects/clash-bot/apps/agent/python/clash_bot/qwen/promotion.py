@@ -225,8 +225,6 @@ def publish(champion_dir, candidate_checkpoint, report_path, actual_candidate_sh
         Path(candidate_checkpoint).resolve(),
     )
     data_dir = champion_dir.parents[1]
-    if not (champion_dir / "promotion-policy.json").exists():
-        raise ValueError("Enable the qualified-champion policy first")
     pointer = json.loads((champion_dir / "current.json").read_text())
     previous = champion_dir / "checkpoints" / f"v{pointer['version']:06d}"
     champion = json.loads((previous / "metadata.json").read_text())

@@ -39,6 +39,7 @@ def choose_external(worker, request):
             checkpoint,
             worker.spec["identity"],
             metadata["target"],
+            frozen=True,
         )
         learner.metadata = metadata
         worker.external_policy = {"path": checkpoint, "learner": learner}

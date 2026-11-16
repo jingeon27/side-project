@@ -21,7 +21,6 @@
     "test:integration": "RUN_COUNTERPUSH_INTEGRATION=1 vitest run --project integration",
     "qwen": "node src/android/qwen-cli.ts",
     "qwen:setup": "node src/shared/python-cli.ts --bootstrap clash_bot.qwen.setup",
-    "selfplay": "node src/android/selfplay-cli.ts",
     "opponent": "node src/counterpush/opponent-cli.ts",
     "counterpush": "node src/counterpush/cli.ts",
     "counterpush:setup": "node src/shared/python-cli.ts --bootstrap clash_bot.perception.setup",

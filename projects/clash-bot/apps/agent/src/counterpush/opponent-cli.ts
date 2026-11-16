@@ -1,41 +1,13 @@
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { LearningClient } from '../qwen/learning-client.ts';
-import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR } from '../shared/config.ts';
-import { acquireLearningLock } from '../shared/runtime-lock.ts';
 import { prepareOpponentDataset } from './learning/opponent-data.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { observations: { type: 'string' }, dataset: { type: 'string' }, model: { type: 'string' } },
+  options: { observations: { type: 'string' } },
 });
-const command = positionals[0];
-const main = async () => {
-  if (command === 'prepare' && values.observations) {
-    console.log(
-      JSON.stringify(await prepareOpponentDataset(resolve(values.observations), DATA_DIR), null, 2),
-    );
-    return;
-  }
-  if (command !== 'train' || !values.dataset)
-    throw new Error(
-      'opponent prepare --observations <관찰.json> 또는 opponent train --dataset <dataset.json> [--model 3.8-27b]',
-    );
-  const lock = await acquireLearningLock(join(DATA_DIR, 'qwen/selfplay'));
-  const client = new LearningClient(DATA_DIR, selectModel(values.model, true).id);
-  const close = () => void client.close();
-  process.once('SIGINT', close);
-  process.once('SIGTERM', close);
-  try {
-    await client.ready();
-    console.log(JSON.stringify(await client.imitate(resolve(values.dataset)), null, 2));
-  } finally {
-    process.removeListener('SIGINT', close);
-    process.removeListener('SIGTERM', close);
-    await client.close();
-    await lock.release();
-  }
-};
-await main();
+if (positionals[0] !== 'prepare' || !values.observations)
+  throw new Error('opponent prepare --observations <관찰.json>');
+console.log(JSON.stringify(await prepareOpponentDataset(resolve(values.observations), DATA_DIR), null, 2));

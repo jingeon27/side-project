@@ -25,8 +25,12 @@ class LearningEpisodeTest(unittest.TestCase):
         self.assertTrue(
             confirmed_input({"type": "input_check", "changed": True, "spent": 0, "confirmed": True})
         )
-        self.assertTrue(confirmed_input({"type": "input_check", "changed": True, "spent": 3}))
-        self.assertFalse(confirmed_input({"type": "input_check", "changed": False, "spent": 3}))
+        self.assertFalse(confirmed_input({"type": "input_check", "changed": True, "spent": 3}))
+        self.assertFalse(
+            confirmed_input(
+                {"type": "input_check", "changed": False, "spent": 3, "confirmed": True}
+            )
+        )
 
     def test_counterpush_rewards_require_two_identical_visible_crown_labels(self):
         result = {
@@ -102,7 +106,7 @@ class LearningEpisodeTest(unittest.TestCase):
         )
         return worker
 
-    def write_episode(self, directory, worker, source="crown_pixels_verified2"):
+    def write_episode(self, directory, worker, readings=("Crowns: you 0, the opponent 1",) * 2):
         directory = Path(directory).resolve()
         features = directory / "features"
         features.mkdir()
@@ -128,10 +132,17 @@ class LearningEpisodeTest(unittest.TestCase):
             prediction(1),
             prediction(2),
             prediction(3),
-            {"type": "input_check", "frame": 1, "changed": True, "spent": 3},
-            {"type": "input_check", "frame": 2, "changed": False, "spent": 3},
+            {"type": "input_check", "frame": 1, "changed": True, "spent": 3, "confirmed": True},
+            {"type": "input_check", "frame": 2, "changed": False, "spent": 3, "confirmed": False},
             {"type": "wait_check", "frame": 3, "valid": True},
-            {"type": "result", "source": source, "blue": 0, "red": 1, "outcome": "win"},
+            {
+                "type": "result",
+                "source": "counterpush_result_dom_verified2",
+                "blue": 0,
+                "red": 1,
+                "outcome": "win",
+                "readings": list(readings),
+            },
         ]
         (directory / "events.jsonl").write_text("\n".join(json.dumps(row) for row in rows))
 
@@ -148,7 +159,7 @@ class LearningEpisodeTest(unittest.TestCase):
     def test_does_not_train_on_a_single_unverified_result_frame(self):
         with tempfile.TemporaryDirectory() as directory:
             worker = self.worker()
-            self.write_episode(directory, worker, source="crown_pixels")
+            self.write_episode(directory, worker, readings=("Crowns: you 0, the opponent 1",))
             self.assertEqual(worker.train({"episode": directory})["reason"], "no_verified_result")
             worker.learner.train.assert_not_called()
 

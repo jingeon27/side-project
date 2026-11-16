@@ -29,7 +29,6 @@ import {
   type FreshBattle,
   type QwenPrediction,
 } from '../policy/qwen-policy.ts';
-import { exportEpisode } from './qwen-dataset.ts';
 
 export async function inspectQwenFrame(
   bytes: Buffer,
@@ -87,7 +86,6 @@ export async function runQwen(options: {
   ) => string;
   maxDecisionMs?: number;
   runDirectory?: string;
-  readOnlyDecisions?: boolean;
   onProgress?: (progress: { frames: number; actions: number; confirmed: number }) => Promise<void>;
 }): Promise<
   { directory: string; result: string; actions: number; confirmed: number; seenBattle: boolean } | undefined
@@ -242,7 +240,6 @@ export async function runQwen(options: {
           ...result,
           image: path,
           source: options.decision ? 'crown_pixels_verified2' : 'crown_pixels',
-          reward: result.outcome === 'win' ? 1 : result.outcome === 'loss' ? -1 : 0,
         });
         break;
       }
@@ -324,23 +321,18 @@ export async function runQwen(options: {
         {
           ...state,
           elapsedMs: Date.now() - started,
-          learning: options.readOnlyDecisions
+          learning: options.decision
             ? 'read-only trophy observations; excluded from training and qualification'
-            : options.decision
-              ? 'on-policy episode; post-match adapter update is recorded in training.json'
-              : 'recorded trajectories only; model weights unchanged',
+            : 'zero-shot Qwen play; model weights unchanged',
         },
         null,
         2,
       ) + '\n',
     );
-    const exported = await exportEpisode(directory, state.result);
     console.log(
-      options.readOnlyDecisions
-        ? `트로피 플레이 기록 ${exported}개 저장 (모델 갱신 없음).`
-        : options.decision
-          ? `경기 기록 ${exported}개 저장. 결과에 따른 학습 대기 중.`
-          : `학습용 실전 기록 ${exported}개 저장 (가중치 변경 없음).`,
+      options.decision
+        ? '트로피 플레이 기록 저장 (모델 갱신 없음).'
+        : 'Qwen 경기 기록 저장 (가중치 변경 없음).',
     );
     console.log(JSON.stringify(state));
   }

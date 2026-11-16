@@ -48,7 +48,7 @@ export async function acquireLearningLock(directory: string) {
       if ((await readLockOwner(directory))?.id === owner.id) await unlink(path);
     },
   };
-  const running = () => new Error('이미 자가학습 실행이 있습니다. selfplay status로 확인하세요.');
+  const running = () => new Error('이미 실행 중인 작업이 있습니다. status 명령으로 확인하세요.');
   // 내용을 모두 쓴 임시 파일을 link로 붙여 lock.json이 빈 채로 보이는 순간을 없앤다. 이미 있으면 false다.
   const create = async () => {
     const temporary = `${path}.${owner.id}.tmp`;
@@ -93,7 +93,7 @@ export async function acquireLearningLock(directory: string) {
 
 export async function requestLearningStop(directory: string) {
   const owner = await readLockOwner(directory);
-  if (!owner || !alive(owner.pid)) throw new Error('현재 실행 중인 자가학습이 없습니다.');
+  if (!owner || !alive(owner.pid)) throw new Error('현재 실행 중인 작업이 없습니다.');
   await atomicWrite(
     join(directory, 'stop.json'),
     JSON.stringify({ id: owner.id, requestedAt: dayjs().toISOString() }),

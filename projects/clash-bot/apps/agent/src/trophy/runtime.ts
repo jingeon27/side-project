@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import type { AdbDevice } from '../android/device/adb.ts';
+import { returnToLobby } from '../android/runtime/lobby.ts';
 import { runQwen } from '../android/runtime/qwen-runner.ts';
-import { returnToLobby } from '../android/runtime/selfplay.ts';
 import { SharedInferenceClient } from '../qwen/shared-inference.ts';
 import { atomicWrite } from '../shared/assets.ts';
 import type { Profile } from '../shared/config.ts';
@@ -110,7 +110,6 @@ export async function runTrophy(options: {
           startMatch: true,
           runDirectory: directory,
           maxDecisionMs: 1000,
-          readOnlyDecisions: true,
           decisionPrompt: (cards, elixir, actions, threats) =>
             trophyPrompt(profile, cards, elixir, actions, threats),
           decision: (request) => client.choose(request, policy.checkpoint),

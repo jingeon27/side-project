@@ -24,11 +24,7 @@ def handle_request(worker, request):
         "promote",
     ):
         raise ValueError("Frozen evaluation cannot train")
-    if (
-        operation in ("train", "train_batch", "imitate")
-        and not worker.candidate_active()
-        and (worker.directory / "promotion-policy.json").exists()
-    ):
+    if operation in ("train", "train_batch", "imitate") and not worker.candidate_active():
         raise ValueError("The deployed champion is frozen; train a private candidate")
     match operation:
         case (

@@ -10,7 +10,7 @@ it('prevents competing controllers and addresses graceful stop to the current ru
   const directory = await mkdtemp(join(tmpdir(), 'clash-learning-lock-'));
   try {
     const lock = await acquireLearningLock(directory);
-    await expect(acquireLearningLock(directory)).rejects.toThrow('이미 자가학습');
+    await expect(acquireLearningLock(directory)).rejects.toThrow('이미 실행 중인 작업');
     await requestLearningStop(directory);
     expect(JSON.parse(await readFile(join(directory, 'stop.json'), 'utf8')).id).toBe(lock.owner.id);
     await lock.release();
