@@ -18,6 +18,18 @@ Mac의 실제 클래시로얄 화면을 읽고 카드를 선택·배치하는 �
 - Qwen3.8을 실제 경기 화면 세 장에서 실행해 판단 시간 **1.32~1.65초**, MLX 최대 메모리 약 **16GiB**를 측정했습니다. 캡처·입력·후속 화면 확인 시간은 포함하지 않습니다. 승률 개선은 검증되지 않았습니다.
 - 3.8 첫 트로피 경기에서 **입력 21회·카드 사용 확인 18회**, 유효한 대기를 포함한 **19개 판단의 학습과 버전 1 저장**을 확인했습니다. 경기 결과는 패배였습니다. 새 어댑터 해시는 `f8bce385007d702c8387d3612e7064f13acc7995c213d1c91647dfb9fc221681`이며, 이전 3.5 버전 6의 해시 `f7e062a18472cf53941b04fd4b6e7ee6b4d9ab8c56da0379b378bad3fb076792`는 그대로 보존됐습니다.
 
+## 코드 관리와 개발 검사
+
+실행 환경별 TypeScript 코드, Python 계산 엔진, 공유 JSON 계약, 시각 자료를 분리했습니다. 공통 카드 판단은 `src/game`, 통신·프로세스는 `src/shared`가 소유합니다. 자세한 위치와 상태 소유권은 [폴더 구조와 실행 경계](docs/architecture.md)에 있습니다.
+
+Python 입력 계약에는 Pydantic, 모델 비교의 정확 이항 검정에는 SciPy, 정적 검사·포맷에는 Ruff를 사용합니다. `python:setup`은 개발 검사 전용 환경을 준비하며 실행 중인 Qwen 환경을 바꾸지 않습니다.
+
+```sh
+yarn workspace @side/clash-bot python:setup
+yarn workspace @side/clash-bot check:python
+yarn workspace @side/clash-bot test:python
+```
+
 ## 설치와 연결
 
 저장소 루트에서 Node 24, Yarn 4.17.0을 사용합니다. Qwen 모드는 Apple Silicon과 Python 3.11이 필요합니다. Expo와 Android Studio를 실행할 필요는 없습니다.
@@ -27,7 +39,7 @@ yarn workspace @side/clash-bot setup
 yarn workspace @side/clash-bot qwen:setup
 ```
 
-`setup`은 작은 참조 이미지와 기본 프로필을 준비하며 기존 설정을 덮어쓰지 않습니다. `qwen:setup`은 `.data/qwen/.venv`에 고정된 Python 의존성을 설치하고, 고정 revision의 **3.8-27B** 모델을 내려받아 모든 가중치 파일의 SHA-256을 검증합니다. 모델 파일은 약 **16.1GB**이며 실행 메모리·Python 의존성·게임 기록은 별도입니다. `qwen:setup 4b`는 이전 3.5-4B(약 3.03GB)를 준비하며 `qwen:setup 2b`는 관찰용 소형 모델을 준비합니다. 모델 사양은 `apps/agent/src/qwen/models.json`에서 공유합니다.
+`setup`은 작은 참조 이미지와 기본 프로필을 준비하며 기존 설정을 덮어쓰지 않습니다. `qwen:setup`은 `.data/qwen/.venv`에 고정된 Python 의존성을 설치하고, 고정 revision의 **3.8-27B** 모델을 내려받아 모든 가중치 파일의 SHA-256을 검증합니다. 모델 파일은 약 **16.1GB**이며 실행 메모리·Python 의존성·게임 기록은 별도입니다. `qwen:setup 4b`는 이전 3.5-4B(약 3.03GB)를 준비하며 `qwen:setup 2b`는 관찰용 소형 모델을 준비합니다. 모델 사양은 `apps/agent/contracts/models.json`에서 공유합니다.
 
 BlueStacks에서 CPU 2개, RAM 2048MB, Balanced, 30 FPS를 설정했습니다. 로컬 ADB 접근을 켜고 BlueStacks를 완전히 종료 후 다시 엽니다. 현재 기기는 `127.0.0.1:5555`입니다. 원격 ADB 접근은 켜지 않습니다.
 
@@ -232,7 +244,9 @@ yarn workspace @side/clash-bot test:learning
 yarn workspace @side/clash-bot test:learning:model
 yarn workspace @side/clash-bot test:perception
 yarn workspace @side/clash-bot test:perception:model
-python3.11 -m compileall -q projects/clash-bot/apps/agent/src/qwen
+yarn workspace @side/clash-bot check:python
+yarn workspace @side/clash-bot test:python
+yarn workspace @side/clash-bot test:arena:model
 ```
 
 타입 검사와 앱 소유 Vitest로 인식·기기 선택·좌표 변환·전면 확인·오래된 응답 거부·손패 교체·비용 확인·합법 후보·실제 결과 화면의 보상 판정을 검증합니다. 자동 테스트의 기기는 가짜 기기이며 실제 MLX 모델은 테스트에서 로드하지 않습니다. 두 PNG 회귀 자료는 실제 게임 화면 중 계정 이름이 없는 영역만 남겼습니다. 실제 BlueStacks에서의 실행·배치·패배 결과는 위 실전 관찰이며 자동 테스트와 구분합니다.
