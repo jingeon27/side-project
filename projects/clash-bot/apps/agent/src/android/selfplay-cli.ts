@@ -4,8 +4,9 @@ import { parseArgs } from 'node:util';
 
 import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR, loadProfile } from '../shared/config.ts';
+import { requestLearningStop } from '../shared/runtime-lock.ts';
 import { AdbDevice, findAdb, listDevices, selectDevice } from './device/adb.ts';
-import { requestLearningStop, runSelfPlay } from './runtime/selfplay.ts';
+import { runSelfPlay } from './runtime/selfplay.ts';
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,

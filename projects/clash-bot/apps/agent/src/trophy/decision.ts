@@ -1,6 +1,6 @@
-import type { QwenAction } from '../android/policy/qwen-actions.ts';
 import { tilePoint } from '../counterpush/policy/decision-v2.ts';
 import { serializeDecision, type DecisionContext } from '../counterpush/policy/decision-v3.ts';
+import type { QwenAction } from '../game/actions.ts';
 import { CARD_INFO, type CardId, type Point, type Profile } from '../shared/config.ts';
 
 export function trophyPrompt(

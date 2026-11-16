@@ -1,4 +1,4 @@
-import type { BattleSituation, FieldUnit } from '../../counterpush/domain/battle-state.ts';
+import type { BattleSituation, FieldUnit } from '../counterpush/domain/battle-state.ts';
 
 // Keep full evidence in states.jsonl, but avoid repeating long field names and
 // historical timestamps for every visible skeleton in each expensive VLM call.

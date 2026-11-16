@@ -4,10 +4,11 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import type { AdbDevice } from '../android/device/adb.ts';
 import { runQwen } from '../android/runtime/qwen-runner.ts';
-import { acquireLearningLock, returnToLobby } from '../android/runtime/selfplay.ts';
+import { returnToLobby } from '../android/runtime/selfplay.ts';
 import { SharedInferenceClient } from '../qwen/shared-inference.ts';
 import { atomicWrite } from '../shared/assets.ts';
 import type { Profile } from '../shared/config.ts';
+import { acquireLearningLock } from '../shared/runtime-lock.ts';
 import { trophyPrompt } from './decision.ts';
 
 export async function runTrophy(options: {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { blockedDeployment } from '../../game/placement.ts';
 import {
   CARD_INFO,
   cardIdSchema,
@@ -10,7 +11,6 @@ import {
   type Profile,
 } from '../../shared/config.ts';
 import { difference } from '../perception/vision.ts';
-import { blockedDeployment } from './placement.ts';
 
 const normalizeCard = (value: unknown) => {
   if (typeof value !== 'string') return null;

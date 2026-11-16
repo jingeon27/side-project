@@ -1,10 +1,10 @@
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { acquireLearningLock } from '../android/runtime/selfplay.ts';
 import { LearningClient } from '../qwen/learning-client.ts';
 import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR } from '../shared/config.ts';
+import { acquireLearningLock } from '../shared/runtime-lock.ts';
 import { prepareOpponentDataset } from './learning/opponent-data.ts';
 
 const { values, positionals } = parseArgs({

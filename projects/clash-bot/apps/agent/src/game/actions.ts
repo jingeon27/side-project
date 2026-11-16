@@ -1,8 +1,8 @@
-import type { BattleSituation } from '../../counterpush/domain/battle-state.ts';
-import { CARD_INFO, type CardId, type Point, type Profile } from '../../shared/config.ts';
-import { compactMechanics, KNOWLEDGE_VERSION, mechanicSummary } from '../../shared/game-knowledge.ts';
+import type { BattleSituation } from '../counterpush/domain/battle-state.ts';
+import { CARD_INFO, type CardId, type Point, type Profile } from '../shared/config.ts';
+import { policyContext } from './context.ts';
+import { compactMechanics, KNOWLEDGE_VERSION, mechanicSummary } from './knowledge.ts';
 import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from './placement.ts';
-import { policyContext } from './policy-context.ts';
 
 export type QwenAction = {
   id: number;

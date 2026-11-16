@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { z } from 'zod';
 
-import type { QwenAction } from '../android/policy/qwen-actions.ts';
+import type { QwenAction } from '../game/actions.ts';
 import { JsonLineClient } from '../shared/json-lines-client.ts';
 import { pythonEnvironment, pythonExecutable } from '../shared/python.ts';
 import { DEFAULT_MODEL, selectModel, type ModelId } from './model-options.ts';

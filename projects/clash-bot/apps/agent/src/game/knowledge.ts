@@ -1,4 +1,4 @@
-import { type CardId } from './config.ts';
+import { type CardId } from '../shared/config.ts';
 
 // Level-11 reference values checked 2026-11-15. Counterpush's physics have not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.

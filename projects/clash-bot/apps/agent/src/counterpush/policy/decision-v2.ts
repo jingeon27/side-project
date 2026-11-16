@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-import { ownPoint } from '../../android/policy/placement.ts';
-import { actionCandidates, type QwenAction } from '../../android/policy/qwen-actions.ts';
+import { actionCandidates, type QwenAction } from '../../game/actions.ts';
+import { ownPoint } from '../../game/placement.ts';
 import { CARD_INFO, type CardId, type Point, type Profile } from '../../shared/config.ts';
 import type { BattleSituation, FieldUnit } from '../domain/battle-state.ts';
 

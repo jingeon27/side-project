@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { actionCandidates } from '../../android/policy/qwen-actions.ts';
+import { actionCandidates } from '../../game/actions.ts';
 import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
 import { BattleMemory } from '../domain/battle-state.ts';
 import { bodyCard, candidatesV2, compactPrompt, tilePoint } from './decision-v2.ts';

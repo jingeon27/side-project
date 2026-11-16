@@ -5,11 +5,11 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import sharp from 'sharp';
 import { z } from 'zod';
 
-import { policyContext } from '../../android/policy/policy-context.ts';
-import { deckGuidance, type QwenAction } from '../../android/policy/qwen-actions.ts';
+import { deckGuidance, type QwenAction } from '../../game/actions.ts';
+import { policyContext } from '../../game/context.ts';
+import { ABILITY_RULES } from '../../game/knowledge.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { cardIdSchema, HEIGHT, WIDTH, type CardId } from '../../shared/config.ts';
-import { ABILITY_RULES } from '../../shared/game-knowledge.ts';
 import { battleSituationSchema, type BattleSituation } from '../domain/battle-state.ts';
 
 export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1';

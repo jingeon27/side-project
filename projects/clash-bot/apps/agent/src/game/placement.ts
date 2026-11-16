@@ -1,6 +1,6 @@
-import type { BattleSituation, FieldEffect } from '../../counterpush/domain/battle-state.ts';
-import { CARD_INFO, type CardId, type Point, type Profile } from '../../shared/config.ts';
-import { CARD_MECHANICS, UNIT_MECHANICS } from '../../shared/game-knowledge.ts';
+import type { BattleSituation, FieldEffect } from '../counterpush/domain/battle-state.ts';
+import { CARD_INFO, type CardId, type Point, type Profile } from '../shared/config.ts';
+import { CARD_MECHANICS, UNIT_MECHANICS } from './knowledge.ts';
 
 export type PlacementOption = { target: Point; description: string };
 const distance = (first: Point, second: Point) => Math.hypot(first.x - second.x, first.y - second.y);

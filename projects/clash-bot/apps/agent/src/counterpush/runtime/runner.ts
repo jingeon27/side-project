@@ -4,13 +4,13 @@ import { dirname, join } from 'node:path';
 
 import { z } from 'zod';
 
-import { acquireLearningLock } from '../../android/runtime/selfplay.ts';
 import { studyNext } from '../../arena/study.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
 import { selectModel, type ModelId } from '../../qwen/model-options.ts';
 import { startSharedInference } from '../../qwen/shared-inference.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { type Profile } from '../../shared/config.ts';
+import { acquireLearningLock } from '../../shared/runtime-lock.ts';
 import { SpawnPatterns } from '../domain/spawn-patterns.ts';
 import { learnCounterpushEpisodes } from '../learning/episode-learning.ts';
 import { evaluateWithResources } from '../learning/evaluation.ts';

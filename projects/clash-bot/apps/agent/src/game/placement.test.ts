@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { BattleMemory, type FieldEffect } from '../../counterpush/domain/battle-state.ts';
-import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
+import { BattleMemory, type FieldEffect } from '../counterpush/domain/battle-state.ts';
+import { DEFAULT_PROFILE, type CardId } from '../shared/config.ts';
+import { actionCandidates } from './actions.ts';
 import { blockedDeployment } from './placement.ts';
-import { actionCandidates } from './qwen-actions.ts';
 
 const deck: CardId[] = [
   'knight',

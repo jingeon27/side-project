@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
+import { UNIT_KINDS } from '../../game/knowledge.ts';
 import { cardIdSchema, type CardId } from '../../shared/config.ts';
-import { UNIT_KINDS } from '../../shared/game-knowledge.ts';
 import { JsonLineClient } from '../../shared/json-lines-client.ts';
 import { pythonEnvironment, pythonExecutable } from '../../shared/python.ts';
 

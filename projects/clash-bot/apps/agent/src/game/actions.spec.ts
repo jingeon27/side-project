@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { BattleMemory } from '../../counterpush/domain/battle-state.ts';
-import { CARD_INFO, DEFAULT_PROFILE } from '../../shared/config.ts';
+import { BattleMemory } from '../counterpush/domain/battle-state.ts';
+import { CARD_INFO, DEFAULT_PROFILE } from '../shared/config.ts';
+import { actionCandidates } from './actions.ts';
 import { blockedDeployment } from './placement.ts';
-import { actionCandidates } from './qwen-actions.ts';
 
 describe('legal actions proposed to Qwen', () => {
   it('sets up defense and a tank before unsupported graveyard/poison attacks, with three hut placements', () => {

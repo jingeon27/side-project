@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { acquireLearningLock } from '../android/runtime/selfplay.ts';
 import { LearningClient } from '../qwen/learning-client.ts';
+import { acquireLearningLock } from '../shared/runtime-lock.ts';
 
 export async function studyNext(
   client: LearningClient,

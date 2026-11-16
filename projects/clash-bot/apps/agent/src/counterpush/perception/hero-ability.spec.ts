@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
-import { actionCandidates, choicePrompt } from '../../android/policy/qwen-actions.ts';
+import { actionCandidates, choicePrompt } from '../../game/actions.ts';
 import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
 import { BattleMemory } from '../domain/battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../runtime/browser.ts';

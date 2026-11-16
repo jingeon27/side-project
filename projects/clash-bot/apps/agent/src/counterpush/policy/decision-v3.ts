@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import type { QwenAction } from '../../android/policy/qwen-actions.ts';
+import type { QwenAction } from '../../game/actions.ts';
 import type { CardId, Profile } from '../../shared/config.ts';
 import type { BattleSituation } from '../domain/battle-state.ts';
 import { compactPrompt } from './decision-v2.ts';

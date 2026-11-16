@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import sharp from 'sharp';
 
+import { actionCandidates, choicePrompt, type QwenAction } from '../../game/actions.ts';
 import type { DecisionOutput, LearningDecisionRequest } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { center, type CardId, type Point, type Profile } from '../../shared/config.ts';
@@ -21,7 +22,6 @@ import {
   readElixir,
   type Templates,
 } from '../perception/vision.ts';
-import { actionCandidates, choicePrompt, type QwenAction } from '../policy/qwen-actions.ts';
 import {
   parsePrediction,
   qwenOutputSchema,

@@ -5,9 +5,9 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { requestLearningStop } from '../android/runtime/selfplay.ts';
 import { selectModel } from '../qwen/model-options.ts';
 import { DATA_DIR } from '../shared/config.ts';
+import { requestLearningStop } from '../shared/runtime-lock.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
 import { runCounterpushEvaluation } from './learning/evaluation.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';

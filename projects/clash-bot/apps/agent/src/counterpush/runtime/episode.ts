@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import { analyze, crop, difference, fingerprint, loadTemplates } from '../../android/perception/vision.ts';
-import { actionCandidates, choicePrompt } from '../../android/policy/qwen-actions.ts';
 import {
   validateQwenAction,
   type FreshBattle,
   type QwenPrediction,
 } from '../../android/policy/qwen-policy.ts';
+import { actionCandidates, choicePrompt } from '../../game/actions.ts';
 import { type LearningClient } from '../../qwen/learning-client.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { CARD_INFO, type Profile } from '../../shared/config.ts';
