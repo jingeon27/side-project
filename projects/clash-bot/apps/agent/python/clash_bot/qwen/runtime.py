@@ -586,6 +586,8 @@ class LearningWorker:
         return {"text": output.text}
 
     def imitate(self, request):
+        if self.learner.metadata.get("controller_version") != 3:
+            raise ValueError("Opponent imitation requires the private fast controller")
         dataset, identity, path = load_demonstrations(
             request["dataset"], self.directory.parents[1] / "counterpush/quarantine.json"
         )
@@ -603,12 +605,10 @@ class LearningWorker:
             prediction = self.choose(
                 {
                     "images": [str(path.parent / observation["image"])],
-                    "prompt": opponent_prompt(observation)
-                    if self.learner.metadata.get("controller_version", 1) >= 3
-                    else observation["prompt"],
+                    "prompt": opponent_prompt(observation),
                     "choices": observation["choices"],
                     "feature_path": str(feature_path),
-                    "controller_version": self.learner.metadata.get("controller_version", 1),
+                    "controller_version": 3,
                 }
             )
             behavior = prediction["behavior"]

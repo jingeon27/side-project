@@ -227,13 +227,23 @@ class LearningEpisodeTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             worker = self.worker()
-            worker.learner.metadata = {"version": 3, "demonstrations": []}
+            worker.learner.metadata = {"version": 3, "demonstrations": [], "controller_version": 3}
             worker.learner.imitate = Mock(return_value={"updated": True, "version": 4})
             observation = {
                 "id": "red-support",
                 "image": "images/before.png",
                 "evidence_image": "images/after.png",
-                "prompt": "Predict the next card.",
+                "before_at": 1000,
+                "situation": {
+                    "at": 1000,
+                    "own": {"units": []},
+                    "opponent": {"units": [], "elixir": {"min": 0, "max": 10}},
+                },
+                "candidates": [
+                    {"id": 7, "card": None, "target": {"x": 0}},
+                    {"id": 2, "card": "furnace", "target": {"x": 95}},
+                    {"id": 9, "card": "furnace", "target": {"x": 90}},
+                ],
                 "choices": [7, 2, 9],
                 "target_ids": [2, 9],
                 "confidence": 0.95,

@@ -3,18 +3,6 @@ import { type CardId } from '../shared/config.ts';
 // Level-11 reference values checked 2026-11-15. Counterpush's physics have not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
 export const KNOWLEDGE_VERSION = 'cr-level11-2026-11-14';
-export const ABILITY_RULES = {
-  version: '2026-08-04',
-  default: 'single_use_per_deployment',
-  exception: 'boss_bandit; do not apply the single-use rule to her consecutive activations',
-  accounting: 'separate elixir cost; no card draw or evolution charge',
-  owner:
-    'most recently deployed unit of that hero/champion type; an older surviving unit does not inherit it',
-  championCycle: 'normal card cycle since October 2025; do not assume the historical 3-card cycle',
-  implementedController: ['hero_ice_wizard'],
-  otherChampionControllers: 'not_implemented',
-} as const;
-
 export const UNIT_MECHANICS = {
   knight: {
     hp: 1766,
@@ -216,21 +204,6 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     },
   },
   poison: { spell: { radiusTiles: 3.5, durationSeconds: 8, dps: 92, slowPercent: 15 } },
-};
-
-export const mechanicSummary = (card: CardId) => {
-  const mechanic = CARD_MECHANICS[card];
-  const child = mechanic?.spawn?.unit;
-  return mechanic
-    ? {
-        ...mechanic,
-        unit: mechanic.body ? UNIT_MECHANICS[mechanic.body] : undefined,
-        spawnedUnit:
-          child && child !== mechanic.body && child in UNIT_MECHANICS
-            ? UNIT_MECHANICS[child as keyof typeof UNIT_MECHANICS]
-            : undefined,
-      }
-    : null;
 };
 
 // The complete registry remains versioned above. Send each body/child's numeric

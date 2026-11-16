@@ -1,7 +1,7 @@
 import type { BattleSituation } from '../counterpush/domain/battle-state.ts';
 import { CARD_INFO, type CardId, type Point, type Profile } from '../shared/config.ts';
 import { policyContext } from './context.ts';
-import { compactMechanics, KNOWLEDGE_VERSION, mechanicSummary } from './knowledge.ts';
+import { compactMechanics, KNOWLEDGE_VERSION } from './knowledge.ts';
 import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from './placement.ts';
 
 export type QwenAction = {
@@ -14,27 +14,6 @@ export type QwenAction = {
   cost?: number;
   abilityInstance?: number;
 };
-
-const CARD_TACTICS: Partial<Record<CardId, string>> = {
-  knight: 'Ground tank: absorb damage and protect ranged support before a counterattack.',
-  barbarian_barrel: 'Roll toward ground swarms and leave a Barbarian; does not answer air troops.',
-  skeletons: 'Cheap ground distraction and cycle; vulnerable to splash damage.',
-  graveyard: 'Attack an enemy tower while an ally tanks; react to visible defenders.',
-  poison: 'Area damage for clustered defenders or to support Graveyard in the SAME lane.',
-  goblin_hut: 'Defensive pull and Spear Goblin pressure over time.',
-  furnace:
-    'Walking ranged support that spawns Fire Spirits; protect it rather than treating it as a building.',
-  ice_wizard:
-    'Ranged slowing support behind a tank. Hero ability is a separate two-elixir action, only when the visible button is ready; freeze requires slowed targets and the snowman can be destroyed.',
-};
-
-export const deckGuidance = (cards: CardId[]) =>
-  cards.map((card) => ({
-    card,
-    cost: CARD_INFO[card].cost,
-    tactics: CARD_TACTICS[card] ?? CARD_INFO[card].role,
-    mechanics: mechanicSummary(card),
-  }));
 
 export function actionCandidates(
   profile: Profile,

@@ -5,31 +5,21 @@ import { dirname, join, resolve } from 'node:path';
 import sharp from 'sharp';
 import { z } from 'zod';
 
-import { deckGuidance, type QwenAction } from '../../game/actions.ts';
-import { policyContext } from '../../game/context.ts';
-import { ABILITY_RULES } from '../../game/knowledge.ts';
+import type { QwenAction } from '../../game/actions.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { cardIdSchema, HEIGHT, WIDTH, type CardId } from '../../shared/config.ts';
 import { inside } from '../../shared/paths.ts';
-import { battleSituationSchema, type BattleSituation } from '../domain/battle-state.ts';
+import { battleSituationSchema } from '../domain/battle-state.ts';
 
-export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v1';
-const frameSchema = z
-  .object({
-    image: z.string().min(1),
-    secondsRemaining: z.int().min(0).max(300).optional(),
-    capturedAt: z.number().positive().optional(),
-  })
-  .refine(
-    (frame) => frame.secondsRemaining !== undefined || frame.capturedAt !== undefined,
-    '프레임 시각이 필요합니다.',
-  );
+// 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
+export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v2';
+const frameSchema = z.object({ image: z.string().min(1), capturedAt: z.number().positive() });
 export const opponentObservationsSchema = z
   .object({
     version: z.literal(1),
     source: z.literal('counterpush_live_screen'),
     actor: z.literal('red_top'),
-    annotation: z.enum(['codex_visual_card_and_lane_only', 'automatic_dino_tracking']).optional(),
+    annotation: z.literal('automatic_dino_tracking'),
     deck: z
       .array(cardIdSchema)
       .length(8)
@@ -56,7 +46,7 @@ export const opponentObservationsSchema = z
           grounding: z
             .object({ x: z.number(), y: z.number(), box: z.array(z.number()).length(4) })
             .optional(),
-          situation: battleSituationSchema.optional(),
+          situation: battleSituationSchema,
         }),
       )
       .min(1)
@@ -78,19 +68,11 @@ export const opponentObservationsSchema = z
 export type OpponentObservation = z.infer<typeof opponentObservationsSchema>['observations'][number];
 
 export function observationExclusion(item: OpponentObservation): string | null {
-  const gap =
-    item.before.capturedAt !== undefined && item.after.capturedAt !== undefined
-      ? (item.after.capturedAt - item.before.capturedAt) / 1000
-      : Number(item.before.secondsRemaining) - Number(item.after.secondsRemaining);
+  const gap = (item.after.capturedAt - item.before.capturedAt) / 1000;
   if (!item.verifiedActor || !item.absentBefore) return 'unverified_actor_or_new_action';
   if (item.confidence < 0.9) return 'low_visual_confidence';
   if (!Number.isFinite(gap) || gap <= 0 || gap > 10) return 'ambiguous_time_window';
-  if (
-    item.situation &&
-    item.before.capturedAt !== undefined &&
-    item.situation.at > item.before.capturedAt + 50
-  )
-    return 'future_context_leak';
+  if (item.situation.at > item.before.capturedAt + 50) return 'future_context_leak';
   return null;
 }
 
@@ -133,17 +115,6 @@ export function macroMatches(action: QwenAction, card: CardId, lane: OpponentObs
       : lane === 'left'
         ? action.target.x < 184
         : action.target.x > 184)
-  );
-}
-
-export function opponentPrompt(deck: CardId[], actions: QwenAction[], situation?: BattleSituation): string {
-  const state = situation
-    ? `Structured BEFORE state uses own=BLUE bottom and opponent=RED top: ${JSON.stringify(policyContext(situation))}. Predict RED's response to BLUE's unit types, positions and recent plays. Exact RED hand/elixir remain hidden: use the provided ranges and FIFO hypotheses within their uncertainty. Both regenerate equally and cap at 10 with no stored overflow. Each deck has 8 cards, a 4-card hand and 4-card FIFO draw queue; a played card returns after 4 subsequent plays.`
-    : '';
-  return (
-    state +
-    `Card knowledge: ${JSON.stringify(deckGuidance(deck))}. Ability rules: ${JSON.stringify(ABILITY_RULES)}. Activating a skill does not draw a card or charge an evolution. This training label predicts card-and-lane only; enemy skill activation and cooldown/used state remain unobserved. ` +
-    `Observe Clash Royale from RED top's perspective. BLUE bottom is the opponent. Predict ONE next card-and-lane intent from RED's publicly visible board. RED hand=UNKNOWN; RED elixir=UNKNOWN. Known RED deck: ${deck.join(', ')}. The list contains deck-wide possibilities, not a verified legal hand. Coordinates are in a ${WIDTH}x${HEIGHT} image. Targets are lane exemplars; exact deployment time and position are unknown. Learn the observed behavior without assuming it is optimal. Reply with exactly ONE action letter, no explanation. Actions: ${JSON.stringify(actions.map((action, index) => ({ id: String.fromCharCode(65 + index), card: action.card, description: action.description, target: action.target })))}.`
   );
 }
 
@@ -213,7 +184,6 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       images: records.map((record) => [record.before.source_sha256, record.after.source_sha256]),
       exclusions: records.map((record) => record.excluded),
       intents: intentPool,
-      prompts: records.map((record) => opponentPrompt(input.deck, intentPool, record.observation.situation)),
     }),
   );
   const directory = join(dataDir, 'counterpush/datasets', identity.slice(0, 24));
@@ -242,8 +212,6 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       evidence_sha256: record.after.sha256,
       source_before_sha256: record.before.source_sha256,
       source_after_sha256: record.after.source_sha256,
-      before_seconds: item.before.secondsRemaining,
-      after_seconds: item.after.secondsRemaining,
       before_at: item.before.capturedAt,
       after_at: item.after.capturedAt,
       actor: input.actor,
@@ -259,7 +227,6 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       context: item.context,
       grounding: item.grounding,
       situation: item.situation,
-      prompt: opponentPrompt(input.deck, actions, item.situation),
       choices: actions.map((action) => action.id),
       candidates: actions,
       target_ids: targetIds,
@@ -269,7 +236,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
     format: DEMONSTRATION_FORMAT,
     source: input.source,
     id: identity,
-    annotation: input.annotation ?? 'codex_visual_card_and_lane_only',
+    annotation: input.annotation,
     samples,
     excluded: records
       .filter((record) => record.excluded)

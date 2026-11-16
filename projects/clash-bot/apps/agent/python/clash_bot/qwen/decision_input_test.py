@@ -21,7 +21,6 @@ class CompactDecisionInputTest(unittest.TestCase):
             "before_at": 1000,
             "card": "graveyard",
             "lane": "right",
-            "prompt": "legacy",
             "candidates": [
                 {"card": None, "target": {"x": 0}},
                 {"card": "graveyard", "target": {"x": 273}},

@@ -5,7 +5,7 @@ import json
 import math
 from pathlib import Path
 
-DEMONSTRATION_FORMAT = "counterpush-card-lane-demonstrations-v1"
+DEMONSTRATION_FORMAT = "counterpush-card-lane-demonstrations-v2"
 
 
 def load_demonstrations(path, quarantine_path=None):
@@ -29,10 +29,7 @@ def load_demonstrations(path, quarantine_path=None):
             raise ValueError("Invalid demonstration quarantine")
         blocked = {(entry["card"], entry["before_sha256"]) for entry in quarantine["entries"]}
     for sample in samples:
-        if (
-            sample["card"],
-            sample.get("source_before_sha256", sample.get("image_sha256")),
-        ) in blocked:
+        if (sample["card"], sample["source_before_sha256"]) in blocked:
             raise ValueError("Quarantined demonstration; re-prepare the dataset: " + sample["id"])
         if (
             sample.get("actor") != "red_top"
@@ -55,11 +52,9 @@ def load_demonstrations(path, quarantine_path=None):
             raise ValueError("Hidden opponent state must remain unknown")
         if sample.get("evidence") not in ("new_unit_visible", "spell_effect_visible"):
             raise ValueError("Missing visual action evidence")
-        gap = (
-            (sample["after_at"] - sample["before_at"]) / 1000
-            if "before_at" in sample and "after_at" in sample
-            else sample["before_seconds"] - sample["after_seconds"]
-        )
+        if not isinstance(sample.get("situation"), dict):
+            raise ValueError("Demonstration needs the tracked before situation")
+        gap = (sample["after_at"] - sample["before_at"]) / 1000
         if not 0 < gap <= 10:
             raise ValueError("Ambiguous opponent action time window")
         choices, targets = sample["choices"], sample["target_ids"]

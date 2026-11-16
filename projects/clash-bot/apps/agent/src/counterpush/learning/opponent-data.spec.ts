@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
+import { BattleMemory } from '../domain/battle-state.ts';
 import {
   macroMatches,
   observationExclusion,
@@ -24,21 +25,30 @@ const deck = [
   'goblin_hut',
   'barbarian_barrel',
 ] as const;
+const situation = new BattleMemory([...deck]).observe({
+  at: 1_000,
+  amount: 5,
+  hand: ['furnace', 'knight', 'poison', 'skeletons'],
+  inputPending: false,
+  allies: [],
+  enemies: [],
+});
 const observation: OpponentObservation = {
   id: 'furnace-left',
-  before: { image: 'before.png', secondsRemaining: 165 },
-  after: { image: 'after.png', secondsRemaining: 161 },
+  before: { image: 'before.png', capturedAt: 1_000 },
+  after: { image: 'after.png', capturedAt: 4_000 },
   card: 'furnace',
   lane: 'left',
   confidence: 0.95,
   evidence: 'new_unit_visible',
   verifiedActor: true,
   absentBefore: true,
-  context: 'Opponent adds a furnace in the left lane.',
+  context: 'Automatic red-marker track; furnace.',
+  situation,
 };
 
 describe('opponent visual demonstrations', () => {
-  it('excludes ambiguous timing, existing units, low confidence and an unverified actor', () => {
+  it('excludes ambiguous timing, future context, existing units, low confidence and an unverified actor', () => {
     expect(observationExclusion(observation)).toBeNull();
     expect(observationExclusion({ ...observation, confidence: 0.7 })).toBe('low_visual_confidence');
     expect(observationExclusion({ ...observation, absentBefore: false })).toBe(
@@ -48,8 +58,11 @@ describe('opponent visual demonstrations', () => {
       'unverified_actor_or_new_action',
     );
     expect(
-      observationExclusion({ ...observation, after: { ...observation.after, secondsRemaining: 145 } }),
+      observationExclusion({ ...observation, after: { ...observation.after, capturedAt: 20_000 } }),
     ).toBe('ambiguous_time_window');
+    expect(observationExclusion({ ...observation, situation: { ...situation, at: 2_000 } })).toBe(
+      'future_context_leak',
+    );
   });
 
   it('keeps screen-left/right when reflecting the top player and labels only the card/lane', () => {
@@ -71,6 +84,7 @@ describe('opponent visual demonstrations', () => {
         version: 1,
         source: 'counterpush_live_screen',
         actor: 'red_top',
+        annotation: 'automatic_dino_tracking',
         deck,
         crop: { x: 0, y: 0, width: 368, height: 652 },
         observations: [{ ...observation, card: 'giant' }],
@@ -96,11 +110,12 @@ describe('opponent visual demonstrations', () => {
           version: 1,
           source: 'counterpush_live_screen',
           actor: 'red_top',
+          annotation: 'automatic_dino_tracking',
           deck,
           crop: { x: 0, y: 0, width: 368, height: 652 },
           observations: [
             observation,
-            { ...observation, id: 'ambiguous', before: { ...observation.before, secondsRemaining: 180 } },
+            { ...observation, id: 'ambiguous', after: { ...observation.after, capturedAt: 20_000 } },
           ],
         }),
       );
@@ -115,8 +130,8 @@ describe('opponent visual demonstrations', () => {
         elixir: null,
         exact_target: null,
       });
-      expect(dataset.samples[0].prompt).toContain('RED hand=UNKNOWN; RED elixir=UNKNOWN');
-      expect(dataset.samples[0].prompt).not.toContain(observation.context);
+      expect(dataset.format).toBe('counterpush-card-lane-demonstrations-v2');
+      expect(dataset.samples[0].situation).toEqual(situation);
       expect(dataset.samples[0].image_sha256).not.toBe(dataset.samples[0].evidence_sha256);
       expect(await prepareOpponentDataset(path, directory)).toEqual(result);
       await writeFile(

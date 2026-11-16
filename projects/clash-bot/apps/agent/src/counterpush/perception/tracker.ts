@@ -2,6 +2,9 @@ import type { CardId } from '../../shared/config.ts';
 import type { OpponentObservation } from '../learning/opponent-data.ts';
 import type { UnitDetection, UnitScan } from './vision-client.ts';
 
+// 경기 루프가 행동 직전 상황을 붙이기 전의 상대 행동이다.
+export type TrackedAction = Omit<OpponentObservation, 'situation'>;
+
 export type VisualFrame = { path: string; capturedAt: number };
 type Track = {
   id: number;
@@ -25,7 +28,7 @@ export class OpponentTracker {
   readonly recent = new Map<string, number>();
   readonly state = { previous: null as VisualFrame | null, nextId: 1, accepted: 0, rejected: 0 };
 
-  update(frame: VisualFrame, scan: UnitScan): OpponentObservation[] {
+  update(frame: VisualFrame, scan: UnitScan): TrackedAction[] {
     const previous = this.state.previous;
     const reset = !previous || frame.capturedAt - previous.capturedAt > 3500;
     if (reset)
@@ -33,7 +36,7 @@ export class OpponentTracker {
         track.suppressed = true;
       });
     const matched = new Set<number>();
-    const events: OpponentObservation[] = [];
+    const events: TrackedAction[] = [];
     for (const marker of scan.markers) {
       const kind = marker.kind ?? 'unit';
       if (
@@ -116,7 +119,7 @@ export class OpponentTracker {
     return events;
   }
 
-  private confirm(track: Track, frame: VisualFrame, detection: UnitDetection): OpponentObservation | null {
+  private confirm(track: Track, frame: VisualFrame, detection: UnitDetection): TrackedAction | null {
     if (
       track.suppressed ||
       track.emitted ||

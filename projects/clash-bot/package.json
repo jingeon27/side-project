@@ -22,7 +22,6 @@
     "check": "yarn lint && yarn typecheck && yarn test",
     "qwen": "yarn workspace @clash-bot/agent qwen",
     "qwen:setup": "yarn workspace @clash-bot/agent qwen:setup",
-    "opponent": "yarn workspace @clash-bot/agent opponent",
     "counterpush": "yarn workspace @clash-bot/agent counterpush",
     "counterpush:setup": "yarn workspace @clash-bot/agent counterpush:setup",
     "test:perception": "yarn workspace @clash-bot/agent test:perception",

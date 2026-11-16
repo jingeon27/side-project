@@ -23,10 +23,12 @@ class OpponentDataTest(unittest.TestCase):
             "elixir": None,
             "exact_target": None,
             "evidence": "new_unit_visible",
-            "before_seconds": 165,
-            "after_seconds": 161,
+            "before_at": 1000,
+            "after_at": 4000,
+            "situation": {"at": 1000},
             "image": "images/before.png",
             "image_sha256": hashlib.sha256(b"before").hexdigest(),
+            "source_before_sha256": hashlib.sha256(b"original-before").hexdigest(),
             "evidence_image": "images/after.png",
             "evidence_sha256": hashlib.sha256(b"after").hexdigest(),
             "choices": [0, 1],
@@ -64,7 +66,7 @@ class OpponentDataTest(unittest.TestCase):
     def test_quarantine_also_blocks_an_already_prepared_dataset(self):
         with tempfile.TemporaryDirectory() as directory:
             source_hash = hashlib.sha256(b"original-before").hexdigest()
-            path = self.fixture(directory, source_before_sha256=source_hash)
+            path = self.fixture(directory)
             quarantine = Path(directory) / "quarantine.json"
             quarantine.write_text(
                 json.dumps(
@@ -91,7 +93,8 @@ class OpponentDataTest(unittest.TestCase):
                 {"verified_actor": False},
                 {"target_ids": [0]},
                 {"confidence": 0.8},
-                {"after_seconds": 100},
+                {"after_at": 20000},
+                {"situation": None},
                 {"image": "../outside.png"},
             ):
                 with self.subTest(overrides=overrides), self.assertRaises(ValueError):

@@ -46,10 +46,8 @@ def serialize_decision(context):
 
 
 def opponent_prompt(observation):
-    state = observation.get("situation")
-    if not state or not observation.get("candidates"):
-        return observation["prompt"]
-    if state["at"] > observation.get("before_at", state["at"]) + 50:
+    state = observation["situation"]
+    if state["at"] > observation["before_at"] + 50:
         raise ValueError("Future opponent context cannot be a prediction input")
     code = lambda card: CONTRACT["codes"].get(card, "?")
 
