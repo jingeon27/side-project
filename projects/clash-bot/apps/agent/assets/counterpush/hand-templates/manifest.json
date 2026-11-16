@@ -6,11 +6,11 @@
       "sha256": "eb01715da72d4cb2a168ea976274703b6e338608637ecac909154cd27f98ade7"
     },
     {
-      "path": "variants/furnace/0070.png",
+      "path": "variants/furnace/disabled-2.png",
       "sha256": "d9c9ae07815cc25b2c3d5a9c4616dd3543ccbf8dcfa5f87a72573f1c768731b6"
     },
     {
-      "path": "variants/furnace/0132.png",
+      "path": "variants/furnace/evolution-0.png",
       "sha256": "16a8df6b16f6dcfc4166483f18261941553f35c109f099355466c5abc9e9377c"
     },
     {
@@ -22,11 +22,11 @@
       "sha256": "dee304cf81855f1fc98b8a104bcdd76ff844b9e9b95fda25885a6b443a3c31be"
     },
     {
-      "path": "variants/knight/0070.png",
+      "path": "variants/knight/evolution-0.png",
       "sha256": "9f8c504d4cc7e2e6c354f8ea5f0e545b54d5f9e42ddd6fb8a6dfbe3b4bbd108f"
     },
     {
-      "path": "variants/knight/0132.png",
+      "path": "variants/knight/evolution-1.png",
       "sha256": "81d55c0849a2da6c3cc2c207e664088a4a346aeab6a272766ddc6f3fef3e4086"
     },
     {
@@ -34,11 +34,11 @@
       "sha256": "95bf8640f4113942a22a25e82de006cb9e352fc44e9c29b558a31a13b663831a"
     },
     {
-      "path": "variants/graveyard/0070.png",
+      "path": "variants/graveyard/disabled-2.png",
       "sha256": "e71a70f21fd9f1c0704b803bd6db630f2b6c7c5bfbbcc12642165da4a47469b7"
     },
     {
-      "path": "variants/graveyard/0132.png",
+      "path": "variants/graveyard/normal-0.png",
       "sha256": "d82dc750d21cc1c212626e33727273482415044df71e9bf8952eca5c7747bca3"
     },
     {
@@ -46,7 +46,7 @@
       "sha256": "6ac37806fb69e4921ac6a8eefa706f12db1cbc6f2523581d7cfc52d556159178"
     },
     {
-      "path": "variants/skeletons/0132.png",
+      "path": "variants/skeletons/normal-0.png",
       "sha256": "8677897483bcca323374a6abebabea8099f8cbe5b1ed3b29cb9a6e88f80cd6fe"
     },
     {
@@ -58,7 +58,7 @@
       "sha256": "3bce5b535e63b82e71729c0f57fb46916ae5d16b8ca44523da6118d836475e0c"
     },
     {
-      "path": "variants/goblin_hut/0070.png",
+      "path": "variants/poison/disabled-2.png",
       "sha256": "2f17234195945c2efbc19bdd7ba2f3374221f5bd89886f7ef73d20e3a6dd23e8"
     },
     {
