@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
-import { loadProfile } from '../../shared/config.ts';
+import { loadProfile } from '../../core/profile.ts';
 import { crop, fingerprint, loadHandCards, matchCard } from './hand.ts';
 
 // 기록한 한 프레임의 회색 손패다. 저장소에 거의 같은 회색 그림이 있어 다른 덮개 위치의 일반화는 보이지 않는다.

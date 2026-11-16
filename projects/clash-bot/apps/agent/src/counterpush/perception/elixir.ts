@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 
-import type { Profile } from '../../shared/config.ts';
+import type { Profile } from '../../core/profile.ts';
 
 export type BarReading = { elixir: number; elixirAmount: number; elixirConfidence: number };
 

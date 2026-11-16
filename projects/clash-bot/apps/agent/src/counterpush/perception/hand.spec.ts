@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE, loadProfile } from '../../shared/config.ts';
+import { DEFAULT_PROFILE, loadProfile } from '../../core/profile.ts';
 import { loadHandReferences } from './hand-references.ts';
 import { loadHandCards, matchCard, readHand } from './hand.ts';
 

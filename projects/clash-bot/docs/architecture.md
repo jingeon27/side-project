@@ -4,17 +4,22 @@ Node는 브라우저·프로세스와 경기 순서를, Python은 모델 계산�
 
 ```text
 apps/agent/
-  src/                         TypeScript 실행기
+  src/                         TypeScript 실행기 (의존 방향은 eslint.config.ts가 검사)
+    core/                      실행 환경과 무관한 게임 규칙
+      cards.ts, deck.ts        카드 정보와 미러전 덱
+      geometry.ts, profile.ts  368×652 화면 좌표와 보정 프로필
+      knowledge.ts             카드 수치·진화와 영웅 조건
+      battle/                  FIFO, 엘릭서, 필드·생성물·진화 상태, 인식 결과와 상대 관찰 형식
+      policy/                  합법 후보, Qwen 판단 계약(controller 1·3)
     counterpush/
-      runtime/                 브라우저와 한 경기, 반복 실행
-      domain/                  FIFO, 엘릭서, 필드·생성물·진화 상태
+      browser/                 전용 Chrome 캡처·입력·결과 판독
       perception/              인식 클라이언트, 손패·엘릭서·스킬 판독, 손패 참조 검증
-      policy/                  합법 후보, 입력 직전 재확인, 모델 입력 계약
-      learning/                경기 후 학습, 고정 평가, 채택·목표
-    game/                      카드 지식·배치 후보·판단 문맥
+      match/                   경기 한 판: 캡처·판단·입력 확인·기록
+      learning/                저장된 기록의 상대 모방 자료·재인식·감사
+      loop/                    후보 학습 → 고정 평가 → 채택, 학습 목표
     qwen/                      모델 사양·학습 클라이언트
     arena/                     자가대국 실행·Qwen 감독 자료 연결
-    shared/                    파일, 프로필, 실행 잠금, JSON 통신·Python 실행
+    shared/                    데이터 경로, 파일, 실행 잠금, JSON 통신·Python 실행
   python/
     clash_bot/
       paths.py                 cwd와 모듈 깊이에 의존하지 않는 경로

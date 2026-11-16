@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
-import { DATA_DIR } from '../../shared/config.ts';
+import { DATA_DIR } from '../../shared/data-dir.ts';
 import { CounterpushVisionClient } from './vision-client.ts';
 
 it.skipIf(process.env.RUN_COUNTERPUSH_INTEGRATION !== '1')(

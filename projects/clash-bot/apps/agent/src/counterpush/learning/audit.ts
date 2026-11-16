@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { type CardId } from '../../shared/config.ts';
-import { COUNTERPUSH_DECK } from '../runtime/browser.ts';
+import type { CardId } from '../../core/cards.ts';
+import { COUNTERPUSH_DECK } from '../../core/deck.ts';
 
 // 확인된 경기 결과를 집계 칸으로 옮긴다. 그 밖의 결과는 unknown으로 센다.
 const RESULT_COUNTERS: Record<string, 'wins' | 'losses' | 'draws'> = {

@@ -7,16 +7,16 @@ import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
-import { DATA_DIR } from '../shared/config.ts';
+import { DATA_DIR } from '../shared/data-dir.ts';
 import { readJsonFile } from '../shared/json-file.ts';
 import { readLockOwner, readRunStatus, requestLearningStop } from '../shared/runtime-lock.ts';
+import { CounterpushBrowser } from './browser/browser.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
-import { runCounterpushEvaluation } from './learning/evaluation.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
+import { runCounterpushEvaluation } from './loop/evaluation.ts';
+import { runCounterpush } from './loop/runner.ts';
 import { CounterpushVisionClient } from './perception/vision-client.ts';
-import { CounterpushBrowser } from './runtime/browser.ts';
-import { loadCounterpushProfile } from './runtime/profile.ts';
-import { runCounterpush } from './runtime/runner.ts';
+import { loadCounterpushProfile } from './profile.ts';
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,

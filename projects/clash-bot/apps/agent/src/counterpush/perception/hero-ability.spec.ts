@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
-import { actionCandidates, choicePrompt } from '../../game/actions.ts';
-import { DEFAULT_PROFILE, type CardId } from '../../shared/config.ts';
-import { BattleMemory } from '../domain/battle-state.ts';
-import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../runtime/browser.ts';
+import { BattleMemory } from '../../core/battle/battle-state.ts';
+import type { CardId } from '../../core/cards.ts';
+import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../../core/deck.ts';
+import { actionCandidates, choicePrompt } from '../../core/policy/actions.ts';
+import { DEFAULT_PROFILE } from '../../core/profile.ts';
 import { abilityInputCheck, canUseHeroAbility, HeroAbilityButton } from './hero-ability.ts';
 
 const hand: CardId[] = ['knight', 'furnace', 'ice_wizard', 'skeletons'];

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE } from '../../shared/config.ts';
+import { DEFAULT_PROFILE } from '../../core/profile.ts';
 import { counterpushBarReading, counterpushElixir, plausibleSpend } from './elixir.ts';
 
 it('reads actual Counterpush bars without mistaking the number bubble for an empty bar', async () => {

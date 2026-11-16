@@ -1,6 +1,5 @@
-import type { CardId } from '../../shared/config.ts';
-import type { OpponentObservation } from '../learning/opponent-data.ts';
-import type { UnitDetection, UnitScan } from './vision-client.ts';
+import type { OpponentObservation, UnitDetection, UnitScan } from '../../core/battle/observation.ts';
+import type { CardId } from '../../core/cards.ts';
 
 // 경기 루프가 행동 직전 상황을 붙이기 전의 상대 행동이다.
 export type TrackedAction = Omit<OpponentObservation, 'situation'>;

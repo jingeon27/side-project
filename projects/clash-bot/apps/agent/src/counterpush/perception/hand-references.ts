@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
-import { cardIdSchema } from '../../shared/config.ts';
+import { cardIdSchema } from '../../core/cards.ts';
 
 // 저장소가 검토·소유하는 Counterpush 손패 그림이다. 실행기는 복사본이 아니라 이 폴더를 직접 읽는다.
 export const HAND_REFERENCE_DIRECTORY = fileURLToPath(

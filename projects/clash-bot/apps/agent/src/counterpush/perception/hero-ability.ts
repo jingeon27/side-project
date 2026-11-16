@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import sharp from 'sharp';
 
-import type { CardId } from '../../shared/config.ts';
-import type { HeroAbility } from '../domain/special-state.ts';
+import type { HeroAbility } from '../../core/battle/special-state.ts';
+import type { CardId } from '../../core/cards.ts';
 import { plausibleSpend } from './elixir.ts';
 import { difference, fingerprint } from './hand.ts';
 

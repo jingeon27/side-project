@@ -1,18 +1,20 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import { BattleMemory, type BattleSituation } from '../../core/battle/battle-state.ts';
+import { FieldDynamics } from '../../core/battle/field-dynamics.ts';
+import type { OpponentObservation } from '../../core/battle/observation.ts';
+import type { CardId } from '../../core/cards.ts';
+import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../../core/deck.ts';
+import type { Point } from '../../core/geometry.ts';
+import type { Profile } from '../../core/profile.ts';
 import { atomicWrite } from '../../shared/assets.ts';
-import { type CardId, type Point, type Profile } from '../../shared/config.ts';
 import { inside } from '../../shared/paths.ts';
-import { BattleMemory, type BattleSituation } from '../domain/battle-state.ts';
-import { FieldDynamics } from '../domain/field-dynamics.ts';
 import { counterpushBarReading, counterpushElixir } from '../perception/elixir.ts';
 import { loadHandCards, readHand } from '../perception/hand.ts';
 import { HeroAbilityButton } from '../perception/hero-ability.ts';
 import { OpponentTracker } from '../perception/tracker.ts';
-import { type CounterpushVisionClient } from '../perception/vision-client.ts';
-import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../runtime/browser.ts';
-import { type OpponentObservation } from './opponent-data.ts';
+import type { CounterpushVisionClient } from '../perception/vision-client.ts';
 
 type RecordedEvent = {
   type: string;

@@ -1,6 +1,6 @@
 """Evidence rows of events.jsonl, judged without MLX so CI checks the contract with TypeScript.
 
-The TypeScript writer is src/counterpush/runtime/episode-events.ts; both sides read
+The TypeScript writer is src/counterpush/match/episode-events.ts; both sides read
 test-fixtures/counterpush/episode-events.json.
 """
 

@@ -5,15 +5,15 @@ import { dirname, join, resolve } from 'node:path';
 import sharp from 'sharp';
 import { z } from 'zod';
 
-import type { QwenAction } from '../../game/actions.ts';
+import { opponentObservationSchema, type OpponentObservation } from '../../core/battle/observation.ts';
+import { cardIdSchema, type CardId } from '../../core/cards.ts';
+import { HEIGHT, WIDTH } from '../../core/geometry.ts';
+import type { QwenAction } from '../../core/policy/actions.ts';
 import { atomicWrite } from '../../shared/assets.ts';
-import { cardIdSchema, HEIGHT, WIDTH, type CardId } from '../../shared/config.ts';
 import { inside } from '../../shared/paths.ts';
-import { battleSituationSchema } from '../domain/battle-state.ts';
 
 // 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
 export const DEMONSTRATION_FORMAT = 'counterpush-card-lane-demonstrations-v2';
-const frameSchema = z.object({ image: z.string().min(1), capturedAt: z.number().positive() });
 export const opponentObservationsSchema = z
   .object({
     version: z.literal(1),
@@ -30,27 +30,7 @@ export const opponentObservationsSchema = z
       width: z.int().positive(),
       height: z.int().positive(),
     }),
-    observations: z
-      .array(
-        z.object({
-          id: z.string().regex(/^[a-z0-9_-]{1,64}$/),
-          before: frameSchema,
-          after: frameSchema,
-          card: cardIdSchema,
-          lane: z.enum(['left', 'right', 'center']),
-          evidence: z.enum(['new_unit_visible', 'spell_effect_visible']),
-          confidence: z.number().min(0).max(1),
-          verifiedActor: z.boolean(),
-          absentBefore: z.boolean(),
-          context: z.string().max(500),
-          grounding: z
-            .object({ x: z.number(), y: z.number(), box: z.array(z.number()).length(4) })
-            .optional(),
-          situation: battleSituationSchema,
-        }),
-      )
-      .min(1)
-      .max(100),
+    observations: z.array(opponentObservationSchema).min(1).max(100),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -65,7 +45,6 @@ export const opponentObservationsSchema = z
         });
     });
   });
-export type OpponentObservation = z.infer<typeof opponentObservationsSchema>['observations'][number];
 
 export function observationExclusion(item: OpponentObservation): string | null {
   const gap = (item.after.capturedAt - item.before.capturedAt) / 1000;

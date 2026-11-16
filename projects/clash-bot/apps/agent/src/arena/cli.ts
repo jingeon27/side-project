@@ -3,7 +3,7 @@ import { closeSync, openSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DATA_DIR } from '../shared/config.ts';
+import { DATA_DIR } from '../shared/data-dir.ts';
 import { pythonEnvironment, pythonExecutable } from '../shared/python.ts';
 import { runStudy } from './study.ts';
 

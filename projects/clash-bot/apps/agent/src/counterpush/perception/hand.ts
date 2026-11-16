@@ -1,6 +1,8 @@
 import sharp from 'sharp';
 
-import { type CardId, type Profile, type Rect } from '../../shared/config.ts';
+import type { CardId } from '../../core/cards.ts';
+import type { Rect } from '../../core/geometry.ts';
+import type { Profile } from '../../core/profile.ts';
 import { loadHandReferences } from './hand-references.ts';
 
 // libvips 작업 풀과 이미지 캐시를 작게 유지한다. GPU·OCR·추론 서버를 쓰지 않는다.

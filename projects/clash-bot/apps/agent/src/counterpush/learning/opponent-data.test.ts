@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import sharp from 'sharp';
 import { expect, it } from 'vitest';
 
-import { BattleMemory } from '../domain/battle-state.ts';
+import { BattleMemory } from '../../core/battle/battle-state.ts';
 import { prepareOpponentDataset } from './opponent-data.ts';
 
 const deck = [

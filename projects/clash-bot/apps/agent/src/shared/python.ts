@@ -1,7 +1,7 @@
 import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DATA_DIR } from './config.ts';
+import { DATA_DIR } from './data-dir.ts';
 
 export const PYTHON_SOURCE_DIR = fileURLToPath(new URL('../../python', import.meta.url));
 

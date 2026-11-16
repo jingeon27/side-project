@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import { DEFAULT_PROFILE } from '../../shared/config.ts';
+import { DEFAULT_PROFILE } from '../../core/profile.ts';
 import type { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { reprocessEpisode } from './reprocess.ts';
 

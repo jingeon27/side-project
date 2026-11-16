@@ -5,14 +5,14 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
-import { BattleMemory } from '../domain/battle-state.ts';
+import { BattleMemory } from '../../core/battle/battle-state.ts';
+import type { OpponentObservation } from '../../core/battle/observation.ts';
 import {
   macroMatches,
   observationExclusion,
   opponentActions,
   opponentObservationsSchema,
   prepareOpponentDataset,
-  type OpponentObservation,
 } from './opponent-data.ts';
 
 const deck = [

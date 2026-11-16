@@ -1,4 +1,4 @@
-"""The TypeScript writer (src/counterpush/runtime/episode-events.spec.ts) produces the same rows."""
+"""The TypeScript writer (src/counterpush/match/episode-events.spec.ts) produces the same rows."""
 
 import json
 import unittest

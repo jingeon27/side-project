@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { loadProfile } from '../../shared/config.ts';
+import { loadProfile } from '../../core/profile.ts';
 import { HAND_REFERENCE_DIRECTORY, loadHandReferences } from './hand-references.ts';
 
 const copies: string[] = [];
