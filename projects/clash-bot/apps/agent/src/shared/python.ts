@@ -9,6 +9,10 @@ export function pythonExecutable(dataDir = DATA_DIR) {
   return process.env.CLASH_BOT_PYTHON ?? join(dataDir, 'qwen/.venv/bin/python');
 }
 
+export function pythonToolsExecutable() {
+  return fileURLToPath(new URL('../../../../.data/python-tools/bin/python', import.meta.url));
+}
+
 export function pythonEnvironment(dataDir = DATA_DIR): NodeJS.ProcessEnv {
   return {
     ...process.env,

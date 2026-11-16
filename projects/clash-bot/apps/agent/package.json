@@ -30,9 +30,15 @@
     "test:learning:model": "RUN_QWEN_INTEGRATION=1 node src/shared/python-cli.ts unittest discover -s python/clash_bot/qwen -t python -p \"learning_model_test.py\"",
     "arena": "node src/arena/cli.ts",
     "arena:setup": "node src/shared/python-cli.ts --bootstrap clash_bot.arena.setup",
-    "test:arena": "OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 node src/shared/python-cli.ts unittest discover -s python/clash_bot/arena -t python -p \"*_test.py\""
+    "test:arena": "OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 node src/shared/python-cli.ts unittest discover -s python/clash_bot/arena -t python -p \"*_test.py\"",
+    "python:setup": "node src/shared/python-cli.ts --bootstrap clash_bot.development",
+    "lint:python": "node src/shared/python-cli.ts --tools ruff check python",
+    "format:python": "node src/shared/python-cli.ts --tools ruff format python",
+    "format:python:check": "node src/shared/python-cli.ts --tools ruff format --check python",
+    "check:python": "yarn lint:python && yarn format:python:check"
   },
   "dependencies": {
+    "dayjs": "catalog:",
     "playwright": "1.64.0",
     "sharp": "catalog:",
     "zod": "catalog:"

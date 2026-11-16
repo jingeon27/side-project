@@ -1,0 +1,33 @@
+[project]
+name = "clash-bot-python"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy==2.4.6",
+  "pydantic==2.14.3",
+  "scipy==1.17.1",
+]
+
+[project.optional-dependencies]
+qwen = ["mlx==0.32.4", "mlx-vlm==0.6.17"]
+arena = ["royalesim==0.1.53", "pillow==13.0.0"]
+perception = ["onnxruntime==1.31.1", "opencv-python==5.0.0.93", "pillow==13.0.0"]
+
+[dependency-groups]
+dev = ["ruff==0.17.5"]
+
+[tool.uv]
+# The Python modules are embedded in this Node application, not a separate wheel.
+package = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+required-version = "==0.17.5"
+src = ["python"]
+
+[tool.ruff.lint]
+select = ["E4", "E9", "F", "I"]
+
+[tool.ruff.format]
+quote-style = "double"

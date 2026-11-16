@@ -1,3 +1,4 @@
+-r core.lock
 onnxruntime==1.31.1
 flatbuffers==25.12.19
 protobuf==7.36.2

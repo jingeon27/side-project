@@ -1,14 +1,12 @@
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 
-import { DATA_DIR } from './config.ts';
-import { pythonEnvironment, pythonExecutable } from './python.ts';
+import { pythonEnvironment, pythonExecutable, pythonToolsExecutable } from './python.ts';
 
 const tools = process.argv[2] === '--tools';
 const bootstrap = process.argv[2] === '--bootstrap';
 const args = process.argv.slice(tools || bootstrap ? 3 : 2);
 const executable = () => {
-  if (tools) return join(DATA_DIR, 'python-tools/bin/python');
+  if (tools) return pythonToolsExecutable();
   if (bootstrap) return 'python3.11';
   return pythonExecutable();
 };

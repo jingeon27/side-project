@@ -1773,6 +1773,7 @@ __metadata:
   dependencies:
     "@side/config": "workspace:*"
     "@types/node": "catalog:"
+    dayjs: "catalog:"
     playwright: "npm:1.64.0"
     sharp: "catalog:"
     vitest: "catalog:"
