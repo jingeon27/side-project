@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 import type { BattleSituation, FieldUnit } from '../battle/battle-state.ts';
@@ -14,16 +15,35 @@ const contract = z
   .strictObject({ version: z.literal(3), header: z.string(), codes: z.record(z.string(), z.string()) })
   .parse(JSON.parse(readFileSync(new URL('../../../contracts/decision-v3.json', import.meta.url), 'utf8')));
 
+export type DecisionUnit = [body: string, x: number, y: number, variant: string];
+export type DecisionEffect = [
+  side: 'blue' | 'red',
+  card: string,
+  x: number,
+  y: number,
+  ageSeconds: number | null,
+];
+export type DecisionAction = [
+  letter: string,
+  kind: 'card' | 'wait' | 'ability',
+  card: string | null,
+  cost: number,
+  x: number,
+  y: number,
+];
 export type DecisionContext = {
   hand: Array<string | null>;
   elixir: number;
   enemyElixir: { min: number; max: number };
   next?: string[];
-  own: Array<[string, number, number, string]>;
-  enemy: Array<[string, number, number, string]>;
-  effects?: Array<[string, string, number, number, number | null]>;
+  own: DecisionUnit[];
+  enemy: DecisionUnit[];
+  effects?: DecisionEffect[];
   skill?: string;
-  actions: Array<[string, string, string | null, number, number, number]>;
+  actions: DecisionAction[];
+  // 문자열로 직렬화하지 않는 빠른 정책 입력이다. 대전 시작 뒤 초, 화면에서 읽은 타워 체력 비율.
+  clock?: number;
+  towers?: { own: number[]; enemy: number[] };
 };
 
 // 화면 좌표를 시뮬레이터와 같은 타일 좌표(가로 0~18, 강 16)로 바꾼다.
@@ -32,14 +52,15 @@ export const tilePoint = (profile: Profile, point: Point): [number, number] => [
   Math.round((16 - ((point.y - profile.riverY) * 9.5) / 130) * 10) / 10,
 ];
 
-function decisionContext(
+export function decisionContext(
   profile: Profile,
   cards: Array<CardId | null>,
   elixir: number,
   actions: QwenAction[],
   situation: BattleSituation,
+  clock?: number,
 ): DecisionContext {
-  const row = (unit: FieldUnit): [string, number, number, string] => [
+  const row = (unit: FieldUnit): DecisionUnit => [
     bodyCard(unit) ?? '?',
     ...tilePoint(profile, unit),
     unit.variant ?? '?',
@@ -59,20 +80,21 @@ function decisionContext(
       .map(row),
     effects: situation.effects
       ?.slice(0, 4)
-      .map((effect): [string, string, number, number, number | null] => [
+      .map((effect): DecisionEffect => [
         effect.side,
         effect.card,
         ...tilePoint(profile, effect),
         Math.round(effect.visibleAgeMs / 1000),
       ]),
     skill: situation.own.ability?.availability,
-    actions: actions.map((action, index): [string, string, string | null, number, number, number] => [
+    actions: actions.map((action, index): DecisionAction => [
       String.fromCharCode(65 + index),
       action.kind ?? (action.card ? 'card' : 'wait'),
       action.card,
       action.cost ?? (action.card ? CARD_INFO[action.card].cost : 0),
       ...tilePoint(profile, action.target),
     ]),
+    ...(clock === undefined ? {} : { clock }),
   };
 }
 
@@ -82,7 +104,10 @@ export function serializeDecision(context: DecisionContext) {
     rows
       .map(
         ([kind, x, y, variant]) =>
-          `${code(kind)}${x},${y}${variant === 'evolution' ? 'E' : variant === 'hero' ? 'H' : ''}`,
+          `${code(kind)}${x},${y}${match(variant)
+            .with('evolution', () => 'E')
+            .with('hero', () => 'H')
+            .otherwise(() => '')}`,
       )
       .join(' ');
   const effects = (context.effects ?? [])
@@ -94,7 +119,11 @@ export function serializeDecision(context: DecisionContext) {
     context.actions
       .map(
         ([letter, kind, card, , x, y]) =>
-          `${letter}:${kind === 'ability' ? 'U' : kind === 'wait' ? 'W' : `${code(card)}${x},${y}`}`,
+          `${letter}:${match(kind)
+            .with('ability', () => 'U')
+            .with('wait', () => 'W')
+            .with('card', () => `${code(card)}${x},${y}`)
+            .exhaustive()}`,
       )
       .join(' ')
   );

@@ -12,8 +12,10 @@ import signal
 import time
 import uuid
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
+from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.files import atomic_json
 
@@ -22,9 +24,32 @@ from .engine import rules_identity
 from .evaluation import evaluate, pfsp_weights
 from .export import export
 from .parallel import play_frozen_games
-from .policy import Policy
+from .policy import LEAGUE_KEY, Policy
 from .selfplay import replay_samples
 from .storage import read_episode, seed_for, write_episode
+
+
+class Opponent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: int = Field(ge=0)
+    # A draw counts half a win.
+    wins: float = Field(ge=0)
+    games: int = Field(ge=0)
+
+
+class LeagueState(BaseModel):
+    """league.json: the learner, the qualified champion and the frozen opponent pool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    format: Literal["clash-arena-league-v1"]
+    rulesID: str
+    learner: int = Field(ge=0)
+    champion: int = Field(ge=0)
+    evaluations: int = Field(ge=0)
+    episodes: list[str]
+    opponents: list[Opponent] = Field(min_length=1)
 
 
 def initialize(root, rules):
@@ -32,7 +57,7 @@ def initialize(root, rules):
     root.mkdir(parents=True, exist_ok=True)
     pointer = root / "league.json"
     if pointer.exists():
-        league = json.loads(pointer.read_text())
+        league = LeagueState.model_validate_json(pointer.read_text()).model_dump()
         if league["rulesID"] != rules["id"]:
             raise ValueError("Create a separate league directory for changed battle rules")
         return league
@@ -43,21 +68,28 @@ def initialize(root, rules):
     else:
         policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
         policy.save(initial, {"role": "initial_random_policy"})
-    league = {
-        "format": "clash-arena-league-v1",
-        "rulesID": rules["id"],
-        "learner": 0,
-        "champion": 0,
-        "evaluations": 0,
-        "episodes": [],
-        "opponents": [{"version": 0, "wins": 0, "games": 0}],
-    }
+    league = LeagueState(
+        format="clash-arena-league-v1",
+        rulesID=rules["id"],
+        learner=0,
+        champion=0,
+        evaluations=0,
+        episodes=[],
+        opponents=[Opponent(version=0, wins=0, games=0)],
+    ).model_dump()
     atomic_json(pointer, league)
+    publish_champion(root, league)
     return league
 
 
 def checkpoint(root, version):
     return Path(root) / "checkpoints" / f"v{version:06d}"
+
+
+def publish_champion(root, league):
+    """Copy the champion's live policy file where `counterpush play` reads it."""
+    source = checkpoint(root, league["champion"]) / "policy.json"
+    atomic_json(Path(root) / "champion-policy.json", json.loads(source.read_text()))
 
 
 def run(
@@ -108,7 +140,7 @@ def run(
 
     try:
         rules = rules_identity()
-        root = data_dir / "arena/leagues" / rules["id"][:16]
+        root = data_dir / "arena/leagues" / f"{rules['id'][:16]}-{LEAGUE_KEY}"
         league = initialize(root, rules)
         atomic_json(control / "active.json", {"root": str(root), "rulesID": rules["id"]})
         report(
@@ -254,6 +286,7 @@ def run(
                 if result["gate"]["passed"]:
                     league["champion"] = version
                 atomic_json(root / "league.json", league)
+                publish_champion(root, league)
                 report(
                     {
                         "phase": "evaluated",

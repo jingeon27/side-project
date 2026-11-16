@@ -1,0 +1,35 @@
+{
+  "format": "clash-fast-policy-v1",
+  "cards": [
+    "barbarian_barrel",
+    "furnace",
+    "goblin_hut",
+    "graveyard",
+    "ice_wizard",
+    "knight",
+    "poison",
+    "skeletons"
+  ],
+  "spells": ["barbarian_barrel", "graveyard", "poison"],
+  "bodies": [
+    "barbarian_barrel",
+    "furnace",
+    "goblin_hut",
+    "graveyard",
+    "ice_wizard",
+    "knight",
+    "poison",
+    "skeletons",
+    "skeleton",
+    "barbarian",
+    "barrel",
+    "fire_spirit",
+    "spear_goblin",
+    "?"
+  ],
+  "effects": ["graveyard", "poison"],
+  "grid": { "columns": 3, "rows": 8, "width": 18, "height": 32 },
+  "clockSeconds": 300,
+  "hidden": 128,
+  "attention": 32
+}

@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -5,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from clash_bot.arena.engine import Action, Arena
-from clash_bot.arena.policy import Policy, action_features, features
+from clash_bot.arena.policy import Policy, features
 from clash_bot.arena.selfplay import play_game, replay_samples
 
 
@@ -15,10 +16,11 @@ class ExpertIterationTest(unittest.TestCase):
         arena.play([Action(-1)] * 2, 100)
         obs = arena.observe(0)
         actions = [Action(*row) for row in obs["legalActions"]]
+        state, action_vectors = features(obs, actions)
         row = {
-            "features": features(obs).tolist(),
+            "features": state.tolist(),
             "actions": [a.row() for a in actions],
-            "actionFeatures": action_features(actions, 0).tolist(),
+            "actionFeatures": action_vectors.tolist(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "outcome": 1,
         }
@@ -31,6 +33,9 @@ class ExpertIterationTest(unittest.TestCase):
             policy.save(path, {"training": report})
             restored = Policy.load(path, "rules-a")
             self.assertEqual(restored.checksum(), policy.checksum())
+            live = json.loads((path / "policy.json").read_text())
+            self.assertEqual(live["weightsSHA256"], policy.checksum())
+            self.assertEqual(live["rulesID"], "rules-a")
             np.testing.assert_array_equal(
                 restored.predict(obs, actions)[0], policy.predict(obs, actions)[0]
             )

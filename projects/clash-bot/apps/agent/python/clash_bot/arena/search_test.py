@@ -16,7 +16,10 @@ class PublicSearchTest(unittest.TestCase):
         self.assertNotEqual(
             first.state()["players"][1]["hand"], second.state()["players"][1]["hand"]
         )
-        np.testing.assert_array_equal(features(first.observe(0)), features(second.observe(0)))
+        for left, right in zip(
+            features(first.observe(0), [Action(-1)]), features(second.observe(0), [Action(-1)])
+        ):
+            np.testing.assert_array_equal(left, right)
         policy, workspace = Policy(), Workspace()
         before = first.battle.state_hash()
         a = search(first.observe(0), policy, 123, simulations=8, depth=4, workspace=workspace)

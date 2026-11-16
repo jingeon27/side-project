@@ -14,8 +14,8 @@ import numpy as np
 from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import serialize_decision
 
+from .context import ALIASES, decision_context
 from .engine import (
-    FIELDS,
     TILE,
     Action,
     Arena,
@@ -29,86 +29,9 @@ from .engine import (
 from .export import render
 from .storage import seed_for
 
-ALIASES = [
-    "barbarian_barrel",
-    "furnace",
-    "goblin_hut",
-    "graveyard",
-    "ice_wizard",
-    "knight",
-    "poison",
-    "skeletons",
-]
-
-
-def body(kind):
-    name = kind.lower()
-    return (
-        "furnace"
-        if "firespirithut" in name
-        else "goblin_hut"
-        if "goblinhut" in name
-        else "ice_wizard"
-        if "icewizard" in name
-        else "knight"
-        if "knight" in name
-        else "fire_spirit"
-        if "firespirit" in name
-        else "spear_goblin"
-        if "speargoblin" in name
-        else "skeleton"
-        if "skeleton" in name
-        else "barbarian"
-        if "barbarian" in name
-        else "?"
-    )
-
 
 def prompt(observation, actions, types):
-    state, team = observation["state"], observation["team"]
-    own, enemy = state["players"][team], state["players"][1 - team]
-    units = [[] for _ in range(2)]
-    for row in state["entities"]:
-        if row[FIELDS["card_id"]] < 0:
-            continue
-        x, y = canonical(row[FIELDS["x"]] / TILE, row[FIELDS["y"]] / TILE, team)
-        units[0 if row[FIELDS["team"]] == team else 1].append(
-            [body(types[row[FIELDS["unit_type"]]]), round(x, 1), round(y, 1), "?"]
-        )
-    effects = []
-    for row in state["spells"]:
-        if row[1] in (3, 6):
-            x, y = canonical(row[3] / TILE, row[4] / TILE, team)
-            effects.append(
-                [
-                    "blue" if row[0] == team else "red",
-                    ALIASES[row[1]],
-                    round(x, 1),
-                    round(y, 1),
-                    None,
-                ]
-            )
-    description = {
-        "hand": [ALIASES[card] for card in own["hand"]],
-        "elixir": round(own["elixir_milli"] / 1000, 1),
-        "enemyElixir": {"min": enemy["elixir_range"][0], "max": enemy["elixir_range"][1]},
-        "next": [ALIASES[own["next_card"]]],
-        "own": sorted(units[0], key=lambda row: -row[2])[:5],
-        "enemy": sorted(units[1], key=lambda row: row[2])[:8],
-        "effects": effects[:4],
-        "skill": "ready" if own["abilities"] and own["abilities"][0][0] else "not_visible",
-        "actions": [
-            [
-                chr(65 + i),
-                "ability" if a.card == -2 else "wait" if a.card == -1 else "card",
-                None if a.card == -1 else "ice_wizard" if a.card == -2 else ALIASES[a.card],
-                0 if a.card == -1 else 2 if a.card == -2 else [2, 4, 4, 5, 3, 3, 4, 1][a.card],
-                *[round(v, 1) for v in canonical(a.x / TILE, a.y / TILE, team)],
-            ]
-            for i, a in enumerate(actions)
-        ],
-    }
-    return serialize_decision(description)
+    return serialize_decision(decision_context(observation, actions, types))
 
 
 class Teacher:

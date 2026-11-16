@@ -22,7 +22,7 @@
     "format:python": "node src/shared/python-cli.ts --tools ruff format python",
     "format:python:check": "node src/shared/python-cli.ts --tools ruff format --check python",
     "check:python": "yarn lint:python && yarn format:python:check",
-    "test:python": "OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 node src/shared/python-cli.ts --tools unittest clash_bot.qwen.protocol_test clash_bot.statistics_test clash_bot.qwen.decision_input_test clash_bot.qwen.model_specs_test clash_bot.qwen.opponent_data_test clash_bot.qwen.search_data_test clash_bot.qwen.setup_test clash_bot.runtime_guard_test clash_bot.downloads_test clash_bot.files_test clash_bot.qwen.promotion_gate_test clash_bot.perception.protocol_test clash_bot.qwen.episode_events_test",
+    "test:python": "OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 node src/shared/python-cli.ts --tools unittest clash_bot.qwen.protocol_test clash_bot.statistics_test clash_bot.qwen.decision_input_test clash_bot.qwen.model_specs_test clash_bot.qwen.opponent_data_test clash_bot.qwen.search_data_test clash_bot.qwen.setup_test clash_bot.runtime_guard_test clash_bot.downloads_test clash_bot.files_test clash_bot.qwen.promotion_gate_test clash_bot.perception.protocol_test clash_bot.qwen.episode_events_test clash_bot.arena.fast_features_test clash_bot.arena.samples_test",
     "test:arena:model": "RUN_ARENA_INTEGRATION=1 node src/shared/python-cli.ts unittest clash_bot.arena.parallel_model_test"
   },
   "dependencies": {

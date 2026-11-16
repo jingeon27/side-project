@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 from .engine import Arena, legal_actions
-from .policy import action_features, features
+from .policy import features
 from .search import Workspace, search
 from .storage import seed_for
 
@@ -58,6 +58,7 @@ def play_game(
             searches += result["simulations"]
             decisions += 1
             if training:
+                state_features, action_vectors = features(observation, result["actions"])
                 samples.append(
                     {
                         "gameID": game_id,
@@ -65,9 +66,9 @@ def play_game(
                         "team": team,
                         "policyVersion": policy.metadata["version"],
                         "observation": observation,
-                        "features": features(observation).tolist(),
+                        "features": state_features.tolist(),
                         "actions": [action.row() for action in result["actions"]],
-                        "actionFeatures": action_features(result["actions"], team).tolist(),
+                        "actionFeatures": action_vectors.tolist(),
                         "target": result["target"].tolist(),
                         "chosen": chosen,
                         "search": {
