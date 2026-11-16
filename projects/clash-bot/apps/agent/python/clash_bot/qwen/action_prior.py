@@ -55,7 +55,7 @@ def bodies(text):
 
 def contextual_prior(code, facts, state):
     point = coordinate(facts)
-    if code not in ("P", "G", "H") or point is None:
+    if code not in ("P", "G", "H", "F", "K", "I", "S") or point is None:
         return 0
     mana_text = state.get("mana")
     mana = float(mana_text.split("-")[0]) if mana_text is not None else None
@@ -77,6 +77,18 @@ def contextual_prior(code, facts, state):
     )
     king_active = enemy_towers is not None and (enemy_towers[0] < 1 or 0 in enemy_towers[1:])
     total = 0
+    if code in POLICY["buildupMana"]:
+        enemy = bodies(state.get("enemy", ""))
+        urgent = any(y < 18 for _, _, y in enemy) or any(
+            side == "r" and card == "G" for side, card, *_ in active
+        )
+        if not urgent and mana is not None:
+            if mana < POLICY["buildupMana"][code]:
+                total += POLICY["lowReserveBuildup"]
+            else:
+                evolution = re.search(code + r"(\d+)-(\d+)", state.get("ownEvolution", ""))
+                if code in ("F", "K") and evolution and evolution[1] == evolution[2]:
+                    total += POLICY["evolutionCyclePreference"]
     if code in ("P", "G"):
         radius = EFFECTS["poison"]["radius"] if code == "P" else POLICY["graveyardSpawnRadius"]
         if (
@@ -113,16 +125,21 @@ def contextual_prior(code, facts, state):
 
         def possible(counter, cost):
             observed = re.search(counter + r"(\d+)-(\d+)", cycle or "")
-            return (observed is None or int(observed[1]) == 0) and (
-                enemy_max is None or enemy_max >= cost
-            )
+            if enemy_max is not None and enemy_max < cost:
+                return 0
+            if observed is None:
+                return POLICY["unknownCounterWeight"]
+            if int(observed[1]) > 0:
+                return 0
+            return 1 if int(observed[2]) == 0 else POLICY["uncertainCounterWeight"]
 
-        counters = any(
+        counters = max(
             possible(counter, cost) for counter, cost in POLICY["graveyardCounters"].items()
         )
         followup = "P" in state.get("hand", "") and mana is not None and mana >= 9
         if not tank and counters and not followup:
-            total += POLICY["unsupportedGraveyard"]
+            advantage = mana is not None and enemy_max is not None and mana - enemy_max >= 2
+            total += POLICY["unsupportedGraveyard"] * counters * (0.5 if advantage else 1)
         if (
             mana is not None
             and mana < 9
@@ -136,7 +153,7 @@ def contextual_prior(code, facts, state):
         if (
             mana is not None
             and mana < 8
-            and state.get("enemy") == ""
+            and not any(y < 18 for _, _, y in bodies(state.get("enemy", "")))
             and not any(side == "r" and card == "G" for side, card, _, _, _ in active)
         ):
             total += POLICY["earlyHut"]

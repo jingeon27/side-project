@@ -43,6 +43,7 @@ export type DecisionContext = {
   enemyElixir: { min: number; max: number };
   enemyCycle?: Array<[card: string, minimumPlays: number, maximumPlays: number]>;
   next?: string[];
+  ownEvolution?: Array<[card: string, minimumPlays: number, maximumPlays: number]>;
   own: DecisionUnit[];
   enemy: DecisionUnit[];
   bodies: { own: CombatBody[]; enemy: CombatBody[] };
@@ -75,6 +76,11 @@ export function decisionContext(
       .filter(([, wait]) => wait.min > 0 || wait.max < 4)
       .map(([card, wait]) => [card, wait.min, wait.max]),
     next: situation.own.cycle?.nextDraw,
+    ownEvolution: situation.own.evolutions?.map((row) => [
+      row.card,
+      row.normalPlaysBeforeEvolved.min,
+      row.normalPlaysBeforeEvolved.max,
+    ]),
     own: situation.own.units
       .toSorted((a, b) => a.y - b.y)
       .slice(0, 5)
@@ -159,7 +165,7 @@ export function serializeDecision(context: PublicDecisionContext) {
     .otherwise(() => '0');
   return (
     contract.header +
-    `mana=${mana};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};enemyCycle=${enemyCycle};towers=${context.towers ? `${context.towers.own.join(',')}|${context.towers.enemy.join(',')}` : '?'};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${skill}\n` +
+    `mana=${mana};enemyMana=${Math.floor(context.enemyElixir.min * 10) / 10}-${Math.ceil(context.enemyElixir.max * 10) / 10};enemyCycle=${enemyCycle};ownEvolution=${context.ownEvolution?.map(([card, min, max]) => `${code(card)}${min}-${max}`).join(' ') || '?'};towers=${context.towers ? `${context.towers.own.join(',')}|${context.towers.enemy.join(',')}` : '?'};hand=${context.hand.map(code).join('')};next=${(context.next ?? []).map(code).join('')};own=${units(context.own)};enemy=${units(context.enemy)};effects=${effects};skill=${skill}\n` +
     context.actions
       .map((action) => {
         const [letter, kind, card, , x, y] = action;

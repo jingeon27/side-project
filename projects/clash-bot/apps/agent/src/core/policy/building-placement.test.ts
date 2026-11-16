@@ -94,3 +94,37 @@ it('does not generate the lateral melee defense offset for a rolling Barrel', ()
   expect(positions.some((option) => option.description.includes('intercept'))).toBe(true);
   expect(positions.every((option) => !option.description.includes('lateral'))).toBe(true);
 });
+
+it('offers a central Firecracker lure only when the approaching body is identified', () => {
+  const state = scene();
+  const enemy = { card: null, kind: 'firecracker' as const, x: 95, y: profile.riverY - 15, confidence: 0.98 };
+  const field: BattleSituation = { ...state, opponent: { ...state.opponent, units: [enemy] } };
+  expect(predictivePlacements(profile, 'knight', [], field)[0]?.description).toContain('Firecracker lure');
+  expect(
+    predictivePlacements(profile, 'knight', [], state).some((row) =>
+      row.description.includes('Firecracker lure'),
+    ),
+  ).toBe(false);
+});
+
+it('does not retain generic tower-center Graveyard candidates when effect-center calibration exists', () => {
+  const calibrated = {
+    ...profile,
+    observedGraveyardCenters: {
+      source: 'winning_opponent_effect_centers' as const,
+      samples: 61,
+      corpusSHA256: 'a'.repeat(64),
+      left: [
+        [-1.6, 0.1],
+        [-1.6, 1],
+      ] as [number, number][],
+      right: [
+        [1.5, 0.1],
+        [1.5, 0.8],
+      ] as [number, number][],
+    },
+  };
+  const placements = predictivePlacements(calibrated, 'graveyard', [], scene());
+  expect(placements).toHaveLength(4);
+  expect(placements.every((row) => row.target.x < 85 || row.target.x > 283)).toBe(true);
+});

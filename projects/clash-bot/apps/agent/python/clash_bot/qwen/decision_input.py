@@ -64,8 +64,12 @@ def serialize_decision(context):
         if tower_state
         else "?"
     )
+    evolution = (
+        " ".join(f"{code(card)}{low}-{high}" for card, low, high in context.get("ownEvolution", []))
+        or "?"
+    )
     before = (
-        f"mana={mana_text};enemyMana={number(math.floor(enemy['min'] * 10) / 10)}-{number(math.ceil(enemy['max'] * 10) / 10)};enemyCycle={cycle};towers={towers};hand={''.join(map(code, context['hand']))};"
+        f"mana={mana_text};enemyMana={number(math.floor(enemy['min'] * 10) / 10)}-{number(math.ceil(enemy['max'] * 10) / 10)};enemyCycle={cycle};ownEvolution={evolution};towers={towers};hand={''.join(map(code, context['hand']))};"
         f"next={''.join(map(code, context.get('next') or []))};own={units(context['own'])};enemy={units(context['enemy'])};effects={effects};skill={'?' if context.get('skill') == 'unknown' else int(context.get('skill') == 'ready')}\n"
     )
     contacts = bool(context["enemy"]) and any(
@@ -131,7 +135,7 @@ def mirror_actor_prompt(observation):
         ]
 
     def reflected(point):
-        return {"x": point["x"], "y": 2 * river - point["y"]}
+        return {"x": 368 - point["x"], "y": 2 * river - point["y"]}
 
     def unit(row):
         return [
@@ -166,11 +170,11 @@ def mirror_actor_prompt(observation):
         "bodies": {
             "own": [
                 screen_body(row, river, True)
-                for row in sorted(state["opponent"]["units"], key=lambda row: -row["y"])[:5]
+                for row in sorted(state["opponent"]["units"], key=lambda row: -row["y"])
             ],
             "enemy": [
                 screen_body(row, river, True)
-                for row in sorted(state["own"]["units"], key=lambda row: row["y"])[:8]
+                for row in sorted(state["own"]["units"], key=lambda row: row["y"])
             ],
         },
         "effects": [

@@ -8,6 +8,20 @@ from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner
 
 
 class ActionPriorTest(unittest.TestCase):
+    def test_unknown_counter_is_not_treated_as_confirmed_and_low_mana_buildup_waits(self):
+        actions = "\nA:G3.5,25.5 B:W"
+        state = "mana=5;enemyMana=4-8;hand=GIKS;own=;enemy=;effects=;enemyCycle="
+        unknown = action_prior(state + "?" + actions, 2)
+        ready = action_prior(state + "P0-0" + actions, 2)
+        self.assertGreater(unknown[0], ready[0])
+        build = "\nA:F8,0.5 B:K10,0.5 C:W"
+        poor = action_prior("mana=5;enemy=;own=;effects=" + build, 3)
+        rich = action_prior("mana=10;enemy=;own=;effects=" + build, 3)
+        self.assertLess(poor[0], rich[0] - 3)
+        self.assertLess(poor[1], rich[1] - 3)
+        defense = action_prior("mana=5;enemy=?3.5,8;own=;effects=" + build, 3)
+        self.assertGreater(defense[0], poor[0])
+
     def test_empty_poison_is_not_rewarded_by_a_possible_movement_upper_bound(self):
         state = "mana=6;enemyMana=0-10;own=;enemy=I1.6,14.5;effects=;towers=?\n"
         empty = action_prior(state + "A:P3.5,25.9d0-368k0?e0-4n0 B:W", 2)
@@ -24,9 +38,11 @@ class ActionPriorTest(unittest.TestCase):
     def test_hut_does_not_spend_early_or_repeat_existing_coverage_without_a_threat(self):
         actions = "\nA:H9,11 B:W"
         early = action_prior("mana=4;enemy=;own=;effects=" + actions, 2)
+        distant = action_prior("mana=4;enemy=K3.5,25;own=;effects=" + actions, 2)
         full = action_prior("mana=10;enemy=;own=;effects=" + actions, 2)
         duplicate = action_prior("mana=10;enemy=;own=H9,10;effects=" + actions, 2)
         self.assertLess(early[0], full[0])
+        self.assertEqual(distant[0], early[0])
         self.assertLess(duplicate[0], full[0])
 
     def test_poison_reserves_defense_and_does_not_stack_an_active_cast(self):

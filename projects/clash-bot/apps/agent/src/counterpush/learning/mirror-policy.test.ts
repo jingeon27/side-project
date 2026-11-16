@@ -6,7 +6,7 @@ import { BattleMemory, type BattleSituation } from '../../core/battle/battle-sta
 import { COUNTERPUSH_DECK } from '../../core/deck.ts';
 import { serializeDecision } from '../../core/policy/decision-v3.ts';
 import { DEFAULT_PROFILE } from '../../core/profile.ts';
-import { mirrorActions, mirrorContext, reflectPoint } from './mirror-policy.ts';
+import { mirrorActions, mirrorContext, rotateOpponentPoint } from './mirror-policy.ts';
 
 const before = () =>
   new BattleMemory([...COUNTERPUSH_DECK]).observe({
@@ -28,7 +28,7 @@ it('teaches BLUE actions from the winning RED field without leaking BLUE private
   expect(context.skill).toBe('unknown');
   expect(context.own[0]?.[0]).toBe('ice_wizard');
   expect(context.enemy[0]?.[0]).toBe('knight');
-  expect(reflectPoint(DEFAULT_PROFILE, { x: 95, y: 160 })).toEqual({ x: 95, y: 428 });
+  expect(rotateOpponentPoint(DEFAULT_PROFILE, { x: 95, y: 160 })).toEqual({ x: 273, y: 428 });
   const changed = {
     ...situation,
     own: {
@@ -57,4 +57,17 @@ it('shares the mirrored public context byte for byte with the Python learner', (
   expect(
     serializeDecision(mirrorContext(DEFAULT_PROFILE, fixture.sample.situation, fixture.sample.candidates)),
   ).toBe(fixture.prompt);
+});
+
+it('rotates positions and both velocity axes by 180 degrees, including effect spawn predictions', () => {
+  const situation = before();
+  const enemy = situation.opponent.units[0]!;
+  enemy.velocity = { xPerSecond: 12, yPerSecond: 20, speedPixelsPerSecond: 23.3 };
+  enemy.motion = { samples: 3, elapsedMs: 500 };
+  const context = mirrorContext(DEFAULT_PROFILE, situation, []);
+  expect(context.own[0]?.slice(1, 3)).toEqual([3.5, 10.6]);
+  expect(context.bodies.own[0]?.velocity?.[0]).toBeCloseTo((-12 * 11) / 178);
+  expect(context.bodies.own[0]?.velocity?.[1]).toBeCloseTo((20 * 9.5) / 130);
+  const point = { x: 73, y: 174 };
+  expect(rotateOpponentPoint(DEFAULT_PROFILE, rotateOpponentPoint(DEFAULT_PROFILE, point))).toEqual(point);
 });

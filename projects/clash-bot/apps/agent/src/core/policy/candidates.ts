@@ -32,11 +32,14 @@ export function affordableCandidates(
   const old = actionCandidates(profile, cards, elixir, threats, observed);
   const byCard = cards.flatMap((card, index) => {
     if (!card || CARD_INFO[card].cost > elixir) return [];
-    const existing = ['ice_wizard', 'barbarian_barrel', 'goblin_hut', 'poison', 'graveyard'].includes(card)
-      ? predictivePlacements(profile, card, threats, observed)
-      : old.filter((action) => action.card === card && action.kind !== 'ability');
+    const existing = predictivePlacements(profile, card, threats, observed);
     const fallback = () => {
-      if (['barbarian_barrel', 'goblin_hut', 'poison', 'graveyard'].includes(card)) return [];
+      if (
+        ['knight', 'furnace', 'skeletons', 'barbarian_barrel', 'goblin_hut', 'poison', 'graveyard'].includes(
+          card,
+        )
+      )
+        return [];
       return [95, 273].flatMap((x) => {
         const target = ownPoint(profile, card, { x, y: profile.riverY + 85 }, observed);
         return target ? [{ target, description: `${card} lane support` }] : [];

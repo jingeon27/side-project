@@ -66,10 +66,10 @@ describe('opponent visual demonstrations', () => {
     );
   });
 
-  it('keeps screen-left/right when reflecting the top player and labels only the card/lane', () => {
+  it('offers legal actor-relative card/lane choices after rotating the top player', () => {
     const actions = mirrorActions(DEFAULT_PROFILE, [...deck], situation);
     const target = actions.find((action) => macroMatches(action, 'furnace', 'left'));
-    expect(target?.target.x).toBe(95);
+    expect(target?.target.x).toBeLessThan(184);
     expect(target?.target.y).toBeGreaterThan(DEFAULT_PROFILE.riverY);
     expect(target?.slot).toBe(0);
     expect(actions.find((action) => macroMatches(action, 'graveyard', 'right'))?.target.y).toBeLessThan(
@@ -144,12 +144,14 @@ describe('opponent visual demonstrations', () => {
       expect(result.excluded).toEqual([{ id: 'ambiguous', reason: 'ambiguous_time_window' }]);
       expect(dataset.samples[0]).toMatchObject({
         card: 'furnace',
-        lane: 'left',
+        source_lane: 'left',
+        lane: 'right',
+        perspective: 'rotate_180_about_river_center',
         hand: null,
         elixir: null,
         exact_target: null,
       });
-      expect(dataset.format).toBe('counterpush-mirror-actor-demonstrations-v4');
+      expect(dataset.format).toBe('counterpush-mirror-actor-demonstrations-v5');
       expect(dataset.samples[0].situation).toEqual(situation);
       expect(dataset.samples[0].image_sha256).not.toBe(dataset.samples[0].evidence_sha256);
       expect(await prepareOpponentDataset(path, directory, { ...DEFAULT_PROFILE, deck: [...deck] })).toEqual(

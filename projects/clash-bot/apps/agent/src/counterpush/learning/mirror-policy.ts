@@ -3,7 +3,7 @@ import { match } from 'ts-pattern';
 
 import type { BattleSituation, FieldUnit } from '../../core/battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../../core/cards.ts';
-import { screenPoint, tilePoint, type Point } from '../../core/geometry.ts';
+import { tilePoint, type Point } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
 import { bodyCard } from '../../core/policy/candidates.ts';
 import { combatBody } from '../../core/policy/combat-projection.ts';
@@ -11,8 +11,8 @@ import type { DecisionUnit, PublicDecisionContext } from '../../core/policy/deci
 import { predictivePlacements } from '../../core/policy/predictive-placement.ts';
 import type { Profile } from '../../core/profile.ts';
 
-export const reflectPoint = (profile: Pick<Profile, 'riverY'>, point: Point): Point => ({
-  x: point.x,
+export const rotateOpponentPoint = (profile: Pick<Profile, 'riverY'>, point: Point): Point => ({
+  x: 368 - point.x,
   y: 2 * profile.riverY - point.y,
 });
 
@@ -25,7 +25,7 @@ export function mirrorContext(
 ): PublicDecisionContext {
   const row = (unit: FieldUnit): DecisionUnit => [
     bodyCard(unit) ?? '?',
-    ...tilePoint(profile, reflectPoint(profile, unit)),
+    ...tilePoint(profile, rotateOpponentPoint(profile, unit)),
     unit.variant ?? '?',
   ];
   return {
@@ -51,8 +51,14 @@ export function mirrorContext(
         .map((unit) =>
           combatBody(profile, {
             ...unit,
-            ...reflectPoint(profile, unit),
-            velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+            ...rotateOpponentPoint(profile, unit),
+            velocity: unit.velocity
+              ? {
+                  ...unit.velocity,
+                  xPerSecond: -unit.velocity.xPerSecond,
+                  yPerSecond: -unit.velocity.yPerSecond,
+                }
+              : undefined,
           }),
         ),
       enemy: situation.own.units
@@ -60,8 +66,14 @@ export function mirrorContext(
         .map((unit) =>
           combatBody(profile, {
             ...unit,
-            ...reflectPoint(profile, unit),
-            velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+            ...rotateOpponentPoint(profile, unit),
+            velocity: unit.velocity
+              ? {
+                  ...unit.velocity,
+                  xPerSecond: -unit.velocity.xPerSecond,
+                  yPerSecond: -unit.velocity.yPerSecond,
+                }
+              : undefined,
           }),
         ),
     },
@@ -70,7 +82,7 @@ export function mirrorContext(
       .map((effect) => [
         effect.side === 'red' ? 'blue' : 'red',
         effect.card,
-        ...tilePoint(profile, reflectPoint(profile, effect)),
+        ...tilePoint(profile, rotateOpponentPoint(profile, effect)),
         effect.onsetCertain ? Math.round(effect.visibleAgeMs / 1000) : null,
       ]),
     skill: 'unknown',
@@ -89,64 +101,40 @@ export function mirrorContext(
 export function mirrorActions(profile: Profile, deck: CardId[], situation: BattleSituation): QwenAction[] {
   const reflectUnit = (unit: FieldUnit) => ({
     ...unit,
-    ...reflectPoint(profile, unit),
-    velocity: unit.velocity ? { ...unit.velocity, yPerSecond: -unit.velocity.yPerSecond } : undefined,
+    ...rotateOpponentPoint(profile, unit),
+    velocity: unit.velocity
+      ? { ...unit.velocity, xPerSecond: -unit.velocity.xPerSecond, yPerSecond: -unit.velocity.yPerSecond }
+      : undefined,
   });
   const field = {
     own: { units: situation.opponent.units.map(reflectUnit) },
     opponent: { units: situation.own.units.map(reflectUnit) },
     effects: situation.effects?.map((effect) => ({
       ...effect,
-      ...reflectPoint(profile, effect),
+      ...rotateOpponentPoint(profile, effect),
       side: effect.side === 'red' ? ('blue' as const) : ('red' as const),
-      predictions: effect.predictions?.map((point) => ({ ...point, ...reflectPoint(profile, point) })),
+      predictions: effect.predictions?.map((point) => ({ ...point, ...rotateOpponentPoint(profile, point) })),
     })),
   };
   const invaders = situation.own.units
     .filter((unit) => unit.confidence >= 0.85)
-    .map((unit) => reflectPoint(profile, unit))
+    .map((unit) => rotateOpponentPoint(profile, unit))
     .toSorted((a, b) => b.y - a.y);
   const plays = deck.flatMap((card) => {
     if (CARD_INFO[card].cost > situation.opponent.elixir.max) return [];
-    const targets = match(card)
-      .with('poison', 'graveyard', 'goblin_hut', 'ice_wizard', () =>
-        predictivePlacements(
-          profile,
-          card,
-          invaders.filter((point) => point.y > profile.riverY),
-          field,
-        )
-          .slice(
-            0,
-            match(card)
-              .with('ice_wizard', () => 4)
-              .with('goblin_hut', () => 3)
-              .otherwise(() => 5),
-          )
-          .map((option) => option.target),
-      )
-      .with('barbarian_barrel', () =>
-        predictivePlacements(profile, card, invaders, field)
-          .slice(0, 2)
-          .map((option) => option.target),
-      )
-      .otherwise(() =>
-        invaders[0]
-          ? [
-              {
-                x: invaders[0].x,
-                y: Math.min(
-                  profile.arena.y + profile.arena.height - 15,
-                  invaders[0].y + (card === 'ice_wizard' || card === 'furnace' ? 45 : 18),
-                ),
-              },
-              {
-                x: invaders[0].x + (invaders[0].x < 184 ? 35 : -35),
-                y: Math.min(profile.arena.y + profile.arena.height - 15, invaders[0].y + 25),
-              },
-            ]
-          : [screenPoint(profile, [3.5, 10]), screenPoint(profile, [14.5, 10])],
-      );
+    const limit = match(card)
+      .with('poison', 'graveyard', () => 5)
+      .with('ice_wizard', () => 4)
+      .with('goblin_hut', () => 3)
+      .otherwise(() => 2);
+    const targets = predictivePlacements(
+      profile,
+      card,
+      invaders.filter((point) => point.y > profile.riverY),
+      field,
+    )
+      .slice(0, limit)
+      .map((option) => option.target);
     return uniqBy(targets, (point) => `${Math.round(point.x)}:${Math.round(point.y)}`).map((target) => ({
       slot: 0,
       card,

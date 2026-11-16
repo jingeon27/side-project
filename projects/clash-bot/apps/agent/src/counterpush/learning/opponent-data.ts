@@ -15,10 +15,10 @@ import type { Profile } from '../../core/profile.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { inside } from '../../shared/paths.ts';
 import { RESULT_LABEL } from '../../shared/qualification.ts';
-import { mirrorActions, mirrorContext, reflectPoint } from './mirror-policy.ts';
+import { mirrorActions, mirrorContext, rotateOpponentPoint } from './mirror-policy.ts';
 
 // 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
-export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v4';
+export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v5';
 export const opponentObservationsSchema = z
   .object({
     version: z.literal(1),
@@ -71,13 +71,16 @@ export function macroMatches(action: QwenAction, card: CardId, lane: OpponentObs
   );
 }
 
+const actorLane = (lane: OpponentObservation['lane']) =>
+  lane === 'center' ? 'center' : lane === 'left' ? 'right' : 'left';
+
 const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 const placementRegion = (profile: Profile, grounding: NonNullable<OpponentObservation['grounding']>) => {
   const [left, top, right, bottom] = z
     .tuple([z.number(), z.number(), z.number(), z.number()])
     .parse(grounding.box);
   return {
-    ...reflectPoint(profile, grounding),
+    ...rotateOpponentPoint(profile, grounding),
     radius: Math.max(24, Math.min(45, Math.max(right - left, bottom - top) * 0.35)),
   };
 };
@@ -202,6 +205,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       ? actions.filter(
           (action) =>
             action.card === item.card &&
+            (item.card !== 'graveyard' || Math.abs(action.target.x - region.x) <= 12) &&
             Math.hypot(action.target.x - region.x, action.target.y - region.y) <= region.radius,
         )
       : [];
@@ -209,7 +213,7 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
     const targetIds = (
       positionTargets.length
         ? positionTargets
-        : actions.filter((action) => macroMatches(action, item.card, item.lane))
+        : actions.filter((action) => macroMatches(action, item.card, actorLane(item.lane)))
     ).map((action) => action.id);
     if (!targetIds.length) {
       record.excluded = 'observed_action_inconsistent_with_before_candidates';
@@ -232,7 +236,9 @@ export async function prepareOpponentDataset(observationsPath: string, dataDir: 
       elixir: null,
       exact_target: null,
       card: item.card,
-      lane: item.lane,
+      source_lane: item.lane,
+      lane: actorLane(item.lane),
+      perspective: 'rotate_180_about_river_center',
       confidence: item.confidence,
       evidence: item.evidence,
       verified_actor: item.verifiedActor,

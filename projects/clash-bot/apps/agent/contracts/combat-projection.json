@@ -71,6 +71,11 @@
       "hp": 1180,
       "speed": 0,
       "ground": true
+    },
+    "firecracker": {
+      "hp": 304,
+      "speed": 1.5,
+      "ground": true
     }
   },
   "policy": {
@@ -91,6 +96,16 @@
       "I": 3,
       "H": 4
     },
-    "thinPoison": -2
+    "thinPoison": -2,
+    "uncertainCounterWeight": 0.5,
+    "unknownCounterWeight": 0.25,
+    "lowReserveBuildup": -4,
+    "buildupMana": {
+      "F": 8,
+      "K": 7,
+      "I": 7,
+      "S": 3
+    },
+    "evolutionCyclePreference": 0.5
   }
 }

@@ -245,15 +245,21 @@ function poisonPlacements(profile: Profile, situation: PlacementField): Placemen
 }
 
 function graveyardPlacements(profile: Profile, situation: PlacementField): PlacementOption[] {
-  const points = [3.5, 14.5].flatMap((x) =>
-    (
-      [
-        [x, 25.5],
-        [x + (x < 9 ? -1.2 : 1.2), 25],
-        [x, 24.3],
-      ] as const
-    ).map((tile) => screenPoint(profile, tile)),
-  );
+  const measured = profile.observedGraveyardCenters;
+  const points = measured
+    ? [
+        ...measured.left.map(([dx, dy]) => screenPoint(profile, [3.5 + dx, 25.5 + dy])),
+        ...measured.right.map(([dx, dy]) => screenPoint(profile, [14.5 + dx, 25.5 + dy])),
+      ]
+    : [3.5, 14.5].flatMap((x) =>
+        (
+          [
+            [x, 25.5],
+            [x + (x < 9 ? -1.2 : 1.2), 25],
+            [x, 24.3],
+          ] as const
+        ).map((tile) => screenPoint(profile, tile)),
+      );
   return points
     .map((target) => {
       const defenders = situation.opponent.units
@@ -276,7 +282,7 @@ function graveyardPlacements(profile: Profile, situation: PlacementField): Place
         : 0;
       return {
         target,
-        score: support * 2 - defenders - poison,
+        score: support * 2 - defenders - poison + (measured && (target.x < 85 || target.x > 283) ? 0.5 : 0),
         description: 'Graveyard tower offset; compare observed defenders, tank arrival and enemy Poison',
       };
     })
@@ -294,7 +300,54 @@ export function predictivePlacements(
   if (card === 'graveyard') return graveyardPlacements(profile, situation);
   if (card === 'poison') return poisonPlacements(profile, situation);
   if (card === 'goblin_hut') return hutPlacements(profile, situation);
-  const existing = unitPlacements(profile, card, threats, situation);
+  // Distant enemy bodies are board context, not a defensive deployment target.
+  const defensiveThreats = threats.filter((point) => point.y > profile.riverY);
+  const existing = unitPlacements(profile, card, defensiveThreats, situation);
+  if (['knight', 'furnace', 'skeletons'].includes(card)) {
+    const firecracker = situation.opponent.units.find(
+      (unit) => unit.kind === 'firecracker' && unit.confidence >= 0.85 && unit.y > profile.riverY - 55,
+    );
+    const centralPull =
+      firecracker && ['knight', 'skeletons'].includes(card)
+        ? [8, 10].flatMap((x) => {
+            const target = ownPoint(profile, card, screenPoint(profile, [x, 12.5]), situation);
+            return target
+              ? [
+                  {
+                    target,
+                    description:
+                      'central Firecracker lure; compare shot direction, tower support and spell cleanup',
+                  },
+                ]
+              : [];
+          })
+        : [];
+    const urgent =
+      defensiveThreats.length > 0 ||
+      graveyardThreat(profile, situation) !== undefined ||
+      situation.opponent.units.some((unit) => unit.confidence >= 0.75 && unit.y > profile.riverY - 55);
+    if (urgent)
+      return uniqBy([...centralPull, ...existing], (option) => `${option.target.x}:${option.target.y}`).slice(
+        0,
+        5,
+      );
+    const rearTiles =
+      card === 'skeletons'
+        ? ([[9, 0.5], ...DEPLOYMENT.kingBackTiles] as const)
+        : [
+            ...DEPLOYMENT.kingBackTiles,
+            ...([
+              [3.5, 3],
+              [14.5, 3],
+            ] as const),
+          ];
+    const rear = rearTiles.flatMap((tile) => {
+      const target = ownPoint(profile, card, screenPoint(profile, tile), situation);
+      return target ? [{ target, description: `${card} calm rear buildup; preserve defense and cycle` }] : [];
+    });
+    const support = existing.filter((option) => option.description.includes('behind advancing'));
+    return uniqBy([...support, ...rear], (option) => `${option.target.x}:${option.target.y}`).slice(0, 5);
+  }
   if (!['ice_wizard', 'barbarian_barrel'].includes(card)) return existing;
   const projected = projectedPlacements(profile, card, situation);
   const approaching = situation.opponent.units.some(

@@ -24,6 +24,21 @@ export const profileSchema = z
       cardDistance: z.number().min(1).max(100),
       cardMargin: z.number().min(0).max(50),
     }),
+    observedGraveyardCenters: z
+      .strictObject({
+        source: z.literal('winning_opponent_effect_centers'),
+        samples: z.int().positive(),
+        corpusSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+        left: z
+          .array(z.tuple([z.number().min(-4).max(0), z.number().min(-3).max(3)]))
+          .min(1)
+          .max(3),
+        right: z
+          .array(z.tuple([z.number().min(0).max(4), z.number().min(-3).max(3)]))
+          .min(1)
+          .max(3),
+      })
+      .optional(),
   })
   .strict()
   .superRefine((profile, context) => {

@@ -52,5 +52,18 @@
   "thresholds": {
     "cardDistance": 29,
     "cardMargin": 3
+  },
+  "observedGraveyardCenters": {
+    "source": "winning_opponent_effect_centers",
+    "samples": 61,
+    "corpusSHA256": "e2a922ed44cbf5f5dc7f12116a3bebd6dd3874e36953eda524aebf1986a561a9",
+    "left": [
+      [-1.6, 0.1],
+      [-1.6, 1.0]
+    ],
+    "right": [
+      [1.5, 0.1],
+      [1.5, 0.8]
+    ]
   }
 }

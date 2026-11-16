@@ -9,6 +9,43 @@ from clash_bot.qwen.opponent_data import DEMONSTRATION_FORMAT, load_demonstratio
 
 
 class OpponentDataTest(unittest.TestCase):
+    def test_graveyard_effect_uncertainty_does_not_teach_the_tower_center_as_an_outer_cast(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(
+                directory,
+                card="graveyard",
+                label_kind="placement_region",
+                target_region={"x": 70, "y": 143, "radius": 45},
+                grounding={"x": 298, "y": 409, "box": [228, 339, 368, 479]},
+                choices=[0, 1, 2],
+                target_ids=[1],
+                candidates=[
+                    {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 1, "card": "graveyard", "cost": 5, "target": {"x": 70, "y": 143}},
+                    {"id": 2, "card": "graveyard", "cost": 5, "target": {"x": 95, "y": 146}},
+                ],
+            )
+            load_demonstrations(path)
+            dataset = json.loads(path.read_text())
+            dataset["samples"][0]["target_ids"].append(2)
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "placement region"):
+                load_demonstrations(path)
+
+    def test_old_vertical_only_labels_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(directory)
+            dataset = json.loads(path.read_text())
+            dataset["format"] = "counterpush-mirror-actor-demonstrations-v4"
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "Unsupported"):
+                load_demonstrations(path)
+            dataset["format"] = DEMONSTRATION_FORMAT
+            dataset["samples"][0]["lane"] = dataset["samples"][0]["source_lane"]
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "rotate both"):
+                load_demonstrations(path)
+
     def test_fresh_ice_wizard_teaches_a_buildup_region_but_a_long_gap_does_not(self):
         with tempfile.TemporaryDirectory() as directory:
             path = self.fixture(
@@ -17,7 +54,7 @@ class OpponentDataTest(unittest.TestCase):
                 after_at=1800,
                 label_kind="placement_region",
                 target_region={"x": 168, "y": 488, "radius": 37.6},
-                grounding={"x": 168, "y": 64, "box": [145, 40, 191, 88]},
+                grounding={"x": 200, "y": 64, "box": [145, 40, 191, 88]},
                 choices=[0, 1, 2],
                 target_ids=[1],
                 candidates=[
@@ -66,7 +103,9 @@ class OpponentDataTest(unittest.TestCase):
             "choices": [0, 1],
             "target_ids": [1],
             "card": "furnace",
+            "source_lane": "right",
             "lane": "left",
+            "perspective": "rotate_180_about_river_center",
             "candidates": [
                 {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
                 {"id": 1, "card": "furnace", "cost": 4, "target": {"x": 95, "y": 350}},
@@ -104,7 +143,7 @@ class OpponentDataTest(unittest.TestCase):
                 river_y=294,
                 label_kind="placement_region",
                 target_region={"x": 95, "y": 424, "radius": 24},
-                grounding={"x": 95, "y": 164, "box": [70, 139, 120, 189]},
+                grounding={"x": 273, "y": 164, "box": [70, 139, 120, 189]},
                 choices=[0, 1, 2],
                 target_ids=[1],
                 candidates=[

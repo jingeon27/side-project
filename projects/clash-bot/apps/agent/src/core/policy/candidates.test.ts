@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BattleMemory } from '../battle/battle-state.ts';
 import type { CardId } from '../cards.ts';
+import { tilePoint } from '../geometry.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { actionCandidates } from './actions.ts';
 import { affordableCandidates, bodyCard } from './candidates.ts';
@@ -18,6 +19,27 @@ const situation = () =>
   });
 
 describe('candidate controller repairs', () => {
+  it('uses the King rear for a calm Trophy opening and does not defend distant enemies at the bridge', () => {
+    const profile = { ...DEFAULT_PROFILE, riverY: 276 };
+    const state = situation();
+    const distant = [{ card: null, x: 273, y: 100, confidence: 0.98 }];
+    state.opponent.units = distant;
+    const hand: CardId[] = ['knight', 'furnace', 'skeletons', 'ice_wizard'];
+    const choices = affordableCandidates(profile, hand, 10, distant, state);
+    for (const card of hand) {
+      const placements = choices.filter((row) => row.card === card);
+      expect(placements.length).toBeGreaterThan(0);
+      expect(placements.every((row) => tilePoint(profile, row.target)[1] <= 3.1)).toBe(true);
+      expect(placements.some((row) => tilePoint(profile, row.target)[1] < 1)).toBe(true);
+    }
+    const invading = { ...distant[0], card: null, x: 95, y: profile.riverY + 75, confidence: 0.98 };
+    state.opponent.units = [invading];
+    expect(
+      affordableCandidates(profile, ['knight', null, null, null], 10, [invading], state).some((row) =>
+        row.description.includes('defend nearest'),
+      ),
+    ).toBe(true);
+  });
   it('offers every affordable hand card despite missing tanks and unknown enemy resources, preserving baseline behavior', () => {
     const before = situation();
     const baseline = actionCandidates(DEFAULT_PROFILE, cards, 10, [], before);

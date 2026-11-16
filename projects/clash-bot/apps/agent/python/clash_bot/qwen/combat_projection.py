@@ -41,7 +41,8 @@ def poison_position(unit, time, x, y, delay):
 def screen_body(unit, river, reflected=False):
     kind = unit.get("kind") or unit.get("card") or "?"
     y = 2 * river - unit["y"] if reflected else unit["y"]
-    point = [rounded(9 + (unit["x"] - 184) * 11 / 178), rounded(16 - (y - river) * 9.5 / 130)]
+    x = 368 - unit["x"] if reflected else unit["x"]
+    point = [rounded(9 + (x - 184) * 11 / 178), rounded(16 - (y - river) * 9.5 / 130)]
     motion, velocity = unit.get("motion"), unit.get("velocity")
     tracked = bool(motion and velocity and motion["samples"] >= 2 and motion["elapsedMs"] >= 100)
     reference, health = COMBAT["bodies"].get(kind), unit.get("health")
@@ -51,7 +52,7 @@ def screen_body(unit, river, reflected=False):
         "y": point[1],
         "variant": unit.get("variant", "unknown"),
         "velocity": [
-            velocity["xPerSecond"] * 11 / 178,
+            velocity["xPerSecond"] * 11 / 178 * (-1 if reflected else 1),
             velocity["yPerSecond"] * 9.5 / 130 * (1 if reflected else -1),
         ]
         if tracked

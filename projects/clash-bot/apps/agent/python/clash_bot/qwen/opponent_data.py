@@ -9,7 +9,7 @@ from .combat_projection import COMBAT
 from .decision_input import CONTRACT, mirror_actor_prompt
 from .episode_events import verified_result
 
-DEMONSTRATION_FORMAT = "counterpush-mirror-actor-demonstrations-v4"
+DEMONSTRATION_FORMAT = "counterpush-mirror-actor-demonstrations-v5"
 
 
 def load_demonstrations(path, quarantine_path=None):
@@ -47,6 +47,12 @@ def load_demonstrations(path, quarantine_path=None):
             or sample.get("absent_before") is not True
         ):
             raise ValueError("Opponent action was not visually verified")
+        if sample.get("perspective") != "rotate_180_about_river_center" or sample.get("lane") != {
+            "left": "right",
+            "right": "left",
+            "center": "center",
+        }.get(sample.get("source_lane")):
+            raise ValueError("Opponent perspective must rotate both screen axes")
         confidence = sample.get("confidence", 0)
         if (
             not isinstance(confidence, (int, float))
@@ -109,7 +115,7 @@ def load_demonstrations(path, quarantine_path=None):
                     / 1000
                 )
             if not (stationary or moving) or region != {
-                "x": grounding["x"],
+                "x": 368 - grounding["x"],
                 "y": 2 * sample["river_y"] - grounding["y"],
                 "radius": radius,
             }:
@@ -124,7 +130,8 @@ def load_demonstrations(path, quarantine_path=None):
             x = candidate["target"]["x"]
             lane = "left" if x < 184 else "right" if x > 184 else "center"
             matches = (
-                math.hypot(x - region["x"], candidate["target"]["y"] - region["y"])
+                (sample["card"] != "graveyard" or abs(x - region["x"]) <= 12)
+                and math.hypot(x - region["x"], candidate["target"]["y"] - region["y"])
                 <= region["radius"]
                 if positional
                 else lane == sample["lane"]

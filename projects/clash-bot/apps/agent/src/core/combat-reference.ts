@@ -71,6 +71,11 @@ const parameters = z
       earlyHut: z.number(),
       redundantHut: z.number(),
       redundantPoison: z.number(),
+      uncertainCounterWeight: z.number().min(0).max(1),
+      unknownCounterWeight: z.number().min(0).max(1),
+      lowReserveBuildup: z.number(),
+      buildupMana: z.record(z.string(), z.number()),
+      evolutionCyclePreference: z.number(),
     }),
   })
   .parse(
