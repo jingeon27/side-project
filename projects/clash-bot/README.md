@@ -91,7 +91,7 @@ yarn workspace @side/clash-bot selfplay stop
 
 ## Counterpush와 BlueStacks 동시 실행
 
-Counterpush의 `start`가 올라가 있는 동안 아래 명령으로 BlueStacks의 현재 트로피 모드에서 반복 플레이할 수 있습니다. 큰 Qwen 본체는 하나만 올리고, 트로피전은 경기 시작 시점의 **개인 학습 후보 체크포인트**를 읽기 전용으로 고정합니다. 배포 모델을 교체하는 동작은 아니며 트로피 결과는 별도 기록합니다. 기존 `selfplay start`와 동시에 실행하지 않습니다.
+Counterpush의 `start`가 올라가 있는 동안 아래 명령으로 BlueStacks의 현재 트로피 모드에서 반복 플레이할 수 있습니다. 큰 Qwen 본체는 하나만 올리고, 트로피전은 경기 시작 시점에 공유 중인 **개인 학습 후보 체크포인트**를 읽기 전용으로 고정합니다. 이 체크포인트는 후보를 마지막으로 고정한 시점의 스냅숏이며, 그 뒤 경기별 학습은 다음 고정 때까지 반영되지 않습니다. 배포 모델을 교체하는 동작은 아니며 트로피 결과는 별도 기록합니다. 기존 `selfplay start`와 동시에 실행하지 않습니다.
 
 ```sh
 yarn workspace @side/clash-bot trophy start --background --hours 8 --matches 0 \
