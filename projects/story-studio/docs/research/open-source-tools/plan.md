@@ -1,5 +1,7 @@
 # Qwen 오픈소스 활용 계획
 
+> 초기 조사·계획을 보존한 문서입니다. 현재 구현·실행 범위는 [프로젝트 README](../../../README.md)를 기준으로 확인합니다.
+
 **첫 조합은 Ollama + Qwen3.8 27B 4bit + SillyTavern으로 정한다.** M5 Pro·통합 메모리 48GB에서 한국어 캐릭터 대화와 소설 초안을 먼저 완성하고, 영상은 ComfyUI와 Kdenlive를 이어 쓴다. 직접 만들 부분은 카카오 대화 파일을 검토 가능한 캐릭터 카드로 변환하는 작은 로컬 도구다. 기존 채팅 화면·대화 저장·세계관 관리·영상 편집기를 재사용하며, 처음부터 웹·API·DB 플랫폼 전체를 구축하지 않는다.
 
 캐릭터 설명·첫 인사·예시 대화·요약·실제 응답을 한국어로 작성한다. SillyTavern에는 한국어 UI 번역이 있지만 모델의 한국어 품질은 별도로 시험한다. [한국어 번역 파일](https://github.com/SillyTavern/SillyTavern/blob/release/public/locales/ko-kr.json)
@@ -76,7 +78,7 @@ Wan2.2 5B 공식 워크플로의 encoder·VAE·dtype을 확인하고 짧은 저�
 
 기존 모노레포에 **`projects/ai-studio`**를 마련해 카카오 변환기·합성 한국어 평가·공개 카드 템플릿·버전 기록·ComfyUI workflow를 둔다. 외부 도구는 레포 밖에서 upstream 절차와 자체 의존성을 유지하며 소스를 Yarn workspace에 복사하지 않는다. 직접 쓴 코드만 저장소 규칙을 따르고 원문·개인 카드·가중치·생성 영상은 Git 밖에 둔다.
 
-원본 수정이 필요할 때만 fork를 검토한다. 자체 화면에는 기존 Amplitude 패턴으로 클릭·내보내기 성공을 구분한다. 원문·카드·추론 성격·검색어·토큰은 제외하고 키가 없으면 전송을 생략한다. 기존 OSS 화면에는 SDK를 주입하지 않는다. [기존 이벤트 카탈로그](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts)
+원본 수정이 필요할 때만 fork를 검토한다. 자체 화면에는 기존 Amplitude 패턴으로 클릭·내보내기 성공을 구분한다. 원문·카드·추론 성격·검색어·토큰은 제외하고 키가 없으면 전송을 생략한다. 기존 OSS 화면에는 SDK를 주입하지 않는다. [기존 이벤트 카탈로그](../../../../game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts)
 
 외부 공유가 필요하면 완성 MP4를 비공개 S3와 만료 링크로 제공하고, 시청량이 늘 때 CloudFront를 붙인다. **오픈소스 활용이 스토리지·CDN까지 직접 운영해야 한다는 뜻은 아니다.** 객체 저장소는 파일 보관, CDN은 파일 전달, 클라우드 GPU는 생성 계산, CI/CD는 검사·배포를 맡는다. CDN은 생성 속도를 높이지 않는다. 여러 사람에게 제공하는 단계에는 인증·사용자별 데이터·접속 중계 설계를 추가해야 하며 ST와 Ollama를 그대로 공개 인터넷에 노출하는 것으로 완료되지 않는다. [CloudFront 비공개 콘텐츠](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-overview.html)
 

@@ -1,5 +1,7 @@
 # Qwen 로컬 창작 서비스 계획
 
+> 초기 조사·계획을 보존한 문서입니다. 현재 구현·실행 범위는 [프로젝트 README](../../../README.md)를 기준으로 확인합니다.
+
 **지금은 기존 모노레포에 독립 프로젝트를 두고, M5 Pro·통합 메모리 48GB에서 텍스트 기능부터 만드는 것을 권한다.** Qwen으로 페르소나 대화·소설·영상 대본을 만들고, 실제 영상 생성과 편집은 각각 전용 모델과 편집 도구가 맡는다. 카카오톡은 과거 대화 파일 가져오기와 채널 챗봇 연결을 나누어 설계한다. 개인 대화 분석은 로컬에서 시작하고, 외부 접속과 영상 공유가 필요해질 때 클라우드 웹·API·저장소·CDN을 추가한다. 이번 판단은 개인 개발과 소규모 비공개 사용을 출발점으로 하며, 유료 다중 사용자 서비스의 용량이나 비용을 확정한 것은 아니다.
 
 2026년 11월 12일 확인한 공개 범용 Qwen 계열은 Qwen3.8이다. 이 장비의 품질 후보는 **Qwen3.8-27B 4bit**, 응답 속도 비교군은 **Qwen3.5-9B 4bit**로 잡는다. 27B 모델은 Apache-2.0이며 이미지·영상 입력을 이해한다. 모델마다 라이선스가 다르므로 계열 이름만 보고 사용 조건을 판단하면 안 된다. [Qwen 공식 모델 목록](https://huggingface.co/models?author=Qwen&sort=created), [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B)
@@ -99,7 +101,7 @@ Mac에서는 보유하거나 사용 권리가 있는 소스의 편집부터 완�
 
 **5. 저장소는 기존 모노레포를 사용하고 실행 환경을 분리한다**
 
-현재 레포는 `projects/*`, 앱, 프로젝트 패키지를 workspace로 관리하며 공통 설정·디자인 시스템·Next.js/NestJS 기반이 있다. 웹과 API를 익숙한 구조로 만들 수 있으므로 **`projects/ai-studio`를 새 프로젝트로 추가하는 선택**을 권한다. Python을 쓰거나 모델 파일이 크다는 이유로 코드 저장소를 나눌 필요는 없다. [루트 package.json](/Users/gimjingeon/Desktop/safedoc/side-project/package.json), [저장소 README](/Users/gimjingeon/Desktop/safedoc/side-project/README.md)
+현재 레포는 `projects/*`, 앱, 프로젝트 패키지를 workspace로 관리하며 공통 설정·디자인 시스템·Next.js/NestJS 기반이 있다. 웹과 API를 익숙한 구조로 만들 수 있으므로 **`projects/ai-studio`를 새 프로젝트로 추가하는 선택**을 권한다. Python을 쓰거나 모델 파일이 크다는 이유로 코드 저장소를 나눌 필요는 없다. [루트 package.json](../../../../../package.json), [저장소 README](../../../../../README.md)
 
 ```text
 projects/ai-studio/
@@ -114,7 +116,7 @@ projects/ai-studio/
 
 웹·API는 기존 Node 24·Yarn 4.17.0 규칙을 따르고, Python 의존성은 워커 내부에서 별도로 고정한다. 모델 가중치, 실제 카카오 원문, 임베딩, DB 덤프, 생성 영상은 Git에 넣지 않는다. 레포에는 모델 이름·revision·양자화·실행 버전·라이선스와 합성 평가 데이터만 기록한다. 실제 여러 프로젝트가 쓰게 된 코드만 공통 패키지로 올린다.
 
-같은 레포에 있다는 것은 같은 서버·DB에 실행한다는 뜻이 아니다. AI 프로젝트의 DB·환경변수·파일 저장소·추론 프로세스는 다른 서비스와 분리한다. 현재 공유 EC2 문서는 작은 2GiB 시작 구성을 설명하므로 그 서버에 무거운 추론이나 영상 렌더까지 얹는 계획으로 잡지 않는다. 또한 현재 `Services`의 변경 경로와 서비스 선택에는 기존 두 서비스가 명시되어 있어 새 폴더를 만들기만 해서는 CI가 자동으로 포함되지 않는다. [배포 구조](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/README.md), [Services workflow](/Users/gimjingeon/Desktop/safedoc/side-project/.github/workflows/services.yml:10), [서비스 선택](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/scripts/service-ci.ts:6)
+같은 레포에 있다는 것은 같은 서버·DB에 실행한다는 뜻이 아니다. AI 프로젝트의 DB·환경변수·파일 저장소·추론 프로세스는 다른 서비스와 분리한다. 현재 공유 EC2 문서는 작은 2GiB 시작 구성을 설명하므로 그 서버에 무거운 추론이나 영상 렌더까지 얹는 계획으로 잡지 않는다. 또한 현재 `Services`의 변경 경로와 서비스 선택에는 기존 두 서비스가 명시되어 있어 새 폴더를 만들기만 해서는 CI가 자동으로 포함되지 않는다. [배포 구조](../../../../../deploy/shared-instance/README.md), [Services workflow](../../../../../.github/workflows/services.yml), [서비스 선택](../../../../../deploy/shared-instance/scripts/service-ci.ts)
 
 외부 협업자에게 AI 코드만 공개해야 하거나, 별도 팀·접근권한·라이선스 관리가 필요해지면 별도 레포가 더 적합해진다. 현재 확인된 요구에는 그런 경계가 없어서 모노레포의 기존 도구와 운영 지식을 재사용하는 편이 낫다. GPU와 배포를 독립시키는 설계는 처음부터 유지한다.
 
@@ -133,9 +135,9 @@ projects/ai-studio/
 
 동일한 합성 질문·장면으로 말투 유지·설정 오류·사적인 원문 재현·사용자 수정량을 비교한다. 모델 revision·양자화·프롬프트·문맥 길이도 함께 기록한다. 앱의 일반 테스트는 가짜 추론기로 권한·저장·취소·재시도를 검증하고, 실제 모델 평가는 별도로 실행한다.
 
-저장소 규칙에 따라 API 테스트는 API 앱, 웹 테스트는 웹 앱, Python 테스트는 워커 안에 둔다. 기존 `Services`, `Blog`, `Static analysis` 체계를 유지하면서 AI 프로젝트 검증을 명시적으로 연결한다. 실제 모델을 실행하지 않은 CI 성공을 한국어 창작 품질이나 GPU 안정성의 검증으로 보고하지 않는다. [저장소 작업 규칙](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md)
+저장소 규칙에 따라 API 테스트는 API 앱, 웹 테스트는 웹 앱, Python 테스트는 워커 안에 둔다. 기존 `Services`, `Blog`, `Static analysis` 체계를 유지하면서 AI 프로젝트 검증을 명시적으로 연결한다. 실제 모델을 실행하지 않은 CI 성공을 한국어 창작 품질이나 GPU 안정성의 검증으로 보고하지 않는다. [저장소 작업 규칙](../../../../../AGENTS.md)
 
-Amplitude는 기존 `ui_interaction` 패턴으로 클릭을 기록하고, 가져오기 성공·페르소나 저장·생성 성공/실패는 실제 상태 변경 후 한 번만 기록하도록 새 앱 카탈로그에 설계한다. 허용 속성은 기능 종류·입력 경로·모델 버전·처리시간 구간·오류 코드 정도로 제한한다. 대화·프롬프트·소설 본문·추론한 성격·실명·파일명·서명 URL은 보내지 않는다. 로컬 기본 모드에서는 키 없이 전송을 생략하며, 클릭만 했을 때 성공 이벤트가 없는지와 재시도 중복·금지 데이터 전송 여부를 검증한다. [기존 이벤트 카탈로그](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts), [관측 규칙](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/docs/observability.md:83)
+Amplitude는 기존 `ui_interaction` 패턴으로 클릭을 기록하고, 가져오기 성공·페르소나 저장·생성 성공/실패는 실제 상태 변경 후 한 번만 기록하도록 새 앱 카탈로그에 설계한다. 허용 속성은 기능 종류·입력 경로·모델 버전·처리시간 구간·오류 코드 정도로 제한한다. 대화·프롬프트·소설 본문·추론한 성격·실명·파일명·서명 URL은 보내지 않는다. 로컬 기본 모드에서는 키 없이 전송을 생략하며, 클릭만 했을 때 성공 이벤트가 없는지와 재시도 중복·금지 데이터 전송 여부를 검증한다. [기존 이벤트 카탈로그](../../../../game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts), [관측 규칙](../../../../game-feedback/docs/observability.md)
 
 원문 파인튜닝, 장편·고해상도 영상, 여러 GPU 운영, Kubernetes는 미룬다. 첫 실험에서는 **이 Mac에서 원하는 한국어 답과 문체를 감당할 시간 안에 얻는지** 확인한다. 부족하면 작은 모델·프롬프트·검색·추가 계산 자원 중 실제 병목에 맞게 선택한다.
 

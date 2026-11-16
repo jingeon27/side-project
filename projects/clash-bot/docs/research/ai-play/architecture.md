@@ -92,8 +92,8 @@
 
 ### Cited Findings
 
-- 현재 저장소는 독립 프로젝트를 `projects/<name>`에 두고, DB·환경·스토리지 분리와 앱 소유 테스트를 요구한다. 공통화는 실제 재사용이 입증될 때만 한다. [AGENTS.md](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md), [package.json](/Users/gimjingeon/Desktop/safedoc/side-project/package.json)
-- 사용자 행동을 추가하는 경우 기존 이벤트 카탈로그 패턴, 클릭과 성공 구분, 키 없을 때 Amplitude 전송 생략, 개인정보/검색어/토큰 수집 금지가 요구된다. 이는 제품 흐름 측정 원칙이며 매 프레임의 연구 기록을 외부 제품 분석으로 보낼 이유가 아니다. [AGENTS.md](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md)
+- 현재 저장소는 독립 프로젝트를 `projects/<name>`에 두고, DB·환경·스토리지 분리와 앱 소유 테스트를 요구한다. 공통화는 실제 재사용이 입증될 때만 한다. [AGENTS.md](../../../../../AGENTS.md), [package.json](../../../../../package.json)
+- 사용자 행동을 추가하는 경우 기존 이벤트 카탈로그 패턴, 클릭과 성공 구분, 키 없을 때 Amplitude 전송 생략, 개인정보/검색어/토큰 수집 금지가 요구된다. 이는 제품 흐름 측정 원칙이며 매 프레임의 연구 기록을 외부 제품 분석으로 보낼 이유가 아니다. [AGENTS.md](../../../../../AGENTS.md)
 
 ### Inferences
 

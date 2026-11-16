@@ -8,10 +8,10 @@
 
 ### Cited Findings
 
-- 루트 workspace glob은 `projects/*`, `projects/*/apps/*`, `projects/*/packages/*`, `packages/*`를 포함한다. 앱별 독립 관리에 이미 적합하다. Node 24/Yarn 4.17.0, 공통 설정·디자인 시스템·toolkit과 Next.js/NestJS 서비스가 존재한다. [루트 package.json](/Users/gimjingeon/Desktop/safedoc/side-project/package.json), [README](/Users/gimjingeon/Desktop/safedoc/side-project/README.md)
-- 공통 코드는 실제 여러 프로젝트가 사용할 때만 루트 packages로 올리고, DB·환경변수·스토리지·Prisma client는 프로젝트별 격리한다. 테스트 설정·러너·테스트는 앱 소유다. [AGENTS.md](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md)
-- 현재 서비스 배포는 두 서비스를 EC2+Caddy+PostgreSQL과 비공개 S3로 운영하는 구조다. 문서는 작은 2GiB EC2 시작 옵션을 설명하며, 한 EC2 장애 시 두 서비스와 DB가 함께 중단된다고 명시한다. GPU 추론 실행 기반으로 확인된 것이 아니다. [배포 README](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/README.md)
-- 현재 `Services` workflow의 paths와 선택 스크립트의 `TService`, `selectServices`, `requiredChecks`는 `game-feedback`, `photo-contest` 두 개를 열거한다. 새 프로젝트를 추가해도 전용 검증·배포가 자동 추가되지 않는다. [Services workflow](/Users/gimjingeon/Desktop/safedoc/side-project/.github/workflows/services.yml:10), [서비스 선택 스크립트](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/scripts/service-ci.ts:6)
+- 루트 workspace glob은 `projects/*`, `projects/*/apps/*`, `projects/*/packages/*`, `packages/*`를 포함한다. 앱별 독립 관리에 이미 적합하다. Node 24/Yarn 4.17.0, 공통 설정·디자인 시스템·toolkit과 Next.js/NestJS 서비스가 존재한다. [루트 package.json](../../../../../package.json), [README](../../../../../README.md)
+- 공통 코드는 실제 여러 프로젝트가 사용할 때만 루트 packages로 올리고, DB·환경변수·스토리지·Prisma client는 프로젝트별 격리한다. 테스트 설정·러너·테스트는 앱 소유다. [AGENTS.md](../../../../../AGENTS.md)
+- 현재 서비스 배포는 두 서비스를 EC2+Caddy+PostgreSQL과 비공개 S3로 운영하는 구조다. 문서는 작은 2GiB EC2 시작 옵션을 설명하며, 한 EC2 장애 시 두 서비스와 DB가 함께 중단된다고 명시한다. GPU 추론 실행 기반으로 확인된 것이 아니다. [배포 README](../../../../../deploy/shared-instance/README.md)
+- 현재 `Services` workflow의 paths와 선택 스크립트의 `TService`, `selectServices`, `requiredChecks`는 `game-feedback`, `photo-contest` 두 개를 열거한다. 새 프로젝트를 추가해도 전용 검증·배포가 자동 추가되지 않는다. [Services workflow](../../../../../.github/workflows/services.yml), [서비스 선택 스크립트](../../../../../deploy/shared-instance/scripts/service-ci.ts)
 
 ### Inferences
 
@@ -47,11 +47,11 @@ projects/ai-studio/
 
 ### Cited Findings
 
-- 기존 운영 지식은 AWS S3/EC2 및 GitHub Actions에 집중되어 있다. 운영 배포는 main에서, 검증·이미지 게시·배포·공개 URL 응답은 별도 상태로 확인한다. [루트 README](/Users/gimjingeon/Desktop/safedoc/side-project/README.md), [배포 README](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/README.md)
+- 기존 운영 지식은 AWS S3/EC2 및 GitHub Actions에 집중되어 있다. 운영 배포는 main에서, 검증·이미지 게시·배포·공개 URL 응답은 별도 상태로 확인한다. [루트 README](../../../../../README.md), [배포 README](../../../../../deploy/shared-instance/README.md)
 - CloudFront는 signed URL 또는 signed cookie로 만료를 포함한 접근 제한을 제공하고, S3 OAC로 origin을 우회한 직접 접근을 제한할 수 있다. [AWS CloudFront 비공개 콘텐츠](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-overview.html)
 - 단일 파일에는 signed URL, 여러 HLS 영상 파일에는 signed cookie가 적합한 사용 사례로 안내된다. [AWS signed URL과 cookie 선택](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-choosing-signed-urls-cookies.html)
 - BullMQ 공식 문서는 재시도해도 최종 상태가 동일하게 되도록 작업을 설계하라고 설명한다. 실행 중 lock 갱신이 끊기면 작업이 재대기하거나 실패할 수 있으므로 중복 실행에 대비해야 한다. 이 원칙은 구현할 작업 큐에도 적용할 설계 근거다. [Idempotent jobs](https://docs.bullmq.io/patterns/idempotent-jobs), [Stalled jobs](https://docs.bullmq.io/guide/workers/stalled-jobs)
-- 현재 API 소스에는 DB 기반 push delivery 작업이 있으나 범용 GPU 작업용 BullMQ/Redis 기반을 확인하지 못했다. [푸시 서비스](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/apps/api/src/push/push.service.ts)
+- 현재 API 소스에는 DB 기반 push delivery 작업이 있으나 범용 GPU 작업용 BullMQ/Redis 기반을 확인하지 못했다. [푸시 서비스](../../../../game-feedback/apps/api/src/push/push.service.ts)
 
 ### Inferences
 
@@ -98,9 +98,9 @@ projects/ai-studio/
 
 ### Cited Findings
 
-- 사용자 흐름 추가 시 Amplitude 이벤트·속성 설계/구현/검증, 클릭과 서버 성공 구분, 키가 없을 때 전송 생략, 개인정보·검색어·초대 토큰 수집 금지가 요구된다. [AGENTS.md](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md)
-- 기존 카탈로그에는 `ui_interaction`, `chat_started`, `message_sent`가 있으며, `message_sent`는 첨부 여부만 허용한다. 기존 카탈로그 패턴을 참조하고 신규 프로젝트 도메인 이벤트는 해당 앱 카탈로그에서 타입으로 관리한다. [analytics.catalog.ts](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts)
-- 현재 관측 문서는 입력 원문·URL 쿼리·fragment를 전송하지 않고 서버 성공 뒤 집계하며, 실제 수집 요청과 서비스 내 재조회 성공을 구분한다. [관측 문서](/Users/gimjingeon/Desktop/safedoc/side-project/projects/game-feedback/docs/observability.md:83)
+- 사용자 흐름 추가 시 Amplitude 이벤트·속성 설계/구현/검증, 클릭과 서버 성공 구분, 키가 없을 때 전송 생략, 개인정보·검색어·초대 토큰 수집 금지가 요구된다. [AGENTS.md](../../../../../AGENTS.md)
+- 기존 카탈로그에는 `ui_interaction`, `chat_started`, `message_sent`가 있으며, `message_sent`는 첨부 여부만 허용한다. 기존 카탈로그 패턴을 참조하고 신규 프로젝트 도메인 이벤트는 해당 앱 카탈로그에서 타입으로 관리한다. [analytics.catalog.ts](../../../../game-feedback/apps/web/src/shared/analytics/analytics.catalog.ts)
+- 현재 관측 문서는 입력 원문·URL 쿼리·fragment를 전송하지 않고 서버 성공 뒤 집계하며, 실제 수집 요청과 서비스 내 재조회 성공을 구분한다. [관측 문서](../../../../game-feedback/docs/observability.md)
 
 ### Inferences
 

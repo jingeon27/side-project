@@ -147,3 +147,8 @@ Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 �
 이 앱은 127.0.0.1에 바인딩된 개인용 도구입니다. 네트워크 공개, 공동 작업과 로그인은 이번 범위에 포함하지 않습니다. 공개 서비스로 전환하려면 인증과 작품 소유권을 별도로 설계해야 합니다.
 
 직접 녹음은 `studio_recording_clicked`의 고정된 `action`(start, stop, cancel), `studio_recording_started`와 `studio_recording_completed`의 고정된 `source`(microphone)로만 측정합니다. 클릭, 실제 마이크 시작, 로컬 WAV 준비 완료를 구분하며 서버 저장 성공은 기존 `studio_request_succeeded`의 `voice-upload`입니다. 녹음 내용, 대본, 파일명과 장치 정보는 보내지 않습니다.
+
+## 초기 조사 기록
+
+- [로컬 창작 서비스 초기 계획과 조사](docs/research/local-creative-service/plan.md)
+- [오픈소스 도구 도입 조사](docs/research/open-source-tools/plan.md)

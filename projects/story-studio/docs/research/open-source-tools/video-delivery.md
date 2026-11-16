@@ -63,8 +63,8 @@ Mac M5 Pro 48GB에서는 **ComfyUI로 생성 워크플로를 실행하고 Kdenli
 
 ### Cited Findings
 
-- 저장소는 프로젝트별 `projects/<name>` 및 앱/프로젝트 패키지 독립 구성을 지원하고, 여러 프로젝트가 실제 공유하는 코드만 루트 packages로 올리도록 정한다. [AGENTS.md](/Users/gimjingeon/Desktop/safedoc/side-project/AGENTS.md), [package.json](/Users/gimjingeon/Desktop/safedoc/side-project/package.json)
-- 현재 운영 지식과 설정은 Caddy·Docker Compose·AWS S3를 포함한다. 모델 inference를 기존 작은 공유 EC2에 함께 실행하는 기반은 아니다. [배포 README](/Users/gimjingeon/Desktop/safedoc/side-project/deploy/shared-instance/README.md)
+- 저장소는 프로젝트별 `projects/<name>` 및 앱/프로젝트 패키지 독립 구성을 지원하고, 여러 프로젝트가 실제 공유하는 코드만 루트 packages로 올리도록 정한다. [AGENTS.md](../../../../../AGENTS.md), [package.json](../../../../../package.json)
+- 현재 운영 지식과 설정은 Caddy·Docker Compose·AWS S3를 포함한다. 모델 inference를 기존 작은 공유 EC2에 함께 실행하는 기반은 아니다. [배포 README](../../../../../deploy/shared-instance/README.md)
 - CloudFront는 비공개 콘텐츠를 signed URL/cookie로 제공하고 S3 origin은 OAC로 제한할 수 있다. 이는 managed AWS 서비스이며 OSS 프로그램을 설치해 운영하는 것과 다르다. [AWS 비공개 콘텐츠](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-overview.html)
 
 ### Inferences

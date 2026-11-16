@@ -158,3 +158,7 @@ yarn workspace @side/clash-bot test:integration
 - [LoRA 논문](https://arxiv.org/abs/2106.09685), [PPO 논문](https://arxiv.org/abs/1707.06347): 낮은 랭크의 가중치 갱신과 클리핑한 정책 경사 목적 함수의 참고 문헌.
 - [SudhishNeel/clash-royale-detector](https://huggingface.co/SudhishNeel/clash-royale-detector): 카드 분류기 가중치를 고정 revision·SHA-256으로 내려받아 CPU에서 실행합니다.
 - [ClashRoyaleBuildABot](https://github.com/Pbatch/ClashRoyaleBuildABot/tree/f89ecbf309e698cb9fccdfb64a6ff2a930e6541e): MIT 공개 프로젝트의 박스 제안 모델 `units_M_480x352.onnx`를 고정 revision·SHA-256으로 내려받습니다. 예전 클래스 이름은 카드 식별에 쓰지 않습니다. 라이선스는 `THIRD_PARTY_NOTICES.md`에 보존했습니다.
+
+## 초기 조사 기록
+
+- [AI 플레이 초기 계획과 조사](docs/research/ai-play/plan.md)
