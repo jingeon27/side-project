@@ -1,6 +1,6 @@
 # 공용 배포 환경 Terraform
 
-[공통 EC2 배포](../README.md)가 요구하는 AWS 리소스(서울 리전의 EC2 한 대 + PostgreSQL 데이터 EBS 볼륨과 일일 스냅샷 + 서비스별·DB 덤프용 비공개 S3 버킷)를 **새로** 만든다. 기존 리소스를 import하지 않는다. PostgreSQL 컨테이너와 서비스별 DB·role, 서버 환경 파일, 프록시, GitHub 설정은 Terraform 밖의 기존 절차를 그대로 따른다.
+[공통 EC2 배포](../README.md)가 요구하는 AWS 리소스(서울 리전의 EC2 한 대 + PostgreSQL 데이터 EBS 볼륨과 일일 스냅샷 + DB 덤프용 비공개 S3 버킷)를 **새로** 만든다. 기존 리소스를 import하지 않는다. PostgreSQL 컨테이너와 서비스별 DB·role, 서버 환경 파일, 프록시, GitHub 설정은 Terraform 밖의 기존 절차를 그대로 따른다.
 
 ## 만드는 리소스
 
@@ -15,7 +15,7 @@
 | 모니터링   | 인스턴스 상태 검사가 1분 단위 3번 연속 실패하면 재부팅하는 CloudWatch 알람, CPU 크레딧 부족 알람, 선택적으로 SNS 메일 알림(`alarm_email`)                                                                                     |
 | DNS        | `route53_zone_id`가 있을 때만 네 호스트의 A 레코드                                                                                                                                                                            |
 
-설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-lifecycle.json`](../s3-lifecycle.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)을 backup 버킷과 서비스 IAM 사용자용 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. 공용 미디어 버킷의 차단·수명 주기·CORS(두 프로젝트의 `s3-cors.json`)는 Terraform이 아니라 콘솔에서 적용한다. backup 버킷 수명 주기는 공용 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
+설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)을 backup 버킷과 서비스 IAM 사용자용 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. [`s3-lifecycle.json`](../s3-lifecycle.json)은 공용 미디어 버킷 전용이라 옮기지 않으며, backup 버킷 HCL은 이전 버전·미완료 multipart 정리만 같은 기준으로 둔다. 공용 미디어 버킷의 차단·수명 주기·CORS(두 프로젝트의 `s3-cors.json`)는 Terraform이 아니라 콘솔에서 적용한다. backup 버킷 수명 주기는 공용 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
 
 ## 비용에 영향을 주는 기본값
 
@@ -77,7 +77,7 @@ cp terraform.tfvars.example terraform.tfvars  # 버킷 이름 세 개와 필요�
 - **버킷 이름**: 점(.) 없이. `media_bucket_name`은 이미 있는 공용 비공개 버킷이고 퍼블릭 접근 차단·암호화·Versioning·수명 주기·CORS를 [공통 운영 가이드](../README.md)대로 콘솔에서 관리한다. Terraform이 만드는 `backup_bucket_name`은 전역 고유하고 공용 버킷과 달라야 하며, 만든 뒤 바꾸면 버킷이 교체된다.
 - **AZ**: `availability_zone`에 EC2와 PostgreSQL 볼륨을 함께 둔다. EBS 볼륨은 같은 AZ의 인스턴스에만 붙으므로 만든 뒤 바꾸지 않는다.
 - **`metadata_hop_limit`**: `scripts/pg-backup.sh`는 aws-cli를 `--network host`로 실행하므로 기본 `1`로 덤프를 올린다. `2`로 올리면 bridge 네트워크의 앱 컨테이너도 인스턴스 역할을 쓸 수 있다.
-- **SSH와 배포 runner**: Actions CD(`ci-upload.sh`)는 SSH로 접속한다. 기본값(`ssh_allowed_cidrs = []`)은 22번을 열지 않으므로 배포 runner의 접속 경로를 별도로 준비해야 한다. self-hosted·고정 IP runner의 출구 IP를 CIDR로 허용하거나 사설 네트워크 접속 경로를 구성한다. 일반 GitHub-hosted runner는 IP가 바뀌므로 운영자의 로컬 IP만 허용해서는 배포할 수 없다. 운영자 셸은 SSM으로도 접속할 수 있다.
+- **SSM 배포 runner**: `github_oidc_subjects`에 정확한 두 운영 Environment의 subject를 넣으면 GitHub OIDC provider와 CD 역할, 이 EC2의 `AWS-StartSSHSession`만 허용하는 정책을 만든다(리소스 3개 추가). GitHub Environment의 배포 브랜치는 반드시 `main`만 허용한다. runner는 OIDC 임시 자격증명으로 SSM 터널을 열고 기존 SSH 인증·호스트 키 검증으로 배포한다. `ssh_allowed_cidrs = []`를 유지해 외부 22번을 열지 않는다. 이 계정에 GitHub OIDC provider가 이미 있다면 새로 만들지 말고 `aws_iam_openid_connect_provider.github[0]`로 import한 뒤 계획을 검토한다. 직접 SSH 배포도 계속 지원하며 이 경우에만 고정 IP runner의 출구 CIDR을 따로 허용한다.
 - **알람 메일**: `alarm_email`을 넣으면 상태 검사 재부팅과 CPU 크레딧 부족을 메일로 받는다. 비워 두면 재부팅만 하고 알리지 않는다.
 - **DNS**: Route 53 호스팅 영역이 있으면 `route53_zone_id`를 넣는다. 같은 이름의 레코드가 이미 있으면 덮어쓰지 않고 실패한다.
 - **계정 고정**: `allowed_account_ids`에 운영 계정 ID를 넣어 다른 계정에 만드는 사고를 막는다.
@@ -91,7 +91,7 @@ terraform apply tfplan
 terraform output
 ```
 
-기본값의 plan은 52개 리소스를 만든다(SSH 규칙·키 페어·DNS 레코드·알람 메일 SNS 제외). `alarm_email`을 넣었다면 적용 뒤 AWS Notifications가 보낸 확인 메일의 링크를 눌러야 알림이 온다. `aws_instance`·`aws_ebs_volume`·`aws_s3_bucket` 속성을 검토한다.
+기본값의 plan은 36개 리소스를 만든다(SSH 규칙·키 페어·DNS 레코드·알람 메일 SNS 제외). `alarm_email`을 넣었다면 적용 뒤 AWS Notifications가 보낸 확인 메일의 링크를 눌러야 알림이 온다. `aws_instance`·`aws_ebs_volume`·`aws_s3_bucket` 속성을 검토한다.
 
 ### 3. 호스트 확인
 
@@ -113,14 +113,14 @@ cloud-init 실패 시 `/var/log/cloud-init-output.log`를 본다. 볼륨 연결�
 
 ### 5. 비밀 발급(Terraform 밖)
 
-| 비밀                           | 발급                                                                  | 넣는 곳                                                                                           |
-| ------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| GF S3 액세스 키                | `aws iam create-access-key --user-name side-shared-game-feedback-s3`  | `/srv/side-project/services/game-feedback/.env`의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY` |
-| PC S3 액세스 키                | `aws iam create-access-key --user-name side-shared-photo-contest-s3`  | `/srv/side-project/services/photo-contest/.env`의 `AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`     |
-| 서비스 DB 비밀번호 4개         | `openssl rand -base64 36` 등으로 서로 다른 32자 이상                  | 6단계 `\password` 프롬프트, 7단계 `DATABASE_URL`·`DATABASE_MIGRATION_URL`(URL 인코딩)             |
-| `GF_CACHE_REVALIDATION_SECRET` | `openssl rand -hex 32`                                                | GF 서비스 `.env`                                                                                  |
-| 배포용 SSH 키                  | `ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f side-deploy` | 공개 키는 호스트 `/home/ubuntu/.ssh/authorized_keys`, 개인 키는 9단계 GitHub Secret               |
-| OAuth·Supercell·Sentry         | 각 공급자 콘솔                                                        | 서비스별 `.env`                                                                                   |
+| 비밀                           | 발급                                                                  | 넣는 곳                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| GF S3 액세스 키                | `aws iam create-access-key --user-name side-shared-game-feedback-s3`  | `/srv/side-project/services/game-feedback/.env`의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY`   |
+| PC S3 액세스 키                | `aws iam create-access-key --user-name side-shared-photo-contest-s3`  | `/srv/side-project/services/photo-contest/.env`의 `PC_AWS_ACCESS_KEY_ID`·`PC_AWS_SECRET_ACCESS_KEY` |
+| 서비스 DB 비밀번호 4개         | `openssl rand -base64 36` 등으로 서로 다른 32자 이상                  | 6단계 `\password` 프롬프트, 7단계 DB URL 두 개(GF는 `DATABASE_*`, PC는 `PC_DATABASE_*`, URL 인코딩) |
+| `GF_CACHE_REVALIDATION_SECRET` | `openssl rand -hex 32`                                                | GF 서비스 `.env`                                                                                    |
+| 배포용 SSH 키                  | `ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f side-deploy` | 공개 키는 호스트 `/home/ubuntu/.ssh/authorized_keys`, 개인 키는 9단계 GitHub Secret                 |
+| OAuth·Supercell·Sentry         | 각 공급자 콘솔                                                        | 서비스별 `.env`                                                                                     |
 
 PostgreSQL superuser 비밀번호는 `prepare.sh`가 `/srv/side-project/database/.env`에 만들며 initdb에만 쓰인다. `pg_hba.conf`가 네트워크의 superuser 로그인을 거부하므로 따로 발급하거나 보관하지 않는다.
 
@@ -150,7 +150,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 ### 7. 서버 환경 파일
 
 - `/srv/side-project/.env`: `terraform output -raw host_env`의 값(`BACKUP_BUCKET`·`BACKUP_REGION` 포함)으로 바꾸고 `ACME_EMAIL`은 확인해 둔다.
-- 서비스별 `.env`: `DATABASE_URL`·`DATABASE_MIGRATION_URL`의 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
+- 서비스별 `.env` 초안: GF의 `DATABASE_URL`·`DATABASE_MIGRATION_URL`, PC의 `PC_DATABASE_URL`·`PC_DATABASE_MIGRATION_URL`에 있는 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
 
 이어서 [공통 EC2 배포](../README.md#프록시와-github-actions)대로 `proxy.sh validate` → `proxy.sh start`를 실행한다.
 
@@ -160,7 +160,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 
 ### 9. GitHub Environment 변수·비밀
 
-`game-feedback-production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [`.github/workflows/game-feedback.yml`](../../../.github/workflows/game-feedback.yml)·[`photo-contest.yml`](../../../.github/workflows/photo-contest.yml)의 `vars.*`·`secrets.*`다.
+`game-feedback-production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [Services workflow](../../../.github/workflows/services.yml)의 GF deploy·PC deploy 작업에서 사용하는 `vars.*`·`secrets.*`다.
 
 | 종류     | 이름                          | 값                                                                                  |
 | -------- | ----------------------------- | ----------------------------------------------------------------------------------- |
@@ -198,7 +198,7 @@ done
 | `PHOTO_CONTEST_WEB_SENTRY_DSN`·`PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택                                          |
 | `GAME_FEEDBACK_DEPLOY_ENABLED`·`PHOTO_CONTEST_DEPLOY_ENABLED`    | 마지막에 `true`                               |
 
-`*_DEPLOY_ENABLED`는 프록시·환경 파일·복구 연습을 마친 뒤에 켠다. DB·S3·OAuth 비밀은 GitHub에 넣지 않고 서버의 서비스별 환경 파일에만 둔다.
+`*_DEPLOY_ENABLED`는 프록시·환경 파일·복구 연습을 마친 뒤에 켠다. DB·S3·OAuth 비밀은 각 production Environment의 `SERVICE_ENV` Secret에 해당 서비스 운영 `.env` 전체 내용으로 등록한다. 기존 DB role 비밀번호를 유지하며, CD가 서버 파일에 반영한다. [운영 환경 파일 관리](../README.md#운영-환경-파일의-위치)를 따른다.
 
 ## 기존 수동 절차와의 관계
 
@@ -217,7 +217,7 @@ done
 - 새 AMI가 게시되거나 `user_data`·`ssh_public_key`가 바뀌어도 EC2를 교체하지 않는다(`ignore_changes`). 호스트를 새로 만들려면 `terraform apply -replace=aws_instance.host`로 명시한다. 탄력적 IP는 네트워크 인터페이스에, PostgreSQL 볼륨은 별도 리소스로 남는다. 기존 인스턴스를 멈춘 뒤 볼륨을 떼어 새 인스턴스에 붙이고, 첫 부팅이 포맷 없이 다시 마운트한다. 루트 볼륨(이미지·Caddy 인증서·`/srv/side-project`)과 SSH host key는 새로 만들어지므로 3·7·9단계를 다시 하고, 6단계는 `prepare.sh`와 `database.sh start`만 실행한다(`bootstrap`은 다시 하지 않는다). 새로 생긴 `database/.env`는 initdb에만 쓰이므로 기존 클러스터에 영향이 없다.
 - `instance_type` 변경은 인스턴스를 멈췄다 켜며 적용된다(짧은 중단). `postgres_volume_size_gib` 증가는 운영 중에 적용되며, 이후 서버에서 파일 시스템을 넓힌다([공통 EC2 배포](../README.md#호스트-파일과-db-초기화) 참고).
 - `name_prefix`·버킷 이름·`vpc_cidr`·`availability_zone`을 바꾸면 해당 리소스가 교체된다. `availability_zone`은 PostgreSQL 볼륨까지 교체하므로 최종 스냅샷에서 복원해야 한다. plan의 `must be replaced`를 반드시 확인한다.
-- 오프라인 검사: `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test`(mock provider, AWS 호출 없음). CI는 [`.github/workflows/terraform.yml`](../../../.github/workflows/terraform.yml)에서 같은 검사를 한다.
+- 오프라인 검사: `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test`(mock provider, AWS 호출 없음). CI는 [`Static analysis`](../../../.github/workflows/static-analysis.yml)에서 인프라·정적 검사 workflow 변경 또는 수동 실행 때 같은 검사를 한다.
 
 ## 파기 시 주의
 
@@ -262,3 +262,15 @@ aws ec2 describe-instance-type-offerings --region ap-northeast-2 --location-type
 ```
 
 관련 공식 문서: [EBS 볼륨 연결](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-attaching-volume.html), [Data Lifecycle Manager 스냅샷 정책](https://docs.aws.amazon.com/ebs/latest/userguide/snapshot-lifecycle.html), [S3 CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html), [Terraform S3 backend 잠금](https://developer.hashicorp.com/terraform/language/backend/s3), [EC2 Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html).
+
+## SSM CD 연결
+
+1. `terraform.tfvars.example`의 `github_oidc_subjects`를 채운다. GitHub API `GET /repos/<owner>/<repo>/actions/oidc/customization/sub`의 `sub_claim_prefix` 뒤에 `:environment:game-feedback-production`와 `:environment:photo-contest-production`을 각각 붙인다. 와일드카드는 허용하지 않는다.
+2. GitHub의 두 운영 Environment에서 배포 브랜치 정책을 **main 브랜치 하나**로 제한한다. Environment subject에는 브랜치가 없으므로 이 제한이 필수다.
+3. Terraform plan에서 기존 EC2·볼륨 교체가 없는지 확인하고 apply한다. CD 역할에는 이 인스턴스의 SSH 세션과 `side-cd-` 이름의 세션 채널만 허용하며 SendCommand, 일반 SSM 셸, S3, DB 권한은 주지 않는다. 문서를 지정하지 않은 세션은 기본 셸 문서로 열리므로 `ssm:SessionDocumentAccessCheck` 조건으로 거부한다. apply 뒤 CD 역할 자격 증명으로 `--document-name` 없이 실행한 `aws ssm start-session --target <인스턴스 ID>`가 AccessDenied로 끝나는지 확인한다.
+4. `github_cd_role_arn`을 두 GitHub Environment의 `SIDE_DEPLOY_AWS_ROLE_ARN`에, `github_cd_instance_id`를 `SIDE_DEPLOY_SSM_INSTANCE_ID`에, AWS 계정 ID를 `SIDE_DEPLOY_AWS_ACCOUNT_ID`에 넣는다. 기존 `SIDE_DEPLOY_HOST`에는 고정 공인 IP, `SIDE_DEPLOY_SSH_USER`에는 `ubuntu`를 유지한다.
+5. 별도의 배포용 SSH 키를 만들고 공개 키를 서버 `ubuntu`의 `~/.ssh/authorized_keys`에 추가한다. 비밀키는 두 Environment의 Secret `SIDE_DEPLOY_SSH_KEY`에만 저장한다. 서버의 SSH 공개 host key를 SSM으로 읽고 고정 IP를 붙여 Variable `SIDE_DEPLOY_SSH_KNOWN_HOSTS`에 넣는다. SSM 터널에서도 이 검증을 생략하지 않는다.
+6. CI는 SHA로 고정한 AWS credentials action과 버전·SHA256으로 고정한 Session Manager plugin을 사용한다. 장기 AWS access key를 CD Secret으로 추가하지 않는다. 서비스 운영 `.env`는 각 Environment의 `SERVICE_ENV` Secret에서 SSH/SSM 표준입력으로 전달한다. 검사·migration 후 서버 파일을 원자 교체하며 시작 실패 시 이전 파일을 복원한다. 공통 호스트·DB 초기화 `.env`는 서버에서 관리한다.
+7. 로컬에서 SSM 터널의 SSH 접속을 확인한 뒤 두 서비스의 `*_DEPLOY_ENABLED=true`를 설정한다. main 반영은 운영자가 수행한다. main push 후 전체 서비스 검사와 이미지 검증이 통과해야 CD가 실행된다.
+
+GitHub OIDC의 실제 토큰 교환과 최초 앱 배포는 main 실행에서 확인한다. 로컬 접속 성공이 GitHub의 OIDC 실행 성공을 대신하지 않는다.

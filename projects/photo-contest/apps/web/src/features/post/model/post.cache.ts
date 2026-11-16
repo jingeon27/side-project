@@ -10,9 +10,9 @@ import {
 export const POST_FEED_QUERIES = [GalleryPostsDocument, PublicGalleryPostsDocument, MyGalleryPostsDocument];
 
 export function resetGalleryPosts(cache: ApolloCache) {
-  cache.evict({ id: 'ROOT_QUERY', fieldName: 'galleryPosts' });
-  cache.evict({ id: 'ROOT_QUERY', fieldName: 'publicGalleryPosts' });
-  cache.evict({ id: 'ROOT_QUERY', fieldName: 'myGalleryPosts' });
+  cache.evict({ id: 'ROOT_QUERY', fieldName: 'galleryPostsPage' });
+  cache.evict({ id: 'ROOT_QUERY', fieldName: 'publicGalleryPostsPage' });
+  cache.evict({ id: 'ROOT_QUERY', fieldName: 'myGalleryPostsPage' });
   cache.gc();
 }
 

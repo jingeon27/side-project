@@ -8,8 +8,8 @@ import { Topbar } from '@/widgets/community-shell';
 export function ProfileTopbar({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
-    <Topbar.Root>
-      <Topbar.Brand home={appRoutes.feed(locale)} />
+    <Topbar.Root className="profile-topbar">
+      <Topbar.Back href={appRoutes.settings(locale)} />
       <Topbar.Title>{t('프로필')}</Topbar.Title>
       <Topbar.Actions>
         <Topbar.Language />

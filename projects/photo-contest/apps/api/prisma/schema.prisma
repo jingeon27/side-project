@@ -27,7 +27,6 @@ model User {
   uploads Upload[]
   reports Report[]
   likes Like[]
-  appLoginTickets AppLoginTicket[]
   posts Post[]
   postUploads PostUpload[]
   postLikes PostLike[]
@@ -47,13 +46,6 @@ model Session {
   @@index([expiresAt])
   pushDevices PushDevice[]
 }
-model OAuthAttempt {
-  stateHash String @id
-  provider String
-  verifier String
-  appChallenge String?
-  expiresAt DateTime
-}
 model Group {
   categories GroupCategory[]
   id String @id @default(cuid())
@@ -61,6 +53,8 @@ model Group {
   description String @default("")
   avatarId String?
   avatar GroupAvatar? @relation("CurrentGroupAvatar", fields: [avatarId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
+  coverId String?
+  cover GroupAvatar? @relation("CurrentGroupCover", fields: [coverId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
   avatarUploads GroupAvatar[] @relation("GroupAvatarUploads")
   visibility String @default("PRIVATE")
   inviteHash String @unique
@@ -83,6 +77,7 @@ model GroupAvatar {
   expiresAt DateTime
   group Group @relation("GroupAvatarUploads", fields: [groupId], references: [id], onDelete: Cascade)
   currentGroups Group[] @relation("CurrentGroupAvatar")
+  coverGroups Group[] @relation("CurrentGroupCover")
   @@unique([id, groupId])
   @@index([expiresAt])
 }
@@ -127,6 +122,7 @@ model Contest {
   posts Post[]
   postVotes PostContestVote[]
   notifications Notification[]
+  @@unique([id,groupId])
   @@index([groupId, format, endsAt, id])
   @@index([groupId, createdAt])
 }
@@ -192,14 +188,6 @@ model Like {
   @@id([submissionId, userId])
   @@index([userId])
 }
-model AppLoginTicket {
-  codeHash String @id
-  userId String
-  challenge String
-  expiresAt DateTime
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([expiresAt])
-}
 model AnalyticsEvent {
   id String @id
   type String
@@ -208,6 +196,19 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
   deliveredAt DateTime?
   @@index([deliveredAt, createdAt])
+  @@index([createdAt, id])
+}
+
+// 원본 삭제 이후에도 같은 사실의 재시도를 중복 집계하지 않기 위한 단방향 해시 키만 남긴다.
+model AnalyticsEventReceipt {
+  keyHash String @id
+}
+model AnalyticsDailySummary {
+  day DateTime @db.Date
+  type String
+  eventCount BigInt @default(0)
+  updatedAt DateTime @updatedAt
+  @@id([day, type])
 }
 
 model PostUpload {
@@ -215,7 +216,8 @@ model PostUpload {
   tokenHash String @unique
   userId String
   groupId String
-  expiresAt DateTime
+  // 게시물·제출한 대회 사진·현재 그룹 대표·배경 사진에 붙으면 null(만료 없음)이다. 떼면 지난 시각으로 돌려 정리한다.
+  expiresAt DateTime?
   policyExpiresAt DateTime?
   storageKey String? @unique
   stagingKey String? @unique
@@ -225,12 +227,17 @@ model PostUpload {
   kind String @default("PHOTO")
   contentType String @default("image/webp")
   byteSize Int @default(0)
+  // 브라우저가 올리기 전에 잰 가로·세로. 게시물 화면의 틀 비율에만 쓰며, 모르면 둘 다 null이다.
+  width Int?
+  height Int?
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   post Post?
   submissionUpload Upload?
   groupAvatar GroupAvatar?
   @@index([expiresAt])
+  @@index([userId])
+  @@unique([id,groupId,userId])
 }
 model PostUploadAttempt {
   key String @id
@@ -245,11 +252,13 @@ model Post {
   category GroupCategory? @relation(fields: [categoryId, groupId], references: [id, groupId], onUpdate: NoAction, onDelete: Restrict)
   @@index([groupId, categoryId, createdAt])
   contestId String?
+  // 같은 그룹 복합 FK는 SQL에 둔다. 기존 단일 FK가 대회 삭제 시 contestId만 비운다.
   contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
   authorId String
   uploadId String? @unique
+  clientRequestId String?
   linkUrl String?
   title String
   body String @default("")
@@ -259,14 +268,17 @@ model Post {
   legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // 같은 그룹·업로더 복합 FK는 SQL에 두고, 단일 unique로 업로드 재사용을 막는다.
   upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict)
   likes PostLike[]
   comments PostComment[]
   contestVotes PostContestVote[]
   notifications Notification[]
   @@unique([id, contestId])
+  @@unique([authorId, clientRequestId])
   @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
+  @@index([authorId, createdAt, id])
 }
 model PostComment {
   id String @id @default(cuid())

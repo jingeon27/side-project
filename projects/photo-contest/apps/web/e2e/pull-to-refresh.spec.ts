@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test';
 import { seedPost } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
+// 기본·중첩 스크롤은 PullToRefresh.browser.spec.ts의 React fixture에서 검사한다.
+// SSR 피드에 테스트 DOM을 끼우면 뒤늦은 hydration과 충돌한다.
 async function pull(page: Page, browserName: string, distance: number) {
   await page.evaluate(() => window.scrollTo(0, 0));
   const box = await page.getByRole('heading', { name: '이달의 인기', exact: true }).boundingBox();
@@ -13,7 +15,7 @@ async function pull(page: Page, browserName: string, distance: number) {
     const session = await page.context().newCDPSession(page);
     try {
       await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-      for (let step = 1; step <= 8; step++)
+      for (const step of [1, 2, 3, 4, 5, 6, 7, 8])
         await session.send('Input.dispatchTouchEvent', {
           type: 'touchMove',
           touchPoints: [{ x, y: y + (distance * step) / 8 }],

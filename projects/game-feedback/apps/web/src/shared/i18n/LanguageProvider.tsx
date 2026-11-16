@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { LoaderCircle } from 'lucide-react';
+import { Spinner } from '@side/design-system';
 
 import {
   LANGUAGE_COOKIE,
@@ -70,7 +70,7 @@ export function LanguageProvider({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const preference = useSyncExternalStore(subscribe, readPreference, () => initialPreference);
-  function handlePreferenceChange(next: TLanguagePreference) {
+  const handlePreferenceChange = (next: TLanguagePreference) => {
     if (pending) return;
     setLanguagePreference(next);
     const target = next === 'auto' ? automaticLocale : next;
@@ -81,7 +81,7 @@ export function LanguageProvider({
         { scroll: false },
       );
     });
-  }
+  };
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
@@ -92,7 +92,7 @@ export function LanguageProvider({
       {children}
       {pending && (
         <div className="preference-progress" role="status">
-          <LoaderCircle size={16} className="spin" aria-hidden />
+          <Spinner className="size-4" />
           {translate(locale, '언어를 변경하고 있어요')}
         </div>
       )}

@@ -39,12 +39,12 @@ export type TBridgeWindow = Pick<Window, 'addEventListener' | 'removeEventListen
 };
 
 export class BridgeError extends Error {
-  readonly code: TBridgeErrorCode;
-
-  constructor(code: TBridgeErrorCode, message: string) {
+  constructor(
+    readonly code: TBridgeErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = 'BridgeError';
-    this.code = code;
   }
 }
 
@@ -63,7 +63,6 @@ const DEFAULT_TIMEOUT_MS: Record<TWebRequestType, number> = {
   'clipboard.copy': 10_000,
   'haptics.impact': 5_000,
   'link.open': 10_000,
-  'auth.socialLogin': 10 * 60_000,
 };
 
 interface IPendingRequest {
@@ -129,7 +128,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
     }
   }
 
-  function handleNativeEvent(event: Event) {
+  const handleNativeEvent = (event: Event) => {
     const message = decodeNativeMessage((event as CustomEvent<unknown>).detail);
     if (!message) return;
     if (message.kind === 'response') {
@@ -155,7 +154,7 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
       return;
     }
     void answer(message.id, message.type, message.payload);
-  }
+  };
 
   win?.addEventListener(NATIVE_EVENT_NAME, handleNativeEvent);
 

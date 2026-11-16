@@ -1,0 +1,203 @@
+<Summary>
+
+Yarn Workspaces와 Turborepo는 둘 다 모노레포의 의존성을 다루지만, 관리하는 대상이 달라요. Yarn은 패키지 사이의 의존성을, Turborepo는 작업 사이의 의존성을 관리해요. 공용 디자인 토큰 하나를 바꾸는 작은 모노레포를 실행하면서 두 도구가 각각 무엇을 정하는지 살펴봐요.
+
+</Summary>
+
+![위쪽은 웹, UI, 토큰 패키지가 이어진 의존 관계, 아래쪽은 같은 관계를 따라 연결된 각 패키지의 빌드 작업](/images/covers/yarn-workspaces-turborepo.avif)
+
+_화살표는 왼쪽 항목이 오른쪽 항목에 의존한다는 뜻이에요. 빌드는 오른쪽의 토큰부터 시작해요._
+
+모노레포에서 '의존성'은 두 가지를 뜻해요. 하나는 패키지 사이의 의존성이에요. 웹이 UI를 import하려면 UI가 설치돼 있고 웹에서 찾을 수 있게 연결돼 있어야 해요. 다른 하나는 작업 사이의 의존성이에요. 웹이 빌드된 UI 파일을 읽는 구조라면 UI 빌드가 먼저 끝나야 해요. Yarn Workspaces는 앞의 것을, Turborepo는 뒤의 것을 맡아요.
+
+|               | Yarn Workspaces                                                             | Turborepo                                                   |
+| ------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 다루는 의존성 | 패키지 사이의 의존성                                                        | 작업 사이의 의존성                                          |
+| 답하는 질문   | 어떤 버전을 설치하고, 어디에 연결할까                                       | 어떤 작업을 먼저 실행하고, 무엇을 다시 실행할까             |
+| 적는 곳       | 각 패키지의 `dependencies`와 `workspace:`, `catalog:`, 루트의 `resolutions`, `.yarnrc.yml`의 `nodeLinker` | 루트 `turbo.json`의 `dependsOn`, `outputs`, `inputs`, `env` |
+| 남기는 것     | `yarn.lock`과 설치 모드에 따른 패키지 배치                                         | 작업 그래프와 작업 결과 캐시                                |
+
+Turborepo는 패키지 사이의 관계를 따로 적지 않아요. Yarn이 읽는 각 패키지의 `package.json`에서 그대로 가져와 작업 그래프를 만들어요. 그래서 두 도구는 서로를 대신하지 않고, Yarn이 이어 둔 패키지 관계 위에 Turborepo가 작업 순서와 캐시를 얹는 구조예요.
+
+예제 모노레포에는 패키지가 네 개 있어요. 웹은 UI를 쓰고, UI는 디자인 토큰을 써요. 그래서 토큰에서 버튼 색 하나를 바꾸면 웹의 CSS까지 달라져요. 문서 앱은 토큰과 UI를 쓰지 않아요. 동작은 Yarn 4.17.0과 Turborepo 2.11.10으로 확인했어요.
+
+## Yarn은 패키지를 어떻게 연결할까요
+
+루트 `package.json`의 `workspaces`는 Yarn이 관리할 패키지 폴더를 알려 줘요. Yarn은 그 폴더에서 찾은 각 패키지를 `package.json`의 `name`으로 구분해요. 이 이름은 패키지 사이의 의존 관계를 적을 때도, 특정 패키지의 스크립트를 실행할 때도 써요. 예를 들어 `apps/web`의 이름이 `@demo/web`이면 `yarn workspace @demo/web build`로 웹의 빌드 스크립트를 실행해요. [Yarn Workspaces 문서](https://yarnpkg.com/features/workspaces)
+
+```json
+{
+  "name": "demo",
+  "private": true,
+  "packageManager": "yarn@4.17.0",
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+`packageManager`는 프로젝트가 쓰는 Yarn 버전을 선언해요. 여러 버전이 설치된 환경이라면 `yarn --version`으로 실제로 실행되는 CLI를 확인할 수 있어요. 아래의 `workspace:`와 `foreach` 예시는 Yarn 4 기준이에요. [Yarn manifest 문서](https://yarnpkg.com/configuration/manifest#packagemanager)
+
+웹은 `dependencies`에 `"@demo/ui": "workspace:*"`를, UI는 `"@demo/tokens": "workspace:*"`를 적어요. `workspace:`는 같은 프로젝트 안에서 그 이름의 워크스페이스를 가리키는 프로토콜이에요. 패키지를 배포할 때는 이 표기가 일반 버전 범위로 바뀌어요. 예제의 토큰 버전을 `1.2.3`으로 두고 UI를 패킹해 보니, `workspace:*`는 정확히 `1.2.3`으로, `workspace:^`는 `^1.2.3`으로 들어갔어요. 저장소 안에서는 두 표기 모두 같은 로컬 토큰을 가리키지만, 배포된 UI를 설치하는 쪽이 받는 버전 범위는 어떤 표기를 썼느냐에 따라 달라져요. [Yarn의 워크스페이스 간 참조](https://yarnpkg.com/features/workspaces#cross-references)
+
+`yarn install`은 패키지와 버전을 정하는 Resolution부터 시작해요. 웹이 적은 `"@demo/ui": "workspace:*"`는 같은 저장소의 UI 패키지로 정해지고, 외부 패키지는 요청한 범위에서 버전을 골라 `yarn.lock`에 기록해요. Fetch에서는 패키지를 캐시에 받고, Link에서는 Node가 찾을 수 있도록 배치해요. 마지막 Build에서는 설치에 필요한 스크립트를 실행해요. [Yarn 설치 과정](https://yarnpkg.com/cli/install)
+
+### 고른 패키지를 배치하는 nodeLinker
+
+Link 단계의 방식은 `.yarnrc.yml`의 `nodeLinker`가 정해요. 같은 의존성 선언도 이 값에 따라 디스크에 배치되는 모습과 Node가 패키지를 찾는 방법이 달라져요. 기본값은 `pnp`예요. 아래 표는 Yarn 문서가 설명하는 설치 방식과 선언 누락 검사, 도구 연동 조건을 정리한 것이에요. [Yarn 설치 모드](https://yarnpkg.com/features/linkers)
+
+| 모드 | Node가 패키지를 찾는 방식 | 선언하지 않은 의존성 | 특징과 연동 조건 |
+| --- | --- | --- | --- |
+| `node-modules` | `node_modules` 트리와 로컬 워크스페이스의 심볼릭 링크 | 차단하지 않아요 | 기존 도구와 호환되고 에디터용 SDK가 필요 없어요 |
+| `pnp` | 패키지 위치와 의존 관계를 기록한 `.pnp.cjs` 로더 | 차단해요 | 설치가 빠르고 Zero-installs를 지원해요. 에디터에는 SDK가 필요할 수 있어요 |
+| `pnpm` | 중앙 저장소에서 하드 링크한 `node_modules/.store`와 이를 가리키는 심볼릭 링크 | 일부 차단해요 | 에디터용 SDK가 필요 없고, 도구의 심볼릭 링크 지원 여부를 확인해야 해요 |
+
+`node-modules`에서는 중복 설치를 줄이려고 의존성을 가능한 한 상위 `node_modules`로 끌어올려요. 이를 호이스팅이라고 해요. 그래서 자기 `package.json`에 적지 않은 패키지도 상위 폴더에 있으면 import가 성공할 수 있어요. `pnp`는 패키지가 선언한 의존 관계를 로더에서 확인하므로, 선언하지 않은 패키지를 읽으려 하면 어떤 선언이 빠졌는지 오류로 알려 줘요. [Yarn 설치 모드 비교](https://yarnpkg.com/features/linkers)
+
+패키지마다 쓰는 의존성을 직접 적어 두는 건 설치 모드와 관계없이 필요해요. 특정 워크스페이스의 의존성만 설치하거나 Turborepo가 패키지 관계를 읽을 때도 `package.json`의 선언을 기준으로 삼아요. [Yarn Workspaces](https://yarnpkg.com/features/workspaces)
+
+가져다 쓰는 라이브러리가 의존성 선언을 빠뜨린 경우에도, 그 패키지를 요청하는 코드가 실행될 때 오류가 날 수 있어요. 이때 `.yarnrc.yml`의 `packageExtensions`로 해당 라이브러리의 선언을 보완할 수 있어요. 내가 작성한 코드에서 쓰는 패키지는 그 워크스페이스의 `dependencies`에 적어요. [Yarn packageExtensions 설정](https://yarnpkg.com/configuration/yarnrc#packageExtensions)
+
+이 블로그가 들어 있는 사이드프로젝트 저장소는 `nodeLinker: node-modules`로 시작했어요. 저장소를 만들 때 쓰던 도구의 PnP 연동을 하나씩 맞추는 게 번거로웠고, 캐시를 저장소에 넣어 설치를 생략하는 Zero-installs도 쓸 수 없는 상황이었어요. 지금도 루트의 `node_modules/@side/design-system`은 `packages/design-system`을 가리키는 심볼릭 링크예요. [Yarn 설정](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.yarnrc.yml#L1), [Yarn Zero-installs](https://yarnpkg.com/features/caching#zero-installs)
+
+대신 `node-modules` 모드가 막지 못하는 선언 누락은 PR 검사에서 걸러요. 블로그 앱은 `graphql`을 의존성에 적지 않았어요. 그런데 피식의 웹과 API가 쓰는 `graphql`이 루트 `node_modules`에 올라가 있어서, 블로그 앱 폴더에서 `import('graphql')`을 실행하니 그대로 성공했어요. 같은 import를 블로그 앱의 테스트 파일에 넣고 `yarn knip`을 실행하자 Knip이 `Unlisted dependencies`로 `graphql`을 보고했어요. 블로그 글과 이미지만 바꾼 PR이 아니면 CI가 이 검사를 실행하므로, PnP에서라면 실행할 때 에러로 드러날 선언 누락을 병합 전에 찾을 수 있어요. [정적 분석 CI](https://github.com/jingeon27/side-project/blob/031d5ca16b1cb43841fdb6576e13190ebb3b5277/.github/workflows/static-analysis.yml#L93-L95)
+
+### 공통 버전 범위를 적는 catalog
+
+여러 앱이 같은 외부 패키지의 버전을 맞추려면 Yarn의 `catalog:`를 쓸 수 있어요. `.yarnrc.yml`의 카탈로그에 공통 버전 범위를 두고, 각 앱의 `dependencies`에서 그 카탈로그를 참조해요. 카탈로그는 버전 범위만 정하고, 설치할 때 실제로 고른 버전은 `yarn.lock`에 기록돼요. CI에서 `yarn install --immutable`을 실행하면 lockfile을 바꿔야 하는 경우 설치가 실패하므로, manifest만 바꾸고 lockfile을 빠뜨린 변경을 걸러 낼 수 있어요. [Yarn 카탈로그](https://yarnpkg.com/features/catalogs), [Yarn install](https://yarnpkg.com/cli/install)
+
+### 간접 의존성에 적용한 resolutions
+
+카탈로그는 워크스페이스가 `catalog:`로 직접 선언한 의존성에만 적용돼요. 설치한 라이브러리가 그 안에서 요청하는 버전까지 바꾸지는 못해요. 예를 들어 이 블로그가 들어 있는 사이드프로젝트 저장소에서는 `@nestjs/platform-express`가 `multer@2.4.0`을 요청해요. 이런 간접 요청을 다른 버전으로 해석하게 하려면 루트 `package.json`의 `resolutions`에 규칙을 둬요. [Yarn의 resolutions 문서](https://yarnpkg.com/configuration/manifest#resolutions)
+
+아래는 사이드프로젝트가 실제로 쓰는 규칙 일부예요. [루트 package.json](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json#L70-L74)
+
+```json
+{
+  "resolutions": {
+    "body-parser": "2.4.0",
+    "multer@npm:2.4.0": "npm:2.5.0",
+    "undici@npm:7.29.1": "npm:7.30.1"
+  }
+}
+```
+
+`body-parser`처럼 이름만 적으면 그 이름의 요청을 모두 `2.4.0`으로 해석해요. `multer@npm:2.4.0`처럼 버전 요청까지 적으면 그 요청에만 규칙이 적용돼요. Nest 패키지는 `2.4.0`을 요청하지만, `yarn why multer`를 실행하면 실제로는 `2.5.0`을 쓰고 있어요.
+
+`undici`도 같은 방식이에요. `@scalar/json-magic`이 요청한 `7.29.1`만 `7.30.1`로 해석해요. 그래서 `yarn why undici`를 보면 `@sentry/cli`가 쓰는 `6.29.1`과 `node-gyp`가 쓰는 `8.12.3`은 그대로 남아 있어요. 이름 전체를 고정할지 특정 요청만 바꿀지에 따라 영향을 받는 경로가 달라지는 거예요. `resolutions`를 고쳤다면 `yarn install`로 lockfile을 갱신하고, `yarn why`로 바뀐 경로를 확인해요. [yarn why](https://yarnpkg.com/cli/why)
+
+## 링크가 생긴 다음에는 파일을 만들어야 해요
+
+예제의 UI 패키지는 빌드한 `dist/index.mjs`를 앱이 읽도록 해 뒀어요. `packages/ui/package.json`의 `exports`가 그 경로를 가리키고, `build` 스크립트가 해당 파일을 만들어요.
+
+```json
+{
+  "name": "@demo/ui",
+  "version": "1.2.3",
+  "type": "module",
+  "exports": "./dist/index.mjs",
+  "dependencies": {
+    "@demo/tokens": "workspace:*"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
+```
+
+토큰도 `dist/index.mjs`를 공개해요. UI 빌드는 이 파일을 읽고, 웹 빌드는 UI가 공개한 파일을 읽어요.
+
+| 패키지         | 빌드가 읽는 것                  | 만드는 파일       |
+| -------------- | ------------------------------- | ----------------- |
+| `@demo/tokens` | 자체 소스의 색상 값             | `dist/index.mjs`  |
+| `@demo/ui`     | `@demo/tokens`가 공개한 색상 값 | `dist/index.mjs`  |
+| `@demo/web`    | `@demo/ui`가 공개한 버튼 CSS    | `dist/page.css`   |
+| `@demo/docs`   | 자체 문서                       | `dist/index.html` |
+
+이 상태에서 `yarn install` 직후 웹 앱만 빌드했더니 `ERR_MODULE_NOT_FOUND`가 났어요. Node가 찾던 파일은 `node_modules/@demo/ui/dist/index.mjs`였어요. `@demo/ui`의 링크를 따라 UI 패키지까지는 찾았지만, `exports`가 가리키는 파일을 만드는 UI 빌드가 아직 실행되지 않았던 거예요.
+
+설치 과정에서도 `postinstall` 같은 스크립트를 실행할 수 있어요. 이 예제에는 설치할 때 UI와 토큰을 빌드하는 설정이 없어서, 각 `build`를 별도로 실행해야 해요. 이미 빌드한 적이 있는 로컬에서는 웹 빌드가 지난번 UI 파일을 읽고 통과할 수 있지만, 토큰을 고친 뒤에도 이전 색이 남을 수 있어요. [Yarn 설치 스크립트](https://yarnpkg.com/advanced/lifecycle-scripts)
+
+이 예제는 Yarn만으로도 순서대로 빌드할 수 있어요.
+
+```bash
+yarn workspaces foreach -R -p -t --from '@demo/web' run build
+```
+
+`-R`과 `--from`은 웹에서 시작해 의존 관계를 따라 워크스페이스를 골라요. `-t`는 `dependencies`에 있는 선행 패키지의 작업이 끝날 때까지 기다리고, `-p`는 기다릴 관계가 없는 작업을 동시에 실행해요. `devDependencies`까지 순서에 넣으려면 `--topological-dev`를 써요. 여러 워크스페이스에서 같은 스크립트를 순서대로 실행하기만 하면 될 때는 이 정도로 충분해요. [Yarn foreach 옵션](https://yarnpkg.com/cli/workspaces/foreach)
+
+## Turborepo는 패키지 위에 작업 그래프를 만들어요
+
+`foreach`는 패키지 사이의 의존성을 따라 순서를 맞춰요. 그런데 작업 사이의 의존성은 작업마다 달라요. 예제에서 웹 빌드는 UI 빌드가 끝나야 시작할 수 있고, 웹 테스트는 웹이 빌드한 파일을 읽는다고 가정해요. 린트는 소스만 읽으므로 다른 작업을 기다리지 않아요. 작업 단위의 이런 관계를 적으려면 루트에 Turborepo를 개발 의존성으로 설치하고 `turbo.json`에 적어요.
+
+```json
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"]
+    },
+    "lint": {}
+  }
+}
+```
+
+`^build`의 `^`는 이 패키지가 의존하는 **다른 패키지**의 `build`를 기다리라는 뜻이에요. 그래서 `@demo/web#build`는 UI 빌드를, UI 빌드는 토큰 빌드를 기다려요. 반면 `test`에 적은 `"build"`는 **같은 패키지**의 빌드를 뜻해요. `@demo/web#test`는 웹 빌드를 기다리고, 웹 빌드는 다시 UI와 토큰 빌드를 기다려요. 이렇게 Turborepo는 패키지 그래프를 바탕으로 `패키지#작업`을 노드로 하는 작업 그래프를 만들어요. 문서 앱의 빌드는 UI와 토큰을 기다릴 필요가 없어서 처음부터 다른 빌드와 함께 실행돼요. [Turborepo의 패키지 그래프와 작업 그래프](https://turborepo.dev/docs/core-concepts/package-and-task-graph)
+
+UI가 빌드 없이 소스 파일을 직접 내보내도록 바꾸고 `build` 스크립트를 빼도, UI가 빌드된 토큰을 읽는다는 관계는 남아요. 이 상태에서 웹 빌드 계획을 출력하니 `@demo/ui#build`의 명령은 `<NONEXISTENT>`였지만, 그 노드의 선행 작업으로 토큰 빌드가 들어 있었어요. Turborepo는 이렇게 실행할 명령 없이 의존 관계만 이어 주는 노드를 transit node라고 불러요. UI 소스를 고치면 이 노드의 해시와 함께 웹 빌드의 해시도 바뀌었어요. [Turborepo의 transit node 설명](https://turborepo.dev/docs/core-concepts/package-and-task-graph#transit-nodes)
+
+## 캐시에서 어떤 파일이 돌아올까요
+
+작업 순서를 정한 다음, Turborepo는 각 작업을 다시 실행할지 캐시에서 가져올지 판단해요. 이때 쓰는 캐시 키에는 작업 정의, 패키지의 파일, 그 패키지에 영향을 주는 외부 의존성의 해석 결과, 환경변수 설정, 선행 작업의 해시 등이 들어가요. 루트 의존성이나 `globalDependencies`에 지정한 파일처럼 저장소 전체에 영향을 주는 입력도 있어요. 토큰 소스만 바꿨는데 UI 빌드의 키까지 달라지는 이유도 선행 작업인 토큰 빌드의 해시가 바뀌었기 때문이에요. [Turborepo 캐시 키](https://turborepo.dev/docs/crafting-your-repository/caching)
+
+예제에서 한 번 빌드한 뒤, 빌드 결과가 없는 상태를 만들려고 웹, UI, 토큰의 `dist` 폴더를 다른 경로로 옮겼어요. 같은 입력으로 웹 빌드를 다시 요청하니 세 작업 모두 `cache hit`가 났고, 웹의 `dist/page.css`에 원래 색상인 `#2459c4`가 돌아왔어요. 로컬 캐시로 실행한 명령은 아래와 같아요.
+
+```bash
+SITE_TITLE=Demo yarn turbo run build --filter=@demo/web --cache=local:rw
+```
+
+캐시에서 어떤 파일을 저장하고 되돌릴지는 `outputs`가 각 패키지 폴더를 기준으로 정해요. 웹 빌드의 `outputs`를 빼고 다시 실험하니, 이전 빌드 로그는 캐시에서 가져왔지만 `page.css`는 돌아오지 않았어요. 린트처럼 파일을 만들지 않는 작업은 로그만 복원해도 되지만, 배포 단계가 읽을 파일이라면 `outputs`에 넣어야 해요. Next.js 빌드라면 `[".next/**", "!.next/cache/**"]`처럼 배포에 필요한 결과와 Next의 내부 빌드 캐시를 구분할 수 있어요. [Turborepo의 outputs 설정](https://turborepo.dev/docs/reference/configuration#outputs)
+
+## 캐시 키에 빠진 입력을 찾는 법
+
+빌드 결과를 바꾸는 값이 캐시 키에 빠져 있으면, 그 값이 바뀌어도 Turborepo는 이전 결과를 복원해요. 웹 빌드가 `SITE_TITLE` 환경변수를 읽어 `dist/title.txt`에 쓴다고 해 볼게요. 이 값은 웹 빌드 결과에만 영향을 주므로, 루트 `turbo.json`의 `tasks`에 웹 빌드 정의를 따로 적었어요.
+
+```json
+{
+  "@demo/web#build": {
+    "dependsOn": ["^build"],
+    "outputs": ["dist/**"],
+    "env": ["SITE_TITLE"]
+  }
+}
+```
+
+`env`에 넣은 변수는 작업에서 읽을 수 있고, 그 값도 해시에 반영돼요. 같은 소스에서 `SITE_TITLE`만 `Demo`에서 `Preview`로 바꾸니 토큰과 UI는 캐시를 썼고 웹만 다시 실행됐어요. 모든 작업에 영향을 주는 값은 `globalEnv`로 선언할 수 있어요. 반면 `passThroughEnv`는 값을 작업에 넘기기만 하고 해시에는 반영하지 않아요. 빌드 결과를 바꾸는 값을 여기에 넣으면 값이 바뀌어도 이전 결과가 그대로 복원돼요. 기본 Strict Mode에서는 이렇게 선언한 변수와 프레임워크가 감지한 변수만 작업에 전달하므로, 선언을 빠뜨린 변수는 작업 안에서 읽히지 않아요. [Turborepo 환경변수 문서](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables)
+
+파일도 마찬가지예요. 프레임워크가 `.env.production`을 읽는다면 그 파일도 해시 입력에 넣어야 해요. Git에서 제외한 파일이라면 해당 빌드의 `inputs`에 `["$TURBO_DEFAULT$", ".env.production"]`처럼 추가할 수 있어요. `inputs`를 직접 쓰면 기본으로 고르는 파일 목록을 대신하게 되는데, `$TURBO_DEFAULT$`를 함께 두면 기본 목록을 유지한 채 필요한 경로만 더할 수 있어요. 특정 작업이 루트의 `tsconfig.base.json`을 읽는다면 `$TURBO_ROOT$/tsconfig.base.json`처럼 그 작업에만 넣을 수도 있어요. [Turborepo의 inputs 설정](https://turborepo.dev/docs/reference/configuration#inputs)
+
+빠진 입력이 있는지는 `--dry=json`으로 확인해요. 작업을 실행하지 않고 각 작업이 어떤 파일과 선행 작업으로 해시를 만드는지 보여 줘요. 토큰의 색을 `#116a55`로 바꾸기 전후에 아래 명령으로 `tasks`의 `hash`를 비교하니 `tokens#build`, `ui#build`, `web#build`가 바뀌었어요. 토큰을 쓰지 않는 `docs#build`의 해시는 그대로였어요. 입력에 들어간 파일은 `inputs`에서, 기다리는 작업과 복원할 경로는 각각 `dependencies`와 `outputs`에서 볼 수 있어요. [Turborepo run 옵션](https://turborepo.dev/docs/reference/run)
+
+```bash
+SITE_TITLE=Preview yarn turbo run build --dry=json
+```
+
+## 실행할 작업을 고르는 일과 캐시를 확인하는 일
+
+`--filter=@demo/web`으로 웹을 고르면 웹 빌드에 필요한 UI와 토큰 작업도 그래프에 들어와요. 반대로 토큰을 고친 뒤 그 영향을 받는 패키지를 모두 고르고 싶다면 `--filter='...@demo/tokens'`를 써요. 이름 앞의 `...`는 토큰에 의존하는 패키지까지 따라가라는 뜻이에요.
+
+CI에서는 `--affected`로 Git에서 바뀐 패키지와 그 패키지에 의존하는 패키지를 고를 수 있어요. PR이 `develop`을 향한다면 아래처럼 비교 기준을 직접 지정하고, `--dry=json`으로 실행 전에 어떤 작업이 골라졌는지 확인해요. 이때 CI 체크아웃은 두 커밋을 비교할 수 있을 만큼 이력을 받아 와야 해요. [Turborepo의 변경 범위와 필터](https://turborepo.dev/docs/reference/run#--affected)
+
+```bash
+TURBO_SCM_BASE=origin/develop TURBO_SCM_HEAD=HEAD \
+  yarn turbo run build --affected --dry=json
+```
+
+이렇게 고른 작업도 같은 키로 저장한 결과가 있으면 캐시에서 가져와요. 원격 캐시를 연결하면 다른 개발 머신이나 CI와도 결과를 공유할 수 있어요. 다만 캐시 키에 들어가지 않는 바깥 상태는 조심해야 해요. 빌드 중에 CMS에서 최신 콘텐츠를 가져온다면 코드가 그대로여도 CMS의 응답에 따라 결과가 바뀌므로, 이 빌드를 재사용하려면 콘텐츠의 스냅샷이나 리비전도 입력에 넣어야 해요. DB 마이그레이션처럼 외부 상태를 바꾸는 스크립트는 실행하는 것 자체가 목적이라 `cache: false`를 지정하는 편이 맞아요. [Turborepo 원격 캐시](https://turborepo.dev/docs/core-concepts/remote-caching)
+
+## 지금 사이드프로젝트는 어디까지 쓰고 있나요
+
+이 블로그가 들어 있는 사이드프로젝트 저장소는 Yarn Workspaces만 쓰고, Turborepo는 아직 쓰지 않아요. 루트 빌드는 `workspaces foreach`로 `@side/*` 프로젝트를 고르고, `@side/blog`는 실제 앱인 `@blog/web`에 빌드를 넘겨요. 블로그 웹은 `@side/design-system`을 `workspace:*`로 연결하는데, 디자인 시스템의 `exports`는 `dist` 대신 `src`를 가리켜요. 그래서 블로그를 빌드할 때 필요한 컴포넌트의 소스를 함께 처리하고, 디자인 시스템을 먼저 빌드할 필요가 없어요. 앞의 토큰 예제처럼 의존 패키지의 배포 파일부터 만들어야 하는 구조가 아닌 거예요. [루트 스크립트](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/package.json), [디자인 시스템 exports](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/packages/design-system/package.json)
+
+CI도 블로그와 서비스를 나눠 실행하고, 블로그는 글과 이미지처럼 콘텐츠만 바뀌면 콘텐츠 검증 경로를 타요. 이런 구조에서 Turborepo를 검토한다면 실제로 시간이 드는 단계부터 보면 돼요. 의존성 다운로드가 오래 걸린다면 Yarn 캐시를 먼저 살펴보고, 같은 입력으로 여러 앱을 반복해서 빌드한다면 작업 결과를 복원하는 캐시가 도움이 돼요. 여러 앱이 공유 패키지의 `dist`를 쓰기 시작하면, 그 파일을 어떤 작업이 만들고 누가 기다려야 하는지도 작업 그래프로 드러낼 수 있어요. [블로그 CI 설정](https://github.com/jingeon27/side-project/blob/b04eaa880b94ead9ff0878386d3917c13a37a694/.github/workflows/blog.yml)

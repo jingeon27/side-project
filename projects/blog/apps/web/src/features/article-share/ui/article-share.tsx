@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-import { labels, type UiLocale } from '@/shared/config/labels';
+import type { Locale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 
 export function ArticleShare({
@@ -10,31 +11,35 @@ export function ArticleShare({
   contentId,
   title,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   contentId: string;
   title: string;
 }) {
   const [status, setStatus] = useState('');
   const t = labels(locale);
-  async function share() {
-    const url = new URL(window.location.href);
-    url.hash = '';
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url: url.href });
-        trackEvent('article_shared', { content_id: contentId, method: 'native' });
-      } else {
-        await navigator.clipboard.writeText(url.href);
-        setStatus(t.article.copied);
-        trackEvent('article_shared', { content_id: contentId, method: 'copy_link' });
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) setStatus(t.article.shareFailed);
-    }
-  }
   return (
     <div className="share-control">
-      <button type="button" className="share-button" onClick={share}>
+      <button
+        type="button"
+        className="share-button"
+        onClick={async () => {
+          const url = new URL(window.location.href);
+          url.hash = '';
+          try {
+            if (navigator.share) {
+              await navigator.share({ title, url: url.href });
+              trackEvent('article_shared', { content_id: contentId, method: 'native' });
+              return;
+            }
+            await navigator.clipboard.writeText(url.href);
+            setStatus(t.article.copied);
+            trackEvent('article_shared', { content_id: contentId, method: 'copy_link' });
+          } catch (error) {
+            if (!(error instanceof DOMException && error.name === 'AbortError'))
+              setStatus(t.article.shareFailed);
+          }
+        }}
+      >
         <svg
           width="16"
           height="16"

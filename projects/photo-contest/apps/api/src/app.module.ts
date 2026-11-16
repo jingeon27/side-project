@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import { LikeModule } from './like/like.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { SentryShutdownService } from './monitoring/sentry-shutdown.service';
 import { NotificationModule } from './notification/notification.module';
 import { PostModule } from './post/post.module';
 import { ProfileModule } from './profile/profile.module';
@@ -44,6 +45,6 @@ import { VoteModule } from './vote/vote.module';
     MaintenanceModule,
     HealthModule,
   ],
-  providers: [DateTimeScalar],
+  providers: [DateTimeScalar, SentryShutdownService],
 })
 export class AppModule {}

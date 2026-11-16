@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
 
+import dayjs from 'dayjs';
+
 import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl, type TTestSchemaPrefix } from './database';
 import { loadProjectEnv } from './env';
 import { SERVE_TEST_API_BIN } from './paths';
@@ -9,7 +11,7 @@ interface IStartIsolatedApiOptions {
   webOrigin: string;
   /** 격리 스키마 이름 앞부분(TEST_SCHEMA_PREFIXES) */
   prefix: TTestSchemaPrefix;
-  /** API에만 더 넘길 환경변수 (예: 가짜 OAuth client id) */
+  /** API에만 더 넘길 환경변수 */
   env?: Record<string, string>;
 }
 
@@ -22,8 +24,8 @@ export interface IIsolatedApi {
 }
 
 async function waitForHealth(url: string, isAlive: () => boolean, timeoutMs: number) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
+  const deadline = dayjs().valueOf() + timeoutMs;
+  while (dayjs().valueOf() < deadline) {
     if (!isAlive()) throw new Error('격리 API가 시작하기 전에 종료됐습니다.');
     try {
       const response = await fetch(url);
@@ -61,7 +63,7 @@ export async function startIsolatedApi({
   const stop = () =>
     new Promise<void>((done) => {
       if (child.exitCode !== null || child.signalCode !== null) return done();
-      child.once('exit', () => done());
+      child.once('exit', done);
       child.kill('SIGTERM');
     });
   try {

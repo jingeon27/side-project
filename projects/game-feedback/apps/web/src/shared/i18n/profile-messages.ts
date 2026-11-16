@@ -1,24 +1,33 @@
 export const profileMessages: Record<string, readonly [string, string]> = {
+  '등록한 게임 계정이 없어요.': ['No game accounts registered.', '登録したゲームアカウントはありません。'],
   '프로필 수정': ['Edit profile', 'プロフィールを編集'],
+  '닉네임, 자기소개와 프로필 사진을 수정하세요.': [
+    'Edit your nickname, bio and profile photo.',
+    'ニックネーム、自己紹介、プロフィール写真を編集してください。',
+  ],
+  '저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?': [
+    'You have unsaved changes. Leaving this page will discard them. Continue?',
+    '保存していない変更があります。この画面を離れると入力内容が失われます。続けますか？',
+  ],
   '프로필 저장': ['Save profile', 'プロフィールを保存'],
   '프로필을 수정했어요.': ['Profile updated.', 'プロフィールを更新しました。'],
   '프로필 사진': ['Profile photo', 'プロフィール写真'],
   자기소개: ['Bio', '自己紹介'],
-  '2~24자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.': [
-    'Use 2–24 letters, numbers, spaces or _ . -.',
-    '2〜24文字の文字・数字・スペース・_ . -が使えます。',
+  '{min}~{max}자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.': [
+    'Use {min}–{max} letters, numbers, spaces or _ . -.',
+    '{min}〜{max}文字の文字・数字・スペース・_ . -が使えます。',
   ],
-  '닉네임은 2~24자의 문자, 숫자, 공백과 _ . -로 입력해주세요.': [
-    'Enter a nickname with 2–24 letters, numbers, spaces or _ . -.',
-    'ニックネームは2〜24文字の文字・数字・スペース・_ . -で入力してください。',
+  '닉네임은 {min}~{max}자의 문자, 숫자, 공백과 _ . -로 입력해주세요.': [
+    'Enter a nickname with {min}–{max} letters, numbers, spaces or _ . -.',
+    'ニックネームは{min}〜{max}文字の文字・数字・スペース・_ . -で入力してください。',
   ],
   '웹 주소를 입력하면 프로필에서 클릭 가능한 링크로 표시돼요.': [
     'Web addresses become clickable links on your profile.',
     '入力したウェブアドレスはプロフィールでクリックできるリンクになります。',
   ],
-  '자기소개는 500자 이하로 입력해주세요.': [
-    'Keep your bio within 500 characters.',
-    '自己紹介は500文字以内で入力してください。',
+  '자기소개는 {max}자 이하로 입력해주세요.': [
+    'Keep your bio within {max} characters.',
+    '自己紹介は{max}文字以内で入力してください。',
   ],
   '최고 트로피': ['Best trophies', '最高トロフィー'],
   '현재 세계 순위': ['Current global rank', '現在の世界順位'],
@@ -36,23 +45,6 @@ export const profileMessages: Record<string, readonly [string, string]> = {
   '{name} 게임 정보 새로고침': ["Refresh {name}'s game data", '{name}のゲーム情報を更新'],
   새로고침: ['Refresh', '更新'],
   '프로필 편집': ['Edit profile', 'プロフィールを編集'],
-  '프로필 링크': ['Profile links', 'プロフィールリンク'],
-  '프로필 링크 편집': ['Edit profile links', 'プロフィールリンクを編集'],
-  '링크를 최대 5개 공개할 수 있어요. 이름과 주소를 함께 입력해주세요.': [
-    'Share up to 5 links. Add a name and URL for each.',
-    '最大5件のリンクを公開できます。名前とURLを入力してください。',
-  ],
-  '링크 {number}': ['Link {number}', 'リンク{number}'],
-  이름: ['Name', '名前'],
-  주소: ['URL', 'URL'],
-  '링크 삭제': ['Remove link', 'リンクを削除'],
-  '링크 추가': ['Add link', 'リンクを追加'],
-  '링크 저장': ['Save links', 'リンクを保存'],
-  '이름과 올바른 HTTP(S) 주소를 입력해주세요.': [
-    'Enter a name and a valid HTTP(S) URL.',
-    '名前と正しいHTTP(S) URLを入力してください。',
-  ],
-  '프로필 링크를 저장했어요.': ['Profile links saved.', 'プロフィールリンクを保存しました。'],
   '선택한 프로필 사진 미리보기': ['Selected profile photo preview', '選択したプロフィール写真のプレビュー'],
   '프로필 사진 편집': ['Edit profile photo', 'プロフィール写真を編集'],
   '프로필 사진 선택': ['Choose profile photo', 'プロフィール写真を選択'],
@@ -65,6 +57,25 @@ export const profileMessages: Record<string, readonly [string, string]> = {
     'Choose a JPEG, PNG or WebP photo under 5 MB.',
     '5MB以下のJPEG・PNG・WebP写真を選択してください。',
   ],
-  '사진 저장': ['Save photo', '写真を保存'],
+  '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.': [
+    'Could not read the photo. Choose another photo.',
+    '写真を読み込めません。別の写真を選択してください。',
+  ],
+  '4000만 화소 이하의 사진을 선택해주세요.': [
+    'Choose a photo of 40 megapixels or less.',
+    '4000万画素以下の写真を選択してください。',
+  ],
+  '사진을 준비하지 못했습니다.': ['Could not prepare the photo.', '写真を準備できませんでした。'],
+  '삭제 취소': ['Undo removal', '削除を取り消す'],
+  '저장하면 프로필 사진이 삭제돼요.': [
+    'Saving will remove your profile photo.',
+    '保存するとプロフィール写真が削除されます。',
+  ],
+  '저장하지 않은 변경이 있어요. 닫으면 입력한 내용이 사라져요.': [
+    'You have unsaved changes. Closing will discard them.',
+    '保存していない変更があります。閉じると入力内容が失われます。',
+  ],
+  '계속 편집': ['Keep editing', '編集を続ける'],
+  '저장하지 않고 닫기': ['Close without saving', '保存せずに閉じる'],
   '프로필 사진 삭제': ['Remove profile photo', 'プロフィール写真を削除'],
 };

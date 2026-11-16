@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 const SERVICE_TIME_ZONE = 'Asia/Seoul';
 
 const dateTimeFormat = new Intl.DateTimeFormat('ko-KR', {
@@ -21,9 +23,12 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
+const parseIso = (value: string) =>
+  dayjs(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00.000Z` : value);
+
 /** `10월 14일 (화) 오후 3:00` 형태. 서버 시각(ISO)을 서비스 시간대로 보여 준다. */
 export function formatDateTime(iso: string) {
-  const parts = dateTimeFormat.formatToParts(new Date(iso));
+  const parts = dateTimeFormat.formatToParts(parseIso(iso).toDate());
   const hour = Number(partValue(parts, 'hour')) % 24;
   // Linux WebKit의 ko-KR dayPeriod는 AM/PM이므로 숫자 시각으로 직접 정한다.
   const period = hour < 12 ? '오전' : '오후';
@@ -32,7 +37,7 @@ export function formatDateTime(iso: string) {
 
 /** `2026년 10월 14일` */
 export function formatDate(iso: string) {
-  const parts = dateFormat.formatToParts(new Date(iso));
+  const parts = dateFormat.formatToParts(parseIso(iso).toDate());
   return `${partValue(parts, 'year')}년 ${partValue(parts, 'month')}월 ${partValue(parts, 'day')}일`;
 }
 
@@ -49,8 +54,8 @@ export function formatCount(value: number) {
 }
 
 /** 마감까지 남은 시간. 지났으면 null. */
-export function formatTimeLeft(targetIso: string, now: Date = new Date()) {
-  const left = new Date(targetIso).getTime() - now.getTime();
+export function formatTimeLeft(targetIso: string, now: Date = dayjs().toDate()) {
+  const left = parseIso(targetIso).diff(now);
   if (left <= 0) return null;
   if (left < MINUTE) return '곧 마감';
   if (left < HOUR) return `${Math.floor(left / MINUTE)}분 남음`;
@@ -60,13 +65,12 @@ export function formatTimeLeft(targetIso: string, now: Date = new Date()) {
 
 /** `<input type="datetime-local">` 값. 입력창은 기기 시간대로 보여 주므로 기기 시간대로 만든다. */
 export function toDateTimeLocalValue(date: Date) {
-  const shifted = new Date(date.getTime() - date.getTimezoneOffset() * MINUTE);
-  return shifted.toISOString().slice(0, 16);
+  return dayjs(date).format('YYYY-MM-DDTHH:mm');
 }
 
 /** `<input type="datetime-local">` 값을 서버에 보낼 ISO 시각으로 바꾼다. 형식이 틀리면 null. */
 export function fromDateTimeLocalValue(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  const date = dayjs(Date.parse(value));
+  return date.isValid() ? date.toISOString() : null;
 }

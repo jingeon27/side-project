@@ -2,25 +2,19 @@
   .feed-section {
     margin-top: 0;
   }
-  .feed-heading {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px 16px;
-    align-items: center;
-    margin-bottom: 22px;
-  }
-  .feed-heading h1 {
-    font-size: var(--text-title);
-    letter-spacing: -1px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .feed-actions {
-    grid-column: 2;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  @media (min-width: 1024px) {
+    .feed-section {
+      width: 100%;
+      max-width: 680px;
+      margin-inline: auto;
+    }
+    .feed-section .empty-feed {
+      min-height: 320px;
+      justify-content: center;
+      margin: 0;
+      border: 0;
+      background: transparent;
+    }
   }
   .game-filter {
     border: 1px solid var(--color-line);
@@ -207,7 +201,7 @@
     font-weight: 600;
     color: var(--color-muted);
   }
-  .answer-count.has-answers {
+  .answer-count[data-has-answers] {
     color: var(--color-muted);
   }
   .answer-count > svg:last-child {
@@ -219,6 +213,12 @@
   }
   .load-more {
     margin-top: 14px;
+  }
+  .feed-loading-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+    color: var(--color-muted);
   }
   .feed-end {
     font-size: var(--text-micro);
@@ -312,7 +312,7 @@
     place-items: center;
     margin-bottom: 4px;
   }
-  .empty-feed h1 {
+  .empty-feed :is(h1, h2) {
     font-size: var(--text-title);
   }
   .empty-feed h3 {
@@ -361,18 +361,6 @@
     .feed-section {
       margin-top: 0;
     }
-    .feed-heading {
-      margin-bottom: 17px;
-    }
-    .feed-heading h1 {
-      font-size: var(--text-title);
-    }
-    .feed-actions > .button {
-      gap: 5px;
-    }
-    .feed-actions > .button > svg {
-      width: 15px;
-    }
     .game-filter {
       font-size: var(--text-caption);
       min-height: 49px;
@@ -417,7 +405,7 @@
     .empty-feed {
       padding: 36px 19px;
     }
-    .empty-feed h1 {
+    .empty-feed :is(h1, h2) {
       font-size: var(--text-title);
     }
     .empty-feed h3 {
@@ -456,10 +444,6 @@
     .post-bottom {
       min-height: 43px;
     }
-    .feed-heading h1 {
-      font-size: var(--text-title);
-      gap: 10px;
-    }
     .post-card h3 {
       font-size: var(--text-body);
     }
@@ -471,15 +455,6 @@
     }
     .game-filter {
       font-size: var(--text-caption);
-    }
-  }
-  @media (max-width: 380px) {
-    .feed-heading {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .feed-actions {
-      grid-column: 1;
-      flex-wrap: wrap;
     }
   }
 }

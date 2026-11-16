@@ -9,11 +9,8 @@ function trimWhitespace(value: string) {
 }
 
 function decodeValue(raw: string) {
-  let value = raw;
-  if (value.startsWith('"')) {
-    if (value.length < 2 || !value.endsWith('"')) return undefined;
-    value = value.slice(1, -1);
-  }
+  if (raw.startsWith('"') && (raw.length < 2 || !raw.endsWith('"'))) return undefined;
+  const value = raw.startsWith('"') ? raw.slice(1, -1) : raw;
   if (!COOKIE_OCTETS.test(value)) return undefined;
   if (!value.includes('%')) return value;
   try {

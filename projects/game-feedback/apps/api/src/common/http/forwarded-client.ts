@@ -2,17 +2,20 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { IncomingHttpHeaders } from 'node:http';
 import { isIP } from 'node:net';
 
+import dayjs from 'dayjs';
+
 /**
  * The Next.js server calls the API over the private network, so the socket address is always the web
  * container. It forwards the visitor address (or `internal` for cookie-free cached reads) with an HMAC
  * keyed from the cache revalidation secret both servers already share. `apps/web/src/shared/api/server.ts`
- * signs with the same derivation; keep the two in sync.
+ * signs with the same derivation; keep the two in sync. Node lowercases incoming header names, so the
+ * lookup keys must be lowercase too.
  */
 export const FORWARDED_CLIENT_HEADERS = {
   client: 'x-gf-client-ip',
   timestamp: 'x-gf-client-timestamp',
   signature: 'x-gf-client-signature',
-} as const;
+} as const satisfies Record<string, Lowercase<string>>;
 export const INTERNAL_CLIENT = 'internal';
 // A captured header set can only be replayed inside this window.
 const MAX_CLOCK_SKEW_SECONDS = 60;
@@ -29,7 +32,7 @@ export function signForwardedClient(key: Buffer, client: string, timestamp: numb
 export function verifiedForwardedClient(
   headers: IncomingHttpHeaders,
   key: Buffer | undefined,
-  now = Date.now(),
+  now = dayjs().valueOf(),
 ): string | null {
   if (!key) return null;
   const client = headers[FORWARDED_CLIENT_HEADERS.client];

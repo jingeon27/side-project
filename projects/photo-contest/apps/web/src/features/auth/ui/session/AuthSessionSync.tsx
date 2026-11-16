@@ -1,0 +1,93 @@
+'use client';
+
+import { useEffect, useEffectEvent } from 'react';
+
+import { useApolloClient, useQuery } from '@apollo/client/react';
+import qs from 'qs';
+
+import { MeDocument } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
+import { reloadDocument } from '@/shared/lib/document-navigation.helper';
+import { getSafeNextPath } from '@/shared/lib/login-redirect.helper';
+import { parseSearch } from '@/shared/lib/query-string.helper';
+import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
+import { useBridge } from '@/shared/model/bridge';
+import { useAppRouter } from '@/shared/model/router';
+
+import { readNotifiedUserId, saveNotifiedUserId, takePendingLogin } from '../../lib/login-marker.helper';
+import { AUTH_SESSION_SIGNAL } from '../../lib/session-change-signal';
+import { authSession } from '../../model/auth-session';
+
+/**
+ * 레이아웃에 한 번 둔다(화면은 그리지 않는다). 누가 로그인했는지 확인되면 분석 도구와 앱에 같은 사용자 ID를 알린다.
+ * - 직전 문서가 남긴 로그인 표시가 있으면 login_succeeded를 보내고 로그인 뒤 이동 경로를 확인한다.
+ * - 앱에는 이 탭에서 처음 확인한 사용자만 auth.changed로 알린다(앱이 다시 열려도 같은 사용자로 묶이게).
+ * - 비로그인으로 확인되면 앱에 signedIn:false를 알리고 남은 분석 사용자를 지운다. 세션 만료는 대개 앱을 다시 연 뒤에
+ *   드러나 이 탭의 표시로는 알 수 없고, 앱·분석 도구 모두 식별된 사용자가 있을 때만 초기화하므로 익명 방문의 기기 ID는 그대로다.
+ */
+export function AuthSessionSync() {
+  const bridge = useBridge();
+  const router = useAppRouter();
+  const client = useApolloClient();
+  const session = authSession(client);
+  const { data } = useQuery(MeDocument);
+  const me = data?.me;
+
+  const handleSessionChanged = useEffectEvent(() => {
+    // RSC·폼·열린 시트도 이전 사용자의 상태이므로 같은 문서를 다시 연다.
+    reloadDocument();
+  });
+  useEffect(() => {
+    const stop = session.subscribe(handleSessionChanged);
+    const handleRefresh = () => {
+      void session.refresh().catch(() => undefined);
+    };
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible') handleRefresh();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === AUTH_SESSION_SIGNAL) handleRefresh();
+    };
+    window.addEventListener('focus', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisible);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      stop();
+      session.stopRefresh();
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisible);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (data) void session.accept(data, false).catch(() => undefined);
+  }, [data, session]);
+
+  useEffect(() => {
+    if (me === undefined) return;
+    const pending = takePendingLogin();
+    if (!me) {
+      forgetAnalyticsUser();
+      saveNotifiedUserId(null);
+      bridge?.notify('auth.changed', { signedIn: false });
+      return;
+    }
+    identifyUser(me.id);
+    if (readNotifiedUserId() !== me.id) {
+      bridge?.notify('auth.changed', { signedIn: true, userId: me.id });
+      saveNotifiedUserId(me.id);
+    }
+    if (me.needsOnboarding && window.location.pathname !== ROUTES.ONBOARDING) {
+      const destination = getSafeNextPath(pending?.next ?? parseSearch(window.location.search).next);
+      router.replace(`${ROUTES.ONBOARDING}${qs.stringify({ next: destination }, { addQueryPrefix: true })}`);
+      return;
+    }
+    if (!pending) return;
+    trackEvent(ANALYTICS_EVENT.LoginSucceeded, { provider: pending.method });
+    const next = getSafeNextPath(pending.next);
+    if (window.location.pathname === ROUTES.HOME && next !== ROUTES.HOME) router.replace(next);
+  }, [me, bridge, router]);
+
+  return null;
+}

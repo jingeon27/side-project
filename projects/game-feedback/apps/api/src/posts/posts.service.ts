@@ -1,10 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
+import { match } from 'ts-pattern';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
 
-import { responseAnswer } from '../answers/answer.presenter';
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { ANSWER_PAGE, answerPage } from '../answers/answer-page';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
@@ -13,10 +16,11 @@ import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
-import { UserVisibilityService } from '../users/user-visibility.service';
-import { authorSelect } from '../users/user.presenter';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
+import { PostMediaService } from './media/post-media.service';
+import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
-import { PostMediaService } from './post-media.service';
+import { isSamePostRequest } from './post-request';
 import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()
@@ -31,13 +35,7 @@ export class PostsService {
     const excluded = await this.visibility.excluded(req);
     const post = await this.db.post.findFirst({
       where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
-      include: {
-        ...postInclude,
-        answers: {
-          where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-          select: { id: true, helpful: true },
-        },
-      },
+      include: postInclude,
     });
     if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
     return post;
@@ -55,28 +53,37 @@ export class PostsService {
     )
       throw new ApiError(400, 'INVALID_FEEDBACK_FILTER', '피드백의 답변 상태를 확인해주세요.');
     const rows = await this.listVisiblePosts(q, excluded);
+    const page = rows.slice(0, q.limit);
+    const counts = await answerCounts(
+      this.db,
+      page.map((post) => post.id),
+      excluded,
+    );
     return {
-      items: rows.slice(0, q.limit).map(responsePost),
+      items: page.map((post) => responsePost(post, counts.get(post.id))),
       nextCursor: nextCursor(rows, q.limit),
     };
   }
   async detail(req: SessionRequest, id: string) {
     const p = await this.visiblePost(req, id),
       excluded = await this.visibility.excluded(req);
-    const [answers, comments] = await Promise.all([
-      this.db.answer.findMany({
-        where: { postId: id, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-        include: { author: { select: authorSelect } },
-        orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
-      }),
+    const [answers, counts, comments] = await Promise.all([
+      answerPage(this.db, id, excluded, { limit: ANSWER_PAGE }),
+      answerCounts(this.db, [id], excluded),
       commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
     return {
-      post: responsePost({ ...p, answers }),
-      answers: answers.map(responseAnswer),
+      post: responsePost(p, counts.get(id)),
+      answers: answers.items,
+      answersCursor: answers.nextCursor,
       comments: comments.items,
       commentsCursor: comments.nextCursor,
     };
+  }
+  async visibleAnswerCounts(req: SessionRequest, id: string) {
+    await this.visiblePost(req, id);
+    const excluded = await this.visibility.excluded(req);
+    return (await answerCounts(this.db, [id], excluded)).get(id) ?? NO_ANSWERS;
   }
   async createPost(req: SessionRequest, input: TCreatePostDto) {
     const u = requireUser(req);
@@ -92,12 +99,32 @@ export class PostsService {
       where: { id: input.categoryId, active: true },
     });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
-    const p = await this.cache.change(
+    const result = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
+        // 사용자 잠금 아래에서 요청 키를 먼저 찾는다. 응답만 끊긴 재시도는 처음 만든 글을 그대로 돌려준다.
+        const previous = input.clientRequestId
+          ? await tx.post.findUnique({
+              where: {
+                authorId_clientRequestId: { authorId: u.id, clientRequestId: input.clientRequestId },
+              },
+              include: postInclude,
+            })
+          : null;
+        if (previous) {
+          if (!isSamePostRequest(previous, input, category.id))
+            throw new ApiError(
+              409,
+              'POST_CONFLICT',
+              '이미 등록된 글입니다. 설정의 내가 작성한 글에서 확인해주세요.',
+            );
+          return { post: previous, created: false };
+        }
         const created = await (tx ?? this.db).post.create({
           data: {
             authorId: u.id,
             categoryId: category.id,
+            clientRequestId: input.clientRequestId ?? null,
             title: input.title,
             body: input.body,
             board: input.board ?? 'FEEDBACK',
@@ -139,11 +166,11 @@ export class PostsService {
               type: 'FOLLOWED_POST',
             })),
           );
-        return created;
+        return { post: created, created: true };
       },
-      (created) => [postCacheTag(created.id), DISCOVERY_CACHE_TAG],
+      ({ post, created }) => (created ? [postCacheTag(post.id), DISCOVERY_CACHE_TAG] : []),
     );
-    return responsePost(p);
+    return responsePost(result.post, NO_ANSWERS);
   }
   async updatePost(req: SessionRequest, id: string, input: TUpdatePostDto) {
     const u = requireUser(req),
@@ -159,46 +186,39 @@ export class PostsService {
     if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
-    return responsePost(
-      await this.cache.change(
-        async (tx) => {
-          await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
-          // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
-          const current = await tx.post.findFirst({
-            where: { id, ...ACTIVE_POST, authorId: u.id },
-            select: { id: true },
-          });
-          if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
-          if (input.body !== undefined || document !== undefined)
-            await this.media.sync(tx, u.id, id, document);
-          return (tx ?? this.db).post.update({
-            where: { id },
-            data: {
-              ...data,
-              ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
-              ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
-              ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
-              ...(input.body !== undefined || document === null
-                ? { document: document ?? Prisma.DbNull }
-                : {}),
-            },
-            include: {
-              ...postInclude,
-              answers: {
-                where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-                select: { id: true, helpful: true },
-              },
-            },
-          });
-        },
-        [postCacheTag(id), DISCOVERY_CACHE_TAG],
-      ),
+    const updated = await this.cache.change(
+      async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
+        const current = await tx.post.findFirst({
+          where: { id, ...ACTIVE_POST, authorId: u.id },
+          select: { id: true },
+        });
+        if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
+        if (input.body !== undefined || document !== undefined) await this.media.sync(tx, u.id, id, document);
+        const post = await (tx ?? this.db).post.update({
+          where: { id },
+          data: {
+            ...data,
+            ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
+            ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
+            ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
+            ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
+          },
+          include: postInclude,
+        });
+        return { post, counts: await answerCounts(tx, [id], excluded) };
+      },
+      [postCacheTag(id), DISCOVERY_CACHE_TAG],
     );
+    return responsePost(updated.post, updated.counts.get(id));
   }
   async deletePost(req: SessionRequest, id: string) {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
         // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 글도 지울 수 있어야 한다.
         const own = await tx.post.findFirst({
@@ -209,7 +229,7 @@ export class PostsService {
         await tx.post.update({
           where: { id },
           data: {
-            deletedAt: new Date(),
+            deletedAt: dayjs().toDate(),
             title: '\uC0AD\uC81C\uB41C \uC694\uCCAD',
             body: '',
             gameProfile: Prisma.DbNull,
@@ -243,13 +263,14 @@ export class PostsService {
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '요청자만 답변을 확인할 수 있습니다.');
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         const changed = await tx.answer.updateMany({
           where: { postId: id, readAt: null, ...ACTIVE_CONTENT },
-          data: { readAt: new Date() },
+          data: { readAt: dayjs().toDate() },
         });
         await tx.notification.updateMany({
           where: { userId: u.id, postId: id, readAt: null },
-          data: { readAt: new Date() },
+          data: { readAt: dayjs().toDate() },
         });
         return changed.count;
       },
@@ -261,12 +282,12 @@ export class PostsService {
   private listVisiblePosts(q: TListQueryDto, excluded: string[]) {
     const cursor = decodeCursor(q.cursor);
     const visibleAnswers = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
-    const answerFilter =
-      q.feedbackStatus === 'ANSWERED'
-        ? { some: visibleAnswers }
-        : q.feedbackStatus === 'WAITING' || q.unanswered === 'true'
-          ? { none: visibleAnswers }
-          : undefined;
+    // 답변 상태가 우선하고, 상태가 없으면 `unanswered=true`가 답변 대기 글만 고른다.
+    const answerFilter = match({ status: q.feedbackStatus, unanswered: q.unanswered })
+      .with({ status: 'ANSWERED' }, () => ({ some: visibleAnswers }))
+      .with({ status: 'WAITING' }, { unanswered: 'true' }, () => ({ none: visibleAnswers }))
+      .with({ status: undefined }, () => undefined)
+      .exhaustive();
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
@@ -297,13 +318,7 @@ export class PostsService {
       where,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: q.limit + 1,
-      include: {
-        ...postInclude,
-        answers: {
-          where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-          select: { id: true, helpful: true },
-        },
-      },
+      include: postInclude,
     });
   }
 }

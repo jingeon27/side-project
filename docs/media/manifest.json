@@ -1,0 +1,113 @@
+{
+  "capturedOn": "2026-11-04",
+  "timezone": "Asia/Seoul",
+  "sourceRepository": "https://github.com/jingeon27/side-project",
+  "sourceRef": "origin/develop",
+  "sourceCommit": "76327634a44a605055a213a8dc3331433ef63350",
+  "dataKind": "example-data",
+  "captures": [
+    {
+      "service": "game-mate",
+      "file": "game-mate-feed.png",
+      "route": "/ko/boards/friend-sale",
+      "width": 430,
+      "height": 860,
+      "sha256": "8225fffe9eea5c01d22ee0be1e2d4bdd0cce907b8a41dd33c5413be3fe6df6bc",
+      "bytes": 65653
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-desktop.png",
+      "route": "/ko/boards/friend-sale",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0d5b187fe71035cd98eae889288af97a73c77f4fc571f8912637ecfd911023a5",
+      "bytes": 74296
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-write.png",
+      "route": "/ko/write",
+      "width": 430,
+      "height": 860,
+      "sha256": "3c3603f529bf02352c4b6dbe1fe0b59683437df9d83ffca6391d9cb96746c53f",
+      "bytes": 44526,
+      "sourceChange": "게시글 등록 버튼의 화살표 아이콘을 제거한 글쓰기 화면 재촬영",
+      "sourceCommit": "824819b966b3288c4053c94ed7b75a9bcb780fed",
+      "capturedOn": "2026-11-05"
+    },
+    {
+      "service": "game-mate",
+      "file": "game-mate-write.gif",
+      "frames": 52,
+      "duration": 10.39,
+      "width": 430,
+      "height": 860,
+      "sha256": "c006cc3f047104c79e4e883e68a724a9f24347e3a8586bed18d213eea65a899c",
+      "kind": "browser-recording",
+      "bytes": 138048,
+      "sourceChange": "게시글 등록 버튼의 화살표 아이콘을 제거한 글 작성 흐름 재촬영",
+      "sourceCommit": "824819b966b3288c4053c94ed7b75a9bcb780fed",
+      "capturedOn": "2026-11-05"
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-explore.png",
+      "route": "/explore",
+      "width": 430,
+      "height": 860,
+      "sha256": "c3fa74f21279d445fb8a9525eeee4d2514455baca75d56b0da917286b927d7c9",
+      "bytes": 49089,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "그라데이션 그룹 아바타와 공개 배지, 글쓰기 버튼을 반영한 그룹 탐색 화면 재촬영",
+      "capturedOn": "2026-11-12"
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-desktop.png",
+      "route": "/",
+      "width": 1280,
+      "height": 800,
+      "sha256": "25b65f22f3a2b4b0aa93c86757512b9e712896dbccc7d46ea7f3d05e33deada1",
+      "bytes": 109529,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "참여한 그룹 목록과 그라데이션 글쓰기 버튼을 반영한 데스크톱 홈 재촬영",
+      "capturedOn": "2026-11-12"
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-group.png",
+      "route": "/groups/[groupId]",
+      "width": 430,
+      "height": 860,
+      "sha256": "6e6000807edda5c7fd0e2f53ef845e139025caec680c2bfb8bfd1949a0ebb067",
+      "bytes": 51929,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "테두리 없이 화면 끝까지 넓힌 게시물 피드를 반영한 그룹 화면 재촬영",
+      "capturedOn": "2026-11-12"
+    },
+    {
+      "service": "pisik",
+      "file": "pisik-group-comments.gif",
+      "frames": 21,
+      "duration": 7.34,
+      "width": 430,
+      "height": 860,
+      "sha256": "2f36bcdce1f8e9ee30d829e2cc02e1776cd794879889e83e0203c9d162f3ff1c",
+      "kind": "browser-recording",
+      "bytes": 261944,
+      "sourceCommit": "130c18af10cdd3dd64df24c4181d39f9ff606784",
+      "sourceChange": "브랜드 리디자인을 반영한 그룹 탐색·댓글 등록 흐름 재촬영",
+      "capturedOn": "2026-11-12"
+    },
+    {
+      "service": "blog",
+      "file": "blog-home.png",
+      "route": "/ko",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fc79ea37416cef306f38185ae0ad448ae59244053a317ec2b84562c3d8d247a0",
+      "bytes": 144800
+    }
+  ]
+}

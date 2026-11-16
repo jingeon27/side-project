@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # CI only. Skip a deployment when a newer commit on the deploy branch changed this service's paths: that commit's
 # own workflow run verifies and deploys the newer release. Unrelated commits never skip a verified release.
-# Keep each list equal to the workflow's on.push.paths (test/deployment/ci-superseded.spec.ts checks this).
+# 검사 선택과 같은 경로 정책을 사용한다.
 set -euo pipefail
 SERVICE=${1:-}
 case "$SERVICE" in
   photo-contest | game-feedback)
-    paths=("projects/$SERVICE/**" 'packages/**' 'package.json' 'yarn.lock' 'scripts/**' 'tsconfig.scripts.json'
-      '.yarnrc.yml' '.nvmrc' '.prettierrc.json' '.prettierignore' '.dockerignore'
-      ".github/workflows/$SERVICE.yml" '.github/workflows/shared-instance.yml' 'deploy/shared-instance/**')
+    policy="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/service-ci.ts"
+    # macOS의 Bash 3에서도 같은 정책을 읽는다. 경로에는 공백이 없다.
+    paths=()
+    while IFS= read -r path; do paths+=("$path"); done < <(node "$policy" paths "$SERVICE")
+    [[ ${#paths[@]} -gt 0 ]]
     ;;
   *)
     echo 'Usage: ci-superseded.sh <photo-contest|game-feedback> <branch | --paths>' >&2

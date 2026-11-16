@@ -54,6 +54,12 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+  @media (min-width: 1024px) {
+    .site-footer-inner {
+      max-width: var(--desktop-content-width);
+      padding-inline: var(--desktop-page-inset);
+    }
+  }
   @media (max-width: 760px) {
     .site-footer-inner {
       flex-direction: column;

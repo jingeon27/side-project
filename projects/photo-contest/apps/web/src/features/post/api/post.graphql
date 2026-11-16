@@ -19,6 +19,8 @@ fragment GalleryPostCard on GalleryPost {
   body
   kind
   mediaUrl
+  mediaWidth
+  mediaHeight
   linkUrl
   createdAt
   likeCount
@@ -34,8 +36,11 @@ fragment GalleryPostCard on GalleryPost {
   }
 }
 query MyGalleryPosts($groupId: ID, $offset: Int!, $limit: Int!) {
-  myGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
-    ...GalleryPostCard
+  myGalleryPostsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
 query GalleryPosts(
@@ -46,7 +51,7 @@ query GalleryPosts(
   $offset: Int!
   $limit: Int!
 ) {
-  galleryPosts(
+  galleryPostsPage(
     groupId: $groupId
     contestId: $contestId
     categoryId: $categoryId
@@ -54,11 +59,20 @@ query GalleryPosts(
     offset: $offset
     limit: $limit
   ) {
-    ...GalleryPostCard
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
-mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
-  requestPostUpload(groupId: $groupId, contentType: $contentType, byteSize: $byteSize) {
+mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!, $width: Int, $height: Int) {
+  requestPostUpload(
+    groupId: $groupId
+    contentType: $contentType
+    byteSize: $byteSize
+    width: $width
+    height: $height
+  ) {
     id
     url
     fields {
@@ -69,6 +83,7 @@ mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!
   }
 }
 mutation CreatePost(
+  $clientRequestId: String
   $categoryId: ID
   $contestId: ID
   $groupId: ID!
@@ -79,6 +94,7 @@ mutation CreatePost(
   $rightsConfirmed: Boolean!
 ) {
   createPost(
+    clientRequestId: $clientRequestId
     categoryId: $categoryId
     contestId: $contestId
     groupId: $groupId
@@ -93,12 +109,16 @@ mutation CreatePost(
 }
 mutation LikePost($postId: ID!) {
   likePost(postId: $postId) {
-    ...GalleryPostCard
+    id
+    likeCount
+    likedByMe
   }
 }
 mutation UnlikePost($postId: ID!) {
   unlikePost(postId: $postId) {
-    ...GalleryPostCard
+    id
+    likeCount
+    likedByMe
   }
 }
 mutation DeletePost($postId: ID!) {
@@ -122,6 +142,12 @@ query PostDownload($postId: ID!) {
   }
 }
 
+fragment GalleryPostAuthor on GalleryPost {
+  id
+  author {
+    id
+  }
+}
 fragment PostCommentCard on PostComment {
   parentId
   replyCount
@@ -155,8 +181,11 @@ mutation DeletePostComment($commentId: ID!) {
 }
 
 query PublicGalleryPosts($sort: PostSort!, $offset: Int!, $limit: Int!) {
-  publicGalleryPosts(sort: $sort, offset: $offset, limit: $limit) {
-    ...GalleryPostCard
+  publicGalleryPostsPage(sort: $sort, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GalleryPostCard
+    }
   }
 }
 
@@ -166,10 +195,13 @@ query RefreshPost($id: ID!) {
   }
 }
 query HiddenGalleryPosts($groupId: ID!, $offset: Int!, $limit: Int!) {
-  hiddenGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
-    id
-    title
-    createdAt
+  hiddenGalleryPostsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      id
+      title
+      createdAt
+    }
   }
 }
 mutation SetPostHidden($postId: ID!, $hidden: Boolean!) {

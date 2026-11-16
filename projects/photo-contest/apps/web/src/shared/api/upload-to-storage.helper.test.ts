@@ -14,9 +14,9 @@ function stallingFetch() {
   const send = vi.fn(
     (_url: string, init?: RequestInit) =>
       new Promise<Response>((_resolve, reject) => {
-        const abort = () => reject(new DOMException('aborted', 'AbortError'));
-        if (init?.signal?.aborted) abort();
-        init?.signal?.addEventListener('abort', abort);
+        const handleAbort = () => reject(new DOMException('aborted', 'AbortError'));
+        if (init?.signal?.aborted) handleAbort();
+        init?.signal?.addEventListener('abort', handleAbort);
       }),
   );
   vi.stubGlobal('fetch', send);

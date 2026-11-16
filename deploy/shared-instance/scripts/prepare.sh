@@ -6,7 +6,18 @@ ROOT=${SIDE_DEPLOY_ROOT:-/srv/side-project}
 [[ -d "$ROOT" && -w "$ROOT" ]]
 mkdir -p "$ROOT/proxy" "$ROOT/database" "$ROOT/services/game-feedback/releases" "$ROOT/services/photo-contest/releases"
 directory="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cp "$directory/compose.yaml" "$directory/Caddyfile" "$ROOT/proxy/"
+# 실행 중인 Caddy는 Caddyfile을 재시작할 때 다시 읽는다. DB 구성 때문에 다시 실행해도 검증·백업·reload 없이
+# 덮어쓰지 않도록 프록시 파일은 처음 한 번만 복사한다. 이미 있는 파일이 이 checkout과 다르면 반영 방법만 알린다.
+for file in compose.yaml Caddyfile; do
+  if [[ ! -f "$ROOT/proxy/$file" ]]; then cp "$directory/$file" "$ROOT/proxy/"; fi
+done
+if [[ "$(<"$directory/Caddyfile")" != "$(<"$ROOT/proxy/Caddyfile")" ]]; then
+  echo 'Kept the host proxy Caddyfile, which differs from this checkout. Validate and apply it with:' >&2
+  printf '  bash %q sync %q\n' "$directory/scripts/proxy.sh" "$directory/Caddyfile" >&2
+fi
+if [[ "$(<"$directory/compose.yaml")" != "$(<"$ROOT/proxy/compose.yaml")" ]]; then
+  echo 'Kept the host proxy compose.yaml, which differs from this checkout. Review and copy it, then run proxy.sh validate and proxy.sh start.' >&2
+fi
 cp "$directory/database/compose.yaml" "$directory/database/pg_hba.conf" "$directory/database/bootstrap.sql" "$ROOT/database/"
 # The postgres user in the container reads these through read-only bind mounts.
 chmod 644 "$ROOT/database/pg_hba.conf" "$ROOT/database/bootstrap.sql"

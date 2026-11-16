@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import type { NextConfig } from 'next';
 
 import createMDX from '@next/mdx';
@@ -11,16 +9,14 @@ import { headers } from './security-headers';
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
+  images: { formats: ['image/avif', 'image/webp'] },
   experimental: { globalNotFound: true },
   pageExtensions: ['ts', 'tsx', 'md', 'mdx'],
   headers,
-  async redirects() {
-    return JSON.parse(readFileSync(new URL('./content/generated-redirects.json', import.meta.url), 'utf8'));
-  },
 };
 const withMDX = createMDX({
   options: {
-    remarkPlugins: ['remark-gfm'],
+    remarkPlugins: [['remark-gfm', { singleTilde: false }], 'remark-cjk-friendly'],
     rehypePlugins: [
       'rehype-slug',
       [

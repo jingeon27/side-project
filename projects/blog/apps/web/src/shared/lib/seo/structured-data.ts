@@ -2,7 +2,7 @@ import type { Locale } from '@/i18n/routing';
 import { labels } from '@/shared/config/labels';
 import { absoluteUrl, author } from '@/shared/config/site';
 
-import { articlePath, type ArticleSeo } from './metadata';
+import { articleImagePath, articlePath, type ArticleSeo } from './metadata';
 
 export function websiteJsonLd(locale: Locale) {
   return {
@@ -44,7 +44,7 @@ export function articleJsonLd(article: ArticleSeo) {
         inLanguage: article.locale,
         keywords: article.keywords.join(', '),
         articleSection: article.category,
-        image: absoluteUrl(article.coverImage || `/og/${article.locale}/${article.id}`),
+        image: absoluteUrl(articleImagePath(article)),
         author: { '@type': 'Person', name: author.name, url: author.github },
         publisher: { '@type': 'Person', name: author.name, url: author.github },
       },

@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { match } from 'ts-pattern';
 
 interface ITestImageOptions {
   width?: number;
@@ -15,7 +16,9 @@ export function createTestImage({
   format = 'png',
 }: ITestImageOptions = {}) {
   const image = sharp({ create: { width, height, channels: 3, background: color } });
-  if (format === 'jpeg') return image.jpeg().toBuffer();
-  if (format === 'webp') return image.webp().toBuffer();
-  return image.png().toBuffer();
+  return match(format)
+    .with('png', () => image.png().toBuffer())
+    .with('jpeg', () => image.jpeg().toBuffer())
+    .with('webp', () => image.webp().toBuffer())
+    .exhaustive();
 }

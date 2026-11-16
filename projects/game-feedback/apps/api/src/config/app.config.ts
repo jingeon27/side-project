@@ -1,17 +1,14 @@
-import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
+import type { IdentityProvider, TIdentityProviders } from '../auth/oauth/providers/identity-provider';
 import {
   resolveCacheRevalidationConfig,
   type ICacheRevalidationConfig,
 } from '../cache-invalidation/cache-invalidation.config';
 import { forwardedClientKey } from '../common/http/forwarded-client';
 import { assertDatabaseUrl } from '../database/database-url';
-import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
-import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
 import type { PrismaClient } from '../generated/prisma';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
 import { resolveAppAuthCallbackUrl } from './app-auth-callback';
-import { resolveIdentityProviders } from './identity-providers';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
@@ -43,8 +40,9 @@ export interface AppConfig {
   demoMode: boolean;
   testAuthEnabled: boolean;
   webOrigin: string;
-  /** 앱 로그인 일회용 코드를 보내는 검증된 https 콜백(App Link·Universal Link) */
+  /** 앱 로그인 일회용 코드를 보내는 WEB_ORIGIN의 고정 콜백 URL(`APP_AUTH_CALLBACK_PATH`). 현재 앱은 받지 않는 호환 계약이다. */
   appAuthCallbackUrl: string;
+  /** 명시적 override만 보관하며 기본 전략 생성은 AuthModule의 Nest factory가 담당한다. */
   identityProvider?: IdentityProvider;
   identityProviders: TIdentityProviders;
   profileProvider?: ProfileProvider;
@@ -65,11 +63,6 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     throw new Error('Production WEB_ORIGIN must use HTTPS.');
   const appAuthCallbackUrl = resolveAppAuthCallbackUrl(options.appAuthCallbackUrl, webOrigin, production);
 
-  const identityProviders = resolveIdentityProviders(
-    webOrigin,
-    options.identityProviders,
-    options.identityProvider,
-  );
   const cacheRevalidation = options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env);
   const forwardedClientSecret = options.forwardedClientSecret ?? cacheRevalidation?.secret;
   return {
@@ -87,16 +80,8 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     appAuthCallbackUrl,
     rateLimit: options.rateLimit !== false,
     mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
-    identityProvider: identityProviders.google,
-    identityProviders,
-    profileProvider:
-      options.profileProvider ??
-      (demoMode
-        ? new DemoProfileProvider()
-        : process.env.SUPERCELL_API_TOKEN
-          ? new SupercellProfileProvider(process.env.SUPERCELL_API_TOKEN)
-          : testAuthEnabled
-            ? new DemoProfileProvider()
-            : undefined),
+    identityProvider: options.identityProvider,
+    identityProviders: options.identityProviders ?? {},
+    profileProvider: options.profileProvider,
   };
 }

@@ -1,17 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { requireAdmin } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
-import { ChatAttachmentService } from '../../chat/chat-attachment.service';
+import { AdminChatAttachmentSchema } from '@game-feedback/contracts';
+
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
+import { ChatAttachmentService } from '../../chat/attachment/chat-attachment.service';
 import { type TSendMessageDto } from '../../chat/chat-input.dto';
-import { ChatMessageService } from '../../chat/chat-message.service';
+import { ChatMessageService } from '../../chat/message/chat-message.service';
 import { ApiError } from '../../common/http/api-error';
 import { type TListQueryDto } from '../../common/http/list-query.dto';
+import { decodeCursor, encodeCursor } from '../../common/pagination';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../../generated/prisma';
 import { authorDto, authorSelect } from '../../users/user.presenter';
-import { type TSupportStatusDto } from './support-input.dto';
+import { type TAdminSupportListQueryDto, type TSupportStatusDto } from './support-input.dto';
 
 const include = {
   requester: { select: authorSelect },
@@ -45,37 +48,68 @@ export class AdminSupportService {
     });
     if (!thread) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
   }
-  async messages(req: SessionRequest, id: string, query: TListQueryDto) {
-    await this.requireThread(req, id);
-    const messages = await this.chat.messages(req, id, query);
+  async messages(req: SessionRequest, conversationId: string, query: TListQueryDto) {
+    await this.requireThread(req, conversationId);
+    const messages = await this.chat.messages(req, conversationId, query);
     return {
       ...messages,
       items: messages.items.map((message) => ({
         ...message,
-        attachments: message.attachments?.map((file) => ({
-          ...file,
-          url: `/api/admin/support/${encodeURIComponent(id)}/attachments/${encodeURIComponent(file.id)}`,
-        })),
+        // 계약의 관리자 첨부 주소와 어긋나면 관리자 화면 대신 여기서 실패하게 한다.
+        attachments: message.attachments?.map((file) =>
+          AdminChatAttachmentSchema.parse({
+            ...file,
+            url: `/api/admin/support/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(file.id)}`,
+          }),
+        ),
       })),
     };
   }
-  async download(req: SessionRequest, id: string, attachmentId: string, res: Response) {
-    await this.requireThread(req, id);
-    return this.attachments.download(req, id, attachmentId, res);
+  async download(req: SessionRequest, conversationId: string, attachmentId: string, res: Response) {
+    await this.requireThread(req, conversationId);
+    return this.attachments.download(req, conversationId, attachmentId, res);
   }
-  async send(req: SessionRequest, id: string, body: TSendMessageDto) {
-    await this.requireThread(req, id);
-    return this.chat.send(req, id, body);
+  async send(req: SessionRequest, conversationId: string, body: TSendMessageDto) {
+    await this.requireThread(req, conversationId);
+    return this.chat.send(req, conversationId, body);
   }
-  async list(req: SessionRequest) {
+  /** 최근 대화가 위로 오는 문의 목록. 커서는 마지막 문의의 (대화 updatedAt, id)다. */
+  async list(req: SessionRequest, query: TAdminSupportListQueryDto) {
     const admin = requireAdmin(req);
+    const cursor = decodeCursor(query.cursor);
     const rows = await this.db.supportConversation.findMany({
-      where: { adminId: admin.id },
+      where: {
+        adminId: admin.id,
+        ...(query.status ? { status: query.status } : {}),
+        ...(cursor
+          ? {
+              OR: [
+                { conversation: { updatedAt: { lt: cursor.createdAt } } },
+                { conversation: { updatedAt: cursor.createdAt }, id: { lt: cursor.id } },
+              ],
+            }
+          : {}),
+      },
       include,
-      orderBy: { conversation: { updatedAt: 'desc' } },
-      take: 100,
+      orderBy: [{ conversation: { updatedAt: 'desc' } }, { id: 'desc' }],
+      take: query.limit + 1,
     });
-    return rows.map(supportThread);
+    const page = rows.slice(0, query.limit);
+    const last = page[page.length - 1];
+    return {
+      items: page.map(supportThread),
+      nextCursor:
+        rows.length > query.limit && last
+          ? encodeCursor({ id: last.id, createdAt: last.conversation.updatedAt })
+          : null,
+    };
+  }
+  /** 목록 페이지와 무관하게 주소의 문의 하나를 연다. 다른 관리자의 문의는 404다. */
+  async thread(req: SessionRequest, id: string) {
+    const admin = requireAdmin(req);
+    const row = await this.db.supportConversation.findFirst({ where: { id, adminId: admin.id }, include });
+    if (!row) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
+    return supportThread(row);
   }
   async status(req: SessionRequest, id: string, body: TSupportStatusDto) {
     const admin = requireAdmin(req);

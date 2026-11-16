@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
 import { isLocale } from '@/i18n/routing';
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { labels } from '@/shared/config/labels';
 
 export async function GET(_request: Request, context: { params: Promise<{ locale: string; id: string }> }) {

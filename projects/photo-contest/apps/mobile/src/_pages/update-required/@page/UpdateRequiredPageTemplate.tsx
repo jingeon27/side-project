@@ -38,9 +38,9 @@ export function UpdateRequiredPageTemplate({
     });
   }, [minimumVersion]);
 
-  function handleOpenStore() {
+  const handleOpenStore = () => {
     if (storeUrl) void openExternalUrl(storeUrl, null);
-  }
+  };
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
@@ -50,10 +50,10 @@ export function UpdateRequiredPageTemplate({
           새 버전으로 업데이트해 주세요
         </Text>
         <Text style={styles.description}>
-          지금 버전에서는 더 이상 사진 공모전을 이용할 수 없어요. 스토어에서 최신 버전을 받아 주세요.
+          지금 버전에서는 더 이상 피식을 이용할 수 없어요. 스토어에서 최신 버전으로 업데이트해 주세요.
         </Text>
         <Text style={styles.version}>
-          현재 버전 {currentVersion} · 필요한 버전 {minimumVersion} 이상
+          현재 {currentVersion} 버전을 사용 중이에요. {minimumVersion} 이상이 필요해요.
         </Text>
         {storeUrl ? (
           <Pressable
@@ -99,6 +99,8 @@ function createStyles(colors: TNativeColors) {
       marginBottom: 28,
       color: colors.muted,
       fontSize: 13,
+      lineHeight: 20,
+      textAlign: 'center',
     },
     button: {
       minWidth: 180,

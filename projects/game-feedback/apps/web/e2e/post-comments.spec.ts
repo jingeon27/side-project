@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
-
 import type { PostDetail } from '@game-feedback/contracts';
+
+import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
@@ -16,10 +16,13 @@ test('public comments identify the post author and remain readable on mobile and
   const comments = page.getByRole('region', { name: /^댓글/ });
   await expect(comments.getByRole('heading', { level: 2 })).toHaveText(`댓글${detail.comments.length}`);
   await expect(comments.getByRole('listitem')).toHaveCount(detail.comments.length);
-  await expect(comments.locator('article.mine')).toHaveCount(0);
+  await expect(comments.locator('article[data-mine]')).toHaveCount(0);
   const authorComment = comments.locator('article').filter({ hasText: ownComment.body });
   await expect(authorComment.locator('.comment-author-label')).toHaveText('작성자');
   await expect(authorComment.locator('time')).toHaveAttribute('datetime', ownComment.createdAt);
+  await expect(comments).not.toContainText('#GG829JGY');
+  await expect(comments).not.toContainText('#9QY82JGY');
+  await expect(comments.getByText('인증 유저', { exact: true })).toBeVisible();
   await expect(comments.getByRole('button', { name: '로그인하고 댓글 남기기', exact: true })).toBeVisible();
   await expect(page.locator('.detail-card .detail-author')).toContainText(detail.post.author.nickname);
   await expect(page.locator('.detail-card .avatar')).toHaveCount(1);
@@ -98,7 +101,7 @@ test('comment drafts support line breaks and author chat opens the correct conve
   await page.unroute(commentEndpoint);
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
   await expect(page.locator('.comment-content > p')).toHaveText('첫 번째 줄\n두 번째 줄');
-  await expect(page.locator('article.comment.mine')).toHaveCount(1);
+  await expect(page.locator('article.comment[data-mine]')).toHaveCount(1);
   await expect(page.locator('.comment-author-label')).toHaveText('작성자');
   await expect(page.getByText('아직 댓글이 없어요.', { exact: true })).toHaveCount(0);
   await expect(input).toHaveValue('');
@@ -108,12 +111,12 @@ test('comment drafts support line breaks and author chat opens the correct conve
   await page.request.post('/api/auth/test-login', { headers, data: { accountId: 'sample-user-3' } });
   await page.reload();
   const comments = page.getByRole('region', { name: /^댓글/ });
-  await expect(comments.locator('article.mine')).toHaveCount(0);
+  await expect(comments.locator('article[data-mine]')).toHaveCount(0);
   const reply = `내 댓글 ${'abcdefghij'.repeat(20)}`;
   await input.fill(reply);
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
-  const mine = comments.locator('article.mine .comment-bubble');
-  const theirs = comments.locator('article:not(.mine) .comment-bubble');
+  const mine = comments.locator('article[data-mine] .comment-bubble');
+  const theirs = comments.locator('article:not([data-mine]) .comment-bubble');
   await expect(mine).toHaveText(reply);
   await expect(theirs).toHaveText('첫 번째 줄\n두 번째 줄');
   expect(await mine.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(
@@ -125,8 +128,11 @@ test('comment drafts support line breaks and author chat opens the correct conve
     const ownBox = await mine.boundingBox();
     const peerBox = await theirs.boundingBox();
     if (!ownBox || !peerBox) throw new Error('Both comment bubbles must be visible.');
-    expect(ownBox.x + ownBox.width).toBeGreaterThan(peerBox.x + peerBox.width);
-    expect((await page.locator('.comment-compose').boundingBox())?.height).toBeLessThanOrEqual(64);
+    expect(Math.abs(ownBox.x - peerBox.x)).toBeLessThanOrEqual(1);
+    const inputBox = await input.boundingBox();
+    expect(inputBox?.height).toBeGreaterThanOrEqual(44);
+    expect(inputBox?.y).toBeLessThan(peerBox.y);
+    await expect(input).toHaveAttribute('aria-describedby', /\S+/);
   }
   await page.setViewportSize({ width: 393, height: 852 });
   await comments.evaluate((node) => node.scrollIntoView({ block: 'start' }));

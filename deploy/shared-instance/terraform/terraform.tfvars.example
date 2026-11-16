@@ -44,3 +44,11 @@ backup_bucket_name = "your-database-backup-bucket"
 # name_prefix        = "side-shared"
 # vpc_cidr           = "10.40.0.0/16"
 # availability_zone  = "ap-northeast-2a"
+
+# GitHub Actions → OIDC → SSM 터널. 지정한 운영 Environment는 GitHub에서 main 브랜치만 허용한다.
+# 실제 prefix는 GitHub API GET /repos/<owner>/<repo>/actions/oidc/customization/sub의 sub_claim_prefix로 확인한다.
+# 새 저장소는 소유자·저장소의 immutable ID를 포함한다. 액세스 키나 SSH 비밀키를 여기에 넣지 않는다.
+# github_oidc_subjects = [
+#   "repo:owner@123456/repository@789012:environment:game-feedback-production",
+#   "repo:owner@123456/repository@789012:environment:photo-contest-production",
+# ]

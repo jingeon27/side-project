@@ -312,7 +312,7 @@ describe('HTTP failures and cancellation', () => {
     );
     await expect(getSession()).rejects.toMatchObject({ status: 502, errorCode: 'REQUEST_FAILED' });
   });
-  it('preserves network and request/body cancellation failures as the original errors', async () => {
+  it('classifies fetch failures without exposing transport error details', async () => {
     const network = new TypeError('Failed to fetch');
     vi.stubGlobal(
       'fetch',
@@ -320,7 +320,14 @@ describe('HTTP failures and cancellation', () => {
         throw network;
       }),
     );
-    await expect(getHealth()).rejects.toBe(network);
+    await expect(getHealth()).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 0,
+      errorCode: 'NETWORK_ERROR',
+      message: '네트워크 요청을 완료하지 못했습니다.',
+    });
+  });
+  it('preserves request/body cancellation failures as the original errors', async () => {
     const aborted = new DOMException('Aborted', 'AbortError');
     vi.stubGlobal(
       'fetch',
@@ -340,6 +347,29 @@ describe('HTTP failures and cancellation', () => {
       })),
     );
     await expect(getHealth()).rejects.toBe(aborted);
+  });
+  it('preserves an explicit signal cancellation reason', async () => {
+    const controller = new AbortController();
+    const cancelled = new Error('caller cancelled');
+    controller.abort(cancelled);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(cancelled));
+    await expect(getHealth({ signal: controller.signal })).rejects.toBe(cancelled);
+  });
+  it('does not classify request construction or response validation bugs as transport failures', async () => {
+    const fetcher = respond({ ok: true });
+    await expect(
+      apiFetch('/health', { baseUrl: 'invalid origin', schema: z.unknown() }),
+    ).rejects.toBeInstanceOf(TypeError);
+    await expect(
+      apiFetch('/health', { headers: { 'invalid\nheader': 'value' }, schema: z.unknown() }),
+    ).rejects.toBeInstanceOf(TypeError);
+    expect(fetcher).not.toHaveBeenCalled();
+
+    const failure = new RangeError('unexpected validator failure');
+    const schema = z.unknown().transform(() => {
+      throw failure;
+    });
+    await expect(apiFetch('/health', { schema })).rejects.toBe(failure);
   });
   it('keeps schema failures compatible with existing API error handling', () => {
     expect(new ApiResponseValidationError(200)).toBeInstanceOf(ApiError);

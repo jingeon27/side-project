@@ -1,7 +1,14 @@
 import type { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 
-import { OnboardInputSchema, PostInputSchema } from '@game-feedback/contracts';
+import {
+  DemoInputSchema,
+  isReservedNickname,
+  NewNicknameSchema,
+  OnboardInputSchema,
+  PostInputSchema,
+  UpdateProfileInputSchema,
+} from '@game-feedback/contracts';
 
 import {
   assertDatabaseUrl,
@@ -79,6 +86,39 @@ describe('cursor and request validation', () => {
         authorId: 'victim',
       }).success,
     ).toBe(false));
+  it('rejects a new nickname that reads as the support account, an admin or a withdrawn user', () => {
+    const impersonations = [
+      '운영자',
+      '운 영 자',
+      // 한글 채움 문자(U+3164)는 글자로 분류돼 형식 검사를 통과하지만 화면에는 보이지 않는다.
+      `운${String.fromCodePoint(0x3164)}영자`,
+      '관리자',
+      '운영팀',
+      'ADMIN',
+      'Ａｄｍｉｎ',
+      'Administrator',
+      '탈퇴한 사용자',
+      '탈퇴한_사용자',
+    ];
+    for (const nickname of impersonations) {
+      expect(isReservedNickname(nickname), nickname).toBe(true);
+      expect(NewNicknameSchema.safeParse(nickname).success, nickname).toBe(false);
+      expect(DemoInputSchema.safeParse({ nickname }).success, nickname).toBe(false);
+      expect(
+        OnboardInputSchema.safeParse({ nickname, acceptedTerms: true, ageConfirmed: true }).success,
+        nickname,
+      ).toBe(false);
+      // 프로필 저장은 지금 닉네임을 늘 함께 보내므로 형식만 본다. 바뀐 닉네임은 ProfileService가 거부한다.
+      expect(UpdateProfileInputSchema.safeParse({ nickname, bio: '' }).success, nickname).toBe(true);
+    }
+  });
+  it('matches whole names only, so names that merely contain a reserved word stay usable', () => {
+    for (const nickname of ['badminton', '운영테스터', '카테고리관리자', '관리자테스트', '운영자 지정 전']) {
+      expect(isReservedNickname(nickname), nickname).toBe(false);
+      expect(NewNicknameSchema.safeParse(nickname).success, nickname).toBe(true);
+      expect(UpdateProfileInputSchema.safeParse({ nickname, bio: '' }).success, nickname).toBe(true);
+    }
+  });
 });
 describe('external adapter boundaries', () => {
   it('requests only openid and enables PKCE plus nonce', () => {

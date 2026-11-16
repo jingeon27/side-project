@@ -1,8 +1,25 @@
 # Sentry·Amplitude 수신 검증
 
-설정은 `projects/photo-contest/.env` 하나에서 읽는다. API는 SENTRY_DSN, 웹은 NEXT_PUBLIC_SENTRY_DSN·NEXT_PUBLIC_AMPLITUDE_API_KEY를 사용한다. Expo 앱도 같은 공개 키를 설정에 담으며 별도 모바일 env 키를 쓰지 않는다. 환경은 기존 NODE_ENV를 사용한다.
+설정은 `projects/photo-contest/.env` 하나에서 읽는다. API는 SENTRY_DSN, 웹은 NEXT_PUBLIC_SENTRY_DSN·NEXT_PUBLIC_AMPLITUDE_API_KEY를 사용한다. Expo 앱도 같은 공개 키를 설정에 담는다. 모바일 전용 관측 키는 만들지 않으며, 앱 빌드만 읽는 MOBILE_EAS_PROJECT_ID(푸시)와 MOBILE_IOS_APP_STORE_ID(강제 업데이트 화면의 App Store 버튼)는 관측과 무관하다. 환경은 기존 NODE_ENV를 사용한다.
 
 프로젝트 집계 명령뿐 아니라 `@photo-contest/web dev/build/start`도 실행 전에 루트 .env를 읽는다. 명시한 프로세스 값(빈 키 포함)이 우선한다. build/start는 프레임워크 NODE_ENV를 production으로 고정한다. 공개 키는 빌드 전에 반영해야 한다.
+
+`SENTRY_RELEASE`는 API와 Next 서버·브라우저에서 사용한다. 운영 CI는 검증할 이미지를 빌드할 때 커밋 SHA를 넣고 배포도 같은 SHA의 이미지 digest를 사용한다. 로컬에서는 비워 두거나 검사할 버전을 넣은 뒤 웹을 다시 빌드한다. release는 브라우저 번들에도 들어가는 공개 값이므로 비밀 정보를 넣지 않는다.
+
+## API p95와 GraphQL 성능
+
+API DSN이 있으면 수동 HTTP·GraphQL span을 10% 샘플링하고, Sentry Application Metrics는 추적 샘플링과 별개로 모든 계측 호출을 기록한다. 자동 HTTP/SQL 계측은 끈다. `photo-content/photo-contest-server`의 Metrics에서 `service:photo-contest layer:api`와 `sentry.environment:production`·release로 운영 데이터를 구분한다.
+
+| 메트릭                                        | 측정 범위                                                                                                                                                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api.http.duration` / `api.http.requests`     | 본문 파싱·Origin·권한·처리부터 응답 쓰기 완료까지의 ms와 요청 수. 라우트 템플릿·메서드·상태·`outcome=ok/client_error/server_error/aborted`로 구분한다. health probe는 제외한다. 클라이언트 네트워크·웹 프록시 시간은 포함하지 않는다.                                           |
+| `api.graphql.duration` / `api.graphql.fields` | 스키마의 최상위 query/mutation resolver가 끝날 때까지의 ms와 실행 필드 수. `graphql.field`, `graphql.operation.type`, `outcome=ok/rejected/failed`로 구분한다. 중첩 필드 전체와 응답 직렬화 시간은 HTTP 지표에서 본다. 캐시 응답과 문서 검증 오류에는 실행 필드가 없을 수 있다. |
+
+HTTP p95는 `metric.name:api.http.duration`에 `p95(value)`를 조회한다. GraphQL 요청 전체는 `http.route:/graphql`, 느린 필드는 `metric.name:api.graphql.duration`을 graphql.field별로 나눠 본다. 업무 거절과 내부 오류는 GraphQL HTTP 200 응답에도 생기므로 `api.graphql.fields outcome:rejected/failed`를 함께 확인한다. 필드 수를 HTTP 요청 수로 해석하거나 필드별 p95를 더하지 않는다.
+
+Traces에서는 `METHOD /라우트/:id`와 `query 필드`·`mutation 필드`를 같은 trace로 연결한다. 원본 문서·변수·alias·클라이언트 operationName·ID는 성능 정보에 넣지 않는다. 허용 목록의 메트릭과 수치·유한한 차원만 남기고, SDK가 beforeSendMetric 뒤에 합치는 scope 속성도 최종 envelope에서 제거한다.
+
+`src/monitoring/performance.database.integration.spec.ts`는 실제 격리 DB·Nest HTTP·Apollo 실행으로 추적 연결, 샘플링 0의 메트릭, HTTP 200 업무/내부 오류, Origin·파싱 거절을 검증한다. 별도 Apollo unit 검사는 네트워크 없이 실제 플러그인 실행과 전송 데이터 제거를 확인한다.
 
 ## 실제 전송 확인
 
@@ -32,6 +49,10 @@ Sentry의 Insights → Frontend → Web Vitals에서 `photo-contest-web` 프로�
 2026-10-26 격리한 로컬 운영 빌드에서 실제 수집 응답 200과 [LCP·CLS·INP span 수신](https://photo-content.sentry.io/explore/traces/trace/a0661ed8327b4d2b9e65d9fc97ca4d11)을 MCP로 확인했다. 테스트용 클릭을 사용한 수집 검증이며 운영 배포는 별도다.
 
 ## 데이터와 구분
+
+공개 소개의 시작 버튼은 `landing_start_clicked`를 보낸다. `placement`는 header/hero/guide, `source_path_template`와 `destination_path_template`는 ID·쿼리·해시를 제거한 경로, `redirect_applied`는 지정한 내부 목적지가 적용됐는지 나타낸다. 그룹 상세로 가는 경우 유효한 cuid만 `group_id`로 추가한다. 원본 redirect URL과 검색어, 초대 토큰은 보내지 않는다.
+
+`/about?redirect=%2Fgroups%2F<groupId>`에서 시작하면 기존 인증 게이트의 `next`를 거쳐 해당 그룹으로 돌아간다. `redirect`가 없거나 외부 주소·인증 화면을 지정하면 기본 홈으로 이동한다. `/about/how-it-works`의 시작 버튼도 같은 쿼리를 지원한다.
 
 Sentry는 API·Next 서버·브라우저에 각각 layer=api/next-server/browser와 service=photo-contest를 붙인다. 브라우저는 기존 client=web/app도 유지한다. 웹 오류의 메시지·extra·request·user·breadcrumbs·문맥과 스택 쿼리·지역 변수·소스 문맥은 제거한다. Next SDK의 contexts.nextjs.request_path도 제거 대상이다. 오류 종류, React 오류 번호와 호출 위치는 유지한다. 수집 서비스 자체의 IP/지역 보관 설정은 별도로 관리한다.
 

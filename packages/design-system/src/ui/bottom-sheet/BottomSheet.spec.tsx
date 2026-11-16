@@ -179,6 +179,38 @@ function ControlledSheet({
 }
 
 describe('BottomSheet 조합 API', () => {
+  it('명시한 초기 포커스와 닫은 뒤 복귀 대상을 primitive에 위임해야 한다', async () => {
+    function FocusSheet() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>그룹 선택 열기</Button>
+          <Button id="return-to-compose">게시글 작성</Button>
+          <BottomSheet.Root
+            open={open}
+            onOpenChange={setOpen}
+            initialFocus={() => document.getElementById('initial-group')}
+            finalFocus={() => document.getElementById('return-to-compose')}
+          >
+            <BottomSheet.Header title="그룹 선택">
+              <BottomSheet.Close label="닫기" />
+            </BottomSheet.Header>
+            <BottomSheet.Content>
+              <Button id="initial-group">첫 그룹</Button>
+            </BottomSheet.Content>
+          </BottomSheet.Root>
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<FocusSheet />);
+    await user.click(screen.getByRole('button', { name: '그룹 선택 열기' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '첫 그룹' })).toHaveFocus());
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: '게시글 작성' })).toHaveFocus());
+  });
+
   it('고정 높이 시트는 손잡이를 장식으로만 그리고 슬롯·닫기·닫힘 완료를 지원해야 한다', async () => {
     const user = userEvent.setup();
     const onClosed = vi.fn();

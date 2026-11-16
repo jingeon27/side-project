@@ -43,16 +43,21 @@ const config: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: resolve(import.meta.dirname, '../../../..'),
   poweredByHeader: false,
-  // Next 16 dev 서버는 distDir마다 잠금을 건다. e2e는 다른 distDir(.next/e2e)로 띄워 사용자의 dev 서버와 겹치지 않게 한다.
+  cacheComponents: true,
+  partialPrefetching: true,
+  // 배포 커밋 SHA는 공개 값이며 브라우저 오류도 같은 release로 묶는다.
+  env: { SENTRY_RELEASE: process.env.SENTRY_RELEASE?.trim() || '' },
+  // Next 16 dev 서버는 distDir마다 잠금을 건다. WEB_ORIGIN이 loopback 3300~3399 포트면 .next/test-<포트>를 distDir로 써 사용자의 dev 서버와 겹치지 않게 한다.
   distDir: isolatedWebPort ? `.next/test-${isolatedWebPort}` : '.next',
   // 격리 API로 다시 실행하는 e2e는 이전 컴파일 상태를 이어받지 않는다.
-  ...(process.env.NODE_ENV === 'test' ? { experimental: { turbopackFileSystemCacheForDev: false } } : {}),
+  experimental: {
+    ...(process.env.NODE_ENV === 'test' ? { turbopackFileSystemCacheForDev: false } : {}),
+    ...(isolatedWebPort ? { exposeTestingApiInProductionBuild: true } : {}),
+  },
   // 워크스페이스 패키지는 TypeScript 소스를 그대로 내보낸다.
   transpilePackages: ['@photo-contest/bridge', '@side/design-system'],
   async headers() {
-    // 앱 로그인 콜백 안내 페이지는 Route Handler가 더 엄격한 CSP·no-referrer를 직접 붙인다. Next는 설정 헤더가 이미 있으면
-    // 같은 이름의 응답 헤더를 버리므로(send-response) 이 경로만 공통 헤더에서 뺀다.
-    return [{ source: '/:path((?!app-auth/callback$).*)', headers: SECURITY_HEADERS }];
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },
   async rewrites() {
     return [

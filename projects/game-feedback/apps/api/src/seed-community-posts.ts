@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { Prisma, PrismaClient } from './generated/prisma';
 
 const communityPosts = [
@@ -116,7 +118,9 @@ export async function seedCommunityPosts(db: PrismaClient, categoryId: string, a
         ...post,
         categoryId,
         authorId,
-        createdAt: new Date(Date.now() - (index + 1) * 45 * 60 * 1000),
+        createdAt: dayjs()
+          .subtract((index + 1) * 45 * 60 * 1000, 'millisecond')
+          .toDate(),
       },
     });
   }

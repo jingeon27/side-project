@@ -1,6 +1,58 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+
+test('profile drafts survive cancelled links and back navigation and saved changes leave without a prompt', async ({
+  page,
+}) => {
+  const login = await page.request.post('/api/auth/test-login', {
+    headers: { Origin: origin },
+    data: { accountId: 'sample-user-0' },
+  });
+  expect(login.ok()).toBe(true);
+  await page.goto('/ko/users/sample-user-0');
+  await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
+  await expect(page).toHaveURL('/ko/settings/profile');
+  const bio = page.getByRole('textbox', { name: '자기소개', exact: true });
+  const originalBio = await bio.inputValue();
+  await bio.fill('저장하지 않은 프로필 소개');
+  const dismiss = async (action: () => Promise<unknown>) => {
+    const dialog = page.waitForEvent('dialog');
+    const pending = action();
+    const confirmation = await dialog;
+    expect(confirmation.type()).toBe('confirm');
+    expect(confirmation.message()).toContain('저장하지 않은 변경');
+    await confirmation.dismiss();
+    await pending;
+    await expect(page).toHaveURL('/ko/settings/profile');
+    await expect(bio).toHaveValue('저장하지 않은 프로필 소개');
+  };
+  await dismiss(() =>
+    page
+      .getByRole('navigation', { name: '주 메뉴', exact: true })
+      .getByRole('link', { name: '홈', exact: true })
+      .click(),
+  );
+  await dismiss(() => page.evaluate(() => history.back()));
+  await dismiss(() => page.getByRole('link', { name: '돌아가기', exact: true }).click());
+  const dialog = page.waitForEvent('dialog');
+  const back = page.evaluate(() => history.back());
+  await (await dialog).accept();
+  await back;
+  await expect(page).toHaveURL('/ko/users/sample-user-0');
+  await page.getByRole('link', { name: '프로필 수정', exact: true }).click();
+  await expect(bio).toHaveValue(originalBio);
+  await bio.fill('저장한 프로필 소개');
+  const handleUnexpectedDialog = async (confirmation: import('@playwright/test').Dialog) => {
+    await confirmation.dismiss();
+    throw new Error('저장 후에는 이탈 확인을 표시하지 않아야 한다.');
+  };
+  page.on('dialog', handleUnexpectedDialog);
+  await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+  await expect(page).toHaveURL('/ko/users/sample-user-0');
+  await expect(page.getByText('저장한 프로필 소개', { exact: true })).toBeVisible();
+  page.off('dialog', handleUnexpectedDialog);
+});
 
 test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {
   const login = await page.request.post('/api/auth/test-login', {
@@ -42,11 +94,7 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await expect(page.locator('.post-card').first()).toBeVisible();
   await page.locator('.post-card').first().getByRole('heading').click();
   await expect(page).toHaveURL(/\/ko\/posts\//);
-  await page
-    .getByRole('link', { name: '홈', exact: true })
-    .filter({ has: page.locator('svg') })
-    .first()
-    .click();
+  await page.getByRole('banner').getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
   await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toHaveAttribute(
     'href',

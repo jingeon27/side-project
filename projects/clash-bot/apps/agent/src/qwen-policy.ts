@@ -112,7 +112,3 @@ export function validateQwenAction(
     return null;
   return { slot, card, target };
 }
-
-export function qwenPrompt(profile: Profile): string {
-  return `Play Clash Royale. Blue bottom is YOU, red top is enemy. Image 1 is current screen. Image 2, if present, is your labeled deck reference. Identify the four bottom hand cards LEFT TO RIGHT by matching artwork to that reference. Allowed cards: ${profile.deck.map((id) => `${id}=${CARD_INFO[id].cost}`).join(', ')}. These are elixir costs. Count the filled purple bar, not the card cost. Defend attacking enemy troops near your towers. At 8+ elixir play a unit; do not wait at full elixir. Place troops only BELOW the river. Goblin hut in the center of your half pulls attackers. Furnace is a walking ranged troop that spawns fire spirits. Graveyard is an ATTACK spell: place it on an enemy princess tower when your knight or furnace advances. Poison supports graveyard or damages clustered enemies. Skeletons distract; barbarian barrel clears ground swarms. Coordinates x,y are fractions of the ENTIRE image, not the board. Pick ONE affordable card slot 1..4 and deployment point. slot=0 means wait. Never click menus, upgrades, emotes or purchases. If not in a live battle return slot=0. Return ONLY compact JSON, no reasoning: {"phase":"battle|lobby|result|unknown","hand":["card_id",null,null,null],"elixir":0,"slot":0,"x":0.5,"y":0.6,"outcome":"unknown"}. On result read win/loss/draw; otherwise outcome=unknown.`;
-}

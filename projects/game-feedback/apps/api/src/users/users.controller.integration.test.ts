@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -10,11 +11,14 @@ import type { GameProfile } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
+import { MAX_GAME_ACCOUNTS_PER_USER } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import {
   ApiError,
   assertDatabaseUrl,
   DemoProfileProvider,
+  hash,
+  token,
   type IdentityProvider,
   type ProfileProvider,
 } from '../security';
@@ -66,7 +70,7 @@ describe.skipIf(!testDatabaseUrl)(
       assertDatabaseUrl(databaseUrl, 'test');
       const migration = spawnSync(
         process.execPath,
-        [require.resolve('prisma/build/index.js'), 'db', 'push'],
+        [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
         {
           env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
           encoding: 'utf8',
@@ -122,9 +126,9 @@ describe.skipIf(!testDatabaseUrl)(
         'answerCount',
         'author',
         'bio',
+        'gameAccounts',
         'helpfulCount',
         'joinedAt',
-        'links',
         'postCount',
       ]);
       expect(Object.keys(profile.author).sort()).toEqual([
@@ -137,6 +141,14 @@ describe.skipIf(!testDatabaseUrl)(
       ]);
       expect(profile.joinedAt).toBeTypeOf('string');
       expect(profile.bio).toBe('');
+      const accounts = await db.gameAccount.findMany({
+        where: { userId: coachId },
+        orderBy: { updatedAt: 'desc' },
+      });
+      expect(accounts).toHaveLength(1);
+      expect(profile.gameAccounts).toEqual(accounts.map((account) => account.profile));
+      expect(profile.gameAccounts[0]).not.toHaveProperty('userId');
+      expect(profile.gameAccounts[0]).not.toHaveProperty('id');
       await supertest(normalApp.getHttpServer()).get(`/api/users/${coachId}`).expect(404);
       await supertest(app.getHttpServer()).get('/api/users/missing-user').expect(404);
     });
@@ -170,7 +182,7 @@ describe.skipIf(!testDatabaseUrl)(
             categoryId: 'clash-royale',
             title: '삭제한 요청',
             body: '검색에 노출하지 않는 본문입니다.',
-            deletedAt: new Date(),
+            deletedAt: dayjs().toDate(),
           },
         ],
         select: { id: true },
@@ -489,6 +501,37 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await account.get('/api/me/game-accounts')).body).toEqual(
         expect.arrayContaining([expect.objectContaining({ playerTag: tag })]),
       );
+    });
+
+    it('keeps only the most recent game accounts instead of one row per looked-up tag', async () => {
+      // 다른 사례가 쓰는 고정 계정의 대표 태그를 바꾸지 않도록 전용 사용자를 만든다.
+      const user = await db.user.create({
+        data: { nickname: '계정상한확인', termsVersion: '2026-10', ageConfirmed: true },
+      });
+      const raw = token();
+      await db.session.create({
+        data: { tokenHash: hash(raw), userId: user.id, expiresAt: dayjs().add(1, 'hour').toDate() },
+      });
+      const save = (playerTag: string) =>
+        supertest(app.getHttpServer())
+          .post('/api/me/game-accounts')
+          .set('Origin', origin)
+          .set('Authorization', `Bearer ${raw}`)
+          .send({ playerTag })
+          .expect(200);
+      const tags = Array.from({ length: MAX_GAME_ACCOUNTS_PER_USER + 2 }, (_, index) => `#CAP${index}`);
+      for (const playerTag of tags) await save(playerTag);
+      // 예전 태그를 다시 저장하면 가장 최근 계정으로 남는다.
+      await save('#CAP0');
+      const saved = (
+        await supertest(app.getHttpServer())
+          .get('/api/me/game-accounts')
+          .set('Authorization', `Bearer ${raw}`)
+          .expect(200)
+      ).body as Array<{ playerTag: string }>;
+      expect(saved.map(({ playerTag }) => playerTag)).toEqual(['#CAP0', ...tags.slice(-4).reverse()]);
+      expect(await db.gameAccount.count({ where: { userId: user.id } })).toBe(MAX_GAME_ACCOUNTS_PER_USER);
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).supercellTag).toBe('#CAP0');
     });
 
     it('registers the user tag on the account while posts use the current author identity', async () => {

@@ -17,12 +17,13 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'git-hooks',
+          name: 'tooling',
           environment: 'node',
           globals: true,
           include: [
             '../../scripts/check-commit-message.spec.ts',
             '../../scripts/check-branch-commits.spec.ts',
+            '../../scripts/knip-baseline.spec.ts',
           ],
         },
       },

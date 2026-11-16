@@ -3,6 +3,7 @@ import { boardBySlug } from '@/features/board';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus, type TPostListParams } from '@/features/post';
 import type { PostList } from '@/shared/api';
+import { parseSearch } from '@/shared/lib/query-string';
 
 export interface ISearchSnapshot {
   path: string;
@@ -11,16 +12,16 @@ export interface ISearchSnapshot {
 }
 
 export function searchQuery(path: string) {
-  const params = new URLSearchParams(path.split('?')[1] ?? '');
-  const board = boardBySlug(params.get('board') ?? '');
-  const unanswered = !board && params.get('tab') === 'unanswered';
+  const params = parseSearch(path.split('?')[1] ?? '');
+  const board = boardBySlug(params.board ?? '');
+  const unanswered = !board && params.tab === 'unanswered';
   const request = {
-    feedbackStatus: parseFeedbackStatus(params.get('feedbackStatus')),
-    q: params.get('q')?.trim().slice(0, 100) ?? '',
+    feedbackStatus: parseFeedbackStatus(params.feedbackStatus),
+    q: params.q?.trim().slice(0, 100) ?? '',
     board: unanswered ? 'FEEDBACK' : (board?.kind ?? 'ALL'),
-    category: params.get('game') ?? (board ? 'clash-royale' : undefined),
-    battleMode: parseBattleMode(params.get('battleMode')),
-    coachingRole: parseCoachingRole(params.get('coachingRole')),
+    category: params.game ?? (board ? 'clash-royale' : undefined),
+    battleMode: parseBattleMode(params.battleMode),
+    coachingRole: parseCoachingRole(params.coachingRole),
     ...(unanswered ? { unanswered: 'true' as const } : {}),
     limit: 12,
   } satisfies TPostListParams;

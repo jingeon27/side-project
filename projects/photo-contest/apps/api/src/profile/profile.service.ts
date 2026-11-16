@@ -1,20 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import { ERROR_CODE, fail } from '../common/errors';
-import {
-  COMPLETED_POST_UPLOAD_TTL_MS,
-  MAX_PENDING_UPLOADS,
-  UPLOAD_TICKET_TTL_MS,
-  USER_STORAGE_QUOTA_BYTES,
-} from '../config/limits';
+import { COMPLETED_POST_UPLOAD_TTL_MS, MAX_PENDING_UPLOADS, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
-import { STORAGE_QUOTA_EXCEEDED } from '../media-upload/media-upload.service';
-import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { assertStorageQuota } from '../media-upload/storage-quota';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { createMediaKey, MediaStorage, type TMediaExtension } from '../storage/media-storage.service';
+import { uploadedObjectMetadata } from '../storage/uploaded-object';
 import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
-const EXTENSION = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as const;
+const EXTENSION = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+} as const satisfies Record<TRequestProfileAvatarUploadDto['contentType'], TMediaExtension>;
 const REJECTED = '프로필 사진 업로드가 만료되었거나 사용할 수 없습니다.';
 
 @Injectable()
@@ -22,32 +24,27 @@ export class ProfileService {
   constructor(
     private readonly db: Database,
     private readonly storage: MediaStorage,
+    private readonly limits: RateLimitService,
   ) {}
 
-  async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto) {
-    const extension = EXTENSION[input.contentType];
-    if (!extension) fail('JPEG·PNG·WebP 사진을 선택해 주세요.');
+  async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto, address: string | null = null) {
+    const expiresAt = dayjs().add(UPLOAD_TICKET_TTL_MS, 'millisecond').toDate();
+    const storageKey = createMediaKey(EXTENSION[input.contentType]);
+    const form = await this.storage.presignUpload(storageKey, input.contentType, input.byteSize, expiresAt);
     const upload = await this.db.atomic(async (tx) => {
-      const now = new Date();
+      const now = dayjs().toDate();
+      if (expiresAt <= now) fail('업로드 요청이 만료되었습니다. 다시 시도해 주세요.', ERROR_CODE.CONFLICT);
       const pending = await tx.profileUpload.count({
         where: { userId: viewer.id, expiresAt: { gt: now }, currentUsers: { none: {} } },
       });
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
-      const [profiles, posts] = await Promise.all([
-        tx.profileUpload.aggregate({ where: { userId: viewer.id }, _sum: { byteSize: true } }),
-        tx.postUpload.aggregate({ where: { userId: viewer.id }, _sum: { byteSize: true } }),
-      ]);
-      if (
-        (profiles._sum.byteSize ?? 0) + (posts._sum.byteSize ?? 0) + input.byteSize >
-        USER_STORAGE_QUOTA_BYTES
-      )
-        fail(STORAGE_QUOTA_EXCEEDED, ERROR_CODE.RATE_LIMITED);
-      const expiresAt = new Date(now.getTime() + UPLOAD_TICKET_TTL_MS);
+      await assertStorageQuota(tx, viewer, input.byteSize);
+      await this.limits.consumeUploadBytes(address, input.byteSize, tx);
       return tx.profileUpload.create({
         data: {
           userId: viewer.id,
-          storageKey: createMediaKey(extension),
+          storageKey,
           contentType: input.contentType,
           byteSize: input.byteSize,
           expiresAt,
@@ -55,12 +52,6 @@ export class ProfileService {
         },
       });
     });
-    const form = await this.storage.presignUpload(
-      upload.storageKey,
-      upload.contentType,
-      upload.byteSize,
-      upload.expiresAt,
-    );
     return {
       id: upload.id,
       expiresAt: upload.expiresAt,
@@ -71,18 +62,16 @@ export class ProfileService {
 
   async completeUpload(viewer: IViewer, uploadId: string) {
     const upload = await this.db.profileUpload.findUnique({ where: { id: uploadId } });
-    if (!upload || upload.userId !== viewer.id || upload.expiresAt <= new Date())
+    if (!upload || upload.userId !== viewer.id || upload.expiresAt <= dayjs().toDate())
       fail(REJECTED, ERROR_CODE.FORBIDDEN);
     if (upload.completedAt) return { id: upload.id };
-    const actual = await this.storage
-      .head(upload.storageKey)
-      .catch(() => fail('파일 전송을 완료한 뒤 다시 시도해 주세요.'));
+    const actual = await uploadedObjectMetadata(this.storage, upload.storageKey);
     if (actual.byteSize !== upload.byteSize || actual.contentType !== upload.contentType)
       fail('업로드한 파일의 크기와 형식을 확인해 주세요.');
-    const now = new Date();
+    const now = dayjs().toDate();
     const completed = await this.db.profileUpload.updateMany({
       where: { id: uploadId, userId: viewer.id, expiresAt: { gt: now }, completedAt: null },
-      data: { completedAt: now, expiresAt: new Date(now.getTime() + COMPLETED_POST_UPLOAD_TTL_MS) },
+      data: { completedAt: now, expiresAt: dayjs(now.getTime() + COMPLETED_POST_UPLOAD_TTL_MS).toDate() },
     });
     if (!completed.count) {
       const current = await this.db.profileUpload.findUnique({ where: { id: uploadId } });
@@ -96,7 +85,12 @@ export class ProfileService {
     return this.db.atomic(async (tx) => {
       if (input.avatarId) {
         const upload = await tx.profileUpload.findUnique({ where: { id: input.avatarId } });
-        if (!upload || upload.userId !== viewer.id || !upload.completedAt || upload.expiresAt <= new Date())
+        if (
+          !upload ||
+          upload.userId !== viewer.id ||
+          !upload.completedAt ||
+          upload.expiresAt <= dayjs().toDate()
+        )
           fail(REJECTED, ERROR_CODE.FORBIDDEN);
       }
       return tx.user.update({
@@ -104,7 +98,7 @@ export class ProfileService {
         data: {
           nickname: input.nickname,
           ...(completeOnboarding
-            ? { needsOnboarding: false, termsAcceptedAt: new Date(), termsVersion: '2026-10-22' }
+            ? { needsOnboarding: false, termsAcceptedAt: dayjs().toDate(), termsVersion: '2026-10-22' }
             : {}),
           ...(input.removeAvatar ? { avatarUploadId: null, avatar: null } : {}),
           ...(input.avatarId ? { avatarUploadId: input.avatarId, avatar: null } : {}),

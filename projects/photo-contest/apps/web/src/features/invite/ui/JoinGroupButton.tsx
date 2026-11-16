@@ -3,7 +3,6 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 
 import { useLoginPrompt } from '@/features/auth';
-import { resetPhotoFeed } from '@/features/feed';
 import { prependMyGroup } from '@/features/group';
 import { resetGalleryPosts } from '@/features/post';
 import { GroupVisibility, JoinGroupDocument, MeDocument } from '@/shared/api/generated';
@@ -28,7 +27,6 @@ export function JoinGroupButton({
     update: (cache, { data: result }) => {
       if (result) {
         prependMyGroup(cache, result.joinGroup);
-        resetPhotoFeed(cache);
         resetGalleryPosts(cache);
       }
     },

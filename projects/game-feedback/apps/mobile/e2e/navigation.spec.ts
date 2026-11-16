@@ -9,9 +9,7 @@ test('mobile header and three tabs navigate in place and report their paths to t
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await expect(
-    page.getByRole('banner').getByRole('link', { name: 'Game Mate 홈', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('heading', { name: '전체', exact: true })).toBeVisible();
   await expect(page.getByRole('banner').getByRole('combobox')).toHaveCount(0);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await expect(tabs.getByRole('link')).toHaveText(['홈', '채팅', '프로필']);
@@ -56,7 +54,7 @@ test('category chips navigate directly and native back restores the saved filter
   nativeHost,
 }) => {
   await page.setViewportSize({ width: 400, height: 844 });
-  await page.goto('/ko?q=%ED%98%B8%EA%B7%B8&tab=unanswered');
+  await page.goto('/ko?q=%ED%98%B8%EA%B7%B8');
   await expect.poll(nativeHost.isReady).toBe(true);
   const chips = page.locator('.game-board-chips:visible');
   await expect(chips.getByRole('link')).toHaveCount(6);
@@ -71,25 +69,15 @@ test('category chips navigate directly and native back restores the saved filter
   await expect.poll(nativeHost.hasOverlay).toBe(false);
   expect(await page.evaluate(() => history.length)).toBe(length);
   expect(await nativeHost.requestBack()).toBe(true);
-  await expect(page).toHaveURL(
-    (url) =>
-      url.pathname === '/ko' &&
-      url.searchParams.get('q') === '호그' &&
-      url.searchParams.get('tab') === 'unanswered',
-  );
+  await expect(page).toHaveURL((url) => url.pathname === '/ko' && url.searchParams.get('q') === '호그');
   expect(nativeHost.rootBacks()).toBe(0);
   await chips.getByRole('link', { name: '친추판매', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/boards/friend-sale');
   await chips.getByRole('link', { name: '전체', exact: true }).click();
-  await expect(page).toHaveURL(
-    (url) =>
-      url.pathname === '/ko' &&
-      url.searchParams.get('q') === '호그' &&
-      url.searchParams.get('tab') === 'unanswered',
-  );
-  await expect(page.getByRole('button', { name: '답변 대기', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
+  await expect(page).toHaveURL((url) => url.pathname === '/ko' && url.searchParams.get('q') === '호그');
+  await expect(chips.getByRole('link', { name: '전체', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
   );
 });
 
@@ -136,10 +124,12 @@ test('query locations, warm nested links and duplicate opens preserve the curren
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-user-0' },
   });
-  await page.goto('/ko?q=%ED%98%B8%EA%B7%B8');
-  await expect.poll(nativeHost.currentPath).toBe(appRoutes.feed('ko', { q: '호그' }));
-  await page.getByRole('button', { name: '답변 대기' }).click();
-  await expect.poll(nativeHost.currentPath).toBe(appRoutes.feed('ko', { q: '호그', tab: 'unanswered' }));
+  await page.goto(appRoutes.boards('ko', 'feedback', '호그'));
+  await expect.poll(nativeHost.currentPath).toBe(appRoutes.boards('ko', 'feedback', '호그'));
+  await page.getByRole('link', { name: '답변 대기', exact: true }).click();
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.boards('ko', 'feedback', '호그', undefined, { feedbackStatus: 'WAITING' }));
   await page.evaluate(() =>
     Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
   );
@@ -155,8 +145,8 @@ test('query locations, warm nested links and duplicate opens preserve the curren
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page).toHaveURL(
     (url) =>
-      url.pathname === '/ko' &&
-      url.searchParams.get('tab') === 'unanswered' &&
+      url.pathname === '/ko/boards/feedback' &&
+      url.searchParams.get('feedbackStatus') === 'WAITING' &&
       url.searchParams.get('q') === '호그',
   );
 });
@@ -238,7 +228,7 @@ test('native back leaves the full-page editor without a dialog and restores filt
   });
   await page.goto('/ko?q=hog&tab=unanswered');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/write');
   await expect(page.getByRole('form', { name: '글쓰기', exact: true })).toBeVisible();
   await expect(page.getByRole('banner')).toBeHidden();

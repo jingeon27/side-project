@@ -1,9 +1,4 @@
-export { GroupContestsPageTemplate } from './@page/GroupContestsPageTemplate';
-export {
-  getGroupContestsSeoData,
-  getGroupContestsMetadata,
-  getPublicGroupContestCount,
-  getPublicGroupContestSitemapPage,
-  PUBLIC_CONTEST_SITEMAP_SIZE,
-} from './@seo/group-contests-seo.server';
-export { groupContestsJsonLd } from './@seo/group-contests-seo.helper';
+export { GroupContestsPage } from './ui/GroupContestsPage';
+export { GroupContestsPendingPage } from './ui/GroupContestsPendingPage';
+export { GroupHallOfFamePage } from './ui/GroupHallOfFamePage';
+export { GroupHallOfFamePendingPage } from './ui/GroupHallOfFamePendingPage';

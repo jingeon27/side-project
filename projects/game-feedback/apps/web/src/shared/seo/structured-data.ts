@@ -1,3 +1,5 @@
+import qs from 'qs';
+
 import type { PostDetail, PublicProfile } from '@/shared/api';
 import { translate } from '@/shared/i18n/index.server';
 
@@ -81,7 +83,7 @@ export function profileDescription(profile: PublicProfile) {
 }
 export function profileStructuredData(profile: PublicProfile, cursor?: string) {
   const url = pageUrl(
-    `/ko/users/${encodeURIComponent(profile.author.id)}${cursor !== undefined ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+    `/ko/users/${encodeURIComponent(profile.author.id)}${qs.stringify({ cursor }, { addQueryPrefix: true })}`,
   );
   return {
     '@context': 'https://schema.org',

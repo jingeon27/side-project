@@ -1,11 +1,14 @@
-import { OnboardingPageTemplate } from '@/_pages/onboarding';
+import { connection } from 'next/server';
+
+import { OnboardingPage } from '@/_pages/onboarding';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import { MeDocument } from '@/shared/api/generated';
 
-export default function Page() {
+export default async function Page() {
+  await connection();
   return (
     <PreloadQuery query={MeDocument}>
-      <OnboardingPageTemplate />
+      <OnboardingPage />
     </PreloadQuery>
   );
 }

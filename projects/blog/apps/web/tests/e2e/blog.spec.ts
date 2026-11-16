@@ -2,10 +2,11 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import redirects from '../../content/generated-redirects.json' with { type: 'json' };
+import localizations from '../../content/english-localizations.json' with { type: 'json' };
+import imageReplacements from '../../content/image-replacements.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
 import ko from '../../messages/ko.json' with { type: 'json' };
-import index from '../../src/entities/article/lib/index.json' with { type: 'json' };
+import index from '../../src/shared/article/lib/index.json' with { type: 'json' };
 
 const articles = index.filter((article) => article.locale === 'ko');
 const article = articles.find((entry) => entry.toc.length > 0) || articles[0]!;
@@ -37,6 +38,7 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page).toHaveURL(/\/ko\/blog$/);
   await page.getByRole('combobox', { name: ko.common.search }).fill(article.title);
   await expect(page.locator('.article-list .article-row')).toHaveCount(1);
+  await page.getByRole('combobox', { name: ko.common.search }).press('Escape');
   await page.getByRole('link', { name: article.title, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
   await expect(page.locator('.article-prose')).toBeVisible();
@@ -46,6 +48,69 @@ test('browse home, search articles, open detail, and visit About', async ({ page
     'mailto:contact@bambyul.com',
   );
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
+});
+
+test('article navigation reaches the top and restores the list position without smooth scrolling', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/ko/blog');
+  // Wait for the hydrated feed before scrolling. Its links replace the server fallback.
+  const link = page.locator('.blog-feed .article-row h3').getByRole('link').nth(7);
+  await link.scrollIntoViewIfNeeded();
+  const listScrollY = await page.evaluate(() => window.scrollY);
+  expect(listScrollY).toBeGreaterThan(300);
+  const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+
+  const [firstDetailFrame] = await Promise.all([
+    page.waitForFunction(() =>
+      document.querySelector('.article-prose') ? { scrollY: window.scrollY } : null,
+    ),
+    link.click(),
+  ]);
+
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  expect(await firstDetailFrame.jsonValue()).toEqual({ scrollY: 0 });
+  const [firstListFrame] = await Promise.all([
+    page.waitForFunction(() => {
+      const row = document.querySelector('.blog-feed .article-row');
+      return window.location.pathname === '/ko/blog' && row?.getClientRects().length
+        ? { scrollY: window.scrollY }
+        : null;
+    }),
+    page.goBack(),
+  ]);
+  const restored = await firstListFrame.jsonValue();
+  expect(restored?.scrollY).toBeCloseTo(listScrollY, 0);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
+});
+
+test('About stays compact and readable in both locales without horizontal overflow', async ({ page }) => {
+  for (const [locale, messages] of [
+    ['ko', ko],
+    ['en', en],
+  ] as const) {
+    await page.goto(`/${locale}/about`);
+    await expect(page.getByRole('heading', { level: 1, name: messages.about.title })).toBeVisible();
+    await expect(page.getByText('Software Engineer', { exact: true })).toBeVisible();
+    await expect(page.getByText(messages.about.description)).toBeVisible();
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(1);
+    await expect(page.getByRole('main').getByRole('article')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: messages.about.projects.gameMate })).toHaveAttribute(
+      'href',
+      'https://github.com/jingeon27/side-project/tree/main/projects/game-feedback',
+    );
+    await expect(page.getByRole('link', { name: 'contact@bambyul.com' })).toHaveAttribute(
+      'href',
+      'mailto:contact@bambyul.com',
+    );
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true);
+    await page.getByRole('link', { name: messages.about.readArticles }).click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}/blog$`));
+  }
 });
 
 test('privacy notice is linked from the footer in both locales', async ({ page }) => {
@@ -61,12 +126,12 @@ test('privacy notice is linked from the footer in both locales', async ({ page }
     await expect(page).toHaveURL(new RegExp(`/${locale}/privacy$`));
     await expect(page.getByRole('heading', { level: 1, name: messages.privacy.title })).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(
-      messages.privacy.sections.length + 2,
+      Object.keys(messages.privacy.sections).length + 2,
     );
   }
 });
 
-test('cover and SVG thumbnails load without breaking title links or mobile layout', async ({ page }) => {
+test('cover thumbnails load without breaking title links or mobile layout', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });
   for (const id of ['reading-ai-code', 'health-check-program', 'bottom-sheet-drag-crash']) {
@@ -90,7 +155,7 @@ test('cover and SVG thumbnails load without breaking title links or mobile layou
   }
 });
 
-test('edited article covers load in the body and match the social preview image', async ({ page }) => {
+test('article covers load in the body and expose the social preview image', async ({ page }) => {
   for (const entry of articles.filter((candidate) => candidate.coverImage)) {
     await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
     const image = page.locator('.article-prose img').first();
@@ -103,13 +168,23 @@ test('edited article covers load in the body and match the social preview image'
     expect(source.searchParams.get('url') || source.pathname).toBe(entry.coverImage);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       'content',
-      new RegExp(`${entry.coverImage!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+      new RegExp(`${(entry.socialImage ?? entry.coverImage!).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
 });
 
-test('side-project screenshots and monitoring diagram load in both article languages', async ({ page }) => {
+test('bold followed by a Korean particle renders without literal markers', async ({ page }) => {
+  const entry = articles.find((candidate) => candidate.id === 'design-concepts-for-reading-ui')!;
+  await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
+  const prose = page.locator('.article-prose');
+  await expect(prose.locator('strong', { hasText: '근접성' })).toHaveCSS('font-weight', '650');
+  await expect(prose).not.toContainText('**');
+});
+
+test('localized product images load and the infrastructure article opens in both languages', async ({
+  page,
+}) => {
   for (const locale of ['ko', 'en'] as const) {
     const entry = index.find(
       (candidate) => candidate.id === 'side-project-design' && candidate.locale === locale,
@@ -117,8 +192,15 @@ test('side-project screenshots and monitoring diagram load in both article langu
     await page.goto(`/${locale}/blog/${encodeURIComponent(entry.slug)}`);
     await expect(page.getByRole('heading', { level: 1, name: entry.title })).toBeVisible();
 
-    for (const name of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
-      const image = page.locator(`.article-prose img[src*="${name}.png"]`);
+    for (const name of ['01-service-screens', '09-product-interactions']) {
+      const archived = `/images/posts/side-project-design/${name}.png`;
+      const replacement = Object.entries(imageReplacements).find(([original]) => original === archived)?.[1];
+      const original = replacement ?? archived;
+      const expected =
+        locale === 'ko' ? original : localizations.images[original as keyof typeof localizations.images];
+      if (!expected) throw new Error(`Missing English image for ${original}`);
+      const image = page.locator(`.article-prose img[src*="${expected.split('/').at(-1)}"]`);
+      await expect(image).toHaveCount(1);
       await image.scrollIntoViewIfNeeded();
       await expect(image).toBeVisible();
       await expect(image).toHaveAttribute('alt', /\S/);
@@ -128,11 +210,20 @@ test('side-project screenshots and monitoring diagram load in both article langu
         )
         .toBe(true);
       const source = new URL((await image.getAttribute('src'))!, page.url());
-      expect(source.searchParams.get('url') || source.pathname).toBe(
-        `/images/posts/side-project-design/${name}.png`,
-      );
+      expect(source.searchParams.get('url') || source.pathname).toBe(expected);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     }
+
+    const infrastructure = index.find(
+      (candidate) => candidate.id === 'side-project-infrastructure' && candidate.locale === locale,
+    )!;
+    await page
+      .locator('.article-prose')
+      .getByRole('link', { name: infrastructure.title, exact: true })
+      .click();
+    await expect(page.getByRole('heading', { level: 1, name: infrastructure.title })).toBeVisible();
+    const productPath = `/${locale}/blog/${encodeURIComponent(entry.slug)}`;
+    await expect(page.locator(`.article-prose a[href="${productPath}"]`)).toHaveCount(1);
   }
 });
 
@@ -177,6 +268,7 @@ test('Command and Control shortcuts open search, Escape closes it, and Enter ope
 }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });
+  await expect(search).toBeVisible();
   for (const shortcut of ['Meta+k', 'Control+k']) {
     await page.keyboard.press(shortcut);
     await expect(search).toBeFocused();
@@ -190,7 +282,7 @@ test('Command and Control shortcuts open search, Escape closes it, and Enter ope
   const option = page.getByRole('option', { name: article.title, exact: true });
   await expect(option).toBeVisible();
   await search.press('ArrowDown');
-  await expect(option).toHaveAttribute('aria-selected', 'true');
+  await expect(option).toHaveAttribute('data-highlighted');
   await search.press('Enter');
   await expect(page).toHaveURL(new RegExp(`${encodeURIComponent(article.slug)}$`));
   await expect(page.getByRole('heading', { name: article.title, level: 1 })).toBeVisible();
@@ -227,7 +319,7 @@ test('article SEO matches canonical, language availability, and structured data'
   );
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'article');
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', article.title);
-  const expectedImage = article.coverImage || `/og/${article.locale}/${article.id}`;
+  const expectedImage = article.socialImage ?? article.coverImage ?? `/og/${article.locale}/${article.id}`;
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
     new RegExp(`${expectedImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
@@ -256,6 +348,7 @@ test('English search opens a full translation and language switching preserves t
   await page.goto('/en/blog');
   await expect(page.locator('.article-list .article-row')).toHaveCount(english.length);
   await page.getByRole('combobox', { name: en.common.search }).fill(translated.title);
+  await page.getByRole('combobox', { name: en.common.search }).press('Escape');
   await expect(page.locator('.article-list .article-row')).toHaveCount(1);
   await page.getByRole('link', { name: translated.title, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/en/blog/${translated.slug}$`));
@@ -326,15 +419,6 @@ test('code copy preserves all code lines and code scrolls within the article', a
   expect(['auto', 'scroll']).toContain(dimensions.overflow);
   if (dimensions.scrollWidth > dimensions.width) expect(dimensions.moved).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-});
-
-test('legacy numeric Tistory paths return an explicit 301 to the matching article', async ({ request }) => {
-  const legacy = redirects.find((entry) => entry.source === '/35')!;
-  const response = await request.get(legacy.source, { maxRedirects: 0 });
-  expect(response.status()).toBe(301);
-  expect(decodeURI(new URL(response.headers().location!, 'http://127.0.0.1:3101').pathname)).toBe(
-    legacy.destination,
-  );
 });
 
 test('theme persists and the layout stays inside the viewport', async ({ page }) => {
@@ -444,15 +528,9 @@ test('unknown pages, slugs, categories, tags and unsupported locales return 404'
   }
 });
 
-test('sitemap and robots expose published translations and allow rendering assets', async ({
-  page,
-  request,
-}) => {
-  const response = await request.get('/sitemap.xml', { maxRedirects: 0 });
-  expect(response.status()).toBe(200);
-  expect(response.headers()['content-type']).toContain('application/xml');
-  const sitemap = await page.evaluate(
-    (xml) => {
+test('sitemap and robots list published URLs and allow rendering assets', async ({ page, request }) => {
+  const parseSitemap = (text: string) =>
+    page.evaluate((xml) => {
       const document = new DOMParser().parseFromString(xml, 'application/xml');
       const namespace = 'http://www.sitemaps.org/schemas/sitemap/0.9';
       return {
@@ -461,44 +539,70 @@ test('sitemap and robots expose published translations and allow rendering asset
         entries: Array.from(document.getElementsByTagNameNS(namespace, 'url'), (entry) => ({
           url: entry.getElementsByTagNameNS(namespace, 'loc')[0]?.textContent || '',
           lastModified: entry.getElementsByTagNameNS(namespace, 'lastmod')[0]?.textContent,
-          languages: Object.fromEntries(
-            Array.from(entry.getElementsByTagNameNS('http://www.w3.org/1999/xhtml', 'link'), (link) => [
-              link.getAttribute('hreflang'),
-              link.getAttribute('href'),
-            ]),
-          ),
+          order: Array.from(entry.children, (child) => child.localName).join(' '),
         })),
       };
-    },
-    await response.text(),
-  );
-  expect(sitemap.errors).toBe(0);
-  expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
-  const urls = sitemap.entries.map((entry) => entry.url);
+    }, text);
+  const entries = (
+    await Promise.all(
+      (['ko', 'en'] as const).map(async (locale) => {
+        const response = await request.get(`/${locale}/sitemap.xml`, { maxRedirects: 0 });
+        expect(response.status()).toBe(200);
+        expect(response.headers()['content-type']).toContain('application/xml');
+        const sitemap = await parseSitemap(await response.text());
+        expect(sitemap.errors).toBe(0);
+        expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
+        for (const entry of sitemap.entries) {
+          expect(new URL(entry.url).pathname).toMatch(`/${locale}`);
+          // hreflang stays in each page head; Next would write sitemap links before lastmod.
+          expect(entry.order, entry.url).toMatch(/^loc( lastmod)?$/);
+        }
+        return sitemap.entries;
+      }),
+    )
+  ).flat();
+  const urls = entries.map((entry) => entry.url);
   expect(new Set(urls).size).toBe(urls.length);
   const origin = new URL(urls[0]!).origin;
+  const sitemapIndex = await request.get('/sitemap.xml', { maxRedirects: 0 });
+  expect(sitemapIndex.status()).toBe(200);
+  expect(sitemapIndex.headers()['content-type']).toContain('application/xml');
+  const sitemapIndexBody = await sitemapIndex.text();
+  for (const locale of ['ko', 'en'])
+    expect(sitemapIndexBody).toContain(`<loc>${origin}/${locale}/sitemap.xml</loc>`);
+  // A tag page for one article stays reachable but is neither listed nor indexed.
+  const koreanTags = index.filter((article) => article.locale === 'ko').flatMap((article) => article.tags);
+  const singleTag = koreanTags.find((tag) => koreanTags.indexOf(tag) === koreanTags.lastIndexOf(tag))!;
+  const singleTagPath = `/ko/blog/tag/${encodeURIComponent(singleTag)}`;
+  expect(urls).not.toContain(`${origin}${singleTagPath}`);
+  await page.goto(singleTagPath);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   const articleUrl = (entry: (typeof index)[number]) =>
     `${origin}/${entry.locale}/blog/${encodeURIComponent(entry.slug)}`;
   expect(urls.filter((url) => /\/(ko|en)\/blog\/[^/]+$/.test(url)).sort()).toEqual(
     index.map(articleUrl).sort(),
   );
-  for (const article of index) {
-    const entry = sitemap.entries.find((entry) => entry.url === articleUrl(article))!;
-    expect(entry.lastModified).toBe(article.updatedAt || article.publishedAt);
-    const translations = index.filter((translation) => translation.id === article.id);
-    const korean = translations.find((translation) => translation.locale === 'ko');
-    expect(entry.languages).toEqual({
-      ...Object.fromEntries(translations.map((translation) => [translation.locale, articleUrl(translation)])),
-      ...(korean && translations.length > 1 ? { 'x-default': articleUrl(korean) } : {}),
-    });
+  for (const article of index)
+    expect(entries.find((entry) => entry.url === articleUrl(article))?.lastModified).toBe(
+      article.updatedAt || article.publishedAt,
+    );
+  // Listings carry the date of their newest article; the static about page has no date to report.
+  for (const locale of ['ko', 'en']) {
+    for (const path of ['', '/blog', '/blog/category/engineering'])
+      expect(entries.find((entry) => entry.url === `${origin}/${locale}${path}`)?.lastModified).toBeTruthy();
+    expect(entries.find((entry) => entry.url === `${origin}/${locale}/about`)?.lastModified).toBeUndefined();
   }
+  expect(
+    entries.filter((entry) => entry.url.includes('/blog/tag/')).every((entry) => entry.lastModified),
+  ).toBe(true);
   const robots = await request.get('/robots.txt', { maxRedirects: 0 });
   expect(robots.status()).toBe(200);
   expect(robots.headers()['content-type']).toContain('text/plain');
   const rules = await robots.text();
   expect(rules).toMatch(/^User-Agent: \*$/m);
   expect(rules).toMatch(/^Allow: \/$/m);
-  expect(rules).toContain(`Sitemap: ${origin}/sitemap.xml`);
+  expect(rules).toContain(`Sitemap: ${origin}/ko/sitemap.xml`);
+  expect(rules).toContain(`Sitemap: ${origin}/en/sitemap.xml`);
   const blockedPaths = [...rules.matchAll(/^Disallow:\s*(\S+)$/gm)].map((match) => match[1]!);
   expect(blockedPaths).toContain('/api/');
   for (const path of [
@@ -550,4 +654,99 @@ test('every published article serves its complete reading page', async ({ reques
     expect(response.status(), `${entry.id}/${entry.locale}`).toBe(200);
     expect(await response.text(), `${entry.id}/${entry.locale}`).toContain('<article class="article-prose">');
   }
+});
+
+test('URL filters survive reload and browser history navigation', async ({ page }) => {
+  await page.goto('/ko/blog?q=react&category=til&ref=mail#archive');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  const filters = page.getByRole('group', { name: ko.common.category });
+  const all = filters.getByRole('button', { name: new RegExp(ko.common.all) });
+  const til = filters.getByRole('button', { name: /TIL/ });
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await all.click();
+  await expect.poll(() => new URL(page.url()).searchParams.has('category')).toBe(false);
+  await page.goBack();
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.goForward();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await search.fill('캐시');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('캐시');
+  await expect(search).toHaveValue('캐시');
+  await search.press('Escape');
+  await page.getByRole('button', { name: ko.common.clearFilters }).first().click();
+  const url = new URL(page.url());
+  expect(url.searchParams.has('q')).toBe(false);
+  expect(url.searchParams.get('ref')).toBe('mail');
+  expect(url.hash).toBe('#archive');
+  await expect(search).toHaveValue('');
+
+  await page.goto('/ko/blog?q=react&category=unknown&ref=mail&ref=sidebar#archive');
+  await expect(search).toHaveValue('react');
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.article-list > article').first()).toBeVisible();
+  await til.click();
+  await expect(search).toHaveValue('react');
+  await expect(til).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: ko.common.clearFilters }).first().click();
+  const preserved = new URL(page.url());
+  expect(preserved.searchParams.getAll('ref')).toEqual(['mail', 'sidebar']);
+  expect(preserved.searchParams.has('q')).toBe(false);
+  expect(preserved.searchParams.has('category')).toBe(false);
+  expect(preserved.hash).toBe('#archive');
+
+  await page.goto('/ko/blog/category/engineering?category=til&q=react');
+  await expect(page.getByRole('group', { name: ko.common.category })).toHaveCount(0);
+  await expect(search).toHaveValue('react');
+});
+
+test('language switching preserves URL search filters, repeated parameters and hash', async ({ page }) => {
+  const query = '?q=react&category=engineering&ref=mail&ref=sidebar#archive';
+  await page.goto(`/ko/blog${query}`);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+  await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+  await expect(page).toHaveURL(new URL(`/en/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: en.common.search })).toHaveValue('react');
+  await expect(
+    page.getByRole('group', { name: en.common.category }).getByRole('button', { name: /Engineering/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.goBack();
+  await expect(page).toHaveURL(new URL(`/ko/blog${query}`, page.url()).href);
+  await expect(page.getByRole('combobox', { name: ko.common.search })).toHaveValue('react');
+});
+
+test('an exact tag selection can be undone and restored through browser history', async ({ page }) => {
+  await page.goto('/ko/blog?q=react&ref=mail#archive');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await search.click();
+  await page.getByRole('option', { name: '#react', exact: true }).click();
+  await expect(search).toHaveValue('#react');
+  await page.goBack();
+  await expect(search).toHaveValue('react');
+  expect(new URL(page.url()).searchParams.get('ref')).toBe('mail');
+  expect(new URL(page.url()).hash).toBe('#archive');
+  await page.goForward();
+  await expect(search).toHaveValue('#react');
+});
+
+test('search popup dismisses through outside click and Tab without clearing the URL query', async ({
+  page,
+}) => {
+  await page.goto('/ko/blog');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await search.fill('react');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.getByRole('heading', { level: 1, includeHidden: true }).click();
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await expect(search).toHaveValue('react');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('react');
+  await search.click();
+  await search.press('Tab');
+  await expect(page.getByRole('button', { name: ko.common.clear })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await expect(search).toHaveValue('react');
 });

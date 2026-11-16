@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getArticles } from '@/entities/article/lib/get-articles';
-import { categories } from '@/entities/article/model/categories';
+import { getArticles } from '@/shared/article/lib/get-articles';
+import { categories } from '@/shared/article/model/categories';
 
 import { generateMetadata, generateStaticParams } from './page';
 

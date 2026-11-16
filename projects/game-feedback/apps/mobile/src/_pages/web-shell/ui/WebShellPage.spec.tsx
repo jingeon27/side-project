@@ -9,7 +9,6 @@ import {
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import * as ExpoLinking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
 import type { WebViewNativeEvent } from 'react-native-webview/lib/WebViewTypes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -149,22 +148,25 @@ describe('mobile WebView shell', () => {
     act(() => currentWebViewProps().onContentProcessDidTerminate?.(event()));
     expect(fakeWebView.handle.reload).toHaveBeenCalledOnce();
   });
-  it('rejects foreign frames and reports unavailable native authentication without opening a browser', async () => {
+  it('rejects foreign frames and reports unavailable native authentication as failed', async () => {
     render(<WebShellPage />);
     act(() =>
       currentWebViewProps().onMessage?.(
         event({ url: 'https://evil.example', data: JSON.stringify({ type: 'auth-request', id: 'evil' }) }),
       ),
     );
-    expect(WebBrowser.openAuthSessionAsync).not.toHaveBeenCalled();
     act(() =>
       currentWebViewProps().onMessage?.(
         event({ data: JSON.stringify({ type: 'auth-request', id: 'auth-1' }) }),
       ),
     );
-    expect(WebBrowser.openAuthSessionAsync).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(fakeWebView.handle.injectJavaScript).toHaveBeenCalledWith(expect.stringContaining('failed')),
+      expect(fakeWebView.handle.injectJavaScript).toHaveBeenCalledWith(
+        expect.stringContaining('{"type":"auth-result","id":"auth-1","status":"failed"}'),
+      ),
+    );
+    expect(fakeWebView.handle.injectJavaScript).not.toHaveBeenCalledWith(
+      expect.stringContaining('"id":"evil"'),
     );
   });
   it('opens cold deep links as the initial source and warm links through the bridge', async () => {

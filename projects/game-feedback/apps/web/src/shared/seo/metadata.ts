@@ -19,6 +19,11 @@ interface IPageMetadata {
   authorUrl?: string;
   isTestAccount?: boolean;
   locale?: TLocale;
+  imagePath?: string;
+  photoPaths?: readonly string[];
+}
+interface IStaticPageContent extends Pick<IPageMetadata, 'title' | 'description' | 'privatePage'> {
+  keywords: readonly string[];
 }
 export function createPageMetadata({
   title,
@@ -33,6 +38,8 @@ export function createPageMetadata({
   authorUrl,
   isTestAccount,
   locale = 'ko',
+  imagePath = '/og',
+  photoPaths = [],
 }: IPageMetadata): Metadata {
   const { indexable, origin } = getSeoConfig();
   const allowed = indexable && !privatePage && !isTestAccount;
@@ -40,7 +47,15 @@ export function createPageMetadata({
   const text = excerpt(description);
   const siteName = translate(locale, SITE_NAME);
   const fullTitle = `${excerpt(title, 80)} | ${siteName}`;
-  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: siteName }];
+  const images = [
+    ...Array.from(new Set(photoPaths))
+      .slice(0, 3)
+      .map((photoPath) => ({
+        url: `${origin}${photoPath}`,
+        alt: fullTitle,
+      })),
+    { url: `${origin}${imagePath}`, width: 1200, height: 630, alt: fullTitle },
+  ];
   return {
     title: { absolute: fullTitle },
     description: text,
@@ -70,11 +85,17 @@ export function createPageMetadata({
       card: 'summary_large_image',
       title: fullTitle,
       description: text,
-      images: images.map((image) => image.url),
+      images,
     },
   };
 }
 export const pageContent = {
+  profileEdit: {
+    title: '프로필 수정',
+    description: '닉네임, 자기소개와 프로필 사진을 수정하세요.',
+    keywords: ['프로필 수정'],
+    privatePage: true,
+  },
   onboarding: {
     title: '회원가입',
     description: '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.',
@@ -117,16 +138,17 @@ export const pageContent = {
   guide: {
     title: 'Game Mate 이용 가이드',
     description:
-      '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.',
+      '전체 게시글 검색과 다섯 분류, 전투 모집, 코치와 수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.',
     keywords: ['커뮤니티 가이드', '게임코치', '전투 모집', '채팅', '프로필 인증'],
   },
   terms: {
     title: '이용약관',
-    description: 'Game Mate 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.',
+    description:
+      'Game Mate의 가입과 이용 조건, 게시물 권리, 거래 유의 사항과 커뮤니티 운영 원칙을 확인하세요.',
     keywords: ['서비스 이용약관'],
   },
   privacy: {
-    title: '개인정보 처리 안내',
+    title: '개인정보 처리방침',
     description: 'Game Mate의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.',
     keywords: ['개인정보 처리', '계정 삭제'],
   },
@@ -153,7 +175,7 @@ export const pageContent = {
     keywords: ['계정 설정', '게임 프로필 연결'],
     privatePage: true,
   },
-} as const;
+} as const satisfies Record<string, IStaticPageContent>;
 export type TStaticPage = keyof typeof pageContent;
 export function staticPagePath(kind: TStaticPage, locale: string) {
   return `/${locale}${kind === 'feed' ? '' : `/${kind}`}`;

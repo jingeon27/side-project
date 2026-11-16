@@ -4,7 +4,10 @@ import { useEffect, type ComponentProps } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { match, P } from 'ts-pattern';
+
 import { backNavigation, registerLogicalParent } from './browser-navigation';
+import { confirmNavigation } from './navigation-guard';
 
 export function BackLink({
   parentOnly = false,
@@ -16,12 +19,18 @@ export function BackLink({
   return (
     <Link
       {...props}
+      data-navigation-back
       onNavigate={(event) => {
         event.preventDefault();
-        const next = backNavigation(parentOnly);
-        if (next.action === 'back') router.back();
-        if (next.action === 'replace') router.replace(next.path);
-        if (next.action === 'root' || next.action === 'unhandled') router.replace(String(props.href));
+        match(backNavigation(parentOnly))
+          .with({ action: 'back' }, () => router.back())
+          .with({ action: 'replace' }, ({ path }) => {
+            if (confirmNavigation()) router.replace(path);
+          })
+          .with({ action: P.union('root', 'unhandled') }, () => {
+            if (confirmNavigation()) router.replace(String(props.href));
+          })
+          .exhaustive();
       }}
     />
   );

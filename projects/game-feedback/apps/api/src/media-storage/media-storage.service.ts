@@ -10,6 +10,7 @@ import {
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { ApiError } from '../common/http/api-error';
 import { MEDIA_SIGNATURE_BYTES, validateMediaHeader } from '../common/media-file';
@@ -44,12 +45,10 @@ export class MediaStorage implements OnModuleDestroy {
     return prefix ? `${prefix}/${path}` : path;
   }
 
-  async reserveUpload(mimeType: string, size: number) {
+  async prepareUpload(mimeType: string, size: number) {
     const storage = this.config.mediaStorage;
-    const object = await this.db.mediaObject.create({
-      data: { backend: 'S3', key: this.key(`staging/${randomUUID()}`) },
-    });
-    const expiresAt = new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000).toISOString();
+    const object = { backend: 'S3', key: this.key(`staging/${randomUUID()}`) };
+    const expiresAt = dayjs().add(MEDIA_UPLOAD_TTL_SECONDS, 'second').toISOString();
     try {
       const form = await createPresignedPost(this.s3, {
         Bucket: storage.bucket,
@@ -61,12 +60,13 @@ export class MediaStorage implements OnModuleDestroy {
           ['eq', '$Content-Type', mimeType],
         ],
       });
-      return { objectId: object.id, form, expiresAt };
-    } catch {
+      return { object, form, expiresAt };
+    } catch (cause) {
       throw new ApiError(
         503,
         'STORAGE_UNAVAILABLE',
         '업로드 주소를 만들지 못했습니다. 잠시 후 다시 시도해주세요.',
+        { cause },
       );
     }
   }
@@ -92,7 +92,14 @@ export class MediaStorage implements OnModuleDestroy {
       etag = metadata.ETag;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+      const name = error instanceof Error ? error.name : undefined;
+      const status = this.storageStatus(error);
+      if (
+        name !== 'NoSuchBucket' &&
+        (status === 404 || (status === undefined && (name === 'NotFound' || name === 'NoSuchKey')))
+      )
+        throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+      throw this.storageError(error, '파일 업로드 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
     const validated = validateMediaHeader({
       name: file.name,
@@ -138,16 +145,23 @@ export class MediaStorage implements OnModuleDestroy {
     }
   }
 
+  private storageStatus(error: unknown) {
+    if (typeof error !== 'object' || error === null || !('$metadata' in error)) return undefined;
+    const metadata = error.$metadata;
+    if (typeof metadata !== 'object' || metadata === null || !('httpStatusCode' in metadata))
+      return undefined;
+    return typeof metadata.httpStatusCode === 'number' ? metadata.httpStatusCode : undefined;
+  }
+
   /** 검증과 복사 사이에 임시 객체가 바뀌면(412) 다시 올리게 하고, 그 밖의 실패는 저장소 장애로 본다. */
   private storageError(error: unknown, message: string) {
     if (error instanceof ApiError) return error;
-    const status =
-      typeof error === 'object' && error !== null && '$metadata' in error
-        ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
-        : undefined;
+    const status = this.storageStatus(error);
     if (status === 412)
-      return new ApiError(409, 'UPLOAD_CHANGED', '업로드한 파일이 바뀌었습니다. 파일을 다시 선택해주세요.');
-    return new ApiError(503, 'STORAGE_UNAVAILABLE', message);
+      return new ApiError(409, 'UPLOAD_CHANGED', '업로드한 파일이 바뀌었습니다. 파일을 다시 선택해주세요.', {
+        cause: error,
+      });
+    return new ApiError(503, 'STORAGE_UNAVAILABLE', message, { cause: error });
   }
 
   async presignRead(file: IMediaReference, mimeType: string, disposition: string) {
@@ -182,7 +196,7 @@ export class MediaStorage implements OnModuleDestroy {
 
   /** Run under the operator lock, after the daily backup. Never delete a referenced object. */
   async prune() {
-    const before = new Date(Date.now() - 86400000);
+    const before = dayjs().subtract(24, 'hour').toDate();
     await this.db.postMedia.deleteMany({ where: { postId: null, createdAt: { lt: before } } });
     await this.db.chatAttachment.deleteMany({ where: { messageId: null, createdAt: { lt: before } } });
     await this.db.avatarUpload.deleteMany({ where: { expiresAt: { lt: before } } });
@@ -196,13 +210,19 @@ export class MediaStorage implements OnModuleDestroy {
         avatar: null,
         avatarUpload: null,
       },
-      data: { retiredAt: new Date() },
+      data: { retiredAt: dayjs().toDate() },
     });
     const objects = await this.db.mediaObject.findMany({
       where: {
         backend: 'S3',
         OR: [
-          { retiredAt: { lt: new Date(Date.now() - 14 * 86400000) } },
+          {
+            retiredAt: {
+              lt: dayjs()
+                .subtract(14 * 24, 'hour')
+                .toDate(),
+            },
+          },
           { key: { startsWith: this.key('staging/') }, createdAt: { lt: before } },
         ],
         postMedia: null,

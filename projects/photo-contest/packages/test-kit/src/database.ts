@@ -103,10 +103,21 @@ export async function createIsolatedDatabase(databaseUrl: string, schema: string
   } finally {
     await admin.$disconnect();
   }
-  execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy', '--config', PRISMA_CONFIG], {
-    env: { ...process.env, DATABASE_URL: url },
-    stdio: 'pipe',
-  });
+  try {
+    execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy', '--config', PRISMA_CONFIG], {
+      env: { ...process.env, DATABASE_URL: url },
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    // 호출자는 URL을 받은 뒤에야 정리를 등록한다. 남은 스키마가 check:cleanup을 계속 실패시키지 않게 여기서 지운다.
+    try {
+      await dropIsolatedDatabase(databaseUrl, schema);
+    } catch {
+      // 원인인 마이그레이션 오류를 가리지 않는다. URL에는 비밀번호가 있을 수 있어 스키마 이름만 남긴다.
+      console.warn(`마이그레이션이 실패한 격리 스키마를 지우지 못했습니다: ${schema}`);
+    }
+    throw error;
+  }
   return url;
 }
 
@@ -122,7 +133,7 @@ export async function dropIsolatedDatabase(databaseUrl: string, schema: string) 
   }
 }
 
-/** 테스트에서 마감 시각 변경처럼 화면으로 만들 수 없는 상태를 준비할 때 쓴다. */
+/** 테스트에서 마감 시각 변경처럼 화면으로 만들 수 없는 상태를 준비할 때 쓴다. 테스트 DB가 아니면 연결 전에 거부한다. */
 export function createDatabaseClient(databaseUrl: string) {
-  return new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
+  return new PrismaClient({ adapter: createPrismaAdapter(assertTestDatabaseUrl(databaseUrl)) });
 }

@@ -47,4 +47,5 @@ type Mutation {
     submissionEndsAt: DateTime!
     endsAt: DateTime!
   ): Contest!
+    @deprecated(reason: "새 대회는 createGroupContest로 생성합니다. 기존 대회의 제출·투표·조회는 유지합니다.")
 }

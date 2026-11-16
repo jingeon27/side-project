@@ -12,10 +12,11 @@ test(
     const searchPath = `/explore?q=${encodeURIComponent(name)}`;
     await page.goto(searchPath);
     const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name, exact: true }) });
-    await card.getByText('둘러보기', { exact: true }).click();
+    // 카드 본문은 이름 링크의 가상 요소가 덮는다. 사용자가 보이는 글자 자리를 누르듯 가려진 글자 위치를 누른다.
+    await card.getByText('둘러보기', { exact: true }).click({ force: true });
     await expect(page).toHaveURL(`/groups/${group.id}`);
     await page.goto(searchPath);
-    await card.getByText('멤버 1명', { exact: true }).click();
+    await card.getByText('멤버 1명', { exact: true }).click({ force: true });
     await expect(page).toHaveURL(`/groups/${group.id}`);
     await page.goto(searchPath);
     await card.getByRole('link', { name, exact: true }).focus();
@@ -36,7 +37,7 @@ test(
     const searchPath = `/explore?q=${encodeURIComponent(name)}`;
     await page.goto(searchPath);
     const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name, exact: true }) });
-    await card.getByText('둘러보기', { exact: true }).click();
+    await card.getByText('둘러보기', { exact: true }).click({ force: true });
     const dialog = page.getByRole('alertdialog', { name: '로그인이 필요해요', exact: true });
     await expect(dialog).toContainText('비공개 그룹은 익명으로 이용할 수 없어요.');
     await expect(page).toHaveURL(searchPath);

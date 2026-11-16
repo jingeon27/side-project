@@ -53,7 +53,7 @@ test(
 );
 
 test(
-  '인증 화면에서는 콘텐츠를 숨기고 익명 시작 후 공개 피드만 보여 줘야 한다',
+  '세션 없는 홈은 공개 피드만 보여 주고 익명 시작 후에도 비공개 게시물을 숨겨야 한다',
   { tag: ['@ios', '@desktop'] },
   async ({ page }) => {
     const owner = await createTestUser(API_URL, { nickname: '익명홈 목록 그룹장', origin: WEB_ORIGIN });
@@ -63,9 +63,14 @@ test(
     await seedPost(owner, secret.id, `익명 비밀 ${suffix}`);
     await seedPost(owner, group.id, `익명 공개사진 ${suffix}`);
     await page.goto('/');
-    await expect(page).toHaveURL(/\/sign\?/);
-    await expect(page.getByRole('region', { name: '공개 그룹의 최신 사진' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: '로그인 없이 그룹 둘러보기' })).toHaveCount(0);
+    await expect(page).toHaveURL('/');
+    await expect(
+      page
+        .getByRole('region', { name: '공개 그룹의 최신 사진' })
+        .getByRole('article', { name: `익명 공개사진 ${suffix}`, exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(`익명 비밀 ${suffix}`, { exact: true })).toHaveCount(0);
+    await page.goto('/sign');
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page).toHaveURL('/');
     await expect(

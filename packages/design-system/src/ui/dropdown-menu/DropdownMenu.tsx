@@ -61,8 +61,10 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
+      // 방향키 이동은 실제 포커스를 항목으로 옮긴다. 강조 배경은 팝업 바탕과 약 1.1:1이라 전역 포커스 링을 지우지 않고,
+      // 팝업 여백과 overflow에 잘리지 않게 링을 항목 안쪽에 그린다.
       className={cn(
-        "group/dropdown-menu-item relative flex min-h-touch cursor-default items-center gap-1.5 rounded-control px-3 py-2 text-input outline-hidden select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-inset:pl-7 data-[variant=danger]:text-danger data-[variant=danger]:data-highlighted:bg-danger-soft data-[variant=danger]:data-highlighted:text-danger data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=danger]:*:[svg]:text-danger",
+        "group/dropdown-menu-item relative flex min-h-touch cursor-default items-center gap-1.5 rounded-control px-3 py-2 text-input -outline-offset-3 select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-inset:pl-7 data-[variant=danger]:text-danger data-[variant=danger]:data-highlighted:bg-danger-soft data-[variant=danger]:data-highlighted:text-danger data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=danger]:*:[svg]:text-danger",
         className,
       )}
       {...props}

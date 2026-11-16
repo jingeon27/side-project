@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
 
 import { MediaUploadModule } from '../media-upload/media-upload.module';
-import { GroupAdministrationResolver } from './group-administration.resolver';
-import { GroupAdministrationService } from './group-administration.service';
-import { GroupCategoryResolver } from './group-category.resolver';
-import { GroupCategoryService } from './group-category.service';
-import { GroupJoinRequestResolver } from './group-join-request.resolver';
-import { GroupJoinRequestService } from './group-join-request.service';
-import { GroupProfileController } from './group-profile.controller';
-import { GroupProfileResolver } from './group-profile.resolver';
-import { GroupProfileService } from './group-profile.service';
+import { GroupAdministrationResolver } from './administration/group-administration.resolver';
+import { GroupAdministrationService } from './administration/group-administration.service';
+import { GroupCategoryResolver } from './categories/group-category.resolver';
+import { GroupCategoryService } from './categories/group-category.service';
 import { GroupResolver } from './group.resolver';
 import { GroupService } from './group.service';
-import { MembershipModule } from './membership.module';
+import { GroupJoinRequestResolver } from './membership/group-join-request.resolver';
+import { GroupJoinRequestService } from './membership/group-join-request.service';
+import { MembershipModule } from './membership/membership.module';
+import { GroupProfileController } from './profile/group-profile.controller';
+import { GroupProfileResolver } from './profile/group-profile.resolver';
+import { GroupProfileService } from './profile/group-profile.service';
 
 @Module({
   imports: [MembershipModule, MediaUploadModule],

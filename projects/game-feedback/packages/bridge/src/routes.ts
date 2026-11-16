@@ -1,19 +1,26 @@
-import { compact } from 'es-toolkit';
+import { pickBy } from 'es-toolkit';
+import qs from 'qs';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
+import {
+  BattleModeSchema as battleModeSchema,
+  BoardQuerySchema,
+  BoardSlugSchema as boardSlugSchema,
+  CoachingRoleSchema as coachingRoleSchema,
+  FeedbackStatusSchema as feedbackStatusSchema,
+  GameSlugSchema,
+} from './board-query';
+
 export const RouteIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const localeSchema = z.enum(['ko', 'en', 'ja']);
-export const GameSlugSchema = z
-  .string()
-  .regex(/^[a-z0-9-]+$/)
-  .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings';
 export type TAppScreen =
   | TAppTab
   | 'search'
   | 'post'
   | 'compose'
+  | 'profile-edit'
   | 'profile'
   | 'conversation'
   | 'guide'
@@ -34,10 +41,6 @@ export interface IAppRoute {
 function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
-const boardSlugSchema = z.enum(['feedback', 'friend-sale', 'friendly', 'coaching', 'free']);
-const battleModeSchema = z.enum(['DUEL', 'TEAM']);
-const coachingRoleSchema = z.enum(['COACH', 'STUDENT']);
-const feedbackStatusSchema = z.enum(['WAITING', 'ANSWERED']);
 interface IRecruitmentFilters {
   battleMode?: z.infer<typeof battleModeSchema>;
   coachingRole?: z.infer<typeof coachingRoleSchema>;
@@ -45,20 +48,21 @@ interface IRecruitmentFilters {
 interface IBoardFilters extends IRecruitmentFilters {
   feedbackStatus?: z.infer<typeof feedbackStatusSchema>;
 }
-const boardSlugs: Record<string, string> = {
+type TBoardKind = 'FEEDBACK' | 'COACHING' | 'FREE' | 'FRIEND_SALE' | 'FRIENDLY';
+type TBoardSlug = z.infer<typeof boardSlugSchema>;
+// 호출자가 넘기는 게시판 종류는 열린 문자열이라 조회 타입은 넓히고, 표는 모든 종류를 slug로 잇는지 검사한다.
+const boardSlugs: Record<string, TBoardSlug> = {
   FEEDBACK: 'feedback',
   COACHING: 'coaching',
   FREE: 'free',
   FRIEND_SALE: 'friend-sale',
   FRIENDLY: 'friendly',
-};
+} satisfies Record<TBoardKind, TBoardSlug>;
 function queryPath(path: string, values: Record<string, string | undefined>) {
-  const query = compact(
-    Object.entries(values).map(([key, value]) =>
-      value ? `${encodeURIComponent(key)}=${encodeURIComponent(value)}` : undefined,
-    ),
-  ).join('&');
-  return `${path}${query ? `?${query}` : ''}`;
+  return `${path}${qs.stringify(
+    pickBy(values, (value) => Boolean(value)),
+    { addQueryPrefix: true },
+  )}`;
 }
 export const appRoutes = {
   login: (locale: string, returnTo?: string) => queryPath(`${root(locale)}/login`, { returnTo }),
@@ -123,23 +127,39 @@ export const appRoutes = {
   messages: (locale: string) => `${root(locale)}/messages`,
   conversation: (locale: string, id: string) => `${root(locale)}/messages/${RouteIdSchema.parse(id)}`,
   notifications: (locale: string) => `${root(locale)}/notifications`,
+  editProfile: (locale: string) => `${root(locale)}/settings/profile`,
   settings: (locale: string) => `${root(locale)}/settings`,
   contact: (locale: string) => `${root(locale)}/contact`,
   guide: (locale: string) => `${root(locale)}/guide`,
+  terms: (locale: string) => `${root(locale)}/terms`,
+  privacy: (locale: string) => `${root(locale)}/privacy`,
 };
+/** qs는 잘못된 인코딩을 원문으로 넘긴다. 경로 전체를 거부하도록 인코딩 오류와 제어 문자는 예외로 올린다. */
+function decodeQueryPart(text: string) {
+  const decoded = decodeURIComponent(text.replace(/\+/g, ' '));
+  if (/[\u0000-\u001f\u007f]/.test(decoded)) throw new Error('Control characters are not allowed.');
+  return decoded;
+}
+function isStringRecord(values: Record<string, unknown>): values is Record<string, string> {
+  return Object.values(values).every((value) => typeof value === 'string');
+}
 function readQuery(search: string): Record<string, string> | null {
-  const values: Record<string, string> = Object.create(null);
   try {
-    return compact(search.split('&')).reduce<Record<string, string> | null>((result, pair) => {
-      if (!result) return null;
-      const index = pair.indexOf('=');
-      const decode = (text: string) => decodeURIComponent(text.replace(/\+/g, ' '));
-      const key = decode(index < 0 ? pair : pair.slice(0, index));
-      const value = decode(index < 0 ? '' : pair.slice(index + 1));
-      if (key in result || /[\u0000-\u001f\u007f]/.test(key + value)) return null;
-      result[key] = value;
-      return result;
-    }, values);
+    // qs는 값 안의 `]=`를 키 경계로 읽어 뒤따르는 값을 다른 키로 숨긴다. 첫 `=`만 키와 값을 나누도록 값 쪽 `=`를 미리 인코딩한다.
+    const parsed = qs.parse(
+      search.replace(/=([^&]*)/g, (_, value: string) => `=${value.replaceAll('=', '%3D')}`),
+      {
+        decoder: decodeQueryPart,
+        depth: 0,
+        parseArrays: false,
+        duplicates: 'combine',
+        plainObjects: true,
+        arrayLimit: Infinity,
+        parameterLimit: Infinity,
+      },
+    );
+    // 중복 키는 배열로 합쳐지므로 문자열이 아닌 값이 있으면 경로 전체를 거부한다.
+    return isStringRecord(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -150,7 +170,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const segments =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|onboarding|search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|onboarding|search|boards|write|messages|notifications|settings\/profile|settings|guide|terms|privacy|contact))?$/.exec(
       pathname,
     );
   if (!segments) return null;
@@ -167,6 +187,14 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const context = { pathname, locale, home, query, game: game.data, id, feedback: feedback.data };
   return match(kind)
     .with('login', 'onboarding', (screen) => resolveAuthRoute(context, screen))
+    .with('settings/profile', () => ({
+      path: appRoutes.editProfile(locale),
+      pathname,
+      locale,
+      screen: 'profile-edit' as const,
+      tab: 'settings' as const,
+      parent: appRoutes.settings(locale),
+    }))
     .with('search', () => resolveSearchRoute(context))
     .with('write', () => resolveComposeRoute(context))
     .with('posts', () => resolvePostRoute(context))
@@ -206,59 +234,48 @@ function resolveAuthRoute(
 }
 
 function resolveSearchRoute({ pathname, locale, query, game, feedback }: IRouteContext): IAppRoute | null {
-  const board = boardSlugSchema.optional().safeParse(query.board);
-  if (feedback && query.board !== 'feedback') return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!board.success || !battle.success || !coaching.success || (query.q?.length ?? 0) > 100) return null;
-  if ((battle.data && board.data !== 'friendly') || (coaching.data && board.data !== 'coaching')) return null;
+  const parsed = BoardQuerySchema.safeParse(query);
+  if (!parsed.success || (query.q?.length ?? 0) > 100) return null;
+  const { board, battleMode, coachingRole } = parsed.data;
   const filters = {
-    board: board.data,
+    board,
     feedbackStatus: feedback,
     game: query.game,
     q: query.q,
     tab: query.tab,
-    battleMode: battle.data,
-    coachingRole: coaching.data,
+    battleMode,
+    coachingRole,
   };
   return {
     path: appRoutes.search(locale, filters),
     pathname,
     locale,
     screen: 'search',
-    tab: board.data ? 'boards' : 'feed',
-    game: board.data || query.game ? game : undefined,
-    parent: board.data
-      ? appRoutes.boards(locale, board.data, query.q, game, filters)
+    tab: board ? 'boards' : 'feed',
+    game: board || query.game ? game : undefined,
+    parent: board
+      ? appRoutes.boards(locale, board, query.q, game, filters)
       : appRoutes.feed(locale, { q: query.q, tab: query.tab }),
   };
 }
 
 function resolveComposeRoute({ pathname, locale, home, query, game }: IRouteContext): IAppRoute | null {
-  const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
-  if (board && !board.success) return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  if (!battle.success || (battle.data && query.board !== 'friendly')) return null;
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!coaching.success || (coaching.data && query.board !== 'coaching')) return null;
+  const parsed = BoardQuerySchema.safeParse(query);
+  if (!parsed.success) return null;
+  const { board, battleMode, coachingRole } = parsed.data;
   return {
     path: queryPath(pathname, {
-      board: board?.success ? board.data : undefined,
+      board,
       game: game !== 'clash-royale' ? game : undefined,
-      battleMode: battle.data,
-      coachingRole: coaching.data,
+      battleMode,
+      coachingRole,
     }),
-    game: game,
+    game,
     pathname,
     locale,
     screen: 'compose',
     tab: board ? 'boards' : 'feed',
-    parent: board?.success
-      ? appRoutes.boards(locale, board.data, undefined, game, {
-          battleMode: battle.data,
-          coachingRole: coaching.data,
-        })
-      : home,
+    parent: board ? appRoutes.boards(locale, board, undefined, game, { battleMode, coachingRole }) : home,
   };
 }
 
@@ -280,29 +297,13 @@ function resolvePostRoute({ pathname, locale, home, query, game, id }: IRouteCon
   };
 }
 
-function resolveBoardRoute({
-  pathname,
-  locale,
-  home,
-  query,
-  game,
-  id,
-  feedback,
-}: IRouteContext): IAppRoute | null {
-  const slug = boardSlugSchema.safeParse(id ?? 'feedback');
-  if (!slug.success || (query.q?.length ?? 0) > 100) return null;
-  if (feedback && slug.data !== 'feedback') return null;
-  const battle = battleModeSchema.optional().safeParse(query.battleMode);
-  if (!battle.success || (battle.data && slug.data !== 'friendly')) return null;
-  const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
-  if (!coaching.success || (coaching.data && slug.data !== 'coaching')) return null;
+function resolveBoardRoute({ pathname, locale, home, query, game, id }: IRouteContext): IAppRoute | null {
+  const parsed = BoardQuerySchema.safeParse({ ...query, board: id ?? 'feedback' });
+  if (!parsed.success || !parsed.data.board || (query.q?.length ?? 0) > 100) return null;
+  const { board, feedbackStatus, battleMode, coachingRole } = parsed.data;
   return {
-    path: appRoutes.boards(locale, slug.data, query.q, game, {
-      feedbackStatus: feedback,
-      battleMode: battle.data,
-      coachingRole: coaching.data,
-    }),
-    game: game,
+    path: appRoutes.boards(locale, board, query.q, game, { feedbackStatus, battleMode, coachingRole }),
+    game,
     pathname,
     locale,
     screen: 'boards',
@@ -344,8 +345,10 @@ function resolveStaticRoute({ pathname, locale, home }: IRouteContext, kind: str
     .otherwise(() => null);
   if (!screen) return null;
   const tab = match(screen)
-    .with('notifications', () => 'notifications' as const)
-    .otherwise(() => 'settings' as const);
+    .returnType<TAppTab>()
+    .with('notifications', () => 'notifications')
+    .with('settings', 'guide', 'terms', 'privacy', 'contact', () => 'settings')
+    .exhaustive();
   return {
     path: pathname,
     pathname,

@@ -15,7 +15,7 @@ const CANCELLED_LOAD_ERRORS = [
   { domain: 'NSURLErrorDomain', code: -999 },
   { domain: 'WebKitErrorDomain', code: 101 },
   { domain: 'WebKitErrorDomain', code: 102 },
-] as const;
+] as const satisfies readonly Required<Pick<ILoadError, 'domain' | 'code'>>[];
 
 /** 웹 origin 메인 문서를 불러오지 못했을 때만 오프라인 화면을 띄운다. */
 export function isOfflineLoadError({ url, domain, code }: ILoadError, webOrigin: string) {

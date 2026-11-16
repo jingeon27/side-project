@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
-import { GroupCategoryService } from './group-category.service';
+import { GroupCategoryService } from './categories/group-category.service';
 
 const CREATE_CATEGORY =
   'mutation($groupId:ID!,$name:String!){createGroupCategory(groupId:$groupId,name:$name){id}}';

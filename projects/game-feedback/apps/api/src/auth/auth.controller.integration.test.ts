@@ -5,9 +5,13 @@ import { createRequire } from 'node:module';
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 
-import { NotificationListSchema, SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
+import {
+  LEGAL_POLICY_VERSION,
+  NotificationListSchema,
+  SocialProviderSchema,
+  SupportThreadListSchema,
+} from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
@@ -38,10 +42,14 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     state.schema = `gf_test_access_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', state.schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
-    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-      encoding: 'utf8',
-    });
+    const migration = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+      },
+    );
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed.');
     const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     state.db = db;
@@ -286,10 +294,10 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect((await requester.get('/api/conversations').expect(200)).body.items).toContainEqual(
       expect.objectContaining({ id: general.id }),
     );
-    // 관리자 문의 목록은 계약(SupportThreadSchema)의 requester로 요청자를 알린다.
-    const threads = z
-      .array(SupportThreadSchema)
-      .parse((await admin.get('/api/admin/support').expect(200)).body);
+    // 관리자 문의 목록은 계약(SupportThreadListSchema)의 requester로 요청자를 알린다.
+    const threads = SupportThreadListSchema.parse(
+      (await admin.get('/api/admin/support').expect(200)).body,
+    ).items;
     expect(threads).toContainEqual(
       expect.objectContaining({
         conversationId: general.id,
@@ -384,7 +392,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         .post('/api/posts')
         .set('Origin', origin)
         .send({
-          title: `새 소식 ${randomUUID()}`,
+          title: '새 소식 알림 테스트',
           body: '함께 연습할 분을 구해요.',
           categoryId: 'clash-royale',
           board: 'FREE',
@@ -475,7 +483,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
   });
 
   it('separates the same external subject across all three social providers and preserves repeat logins', async () => {
-    const { app } = fixture();
+    const { app, db } = fixture();
     const ids = new Set<string>();
     for (const provider of SocialProviderSchema.options) {
       const agent = supertest.agent(app.getHttpServer());
@@ -494,6 +502,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
           .expect(200)
       ).body.user;
       ids.add(user.id);
+      const consent = await db.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { termsVersion: true, termsAcceptedAt: true },
+      });
+      expect(consent.termsVersion).toBe(LEGAL_POLICY_VERSION);
+      expect(consent.termsAcceptedAt).toBeInstanceOf(Date);
       const again = await agent.get(`/api/auth/social/${provider}`).expect(302);
       await agent
         .get(`/api/auth/social/${provider}/callback`)
@@ -503,6 +517,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         })
         .expect(302);
       expect((await agent.get('/api/session')).body.user.id).toBe(user.id);
+      expect(
+        await db.user.findUniqueOrThrow({
+          where: { id: user.id },
+          select: { termsVersion: true, termsAcceptedAt: true },
+        }),
+      ).toEqual(consent);
     }
     expect(ids.size).toBe(3);
   });
@@ -513,7 +533,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const start = await agent.get('/api/auth/social/discord').query({ app_challenge: challenge }).expect(302);
     const oauthState = new URL(responseLocation(start)).searchParams.get('state');
-    await agent.get('/api/auth/social/kakao/callback').query({ state: oauthState, code: 'fake' }).expect(400);
+    // 다른 제공자의 콜백은 시도를 쓰지 않고 앱 콜백에 실패만 알린다.
+    const mismatched = await agent
+      .get('/api/auth/social/kakao/callback')
+      .query({ state: oauthState, code: 'fake' })
+      .expect(302);
+    expect(responseLocation(mismatched)).toBe(`${origin}/app-auth/callback?error=login_failed`);
     const callback = await agent
       .get('/api/auth/social/discord/callback')
       .query({ state: oauthState, code: 'fake' })

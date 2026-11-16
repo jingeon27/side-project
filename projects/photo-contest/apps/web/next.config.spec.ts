@@ -6,21 +6,13 @@ import nextConfig from './next.config';
 
 const respond = (url: string) => unstable_getResponseFromNextConfig({ url, nextConfig });
 
-describe('next.config 앱 링크', () => {
-  it('앱 로그인 콜백만 공통 헤더에서 빼 Route Handler의 엄격한 CSP·no-referrer가 그대로 나가야 한다', async () => {
-    for (const url of [
-      'https://contest.example/app-auth/callback',
-      'https://contest.example/app-auth/callback?code=x',
-    ]) {
-      const { headers } = await respond(url);
-      expect(headers.get('content-security-policy'), url).toBeNull();
-      expect(headers.get('referrer-policy'), url).toBeNull();
+describe('next.config 보안 헤더', () => {
+  it('모든 경로에 공통 보안 헤더를 적용해야 한다', async () => {
+    for (const path of ['/', '/sign', '/groups/1', '/missing/route']) {
+      const { headers } = await respond(`https://contest.example${path}`);
+      expect(headers.get('content-security-policy')).toContain("frame-ancestors 'self'");
+      expect(headers.get('x-frame-options')).toBe('SAMEORIGIN');
+      expect(headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
     }
-    for (const url of [
-      'https://contest.example/app-auth/callbackx',
-      'https://contest.example/app-auth/callback/extra',
-      'https://contest.example/.well-known/assetlinks.json',
-    ])
-      expect((await respond(url)).headers.get('x-frame-options'), url).toBe('SAMEORIGIN');
   });
 });

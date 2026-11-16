@@ -6,12 +6,17 @@ import { match } from 'ts-pattern';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { PHASE, type TPhase } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
+import type { TCreateLegacyTestContestDto } from './testing.dto';
 
 const STEP_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class TestingService {
   constructor(private readonly db: Database) {}
+
+  createLegacyContest(input: TCreateLegacyTestContestDto) {
+    return this.db.contest.create({ data: { ...input, format: 'LEGACY' }, select: { id: true } });
+  }
 
   createUser(nickname: string, options: { needsOnboarding?: boolean; avatar?: string } = {}) {
     return this.db.user.create({
@@ -45,6 +50,4 @@ export class TestingService {
     if (!result.count) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return { contestId, phase };
   }
-
-  /** 외부 provider의 성공 콜백만 대체한다. 웹의 PKCE 교환·세션 발급은 실제 인증 API가 처리한다. */
 }

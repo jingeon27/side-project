@@ -11,10 +11,10 @@ import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, LoadingState } from '@/shared/ui';
 
-import { ChatConnectionStatus } from './ChatConnectionStatus';
-import { ChatWelcome } from './ChatWelcome';
-import { ConversationPane } from './ConversationPane';
-import { ConversationSidebar } from './ConversationSidebar';
+import { ConversationPane } from './conversation/ConversationPane';
+import { ConversationSidebar } from './list/ConversationSidebar';
+import { ChatConnectionStatus } from './status/ChatConnectionStatus';
+import { ChatWelcome } from './status/ChatWelcome';
 
 interface IMessagesPageProps {
   locale: string;
@@ -23,18 +23,20 @@ interface IMessagesPageProps {
 
 export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   const { t } = useI18n();
-  const { session, loading, login } = useSession();
+  const { session, login } = useSession();
   const userId = session?.user?.id;
-  if (loading) return <LoadingState text={t('메시지 공간을 준비하고 있어요')} />;
   if (!userId)
     return (
       <div className="empty-feed">
-        <span>
-          <MessageCircle size={30} />
+        <span
+          aria-hidden
+          className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+        >
+          <MessageCircle className="size-full" />
         </span>
-        <h1>{t('플레이 이야기를, 조금 더 가까이')}</h1>
+        <h2>{t('플레이 이야기를, 조금 더 가까이')}</h2>
         <p>{t('로그인하면 다른 플레이어와 1:1 메시지를 나눌 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={login}>
           {t('로그인하고 대화하기')}
           <ArrowUpRight size={16} />
         </Button>
@@ -43,12 +45,9 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   return (
     <>
       <div className="page-heading chat-page-heading">
-        <div>
-          <h1>{t('채팅')}</h1>
-        </div>
         <ChatConnectionStatus />
       </div>
-      <div className={`chat-workspace ${conversationId ? 'has-conversation' : ''}`}>
+      <div className="chat-workspace" data-has-conversation={!!conversationId || undefined}>
         <AsyncBoundary
           clientOnly
           title={t('대화 목록')}

@@ -1,0 +1,20 @@
+'use client';
+
+import { appRoutes } from '@game-feedback/bridge';
+
+import { useI18n } from '@/shared/i18n';
+import { Topbar } from '@/widgets/community-shell';
+
+export function MessagesTopbar({ locale }: { locale: string }) {
+  const { t } = useI18n();
+  return (
+    <Topbar.Root>
+      <Topbar.Title heading>{t('채팅')}</Topbar.Title>
+      <Topbar.Actions>
+        <Topbar.Language />
+        <Topbar.Notifications href={appRoutes.notifications(locale)} />
+        <Topbar.Account href={appRoutes.settings(locale)} />
+      </Topbar.Actions>
+    </Topbar.Root>
+  );
+}

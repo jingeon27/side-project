@@ -27,18 +27,15 @@ export function analyticsContext({
     client: native ? 'webview' : 'browser',
     viewport_bucket: viewportBucket(width),
     locale: route?.locale ?? locale.split('-')[0],
-    screen: route?.screen ?? 'unknown',
+    screen: pathname === '/about' ? 'landing' : (route?.screen ?? 'unknown'),
   };
 }
 function withoutQuery(value: string) {
   if (!value || value === 'EMPTY' || value === '-') return value;
   try {
     const url = new URL(value, typeof location === 'undefined' ? 'https://local.invalid' : location.origin);
-    return /^https?:$/.test(url.protocol)
-      ? value.startsWith('/')
-        ? url.pathname
-        : url.origin + url.pathname
-      : '';
+    if (!/^https?:$/.test(url.protocol)) return '';
+    return value.startsWith('/') ? url.pathname : url.origin + url.pathname;
   } catch {
     return value.split(/[?#]/)[0] ?? '';
   }

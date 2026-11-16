@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import { match, P } from 'ts-pattern';
+import dayjs from 'dayjs';
+import { attemptAsync, chunk } from 'es-toolkit';
 
-import { ExpoPushTransport, PushProviderError, type IPushMessage } from './index';
+import { ExpoPushTransport, PUSH_BATCH_SIZE, PushProviderError, type IPushMessage } from './index';
 
 export interface IPushJob {
   id: string;
@@ -16,7 +17,7 @@ export interface IPushJob {
 export interface IPushJobUpdate {
   status: 'PENDING' | 'TICKET' | 'DELIVERED' | 'FAILED' | 'CANCELLED';
   nextAttemptAt?: Date;
-  ticketId?: string;
+  ticketId?: string | null;
   attempts?: number;
 }
 export interface IPushStore {
@@ -38,12 +39,12 @@ export class PushDispatcher {
     private readonly transport: ExpoPushTransport,
   ) {}
 
-  async run(now = new Date()): Promise<void> {
+  async run(now = dayjs().toDate()): Promise<void> {
     const jobs = await this.store.due(now);
     const claimed: { job: IPushJob; lease: string }[] = [];
     for (const job of jobs) {
       const lease = randomUUID();
-      if (await this.store.claim(job.id, lease, now, new Date(now.getTime() + 120_000)))
+      if (await this.store.claim(job.id, lease, now, dayjs(now.getTime() + 120_000).toDate()))
         claimed.push({ job, lease });
     }
     const pending: { job: IPushJob; lease: string; message: IPushMessage }[] = [];
@@ -64,43 +65,56 @@ export class PushDispatcher {
       }
       pending.push({ ...item, message });
     }
-    if (pending.length) {
-      try {
-        const tickets = await this.transport.send(pending.map((item) => item.message));
-        for (const [index, item] of pending.entries()) {
-          const ticket = tickets[index];
+    const persistenceErrors: unknown[] = [];
+    // Expo는 요청 하나에 PUSH_BATCH_SIZE개까지 받는다. 저장소가 더 많이 돌려줘도 나눠 보내고,
+    // 한 묶음의 공급자 실패는 그 묶음만 재시도한다.
+    for (const batch of chunk(pending, PUSH_BATCH_SIZE)) {
+      // 공급자 실패만 전송 재시도 정책에 넣는다. DB 실패는 다른 작업의 공급자 결과를 바꾸지 않는다.
+      const [error, tickets] = await attemptAsync(() =>
+        this.transport.send(batch.map((item) => item.message)),
+      );
+      // 호출 계약·프로그래밍 오류를 영구 전송 실패로 바꾸지 않는다.
+      if (tickets === null && !(error instanceof PushProviderError)) throw error;
+      for (const [index, item] of batch.entries()) {
+        try {
+          if (error instanceof PushProviderError) {
+            await this.retry(item, now, error.retryable, error.retryAfterMs);
+            continue;
+          }
+          const ticket = tickets?.[index];
           if (ticket?.status === 'ok') {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
               ticketId: ticket.id,
-              nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
+              nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
             });
             continue;
           }
           if (ticket?.status === 'error' && ticket.code === 'DeviceNotRegistered')
             await this.store.disable(item.job.deviceId);
           await this.retry(item, now, ticket?.status === 'error' && ticket.code === 'MessageRateExceeded');
+        } catch (error) {
+          persistenceErrors.push(error);
         }
-      } catch (error) {
-        const failure = match(error)
-          .with(P.instanceOf(PushProviderError), ({ retryable, retryAfterMs }) => ({
-            retryable,
-            delay: retryAfterMs,
-          }))
-          .otherwise(() => ({ retryable: false, delay: undefined }));
-        for (const item of pending) await this.retry(item, now, failure.retryable, failure.delay);
       }
     }
-    if (receipts.length) {
-      try {
-        const results = await this.transport.receipts(receipts.map((item) => item.ticketId));
-        for (const item of receipts) {
-          const result = results[item.ticketId];
+    for (const batch of chunk(receipts, PUSH_BATCH_SIZE)) {
+      const [error, results] = await attemptAsync(() =>
+        this.transport.receipts(batch.map((item) => item.ticketId)),
+      );
+      if (results === null && !(error instanceof PushProviderError)) throw error;
+      for (const item of batch) {
+        try {
+          const result = results?.[item.ticketId];
           if (!result) {
             await this.store.finish(item.job.id, item.lease, {
               status: 'TICKET',
-              nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
+              nextAttemptAt: dayjs(now.getTime() + RECEIPT_DELAY_MS).toDate(),
             });
+            continue;
+          }
+          if (result.status === 'error' && result.code === 'MessageRateExceeded') {
+            await this.retry(item, now, true);
             continue;
           }
           if (result.status === 'error' && result.code === 'DeviceNotRegistered')
@@ -108,15 +122,14 @@ export class PushDispatcher {
           await this.store.finish(item.job.id, item.lease, {
             status: result.status === 'ok' ? 'DELIVERED' : 'FAILED',
           });
+        } catch (error) {
+          persistenceErrors.push(error);
         }
-      } catch {
-        for (const item of receipts)
-          await this.store.finish(item.job.id, item.lease, {
-            status: 'TICKET',
-            nextAttemptAt: new Date(now.getTime() + RECEIPT_DELAY_MS),
-          });
       }
     }
+    // 저장하지 못한 작업은 기존 임대 만료 후 다시 처리하며, 호출자가 DB 장애를 관측할 수 있게 한다.
+    if (persistenceErrors.length)
+      throw new AggregateError(persistenceErrors, 'Push result persistence failed');
   }
 
   private async retry(item: { job: IPushJob; lease: string }, now: Date, retryable: boolean, delay?: number) {
@@ -124,7 +137,10 @@ export class PushDispatcher {
     await this.store.finish(item.job.id, item.lease, {
       status: retryable && attempts < MAX_ATTEMPTS ? 'PENDING' : 'FAILED',
       attempts,
-      nextAttemptAt: new Date(now.getTime() + Math.max(delay ?? 0, 30_000 * 2 ** (attempts - 1))),
+      ticketId: null,
+      nextAttemptAt: dayjs(
+        now.getTime() + Math.max(delay ?? 0, 30_000 * 2 ** Math.min(attempts - 1, MAX_ATTEMPTS - 1)),
+      ).toDate(),
     });
   }
 }

@@ -10,8 +10,8 @@ import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { BackLink } from '@/shared/navigation';
 import { AsyncBoundary } from '@/shared/ui';
-import { CreatePostForm } from '@/widgets/post-composer';
-import { VerificationPrompt } from '@/widgets/support';
+
+import { CreatePostForm } from './CreatePostForm';
 
 interface IPostComposePageProps {
   locale: string;
@@ -65,17 +65,14 @@ function ComposeContent({
       </div>
     );
   return (
-    <>
-      <VerificationPrompt />
-      <CreatePostForm
-        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}:${coachingRole ?? ''}`}
-        categories={categories}
-        locale={locale}
-        board={board}
-        initialCategoryId={categoryId}
-        initialBattleMode={battleMode}
-        initialCoachingRole={coachingRole}
-      />
-    </>
+    <CreatePostForm
+      key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}:${coachingRole ?? ''}`}
+      categories={categories}
+      locale={locale}
+      board={board}
+      initialCategoryId={categoryId}
+      initialBattleMode={battleMode}
+      initialCoachingRole={coachingRole}
+    />
   );
 }

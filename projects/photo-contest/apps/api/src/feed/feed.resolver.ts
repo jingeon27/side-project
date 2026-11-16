@@ -1,7 +1,7 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
+import type { IViewer } from '../auth/session/session.service';
+import { Viewer } from '../auth/session/viewer.decorator';
 import { FeedService, type IFeedRange } from './feed.service';
 
 @Resolver('PhotoFeedItem')

@@ -1,6 +1,13 @@
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
 
+interface IBoardConfig {
+  kind: TBoardKind;
+  slug: string;
+  name: string;
+  description: string;
+}
+
 export const communityBoards = [
   {
     kind: 'FRIEND_SALE',
@@ -26,7 +33,7 @@ export const communityBoards = [
     name: '자유게시판',
     description: '게임 이야기와 일상을 자유롭게 나눠보세요.',
   },
-] as const;
+] as const satisfies readonly IBoardConfig[];
 export const gameBoards = [
   {
     kind: 'FEEDBACK',
@@ -35,7 +42,7 @@ export const gameBoards = [
     description: '플레이 고민을 나누고 다른 플레이어의 피드백을 받아보세요.',
   },
   ...communityBoards,
-] as const;
+] as const satisfies readonly IBoardConfig[];
 export function boardBySlug(slug: string) {
   return gameBoards.find((board) => board.slug === slug);
 }

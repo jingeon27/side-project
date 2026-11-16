@@ -18,6 +18,10 @@
 
 ## Web FSD 구성
 
+페이지 내부는 기능별 하위 폴더로 구분한다. 상세의 `ui/answers`·`ui/comments/thread`, 채팅의 `ui/list`·`ui/conversation`·`ui/composer`·`ui/history`가 각각 관련 UI와 테스트를 함께 소유한다. 모델은 `model/composer`·`model/history`로 대응하며 공개 진입점과 페이지 조립 파일은 상위에 유지한다.
+
+페이지 전용 조회와 폼·탐색 조립은 `_pages/<screen>`의 `ui`·`model`에 둔다. 프로필 편집과 알림 설정, 가입 폼, 글쓰기·수정의 제출 흐름이 해당한다. 서버 IO·query/mutation options와 재사용할 도메인 표시는 features에 유지하고, 작성·수정이 공유하는 입력·검증은 widgets에 둔다. 사용처가 하나라는 이유만으로 도메인 카드나 동작을 페이지로 옮기지 않는다.
+
 현재 저장소의 공통 ESLint preset에 따라 다음 5레이어를 사용한다. Next의 예약 디렉터리와 구분하기 위해 앱 조합과 화면에 `_app`·`_pages` 이름을 사용한다.
 
 | 경로           | 책임                                                                                         |
@@ -41,7 +45,7 @@ Web의 `shared/ui/ServiceErrorBoundary`는 설치된 Next 16.4의 `catchError`�
 
 - `CommunityShell`의 본문·상단/하단 메뉴·양쪽 사이드바를 독립 경계로 나눈다. 본문은 계정·경로로 reset하며 Server Component도 포함하므로 재시도에 route refresh를 사용한다. `[locale]/error.tsx`는 셸 안쪽 라우트의 마지막 복구 경계이며 예약 라우트 파일은 `_app/errors`를 재수출한다.
 - 피드 카드, 게시글·답변·댓글, 채팅 목록·대화창은 각각 실패한 영역만 재생성한다. 계정·대화 ID가 바뀌면 이전 오류 상태를 폐기한다. 대화 목록 실패 시 건강한 대화창의 초안과 상태는 유지된다. 채팅 오류 화면도 기존 반응형 레이아웃과 목록/대화창 표시 규칙을 따른다.
-- 모든 overlay controller는 `openOverlay`로 연다. provider 아래에 그려지는 포털도 별도 경계로 감싸며 controller 렌더 자체의 오류도 잡는다. 실패한 창은 공통 Dialog에서 재시도·닫기를 제공하고 본문과 다른 창을 유지한다. NativeBridge·가입 안내도 각각 경계를 두며 세션 Provider에는 서비스 복구 경계를 둔다.
+- 모든 overlay controller는 `openOverlay`로 연다. controller는 받은 `{ open, onOpenChange, onOpenChangeComplete }`를 시트·대화상자에 그대로 넘기고 닫을 때는 `onOpenChange(false)`만 부른다. overlay는 닫기 전환이 끝난 `onOpenChangeComplete(false)`에서 제거된다. provider 아래에 그려지는 포털도 별도 경계로 감싸며 controller 렌더 자체의 오류도 잡는다. 실패한 창은 공통 Dialog에서 재시도·닫기를 제공하고 본문과 다른 창을 유지한다. NativeBridge·가입 안내도 각각 경계를 두며 세션 Provider에는 서비스 복구 경계를 둔다.
 - Mobile은 SafeAreaProvider 안에서 WebShellPage를 네이티브 경계로 감싼다. 렌더 오류 시 셸을 unmount해 OS listener·host를 정리하고 재시도에 서비스 초기 화면으로 재생성한다. 쿠키 저장소를 삭제하지 않는다. 문서 연결·renderer/content process 오류는 기존 WebView 복구가 별도로 처리한다.
 
 React 경계는 렌더·라이프사이클 오류를 담당한다. REST 응답 검증·조회·mutation·폼 제출·SSE 연결의 예상 가능한 오류는 기존 도메인 처리에 남기며 전역 `throwOnError`로 바꾸지 않는다. 복구 callback이 실패하면 같은 오류 화면 안에서 재시도할 수 있고 다른 cache를 일괄 삭제하지 않는다.
@@ -68,34 +72,38 @@ Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, 
 
 ## Mobile WebView 구성
 
-`apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host와 PKCE 시스템 인증을 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
+`apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host를, `shared/lib/push`는 OS 푸시를 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
 
-세션 쿠키는 WebView에만 남는다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급한다. WebView가 verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한다. 그 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 앱 교환으로 세션을 바꾸면 이전 SSE도 종료한다. OAuthAttempt와 AppLoginTicket은 현재 Prisma 스키마에서 관리한다.
+세션 쿠키는 WebView에만 남는다. 현재 앱은 네이티브 소셜 로그인을 제공하지 않으며 앱 안의 로그인 화면은 웹 브라우저 이용을 안내한다. 서버에는 이전 앱 로그인의 호환 계약이 남아 있다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급하며, verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 교환으로 세션을 바꾸면 이전 SSE도 종료한다. OAuthAttempt와 AppLoginTicket은 현재 Prisma 스키마에서 관리한다. 이 계약을 현재 앱의 로그인 방식으로 설명하지 않는다([프로젝트 AGENTS.md](../AGENTS.md)).
 
-API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E의 3302/4302·`.next/e2e-mobile`·`gf_test_mobile_*`는 Web E2E의 3301/4301과 분리한다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
+API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E는 3302/4302와 `gf_test_mobile_*` 스키마로 Web E2E(3301/4301)와 분리한다. 다만 두 E2E의 Web 빌드는 모두 `ENVIRONMENT=test`의 `.next/test`를 쓰므로 같은 checkout에서 동시에 실행하지 않는다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
 
 ## API 모듈 구성
 
-`apps/api/src/app.ts`는 애플리케이션 생성·HTTP 설정·미들웨어 등록·초기화만 담당한다. `AppModule.register(options)`는 실행별 설정을 만들고 DatabaseModule과 12개 도메인 모듈을 조합한다. 도메인은 Controller에서 요청을 받고 Service에서 업무 동작을 수행하며, 공용 응답 presenter와 외부 제공자 구현도 소유 도메인에 둔다.
+`apps/api/src/app.ts`는 애플리케이션 생성·HTTP 설정·미들웨어 등록·초기화만 담당한다. `AppModule.register(options)`는 실행별 설정을 만들고 DatabaseModule과 도메인 모듈을 조합한다. 도메인은 Controller에서 요청을 받고 Service에서 업무 동작을 수행하며, 공용 응답 presenter와 외부 제공자 구현도 소유 도메인에 둔다.
 
-| 도메인          | 책임                                                        |
-| --------------- | ----------------------------------------------------------- |
-| `auth`          | Google·데모 인증, 가입, 세션 생성·조회·교체·종료, 계정 삭제 |
-| `users`         | 사용자 인증 표시, 공개 사용자 presenter, 조회 제외 사용자   |
-| `posts`         | 요청 CRUD와 상세·목록·답변 읽음                             |
-| `answers`       | 피드백 답변 CRUD와 도움됨                                   |
-| `comments`      | 일반 댓글 CRUD                                              |
-| `categories`    | 활성 카테고리 조회와 관리자 생성                            |
-| `game-profiles` | 게임 프로필 제공자, 조회·연결과 대표 태그 저장              |
-| `notifications` | 알림 조회와 읽음                                            |
-| `blocks`        | 사용자 차단·해제와 차단 목록                                |
-| `moderation`    | 콘텐츠 신고·숨김과 관리자 신고 조회                         |
-| `chat`          | 대화·메시지·읽음, SSE와 채팅 연결 수명                      |
-| `health`        | DB 연결 상태 확인                                           |
+| 도메인          | 책임                                                      |
+| --------------- | --------------------------------------------------------- |
+| `auth`          | 소셜·데모 인증, 가입, 세션 생성·조회·교체·종료, 계정 삭제 |
+| `users`         | 사용자 인증 표시, 공개 사용자 presenter, 조회 제외 사용자 |
+| `posts`         | 요청 CRUD와 상세·목록·답변 읽음                           |
+| `answers`       | 피드백 답변 CRUD와 도움됨                                 |
+| `comments`      | 일반 댓글 CRUD                                            |
+| `categories`    | 활성 카테고리 조회와 관리자 생성                          |
+| `game-profiles` | 게임 프로필 제공자, 조회·연결과 대표 태그 저장            |
+| `notifications` | 알림 조회와 읽음                                          |
+| `blocks`        | 사용자 차단·해제와 차단 목록                              |
+| `moderation`    | 콘텐츠 신고·숨김과 관리자 신고 조회                       |
+| `chat`          | 대화·메시지·읽음, SSE와 채팅 연결 수명                    |
+| `health`        | DB 연결 상태 확인                                         |
 
-`config`는 AppConfig와 `APP_CONFIG` 토큰, `database`는 전용 PrismaClient와 소유권에 따른 종료를 제공한다. `common`에는 검증·페이지네이션·HTTP 오류·쿠키·출처 검사 등 도메인에 의존하지 않는 공통 처리를 둔다. 인증 권한 검사는 `auth/session-access.ts`의 상태 없는 함수가 요청의 세션을 확인한다. 기존 `security.ts`는 이전 테스트·seed 소비자를 위한 export 호환 진입점이며 구현을 담지 않는다.
+`config`는 AppConfig와 `APP_CONFIG` 토큰, `database`는 전용 PrismaClient와 소유권에 따른 종료를 제공한다. `common`에는 검증·페이지네이션·HTTP 오류·쿠키·출처 검사 등 도메인에 의존하지 않는 공통 처리를 둔다. 인증 권한 검사는 `auth/session/session-access.ts`의 상태 없는 함수가 요청의 세션을 확인한다. 기존 `security.ts`는 이전 테스트·seed 소비자를 위한 export 호환 진입점이며 구현을 담지 않는다.
 
 Service는 명시적인 `@Inject` 토큰으로 PrismaClient·AppConfig·필요한 도메인 Service를 받는다. ModerationService는 PostsService·AnswersService·CommentsService의 기존 접근 검사를 호출하며, 도메인 전반을 포괄하는 GameService는 사용하지 않는다. HTTP 경로·상태·오류 코드·SQL·트랜잭션과 생성 계약은 유지한다.
+
+auth는 oauth·session·app-login·account, chat은 conversation·message·attachment·events, posts는 media·views, users는 profile·visibility로 함께 바뀌는 구현과 테스트를 묶는다. 여러 책임을 조합하는 controller/module·공통 DTO/presenter는 root에 둔다. 폴더마다 module이나 export barrel을 만들지 않고 기존 Nest module 경계와 exports를 유지한다.
+
+APP_CONFIG는 실행 설정과 명시적 테스트 제공자 override를 보관한다. AuthModule의 IDENTITY_PROVIDERS factory가 OAuth 구현을 만들고 IdentityProviderRegistry로 제공자 선택과 세션의 configured 표시를 일치시킨다. GameProfilesModule의 PROFILE_PROVIDER factory가 기존 profile override·데모·실제 토큰·테스트 인증 우선순위를 유지한다. 외부 오류는 OAuthException·ProfileException에서 ApiError로 전달하며 HTTP 상태와 `{ errorCode, message }`는 바뀌지 않는다.
 
 ## 인증과 도메인
 
@@ -131,7 +139,7 @@ DatabaseModule은 실행별 AppConfig와 PrismaClient를 컨테이너에 제공�
 
 로컬 DB 관리자는 `.data/postgres-dev`와 `.data/postgres-test`만 관리한다. TCP loopback과 고정 전용 포트를 사용한다. 임의 포트 프로세스를 종료하지 않는다. 시작한 DB 소유 프로세스는 랜덤 토큰으로만 제어하며 관리자 비밀과 제어 메타데이터는 Git에서 제외한다.
 
-스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 배포 전에는 `schema.prisma`만 관리하며 URL 검증 뒤 `prisma db push`로 적용한다. 데이터 손실 경고가 발생하면 강제하지 않고 실패한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
+스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. schema.prisma와 migration SQL을 함께 관리하며 로컬·테스트·운영 모두 `prisma migrate deploy`로 FK·CHECK·부분 인덱스까지 적용한다. 기존 데이터가 있고 migration 이력이 없는 DB는 자동 baseline하거나 초기화하지 않는다. 별도 백업에서 스키마와 모든 SQL 제약을 대조한 뒤 이력을 정리해야 한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
 
 ## API 계약과 갱신
 
@@ -143,7 +151,7 @@ Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 �
 
 ## 외부 서비스 경계
 
-실제 Google·Supercell 구현과 가짜 제공자를 분리한다. 테스트는 가짜 제공자를 강제하며 데모는 명시적 `GF_DEMO_MODE`와 개발 실행에서만 허용한다. production은 데모를 거부한다. Supercell 키·등록 IP가 없거나 제공자 조회가 실패하면 실제 데이터가 조회된 것처럼 성공 처리하지 않는다. 번역·이메일·분석 연동은 후속 범위다.
+실제 Google·Supercell 구현과 가짜 제공자를 분리한다. 테스트는 가짜 제공자를 강제하며 데모는 명시적 실행 인자(`dev:demo`의 `--demo`)나 격리 E2E 서버의 `createApp` 옵션으로만 켜고 환경 변수로는 켜지 않는다. production은 데모와 테스트 인증을 거부한다. Supercell 키·등록 IP가 없거나 제공자 조회가 실패하면 실제 데이터가 조회된 것처럼 성공 처리하지 않는다. 번역·이메일·분석 연동은 후속 범위다.
 
 ## 페이지 조립과 별도 관리자
 
@@ -153,6 +161,6 @@ Topbar는 Root, Brand, Title, Back, Breadcrumb, Actions를 제공한다. Next `@
 
 관리자 UI는 `apps/admin`의 React/Vite 서비스로 분리한다. 공개 Web/WebView의 관리자 페이지, 메뉴, 관리용 클라이언트 도메인은 제거한다. 로컬 3303의 관리자 프록시는 요청 Origin을 검증하고 기존 API의 ADMIN 권한 및 감사 기록을 사용한다. 사용자 문의는 기존 1:1 채팅이므로 관리자 UI 분리와 무관하게 유지한다.
 
-NativeHost와 NativeBridgeChannel은 각 환경의 수명과 연결 상태를 클래스로 관리한다. instrumentation-client가 브라우저 이벤트 구독을 한 번 설치하고 React NativeBridge는 최신 router/session/overlay 어댑터만 bind/unbind한다. 경로와 메시지 분기는 ts-pattern, 쿼리 조합과 마지막 overlay 선택은 es-toolkit을 사용한다. sitemap은 24시간 뒤 요청 시 재검증하며 게시글 lastmod는 updatedAt을 사용한다. 정해진 시각에 실행하는 스케줄러는 아니다.
+NativeHost와 NativeBridgeChannel은 각 환경의 수명과 연결 상태를 클래스로 관리한다. instrumentation-client가 브라우저 이벤트 구독을 한 번 설치하고 React NativeBridge는 최신 router/session/overlay 어댑터만 bind/unbind한다. 경로와 메시지 분기는 ts-pattern, 쿼리 조합과 마지막 overlay 선택은 es-toolkit을 사용한다. sitemap은 24시간 뒤 요청 시 재검증한다. 정해진 시각에 실행하는 스케줄러는 아니다. 게시글 lastmod는 updatedAt을, 홈·게시판·작성자 프로필은 그 안의 공개 글 중 가장 늦은 updatedAt을, 약관·개인정보는 시행일(`LEGAL_POLICY_VERSION`)을 쓴다. 소개·가이드·문의와 글이 없는 게시판은 수정일 기록이 없어 생략한다. 답변·댓글 등록은 Post.updatedAt을 바꾸지 않아 게시글 lastmod에 반영되지 않는다.
 
 API의 AdminModule은 공개 도메인 서비스와 별개로 관리자 카테고리/사용자/신고/문의의 controller와 service를 소유한다. 같은 Prisma 테이블을 사용해도 권한과 업무 흐름을 공개 service에 섞지 않는다. JSON Body/Query는 Zod 스키마를 명시한 parameter decorator로 받고 NestJS 12.2의 전역 StandardSchemaValidationPipe가 검증한다. Guard → Zod 검증 → Service 순서를 유지하며 DTO 타입은 스키마에서 추론한다. schema 메타데이터를 직접 지정하므로 tsx의 design:paramtypes 생성 여부에 의존하지 않는다. Zod의 계약 정규화와 중첩 JSON 규칙은 HTTP 경계에서 검사해 OpenAPI와 SDK의 단일 계약을 보존하며 Service의 입력 parse를 제거한다. Response Zod 검증과 fallback은 SDK가 계속 소유한다. [Nest ValidationPipe](https://docs.nestjs.com/application/validation)를 기반으로 한다.

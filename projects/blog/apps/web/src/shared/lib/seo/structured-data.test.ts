@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ArticleSeo } from './metadata';
+import { siteUrl } from '@/shared/config/site';
+
+import { articleMetadata, type ArticleSeo } from './metadata';
 import { articleJsonLd, serializeJsonLd } from './structured-data';
 
 const article: ArticleSeo = {
@@ -23,5 +25,16 @@ describe('multilingual SEO', () => {
     const encoded = serializeJsonLd(data);
     expect(encoded).not.toContain('</script>');
     expect(JSON.parse(encoded)['@graph'][0].headline).toContain('</script>');
+  });
+
+  it('shares the JPG image of og:image rather than the AVIF cover', () => {
+    const covered = {
+      ...article,
+      coverImage: '/images/covers/cache.avif',
+      socialImage: '/images/covers/cache-og.jpg',
+    };
+    const image = `${siteUrl.origin}/images/covers/cache-og.jpg`;
+    expect(articleJsonLd(covered)['@graph'][0]).toMatchObject({ image });
+    expect(articleMetadata(covered).openGraph?.images).toEqual([expect.objectContaining({ url: image })]);
   });
 });

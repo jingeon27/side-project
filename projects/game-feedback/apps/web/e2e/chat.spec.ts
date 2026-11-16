@@ -1,5 +1,3 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
-
 import type { ChatMessage, Conversation } from '@game-feedback/contracts';
 import { listChatMessages, listConversations } from '@game-feedback/sdk';
 
@@ -7,6 +5,7 @@ import {
   ListChatMessagesResponse,
   ListConversationsResponse,
 } from '../../../packages/sdk/src/generated/validation';
+import { expect, test, type Browser, type BrowserContext, type Page } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 

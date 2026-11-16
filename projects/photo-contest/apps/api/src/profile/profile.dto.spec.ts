@@ -53,7 +53,7 @@ describe('Zod profile inputs', () => {
         { contentType: 'image/svg+xml', byteSize: 1024 },
         { type: 'custom', schema: RequestProfileAvatarUploadSchema },
       ),
-    ).rejects.toThrow('JPEG·PNG·WebP 사진을 선택해 주세요.');
+    ).rejects.toThrow('JPEG, PNG, WebP 형식의 사진을 선택해 주세요.');
     await expect(
       pipe.transform(
         { contentType: 'image/png', byteSize: MAX_UPLOAD_BYTES },

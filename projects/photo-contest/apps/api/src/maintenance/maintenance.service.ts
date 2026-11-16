@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { Prisma } from '../../generated/prisma';
+import { archiveAnalyticsEvents } from '../analytics/analytics-retention.repository';
 import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
-import { Database } from '../database/database.service';
+import { Database, type TDatabaseClient } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { MediaStorage } from '../storage/media-storage.service';
 
@@ -13,9 +15,9 @@ export class MaintenanceService {
     private readonly media: MediaStorage,
   ) {}
 
-  async cleanup(now = new Date()) {
+  async cleanup(now = dayjs().toDate()) {
     // 만료 직전에 시작한 완료 확정과 겹치지 않도록 모든 업로드 정리는 만료 뒤 유예 시간이 지나야 한다.
-    const cutoff = new Date(now.getTime() - UPLOAD_TICKET_TTL_MS);
+    const cutoff = dayjs(now.getTime() - UPLOAD_TICKET_TTL_MS).toDate();
     // 저장소는 POST 정책이 끝날 때까지 같은 키에 다시 쓰기를 받으므로 그 뒤에 지워야 다시 올린 파일까지 정리된다.
     const policyClosed = [
       { policyExpiresAt: null },
@@ -33,13 +35,18 @@ export class MaintenanceService {
       });
     }
     const avatars = await this.db.groupAvatar.findMany({
-      where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} } },
+      where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} }, coverGroups: { none: {} } },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const avatar of avatars) {
       await this.attempt(async () => {
         await this.media.delete(avatar.storageKey);
-        await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
+        await this.db.$transaction(async (tx) => {
+          const removed = await tx.groupAvatar.deleteMany({
+            where: { id: avatar.id, currentGroups: { none: {} }, coverGroups: { none: {} } },
+          });
+          if (removed.count) await this.releaseUpload(tx, avatar.mediaUploadId);
+        });
       });
     }
     // 완료하지 않은 티켓의 최종 키다.
@@ -75,8 +82,7 @@ export class MaintenanceService {
     await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.session.deleteMany({ where: { expiresAt: { lt: now } } });
-    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lt: now } } });
-    await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lt: now } } });
+    await archiveAnalyticsEvents({ client: this.db, now });
   }
   private async attempt(work: () => Promise<void>) {
     try {
@@ -87,15 +93,30 @@ export class MaintenanceService {
   }
   private async removeAbandonedUploads(now: Date) {
     const abandoned = await this.db.upload.findMany({
-      where: { expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) }, submission: null },
-      select: { id: true, imageKey: true },
+      where: { expiresAt: { lt: dayjs(now.getTime() - UPLOAD_TICKET_TTL_MS).toDate() }, submission: null },
+      select: { id: true, imageKey: true, mediaUploadId: true },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const upload of abandoned) {
       await this.attempt(async () => {
         if (upload.imageKey) await this.media.delete(upload.imageKey);
-        await this.db.upload.deleteMany({ where: { id: upload.id, submission: null } });
+        await this.db.$transaction(async (tx) => {
+          const removed = await tx.upload.deleteMany({ where: { id: upload.id, submission: null } });
+          if (removed.count) await this.releaseUpload(tx, upload.mediaUploadId);
+        });
       });
     }
+  }
+
+  /**
+   * 대회 사진·대표 사진 행을 지웠으면 그 원본 PostUpload를 지난 만료로 돌려 일반 정리(쓰지 않은 업로드)가 지우게 한다.
+   * 붙어 있는 동안 만료를 비워 두므로 되돌리지 않으면 행과 용량이 남는다.
+   */
+  private async releaseUpload(tx: TDatabaseClient, mediaUploadId: string | null) {
+    if (!mediaUploadId) return;
+    await tx.postUpload.updateMany({
+      where: { id: mediaUploadId, post: null, submissionUpload: null, groupAvatar: null },
+      data: { expiresAt: dayjs(0).toDate() },
+    });
   }
 }

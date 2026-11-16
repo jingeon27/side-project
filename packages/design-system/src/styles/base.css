@@ -36,8 +36,9 @@
     font-size: max(16px, 1em);
   }
 
+  /* 자리표시도 글자라 4.5:1이 필요하다. subtle은 흰 바탕 2.52:1이라 공통 입력과 같은 muted를 쓴다. */
   ::placeholder {
-    color: var(--color-subtle);
+    color: var(--color-muted);
   }
 
   /* 두 번 탭 확대 대기 없이 바로 반응하게 한다. 확대 자체는 막지 않는다. */

@@ -22,6 +22,7 @@ const meta = {
       options: ['primary', 'secondary', 'ghost', 'danger', 'accent'],
     },
     size: { control: 'select', options: ['lg', 'md', 'sm', 'icon', 'icon-lg'] },
+    shape: { control: 'select', options: ['rounded', 'pill'] },
     children: { control: 'text' },
     icon: { control: false },
   },
@@ -78,3 +79,13 @@ export const LoadingWithIcon: Story = {
   args: { variant: 'secondary', icon: <Send aria-hidden="true" />, children: '보내는 중', loading: true },
 };
 export const FullWidth: Story = { args: { fullWidth: true } };
+/** 알약 모양. 피식은 만들기 진입(그룹 만들기·글쓰기·대회 개최하기)에 쓴다. */
+export const Pill: Story = {
+  args: {
+    variant: 'accent',
+    size: 'md',
+    shape: 'pill',
+    icon: <Plus aria-hidden="true" />,
+    children: '그룹 만들기',
+  },
+};

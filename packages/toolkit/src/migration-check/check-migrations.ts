@@ -1,6 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import reviewedMigrations from './reviewed-migrations.json' with { type: 'json' };
 
 interface IScanResult {
   masked: string;
@@ -18,6 +21,33 @@ interface IMigrationBaseOptions {
   fallback?: string;
   cwd?: string;
 }
+interface IMigrationReview {
+  sha256: string;
+  reason: string;
+}
+
+/** 적용 이력은 SQL 주석도 고치지 않는다. 파일 경로와 원문 해시가 일치한 검토 기록만 인정한다. */
+export function migrationReviews({
+  cwd,
+  reviews = reviewedMigrations,
+}: {
+  cwd: string;
+  reviews?: Record<string, IMigrationReview>;
+}) {
+  const files = new Set(Object.keys(reviews));
+  const errors = Object.entries(reviews).flatMap(([file, review]) => {
+    try {
+      const digest = createHash('sha256')
+        .update(readFileSync(path.join(cwd, file)))
+        .digest('hex');
+      if (digest === review.sha256 && review.reason.trim().length >= 5) return [];
+      return [`${file}: reviewed migration.sql or its review was modified; add a new migration instead.`];
+    } catch {
+      return [`${file}: reviewed migration.sql is missing or unreadable; do not delete migration history.`];
+    }
+  });
+  return { files, errors };
+}
 
 const MIGRATION_PATHSPEC = 'projects/*/apps/api/prisma/migrations/*/migration.sql';
 // 식별자를 잇는 글자 뒤의 $·E·U&는 달러 인용이나 접두 문자열이 아니라 식별자의 일부다(`a$$`, `nameE`).
@@ -25,11 +55,10 @@ const IDENTIFIER_CHAR = /[\w$]/;
 const DOLLAR_TAG = /^\$(?:[A-Za-z_\u0080-￿][\w\u0080-￿]*)?\$/;
 // DO 블록과 함수·프로시저 본문은 migration이 실행하거나 정의하는 SQL이라 문자열로 가리지 않고 검사한다.
 const CODE_BODY_PREFIX = /\b(?:AS|DO|DO\s+LANGUAGE\s+[A-Za-z_][\w$]*)\s*$/i;
-const DO_PREFIX = /\bDO(?:\s+LANGUAGE\s+[A-Za-z_][\w$]*)?\s*$/i;
 
 function scanSql(sql: string): IScanResult {
   const output = sql.split('');
-  // 작은따옴표 DO 본문은 이스케이프 때문에 위치를 보존한 채 다시 검사할 수 없어 따로 표시한다.
+  // 작은따옴표 DO·함수 본문(`AS '...'`)은 이스케이프 때문에 위치를 보존한 채 다시 검사할 수 없어 따로 표시한다.
   const opaqueBodies: number[] = [];
   const position = { cursor: 0 };
   const fill = (start: number, end: number, char: string) => {
@@ -87,13 +116,16 @@ function scanSql(sql: string): IScanResult {
       continue;
     }
     if (prefixAllowed && /^[uU]&["']/.test(sql.slice(position.cursor, position.cursor + 3))) {
+      const quote = sql[position.cursor + 2];
+      if (quote === "'" && CODE_BODY_PREFIX.test(maskedBefore(position.cursor)))
+        opaqueBodies.push(position.cursor);
       const end = quotedEnd(position.cursor + 2, false);
-      fill(position.cursor, end, sql[position.cursor + 2] === '"' ? '_' : ' ');
+      fill(position.cursor, end, quote === '"' ? '_' : ' ');
       position.cursor = end;
       continue;
     }
     if (prefixAllowed && /^[eE]'/.test(sql.slice(position.cursor, position.cursor + 2))) {
-      if (DO_PREFIX.test(maskedBefore(position.cursor))) opaqueBodies.push(position.cursor);
+      if (CODE_BODY_PREFIX.test(maskedBefore(position.cursor))) opaqueBodies.push(position.cursor);
       const end = quotedEnd(position.cursor + 1, true);
       fill(position.cursor, end, ' ');
       position.cursor = end;
@@ -101,7 +133,8 @@ function scanSql(sql: string): IScanResult {
     }
     const char = sql[position.cursor];
     if (char === "'" || char === '"') {
-      if (char === "'" && DO_PREFIX.test(maskedBefore(position.cursor))) opaqueBodies.push(position.cursor);
+      if (char === "'" && CODE_BODY_PREFIX.test(maskedBefore(position.cursor)))
+        opaqueBodies.push(position.cursor);
       const end = quotedEnd(position.cursor, false);
       fill(position.cursor, end, char === '"' ? '_' : ' ');
       position.cursor = end;
@@ -132,7 +165,8 @@ function scanSql(sql: string): IScanResult {
 }
 
 // Preserve positions/newlines while ignoring comments, quoted identifiers and SQL literals.
-// Nested comments and plain dollar-quoted literals are hidden; DO blocks and routine bodies stay visible.
+// Nested comments and plain dollar-quoted literals are hidden; dollar-quoted DO blocks and routine bodies stay
+// visible, and single-quoted ones are reported as DYNAMIC SQL.
 export function maskSql(sql: string) {
   return scanSql(sql).masked;
 }
@@ -152,9 +186,13 @@ const KEYWORD_RULES: [string, RegExp][] = [
   ['TRUNCATE', /\bTRUNCATE\b(?!\s*(?:,|ON\b|OR\b))/gi],
   // 문자열로 만든 SQL은 정적으로 검사할 수 없다. 트리거의 EXECUTE FUNCTION과 GRANT EXECUTE ON은 제외한다.
   ['DYNAMIC SQL', /\bEXECUTE\b(?!\s+(?:ON|FUNCTION|PROCEDURE)\b)/gi],
+  // 테이블·타입·함수를 다른 스키마로 옮기면 이전 이름을 쓰는 구버전 서버가 실패한다.
+  // 문장 첫머리의 SET SCHEMA는 search_path를 바꾸는 세션 명령이라 객체를 옮기지 않는다.
+  ['SET SCHEMA', /(?<!^)\bSET\s+SCHEMA\b/gi],
 ];
+// OWNED BY는 역할이 가진 객체를 모두 지우고, POLICY·RULE은 접근 정책과 쓰기 동작을 바꾼다.
 const DROP_OBJECT =
-  /\bDROP\s+(MATERIALIZED\s+VIEW|VIEW|TYPE|FUNCTION|PROCEDURE|SEQUENCE|SCHEMA|TRIGGER|EXTENSION|DOMAIN)\b/gi;
+  /\bDROP\s+(MATERIALIZED\s+VIEW|VIEW|TYPE|FUNCTION|PROCEDURE|SEQUENCE|SCHEMA|TRIGGER|EXTENSION|DOMAIN|OWNED|POLICY|RULE)\b/gi;
 const CREATE_TABLE = new RegExp(
   String.raw`\bCREATE\s+(?:(?:GLOBAL|LOCAL)\s+)?(?:(?:TEMP|TEMPORARY|UNLOGGED)\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(${IDENT})`,
   'dgi',
@@ -436,7 +474,8 @@ function explain(rule: string) {
 export function main({
   env = process.env,
   cwd = process.cwd(),
-}: { env?: NodeJS.ProcessEnv; cwd?: string } = {}) {
+  reviews = reviewedMigrations,
+}: { env?: NodeJS.ProcessEnv; cwd?: string; reviews?: Record<string, IMigrationReview> } = {}) {
   const resolveBase = () => {
     try {
       return migrationBase({ requested: env.MIGRATION_BASE_REF, event: env.GITHUB_EVENT_NAME, cwd });
@@ -449,16 +488,20 @@ export function main({
   const base = resolveBase();
   if (!base) return;
   const { added, changed } = migrationChanges({ base, cwd });
+  const reviewed = migrationReviews({ cwd, reviews });
   const errors = [
+    ...reviewed.errors,
     ...changed.map(
       ({ file, status }) =>
         `${file}: existing migration.sql was ${status}; add a new migration instead of rewriting history.`,
     ),
-    ...added.flatMap((file) =>
-      checkMigration(readFileSync(path.join(cwd, file), 'utf8')).map(
-        (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+    ...added
+      .filter((file) => !reviewed.files.has(file))
+      .flatMap((file) =>
+        checkMigration(readFileSync(path.join(cwd, file), 'utf8')).map(
+          (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+        ),
       ),
-    ),
   ];
   for (const error of errors) console.error(error);
   console.log(`Migration compatibility: ${added.length} newly added SQL files checked against ${base}.`);

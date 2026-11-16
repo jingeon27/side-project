@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { useApolloClient } from '@apollo/client/react';
@@ -7,11 +7,13 @@ import { match } from 'ts-pattern';
 
 import type { IWebBridge } from '@photo-contest/bridge/web';
 
+import { refreshAuthSession } from '@/features/auth';
 import { buildSentryClientTags } from '@/shared/lib/sentry.helper';
 import {
   closeTopOverlay,
   getParentRoute,
   hasOpenOverlay,
+  leaveAfterConfirm,
   resolveBackAction,
   routeHistoryStore,
   useAppRouter,
@@ -23,6 +25,7 @@ const currentPath = () => `${window.location.pathname}${window.location.search}`
  * 앱 WebView와 웹의 약속(packages/bridge)을 레이아웃에서 한 번 연결한다. 앱 밖에서는 브리지가 아무것도 하지 않는다.
  * - 알림: 마운트 때 app.ready, 경로가 바뀌면 navigation.changed
  * - 앱 요청 navigation.back: 열린 오버레이 → 앱 안 기록 → 상위 화면 순으로 처리하고, 홈이면 앱에 맡긴다(handled false).
+ *   화면이 떠나기 전 확인을 등록했으면 묻는 동안에도 처리했다고 답하고, 떠나도 될 때만 이동한다.
  * - 앱 이벤트: navigation.open(딥링크) 이동, app.state active면 보이는 쿼리를 다시 불러온다.
  */
 export function useBridgeLifecycle(bridge: IWebBridge | null) {
@@ -43,46 +46,51 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
     notifiedPathname.current = pathname;
   }, [bridge, pathname]);
 
+  const handleBack = useEffectEvent(() => {
+    const { pathname: path } = window.location;
+    const action = resolveBackAction({
+      hasOverlay: hasOpenOverlay(),
+      depth: routeHistoryStore.getDepth(),
+      pathname: path,
+      parentHref: getParentRoute(path),
+    });
+    return match(action)
+      .with({ type: 'close-overlay' }, () => ({ handled: closeTopOverlay() }))
+      .with({ type: 'history-back' }, () => {
+        leaveAfterConfirm(path, () => router.back());
+        return { handled: true };
+      })
+      .with({ type: 'replace' }, ({ href }) => {
+        leaveAfterConfirm(path, () => router.replace(href));
+        return { handled: true };
+      })
+      .with({ type: 'exit' }, () => ({ handled: false }))
+      .exhaustive();
+  });
   useEffect(() => {
     if (!bridge) return;
-    return bridge.handleRequest('navigation.back', () => {
-      const { pathname: path } = window.location;
-      const action = resolveBackAction({
-        hasOverlay: hasOpenOverlay(),
-        depth: routeHistoryStore.getDepth(),
-        pathname: path,
-        parentHref: getParentRoute(path),
-      });
-      return match(action)
-        .with({ type: 'close-overlay' }, () => ({ handled: closeTopOverlay() }))
-        .with({ type: 'history-back' }, () => {
-          router.back();
-          return { handled: true };
-        })
-        .with({ type: 'replace' }, ({ href }) => {
-          router.replace(href);
-          return { handled: true };
-        })
-        .with({ type: 'exit' }, () => ({ handled: false }))
-        .exhaustive();
-    });
-  }, [bridge, router]);
+    return bridge.handleRequest('navigation.back', handleBack);
+  }, [bridge]);
 
+  const handleOpenPath = useEffectEvent((path: string) => router.push(path));
+  const handleActiveState = useEffectEvent(async () => {
+    try {
+      if (await refreshAuthSession(client)) return;
+      await client.refetchQueries({ include: 'active' });
+    } catch {
+      // 각 쿼리의 실패는 그 화면이 보여 준다.
+    }
+  });
   useEffect(() => {
     if (!bridge) return;
     // 프로토콜이 같은 origin의 상대 경로만 통과시킨다.
-    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => router.push(path));
-    const stopState = bridge.onEvent('app.state', async ({ state }) => {
-      if (state !== 'active') return;
-      try {
-        await client.refetchQueries({ include: 'active' });
-      } catch {
-        // 각 쿼리의 실패는 그 화면이 보여 준다.
-      }
+    const stopOpen = bridge.onEvent('navigation.open', ({ path }) => handleOpenPath(path));
+    const stopState = bridge.onEvent('app.state', ({ state }) => {
+      if (state === 'active') void handleActiveState();
     });
     return () => {
       stopOpen();
       stopState();
     };
-  }, [bridge, router, client]);
+  }, [bridge]);
 }

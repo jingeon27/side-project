@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { pageRange } from '../common/validation';
+import { NOTIFICATION_PAGE_SIZE_DEFAULT } from '../config/limits';
 import { Database } from '../database/database.service';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import { NOTIFICATION_TYPE } from './notification-type';
 
 @Injectable()
@@ -65,7 +67,7 @@ export class NotificationService {
   }
 
   async list(viewer: IViewer, offset?: number | null, limit?: number | null) {
-    const range = pageRange(offset ?? 0, limit ?? 20);
+    const range = pageRange(offset ?? 0, limit ?? NOTIFICATION_PAGE_SIZE_DEFAULT);
     const where = await this.visible(viewer.id);
     const [rows, unreadCount] = await Promise.all([
       this.db.notification.findMany({
@@ -114,7 +116,7 @@ export class NotificationService {
     return this.db.atomic(async (tx) => {
       const updated = await tx.notification.updateMany({
         where: { userId: viewer.id, ...(id ? { id } : {}), readAt: null },
-        data: { readAt: new Date() },
+        data: { readAt: dayjs().toDate() },
       });
       if (
         id &&

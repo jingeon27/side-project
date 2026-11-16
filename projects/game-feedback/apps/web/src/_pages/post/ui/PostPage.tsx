@@ -13,15 +13,16 @@ import { PostArticle, postDetailOptions, useRecordPostView } from '@/features/po
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { PostDetail } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { BackLink } from '@/shared/navigation';
 import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { StartChatLink } from '@/widgets/start-chat';
 import { VerificationPrompt } from '@/widgets/support';
 
-import { usePostRead } from '../model/use-post-read.hook';
-import { ContentActions } from './ContentActions';
-import { PostAnswersSection } from './PostAnswersSection';
-import { PostCommentsSection } from './PostCommentsSection';
+import { usePostRead } from '../model/read/use-post-read.hook';
+import { PostActions } from './actions/PostActions';
+import { PostAnswersSection } from './answers/PostAnswersSection';
+import { PostCommentsSection } from './comments/PostCommentsSection';
 
 interface IPostPageProps {
   id: string;
@@ -64,7 +65,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
     if (!boardContext || !game) return;
     if (boardContext.kind === 'FEEDBACK' && game === 'clash-royale' && !params.get('board')) return;
     if (
-      new URL(window.location.href).searchParams.get('board') === boardContext.slug &&
+      parseSearch(window.location.search).board === boardContext.slug &&
       (params.get('game') ?? 'clash-royale') === game
     )
       return;
@@ -93,24 +94,30 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
                 userId={post.author.id}
                 nickname={post.author.nickname}
                 label={t('작성자와 1:1 채팅')}
-                appearance="button"
+                variant="accent"
+                size="md"
               />
             )
           }
-          actions={
-            <ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />
-          }
+          actions={<PostActions post={post} />}
         />
       </ServiceErrorBoundary>
       {post.author.id === session.user?.id && <VerificationPrompt />}
       {isFeedback && (
         <ServiceErrorBoundary title={t('답변')} resetKey={id}>
-          <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
+          <PostAnswersSection
+            postId={post.id}
+            postAuthorId={post.author.id}
+            answers={answers}
+            cursor={detail.data.answersCursor}
+            locale={locale}
+          />
         </ServiceErrorBoundary>
       )}
       <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
         <PostCommentsSection
-          post={post}
+          postId={post.id}
+          postAuthorId={post.author.id}
           comments={comments}
           cursor={detail.data.commentsCursor}
           locale={locale}

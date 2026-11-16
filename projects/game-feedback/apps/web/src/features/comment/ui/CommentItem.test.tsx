@@ -16,6 +16,8 @@ describe('댓글 시간의 서버 렌더와 하이드레이션', () => {
       id: 'comment',
       postId: 'post',
       parentId: null,
+      replyCount: 0,
+      repliesCursor: null,
       isDeleted: false,
       body: '댓글 본문',
       createdAt: '2026-10-20T00:00:00Z',

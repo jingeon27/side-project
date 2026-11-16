@@ -14,13 +14,7 @@ vi.mock('expo-linking', () => ({
   getInitialURL: vi.fn(async () => null),
   addEventListener: vi.fn(() => ({ remove: vi.fn() })),
 }));
-vi.mock('expo-web-browser', () => ({ openAuthSessionAsync: vi.fn(async () => ({ type: 'cancel' })) }));
-vi.mock('expo-crypto', () => ({
-  getRandomBytes: vi.fn(() => new Uint8Array(32)),
-  digestStringAsync: vi.fn(async () => 'a'.repeat(43)),
-  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
-  CryptoEncoding: { BASE64: 'base64' },
-}));
+vi.mock('expo-crypto', () => ({ randomUUID: vi.fn(() => '00000000-0000-4000-8000-000000000000') }));
 afterEach(() => {
   cleanup();
   resetFakeWebView();

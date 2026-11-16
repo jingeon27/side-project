@@ -18,12 +18,15 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
   /** 고정 경로는 권한만 확인하고 캐시 금지 307로 짧은 서명 GET에 보낸다. */
-  const expectStorageRedirect = async (response: { status(): number; headers(): Record<string, string> }) => {
+  const expectStorageRedirect = async (
+    response: { status(): number; headers(): Record<string, string> },
+    expiresIn = '60',
+  ) => {
     expect(response.status()).toBe(307);
     expect(response.headers()['cache-control']).toBe('private, no-store');
     const signed = new URL(response.headers()['location'] ?? '');
     expect(signed.origin).toBe(storage);
-    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe(expiresIn);
     return signed.toString();
   };
   const errors: string[] = [];
@@ -32,6 +35,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   // 운영 이미지가 프레임워크를 알리지 않고, CSP를 지킨 채 실제 S3로 업로드·조회까지 이어지는지 본다.
   expect(home?.headers()['x-powered-by']).toBeUndefined();
   expect(home?.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
+  await page.goto('/sign');
   await expect(page.getByRole('link', { name: /구글|카카오/ })).toHaveCount(0);
   await page.getByRole('tab', { name: '회원가입', exact: true }).click();
   await page.getByLabel('아이디', { exact: true }).fill('container_owner');
@@ -53,17 +57,18 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  const groupForm = page.getByRole('dialog');
+  await expect(page).toHaveURL(/\/groups\/new$/);
+  const groupForm = page.getByRole('form', { name: '그룹 만들기', exact: true });
   await groupForm.getByLabel('그룹 이름').fill('운영 이미지 그룹');
   await groupForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+  await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
 
   const groupPath = new URL(page.url()).pathname;
   const createMediaPost = async (title: string, video = false) => {
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await form.getByLabel('제목', { exact: true }).fill(title);
-    await form.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+    await form.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
       name: video ? 'smoke.mp4' : 'smoke.png',
       mimeType: video ? 'video/mp4' : 'image/png',
       buffer: video ? await createTestVideo() : await createTestImage(),
@@ -89,7 +94,10 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     .locator('video')
     .getAttribute('src');
   if (!videoUrl) throw new Error('영상 주소가 있어야 한다');
-  const signedVideo = await expectStorageRedirect(await page.request.get(videoUrl, { maxRedirects: 0 }));
+  const signedVideo = await expectStorageRedirect(
+    await page.request.get(videoUrl, { maxRedirects: 0 }),
+    '600',
+  );
   // 브라우저처럼 서명 GET에 Range를 보내 저장소가 구간을 돌려주는지 확인한다.
   const range = await page.evaluate(async (url) => {
     const response = await fetch(url, { headers: { Range: 'bytes=0-31' } });
@@ -120,12 +128,17 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   expect(seoHtml).toContain('DiscussionForumPosting');
 
   await page.goto('/explore');
-  await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  const privateForm = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '글쓰기', exact: true })
+    .getByRole('button', { name: '그룹 만들기', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/groups\/new$/);
+  const privateForm = page.getByRole('form', { name: '그룹 만들기', exact: true });
   await privateForm.getByLabel('그룹 이름').fill('운영 비공개 그룹');
   await privateForm.getByRole('radio', { name: /^비공개 그룹/ }).check();
   await privateForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+  await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
   const privatePath = new URL(page.url()).pathname;
   await createMediaPost('운영 비공개 사진');
   const privateUrl = await page
@@ -191,16 +204,4 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
       .getByRole('link', { name: /운영 이미지 그룹/ }),
   ).toBeVisible();
   expect(errors).toEqual([]);
-});
-
-test('운영 Caddy가 앱 링크 검증 파일과 앱 로그인 콜백 안내를 막지 않고 그대로 전달해야 한다', async ({
-  request,
-}) => {
-  const callback = await request.get('/app-auth/callback?code=smoke-login-code-0123456789', {
-    maxRedirects: 0,
-  });
-  expect(callback.status()).toBe(200);
-  expect(callback.headers()['cache-control']).toBe('no-store');
-  expect(callback.headers()['referrer-policy']).toContain('no-referrer');
-  expect(await callback.text()).not.toContain('smoke-login-code');
 });

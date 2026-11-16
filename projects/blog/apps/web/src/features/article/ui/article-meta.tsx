@@ -1,0 +1,20 @@
+import type { Article } from '@/shared/article/model/types';
+import { labels } from '@/shared/config/labels';
+import { formatDate } from '@/shared/lib/date/format-date';
+
+export function ArticleMeta({ article }: { article: Article }) {
+  const t = labels(article.locale);
+  return (
+    <div className="article-meta">
+      <span>
+        {t.common.published}{' '}
+        <time dateTime={article.publishedAt}>{formatDate(article.publishedAt, article.locale)}</time>
+      </span>
+      <span>
+        {article.readingMinutes}
+        {article.locale === 'ko' ? '' : ' '}
+        {t.common.minutes}
+      </span>
+    </div>
+  );
+}

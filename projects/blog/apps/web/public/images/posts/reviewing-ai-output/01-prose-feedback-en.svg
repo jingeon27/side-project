@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1210" viewBox="0 0 1080 1210">
+<title>Make the reason part of the sentence</title><desc>Reconstructed English prose comparing symbol-heavy phrasing with a sentence that connects the reason and action.</desc>
+<rect width="1080" height="1210" fill="#f4f2eb"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="68" y="64" fill="#65766e" font-size="25" letter-spacing="2">01 / PROSE FEEDBACK</text>
+<text x="68" y="130" fill="#243b34" font-size="44" font-weight="700">Make the reason part of the sentence</text>
+<rect x="68" y="180" width="944" height="290" rx="20" fill="#fffdf8" stroke="#d5bbb0" stroke-width="2"/>
+<rect x="100" y="210" width="130" height="45" rx="10" fill="#f5e6de"/>
+<text x="119" y="241" fill="#9c553d" font-size="27" font-weight="700">Before</text>
+<text x="112" y="318" font-size="38" fill="#76594d">I put the web app · API · database</text><text x="112" y="376" font-size="38" fill="#76594d">on one server — to reduce initial costs.</text>
+<path d="M540 486 V520 M526 507 L540 521 L554 507" fill="none" stroke="#7b8c80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="68" y="542" width="944" height="316" rx="20" fill="#fcfdf7" stroke="#98b39e" stroke-width="2"/>
+<rect x="100" y="572" width="230" height="45" rx="10" fill="#e4eddf"/>
+<text x="119" y="603" fill="#356349" font-size="27" font-weight="700">After feedback</text>
+<text x="112" y="680" font-size="38" fill="#294d38">To reduce initial costs,</text><text x="112" y="738" font-size="38" fill="#294d38">I put the web app, API, and database</text><text x="112" y="796" font-size="38" fill="#294d38">on one server.</text>
+<path d="M68 902 H1012" stroke="#c6ccc1" stroke-width="2"/>
+<text x="112" y="966" font-size="27" fill="#55705e" font-weight="700">Feedback</text>
+<text x="112" y="1026" font-size="31" fill="#4f6256">Move the reason into the sentence.</text><text x="112" y="1074" font-size="31" fill="#4f6256">Use commas and “and” to connect the list.</text>
+<text x="68" y="1162" fill="#7a8278" font-size="23">Reconstructed copy examples, not screenshots of a real interface.</text>
+</g></svg>

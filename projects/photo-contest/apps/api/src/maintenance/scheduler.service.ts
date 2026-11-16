@@ -1,6 +1,6 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 
-import { ContestCompletionService } from '../analytics/contest-completion.service';
+import { ContestCompletionService } from '../analytics/completion/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { ContestNotificationService } from '../notification/contest-notification.service';
@@ -24,12 +24,12 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     this.stop();
-    await this.running?.catch(() => undefined);
+    await this.running;
   }
 
   start() {
     if (this.timer) return;
-    this.timer = setInterval(() => this.handleTick(), MAINTENANCE_INTERVAL_MS);
+    this.timer = setInterval(this.handleTick, MAINTENANCE_INTERVAL_MS);
     // 대기 중인 타이머 때문에 프로세스가 끝나지 않는 일이 없게 한다.
     this.timer.unref();
   }
@@ -46,20 +46,37 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   runOnce(): Promise<void> {
     const previous = this.running ?? Promise.resolve();
-    const run = previous.catch(() => undefined).then(() => this.runSteps());
-    const settled: Promise<void> = run
-      .catch(() => undefined)
-      .finally(() => {
+    const runQueued = async () => {
+      try {
+        await previous;
+      } catch {
+        // 앞선 실패가 다음 실행을 막지 않게 한다.
+      }
+      await this.runSteps();
+    };
+    const run = runQueued();
+    const settle = async () => {
+      try {
+        await run;
+      } catch {
+        // 실패는 호출자에게 반환한 run으로 전달한다.
+      } finally {
         if (this.running === settled) this.running = undefined;
-      });
+      }
+    };
+    const settled = settle();
     this.running = settled;
     return run;
   }
 
-  private handleTick() {
+  private readonly handleTick = async () => {
     if (this.running) return;
-    this.runOnce().catch((error: unknown) => reportUnexpectedError(error, { job: 'maintenance' }));
-  }
+    try {
+      await this.runOnce();
+    } catch (error) {
+      reportUnexpectedError(error, { job: 'maintenance' });
+    }
+  };
 
   private async runSteps() {
     const steps = [

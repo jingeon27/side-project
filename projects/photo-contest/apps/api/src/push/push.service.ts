@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request } from 'express';
 
 import {
@@ -9,7 +10,7 @@ import {
   type IPushMessage,
 } from '@side/toolkit/push-notifications';
 
-import { SessionService } from '../auth/session.service';
+import { SessionService } from '../auth/session/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { mobilePushSettings } from '../config/env';
 import { PUSH_DEVICE_LIMIT, PUSH_INTERVAL_MS, PUSH_QUEUE_BATCH_SIZE } from '../config/limits';
@@ -33,13 +34,16 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!mobilePushSettings().enabled) return;
     this.timer = setInterval(() => {
       if (this.running) return;
-      this.running = this.runOnce()
-        .catch(() => {
+      const dispatch = async () => {
+        try {
+          await this.runOnce();
+        } catch {
           this.logger.warn('푸시 큐 처리에 실패했습니다.');
-        })
-        .finally(() => {
+        } finally {
           this.running = undefined;
-        });
+        }
+      };
+      this.running = dispatch();
     }, PUSH_INTERVAL_MS);
     this.timer.unref();
   }
@@ -82,7 +86,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
 
   async runOnce(
     transport = new ExpoPushTransport({ accessToken: mobilePushSettings().accessToken }),
-    now = new Date(),
+    now = dayjs().toDate(),
   ) {
     const dispatcher = new PushDispatcher(
       {
@@ -102,6 +106,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
               where: {
                 id,
                 status: { in: ['PENDING', 'TICKET'] },
+                nextAttemptAt: { lte: date },
                 OR: [{ leaseUntil: null }, { leaseUntil: { lte: date } }],
               },
               data: { leaseToken: lease, leaseUntil: until },
@@ -117,7 +122,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     );
     await dispatcher.run(now);
     await this.db.pushDelivery.deleteMany({
-      where: { createdAt: { lt: new Date(now.getTime() - 2 * 86_400_000) } },
+      where: { createdAt: { lt: dayjs(now.getTime() - 2 * 86_400_000).toDate() } },
     });
     await this.db.pushDevice.deleteMany({ where: { session: { expiresAt: { lte: now } } } });
   }
@@ -135,7 +140,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
         id: job.deviceId,
         enabled: true,
         user: { needsOnboarding: false },
-        session: { expiresAt: { gt: new Date() } },
+        session: { expiresAt: { gt: dayjs().toDate() } },
       },
       include: { session: { select: { userId: true } } },
     });
@@ -147,7 +152,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!status) return null;
     return {
       to: device.token,
-      title: '웃긴순간',
+      title: '피식',
       body: '새로운 알림이 도착했어요.',
       data: { path: '/notifications', notificationId: job.eventId },
       badge: Math.min(9999, status.badge),

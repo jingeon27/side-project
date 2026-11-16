@@ -76,7 +76,7 @@ function Feed({ isAdmin }: { isAdmin: boolean }) {
   const { data } = useQuery(SubmissionsDocument, { variables: FEED });
   return (
     <ul>
-      {data?.submissions
+      {data?.submissionsPage.items
         .filter((submission) => !submission.hidden)
         .map((submission) => (
           <li key={submission.id} aria-label={submission.caption}>
@@ -104,11 +104,15 @@ function renderFeed({ isAdmin, mocks = [] }: { isAdmin: boolean; mocks?: MockLin
     query: SubmissionsDocument,
     variables: FEED,
     data: {
-      submissions: [
-        photo('photo-a'),
-        photo('photo-b'),
-        photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } }),
-      ],
+      submissionsPage: {
+        __typename: 'SubmissionPage',
+        items: [
+          photo('photo-a'),
+          photo('photo-b'),
+          photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } }),
+        ],
+        nextOffset: null,
+      },
     },
   });
   render(
@@ -137,6 +141,19 @@ afterEach(() => {
 });
 
 describe('ModerationActions', () => {
+  it('일반 멤버의 신고 행동은 관리자 mutation 컨텍스트 없이 표시해야 한다', () => {
+    render(
+      <ModerationActions
+        submission={{ id: 'photo-public', hidden: false, reportCount: 0, reports: [] }}
+        contestId="contest-1"
+        isAdmin={false}
+        isMine={false}
+        isCompleted={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '신고' })).toBeVisible();
+  });
+
   it('일반 멤버는 남의 사진만 신고할 수 있고 관리 버튼은 보지 않아야 한다', () => {
     renderFeed({ isAdmin: false });
 
@@ -183,6 +200,18 @@ describe('ModerationActions', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
+  it('관리자는 접힌 신고 내용을 공통 펼침 영역에서 열어 봐야 한다', async () => {
+    const { user } = renderFeed({ isAdmin: true });
+    const card = item('photo-a 캡션');
+    const label = within(card).getByText('신고 내용 확인');
+    // 브라우저 기본 ▶ 대신 공통 펼침 화살표를 쓴다(V18).
+    expect(label.closest('summary')).toHaveAttribute('data-slot', 'disclosure-trigger');
+    expect(within(card).getByText('동의 없이 올린 사진')).not.toBeVisible();
+
+    await user.click(label);
+    expect(within(card).getByText('동의 없이 올린 사진')).toBeVisible();
+  });
+
   it('관리자는 신고 수와 내용을 보고 숨기면 피드에서 바로 빠져야 한다', async () => {
     const { user, client } = renderFeed({
       isAdmin: true,
@@ -196,12 +225,16 @@ describe('ModerationActions', () => {
           request: { query: SubmissionsDocument, variables: FEED },
           result: {
             data: {
-              submissions: [
-                photo('photo-b'),
-                photo('photo-mine', {
-                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
-                }),
-              ],
+              submissionsPage: {
+                __typename: 'SubmissionPage',
+                items: [
+                  photo('photo-b'),
+                  photo('photo-mine', {
+                    author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                  }),
+                ],
+                nextOffset: null,
+              },
             },
           },
         },
@@ -238,12 +271,16 @@ describe('ModerationActions', () => {
           request: { query: SubmissionsDocument, variables: FEED },
           result: {
             data: {
-              submissions: [
-                photo('photo-a'),
-                photo('photo-mine', {
-                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
-                }),
-              ],
+              submissionsPage: {
+                __typename: 'SubmissionPage',
+                items: [
+                  photo('photo-a'),
+                  photo('photo-mine', {
+                    author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                  }),
+                ],
+                nextOffset: null,
+              },
             },
           },
         },

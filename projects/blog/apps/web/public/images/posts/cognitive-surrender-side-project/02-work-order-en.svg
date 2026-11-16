@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="970" viewBox="0 0 1080 970">
+  <title>The order I used and the one I&#x27;d try</title>
+  <desc>I did not build the same project twice to compare. This diagram sets out my guess.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6a7873" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-rust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#a85f43" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+  <rect width="1080" height="970" fill="#f4f1ea"/>
+  <text x="68" y="62" font-size="24" font-weight="400" fill="#62756d" text-anchor="start">02 / Work order</text>
+  <text x="68" y="124" font-size="40" font-weight="700" fill="#273b36" text-anchor="start">The order I used and the one I&#x27;d try</text>
+  <rect x="96" y="148" width="290" height="50" rx="10" fill="#f5e6df"/><text x="116" y="183" font-size="28" font-weight="700" fill="#9c5238" text-anchor="start">What I did</text>
+  <rect x="582" y="148" width="290" height="50" rx="10" fill="#e4ece0"/><text x="602" y="183" font-size="28" font-weight="700" fill="#2f5a48" text-anchor="start">What I would try</text>
+  <rect x="96" y="214" width="430" height="104" rx="14" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><text x="122" y="257" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Decide stack, requirements,</text><text x="122" y="294" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">and caching policy</text>
+  <path d="M 311.0 322 V 344" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="96" y="348" width="430" height="104" rx="14" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><text x="122" y="391" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Leave detailed conditions</text><text x="122" y="428" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">and design to the agent</text>
+  <path d="M 311.0 456 V 478" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="96" y="482" width="430" height="104" rx="14" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><text x="122" y="525" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Read the reports</text><text x="122" y="562" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">and try the screens</text>
+  <path d="M 311.0 590 V 612" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="96" y="616" width="430" height="104" rx="14" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><text x="122" y="659" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">List missing cases</text><text x="122" y="696" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">and technical debt</text>
+  <path d="M 311.0 724 V 746" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="96" y="750" width="430" height="104" rx="14" fill="#fffef9" stroke="#d9bfb3" stroke-width="2"/><text x="122" y="793" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Fill in the cases</text><text x="122" y="830" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">and rework the structure</text>
+  <rect x="582" y="214" width="430" height="104" rx="14" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><text x="608" y="275" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Set up a system first</text>
+  <path d="M 797.0 322 V 344" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="582" y="348" width="430" height="104" rx="14" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><text x="608" y="409" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Set conditions for each case</text>
+  <path d="M 797.0 456 V 478" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="582" y="482" width="430" height="104" rx="14" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><text x="608" y="525" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Set design criteria</text><text x="608" y="562" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">with HTML</text>
+  <path d="M 797.0 590 V 612" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="582" y="616" width="430" height="104" rx="14" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><text x="608" y="677" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Delegate the implementation</text>
+  <path d="M 797.0 724 V 746" fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="582" y="750" width="430" height="104" rx="14" fill="#fffef9" stroke="#9db7a5" stroke-width="2"/><text x="608" y="811" font-size="27" font-weight="400" fill="#273b36" text-anchor="start">Verify against the criteria</text>
+  <path d="M 92 802.0 H 58 V 534.0 H 88" fill="none" stroke="#a85f43" stroke-width="3" stroke-dasharray="9 8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-rust)"/>
+  <path d="M 68 898 H 1012" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="68" y="942" font-size="24" font-weight="400" fill="#7d8a84" text-anchor="start">I did not build the same project twice to compare. This diagram sets out my guess.</text>
+  </g>
+</svg>

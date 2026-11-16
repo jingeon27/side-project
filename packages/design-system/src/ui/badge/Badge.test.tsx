@@ -4,7 +4,17 @@ import { describe, expect, it } from 'vitest';
 import { colorModes, contrastRatio, resolveColor } from '../../test/color-tokens';
 import { Badge, type TBadgeTone } from './Badge';
 
-const tones: TBadgeTone[] = ['brand', 'accent', 'neutral', 'danger', 'info', 'gold', 'silver', 'bronze'];
+const tones: TBadgeTone[] = [
+  'brand',
+  'accent',
+  'neutral',
+  'outline',
+  'danger',
+  'info',
+  'gold',
+  'silver',
+  'bronze',
+];
 const textSizes = new Set(['micro']);
 
 function badgeColors(tone: TBadgeTone) {

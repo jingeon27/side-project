@@ -22,3 +22,19 @@ Design references requested by the user:
 
 Performance and fidelity claims in those projects are not measurements of this
 bot. Our own tests, rule hashes, seeds and evaluation reports are recorded separately.
+
+## Card-mechanics reference provenance
+
+The reference table was checked on 2026-11-15. These source links document
+its provenance; they are not a claim of current patch synchronization.
+
+- [currentStats](https://www.royaletools.com/cards/)
+- [furnaceRangeAndGraveyardCount](https://supercell.com/en/games/clashroyale/blog/release-notes/june-balance-changes-2026/)
+- [fixedGraveyard](https://supercell.com/en/games/clashroyale/blog/release-notes/january-balance-changes-26/)
+- [revisedGraveyard](https://supercell.com/en/games/clashroyale/blog/news/february-balance-changes-26/)
+- [furnaceRework](https://supercell.com/en/games/clashroyale/blog/release-notes/new-season-fired-up/)
+- [hutSpawn](https://supercell.com/en/games/clashroyale/blog/release-notes/april26-balance-changes/)
+- [singleUseAbilities](https://supercell.com/en/games/clashroyale/blog/news/final-august-balance-changes-826/)
+- [iceWizardHero](https://support.clashroyale.com/hc/en-us/articles/54836231287963-What-s-New-September-2026)
+- [championCycle](https://supercell.com/en/games/clashroyale/blog/release-notes/october-update-2025/)
+- [championAbilityOwner](https://support.clashroyale.com/hc/en-us/articles/49484915467291-Champions)

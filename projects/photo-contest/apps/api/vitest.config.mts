@@ -12,12 +12,35 @@ const typescriptWithDecorators = swc.vite({
     target: 'es2022',
   },
 });
+const databaseOnly = process.argv.some(
+  (argument) => argument === 'database' || argument === '--project=database',
+);
 
 export default defineConfig({
   plugins: [typescriptWithDecorators],
   test: {
     maxWorkers: '10%',
     projects: [
+      ...(databaseOnly
+        ? [
+            {
+              extends: true as const,
+              test: {
+                name: 'database',
+                environment: 'node' as const,
+                include: [
+                  'src/**/*.database.integration.{spec,test}.ts',
+                  'src/testing/testing.controller.integration.spec.ts',
+                ],
+                globalSetup: ['test/support/database-global-setup.ts'],
+                setupFiles: ['test/support/setup.ts'],
+                fileParallelism: false,
+                testTimeout: 30_000,
+                hookTimeout: 30_000,
+              },
+            },
+          ]
+        : []),
       {
         extends: true,
         test: {

@@ -1,1 +1,1 @@
-export { NotificationsPageTemplate } from './@page/NotificationsPageTemplate';
+export { NotificationsPage } from './ui/NotificationsPage';

@@ -32,6 +32,21 @@ describe('rich text contract and safe server rendering', () => {
     expect(html.match(/<li>/g)).toHaveLength(2);
     expect(richTextToPlainText(document)).toBe('Formatted title\nBold text and a link\nFirst\nSecond');
   });
+  it('renders level 3 headings and quotes as their own blocks and other lines as paragraphs', () => {
+    const document = RichTextDocumentSchema.parse({
+      ops: [
+        { insert: 'Section' },
+        { insert: '\n', attributes: { header: 3 } },
+        { insert: 'Quoted' },
+        { insert: '\n', attributes: { blockquote: true } },
+        { insert: 'Plain\n' },
+      ],
+    });
+    const html = renderToStaticMarkup(<RichTextBody body="" document={document} />);
+    expect(html).toContain('<h3><span>Section</span></h3>');
+    expect(html).toContain('<blockquote><span>Quoted</span></blockquote>');
+    expect(html).toContain('<p><span>Plain</span></p>');
+  });
   it('renders uploaded images and native video in public HTML and rejects external and data embeds', () => {
     const document = RichTextDocumentSchema.parse({
       ops: [

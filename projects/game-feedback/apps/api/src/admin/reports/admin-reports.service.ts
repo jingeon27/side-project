@@ -4,8 +4,8 @@ import { match } from 'ts-pattern';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag } from '@game-feedback/contracts';
 
-import { requireAdmin } from '../../auth/session-access';
-import type { SessionRequest } from '../../auth/session.types';
+import { requireAdmin } from '../../auth/session/session-access';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
 import { decodeCursor, nextCursor } from '../../common/pagination';
@@ -31,13 +31,18 @@ export class AdminReportsService {
       async (tx) => {
         const data = { hidden: input.hidden };
         const postId = await match(input.targetType)
-          .with('POST', () => tx.post.update({ where: { id: input.targetId }, data }).then((row) => row.id))
-          .with('ANSWER', () =>
-            tx.answer.update({ where: { id: input.targetId }, data }).then((row) => row.postId),
-          )
-          .with('COMMENT', () =>
-            tx.comment.update({ where: { id: input.targetId }, data }).then((row) => row.postId),
-          )
+          .with('POST', async () => {
+            const row = await tx.post.update({ where: { id: input.targetId }, data });
+            return row.id;
+          })
+          .with('ANSWER', async () => {
+            const row = await tx.answer.update({ where: { id: input.targetId }, data });
+            return row.postId;
+          })
+          .with('COMMENT', async () => {
+            const row = await tx.comment.update({ where: { id: input.targetId }, data });
+            return row.postId;
+          })
           .exhaustive();
         const scope = hiddenNotificationScope(input);
         if (scope) await (tx ?? this.db).notification.deleteMany({ where: scope });

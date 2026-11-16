@@ -1,7 +1,10 @@
 import { connection } from 'next/server';
 
-import { getPublicGroupCount, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group';
-import { getPublicGroupContestCount, PUBLIC_CONTEST_SITEMAP_SIZE } from '@/_pages/group-contests';
+import {
+  getPublicGroupContestCount,
+  PUBLIC_CONTEST_SITEMAP_SIZE,
+} from '@/_pages/group-contests/index.server';
+import { getPublicGroupCount, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group/index.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { siteUrl } from '@/shared/lib/seo.helper';
 import { sitemapIndex, sitemapPageCount, sitemapResponse } from '@/shared/lib/sitemap.helper';

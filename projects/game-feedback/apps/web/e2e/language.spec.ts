@@ -1,24 +1,28 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
+
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 test('first visits use the browser region without JavaScript and retain feed filters', async ({
   browser,
 }) => {
   for (const [locale, path, heading] of [
-    ['ko-KR', 'ko', 'Game Mate'],
-    ['ja-JP', 'ja', 'Game Mate'],
-    ['en-GB', 'en', 'Game Mate'],
+    ['ko-KR', 'ko', '전체'],
+    ['ja-JP', 'ja', 'すべて'],
+    ['en-GB', 'en', 'All'],
   ] as const) {
     const context = await browser.newContext({
       locale,
       javaScriptEnabled: false,
-      baseURL: 'http://127.0.0.1:3301',
+      baseURL: origin,
     });
     try {
       const page = await context.newPage();
       await page.goto('/?q=hog&tab=unanswered');
       await expect(page).toHaveURL(new RegExp(`/${path}\\?q=hog&tab=unanswered$`));
       await expect(page.locator('html')).toHaveAttribute('lang', path);
-      await expect(page.getByRole('banner')).toContainText(heading);
+      await expect(
+        page.getByRole('banner').getByRole('heading', { name: heading, exact: true }),
+      ).toBeVisible();
     } finally {
       await context.close();
     }
@@ -28,7 +32,7 @@ test('first visits use the browser region without JavaScript and retain feed fil
 test('signed-out users can save a manual language, reload and resume automatic selection', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ locale: 'ja-JP', baseURL: 'http://127.0.0.1:3301' });
+  const context = await browser.newContext({ locale: 'ja-JP', baseURL: origin });
   try {
     const page = await context.newPage();
     await page.goto('/ja/settings');
@@ -63,7 +67,7 @@ test('signed-out users can save a manual language, reload and resume automatic s
 test('the header dropdown preserves the current page, filters and hash while sharing the saved preference', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ locale: 'ja-JP', baseURL: 'http://127.0.0.1:3301' });
+  const context = await browser.newContext({ locale: 'ja-JP', baseURL: origin });
   try {
     const page = await context.newPage();
     await page.goto('/ja?q=hog&tab=unanswered#feed');
@@ -80,10 +84,7 @@ test('the header dropdown preserves the current page, filters and hash while sha
       'href',
       '/en/search?q=hog&tab=unanswered',
     );
-    await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => Reflect.get(window, '__languageDocument'))).toBe('kept');
     expect(await page.evaluate(() => history.length)).toBe(length);
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_language')?.value).toBe('en');
@@ -119,7 +120,9 @@ test('language changes keep the page visible and disable both selectors until th
     await page.locator('#language-preference:visible').click();
     await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page.getByRole('status').filter({ hasText: '언어를 변경하고 있어요' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '나의 플레이 공간', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('banner').getByRole('heading', { name: '프로필', exact: true }),
+    ).toBeVisible();
     await expect(page.locator('.page-loading-screen')).toHaveCount(0);
     await expect(page.locator('#language-preference:visible')).toBeDisabled();
     await expect(page.getByRole('banner').getByRole('combobox')).toBeDisabled();

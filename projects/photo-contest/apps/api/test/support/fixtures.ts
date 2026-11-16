@@ -75,11 +75,14 @@ export async function createContest(
   groupId: string,
   title = '테스트 대회',
 ): Promise<string> {
-  const { createContest: contest } = await api.gqlOk<{ createContest: { id: string } }>(
-    owner.cookie,
-    CREATE_CONTEST,
-    { groupId, title, ...contestSchedule() },
-  );
+  const response = await api
+    .http()
+    .post('/testing/legacy-contests')
+    .set('Origin', 'http://web.test')
+    .set('Cookie', owner.cookie)
+    .send({ groupId, title, ...contestSchedule() })
+    .expect(201);
+  const contest = response.body as { id: string };
   return contest.id;
 }
 

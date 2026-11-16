@@ -1,12 +1,12 @@
 <Summary>
 
-A review like appears in both list and detail caches. I updated them together and restored saved snapshots when the request failed.
+The same hospital review appears in a list and on a detail screen, and liking it changed only the side where the button was pressed. I moved the like value into TanStack Query's cache, updated both before the response arrived, and restored saved snapshots when the request failed. This walks through that implementation in six steps with v5 code.
 
 </Summary>
 
-> This article uses TanStack Query v5, the version used in the project.
+![An illustration of a like action updating list and detail caches together.](/images/covers/review-like-optimistic-update.avif)
 
-The same hospital review appeared in lists and on its detail screen, but each ReviewItem held its own like state. It copied `isLiked` and `likeCount` from the server response into local state, then changed only the component whose button was pressed.
+A hospital review can appear in a list and on its detail screen. Liking it changed only the component where the button was pressed. Each `ReviewItem` copied the server's like state and count into local `isLiked` and `likeCount` state, and the handler updated only that copy.
 
 ```tsx
 function ReviewItem({ review }: { review: Review }) {
@@ -34,18 +34,17 @@ function ReviewItem({ review }: { review: Review }) {
 }
 ```
 
-The button responded immediately, but the approach had two problems.
+This code changes the screen without waiting for the response. Assuming a request will succeed and showing the result first is called an optimistic update. If the button waited for the response, it would sit unchanged for a network round trip after each press. The assumption can be wrong, so code to undo the change has to come with it. Here, `previous` holds the values to restore.
 
-- The list and detail screens held separate local states for the same review.
-- On failure, each component restored only its own state, which could leave screens showing different values.
+The button responded immediately, but the list and detail could disagree about the same review. `useState` reads its argument only on the first mount, so the copied value stays put even when a parent passes a new `review`. A failed request restored only the component's own state.
 
-The server's reviews were already stored in TanStack Query's cache. Having the UI subscribe to that cache was more natural than copying the same values into components again.
+The review response was already in TanStack Query's cache. TanStack Query stores server responses by query key and re-renders the components subscribed to a key when its value changes. With screens subscribed to the cache instead of keeping copies, the like handler can update the relevant caches together and restore them together on failure. The examples use TanStack Query v5, which the project used.
 
-## TanStack Query does not roll back manual cache updates automatically
+## The sequence
 
-Calling `setQueryData` inside `onMutate` does not make TanStack Query save and restore the previous cache automatically.
+Moving state into the cache does not remove the need for rollback. Requests that change server data go through `useMutation`: `onMutate` runs before the request is sent, `onError` runs on failure, and `onSettled` runs last after either outcome. TanStack Query does not save the previous value just because `onMutate` calls `setQueryData`. The value to restore has to be saved first, and that saved value is called a snapshot.
 
-A manual optimistic cache update also needs these steps.
+The work around the request runs in this order.
 
 1. Cancel an ongoing refetch.
 2. Save a snapshot of the cache before the change.
@@ -54,11 +53,11 @@ A manual optimistic cache update also needs these steps.
 5. Restore it in `onError` if the request fails.
 6. Use `invalidateQueries` after success or failure to synchronize with the server.
 
-The official documentation likewise describes returning a value from `onMutate` and using it in `onError` to restore the data explicitly.
+The official optimistic-update example follows this flow too.
 
-## Define the query key scope first
+## Setup: query key scope
 
-Review lists have separate caches depending on the hospital and page size. A review detail uses another cache.
+Updating only the cache for the current screen leaves the original problem in place. Lists differ by hospital and page size, and a detail uses another key. Passing the front part of a key to a cache lookup matches every cache starting with it, so a key hierarchy lets one prefix find every cached list.
 
 ```typescript
 const reviewKeys = {
@@ -69,7 +68,7 @@ const reviewKeys = {
 };
 ```
 
-For example, all these queries fall under `reviewKeys.infinite` despite their different parameters.
+All these queries fall under `reviewKeys.infinite` despite their different parameters.
 
 ```text
 ['review', 'infinite', { hospitalId: 1, size: 3 }]
@@ -77,11 +76,11 @@ For example, all these queries fall under `reviewKeys.infinite` despite their di
 ['review', 'infinite', { hospitalId: 2, size: 10 }]
 ```
 
-This hierarchy lets me find the review lists currently cached without hardcoding a particular `size`.
+Using `reviewKeys.infinite` avoids fixing the handler to one `size`. The same update can reach every matching list already in the cache.
 
-## A pure function for updating one review
+## Setup: a pure function for one review
 
-I extracted the rule for changing one review so lists and details could use the same calculation.
+One function updates a review for both list and detail, so the two cannot calculate the count differently. A pure function returns the same result for the same input and changes nothing outside itself. The cache has to be treated as immutable, so values passed to `setQueryData` are new objects rather than edited ones. The function returns the original object when the ID does not match or the like state is already correct. Applying the same state again does not change the count twice.
 
 ```tsx
 import type { InfiniteData, QueryKey } from '@tanstack/react-query';
@@ -105,7 +104,7 @@ function updateReviewLike<T extends Review>(
 
   const nextLike = feedbackType === 'LIKE';
 
-  // 같은 상태를 다시 반영할 때 숫자가 중복으로 변하지 않게 한다.
+  // Reapplying the same state must not change the count twice.
   if (review.like === nextLike) return review;
 
   return {
@@ -116,7 +115,7 @@ function updateReviewLike<T extends Review>(
 }
 ```
 
-I apply that function to each page in a list response.
+An infinite list's cache holds its loaded pages in a `pages` array. Apply the function to the reviews on each page's `list`. Unchanged reviews and the rest of the response stay intact.
 
 ```typescript
 function updateReviewList(
@@ -139,9 +138,9 @@ function updateReviewList(
 }
 ```
 
-## Snapshot both list and detail caches
+## useReviewLike
 
-Restoring only a list or only a detail after a failed like request leaves inconsistent screens. I therefore save both types of cache in `onMutate`.
+The six steps appear in this hook in order.
 
 ```tsx
 type ReviewLikeContext = {
@@ -168,7 +167,7 @@ export function useReviewLike() {
     onMutate: async (variables) => {
       const detailKey = reviewKeys.detail(variables.reviewId);
 
-      // 이미 진행 중인 refetch가 낙관적 값을 덮지 않게 한다.
+      // Prevent an in-flight refetch from overwriting the optimistic value.
       await Promise.all([
         queryClient.cancelQueries({ queryKey: reviewKeys.infinite }),
         queryClient.cancelQueries({ queryKey: detailKey }),
@@ -218,7 +217,7 @@ export function useReviewLike() {
         );
       }
 
-      toast.warning(SafedocError.getMessage(error));
+      toast.warning(ServiceError.getMessage(error));
     },
 
     onSettled: () =>
@@ -226,32 +225,45 @@ export function useReviewLike() {
   });
 
   return {
-    handleLike: mutation.mutateAsync,
+    handleLike: mutation.mutate,
     isLikePending: mutation.isPending,
   };
 }
 ```
 
-Returning the `invalidateQueries` Promise from `onSettled` can keep the mutation pending until revalidation finishes.
+The click handler does not need to await a result, so it uses `mutate`. `onError` handles the notice and rollback. With `mutateAsync`, the caller would also need to handle the rejected Promise separately.
 
-## What getQueriesData does
+### 1. Cancel refetches
 
-`getQueriesData({ queryKey: reviewKeys.infinite })` returns queries that currently exist in the cache under that prefix. It does not create new list caches or automatically synchronize screens that will be added later.
+`onMutate` starts with `cancelQueries`. An in-flight request that finishes late could overwrite the optimistic value, because a refetch started just before the click may carry the count from before the like. The result of a cancelled query does not enter the cache.
 
-That leaves several requirements.
+### 2. Save snapshots
 
-- List query keys must follow the same hierarchy.
-- Caches using other keys, such as details, must be updated separately.
-- A new cache displaying likes needs to be reviewed for inclusion in the optimistic update.
-- The server must be queried again at the end to verify the client's calculation.
+Rollback needs the same scope as the update. `getQueriesData` saves the previous lists by key, and `getQueryData` saves the previous detail response. `getQueriesData` returns an array of `[queryKey, data]` pairs.
 
-The benefit of `getQueriesData` is that it finds existing list caches with different parameters using the query key convention. It does not discover every screen automatically.
+`getQueriesData({ queryKey: reviewKeys.infinite })` returns **queries that currently exist in the cache** under that prefix. It does not create new list caches or automatically synchronize screens that will be added later.
 
-## Repeated clicks are a separate problem
+### 3. Update the caches
 
-An optimistic update makes one request feel fast; it does not automatically solve concurrency. If a user likes and unlikes repeatedly, requests can finish in a different order from the one in which they were sent.
+`setQueriesData` applies `updateReviewList` to the lists, and `setQueryData` applies `updateReviewLike` to the detail. List keys share one prefix, and the detail uses another key, so it is updated separately. When an updater returns `undefined`, `setQueryData` creates nothing, so a detail nobody has fetched yet does not gain a cache entry. Another cache displaying likes would also need to join this handler.
 
-For this screen, disabling the same button while a request is pending is the simplest choice.
+### 4. Return the snapshots
+
+`onMutate` returns the list snapshots, the detail key, and the detail snapshot. That value arrives as `context` in `onError`. Variables inside `onMutate` are out of reach from `onError`, which is why they travel through the return value.
+
+### 5. Restore on failure
+
+On failure, `onError` puts each saved value back under its key. `toast.warning` shows the user the error message. `updateReviewLike` leaves a matching state alone and never goes below zero, so running it once more in the opposite direction cannot be counted on to reach the original value. Putting back the saved value avoids that.
+
+### 6. Synchronize with the server
+
+After either outcome, `onSettled` fetches the server state again. This reconciles the count calculated in the browser with the server's value. `invalidateQueries` marks the matching caches as outdated and refetches the queries screens are subscribed to. Returning its Promise keeps the mutation pending until that revalidation finishes.
+
+## Repeated clicks need separate handling
+
+The code so far handles one interaction at a time. If someone likes and unlikes repeatedly, the first request can finish last. Saving snapshots does not establish request order.
+
+For this screen, disabling the button while its request is pending is the simplest approach.
 
 ```tsx
 const { handleLike, isLikePending } = useReviewLike();
@@ -268,35 +280,25 @@ const { handleLike, isLikePending } = useReviewLike();
 />
 ```
 
+Because step 6 returns the Promise, the button stays disabled until the refetch finishes, and a like cannot be undone right away during that time.
+
 If repeated interactions must be allowed, the design also needs to consider serializing requests by review ID, applying only the latest intention, and server-side idempotency. Cache snapshots alone do not solve that problem.
 
-## Tests to check
+## How to verify
 
-Failures and overlapping caches matter more here than the success path alone.
+An icon changing quickly is only part of the behavior to check. With the same review in lists of different sizes and in a detail cache, they should change together before the response arrives. A failed request should return each cache to its own saved value.
 
-1. The list's icon and count change before the API responds.
-2. The same review changes in all existing list caches with different sizes.
-3. If a detail cache exists, both list and detail change together.
-4. On API failure, all lists and the detail return to their own snapshots.
-5. An ongoing refetch does not overwrite the optimistic value midway.
-6. Applying the same state twice does not increment the count twice or make it negative.
-7. After revalidation, the UI matches the server's final value.
+An ongoing refetch must not overwrite that change midway. Applying the same like state again must not increase the count twice or make it negative. After revalidation, the displayed values should match the server.
 
-## A shared source for the UI
-
-This work changed more than the speed of the like count. Screens showing the same review now subscribe to TanStack Query's cache instead of keeping independent local states.
-
-The cache does not replace the server as the final authority. An optimistic update projects the user's intent early. It needs an explicit rollback on failure and revalidation against server data at the end.
-
-The review like flow is therefore:
+Moving the value out of local state also changed the scope of a like action. The handler now updates the lists and detail showing that review in the same sequence.
 
 ```text
-사용자 입력
-  -> 관련 refetch 취소
-  -> 목록과 상세 cache snapshot 저장
-  -> 목록과 상세 cache 즉시 변경
-  -> 요청 실패 시 snapshot 직접 복구
-  -> 성공/실패 후 서버 데이터 재검증
+User input
+  -> Cancel related refetches
+  -> Save list and detail cache snapshots
+  -> Update list and detail caches immediately
+  -> Restore snapshots directly on request failure
+  -> Revalidate server data after success or failure
 ```
 
 Reference: [TanStack Query Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)

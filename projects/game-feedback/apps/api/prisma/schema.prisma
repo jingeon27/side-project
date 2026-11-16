@@ -159,6 +159,7 @@ model Post {
   battle Json?
   hidden Boolean @default(false)
   viewCount Int @default(0)
+  clientRequestId String?
   deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -167,9 +168,11 @@ model Post {
   notifications Notification[]
   media PostMedia[]
   views PostView[]
+  @@unique([authorId,clientRequestId])
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
   @@index([board,createdAt,id])
+  @@index([authorId,createdAt])
 }
 model PostView {
   postId String
@@ -179,6 +182,7 @@ model PostView {
   lastViewedAt DateTime @default(now())
   @@id([postId,visitorHash])
   @@index([postId,networkHash,lastViewedAt])
+  @@index([lastViewedAt,postId,visitorHash])
 }
 model Answer {
   id String @id @default(cuid())
@@ -194,6 +198,9 @@ model Answer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
+  notifications Notification[]
+  @@unique([id,postId])
+  @@index([authorId])
 }
 model Comment {
   id String @id @default(cuid())
@@ -202,6 +209,9 @@ model Comment {
   parentId String?
   parent Comment? @relation("CommentReplies",fields:[parentId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
   replies Comment[] @relation("CommentReplies")
+  replyToId String?
+  replyTo Comment? @relation("CommentReplyTargets",fields:[replyToId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  targetedReplies Comment[] @relation("CommentReplyTargets")
   notifications Notification[]
   authorId String
   author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
@@ -230,8 +240,9 @@ model Notification {
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
   answerId String?
+  answer Answer? @relation(fields:[answerId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
   commentId String?
-  comment Comment? @relation(fields:[commentId],references:[id],onDelete:Cascade)
+  comment Comment? @relation(fields:[commentId,postId],references:[id,postId],onDelete:Cascade,onUpdate:NoAction)
   type String
   // 알림 문구는 저장하지 않는다(actor·대상 id·유형만 둔다). 열은 추가형 migration 규칙에 따라 남긴다.
   message String @default("")
@@ -239,6 +250,8 @@ model Notification {
   createdAt DateTime @default(now())
   @@index([userId,createdAt,id])
   @@index([commentId])
+  @@index([postId])
+  @@index([answerId])
 }
 model Report {
   id String @id @default(cuid())
@@ -261,6 +274,7 @@ model Block {
   blockedUser User @relation("blocked",fields:[blockedUserId],references:[id],onDelete:Cascade)
   createdAt DateTime @default(now())
   @@unique([userId,blockedUserId])
+  @@index([blockedUserId])
 }
 model AuditLog {
   id String @id @default(cuid())
@@ -307,6 +321,7 @@ model ChatMessage {
   createdAt DateTime @default(now())
   attachments ChatAttachment[]
   notification ChatNotification?
+  @@unique([id,conversationId])
   @@unique([senderId,clientMessageId])
   @@index([conversationId,createdAt,id])
 }
@@ -327,7 +342,7 @@ model ChatAttachment {
   conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
   uploaderId String
   messageId String?
-  message ChatMessage? @relation(fields:[messageId],references:[id],onDelete:Cascade)
+  message ChatMessage? @relation(fields:[messageId,conversationId],references:[id,conversationId],onDelete:Cascade,onUpdate:NoAction)
   name String
   mimeType String
   size Int

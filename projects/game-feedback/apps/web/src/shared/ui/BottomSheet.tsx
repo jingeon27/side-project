@@ -24,7 +24,7 @@ export function BottomSheet({
     <DesignSystemBottomSheet
       {...props}
       onOpenChange={onOpenChange}
-      title={t(title)}
+      title={title}
       dismissible={dismissible}
       responsive
       showCloseButton={false}

@@ -1,10 +1,16 @@
 <Summary>
 
-Data appeared in the browser but was missing from the initial HTML. I separated queries the server must await from those it can stream while pending.
+The reservation detail page looked fine in the browser, yet the first HTML from the server lacked hospital information, and that HTML is also what a search crawler receives first. The server was starting its query without waiting for it. Starting prefetch did not mean the server was ready to pass its data along.
 
 </Summary>
 
-The hospital information appeared when I opened a reservation detail page in the browser, but it was absent from the server's initial HTML. I followed the server component's `prefetchQuery` call and the timing of `dehydrate`.
+![An illustration of fetching page content before navigating to the next screen.](/images/covers/nextjs-seo-prefetch.avif)
+
+I opened the HTML the server sent first, and the hospital information wasn't in it. The reservation detail page showed it fine in the browser, so the query had seemed to work.
+
+The browser hides this difference. What you see on screen is the result after JavaScript has run, while a crawler requesting the address first receives the server's initial HTML. Google renders JavaScript in a separate step after crawling, and [its documentation](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics) also notes that not all bots can run JavaScript. Content that should appear in search results is safer in that first HTML.
+
+This page used TanStack Query in a Next.js Server Component to fetch hospital information ahead of time. I checked when the Server Component called `dehydrate` after starting `prefetchQuery`.
 
 ```tsx
 void queryClient.prefetchQuery(hospitalOptions(hospitalId));
@@ -16,11 +22,13 @@ return (
 );
 ```
 
-In this code, `dehydrate` can run before prefetching finishes. The default dehydration settings include successful queries, so a pending query is left out of the state. The browser may fetch it again and show the screen, while the server-generated initial HTML is still missing the data.
+Here is the intended order. `prefetchQuery` puts a result into the server's `QueryClient` cache ahead of time. `dehydrate` extracts that cache as a value that can travel to the browser, and `HydrationBoundary` fills the cache used by the screen below it with that value. That screen renders once on the server to produce HTML, then runs again in the browser and takes the HTML over. That takeover is hydration. The hospital information reaches the HTML only if the cache has data during the server render.
 
-## Wait when the initial HTML needs the data
+But this code starts `prefetchQuery` without waiting for the result. The `void` marks the Promise as deliberately not awaited. If `dehydrate` runs before it finishes, the default policy leaves the pending query out, since it selects only successful queries. The screen looked right because the browser fetched again, and that doesn't mean the data was in the initial HTML.
 
-In Next.js 15, a page's `searchParams` is a Promise.
+## `await`, then dehydrate
+
+I awaited the query the initial HTML needed. In Next.js 15, `searchParams`, which holds the address's query string, is also a Promise and has to be read before building the query options.
 
 ```tsx
 interface Props {
@@ -47,11 +55,13 @@ export default async function ReservationPage({ searchParams }: Props) {
 }
 ```
 
-When the query succeeds, calling `dehydrate` after `await` includes its result. In TanStack Query v5, however, `prefetchQuery` does not throw failures to its caller. Use `fetchQuery` when the server must decide not-found or handle an error itself. `generateMetadata` also does not automatically share the page's QueryClient; sharing those reads needs a separate arrangement.
+On success, `dehydrate` after the `await` includes the result. The server render reads that cache, so the hospital information can reach the HTML. The cost is that a slow query delays the page's HTML by as much.
 
-## When void prefetchQuery is intentional
+Failure is a separate matter. `prefetchQuery` does not throw to its caller, so when the server has to decide on `notFound` or an error response, it needs `fetchQuery` and direct handling of the result and the failure. `generateMetadata`, which produces the title and description search results can use, does not automatically share the page's `QueryClient` either, and tying those reads together takes separate configuration.
 
-TanStack Query can also dehydrate pending queries for streaming.
+## Queries that can stay `void`
+
+A `void` doesn't automatically mean a missing `await`, because not every piece of data has to be ready at the same point. Streaming means the server sends HTML in parts as they become ready instead of all at once. If TanStack Query also serializes pending queries, an in-progress query can be passed along and streamed.
 
 ```typescript
 const queryClient = new QueryClient({
@@ -65,7 +75,7 @@ const queryClient = new QueryClient({
 });
 ```
 
-With that configuration, a consuming component that subscribes to the same query through `useSuspenseQuery` can intentionally avoid waiting for prefetching.
+The screen then subscribes to the same query with `useSuspenseQuery`. Suspense shows a fallback for the region that isn't ready, so the server doesn't have to wait for prefetch to finish first.
 
 ```tsx
 void queryClient.prefetchQuery(hospitalOptions(hospitalId));
@@ -79,22 +89,20 @@ return (
 );
 ```
 
-The presence of `void` alone does not determine whether the implementation is correct.
+The first line is identical to the code I started with. So I don't judge by the `void` alone. I read it together with when this screen needs the data, the dehydration settings, and the consuming component.
 
 | Situation | Choice |
 | --- | --- |
-| Essential data that must be in the initial HTML | await prefetchQuery |
-| Data used to decide not-found or an error on the server | Handle fetchQuery results and failures on the server |
+| Essential data that must be in the initial HTML | `await prefetchQuery` |
+| Data used to decide not-found or an error on the server | Handle `fetchQuery` results and failures on the server |
 | Data that can appear later within Suspense | pending dehydration + streaming |
 | Data needed only after an interaction | client query |
 
-## Distinguish SEO from the sitemap
+`HydrationBoundary` doesn't have to be gathered into one place either. Several Server Components can fetch their own data and pass it to nearby client screens. I check whether the same query and state are being passed repeatedly before combining them.
 
-A sitemap does not read a page's internal data. It tells search engines about URLs; their crawlers then request those URLs and read the HTML. The precise description is that the crawler's initial HTML was missing essential content, rather than that the sitemap could not read it.
+## A URL in the sitemap
 
-Multiple HydrationBoundaries are not necessarily duplicates either. Different Server Components can prefetch their own caches and pass them to nearby client subtrees. I consider moving a boundary upward when the same query and state are passed repeatedly.
-
-For queries that matter to SEO, I first decide how much the server must finish. Then I choose between waiting for completion and streaming the pending state.
+The sitemap tells search engines where a page is. The crawler then requests that address and reads the HTML. Whether the HTML at that address contains hospital information had to be checked on the page itself. The change here belonged in the server's query and `dehydrate` order, rather than the sitemap.
 
 References: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js searchParams](https://nextjs.org/docs/app/api-reference/file-conventions/page#searchparams-optional)
 

@@ -4,12 +4,14 @@ import {
   type EventSourceMessage,
 } from '@microsoft/fetch-event-source';
 import type { QueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { notificationListOptions } from '@/features/notification';
 
 import { chatMessageOptions, chatMessageScopeOptions, conversationScopeOptions } from './chat.options';
 import type { TChatConnection } from './chat.types';
+import { invalidateChatQueries } from './invalidate-chat-queries';
 
 const invalidationSchema = z.object({ conversationId: z.string().min(1).max(128).nullable() });
 interface IChatRealtimeOptions {
@@ -69,11 +71,10 @@ export class ChatRealtimeConnection {
     if (!this.lifetime || !userId) return;
     void client.invalidateQueries(conversationScopeOptions(userId));
     void client.invalidateQueries(notificationListOptions(userId));
-    if (conversationId) {
-      void client.invalidateQueries(chatMessageOptions(userId, conversationId));
-      return;
-    }
-    void client.invalidateQueries(chatMessageScopeOptions(userId));
+    const messages = conversationId
+      ? chatMessageOptions(userId, conversationId)
+      : chatMessageScopeOptions(userId);
+    void invalidateChatQueries(client, messages);
   }
 
   private openStream() {
@@ -109,7 +110,7 @@ export class ChatRealtimeConnection {
         if (!this.active(stream)) return;
         this.publish(navigator.onLine ? 'retrying' : 'offline');
         this.refresh();
-        const now = Date.now();
+        const now = dayjs().valueOf();
         if (error instanceof ChatStreamAccessError || now - this.lastSessionCheck >= 5_000) {
           this.lastSessionCheck = now;
           this.options.onSessionStale();

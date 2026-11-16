@@ -27,8 +27,8 @@ function TermsForm({ onSubmit }: { onSubmit: (values: TValues) => void }) {
               id={checkboxId}
               name={field.name}
               checked={field.value}
-              onCheckedChange={(checked) => field.onChange(checked)}
-              onBlur={() => field.onBlur()}
+              onCheckedChange={field.onChange}
+              onBlur={field.onBlur}
               inputRef={field.ref}
               aria-invalid={fieldState.invalid || undefined}
             />

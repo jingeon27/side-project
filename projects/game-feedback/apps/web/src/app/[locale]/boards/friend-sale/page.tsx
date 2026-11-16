@@ -1,11 +1,24 @@
-import { BoardDocument, boardDocumentMetadata, type IBoardDocumentProps } from '@/_app/index.server';
+import { locale as rootLocale } from 'next/root-params';
 
-export function generateMetadata(props: IBoardDocumentProps) {
-  return boardDocumentMetadata('friend-sale', props);
+import { isClientNavigation } from '@/_app/index.server';
+import { boardMetadata, FriendSaleBoardRoute } from '@/_pages/boards/index.server';
+
+interface IPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function Page(props: IBoardDocumentProps) {
-  return <BoardDocument {...props} slug="friend-sale" />;
+export async function generateMetadata({ searchParams }: IPageProps) {
+  return boardMetadata(await rootLocale(), 'friend-sale', (await searchParams).game);
+}
+
+export default async function Page({ searchParams }: IPageProps) {
+  return (
+    <FriendSaleBoardRoute
+      locale={await rootLocale()}
+      searchParams={searchParams}
+      blockUntilReady={!(await isClientNavigation())}
+    />
+  );
 }
 
 // Initial public HTML is complete; instant() verifies the prefetched navigation controls.

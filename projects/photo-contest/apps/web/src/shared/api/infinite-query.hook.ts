@@ -1,68 +1,38 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useTransition } from 'react';
 
+import { NetworkStatus } from '@apollo/client';
 import type { MaybeMasked } from '@apollo/client/masking';
-import { useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-interface IInfiniteQueryOptions<TData, TItem extends { id: string }> {
-  select: (data: MaybeMasked<TData>) => readonly TItem[];
-  pageSize: number;
-  canFetchMore?: (data: MaybeMasked<TData>) => boolean;
-}
+import type { useObservableQueryRef } from './observable-query-ref.hook';
 
-interface ILastPage<TData> {
-  queryRef: QueryRef<TData>;
-  firstId?: string;
-  count: number;
-  hasNextPage: boolean;
-}
-
-/** 데이터는 Apollo 캐시에서 읽고, 추가 조회의 끝과 동시 요청만 관리한다. */
-export function useInfiniteQuery<TData, TItem extends { id: string }>(
-  queryRef: QueryRef<TData>,
-  { select, pageSize, canFetchMore }: IInfiniteQueryOptions<TData, TItem>,
+/** 서버가 알려준 페이지 범위를 따라 읽고, Apollo의 현재 조회 상태로 추가 요청을 제어한다. */
+export function useInfiniteQuery<TData>(
+  { observable, fetchMore, ...result }: ReturnType<typeof useObservableQueryRef<TData>>,
+  getNextOffset: (data: MaybeMasked<TData>) => number | null,
+  onPageLoaded?: (offset: number) => void,
 ) {
-  const { fetchMore, refetch } = useQueryRefHandlers(queryRef);
-  const result = useReadQuery(queryRef);
-  const items = select(result.data);
-  const [lastPage, setLastPage] = useState<ILastPage<TData> | null>(null);
   const [isFetchingNextPage, startTransition] = useTransition();
-  const activeRequest = useRef<Promise<unknown> | null>(null);
-  const sameList =
-    lastPage?.queryRef === queryRef && lastPage.firstId === items[0]?.id && lastPage.count === items.length;
-  const hasNextPage =
-    items.length >= pageSize && (!sameList || lastPage.hasNextPage) && (canFetchMore?.(result.data) ?? true);
 
   return {
     ...result,
-    items,
-    hasNextPage,
+    hasNextPage: getNextOffset(result.data) !== null,
     isFetchingNextPage,
     fetchNextPage: () => {
-      if (!hasNextPage || activeRequest.current) return;
+      const current = observable.getCurrentResult();
+      if (current.networkStatus !== NetworkStatus.ready || current.dataState !== 'complete') return;
+      const nextOffset = getNextOffset(current.data);
+      if (nextOffset === null) return;
       startTransition(async () => {
-        const request = fetchMore({ variables: { offset: items.length } });
-        activeRequest.current = request;
         try {
-          const next = await request;
-          const page = select(next.data);
-          setLastPage({
-            queryRef,
-            firstId: items[0]?.id,
-            count: items.length + page.length,
-            hasNextPage: page.length >= pageSize,
-          });
+          await fetchMore({ variables: { offset: nextOffset } });
         } catch {
           /* 조회 오류는 같은 QueryRef의 AsyncBoundary에서 복구한다. */
-        } finally {
-          if (activeRequest.current === request) activeRequest.current = null;
+          return;
         }
+        onPageLoaded?.(nextOffset);
       });
-    },
-    refetch: () => {
-      setLastPage(null);
-      return refetch();
     },
   };
 }

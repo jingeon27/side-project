@@ -1,13 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
-import {
-  getGroupMetadata,
-  getGroupSeoData,
-  groupJsonLd,
-  GroupPageTemplate,
-  parseGroupCategory,
-} from '@/_pages/group';
+import { GroupPage, parseGroupCategory } from '@/_pages/group';
+import { getGroupMetadata, getGroupSeoData, groupJsonLd } from '@/_pages/group/index.server';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
   GalleryDocument,
@@ -32,6 +28,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { id } = await params;
   const seo = await getGroupSeoData(id);
   if (!seo) notFound();
@@ -43,7 +40,7 @@ export default async function Page({
       <PreloadQuery query={MeDocument}>
         <PreloadQuery query={GalleryDocument} variables={{ id }} errorPolicy="all">
           {seo.group.visibility === GroupVisibility.Private ? (
-            <GroupPageTemplate id={id} />
+            <GroupPage id={id} />
           ) : (
             <PreloadQuery
               query={GalleryPostsDocument}
@@ -61,7 +58,7 @@ export default async function Page({
                 variables={{ groupId: id, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 }}
                 errorPolicy="all"
               >
-                <GroupPageTemplate id={id} />
+                <GroupPage id={id} />
               </PreloadQuery>
             </PreloadQuery>
           )}
@@ -70,3 +67,5 @@ export default async function Page({
     </>
   );
 }
+
+export const instant = true;

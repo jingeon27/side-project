@@ -6,6 +6,34 @@
       "Filter": { "Prefix": "" },
       "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
       "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    },
+    {
+      "ID": "game-feedback-ci-expire-tests",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "game-feedback/ci/tests/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "game-feedback-local-expire-tests",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "game-feedback/local/tests/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "photo-contest-ci-expire-tests",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "photo-contest/ci/tests/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "photo-contest-local-expire-tests",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "photo-contest/local/tests/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
     }
   ]
 }

@@ -6,7 +6,8 @@ import { postDetailOptions, postListOptions } from '@/features/post';
 import { deleteUserBlock } from '../api/user.api';
 import { blockListOptions } from './user.options';
 
-export function unblockUserMutationOptions(client: QueryClient, notify: (text: string) => void) {
+/** `afterSuccess`는 캐시 갱신이 끝난 뒤 부른다(호출부의 번역한 알림 등). */
+export function unblockUserMutationOptions(client: QueryClient, afterSuccess?: () => void) {
   return mutationOptions({
     mutationKey: ['user', 'unblock-user'],
     mutationFn: deleteUserBlock,
@@ -17,7 +18,7 @@ export function unblockUserMutationOptions(client: QueryClient, notify: (text: s
         client.invalidateQueries(postDetailOptions()),
         client.invalidateQueries(chatScopeOptions()),
       ]);
-      notify('차단을 해제했어요.');
+      afterSuccess?.();
     },
   });
 }

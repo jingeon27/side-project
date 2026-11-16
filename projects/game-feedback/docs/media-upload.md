@@ -2,13 +2,25 @@
 
 게시글·채팅 첨부와 프로필 사진은 모두 서명 발급 → 브라우저 S3 POST → 완료 확인으로 처리한다. API는 JSON 메타데이터만 받는다. 저장소를 선택하는 DATABASE·FILESYSTEM 모드와 프록시 multipart 업로드는 제거한다. 조회는 사용자·공개 범위·차단·대화 접근을 확인한 뒤 60초 presigned GET으로 307 이동한다.
 
-완료는 HEAD의 크기·타입·ETag와 앞 4KB의 파일 서명을 확인하고 같은 ETag를 조건으로 별도 최종 키에 CopyObject한다. 발급한 주소를 다시 써도 게시된 파일은 덮어쓰지 못한다. 프로필 사진은 웹에서 방향·중앙 자르기·최대 512px JPEG 변환으로 촬영 메타데이터를 제거한다. 서버의 파일 헤더 검사는 이미지 전체 디코딩이나 제3자 클라이언트의 메타데이터 제거를 보장하지 않는다.
+업로드 서명은 5분 동안 유효하고, 완료는 느린 전송을 위해 서명 만료 뒤 30분까지 받는다. 완료는 HEAD의 크기·타입·ETag와 앞 4KB의 파일 서명을 확인하고 같은 ETag를 조건으로 별도 최종 키에 CopyObject한다. 발급한 주소를 다시 써도 게시된 파일은 덮어쓰지 못한다. 프로필 사진은 웹에서 방향·중앙 자르기·최대 512px JPEG 변환으로 촬영 메타데이터를 제거한다. 서버의 파일 헤더 검사는 이미지 전체 디코딩이나 제3자 클라이언트의 메타데이터 제거를 보장하지 않는다.
+
+## 예약 실패와 메타데이터
+
+프로필·게시물·채팅 업로드는 다음 경계를 공유한다.
+
+1. `MediaStorage.prepareUpload`가 임시 키와 서명 정책을 준비한다. 이 단계는 DB 행이나 S3 객체를 만들지 않는다. 서명 오류는 원인을 보존한 `STORAGE_UNAVAILABLE`로 반환한다.
+2. 사용자 행을 잠그고 대기 업로드 개수를 확인한다. 허용된 요청만 같은 DB 트랜잭션에서 `MediaObject`와 업로드 티켓을 함께 생성한다. 제한 거절이나 티켓 INSERT 실패에는 새 메타데이터가 남지 않는다.
+3. 커밋한 티켓과 서명 정책을 응답한다. 브라우저가 실제 파일을 전송한 뒤에는 기존 완료·만료·정리 정책을 따른다.
+
+예약 원자성은 `yarn workspace @game-feedback/api test:database src/media-storage/upload-reservation.database.integration.test.ts`로 검사한다. 실제 PostgreSQL의 연결 1개/3개에서 세 업로드의 성공·반복 제한 거절·동시 요청·DB 제약 실패를 확인하며 S3 전송은 하지 않는다. 실제 전송은 기존 업로드 integration 레인의 책임이다.
+
+이미 발급한 주소로 전송한 staging 파일이나 완료 단계의 S3 복사 결과는 예약 실패와 다르다. 외부 쓰기가 성공했는지 모르는 네트워크 오류 뒤에 추적 행을 무조건 지우면 S3 파일만 남을 수 있다. 이 경로의 추적 메타데이터와 기존 고아 행은 아래 수명 주기·운영자 `prune`으로 정리한다. 이번 예약 수정은 기존 버킷·객체·DB 행을 일괄 삭제하지 않는다.
 
 ## 기본 로컬 실행
 
 `yarn workspace @side/game-feedback dev:test`와 `yarn workspace @side/game-feedback admin:dev`를 사용한다. 로컬 개발도 프로젝트 `.env`에 설정한 실제 AWS S3 버킷과 자격 증명을 사용한다. 버킷이 비어 있어도 로컬 저장소 서버를 시작하거나 가짜 자격 증명을 채우지 않는다.
 
-통합·브라우저 테스트는 같은 버킷의 `<GF_S3_KEY_PREFIX>/tests/<실행 ID>/` 아래에서만 객체를 만들고 종료 시 그 경로만 정리한다. 버킷 생성·삭제는 하지 않는다. 테스트 계정에는 해당 경로의 GetObject·PutObject·DeleteObject와 `s3:prefix` 조건으로 제한한 ListBucket 권한이 필요하다. 단위 테스트는 AWS에 접속하지 않고 설정·서명 정책만 확인한다. 강제 종료로 정리가 중단되면 실패한 실행 ID의 경로만 확인해 정리한다.
+통합·브라우저 테스트는 같은 버킷의 `<GF_S3_KEY_PREFIX>/tests/<실행 ID>/` 아래에서만 객체를 만들고 종료 시 그 경로만 정리한다. 버킷 생성·삭제는 하지 않는다. 테스트 계정에는 해당 경로의 GetObject·PutObject·DeleteObject와 `s3:prefix` 조건으로 제한한 ListBucket 권한이 필요하다. 단위 테스트는 AWS에 접속하지 않고 설정·서명 정책만 확인한다. 강제 종료로 정리가 중단되면 실패한 실행 ID의 경로만 확인해 정리한다. 접두사가 `game-feedback/ci`나 `game-feedback/local`이면 [수명 주기](#staging-업로드-수명-주기)를 적용한 버킷에서는 정리하지 못한 객체도 2일 뒤 만료된다.
 
 브라우저 테스트를 실행하려면 버킷 CORS에 실제 사용하는 웹 origin(기본 `http://127.0.0.1:3301`, `http://127.0.0.1:3302`, `http://127.0.0.1:3304`, 관측 레인 `http://127.0.0.1:3353`, `http://127.0.0.1:3354`)을 허용한다. CI는 Repository Variables의 `GAME_FEEDBACK_S3_BUCKET`·`GAME_FEEDBACK_S3_KEY_PREFIX`와 Secrets의 `GAME_FEEDBACK_S3_ACCESS_KEY_ID`·`GAME_FEEDBACK_S3_SECRET_ACCESS_KEY`를 앱의 `GF_S3_*` 환경변수로 전달한다. 공유 배포 검증에는 Photo Contest의 S3 설정도 필요하다. 설정이 없는 통합 검사는 대역으로 대체하거나 성공 처리하지 않고 실패한다. 외부 fork PR처럼 Secrets가 제공되지 않는 실행도 동일하다.
 
@@ -70,6 +82,22 @@ AWS 공식 자료: [IAM 사용자 키 발급과 CLI 설정](https://docs.aws.ama
 같은 버킷에서 운영은 `game-feedback/production/`, 로컬은 `game-feedback/local/`, CI는 `game-feedback/ci/`를 쓴다. 로컬·CI 키에는 자기 폴더 권한만 주어 운영 파일에 닿지 않게 한다. 운영 앱은 `GF_S3_KEY_PREFIX`가 `game-feedback/<폴더>`가 아니면 시작하지 않는다. name_prefix를 바꾸면 IAM 사용자 교체가 계획될 수 있다.
 
 버킷 CORS는 Terraform이 관리하지 않는다. 콘솔에서 같은 버킷의 규칙 배열에 운영 도메인, `http://localhost:3300`, 브라우저 테스트 origin을 둔다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
+
+## staging 업로드 수명 주기
+
+예약한 업로드는 `<GF_S3_KEY_PREFIX>/staging/<uuid>`에 올라오고 완료 시 `objects/`의 새 키로 복사된다. 완료하지 않은 staging 객체는 운영자 `prune`(`deploy/shared-instance/scripts/service.sh game-feedback prune`)이 24시간 뒤 지운다. `prune`이 멈추거나 실행되지 않아도 버킷에 쌓이지 않도록 S3 수명 주기가 staging 접두사를 2일 뒤 만료한다. 완료 가능 시간(서명 5분 + 완료 유예)보다 충분히 길고, 최종 객체(`objects/`)와 다른 서비스 폴더의 현재 객체는 테스트 실행 폴더(`<서비스>/<ci|local>/tests/`)를 빼고 만료하지 않는다.
+
+`put-bucket-lifecycle-configuration`은 버킷의 규칙 전체를 바꾼다. 공용 버킷에는 공통 [`s3-lifecycle.json`](../../../deploy/shared-instance/s3-lifecycle.json) 대신 공통 규칙을 그대로 포함한 [GF 수명 주기](../deploy/shared-instance/s3-lifecycle.json)를 적용한다. 공통 규칙이 바뀌면 이 파일도 함께 바꾼다(`src/media-storage/s3-lifecycle.spec.ts`가 포함 여부를 검사한다). 버킷 관리 권한이 있는 운영자 자격 증명으로 저장소 루트에서 실행한다.
+
+```sh
+aws s3api put-bucket-lifecycle-configuration \
+  --region ap-northeast-2 \
+  --bucket YOUR_BUCKET_NAME \
+  --lifecycle-configuration file://projects/game-feedback/deploy/shared-instance/s3-lifecycle.json
+aws s3api get-bucket-lifecycle-configuration --region ap-northeast-2 --bucket YOUR_BUCKET_NAME
+```
+
+Versioning이 켜진 버킷에서 만료는 삭제 마커를 남기고, staging의 이전 버전은 1일 뒤 지운다. 로컬 개발 폴더(`game-feedback/local/staging/`)에도 같은 규칙을 둔다. 통합·브라우저 테스트의 `tests/<실행 ID>/`는 테스트가 직접 정리한다. 정리 전에 강제 종료된 실행이 남긴 객체는 `game-feedback/ci/tests/`·`game-feedback/local/tests/` 규칙이 같은 방식으로 2일 뒤 만료한다.
 
 ## 기존 파일 이행과 배포
 

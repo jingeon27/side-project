@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { usePathname } from 'next/navigation';
 
 import {
@@ -12,21 +12,24 @@ import {
 
 export function AnalyticsTracker() {
   const pathname = usePathname();
+  const handleConsentChange = useEffectEvent(() => trackPageView(pathname));
+  const handleStorage = useEffectEvent((event: StorageEvent) => {
+    if (event.key !== consentKey && event.key !== null) return;
+    applyAnalyticsConsent();
+    trackPageView(pathname);
+  });
+
   useEffect(() => {
-    const track = () => trackPageView(pathname);
-    track();
-    // 다른 탭에서 바꾼 선택을 이 탭의 수집 상태에도 반영한다.
-    const syncConsent = (event: StorageEvent) => {
-      if (event.key !== consentKey && event.key !== null) return;
-      applyAnalyticsConsent();
-      track();
-    };
-    window.addEventListener(consentChangedEvent, track);
-    window.addEventListener('storage', syncConsent);
-    return () => {
-      window.removeEventListener(consentChangedEvent, track);
-      window.removeEventListener('storage', syncConsent);
-    };
+    trackPageView(pathname);
   }, [pathname]);
+
+  useEffect(() => {
+    window.addEventListener(consentChangedEvent, handleConsentChange);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(consentChangedEvent, handleConsentChange);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
   return null;
 }

@@ -1,5 +1,5 @@
-import { getArticles } from '@/entities/article/lib/get-articles';
 import { isLocale, locales } from '@/i18n/routing';
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { createRss } from '@/shared/lib/seo/rss';
 
 export function generateStaticParams() {

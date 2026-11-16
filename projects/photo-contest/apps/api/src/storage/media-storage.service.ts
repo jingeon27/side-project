@@ -4,9 +4,10 @@ import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, S3Client } fr
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { NO_STORE } from '../common/http/no-store.middleware';
-import { s3KeyPrefix, s3Settings } from '../config/env';
+import { awsCredentials, s3KeyPrefix, s3Settings } from '../config/env';
 import { MEDIA_IO_TIMEOUT_MS, MEDIA_URL_TTL_SECONDS } from '../config/limits';
 
 const MEDIA_TYPES = {
@@ -15,7 +16,7 @@ const MEDIA_TYPES = {
   webp: 'image/webp',
   mp4: 'video/mp4',
   webm: 'video/webm',
-} as const;
+} as const satisfies Record<string, `${'image' | 'video'}/${string}`>;
 export type TMediaExtension = keyof typeof MEDIA_TYPES;
 const MEDIA_KEY = /^(?:[A-Za-z0-9_-]+\/)*[a-f0-9-]{36}\.(jpg|png|webp|mp4|webm)$/;
 // 이전 staging 업로드는 확장자 없는 키로 남아 있을 수 있어 정리할 때만 허용한다.
@@ -31,6 +32,12 @@ export function mediaContentType(key: string) {
   const extension = mediaKey(key).split('.').at(-1) as TMediaExtension;
   return MEDIA_TYPES[extension];
 }
+/** 서명 GET의 수명(초). 동영상만 길게, 사진은 짧게 둔다. */
+export function mediaUrlTtlSeconds(key: string) {
+  return mediaContentType(key).startsWith('video/')
+    ? MEDIA_URL_TTL_SECONDS.VIDEO
+    : MEDIA_URL_TTL_SECONDS.PHOTO;
+}
 export function createMediaKey(extension: TMediaExtension) {
   return `${s3KeyPrefix()}${randomUUID()}.${extension}`;
 }
@@ -44,7 +51,7 @@ export class MediaStorage {
   presignUpload(key: string, contentType: string, byteSize: number, expiresAt: Date) {
     const { client, bucket } = this.connection();
     // 정책은 티켓보다 먼저 끝나야 정리 작업이 지운 키에 늦은 전송이 다시 쓰지 못한다.
-    const expires = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+    const expires = Math.floor((expiresAt.getTime() - dayjs().valueOf()) / 1000);
     if (expires <= 0) throw new Error('Upload ticket already expired');
     return createPresignedPost(client, {
       Bucket: bucket,
@@ -89,20 +96,13 @@ export class MediaStorage {
         ResponseCacheControl: NO_STORE,
         ...(disposition ? { ResponseContentDisposition: disposition } : {}),
       }),
-      { expiresIn: MEDIA_URL_TTL_SECONDS },
+      { expiresIn: mediaUrlTtlSeconds(key) },
     );
   }
 
   private connection() {
     const settings = s3Settings();
-    const credentials =
-      process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-        ? {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}),
-          }
-        : undefined;
+    const credentials = awsCredentials();
     const signature = JSON.stringify({ settings, credentials });
     // 같은 설정이면 연결을 재사용한다. 테스트가 실행 중에 설정을 바꾸면 새로 만든다.
     if (this.s3?.signature !== signature)

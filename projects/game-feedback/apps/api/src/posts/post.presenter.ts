@@ -1,15 +1,14 @@
-import { ACTIVE_CONTENT } from '../common/content';
 import type { Prisma } from '../generated/prisma';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { NO_ANSWERS, type IAnswerCounts } from './post-answer-counts';
 
 export const postInclude = {
   author: { select: authorSelect },
   category: true,
-  answers: { where: ACTIVE_CONTENT, select: { id: true, helpful: true } },
 } as const;
 
 type PostRecord = Prisma.PostGetPayload<{ include: typeof postInclude }>;
-export const responsePost = (p: PostRecord) => ({
+export const responsePost = (p: PostRecord, counts: IAnswerCounts = NO_ANSWERS) => ({
   id: p.id,
   title: p.title,
   body: p.body,
@@ -23,8 +22,8 @@ export const responsePost = (p: PostRecord) => ({
   author: authorDto(p.author),
   gameProfile: p.gameProfile,
   viewCount: p.viewCount,
-  answerCount: p.answers.length,
-  helpfulCount: p.answers.filter((a) => a.helpful).length,
+  answerCount: counts.answerCount,
+  helpfulCount: counts.helpfulCount,
   createdAt: p.createdAt.toISOString(),
   updatedAt: p.updatedAt.toISOString(),
 });

@@ -18,6 +18,18 @@ function start(path: string) {
   stop = installBrowserNavigation();
 }
 describe('application history', () => {
+  it('프로필 수정은 열었던 공개 프로필로 돌아가고 새 문서에서는 지정한 프로필을 연다', () => {
+    const profile = appRoutes.profile('ko', 'player-1');
+    start(profile);
+    window.history.pushState({}, '', appRoutes.editProfile('ko'));
+    expect(backNavigation()).toEqual({ action: 'back' });
+    stop();
+    start(appRoutes.editProfile('ko'));
+    const release = registerLogicalParent(profile);
+    expect(backNavigation()).toEqual({ action: 'replace', path: profile });
+    release();
+  });
+
   it('가입 안내는 이전 게시판으로 돌아가고 직접 진입하면 복귀 경로를 사용해야 한다', () => {
     const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
     start(parent);

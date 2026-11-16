@@ -5,6 +5,7 @@ import { cn } from './cn.helper';
 describe('cn', () => {
   it('커스텀 글자 토큰과 글자색을 함께 남겨야 한다', () => {
     expect(cn('text-title', 'text-ink')).toBe('text-title text-ink');
+    expect(cn('text-hero', 'text-ink')).toBe('text-hero text-ink');
   });
 
   it('같은 종류의 클래스가 겹치면 뒤의 값만 남겨야 한다', () => {

@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
+
 import { track } from '@amplitude/analytics-react-native';
-import { render, screen, waitFor } from '@testing-library/react';
-import { getInitialURL } from 'expo-linking';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getInitialURL, openURL } from 'expo-linking';
 import { hideAsync } from 'expo-splash-screen';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,6 +31,7 @@ function trackedEvents() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'web' });
 });
 
 describe('App', () => {
@@ -90,16 +93,6 @@ describe('App', () => {
     await waitFor(() => expect(fakeWebView.props?.source).toEqual({ uri: `${WEB_ORIGIN}/` }));
   });
 
-  it('소셜 로그인 콜백 앱 링크로 열렸으면 코드를 웹에 넘기지 않고 홈을 열어야 한다', async () => {
-    vi.mocked(getInitialURL).mockResolvedValue(`${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop`);
-    stubAppConfig(async () => jsonResponse({ minimumVersion: '1.0.0', latestVersion: '1.0.0' }));
-
-    render(<App />);
-
-    await waitFor(() => expect(fakeWebView.props?.source).toEqual({ uri: `${WEB_ORIGIN}/` }));
-    expect(trackedEvents()).toEqual([{ name: 'app_opened', properties: { source: 'launch' } }]);
-  });
-
   it('시작 링크를 읽지 못해도 홈을 열고 app_opened(launch)를 보내야 한다', async () => {
     vi.mocked(getInitialURL).mockRejectedValue(new Error('activity not ready'));
     stubAppConfig(async () => jsonResponse({ minimumVersion: '1.0.0', latestVersion: '1.0.0' }));
@@ -116,7 +109,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('새 버전으로 업데이트해 주세요')).toBeTruthy();
-    expect(screen.getByText('현재 버전 1.0.0 · 필요한 버전 1.1.0 이상')).toBeTruthy();
+    expect(screen.getByText('현재 1.0.0 버전을 사용 중이에요. 1.1.0 이상이 필요해요.')).toBeTruthy();
     expect(screen.getByRole('button', { name: '업데이트하기' })).toBeTruthy();
     expect(screen.queryByTestId('web-view')).toBeNull();
     await waitFor(() => expect(hideAsync).toHaveBeenCalled());
@@ -126,6 +119,16 @@ describe('App', () => {
         properties: { minimum_version: '1.1.0' },
       }),
     );
+  });
+
+  it('iOS에서 최소 버전보다 낮으면 설정한 App Store ID의 스토어 화면으로 보내야 한다', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'ios' });
+    stubAppConfig(async () => jsonResponse({ minimumVersion: '1.1.0', latestVersion: '1.2.0' }));
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: '업데이트하기' }));
+
+    expect(openURL).toHaveBeenCalledWith('https://apps.apple.com/app/id1000000001');
   });
 
   it('버전 설정을 읽지 못하면 막지 않고 웹을 열어야 한다', async () => {

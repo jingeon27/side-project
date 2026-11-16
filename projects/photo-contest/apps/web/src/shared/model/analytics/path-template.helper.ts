@@ -3,7 +3,7 @@ const DYNAMIC_SEGMENTS = [
   { prefix: 'groups', placeholder: ':id' },
   { prefix: 'contests', placeholder: ':id' },
   { prefix: 'invite', placeholder: ':token' },
-] as const;
+] as const satisfies readonly { prefix: string; placeholder: `:${string}` }[];
 
 /**
  * `/groups/clx1?sort=popular` → `/groups/:id`. 쿼리·해시는 버리고, 초대 토큰처럼 다시 쓰면 안 되는 값이 이벤트에 남지 않게 한다.

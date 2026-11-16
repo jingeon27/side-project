@@ -45,6 +45,30 @@ function DropdownMenuExample({ align, side, sideOffset, ...args }: TDropdownMenu
   );
 }
 
+const FORMAT_ITEMS = Array.from({ length: 12 }, (_, index) => `서식 ${index + 1}`);
+
+function LongDropdownMenuExample({ align, side, sideOffset, ...args }: TDropdownMenuStoryArgs) {
+  const [selected, setSelected] = useState('');
+
+  return (
+    <div className="flex flex-col items-start gap-4">
+      <DropdownMenu {...args}>
+        <DropdownMenuTrigger render={<Button variant="secondary" />}>서식 메뉴</DropdownMenuTrigger>
+        <DropdownMenuContent align={align} side={side} sideOffset={sideOffset}>
+          {FORMAT_ITEMS.map((name) => (
+            <DropdownMenuItem key={name} onClick={() => setSelected(name)}>
+              {name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <output aria-label="고른 항목" className="text-body text-muted">
+        {selected}
+      </output>
+    </div>
+  );
+}
+
 const meta = {
   title: 'Overlays/DropdownMenu',
   component: DropdownMenu,
@@ -91,4 +115,17 @@ export const Actions: Story = { name: '작업 선택' };
 export const SidePlacement: Story = {
   name: '오른쪽에 표시',
   args: { side: 'right', sideOffset: 8 },
+};
+
+export const LongList: Story = {
+  name: '긴 목록',
+  render: (args) => <LongDropdownMenuExample {...args} />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '화면 높이가 부족하면 남은 높이 안에서 메뉴를 스크롤합니다. `DropdownMenu.browser.spec.ts`가 이 스토리를 엽니다.',
+      },
+    },
+  },
 };

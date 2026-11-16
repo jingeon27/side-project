@@ -9,7 +9,7 @@ describe('WebViewChannel external store', () => {
     const channel = new WebViewChannel(`${origin}/`);
     const { subscribe, getSnapshot, finishLoading } = channel;
     const initial = getSnapshot();
-    const listener = vi.fn(() => getSnapshot());
+    const listener = vi.fn(getSnapshot);
     const unsubscribe = subscribe(listener);
 
     channel.setOverlayOpen(false);
@@ -36,7 +36,7 @@ describe('WebViewChannel external store', () => {
     channel.finishLoading();
     channel.setOverlayOpen(true);
     const ready = channel.getSnapshot();
-    const listener = vi.fn(() => channel.getSnapshot());
+    const listener = vi.fn(channel.getSnapshot);
     channel.subscribe(listener);
 
     channel.rememberUrl(`${origin}/ja/messages/thread-1?tab=unanswered`);

@@ -1,8 +1,8 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { SessionService } from '../../auth/session.service';
-import type { SessionRequest } from '../../auth/session.types';
+import { SessionService } from '../../auth/session/session.service';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { ValidatedBody } from '../../common/http/request-validation';
 import { AdminLoginInputSchema, type TAdminLoginDto } from './admin-auth-input.dto';
 import { AdminAuthService } from './admin-auth.service';

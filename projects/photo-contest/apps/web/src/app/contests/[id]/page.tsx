@@ -1,9 +1,19 @@
-import { ContestPageTemplate } from '@/_pages/contest';
-import { contestSearchSchema } from '@/_pages/contest/@page/model/contest-search.schema';
-import { PreloadQuery } from '@/shared/api/apollo-client.server';
-import { ContestDocument, MeDocument, SubmissionsDocument } from '@/shared/api/generated';
+import { connection } from 'next/server';
 
-const SORT = { latest: 'NEWEST', popular: 'MOST_LIKED' } as const;
+import { ContestPage, contestSearchSchema } from '@/_pages/contest';
+import { PreloadQuery } from '@/shared/api/apollo-client.server';
+import {
+  ContestDocument,
+  MeDocument,
+  SubmissionsDocument,
+  type SubmissionSort,
+} from '@/shared/api/generated';
+import type { TPhotoSortValue } from '@/shared/model/analytics';
+
+const SORT = { latest: 'NEWEST', popular: 'MOST_LIKED' } as const satisfies Record<
+  TPhotoSortValue,
+  SubmissionSort
+>;
 
 export default async function Page({
   params,
@@ -12,6 +22,7 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await connection();
   const { id } = await params;
   const { sort } = contestSearchSchema.parse(await searchParams);
   return (
@@ -21,7 +32,7 @@ export default async function Page({
           query={SubmissionsDocument}
           variables={{ contestId: id, sort: SORT[sort], offset: 0, limit: 24 }}
         >
-          <ContestPageTemplate id={id} />
+          <ContestPage id={id} />
         </PreloadQuery>
       </PreloadQuery>
     </PreloadQuery>

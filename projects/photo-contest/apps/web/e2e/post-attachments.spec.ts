@@ -12,9 +12,13 @@ test(
     const cookie = await signIn('업로드 재시도 작성자');
     const group = await seedGroup(cookie, '전송 재시도');
     await page.goto(`/groups/${group.id}`);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
-    await form.getByLabel('사진·동영상 선택').setInputFiles({
+    const chooser = page.waitForEvent('filechooser');
+    await form.getByRole('button', { name: /^파일 선택/ }).click();
+    await (
+      await chooser
+    ).setFiles({
       name: 'retry.png',
       mimeType: 'image/png',
       buffer: await createTestImage(),
@@ -50,11 +54,11 @@ test(
       ['함께 볼 유튜브', 'https://youtu.be/abcdefghijk'],
       ['읽어볼 링크', 'https://example.com/funny'],
     ]) {
-      await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
       await form.getByLabel('제목', { exact: true }).fill(title ?? '');
       await form.getByLabel('첨부 링크', { exact: true }).fill(link ?? '');
-      await expect(form.getByLabel('사진·동영상 선택')).toHaveAttribute('aria-required', 'false');
+      await expect(form.getByLabel('사진 또는 동영상 선택')).toHaveAttribute('aria-required', 'false');
       await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
       await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
       await expect(form).toHaveCount(0);
@@ -68,7 +72,8 @@ test(
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByRole('article', { name: '함께 볼 유튜브', exact: true });
     await expect(youtube.locator('iframe')).toHaveCount(0);
-    await expect(youtube.getByRole('link', { name: '유튜브 영상 열기: youtu.be' })).toHaveAttribute(
+    // 음성 입력으로 부를 수 있게 링크 이름은 보이는 글자로 시작한다.
+    await expect(youtube.getByRole('link', { name: 'YouTube https://youtu.be/abcdefghijk' })).toHaveAttribute(
       'href',
       'https://youtu.be/abcdefghijk',
     );
@@ -87,10 +92,9 @@ test(
     const ordinary = page
       .getByRole('region', { name: '최신 게시물', exact: true })
       .getByRole('article', { name: '읽어볼 링크', exact: true });
-    await expect(ordinary.getByRole('link', { name: '첨부 링크 열기: example.com' })).toHaveAttribute(
-      'rel',
-      'noopener noreferrer ugc',
-    );
+    await expect(
+      ordinary.getByRole('link', { name: 'example.com https://example.com/funny' }),
+    ).toHaveAttribute('rel', 'noopener noreferrer ugc');
     await context.clearCookies();
     await startAnonymousSession(context);
     await page.goto(path);
@@ -121,9 +125,13 @@ for (const video of [false, true]) {
       const group = await seedGroup(cookie, '편하게 파일 저장');
       const title = video ? '동영상으로 남긴 순간' : '사진으로 남긴 순간';
       await page.goto(`/groups/${group.id}`);
-      await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
-      await form.getByLabel('사진·동영상 선택').setInputFiles({
+      const chooser = page.waitForEvent('filechooser');
+      await form.getByRole('button', { name: /^파일 선택/ }).click();
+      await (
+        await chooser
+      ).setFiles({
         name: video ? 'clip.mp4' : 'photo.png',
         mimeType: video ? 'video/mp4' : 'image/png',
         buffer: video ? await createTestVideo() : await createTestImage(),
@@ -145,7 +153,7 @@ for (const video of [false, true]) {
       expect(redirect.headers()['cache-control']).toBe('private, no-store');
       const signed = new URL(redirect.headers()['location'] ?? '');
       expect(signed.origin).not.toBe(new URL(page.url()).origin);
-      expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+      expect(signed.searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
       const range = await page.request.get(signed.toString(), { headers: { Range: 'bytes=0-31' } });
       expect(range.status()).toBe(206);
       expect((await range.body()).length).toBe(32);

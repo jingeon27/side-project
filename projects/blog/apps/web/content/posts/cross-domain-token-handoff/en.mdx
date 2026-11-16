@@ -1,35 +1,35 @@
 <Summary>
 
-Moving settlement pages to another host required an authentication handoff. I compared URL and POST-body delivery and considered the session problems that remained.
+Moving a business admin app's settlement screen to another domain left the login cookies behind. To spare people a second login, I put tokens in a URL and then in a POST body, and each fix exposed the next hole. The authentication state duplicated across the two hosts is still unsolved.
 
 </Summary>
 
-## Settlement needed a separate host
+![An illustration of an authentication handoff between two separate web hosts](/images/covers/cross-domain-token-handoff.avif)
 
-The business admin SaaS I worked on, called admin-app here, handled products, reservations, and settlement. Settlement had different authorization and audit requirements and needed its own host.
+## Splitting the hosts left the cookies behind
 
-- Main app: app.example.com
-- Settlement app: finance.example.net
+Our business admin SaaS handled products, reservations, and settlement in one app. I call it admin-app here. Settlement had different permission and audit requirements, so operationally it needed its own host.
+
+- Main app: `app.example.com` (the main host)
+- Settlement app: `finance.example.net` (the settlement host)
 
 > Company, service, domain, internal path, identifier, and token-lifetime examples have been renamed by role. Different registrable domains, the technical flow, versions, and observed counts reflect the actual system.
 
-Hosts had to separate while the codebase stayed in one repository. Splitting apps would duplicate shared entities, UI, and utilities and make extracting existing settlement code expensive.
-
-I chose Next.js route groups and middleware.
+The hosts could differ, but the repository had to stay together. Two apps would mean keeping two copies of shared entities, UI, and utilities, and extracting the existing settlement code was expensive too. So instead of copying the app, I split layouts with Next.js route groups and used middleware to choose the host for each path. A route group is a folder whose name is wrapped in parentheses: the name stays out of the URL, and the screens under it can get their own layout. Middleware is code that runs before a request reaches a page.
 
 ```text
 app/
-├── (auth)/login/*              # 로그인
-├── (main)/                     # 메인 기능
+├── (auth)/login/*              # Login
+├── (main)/                     # Main features
 ├── finance/
-│   └── (secondaryLayout)/*     # 정산 — 별도 레이아웃, 같은 코드베이스
+│   └── (secondaryLayout)/*     # Finance: a separate layout in the same codebase
 └── api/                        # API Routes (BFF)
 ```
 
-The (secondaryLayout) route group under finance gives settlement a separate layout. middleware.ts enforces hosts by path: /finance/* on the main host redirects to settlement; non-settlement paths on settlement redirect to main.
+The `(secondaryLayout)` route group under `finance` gives settlement its own layout. `middleware.ts` sends main-host `/finance/*` requests to settlement and sends other settlement-host paths back to main. The `matcher` at the end of the code is the pattern that selects which paths run the middleware.
 
 ```typescript
-// middleware.ts (분리 8일 차 버전 — 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
+// middleware.ts on day eight of the split: no matcher on day one. Now proxy.ts; revisited in section 9.
 function routeToRequiredHost(request: NextRequest, domain: string | undefined) {
   if (!domain) return NextResponse.next();
   const host = domain.replace(/^https?:\/\//, '');
@@ -50,43 +50,32 @@ export const config = {
 };
 ```
 
-Four defects emerged three months later: matcher scope and path-boundary checking, plus query loss and protocol-relative URL interpretation in new URL(pathname, domain). Matcher scope directly caused the outage; investigation found the others. I distinguish them later in the section about the Next.js upgrade.
+I returned to this setup during a later Next.js upgrade. A matcher redirecting static files broke the screen, and the investigation also exposed path-checking and query-preservation problems. That story comes at the end. The first thing to hit after splitting the hosts was login.
 
----
-
-## The hosts cannot share cookies
-
-Access and refresh tokens are stored in HttpOnly cookies. An Axios interceptor adds the access token to Authorization for each request.
+The service keeps a login alive with two tokens. The access token goes along with API calls, and the refresh token gets a new access token once the old one expires. Both were stored in HttpOnly cookies. The browser sends an HttpOnly cookie with requests, but JavaScript on the page cannot read its value, so XSS (a malicious script running in the page) can't simply lift it. An Axios interceptor read the access token and added it to `Authorization` for authenticated requests. How it read an HttpOnly cookie comes up later.
 
 ```typescript
-// 공용 쿠키 설정
+// Shared cookie settings
 export const BASE_AUTH_COOKIE_SETTINGS: AuthCookieSettings = {
   secure: process.env.NODE_ENV === 'production',
   httpOnly: true,
 };
 ```
 
-The registrable domains differ. Browsers treat them as separate sites despite common company ownership, so signing into the main host does not give settlement a token.
+Cookies have a scope that decides which hosts receive them. Without a `Domain` attribute, a cookie goes only to the host that set it. `Domain` can widen that, but only within one registrable domain, the unit someone actually registers and owns, such as `example.com`. If the hosts had been `app.example.com` and `finance.example.com`, `Domain=example.com` would have let them share cookies.
 
-> Opening settlement while signed in requires an explicit token handoff.
+Logging into `app.example.com` gives `finance.example.net` no cookie. Their registrable domains differ, so common company ownership does not let the browser share those cookies. Opening settlement from its menu without another login required passing authentication from the main host once. I call that transfer the handoff.
 
-This records how that handoff changed, separating implemented changes from proposed hardening.
+## Tokens in the query string
 
----
-
-## First approach: tokens in URL parameters
-
-The initial proposal was a two-stage middleware redirect.
-
-1. Read cookies for main-host /finance/* and redirect to settlement with tokens in searchParams.
-2. Store those tokens in settlement cookies and redirect again to remove the parameters.
+The first proposal used two middleware redirects. A redirect response only tells the browser the next address, so carrying a value to another host means putting it in that address. For a main-host `/finance/*` request, read the cookies, put the tokens in the query string, and redirect to settlement. Settlement moves the tokens into cookies and redirects again to a URL without the query string.
 
 ```typescript
-// middleware.ts (1단계 — 지금은 제거된 버전)
+// middleware.ts (step 1, since removed)
 if (request.nextUrl.pathname.startsWith('/finance')) {
   const secondaryHost = secondaryOrigin?.replace(/^https?:\/\//, '');
 
-  // 1단계: 메인 호스트 → 정산 호스트, 토큰을 쿼리에 실어 보냄
+  // Step 1: send tokens in the query from the main host to the finance host
   if (!secondaryHost || request.headers.get('host') !== secondaryHost) {
     const sessionToken = request.cookies.get(authCookieKey('sessionToken'))?.value;
     const renewalToken = request.cookies.get(authCookieKey('renewalToken'))?.value;
@@ -98,7 +87,7 @@ if (request.nextUrl.pathname.startsWith('/finance')) {
     return NextResponse.redirect(url);
   }
 
-  // 2단계: 정산 호스트에서 쿼리의 토큰을 쿠키로 옮기고 깨끗한 URL로 리다이렉트
+  // Step 2: move query tokens into cookies on the finance host, then redirect to a clean URL
   const sessionToken = request.nextUrl.searchParams.get('sessionToken');
   const renewalToken = request.nextUrl.searchParams.get('renewalToken');
   if (sessionToken && renewalToken) {
@@ -112,27 +101,20 @@ if (request.nextUrl.pathname.startsWith('/finance')) {
 }
 ```
 
-It worked. The token URL was an intermediate server redirect and did not remain in the final address or history, but it still traveled through the network.
+Tokens disappeared from the final settlement address, but a request had already traveled through a URL containing them. URLs get recorded wherever a request passes. Reverse proxies, CDNs, and web servers could log the complete token-bearing URL in plain text. HTTPS encrypts the connection, so it does nothing for the logs of whoever terminates it. And holding this token is enough to act as that user, so anyone who can read those logs could use it.
 
-- Reverse proxies, CDNs, and web servers could log the complete token-bearing URL.
-- Referer could propagate it during redirects.
+Reusing the intermediate URL as a document or in another request creates further exposure to check. Referer is the header in which a browser sends the previous page's address, and a server-side 3xx URL does not automatically become the next request's Referer; [Fetch's redirect algorithm](https://fetch.spec.whatwg.org/#http-redirect-fetch) handles those separately.
 
-Cleaning history did not clean network-path logs, so tokens needed to leave the URL.
+Cleaning browser history could not clean proxy logs. The tokens had to move out of the URL.
 
----
+## Tokens in a POST body
 
-## Moving tokens into an HTML form POST
+A GET redirect cannot carry a body, so I created an automatically submitted HTML form. Instead of redirecting, middleware returns `<form method="POST">` HTML with the tokens in hidden inputs, and the form immediately posts to settlement's `/api/finance`. Submitting a form navigates the browser to that address, so `Set-Cookie` on the response lands as a settlement-host cookie and the user moves over with it. That route is the BFF (Backend for Frontend), a server layer owned by the frontend app. It reads `formData`, stores the cookies, and redirects to the destination.
 
-A GET redirect cannot carry the needed body, so I inserted an auto-submitting HTML form. The receiver is a BFF, a server layer owned by the frontend app.
-
-- Middleware returns form HTML with tokens in hidden inputs instead of redirecting.
-- The form immediately posts to settlement's /api/finance BFF.
-- The BFF reads formData, stores cookies, and redirects to the destination.
-
-This reduces query-string, Referer, and ordinary URL access-log exposure. A body is still not secure storage: WAF, APM, or debug middleware can record it. Body collection and retention on this path need checking.
+That removes tokens from query strings and ordinary URL access logs. It does not hide the request body from a web application firewall (WAF), performance monitoring (APM), or debug middleware, so body collection and retention settings on this route still matter.
 
 ```typescript
-// 토큰 수신 BFF
+// Token-receiving BFF
 export async function POST(req: NextRequest) {
   const secondaryOrigin = process.env.SECONDARY_ORIGIN;
   if (!secondaryOrigin) {
@@ -154,24 +136,22 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-This implementation still fails open: absent tokens do not clear existing settlement cookies, allowing a previous session to continue. That is an unfixed defect. Missing tokens should fail the request and clear existing authentication cookies.
+Redirecting with **303 See Other** after the POST changes the next request to GET, avoiding form resubmission on refresh.
 
-> After POST, 303 See Other changes the next request to GET, avoiding form resubmission on refresh.
+The receiving code still has an unfixed fail-open problem: a failed check lets the request through anyway. Missing new tokens leave existing settlement cookies intact, allowing a previous login to keep opening settlement. The request needs to fail and clear those authentication cookies when tokens are absent.
 
-Whether to transfer refresh tokens is another decision. I transferred both because settlement needed renewal, but a long-lived refresh token increases theft impact. Passing only access tokens and repeating handoff on expiry remains an option to assess with session-duration data.
+I transferred the refresh token too because settlement needed renewal. That also increases the impact of exposing a longer-lived credential. Sending only an access token and repeating the handoff on expiry is another option, left for a decision informed by session duration.
 
-The same refresh token also becomes duplicated across hosts. With rotation or reuse detection, concurrent refreshes across tabs/hosts can invalidate sessions or trigger theft handling. The subscriber queue below coordinates only requests during one tab's refresh. Cross-host refresh, logout, and revocation need separate policy.
+Copying the refresh token lets both hosts renew with the same value. With rotation, where each renewal issues a new refresh token and retires the old one, or reuse detection, where a spent token arriving again counts as theft, one legitimate refresh can invalidate another session or trigger theft handling. The queue described later only holds requests in one tab. It does not coordinate refresh, logout, or revocation across hosts and tabs.
 
----
+## A receiver that can't tell who sent the form
 
-## Reviewing the proposed BFF hardening
+Taking tokens out of the URL left settlement with a POST endpoint that accepts them. That endpoint also needs to establish who submitted the form, because an HTML form on any site can post to any address. CSRF is the attack where another site makes a user's browser send a request. Here, an attacker could get a form holding their own token submitted from a victim's browser. The victim ends up logged into the attacker's account without knowing it, and what they do there can land in that account. That variant is called login CSRF.
 
-A POST endpoint accepting external tokens can permit login CSRF: an attacker submits their own token and causes a victim to use the attacker's account.
-
-The branch reviewed here lacks an incoming Origin allowlist. The following is a proposal, not the deployed implementation. Only the main host should submit, so only its exact Origin is permitted.
+The receiving BFF still has no Origin allowlist. `Origin` is a header the browser attaches with the origin of the page that started the request, and page JavaScript cannot change it. The following code is a proposed change to accept only main-host submissions, and it is not the applied implementation.
 
 ```typescript
-// Origin 검증 보강안
+// Proposed Origin validation
 const mainOrigin = process.env.MAIN_ORIGIN
   ? new URL(process.env.MAIN_ORIGIN).origin
   : null;
@@ -181,51 +161,42 @@ export async function POST(req: NextRequest) {
   if (!mainOrigin || origin !== mainOrigin) {
     return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
   }
-  // ... 이하 토큰 처리 (2단계 코드와 동일)
+  // ... Remaining token handling is the same as step 2
 }
 ```
 
-- Check exact Origin, rejecting missing or null values.
-- Retain form HTML Cache-Control: no-store and the secondaryOrigin early return.
+It allows only an exact Origin match from the main host and rejects missing or null values. The form HTML's `Cache-Control: no-store` and the `secondaryOrigin` early return stay.
 
-Adding only receiver validation would not work. The current Referrer-Policy: no-referrer can make a cross-origin form POST's Origin null. Applying this proposal also requires Referrer-Policy: origin, or signed state/CSRF tokens.
+Adding that check alone could reject legitimate handoffs. The form response currently uses `Referrer-Policy: no-referrer`, which can make Origin null for a cross-origin POST. Applying validation also means changing the policy to `origin` or verifying signed state or a CSRF token.
 
-Origin validation does not make handoff one-time. TTL, nonce, atomic one-time consumption, and session binding require shared verification state or a separate exchange. Those remain absent.
+Checking Origin would not stop replaying a form. An expiry (TTL), a single-use random value (nonce), atomic one-time consumption, and session binding require shared verification state or an exchange procedure. Those are absent from this implementation.
 
----
+## Taking the handoff out of middleware
 
-## Giving handoff a dedicated route
+Where the form got built was a problem too. Middleware initially read cookies and built form HTML while also routing every request, so host selection and transferring login information were mixed together.
 
-The second approach put host routing, token reading, and HTML generation in middleware. That was too much responsibility in a layer traversed by all requests.
-
-I extracted /api/finance/bridge.
-
-- Middleware only routes to required hosts, through a function renamed routeToRequiredHost.
-- The handoff route is the only place reading HttpOnly cookies to build form HTML.
-- The settlement menu opens the handoff endpoint in a new window rather than relying on middleware redirects.
+I moved the handoff HTML to `/api/finance/bridge`. This route is now the only place reading HttpOnly cookies to build form HTML. Middleware keeps only the host redirect, through a function renamed `routeToRequiredHost`, and the settlement menu opens the route in a new window rather than relying on middleware redirects.
 
 ```typescript
-// 정산 메뉴 클릭 핸들러
+// Finance menu click handler
 const openFinanceApp = (args: { key: string }) => {
   window.open(`/api/finance/bridge?destination=${encodeURIComponent(args.key)}`, '_blank');
 };
 ```
 
-The bridge is directly accessible. Outside local mode, ordinary UI calls it from the settlement menu, while middleware handles routing only. The current window.open lacks noopener; explicit noopener or equivalent isolation is still needed rather than relying on browser defaults.
+The bridge can also be opened directly. Outside local mode, the normal UI calls it from the settlement menu. `window.open` still lacks noopener. A new window can reach the window that opened it through `window.opener`, and noopener cuts that link. Instead of relying on browser defaults, it needs isolation such as `window.open(url, '_blank', 'noopener')`.
 
----
+## The destination and the response headers
 
-## Checking the current headers and their limits
+The dedicated bridge also gained destination parsing and response headers. It still lacks incoming Origin validation and a nonce-based CSP.
 
-The bridge gained destination normalization and response headers. This is the reviewed branch implementation; Origin checks and nonce-based CSP are still absent.
-
-**Destination normalization:** using an untrusted path directly risks open redirects or control-character injection. Both bridge and BFF parse through new URL, retain pathname only, and fall back unless it begins with /finance.
+The destination never gets concatenated straight into a URL. Doing that invites open redirects, where a link starting with our address sends the user to an outside site, as well as control-character injection. So I parse it with `new URL` and keep only `pathname`. Paths not starting with `/finance` fall back to the default settlement path. Bridge and receiver share this function.
 
 ```typescript
-// 정산 경로 유틸리티
+// Finance route utility
 export function resolveDestination(destination: string | null) {
   try {
-    const { pathname } = new URL(destination ?? '', '<http://x>');
+    const { pathname } = new URL(destination ?? '', 'http://x');
     return pathname.startsWith('/finance') ? pathname : '/finance/overview';
   } catch {
     return '/finance/overview';
@@ -233,12 +204,12 @@ export function resolveDestination(destination: string | null) {
 }
 ```
 
-http://x is a valid base for parsing relative paths. Even an external URL loses its host and query. However, prefix checking also accepts /finance-evil. A full path allowlist needs `pathname === '/finance' || pathname.startsWith('/finance/')`.
+`http://x` supplies a base for relative-path parsing. An external URL loses its host and query. The prefix check still accepts `/finance-evil`, though. Restricting actual settlement paths requires checking the boundary with `pathname === '/finance' || pathname.startsWith('/finance/')`.
 
-**Current response headers:** limit caching, framing, and external form submission.
+This form HTML contains the tokens as they are, so the response headers restrict caching, framing, and submitting the form elsewhere.
 
 ```tsx
-// 핸드오프 BFF
+// Handoff BFF
 const action = new URL('/api/finance', secondaryOrigin).toString();
 const submissionOrigin = new URL(action).origin;
 const html = `<!doctype html><html><body>
@@ -261,48 +232,43 @@ return new NextResponse(html, {
 });
 ```
 
-- encodeHtmlAttribute, a renamed helper, reduces attribute injection through token and destination values.
-- X-Frame-Options: DENY blocks framing; CSP form-action restricts submission to settlement's Origin.
-- no-referrer removes Referer but must change alongside the earlier Origin-validation proposal.
-- script-src unsafe-inline permits all inline scripts. Input escaping does not provide a nonce's guarantees.
+`encodeHtmlAttribute`, a renamed helper, reduces attribute injection through token and destination values. `X-Frame-Options: DENY` blocks framing, and `form-action` in the CSP (a header limiting what a page may run and where it may submit) restricts submission to settlement's Origin. Two headers still have holes. `Referrer-Policy: no-referrer` removes Referer but has to change alongside the earlier Origin-validation proposal. `script-src 'unsafe-inline'` permits all inline scripts, and input escaping does not provide a nonce's guarantees.
 
-Request-specific nonces, nonce script-src, frame-ancestors none, and base-uri none are proposed next steps. Referrer-Policy: origin and exact receiving Origin validation are also not yet applied.
+The remaining proposal is a per-request nonce with `script-src 'nonce-…'`, so only scripts matching the value in the response run. I also looked at `frame-ancestors 'none'` and `base-uri 'none'`. The `Referrer-Policy` change and receiving Origin validation discussed earlier have not been applied either.
 
----
+## From HttpOnly cookies back to JavaScript
 
-## Current flow and token subscriptions
-
-The current handoff is:
+The handoff now follows this sequence.
 
 ```text
-[메인 호스트]
-  정산관리 메뉴 클릭
+[Main host]
+  Click the finance menu
         │  window.open('/api/finance/bridge?destination=/finance/overview')
         ▼
-  GET /api/finance/bridge               ← 메인 호스트의 BFF
-   - HttpOnly 쿠키에서 access/refresh 토큰 읽기
-   - 토큰을 hidden input에 담은 auto-submit form HTML 반환
-   - no-store / referrer=no-referrer / DENY / CSP(unsafe-inline, form-action=정산도메인)
-        │  document.forms[0].submit()  (POST, 토큰은 body)
+  GET /api/finance/bridge               ← BFF on the main host
+   - Read access and refresh tokens from HttpOnly cookies
+   - Return an auto-submitting form with tokens in hidden inputs
+   - no-store / referrer=no-referrer / DENY / CSP(unsafe-inline, form-action=finance-host)
+        │  document.forms[0].submit()  (POST, tokens in the body)
         ▼
-[정산 호스트]
-  POST /api/finance                     ← 정산 호스트의 BFF
-   - 현재 Origin 화이트리스트 없음 (login-CSRF 보강 필요)
-   - formData에서 토큰 꺼내 HttpOnly 쿠키로 set
-   - resolveDestination(destination)으로 pathname만 추출 (prefix 경계 보강 필요)
+[Finance host]
+  POST /api/finance                     ← BFF on the finance host
+   - No Origin allowlist yet (login-CSRF hardening needed)
+   - Read tokens from formData and set HttpOnly cookies
+   - Extract the pathname with resolveDestination(destination) (prefix-boundary hardening needed)
         │  303 redirect → destination
         ▼
-  /finance/overview  (정산 호스트에 토큰 쿠키 보유 → 로그인된 상태)
+  /finance/overview  (token cookies on the finance host → signed in)
 ```
 
-The diagram includes implementation and remaining risks. Responses still use no-referrer and unsafe-inline, without nonce or Origin validation.
+The form still uses `no-referrer` and `unsafe-inline`, with neither a nonce nor an Origin check.
 
-Token reads through Server Functions and refresh-queue subscriptions are different. Every authenticated request reads a token through a Server Function. The queue waits only while refresh is underway. Middleware previously received tokens through URL parameters; now a browser Axios interceptor reads settlement HttpOnly cookies through a Server Function for every authenticated request and adds a header.
+Getting the token into a cookie wasn't the end of it. After the transfer, settlement's Axios interceptor prepares authenticated requests. Browser JavaScript cannot read HttpOnly cookies directly, so it retrieves the token through a Server Function and adds a header. A Server Function is a Next.js feature that browser code calls like a function while a request actually goes to the server.
 
-readServerCookie is an alias for a server function, not document.cookie. It reads HttpOnly values on the server and returns them to browser JavaScript, adding one request per authenticated API call. XSS can then read the returned token. Accepting a cookie name also requires a server-side name allowlist. A safer direction is having the BFF call backend APIs without returning credentials to JavaScript.
+The aliased `readServerCookie` reads a cookie on the server and returns its value to browser JavaScript. That adds a network call to every authenticated request and makes the returned token readable by XSS, reopening through this path what HttpOnly was meant to block. Since it accepts a cookie name, the server also needs an allowed-name list. Keeping tokens out of browser JavaScript would require the BFF to make backend API calls itself.
 
 ```typescript
-// 공용 Axios 인스턴스
+// Shared Axios instance
 instance.interceptors.request.use(async (config) => {
   if (requiresAuth) {
     const sessionToken = await readServerCookie(authCookieKey('sessionToken'));
@@ -314,7 +280,7 @@ instance.interceptors.request.use(async (config) => {
 });
 ```
 
-401 handling uses a refresh subscriber queue. Requests arriving during renewal wait for the new token and retry together.
+The refresh queue is separate from that read and waits only when renewal is underway. An expired access token makes the API return 401. A screen with several requests in flight gets several 401s back, and if each renewed on its own, the same refresh token would be used repeatedly. So a 401 starts renewal. Requests arriving meanwhile wait in the refresh subscriber queue and retry together with the new token.
 
 ```typescript
 type PendingAuthRequest = {
@@ -337,7 +303,7 @@ const notifyRefreshFailure = (error: unknown) => {
   requests.forEach(({ rejectWithError }) => rejectWithError(error));
 };
 
-// 401 처리: 갱신 중이면 새 토큰을 구독하며 대기
+// On 401: wait for the new token if a refresh is already in progress
 if (refreshInProgress) {
   return new Promise((resolve, reject) => {
     pendingAuthRequests.push({
@@ -351,75 +317,60 @@ if (refreshInProgress) {
 }
 ```
 
-The queue clears on success and failure. A renamed _hasRetried flag prevents repeated 401 loops on one request. Because the queue is in one tab's memory, it cannot coordinate rotation or logout across tabs and hosts.
+The queue clears on both success and failure, and the renamed `_hasRetried` flag prevents a repeated 401 loop for one request. It lives only in one tab's memory, so it cannot coordinate refresh or logout between hosts and tabs.
 
-Tokens currently pass through four stages.
+Posting a token and storing it in an HttpOnly cookie did not keep it on the server. Preparing API requests returned it to JavaScript, while both hosts retained copies.
 
-1. Copy to another host through form POST.
-2. Store in settlement HttpOnly cookies.
-3. Read through a Server Function into browser JavaScript for request headers.
-4. Wait in one runtime's subscriber queue during refresh.
+## A one-time code exchange needed shared state
 
-URL exposure fell, but duplication and JavaScript exposure remain.
+There is a way to keep tokens out of the browser. An OAuth-style exchange sends only a one-time authorization code through the browser, and settlement's server exchanges it for tokens server to server. That is a safer way to perform this transfer.
 
----
-
-## Why authorization-code exchange was outside scope
-
-An OAuth-style authorization-code exchange is safer for this transfer. Only a one-time code crosses the browser; settlement exchanges it for tokens server to server.
-
-The constraint was:
+The constraint at the time was:
 
 > “Do not add backend resources.”
 
-The work had to remain in frontend deployment without changing the product backend. Authorization-code exchange was not technically impossible: Next.js Route Handlers can provide exchange endpoints. But one-time guarantees need shared persistent storage across both hosts and instances, TTL, atomic consumption, and session binding. Those were outside this task.
+The change had to stay within frontend deployment without modifying the product backend. Next.js Route Handlers could implement an exchange API. But judging whether a code has been used requires the issuer and the exchanger to see the same record, which meant storage shared across hosts and instances, TTL, atomic consumption, and session binding. Operating that shared state was outside the work.
 
-The BFF therefore lives in frontend-owned /api/finance/bridge and /api/finance handlers. They control token reading and storage without expanding the product backend. This is a temporary compromise within a no-new-shared-state scope, not a general best choice wherever handlers and shared storage are available.
+I therefore used the frontend-owned `/api/finance/bridge` and `/api/finance` handlers to read and store tokens. That kept the points reading and storing tokens in our own code without growing the product backend. In exchange, the token still crosses the browser once in plain text. It was a stopgap chosen within the limit of running no new shared state, and it does not provide the protections of an authorization-code exchange.
 
-The accepted risks are:
+Transferring refresh tokens, coordinating renewal and logout, and preventing replay remain unresolved. Short access-token lifetimes and HTTPS do not stop body collection or XSS. If shared storage and an exchange API become available, `/api/finance/bridge` provides a starting point for replacing the transfer, and having the start of the handoff in that one place keeps the change small.
 
-- Tokens still pass through the browser in readable form. Reduced URL, Referer, and ordinary log exposure does not prevent body collection or XSS.
-- HTTPS and short access-token lifetimes reduce some risks but do not remove the cost of transferring long-lived refresh tokens.
-- Both hosts share one refresh token and need coordinated rotation/logout. Sending only the access token in the form POST and repeating handoff on expiry remains follow-up work.
-- The form lacks TTL, nonce, one-time consumption, session binding, and incoming Origin validation. It is not replay-proof.
-- An authorization-code exchange should replace it if shared storage or an exchange API becomes available. Centralizing the start in /api/finance/bridge limits replacement scope.
+## Three months later, settlement broke
 
----
+Three months after splitting the hosts, upgrading Next.js 14.2 to 16.3.0 broke the settlement screen. This time the tokens weren't involved. It was the matcher I wrote at the start.
 
-## A Next.js 16.3 upgrade exposed the matcher
+Next.js 16 defaults to the Turbopack bundler and replaces `middleware.ts` with Node-runtime `proxy.ts`. I carried the old matcher through the migration.
 
-Three months after host separation, moving from Next.js 14.2 to 16.3.0 broke settlement. Next.js 16 defaulted to Turbopack and renamed middleware.ts to Node-runtime proxy.ts. We retained the old matcher.
+### Chunk requests were going to the main host
 
-### Conditions behind the failure
-
-`/((?!api).*)` also catches /_next/**. Settlement chunks redirected 307 to the main host because they were not settlement paths.
+`/((?!api).*)` catches every path not starting with `api`, including `/_next/**`, where the JavaScript files a build splits out, called chunks, are served. Settlement chunks redirected 307 to the main host because they were not settlement paths.
 
 ```text
-GET <https://finance.example.net/_next/static/chunks/main.js>
-  → 307 Location: <https://app.example.com/_next/static/chunks/main.js>
+GET https://finance.example.net/_next/static/chunks/main.js
+  → 307 Location: https://app.example.com/_next/static/chunks/main.js
 ```
 
-I compared old and new SSR HTML for the same screen.
+To see what had changed, I compared old and new SSR HTML for the same screen.
 
 ```tsx
-<!-- 14.2.33, webpack: script 20개 중 crossorigin 0개 -->
+<!-- 14.2.33, webpack: 0 of 20 scripts have crossorigin -->
 <script src="/_next/static/chunks/main-app.js" async=""></script>
 
-<!-- 16.3.0, Turbopack: script 18개 중 crossorigin="" 11개 -->
+<!-- 16.3.0, Turbopack: 11 of 18 scripts have crossorigin="" -->
 <script src="/_next/static/chunks/client.js" async="" crossorigin=""></script>
 ```
 
-An empty crossorigin means anonymous rather than being ignored, switching the request to CORS. Three conditions combined:
+An empty `crossorigin` means `anonymous` rather than being ignored, switching the request to CORS. A `<script>` without the attribute loads and runs even after redirecting to another origin. In CORS mode, the browser accepts the response only if its `Access-Control-Allow-Origin` (ACAO) header allows the requesting origin. Three conditions combined:
 
-1. The matcher redirected settlement /_next/** to the main host.
-2. Version 16.3.0 added crossorigin="" to some chunks.
+1. The matcher redirected settlement `/_next/**` to the main host.
+2. Version 16.3.0 added `crossorigin=""` to some chunks.
 3. Main-host static responses lacked ACAO for settlement's Origin.
 
-The matcher was wrong from the start, but the second condition exposed it. The upgrade revealed rather than created the routing defect.
+The static-asset redirect had existed from the start, without a symptom for three months. The new `crossorigin` attribute changed how the browser requested those assets, and CORS began blocking requests it had previously accepted.
 
-### Evidence of an upstream regression
+### The manifest in 16.2.12 and 16.3.0
 
-The client reference manifest's moduleLoading.crossOrigin differed.
+The client reference manifest's `moduleLoading.crossOrigin` differed. That manifest is a file generated at build time describing how to load client component chunks.
 
 ```text
 // 16.2.12
@@ -428,16 +379,17 @@ The client reference manifest's moduleLoading.crossOrigin differed.
 "moduleLoading": { "prefix": "", "crossOrigin": "none" }
 ```
 
-React turned the string none into empty crossorigin. It affected only client component chunks preinitialized through moduleLoading, so 11 of 18 chunks showed it.
+React turned the string `"none"` into an empty `crossorigin` attribute. Only client component chunks preinitialized (told to load and run ahead of time) through `moduleLoading` received it, which explains why the HTML comparison showed it on 11 of 18 scripts.
 
 I found matching upstream reports and a proposed fix.
 
-- [Next.js #96831](https://github.com/vercel/next.js/issues/96831) — reproduction and symptoms
-- [Next.js #96834](https://github.com/vercel/next.js/pull/96834) — routing none back through the null path
+- [Next.js #96831](https://github.com/vercel/next.js/issues/96831): reproduction and symptoms
+- [Next.js #96834](https://github.com/vercel/next.js/pull/96834): an initial proposal closed without merging
+- [Next.js #97164](https://github.com/vercel/next.js/pull/97164): the merged fix omitting the field for `CrossOrigin::None`
 
-Both were open at the article's review point. This narrowed the cause to a 16.3.0 serialization regression rather than a specification change across all of Next.js 16.
+The initial #96834 proposal closed without merging. #97164 instead omitted the field for `CrossOrigin::None` and entered canary on August 12. A later 16.3.6 build of the member-facing portal also lacked the field. [The Next.js upgrade article](/en/blog/nextjs-server-client-issues) follows that build-output check.
 
-### Applied changes
+### Redirecting pages only
 
 First, I excluded API and static paths from the matcher.
 
@@ -447,7 +399,7 @@ export const config = {
 };
 ```
 
-I added both hosts to experimental.serverActions.allowedOrigins and preserved redirect queries. A pathname starting // can make new URL(pathname, base) interpret a protocol-relative URL. I instead fixed the destination host with new URL(domain), then assigned pathname and search. Next.js normalized this earlier in the deployed flow, so it did not reproduce there, but the change removed dependence on execution order.
+I also preserved query strings while fixing redirects, since the original code passed only `pathname` and lost them. Passing a `//`-prefixed pathname into `new URL(pathname, domain)` can also select a different host as a protocol-relative URL. I now create `new URL(domain)` first, then assign `pathname` and `search`. Next.js normalized the path earlier in deployment, so that issue did not reproduce there, and the URL-building function now preserves the host itself. Both hosts were also added to `experimental.serverActions.allowedOrigins`. Server Actions reject requests whose Origin and Host differ, and origins on that list get through.
 
 ```typescript
 const destinationUrl = new URL(domain);
@@ -456,33 +408,15 @@ destinationUrl.search = request.nextUrl.search;
 return NextResponse.redirect(destinationUrl);
 ```
 
-I pinned ~16.2.12 pending a stable fix. ^16.2.12 would permit reinstalling 16.3.x and would not avoid it.
+Before the upstream fix reached a stable release, I pinned `~16.2.12`. `~` allows only patch updates, while `^` also allows minor ones, so `^16.2.12` would still allow 16.3.x and could reinstall the same regression.
 
-Error-collection CORS uses an exact allowlist and Vary: Origin but permits credentials on every path. Separately from the matcher, it needs narrowing to error-collection routes.
+Error-collection CORS uses an exact allowlist and `Vary: Origin` but permits credentials on every path. Separately from the matcher, it needs narrowing to error-collection routes.
 
-### Remaining tests
+### What to check again when releasing the pin
 
-The matcher fix addressed the /_next/** outage. Exact /api and /_next paths, robots.txt, sitemap.xml, manifests, and public fonts still need checking against the real asset set.
+The change stops `/_next/**` redirects. Releasing the version pin calls for comparing the same screen's SSR HTML again, along with these:
 
-- Fix page/API/static matcher cases with unstable_doesProxyMatch.
-- Integration-test 200 chunk responses on both hosts and redirect preservation of queries and environment-defined hosts.
-- Test Server Action Origin/Host combinations and CORS preflights/credential scope.
-- Compare the same SSR HTML before releasing the version pin after the upstream fix ships.
-
-Comments alone cannot prevent recurrence. Configuration, browser request mode, and framework regressions each need reproducible checks.
-
----
-
-## What changed
-
-| Stage | Transfer channel | Result |
-| --- | --- | --- |
-| 1 | URL query, two middleware redirects | Clean final history, but intermediate URLs remain in logs, Referer, and proxies |
-| 2 | Form POST to BFF | Less URL/Referer/access-log exposure; body-recording risk remains |
-| 3 | Exact Origin validation | Proposed, not implemented; requires changing no-referrer too |
-| 4 | Dedicated handoff route | Middleware only routes; handoff generation is centralized |
-| 5 | CSP, X-Frame-Options, resolveDestination | Current unsafe-inline and prefix checks; nonce and path-boundary hardening remain |
-
-Moving from URL to body reduced exposure but left token duplication, rotation/logout coordination, login CSRF, and JavaScript access. Shared state was outside scope, preventing authorization-code exchange. Centralizing the BFF entrypoint at least narrowed later replacement.
-
-Independently, incorrect host-enforcement scope can stop the screen itself loading. A matcher remained silent for three months before meeting a framework regression. Current successful behavior does not prove either our settings or every framework assumption correct.
+- Whether exact `/api` and `/_next` paths, `robots.txt`, `sitemap.xml`, manifests, and public fonts are classified against the actual assets
+- Page, API, and static-path combinations, which `unstable_doesProxyMatch` can exercise
+- Whether real requests retain chunk responses, queries, and environment-defined hosts on both domains
+- Server Action Origin and Host combinations, plus CORS preflight and credential scope, which use the same host settings

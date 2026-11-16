@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 
+import dayjs from 'dayjs';
+
 import { Mention } from '@side/design-system';
 
 import type { Comment } from '@/shared/api';
@@ -15,6 +17,7 @@ interface ICommentItemProps {
   authorContent?: ReactNode;
   authorName?: ReactNode;
   actions?: ReactNode;
+  replyAction?: ReactNode;
   isPostAuthor?: boolean;
   mine: boolean;
   replyToName?: string;
@@ -25,6 +28,7 @@ export function CommentItem({
   authorContent,
   authorName,
   actions,
+  replyAction,
   isPostAuthor,
   mine,
   replyToName,
@@ -38,13 +42,14 @@ export function CommentItem({
       </article>
     );
   return (
-    <article id={`comment-${comment.id}`} className={`comment${mine ? ' mine' : ''}`}>
-      {!mine && <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="small" />}
+    <article id={`comment-${comment.id}`} className="comment" data-mine={mine || undefined}>
+      <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="small" />
       <div className="comment-content">
         <div className="comment-heading">
           <strong>{authorName ?? comment.author.nickname}</strong>
           {isPostAuthor && <span className="comment-author-label">{t('작성자')}</span>}
           {authorContent}
+          {actions}
         </div>
         <p className="comment-bubble">
           {replyToName && (
@@ -57,12 +62,12 @@ export function CommentItem({
         <div className="comment-meta">
           <time dateTime={comment.createdAt}>
             {isSSR
-              ? new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
+              ? dayjs(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
               : timeAgo(comment.createdAt, textLocale)}
           </time>
           {comment.updatedAt !== comment.createdAt && <span>{t(' (수정됨)')}</span>}
+          {replyAction}
         </div>
-        {actions}
       </div>
     </article>
   );

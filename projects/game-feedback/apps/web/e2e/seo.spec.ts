@@ -1,6 +1,6 @@
-import { expect, test, type BrowserContext } from '@playwright/test';
-
 import type { PostDetail } from '@game-feedback/contracts';
+
+import { expect, test, type BrowserContext } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 async function choose(context: BrowserContext, accountId: string) {
@@ -20,7 +20,7 @@ test('every screen serves page-specific metadata without JavaScript and private 
       ['', '게임 커뮤니티 홈'],
       ['/guide', 'Game Mate 이용 가이드'],
       ['/terms', '이용약관'],
-      ['/privacy', '개인정보 처리 안내'],
+      ['/privacy', '개인정보 처리방침'],
       ['/contact', '문의 및 신고 안내'],
       ['/messages', '내 채팅'],
       ['/notifications', '내 알림'],

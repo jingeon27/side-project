@@ -30,7 +30,7 @@ export class PushInbox {
     this.pending = path;
     this.flush();
   }
-  notify = () => this.received?.();
+  readonly handleNotificationReceived = () => this.received?.();
   flush = () => {
     if (!this.pending || !this.open?.(this.pending)) return;
     this.pending = null;

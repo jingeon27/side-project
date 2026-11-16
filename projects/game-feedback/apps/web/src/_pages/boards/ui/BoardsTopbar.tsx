@@ -6,8 +6,11 @@ import { usePathname } from 'next/navigation';
 import { appRoutes } from '@game-feedback/bridge';
 
 import { parseBattleMode } from '@/features/battle';
+import { boardBySlug } from '@/features/board';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus } from '@/features/post';
+import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
 import { Topbar } from '@/widgets/community-shell';
 
@@ -17,9 +20,11 @@ interface IBoardsTopbarProps {
 }
 
 export function BoardsTopbar({ locale, slug }: IBoardsTopbarProps) {
+  const { t } = useI18n();
+  const board = boardBySlug(slug);
   return (
     <Topbar.Root className="feed-topbar">
-      <Topbar.Brand home={appRoutes.feed(locale)} />
+      <Topbar.Title heading>{t(board?.name ?? '게시판')}</Topbar.Title>
       <Topbar.Actions>
         <Suspense fallback={null}>
           <BoardSearchLink locale={locale} slug={slug} />
@@ -36,16 +41,16 @@ export function BoardsTopbar({ locale, slug }: IBoardsTopbarProps) {
 
 function BoardSearchLink({ locale, slug }: IBoardsTopbarProps) {
   const pathname = usePathname();
-  const params = new URLSearchParams(useBrowserSearch('', pathname));
+  const params = parseSearch(useBrowserSearch('', pathname));
   return (
     <Topbar.Search
       href={appRoutes.search(locale, {
         board: slug,
-        feedbackStatus: parseFeedbackStatus(params.get('feedbackStatus')),
-        game: params.get('game') ?? undefined,
-        q: params.get('q') ?? undefined,
-        battleMode: parseBattleMode(params.get('battleMode')),
-        coachingRole: parseCoachingRole(params.get('coachingRole')),
+        feedbackStatus: parseFeedbackStatus(params.feedbackStatus),
+        game: params.game,
+        q: params.q,
+        battleMode: parseBattleMode(params.battleMode),
+        coachingRole: parseCoachingRole(params.coachingRole),
       })}
     />
   );

@@ -17,5 +17,8 @@ export function postLink(value: string | null | undefined): string | null {
   } catch {
     // URL 파싱 실패도 입력 필드에서 고칠 수 있는 동일한 오류로 알린다.
   }
-  return fail('링크는 2048자 이하의 올바른 HTTP·HTTPS 주소로 입력해 주세요.', ERROR_CODE.BAD_USER_INPUT);
+  return fail(
+    '링크는 http:// 또는 https://로 시작하는 올바른 주소를 2048자 이내로 입력해 주세요.',
+    ERROR_CODE.BAD_USER_INPUT,
+  );
 }

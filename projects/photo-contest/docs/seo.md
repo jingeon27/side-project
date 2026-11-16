@@ -1,13 +1,19 @@
-# 공개 그룹 SEO
+# 피식 공개 소개와 콘텐츠 SEO
 
-콘텐츠 화면은 익명 또는 회원 세션이 있어야 진입한다. 세션 없는 요청(크롤러 포함)은 `/sign?next=…`로 이동하며 인증 화면은 noindex다. 아래 메타데이터·서버 HTML 계약은 세션으로 진입한 콘텐츠 화면에 적용한다. 내부 공개 데이터 조회·공유 캐시는 사용자 쿠키 없이 유지한다.
+서비스 소개 `/about`와 이용 방법 `/about/how-it-works`는 세션 없이 읽고 각 페이지의 canonical과 index 메타데이터를 제공한다. 공개 소개에서는 인증·푸시 API를 호출하지 않는다.
+
+홈과 그룹 등 콘텐츠 화면은 세션 없이도 열린다. 크롤러를 포함한 세션 없는 요청도 아래 메타데이터·서버 HTML을 그대로 받으므로 공개 그룹의 게시물은 검색 결과에 노출될 수 있다. 인증 화면 `/sign`은 noindex이고 자동으로 보내지 않는다. 내부 공개 데이터 조회·공유 캐시는 사용자 쿠키 없이 유지한다.
 
 `WEB_ORIGIN`을 실제 HTTPS 서비스 도메인으로 설정한다. canonical·OG/Twitter·JSON-LD·robots·사이트맵은 이 값만 사용하며 요청 Host나 추적 파라미터로 도메인을 바꾸지 않는다. 내부 API 주소는 별도 `API_URL`이다. 운영 Compose는 기존 배포 안내대로 두 값을 전달한다.
 
 ## 검색에 공개하는 범위
 
+제목은 레이아웃 템플릿으로 `<화면 이름> | 피식`이다. 서비스 이름이 이미 든 홈의 `같이 보면 더 웃긴 피식`만 템플릿을 적용하지 않는다. 화면 이름에 서비스 이름을 넣어 `피식 | 피식`처럼 겹치게 만들지 않는다.
+
 | 화면                                        | 검색·메타데이터                                                                                         |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 서비스 소개 `/about`                        | 세션 없이 읽는 서비스 설명, 자기 canonical, 브랜드 공유 이미지, WebSite JSON-LD                         |
+| 이용 방법 `/about/how-it-works`             | 세션 없이 읽는 사용 안내, 자기 canonical과 브랜드 공유 이미지                                           |
 | 홈 `/`                                      | 대표 canonical, 사이트 소개·브랜드 공유 이미지, WebSite JSON-LD                                         |
 | 탐색 `/explore`                             | 대표 canonical·공유 정보, 그룹 카드 서버 HTML                                                           |
 | 검색 `/explore?q=…`                         | canonical은 `/explore`, 검색 결과는 noindex                                                             |
@@ -29,11 +35,11 @@
 ## 크롤링과 사이트맵
 
 - `/robots.txt`는 `/sitemap.xml`을 안내한다. MY·초대·기존 대회·인증·GraphQL·testing 경로를 제외한다. `/groups/*`는 차단하지 않아 검색 엔진이 비공개 그룹의 noindex를 읽을 수 있게 한다.
-- `/sitemap.xml`은 사이트맵 인덱스다. 홈·탐색은 `/sitemaps/main.xml`, 그룹은 `/sitemaps/groups/0.xml`부터 48개씩 제공한다.
+- `/sitemap.xml`은 사이트맵 인덱스다. 홈·탐색·공개 소개 두 페이지는 `/sitemaps/main.xml`, 그룹은 `/sitemaps/groups/0.xml`부터 48개씩 제공한다.
 - 그룹 개수·목록은 API에서 PUBLIC만 조회한다. PRIVATE·알 수 없는 공개 범위는 포함하지 않는다. 데이터가 없는 페이지·잘못된 페이지 번호는 404다. 분할 파일은 인덱스와 같은(캐시된) 개수로 최대 번호를 계산해, 범위 밖 번호는 목록을 조회하지 않고 404로 끝낸다(번호마다 빈 결과가 데이터 캐시에 쌓이지 않게).
-- 확인되지 않은 수정일을 lastmod로 만들지 않는다. 사이트맵 HTTP 응답은 no-store이고 공개 데이터는 서버에서 60초 주기로 재검증한다. API 장애를 비어 있는 성공 응답으로 바꾸지 않는다.
+- 확인되지 않은 수정일을 lastmod로 만들지 않는다. 그룹은 마지막 공개 게시물 등록 시각(없으면 그룹 생성 시각), 대회 상세는 생성·지나간 단계 경계·마지막 공개 참여작 중 가장 늦은 시각, 대회 목록과 명예의 전당은 같은 사이트맵 파일에서 그 목록에 보이는 대회 중 가장 늦은 시각을 쓴다. 그룹 프로필·게시물 수정과 게시물 삭제 시각은 저장하지 않아 반영되지 않는다. `main.xml`의 홈·탐색·소개와 사이트맵 인덱스의 하위 파일에는 근거가 되는 시각이 없어 넣지 않는다. 사이트맵 HTTP 응답은 no-store이고 공개 데이터는 서버에서 60초 주기로 재검증한다. API 장애를 비어 있는 성공 응답으로 바꾸지 않는다.
 
-그룹 사이트맵은 각 공개 그룹의 게시물·대회 목록·명예의 전당 URL을 제공한다. 공개 POST 대회 상세는 `/sitemaps/contests/0.xml`부터 48개씩 별도로 나누고 인덱스에 연결한다. LEGACY·PRIVATE 대회는 포함하지 않는다. 비공개 그룹에서는 대회·결과·참여작 SEO 쿼리를 실행하지 않고 로그인한 그룹장에게도 공통 noindex·사진 없음·JSON-LD 없음 정책을 적용한다. 다른 그룹의 대회 ID를 끼워 넣은 공개 URL은 없는 페이지로 처리한다.
+그룹 사이트맵은 각 공개 그룹의 게시물 URL을 제공한다. 공개 POST 대회 상세는 `/sitemaps/contests/0.xml`부터 48개씩 별도로 나누고 인덱스에 연결한다. 대회 목록과 명예의 전당은 빈 화면을 제출하지 않도록 대회 사이트맵에서 그 대회가 실제로 보이는 쪽만 함께 제공한다. 끝나지 않은 대회는 대회 목록, 종료된 대회는 명예의 전당이다. LEGACY·PRIVATE 대회는 포함하지 않는다. 비공개 그룹에서는 대회·결과·참여작 SEO 쿼리를 실행하지 않고 로그인한 그룹장에게도 공통 noindex·사진 없음·JSON-LD 없음 정책을 적용한다. 다른 그룹의 대회 ID를 끼워 넣은 공개 URL은 없는 페이지로 처리한다.
 
 Event는 실제 시작·투표 마감과 VirtualLocation을 가진 온라인 대회다. 종료 후에는 실제 수상작에만 award를 붙이고 공동 우승을 유지한다. 표가 없으면 수상을 만들지 않으며 영상 poster·평점·입장권·물리적 장소를 지어내지 않는다. 구조화 데이터는 화면에 표시되는 공개 참여작·결과와 같은 데이터를 사용한다. [Schema.org Event](https://schema.org/Event)의 온라인 행사 속성을 따른다.
 
@@ -55,7 +61,7 @@ Next.js fetch Data Cache에 공개 게시물·대회 목록·결과는 30초, �
 
 ## 배포 후 확인
 
-1. 실제 도메인의 공개 그룹을 로그아웃 상태로 열고 HTML 소스에서 title·canonical·robots·OG/Twitter·application/ld+json과 게시물 본문을 확인한다.
+1. 로그아웃 상태에서 `/about`와 `/about/how-it-works`의 서버 HTML, canonical, index 메타데이터와 인증 API 요청이 없는지 확인한다. 홈, 탐색, 공개 그룹도 세션 없이 200으로 열리는지 확인하고 title·canonical·robots·OG/Twitter·application/ld+json과 게시물 본문을 확인한다.
 2. `/robots.txt`와 `/sitemap.xml` 및 하위 사이트맵이 실제 도메인·공개 그룹만 가리키는지 확인한다.
 3. 도메인 소유자가 Google Search Console에서 도메인을 인증하고 `/sitemap.xml`을 제출한다. DNS 인증과 실제 서비스 도메인은 운영자가 준비한다.
 4. Search Console URL 검사와 Rich Results Test로 배포 URL을 검사한다. 배포 환경에서 공개 미디어가 쿠키 없이 읽히는지, 비공개 미디어는 거부되는지 함께 확인한다.
@@ -66,6 +72,6 @@ API e2e는 익명 공개 읽기·미디어 Range·댓글·숨김·기존 대회 
 
 참고: [Next.js JSON-LD](https://nextjs.org/docs/app/guides/json-ld), [Google discussion forum markup](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum), [Google canonical 가이드](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls), [Schema.org CollectionPage](https://schema.org/CollectionPage).
 
-공개 홈의 공개 그룹 6개·최신 게시물 24개도 익명 Next Data Cache(30초)를 사용한다. RSC에서 현재 사용자·가입 그룹은 no-store로 먼저 확인해 공개 홈과 내 피드의 사전 조회를 나눈다. publicPreloadContext는 쿠키 없는 공개 조회에만 지정하며 같은 문서·변수로 브라우저 캐시에 사전 조회한다. 쓰기·숨김·복원 뒤 공통 공개 태그를 즉시 만료시킨다. 개인 피드는 캐시하지 않는다.
+가입 그룹이 없는 사용자의 `/` 화면에서 공개 그룹 6개·최신 게시물 24개는 익명 Next Data Cache(30초)를 사용한다. RSC에서 현재 사용자·가입 그룹은 no-store로 먼저 확인해 공개 목록과 개인 피드의 사전 조회를 나눈다. publicPreloadContext는 쿠키 없는 공개 조회에만 지정하며 같은 문서·변수로 브라우저 캐시에 사전 조회한다. 쓰기·숨김·복원 뒤 공통 공개 태그를 즉시 만료시킨다. 개인 피드는 캐시하지 않는다.
 
 `?category=` 필터의 canonical은 그룹 기본 URL이다. 활성 카테고리 ID는 fresh 그룹 메타데이터로 확인하고 잘못되거나 보관된 ID는 전체 목록으로 처리한다. 필터별 캐시는 categoryId로 구분하며 공개 SEO·사이트맵 태그는 카테고리 쓰기에도 즉시 무효화한다.

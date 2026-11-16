@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
@@ -166,7 +166,8 @@ test('blocking a comment author hides their comment while keeping the current po
     });
     await page.goto(`/ko/posts/${post.id}?board=free`);
     const comment = page.locator('article.comment').filter({ hasText: '차단할 사용자의 댓글' });
-    await comment.getByRole('button', { name: '차단', exact: true }).click();
+    await comment.getByRole('button', { name: /댓글 메뉴$/ }).click();
+    await page.getByRole('menuitem', { name: '차단', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: '차단하기', exact: true }).click();
     await expect(dialog).toHaveCount(0);

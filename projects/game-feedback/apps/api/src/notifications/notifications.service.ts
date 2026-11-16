@@ -1,17 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { uniq } from 'es-toolkit';
+import { match } from 'ts-pattern';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
-import { ChatAccessService } from '../chat/chat-access.service';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
+import { ChatAccessService } from '../chat/conversation/chat-access.service';
 import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { PrismaClient, type Prisma } from '../generated/prisma';
-import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 
 @Injectable()
 export class NotificationsService {
@@ -42,11 +44,11 @@ export class NotificationsService {
     };
     const [kind, id] = eventId.split(':');
     const [row, postUnread, chatUnread] = await Promise.all([
-      kind === 'chat'
-        ? this.db.chatNotification.findFirst({ where: { ...chatWhere, id } })
-        : kind === 'post'
-          ? this.db.notification.findFirst({ where: { ...postWhere, id } })
-          : null,
+      // 푸시 큐에 저장된 `<kind>:<id>`라 모르는 종류는 대상 없음으로 본다.
+      match(kind)
+        .with('chat', () => this.db.chatNotification.findFirst({ where: { ...chatWhere, id } }))
+        .with('post', () => this.db.notification.findFirst({ where: { ...postWhere, id } }))
+        .otherwise(() => null),
       this.db.notification.count({ where: postWhere }),
       this.db.chatNotification.count({ where: chatWhere }),
     ]);
@@ -165,7 +167,7 @@ export class NotificationsService {
   async readNotification(req: SessionRequest, id?: string) {
     const u = requireUser(req);
     const where = { userId: u.id, ...(id ? { id } : {}), readAt: null };
-    const data = { readAt: new Date() };
+    const data = { readAt: dayjs().toDate() };
     const results = await this.db.$transaction([
       this.db.notification.updateMany({ where, data }),
       this.db.chatNotification.updateMany({ where, data }),

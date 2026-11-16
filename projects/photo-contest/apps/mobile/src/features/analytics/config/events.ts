@@ -1,8 +1,3 @@
-import type { TWebRequestPayload } from '@photo-contest/bridge';
-
-type TSocialProvider = TWebRequestPayload<'auth.socialLogin'>['provider'];
-type TSocialLoginProperties = { provider: TSocialProvider };
-
 /** 앱을 새로 띄운 계기. 앱이 아는 링크(앱 스킴·유니버설 링크)로 열렸으면 deep_link */
 export type TAppOpenSource = 'launch' | 'deep_link';
 
@@ -16,11 +11,6 @@ export interface IAnalyticsEventProperties {
   /** 실제로 background에 다녀왔을 때만 (iOS inactive는 제외) */
   app_foregrounded: undefined;
   deep_link_opened: { path_template: string };
-  social_login_started: TSocialLoginProperties;
-  /** 시스템 브라우저 로그인이 끝나 앱 로그인 코드를 받았다. 세션 교환 성공은 웹의 login_succeeded */
-  social_login_succeeded: TSocialLoginProperties;
-  social_login_cancelled: TSocialLoginProperties;
-  social_login_failed: TSocialLoginProperties;
   /** Android는 OS가 공유 결과를 알려 주지 않아 시트를 닫아도 completed로 온다. */
   native_share_completed: undefined;
   native_share_dismissed: undefined;
@@ -37,10 +27,6 @@ export const ANALYTICS_EVENT = {
   AppOpened: 'app_opened',
   AppForegrounded: 'app_foregrounded',
   DeepLinkOpened: 'deep_link_opened',
-  SocialLoginStarted: 'social_login_started',
-  SocialLoginSucceeded: 'social_login_succeeded',
-  SocialLoginCancelled: 'social_login_cancelled',
-  SocialLoginFailed: 'social_login_failed',
   NativeShareCompleted: 'native_share_completed',
   NativeShareDismissed: 'native_share_dismissed',
   UpdateRequiredShown: 'update_required_shown',

@@ -4,6 +4,7 @@ import {
   ApiResponseValidationError,
   createComment,
   getPost,
+  listCommentReplies,
   listNotifications,
   listPostComments,
 } from './index';
@@ -14,6 +15,8 @@ const rootComment = {
   id: 'comment-1',
   postId: 'post-1',
   parentId: null,
+  replyCount: 0,
+  repliesCursor: null,
   isDeleted: false,
   body: '댓글 본문입니다.',
   author: authorFixture(),
@@ -115,8 +118,24 @@ describe('comment thread response validation', () => {
     await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
   });
 
+  it('loads a root’s earlier replies with the generated validated endpoint', async () => {
+    const page = { items: [replyComment], nextCursor: 'previous-replies' };
+    const fetcher = respond(page);
+    await expect(listCommentReplies(rootComment.id, { cursor: 'reply-cursor', limit: 30 })).resolves.toEqual(
+      page,
+    );
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/comments/comment-1/replies?cursor=reply-cursor&limit=30');
+    expect(fetcher.mock.calls[0]?.[1]?.credentials).toBe('include');
+    respond({ ...page, nextCursor: '' });
+    await expect(listCommentReplies(rootComment.id)).rejects.toBeInstanceOf(ApiResponseValidationError);
+  });
+
   it.each([
     ['missing parent', { ...rootComment, parentId: undefined }],
+    ['missing reply count', { ...rootComment, replyCount: undefined }],
+    ['negative reply count', { ...rootComment, replyCount: -1 }],
+    ['missing reply cursor', { ...rootComment, repliesCursor: undefined }],
+    ['empty reply cursor', { ...rootComment, repliesCursor: '' }],
     ['empty parent', { ...rootComment, parentId: '' }],
     ['numeric parent', { ...rootComment, parentId: 42 }],
     ['missing deletion status', { ...rootComment, isDeleted: undefined }],

@@ -21,12 +21,9 @@ new RuleTester({ languageOptions }).run(
     valid: [
       // 디자인 시스템 입력(Input·Checkbox)을 label 안에 두면 연결된다.
       { ...fixtures.read('valid/nested-control.tsx'), options },
-      // Label 프리미티브는 htmlFor로 연결한다.
-      { ...fixtures.read('valid/label-component.tsx'), options },
     ],
     invalid: [
       { ...fixtures.read('invalid/unknown-control.tsx'), options, errors: [{ message: unassociated }] },
-      { ...fixtures.read('invalid/label-component.tsx'), options, errors: [{ message: unassociated }] },
     ],
   },
 );

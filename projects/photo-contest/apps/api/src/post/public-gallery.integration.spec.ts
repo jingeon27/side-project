@@ -4,6 +4,18 @@ import { createTestApp, type ITestApi, type ITestUser } from '../../test/support
 
 const POSTS =
   'query($offset:Int,$limit:Int){publicGalleryPosts(sort:NEWEST,offset:$offset,limit:$limit){id groupId canInteract}}';
+const PAGE = `query($offset: Int, $limit: Int) {
+  publicGalleryPostsPage(sort: NEWEST, offset: $offset, limit: $limit) {
+    items { id groupId canInteract }
+    nextOffset
+  }
+}`;
+const GROUP_PAGE = `query($groupId: ID!, $offset: Int, $limit: Int) {
+  galleryPostsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    items { id groupId canInteract }
+    nextOffset
+  }
+}`;
 interface IPublicPost {
   id: string;
   groupId: string;
@@ -80,10 +92,28 @@ describe('공개 그룹 전체 게시물', () => {
     );
     expect(posts.map(({ id }) => id)).toEqual(visibleIds.slice(2, 4));
   });
+  it('공개 범위로 거른 뒤 다음 offset을 주고 limit을 채운 마지막 페이지에서도 멈춰야 한다', async () => {
+    const { publicGalleryPostsPage } = await api.gqlOk<{
+      publicGalleryPostsPage: { items: IPublicPost[]; nextOffset: number | null };
+    }>(undefined, PAGE, { offset: 0, limit: 2 });
+    expect(publicGalleryPostsPage.items.map(({ id }) => id)).toEqual(visibleIds.slice(0, 2));
+    expect(publicGalleryPostsPage.nextOffset).toBe(2);
+    const page = async (offset: number) => {
+      const { galleryPostsPage } = await api.gqlOk<{
+        galleryPostsPage: { items: IPublicPost[]; nextOffset: number | null };
+      }>(undefined, GROUP_PAGE, { groupId: publicId, offset, limit: 3 });
+      return galleryPostsPage;
+    };
+    const last = await page(2);
+    expect(last.items.map(({ id }) => id)).toEqual(visibleIds.slice(2));
+    expect(last.nextOffset).toBeNull();
+    expect(await page(5)).toEqual({ items: [], nextOffset: null });
+  });
   it.each([{ offset: -1 }, { limit: 0 }, { limit: 49 }])(
     '잘못된 페이지 범위 %j를 거부해야 한다',
     async (variables) => {
       expect(await api.gqlFail(undefined, POSTS, variables)).toMatchObject({ code: 'BAD_USER_INPUT' });
+      expect(await api.gqlFail(undefined, PAGE, variables)).toMatchObject({ code: 'BAD_USER_INPUT' });
     },
   );
   it('기존 내 그룹 피드는 가입 그룹이 없으면 빈 배열을 반환해야 한다', async () => {

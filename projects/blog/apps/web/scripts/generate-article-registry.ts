@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,54 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { imageSize } from 'image-size';
 import { format, resolveConfig } from 'prettier';
 
-import { findMissingRedirects, readContent, type ContentArticle } from './content';
+import { readContent } from './content';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const check = process.argv.includes('--check');
-const { articles, imports, redirects } = await readContent(root);
-const lib = path.join(root, 'src/entities/article/lib');
-const indexPath = 'src/entities/article/lib/index.json';
+const { articles, imports } = await readContent(root);
+const lib = path.join(root, 'src/shared/article/lib');
+const indexPath = 'src/shared/article/lib/index.json';
 
-function git(...args: string[]) {
-  return execFileSync('git', args, {
-    cwd: root,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
-}
-/**
- * The published index to compare against: the merge base with the target branch for --check
- * (CI or local validation), otherwise the committed HEAD. Falls back to the file on disk.
- */
-async function readPublishedIndex(): Promise<{ label: string; articles: ContentArticle[] }> {
-  const baseRefs = check
-    ? [
-        process.env.CONTENT_BASE_REF,
-        process.env.GITHUB_BASE_REF && `origin/${process.env.GITHUB_BASE_REF}`,
-        'origin/develop',
-      ]
-    : [];
-  for (const ref of [...baseRefs.filter(Boolean), 'HEAD'] as string[]) {
-    try {
-      const base = ref === 'HEAD' ? 'HEAD' : git('merge-base', 'HEAD', ref).trim();
-      return { label: ref, articles: JSON.parse(git('show', `${base}:./${indexPath}`)) };
-    } catch {
-      /* Shallow clones or missing refs fall through to the next candidate. */
-    }
-  }
-  try {
-    return { label: indexPath, articles: JSON.parse(await readFile(path.join(root, indexPath), 'utf8')) };
-  } catch {
-    return { label: 'none', articles: [] };
-  }
-}
-const published = await readPublishedIndex();
-const missingRedirects = findMissingRedirects(published.articles, articles, redirects);
-if (missingRedirects.length)
-  throw new Error(
-    `Published article URLs disappeared without a 301 redirect (compared with ${published.label}): ${missingRedirects.join(', ')}. Add { "locale", "from", "to" } entries to content/redirects.json.`,
-  );
 const dimensions: Record<string, { width: number; height: number }> = {};
 const imagesDir = path.join(root, 'public/images');
 for (const file of (await readdir(imagesDir, { recursive: true })).sort()) {
@@ -67,7 +26,6 @@ const unformatted = new Map([
   [path.join(root, 'src/shared/config/image-sizes.json'), JSON.stringify(dimensions, null, 2) + '\n'],
   [path.join(root, indexPath), JSON.stringify(articles, null, 2) + '\n'],
   [path.join(lib, 'registry.ts'), registry],
-  [path.join(root, 'content/generated-redirects.json'), JSON.stringify(redirects, null, 2) + '\n'],
 ]);
 const files = new Map(
   await Promise.all(
@@ -90,13 +48,12 @@ if (check) {
     if (actual !== expected)
       throw new Error(`Stale generated content: ${path.relative(root, file)}. Run yarn content:generate.`);
   }
-} else {
+}
+if (!check) {
   await mkdir(lib, { recursive: true });
   for (const [file, source] of files) {
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, source);
   }
 }
-console.log(
-  `Validated ${articles.length} article locales, ${imports.length} static MDX imports, ${redirects.length} redirects.`,
-);
+console.log(`Validated ${articles.length} article locales, ${imports.length} static MDX imports.`);

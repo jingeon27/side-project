@@ -56,7 +56,7 @@ afterEach(() => {
 describe('analytics', () => {
   it('API 키가 없으면 아무것도 초기화하거나 보내지 않아야 한다', () => {
     initAnalytics({ apiKey: undefined, app: null });
-    trackEvent(ANALYTICS_EVENT.GroupCreated, { group_id: 'group-1' });
+    trackEvent(ANALYTICS_EVENT.PostListPageLoaded, { surface: 'latest', offset: 24 });
     identifyUser('user-1');
     resetAnalytics();
 

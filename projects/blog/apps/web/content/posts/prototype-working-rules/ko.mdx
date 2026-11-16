@@ -1,41 +1,22 @@
 <Summary>
 
-프로토타입을 Next.js PoC로 옮기며 반복되던 결정을 skills에 남겼어요. 훅과 props, Suspense에 같은 규칙을 일률적으로 적용하지 않도록 기준을 고쳤어요.
+검증용 SPA를 Next.js 서비스로 옮기며 코딩 에이전트에 비슷한 구현을 여러 번 맡기는 동안, 그때마다 고치던 내용을 에이전트가 읽는 지침 문서인 skill에 적었어요. 그런데 짧고 강한 규칙은 멀쩡한 코드까지 바꾸게 할 수 있어서, 언제 쓰면 안 되는지까지 적어야 했어요.
 
 </Summary>
 
-검증용 SPA 프로토타입을 실사용 서비스로 옮기면서 SSR, SEO, 다국어, 폼 검증과 관리자 화면을 붙여야 했다. 비슷한 페이지와 폼을 반복해서 만들게 될 것 같아, Claude Code에 작업을 맡기기 전에 계획부터 검증까지의 순서를 정리했다.
+![프로토타입에서 반복한 판단을 공통 작업 규칙으로 옮기는 모습을 그린 일러스트](/images/covers/prototype-working-rules.avif)
 
-여기서 규칙은 "항상 hook을 써라" 같은 취향 목록이 아니었다. Jira task를 읽고 plan을 세우는 단계부터 구현, 검증, code review, commit까지 반복되는 판단을 문서화한 것이었다.
+반복되는 실수를 막으려고 skill에 “hook으로 얻을 수 있는 값은 prop으로 넘기지 않는다”고 적은 적이 있어요. skill은 코딩 에이전트가 작업할 때 읽도록 적어 두는 지침 문서예요. 에이전트는 여기 적힌 문장을 다음 구현에서 따르려고 하는데, 이 문장대로라면 명시적인 입력을 받는 UI까지 context에 묶일 수 있었어요.
 
-## 작업 흐름부터 고정하기
+마운트가 끝날 때까지 children을 숨기는 컴포넌트를 없애 달라고 했을 때는 에이전트가 같은 내용을 `useMounted` 훅으로 옮겼어요. 컴포넌트는 사라졌지만 첫 화면은 여전히 비어 있었어요.
 
-서비스 작업용 skill에는 다음 순서를 넣었다.
+둘 다 검증용 SPA를 Next.js 서비스로 옮기면서 겪은 일이에요. SPA는 브라우저에서 JavaScript로 화면을 그리는 앱이라 서버가 보내는 첫 HTML이 거의 비어 있어요. 실제로 쓸 서비스로 옮기는 일은 화면만 다시 만드는 것으로 끝나지 않았고, 서버에서 HTML을 만드는 SSR과 SEO, 다국어, 폼 검증, 관리자 화면을 붙여야 했어요. 비슷한 페이지와 폼이 이어질 작업이라 Claude Code에 매번 같은 설명을 반복하고 싶지 않아서 반복된 지적을 skill에 더해 갔는데, 쓰다 보니 규칙을 짧게 적는 것만으로는 부족했어요. 언제 그 규칙을 쓰면 안 되는지도 필요했어요.
 
-```text
-Jira task와 acceptance criteria 확인
-  -> 관련 route, API, 기존 pattern 탐색
-  -> 변경 파일과 검증 방법을 plan으로 작성
-  -> 작은 단위로 구현
-  -> typecheck, lint, build, route smoke test
-  -> diff 기반 code review
-  -> 지적 반영 후 commit
-```
+## props를 없애라는 규칙
 
-component를 생성하는 command 이름보다 중요한 것은 각 단계의 입출력이었다.
+처음 문장이 어디서나 틀린 건 아니었어요. props로 값을 여러 단계 내리면 중간 컴포넌트는 자기가 쓰지도 않는 값을 전달만 하게 돼요. locale처럼 앱 전체가 함께 쓰는 값은 위쪽의 provider가 React context로 제공하니, 필요한 컴포넌트가 훅으로 직접 읽으면 이런 전달을 줄일 수 있어요.
 
-- plan에는 바꿀 route, 재사용할 pattern, loading/error/empty state를 적는다.
-- 구현 전에 현재 codebase에서 가장 가까운 예제를 찾는다.
-- review에서는 task 범위를 벗어난 변경, hydration, 접근성, 번역 누락을 확인한다.
-- commit은 검증을 통과한 한 작업 단위로 만든다.
-
-form, query, drawer 같은 반복 구현은 별도 skill에 실제 codebase의 pattern과 금지 사례를 함께 적었다. 새로운 화면을 만들 때마다 설명을 다시 쓰지 않고, Jira task의 차이만 plan에 남기는 구조였다.
-
-## 규칙에 적용 조건을 적었다
-
-처음에는 AI가 반복해서 만든 문제를 짧게 막으려다 너무 강한 규칙을 만들기도 했다. 예를 들어 "hook으로 얻을 수 있는 값은 prop으로 넘기지 않는다"는 규칙이다.
-
-이 문장은 prop drilling을 줄이는 데는 도움이 되지만 항상 맞지는 않는다. props는 component의 입력을 명시하고 순수하게 테스트할 수 있게 해준다. 수정한 규칙은 다음과 같다.
+하지만 props는 부모가 계산한 값을 전달하고, 컴포넌트가 무엇을 필요로 하는지 드러내는 방법이기도 해요. 입력이 드러나 있으면 그 컴포넌트만 떼어 테스트하기도 쉬워요. 그래서 공통 provider의 값을 중간에서 전달만 하는 경우로 규칙을 좁혔어요.
 
 > router, locale, theme처럼 이미 공통 provider가 소유한 값을 관계없는 중간 component들이 전달만 하지 않는다. 반면 부모가 계산한 화면 데이터와 component의 명시적 입력은 props로 전달한다.
 
@@ -62,11 +43,25 @@ function ProductName({ locale }: { locale: Locale }) {
 }
 ```
 
-viewport도 표시만 달라진다면 JavaScript hook보다 CSS media query를 우선한다. 하지만 viewport에 따라 fetch나 행동 자체가 달라진다면 그 결정은 별도 client logic으로 명시한다.
+위쪽의 `Page`와 `Section`이 규칙으로 없애려는 전달이고, 아래쪽이 규칙을 좁힌 뒤의 모양이에요. 이 예제에서는 `ProductCard`가 locale을 읽고 `ProductName`은 입력받은 locale로 그리기만 해요. `Section`이 대신 전달할 필요는 없지만, `ProductName`의 입력까지 없앨 필요도 없어요.
 
-## mount gate와 Suspense는 같은 해결책이 아니다
+처음 문장을 그대로 따르면 `ProductName`도 locale을 직접 읽게 돼요. 줄인 예시예요.
 
-레거시에는 mounted가 된 뒤에만 children을 보여주는 component가 있었다.
+```tsx
+// 처음 규칙을 문자 그대로 따른 모양
+function ProductName() {
+  const locale = useLocale();
+  // ...
+}
+```
+
+겉으로는 입력이 없는 컴포넌트처럼 보이지만, 이제 provider가 있어야 그릴 수 있고 다른 locale로 그려 보려면 provider부터 감싸야 해요.
+
+화면 너비에 따라서도 비슷하게 구분했어요. 배치나 표시만 달라지면 CSS media query를 쓰고, 너비에 따라 조회나 행동이 달라질 때만 클라이언트 로직으로 표현해요.
+
+## useMounted로 옮겨도 비어 있는 첫 화면
+
+기존 코드에는 마운트가 끝날 때까지 children을 숨기는 컴포넌트가 있었어요. 이런 코드를 여기서는 mount gate라고 부를게요.
 
 ```typescript
 function ClientOnly({ children }: { children: React.ReactNode }) {
@@ -76,16 +71,35 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 }
 ```
 
-AI에게 제거를 요청했더니 같은 코드를 useMounted hook으로 옮겼다. 이름은 바뀌었지만 첫 paint를 비우는 동작은 그대로였다.
+`useEffect`는 서버에서 실행되지 않고, 브라우저에서도 첫 렌더가 끝난 뒤에 돌아요. 그래서 서버 HTML과 브라우저의 첫 렌더에서 `mounted`는 `false`이고, 이 컴포넌트 아래는 아무것도 그려지지 않아요. SSR과 SEO를 붙이려고 옮기는 서비스인데 이 아래는 서버 HTML이 비어 있는 셈이에요.
 
-그렇다고 "layout에 Suspense가 있으니 모든 mount gate를 제거한다"도 정확하지 않다. Suspense는 suspend하는 작업의 fallback을 처리하지만 window 접근이나 viewport 기반 hydration mismatch를 자동으로 해결하지 않는다.
+mount gate는 보통 hydration 문제를 피하려고 써요. hydration은 서버가 만든 HTML에 React가 브라우저에서 이벤트 핸들러를 연결하는 과정이에요. 이때 브라우저의 첫 렌더 결과가 서버 HTML과 다르면 hydration mismatch가 나요. 양쪽의 첫 렌더를 모두 비워 두면 다를 것이 없으니 mismatch는 사라지지만, 내용도 함께 사라져요.
 
-규칙을 원인별로 나눴다.
+이 코드를 없애 달라고 했더니 같은 내용이 `useMounted` 훅으로 옮겨 갔어요. 줄인 예시로 보면 이래요.
 
-- useSearchParams처럼 정적 rendering을 client rendering으로 전환할 수 있는 hook은 사용하는 가장 작은 subtree를 Suspense로 감싼다.
-- browser API는 event handler나 effect에서 읽고, 첫 server/client render가 같은 markup을 만들게 한다.
-- 표시 차이는 가능한 CSS media query로 처리한다.
-- 외부 widget처럼 SSR이 불가능한 component만 client-only boundary를 사용한다.
+```typescript
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+```
+
+첫 paint가 비어 있는 이유는 그대로 남았고, 바뀐 건 이름과 파일 위치뿐이었어요. 제가 원한 수정이 아니었어요.
+
+그렇다고 layout에 Suspense가 있다는 이유로 mount gate를 모두 없앨 수도 없어요. Suspense는 아직 준비되지 않아 suspend한 하위 트리 대신 fallback을 보여 주는 경계예요. 기다릴 것이 있을 때 쓰는 장치라, window 접근이나 viewport에 따른 hydration mismatch를 해결해 주지는 않아요. 아래는 줄인 예시예요.
+
+```tsx
+// 서버에는 window가 없어서 DesktopNav를 그리고,
+// 좁은 화면의 브라우저는 첫 렌더에서 MobileNav를 그려요.
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+return isMobile ? <MobileNav /> : <DesktopNav />;
+```
+
+이 컴포넌트를 Suspense로 감싸도 서버와 브라우저의 첫 렌더는 여전히 달라요.
+
+이후에는 규칙 하나로 줄이지 않고 원인을 구분해서 적었어요. `useSearchParams`처럼 정적 렌더링을 클라이언트 렌더링으로 전환할 수 있는 훅은 필요한 작은 subtree를 Suspense로 감싸요. Next.js에서 미리 렌더링하는 페이지는 요청이 오기 전이라 쿼리 문자열을 알 수 없어요. 그래서 이 훅을 쓰면 가장 가까운 Suspense 경계까지 브라우저에서 렌더링하고, 경계가 없으면 프로덕션 빌드가 실패해요. 작게 감싸면 그 바깥은 첫 HTML에 남아요.
 
 ```tsx
 function SearchSection() {
@@ -97,11 +111,26 @@ function SearchSection() {
 }
 ```
 
-핵심은 gate를 금지하는 것이 아니라 왜 첫 render가 달라지는지 먼저 분류하는 것이다.
+브라우저 API는 이벤트 핸들러나 effect에서 읽어 첫 서버 렌더와 클라이언트 렌더가 같은 마크업을 만들게 해요. 표시 차이는 CSS로 처리하고, 외부 위젯처럼 SSR을 할 수 없는 경우에만 client-only 경계를 남겨요.
 
-## mutation state를 복제하지 않을 조건
+## 제출 결과를 mutation 밖에 다시 저장한 코드
 
-폼 제출을 useMutation으로 옮긴 뒤에도 성공 여부와 마지막 제출 값을 local state와 ref에 다시 저장한 코드가 있었다.
+폼 제출을 TanStack Query의 `useMutation`으로 바꾸고도 성공 여부와 마지막 제출 값을 local state와 ref에 다시 저장한 코드가 있었어요. `useMutation`은 서버에 쓰는 요청과 그 진행 상태를 관리하는 훅이에요. 코드로 줄이면 다음과 같아요.
+
+```typescript
+const [isComplete, setIsComplete] = useState(false);
+const lastValues = useRef<FormValues | null>(null);
+
+const mutation = useMutation({
+  mutationFn: submitForm,
+  onSuccess: (_, variables) => {
+    setIsComplete(true);
+    lastValues.current = variables;
+  },
+});
+```
+
+화면에 필요한 값이 mutation에도 이미 있었어요.
 
 ```typescript
 const mutation = useMutation({ mutationFn: submitForm });
@@ -110,48 +139,36 @@ const submittedValues = mutation.variables;
 const isComplete = mutation.isSuccess;
 ```
 
-한 번에 하나만 제출할 수 있고 마지막 mutation의 lifecycle만 화면에 필요하다면 variables와 isSuccess를 그대로 쓸 수 있다. 같은 값을 useState와 useRef에 복제하지 않아도 된다.
+한 번에 하나씩 제출하고 마지막 제출의 결과만 보여주는 화면이라면 마지막으로 보낸 입력값인 `variables`와 그 요청의 성공 여부인 `isSuccess`를 그대로 읽으면 돼요. 성공할 때 따로 상태를 쓰고 reset할 때 다시 맞출 필요가 없어요.
 
-하지만 이것도 조건부 규칙이다.
+반대로 동시에 여러 제출을 다루거나, mutation을 reset한 뒤에도 제출 당시 값을 보관해야 한다면 별도 상태가 필요해요. `reset()`을 부르면 `variables`도 함께 비워지니까요. 성공 후 오래 남겨 둘 snapshot도 마찬가지예요. 그래서 상태를 만들지 말라고 적지 않고, 화면에서 필요한 동안 mutation이 이미 보관하는 값만 중복 저장하지 않도록 적었어요.
 
-- 여러 제출이 동시에 진행될 수 있다.
-- 성공 이후에도 snapshot을 오래 보존해야 한다.
-- mutation reset과 무관한 업무 상태다.
+## 규칙보다 먼저 적은 작업 순서
 
-이 경우에는 mutation state와 별도의 domain state가 필요하다. "상태를 줄인다"가 목표가 아니라 source of truth가 이미 있는 값을 다시 저장하지 않는 것이 목표다.
+이런 구현 규칙을 적기 전에 skill에 먼저 넣은 건 Jira task를 읽은 뒤 어떤 코드를 찾고 어디서 검토할지였어요. 계획부터 커밋까지의 순서를 이렇게 적었어요.
 
-## review 결과를 skill에 되돌려 넣기
+```text
+Jira task와 acceptance criteria 확인
+  -> 관련 route, API, 기존 pattern 탐색
+  -> 변경 파일과 검증 방법을 plan으로 작성
+  -> 작은 단위로 구현
+  -> typecheck, lint, build, route smoke test
+  -> diff 기반 code review
+  -> 지적 반영 후 commit
+```
 
-몇 개 route를 옮긴 뒤 전체 diff를 다시 검토했다. 발견한 문제를 해당 파일만 고치는 데서 끝내지 않고, 반복될 가능성이 있는 항목만 skill에 반영했다.
+plan은 에이전트가 구현 전에 쓰는 작업 계획이에요. 여기에 바꿀 route와 가까운 기존 구현을 적게 했어요. 로딩 중이거나 조회가 실패했을 때, 데이터가 없을 때 보여줄 화면도 여기서 정해요. 폼이나 drawer를 매번 다른 모양으로 만들지 않도록 구현 전에 참고할 코드를 찾게 한 거예요.
 
-예를 들어 다음 항목이 추가됐다.
+리뷰에서는 task 밖의 변경이 섞였는지와 hydration, 접근성, 번역 누락을 봐요. 검증을 통과한 작업 단위로 커밋하도록 했고요. 폼과 query처럼 자주 만드는 코드는 별도 skill에 예제와 피해야 할 구현을 함께 뒀어요. 각 작업의 plan에는 그 예제와 달라지는 부분을 설명하게 해서, 화면을 새로 만들 때마다 같은 설명을 다시 쓰지 않아도 됐어요.
 
-- async page props는 현재 Next.js version의 타입에 맞춰 먼저 await한다.
-- query prefetch는 SEO가 필요한지, streaming 가능한지 plan에서 정한다.
-- form의 async initial value는 Suspense gate 또는 reset 정책을 명시한다.
-- icon button에는 접근 가능한 이름과 tooltip을 둔다.
-- 다국어 route는 새 문구의 모든 locale key를 함께 검증한다.
+작업을 끝내는 조건도 코드 생성과 나눠 뒀어요. 코드가 빨리 나왔다는 이유로 끝내지 않도록, 바뀐 route의 typecheck와 lint, production build에 더해 desktop과 mobile 화면을 열고, 서버 HTML과 metadata, 번역 key를 확인하도록 했어요. 폼의 입력 검증과 제출 실패도 보고, 마지막 diff에서 task 밖의 변경을 걷어내게 했고요. skill을 보강했다고 이 확인을 건너뛰지는 않았어요.
 
-모든 review 지적을 영구 규칙으로 만들지는 않았다. 한 화면에만 해당하거나 앞으로 반복될 가능성이 낮은 예외는 code에서만 고쳤다. 규칙이 너무 많아지면 서로 충돌하고 중요한 기준이 묻히기 때문이다.
+## skill에 남긴 지적
 
-## 완료 기준
+몇 개 route를 옮긴 뒤에는 변경 내용을 함께 읽었어요. 다시 나올 만한 내용은 skill에 더했어요. 이 Next.js 버전에서 Promise로 오는 async page props는 타입에 맞춰 먼저 await하고, query prefetch는 SEO에 필요한지 스트리밍해도 되는지를 plan에서 정하게 했어요. 늦게 도착하는 폼 초기값은 Suspense로 기다릴지 reset으로 채울지 적게 했고요. 아이콘 버튼의 접근 가능한 이름과 tooltip, 다국어 문구의 locale key 확인도 넣었어요.
 
-빠르게 끝났다는 인상만으로 실사용 전환을 설명하지 않기 위해 완료 조건을 명시했다.
+한 화면에서만 필요한 수정은 그 코드에서 끝냈어요. 규칙이 너무 많아지면 서로 충돌하고 중요한 기준이 묻히기 때문이에요. 예외가 많은 문장을 모든 작업에 적용하면, 앞서 props 규칙에서 그랬듯 멀쩡한 입력까지 없애는 수정이 나올 수 있었어요.
 
-- 변경 route의 typecheck와 lint 통과
-- production build 통과
-- 주요 route의 desktop/mobile smoke test
-- server-rendered HTML과 metadata 확인
-- form의 validation, submit, error path 확인
-- locale별 누락 key 확인
-- diff code review 후 task 밖 변경 제거
-
-AI가 코드를 생성한 속도보다 같은 종류의 지적이 다음 작업에서 줄었는지를 봤다. 규칙으로 옮길 가치가 있는 것도 이 기준으로 골랐다.
-
-## 다음 작업에도 적용할 규칙
-
-프로토타입을 실사용 단계로 옮길 때 가장 효과가 컸던 것은 command를 많이 만든 일이 아니었다. Jira task를 plan으로 바꾸는 순서, codebase pattern을 찾는 기준, 구현 뒤 검증과 review를 거치는 흐름을 skill로 고정한 일이었다.
-
-좋은 규칙은 짧고 강한 구호가 아니라 적용 조건과 예외를 함께 가진다. Suspense, props, mutation state도 항상 한쪽이 옳은 문제가 아니었다. 작업 중 발견한 판단을 다음 작업이 재사용할 수 있는 형태로 남기되, 실제 결과는 build와 화면 검증으로 다시 확인하는 것이 이 프로젝트에서 정리한 AI 협업 방식이다.
+규칙으로 옮길 만한지는 에이전트가 코드를 만든 속도보다 같은 종류의 지적이 다음 작업에서 줄었는지를 보고 골랐어요.
 
 참고: [Next.js useSearchParams와 Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

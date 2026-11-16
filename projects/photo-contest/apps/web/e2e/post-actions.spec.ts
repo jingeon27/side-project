@@ -23,8 +23,8 @@ test(
     const post = latest.getByRole('article', { name: '우연히 찍힌 완벽한 순간', exact: true });
     const trigger = post.getByRole('button', { name: '우연히 찍힌 완벽한 순간 더보기', exact: true });
     await expect(post.getByRole('button', { name: /숨기기|분류 변경|삭제/ })).toHaveCount(0);
-    await trigger.focus();
-    await page.keyboard.press('Enter');
+    await expect(trigger).toBeEnabled();
+    await trigger.press('Enter');
     const menu = page.getByRole('menu');
     await expect(menu.getByRole('menuitem', { name: '수정', exact: true })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: '숨기기', exact: true })).toBeVisible();
@@ -75,14 +75,15 @@ test(
     await page.getByRole('alertdialog').getByRole('button', { name: '숨기기', exact: true }).click();
     await expect(edited).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    expect(
-      (
-        await productRequest<{ hiddenGalleryPosts: { id: string }[] }>(
+    await expect
+      .poll(async () => {
+        const result = await productRequest<{ hiddenGalleryPosts: { id: string }[] }>(
           cookie,
           'query($id:ID!){hiddenGalleryPosts(groupId:$id){id}}',
           { id: group.id },
-        )
-      ).hiddenGalleryPosts.map(({ id }) => id),
-    ).toContain(postId);
+        );
+        return result.hiddenGalleryPosts.map(({ id }) => id);
+      })
+      .toContain(postId);
   },
 );

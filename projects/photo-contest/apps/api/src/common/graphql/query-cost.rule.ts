@@ -22,7 +22,7 @@ interface IQueryCost {
 export const QUERY_COST_MESSAGE = {
   FIELDS: '한 번에 요청한 필드가 너무 많습니다.',
   ALIASES: '한 번에 요청한 별칭(alias)이 너무 많습니다.',
-} as const;
+} as const satisfies Record<string, string>;
 
 /**
  * 조각(fragment)을 펼쳐 필드·alias를 센다. 조각을 겹쳐 쓰면 펼친 크기가 기하급수로 커지므로

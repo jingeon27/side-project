@@ -11,20 +11,8 @@ import { onboardingRedirect } from './onboarding-navigation';
 
 export function openLoginDialog(returnTo?: string) {
   openOverlay(
-    ({ isOpen, close, unmount }) => (
-      <LoginDialog
-        returnTo={returnTo}
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (open) return;
-          close();
-          unmount();
-        }}
-        onSuccess={() => {
-          close();
-          unmount();
-        }}
-      />
+    (control) => (
+      <LoginDialog {...control} returnTo={returnTo} onSuccess={() => control.onOpenChange(false)} />
     ),
     { overlayId: 'login-dialog' },
   );

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync, type SpawnSyncOptionsWithStringEncoding } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
+  appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -17,6 +18,8 @@ import { request } from 'node:https';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+
+import dayjs from 'dayjs';
 
 import {
   adminResponse,
@@ -34,6 +37,7 @@ import {
   storageResponse,
 } from './shared-instance/response.ts';
 import { assertAnonymousSession } from './shared-instance/session-check.ts';
+import { verificationEvidence, type IRestoreMeasurement } from './shared-instance/verification-evidence.ts';
 
 // API-owned integration runner. Registry and backup-bucket boundaries are isolated; media uses configured AWS S3;
 // the shared database is the real deploy/shared-instance/database container started by database.sh.
@@ -84,7 +88,7 @@ const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf
 // Compose prefers shell variables over --env-file values. Drop the runner's S3 settings so each service .env decides
 // the bucket, credentials and run-scoped prefix, as on the host.
 const storageNames = new Set([
-  ...Object.values(storage).flatMap((values) => Object.keys(values)),
+  ...Object.values(storage).flatMap(Object.keys),
   'AWS_SESSION_TOKEN',
   'GF_S3_ENDPOINT',
   'S3_ENDPOINT',
@@ -121,6 +125,12 @@ const proxyEnv = {
 };
 const projects: string[] = [];
 const cleanupState = { failed: false };
+const verification = {
+  complete: false,
+  durations: [] as number[],
+  failures: 0,
+  restores: [] as IRestoreMeasurement[],
+};
 
 function run(
   binary: string,
@@ -271,6 +281,58 @@ function sql(database: string, text: string) {
     text,
   ]).trim();
 }
+/** 이 실행이 소유한 PostgreSQL 컨테이너 안에서 별도 DB에 실제 덤프를 복원한다. */
+function measureDatabaseRestore({ service }: { service: 'game-feedback' | 'photo-contest' }) {
+  const database = service.replace('-', '_');
+  const restored = `ci_restore_${id}_${database}`;
+  const dump = `/tmp/${prefix}-${database}.dump`;
+  const tables =
+    service === 'game-feedback'
+      ? ['User', 'Post', 'Comment', 'ChatMessage']
+      : ['User', 'Post', 'PostComment', 'Group'];
+  const fingerprint = (table: string) =>
+    `SELECT count(*)::text || ':' || md5(COALESCE(string_agg(t::text, chr(10) ORDER BY t."id"), '')) FROM "${table}" t`;
+  const expected = tables.map((table) => ({ table, value: sql(database, fingerprint(table)) }));
+  const backupStartedAt = dayjs().toISOString();
+  databaseCompose(['exec', '-T', 'postgres', 'pg_dump', '-U', 'postgres', '-d', database, '-Fc', '-f', dump]);
+  const backupCompletedAt = dayjs().toISOString();
+  const started = performance.now();
+  try {
+    databaseCompose(['exec', '-T', 'postgres', 'createdb', '-U', 'postgres', '-T', 'template0', restored]);
+    databaseCompose([
+      'exec',
+      '-T',
+      'postgres',
+      'pg_restore',
+      '-U',
+      'postgres',
+      '--no-owner',
+      '--no-acl',
+      '--exit-on-error',
+      '-d',
+      restored,
+      dump,
+    ]);
+    for (const { table, value } of expected)
+      assert.equal(
+        sql(restored, fingerprint(table)),
+        value,
+        `${service} ${table} restored content must match`,
+      );
+    verification.restores.push({
+      service,
+      backupStartedAt,
+      backupCompletedAt,
+      databaseRestoreMs: Math.ceil(performance.now() - started),
+      verifiedTables: tables.length,
+      verifiedRows: expected.reduce((total, { value }) => total + Number(value.split(':')[0]), 0),
+    });
+  } finally {
+    databaseCompose(['exec', '-T', 'postgres', 'dropdb', '-U', 'postgres', '--if-exists', restored]);
+    databaseCompose(['exec', '-T', 'postgres', 'rm', '-f', dump]);
+  }
+}
+
 function release(service: string, revision: string) {
   const directory = join(root, `services/${service}/releases/${revision}`);
   mkdirSync(directory, { recursive: true });
@@ -471,7 +533,13 @@ try {
             ...storage['photo-contest'],
           }),
     };
-    saveEnv(join(root, `services/${service}/.env`), environment);
+    // 운영 PC 입력의 접두사를 실제 Compose 경계에서 검증한다.
+    saveEnv(
+      join(root, `services/${service}/.env`),
+      service === 'photo-contest'
+        ? Object.fromEntries(Object.entries(environment).map(([key, value]) => [`PC_${key}`, value]))
+        : environment,
+    );
     refs[service] = [reference(service, 'api'), reference(service, 'web')];
   }
   writeFileSync(baseEnv.SIDE_SMOKE_IMAGE_MAP, JSON.stringify(images));
@@ -627,6 +695,8 @@ try {
   } finally {
     availability.running = false;
     await Promise.all(probes);
+    verification.durations = availability.samples.map((sample) => sample.milliseconds);
+    verification.failures = availability.failures.length;
   }
   if (availability.failures.length) {
     console.error(
@@ -720,24 +790,21 @@ try {
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
   ).json(groupResponse);
   const publicPc = new Client(pcDomain, port, publicCa);
-  const gatedGroup = await publicPc.http(`/groups/${group.id}`);
-  assert.equal(gatedGroup.status, 307, gatedGroup.text());
-  const signLocation = new URL(gatedGroup.headers.location ?? '', `https://${pcDomain}`);
-  assert.equal(signLocation.pathname, '/sign');
-  assert.equal(signLocation.searchParams.get('next'), `/groups/${group.id}`);
+  const guestGroup = await publicPc.http(`/groups/${group.id}`);
+  assert.equal(guestGroup.status, 200, guestGroup.text());
   const anonymousSession = await publicPc.graphql('mutation { startAnonymousSession { id } }');
   publicPc.cookie = anonymousSession.headers['set-cookie']
     ?.find((value) => value.startsWith('__Host-contest_session='))
     ?.split(';')[0];
   assert.ok(publicPc.cookie, 'Anonymous browsing requires an HttpOnly session.');
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
-  // Both services currently omit native association files while preserving the login callback.
-  assert.equal((await publicPc.http('/.well-known/apple-app-site-association')).status, 404);
-  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 404);
-  const appCallback = await publicPc.http('/app-auth/callback?code=shared-smoke-login-code-0123');
-  assert.equal(appCallback.status, 200);
-  assert.equal(appCallback.headers['cache-control'], 'no-store');
-  assert.equal(appCallback.text().includes('shared-smoke-login-code'), false);
+  // PC는 소셜 로그인과 앱 링크 검증 경로를 제공하지 않는다.
+  for (const removedPath of [
+    '/.well-known/apple-app-site-association',
+    '/.well-known/assetlinks.json',
+    '/app-auth/callback?code=shared-smoke-login-code-0123',
+  ])
+    assert.equal((await publicPc.http(removedPath)).status, 404, `Retired PC route: ${removedPath}`);
   // Photo Contest no longer ships sharp; an 8x8 PNG keeps both services' upload checks real.
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGNwav+KFTEMLQkAZI1vgcNLzfoAAAAASUVORK5CYII=',
@@ -977,6 +1044,7 @@ try {
   serviceCompose('photo-contest', ['restart', 'api', 'web']);
   serviceCompose('photo-contest', ['up', '-d', '--wait', 'api', 'web']);
   assert.equal((await pc.http(post.mediaUrl)).status, 307);
+  for (const service of ['game-feedback', 'photo-contest'] as const) measureDatabaseRestore({ service });
   databaseCompose(['stop', 'postgres']);
   assert.equal((await gf.http('/api/health/live')).status, 200);
   assert.equal((await pc.http('/backend/health/live')).status, 200);
@@ -985,6 +1053,7 @@ try {
   assert.equal((await gf.http('/health-check/live')).status, 200);
   assert.equal((await pc.http('/health-check/live')).status, 200);
   run('bash', [join(source, 'scripts/database.sh'), 'start']);
+  verification.complete = true;
   console.log(
     'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and service S3 folders, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
@@ -1034,4 +1103,36 @@ try {
   for (const image of createdImages)
     spawnSync(realDocker, ['image', 'rm', image], { env: baseEnv, stdio: 'ignore' });
   if (!cleanupState.failed) rmSync(root, { recursive: true });
+  const evidence = verificationEvidence({
+    revision: sha,
+    ...verification,
+    complete: verification.complete && !cleanupState.failed,
+  });
+  writeFileSync(
+    join(scratch, 'shared-instance-verification.json'),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+    { mode: 0o600 },
+  );
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const rows = evidence.restores.map(
+      (restore) =>
+        `| ${restore.service} | ${restore.databaseRestoreMs} | ${restore.verifiedTables} | ${restore.verifiedRows} |`,
+    );
+    appendFileSync(
+      process.env.GITHUB_STEP_SUMMARY,
+      [
+        '## Isolated container recovery verification',
+        '',
+        `Result: ${evidence.status}. Production RTO/RPO was not measured.`,
+        '',
+        '| Service | DB restore and verification ms | Tables | Rows |',
+        '| --- | ---: | ---: | ---: |',
+        ...rows,
+        '',
+        `Replacement probes: ${evidence.replacement.latency?.count ?? 0}; failures: ${evidence.replacement.failures}; p95: ${evidence.replacement.latency?.p95Ms ?? 'unavailable'} ms.`,
+        '',
+      ].join('\n'),
+    );
+  }
+  if (cleanupState.failed) process.exitCode = 1;
 }

@@ -85,6 +85,12 @@ export class WebViewChannel {
   }
 
   loadCurrentDocument() {
+    // 같은 주소의 source는 다시 불러오지 않고 실패한 WebView는 native 주소 비교로 건너뛸 수 있어 새로 만든다.
+    const unchanged = this.url === this.snapshot.sourceUrl && !this.snapshot.loading;
+    if (this.snapshot.offline || unchanged) {
+      this.recreate();
+      return;
+    }
     this.update({ sourceUrl: this.url, loading: true, offline: false, overlayOpen: false });
   }
 

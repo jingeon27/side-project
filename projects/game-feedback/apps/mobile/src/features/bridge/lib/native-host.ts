@@ -69,13 +69,19 @@ export class NativeHost {
     }
     if (message.type === 'push-request' && this.options.getPushRegistration) {
       const started = this.generation;
-      void this.options
-        .getPushRegistration(message.requestPermission)
-        .catch(() => null)
-        .then((registration) => {
-          if (this.generation === started)
-            this.options.send({ type: 'push-result', id: message.id, registration });
-        });
+      const register = async () => {
+        try {
+          return (await this.options.getPushRegistration?.(message.requestPermission)) ?? null;
+        } catch {
+          return null;
+        }
+      };
+      const respond = async () => {
+        const registration = await register();
+        if (this.generation === started)
+          this.options.send({ type: 'push-result', id: message.id, registration });
+      };
+      void respond();
     }
     if (message.type === 'push-settings') void this.options.openPushSettings?.().catch(() => undefined);
     if (message.type === 'push-badge') void this.options.setPushBadge?.(message.count).catch(() => undefined);
@@ -90,14 +96,20 @@ export class NativeHost {
       }
       this.authPending = true;
       const started = this.generation;
-      void this.options
-        .login(message.provider ?? 'google')
-        .catch((): TLoginResult => ({ status: 'failed' }))
-        .then((result) => {
-          this.authPending = false;
-          if (this.generation === started)
-            this.options.send({ type: 'auth-result', id: message.id, ...result });
-        });
+      const login = async (): Promise<TLoginResult> => {
+        try {
+          return (await this.options.login?.(message.provider ?? 'google')) ?? { status: 'failed' };
+        } catch {
+          return { status: 'failed' };
+        }
+      };
+      const respond = async () => {
+        const result = await login();
+        this.authPending = false;
+        if (this.generation === started)
+          this.options.send({ type: 'auth-result', id: message.id, ...result });
+      };
+      void respond();
     }
   };
 

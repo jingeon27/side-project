@@ -31,6 +31,12 @@ export default defineConfig([
             "CallExpression[callee.type='MemberExpression'][callee.property.name=/^(invalidateQueries|refetchQueries|cancelQueries|removeQueries|resetQueries|getQueriesData|setQueriesData)$/] > ObjectExpression.arguments > Property[key.name='queryKey'] > ArrayExpression.value",
           message: '캐시 작업에는 도메인 query options의 queryKey를 재사용하세요.',
         },
+        {
+          selector:
+            "JSXAttribute[name.name='className'] > JSXExpressionContainer > TemplateLiteral[expressions.length>0]",
+          message:
+            'className에 상태 class를 문자열로 이어 붙이지 마세요. 켜짐/꺼짐 상태는 data-*·aria-* 속성과 CSS 속성 선택자로, class 조합은 cn()으로 표현하세요.',
+        },
       ],
     },
   },
@@ -41,6 +47,32 @@ export default defineConfig([
         'error',
         {
           paths: [{ name: '@game-feedback/sdk', message: 'REST 호출은 도메인 api/*.api.ts에서 수행하세요.' }],
+        },
+      ],
+    },
+  },
+  {
+    // .ts도 SDK 호출은 도메인 api/와 서버 진입점(index.server)에만 둔다. 응답 타입만 쓰는 import type은 허용한다.
+    files: ['src/{_app,_pages,widgets,features,shared}/**/*.ts'],
+    ignores: [
+      'src/**/api/**',
+      'src/**/index.server.ts',
+      'src/**/*.{spec,test}.ts',
+      // proxy가 가져오는 접근 판정 모듈이다. features의 index.server는 'use cache' 조회를 함께 공개하고
+      // proxy는 'use cache'를 실행하지 못하므로, 이 모듈만 SDK를 직접 부른다.
+      'src/_app/seo/document-access.server.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@game-feedback/sdk',
+              allowTypeImports: true,
+              message: 'REST 호출은 도메인 api/*.api.ts에서 수행하세요.',
+            },
+          ],
         },
       ],
     },

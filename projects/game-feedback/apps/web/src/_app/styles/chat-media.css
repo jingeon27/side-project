@@ -62,7 +62,7 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
-  .chat-attach-button.disabled {
+  .chat-attach-button[data-disabled] {
     opacity: 0.5;
   }
   .chat-image-open {

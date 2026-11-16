@@ -8,5 +8,11 @@ import { sitemapDocument, sitemapResponse } from '@/shared/lib/sitemap.helper';
 export async function GET() {
   await connection();
   const origin = getWebOrigin();
-  return sitemapResponse(sitemapDocument([siteUrl(ROUTES.HOME, origin), siteUrl(ROUTES.EXPLORE, origin)]));
+  return sitemapResponse(
+    sitemapDocument(
+      [ROUTES.HOME, ROUTES.LANDING, ROUTES.HOW_IT_WORKS, ROUTES.EXPLORE].map((path) => ({
+        url: siteUrl(path, origin),
+      })),
+    ),
+  );
 }

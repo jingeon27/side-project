@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
@@ -35,7 +35,7 @@ test('post detail uses a compact game breadcrumb and one contact action with unb
   }
   await header.getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL('/ko/boards/friend-sale');
-  await expect(header.locator('.brand')).toBeVisible();
+  await expect(header.locator('.brand')).toHaveCount(0);
   const crawler = await browser.newContext({
     baseURL: origin,
     javaScriptEnabled: false,

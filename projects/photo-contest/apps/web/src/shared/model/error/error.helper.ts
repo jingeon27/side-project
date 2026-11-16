@@ -12,7 +12,7 @@ export const ERROR_CODE = {
   RateLimited: 'RATE_LIMITED',
   Unavailable: 'UNAVAILABLE',
   Internal: 'INTERNAL_SERVER_ERROR',
-} as const;
+} as const satisfies Record<string, string>;
 export type TErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 export const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -34,12 +34,12 @@ const NETWORK_FAILURE = /failed to fetch|load failed|networkerror/i;
 
 /** `/backend/*` REST 호출이 실패했을 때. message는 서버가 보낸 한국어 안내문이다. */
 export class RequestError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
     this.name = 'RequestError';
-    this.status = status;
   }
 }
 

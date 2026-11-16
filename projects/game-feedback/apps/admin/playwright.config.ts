@@ -23,6 +23,7 @@ const env = {
 };
 export default defineConfig({
   testDir: './e2e',
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   timeout: 45_000,
   reporter: 'list',

@@ -27,6 +27,9 @@ type GalleryPost {
   createdAt: DateTime!
   kind: PostKind!
   mediaUrl: String
+  "올릴 때 브라우저가 잰 가로·세로. 화면 틀의 비율에만 쓰며, 모르면 둘 다 null"
+  mediaWidth: Int
+  mediaHeight: Int
   linkUrl: String
   likeCount: Int!
   commentCount: Int!
@@ -58,11 +61,24 @@ type HiddenGalleryPost {
   title: String!
   createdAt: DateTime!
 }
+type GalleryPostPage {
+  items: [GalleryPost!]!
+  nextOffset: Int
+}
+
+type HiddenGalleryPostPage {
+  items: [HiddenGalleryPost!]!
+  nextOffset: Int
+}
+
 extend type Query {
   galleryPost(id: ID!): GalleryPost!
   hiddenGalleryPosts(groupId: ID!, offset: Int = 0, limit: Int = 24): [HiddenGalleryPost!]!
+  hiddenGalleryPostsPage(groupId: ID!, offset: Int = 0, limit: Int = 24): HiddenGalleryPostPage!
   publicGalleryPosts(sort: PostSort!, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  publicGalleryPostsPage(sort: PostSort!, offset: Int = 0, limit: Int = 24): GalleryPostPage!
   myGalleryPosts(groupId: ID, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  myGalleryPostsPage(groupId: ID, offset: Int = 0, limit: Int = 24): GalleryPostPage!
   postDownload(postId: ID!): PostDownload!
   galleryPosts(
     categoryId: ID
@@ -72,15 +88,31 @@ extend type Query {
     offset: Int = 0
     limit: Int = 24
   ): [GalleryPost!]!
+  galleryPostsPage(
+    categoryId: ID
+    groupId: ID
+    contestId: ID
+    sort: PostSort = NEWEST
+    offset: Int = 0
+    limit: Int = 24
+  ): GalleryPostPage!
   postComments(postId: ID!, parentId: ID, offset: Int = 0, limit: Int = 24): [PostComment!]!
   postCommentCount(postId: ID!, parentId: ID): Int!
 }
 extend type Mutation {
   setPostCategory(postId: ID!, categoryId: ID): GalleryPost!
   setPostHidden(postId: ID!, hidden: Boolean!): Boolean!
-  requestPostUpload(groupId: ID!, contentType: String!, byteSize: Int!): PostUploadTicket!
+  "width·height는 함께 보내거나 함께 비운다. 1~20000 정수"
+  requestPostUpload(
+    groupId: ID!
+    contentType: String!
+    byteSize: Int!
+    width: Int
+    height: Int
+  ): PostUploadTicket!
   completePostUpload(uploadId: ID!): PostUploadResult!
   createPost(
+    clientRequestId: String
     categoryId: ID
     contestId: ID
     groupId: ID!

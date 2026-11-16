@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestImage } from '@photo-contest/test-kit';
 
 import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
+import { ERROR_MESSAGE } from '../common/errors';
 import { UPLOAD_TICKET_TTL_MS } from '../config/limits';
 
 const REQUEST =
@@ -18,7 +19,7 @@ interface ITicket {
   fields: { name: string; value: string }[];
 }
 
-describe('프로필 사진과 소셜 가입 설정', () => {
+describe('프로필 사진과 가입 설정', () => {
   let api: ITestApi, owner: ITestUser, other: ITestUser;
   beforeAll(async () => {
     api = await createTestApp();
@@ -39,7 +40,24 @@ describe('프로필 사진과 소셜 가입 설정', () => {
   it('브라우저가 S3에 직접 올린 사진만 HEAD 확인 후 적용하고 조회 때 짧은 서명 URL로 보내야 한다', async () => {
     const body = await createTestImage();
     const upload = await ticket(body);
-    expect((await api.gqlFail(owner.cookie, COMPLETE, { uploadId: upload.id })).code).toBe('BAD_USER_INPUT');
+    const previous = await api.db.user.findUniqueOrThrow({
+      where: { id: owner.id },
+      select: { avatarUploadId: true },
+    });
+    // ListBucket 권한이 없는 AWS HEAD는 미전송 객체도 403이라 원인을 확정할 수 없어 서버 오류로 보고한다.
+    expect([
+      { code: 'BAD_USER_INPUT', message: '파일 전송을 완료한 뒤 다시 시도해 주세요.' },
+      { code: 'INTERNAL_SERVER_ERROR', message: ERROR_MESSAGE.INTERNAL },
+    ]).toContainEqual(await api.gqlFail(owner.cookie, COMPLETE, { uploadId: upload.id }));
+    expect(await api.db.profileUpload.findUniqueOrThrow({ where: { id: upload.id } })).toMatchObject({
+      completedAt: null,
+    });
+    expect(
+      await api.db.user.findUniqueOrThrow({ where: { id: owner.id }, select: { avatarUploadId: true } }),
+    ).toEqual(previous);
+    expect(
+      (await api.gqlFail(owner.cookie, UPDATE, { nickname: owner.nickname, avatarId: upload.id })).code,
+    ).toBe('FORBIDDEN');
     expect((await api.gqlFail(other.cookie, COMPLETE, { uploadId: upload.id })).code).toBe('FORBIDDEN');
     expect((await uploadToStorage(upload, body, 'image/png')).ok).toBe(true);
     await api.gqlOk(owner.cookie, COMPLETE, { uploadId: upload.id });
@@ -101,14 +119,14 @@ describe('프로필 사진과 소셜 가입 설정', () => {
     await expect(api.storage.head(row.storageKey)).rejects.toThrow();
   });
 
-  it('소셜 이름·사진을 기본값으로 주고 약관 동의와 수정·제거를 확정해야 한다', async () => {
-    const user = await api.signIn('소셜가입전');
+  it('기존 이름·사진을 기본값으로 주고 약관 동의와 수정·제거를 확정해야 한다', async () => {
+    const user = await api.signIn('가입완료전');
     await api.db.user.update({
       where: { id: user.id },
-      data: { needsOnboarding: true, nickname: 'OAuth 이름', avatar: 'https://provider.example/profile.jpg' },
+      data: { needsOnboarding: true, nickname: '기존 이름', avatar: 'https://provider.example/profile.jpg' },
     });
     expect(await api.gqlOk(user.cookie, '{me{nickname avatar needsOnboarding}}')).toEqual({
-      me: { nickname: 'OAuth 이름', avatar: 'https://provider.example/profile.jpg', needsOnboarding: true },
+      me: { nickname: '기존 이름', avatar: 'https://provider.example/profile.jpg', needsOnboarding: true },
     });
     expect((await api.gqlFail(user.cookie, 'mutation{createGroup(name:"가입전 금지"){id}}')).code).toBe(
       'FORBIDDEN',

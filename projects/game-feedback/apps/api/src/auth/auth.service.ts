@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Request, Response } from 'express';
+import qs from 'qs';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import { SocialProviderSchema, type TLoginFailure, type TSocialProvider } from '@game-feedback/contracts';
 
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
@@ -12,30 +14,32 @@ import { parse } from '../common/validation';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { GameProfilesService } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
+import { reportUnexpectedError } from '../monitoring/sentry';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
-import { AccountWithdrawalService } from './account-withdrawal.service';
-import { AppAuthService } from './app-auth.service';
+import { AccountWithdrawalService } from './account/account-withdrawal.service';
+import { isBannedIdentity } from './account/banned-identity';
+import { SocialIdentityService } from './account/social-identity.service';
+import { AppAuthService } from './app-login/app-auth.service';
 import { type TDemoLoginDto, type TOnboardDto, type TTestLoginDto } from './auth-input.dto';
-import { bannedIdentityError, isBannedIdentity } from './banned-identity';
+import { IdentityProviderRegistry } from './oauth/identity-provider.registry';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
   savedReturnPath,
-} from './oauth-return-path';
-import { requireUser } from './session-access';
-import { sessionToken } from './session-token';
-import { SessionService } from './session.service';
-import type { SessionRequest } from './session.types';
-import { SocialIdentityService } from './social-identity.service';
+} from './oauth/oauth-return-path';
+import { requireUser } from './session/session-access';
+import { sessionToken } from './session/session-token';
+import { SessionService } from './session/session.service';
+import type { SessionRequest } from './session/session.types';
 
 /**
- * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 보낸다. 코드 원문은 이 URL에만 실린다.
+ * 앱 로그인 결과는 WEB_ORIGIN의 고정 콜백 경로(`APP_AUTH_CALLBACK_PATH`)로만 보낸다. 코드 원문은 이 URL에만 실린다.
  * 커스텀 스킴은 다른 앱도 등록할 수 있어 그 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다.
  */
 function appCallbackUrl(callbackUrl: string, params: Record<string, string>) {
-  return `${callbackUrl}?${new URLSearchParams(params).toString()}`;
+  return `${callbackUrl}${qs.stringify(params, { addQueryPrefix: true })}`;
 }
 
 @Injectable()
@@ -48,6 +52,7 @@ export class AuthService {
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
     @Inject(GameProfilesService) private readonly gameProfiles: GameProfilesService,
+    @Inject(IdentityProviderRegistry) private readonly providers: IdentityProviderRegistry,
   ) {}
   async demo(req: SessionRequest, res: Response, input: TDemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
@@ -121,8 +126,7 @@ export class AuthService {
 
   async social(req: Request, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const returnPath = requestedReturnPath(req);
     const appChallenge = req.query.app_challenge;
     if (
@@ -134,7 +138,7 @@ export class AuthService {
     const nonce = token();
     const verifier = token();
     // Abandoned attempts are only removed here; the table stays bounded by the auth rate limit × 10 minutes.
-    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: new Date() } } });
+    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: dayjs().toDate() } } });
     await this.db.oAuthAttempt.create({
       data: {
         provider,
@@ -142,7 +146,9 @@ export class AuthService {
         nonce,
         verifier,
         appChallenge,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        expiresAt: dayjs()
+          .add(10 * 60 * 1000, 'millisecond')
+          .toDate(),
       },
     });
     setCookie(res, 'gamefeedback_oauth', state, 10 * 60 * 1000, this.config.production);
@@ -159,48 +165,41 @@ export class AuthService {
 
   async socialCallback(req: SessionRequest, res: Response, name: TSocialProvider) {
     const provider = name;
-    const identity = this.config.identityProviders[provider];
-    if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const identity = this.providers.require(provider);
     const state = typeof req.query.state === 'string' ? req.query.state : '';
     const code = typeof req.query.code === 'string' ? req.query.code : '';
-    if (!state || cookies(req).gamefeedback_oauth !== state)
-      throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청을 확인할 수 없습니다.');
-    const attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: hash(state) } });
-    if (!attempt || attempt.provider !== provider || attempt.expiresAt <= new Date())
-      throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 만료되었거나 올바르지 않습니다.');
-    const consumed = await this.db.oAuthAttempt.deleteMany({
-      where: { stateHash: hash(state), provider, expiresAt: { gt: new Date() } },
-    });
-    if (consumed.count !== 1)
-      throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 이미 사용되었습니다.');
-    setCookie(res, 'gamefeedback_oauth', '', 0, this.config.production);
     const returnPath = savedReturnPath(req);
-    setCookie(res, OAUTH_RETURN_COOKIE, '', 0, this.config.production);
-    if (!code) {
+    // 브라우저가 연 콜백이라 실패해도 JSON을 그리지 않는다. 웹 취소는 시작한 화면으로, 그 밖의 실패는 이유와
+    // 함께 로그인 화면으로, 앱 시도는 앱 콜백으로 보낸다. state를 묶지 못한 요청은 앱 시도인지 알 수 없으므로
+    // 웹으로 보낸다.
+    const fail = (reason: TLoginFailure, appChallenge?: string | null) =>
       res.redirect(
-        attempt.appChallenge
+        appChallenge
           ? appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' })
-          : loginRedirect(this.config.webOrigin, returnPath, 'cancelled'),
+          : loginRedirect(this.config.webOrigin, returnPath, reason),
       );
-      return;
-    }
-    const subject = await identity.exchange(code, attempt.verifier, attempt.nonce).catch((error: unknown) => {
-      if (attempt.appChallenge) return null;
-      throw error;
+    if (!state || cookies(req).gamefeedback_oauth !== state) return fail('expired');
+    const attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: hash(state) } });
+    if (!attempt) return fail('expired');
+    if (attempt.provider !== provider || attempt.expiresAt <= dayjs().toDate())
+      return fail('expired', attempt.appChallenge);
+    const consumed = await this.db.oAuthAttempt.deleteMany({
+      where: { stateHash: hash(state), provider, expiresAt: { gt: dayjs().toDate() } },
     });
-    if (!subject) {
-      res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' }));
-      return;
-    }
+    if (consumed.count !== 1) return fail('expired', attempt.appChallenge);
+    setCookie(res, 'gamefeedback_oauth', '', 0, this.config.production);
+    setCookie(res, OAUTH_RETURN_COOKIE, '', 0, this.config.production);
+    if (!code) return fail('cancelled', attempt.appChallenge);
+    const subject = await identity.exchange(code, attempt.verifier, attempt.nonce).catch((error: unknown) => {
+      // 사용자는 다시 시도할 화면으로 보내고, 제공자 교환 실패는 운영자가 볼 수 있게 남긴다.
+      reportUnexpectedError(error, { component: 'auth.oauth', operation: 'exchange', provider });
+      return null;
+    });
+    if (!subject) return fail('failed', attempt.appChallenge);
     const user = await this.identities.findUser(provider, subject);
     // A banned user who still has an account may sign in for support; only a fresh signup is refused.
-    if (!user && (await isBannedIdentity(this.db, provider, subject))) {
-      if (attempt.appChallenge) {
-        res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' }));
-        return;
-      }
-      throw bannedIdentityError();
-    }
+    if (!user && (await isBannedIdentity(this.db, provider, subject)))
+      return fail('banned', attempt.appChallenge);
     if (attempt.appChallenge) {
       const ticket = await this.appAuth.issueTicket(subject, attempt.appChallenge, provider);
       res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { code: ticket }));

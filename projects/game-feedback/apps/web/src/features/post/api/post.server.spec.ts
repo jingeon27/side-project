@@ -27,7 +27,7 @@ vi.mock('@game-feedback/sdk', async (importOriginal) => ({
 
 const author = (id: string) => ({ author: { id } });
 const detail = {
-  post: { id: 'post-1', ...author('writer') },
+  post: { id: 'post-1', answerCount: 14, helpfulCount: 2, ...author('writer') },
   answers: [
     { id: 'answer-1', ...author('coach') },
     { id: 'answer-2', ...author('blocked') },
@@ -87,10 +87,38 @@ describe('게시글 상세 서버 조회', () => {
 
   it('차단 관계가 있는 사람의 답변과 댓글은 빼고 돌려줘야 한다', async () => {
     signIn();
-    fetchMock.mockResolvedValue(excludedAuthors(['blocked']));
+    fetchMock
+      .mockResolvedValueOnce(excludedAuthors(['blocked']))
+      .mockResolvedValueOnce(Response.json({ answerCount: 12, helpfulCount: 0 }));
     const visible = await getServerPost('post-1');
     expect(visible.answers.map((answer) => answer.id)).toEqual(['answer-1']);
     expect(visible.comments.map((comment) => comment.id)).toEqual(['comment-1']);
+    expect(visible.post).toMatchObject({ answerCount: 12, helpfulCount: 0 });
+    expect(detail.post).toMatchObject({ answerCount: 14, helpfulCount: 2 });
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://api.feedback.example/internal/posts/post-1/answer-counts',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: { Cookie: 'gamefeedback_session=test-only-session' },
+      }),
+    );
+  });
+
+  it('개인화 집계 실패나 잘못된 응답을 공개 집계로 대체하지 않아야 한다', async () => {
+    signIn();
+    for (const response of [
+      new Response('', { status: 503 }),
+      Response.json({ answerCount: -1, helpfulCount: 0 }),
+    ]) {
+      fetchMock.mockResolvedValueOnce(excludedAuthors(['blocked'])).mockResolvedValueOnce(response);
+      await expect(getServerPost('post-1')).rejects.toThrow();
+    }
+    fetchMock
+      .mockResolvedValueOnce(excludedAuthors(['blocked']))
+      .mockResolvedValueOnce(new Response('', { status: 404 }));
+    await expect(getServerPost('post-1')).rejects.toThrow('NEXT_NOT_FOUND');
+    getCookie.mockReturnValue(undefined);
+    await expect(getServerPost('post-1')).resolves.toBe(detail);
   });
 
   it('차단 관계를 받지 못하면 걸러지지 않은 상세를 보여주지 않아야 한다', async () => {

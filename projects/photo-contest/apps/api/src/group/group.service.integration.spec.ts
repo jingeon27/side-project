@@ -43,14 +43,13 @@ describe('그룹과 초대', () => {
     await api?.close();
   });
 
-  function membersOf(cookie: string, groupId: string) {
-    return api
-      .gqlOk<{ group: { members: IMemberView[] } }>(
-        cookie,
-        'query($id: ID!) { group(id: $id) { members { user { id nickname } role } } }',
-        { id: groupId },
-      )
-      .then(({ group }) => group.members);
+  async function membersOf(cookie: string, groupId: string) {
+    const { group } = await api.gqlOk<{ group: { members: IMemberView[] } }>(
+      cookie,
+      'query($id: ID!) { group(id: $id) { members { user { id nickname } role } } }',
+      { id: groupId },
+    );
+    return group.members;
   }
 
   it('그룹을 만들고 초대로 가입해야 한다', async () => {
@@ -179,7 +178,7 @@ describe('그룹과 초대', () => {
       );
       expect(myGroups.map(({ id }) => id)).toEqual([second.id, first.id]);
       expect(internals.membersOf).toHaveBeenCalledTimes(1);
-      expect(internals.membersOf).toHaveBeenCalledWith([second.id, first.id]);
+      expect(internals.membersOf).toHaveBeenCalledWith([second.id, first.id], { offset: 0, limit: 48 });
       expect(internals.contestsOfGroup).toHaveBeenCalledTimes(2);
       expect(internals.leaderboard).toHaveBeenCalledTimes(2);
 
@@ -229,10 +228,10 @@ describe('그룹과 초대', () => {
 
     it('관리자가 여럿이면 가장 먼저 가입한 관리자의 닉네임을 보여줘야 한다', async () => {
       const group = await createGroup(api, owner, '공동 관리 그룹', [friend]);
-      // 관리자를 더 만드는 화면은 없으므로 DB에서 역할을 바꾼다.
+      // 그룹장은 한 명만 유지하고 부관리자를 추가한다.
       await api.db.groupMember.update({
         where: { groupId_userId: { groupId: group.id, userId: friend.id } },
-        data: { role: 'OWNER' },
+        data: { role: 'MODERATOR' },
       });
       const { invitePreview } = await api.gqlOk<{ invitePreview: { ownerNickname: string } }>(
         undefined,

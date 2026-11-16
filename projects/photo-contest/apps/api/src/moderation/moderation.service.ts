@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { MediaStorage } from '../storage/media-storage.service';
@@ -39,13 +40,13 @@ export class ModerationService {
     return true;
   }
 
-  /** 관리자만. 사진·투표·좋아요·신고를 보존한 채 목록·결과에서 뺀다. */
+  /** 관리자만. 사진·투표·좋아요·신고를 보존한 채 목록·결과에서 뺀다. 이관된 게시물도 같은 상태로 맞춘다. */
   async hide(viewer: IViewer, submissionId: string): Promise<boolean> {
     await this.membership.accessibleSubmission(viewer.id, submissionId, { owner: true });
-    const updated = await this.db.submission.updateMany({
-      where: { id: submissionId },
-      data: { hidden: true },
-    });
+    const [updated] = await this.transactions.run([
+      this.db.submission.updateMany({ where: { id: submissionId }, data: { hidden: true } }),
+      this.db.post.updateMany({ where: { legacySubmissionId: submissionId }, data: { hidden: true } }),
+    ]);
     if (updated.count !== 1) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return true;
   }
@@ -57,15 +58,25 @@ export class ModerationService {
         owner: true,
         client: tx,
       });
-      const upload = await (tx ?? this.db).upload.findUnique({
+      const upload = await tx.upload.findUnique({
         where: { id: submission.uploadId },
         select: { imageKey: true },
       });
-      await (tx ?? this.db).submission.delete({ where: { id: submission.id } });
+      const migrated = await tx.post.findUnique({
+        where: { legacySubmissionId: submission.id },
+        select: { uploadId: true },
+      });
+      // 이관된 게시물은 사진과 함께 cascade로 지워진다. 그 원본 업로드를 정리 대상으로 돌린다.
+      if (migrated?.uploadId)
+        await tx.postUpload.update({
+          where: { id: migrated.uploadId },
+          data: { expiresAt: dayjs(0).toDate() },
+        });
+      await tx.submission.delete({ where: { id: submission.id } });
       // 업로드 행은 정리 작업이 지우도록 만료시켜 둔다.
-      await (tx ?? this.db).upload.update({
+      await tx.upload.update({
         where: { id: submission.uploadId },
-        data: { expiresAt: new Date() },
+        data: { expiresAt: dayjs().toDate() },
       });
       return upload?.imageKey ?? null;
     });

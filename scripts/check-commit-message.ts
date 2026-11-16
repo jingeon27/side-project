@@ -61,7 +61,7 @@ export function checkCommitMessage(message: string) {
     '  <type>(<scope>): <무엇을 ~한다>',
     `  type: ${COMMIT_TYPES.join(' · ')}`,
     '  scope: 선택. 소문자·숫자·하이픈, 여러 개는 쉼표로 잇는다(game-feedback,photo-contest).',
-    '  예: feat(web): 사진 좋아요 버튼을 추가한다',
+    '  예: feat(photo-contest): 사진 좋아요 버튼을 추가한다',
     '      chore: husky로 커밋 전 포맷과 커밋 메시지를 검사한다',
     '',
     '병합·되돌리기·fixup/squash 자동 메시지는 그대로 통과합니다. 비상시에만 --no-verify로 건너뜁니다.',

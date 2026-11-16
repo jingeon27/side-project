@@ -8,16 +8,18 @@ import {
   MediaUploadPlanSchema,
 } from './media-upload';
 import { PostMediaSchema } from './post-media';
-import { NicknameSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { NewNicknameSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
+export { LEGAL_POLICY_VERSION } from './legal-policy';
+
 export {
+  isReservedNickname,
+  NewNicknameSchema,
   NicknameSchema,
   PROFILE_BIO_MAX_LENGTH,
   ProfileBioSchema,
   ProfileDetailsInputSchema,
-  ProfileLinkSchema,
-  ProfileLinksSchema,
   UpdateProfileInputSchema,
 } from './profile';
 
@@ -132,16 +134,6 @@ export type TFollowInput = z.infer<typeof FollowInputSchema>;
 export type TFollowStatus = z.infer<typeof FollowStatusSchema>;
 export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
-export const PublicProfileSchema = z.object({
-  author: AuthorSchema,
-  bio: z.string().optional(),
-  links: ProfileLinksSchema.optional(),
-  joinedAt: ResponseTimestampSchema,
-  postCount: ResponseCountSchema,
-  answerCount: ResponseCountSchema,
-  helpfulCount: ResponseCountSchema,
-});
-export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export const CategorySchema = z.object({
   id: ResponseIdSchema,
   slug: z.string().min(1),
@@ -168,6 +160,16 @@ export const GameProfileSchema = z.object({
   source: z.enum(['SUPERCELL', 'DEMO']),
   fetchedAt: ResponseTimestampSchema,
 });
+export const PublicProfileSchema = z.object({
+  author: AuthorSchema,
+  gameAccounts: z.array(GameProfileSchema).optional(),
+  bio: z.string().optional(),
+  joinedAt: ResponseTimestampSchema,
+  postCount: ResponseCountSchema,
+  answerCount: ResponseCountSchema,
+  helpfulCount: ResponseCountSchema,
+});
+export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export const PostSchema = z.object({
   id: ResponseIdSchema,
   title: z.string().min(1),
@@ -200,6 +202,10 @@ export const AnswerSchema = z.object({
 const CommentFields = {
   id: ResponseIdSchema,
   postId: ResponseIdSchema,
+  /** 원댓글의 가시 답글 수. 답글과 생성·수정의 단건 응답은 0이다. */
+  replyCount: ResponseCountSchema,
+  /** 아직 싣지 않은 이전 답글. listCommentReplies에 넘긴다. */
+  repliesCursor: z.string().min(1).nullable(),
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 };
@@ -207,6 +213,7 @@ export const CommentSchema = z.discriminatedUnion('isDeleted', [
   z.object({
     ...CommentFields,
     parentId: ResponseIdSchema.nullable(),
+    replyToId: ResponseIdSchema.nullable().optional(),
     isDeleted: z.literal(false),
     body: z.string().min(1),
     author: AuthorSchema,
@@ -248,14 +255,22 @@ export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
 });
-/** 최근 원댓글 스레드부터 나눈 댓글 한 페이지. 페이지 안은 오래된 순이고 각 원댓글의 답글을 함께 싣는다. */
+/** 최근 원댓글 페이지 또는 한 원댓글의 이전 답글 페이지. 항목은 오래된 순이다. */
 export const CommentPageSchema = z.object({
   items: z.array(CommentSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 도움됨 → 오래된 순으로 나눈 답변 한 페이지. */
+export const AnswerPageSchema = z.object({
+  items: z.array(AnswerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
+  /** 첫 답변 페이지. 전체 개수는 `post.answerCount`다. */
   answers: z.array(AnswerSchema),
+  /** 상세에 싣지 않은 다음 답변을 `listPostAnswers`로 받는 커서. 없으면 null. */
+  answersCursor: z.string().min(1).nullable(),
   comments: z.array(CommentSchema),
   /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
   commentsCursor: z.string().min(1).nullable(),
@@ -317,6 +332,10 @@ export const ChatAttachmentSchema = z.object({
   url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
 });
 export type TChatAttachment = z.infer<typeof ChatAttachmentSchema>;
+// 관리자 쿠키는 /api/admin에만 실리므로 문의 기록의 첨부는 관리자 경로로 내려받는다.
+export const AdminChatAttachmentSchema = ChatAttachmentSchema.extend({
+  url: z.string().regex(/^\/api\/admin\/support\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
+});
 export const ChatMessageSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
@@ -325,6 +344,9 @@ export const ChatMessageSchema = z.object({
   attachments: z.array(ChatAttachmentSchema).max(4).optional(),
   createdAt: ResponseTimestampSchema,
   clientMessageId: z.uuid(),
+});
+const AdminChatMessageSchema = ChatMessageSchema.extend({
+  attachments: z.array(AdminChatAttachmentSchema).max(4).optional(),
 });
 export const SupportTopicSchema = z.enum(['GENERAL', 'VERIFICATION']);
 export const ConversationSchema = z.object({
@@ -345,6 +367,9 @@ export const ChatMessageListSchema = z.object({
   conversation: ConversationSchema,
   items: z.array(ChatMessageSchema),
   nextCursor: z.string().min(1).nullable(),
+});
+export const AdminChatMessageListSchema = ChatMessageListSchema.extend({
+  items: z.array(AdminChatMessageSchema),
 });
 export const ConversationInputSchema = z.object({ recipientId: z.string().min(1).max(100) }).strict();
 export const ChatMessageInputSchema = z
@@ -370,7 +395,7 @@ export const PlayerTagSchema = z
   .transform((value) => `#${value.replace(/^#/, '').toUpperCase()}`);
 export const OnboardInputSchema = z
   .object({
-    nickname: NicknameSchema,
+    nickname: NewNicknameSchema,
     acceptedTerms: z.literal(true),
     ageConfirmed: z.literal(true),
     playerTag: PlayerTagSchema.optional(),
@@ -382,8 +407,8 @@ export const AppExchangeInputSchema = z
     verifier: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   })
   .strict();
-export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
-export const POST_TITLE_MAX_LENGTH = 60;
+export const DemoInputSchema = z.object({ nickname: NewNicknameSchema }).strict();
+export const POST_TITLE_MAX_LENGTH = 30;
 export const PostInputSchema = z
   .object({
     title: z.string().trim().min(4).max(POST_TITLE_MAX_LENGTH),
@@ -394,9 +419,11 @@ export const PostInputSchema = z
     friendSale: FriendSaleDetailsSchema.nullable().optional(),
     battle: BattleDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
+    /** 같은 초안의 재시도를 작성자별로 한 글에 묶는 키. 응답만 끊긴 뒤 다시 보내도 글이 늘지 않는다. */
+    clientRequestId: z.uuid().optional(),
   })
   .strict();
-export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true })
+export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true, clientRequestId: true })
   .partial()
   .refine((v) => Object.keys(v).length > 0);
 export const AnswerInputSchema = z.object({ body: z.string().trim().min(10).max(10000) }).strict();
@@ -461,6 +488,7 @@ export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
 export type CommentPage = z.infer<typeof CommentPageSchema>;
+export type AnswerPage = z.infer<typeof AnswerPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -470,18 +498,31 @@ export const UserBanInputSchema = z
   .strict();
 export const ReportReviewInputSchema = z.object({ status: z.enum(['REVIEWED', 'DISMISSED']) }).strict();
 export const SupportInputSchema = z.object({ topic: SupportTopicSchema }).strict();
-export const SupportStatusInputSchema = z.object({ status: z.enum(['OPEN', 'CLOSED']) }).strict();
+export const SupportStatusSchema = z.enum(['OPEN', 'CLOSED']);
+export type TSupportStatus = z.infer<typeof SupportStatusSchema>;
+export const SupportStatusInputSchema = z.object({ status: SupportStatusSchema }).strict();
 export const SupportThreadSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
   requester: AuthorSchema,
   adminId: ResponseIdSchema,
   topic: SupportTopicSchema,
-  status: z.enum(['OPEN', 'CLOSED']),
+  status: SupportStatusSchema,
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 });
 export type TSupportThread = z.infer<typeof SupportThreadSchema>;
+/** 최근 대화 순(대화 updatedAt → id 내림차순)으로 나눈 관리자 문의 한 페이지. */
+export const SupportThreadListSchema = z.object({
+  items: z.array(SupportThreadSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+/** 상태를 비우면 모든 문의를 본다. */
+export const AdminSupportListQuerySchema = z.object({
+  status: SupportStatusSchema.optional(),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+});
 
 export const schemas = {
   AdminLoginInput: AdminLoginInputSchema,
@@ -490,6 +531,7 @@ export const schemas = {
   SupportInput: SupportInputSchema,
   SupportStatusInput: SupportStatusInputSchema,
   SupportThread: SupportThreadSchema,
+  SupportThreadList: SupportThreadListSchema,
   PostMedia: PostMediaSchema,
   MediaUploadInput: MediaUploadInputSchema,
   AvatarUploadInput: AvatarUploadInputSchema,
@@ -509,6 +551,7 @@ export const schemas = {
   Conversation: ConversationSchema,
   ConversationList: ConversationListSchema,
   ChatMessageList: ChatMessageListSchema,
+  AdminChatMessageList: AdminChatMessageListSchema,
   ConversationInput: ConversationInputSchema,
   ChatMessageInput: ChatMessageInputSchema,
   ChatReadInput: ChatReadInputSchema,
@@ -529,6 +572,7 @@ export const schemas = {
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
   CommentPage: CommentPageSchema,
+  AnswerPage: AnswerPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -544,7 +588,7 @@ export const schemas = {
   BlockInput: BlockInputSchema,
   CategoryInput: CategoryInputSchema,
   HideInput: HideInputSchema,
-};
+} satisfies Record<string, z.ZodType>;
 export type OperationSpec = {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   path: string;
@@ -563,16 +607,17 @@ export const operations: OperationSpec[] = [
     response: SessionSchema,
   },
   { method: 'post', path: '/api/admin/auth/logout', id: 'adminLogout', response: OkSchema },
+  // 메시지 경로는 대화(ChatConversation) id를 받는다. getSupportThread·setSupportStatus의 {id}는 문의 id다.
   {
     method: 'get',
-    path: '/api/admin/support/{id}/messages',
+    path: '/api/admin/support/{conversationId}/messages',
     id: 'listAdminSupportMessages',
     query: true,
-    response: ChatMessageListSchema,
+    response: AdminChatMessageListSchema,
   },
   {
     method: 'post',
-    path: '/api/admin/support/{id}/messages',
+    path: '/api/admin/support/{conversationId}/messages',
     id: 'sendAdminSupportMessage',
     body: ChatMessageInputSchema,
     response: ChatMessageSchema,
@@ -617,7 +662,14 @@ export const operations: OperationSpec[] = [
     method: 'get',
     path: '/api/admin/support',
     id: 'listSupportThreads',
-    response: z.array(SupportThreadSchema),
+    response: SupportThreadListSchema,
+    query: true,
+  },
+  {
+    method: 'get',
+    path: '/api/admin/support/{id}',
+    id: 'getSupportThread',
+    response: SupportThreadSchema,
   },
   {
     method: 'patch',
@@ -770,6 +822,13 @@ export const operations: OperationSpec[] = [
   { method: 'patch', path: '/api/posts/{id}', id: 'updatePost', body: PostPatchSchema, response: PostSchema },
   { method: 'delete', path: '/api/posts/{id}', id: 'deletePost', response: OkSchema },
   {
+    method: 'get',
+    path: '/api/posts/{id}/answers',
+    id: 'listPostAnswers',
+    response: AnswerPageSchema,
+    query: true,
+  },
+  {
     method: 'post',
     path: '/api/posts/{id}/answers',
     id: 'createAnswer',
@@ -812,6 +871,13 @@ export const operations: OperationSpec[] = [
     id: 'createComment',
     body: CreateCommentInputSchema,
     response: CommentSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/comments/{id}/replies',
+    id: 'listCommentReplies',
+    response: CommentPageSchema,
+    query: true,
   },
   {
     method: 'patch',
@@ -885,4 +951,5 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/admin/hide', id: 'hideContent', body: HideInputSchema, response: OkSchema },
 ];
-export { AuthReturnPathSchema } from './auth-return-path';
+export { AuthReturnPathSchema, LoginFailureSchema } from './auth-return-path';
+export type { TLoginFailure } from './auth-return-path';

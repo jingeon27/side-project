@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { ApiError } from './http/api-error';
@@ -7,13 +8,19 @@ const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('
 
 describe('Repository 목록 커서', () => {
   it('같은 시각의 항목을 구분할 ID와 밀리초를 보존해야 한다', () => {
-    const row = { id: 'post-with-same-time', createdAt: new Date('2026-10-19T01:02:03.456Z') };
+    const row = { id: 'post-with-same-time', createdAt: dayjs('2026-10-19T01:02:03.456Z').toDate() };
     const cursor = encodeCursor(row);
     expect(cursor).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeCursor(cursor)).toEqual(row);
   });
   it.each([undefined, ''])('커서가 없으면 첫 페이지로 처리해야 한다: %j', (value) => {
     expect(decodeCursor(value)).toBeNull();
+  });
+  it.each([
+    ['2026-10-31', '2026-10-31T00:00:00.000Z'],
+    ['2026-10-31T09:00:00+09:00', '2026-10-31T00:00:00.000Z'],
+  ])('커서의 날짜 입력 %s를 기존 절대 시각으로 읽어야 한다', (value, expected) => {
+    expect(decodeCursor(encode([value, 'post']))?.createdAt.toISOString()).toBe(expected);
   });
   it.each([
     'not-json',
@@ -39,7 +46,7 @@ describe('Repository 목록 커서', () => {
 describe('limit+1 조회의 다음 페이지 커서', () => {
   const rows = [0, 1, 2].map((index) => ({
     id: `row-${index}`,
-    createdAt: new Date(Date.UTC(2026, 9, 19, 0, 0, index)),
+    createdAt: dayjs('2026-10-19T00:00:00Z').add(index, 'second').toDate(),
   }));
   it('한 건이 더 있으면 이 페이지의 마지막 항목으로 커서를 만들어야 한다', () => {
     expect(nextPageAnchor(rows, 2)).toBe(rows[1]);

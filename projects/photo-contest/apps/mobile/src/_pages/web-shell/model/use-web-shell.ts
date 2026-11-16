@@ -113,6 +113,15 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     },
   });
 
+  const recreateWebView = useCallback(() => {
+    isWebReadyRef.current = false;
+    canGoBackRef.current = false;
+    setSourceUrl(currentUrlRef.current);
+    setHasLoadError(false);
+    setIsLoading(true);
+    setWebViewKey((key) => key + 1);
+  }, []);
+
   /** 웹이 준비됐으면 웹 라우터로 이동하고, 아니면 그 경로로 문서를 새로 연다. */
   const openPath = useCallback(
     (path: string) => {
@@ -121,12 +130,18 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
         return;
       }
       const url = toWebUrl(path);
+      // WebView는 source가 그대로면 다시 불러오지 않는다. 그 사이 다른 문서를 여는 중이면(iOS reload 등) 새로 만들어 연다.
+      const isOpeningOtherDocument = url === sourceUrl && currentUrlRef.current !== url;
       currentUrlRef.current = url;
+      if (isOpeningOtherDocument) {
+        recreateWebView();
+        return;
+      }
       setSourceUrl(url);
       setHasLoadError(false);
       setIsLoading(true);
     },
-    [router],
+    [recreateWebView, router, sourceUrl],
   );
 
   usePushEvents(
@@ -140,15 +155,6 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       if (isWebReadyRef.current) router.emit('notifications.received', {});
     },
   );
-
-  const recreateWebView = useCallback(() => {
-    isWebReadyRef.current = false;
-    canGoBackRef.current = false;
-    setSourceUrl(currentUrlRef.current);
-    setHasLoadError(false);
-    setIsLoading(true);
-    setWebViewKey((key) => key + 1);
-  }, []);
 
   const handleDeepLink = useCallback(
     (path: string) => {
@@ -231,8 +237,6 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     if (isWebOriginUrl(state.url)) currentUrlRef.current = state.url;
   }, []);
 
-  const handleLoadEnd = useCallback<TWebViewHandler<'onLoadEnd'>>(() => finishLoading(), [finishLoading]);
-
   const handleError = useCallback<TWebViewHandler<'onError'>>(
     (event) => {
       // WebView 기본 오류 화면(영문)을 띄우지 않는다. 연결 문제일 때만 오프라인 화면으로 바꾼다.
@@ -283,7 +287,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       onOpenWindow: handleOpenWindow,
       onMessage: handleMessage,
       onLoadStart: handleLoadStart,
-      onLoadEnd: handleLoadEnd,
+      onLoadEnd: finishLoading,
       onNavigationStateChange: handleNavigationStateChange,
       onError: handleError,
       onHttpError: handleHttpError,

@@ -18,6 +18,6 @@ describe('게시물 첨부 링크', () => {
       'https://user:password@example.com',
       'https://example.com/' + 'a'.repeat(2048),
     ])
-      expect(() => postLink(value)).toThrow('HTTP·HTTPS');
+      expect(() => postLink(value)).toThrow('http:// 또는 https://');
   });
 });

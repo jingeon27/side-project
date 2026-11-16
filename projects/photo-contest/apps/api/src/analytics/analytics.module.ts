@@ -1,9 +1,17 @@
 import { Module } from '@nestjs/common';
 
-import { ContestCompletionService } from './contest-completion.service';
+import { completionReadersProvider } from './completion/completion-readers.provider';
+import { ContestCompletionService } from './completion/contest-completion.service';
+import { LegacyCompletionReader } from './completion/legacy-completion.reader';
+import { PostCompletionReader } from './completion/post-completion.reader';
 
 @Module({
-  providers: [ContestCompletionService],
+  providers: [
+    PostCompletionReader,
+    LegacyCompletionReader,
+    completionReadersProvider,
+    ContestCompletionService,
+  ],
   exports: [ContestCompletionService],
 })
 export class AnalyticsModule {}

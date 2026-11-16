@@ -8,6 +8,7 @@ import {
   parseAppUserAgent,
   parseNativeAppInfo,
   PROTOCOL_VERSION,
+  PushRegistrationSchema,
   readRequestId,
 } from './protocol';
 
@@ -76,14 +77,6 @@ describe('decodeWebMessage', () => {
     ).toBeNull();
     expect(decodeWebMessage('x'.repeat(20_001))).toBeNull();
   });
-
-  it('소셜 로그인 결과의 verifier 형식을 검사해야 한다', () => {
-    const verifier = 'v'.repeat(43);
-    const ok = decodeWebMessage(
-      encode({ v: 1, kind: 'response', id: 'a4', ok: true, result: { code: 'c'.repeat(16), verifier } }),
-    );
-    expect(ok?.kind).toBe('response');
-  });
 });
 
 describe('decodeNativeMessage', () => {
@@ -109,6 +102,45 @@ describe('decodeNativeMessage', () => {
         }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('PushRegistrationSchema', () => {
+  const granted = {
+    installationId: '11111111-1111-4111-8111-111111111111',
+    platform: 'android',
+    status: 'granted',
+    token: 'ExpoPushToken[aaaaaaaaaaaaaaaaaaaa]',
+  };
+
+  it('권한을 받은 등록에만 토큰이 있어야 한다', () => {
+    expect(PushRegistrationSchema.safeParse(granted).success).toBe(true);
+    expect(PushRegistrationSchema.safeParse({ ...granted, status: 'denied', token: null }).success).toBe(
+      true,
+    );
+    expect(PushRegistrationSchema.safeParse({ ...granted, token: null }).success).toBe(false);
+    expect(PushRegistrationSchema.safeParse({ ...granted, status: 'undetermined' }).success).toBe(false);
+  });
+
+  it('Expo push token 형식이 아니거나 모르는 필드가 있으면 거부해야 한다', () => {
+    expect(PushRegistrationSchema.safeParse({ ...granted, token: 'fcm-device-token' }).success).toBe(false);
+    expect(PushRegistrationSchema.safeParse({ ...granted, sessionCookie: 'contest_session=x' }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('notifications.badge', () => {
+  function badge(count: unknown) {
+    return decodeWebMessage(
+      encode({ v: 1, kind: 'request', id: 'badge-1', type: 'notifications.badge', payload: { count } }),
+    );
+  }
+
+  it('0부터 9999까지의 정수만 받아들여야 한다', () => {
+    expect(badge(0)).toMatchObject({ type: 'notifications.badge', payload: { count: 0 } });
+    expect(badge(9999)).toMatchObject({ type: 'notifications.badge', payload: { count: 9999 } });
+    for (const count of [-1, 10_000, 1.5, '3']) expect(badge(count)).toBeNull();
   });
 });
 

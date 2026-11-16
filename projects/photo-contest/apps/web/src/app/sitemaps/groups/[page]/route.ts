@@ -1,6 +1,10 @@
 import { connection } from 'next/server';
 
-import { getPublicGroupCount, getPublicGroupSitemapPage, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group';
+import {
+  getPublicGroupCount,
+  getPublicGroupSitemapPage,
+  PUBLIC_GROUP_SITEMAP_SIZE,
+} from '@/_pages/group/index.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { siteUrl } from '@/shared/lib/seo.helper';
@@ -21,11 +25,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
   if (!groups.length) return new Response(null, { status: 404 });
   return sitemapResponse(
     sitemapDocument(
-      groups.flatMap((group) =>
-        [ROUTES.GROUP(group.id), ROUTES.GROUP_CONTESTS(group.id), ROUTES.GROUP_HALL_OF_FAME(group.id)].map(
-          (path) => siteUrl(path, getWebOrigin()),
-        ),
-      ),
+      groups.map((group) => ({
+        url: siteUrl(ROUTES.GROUP(group.id), getWebOrigin()),
+        lastModified: group.lastModifiedAt,
+      })),
     ),
   );
 }

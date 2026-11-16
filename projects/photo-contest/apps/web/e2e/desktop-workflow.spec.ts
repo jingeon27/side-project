@@ -34,7 +34,9 @@ test(
       if (!feed || !popular) throw new Error('피드와 인기 목록이 보여야 한다');
       expect(popular.x).toBeGreaterThan(feed.x + feed.width);
       expect(feed.width).toBeLessThanOrEqual(680);
-      expect((await page.locator('#pc-main').boundingBox())?.width).toBeLessThanOrEqual(1440);
+      const shell = await page.locator('#pc-main').boundingBox();
+      expect(shell?.x).toBe(0);
+      expect(shell?.width).toBe(width);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     await page.setViewportSize({ width: 1440, height: 960 });
@@ -67,16 +69,16 @@ test(
     await page.screenshot({ path: '.data/screens/desktop-group-wide.png' });
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const write = page.getByRole('link', { name: '글쓰기', exact: true });
+    const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(write).toBeInViewport();
     await write.click();
     const composer = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     const title = composer.getByLabel('제목', { exact: true });
-    const picker = await composer.getByRole('button', { name: '파일 선택', exact: true }).boundingBox();
+    const picker = await composer.getByRole('button', { name: /^파일 선택/ }).boundingBox();
     const titleBox = await title.boundingBox();
     if (!picker || !titleBox) throw new Error('미디어와 제목 입력이 보여야 한다');
     expect(titleBox.x).toBeGreaterThan(picker.x + picker.width);
-    await composer.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+    await composer.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
       name: 'desktop-moment.png',
       mimeType: 'image/png',
       buffer: await createTestImage({ width: 360, height: 240 }),
@@ -92,6 +94,10 @@ test(
     await composer.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(composer).toHaveCount(0);
     await expect(latest.getByRole('heading', { name: '스크롤하다 남긴 순간', exact: true })).toBeInViewport();
+    // 브라우저가 잰 360×240이 API를 거쳐 카드 틀의 비율이 된다.
+    await expect(
+      latest.getByRole('img', { name: '스크롤하다 남긴 순간', exact: true }).locator('..'),
+    ).toHaveCSS('aspect-ratio', '1.5 / 1');
 
     await latest.getByRole('button', { name: '함께 웃는 오후 댓글 1개', exact: true }).click();
     const comments = page.getByRole('dialog', { name: '댓글', exact: true });
@@ -108,7 +114,7 @@ test(
     await comments.getByRole('button', { name: '댓글 올리기', exact: true }).click();
     await expect(list.getByRole('listitem')).toHaveCount(2);
     await page.screenshot({ path: '.data/screens/desktop-comments-wide.png' });
-    await comments.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     await expect(comments).toHaveCount(0);
   },
 );

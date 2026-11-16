@@ -22,6 +22,18 @@ describe('request rate limits across shared network addresses', () => {
     expect(limiter.consume(bob.key, bob.limit, 0)).toBe(0);
     expect(limiter.consume(alice.key, alice.limit, 60000)).toBe(0);
   });
+  it('bounds the window store by dropping expired and then the oldest windows instead of rescanning it', () => {
+    const limiter = new RequestRateLimiter(60000, 3);
+    expect(limiter.consume('old', 1, 0)).toBe(0);
+    expect(limiter.consume('old', 1, 0)).toBe(60);
+    for (const [index, key] of ['a', 'b', 'c'].entries()) expect(limiter.consume(key, 1, index + 1)).toBe(0);
+    // 상한을 넘겨 가장 오래된 창이 빠졌으므로 같은 키는 새 창에서 다시 시작한다.
+    expect(limiter.consume('old', 1, 10)).toBe(0);
+    // 남은 창은 그대로 세어 우회되지 않는다.
+    expect(limiter.consume('c', 1, 11)).toBe(60);
+    // 창이 끝난 키는 다시 넣을 때 새 창으로 시작한다.
+    expect(limiter.consume('c', 1, 60003)).toBe(0);
+  });
   it('shares a user write budget across sessions and IP changes', () => {
     const limiter = new RequestRateLimiter();
     const first = requestRateBucket({ ...request, userId: 'alice', method: 'POST' });

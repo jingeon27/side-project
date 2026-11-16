@@ -16,6 +16,7 @@ const webOrigin = 'http://127.0.0.1:3336';
 export default defineConfig({
   testDir: '.',
   testMatch: ['test/monitoring/**/*.spec.ts', 'test/observability/web-vitals.spec.ts'],
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   retries: 0,
   timeout: 90_000,

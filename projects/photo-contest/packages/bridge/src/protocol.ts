@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 /** 웹과 앱이 서로 다른 버전으로 배포돼도 메시지 해석이 어긋나지 않게 봉투에 싣는다. */
@@ -15,7 +16,7 @@ export const BRIDGE_ERROR_CODE = {
   Failed: 'FAILED',
   Invalid: 'INVALID',
   Timeout: 'TIMEOUT',
-} as const;
+} as const satisfies Record<string, z.output<typeof errorSchema>['code']>;
 export type TBridgeErrorCode = (typeof BRIDGE_ERROR_CODE)[keyof typeof BRIDGE_ERROR_CODE];
 
 /** URL 생성자가 불완전한 런타임(구형 WKWebView, React Native)에서도 같은 결과를 내도록 정규식으로 검사한다. */
@@ -45,6 +46,8 @@ export const PushRegistrationSchema = z
   .strict()
   .refine((value) => (value.status === 'granted') === (value.token !== null));
 export type TPushRegistration = z.infer<typeof PushRegistrationSchema>;
+
+type TRequestSchemas = Record<string, { payload: z.ZodType; result: z.ZodType }>;
 
 /** 웹이 앱에 요청하고 결과를 기다리는 기능 */
 export const WEB_REQUEST = {
@@ -77,15 +80,7 @@ export const WEB_REQUEST = {
     payload: z.object({ url: downloadCapableUrl }),
     result: z.object({ opened: z.boolean() }),
   },
-  /** 시스템 브라우저로 소셜 로그인한 뒤 앱 로그인 교환에 쓸 일회용 코드와 verifier를 돌려준다. */
-  'auth.socialLogin': {
-    payload: z.object({ provider: z.enum(['google', 'kakao']) }),
-    result: z.object({
-      code: z.string().min(16).max(256),
-      verifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
-    }),
-  },
-} as const;
+} as const satisfies TRequestSchemas;
 export type TWebRequestType = keyof typeof WEB_REQUEST;
 export type TWebRequestPayload<T extends TWebRequestType> = z.input<(typeof WEB_REQUEST)[T]['payload']>;
 export type TWebRequestResult<T extends TWebRequestType> = z.output<(typeof WEB_REQUEST)[T]['result']>;
@@ -97,7 +92,7 @@ export const NATIVE_REQUEST = {
     payload: z.object({}),
     result: z.object({ handled: z.boolean() }),
   },
-} as const;
+} as const satisfies TRequestSchemas;
 export type TNativeRequestType = keyof typeof NATIVE_REQUEST;
 export type TNativeRequestPayload<T extends TNativeRequestType> = z.input<
   (typeof NATIVE_REQUEST)[T]['payload']
@@ -113,7 +108,7 @@ export const WEB_EVENT = {
   /** userId는 네이티브 분석 도구의 사용자 식별에만 쓴다(세션 토큰이 아니다). */
   'auth.changed': z.object({ signedIn: z.boolean(), userId: z.string().min(1).max(64).optional() }),
   'appearance.changed': z.object({ preference: z.enum(['system', 'light', 'dark']) }),
-} as const;
+} as const satisfies Record<string, z.ZodType>;
 export type TWebEventType = keyof typeof WEB_EVENT;
 export type TWebEventPayload<T extends TWebEventType> = z.input<(typeof WEB_EVENT)[T]>;
 
@@ -126,7 +121,7 @@ export const NATIVE_EVENT = {
   'app.state': z.object({ state: z.enum(['active', 'background']) }),
   /** 딥링크·알림을 눌러 앱이 열렸을 때 웹이 그 경로로 이동한다. */
   'navigation.open': z.object({ path: z.string().max(2048).regex(RELATIVE_PATH) }),
-} as const;
+} as const satisfies Record<string, z.ZodType>;
 export type TNativeEventType = keyof typeof NATIVE_EVENT;
 export type TNativeEventPayload<T extends TNativeEventType> = z.input<(typeof NATIVE_EVENT)[T]>;
 
@@ -203,13 +198,6 @@ const webRequestSchema = z.discriminatedUnion('type', [
     type: z.literal('link.open'),
     payload: WEB_REQUEST['link.open'].payload,
   }),
-  z.object({
-    v: z.literal(PROTOCOL_VERSION),
-    kind: z.literal('request'),
-    id: messageId,
-    type: z.literal('auth.socialLogin'),
-    payload: WEB_REQUEST['auth.socialLogin'].payload,
-  }),
 ]);
 export type TWebRequestMessage = z.output<typeof webRequestSchema>;
 
@@ -281,6 +269,18 @@ const kindSchema = z.object({
   v: z.literal(PROTOCOL_VERSION),
   kind: z.enum(['request', 'event', 'response']),
 });
+type TMessageKind = z.output<typeof kindSchema>['kind'];
+
+const WEB_MESSAGE_SCHEMA = {
+  request: webRequestSchema,
+  event: webEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
+const NATIVE_MESSAGE_SCHEMA = {
+  request: nativeRequestSchema,
+  event: nativeEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
 
 function parseJson(raw: unknown): unknown {
   if (typeof raw !== 'string' || raw.length > 20_000) return undefined;
@@ -296,13 +296,7 @@ export function decodeWebMessage(raw: unknown): TWebMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? webRequestSchema
-      : kind.data.kind === 'event'
-        ? webEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = WEB_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
@@ -311,13 +305,7 @@ export function decodeNativeMessage(raw: unknown): TNativeMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? nativeRequestSchema
-      : kind.data.kind === 'event'
-        ? nativeEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = NATIVE_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
@@ -376,5 +364,5 @@ let sequence = 0;
 /** http로 연 WebView는 보안 컨텍스트가 아니라 crypto.randomUUID가 없을 수 있다. 응답 짝 맞추기용이라 예측 가능해도 된다. */
 export function createMessageId() {
   sequence = (sequence + 1) % Number.MAX_SAFE_INTEGER;
-  return `${Date.now().toString(36)}-${sequence.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${dayjs().valueOf().toString(36)}-${sequence.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

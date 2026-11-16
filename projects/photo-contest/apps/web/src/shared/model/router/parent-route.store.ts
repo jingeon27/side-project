@@ -8,7 +8,8 @@ let registered: { pathname: string; href: string } | null = null;
 /** 화면이 알려 준 상위 화면. 알려 주지 않았으면 홈, 홈이면 null. */
 export function getParentRoute(pathname: string) {
   if (registered?.pathname === pathname) return registered.href;
-  return pathname === ROUTES.HOME ? null : ROUTES.HOME;
+  if (pathname === ROUTES.HOW_IT_WORKS) return ROUTES.LANDING;
+  return pathname === ROUTES.HOME || pathname === ROUTES.LANDING ? null : ROUTES.HOME;
 }
 
 export function registerParentRoute(pathname: string, href: string) {

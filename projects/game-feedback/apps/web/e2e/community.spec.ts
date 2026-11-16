@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
-test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
+test('community boards publish and edit formatting, stay separate from feedback and render without JavaScript', async ({
   page,
   browser,
   baseURL,
@@ -52,7 +52,9 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(page.locator('.deck, .deck-card')).toHaveCount(0);
     await page.locator('.detail-card').getByRole('button', { name: '수정', exact: true }).click();
     const edit = page.getByRole('dialog', { name: '게시글 수정', exact: true });
-    await expect(edit.locator('.ql-editor strong')).toContainText(body);
+    await expect(edit.getByRole('textbox', { name: '내용', exact: true }).locator('strong')).toContainText(
+      body,
+    );
     if (slug === 'friend-sale') {
       await expect(edit.getByLabel('판매 금액 (원)', { exact: true })).toHaveValue('12000');
       await edit.getByLabel('판매 금액 (원)', { exact: true }).fill('18000');
@@ -99,19 +101,19 @@ test('every game contains five shared boards on desktop and mobile and retired b
     const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
       ...(desktop ? [] : ['전체']),
-      '피드백',
       '친추판매',
       '전투 모집',
       '게임코치',
       '자유게시판',
+      '피드백',
     ]);
-    for (const [name, path] of [
-      ['친추판매', '/ko/boards/friend-sale'],
-      ['전투 모집', '/ko/boards/friendly'],
-      ['피드백', '/ko/boards/feedback'],
-      ['게임코치', '/ko/boards/coaching'],
-      ['자유게시판', '/ko/boards/free'],
-      ['홈', '/ko'],
+    for (const [name, path, filter] of [
+      ['친추판매', '/ko/boards/friend-sale', null],
+      ['전투 모집', '/ko/boards/friendly', '전투 유형'],
+      ['피드백', '/ko/boards/feedback', '답변 상태'],
+      ['게임코치', '/ko/boards/coaching', '모집 유형'],
+      ['자유게시판', '/ko/boards/free', null],
+      ['홈', '/ko', null],
     ] as const) {
       const link = navigation.getByRole('link', {
         name: !desktop && name === '홈' ? '전체' : name,
@@ -120,6 +122,14 @@ test('every game contains five shared boards on desktop and mobile and retired b
       await link.click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(link).toHaveAttribute('aria-current', 'page');
+      // 라우트마다 자기 게시판을 선언하므로 제목과 전용 필터가 경로와 맞아야 한다.
+      await expect(
+        page.getByRole('heading', { level: 1, name: name === '홈' ? '전체' : name, exact: true }),
+      ).toBeVisible();
+      for (const label of ['답변 상태', '전투 유형', '모집 유형'])
+        await expect(page.getByRole('navigation', { name: label, exact: true })).toHaveCount(
+          label === filter ? 1 : 0,
+        );
       if (!desktop) {
         await expect(link).toBeInViewport({ ratio: 1 });
         await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -137,7 +147,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   }
 });
-test('category chips support direct links, keyboard navigation, short viewports and Quill context', async ({
+test('category chips scroll in one row and support keyboard navigation, short viewports and editor context', async ({
   page,
   baseURL,
 }) => {
@@ -154,6 +164,7 @@ test('category chips support direct links, keyboard navigation, short viewports 
   await expect(friendly).toHaveAttribute('aria-current', 'page');
   await expect(friendly).toBeInViewport({ ratio: 1 });
   expect(await chips.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+  expect(await chips.evaluate((node) => getComputedStyle(node).overflowX)).toBe('auto');
   const length = await page.evaluate(() => history.length);
   await friendly.focus();
   await page.keyboard.press('Tab');
@@ -167,10 +178,11 @@ test('category chips support direct links, keyboard navigation, short viewports 
   await page.reload();
   await expect(coaching).toHaveAttribute('aria-current', 'page');
   await expect(coaching).toBeInViewport({ ratio: 1 });
-  await chips.getByRole('link').last().click();
+  const free = chips.locator('a[href="/ja/boards/free"]');
+  await free.click();
   await expect(page).toHaveURL('/ja/boards/free');
   await page.setViewportSize({ width: 400, height: 360 });
-  await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
+  await expect(free).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(
     await chips
@@ -183,11 +195,11 @@ test('category chips support direct links, keyboard navigation, short viewports 
   await expect(chips.getByRole('link').first()).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 760, height: 844 });
   await page.setViewportSize({ width: 320, height: 844 });
-  await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
+  await expect(free).toBeInViewport({ ratio: 1 });
   await friendly.click();
   await expect(page).toHaveURL('/ja/boards/friendly');
-  await page.locator('.board-heading:visible button').click();
-  await expect(page.locator('.ql-editor')).toBeVisible();
+  await page.getByRole('button', { name: '投稿する', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '本文', exact: true })).toBeVisible();
   await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   const dialog = await page.getByRole('form', { name: '投稿する', exact: true }).boundingBox();
@@ -221,7 +233,7 @@ test('mobile composition can switch categories from a board and persist friend s
   await expect(price).toHaveCount(0);
   await editor.getByLabel('Category', { exact: true }).selectOption('FRIEND_SALE');
   await expect(price).toHaveValue('');
-  const title = `Mobile friend slot sale ${Date.now().toString(36)}`;
+  const title = `Friend slot sale ${Date.now().toString(36)}`;
   await editor.getByLabel('Title', { exact: true }).fill(title);
   await expect(editor.getByRole('textbox', { name: 'Content', exact: true })).toContainText(body);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

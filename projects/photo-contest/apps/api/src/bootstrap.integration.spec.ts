@@ -12,7 +12,6 @@ const MUTATING_ENDPOINTS: Array<{ path: string; body?: Record<string, unknown> }
   { path: '/graphql', body: { query: 'mutation { createGroup(name: "출처 검사 그룹") { id } }' } },
   { path: '/testing/users', body: { nickname: '출처-외부인' } },
   { path: '/auth/logout' },
-  { path: '/auth/app/exchange', body: { code: 'code', verifier: 'v'.repeat(43) } },
   { path: '/uploads/some-upload-token' },
 ];
 
@@ -32,9 +31,13 @@ const PROTECTED_OPERATIONS: Array<[string, string]> = [
   ['approveGroupJoinRequest', 'mutation { approveGroupJoinRequest(requestId: "request") }'],
   ['rejectGroupJoinRequest', 'mutation { rejectGroupJoinRequest(requestId: "request") }'],
   ['groupJoinRequests', '{ groupJoinRequests(groupId: "group") { id } }'],
+  ['groupJoinRequestsPage', '{ groupJoinRequestsPage(groupId: "group") { nextOffset } }'],
+  ['hiddenGalleryPostsPage', '{ hiddenGalleryPostsPage(groupId: "group") { nextOffset } }'],
+  ['myGalleryPostsPage', '{ myGalleryPostsPage { nextOffset } }'],
   ['contest', '{ contest(id: "contest") { id } }'],
   ['contestResults', '{ contestResults(contestId: "contest") { rank } }'],
   ['submissions', '{ submissions(contestId: "contest") { id } }'],
+  ['submissionsPage', '{ submissionsPage(contestId: "contest") { nextOffset } }'],
   ['createGroup', 'mutation { createGroup(name: "그룹") { id } }'],
   ['joinGroup', 'mutation { joinGroup(token: "token") { id } }'],
   ['regenerateInviteLink', 'mutation { regenerateInviteLink(groupId: "group") { id } }'],

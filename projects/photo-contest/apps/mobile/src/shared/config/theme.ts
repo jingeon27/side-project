@@ -6,7 +6,7 @@ export const COLORS = {
   ink: '#101010',
   muted: '#6b6b6b',
   surface: '#ffffff',
-} as const;
+} as const satisfies Record<string, string>;
 
 export const DARK_COLORS = {
   background: '#141312',
@@ -15,6 +15,6 @@ export const DARK_COLORS = {
   ink: '#f4f1eb',
   muted: '#b4ada3',
   surface: '#1c1b1a',
-} as const;
+} as const satisfies TNativeColors;
 
 export type TNativeColors = { [Key in keyof typeof COLORS]: string };

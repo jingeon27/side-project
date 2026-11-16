@@ -4,7 +4,7 @@ export const TOAST_TYPE = {
   Success: 'success',
   Error: 'error',
   Info: 'info',
-} as const;
+} as const satisfies Record<string, string>;
 export type TToastType = (typeof TOAST_TYPE)[keyof typeof TOAST_TYPE];
 
 interface IToastOptions {

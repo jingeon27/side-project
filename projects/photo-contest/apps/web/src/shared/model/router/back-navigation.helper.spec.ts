@@ -34,4 +34,10 @@ describe('resolveBackAction', () => {
       type: 'exit',
     });
   });
+
+  it('공개 소개로 바로 들어왔다면 메인 인증 화면을 거치지 않고 앱에 뒤로 가기를 넘겨야 한다', () => {
+    expect(resolveBackAction({ hasOverlay: false, depth: 0, pathname: '/about', parentHref: null })).toEqual({
+      type: 'exit',
+    });
+  });
 });

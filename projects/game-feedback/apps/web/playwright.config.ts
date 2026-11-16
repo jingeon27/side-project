@@ -29,6 +29,7 @@ export default defineConfig({
   testDir: './e2e',
   testIgnore: ['**/test-token-chat.spec.ts', '**/observability.spec.ts', '**/sentry-web-vitals.spec.ts'],
   fullyParallel: false,
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   timeout: 45_000,
   use: { baseURL: 'http://127.0.0.1:3301', trace: 'retain-on-failure' },

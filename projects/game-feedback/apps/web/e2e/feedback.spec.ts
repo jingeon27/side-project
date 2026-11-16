@@ -1,5 +1,3 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
-
 import { getSession, listCategories, listPosts } from '@game-feedback/sdk';
 
 import {
@@ -7,6 +5,7 @@ import {
   ListCategoriesResponse,
   ListPostsResponse,
 } from '../../../packages/sdk/src/generated/validation';
+import { expect, test, type APIRequestContext } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 

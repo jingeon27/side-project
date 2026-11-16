@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
 import { isProduction } from '../../config/env';
@@ -17,7 +18,7 @@ export class FixedWindowCounter {
 
   constructor(private readonly windowMs: number) {}
 
-  hit(key: string, now = Date.now()) {
+  hit(key: string, now = dayjs().valueOf()) {
     if (now >= this.sweepAt) {
       for (const [address, window] of this.windows) if (window.resetAt <= now) this.windows.delete(address);
       this.sweepAt = now + this.windowMs;
@@ -52,7 +53,7 @@ export function graphqlRateLimit(): RequestHandler {
       next();
       return;
     }
-    res.setHeader('Retry-After', String(Math.max(Math.ceil((resetAt - Date.now()) / 1000), 1)));
+    res.setHeader('Retry-After', String(Math.max(Math.ceil((resetAt - dayjs().valueOf()) / 1000), 1)));
     res.status(429).json({
       errors: [{ message: GRAPHQL_RATE_LIMITED, extensions: { code: ERROR_CODE.RATE_LIMITED } }],
     });

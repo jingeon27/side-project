@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export interface IGraphqlResponse<TData> {
   data?: TData;
   errors?: Array<{ message: string; extensions?: { code?: string } }>;
@@ -45,6 +47,27 @@ interface IGraphqlRequest {
   variables?: Record<string, unknown>;
   cookie?: string;
   origin: string;
+}
+
+/** 생성이 종료된 구대회는 테스트 전용 API에서만 준비한다. 운영의 생성 mutation을 우회하지 않는다. */
+export async function createLegacyTestContest(
+  apiUrl: string,
+  { groupId, title, origin, cookie }: { groupId: string; title: string; origin: string; cookie?: string },
+): Promise<{ id: string }> {
+  const now = dayjs().valueOf();
+  const response = await fetch(`${apiUrl}/testing/legacy-contests`, {
+    method: 'POST',
+    headers: { Origin: origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+    body: JSON.stringify({
+      groupId,
+      title,
+      startsAt: dayjs(now).toDate(),
+      submissionEndsAt: dayjs(now + 3_600_000).toDate(),
+      endsAt: dayjs(now + 7_200_000).toDate(),
+    }),
+  });
+  if (!response.ok) throw new Error(`구대회 fixture 생성 실패 (${response.status})`);
+  return response.json() as Promise<{ id: string }>;
 }
 
 export async function graphqlRequest<TData>(

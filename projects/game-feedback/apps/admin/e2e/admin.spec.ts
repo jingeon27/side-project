@@ -108,6 +108,38 @@ test('a failed report page preserves navigation and user deep links restore the 
   await expect(page.getByRole('heading', { name: '문의함', exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/admin-support.png', fullPage: true });
 });
+test('a support deep link opens its thread directly and the status filter keeps the inbox scoped', async ({
+  page,
+  browser,
+}) => {
+  const viewer = await browser.newContext({ baseURL: origin });
+  try {
+    const nickname = `딥링크_${randomUUID().slice(0, 8)}`;
+    await viewer.request.post('/api/auth/demo', { headers, data: { nickname } });
+    const created = await viewer.request.post('/api/support/conversations', {
+      headers,
+      data: { topic: 'GENERAL' },
+    });
+    expect(created.ok()).toBe(true);
+    await page.goto('/');
+    await login(page);
+    const listed = page.locator('[data-thread-id]').filter({ hasText: nickname });
+    const supportId = await listed.getAttribute('data-thread-id');
+    if (!supportId) throw new Error('Expected the new inquiry in the inbox');
+    // 목록 페이지에 의존하지 않고 주소의 문의 하나를 직접 받아 연다.
+    await page.goto(`/#support?thread=${supportId}`);
+    await page.reload();
+    const conversation = page.getByRole('region', { name: '문의 대화', exact: true });
+    await expect(conversation.getByRole('heading', { name: `${nickname} 문의`, exact: true })).toBeVisible();
+    const statuses = page.getByRole('navigation', { name: '문의 상태' });
+    await statuses.getByRole('link', { name: '처리 완료', exact: true }).click();
+    await expect(page.locator('[data-thread-id]').filter({ hasText: nickname })).toHaveCount(0);
+    await statuses.getByRole('link', { name: '상담 중', exact: true }).click();
+    await expect(page.locator('[data-thread-id]').filter({ hasText: nickname })).toHaveCount(1);
+  } finally {
+    await viewer.close();
+  }
+});
 test('a local administrator verifies users and applies and reverses a reasoned ban', async ({ page }) => {
   await page.goto('/');
   await login(page);
@@ -117,7 +149,7 @@ test('a local administrator verifies users and applies and reverses a reasoned b
   await page.getByRole('button', { name: '조회', exact: true }).click();
   const user = page.getByRole('article', { name: '사용자 관리' });
   await expect(user).toContainText('새벽의호그');
-  await user.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+  await user.getByRole('button', { name: '인증 승인', exact: true }).click();
   await expect(user).toContainText('인증된 사용자');
   await user.getByRole('button', { name: '인증 해제', exact: true }).click();
   await expect(user).toContainText('미인증 사용자');
@@ -164,16 +196,22 @@ test('the separate admin answers support chats, resolves inquiries and reviews r
     await expect(conversation.getByRole('log')).toContainText(question);
     const verification = conversation.getByRole('group', { name: '프로필 인증', exact: true });
     await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
+    // 보이는 글자가 곧 접근 이름이고 상태는 status만 알린다.
+    for (const name of ['인증 승인', '인증 해제']) {
+      const button = verification.getByRole('button', { name, exact: true });
+      await expect(button).toHaveText(name);
+      await expect(button).not.toHaveAttribute('aria-pressed');
+    }
     const attempts: string[] = [];
     await page.route('**/api/admin/users/sample-user-0/verification', async (route) => {
       attempts.push(route.request().method());
       if (attempts.length === 1) return route.abort('failed');
       return route.continue();
     });
-    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await verification.getByRole('button', { name: '인증 승인', exact: true }).click();
     await expect(verification.getByRole('alert')).toBeVisible();
     await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
-    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await verification.getByRole('button', { name: '인증 승인', exact: true }).click();
     await expect(verification.getByRole('status')).toHaveText('인증된 사용자');
     await expect(thread.getByText('프로필 인증', { exact: true })).toBeVisible();
     expect((await (await viewer.request.get('/api/session')).json()).user.isVerified).toBe(true);

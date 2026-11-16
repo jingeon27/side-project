@@ -1,24 +1,16 @@
 import type { MetadataRoute } from 'next';
+import { connection } from 'next/server';
 
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { siteUrl } from '@/shared/lib/seo.helper';
 
-export const dynamic = 'force-dynamic';
-
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  await connection();
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: [
-        '/me',
-        '/invite/',
-        '/contests/',
-        '/app-auth/',
-        '/backend/graphql',
-        '/backend/auth/',
-        '/backend/testing/',
-      ],
+      disallow: ['/me', '/invite/', '/contests/', '/backend/graphql', '/backend/auth/', '/backend/testing/'],
     },
     sitemap: siteUrl('/sitemap.xml', getWebOrigin()),
   };

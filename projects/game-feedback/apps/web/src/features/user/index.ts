@@ -1,10 +1,15 @@
 export { UserBadges } from './ui/UserBadges';
 export { blockListOptions } from './model/user.options';
 
-export type { TAuthor, TUser } from './types/user.type';
-
 export { AuthorLink } from './ui/AuthorLink';
 export { profileOptions } from './model/user.options';
 export { unblockUserMutationOptions } from './model/user.mutation-options';
 
-export { ProfileEditSheet } from './ui/ProfileEditSheet';
+export { nicknameLength } from './model/nickname-length';
+export { RESERVED_NICKNAME_MESSAGE } from './model/reserved-nickname';
+export {
+  updateProfileMutationOptions,
+  deleteAvatarMutationOptions,
+  uploadAvatarMutationOptions,
+} from './model/profile.mutation-options';
+export { avatarAccept, isAvatarFile } from './lib/avatar-file';

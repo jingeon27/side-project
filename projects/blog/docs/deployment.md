@@ -1,6 +1,10 @@
 # 배포와 외부 서비스 설정
 
-이 문서는 운영자가 수행할 외부 설정을 정리합니다. 이 저장소 작업에서는 Vercel 프로젝트 생성, 도메인 연결, GA4 속성 생성, Search Console 인증, Sentry 이벤트 수신을 수행하지 않았습니다.
+현재 블로그는 **main 기반 Vercel 배포와 blog.bambyul.com 연결을 완료**했습니다. 이 문서는 실제 운영 설정과 재배포 절차를 먼저 설명하고, 분석·오류 수집의 별도 설정 및 미검증 범위를 구분합니다.
+
+- [운영 블로그](https://blog.bambyul.com/ko) · [Vercel 프로젝트](https://vercel.com/jingeon27s-projects/side-project-vttu)
+- 개발·검증: [프로젝트 README](../README.md)
+- EC2의 Game Mate, 피식과는 별도 배포입니다. 이 블로그에 EC2·PostgreSQL·S3 환경변수는 필요하지 않습니다.
 
 ## 환경변수
 
@@ -9,7 +13,7 @@
 | 변수                                                   | 용도                                                                                         |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | `SITE_URL`                                             | Canonical, sitemap, RSS, OG, JSON-LD의 공개 원점. 운영에서는 실제 HTTPS 도메인을 반드시 설정 |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID`                        | 선택 사항. `G-...` GA4 웹 데이터 스트림 ID                                                   |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID`                        | `G-...` 웹 스트림 ID. Production 기본값이 있으므로 수집을 끄려면 명시적 빈 값                |
 | `GOOGLE_SITE_VERIFICATION`                             | 선택 사항. Search Console URL-prefix 방식의 HTML verification 값                             |
 | `NEXT_PUBLIC_SENTRY_DSN`                               | 선택 사항. 브라우저 오류 전송                                                                |
 | `SENTRY_DSN`                                           | 선택 사항. 서버·edge 오류 전송. 없으면 공개 DSN 사용                                         |
@@ -20,40 +24,80 @@
 
 `SITE_URL` 미설정 시 개발은 `http://localhost:3100`, production은 `https://blog.bambyul.com`을 사용합니다. 운영 설정 예시는 `apps/web/.env.production.example`입니다. URL의 경로·쿼리·fragment는 제거하여 원점 하나를 사용합니다. `NEXT_PUBLIC_*`는 빌드 시 브라우저 번들에 들어가므로 값을 변경하면 재빌드합니다.
 
+Clarity 연동은 중단했습니다. 기존 `NEXT_PUBLIC_CLARITY_PROJECT_ID`가 배포 환경에 남아 있어도 앱은 읽거나 로드하지 않으며, 이 변수는 제거해도 됩니다. 이 변경을 배포한 뒤 새로 연 페이지부터 적용됩니다.
+
 ## Vercel
 
-1. GitHub `jingeon27/side-project`를 Vercel에 연결합니다.
-2. Framework를 Next.js, Root Directory를 `projects/blog/apps/web`, Node.js를 24로 설정합니다. 모노레포에서 루트 외부 파일을 포함하도록 설정합니다.
-3. 설치 명령은 저장소 루트 기준 `yarn install --immutable`입니다. 앱 디렉터리에서 명령을 실행하는 설정이라면 `cd ../../../.. && yarn install --immutable`을 사용합니다.
-4. 빌드 명령은 `yarn workspace @blog/web build`, 출력 디렉터리는 기본 `.next`를 사용합니다.
-5. Production·Preview 환경변수를 분리합니다. Preview에는 운영 GA ID를 넣지 않아 통계 혼합을 피할 수 있습니다. 각 공개 배포의 canonical 정책에 맞는 `SITE_URL`을 지정합니다.
-6. Production branch를 `main`으로 정하고 `blog.bambyul.com` 도메인·HTTPS를 연결한 뒤 실제 페이지와 canonical을 확인합니다.
+### 현재 운영 설정
 
-GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, production build, Chromium 데스크톱·모바일 E2E를 수행합니다. Vercel은 Git 연결을 통해 별도로 빌드·배포하므로 Actions에 중복 배포 job은 두지 않았습니다. GitHub Actions 실패가 Vercel Preview를 자동 차단한다는 가정은 하지 않습니다. `main` 보호 규칙에 이 검증을 필수로 추가하고 검증을 통과한 PR만 병합하도록 설정하세요. Vercel 자체 빌드 실패는 해당 배포를 차단합니다.
+| 항목                           | 값                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 프로젝트                       | [jingeon27s-projects / side-project-vttu](https://vercel.com/jingeon27s-projects/side-project-vttu) |
+| Git 저장소 / Production Branch | `jingeon27/side-project` / **main**                                                                 |
+| Root Directory                 | `projects/blog/apps/web`                                                                            |
+| Framework / Node.js            | Next.js / **24.x**                                                                                  |
+| 루트 외부 파일 포함            | 켜기 (모노레포 루트와 공유 파일 필요)                                                               |
+| Output Directory               | 기본 `.next`                                                                                        |
+| 공개 도메인                    | [blog.bambyul.com](https://blog.bambyul.com/ko)                                                     |
+| 기본 도메인                    | [side-project-vttu.vercel.app](https://side-project-vttu.vercel.app)                                |
+
+이전 계정의 `jingeons-projects/side-project`가 아니라 위 프로젝트를 사용합니다. Node의 패치 버전은 Vercel이 관리하므로 24.x 범위에서 달라질 수 있습니다.
+
+**Install Command** — 앱 디렉터리에서 시작해 고정한 Yarn CLI를 설치한 뒤 저장소 루트에서 의존성을 설치합니다. 플랫폼 기본 Yarn 1에 맡기지 않습니다.
+
+```sh
+npm install --global @yarnpkg/cli-dist@4.17.0 --force && export PATH="$(npm prefix --global)/bin:$PATH" && cd ../../../.. && yarn install --immutable
+```
+
+**Build Command**
+
+```sh
+export PATH="$(npm prefix --global)/bin:$PATH" && node --version && yarn --version && yarn workspace @blog/web build
+```
+
+Production·Preview의 `SITE_URL`을 각각 설정하고, Preview의 GA 수집을 끄려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`를 **명시적으로 빈 값**으로 둡니다. 변수를 단순히 생략하면 production 빌드 기본 ID가 적용될 수 있습니다. Vercel에서 환경변수를 바꾼 뒤에는 다시 빌드합니다.
+
+### 변경을 배포하는 순서
+
+1. 기능 브랜치에서 콘텐츠·앱 검사를 실행하고 PR을 develop에 병합합니다.
+2. 검증한 develop을 main에 **merge commit**으로 반영합니다.
+3. main의 변경을 Vercel Git 연동이 자동 빌드·배포합니다. `apps/web/vercel.ts`의 `git.deploymentEnabled`에서 모든 브랜치를 차단하고 main만 허용합니다. develop과 기능 브랜치의 PR 미리보기도 자동 배포하지 않습니다.
+4. Production의 소스 commit과 Ready 상태를 확인하고 실제 도메인의 두 언어를 검사합니다.
+
+[Vercel의 브랜치별 배포 설정](https://vercel.com/docs/project-configuration/git-configuration)을 앱 Root Directory의 `vercel.ts`에서 관리합니다. develop과 PR은 Actions 검증만 실행하며, main에서만 Production을 배포합니다. 이 설정은 Git 커밋에 의한 자동 배포를 제어하며 수동 CLI 배포·기존 배포를 취소하지 않습니다. 새 설정이 develop에 반영된 뒤 다음 develop push에서 배포 차단을 확인합니다.
+
+GitHub Actions의 Blog workflow는 경로 필터 없이 develop·main 대상 PR과 develop·main push마다 실행합니다. selection job이 블로그 프로젝트, 블로그 앱이 쓰는 공유 패키지, 루트 설치·포맷 설정, `blog.yml`의 변경을 찾으면 `Blog / verify`가 포맷과 콘텐츠 검증을 실행합니다. 타입, lint, 전체 Vitest, 개발 서버 E2E, production build, Chromium 데스크톱·모바일 E2E는 코드가 바뀐 실행에서만 수행하고, 콘텐츠·SEO·이미지·문서와 생성 파일만 바뀐 실행(`apps/web/scripts/ci-scope.ts`)은 workflow의 content-only 단계(글 계약 테스트 `vitest run scripts` 포함)만 실행합니다. Vercel은 Git 연결을 통해 별도로 빌드·배포하므로 Actions에 중복 배포 job은 두지 않았습니다. 자동 Preview 배포는 끄지만 수동 CLI 배포는 Actions 결과와 별개이고, main push의 Production 배포도 Actions 결과를 기다리지 않습니다. 결과는 항상 실행되는 집계 job `Blog verification`이 판정하며, 이 job을 필수 상태 검사로 지정하는 방법은 [개발 가이드의 검증](../../../docs/development.md#검증) 절을 따릅니다. 실제 GitHub 설정과, main 배포가 이 결과를 기다리게 할지(Vercel Deployment Checks)는 저장소 소유자가 정합니다. Vercel 자체 빌드 실패는 해당 배포를 차단합니다.
 
 모든 응답에는 `apps/web/security-headers.ts`의 보안 헤더(`X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`)를 붙입니다. 인라인 테마 스크립트·JSON-LD·RSC payload에 hash나 nonce를 적용하기 전까지 `script-src`는 제한하지 않습니다.
 
+## 운영 확인 기록 · 2026-10-30
+
+- [첫 운영 배포](https://vercel.com/jingeon27s-projects/side-project-vttu/2ku24xMC2tQwDGjK5tEtEWsNkaUD): Ready, main `1d6535fab5968093016ae151eb87b786f74ab3a8`.
+- 빌드 로그에서 Node 24.22.2와 Yarn 4.17.0을 확인했다. 이는 당시 실행 버전이며 고정 패치 요구 사항이 아니다.
+- 실제 도메인의 한영 홈·수정한 글·sitemap·robots·RSS 응답과 HTTPS를 확인했다. Canonical도 `https://blog.bambyul.com`을 사용한다.
+- GA4·Clarity·Sentry의 운영 이벤트 수신과 Search Console 접수는 이 기록에서 완료로 간주하지 않는다. 현재는 Clarity 연동을 중단했으며, 나머지는 아래 도구별 절차로 별도 확인한다.
+
 ## GA4
 
-1. GA4 속성과 웹 데이터 스트림을 만들고 측정 ID를 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정합니다.
+1. 운영 빌드는 기본 측정 ID `G-7ZET0K4PSC`를 사용합니다. 다른 스트림을 쓰려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정하고 재빌드합니다. 빈 문자열을 명시하면 GA4를 끕니다. 개발·테스트에서는 ID를 지정하지 않으면 수집하지 않습니다. Vercel Preview는 production 빌드이므로 운영 통계에 포함하지 않으려면 Preview 환경에 빈 문자열을 지정합니다.
 2. **향상된 측정의 Page views → 고급 설정 → 브라우저 방문 기록 이벤트에 기반한 페이지 변경을 끕니다.** 앱은 `send_page_view: false`로 초기화하고 경로 변경마다 수동 `page_view`를 한 번 전송합니다. GA4의 이 설정이 켜져 있으면 중복 페이지뷰가 발생할 수 있습니다. [공식 페이지뷰 문서](https://developers.google.com/analytics/devguides/collection/ga4/views?hl=ko)
 3. 향상된 측정의 사이트 검색 수집도 끕니다. 앱 검색은 로컬 제목·태그 필터이며 `search_performed`에는 `has_query`만 보냅니다. 외부 링크 측정은 링크 URL에 민감한 정보가 포함되지 않는지 확인한 뒤 활성화합니다.
-4. 동의 배너는 두지 않습니다. 모든 방문자에게서 GA4 방문 통계와 Clarity를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈추며 Clarity도 멈춥니다.
+4. 동의 배너는 두지 않습니다. GA4가 설정된 빌드에서는 방문 통계를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈춥니다. 선택을 저장하지 못해도 현재 탭에서는 즉시 멈추며, 저장 실패 시 페이지를 다시 열면 선택이 유지되지 않을 수 있습니다.
 5. DebugView·실시간 보고서에서 첫 진입과 클라이언트 경로 전환마다 한 번만 `page_view`가 발생하는지 확인합니다.
 
 페이지 URL과 referrer는 query·fragment를 제거해 전송합니다. 광고 관련 저장·개인화·Google signals는 비활성화합니다. 커스텀 이벤트는 `language_changed`, `article_shared`, `category_selected`, `tag_selected`, `search_performed`이며 이벤트별 허용 속성만 전송합니다. 브라우저 차단이나 SDK 실패가 글 읽기 기능을 막지 않도록 처리합니다.
 
-수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 푸터에서 연결한 개인정보 처리 안내에 있습니다. 보관 기간은 GA4·Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. GA4는 유럽(EEA·영국·스위스) 방문자에게도 사전 동의 없이 쿠키를 쓰므로 해당 지역 규정상 위반 소지가 남습니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
+수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 푸터에서 연결한 개인정보 처리 안내에 있습니다. 보관 기간은 GA4와 과거 사용한 Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. 연동 제거가 과거 데이터나 기존 브라우저 쿠키의 삭제를 뜻하지는 않습니다. GA4는 유럽(EEA·영국·스위스) 방문자에게도 사전 동의 없이 쿠키를 쓰므로 해당 지역 규정상 위반 소지가 남습니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
 
 ## Search Console
 
-`/sitemap.xml`과 `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. Next.js의 `app/sitemap.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
+사이트맵은 언어별로 `/ko/sitemap.xml`과 `/en/sitemap.xml`에서, `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. `/sitemap.xml`은 두 파일을 가리키는 사이트맵 인덱스입니다. 언어별 파일은 자기 경로 아래의 URL과 `lastmod`만 담고, 언어 대체(hreflang)는 각 페이지 `<head>`가 제공합니다. Next.js `sitemap.ts`는 hreflang 링크를 `lastmod`보다 먼저 써서 사이트맵 스키마 순서(`loc` → `lastmod` → 확장 태그)를 어기기 때문입니다. Next.js의 `app/ko/sitemap.ts`, `app/en/sitemap.ts`, `app/sitemap.xml/route.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
 
-- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 태그와 실제 본문이 있는 글을 포함합니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 현재 글은 한국어 28편·영어 28편이며, 글별 `lastmod`와 실제 번역의 `hreflang`을 제공합니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
-- robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 `/sitemap.xml`을 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
+- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 글이 2개 이상인 태그와 실제 본문이 있는 글을 포함합니다. 글이 1개뿐인 태그 페이지는 글의 링크로 계속 열리지만 그 글을 반복할 뿐이라 사이트맵에서 빼고 `noindex, follow`로 둡니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 글 수는 생성된 콘텐츠 인덱스를 기준으로 하며, 사이트맵은 글별 `lastmod`를, 각 글의 `<head>`는 실제 번역의 `hreflang`을 제공합니다. 홈·목록·카테고리·태그의 `lastmod`는 그 페이지에 보이는 글 중 가장 최근 수정일이고, 수정일 기록이 없는 소개 페이지에는 넣지 않습니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
+- robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 언어별 사이트맵 두 개를 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
 
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.
-2. `https://blog.bambyul.com/sitemap.xml`을 제출합니다.
+2. `https://blog.bambyul.com/ko/sitemap.xml`과 `https://blog.bambyul.com/en/sitemap.xml`을 각각 제출합니다.
 3. `/robots.txt`, 한국어·영어 홈과 대표 글 URL을 URL 검사로 확인합니다.
 4. Canonical이 자기 언어 URL인지, `hreflang`이 실제 존재하는 번역만 가리키는지 확인합니다. 두 언어가 모두 있는 페이지는 `x-default`로 한국어 버전을 가리키며 글 페이지에도 RSS `alternate`가 남아 있어야 합니다. 영어 본문이 없는 한국어 글의 영어 상세 URL은 제공하지 않습니다.
 5. 검색 실적과 Core Web Vitals는 실제 운영 데이터가 쌓인 뒤 확인합니다. LCP 2.5초·INP 200ms·CLS 0.1은 목표이며 로컬 빌드 성공이 이를 보장하지 않습니다.
@@ -74,22 +118,22 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - `/ko`, `/en`, 글·카테고리·태그·About, 없는 주소의 404
 - Canonical, `hreflang`, OG 이미지, JSON-LD, sitemap, 두 언어의 RSS
 - 모바일 가로 넘침, 테마 유지, 검색, 목차, 공유와 코드 복사
-- 첫 방문부터 단일 페이지뷰와 Clarity 로드, 개인정보 처리 안내의 ‘수집 끄기’ 뒤 전송 중단, ‘다시 켜기’ 뒤 재개
+- 첫 방문부터 단일 GA4 페이지뷰, 개인정보 처리 안내의 ‘수집 끄기’ 뒤 전송 중단, ‘다시 켜기’ 뒤 재개
+- 기존 Clarity ID가 남아 있어도 첫 방문·검색·SPA 이동·수집 다시 켜기에서 Clarity 스크립트와 요청이 없는지 확인
 - Sentry 테스트 이벤트와 source map, Search Console 소유권·sitemap 접수
 
 확인한 날짜·배포 URL·commit·실제 결과를 배포 기록에 남깁니다.
 
 ## 밤별 블로그 도메인
 
-Vercel 프로젝트에 `blog.bambyul.com`을 추가하고 콘솔에서 안내하는 DNS 레코드를 등록한다. 운영 `SITE_URL=https://blog.bambyul.com`으로 canonical·JSON-LD·OG·RSS·사이트맵을 통일한다. 작성자 이름은 김진건, 제품명은 밤별 블로그(Bambyul Blog)다. 별도 API 서버가 없어 `api.blog.bambyul.com`은 현재 연결하지 않는다.
+현재 프로젝트의 도메인은 Valid Configuration을 확인했다. Cloudflare의 `blog` CNAME은 `ddff7eb52ed2e841.vercel-dns-017.com`을 가리키며 DNS only로 둔다. 이후 프로젝트를 이전할 때는 새 Vercel 화면에서 제공하는 값을 기준으로 확인하고 이 블로그 레코드만 변경한다. 소유권 이전용 TXT 값은 콘솔에서 관리하며 저장소에 복사하지 않는다. 운영 `SITE_URL=https://blog.bambyul.com`으로 canonical·JSON-LD·OG·RSS·사이트맵을 통일한다. 작성자 이름은 김진건, 제품명은 밤별 블로그(Bambyul Blog)다. 별도 API 서버가 없어 `api.blog.bambyul.com`은 현재 연결하지 않는다.
 
-## 클릭·스크롤 히트맵과 글 이탈 분석
+## 히트맵 중단과 글 이탈 분석
 
-행동 분포는 Microsoft Clarity, 참여·이탈 지표는 기존 GA4를 사용한다. Clarity의 Settings → Setup에서 받은 공개 project ID를 Vercel 빌드 환경 `NEXT_PUBLIC_CLARITY_PROJECT_ID`에 넣고 다시 빌드한다. ID를 비우거나 방문자가 개인정보 처리 안내에서 수집을 끄면 스크립트를 로드하지 않는다. 처음에는 동의 신호를 보내지 않아 EEA·영국·스위스 방문자에게는 Clarity의 기본 동의 모드가 쿠키를 만들지 않으며, 끄기를 되돌릴 때만 동의 신호와 함께 재개한다. 동의 신호를 보낼 때 광고 저장은 항상 denied로 보낸다. 수집을 끄면 consentv2 denied와 stop으로 수집을 종료하고 다른 탭의 동의 변경도 반영한다. 검색 입력은 명시적으로 마스킹하고 검색어·사용자 ID·개인 속성을 커스텀 이벤트로 보내지 않는다. SDK 설치 성공을 실제 대시보드 수신으로 취급하지 않는다.
+Clarity의 자동 로더와 커스텀 이벤트 연결을 제거했습니다. 검색 입력을 가려도 SDK가 페이지 URL과 referrer를 따로 수집하므로, URL의 `q`에 있는 검색어를 보내지 않는다는 정책을 보장할 수 없었습니다. 스크립트 로딩 중 검색 주소가 바뀌면 시작 직후 수집을 중단하는 방식도 최초 수집을 막는 보장이 되지 않습니다. 현재 히트맵과 세션 재생은 수집하지 않으며, URL·referrer·클릭 대상 주소와 비동기 시작 경로까지 검색어 비수집을 검증한 뒤 재도입을 검토합니다. [Clarity URL 수집 구현](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/data/metadata.ts), [Clarity FAQ](https://learn.microsoft.com/en-us/clarity/faq)
 
-1. Clarity Heatmaps에서 글 URL별 클릭·스크롤·attention 분포를 모바일/데스크톱으로 나누어 본다. Recordings의 방문·진입·이탈 URL 필터로 중단한 지점을 확인한다.
-2. GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 추가한다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않는다.
-3. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교한다. 적은 표본과 측정 범위(수집을 끄지 않은 방문자, Clarity는 동의 신호가 없는 EEA·영국·스위스 방문자 제외)를 함께 기록한다.
-4. Preview에서 첫 방문의 GA·Clarity 한 번 로드, SPA 이동, ‘수집 끄기’ 뒤 중단과 ‘다시 켜기’ 뒤 재개를 검사하고 운영 대시보드에서 실제 세션을 확인한다. 계정·실제 project ID·운영 데이터가 없으므로 외부 수신과 실제 글의 이탈 원인은 아직 검증하지 않았다.
+1. 기존 GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 확인합니다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않습니다.
+2. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교합니다. 적은 표본과 수집을 끄지 않은 방문자만 측정한다는 범위를 함께 기록합니다.
+3. 격리된 검토 빌드에서 첫 방문의 GA4 한 번 로드, SPA 이동, ‘수집 끄기’ 뒤 중단과 ‘다시 켜기’ 뒤 재개를 검사하고 운영 대시보드에서 실제 세션을 확인합니다. 실제 운영 대시보드의 세션 수신과 글의 이탈 원인은 아직 검증하지 않았습니다.
 
-공식 문서: [히트맵](https://learn.microsoft.com/en-us/clarity/heatmaps/heatmaps-overview), [설치](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-setup), [Consent V2](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-consent-api-v2), [수집 모듈 stop](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/clarity.ts), [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).
+공식 문서: [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).

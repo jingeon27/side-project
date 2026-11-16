@@ -28,6 +28,7 @@ const apiEnv = {
 export default defineConfig({
   testDir: './e2e-production',
   fullyParallel: false,
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   timeout: 45_000,
   use: { baseURL: 'http://127.0.0.1:3353', trace: 'retain-on-failure' },

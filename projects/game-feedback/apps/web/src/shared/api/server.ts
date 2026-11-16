@@ -52,8 +52,15 @@ export function forwardedClientHeaders(client: string, now = epochMilliseconds()
 export function publicServerOptions() {
   return { ...apiOptions(), headers: forwardedClientHeaders(INTERNAL_CLIENT) };
 }
+/**
+ * Proxy access checks run once per visitor request (unlike the shared `'use cache'` fills), so they spend the
+ * visitor's own API budget. Without a forwarded address (local development) they keep the internal budget.
+ */
+export function visitorLookupOptions(visitor: string | null) {
+  return { ...apiOptions(), headers: forwardedClientHeaders(visitor ?? INTERNAL_CLIENT) };
+}
 // Caddy replaces any X-Forwarded-For sent by the client, so its first value is the visitor address.
-function visitorAddress(forwardedFor: string | null) {
+export function visitorAddress(forwardedFor: string | null) {
   const address = forwardedFor?.split(',')[0]?.trim() ?? '';
   return isIP(address) ? address : null;
 }

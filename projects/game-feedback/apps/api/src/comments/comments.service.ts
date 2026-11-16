@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { uniq } from 'es-toolkit';
 
 import { postCacheTag } from '@game-feedback/contracts';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
@@ -12,10 +14,10 @@ import { type TListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { writePostNotifications } from '../push/post-notification.writer';
-import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { type TCommentBodyDto, type TCreateCommentBodyDto } from './comment-input.dto';
-import { commentThreadPage } from './comment-page';
+import { commentReplyPage, commentThreadPage, visibleCommentRoot } from './comment-page';
 import { activeCommentWhere } from './comment-visibility';
 import { responseComment } from './comment.presenter';
 
@@ -31,6 +33,7 @@ export class CommentsService {
     const u = requireUser(req);
     const c = await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${postId} FOR UPDATE`;
         const excluded = await this.visibility.excluded(req, tx);
         const post = await tx.post.findFirst({
@@ -38,20 +41,32 @@ export class CommentsService {
           select: { authorId: true },
         });
         if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
-        const parentId = input.parentId ?? null;
-        if (parentId) await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${parentId} FOR UPDATE`;
-        const parent = parentId
+        const targetId = input.parentId ?? null;
+        if (targetId) await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${targetId} FOR UPDATE`;
+        const parent = targetId
           ? await tx.comment.findFirst({
-              where: { id: parentId, postId, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-              select: { authorId: true, parentId: true },
+              where: { id: targetId, postId, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+              select: { id: true, authorId: true, parentId: true },
             })
           : null;
-        if (parentId && !parent)
+        if (targetId && !parent)
           throw new ApiError(404, 'COMMENT_NOT_FOUND', '답글을 남길 댓글을 찾을 수 없습니다.');
-        if (parent?.parentId)
-          throw new ApiError(400, 'INVALID_COMMENT_PARENT', '원댓글에 답글을 남겨주세요.');
+        const parentId = parent?.parentId ?? parent?.id ?? null;
+        if (parent?.parentId) {
+          const root = await tx.comment.findFirst({
+            where: {
+              id: parent.parentId,
+              postId,
+              parentId: null,
+              ...ACTIVE_CONTENT,
+              authorId: { notIn: excluded },
+            },
+            select: { id: true },
+          });
+          if (!root) throw new ApiError(404, 'COMMENT_NOT_FOUND', '답글을 남길 댓글을 찾을 수 없습니다.');
+        }
         const row = await tx.comment.create({
-          data: { postId, parentId, authorId: u.id, body: input.body },
+          data: { postId, parentId, replyToId: targetId, authorId: u.id, body: input.body },
           include: { author: { select: authorSelect } },
         });
         const recipients = uniq([post.authorId, ...(parent ? [parent.authorId] : [])]).filter(
@@ -83,6 +98,16 @@ export class CommentsService {
       limit: query.limit,
     });
   }
+  async replies(req: SessionRequest, id: string, query: TListQueryDto) {
+    const excluded = await this.visibility.excluded(req);
+    const root = await this.db.comment.findFirst({
+      where: { id, ...visibleCommentRoot(excluded) },
+      select: { postId: true },
+    });
+    if (!root) throw new ApiError(404, 'COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    await this.posts.visiblePost(req, root.postId);
+    return commentReplyPage(this.db, root.postId, id, excluded, query);
+  }
   async visibleComment(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
     const c = await this.db.comment.findFirst({
@@ -100,6 +125,7 @@ export class CommentsService {
     return responseComment(
       await this.cache.change(
         async (tx) => {
+          await lockActiveUser({ client: tx, userId: u.id });
           // createComment와 같은 글 → 댓글 순서로 잠근 뒤 숨김·삭제·차단을 다시 확인한다.
           await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${c.postId} FOR UPDATE`;
           await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`;
@@ -127,6 +153,7 @@ export class CommentsService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await lockActiveUser({ client: tx, userId: u.id });
         await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`;
         // 작성자 삭제는 소유권만 본다. 숨겨진 댓글이나 숨겨진 원댓글 아래 답글도 지울 수 있다.
         const own = await tx.comment.findFirst({
@@ -134,7 +161,7 @@ export class CommentsService {
           select: { postId: true },
         });
         if (!own) throw await this.deletionDenied(req, id, tx);
-        await tx.comment.update({ where: { id }, data: { deletedAt: new Date(), body: '' } });
+        await tx.comment.update({ where: { id }, data: { deletedAt: dayjs().toDate(), body: '' } });
         await tx.notification.deleteMany({ where: { commentId: id } });
         return own;
       },

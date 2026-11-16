@@ -4,8 +4,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createContest, createGroup } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
-import { ContestCompletionService } from '../analytics/contest-completion.service';
-import { SessionService } from '../auth/session.service';
+import { ContestCompletionService } from '../analytics/completion/contest-completion.service';
+import { SessionService } from '../auth/session/session.service';
 import { GroupService } from '../group/group.service';
 import { MaintenanceService } from '../maintenance/maintenance.service';
 import { MediaStorage } from '../storage/media-storage.service';
@@ -104,15 +104,6 @@ describe('Sentry 오류 보고', () => {
           api.http().post('/uploads/bad-token').set('Origin', TEST_WEB_ORIGIN).set('Cookie', member.cookie),
       ],
       [
-        404,
-        () =>
-          api
-            .http()
-            .post('/auth/app/exchange')
-            .set('Origin', TEST_WEB_ORIGIN)
-            .send({ code: 'x', verifier: 'y' }),
-      ],
-      [
         400,
         () =>
           api
@@ -124,8 +115,6 @@ describe('Sentry 오류 보고', () => {
       ],
     ] as const;
     for (const [status, send] of restFailures) expect((await send()).status).toBe(status);
-    // state가 맞지 않는 OAuth 콜백도 예상한 실패다.
-
     expect(captureException).not.toHaveBeenCalled();
   });
 

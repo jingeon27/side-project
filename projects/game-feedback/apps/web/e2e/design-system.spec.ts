@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
@@ -59,13 +59,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     await dialog.getByRole('button', { name: '취소', exact: true }).click();
     await expect(dialog).not.toBeVisible();
     await page.goto('/ko');
-    const unanswered = page.getByRole('button', { name: '답변 대기', exact: true });
-    await unanswered.focus();
-    await page.keyboard.press('Enter');
-    await expect(unanswered).toHaveAttribute('aria-pressed', 'true');
-    await expect(page).toHaveURL(/tab=unanswered/);
-    await page.keyboard.press('Enter');
-    await expect(unanswered).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByRole('button', { name: '답변 대기', exact: true })).toHaveCount(0);
     await expect(page).toHaveURL((url) => !url.searchParams.has('tab'));
   }
 });

@@ -1,9 +1,10 @@
-import type { TSocialProvider } from '@game-feedback/contracts';
+import type { TLoginFailure, TSocialProvider } from '@game-feedback/contracts';
 
 export const ANALYTICS_EVENT = {
   LoginOpened: 'login_opened',
   LoginProviderSelected: 'login_provider_selected',
   LoginSucceeded: 'login_succeeded',
+  LoginFailed: 'login_failed',
   SignupCompleted: 'signup_completed',
   PostCreated: 'post_created',
   ChatStarted: 'chat_started',
@@ -11,12 +12,20 @@ export const ANALYTICS_EVENT = {
   Interaction: 'ui_interaction',
   ScrollDepth: 'scroll_depth',
   PageEngagement: 'page_engagement',
-} as const;
+  LandingStartClicked: 'landing_start_clicked',
+} as const satisfies Record<string, keyof TAnalyticsProperties>;
 export type TAnalyticsEventName = (typeof ANALYTICS_EVENT)[keyof typeof ANALYTICS_EVENT];
 export type TAnalyticsProperties = {
+  landing_start_clicked: {
+    placement: 'header' | 'hero' | 'footer';
+    destination_screen: string;
+    redirect_applied: boolean;
+  };
   login_opened: Record<string, never>;
   login_provider_selected: { provider: TSocialProvider };
   login_succeeded: { provider: TSocialProvider };
+  // 취소는 시작한 화면으로 돌아가 로그인 화면이 모두 보지 못하므로 집계하지 않는다.
+  login_failed: { provider: TSocialProvider; reason: Exclude<TLoginFailure, 'cancelled'> };
   signup_completed: { provider: TSocialProvider };
   post_created: { board: string; game: string };
   chat_started: { source: 'post' | 'comment' | 'profile' };

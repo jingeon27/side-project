@@ -1,42 +1,88 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, type ComponentProps } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-import type { Article } from '@/entities/article/model/types';
-import { ArticleCard } from '@/entities/article/ui/article-card';
+import { countBy } from 'es-toolkit';
+import qs from 'qs';
+import { match, P } from 'ts-pattern';
+
 import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
 import { ArticleSearch } from '@/features/article-search/ui/article-search';
-import { CategoryFilter, type Category } from '@/features/category-filter/ui/category-filter';
-import { labels, type UiLocale } from '@/shared/config/labels';
+import { ArticleCard } from '@/features/article/ui/article-card';
+import { CategoryFilter } from '@/features/category-filter/ui/category-filter';
+import type { Locale } from '@/i18n/routing';
+import type { Article, Category } from '@/shared/article/model/types';
+import { labels } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 
-export function BlogFeed({
+import { blogFeedSearchParamsSchema } from '../model/blog-feed-search-params.schema';
+
+export function BlogFeed(props: ComponentProps<typeof BlogFeedContent>) {
+  return (
+    <Suspense
+      fallback={
+        <div className="article-list">
+          {props.articles.map((article) => (
+            <ArticleCard key={article.id} article={article} />
+          ))}
+        </div>
+      }
+    >
+      <BlogFeedContent {...props} />
+    </Suspense>
+  );
+}
+
+function BlogFeedContent({
   locale,
   articles,
   fixedCategory,
   fixedTag,
 }: {
-  locale: UiLocale;
+  locale: Locale;
   articles: Article[];
   fixedCategory?: Category;
   fixedTag?: string;
 }) {
   const t = labels(locale);
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<Category | 'all'>(fixedCategory ?? 'all');
-  const counts = useMemo(
-    () =>
-      articles.reduce<Record<string, number>>(
-        (result, article) => {
-          result.all = (result.all ?? 0) + 1;
-          result[article.category] = (result[article.category] ?? 0) + 1;
-          return result;
-        },
-        { all: 0 },
-      ),
-    [articles],
-  );
+  const searchParams = useSearchParams();
+  const params = blogFeedSearchParamsSchema.parse({
+    q: searchParams.get('q') ?? undefined,
+    category: searchParams.get('category') ?? undefined,
+  });
+  const query = params.q ?? '';
+  const category = fixedCategory ?? params.category ?? 'all';
+  const updateFilters = (updates: { q?: string; category?: Category | 'all' }, push = false) => {
+    const url = new URL(window.location.href);
+    // 쓰기는 소유한 키만 바꾸고 다른 키와 중복 키를 보존한다. 빈 값은 skipNulls로 지운다.
+    const current = qs.parse(window.location.search, {
+      ignoreQueryPrefix: true,
+      depth: 0,
+      parseArrays: false,
+      duplicates: 'combine',
+      arrayLimit: Infinity,
+      parameterLimit: Infinity,
+    });
+    url.search = qs.stringify(
+      {
+        ...current,
+        ...(updates.q !== undefined ? { q: updates.q || null } : {}),
+        ...(updates.category !== undefined
+          ? { category: updates.category !== 'all' && !fixedCategory ? updates.category : null }
+          : {}),
+      },
+      { addQueryPrefix: true, arrayFormat: 'repeat', skipNulls: true },
+    );
+    if (url.href === window.location.href) return;
+    if (push) {
+      window.history.pushState(null, '', url);
+      return;
+    }
+    window.history.replaceState(null, '', url);
+  };
+  const counts = { ...countBy(articles, (article) => article.category), all: articles.length };
   const searchArticles = articles.filter(
     (article) =>
       (category === 'all' || article.category === category) && (!fixedTag || article.tags.includes(fixedTag)),
@@ -48,14 +94,19 @@ export function BlogFeed({
     return () => clearTimeout(timer);
   }, [query]);
   const isFiltered = Boolean(query || (category !== 'all' && !fixedCategory));
-  const resetFilters = () => {
-    setQuery('');
-    setCategory(fixedCategory ?? 'all');
+  const handleResetFilters = () => {
+    updateFilters({ q: '', category: 'all' }, true);
   };
   return (
     <div className="blog-feed">
       <div className="feed-search">
-        <ArticleSearch locale={locale} value={query} onChange={setQuery} articles={searchArticles} />
+        <ArticleSearch
+          locale={locale}
+          value={query}
+          onChange={(next) => updateFilters({ q: next })}
+          onTagSelect={(tag) => updateFilters({ q: `#${tag}` }, true)}
+          articles={searchArticles}
+        />
       </div>
       {!fixedCategory && (
         <CategoryFilter
@@ -63,7 +114,7 @@ export function BlogFeed({
           selected={category}
           counts={counts}
           onChange={(next) => {
-            setCategory(next);
+            updateFilters({ category: next }, true);
             trackEvent('category_selected', { category_id: next });
           }}
         />
@@ -73,34 +124,40 @@ export function BlogFeed({
           <strong>{filtered.length}</strong> {t.blog.results}
         </p>
         {isFiltered && (
-          <button type="button" className="text-button reset-filters" onClick={resetFilters}>
+          <button type="button" className="text-button reset-filters" onClick={handleResetFilters}>
             {t.common.clearFilters}
           </button>
         )}
       </div>
-      {filtered.length ? (
-        <div className="article-list">
-          {filtered.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <h2>{articles.length ? t.common.noResults : t.common.empty}</h2>
-          <p>{articles.length ? t.common.noResultsDescription : t.common.emptyDescription}</p>
-          {articles.length ? (
-            <button type="button" className="text-link" onClick={resetFilters}>
+      {match([filtered.length > 0, articles.length > 0] as const)
+        .with([true, P._], () => (
+          <div className="article-list">
+            {filtered.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        ))
+        .with([false, true], () => (
+          <div className="empty-state">
+            <h2>{t.common.noResults}</h2>
+            <p>{t.common.noResultsDescription}</p>
+            <button type="button" className="text-link" onClick={handleResetFilters}>
               {t.common.clearFilters}
             </button>
-          ) : (
-            locale === 'en' && (
+          </div>
+        ))
+        .with([false, false], () => (
+          <div className="empty-state">
+            <h2>{t.common.empty}</h2>
+            <p>{t.common.emptyDescription}</p>
+            {locale === 'en' && (
               <Link className="text-link" href="/ko/blog">
                 {t.common.koreanArticles}
               </Link>
-            )
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        ))
+        .exhaustive()}
     </div>
   );
 }

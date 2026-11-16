@@ -8,9 +8,40 @@
     --toast-bottom: calc(var(--spacing-bottom-nav) + 12px + var(--safe-bottom));
   }
 
+  #pc-main:has([data-compose-entry]) {
+    --toast-bottom: calc(96px + var(--safe-bottom));
+  }
+
+  #pc-main:has([data-compose-above-nav]) {
+    --toast-bottom: calc(var(--spacing-bottom-nav) + 84px + var(--safe-bottom));
+  }
+
   @media (width >= 1024px) {
     #pc-main:has([data-bottom-nav]) {
       --toast-bottom: calc(16px + var(--safe-bottom));
+    }
+
+    #pc-main:has([data-compose-entry]) {
+      --toast-bottom: calc(100px + var(--safe-bottom));
+    }
+  }
+}
+
+@layer components {
+  [data-page-form] {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--visual-viewport-top, 0px);
+    height: var(--visual-viewport-height, 100dvh);
+  }
+  @media (width >= 1024px) {
+    #pc-main:has([data-desktop-nav]) [data-page-form] {
+      left: calc(var(--spacing) * 48);
+    }
+  }
+  @media (width >= 1280px) {
+    #pc-main:has([data-desktop-nav]) [data-page-form] {
+      left: calc(var(--spacing) * 56);
     }
   }
 }

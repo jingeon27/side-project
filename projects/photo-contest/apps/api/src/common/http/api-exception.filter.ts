@@ -4,11 +4,11 @@ import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
 
 import { reportUnexpectedError } from '../../monitoring/sentry';
-import { httpStatusOf } from '../errors';
+import { DomainError, httpStatusOf } from '../errors';
 
 const UNMATCHED_ROUTE = '(unmatched)';
 
-/** 경로 원문에는 업로드·OAuth 토큰이 들어 있으므로 라우트 패턴(/uploads/:token)만 태그로 남긴다. */
+/** 경로 원문에는 업로드 토큰이 들어 있으므로 라우트 패턴(/uploads/:token)만 태그로 남긴다. */
 function routeOf(request: Request) {
   const route: unknown = request.route;
   const path =
@@ -40,6 +40,7 @@ export class ApiExceptionFilter extends BaseExceptionFilter {
 
   /** Nest 기본 필터가 응답할 상태와 같은 기준 */
   private statusOf(exception: unknown): number {
+    if (exception instanceof DomainError) return httpStatusOf(exception.code);
     if (exception instanceof GraphQLError) return httpStatusOf(exception.extensions.code);
     if (exception instanceof HttpException) return exception.getStatus();
     if (this.isHttpError(exception)) return exception.statusCode;

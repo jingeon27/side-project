@@ -1,36 +1,26 @@
 <Summary>
 
-Answer generation and final messages arrived through separate SSE streams. I split their responsibilities to keep one coherent message flow.
+An AI support screen received AI answers and counselor messages over SSE from two different servers. SSE is a way for a server to keep an HTTP response open and send messages as they come. I connected the screen to the session stream only and kept the AI stream just to trigger generation. Giving up token-by-token display got me a screen that does not show the same answer twice, with no backend changes.
 
 </Summary>
 
-I added an AI support chatbot to a shopping service. The frontend team could not modify its backends and had to connect two separate services.
+![An illustration of two SSE message streams passing through an adapter into one conversation](/images/covers/chatbot-message-layer.avif)
 
-- **AI chat service:** streams AI answers token by token over SSE.
-- **Session backend:** manages counselor connections, sessions, and history, sending counselor messages and status changes over SSE.
+## One conversation, two servers
 
-Neither was ours to change. There was no backend owner we could ask to merge both channels, and neither independent service could reasonably be assigned the other's responses.
+The job was adding an AI support chatbot to a service. A user asks the AI in a chat window, and when the AI cannot solve the problem, a human counselor takes over. To the user that is one continuing conversation, but the screen had to talk to two backends, and I could change neither of them.
 
-The task became combining two external streams into one client-side conversation timeline. I rebuilt that integration five times.
+- **AI chat service**: takes a question and streams the AI answer token by token over SSE.
+- **Session backend**: handles counselor connections, sessions, and conversation history. It sends counselor messages and status changes over SSE.
 
-> AI token streaming → separate counselor-button panel → keyword-based integration → useReducer state machine → useSyncExternalStore store → @tanstack/ai adapter
+SSE (Server-Sent Events) lets a server keep an HTTP response open and send events as they come. The response body is text made of a growing series of `data: ...` lines, and it flows one way, from the server to the browser. Tokens are the small pieces of text an AI emits while it builds an answer. Attach them to the screen as they arrive and the answer appears as if it were being typed.
 
----
+These were separate services, so asking one to consume the other's output was not an option. Making the two streams look like one conversation fell to the client. I moved from accumulating tokens by hand to separate panels and back to one panel, then from `useReducer` through a custom store to `@tanstack/ai`.
 
-## An ordinary AI chatbot at first
-
-```text
-src/modules/entities/chat/chatbot/
-├─ api/chatbot.api.ts        # AI 챗 서비스 /chat/stream 호출 + SSE 파싱
-├─ model/use-chat-stream.hook.ts
-├─ model/use-chat-session.hook.ts
-└─ ui/ (MessageBubble, TypingIndicator, MarkdownContent ...)
-```
-
-The initial requirement was to send a question and display the answer. We neither designed nor controlled the API. POST /chat/stream supplied SSE, which we parsed directly into live tokens.
+The first screen connected only to the AI chat service. `useMutation` called `POST /chat/stream`, and I parsed the SSE response by hand, appending each token to a message in `useState<Message[]>`.
 
 ```tsx
-// 초기 — AI 응답 스트림을 직접 파싱해 화면에 흘림
+// Initially: parse the AI response stream and render it directly
 async function* parseSSEStream(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -48,31 +38,23 @@ async function* parseSSEStream(stream: ReadableStream<Uint8Array>) {
   }
 }
 
-// 토큰이 올 때마다 메시지 text 에 이어붙임 (= 진짜 스트리밍 UI)
+// Append each token to the message text
 onData: (data) =>
   setMessages((prev) => updateMessage(prev, botMessageId, { text: current.text + data.content })),
 ```
 
-`useState<Message[]>` and useMutation accumulated tokens without a streaming library.
+Chunks off the network can break in the middle of a line, so the last line waits in `buffer` to join the next chunk, and only lines starting with `data: ` get read as JSON. The browser's `EventSource` can only send GET requests, so it cannot be used for a stream opened with POST.
 
-The server's history already included an instruction:
+The server's history already included this instruction:
 
-> “How can I help? To connect to a counselor, enter 'connect to an agent'.”
+> "How can I help? To connect to a counselor, enter 'connect to an agent'."
 
-That connection keyword led to the next requirement.
+Adding that connection to a screen that only showed AI answers meant receiving the session backend's SSE too. Its `start` opens a session, `subscribe` delivers messages and statuses, and `message` and `end` send messages and close the session.
 
----
-
-## Adding a counselor connection button
-
-Questions AI could not resolve needed a human counselor. Responses came from the separate session backend's SSE, with start / subscribe / message / end operations opening sessions and receiving messages and statuses.
-
-These were separate externally controlled services, not two channels of one API. No endpoint combined them and no shared owner could add one.
-
-The first UI mirrored them: AiChatPanel for the AI stream and CounselingPanel for session SSE, switching modes with a counselor button.
+I first split the screen the way the servers were split. `AiChatPanel` handled the AI stream, `CounselingPanel` handled session SSE, and a button switched between them.
 
 ```typescript
-// 상담사 연결이 '버튼'이던 시절 — EventSource 로 세션 SSE 구독
+// When connecting to an agent was a button: subscribe to session SSE with EventSource
 const subscribeSse = useCallback((sid: string) => {
   const es = fetchCounselingSubscribe(sid);
   es.addEventListener('status', (e) => {
@@ -87,123 +69,110 @@ const subscribeSse = useCallback((sid: string) => {
 }, []);
 ```
 
-But moving from AI to a counselor continues the same conversation. Splitting panels separated the message list, scroll, and session at the transition. Creation functions—createUserMessage, createCounselorMessage, and createSystemMessage—also gave the same concept different types by source.
+Switching panels also split the message list, scroll position, and session. The user saw one continuing conversation while the code moved to another screen. Message constructors and types separated by source as well: `createUserMessage`, `createCounselorMessage`, and `createSystemMessage`.
 
----
+## Displaying messages from session SSE only
 
-## Combining the panels and using a connection keyword
+I merged the panels and removed the button. Entering the keyword from the server's instruction now requests a counselor. One hook handles sending: it goes to the session backend while connecting or counseling, and to the AI chat service otherwise. The branch in the top-level component that chose a panel went away.
 
-I changed two things together.
+Both kinds of answer now land in one list. Session SSE carries AI and counselor answers, while the AI chat service carries only AI answers. AI answers therefore arrive by two routes, and drawing both streams could show the same answer twice. A made-up sentence shows it.
 
-1. Replace the connection button with the connection keyword, removing that mode-control UI state.
-2. Remove the top-level ai/counseling branch and use one panel and hook. Status routes sending to the session backend while connecting or counseling, and otherwise to the AI service.
+```text
+AI stream  : Your order + arrives + tomorrow   (an answer joined from tokens)
+Session SSE: Your order arrives tomorrow       (the finished copy of that answer)
 
-One UI left two problems: which channel to display, and how to manage state.
+Put both in the list and you get
+  AI: Your order arrives tomorrow
+  AI: Your order arrives tomorrow
+```
 
-### Keep the AI stream connected without displaying it
+With no server to merge the two, keeping messages from doubling up or falling out of order meant choosing one source for display first. I connected the screen only to session SSE, which carries both kinds of answer.
 
-I chose session SSE as the sole display channel. It carried both AI and counselor answers, while the AI stream carried only AI answers.
-
-Combining behavior still had to happen on the client because neither backend could be changed. The AI stream therefore lost its display role and became a drain-only pump: keep reading and discarding its response so generation can finish.
+The AI stream stays open and gets read to the end, but its response never reaches the screen. The request that triggers generation is now separate from the subscription that delivers the finished answer.
 
 ```tsx
-// 한때 화면에 흘리던 AI 스트림이 → drain-only(읽고 버림) 로 강등됨
 const response = await chatClient.post('/chat/stream', body, {
   adapter: 'fetch',
   responseType: 'stream',
-  timeout: 30_000, // 30s 상한 — 생성이 오래 걸릴 수 있어 넉넉히
+  timeout: 30_000, // Allow up to 30 seconds for generation
 });
 const reader = (response.data as ReadableStream<Uint8Array>).getReader();
 try {
   while (!(await reader.read()).done) {
-    // 읽기만 하고 버린다. 표시는 세션 SSE 가 담당.
+    // Read and discard. Session SSE owns display.
   }
 } finally {
   reader.releaseLock();
 }
 ```
 
-Discarding a response can look like a bug. Here it came from the external-service constraint. I could not inspect their internals to prove the mechanism, but observations suggested the client had to retain the AI stream, for up to 30 seconds, to complete generation. Results then accumulated in the session backend and reappeared through its SSE. Keeping the connection without displaying it was the compromise available to us. Its dependence on a browser connection and timeout remains a limitation discussed below.
+I could not see inside the servers, so I never confirmed this. From the behavior I observed, generation only proceeded and reached session SSE while the AI stream stayed open, for up to 30 seconds. So the connection stayed open even though its response was discarded.
 
----
+This decision gave up the token-by-token display from the first version and meant holding a connection open for up to 30 seconds per question just to throw its response away. A browser disconnect or timeout can also affect generation. What I got in exchange was a screen that does not show the same answer twice, with no backend changes. Displayed messages also came down to one source, session SSE. Token display could return if the AI service sends tokens over session SSE.
 
 ## Authentication headers ruled out EventSource
 
-Session SSE required Authorization: Bearer, but standard browser EventSource cannot send custom headers. I switched to `@microsoft/fetch-event-source`, whose fetch-based implementation supports Bearer headers, reconnection policy, and background-tab connections with `openWhenHidden`.
+Attaching session SSE ran into the authentication header. The server required `Authorization: Bearer`, and standard `EventSource` cannot send custom headers. I switched to the fetch-based [`@microsoft/fetch-event-source`](https://github.com/Azure/fetch-event-source), which also handled the reconnection policy and background-tab behavior through `openWhenHidden`. By default this library closes the connection when a tab is hidden, so I turned the option on to keep receiving counseling messages. That added a dependency and left the reconnection delay for me to choose, but it could send the authentication header the server required.
 
 ```typescript
 export async function openSessionStream(sessionId, init) {
   const accessToken = await getCookie('accessToken');
   return fetchEventSource(`${SESSION_API_URL}/chat/sessions/${sessionId}/stream`, {
     signal: init.signal,
-    openWhenHidden: true, // 백그라운드 탭에서도 상담 메시지 유지
+    openWhenHidden: true, // Keep receiving chat messages in background tabs
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     onmessage: (e) => init.onMessage(e.event, e.data),
-    onerror: init.onError, // 지연(ms) 반환 시 재연결, throw 시 중단
+    onerror: init.onError, // Return a delay in milliseconds to reconnect; throw to stop
   });
 }
 ```
 
-This was another constraint of consuming an external API: the browser's standard API did not match its authentication model.
+## Gathering transitions and connection rules in one place
 
----
-
-## Gathering transitions in useReducer
-
-Status was more than a flag. It encoded the session workflow.
+Conversation status decided which server to send to and whether to subscribe. That status mixed values the client created with values the server sent.
 
 ```text
-ai ──"상담원 연결"→ connecting ──(SSE: live)→ live ──(SSE: done)→ done
+ai ──"Connect to an agent"→ connecting ──(SSE: live)→ live ──(SSE: done)→ done
                                        └─(SSE: hold)→ hold
 ```
 
-- ai: the client's default AI-response state
-- connecting: client-only state after ending AI and while awaiting counselor acceptance
-- live/hold/done: server-owned states from session SSE
+- `ai`: the AI is answering. This is the client's default.
+- `connecting`: the client has called AI end and is waiting for a counselor to accept. Only the client knows this state.
+- `live`, `hold`, `done`: server states set by session SSE.
 
-Client-created and server-provided values shared one variable. Several useState calls could become inconsistent at boundaries such as an SSE done event arriving while connecting. I gathered transitions into one useReducer state machine.
+The server can send `done` while the client is in `connecting`. Separate `useState` values made that ordering hard to handle, so I gathered the transitions into `useReducer`, the React hook that lets one function describe how state changes when something happens.
 
-Transitions became clearer, but effects still imperatively opened and closed SSE. “Status is live but connection is closed” remained possible. I separated the client and server status types later when moving to @tanstack/ai.
+Transitions became easier to read, but several effects still opened and closed the connection. Status could be `live` with SSE closed. So I built a store that derives the connection from state: it connects only when there is a subscriber, a session, and the conversation has not ended.
 
----
-
-## Letting the store own SSE while React subscribes to snapshots
-
-> Connection = subscribers exist ∧ session exists ∧ session is not finished.
-
-`syncConnection()` reconciles the connection whenever those inputs change, preventing that mismatch and restoring it after remounting. useSyncExternalStore fits a model where the store owns SSE lifetime and React subscribes to snapshots.
+`syncConnection()` reconciles the connection whenever those three values change. React subscribes only to snapshots through `useSyncExternalStore`, a hook that reads a store living outside React through two functions, `subscribe` and `getSnapshot`. That is why `ChatStore` below has both. Events arriving during reconnection or unsubscribing are not solved by these conditions alone.
 
 ```tsx
 export class ChatStore {
   private snapshot = ChatStore.initialSnapshot();
   private readonly listeners = new Set<Listener>();
-  private readonly seen = new Set<number>(); // 메시지 id 로 history+SSE 이중표시 제거
+  private readonly seen = new Set<number>(); // Deduplicate message IDs across history and SSE
 
   readonly subscribe = (listener: Listener) => {
     this.listeners.add(listener);
-    this.syncConnection(); // 구독 시작 → 필요하면 연결
+    this.syncConnection(); // Start subscribing: connect if needed
     return () => {
       this.listeners.delete(listener);
-      this.syncConnection(); // 구독 종료 → 필요하면 해제
+      this.syncConnection(); // End the subscription: disconnect if needed
     };
   };
   readonly getSnapshot = () => this.snapshot;
 }
 ```
 
-React Query in the hook owns network actions—ending AI, sending messages, and the AI stream. The store owns SSE subscriptions and transitions. The external payloads were not fully documented either. I defensively parsed single items, arrays, and `{ messages: [] }` wrappers with Zod `.catch()` so one broken item did not discard everything.
-
-This version worked, but I replaced it anyway.
-
----
+Ending AI, sending messages, and opening the AI stream stayed in the hook's React Query code. The store kept SSE subscriptions and transitions. It also accepted undocumented message shapes: single items, arrays, and `{ messages: [] }` wrappers. Zod `.catch()` let valid items survive a malformed one.
 
 ## Moving message management to @tanstack/ai
 
-ChatStore accumulated messages, deduplicated IDs with seen, managed subscriptions, and updated immutable snapshots. Those are common message-store responsibilities already handled by AI message frameworks.
+The custom store connected everything, but `ChatStore` was accumulating messages, deduplicating IDs with `seen`, managing subscriptions, and publishing immutable snapshots. AI message libraries already provide these.
 
-The chatbot was expected to gain token streaming, tool calls, and multipart messages with cards or attachments. Those features would eventually require a standard AI message model. Moving from the useSyncExternalStore version was a chance to pay that migration cost once.
+We planned to support token streaming, tool calls, and messages with cards and attachments. Each new format would have meant reworking the text-oriented store, so I moved to the message model in `@tanstack/ai`.
 
-The session SSE still did not match useChat's expected connection format, and we could not change it. I put it behind a SubscribeConnectionAdapter.
+Session SSE did not match the connection format [`useChat`](https://tanstack.com/ai/latest/docs/api/ai-react) accepts. `useChat` is the library's React hook, and a connection is the channel it uses to exchange messages. With the server format left as it was, `SubscribeConnectionAdapter` reads the SSE and hands it to the library. The linked docs describe the latest version, so names may differ from the code below.
 
 ```tsx
 export function makeSessionConnection({ sessionId, onStatus }): SubscribeConnectionAdapter {
@@ -216,99 +185,75 @@ export function makeSessionConnection({ sessionId, onStatus }): SubscribeConnect
       const accessToken = await getCookie('accessToken');
       fetchEventSource(`${SESSION_API_URL}/chat/sessions/${sessionId}/stream`, {
         signal: controller.signal,
-        openWhenHidden: true,
+        openWhenHidden: true, // Keep receiving chat messages in background tabs
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
         onmessage: ({ event, data }) => {
           if (event === SseEvent.StatusChange) {
             const status = parseStatusEvent(safeParse(data));
-            if (status) onStatus(status); // 서버 상태 → 비즈니스 레이어 (ServerStatus 타입)
+            if (status) onStatus(status); // Pass server status to the business layer
           } else {
-            queue.push(...itemsToChunks(safeParse(data))); // 메시지 → 표준 StreamChunk
+            queue.push(...itemsToChunks(safeParse(data))); // Messages to standard StreamChunk values
           }
           notify();
         },
-        onerror: () => 3000, // 3s 후 재연결
+        onerror: () => 3000, // Reconnect after three seconds
       }).catch(() => {});
 
       try {
         while (true) {
           if (queue.length === 0) await new Promise<void>((r) => (notify = r));
-          yield* queue.splice(0); // 콜백(push) → async generator(pull) 브리지
+          yield* queue.splice(0); // Bridge callback pushes to async-generator pulls
         }
       } finally {
-        controller.abort(); // 소비 종료 시 SSE 닫기
+        controller.abort(); // Close SSE when consumption ends
       }
     },
-    send: asyncNoop, // ← 전송은 이 채널이 아니다
+    send: asyncNoop, // Sending does not go through this channel
   };
 }
 ```
 
-The empty send function reflects our split architecture. A conventional connection sends and returns a response stream. Here sending routes by source, while receiving always uses session SSE, leaving the adapter's send side empty.
+`subscribe` is an async generator, a function that hands out one value each time its consumer asks for the next. `fetchEventSource` works the other way around and calls back when a message arrives. To bridge them, the callback puts messages in `queue` and wakes the waiting side with `notify`, while the generator waits when the queue is empty and then yields whatever has piled up. Status-change events skip the queue and go straight to `onStatus`.
 
-### Match mounting to the library's lifetime assumptions
+`send` is empty. A connection usually returns a response stream after sending, but this app picks the sending server separately and receives only through session SSE. Putting sending in the adapter would have meant choosing between the two servers again, so the adapter only subscribes.
 
-The adapter was only part of the work. useChat made several assumptions.
+This approach leaves a conversion adapter to maintain, and a format change on the server or in the library means changing it. In exchange, the server format stayed as it was and message accumulation and subscription management moved to the library.
 
-- It reads initialMessages only once at mount. Asynchronous history originally arrived after an empty first render. Gating the conversation with useSuspenseQuery mounts it only after history is ready, making initialMessages the actual history.
-- Without `live: true`, subscription does not start. Omitting it caused missing live messages until I used `useChat({ connection, initialMessages, live: true })`.
-- Closing the panel unmounts the component and unsubscribes. The adapter's finally calls controller.abort() to close SSE.
+Some things still needed checking after the move. The code above is shortened to show how the two channels connect. With an empty queue awaiting input, a cancel signal may not release the wait right away, so a real version has to pass cancellation to SSE and wake the queue.
 
-### Separating client and server status types
+I left `seen` behind and relied on `messageId` accumulation in `useChat`, and whether identical IDs from history and SSE merge still needs a look, including backend retransmission. The client greeting at the top of the conversation can also duplicate the one in server history, and showing it only when history is empty remains to be checked.
 
-I first split the client's connecting state and the server's status into serverStatus and isConnecting. I later simplified this to one state value with separate types.
+The renderer also still takes a one-line `Message`, so converting `UIMessage` discards the cards, tools, and attachments in `parts`. Showing those formats requires the renderer to read `parts` directly.
+
+### Matching useChat initialization and subscription timing
+
+Even with the format matched, history could be missing and live messages could fail to arrive. What remained was timing.
+
+`useChat` reads `initialMessages` once at mount. History arrived asynchronously through React Query, so the first render had none, and it did not appear when it arrived later. I used `useSuspenseQuery` to mount the conversation only after history was ready. `useSuspenseQuery` is a React Query hook that holds a component's render until its data is ready. The conversation appears later as a result, but `initialMessages` holds the history from the first render.
+
+The live messages were my own mistake. Subscription never starts without `live: true`, and I had left it out, so messages stayed missing for a while. I changed the call to `useChat({ connection, initialMessages, live: true })`.
+
+Closing the panel unmounts the component and unsubscribes, and the adapter's `finally` calls `controller.abort()` to close SSE.
+
+### Narrowing the statuses a server can send
+
+I first kept `serverStatus` and `isConnecting` separate to tell `connecting` apart from server states. Later I kept one status value and narrowed what the server can supply with `ServerStatus`.
 
 ```tsx
-type ServerStatus = 'ai' | 'live' | 'hold' | 'done';   // SSE/히스토리가 주는 권위 상태
-type ChatStatus = ServerStatus | 'connecting';          // + 클라 전용 전이 상태
+type ServerStatus = 'ai' | 'live' | 'hold' | 'done'; // Status from SSE and history
+type ChatStatus = ServerStatus | 'connecting'; // Adds a client-only status
 
-const [status, setStatus] = useState<ChatStatus>(/* 히스토리 마지막 status ?? 'ai' */);
-// onStatus 가 ServerStatus 타입이라, SSE 는 connecting 을 타입상 절대 못 덮는다
+const [status, setStatus] = useState<ChatStatus>(/* Last history status ?? 'ai' */);
+// onStatus accepts only ServerStatus, so passing connecting here fails type checking
 const connection = useMemo(() => makeSessionConnection({ sessionId, onStatus: setStatus }), [sessionId]);
 ```
 
-The keyword handler directly sets connecting. The server callback onStatus accepts only ServerStatus, so that path cannot supply the client's optimistic connecting value. The distinction is expressed through types rather than additional runtime state.
+Only the keyword handler sets `connecting`. Passing it through `onStatus`, the path for server events, fails type checking.
 
-### Message deduplication still needed verification
+## Looking back
 
-I did not port ChatStore's seen set into the adapter. Message accumulation, deduplication, and lifetime were delegated to useChat's messageId handling. That does not mean I verified every deduplication case. Whether identical IDs from initial history and SSE are combined still needs a backend-retransmission scenario test.
+Splitting the panels copied the server structure onto the screen. The user was reading one conversation while the code split in two, and the branch choosing a panel only went away once I merged them again. That taught me to divide a screen by what the user sees, however many servers sit behind it.
 
----
+I also trusted types too far. I narrowed `onStatus` to `ServerStatus` and wrote in a code comment that SSE could not overwrite `connecting`. Reviewing this article later showed me that was wrong. The type only blocks passing the value `connecting` through that path. When `live` or `done` arrives, the current `connecting` still gets replaced. A type decides which values can be passed; it did not decide the order events arrive in. Which transitions to accept still needs its own rule.
 
-## Fixing send failures and checking the remaining work
-
-Review led to several corrections.
-
-- **Send failures:** custom error bubbles appeared beneath unrelated answers and never disappeared. A shared toast.warning replaced them.
-- **Status inference:** using `.at(-1)` failed when the last item had no status. I changed it to `.findLast(i => i.status)`.
-- **Input locking:** sending could race while connecting and ending AI. Including that call in isPending blocks input.
-- **Initial greeting:** I added a client greeting, but it may duplicate the greeting in server history. Showing it only for empty history would be safer and remains to be verified.
-
-Other debt remains.
-
-- The renderer converts the library's UIMessage back into our one-line Message. Future parts, tools, and attachments live in UIMessage.parts, so this currently discards the model's intended benefits before rendering. The next step is rendering parts directly.
-- The drain-only pump remains tied to the browser connection and a 30-second timeout. History/SSE deduplication also needs verification through backend access or load scenarios.
-- If the AI service eventually sends tokens through session SSE, the token streaming we originally had can return through the library.
-
----
-
-## Looking back at my decisions and the external constraints
-
-### Decisions I made
-
-- Replace separate panels with one continuous timeline.
-- Use a connection keyword instead of a mode button.
-- Derive SSE connection from state rather than scattered imperative effects.
-- Keep one status value while separating ServerStatus and ChatStatus types.
-- Move a working store to a standard framework in preparation for streaming, tools, and parts.
-
-### Constraints imposed by the two external backends
-
-- No shared backend owner could merge them, so coordination stayed on the client.
-- Session SSE became the display source, separating send and receive and leaving send as asyncNoop.
-- The AI stream became a drain-only keep-alive pump with a 30-second cap.
-- Bearer authentication required fetch-event-source instead of EventSource.
-- Undocumented payloads needed defensive Zod parsing.
-- Nonstandard SSE needed a SubscribeConnectionAdapter.
-
-Across five rewrites, most of the code's shape came from boundaries I could not change. My work was to understand those boundaries, choose a workable integration, and record why it looks this way so the next person does not have to rediscover the constraints.
+What belongs in the conversation list was something I settled only after running into it. Send failures went in as error bubbles, attached under unrelated answers, and stayed for the whole session. Failure notices are a different kind of thing from conversation, so they moved to the shared `toast.warning`. Reading initial status with `.at(-1)` could pick a message without a status, so I switched to `.findLast(i => i.status)`. Sending that still worked while AI was ending got blocked by including that call in `isPending`.

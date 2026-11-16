@@ -9,8 +9,10 @@ import {
 } from 'zod';
 
 import {
+  AdminChatMessageList,
   AdminReportList,
   Answer,
+  AnswerPage,
   Category,
   ChatAttachment,
   ChatMessage,
@@ -26,7 +28,6 @@ import {
   ListBlocks200Item,
   ListCategories200Item,
   ListGameAccounts200Item,
-  ListSupportThreads200Item,
   MediaUploadPlan,
   NotificationList,
   Ok,
@@ -39,6 +40,7 @@ import {
   RegisterPushDevice200,
   Session,
   SupportThread,
+  SupportThreadList,
   TestAccountList,
   User
 } from './models';
@@ -62,11 +64,14 @@ import type {
   HideInput,
   ListAdminSupportMessagesParams,
   ListChatMessagesParams,
+  ListCommentRepliesParams,
   ListConversationsParams,
   ListNotificationsParams,
+  ListPostAnswersParams,
   ListPostCommentsParams,
   ListPostsParams,
   ListReportsParams,
+  ListSupportThreadsParams,
   MediaUploadInput,
   OnboardInput,
   PostInput,
@@ -165,7 +170,7 @@ export const adminLogout = async ( options?: Parameters<typeof apiFetch>[1]): Pr
 
 
 
-export const getListAdminSupportMessagesUrl = (id: string,
+export const getListAdminSupportMessagesUrl = (conversationId: string,
     params?: ListAdminSupportMessagesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -178,33 +183,33 @@ export const getListAdminSupportMessagesUrl = (id: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/admin/support/${encodeURIComponent(String(id))}/messages?${stringifiedParams}` : `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+  return stringifiedParams.length > 0 ? `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages?${stringifiedParams}` : `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages`
 }
 
-export const listAdminSupportMessages = async (id: string,
-    params?: ListAdminSupportMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessageList> => {
+export const listAdminSupportMessages = async (conversationId: string,
+    params?: ListAdminSupportMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<AdminChatMessageList> => {
 
-  return apiFetch<ChatMessageList>(getListAdminSupportMessagesUrl(id,params),
+  return apiFetch<AdminChatMessageList>(getListAdminSupportMessagesUrl(conversationId,params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: ChatMessageList
+    schema: AdminChatMessageList
   }
 );}
 
 
 
-export const getSendAdminSupportMessageUrl = (id: string,) => {
+export const getSendAdminSupportMessageUrl = (conversationId: string,) => {
 
 
 
 
-  return `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+  return `/api/admin/support/${encodeURIComponent(String(conversationId))}/messages`
 }
 
-export const sendAdminSupportMessage = async (id: string,
+export const sendAdminSupportMessage = async (conversationId: string,
     chatMessageInput: ChatMessageInput, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessage> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
@@ -221,7 +226,7 @@ export const sendAdminSupportMessage = async (id: string,
     }
     return headers;
   };
-return apiFetch<ChatMessage>(getSendAdminSupportMessageUrl(id),
+return apiFetch<ChatMessage>(getSendAdminSupportMessageUrl(conversationId),
   {
     ...options,
     method: 'POST',
@@ -445,23 +450,52 @@ return apiFetch<Conversation>(getStartSupportConversationUrl(),
 
 
 
-export const getListSupportThreadsUrl = () => {
+export const getListSupportThreadsUrl = (params?: ListSupportThreadsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/support`
+  return stringifiedParams.length > 0 ? `/api/admin/support?${stringifiedParams}` : `/api/admin/support`
 }
 
-export const listSupportThreads = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ListSupportThreads200Item[]> => {
+export const listSupportThreads = async (params?: ListSupportThreadsParams, options?: Parameters<typeof apiFetch>[1]): Promise<SupportThreadList> => {
 
-  return apiFetch<ListSupportThreads200Item[]>(getListSupportThreadsUrl(),
+  return apiFetch<SupportThreadList>(getListSupportThreadsUrl(params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: zod.array(ListSupportThreads200Item)
+    schema: SupportThreadList
+  }
+);}
+
+
+
+export const getGetSupportThreadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/support/${encodeURIComponent(String(id))}`
+}
+
+export const getSupportThread = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<SupportThread> => {
+
+  return apiFetch<SupportThread>(getGetSupportThreadUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: SupportThread
   }
 );}
 
@@ -1480,6 +1514,37 @@ export const deletePost = async (id: string, options?: Parameters<typeof apiFetc
 
 
 
+export const getListPostAnswersUrl = (id: string,
+    params?: ListPostAnswersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/posts/${encodeURIComponent(String(id))}/answers?${stringifiedParams}` : `/api/posts/${encodeURIComponent(String(id))}/answers`
+}
+
+export const listPostAnswers = async (id: string,
+    params?: ListPostAnswersParams, options?: Parameters<typeof apiFetch>[1]): Promise<AnswerPage> => {
+
+  return apiFetch<AnswerPage>(getListPostAnswersUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: AnswerPage
+  }
+);}
+
+
+
 export const getCreateAnswerUrl = (id: string,) => {
 
 
@@ -1735,6 +1800,37 @@ return apiFetch<Comment>(getCreateCommentUrl(id),
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(createCommentInput),
     schema: Comment
+  }
+);}
+
+
+
+export const getListCommentRepliesUrl = (id: string,
+    params?: ListCommentRepliesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/comments/${encodeURIComponent(String(id))}/replies?${stringifiedParams}` : `/api/comments/${encodeURIComponent(String(id))}/replies`
+}
+
+export const listCommentReplies = async (id: string,
+    params?: ListCommentRepliesParams, options?: Parameters<typeof apiFetch>[1]): Promise<CommentPage> => {
+
+  return apiFetch<CommentPage>(getListCommentRepliesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: CommentPage
   }
 );}
 

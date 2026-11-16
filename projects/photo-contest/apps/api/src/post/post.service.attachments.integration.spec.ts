@@ -113,8 +113,11 @@ describe('링크 게시물과 미디어 저장', () => {
       const url = new URL(download.url);
       expect(url.protocol).toBe('https:');
       expect(decodeURIComponent(url.pathname).includes(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
-      expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
-      expect(Date.parse(download.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
+      // 동영상은 느린 연결에서도 재생·저장이 끊기지 않게 10분, 사진은 60초다.
+      expect(url.searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
+      const remaining = Date.parse(download.expiresAt ?? '') - Date.now();
+      expect(remaining).toBeGreaterThan(video ? 595_000 : 55_000);
+      expect(remaining).toBeLessThanOrEqual(video ? 600_000 : 60_000);
       expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.png');
       const response = await fetch(download.url);
       expect(response.status).toBe(200);

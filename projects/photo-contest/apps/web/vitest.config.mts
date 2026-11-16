@@ -22,17 +22,34 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           // 루트의 *.test.ts는 next.config 같은 앱 설정 파일 옆에 둔 테스트다.
-          include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts', 'test/deployment/*.{spec,test}.ts'],
-          exclude: ['src/**/*.api.{spec,test}.ts'],
+          include: [
+            '*.{spec,test}.ts',
+            'src/**/*.{spec,test}.ts',
+            'test/deployment/*.{spec,test}.ts',
+            '../../../../deploy/shared-instance/scripts/sentry-release.spec.ts',
+            '../../../../deploy/shared-instance/scripts/service-ci.{spec,test}.ts',
+          ],
+          exclude: ['src/**/*.api.{spec,test}.ts', 'src/**/*.browser.{spec,test}.ts'],
         },
       },
       {
         extends: true,
+        // 실제 AppApolloProvider를 jsdom에서 실행할 때 Next 통합의 SSR 전송을 사용하지 않는다.
+        resolve: { conditions: ['browser'] },
         test: {
           name: 'ui',
           environment: 'jsdom',
           include: ['src/**/*.{spec,test}.tsx'],
           setupFiles: ['./vitest.setup.ts'],
+          server: {
+            deps: {
+              inline: [
+                /@apollo\/client-integration-nextjs/,
+                /@apollo\/client-react-streaming/,
+                /@sentry\/nextjs/,
+              ],
+            },
+          },
         },
       },
       {

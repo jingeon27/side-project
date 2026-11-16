@@ -10,8 +10,9 @@ RUN yarn workspace @photo-contest/api db:generate
 ENV NEXT_TELEMETRY_DISABLED=1 API_URL=http://api:4200
 ARG WEB_ORIGIN=https://photo-contest.test
 ARG NEXT_PUBLIC_SENTRY_DSN=
+ARG SENTRY_RELEASE=
 ARG NEXT_PUBLIC_AMPLITUDE_API_KEY=
-ENV WEB_ORIGIN=${WEB_ORIGIN} NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
+ENV WEB_ORIGIN=${WEB_ORIGIN} NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} SENTRY_RELEASE=${SENTRY_RELEASE} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
 RUN --mount=type=cache,id=pc-next-cache,target=/app/projects/photo-contest/apps/web/.next/cache \
     yarn workspace @photo-contest/web codegen \
     && mkdir -p projects/photo-contest/apps/web/public \

@@ -1,2 +1,2 @@
 export { createShareImage } from './ShareImage';
-export { robots, sitemap, dailySitemap } from './discovery.server';
+export { robots, dailySitemap } from './discovery.server';

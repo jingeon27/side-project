@@ -1,4 +1,7 @@
-import { getPublicProfile, listBlocks, unblockUser } from '@game-feedback/sdk';
+import type { z } from 'zod';
+
+import { UpdateProfileInputSchema } from '@game-feedback/contracts';
+import { getPublicProfile, listBlocks, unblockUser, updateProfile } from '@game-feedback/sdk';
 
 import { withApiError, type Author } from '@/shared/api';
 
@@ -11,4 +14,7 @@ export function deleteUserBlock({ userId }: { userId: string }) {
 
 export function fetchPublicProfile(id: string) {
   return withApiError(getPublicProfile(id));
+}
+export function patchProfile(input: z.infer<typeof UpdateProfileInputSchema>) {
+  return withApiError(updateProfile(input));
 }

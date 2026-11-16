@@ -30,6 +30,7 @@ it('닫기·높이 조절 이름은 소비 앱이 넘긴 글자만 써야 한다
       open
       onOpenChange={() => undefined}
       title="Game account"
+      showCloseButton
       closeLabel="Close"
       resizeLabel="Resize sheet"
     >
@@ -37,7 +38,8 @@ it('닫기·높이 조절 이름은 소비 앱이 넘긴 글자만 써야 한다
     </BottomSheet>,
   );
   const sheet = await screen.findByRole('dialog', { name: 'Game account' });
-  expect(within(sheet).getByRole('button', { name: 'Close' })).toBeInTheDocument();
+  expect(within(sheet).getByRole('button', { name: 'Close' })).toHaveTextContent('Close');
+  expect(within(sheet).getByRole('button', { name: 'Close' }).querySelector('svg')).toBeNull();
   expect(within(sheet).getByRole('slider', { name: 'Resize sheet' })).toBeInTheDocument();
   expect(within(sheet).queryByRole('button', { name: '닫기' })).not.toBeInTheDocument();
   expect(within(sheet).queryByRole('slider', { name: '시트 높이 조절' })).not.toBeInTheDocument();

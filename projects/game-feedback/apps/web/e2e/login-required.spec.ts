@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [320, 1440]) {
   test(`${width}px 비회원 액션은 로그인 안내를 먼저 표시하고 취소하면 현재 화면을 유지한다`, async ({
@@ -18,8 +18,12 @@ for (const width of [320, 1440]) {
       ['/ko/contact', '프로필 인증 문의'],
     ] as const) {
       await page.goto(path);
-      const action = page.getByRole('main').getByRole('button', { name, exact: true }).first();
+      const profileReport = path.startsWith('/ko/users/') && name === '사용자 신고';
+      const action = profileReport
+        ? page.getByRole('button', { name: '덱연구소님의 프로필 메뉴', exact: true })
+        : page.getByRole('main').getByRole('button', { name, exact: true }).first();
       await action.click();
+      if (profileReport) await page.getByRole('menuitem', { name, exact: true }).click();
       const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
       await expect(required, name).toBeVisible();
       await expect(required).toContainText('로그인 후 이 기능을 이용할 수 있어요.');

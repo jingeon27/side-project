@@ -1,0 +1,105 @@
+name: Static analysis
+run-name: >-
+  Static analysis / ${{ github.event_name == 'pull_request' && format('PR {0}', github.event.pull_request.number) || github.ref_name == 'main' && 'production' || github.ref_name == 'develop' && 'development' || github.ref_name }}
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# push는 자기 diff로 Terraform 검사와 content-only 생략을 정하므로, 다음 push가 이전 실행을 취소하면 그 변경의
+# 검사가 사라진다. PR의 이전 실행만 취소한다.
+concurrency:
+  group: static-analysis-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  knip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Check the actual PR branch commits
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-branch-commits.ts "$PR_BASE_SHA" "$PR_HEAD_SHA"
+      - name: Select Terraform verification
+        id: terraform
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] ||
+             ! git diff --quiet "$BASE_SHA" HEAD -- deploy/shared-instance/terraform .github/workflows/static-analysis.yml; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        if: steps.terraform.outputs.check == 'true'
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - name: Terraform fmt, validate and mock tests
+        if: steps.terraform.outputs.check == 'true'
+        working-directory: deploy/shared-instance/terraform
+        env:
+          TF_IN_AUTOMATION: '1'
+          TF_INPUT: '0'
+          CHECKPOINT_DISABLE: '1'
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -lockfile=readonly
+          terraform validate
+          terraform test
+      - name: Select content-only verification
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node projects/blog/apps/web/scripts/ci-scope.ts
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn install --immutable
+        if: steps.scope.outputs.content-only != 'true'
+      # Services·Blog selection이 고르지 않는 문서·설정 변경도 포맷을 검사하도록 저장소 전체를 확인한다.
+      # 블로그 content-only 변경은 Blog verify가 블로그 포맷을 검사한다.
+      - run: yarn format:check
+        if: steps.scope.outputs.content-only != 'true'
+      # DB와 앱 서버를 띄우지 않고 import 대상만 준비한다.
+      - run: yarn workspace @side/toolkit build
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn workspace @photo-contest/api db:generate
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn workspace @game-feedback/api db:generate
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn workspace @photo-contest/web codegen
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn workspace @blog/web content:generate
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn workspace @side/config check
+        if: steps.scope.outputs.content-only != 'true'
+      - run: yarn typecheck:scripts
+        if: steps.scope.outputs.content-only != 'true'
+      # 이 구조 테스트는 Services의 PC 단위 테스트에도 들어 있지만, blog.yml이나 블로그 앱 의존성만 바뀐 PR에서는
+      # Services가 PC 검사를 고르지 않는다. 그래서 경로 필터·집계 job·발행 조건·concurrency와 Blog 선택 경로를
+      # 여기서 검사한다. 생략되는 content-only 변경은 블로그 콘텐츠·문서와 생성 파일뿐이라 workflow나 이 테스트를
+      # 바꾸지 못한다.
+      - name: Check workflow contracts
+        if: steps.scope.outputs.content-only != 'true'
+        run: yarn workspace @photo-contest/web test:unit ../../../../deploy/shared-instance/scripts/service-ci.test.ts
+      - name: Reject new unused files, dependencies and exports
+        if: steps.scope.outputs.content-only != 'true'
+        run: yarn knip

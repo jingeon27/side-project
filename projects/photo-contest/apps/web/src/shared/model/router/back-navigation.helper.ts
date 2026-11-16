@@ -19,6 +19,7 @@ export function resolveBackAction({
 }): TBackAction {
   if (hasOverlay) return { type: 'close-overlay' };
   if (depth > 0) return { type: 'history-back' };
-  if (pathname !== ROUTES.HOME) return { type: 'replace', href: parentHref ?? ROUTES.HOME };
+  if (pathname !== ROUTES.HOME && pathname !== ROUTES.LANDING)
+    return { type: 'replace', href: parentHref ?? ROUTES.HOME };
   return { type: 'exit' };
 }

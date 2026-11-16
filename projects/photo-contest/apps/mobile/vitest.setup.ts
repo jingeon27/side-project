@@ -1,4 +1,4 @@
-import { createHash, webcrypto } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
@@ -49,16 +49,10 @@ vi.mock('expo-haptics', () => ({
 
 vi.mock('expo-web-browser', () => ({
   openBrowserAsync: vi.fn(async () => ({ type: 'opened' })),
-  openAuthSessionAsync: vi.fn(async () => ({ type: 'cancel' })),
 }));
 
 vi.mock('expo-crypto', () => ({
-  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
-  getRandomValues: vi.fn(<T extends Uint8Array>(array: T) => webcrypto.getRandomValues(array)),
-  digest: vi.fn(async (_algorithm: string, data: Uint8Array) => {
-    const hash = createHash('sha256').update(data).digest();
-    return hash.buffer.slice(hash.byteOffset, hash.byteOffset + hash.byteLength);
-  }),
+  randomUUID: vi.fn(() => randomUUID()),
 }));
 
 vi.mock('expo-application', () => ({
@@ -74,6 +68,8 @@ vi.mock('expo-constants', () => ({
         webOrigin: 'https://contest.example',
         sentryDsn: 'https://public@sentry.example/1',
         amplitudeApiKey: 'amplitude-test-key',
+        // 실제 앱 ID가 아닌 형식만 맞춘 값이다.
+        iosAppStoreId: '1000000001',
       },
     },
   },

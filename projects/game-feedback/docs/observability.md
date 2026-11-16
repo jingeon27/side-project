@@ -1,14 +1,55 @@
 # 오류와 이용 흐름 관측
 
-API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. 브라우저는 Web Vitals도 수집하고, Amplitude는 웹의 제품 이벤트를 수집한다. SDK 키가 비어 있으면 전송하지 않는다.
+API는 예상하지 못한 오류와 수동으로 계측한 HTTP·채팅 성능을 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. 브라우저는 Web Vitals도 수집하고, Amplitude는 웹의 제품 이벤트를 수집한다. SDK 키가 비어 있으면 전송하지 않는다.
 
 ## 설정과 실행
 
-설정은 `projects/game-feedback/.env` 하나에서 읽는다. 웹은 `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_AMPLITUDE_API_KEY`, API는 `SENTRY_DSN`을 사용한다. 환경은 `ENVIRONMENT`, 배포 버전은 `SENTRY_RELEASE`다. 모바일 셸도 이 루트 파일의 공개 키를 Expo 설정으로 전달하며 별도 모바일 env 키를 만들지 않는다.
+설정은 `projects/game-feedback/.env` 하나에서 읽는다. 웹은 `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_AMPLITUDE_API_KEY`, API는 `SENTRY_DSN`을 사용한다. 환경은 `ENVIRONMENT`, 배포 버전은 `SENTRY_RELEASE`다. 모바일 셸도 이 루트 파일의 공개 키와 선택 빌드 키 `MOBILE_EAS_PROJECT_ID`(푸시)를 Expo 설정으로 전달하며 별도 모바일 env 파일을 만들지 않는다.
 
 `@side/game-feedback dev`와 `@game-feedback/web dev` 모두 루트 설정을 읽는다. 웹의 build/start도 같은 실행기를 거친다. 프로세스에서 명시한 값(빈 키 포함)이 파일보다 우선하고 build/start의 프레임워크 `NODE_ENV`는 production이다. 공개 키·환경·release는 빌드에 고정되므로 운영 값을 바꾸면 다시 빌드한다. 로컬에서 이미 실행 중인 서버에는 이후 수정한 값이 자동 반영되지 않는다.
 
 Sentry에서 `service:game-feedback`과 `layer:api`, `layer:next-server`, `layer:browser`로 발생 위치를 구분한다. API와 Next 서버가 같은 DSN을 사용해도 이 태그로 나눌 수 있다. 브라우저·WebView는 기존 `client` 태그로 구분한다. Amplitude는 US 데이터 센터와 개발/운영 별도 프로젝트를 사용한다.
+
+## API와 채팅 성능
+
+API DSN이 있으면 HTTP 요청을 10% 샘플링하고, 선택한 요청의 자식 span도 같은 추적에 남긴다. 별도 환경변수나 자동 HTTP·SQL integration을 추가하지 않는다. `defaultIntegrations: false`와 `enableRuntimeChannelInjection: false`를 유지하므로 현재 초기화 순서에서 수동 span만 기록한다. 자동 계측을 도입할 때는 SDK 초기화·모듈 로딩 순서를 별도로 검토해야 한다.
+
+| span                                      | 측정 범위                                                                                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `METHOD /api/.../:id/...` (`http.server`) | JSON 파싱·세션·권한·요청 제한·controller 처리부터 응답 쓰기 완료까지. 클라이언트 네트워크 시간과 웹 프록시 시간은 포함하지 않는다. 응답 전에 연결이 끊어지면 aborted로 종료한다. |
+| `chat.persist` (`db.transaction`)         | 대화 잠금·트랜잭션 안 권한 조회·멱등 확인·메시지/알림/푸시 큐 쓰기·커밋. 트랜잭션 앞의 접근 확인은 HTTP에만 포함된다.                                                            |
+| `chat.insert` (`db.query`)                | Prisma `chatMessage.create`와 반환 관계 조회. 단일 SQL INSERT 시간이나 전체 SQL 실행 횟수를 뜻하지 않는다. 멱등 재전송에는 새 INSERT span이 없다.                                |
+| `chat.lock` (`db.query`)                  | 전송 트랜잭션의 대화 행 `FOR UPDATE` 호출부터 반환까지. DB 왕복과 잠금 대기를 포함하며 순수 잠금 대기만의 시간은 아니다.                                                         |
+| `chat.messages` (`db.query`)              | 메시지 목록 Prisma 조회와 관계 데이터 반환. API 전체 조회 시간은 HTTP 지표에서 본다.                                                                                             |
+| `chat.publish` (`messaging.publish`)      | 커밋 뒤 수신 연결의 세션·접근 확인과 `subscriber.next()` 호출까지. 상대 브라우저 수신·REST 재조회·화면 반영은 포함하지 않는다.                                                   |
+| `chat.heartbeat` (`function`)             | 열린 연결의 세션 일괄 조회와 heartbeat 전달 한 주기.                                                                                                                             |
+
+Sentry의 Traces에서 `service=game-feedback`, `layer=api`를 선택하고 HTTP 라우트 패턴·span 이름별 duration의 p50/p95/p99와 HTTP 상태를 비교한다. 추적 ID로 같은 요청의 HTTP·persist·insert·publish를 연결한다. HTTP와 비동기 publish 시간은 겹칠 수 있고, 구간별 p95를 더해 전체 p95를 계산하지 않는다. 샘플링된 span 개수로 전체 메시지 수나 정확한 요청·SQL 실행 횟수를 주장하지 않는다.
+
+`chat.publish.recipients`는 대상 사용자 수가 아니라 확인한 열린 연결 수다. `sent`는 서버 구독자에 넘긴 연결, `unavailable`은 세션 만료·이미 닫힌 연결, `denied`는 접근 확인이 false를 반환한 연결, `failed`는 전달 과정에서 예외가 난 연결 수다. failed가 하나라도 있으면 publish span을 오류 상태로 표시한다. 접근 확인 자체가 false로 흡수한 오류와 실제 권한 거부는 이 수치만으로 구분하지 않는다. 이 값들도 샘플링된 publish 단위 측정이며 누적 운영 카운터가 아니다.
+
+오래 열린 `GET /api/chat/events`와 health probe는 HTTP span을 만들지 않는다. SSE의 연결 시간은 메시지 지연이 아니다. heartbeat는 기존처럼 5초마다 세션 일괄 조회 한 번으로 동작한다.
+
+### 샘플링과 독립인 채팅 메트릭
+
+Sentry Application Metrics는 추적 샘플링 10%와 별개로 모든 계측 호출을 기록한다. `game-feedback-server`의 Metrics에서 `service:game-feedback layer:api`와 대상 환경·release를 선택한다. 운영 지표는 `sentry.environment:production`으로 검증용 test 데이터를 제외한다.
+
+| 메트릭                                                | 용도·차원                                                                                                                                                                                                   |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat.http.duration` / `chat.http.requests`           | 목록·메시지 전송/조회·읽음·기록 삭제 HTTP의 지연(ms)과 요청 수. 라우트 템플릿·메서드·상태·`outcome=ok/client_error/server_error/aborted`로 구분한다. 인증·Origin·본문 파싱 전에 거절된 요청도 집계한다.     |
+| `chat.operation.duration` / `chat.operation.failures` | `operation=chat.persist/chat.lock/chat.insert/chat.messages/chat.publish/chat.heartbeat`별 지연과 예외 수. 실패는 `rejected`(4xx 업무 오류), `failed`(내부 실패)를 나눈다.                                  |
+| `chat.send.results`                                   | 커밋된 신규 메시지 `created`와 동일 요청의 멱등 반환 `duplicate`. 신규 메시지 수는 created만 센다.                                                                                                          |
+| `chat.publish.recipients` / `chat.publish.deliveries` | publish마다 열린 대상 연결 수와 `result=sent/unavailable/denied/failed` 연결별 결과. 수신 기기의 실제 표시 성공 수를 뜻하지 않는다.                                                                         |
+| `chat.sse.opened` / `chat.sse.closed`                 | 연결 생성과 종료 수. 종료 이유는 `client_disconnect/session_invalid/session_limit/user_limit/session_closed/user_closed/server_shutdown/heartbeat_failed/delivery_failed`.                                  |
+| `chat.sse.active` / `chat.sse.connection.duration`    | 프로세스의 현재 열린 연결 수와 종료 시 연결 수명(ms). 연결 변화와 5초 heartbeat에서 gauge를 갱신한다. 열림 빈도와 종료 이유를 함께 보고 재연결 이상을 진단하며 같은 사용자의 재연결 횟수로 단정하지 않는다. |
+
+전송 API p95: `metric.name:chat.http.duration http.route:/api/conversations/:id/messages http.request.method:POST outcome:ok`에 `p95(value)`를 조회한다. p99·요청 수와 함께 보고, 느린 구간은 `metric.name:chat.operation.duration`을 operation별로 나눠 찾는다. 5xx 비율은 `chat.http.requests`의 server_error 합계를 전체 합계와 비교한다. HTTP 200 뒤 비동기 전달 실패는 `chat.publish.deliveries result:failed`로 따로 확인한다.
+
+본문·파일명·원본 URL·사용자/대화/메시지 ID는 메트릭 차원에 없다. `beforeSendMetric`과 최종 envelope 정리를 함께 적용해 SDK가 나중에 합치는 scope·사용자·호스트 속성도 제거한다. DB/접근 조회 장애는 정상적인 권한 거부 denied로 숨기지 않고 failed와 정리한 오류 이벤트로 기록한다.
+
+성능 전송은 오류용 `beforeSend`와 별도로 `beforeSendSpan`에서 작업명·라우트 템플릿·상태·유한한 숫자 측정값·추적 ID·SDK/환경/release만 남긴다. 원본 URL·쿼리·메시지·대화/사용자 ID·세션·쿠키·헤더·SQL·span link는 제거한다. span 바깥 envelope의 sampling metadata에도 원래 작업명이 남지 않도록 `createDsc`에서 transaction 이름을 제거한다. 라우트가 결정되기 전 거부된 요청과 알 수 없는 경로는 `unmatched`로 집계한다.
+
+`src/monitoring/sentry.spec.ts`는 실제 SDK의 메모리 transport로 정리 정책을 검사한다. `src/monitoring/chat-performance.database.integration.spec.ts`는 실제 격리 PostgreSQL·Nest HTTP·SSE를 통해 추적 관계와 커밋 뒤 전달을 검사한다. 실제 Sentry 수신 확인이나 운영 성능 측정을 대신하지 않는다. 두 브라우저의 전달 시간과 실제 REST 요청 횟수를 측정하는 opt-in 벤치마크는 [부하테스트 안내](load-testing.md)를 따른다.
 
 ## Web Vitals
 
@@ -43,9 +84,11 @@ yarn workspace @game-feedback/web monitoring:check
 
 웹 Sentry는 요청·사용자·breadcrumbs·문맥·extra·오류 메시지 원문을 제거한다. 오류 종류, React 오류 번호, 스택 위치, 환경·release와 코드에서 정한 태그를 남긴다. API도 SQL 인자 대신 오류 종류·코드·호출 위치만 보낸다. 이는 SDK가 보내는 본문의 정책이며 수집 서비스 자체의 IP/지역 보관 설정과는 별개다.
 
-Amplitude는 IP·페이지 제목·검색어·fragment를 보내지 않고 화면 이름, client, locale, viewport_bucket을 기록한다. 로그인 성공, 가입, 글쓰기, 채팅 시작, 메시지 성공은 타입 카탈로그에 있고 서버 성공 뒤 집계한다. 입력 원문은 보내지 않는다. 계정 전환과 로그아웃 때 식별자를 초기화한다. 자동 수집한 URL은 enrichment에서 검색어·fragment를 제거한다.
+Amplitude는 IP·페이지 제목·검색어·fragment를 보내지 않고 화면 이름, client, locale, viewport_bucket을 기록한다. 로그인 성공, 가입, 글쓰기, 채팅 시작, 메시지 성공은 타입 카탈로그에 있고 서버 성공 뒤 집계한다. 로그인 실패(`login_failed`)는 이 탭에서 고른 제공자와 API가 붙인 이유(`expired`, `failed`, `banned`)를 로그인 화면에 돌아왔을 때 한 번 보낸다. 취소는 시작한 화면으로 돌아가 로그인 화면이 모두 보지 못하므로 집계하지 않는다. 입력 원문은 보내지 않는다. 계정 전환과 로그아웃 때 식별자를 초기화한다. 자동 수집한 URL은 enrichment에서 검색어·fragment를 제거한다.
 
 ## MCP로 수신 재확인
+
+공개 랜딩 `/about`은 `screen=landing`으로 구분한다. 시작 버튼의 `landing_start_clicked`는 `placement`(header/hero/footer), `destination_screen`, `redirect_applied`를 보낸다. 클릭 이벤트를 실제 가입·게시글 작성 성공으로 집계하지 않는다. `redirect`의 원본 URL과 게시글 ID, 검색어는 이벤트 속성에 넣지 않으며 자동 페이지뷰도 기존 enrichment에서 쿼리를 제거한다. 게시판 바로가기와 가이드·정책 링크는 기존 `ui_interaction`으로 구분한다.
 
 ```sh
 codex mcp add sentry --url https://mcp.sentry.dev/mcp

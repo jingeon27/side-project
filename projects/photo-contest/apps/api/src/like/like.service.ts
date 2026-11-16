@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
-import type { IViewer } from '../auth/session.service';
+import type { IViewer } from '../auth/session/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService } from '../group/membership/membership.service';
 import type { ISubmissionView } from '../submission/submission.presenter';
 import { SubmissionService } from '../submission/submission.service';
 
@@ -37,13 +37,13 @@ export class LikeService {
     try {
       // 이미 있으면 아무것도 하지 않는다. Serializable이 아니어야 동시 요청이 재시도 없이 모두 성공한다.
       await this.transactions.run(async (tx) => {
-        const { count } = await (tx ?? this.db).like.createMany({
+        const { count } = await tx.like.createMany({
           data: [{ submissionId, userId: viewer.id }],
           skipDuplicates: true,
         });
         if (count === 0) return;
         // 취소 후 다시 눌러도 같은 id라 이벤트는 처음 한 번만 남는다.
-        await recordEvent(tx ?? this.db, {
+        await recordEvent(tx, {
           id: `like:${submissionId}:${viewer.id}`,
           type: ANALYTICS_EVENT.SUBMISSION_LIKED,
           userId: viewer.id,

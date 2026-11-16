@@ -12,11 +12,11 @@ test(
     const name = `공개-${testInfo.project.name}-${Date.now()}`;
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    const form = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+    const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
     await expect(form.getByRole('radio', { name: /^공개 그룹/ })).toBeChecked();
     await form.getByLabel('그룹 이름').fill(name);
     await form.getByLabel('그룹 이름').press('Enter');
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const groupPath = new URL(page.url()).pathname;
     const groupId = groupPath.split('/').at(-1);
     if (!groupId) throw new Error('그룹 주소가 있어야 한다');
@@ -32,8 +32,14 @@ test(
     await seedPost(owner, secret.id, secretTitle);
 
     await context.clearCookies();
-    await page.goto('/');
-    await expect(page).toHaveURL(/\/sign\?/);
+    const guestGroup = await page.goto(groupPath);
+    expect(guestGroup?.status()).toBe(200);
+    await expect(
+      page
+        .getByRole('region', { name: '최신 게시물', exact: true })
+        .getByRole('article', { name: title, exact: true }),
+    ).toBeVisible();
+    await page.goto('/sign');
     await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page).toHaveURL('/');
     await page.getByRole('link', { name: '탐색', exact: true }).click();
@@ -60,7 +66,7 @@ test(
     await expect(comments.getByText('공개 사진 이야기', { exact: true })).toBeVisible();
     await expect(comments.getByRole('link', { name: '그룹에 가입하고 댓글 남기기' })).toBeVisible();
     await expect(comments.getByRole('textbox', { name: '댓글', exact: true })).toHaveCount(0);
-    await comments.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     expect(await page.evaluate(() => '__seoXss' in window)).toBe(false);
 
     const response = await page.request.get(`${groupPath}?utm_source=duplicate`, {
@@ -79,12 +85,14 @@ test(
             JSON.parse(script.textContent ?? '{}'),
           ),
           headings: Array.from(document.querySelectorAll('h3')).map((node) => node.textContent),
-          errors: document.querySelectorAll('template[data-dgst]').length,
+          errors: document.querySelectorAll(
+            'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+          ).length,
         };
       },
       await response.text(),
     );
-    expect(seo.title).toBe(`${name} · 별사대`);
+    expect(seo.title).toBe(`${name} | 피식`);
     expect(seo.canonical).toBe(WEB_ORIGIN + groupPath);
     expect(seo.ogImage).toBe(`${WEB_ORIGIN}/backend/media/${postId}`);
     expect(seo.robots).toContain('index');
@@ -142,6 +150,9 @@ test(
       );
     }
     expect(urls).toContain(WEB_ORIGIN + groupPath);
+    // 대회가 없는 그룹의 빈 목록 화면은 제출하지 않는다.
+    expect(urls).not.toContain(`${WEB_ORIGIN}${groupPath}/contests`);
+    expect(urls).not.toContain(`${WEB_ORIGIN}${groupPath}/hall-of-fame`);
     expect(urls).not.toContain(`${WEB_ORIGIN}/groups/${secret.id}`);
     expect(urls).not.toContain(`${WEB_ORIGIN}/me`);
     const robots = await page.request.get('/robots.txt');
@@ -164,11 +175,11 @@ test(
     const owner = await signIn(`비공개-${testInfo.project.name}`);
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    const form = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+    const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
     await form.getByLabel('그룹 이름').fill(`승인-${testInfo.project.name}-${Date.now()}`);
     await form.getByRole('radio', { name: /^비공개 그룹/ }).check();
     await form.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const groupPath = new URL(page.url()).pathname;
     const groupId = groupPath.split('/').at(-1);
     if (!groupId) throw new Error('그룹 주소가 있어야 한다');
@@ -211,7 +222,7 @@ test(
           .getByRole('region', { name: '최신 게시물', exact: true })
           .getByRole('article', { name: '승인한 멤버에게만 보이는 순간', exact: true }),
       ).toBeVisible();
-      await expect(applicantPage.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
+      await expect(applicantPage.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
       expect((await applicantPage.request.get(`/backend/media/${postId}`)).status()).toBe(200);
       await applicantPage.goto('/me');
       await expect(

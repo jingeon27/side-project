@@ -2,12 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { Page } from '@playwright/test';
 
-import {
-  buildBootstrapScript,
-  buildDispatchScript,
-  type TLoginResult,
-  type TWebMessage,
-} from '@game-feedback/bridge';
+import { buildBootstrapScript, buildDispatchScript, type TWebMessage } from '@game-feedback/bridge';
 
 import { NativeHost } from '../../src/features/bridge/lib/native-host';
 import { toWebPath } from '../../src/features/navigation/lib/navigation-policy';
@@ -19,11 +14,8 @@ class NativeHostHarness {
   private pushGranted = false;
   private readonly installationId = randomUUID();
   readonly messages: TWebMessage[] = [];
-  readonly authSessions: string[] = [];
-  readonly authCallbacks: string[] = [];
   private ready = false;
   private closed = false;
-  private loginResult: TLoginResult | null = null;
   private path = '';
   private rootBackCount = 0;
   private overlayOpen = false;
@@ -92,9 +84,6 @@ class NativeHostHarness {
   openDeepLink = (url: string) => {
     const path = toWebPath(url, ORIGIN);
     return path ? this.host.open(path) : false;
-  };
-  setLoginResult = (result: TLoginResult) => {
-    this.loginResult = result;
   };
   dispose = () => {
     this.closed = true;

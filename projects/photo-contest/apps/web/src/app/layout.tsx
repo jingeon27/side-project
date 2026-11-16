@@ -5,22 +5,26 @@ import { cookies, headers } from 'next/headers';
 import { parseAppUserAgent } from '@photo-contest/bridge';
 
 import { AppProviders } from '@/_app/providers';
+import { AppShell } from '@/_app/shell';
 
 import '@/_app/styles/tailwind.css';
 
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { APP_MAIN_ID, APP_ROOT_ID, DARK_THEME_COLOR, THEME_COLOR } from '@/shared/constants/layout';
-import { PRIVATE_ROBOTS, SITE_DESCRIPTION } from '@/shared/lib/seo.helper';
+import { PRIVATE_ROBOTS, SITE_DESCRIPTION, SITE_TITLE } from '@/shared/lib/seo.helper';
 import { parseThemePreference, THEME_COOKIE } from '@/shared/model/theme/theme-preference';
 
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getWebOrigin()),
-    title: { default: '별사대 — 별난 사진 대회', template: '%s · 별사대' },
+    title: { default: SITE_TITLE, template: '%s | 피식' },
     description: SITE_DESCRIPTION,
     robots: PRIVATE_ROBOTS,
   };
 }
+
+// 첫 문서는 저장된 테마와 앱 환경을 기다리고, 하위 화면 이동은 각 loading 경계가 맡는다.
+export const instant = false;
 
 // 사진을 확대해 봐야 하므로 확대는 막지 않는다. 노치·홈 인디케이터 영역까지 그리고 안전 영역은 CSS env()로 비킨다.
 export const viewport: Viewport = {
@@ -44,9 +48,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas desktop:bg-sunken">
           <main
             id={APP_MAIN_ID}
-            className="relative flex min-h-dvh w-full min-w-0 max-w-web flex-col bg-surface desktop:bg-sunken desktop:has-[[data-desktop-nav]]:pl-48 wide:has-[[data-desktop-nav]]:pl-56"
+            className="relative flex min-h-dvh w-full min-w-0 flex-col bg-surface desktop:bg-sunken desktop:has-[[data-desktop-nav]]:pl-48 wide:has-[[data-desktop-nav]]:pl-56"
           >
-            <AppProviders themePreference={preference}>{children}</AppProviders>
+            <AppProviders themePreference={preference}>
+              <AppShell>{children}</AppShell>
+            </AppProviders>
           </main>
         </div>
       </body>

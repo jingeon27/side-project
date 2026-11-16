@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { locales } from '@/i18n/routing';
+import { getArticles } from '@/shared/article/lib/get-articles';
 import { siteUrl } from '@/shared/config/site';
-import { articleMetadata, pageMetadata, type ArticleSeo } from '@/shared/lib/seo/metadata';
+import { articleImagePath, articleMetadata, pageMetadata, type ArticleSeo } from '@/shared/lib/seo/metadata';
 
 const article: ArticleSeo = {
   id: 'cache',
@@ -63,5 +65,12 @@ describe('multilingual SEO', () => {
     expect(
       articleMetadata({ ...article, translations: { ko: article.slug } }).alternates?.languages,
     ).not.toHaveProperty('en');
+  });
+
+  it('shares a JPG or PNG image for every published article, never the AVIF cover', () => {
+    // The generated /og card is a PNG.
+    for (const locale of locales)
+      for (const entry of getArticles(locale))
+        expect(articleImagePath(entry), `${locale}/${entry.id}`).toMatch(/\.(?:jpe?g|png)$|^\/og\//i);
   });
 });

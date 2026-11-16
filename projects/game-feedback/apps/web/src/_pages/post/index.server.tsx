@@ -1,13 +1,15 @@
 import { Suspense, type ReactNode } from 'react';
 
+import { richTextMediaReferences } from '@game-feedback/contracts';
+
 import { getServerSession } from '@/features/auth/index.server';
 import { getServerPost } from '@/features/post/index.server';
 import { createPageMetadata, JsonLd, pageUrl, postStructuredData } from '@/shared/seo';
 import { CommunityPage } from '@/widgets/community-shell';
 
+import { PostTopbar } from './ui/header/PostTopbar';
+import { PostTopbarPlaceholder } from './ui/header/PostTopbarPlaceholder';
 import { PostPage } from './ui/PostPage';
-import { PostTopbar } from './ui/PostTopbar';
-import { PostTopbarPlaceholder } from './ui/PostTopbarPlaceholder';
 
 interface IPostRouteProps {
   params: Promise<{ locale: string; id: string }>;
@@ -16,6 +18,10 @@ export async function postMetadata({ params }: IPostRouteProps) {
   const { locale, id } = await params;
   const { post } = await getServerPost(id);
   return createPageMetadata({
+    imagePath: `/og/posts/${encodeURIComponent(id)}`,
+    photoPaths: richTextMediaReferences(post.document)
+      .filter((media) => media.kind === 'IMAGE')
+      .map((media) => media.url),
     title: post.title,
     description: post.body,
     path: `/${locale}/posts/${encodeURIComponent(id)}`,
@@ -60,6 +66,7 @@ export function PostDocument({
   return (
     <CommunityPage
       locale={locale}
+      screenKey="post"
       topbar={
         streamHeader ? (
           <Suspense fallback={<PostTopbarPlaceholder locale={locale} />}>{header}</Suspense>

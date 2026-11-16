@@ -20,20 +20,29 @@ export function usePushEvents(inbox: PushInbox, onOpen: (path: string) => boolea
     inbox.bindConsumed(() => {
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     });
-    let active = true;
-    const receiveResponse = (response: Notifications.NotificationResponse | null) => {
-      if (!active || !response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER)
+    const lifetime = new AbortController();
+    const handleNotificationResponse = (response: Notifications.NotificationResponse | null) => {
+      if (
+        lifetime.signal.aborted ||
+        !response ||
+        response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER
+      )
         return;
       inbox.tap(response.notification.request.identifier, response.notification.request.content.data?.path);
     };
-    const tapped = Notifications.addNotificationResponseReceivedListener(receiveResponse);
-    const received = Notifications.addNotificationReceivedListener(inbox.notify);
-    const tokenChanged = Notifications.addPushTokenListener(inbox.notify);
-    void Notifications.getLastNotificationResponseAsync()
-      .then(receiveResponse)
-      .catch(() => undefined);
+    const tapped = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    const received = Notifications.addNotificationReceivedListener(inbox.handleNotificationReceived);
+    const tokenChanged = Notifications.addPushTokenListener(inbox.handleNotificationReceived);
+    const restoreResponse = async () => {
+      try {
+        handleNotificationResponse(await Notifications.getLastNotificationResponseAsync());
+      } catch {
+        // 마지막 알림 복원 실패는 실시간 구독을 막지 않는다.
+      }
+    };
+    void restoreResponse();
     return () => {
-      active = false;
+      lifetime.abort();
       tapped.remove();
       received.remove();
       tokenChanged.remove();

@@ -1,12 +1,14 @@
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { ANSWER_PAGE } from '../answers/answer-page';
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
@@ -30,10 +32,14 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
-      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-      encoding: 'utf8',
-    });
+    const migration = spawnSync(
+      process.execPath,
+      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      {
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+        encoding: 'utf8',
+      },
+    );
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed');
     db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
@@ -49,6 +55,105 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       await db.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
       await db.$disconnect();
     }
+  });
+  it('accepts 30-character titles and rejects 31-character titles on create and edit', async () => {
+    const input = { categoryId, board: 'FREE', title: '제'.repeat(30), body: '본문' };
+    const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;
+    expect(created.title).toBe(input.title);
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, title: '제'.repeat(31) })
+      .expect(400);
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ title: '제'.repeat(31) })
+      .expect(400);
+    expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.title).toBe(input.title);
+  });
+  it('같은 요청 키의 재시도와 동시 전송은 글 하나만 만들고 다른 내용은 거부해야 한다', async () => {
+    const input = {
+      categoryId,
+      board: 'FREE',
+      title: '응답이 끊긴 글쓰기',
+      body: '같은 초안을 다시 보내도 글은 하나만 남아야 합니다.',
+      clientRequestId: randomUUID(),
+    };
+    const before = await db.post.count();
+    const [first, second] = await Promise.all(
+      [0, 1].map(() => author.post('/api/posts').set('Origin', origin).send(input).expect(200)),
+    );
+    expect(second?.body.id).toBe(first?.body.id);
+    const retried = await author.post('/api/posts').set('Origin', origin).send(input).expect(200);
+    expect(retried.body.id).toBe(first?.body.id);
+    expect(await db.post.count()).toBe(before + 1);
+    const changed = await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, title: '내용을 고친 글쓰기' })
+      .expect(409);
+    expect(changed.body.errorCode).toBe('POST_CONFLICT');
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, clientRequestId: randomUUID() })
+      .expect(200);
+    expect(await db.post.count()).toBe(before + 2);
+  });
+  it('내부 SSR 집계는 첫 페이지 밖 답변까지 세고 차단·숨김·삭제를 제외해야 한다', async () => {
+    const post = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({
+          categoryId,
+          board: 'FEEDBACK',
+          title: '서버 집계 확인',
+          body: '첫 페이지 밖의 답변도 집계합니다.',
+        })
+        .expect(200)
+    ).body;
+    const reviewer = supertest.agent(app.getHttpServer());
+    await reviewer.post('/api/auth/demo').set('Origin', origin).send({ nickname: '집계답변자' }).expect(200);
+    const reviewerId = (await reviewer.get('/api/session').expect(200)).body.user.id;
+    const writerId = (await author.get('/api/session').expect(200)).body.user.id;
+    const visibleCount = ANSWER_PAGE + 2;
+    await db.answer.createMany({
+      data: [
+        ...Array.from({ length: visibleCount }, () => ({
+          postId: post.id,
+          authorId: writerId,
+          body: '보이는 답변',
+          helpful: false,
+        })),
+        { postId: post.id, authorId: reviewerId, body: '도움된 답변', helpful: true },
+        { postId: post.id, authorId: writerId, body: '숨긴 답변', helpful: true, hidden: true },
+        {
+          postId: post.id,
+          authorId: writerId,
+          body: '삭제된 답변',
+          helpful: true,
+          deletedAt: dayjs().toDate(),
+        },
+      ],
+    });
+    const path = `/internal/posts/${post.id}/answer-counts`;
+    expect((await supertest(app.getHttpServer()).get(path).expect(200)).body).toEqual({
+      answerCount: visibleCount + 1,
+      helpfulCount: 1,
+    });
+    await author.post('/api/blocks').set('Origin', origin).send({ blockedUserId: reviewerId }).expect(200);
+    expect((await author.get(path).expect(200).expect('Cache-Control', 'no-store')).body).toEqual({
+      answerCount: visibleCount,
+      helpfulCount: 0,
+    });
+    expect((await author.get(`/api/posts/${post.id}`).expect(200)).body.answers).toHaveLength(ANSWER_PAGE);
+    await reviewer.get(path).expect(404);
+    await author.delete(`/api/blocks/${reviewerId}`).set('Origin', origin).expect(200);
+    await db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    await author.get(path).expect(404);
+    await author.get('/internal/posts/missing/answer-counts').expect(404);
   });
   it('creates and edits a one-character post while rejecting empty, oversized and mismatched content', async () => {
     const input = {

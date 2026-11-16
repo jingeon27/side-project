@@ -56,4 +56,75 @@ describe('API Sentry', () => {
     expect(captured[0]).toContain('"environment":"test"');
     expect(captured[0]).toContain('"release":"test-release"');
   });
+
+  it('실제 span 전송에서 작업명·측정값만 남기고 SQL·사용자·URL·링크를 제거해야 한다', async () => {
+    vi.stubEnv('SENTRY_DSN', 'https://test@example.invalid/1');
+    const captured: string[] = [];
+    Sentry.init({
+      ...sentryOptions(),
+      tracesSampleRate: 1,
+      transport: () => ({
+        send: async (envelope) => {
+          captured.push(JSON.stringify(envelope));
+          return { statusCode: 200 };
+        },
+        flush: async () => true,
+      }),
+    });
+    await Sentry.startSpan(
+      {
+        name: 'POST /api/conversations/private-conversation-id/messages?token=private-token',
+        op: 'http.server',
+        parentSpan: null,
+        attributes: {
+          'http.route': '/api/conversations/:id/messages',
+          'http.request.method': 'POST',
+          'http.response.status_code': 200,
+          'url.full': 'https://example.com/private-url',
+          'user.id': 'private-user-id',
+          'http.request.header.cookie': 'private-cookie',
+        },
+      },
+      async () => {
+        await Sentry.startSpan(
+          {
+            name: 'chat.persist',
+            op: 'db.transaction',
+            attributes: { 'db.statement': 'SELECT private-sql-value', 'message.body': 'private-body' },
+          },
+          async () => {},
+        );
+        await Sentry.startSpan(
+          {
+            name: 'chat.publish',
+            op: 'messaging.publish',
+            attributes: {
+              'chat.publish.sent': 2,
+              'chat.publish.failed': 0,
+              'chat.publish.recipients': 'private-invalid-number',
+              'sentry.segment.name': 'private-parent-name',
+            },
+            links: [
+              {
+                context: { traceId: 'a'.repeat(32), spanId: 'b'.repeat(16), traceFlags: 1 },
+                attributes: { private: 'private-link' },
+              },
+            ],
+          },
+          async () => {},
+        );
+      },
+    );
+    Sentry.startSpan({ name: 'private-unknown-operation', op: 'db.sql', parentSpan: null }, () => {});
+    await Sentry.flush(1000);
+    const payload = captured.join('\n');
+    expect(payload).not.toContain('private-');
+    expect(payload).not.toContain('db.statement');
+    expect(payload).toContain('POST /api/conversations/:id/messages');
+    expect(payload).toContain('chat.persist');
+    expect(payload).toContain('chat.publish');
+    expect(payload).toContain('chat.publish.sent');
+    expect(payload).not.toContain('chat.publish.recipients');
+    expect(payload).toContain('api.operation');
+  });
 });

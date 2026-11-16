@@ -13,14 +13,14 @@ export const SHARE_OUTCOME = {
   Cancelled: 'cancelled',
   /** 공유도 복사도 하지 못했다 */
   Failed: 'failed',
-} as const;
+} as const satisfies Record<string, string>;
 export type TShareOutcome = (typeof SHARE_OUTCOME)[keyof typeof SHARE_OUTCOME];
 
 /** 복사에 성공한 경로: 앱 clipboard.copy 또는 웹(navigator.clipboard·숨긴 textarea) */
 export const COPY_METHOD = {
   App: 'app',
   Web: 'web',
-} as const;
+} as const satisfies Record<string, string>;
 export type TCopyMethod = (typeof COPY_METHOD)[keyof typeof COPY_METHOD];
 
 export interface IShareContent {

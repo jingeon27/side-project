@@ -52,7 +52,7 @@ test('가짜 앱 WebView에서도 비밀번호 가입·초대 공유·뒤로 가
           capabilities: ['share.open', 'clipboard.copy'],
         }),
     });
-    await page.goto('/');
+    await page.goto('/sign');
     await expect.poll(() => events).toContain('app.ready');
     await page.getByRole('tab', { name: '회원가입', exact: true }).click();
     const registration = page.getByRole('tabpanel', { name: '회원가입', exact: true });
@@ -61,21 +61,24 @@ test('가짜 앱 WebView에서도 비밀번호 가입·초대 공유·뒤로 가
     await registration.getByLabel('비밀번호', { exact: true }).fill('webview password 2026');
     await page.getByRole('button', { name: '가입하고 시작하기', exact: true }).click();
     await expect(page.getByRole('button', { name: /구글|Google/ })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
+    await expect(page.getByRole('region', { name: '공개 그룹 목록' })).toBeVisible();
     expect((await context.cookies()).find(({ name }) => name === 'contest_session')?.httpOnly).toBe(true);
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page).toHaveURL('/me');
     await expect(page.getByRole('heading', { name: '마이페이지', exact: true })).toBeVisible();
     await page.getByRole('button', { name: '그룹 만들기' }).click();
-    await page.getByRole('dialog').getByLabel('그룹 이름').fill('웹뷰 모임');
+    await page.getByRole('form', { name: '그룹 만들기' }).getByLabel('그룹 이름').fill('웹뷰 모임');
     await expect(router.requestWeb('navigation.back', {}, { timeoutMs: 800 })).resolves.toEqual({
       handled: true,
     });
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL('/me');
     await page.getByRole('button', { name: '그룹 만들기' }).click();
-    await page.getByRole('dialog').getByLabel('그룹 이름').fill('웹뷰 모임');
-    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await page.getByRole('form', { name: '그룹 만들기' }).getByLabel('그룹 이름').fill('웹뷰 모임');
+    await page
+      .getByRole('form', { name: '그룹 만들기' })
+      .getByRole('button', { name: '그룹 만들기', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     await page.getByText('초대와 그룹 멤버', { exact: true }).click();
     await page.getByRole('button', { name: '친구 초대하기' }).click();
     await page.getByRole('button', { name: '링크 복사', exact: true }).click();

@@ -1,4 +1,6 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import dayjs from 'dayjs';
+import { match } from 'ts-pattern';
 
 import {
   ExpoPushTransport,
@@ -8,8 +10,8 @@ import {
   type IPushMessage,
 } from '@side/toolkit/push-notifications';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient } from '../generated/prisma';
@@ -89,7 +91,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
 
   async runOnce(
     transport = new ExpoPushTransport({ accessToken: this.config.mobilePush.accessToken }),
-    now = new Date(),
+    now = dayjs().toDate(),
   ) {
     const dispatcher = new PushDispatcher(
       {
@@ -109,6 +111,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
               where: {
                 id,
                 status: { in: ['PENDING', 'TICKET'] },
+                nextAttemptAt: { lte: date },
                 OR: [{ leaseUntil: null }, { leaseUntil: { lte: date } }],
               },
               data: { leaseToken: lease, leaseUntil: until },
@@ -124,7 +127,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     );
     await dispatcher.run(now);
     await this.db.pushDelivery.deleteMany({
-      where: { createdAt: { lt: new Date(now.getTime() - 2 * 86_400_000) } },
+      where: { createdAt: { lt: dayjs(now.getTime() - 2 * 86_400_000).toDate() } },
     });
     await this.db.pushDevice.deleteMany({ where: { session: { expiresAt: { lte: now } } } });
   }
@@ -142,22 +145,21 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
         id: job.deviceId,
         enabled: true,
         user: { bannedAt: null, withdrawnAt: null },
-        session: { expiresAt: { gt: new Date() } },
+        session: { expiresAt: { gt: dayjs().toDate() } },
       },
       include: { session: { select: { userId: true } } },
     });
     if (!device || device.session.userId !== device.userId) return null;
     const status = await this.notifications.pushStatus(device.userId, job.eventId);
     if (!status) return null;
+    // 기기 언어는 DB 문자열이라 모르는 값은 한국어 문구를 쓴다.
+    const copy = match(device.locale)
+      .with('en', () => ({ title: 'New activity', body: 'You have a new notification.' }))
+      .with('ja', () => ({ title: '新しいお知らせ', body: '新しいお知らせが届きました。' }))
+      .otherwise(() => ({ title: '새 알림', body: '새로운 알림이 도착했어요.' }));
     return {
       to: device.token,
-      title: device.locale === 'en' ? 'New activity' : device.locale === 'ja' ? '新しいお知らせ' : '새 알림',
-      body:
-        device.locale === 'en'
-          ? 'You have a new notification.'
-          : device.locale === 'ja'
-            ? '新しいお知らせが届きました。'
-            : '새로운 알림이 도착했어요.',
+      ...copy,
       data: { path: `/${device.locale}/notifications`, notificationId: job.eventId },
       badge: Math.min(9999, status.badge),
       sound: 'default',

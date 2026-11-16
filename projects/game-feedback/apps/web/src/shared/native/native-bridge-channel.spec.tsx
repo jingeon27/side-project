@@ -83,6 +83,29 @@ describe('instrumented native bridge channel', () => {
       atRoot: true,
     });
   });
+  // 네이티브는 back-result를 800ms만 기다린다. 이탈 확인 창을 띄울 수 있는 닫기·이동보다 응답이 먼저 나가야 한다.
+  it('answers back before dismissing an overlay or navigating, which may wait on a confirm dialog', () => {
+    const { channel, binding, emit, postMessage } = setup();
+    const answers = () =>
+      postMessage.mock.calls
+        .map(([data]) => JSON.parse(data))
+        .filter((message) => message.type === 'back-result');
+    const onDismissOverlay = vi.fn(answers);
+    const navigate = vi.fn(answers);
+    channel.start();
+    channel.bind({ ...binding, overlayOpen: true, onDismissOverlay });
+    emit({ type: 'back', id: 'sheet' });
+    expect(onDismissOverlay.mock.results[0]?.value).toEqual([
+      { type: 'back-result', id: 'sheet', handled: true },
+    ]);
+    channel.bind({ ...binding, onBack: () => ({ handled: true, navigate }) });
+    emit({ type: 'back', id: 'page' });
+    expect(navigate.mock.results[0]?.value).toContainEqual({
+      type: 'back-result',
+      id: 'page',
+      handled: true,
+    });
+  });
   it('ignores malformed messages and disconnects after disposal', () => {
     const { channel, binding, emit } = setup();
     channel.start();

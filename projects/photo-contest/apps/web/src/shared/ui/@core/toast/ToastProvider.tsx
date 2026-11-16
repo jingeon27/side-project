@@ -3,19 +3,21 @@
 import type { ReactNode } from 'react';
 
 import { Toast } from '@base-ui/react/toast';
-import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { match } from 'ts-pattern';
 
+import { StatusAnimation } from '@side/design-system';
+
 import { cn } from '../../../lib/cn.helper';
-import { getOverlayContainer } from '../../../lib/overlay-container.helper';
 import { TOAST_TYPE, toastManager } from '../../../model/toast';
+import { OverlayPortal } from '../overlay-portal';
 
 const TOAST_TIMEOUT_MS = 4_000;
 
 function ToastIcon({ type }: { type: string | undefined }) {
   return match(type)
-    .with(TOAST_TYPE.Success, () => <CircleCheck aria-hidden className="size-5 shrink-0 text-accent" />)
-    .with(TOAST_TYPE.Error, () => <CircleAlert aria-hidden className="size-5 shrink-0 text-danger-soft" />)
+    .with(TOAST_TYPE.Success, () => <StatusAnimation variant="success" className="size-5 text-accent" />)
+    .with(TOAST_TYPE.Error, () => <StatusAnimation variant="error" className="size-5 text-on-brand" />)
     .otherwise(() => <Info aria-hidden className="size-5 shrink-0 text-on-brand" />);
 }
 
@@ -59,14 +61,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <Toast.Provider toastManager={toastManager} limit={3} timeout={TOAST_TIMEOUT_MS}>
       {children}
-      <Toast.Portal container={getOverlayContainer()}>
-        <Toast.Viewport
-          aria-label="알림"
-          className="fixed inset-x-0 bottom-(--toast-bottom,16px) z-toast mx-auto w-[calc(100%-32px)] max-w-[calc(var(--max-width-app)-32px)]"
-        >
-          <ToastList />
-        </Toast.Viewport>
-      </Toast.Portal>
+      <OverlayPortal>
+        {(container) => (
+          <Toast.Portal container={container}>
+            <Toast.Viewport
+              aria-label="알림"
+              className="fixed inset-x-0 bottom-(--toast-bottom,16px) z-toast mx-auto w-[calc(100%-32px)] max-w-[calc(var(--max-width-app)-32px)]"
+            >
+              <ToastList />
+            </Toast.Viewport>
+          </Toast.Portal>
+        )}
+      </OverlayPortal>
     </Toast.Provider>
   );
 }

@@ -10,7 +10,7 @@ import { match } from 'ts-pattern';
 
 import { refreshSessionMutationOptions } from '@/features/auth';
 import { nativeBridgeChannel } from '@/shared/native';
-import { backNavigation } from '@/shared/navigation';
+import { backNavigation, confirmNavigation, confirmOverlayClose } from '@/shared/navigation';
 
 export function NativeBridge() {
   const client = useQueryClient();
@@ -21,26 +21,30 @@ export function NativeBridge() {
   const overlays = useOverlayData();
   useEffect(() => {
     const open = last(Object.values(overlays).filter((item) => item.isOpen));
+    const currentPath = pathname + (search ? `?${search}` : '');
     return nativeBridgeChannel.bind({
-      path: pathname + (search ? `?${search}` : ''),
+      path: currentPath,
       overlayOpen: !!open,
-      onOpen: (path) => router.push(path),
+      onOpen: (path) => {
+        if (path === currentPath || confirmNavigation()) router.push(path);
+      },
       onActive: refreshSession,
       onDismissOverlay: () => {
-        if (!open) return;
+        // 고친 내용이 있는 수정 시트처럼 그 오버레이 안의 초안만 닫기 확인을 거친다. 취소하면 시트를 그대로 둔다.
+        if (!open || !confirmOverlayClose(open.id)) return;
+        // 시트가 닫기 전환을 마친 뒤 openOverlay가 제거한다.
         overlay.close(open.id);
-        overlay.unmount(open.id);
       },
+      // 이동은 채널이 back-result를 보낸 뒤에 실행한다. 이탈 확인 창이 네이티브의 800ms 응답 대기를 넘기지 않는다.
       onBack: () =>
         match(backNavigation())
-          .with({ action: 'back' }, () => {
-            router.back();
-            return { handled: true };
-          })
-          .with({ action: 'replace' }, ({ path }) => {
-            router.replace(path);
-            return { handled: true };
-          })
+          .with({ action: 'back' }, () => ({ handled: true, navigate: () => router.back() }))
+          .with({ action: 'replace' }, ({ path }) => ({
+            handled: true,
+            navigate: () => {
+              if (confirmNavigation()) router.replace(path);
+            },
+          }))
           .with({ action: 'root' }, () => ({ handled: false, atRoot: true }))
           .with({ action: 'unhandled' }, () => ({ handled: false }))
           .exhaustive(),

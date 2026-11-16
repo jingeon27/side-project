@@ -1,46 +1,27 @@
 <Summary>
 
-While moving a prototype into a Next.js proof of concept, I recorded repeated decisions in skills and revised rules that were too broad.
+Moving a validation SPA to a Next.js service meant asking a coding agent to build similar features repeatedly, so I put recurring corrections into skills, the instruction documents the agent reads. Short, absolute rules could push it to change perfectly good code too, and I had to write down when each rule did not apply.
 
 </Summary>
 
-Moving an SPA prototype into a usable service meant adding SSR, SEO, multiple languages, form validation, and admin screens. I expected to build similar pages and forms repeatedly, so before giving the work to Claude Code, I wrote down the sequence from planning to verification.
+![An illustration of turning repeated prototype decisions into reusable working rules.](/images/covers/prototype-working-rules.avif)
 
-These rules documented recurring decisions from reading a Jira task through planning, implementation, validation, code review, and committing. They were more specific than preferences such as “always use a hook.”
+To stop a recurring mistake, one of my skills once said, “do not pass a value as a prop if a hook can provide it.” A skill is an instruction document a coding agent reads while working. The agent tries to follow what it says on the next implementation, and applied literally, that sentence could bind UI with explicit inputs to context.
 
-## Fix the workflow first
+When I asked for the removal of a component that hid its children until mounting finished, the agent moved the same logic into `useMounted`. The component disappeared, and the first paint stayed empty.
 
-I put this sequence in the skill used for service development.
+Both came up while moving a validation SPA into a Next.js service. An SPA draws its screens with JavaScript in the browser, so the first HTML the server sends is nearly empty. Moving to a service for real use involved more than rebuilding screens: it needed SSR, which produces HTML on the server, along with SEO, multiple languages, form validation, and admin pages. Similar pages and forms would follow, and I did not want to repeat the same instructions to Claude Code each time, so recurring corrections went into a skill. Using it showed me that a concise rule was not enough. It also had to say where it did not apply.
 
-```text
-Jira task와 acceptance criteria 확인
-  -> 관련 route, API, 기존 pattern 탐색
-  -> 변경 파일과 검증 방법을 plan으로 작성
-  -> 작은 단위로 구현
-  -> typecheck, lint, build, route smoke test
-  -> diff 기반 code review
-  -> 지적 반영 후 commit
-```
+## The rule against passing props
 
-The inputs and outputs of each stage mattered more than the name of a component-generation command.
+That first sentence was not wrong everywhere. When a value travels down through several levels of props, intermediate components forward it without using it. A value the whole app shares, such as locale, comes from a provider through React context, so a component that needs it can read it with a hook and cut out that forwarding.
 
-- The plan lists routes to change, patterns to reuse, and loading, error, and empty states.
-- Before implementation, find the closest example in the current codebase.
-- Review checks scope, hydration, accessibility, and missing translations.
-- Each commit contains one verified unit of work.
-
-Separate skills covered recurring forms, queries, and drawers, using real codebase patterns and examples to avoid. Each new plan could focus on what differed in the Jira task instead of repeating the same instructions.
-
-## Give rules conditions
-
-Some early rules were too strong because I tried to stop recurring AI mistakes with short prohibitions. One was “do not pass a value as a prop if a hook can provide it.”
-
-That can reduce prop drilling, but props also make a component's inputs explicit and allow pure tests. I revised it to:
+But props also communicate a component's inputs and carry values computed by its parent. Visible inputs also make it easier to test a component on its own. So I narrowed the rule to forwarding values already supplied by a shared provider.
 
 > Do not pass values already owned by common providers, such as router, locale, or theme, through unrelated intermediate components. Pass parent-computed screen data and explicit component inputs as props.
 
 ```tsx
-// 관계없는 component 두 개가 locale을 전달만 한다.
+// Two unrelated components only pass the locale through.
 function Page() {
   const locale = useLocale();
   return <Section locale={locale} />;
@@ -50,23 +31,37 @@ function Section({ locale }: { locale: Locale }) {
   return <ProductCard locale={locale} />;
 }
 
-// 실제 소비 지점에서 app context를 읽는다.
+// Read app context at the actual point of use.
 function ProductCard() {
   const locale = useLocale();
   return <ProductName locale={locale} />;
 }
 
-// ProductName은 명시적인 입력을 받는 순수 UI로 남긴다.
+// ProductName stays pure UI with explicit inputs.
 function ProductName({ locale }: { locale: Locale }) {
   // ...
 }
 ```
 
-For viewport differences that affect presentation alone, prefer CSS media queries over JavaScript hooks. If the viewport changes fetching or behavior, make that decision explicit in client logic.
+`Page` and `Section` at the top show the forwarding the rule is meant to remove, and the lower half is the shape after narrowing it. Here `ProductCard` reads locale, while `ProductName` renders from the locale it receives. `Section` no longer needs to forward the value, but `ProductName` still has an explicit input.
 
-## A mount gate and Suspense solve different problems
+Following the first sentence literally would make `ProductName` read locale itself too. This is a shortened example.
 
-The legacy code had a component that showed children only after mounting.
+```tsx
+// The original rule, followed to the letter
+function ProductName() {
+  const locale = useLocale();
+  // ...
+}
+```
+
+It looks like a component with no inputs, but it now needs a provider to render, and drawing it in another locale means wrapping it in a provider first.
+
+I made a similar distinction for viewport changes. CSS media queries handle changes in layout or visibility. Client logic is reserved for cases where the viewport changes fetching or behavior.
+
+## An empty first paint, even after moving to useMounted
+
+The existing code included a component that hid its children until mounting finished. I will call this kind of code a mount gate.
 
 ```typescript
 function ClientOnly({ children }: { children: React.ReactNode }) {
@@ -76,16 +71,35 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 }
 ```
 
-When I asked the AI to remove it, it moved the same code into a `useMounted` hook. The name changed; the first paint still remained empty.
+`useEffect` does not run on the server, and in the browser it runs after the first render. So `mounted` is `false` in the server HTML and in the browser's first render, and nothing below this component is drawn. In a service being moved so it could have SSR and SEO, the server HTML below this point is effectively empty.
 
-But “the layout has Suspense, so remove every mount gate” is inaccurate too. Suspense handles fallback for work that suspends. It does not automatically fix access to `window` or viewport-based hydration mismatches.
+Mount gates are usually there to avoid hydration problems. Hydration is the process where React attaches event handlers in the browser to HTML the server produced. If the browser's first render differs from that HTML, you get a hydration mismatch. Leaving both first renders empty removes the mismatch, because nothing can differ, and removes the content along with it.
 
-I separated the rules by cause.
+When I asked for its removal, the same logic moved into `useMounted`. Here it is in shortened form.
 
-- Wrap the smallest subtree using a hook such as `useSearchParams`, which can switch static rendering to client rendering, in Suspense.
-- Read browser APIs in event handlers or effects, and make the first server and client renders produce the same markup.
-- Handle presentation differences with CSS media queries where possible.
-- Use a client-only boundary for components that cannot support SSR, such as some external widgets.
+```typescript
+function useMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+```
+
+The reason for the empty first paint remained, and only the name and file location had changed. That was not the change I wanted.
+
+Having Suspense in the layout is no reason to remove every mount gate either. Suspense is a boundary that shows a fallback in place of a subtree that has suspended because it is not ready. It is for when there is something to wait for, so it does not resolve window access or viewport-based hydration mismatches. Here is a shortened example.
+
+```tsx
+// The server has no window, so it draws DesktopNav,
+// while a browser on a narrow screen draws MobileNav on its first render.
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+return isMobile ? <MobileNav /> : <DesktopNav />;
+```
+
+Wrapping this component in Suspense still leaves the first renders on the server and in the browser different.
+
+After that I wrote the guidance by cause instead of compressing it into one rule. A hook such as `useSearchParams`, which can switch static rendering to client rendering, belongs in a small Suspense-wrapped subtree. A page Next.js prerenders is built before any request arrives, so it cannot know the query string. Using this hook therefore renders up to the closest Suspense boundary in the browser, and without a boundary the production build fails. Wrapping a small part keeps everything outside it in the first HTML.
 
 ```tsx
 function SearchSection() {
@@ -97,11 +111,26 @@ function SearchSection() {
 }
 ```
 
-Before deciding whether to remove a gate, determine why the first render differs.
+Browser APIs are read in handlers or effects so the first server and client renders match. CSS handles presentation differences, while genuinely non-SSR components such as external widgets retain a client-only boundary.
 
-## When mutation state does not need another copy
+## Submission results copied out of the mutation
 
-After moving form submission to `useMutation`, some code still copied success state and the last submitted values into local state and a ref.
+Some code moved submission to TanStack Query's `useMutation` but still copied success status and the last submitted values into local state and a ref. `useMutation` is a hook that manages a request that writes to the server, along with its progress. A shortened version of the code follows.
+
+```typescript
+const [isComplete, setIsComplete] = useState(false);
+const lastValues = useRef<FormValues | null>(null);
+
+const mutation = useMutation({
+  mutationFn: submitForm,
+  onSuccess: (_, variables) => {
+    setIsComplete(true);
+    lastValues.current = variables;
+  },
+});
+```
+
+The mutation already held what the screen needed.
 
 ```typescript
 const mutation = useMutation({ mutationFn: submitForm });
@@ -110,48 +139,36 @@ const submittedValues = mutation.variables;
 const isComplete = mutation.isSuccess;
 ```
 
-If only one submission can run at a time and the screen needs only the latest mutation's lifecycle, `variables` and `isSuccess` can be used directly. They do not need copies in `useState` and `useRef`.
+If submissions run one at a time and the screen shows only the latest result, it can read `variables`, the last input sent, and `isSuccess`, whether that request succeeded, directly. There is no second state to update on success and reconcile on reset.
 
-That rule has exceptions too.
+Separate state is appropriate when submissions can overlap or submitted values must survive a mutation reset, since calling `reset()` clears `variables` too. A snapshot retained long after success also has a different lifetime. So I did not write “never create state.” The rule only avoids copies when the mutation already retains the value for as long as the screen needs it.
 
-- Several submissions may run concurrently.
-- A snapshot may need to survive long after success.
-- The business state may be independent of resetting a mutation.
+## The work order I wrote before these rules
 
-Those cases need domain state separate from mutation state. The aim is to avoid storing another copy of a value that already has an owner.
+Before documenting implementation patterns, I wrote down how to read a Jira task, find relevant code, and review the result. The skill described the sequence from planning to committing.
 
-## Feed review findings back into the skill
+```text
+Check the Jira task and acceptance criteria
+  -> Explore related routes, APIs, and existing patterns
+  -> Plan the changed files and verification
+  -> Implement in small units
+  -> typecheck, lint, build, route smoke test
+  -> Review the diff
+  -> Address findings and commit
+```
 
-After moving several routes, I reviewed the full diff. I fixed individual files and added only findings likely to recur to the skill.
+A plan is the work plan an agent writes before implementing. Mine had to identify the route and the closest existing implementation. It also described loading, failure, and empty states. The reference gave the agent an existing form or drawer to follow before building another.
 
-For example:
+Review covered hydration, accessibility, missing translations, and changes outside the task. Commits were limited to verified units of work. Separate skills held examples and pitfalls for recurring forms and queries, leaving each plan to explain how its task differed from those examples, so a new screen did not need the same explanation written again.
 
-- Await asynchronous page props according to the current Next.js version's types.
-- Decide in the plan whether query prefetching needs SEO or can stream.
-- Specify a Suspense gate or reset policy for asynchronous form initial values.
-- Give icon buttons accessible names and tooltips.
-- Check new message keys across every locale used by a multilingual route.
+I kept task completion separate from code generation. So that code arriving quickly would not end a task, changed routes needed typecheck, lint, and a production build, followed by desktop and mobile screen checks, server HTML, metadata, and translation keys. Forms also needed validation, submission, and failure checks, with unrelated changes removed in the final diff review. Adding more guidance to the skill did not let me skip those checks.
 
-I did not turn every review comment into a permanent rule. Exceptions relevant to one screen or unlikely to recur stayed in code. Too many rules create conflicts and bury the criteria that matter.
+## The corrections that stayed in the skill
 
-## Completion criteria
+After migrating several routes, I read their changes together. What seemed likely to recur went into the skill. Asynchronous page props, which arrive as Promises in this Next.js version, get awaited first according to their types, and the plan decides whether a query prefetch is needed for SEO or can be streamed. For late form defaults, the plan says whether to wait with Suspense or fill them with a reset. I also added guidance for accessible icon-button names and tooltips, and checking message keys across locales.
 
-I made the completion criteria explicit so that a fast-looking implementation would not be mistaken for a finished migration.
+A correction specific to one screen stayed in that code. Too many rules start conflicting with each other and bury the criteria that matter. Applying a rule with many exceptions to every task could produce the same kind of mistake as removing useful props.
 
-- Typecheck and lint pass for changed routes.
-- The production build passes.
-- Main routes pass desktop and mobile smoke tests.
-- Server-rendered HTML and metadata are checked.
-- Forms are checked for validation, submission, and errors.
-- Missing locale keys are checked.
-- The diff is reviewed and changes outside the task are removed.
-
-I looked for fewer repeated review findings in the next task, rather than measuring only code generation speed. That also helped decide which findings belonged in the rules.
-
-## Rules to carry into the next task
-
-For this prototype, the useful work was fixing how a Jira task becomes a plan, how existing patterns are found, and how implementation passes through validation and review.
-
-Rules need conditions and exceptions. Suspense, props, and mutation state each depend on context. I record decisions in a form the next task can reuse, then still check the result with a build and the actual screen. That is the AI collaboration process I settled on in this project.
+To decide what deserved to become a rule, I looked at whether the same kind of correction came up less on the next task, more than at how fast the agent produced code.
 
 References: [Next.js useSearchParams and Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

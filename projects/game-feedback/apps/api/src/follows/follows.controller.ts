@@ -1,6 +1,6 @@
 import { Controller, Delete, Get, Inject, Param, Put, Req, UseGuards } from '@nestjs/common';
 
-import type { SessionRequest } from '../auth/session.types';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { FollowInputSchema, type TFollowUserDto } from './follow-input.dto';

@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
-import { contestDates, phase, PHASE } from './contest.policy';
+import { contestDates, contestLastModifiedAt, phase, PHASE } from './contest.policy';
 
 const DAY_MS = 86_400_000;
 
@@ -70,5 +70,30 @@ describe('대회 정책', () => {
       expect((error as GraphQLError).message).toBe('올바른 대회 시각을 입력해 주세요.');
       expect((error as GraphQLError).extensions.code).toBe('BAD_USER_INPUT');
     }
+  });
+});
+
+describe('대회 수정 시각', () => {
+  const contest = {
+    createdAt: new Date('2026-10-12T00:00:00Z'),
+    startsAt: new Date('2026-10-13T00:00:00Z'),
+    submissionEndsAt: new Date('2026-10-14T00:00:00Z'),
+    endsAt: new Date('2026-10-15T00:00:00Z'),
+  };
+
+  it('시작 전에는 미래의 단계 경계가 아니라 생성 시각이어야 한다', () => {
+    expect(contestLastModifiedAt(contest, null, new Date('2026-10-12T12:00:00Z'))).toEqual(contest.createdAt);
+  });
+
+  it('지나간 단계 경계 중 가장 늦은 값이어야 하고 경계 시각 자체는 지난 것으로 본다', () => {
+    expect(contestLastModifiedAt(contest, null, new Date('2026-10-13T12:00:00Z'))).toEqual(contest.startsAt);
+    expect(contestLastModifiedAt(contest, null, contest.endsAt)).toEqual(contest.endsAt);
+  });
+
+  it('단계 경계보다 늦은 참여작만 수정 시각을 앞당겨야 한다', () => {
+    const now = new Date('2026-10-13T12:00:00Z');
+    const entry = new Date('2026-10-13T06:00:00Z');
+    expect(contestLastModifiedAt(contest, entry, now)).toEqual(entry);
+    expect(contestLastModifiedAt(contest, new Date('2026-10-12T06:00:00Z'), now)).toEqual(contest.startsAt);
   });
 });

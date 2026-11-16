@@ -16,6 +16,7 @@ interface IServiceErrorBoundaryProps {
   refreshOnRetry?: boolean;
   fallbackClassName?: string;
   recoveryAction?: ReactNode;
+  compact?: boolean;
 }
 
 function ServiceErrorFallback(
@@ -25,16 +26,17 @@ function ServiceErrorFallback(
     refreshOnRetry,
     fallbackClassName,
     recoveryAction,
+    compact,
   }: Omit<IServiceErrorBoundaryProps, 'children' | 'resetKey'>,
   { reset, retry }: ErrorInfo,
 ) {
   // Bootstrap errors can render outside the service's QueryClientProvider.
   const [client] = useState(() => new QueryClient());
   const recovery = useMutation(errorRecoveryMutationOptions(), client);
-  function handleRetry() {
+  const handleRetry = () => {
     if (recovery.isPending) return;
     recovery.mutate({ onReset, refreshOnRetry, reset, retry });
-  }
+  };
   return (
     <ErrorRecovery
       title={title}
@@ -42,6 +44,7 @@ function ServiceErrorFallback(
       pending={recovery.isPending}
       recoveryAction={recoveryAction}
       onRetry={handleRetry}
+      compact={compact}
     />
   );
 }
@@ -56,6 +59,7 @@ export function ServiceErrorBoundary({
   refreshOnRetry,
   fallbackClassName,
   recoveryAction,
+  compact,
 }: IServiceErrorBoundaryProps) {
   return (
     <QueryErrorResetBoundary key={resetKey}>
@@ -65,6 +69,7 @@ export function ServiceErrorBoundary({
           refreshOnRetry={refreshOnRetry}
           fallbackClassName={fallbackClassName}
           recoveryAction={recoveryAction}
+          compact={compact}
           onReset={async () => {
             await onReset?.();
             reset();

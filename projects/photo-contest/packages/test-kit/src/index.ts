@@ -14,7 +14,7 @@ export { apiWebServer, prepareE2eDatabase } from './e2e';
 export type { IE2eDatabase } from './e2e';
 export { loadProjectEnv } from './env';
 export { cleanupS3TestObjects, s3TestEnvironment, verifyS3TestAccess } from './s3';
-export { createTestUser, graphqlRequest, moveTestContest } from './http';
+export { createTestUser, createLegacyTestContest, graphqlRequest, moveTestContest } from './http';
 export type { IGraphqlResponse } from './http';
 export { createTestImage } from './image';
 export { startIsolatedApi } from './isolated-api';

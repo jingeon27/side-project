@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { match } from 'ts-pattern';
 
@@ -50,9 +52,9 @@ async function check() {
   await workspace('admin', 'lint');
 }
 
-async function test() {
+async function test({ unitOnly = false } = {}) {
   await prerequisites();
-  await workspace('api', 'test', { ENVIRONMENT: 'test' });
+  await workspace('api', unitOnly ? 'test:unit' : 'test', { ENVIRONMENT: 'test' });
   await workspace('sdk', 'test');
   await workspace('bridge', 'test');
   await workspace('web', 'test');
@@ -90,16 +92,19 @@ export async function runTask(task: string | undefined) {
     .with('setup', () => setup())
     .with('codegen', prerequisites)
     .with('check', check)
-    .with('test', test)
+    .with('test', () => test())
+    .with('test:unit', () => test({ unitOnly: true }))
     .with('test:e2e', endToEnd)
     .with('test:mobile:e2e', mobileEndToEnd)
     .with('build', build)
     .otherwise(() => {
-      throw new Error('Usage: tasks.ts setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
+      throw new Error('Usage: tasks.ts setup|codegen|check|test|test:unit|test:e2e|test:mobile:e2e|build');
     });
 }
 
-if (process.argv[1] === new URL(import.meta.url).pathname) {
+// URL pathname은 공백·한글을 인코딩하고 import.meta.url은 심볼릭 링크를 푼 경로라서, 실제 파일 경로끼리 비교한다.
+// 판정이 어긋나면 check·test·build가 아무것도 실행하지 않고 성공으로 끝난다.
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     await runTask(action);
   } catch (error) {

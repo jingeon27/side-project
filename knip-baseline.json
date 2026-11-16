@@ -1,0 +1,8 @@
+{
+  "issues": [
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "SupercellProfileProvider"],
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "cookies"],
+    ["exports", "projects/game-feedback/apps/api/src/security.ts", "setCookie"],
+    ["types", "packages/toolkit/src/push-notifications/index.ts", "IPushStore"]
+  ]
+}

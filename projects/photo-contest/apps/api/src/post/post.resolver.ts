@@ -1,15 +1,19 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import type { IViewer } from '../auth/session/session.service';
+import { OptionalViewer, Viewer } from '../auth/session/viewer.decorator';
+import { MediaUploadService } from '../media-upload/media-upload.service';
 import { ClientAddress } from '../rate-limit/client-address.decorator';
-import { PostModerationService } from './post-moderation.service';
+import { PostFileService } from './media/post-file.service';
+import { PostModerationService } from './moderation/post-moderation.service';
 import { PostService } from './post.service';
 
 @Resolver()
 export class PostResolver {
   constructor(
     private readonly posts: PostService,
+    private readonly files: PostFileService,
+    private readonly uploads: MediaUploadService,
     private readonly moderation: PostModerationService,
   ) {}
   @Query()
@@ -17,11 +21,20 @@ export class PostResolver {
     return this.posts.find(viewer, id);
   }
   @Query()
-  hiddenGalleryPosts(
+  async hiddenGalleryPosts(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
-    @Args('offset') offset: number,
-    @Args('limit') limit: number,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
+  ) {
+    return (await this.moderation.hidden(viewer, groupId, offset, limit)).items;
+  }
+  @Query()
+  hiddenGalleryPostsPage(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
   ) {
     return this.moderation.hidden(viewer, groupId, offset, limit);
   }
@@ -31,21 +44,42 @@ export class PostResolver {
   }
   @Query()
   postDownload(@OptionalViewer() viewer: IViewer | null, @Args('postId') id: string) {
-    return this.posts.download(viewer, id);
+    return this.files.download(viewer, id);
   }
   @Query()
-  publicGalleryPosts(
+  async publicGalleryPosts(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['listPublic']>[1],
+  ) {
+    return (await this.posts.listPublic(viewer, query)).items;
+  }
+  @Query()
+  publicGalleryPostsPage(
     @OptionalViewer() viewer: IViewer | null,
     @Args() query: Parameters<PostService['listPublic']>[1],
   ) {
     return this.posts.listPublic(viewer, query);
   }
   @Query()
-  myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+  async myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+    return (await this.posts.listMine(viewer, query)).items;
+  }
+  @Query()
+  myGalleryPostsPage(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
     return this.posts.listMine(viewer, query);
   }
   @Query()
-  galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
+  async galleryPosts(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['list']>[1],
+  ) {
+    return (await this.posts.list(viewer, query)).items;
+  }
+  @Query()
+  galleryPostsPage(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args() query: Parameters<PostService['list']>[1],
+  ) {
     return this.posts.list(viewer, query);
   }
   @Mutation()
@@ -54,12 +88,22 @@ export class PostResolver {
     @Args('groupId') groupId: string,
     @Args('contentType') contentType: string,
     @Args('byteSize') byteSize: number,
+    @Args('width') width: number | null | undefined,
+    @Args('height') height: number | null | undefined,
+    @ClientAddress() address: string | null,
   ) {
-    return this.posts.requestUpload(viewer, groupId, contentType, byteSize);
+    return this.uploads.requestUpload(
+      viewer,
+      groupId,
+      contentType,
+      byteSize,
+      { kind: 'POST', width, height },
+      address,
+    );
   }
   @Mutation()
   completePostUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
-    return this.posts.completeUpload(viewer, uploadId);
+    return this.uploads.completeUpload(viewer, uploadId);
   }
   @Mutation()
   createPost(

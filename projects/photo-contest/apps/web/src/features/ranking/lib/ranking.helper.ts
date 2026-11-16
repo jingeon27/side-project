@@ -37,7 +37,7 @@ export function getResultHeadline(winnerCount: number) {
     }))
     .with(P.number, () => ({
       title: '함께 웃겼다면, 함께 우승!',
-      description: '동점은 공동 우승 · 모든 참여가 우리의 추억이에요.',
+      description: '득표수가 같으면 공동 우승이에요.',
     }))
     .exhaustive();
 }

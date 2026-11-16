@@ -1,2 +1,3 @@
-export { synchronizePush } from './push-registration';
-export { PushNotificationSettings } from './PushNotificationSettings';
+export { synchronizePush } from './lib/push-registration.helper';
+
+export type { TPushStatus } from './model/push-status.type';

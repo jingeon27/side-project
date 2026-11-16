@@ -49,7 +49,7 @@ const photo = (overrides: Partial<SubmissionCardFragment> = {}): SubmissionCardF
 /** 피드처럼 캐시를 구독해 낙관적 값과 되돌림이 화면에 반영되는지 본다. */
 function FeedLikeButton({ isMine }: { isMine: boolean }) {
   const { data } = useQuery(SubmissionsDocument, { variables: FEED, fetchPolicy: 'cache-only' });
-  const submission = data?.submissions[0];
+  const submission = data?.submissionsPage.items[0];
   return submission ? <LikeButton submission={submission} isMine={isMine} /> : null;
 }
 
@@ -74,7 +74,7 @@ function renderButton({
   client.writeQuery({
     query: SubmissionsDocument,
     variables: FEED,
-    data: { submissions: [initial] },
+    data: { submissionsPage: { __typename: 'SubmissionPage', items: [initial], nextOffset: null } },
   });
   render(
     <ApolloProvider client={client}>

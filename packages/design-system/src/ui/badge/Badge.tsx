@@ -13,6 +13,7 @@ const badgeVariants = cva(
         brand: 'bg-brand-soft text-brand-strong',
         accent: 'bg-accent-soft text-accent-ink',
         neutral: 'bg-neutral-soft text-muted',
+        outline: 'border border-line bg-surface text-ink',
         danger: 'bg-danger-soft text-danger',
         info: 'bg-info-soft text-info',
         /* 메달 배경은 다크 모드에서도 밝으므로 모드에 따라 바뀌는 ink 대신 고정 글자색을 쓴다. */

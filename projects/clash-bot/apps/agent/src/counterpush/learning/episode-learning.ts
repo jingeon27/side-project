@@ -6,14 +6,6 @@ import { LearningClient } from '../../learning-client.ts';
 import { prepareOpponentDataset } from '../../opponent-data.ts';
 import { readEpisodeCoverage } from './audit.ts';
 
-export async function learnCounterpushEpisode(
-  client: LearningClient,
-  dataDir: string,
-  episode: { directory: string; opponentActions: number },
-) {
-  return (await learnCounterpushEpisodes(client, dataDir, [episode]))[0]!.training;
-}
-
 export async function learnCounterpushEpisodes(
   client: LearningClient,
   dataDir: string,

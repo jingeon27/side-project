@@ -107,6 +107,33 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     ]);
   });
 
+  it('keeps replies to replies in the root thread and records the mentioned target', async () => {
+    const post = await createPost();
+    const root = await comment(commenter.agent, post.id, '원댓글');
+    const first = await comment(replier.agent, post.id, '첫 답글', root.id);
+    const next = await comment(commenter.agent, post.id, '대댓글에 답글', first.id);
+    const last = await comment(replier.agent, post.id, '다시 답글', next.id);
+    expect(next).toMatchObject({ parentId: root.id, replyToId: first.id });
+    expect(last).toMatchObject({ parentId: root.id, replyToId: next.id });
+    expect((await detail(postAuthor.agent, post.id)).comments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: next.id, parentId: root.id, replyToId: first.id }),
+      ]),
+    );
+    await db.comment.update({ where: { id: first.id }, data: { hidden: true } });
+    await commenter.agent
+      .post(`/api/posts/${post.id}/comments`)
+      .set('Origin', origin)
+      .send({ body: '숨긴 대댓글에 답글', parentId: first.id })
+      .expect(404);
+    await db.comment.update({ where: { id: root.id }, data: { deletedAt: new Date(), body: '' } });
+    await commenter.agent
+      .post(`/api/posts/${post.id}/comments`)
+      .set('Origin', origin)
+      .send({ body: '삭제된 스레드에 답글', parentId: next.id })
+      .expect(404);
+  });
+
   it('returns the latest comment threads in the detail and pages earlier threads with their replies', async () => {
     const post = await createPost();
     const roots = [];
@@ -222,7 +249,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     }
   });
 
-  it('rejects missing and cross-post parents, deeper nesting and parent changes while editing', async () => {
+  it('rejects missing and cross-post targets and parent changes while editing', async () => {
     const post = await createPost();
     const another = await createPost();
     const root = await comment(commenter.agent, post.id, '원댓글');
@@ -230,7 +257,6 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     for (const [postId, parentId, status] of [
       [post.id, 'missing-comment', 404],
       [another.id, root.id, 404],
-      [post.id, reply.id, 400],
     ] as const)
       await replier.agent
         .post(`/api/posts/${postId}/comments`)

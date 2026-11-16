@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { requireUser } from '../auth/session-access';
-import type { SessionRequest } from '../auth/session.types';
+import { lockActiveUser } from '../auth/account/user-write';
+import { requireUser } from '../auth/session/session-access';
+import type { SessionRequest } from '../auth/session/session.types';
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
-import { UserVisibilityService } from '../users/user-visibility.service';
+import { PrismaClient } from '../generated/prisma';
+import { lockUserRelationship } from '../users/relationship-lock';
+import { UserVisibilityService } from '../users/visibility/user-visibility.service';
 import { type TFollowUserDto } from './follow-input.dto';
 
 @Injectable()
@@ -40,7 +42,10 @@ export class FollowsService {
     if (user.id === id) throw new ApiError(400, 'CANNOT_FOLLOW_SELF', '자신을 팔로우할 수 없습니다.');
     await this.target(req, id);
     const follow = await this.transactions.run(async (tx) => {
-      await this.lockRelationship(user.id, id, tx);
+      await lockUserRelationship(tx, user.id, id);
+      await lockActiveUser({ client: tx, userId: user.id });
+      const target = await tx.user.findUnique({ where: { id, withdrawnAt: null, bannedAt: null } });
+      if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
       const blocked = await (tx ?? this.db).block.findFirst({
         where: {
           OR: [
@@ -63,14 +68,10 @@ export class FollowsService {
   async unfollow(req: SessionRequest, id: string) {
     const user = requireUser(req);
     await this.transactions.run(async (tx) => {
-      await this.lockRelationship(user.id, id, tx);
+      await lockUserRelationship(tx, user.id, id);
+      await lockActiveUser({ client: tx, userId: user.id });
       await (tx ?? this.db).userFollow.deleteMany({ where: { followerId: user.id, followingId: id } });
     });
     return { ok: true };
-  }
-
-  private lockRelationship(first: string, second: string, client: Prisma.TransactionClient) {
-    const key = `user-relationship:${[first, second].sort().join(':')}`;
-    return client.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
   }
 }

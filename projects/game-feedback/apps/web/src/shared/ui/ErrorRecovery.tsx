@@ -2,18 +2,20 @@
 
 import type { ReactNode } from 'react';
 
-import { Button, cn } from '@side/design-system';
+import { Button, cn, StatusAnimation } from '@side/design-system';
 
 import { getContactEmail } from '@/shared/config';
 import { useI18n } from '@/shared/i18n';
 
 interface IErrorRecoveryProps {
+  /** 번역을 마친 영역 이름 */
   title: string;
   onRetry: () => void;
   pending?: boolean;
   className?: string;
   recoveryAction?: ReactNode;
   showRetry?: boolean;
+  compact?: boolean;
 }
 
 export function ErrorRecovery({
@@ -23,6 +25,7 @@ export function ErrorRecovery({
   className,
   recoveryAction,
   showRetry = true,
+  compact = false,
 }: IErrorRecoveryProps) {
   const { t } = useI18n();
   const email = getContactEmail();
@@ -30,24 +33,37 @@ export function ErrorRecovery({
     <section
       className={cn('error-recovery', className)}
       role="alert"
-      aria-label={`${t(title)} ${t('오류')}`}
+      aria-label={`${title} ${t('오류')}`}
       aria-busy={pending}
+      data-compact={compact || undefined}
     >
-      <h2>
-        {title}
-        {t('에 문제가 생겼어요')}
-      </h2>
-      <p>{t('잠시 후 이 영역을 다시 시도해 주세요.')}</p>
+      {compact ? (
+        <p>
+          {title}
+          {t('에 문제가 생겼어요')}
+        </p>
+      ) : (
+        <>
+          <StatusAnimation variant="error" className="mx-auto mb-3 size-14 text-danger" />
+          <h2>
+            {title}
+            {t('에 문제가 생겼어요')}
+          </h2>
+          <p>{t('잠시 후 이 영역을 다시 시도해 주세요.')}</p>
+        </>
+      )}
       {showRetry && (
         <Button variant="secondary" size="md" type="button" disabled={pending} onClick={onRetry}>
           {pending ? t('다시 불러오는 중…') : t('다시 시도하기')}
         </Button>
       )}
-      <p className="error-contact">
-        {t('문제가 계속되면 이메일로 문의해주세요.')}
-        <br />
-        <a href={`mailto:${email}`}>{email}</a>
-      </p>
+      {!compact && (
+        <p className="error-contact">
+          {t('문제가 계속되면 이메일로 문의해주세요.')}
+          <br />
+          <a href={`mailto:${email}`}>{email}</a>
+        </p>
+      )}
       {recoveryAction}
     </section>
   );

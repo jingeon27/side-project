@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { s3KeyPrefix } from '../config/env';
-import { createMediaKey, mediaContentType, MediaStorage } from './media-storage.service';
+import { createMediaKey, mediaContentType, MediaStorage, mediaUrlTtlSeconds } from './media-storage.service';
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -47,6 +47,39 @@ describe('미디어 저장소 서명 POST', () => {
         'Invalid media key',
       );
     await expect(storage.delete('../secret.png')).rejects.toThrow('Invalid media key');
+  });
+
+  it('환경변수의 AWS 키로 서명하고 키가 바뀌면 같은 저장소도 새 키와 세션 토큰으로 서명해야 한다', async () => {
+    useSigningConfig();
+    const storage = new MediaStorage();
+    const sign = async () =>
+      (await storage.presignUpload(createMediaKey('png'), 'image/png', 1, new Date(Date.now() + 60_000)))
+        .fields;
+    const issued = await sign();
+    expect(issued['X-Amz-Credential']).toMatch(/^unit-signing-key\//);
+    expect(issued).not.toHaveProperty('X-Amz-Security-Token');
+    vi.stubEnv('AWS_ACCESS_KEY_ID', 'rotated-signing-key');
+    vi.stubEnv('AWS_SESSION_TOKEN', 'unit-session-token');
+    const rotated = await sign();
+    expect(rotated['X-Amz-Credential']).toMatch(/^rotated-signing-key\//);
+    expect(rotated['X-Amz-Security-Token']).toBe('unit-session-token');
+  });
+});
+
+describe('미디어 저장소 서명 GET', () => {
+  it.each([
+    ['png', '60'],
+    ['jpg', '60'],
+    ['webp', '60'],
+    ['mp4', '600'],
+    ['webm', '600'],
+  ] as const)('%s 파일은 %s초 동안만 읽을 수 있게 서명해야 한다', async (extension, seconds) => {
+    useSigningConfig();
+    const key = createMediaKey(extension);
+    const url = new URL(await new MediaStorage().presignRead(key));
+    expect(url.searchParams.get('X-Amz-Expires')).toBe(seconds);
+    expect(String(mediaUrlTtlSeconds(key))).toBe(seconds);
+    expect(url.searchParams.get('response-cache-control')).toBe('private, no-store');
   });
 });
 

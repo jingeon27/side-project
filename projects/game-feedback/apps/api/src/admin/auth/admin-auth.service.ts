@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Response } from 'express';
 
-import { SessionService } from '../../auth/session.service';
-import type { SessionRequest } from '../../auth/session.types';
+import { SessionService } from '../../auth/session/session.service';
+import type { SessionRequest } from '../../auth/session/session.types';
 import { hash, token } from '../../common/crypto';
 import { ApiError } from '../../common/http/api-error';
 import { cookies } from '../../common/http/cookies';
@@ -53,14 +54,17 @@ export class AdminAuthService {
         throw new ApiError(401, 'INVALID_ADMIN_CREDENTIALS', '아이디 또는 비밀번호를 확인해주세요.');
       await tx.adminSession.deleteMany({
         where: {
-          OR: [{ expiresAt: { lte: new Date() } }, ...(previous ? [{ tokenHash: hash(previous) }] : [])],
+          OR: [
+            { expiresAt: { lte: dayjs().toDate() } },
+            ...(previous ? [{ tokenHash: hash(previous) }] : []),
+          ],
         },
       });
       await tx.adminSession.create({
         data: {
           accountId: account.id,
           tokenHash: hash(raw),
-          expiresAt: new Date(Date.now() + ADMIN_SESSION_MS),
+          expiresAt: dayjs().add(ADMIN_SESSION_MS, 'millisecond').toDate(),
         },
       });
       await tx.auditLog.create({

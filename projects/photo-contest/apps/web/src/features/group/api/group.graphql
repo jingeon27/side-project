@@ -1,16 +1,11 @@
-# MY 그룹 카드: 이름, 내 역할, 멤버 수
+# MY 그룹 카드: 이름, 내 역할, 멤버 수(멤버 명단은 받지 않는다)
 fragment GroupCard on Group {
   description
   avatarUrl
   id
   name
   role
-  members {
-    role
-    user {
-      id
-    }
-  }
+  memberCount
 }
 
 query MyGroups {
@@ -49,6 +44,7 @@ mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC, $de
 
 query Gallery($id: ID!) {
   group(id: $id) {
+    coverUrl
     ...GroupCategories
     description
     avatarUrl
@@ -84,8 +80,11 @@ fragment DiscoverGroup on Group {
 }
 
 query DiscoverGroups($search: String, $visibility: GroupVisibility, $offset: Int = 0, $limit: Int = 24) {
-  discoverGroups(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
-    ...DiscoverGroup
+  discoverGroupsPage(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...DiscoverGroup
+    }
   }
 }
 
@@ -108,8 +107,11 @@ fragment GroupJoinRequestRow on GroupJoinRequest {
 }
 
 query GroupJoinRequests($groupId: ID!, $offset: Int = 0, $limit: Int = 24) {
-  groupJoinRequests(groupId: $groupId, offset: $offset, limit: $limit) {
-    ...GroupJoinRequestRow
+  groupJoinRequestsPage(groupId: $groupId, offset: $offset, limit: $limit) {
+    nextOffset
+    items {
+      ...GroupJoinRequestRow
+    }
   }
 }
 
@@ -125,6 +127,7 @@ query PublicGroupSeo($id: ID!) {
   group(id: $id) {
     description
     avatarUrl
+    coverUrl
     categories {
       id
     }
@@ -140,8 +143,9 @@ query PublicGroupCount {
 }
 
 query PublicGroupSitemap($offset: Int!, $limit: Int!) {
-  discoverGroups(visibility: PUBLIC, offset: $offset, limit: $limit) {
+  publicGroupSitemap(offset: $offset, limit: $limit) {
     id
+    lastModifiedAt
   }
 }
 
@@ -224,6 +228,7 @@ query GroupProfile($id: ID!) {
     name
     description
     avatarUrl
+    coverUrl
     role
   }
 }
@@ -231,6 +236,8 @@ mutation UpdateGroupProfile(
   $groupId: ID!
   $name: String!
   $description: String!
+  $coverId: ID
+  $removeCover: Boolean! = false
   $avatarId: ID
   $removeAvatar: Boolean! = false
 ) {
@@ -238,6 +245,8 @@ mutation UpdateGroupProfile(
     groupId: $groupId
     name: $name
     description: $description
+    coverId: $coverId
+    removeCover: $removeCover
     avatarId: $avatarId
     removeAvatar: $removeAvatar
   ) {

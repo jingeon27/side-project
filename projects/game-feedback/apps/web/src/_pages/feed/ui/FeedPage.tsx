@@ -1,24 +1,39 @@
 'use client';
 
-import { use, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, LoaderCircle, MessageSquare, Plus } from 'lucide-react';
+import { MessageCircleQuestion, Newspaper, SearchX } from 'lucide-react';
+import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { Spinner } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  postListOptions,
+  PostListSkeleton,
+} from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
+import { parseSearch } from '@/shared/lib/query-string';
 import { useBrowserSearch } from '@/shared/navigation';
-import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { AsyncBoundary, Await, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
+import { FloatingComposeButton } from '@/widgets/compose-entry';
 
+import { feedSnapshotSearch } from '../model/feed-snapshot-search';
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
-import { FeedFilters } from './FeedFilters';
 import { FeedTopbar } from './FeedTopbar';
 
 function FeedContent({
@@ -29,19 +44,10 @@ function FeedContent({
   initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
 }) {
   const { t } = useI18n();
-  const { session, requireLogin } = useSession();
-  const router = useRouter();
-  function handleCompose() {
-    if (!session?.user) {
-      requireLogin();
-      return;
-    }
-    router.push(appRoutes.compose(locale));
-  }
+  const { session } = useSession();
 
   return (
     <section className="feed-section">
-      <FeedFilters onCompose={handleCompose} />
       <AsyncBoundary
         title={t('최신 글')}
         resetKey={session.user?.id}
@@ -49,32 +55,25 @@ function FeedContent({
         suspense={'then' in initialFeed}
         pendingFallback={<PostListSkeleton />}
       >
-        <FeedResultsRegion locale={locale} initialFeed={initialFeed} onCompose={handleCompose} />
+        <Await value={initialFeed}>
+          {(initial) => <FeedResultsRegion locale={locale} initialFeed={initial} />}
+        </Await>
       </AsyncBoundary>
     </section>
   );
 }
 
-function FeedResultsRegion({
-  locale,
-  initialFeed,
-  onCompose,
-}: {
-  locale: string;
-  initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
-  onCompose: () => void;
-}) {
+function FeedResultsRegion({ locale, initialFeed }: { locale: string; initialFeed: IFeedSnapshot }) {
   const { t } = useI18n();
   const { session } = useSession();
-  const initial = 'then' in initialFeed ? use(initialFeed) : initialFeed;
-  const initialSearch = new URLSearchParams({ q: initial.q, tab: initial.tab }).toString();
-  const search = useBrowserSearch(`?${initialSearch}`, `/${locale}`);
-  const params = new URLSearchParams(search);
-  const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
-  const q = params.get('q')?.trim().slice(0, 100) ?? '';
+  const initial = initialFeed;
+  const search = useBrowserSearch(feedSnapshotSearch(initial), appRoutes.feed(locale));
+  const params = parseSearch(search);
+  const tab = params.tab === 'unanswered' ? 'unanswered' : 'latest';
+  const q = params.q?.trim().slice(0, 100) ?? '';
   return (
     <ServiceErrorBoundary title={t('최신 글')} resetKey={`${session.user?.id ?? 'anonymous'}:${tab}:${q}`}>
-      <FeedResults locale={locale} tab={tab} q={q} initial={initial} onCompose={onCompose} />
+      <FeedResults locale={locale} tab={tab} q={q} initial={initial} />
     </ServiceErrorBoundary>
   );
 }
@@ -83,13 +82,11 @@ function FeedResults({
   tab,
   q,
   initial,
-  onCompose: handleCompose,
 }: {
   locale: string;
-  tab: string;
+  tab: 'latest' | 'unanswered';
   q: string;
   initial: IFeedSnapshot;
-  onCompose: () => void;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
@@ -122,59 +119,64 @@ function FeedResults({
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  const emptyIcon = match({ q, tab })
+    .with({ q: P.string.minLength(1) }, () => <SearchX className="size-full" />)
+    .with({ tab: 'unanswered' }, () => <MessageCircleQuestion className="size-full" />)
+    .with({ tab: 'latest' }, () => <Newspaper className="size-full" />)
+    .exhaustive();
+  const emptyTitle = match({ q, tab })
+    .with({ q: P.string.minLength(1) }, () => t('일치하는 게시글이 없어요'))
+    .with({ tab: 'unanswered' }, () => t('지금은 모든 요청에 답변이 있어요'))
+    .with({ tab: 'latest' }, () => t('첫 번째 이야기를 기다려요'))
+    .exhaustive();
   if (feed.error && !feed.isFetching) throw feed.error;
   if (!feed.data) return <PostListSkeleton />;
   return (
     <>
       {!posts.length && (
         <div className="empty-feed">
-          <span>
-            <MessageSquare size={30} />
+          <span
+            aria-hidden
+            className="relative mx-auto mb-3 inline-grid size-14 shrink-0 place-items-center text-accent"
+          >
+            {emptyIcon}
           </span>
-          <h3>
-            {q
-              ? t('일치하는 게시글이 없어요')
-              : tab === 'unanswered'
-                ? t('지금은 모든 요청에 답변이 있어요')
-                : t('첫 번째 이야기를 기다려요')}
-          </h3>
+          <h3>{emptyTitle}</h3>
           <p>
             {q
               ? t('다른 단어로 검색하거나 새로운 글을 남겨보세요.')
               : t('플레이 이야기나 모집 글을 남겨보세요.')}
           </p>
-          <Button variant="accent" size="md" type="button" onClick={handleCompose}>
-            {t('글쓰기')}
-            <ArrowUpRight size={16} />
-          </Button>
         </div>
       )}
       <div className="post-list">
         {posts.map((post) => (
           <ServiceErrorBoundary key={post.id} title={t('게시글')} resetKey={post.id}>
-            <PostCard
-              post={post}
-              href={appRoutes.post(locale, post.id)}
-              authorName={<AuthorLink author={post.author} locale={locale} />}
-              authorContent={<UserBadges author={post.author} compact />}
-            />
+            <PostCard post={post}>
+              <PostCardHeader>
+                <PostCardBoard />
+              </PostCardHeader>
+              <PostCardContent href={appRoutes.post(locale, post.id)}>
+                <PostCardDetails />
+              </PostCardContent>
+              <PostCardFooter>
+                <PostCardAuthor>
+                  <PostCardAuthorName>
+                    <AuthorLink author={post.author} locale={locale} />
+                  </PostCardAuthorName>
+                  <UserBadges author={post.author} compact showTag={false} />
+                </PostCardAuthor>
+                <PostCardActivity />
+              </PostCardFooter>
+            </PostCard>
           </ServiceErrorBoundary>
         ))}
       </div>
       <div ref={sentinel} className="feed-sentinel" />
-      {feed.hasNextPage && (
-        <Button
-          variant="secondary"
-          size="lg"
-          fullWidth
-          type="submit"
-          className="button outline full load-more"
-          disabled={feed.isFetchingNextPage}
-          onClick={() => feed.fetchNextPage()}
-        >
-          {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
-          {t('더 많은 글 보기')}
-        </Button>
+      {isFetchingNextPage && (
+        <div className="feed-loading-more">
+          <Spinner label={t('게시글 불러오는 중')} />
+        </div>
       )}
       {posts.length > 0 && !hasNextPage && (
         <div className="feed-end">
@@ -188,8 +190,23 @@ function FeedResults({
 }
 
 export function FeedPage(props: Parameters<typeof FeedContent>[0]) {
+  const { session, requireLogin } = useSession();
+  const router = useRouter();
+  const userId = session.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    router.prefetch(appRoutes.compose(props.locale));
+  }, [props.locale, router, userId]);
+  const handleCompose = () => {
+    if (!session.user) {
+      requireLogin();
+      return;
+    }
+    router.push(appRoutes.compose(props.locale));
+  };
   return (
-    <CommunityPage locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
+    <CommunityPage screenKey="feed" locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
+      <FloatingComposeButton onCompose={handleCompose} />
       <FeedContent {...props} />
     </CommunityPage>
   );

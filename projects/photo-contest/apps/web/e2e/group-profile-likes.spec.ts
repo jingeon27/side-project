@@ -16,8 +16,11 @@ test(
     // 변경 전 공개 캐시도 채워 새 프로필이 JSON mutation 뒤 바로 갱신되는지 확인한다.
     await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } });
     await page.goto(path);
-    await page.getByRole('button', { name: '그룹 프로필 수정' }).click();
-    const editor = page.getByRole('dialog', { name: '그룹 프로필 수정', exact: true });
+    await page.getByRole('link', { name: '그룹 프로필 수정' }).click();
+    await expect(page).toHaveURL(`${path}/edit`);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const editor = page.getByRole('form', { name: '그룹 프로필 수정', exact: true });
+    await editor.locator('summary').click();
     await editor.getByLabel('그룹 사진 선택').setInputFiles({
       name: 'group.png',
       mimeType: 'image/png',
@@ -29,7 +32,7 @@ test(
     await expect
       .poll(() => preview.evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBeGreaterThan(0);
-    const name = `밤별의 순간-${testInfo.project.name}`;
+    const name = `밤별의 순간-${testInfo.project.name}-${testInfo.repeatEachIndex}`;
     const description = '우연히 담은 별난 순간들을 함께 나눠요.';
     await editor.getByLabel('그룹 이름').fill(name);
     await editor.getByLabel('그룹 소개').fill(description);
@@ -54,31 +57,41 @@ test(
       }
     });
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
-    await expect(editor).toHaveCount(0);
+    await expect(page).toHaveURL(path);
     expect(mutations.some((body) => body.includes('completeGroupAvatarUpload'))).toBe(true);
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    await expect(page.getByText(description, { exact: true }).filter({ visible: true })).toBeVisible();
     const { group: profile } = await productRequest<{ group: { avatarUrl: string } }>(
       owner,
       'query($id:ID!){group(id:$id){avatarUrl}}',
       { id: group.id },
     );
-    await expect(page.locator(`img[src="${profile.avatarUrl}"]`)).toBeVisible();
+    await expect(page.locator(`img[src="${profile.avatarUrl}"]:visible`)).toBeVisible();
     const html = await (await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } })).text();
     expect(html).toContain(description);
     expect(html).toContain(WEB_ORIGIN + profile.avatarUrl);
     await page.goto(`/explore?q=${encodeURIComponent(name)}`);
     await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    // 탐색 카드의 링크는 그룹 이름만 담고, 소개는 같은 카드에 보인다.
+    await expect(
+      page
+        .getByRole('article')
+        .filter({ has: page.getByRole('link', { name, exact: true }) })
+        .getByText(description, { exact: true }),
+    ).toBeVisible();
     await page.goto('/me');
     await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
-    await expect(page.getByText(description, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: new RegExp(name) }).getByText(description, { exact: true }),
+    ).toBeVisible();
     await page.goto(path);
-    await page.getByRole('button', { name: '그룹 프로필 수정' }).click();
+    await page.getByRole('link', { name: '그룹 프로필 수정' }).click();
+    await expect(page).toHaveURL(`${path}/edit`);
+    await editor.locator('summary').click();
     await editor.getByRole('button', { name: '사진 삭제', exact: true }).click();
     await expect(preview).toHaveCount(0);
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
-    await expect(editor).toHaveCount(0);
-    await expect(page.locator(`img[src="${profile.avatarUrl}"]`)).toHaveCount(0);
+    await expect(page).toHaveURL(path);
+    await expect(page.locator(`img[src="${profile.avatarUrl}"]:visible`)).toHaveCount(0);
   },
 );
 
@@ -117,18 +130,21 @@ test(
       );
     }
     await page.goto(contestPath);
-    const first = page.getByRole('button', { name: '첫 번째 순간 좋아요', exact: true });
-    const second = page.getByRole('button', { name: '두 번째 순간 좋아요', exact: true });
-    const third = page.getByRole('button', { name: '세 번째 순간 좋아요', exact: true });
+    const first = page.getByRole('button', { name: /^첫 번째 순간 좋아요 / });
+    const second = page.getByRole('button', { name: /^두 번째 순간 좋아요 / });
+    const third = page.getByRole('button', { name: /^세 번째 순간 좋아요 / });
     await first.click();
     await expect(first).toHaveAttribute('aria-pressed', 'true');
     await second.click();
     await expect(second).toHaveAttribute('aria-pressed', 'true');
     await third.click();
-    await expect(
-      page.getByRole('region', { name: '알림', exact: true }).getByText(/이 대회에서는 2개 작품까지만/),
-    ).toBeVisible();
+    const notifications = page.getByRole('region', { name: '알림', exact: true });
+    const limitError = notifications.getByText(/이 대회에서는 2개 작품까지만/);
+    await expect(limitError).toBeVisible();
     await expect(third).toHaveAttribute('aria-pressed', 'false');
+    // 작은 화면에서는 오류 알림이 다음 좋아요 버튼을 덮으므로 닫고 계속한다.
+    await notifications.getByLabel('알림 닫기', { exact: true }).click();
+    await expect(limitError).toHaveCount(0);
     await first.click();
     await expect(first).toHaveAttribute('aria-pressed', 'false');
     await third.click();

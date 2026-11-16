@@ -1,9 +1,12 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
+import { chatMetricsPrivacyIntegration, scrubChatMetric } from './chat-metrics';
+import { performancePrivacyIntegration, scrubPerformanceSpan } from './performance';
+
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
 const sentryEnvironment = () => process.env.ENVIRONMENT || 'development';
 const sentryRelease = () => process.env.SENTRY_RELEASE;
-const sentryTracesSampleRate = () => 0;
+const sentryTracesSampleRate = () => 0.1;
 
 const STACK_FRAME = /^\s+at /;
 
@@ -12,8 +15,18 @@ export type TErrorTags = Record<string, string>;
 
 // Apollo(graphql CJS)가 만든 GraphQLError는 테스트에서 다른 graphql 사본일 수 있어 instanceof 대신 속성으로 본다.
 function wrappedError(error: unknown): unknown {
-  if (typeof error !== 'object' || error === null || !('originalError' in error)) return undefined;
-  return error.originalError instanceof Error ? error.originalError : undefined;
+  if (typeof error !== 'object' || error === null) return undefined;
+  const original = 'originalError' in error ? error.originalError : undefined;
+  if (original instanceof Error) return original;
+  const cause = 'cause' in error ? error.cause : undefined;
+  return cause instanceof Error ? cause : undefined;
+}
+
+function sourceError(error: unknown, seen = new Set<unknown>()): unknown {
+  if (seen.has(error) || seen.size >= 8) return error;
+  seen.add(error);
+  const source = wrappedError(error);
+  return source === undefined ? error : sourceError(source, seen);
 }
 
 function stringProperty(value: unknown, name: string) {
@@ -34,7 +47,7 @@ function errorCode(error: unknown) {
  * 오류 종류·코드와 호출 위치(stack frame)만 남긴 오류를 만든다.
  */
 export function reportableError(error: unknown): Error {
-  const original = wrappedError(error) ?? error;
+  const original = sourceError(error);
   const kind = original instanceof Error ? original.name : typeof original;
   const code = errorCode(original);
   const reportable = new Error(`Unexpected ${kind}${code ? ` ${code}` : ''}`);
@@ -71,9 +84,13 @@ export function sentryOptions(): NodeOptions | undefined {
       urlQueryParams: false,
       graphQL: { document: false, variables: false },
     },
-    // 자동 계측은 요청 URL(업로드·OAuth 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
+    // Only explicit HTTP/chat spans are collected; automatic URL/header/SQL instrumentation stays off.
     defaultIntegrations: false,
+    integrations: [performancePrivacyIntegration, chatMetricsPrivacyIntegration],
+    enableRuntimeChannelInjection: false,
     beforeSend: scrubEvent,
+    beforeSendSpan: scrubPerformanceSpan,
+    beforeSendMetric: scrubChatMetric,
   };
 }
 

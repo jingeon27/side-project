@@ -4,16 +4,18 @@ import { SunMoon } from 'lucide-react';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
 
-import { parseThemePreference, useThemePreference } from '../../../model/theme';
+import { useIsSSR } from '../../../model/is-ssr.hook';
+import { parseThemePreference, useThemePreference, type TThemePreference } from '../../../model/theme';
 import { toast } from '../../../model/toast';
 
 const items = [
   { value: 'system', label: '기기 설정에 맞춤' },
   { value: 'light', label: '라이트 모드' },
   { value: 'dark', label: '다크 모드' },
-];
+] satisfies { value: TThemePreference; label: string }[];
 
 export function ThemeSettings() {
+  const isSSR = useIsSSR();
   const { preference, setPreference } = useThemePreference();
   return (
     <section aria-labelledby="theme-title" className="order-3 flex flex-col gap-3 desktop:order-none">
@@ -30,7 +32,7 @@ export function ThemeSettings() {
           toast.info('화면 모드를 변경했어요.');
         }}
       >
-        <SelectTrigger aria-label="화면 모드" className="w-full">
+        <SelectTrigger disabled={isSSR} aria-label="화면 모드" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="start" alignItemWithTrigger={false}>

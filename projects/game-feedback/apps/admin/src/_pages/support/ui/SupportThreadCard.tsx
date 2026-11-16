@@ -4,17 +4,22 @@ import { match } from 'ts-pattern';
 import { Button } from '@side/design-system';
 
 import { statusMutationOptions, type TSupportThread } from '@/features/support';
-import { adminSupportPath, adminUserPath } from '@/shared/lib';
+import { adminSupportPath, adminUserPath, type TSupportStatusFilter } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
 
-export function SupportThreadCard({ thread }: { thread: TSupportThread }) {
+interface ISupportThreadCardProps {
+  thread: TSupportThread;
+  status: TSupportStatusFilter;
+}
+
+export function SupportThreadCard({ thread, status: filter }: ISupportThreadCardProps) {
   const client = useQueryClient();
   const status = useMutation(statusMutationOptions(client));
   const topic = match(thread.topic)
     .with('VERIFICATION', () => '프로필 인증 문의')
     .with('GENERAL', () => '관리자 문의')
     .exhaustive();
-  function handleToggleStatus() {
+  const handleToggleStatus = () => {
     status.mutate({
       id: thread.id,
       status: match(thread.status)
@@ -22,7 +27,7 @@ export function SupportThreadCard({ thread }: { thread: TSupportThread }) {
         .with('CLOSED', () => 'OPEN' as const)
         .exhaustive(),
     });
-  }
+  };
   return (
     <article className="admin-card form-stack" data-thread-id={thread.id}>
       <h2>{thread.requester.nickname}</h2>
@@ -31,7 +36,7 @@ export function SupportThreadCard({ thread }: { thread: TSupportThread }) {
         {topic} / {thread.status === 'OPEN' ? '상담 중' : '처리 완료'}
       </p>
       <div className="admin-actions">
-        <a href={adminSupportPath(thread.id)}>문의 채팅 열기</a>
+        <a href={adminSupportPath(thread.id, filter)}>문의 채팅 열기</a>
         <a href={adminUserPath(thread.requester.id)}>사용자 관리</a>
       </div>
       <Button type="button" variant="secondary" disabled={status.isPending} onClick={handleToggleStatus}>

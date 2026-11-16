@@ -1,0 +1,142 @@
+[
+  {
+    "path": "projects/photo-contest/.agents/skills/photo-contest-web/references/styling.md",
+    "sha256": "7b59b1e49c922c22dfd0f8b7558540798294a8ec1d274c7b30a9fb2ba47fbf78"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/AGENTS.md",
+    "sha256": "e950c7420921b9dd54852bf4b567af35de77b89562b30b7dfe20c56a56261582"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/e2e/group-compose.spec.ts",
+    "sha256": "fa3469dc716b807e60750fa0a7579f57c4bb529fa545d658260155dc560555c7"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/e2e/group-polish.spec.ts",
+    "sha256": "058e693d3ad21cc79ca8595397d619c05b84fb861683c1ff5da882dd89a3a14f"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/e2e/home-compose.spec.ts",
+    "sha256": "260029d7106be08f9c699c9ed48d951937118da35aec362bc055a10d154a52c3"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_app/styles/globals.css",
+    "sha256": "62eec6def623a82593b9cf6caf7493ae748f4d006693e786af5afdf81fa7ef75"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/explore/@page/ExplorePageTemplate.spec.tsx",
+    "sha256": "a961b343b6ec0dbd06027da1fe067c9dc56d3e674577b21b872daeed07130da1"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/explore/@page/ExplorePageTemplate.tsx",
+    "sha256": "a4f7d5b7372d04686f7784093b3645f543f7de1fa98264222aedbf299773db39"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/explore/@page/ui/ExploreComposeEntry.tsx",
+    "sha256": "512154779f56517ddb0de5f402b52d6e0fcd3cf072aa9df4d8e679339738152a"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/explore/@page/ui/GroupDiscoveryResults.tsx",
+    "sha256": "3ac020be44a45f0725836341b60d9b27a89400a8208c3819f6ffd6cc41e1f1a4"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/GroupPageTemplate.test.tsx",
+    "sha256": "caa8fac11bee15674cd62c458d5aa2bf5df25fe9692044ecf93a1764d8e9c30a"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/GroupPageTemplate.tsx",
+    "sha256": "11794de3a33cbefa52f69da530cd1d45a4e48aa5279d2939d154610caeaeb3ff"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/GroupSidebar.tsx",
+    "sha256": "a150b17bf28b3497bdf50a0183a41a19bf0fbfcdffe2d36ab3924d5814f534b8"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/access/PrivateGroupNotice.test.tsx",
+    "sha256": "23b995be155530abf835dee407a60d7b8c562add11d2cf8beafd9ea0ec8788cc"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/access/PrivateGroupNotice.tsx",
+    "sha256": "3f22c6f2d1c798e0915bc32fe646c524cc81cc0a62ea295c358cd66064b5e244"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/categories/GroupCategoryFilter.tsx",
+    "sha256": "aea26b43aaf419df8384b4223604605c4c5013230fa8ed6640a85702dca5288c"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/feed/GroupPostsEmptyState.spec.tsx",
+    "sha256": "ac450a8f7d4d21449d796941075b0a629ab75cc6cf90843362685a48e71fe6bd"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/feed/GroupPostsEmptyState.tsx",
+    "sha256": "c3766dac9e92af03cd566d1d35471bbc4189bb5d29f03992bd427e9fcee90e0c"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/group/@page/ui/header/GroupIdentity.tsx",
+    "sha256": "cd87b8b4c6bacfcccb49eb0b9c1c00b414b0ab77681b5200505ca1a215f08696"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/home/@page/HomePageTemplate.tsx",
+    "sha256": "0be1dd42b263d42ccc644b9e2a39d9d5999f5e4dc18800dbf2a2a8f5f1426801"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/home/@page/no-group/NoGroupHome.spec.tsx",
+    "sha256": "fdc75c081447e3ba6b0b9420f196cd51979f85428a91592bf5d2cf0234df909a"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/home/@page/no-group/NoGroupHome.tsx",
+    "sha256": "ad3e54e273cd4c3e7e4e1f96a93751078e8ccfd97416c2c15b980e281adcb263"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/home/@page/ui/MemberHome.tsx",
+    "sha256": "995b7f6f343d8dd8be819aac86ee0478f48fcee40d751af3ee7947ecc903fcd2"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/_pages/me/@page/groups/MyGroupsSection.tsx",
+    "sha256": "6186acf4f1504764595bdf1f3a0b0b0d7b0bc8848ad945b7fb689fcf85f7bd2b"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/app/explore/page.tsx",
+    "sha256": "ee8e0a68c2cee0f28b039c42aa9136dcb874a1a3376e98e91af5310b4b676722"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/features/group/ui/discovery/GroupSearchForm.tsx",
+    "sha256": "2217e2c705cc02f5bcf1d6a4054c7080502a17beff47b318f87ba887beb45bb6"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/features/group/ui/navigation/GroupNavigation.tsx",
+    "sha256": "528bf3e8f984a940730cad90021832153f71988ab4bb287099df8786172d25ad"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/features/invite/ui/InviteCard.tsx",
+    "sha256": "8dec7dd7ba779f4ee4c83392e8dbb40b41109f9ada2c45c4afcd6c1aa21ccc63"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/features/post/ui/feed/PopularPosts.tsx",
+    "sha256": "d9680c828e2ca58f23f204d18eb3fb4b54e68b46dbdfc18f6e6d75dd2ed532b9"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/widgets/compose-entry/index.ts",
+    "sha256": "f354769e95a4e1e2305e567f34c6014ffe87fc37c93d06be64f399cdc9470165"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/widgets/compose-entry/ui/ComposeEntryBottomSheet.tsx",
+    "sha256": "593353b9fa835b4e5d231928a49bd9fbc508f746e019f15df48fb1a5d92685c0"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/widgets/compose-entry/ui/ComposeEntryButton.spec.tsx",
+    "sha256": "2150218caac05842c82efbc7907e8fe2a99723d8bc9c1710cb10374a991ac95c"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/widgets/compose-entry/ui/ComposeEntryButton.tsx",
+    "sha256": "7ab4b459386a9258df32f51c3cf02138920e99a0d6c5a6724412d6eebfac3107"
+  },
+  {
+    "path": "projects/photo-contest/apps/web/src/widgets/compose-entry/ui/FloatingComposeButton.tsx",
+    "sha256": "38c869f5203dd9d0458fec8e22b1d080ca052c49afeb4f1516b0dd61ec2bb693"
+  },
+  {
+    "path": "projects/photo-contest/docs/implementation.md",
+    "sha256": "35763f5042502510436685f208610871e4bfb1dbd24c2c03711cbf5ba4fdce65"
+  }
+]

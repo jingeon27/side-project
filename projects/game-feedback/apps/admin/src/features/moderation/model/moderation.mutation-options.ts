@@ -1,13 +1,20 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
+import { threadOptions } from '@/features/support';
+
 import { updateBan, updateReport, updateVerification, updateVisibility } from '../api/moderation.api';
 import { reportOptions, userOptions } from './moderation.options';
 
-export function verifyMutationOptions(client: QueryClient, onVerified?: () => Promise<void>) {
+export function verifyMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['admin-verify'],
     mutationFn: updateVerification,
-    onSuccess: (user) => Promise.all([client.invalidateQueries(userOptions(user.id)), onVerified?.()]),
+    // 문의함 카드도 요청자의 인증 상태를 보여 주므로 함께 갱신한다.
+    onSuccess: (user) =>
+      Promise.all([
+        client.invalidateQueries(userOptions(user.id)),
+        client.invalidateQueries(threadOptions()),
+      ]),
   });
 }
 

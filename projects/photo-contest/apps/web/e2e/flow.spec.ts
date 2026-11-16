@@ -5,10 +5,10 @@ import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { authenticate, expect, test, waitForHydrationOnLoad } from './support/test';
 
 async function writePost(page: Page, title: string, video = false) {
-  await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
   await sheet.getByLabel('제목', { exact: true }).fill(title);
-  await sheet.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+  await sheet.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
     name: video ? 'clip.mp4' : 'photo.png',
     mimeType: video ? 'video/mp4' : 'image/png',
     buffer: video ? await createTestVideo() : await createTestImage(),
@@ -41,9 +41,12 @@ test(
     await signIn('통합 관리자');
     await page.goto('/me');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('그룹 이름').fill('언제나 웃긴 그룹');
-    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await page.getByRole('form', { name: '그룹 만들기' }).getByLabel('그룹 이름').fill('언제나 웃긴 그룹');
+    await page
+      .getByRole('form', { name: '그룹 만들기' })
+      .getByRole('button', { name: '그룹 만들기', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const galleryUrl = page.url();
     await expect(page.getByRole('button', { name: '대회 만들기', exact: true })).toHaveCount(0);
     await page.getByText('초대와 그룹 멤버', { exact: true }).click();

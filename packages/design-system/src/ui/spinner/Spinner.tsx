@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 
 import { cn } from '../../lib/cn.helper';
+import { StatusAnimation } from '../status-animation/StatusAnimation';
 
 export interface ISpinnerProps extends Omit<ComponentProps<'span'>, 'className' | 'children' | 'role'> {
   /**
@@ -19,11 +20,9 @@ export function Spinner({ label, className, ...props }: ISpinnerProps) {
       {...props}
       role={label ? 'status' : undefined}
       aria-hidden={label ? undefined : true}
-      className={cn(
-        'inline-block size-5 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent',
-        className,
-      )}
+      className={cn('inline-flex size-5 shrink-0 items-center justify-center', className)}
     >
+      <StatusAnimation variant="loading" className="size-full text-current" />
       {label ? <span className="sr-only">{label}</span> : null}
     </span>
   );

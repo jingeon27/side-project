@@ -13,13 +13,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "^4.1.12"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "catalog:",
     "orval": "8.43.0",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.0"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

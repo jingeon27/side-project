@@ -28,7 +28,7 @@ export function postComposerCopy(board: TBoardKind, role: TCoachingDetails['role
     COACHING:
       role === 'STUDENT'
         ? {
-            title: '예: 목표 점수 달성까지 도와줄 코치 구해요',
+            title: '예: 목표 달성까지 도와줄 코치 구해요',
             body: '현재 실력과 목표, 배우고 싶은 내용, 가능한 시간과 예산을 알려주세요.',
           }
         : {

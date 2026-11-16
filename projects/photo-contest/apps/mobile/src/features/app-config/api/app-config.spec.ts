@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchAppConfig, fetchHealth, type TFetch } from './app-config.api';
+import { fetchAppConfig, type TFetch } from './app-config.api';
 
 const BASE_URL = 'https://contest.example/backend';
 
@@ -65,27 +65,5 @@ describe('fetchAppConfig', () => {
     await vi.advanceTimersByTimeAsync(5_000);
 
     await assertion;
-  });
-});
-
-describe('fetchHealth', () => {
-  it('정상이면 ok를 돌려줘야 한다', async () => {
-    const fetchImpl = stubFetch(jsonResponse({ status: 'ok' }));
-
-    await expect(fetchHealth(BASE_URL, fetchImpl)).resolves.toEqual({ status: 'ok' });
-    expect(fetchImpl).toHaveBeenCalledWith('https://contest.example/backend/health', expect.anything());
-  });
-
-  it('503 본문도 unavailable로 읽어야 한다', async () => {
-    await expect(
-      fetchHealth(BASE_URL, stubFetch(jsonResponse({ status: 'unavailable' }, 503))),
-    ).resolves.toEqual({
-      status: 'unavailable',
-    });
-  });
-
-  it('약속하지 않은 상태 코드나 본문이면 거부해야 한다', async () => {
-    await expect(fetchHealth(BASE_URL, stubFetch(jsonResponse({ status: 'ok' }, 502)))).rejects.toThrow();
-    await expect(fetchHealth(BASE_URL, stubFetch(jsonResponse({ status: 'maybe' })))).rejects.toThrow();
   });
 });

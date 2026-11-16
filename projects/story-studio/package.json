@@ -1,0 +1,16 @@
+{
+  "name": "@side/story-studio",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "yarn workspace @story-studio/web dev",
+    "build": "yarn workspace @story-studio/web build",
+    "start": "yarn workspace @story-studio/web start",
+    "typecheck": "yarn workspace @story-studio/web typecheck",
+    "test": "yarn workspace @story-studio/web test",
+    "test:e2e": "yarn workspace @story-studio/web test:e2e",
+    "check": "yarn workspace @story-studio/web check",
+    "local:setup": "yarn workspace @story-studio/web local:setup"
+  }
+}

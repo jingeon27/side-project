@@ -21,7 +21,7 @@ function Tabs({ className, orientation = 'horizontal', ...props }: TStyledProps<
   );
 }
 
-/** default는 Photo Contest SegmentedControl과 같은 채운 칸, line은 밑줄 탭이다. */
+/** default는 Photo Contest SegmentedControl과 같은 채운 칸에 선택 칸 테두리를 더하고, line은 밑줄 탭이다. */
 const tabsListVariants = cva(
   'group/tabs-list inline-flex items-center text-muted group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col group-data-[orientation=vertical]/tabs:items-stretch',
   {
@@ -47,9 +47,12 @@ const tabsTriggerVariants = cva(
   {
     variants: {
       variant: {
-        /** 보이는 칸은 36px이고 누르는 영역은 44px로 넓힌다. */
+        /**
+         * 보이는 칸은 36px이고 누르는 영역은 테두리와 관계없이 가운데 44px로 넓힌다. 다크 모드에서는 칸 바탕(1.07:1)과
+         * 글자색(1.97:1)만으로 선택 칸이 구분되지 않아 3:1 이상인 control-border 테두리를 더한다.
+         */
         default:
-          "h-9 rounded-badge before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] data-active:bg-surface data-active:shadow-card",
+          "h-9 rounded-badge border border-transparent before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-[''] data-active:border-control-border data-active:bg-surface data-active:shadow-card",
         line: 'min-h-touch border-transparent active:bg-sunken data-active:border-ink data-[orientation=horizontal]:-mb-px data-[orientation=horizontal]:border-b-2 data-[orientation=vertical]:-ml-px data-[orientation=vertical]:border-l-2',
       },
     },

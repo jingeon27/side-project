@@ -15,7 +15,7 @@
   .notification-item:last-child {
     border-bottom: 0;
   }
-  .notification-item.unread {
+  .notification-item[data-unread] {
     background: var(--color-sunken);
   }
   .notification-type {

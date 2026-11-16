@@ -1,7 +1,16 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@side/design-system';
+
+import { BottomSheet } from './BottomSheet';
 import { openOverlay } from './open-overlay';
 
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
@@ -45,5 +54,46 @@ describe('overlay error isolation', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: '작성' }));
     await screen.findByRole('dialog');
+  });
+});
+
+describe('overlays opened from a menu', () => {
+  it('moves focus into a sheet opened from a menu item, then returns it to the menu trigger on close', async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayProvider>
+        <DropdownMenu>
+          <DropdownMenuTrigger>대화 메뉴</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() =>
+                openOverlay((control) => (
+                  <BottomSheet {...control} title="대화내역 삭제">
+                    <p>현재까지의 대화내역을 삭제해요.</p>
+                  </BottomSheet>
+                ))
+              }
+            >
+              대화내역 삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </OverlayProvider>,
+    );
+    const trigger = screen.getByRole('button', { name: '대화 메뉴' });
+    trigger.focus();
+
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: '대화내역 삭제' })),
+    );
+    await user.keyboard('{Enter}');
+    const sheet = await screen.findByRole('dialog', { name: '대화내역 삭제' });
+    // 메뉴가 닫히며 트리거로 돌려준 포커스를 시트가 가져간 뒤에 닫아야 복귀를 확인할 수 있다.
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true));
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(trigger);
   });
 });

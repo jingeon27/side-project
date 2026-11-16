@@ -53,7 +53,7 @@ export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
             <Globe size={14} aria-hidden />
             {t('현재 세계 순위')}
           </dt>
-          <dd className={!profile.currentGlobalRank ? 'snapshot-rank-unavailable' : undefined}>
+          <dd data-unavailable={!profile.currentGlobalRank || undefined}>
             {formatRank(profile.currentGlobalRank)}
           </dd>
         </div>
@@ -62,7 +62,7 @@ export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
             <Globe size={14} aria-hidden />
             {t('최고 시즌 순위')}
           </dt>
-          <dd className={!profile.bestGlobalRank ? 'snapshot-rank-unavailable' : undefined}>
+          <dd data-unavailable={!profile.bestGlobalRank || undefined}>
             {formatRank(profile.bestGlobalRank)}
           </dd>
         </div>

@@ -6,19 +6,32 @@ import { useQuery } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 
 import { useSession } from '@/features/auth';
 import { FollowControls } from '@/features/follow';
-import { PostCard, userPostListOptions } from '@/features/post';
-import { AuthorLink, ProfileEditSheet, profileOptions, UserBadges } from '@/features/user';
+import { ProfileSnapshot } from '@/features/game-profile';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  userPostListOptions,
+} from '@/features/post';
+import { AuthorLink, profileOptions, UserBadges } from '@/features/user';
 import type { PostList, PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { BackLink } from '@/shared/navigation';
-import { Avatar, LinkifiedText, LoadingState, openOverlay, ServiceErrorBoundary } from '@/shared/ui';
-import { ReportUserButton } from '@/widgets/moderation';
+import { Avatar, LinkifiedText, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { StartChatLink } from '@/widgets/start-chat';
+
+import { ProfileActionsMenu } from './ProfileActionsMenu';
 
 interface IProfilePageProps {
   id: string;
@@ -27,19 +40,6 @@ interface IProfilePageProps {
   initialProfile: PublicProfile;
   initialPosts: PostList;
   initialViewerId?: string;
-}
-function openProfileEdit(profile: PublicProfile) {
-  openOverlay(({ isOpen, close, unmount }) => (
-    <ProfileEditSheet
-      profile={profile}
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (open) return;
-        close();
-        unmount();
-      }}
-    />
-  ));
 }
 export function ProfilePage(props: IProfilePageProps) {
   const { t } = useI18n();
@@ -72,16 +72,13 @@ function ProfileContent({
     initialData: sameViewer ? initialProfile : undefined,
   });
   if (!profile.data) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
-  const { links, bio, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
+  const { bio, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
-      <BackLink className="back-link" href={appRoutes.feed(locale)}>
-        {t('← 피드')}
-      </BackLink>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
           <Avatar src={author.avatarUrl} name={author.nickname} size="large" />
-          <div>
+          <div className="profile-identity-text">
             <h1>{author.nickname}</h1>
             <UserBadges author={author} />
             <p>
@@ -91,30 +88,18 @@ function ProfileContent({
             </p>
           </div>
           {author.id === session.user?.id && (
-            <Button
-              type="button"
+            <ButtonLink
+              href={appRoutes.editProfile(locale)}
               variant="secondary"
               size="sm"
               className="profile-edit-trigger"
-              onClick={() => openProfileEdit(profile.data)}
             >
               <Pencil size={15} aria-hidden />
               {t('프로필 수정')}
-            </Button>
+            </ButtonLink>
           )}
         </div>
         {bio && <LinkifiedText text={bio} className="profile-bio" />}
-        {(links ?? []).length > 0 && (
-          <ul className="profile-links" aria-label={t('프로필 링크')}>
-            {(links ?? []).map((link) => (
-              <li key={`${link.url}:${link.label}`}>
-                <a href={link.url} target="_blank" rel="nofollow ugc noopener noreferrer">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
         {!bio && <p className="muted">{t('클래시 로얄 플레이 경험을 나누는 플레이어')}</p>}
         <dl className="public-profile-stats">
           <div>
@@ -130,16 +115,32 @@ function ProfileContent({
             <dd>{helpfulCount}</dd>
           </div>
         </dl>
-        {author.supercellTag && (
-          <p className="small muted">
-            {t('게임 계정 소유권은 인증되지 않았습니다. 서비스 인증 표시와는 별개입니다.')}
-          </p>
+        {author.id !== session.user?.id && (
+          <div className="public-profile-actions">
+            <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={requireLogin} />
+            <StartChatLink
+              source="profile"
+              userId={author.id}
+              nickname={author.nickname}
+              variant="accent"
+              size="md"
+            />
+            <div className="profile-safety-actions">
+              <ProfileActionsMenu author={author} locale={locale} />
+            </div>
+          </div>
         )}
-        {author.id !== session?.user?.id && (
-          <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
+      </section>
+      <section className="settings-card" aria-label={t('게임 계정')}>
+        <h2>{t('게임 계정')}</h2>
+        {(profile.data.gameAccounts ?? []).length === 0 && (
+          <p className="muted">{t('등록한 게임 계정이 없어요.')}</p>
         )}
-        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
-        <ReportUserButton userId={author.id} />
+        <div className="game-account-list">
+          {(profile.data.gameAccounts ?? []).map((account) => (
+            <ProfileSnapshot key={account.playerTag} profile={account} />
+          ))}
+        </div>
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>
         <ProfilePosts
@@ -179,21 +180,29 @@ function ProfilePosts({
       {posts.data.items.length === 0 && <p className="muted">{t('공개한 게시글이 없어요.')}</p>}
       <div className="post-list">
         {posts.data.items.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
-            authorName={<AuthorLink author={post.author} locale={locale} />}
-            authorContent={<UserBadges author={post.author} compact />}
-          />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard />
+            </PostCardHeader>
+            <PostCardContent href={appRoutes.post(locale, post.id, post.board, post.category.slug)}>
+              <PostCardDetails />
+            </PostCardContent>
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
+            </PostCardFooter>
+          </PostCard>
         ))}
       </div>
       <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
-        {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
+        {cursor && <Link href={appRoutes.profile(locale, id)}>{t('처음으로')}</Link>}
         {posts.data?.nextCursor && (
-          <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
-            {t('이전 글 보기 →')}
-          </Link>
+          <Link href={appRoutes.profile(locale, id, posts.data.nextCursor)}>{t('이전 글 보기 →')}</Link>
         )}
       </nav>
     </section>

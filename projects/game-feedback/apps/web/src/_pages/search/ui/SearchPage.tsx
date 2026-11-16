@@ -1,19 +1,29 @@
 'use client';
 
-import { use } from 'react';
-
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search, X } from 'lucide-react';
 
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
-import { Button, Input } from '@side/design-system';
+import { Button, IconButton, iconButtonVariants, Input } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import {
+  PostCard,
+  PostCardActivity,
+  PostCardAuthor,
+  PostCardAuthorName,
+  PostCardBoard,
+  PostCardContent,
+  PostCardDetails,
+  PostCardFooter,
+  PostCardHeader,
+  postListOptions,
+  PostListSkeleton,
+} from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
-import { AsyncBoundary } from '@/shared/ui';
+import { AsyncBoundary, Await } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
@@ -42,9 +52,9 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
         <BackLink
           href={route?.parent ?? appRoutes.feed(locale)}
           aria-label={t('돌아가기')}
-          className="icon-button"
+          className={iconButtonVariants()}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft className="size-5" aria-hidden />
         </BackLink>
         <h1 className="max-[760px]:sr-only">{t('검색')}</h1>
       </div>
@@ -59,19 +69,13 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
           placeholder={t('제목이나 내용으로 검색')}
         />
         {draft && (
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label={t('검색어 지우기')}
-            onClick={handleClear}
-          >
-            <X size={18} />
-          </Button>
+          <IconButton type="button" label={t('검색어 지우기')} onClick={handleClear}>
+            <X aria-hidden />
+          </IconButton>
         )}
-        <Button variant="accent" size="icon" type="submit" aria-label={t('검색')}>
-          <Search size={20} />
-        </Button>
+        <IconButton variant="accent" type="submit" label={t('검색')}>
+          <Search aria-hidden />
+        </IconButton>
       </form>
       <p className="search-scope">
         {t('검색 범위')}: {t(board?.name ?? '전체')}
@@ -86,7 +90,9 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
           suspense={'then' in initialSearch}
           pendingFallback={<PostListSkeleton />}
         >
-          <SearchResults locale={locale} path={path} initialSearch={initialSearch} />
+          <Await value={initialSearch}>
+            {(initial) => <SearchResults locale={locale} path={path} initialSearch={initial} />}
+          </Await>
         </AsyncBoundary>
       )}
     </section>
@@ -100,10 +106,10 @@ function SearchResults({
 }: {
   locale: string;
   path: string;
-  initialSearch: ISearchPageProps['initialSearch'];
+  initialSearch: ISearchSnapshot;
 }) {
   const { t } = useI18n();
-  const initial = 'then' in initialSearch ? use(initialSearch) : initialSearch;
+  const initial = initialSearch;
   const { session } = useSession();
   const { board, request } = searchQuery(path);
   const same = initial.path === path && initial.viewerId === session.user?.id && initial.posts;
@@ -119,14 +125,23 @@ function SearchResults({
       {!posts.length && <p className="search-empty">{t('일치하는 게시글이 없어요')}</p>}
       <div className="post-list">
         {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            showBoardLabel={board?.kind !== 'FEEDBACK'}
-            href={appRoutes.post(locale, post.id, board?.kind, request.category)}
-            authorName={<AuthorLink author={post.author} locale={locale} />}
-            authorContent={<UserBadges author={post.author} compact />}
-          />
+          <PostCard key={post.id} post={post}>
+            <PostCardHeader>
+              <PostCardBoard showLabel={board?.kind !== 'FEEDBACK'} />
+            </PostCardHeader>
+            <PostCardContent href={appRoutes.post(locale, post.id, board?.kind, request.category)}>
+              <PostCardDetails />
+            </PostCardContent>
+            <PostCardFooter>
+              <PostCardAuthor>
+                <PostCardAuthorName>
+                  <AuthorLink author={post.author} locale={locale} />
+                </PostCardAuthorName>
+                <UserBadges author={post.author} compact />
+              </PostCardAuthor>
+              <PostCardActivity />
+            </PostCardFooter>
+          </PostCard>
         ))}
       </div>
       {results.hasNextPage && (
@@ -146,7 +161,7 @@ function SearchResults({
 
 export function SearchPage(props: Parameters<typeof SearchContent>[0]) {
   return (
-    <CommunityPage locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
+    <CommunityPage screenKey="search" locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
       <SearchContent {...props} />
     </CommunityPage>
   );

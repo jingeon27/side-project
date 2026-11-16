@@ -7,13 +7,16 @@ import { CheckIcon } from 'lucide-react';
 import { cn } from '../../lib/cn.helper';
 import type { TStyledProps } from '../../lib/styled-props';
 
-/** 보이는 상자는 16px이고 after 가상 요소로 누르는 영역을 44×44px로 넓힌다. */
+/**
+ * 보이는 상자는 16px이고 after 가상 요소로 누르는 영역을 44×44px로 넓힌다. 가상 요소는 테두리 안쪽(14px)을 기준으로
+ * 놓이므로 사방을 늘리면 42px가 된다. Button sm처럼 가운데에 44px 크기로 둔다.
+ */
 function Checkbox({ className, ...props }: TStyledProps<CheckboxPrimitive.Root.Props>) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input-border transition-colors group-has-disabled/field:opacity-50 after:absolute after:-inset-3.5 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
+        'peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input-border transition-colors group-has-disabled/field:opacity-50 after:absolute after:top-1/2 after:left-1/2 after:size-touch after:-translate-1/2 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
         className,
       )}
       {...props}

@@ -9,9 +9,12 @@ import type { IAvatarProps } from '@side/design-system/ui/avatar';
 import type { IBadgeProps, TBadgeTone } from '@side/design-system/ui/badge';
 import type { IButtonProps } from '@side/design-system/ui/button';
 import type { IDialogProps } from '@side/design-system/ui/dialog';
+import type { IDisclosureProps, IDisclosureTriggerProps } from '@side/design-system/ui/disclosure';
+import type { IFloatingActionButtonProps } from '@side/design-system/ui/floating-action-button';
 import type { IFormFieldProps } from '@side/design-system/ui/form-field';
 import type { IIconButtonProps } from '@side/design-system/ui/icon-button';
 import type { IMentionProps } from '@side/design-system/ui/mention';
+import type { IMotionProviderProps } from '@side/design-system/ui/motion-provider';
 import type { ISpinnerProps } from '@side/design-system/ui/spinner';
 import type { ITextAreaFieldProps, ITextFieldProps } from '@side/design-system/ui/text-field';
 
@@ -34,9 +37,13 @@ export type TPublicTypes = [
   TBadgeTone,
   IButtonProps,
   IDialogProps,
+  IDisclosureProps,
+  IDisclosureTriggerProps,
+  IFloatingActionButtonProps,
   IFormFieldProps,
   IIconButtonProps,
   IMentionProps,
+  IMotionProviderProps,
   ISpinnerProps,
   ITextAreaFieldProps,
   ITextFieldProps,
@@ -58,9 +65,15 @@ describe('package exports', () => {
   it('루트 진입점의 공개 값은 같은 객체로 하위 경로에서도 가져올 수 있어야 한다', async () => {
     const root = await importSubpath('ui');
     const subpaths = await Promise.all(
-      [...uiFolders.map((folder) => `ui/${folder}`), 'lib/cn.helper'].map(importSubpath),
+      [
+        ...uiFolders.map((folder) => `ui/${folder}`),
+        'lib/cn.helper',
+        'lib/use-scroll-visibility',
+        'lib/use-motion-preference',
+        'lib/motion',
+      ].map(importSubpath),
     );
-    const reachable = new Map(subpaths.flatMap((module) => Object.entries(module)));
+    const reachable = new Map(subpaths.flatMap(Object.entries));
     for (const [name, value] of Object.entries(root)) {
       expect.soft(reachable.get(name), name).toBe(value);
     }

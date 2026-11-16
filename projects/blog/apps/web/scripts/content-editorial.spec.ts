@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import manifest from '../../../docs/migration-manifest.json';
+import localizations from '../content/english-localizations.json';
+import imageReplacements from '../content/image-replacements.json';
 import enSeo from '../seo/en.json';
 import koSeo from '../seo/ko.json';
 
@@ -14,22 +15,12 @@ const editions = [
 ] as const;
 
 describe('edited article contracts', () => {
-  it('keeps the original publication dates of migrated articles', async () => {
-    for (const post of manifest.posts) {
-      const meta = JSON.parse(
-        await readFile(path.join(contentRoot, post.contentId, 'meta.json'), 'utf8'),
-      ) as { publishedAt: string };
-
-      expect(new Date(meta.publishedAt).getTime(), post.contentId).toBe(new Date(post.publishedAt).getTime());
-    }
-  });
-
-  it.each(editions)('introduces migrated articles in $locale with a short summary', async ({ locale }) => {
-    for (const post of manifest.posts) {
-      const source = await readFile(path.join(contentRoot, post.contentId, `${locale}.mdx`), 'utf8');
+  it.each(editions)('introduces articles in $locale with a short summary', async ({ locale, seo }) => {
+    for (const id of Object.keys(seo.posts)) {
+      const source = await readFile(path.join(contentRoot, id, `${locale}.mdx`), 'utf8');
       const summary = source.match(/^<Summary>\s*\n([\s\S]*?)\n<\/Summary>/)?.[1];
 
-      expect(summary?.trim(), post.contentId).toBeTruthy();
+      expect(summary?.trim(), id).toBeTruthy();
     }
   });
 
@@ -44,20 +35,21 @@ describe('edited article contracts', () => {
   );
 
   it.each(editions)(
-    'keeps implementation evidence and current screenshots in the side-project article in $locale',
+    'keeps product visuals in the article language and a separate infrastructure link in $locale',
     async ({ locale }) => {
       const source = await readFile(path.join(contentRoot, 'side-project-design', `${locale}.mdx`), 'utf8');
 
-      for (const image of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
-        expect(source).toContain(`/images/posts/side-project-design/${image}.png`);
+      for (const image of ['01-service-screens', '09-product-interactions']) {
+        const archived = `/images/posts/side-project-design/${image}.png`;
+        const replacement = Object.entries(imageReplacements).find(
+          ([original]) => original === archived,
+        )?.[1];
+        const original = replacement ?? archived;
+        const localized = localizations.images[original as keyof typeof localizations.images];
+        expect(source).toContain(locale === 'en' ? (localized ?? original) : original);
       }
-      for (const evidence of [
-        'projects/game-feedback/apps/api/src/cache-invalidation',
-        'projects/game-feedback/docs/observability.md',
-        'projects/photo-contest/docs/observability.md',
-      ]) {
-        expect(source).toContain(evidence);
-      }
+      const seo = locale === 'ko' ? koSeo : enSeo;
+      expect(source).toContain(`](/${locale}/blog/${seo.posts['side-project-infrastructure'].slug})`);
     },
   );
 });

@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
-import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
+import type { IViewer } from '../auth/session/session.service';
+import { Viewer } from '../auth/session/viewer.decorator';
 import { redirectToStorage } from '../common/http/storage-redirect';
 import { MediaStorage } from '../storage/media-storage.service';
 import { SubmissionService } from './submission.service';

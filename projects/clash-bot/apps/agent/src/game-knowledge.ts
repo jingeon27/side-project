@@ -3,21 +3,6 @@ import { type CardId } from './config.ts';
 // Level-11 reference values checked 2026-11-15. Counterpush's physics have not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
 export const KNOWLEDGE_VERSION = 'cr-level11-2026-11-14';
-export const KNOWLEDGE_SOURCES = {
-  currentStats: 'https://www.royaletools.com/cards/',
-  furnaceRangeAndGraveyardCount:
-    'https://supercell.com/en/games/clashroyale/blog/release-notes/june-balance-changes-2026/',
-  fixedGraveyard: 'https://supercell.com/en/games/clashroyale/blog/release-notes/january-balance-changes-26/',
-  revisedGraveyard: 'https://supercell.com/en/games/clashroyale/blog/news/february-balance-changes-26/',
-  furnaceRework: 'https://supercell.com/en/games/clashroyale/blog/release-notes/new-season-fired-up/',
-  hutSpawn: 'https://supercell.com/en/games/clashroyale/blog/release-notes/april26-balance-changes/',
-  singleUseAbilities:
-    'https://supercell.com/en/games/clashroyale/blog/news/final-august-balance-changes-826/',
-  iceWizardHero: 'https://support.clashroyale.com/hc/en-us/articles/54836231287963-What-s-New-September-2026',
-  championCycle: 'https://supercell.com/en/games/clashroyale/blog/release-notes/october-update-2025/',
-  championAbilityOwner: 'https://support.clashroyale.com/hc/en-us/articles/49484915467291-Champions',
-};
-
 export const ABILITY_RULES = {
   version: '2026-08-04',
   default: 'single_use_per_deployment',

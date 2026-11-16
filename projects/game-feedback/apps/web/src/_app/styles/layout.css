@@ -40,33 +40,36 @@
     padding: 0 40px;
     gap: 24px;
   }
-  .brand {
-    display: flex;
-    gap: 9px;
+  .error-recovery.topbar[data-compact] {
+    flex-direction: row;
     align-items: center;
-    font-size: var(--text-title-lg);
-    font-weight: 800;
-    letter-spacing: -1.2px;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 16px;
+    border: 0;
+    border-bottom: 1px solid var(--color-line);
+    border-radius: 0;
+  }
+  .error-recovery.topbar[data-compact] > p {
+    margin: 0;
+    font-size: var(--text-caption);
+    line-height: 1.4;
+  }
+  .error-recovery.topbar[data-compact] > button {
+    flex-shrink: 0;
+  }
+  .topbar-inner:has(> .post-header-back) {
+    gap: 4px;
+  }
+  .topbar-title {
+    min-width: 0;
+    font-size: var(--text-title);
+    font-weight: 700;
+  }
+  .topbar-title > :is(p, h1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .brand > span:last-child {
-    display: flex;
-    gap: 9px;
-    align-items: center;
-  }
-  .brand-mark {
-    display: grid;
-    place-items: center;
-    width: 35px;
-    height: 35px;
-    border-radius: var(--radius-card);
-  }
-  .brand-mark img {
-    width: 100%;
-    height: 100%;
-  }
-  .mobile-page-title {
-    display: none;
   }
   .post-header-back.back-link {
     flex-shrink: 0;
@@ -109,20 +112,6 @@
     display: flex;
     align-items: center;
     gap: 21px;
-  }
-  .icon-button {
-    padding: 7px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    color: var(--color-muted);
-  }
-  .icon-button:hover {
-    background: var(--color-sunken);
-  }
-  .notification-button {
-    position: relative;
   }
   .header-notification-count {
     position: absolute;
@@ -175,6 +164,18 @@
     color: var(--color-muted);
     padding: 7px 12px 12px;
   }
+  .sidebar-brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 24px;
+    padding-inline: 10px;
+    border-radius: var(--radius-control);
+  }
+  .sidebar-brand:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
   .side-link {
     padding: 13px 13px;
     margin: 1px 0;
@@ -190,7 +191,7 @@
     margin-left: auto;
     color: var(--color-muted);
   }
-  .side-link.selected {
+  .side-link[aria-current='page'] {
     background: var(--color-accent-soft);
     color: var(--color-ink);
   }
@@ -226,10 +227,6 @@
   .game-submenu .side-link {
     padding: 10px;
     font-size: var(--text-caption);
-  }
-  .game-icon {
-    width: 40px;
-    height: 40px;
   }
   .game-side-link strong {
     font-size: var(--text-body);
@@ -279,6 +276,53 @@
   .mobile-nav {
     display: none;
   }
+  @media (min-width: 1024px) {
+    .community-shell {
+      --desktop-sidebar-width: 192px;
+      --desktop-content-width: 1216px;
+      --desktop-page-inset: 32px;
+      position: relative;
+      padding-inline-start: var(--desktop-sidebar-width);
+    }
+    .community-shell .site-grid {
+      max-width: var(--desktop-content-width);
+      padding: 32px var(--desktop-page-inset) 80px;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      align-content: stretch;
+      gap: 0;
+    }
+    .community-shell .topbar-inner {
+      max-width: var(--desktop-content-width);
+      padding-inline: var(--desktop-page-inset);
+    }
+    .main-content {
+      width: 100%;
+      max-width: 960px;
+      min-height: 100dvh;
+      margin-inline: auto;
+    }
+    .shell-left-sidebar {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      width: var(--desktop-sidebar-width);
+      padding: 32px 20px;
+      border-inline-end: 1px solid var(--color-line);
+      background: var(--color-surface);
+    }
+    .left-sidebar {
+      position: sticky;
+      top: 32px;
+      max-height: calc(100dvh - 64px);
+      overflow-y: auto;
+    }
+  }
+  @media (min-width: 1280px) {
+    .community-shell {
+      --desktop-sidebar-width: 224px;
+    }
+  }
   @media (max-width: 1250px) {
     .site-grid {
       grid-template-columns: 165px minmax(0, 1fr);
@@ -289,9 +333,6 @@
       padding: 0 28px;
       gap: 20px;
     }
-    .brand {
-      font-size: var(--text-title-lg);
-    }
     .game-side-link {
       gap: 7px;
       padding-left: 7px;
@@ -301,10 +342,6 @@
     }
     .game-side-link small {
       font-size: var(--text-micro);
-    }
-    .game-icon {
-      width: 33px;
-      height: 35px;
     }
     .sidebar-bottom {
       padding: 0 9px;
@@ -325,9 +362,6 @@
     }
     .header-actions {
       gap: 13px;
-    }
-    .brand {
-      font-size: var(--text-title);
     }
     .user-button {
       font-size: var(--text-caption);
@@ -351,32 +385,6 @@
       gap: 16px;
       max-width: 650px;
     }
-    .topbar .brand {
-      display: none;
-    }
-    .mobile-page-title {
-      display: block;
-      min-width: 0;
-      font-size: var(--text-title);
-      font-weight: 700;
-    }
-    .mobile-page-title p {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .brand {
-      font-size: var(--text-title);
-      letter-spacing: -1px;
-    }
-    .brand-mark {
-      width: 31px;
-      height: 31px;
-      border-radius: var(--radius-control);
-    }
-    .brand > span:last-child {
-      gap: 6px;
-    }
     .header-actions {
       gap: 8px;
     }
@@ -385,12 +393,6 @@
     }
     .header-actions .small-button svg {
       width: 12px;
-    }
-    .header-actions .notification-button {
-      padding: 4px;
-    }
-    .header-actions .notification-button > svg {
-      width: 19px;
     }
     .user-button > span:last-child {
       display: none;
@@ -418,7 +420,7 @@
       min-width: 44px;
       flex: 1;
     }
-    .mobile-nav > a.active {
+    .mobile-nav > a[aria-current='page'] {
       color: var(--color-muted);
     }
     .language-banner {
@@ -439,13 +441,6 @@
     .topbar-inner {
       padding: 0 15px;
     }
-    .brand {
-      font-size: var(--text-title);
-    }
-    .brand-mark {
-      width: 29px;
-      height: 29px;
-    }
     .header-actions .small-button > svg {
       display: none;
     }
@@ -457,10 +452,6 @@
     .topbar-inner {
       gap: 8px;
       padding-inline: 12px;
-    }
-    .brand {
-      gap: 6px;
-      font-size: var(--text-body);
     }
     .header-login-long {
       display: none;

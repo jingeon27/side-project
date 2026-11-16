@@ -5,7 +5,7 @@ import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contr
 
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
 import { DemoAuthGuard, TestAuthGuard } from '../common/http/session.guard';
-import { AppAuthService } from './app-auth.service';
+import { AppAuthService } from './app-login/app-auth.service';
 import {
   AppExchangeInputSchema,
   DemoInputSchema,
@@ -17,8 +17,8 @@ import {
   type TTestLoginDto,
 } from './auth-input.dto';
 import { AuthService } from './auth.service';
-import { SessionService } from './session.service';
-import type { SessionRequest } from './session.types';
+import { SessionService } from './session/session.service';
+import type { SessionRequest } from './session/session.types';
 
 @Controller('api')
 export class AuthController {

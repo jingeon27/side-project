@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('기기 언어가 이미 선택돼 있어도 다른 언어 경로에서 다시 적용할 수 있어야 한다', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'ko-KR', baseURL: 'http://127.0.0.1:3301' });

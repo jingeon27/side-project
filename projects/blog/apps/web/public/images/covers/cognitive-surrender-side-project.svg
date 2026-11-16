@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <title>Stepping down from owning the result to no longer checking it</title>
+  <desc>Three documents descend a staircase. The top one is marked up by a reviewer, the middle one has a single check, and the bottom one looks finished with a check badge while dashed rows stay empty. An editorial diagram, not a product screenshot.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 H 0 V 32" fill="none" stroke="#dddcd4" stroke-width="1" opacity=".45"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#6a7873" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="720" fill="#f3f1e9"/>
+  <rect width="1280" height="720" fill="url(#grid)"/>
+
+  <path d="M 65 322 H 440 V 472 H 845 V 622 H 1215" fill="none" stroke="#6a7873" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g stroke="#b6c0b9" stroke-width="2" fill="#fffef9">
+    <rect x="95" y="106" width="300" height="216" rx="12"/>
+    <rect x="490" y="256" width="300" height="216" rx="12"/>
+    <rect x="890" y="406" width="300" height="216" rx="12"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-width="7">
+    <path d="M 125 148 H 332 M 125 178 H 362 M 125 208 H 300 M 125 238 H 348 M 125 268 H 262" stroke="#d0d5cb"/>
+    <path d="M 520 298 H 727 M 520 328 H 757 M 520 358 H 695 M 520 388 H 743 M 520 418 H 657" stroke="#d0d5cb"/>
+    <path d="M 920 490 H 1152 M 920 520 H 1110" stroke="#bacbc0"/>
+  </g>
+
+  <g stroke="#a85f43" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 165 178 H 348"/>
+    <path d="M 167 163 Q 255 152 350 162"/>
+    <path d="M 274 262 L 284 271 L 300 250"/>
+    <path d="M 113 202 Q 103 235 113 274"/>
+    <path d="M 742 303 L 752 311 L 770 289"/>
+  </g>
+
+  <g stroke="#a85f43" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 8">
+    <rect x="920" y="546" width="168" height="16" rx="4"/>
+    <rect x="920" y="578" width="116" height="16" rx="4"/>
+  </g>
+
+  <g transform="translate(372 150) rotate(31)">
+    <path d="M 0 0 H 17 V 124 L 8.5 144 L 0 124 Z" fill="#c48a60" stroke="#765d47" stroke-width="2"/>
+    <path d="M 0 122 H 17 L 8.5 144 Z" fill="#ead6b8"/>
+    <path d="M 5 136 L 8.5 144 L 12 136 Z" fill="#36463d"/>
+    <path d="M 6 6 V 116" stroke="#ead6b8" stroke-width="3"/>
+  </g>
+
+  <g fill="none" stroke="#6a7873" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M 412 190 C 480 190 545 190 562 238"/>
+    <path d="M 807 300 C 880 300 945 310 962 388"/>
+  </g>
+
+  <rect x="920" y="440" width="58" height="16" rx="4" fill="#4f786a"/>
+  <circle cx="1146" cy="448" r="19" fill="#4f786a"/>
+  <path d="M 1137 448 L 1143 454 L 1156 441" fill="none" stroke="#fffef9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

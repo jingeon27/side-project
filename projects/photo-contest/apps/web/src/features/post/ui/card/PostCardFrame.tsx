@@ -1,0 +1,108 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+
+import { useFragment } from '@apollo/client/react';
+import { Video } from 'lucide-react';
+
+import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
+import { cn } from '@/shared/lib/cn.helper';
+import { formatDateTime } from '@/shared/lib/format.helper';
+import { Avatar } from '@/shared/ui/@core/avatar';
+
+import { PostDownloadButton } from '../media/PostDownloadButton';
+import { PostLink } from '../media/PostLink';
+import { PostMedia } from '../media/PostMedia';
+
+/** 카드의 좌우 여백. 휴대폰은 화면 여백을 그대로 쓰고 미디어만 화면 끝까지 채운다. */
+const CARD_INSET = 'tablet:px-4 desktop:px-5';
+
+/**
+ * 게시물 카드의 공통 틀. 작성자·제목·미디어·본문·작성 시각을 그리고, 머리의 메뉴와 아래쪽 행동은 카드 종류가 넣는다.
+ * 여백을 구역마다 주어 미디어가 음수 여백 없이 카드 너비를 채운다.
+ */
+export function PostCardFrame({
+  id,
+  menu,
+  actions,
+  isPriority = false,
+}: {
+  id: string;
+  menu?: ReactNode;
+  actions: ReactNode;
+  /** 목록의 첫 카드만 사진을 먼저 불러온다. */
+  isPriority?: boolean;
+}) {
+  const { data: post, complete } = useFragment({
+    fragment: GalleryPostCardFragmentDoc,
+    from: { __typename: 'GalleryPost', id },
+  });
+  if (!complete) return null;
+
+  return (
+    <article
+      id={`post-${id}`}
+      className="min-w-0 bg-surface tablet:overflow-hidden tablet:rounded-sheet tablet:border tablet:border-line/70 tablet:py-4 desktop:py-5"
+      aria-label={post.title}
+    >
+      <div className={cn('flex items-center gap-3 pb-3', CARD_INSET)}>
+        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" tone="accent" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* 말줄임의 넘침 자르기가 링크에 있으면 위아래로 넓힌 누름 영역까지 잘리므로 안쪽 글자에만 둔다. */}
+          <Link
+            href={ROUTES.GROUP(post.groupId)}
+            className="relative block w-fit max-w-full text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-accent-ink active:opacity-60"
+          >
+            <span className="block truncate">{post.groupName}</span>
+          </Link>
+          <p className="flex min-w-0 flex-wrap items-center gap-x-3 text-caption text-muted">
+            <span className="max-w-full truncate">{post.author.nickname}</span>
+            <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
+          </p>
+        </div>
+        {post.kind === PostKind.Video ? (
+          <Video aria-label="동영상" className="size-4 shrink-0 text-muted" />
+        ) : null}
+        {menu}
+      </div>
+      <div className={CARD_INSET}>
+        {post.contest ? (
+          <Link
+            href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
+            className="mb-3 inline-flex min-h-touch max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-card bg-accent-soft px-3 py-2 text-caption text-accent-ink transition-colors hover:bg-accent/20 active:bg-accent/25"
+          >
+            <span>대회 참여</span>
+            <span className="min-w-0 wrap-break-word">{post.contest.title}</span>
+            <span>좋아요는 한 사람당 최대 {post.contest.likeLimit}개</span>
+          </Link>
+        ) : null}
+        {post.category ? (
+          <p className="mb-3 w-fit rounded-badge bg-accent-soft px-2 py-1 text-micro text-accent-ink">
+            {post.category.name}
+            {post.category.archivedAt ? ' (보관됨)' : ''}
+          </p>
+        ) : null}
+        <h3 className="mb-3 wrap-break-word text-title leading-snug text-ink">{post.title}</h3>
+      </div>
+      <PostMedia
+        postId={id}
+        isPriority={isPriority}
+        className="-mx-4 w-[calc(100%+2rem)] max-w-none rounded-none tablet:mx-0 tablet:w-full"
+      />
+      <div className={CARD_INSET}>
+        <PostLink postId={id} />
+        {post.body ? (
+          <p className="pt-3 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
+        ) : null}
+        <div className="-mx-2 mt-2 flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          {post.mediaUrl ? (
+            <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}

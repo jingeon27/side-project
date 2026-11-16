@@ -30,12 +30,21 @@ test(
     const contestId = contestPath.split('/').at(-1);
     if (!contestId) throw new Error('대회 ID가 있어야 한다');
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: `대회 그룹-${testInfo.project.name} > ${title}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole('navigation', { name: '그룹 메뉴' })).toHaveCount(0);
+    await expect(page.locator('header').getByRole('link', { name: /알림/ })).toBeVisible();
     await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     const sheet = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).toBeChecked();
     await expect(sheet.getByLabel('참여할 대회')).toHaveValue(contestId);
     await sheet
-      .getByLabel('사진·동영상 선택')
+      .getByLabel('사진 또는 동영상 선택')
       .setInputFiles({ name: 'winner.png', mimeType: 'image/png', buffer: await createTestImage() });
     await sheet.getByLabel('제목', { exact: true }).fill('우승할 웃긴 순간');
     await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
@@ -44,12 +53,12 @@ test(
     await expect(page.getByRole('article', { name: '우승할 웃긴 순간', exact: true })).toBeVisible();
 
     await page.goto(groupPath);
-    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).not.toBeChecked();
     await sheet.getByRole('checkbox', { name: /대회에 참여하기/ }).check();
     await sheet.getByLabel('참여할 대회').selectOption(contestId);
     await sheet
-      .getByLabel('사진·동영상 선택')
+      .getByLabel('사진 또는 동영상 선택')
       .setInputFiles({ name: 'entry.mp4', mimeType: 'video/mp4', buffer: await createTestVideo() });
     await sheet.getByLabel('제목', { exact: true }).fill('동영상으로도 참여');
     await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
@@ -67,10 +76,12 @@ test(
     });
     const html = await seoResponse.text();
     expect(html).toContain('우승할 웃긴 순간');
-    expect(html).not.toContain('data-dgst=');
     const seo = await page.evaluate((html) => {
       const d = new DOMParser().parseFromString(html, 'text/html');
       return {
+        errors: d.querySelectorAll(
+          'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+        ).length,
         canonical: d.querySelector('link[rel="canonical"]')?.getAttribute('href'),
         ld: Array.from(d.querySelectorAll('script[type="application/ld+json"]')).map((node) =>
           JSON.parse(node.textContent ?? '{}'),
@@ -78,6 +89,7 @@ test(
         robots: d.querySelector('meta[name="robots"]')?.getAttribute('content'),
       };
     }, html);
+    expect(seo.errors).toBe(0);
     expect(seo.canonical).toBe(WEB_ORIGIN + contestPath);
     expect(seo.robots).not.toContain('noindex');
     expect(seo.ld[0]['@graph']).toEqual(
@@ -103,12 +115,13 @@ test(
       },
     ]);
     await page.goto(contestPath);
-    const vote = page.getByRole('button', { name: '우승할 웃긴 순간 대회 투표', exact: true });
-    await vote.click();
-    await expect(vote).toHaveText('내가 투표한 참여작');
-    await expect(vote).toBeDisabled();
+    // 버튼 이름은 보이는 투표 상태로 시작하고 참여작 제목을 덧붙인다.
+    await page.getByRole('button', { name: '이 참여작에 투표하기 (우승할 웃긴 순간)', exact: true }).click();
     await expect(
-      page.getByRole('button', { name: '동영상으로도 참여 대회 투표', exact: true }),
+      page.getByRole('button', { name: '내가 투표한 참여작 (우승할 웃긴 순간)', exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: '투표 완료 (동영상으로도 참여)', exact: true }),
     ).toBeDisabled();
     await moveTestContest(API_URL, { origin: WEB_ORIGIN, contestId, phase: 'COMPLETED' });
     await context.clearCookies();
@@ -130,9 +143,17 @@ test(
     ).text();
     expect(hallHtml).toContain('우승할 웃긴 순간');
     expect(hallHtml).toContain('application/ld+json');
-    expect(hallHtml).not.toContain('data-dgst=');
+    const hallErrors = await page.evaluate((html) => {
+      const d = new DOMParser().parseFromString(html, 'text/html');
+      return d.querySelectorAll(
+        'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+      ).length;
+    }, hallHtml);
+    expect(hallErrors).toBe(0);
     const sitemap = await (await page.request.get('/sitemaps/contests/0.xml')).text();
     expect(sitemap).toContain(WEB_ORIGIN + contestPath);
+    // 단계 이동은 API를 직접 호출해 캐시를 만료시키지 않으므로 어느 목록인지는 route.test가 확인한다.
+    expect(sitemap).toMatch(new RegExp(`${WEB_ORIGIN}${groupPath}/(contests|hall-of-fame)<`));
     expect((await page.request.get('/sitemaps/contests/9999999999999.xml')).status()).toBe(404);
   },
 );
@@ -149,8 +170,8 @@ test(
       groupId: group.id,
     });
     await page.goto(`/groups/${group.id}`);
-    await expect(page.getByText('카테고리 관리', { exact: true })).toBeVisible();
-    await page.getByText('초대와 그룹 멤버', { exact: true }).click();
+    await expect(page.getByText('카테고리 관리', { exact: true }).filter({ visible: true })).toBeVisible();
+    await page.getByText('초대와 그룹 멤버', { exact: true }).filter({ visible: true }).click();
     await page.getByRole('button', { name: `${nickname} 부관리자 임명`, exact: true }).click();
     await expect(page.getByRole('button', { name: `${nickname} 부관리자 해제`, exact: true })).toBeVisible();
     await page.getByRole('button', { name: `${nickname} 부관리자 해제`, exact: true }).click();

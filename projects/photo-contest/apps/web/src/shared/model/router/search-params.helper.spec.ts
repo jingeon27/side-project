@@ -21,4 +21,11 @@ describe('replaceSearchParams', () => {
     replaceSearchParams({ sort: 'popular' });
     expect(window.history.state).toEqual({ __photoContestOverlay: 'k1' });
   });
+
+  it('쿼리를 바꿔도 오버레이의 앞뒤 이동 위치는 유지해야 한다', () => {
+    const state = { __photoContestOverlay: 'k1', __photoContestOverlayPosition: 4 };
+    window.history.replaceState(state, '', '/contests/c1');
+    replaceSearchParams({ sort: 'popular' });
+    expect(window.history.state).toEqual(state);
+  });
 });

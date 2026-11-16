@@ -3,6 +3,7 @@ import { print } from 'graphql';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
+  createLegacyTestContest,
   createTestImage,
   createTestUser,
   createTestVideo,
@@ -40,7 +41,6 @@ import {
   LoginWithPasswordDocument,
   MeDocument,
   MyGroupsDocument,
-  MyPhotoFeedDocument,
   PostCommentsDocument,
   PostDownloadDocument,
   PostSort,
@@ -129,15 +129,21 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
     inviteToken = token;
     await ok(JoinGroupDocument, member, { token: inviteToken });
+    contestId = (
+      await createLegacyTestContest(url, { cookie: owner, groupId, title: '문서 계약 대회', origin })
+    ).id;
+  });
+
+  it('구대회 생성 문서는 종료 응답을 받는다', async () => {
     const now = Date.now();
-    const contest = await ok(CreateContestDocument, owner, {
+    const result = await execute(CreateContestDocument, owner, {
       groupId,
-      title: '문서 계약 대회',
+      title: '종료된 생성',
       startsAt: new Date(now).toISOString(),
       submissionEndsAt: new Date(now + 3_600_000).toISOString(),
       endsAt: new Date(now + 7_200_000).toISOString(),
     });
-    contestId = contest.createContest.id;
+    expect(result.errors?.[0]).toMatchObject({ extensions: { code: 'FORBIDDEN' } });
   });
 
   it('그룹 사진 presigned POST와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
@@ -270,7 +276,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       offset: 0,
       limit: 1,
     });
-    expect(popular.submissions.map(({ id }) => id)).toEqual([ownerPhoto.id]);
+    expect(popular.submissionsPage.items.map(({ id }) => id)).toEqual([ownerPhoto.id]);
     expect(
       (await ok(UnlikeSubmissionDocument, member, { submissionId: ownerPhoto.id })).unlikeSubmission
         .likeCount,
@@ -328,47 +334,6 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     );
   });
 
-  it('홈 피드 문서는 가입한 모든 그룹의 공개 사진을 최신순으로 이어 받아야 한다', async () => {
-    const groups = [];
-    for (const name of ['홈 피드 첫 그룹', '홈 피드 둘째 그룹']) {
-      const group = (await ok(CreateGroupDocument, owner, { name })).createGroup;
-      const token = (await ok(GroupDocument, owner, { id: group.id })).group.inviteToken;
-      if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
-      await ok(JoinGroupDocument, member, { token });
-      const now = Date.now();
-      const contest = (
-        await ok(CreateContestDocument, owner, {
-          groupId: group.id,
-          title: name + ' 대회',
-          startsAt: new Date(now).toISOString(),
-          submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-          endsAt: new Date(now + 7_200_000).toISOString(),
-        })
-      ).createContest;
-      const photo = await submit(owner, contest.id, name + ' 사진');
-      groups.push({ group, photo });
-    }
-    const newer = groups[1];
-    const older = groups[0];
-    if (!newer || !older) throw new Error('피드 준비 실패');
-    const first = await ok(MyPhotoFeedDocument, member, { offset: 0, limit: 1 });
-    const second = await ok(MyPhotoFeedDocument, member, { offset: 1, limit: 1 });
-    expect(first.myPhotoFeed[0]).toMatchObject({
-      groupId: newer.group.id,
-      submission: { id: newer.photo.id },
-    });
-    expect(second.myPhotoFeed[0]).toMatchObject({
-      groupId: older.group.id,
-      submission: { id: older.photo.id },
-    });
-    expect((await ok(MyPhotoFeedDocument, outsider, { offset: 0, limit: 24 })).myPhotoFeed).toEqual([]);
-    await ok(HideSubmissionDocument, owner, { submissionId: newer.photo.id });
-    expect(
-      (await ok(MyPhotoFeedDocument, owner, { offset: 0, limit: 24 })).myPhotoFeed.some(
-        ({ id }) => id === newer.photo.id,
-      ),
-    ).toBe(false);
-  });
   it('기간 없는 사진·동영상 게시물과 이달의 인기·관리자 삭제 문서가 실행돼야 한다', async () => {
     expect((await ok(GalleryDocument, member, { id: groupId })).group.name).toBe('문서 계약 그룹');
     const variables = { groupId, sort: PostSort.Newest, offset: 0, limit: 24 };
@@ -406,8 +371,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       ).createPost;
       expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
       const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
-      expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe('60');
-      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
+      // 동영상 서명은 재생·저장이 끊기지 않게 10분, 사진은 60초다.
+      expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
+      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(video ? 595_000 : 55_000);
       expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.png$/);
       const saved = await fetch(postDownload.url);
       expect(saved.headers.get('content-disposition')).toContain('attachment;');
@@ -416,17 +382,19 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     }
     const photo = created[0];
     if (!photo) throw new Error('사진 준비 실패');
-    expect((await ok(GalleryPostsDocument, owner, variables)).galleryPosts.map((p) => p.id)).toEqual(
-      created.map((p) => p.id).reverse(),
-    );
+    expect(
+      (await ok(GalleryPostsDocument, owner, variables)).galleryPostsPage.items.map((p) => p.id),
+    ).toEqual(created.map((p) => p.id).reverse());
     expect((await ok(LikePostDocument, owner, { postId: photo.id })).likePost.likeCount).toBe(1);
     expect(
-      (await ok(GalleryPostsDocument, owner, { ...variables, sort: PostSort.MonthlyPopular })).galleryPosts[0]
-        ?.id,
+      (await ok(GalleryPostsDocument, owner, { ...variables, sort: PostSort.MonthlyPopular }))
+        .galleryPostsPage.items[0]?.id,
     ).toBe(photo.id);
     expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
     expect(
-      (await ok(GalleryPostsDocument, outsider, variables)).galleryPosts.find((post) => post.id === photo.id),
+      (await ok(GalleryPostsDocument, outsider, variables)).galleryPostsPage.items.find(
+        (post) => post.id === photo.id,
+      ),
     ).toMatchObject({ canModerate: false, canInteract: false, canDelete: false, likedByMe: false });
     expect(
       (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
@@ -457,8 +425,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     const commentVariables = { postId: photo.id, offset: 0, limit: 24 };
     expect((await ok(PostCommentsDocument, owner, commentVariables)).postComments).toEqual([comment]);
     expect(
-      (await ok(GalleryPostsDocument, owner, variables)).galleryPosts.find(({ id }) => id === photo.id)
-        ?.commentCount,
+      (await ok(GalleryPostsDocument, owner, variables)).galleryPostsPage.items.find(
+        ({ id }) => id === photo.id,
+      )?.commentCount,
     ).toBe(1);
     expect((await ok(PostCommentsDocument, outsider, commentVariables)).postComments).toEqual([
       { ...comment, canDelete: false, canInteract: false },
@@ -540,7 +509,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     });
     await ok(DeletePostDocument, owner, { postId: photo.id });
     expect(
-      (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
+      (await ok(GalleryPostsDocument, member, variables)).galleryPostsPage.items.some(
+        (p) => p.id === photo.id,
+      ),
     ).toBe(false);
   });
   it('링크 게시물 문서는 파일 없이 실행되고 비공개 링크는 멤버에게만 보여야 한다', async () => {
@@ -567,7 +538,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
           offset: 0,
           limit: 24,
         })
-      ).galleryPosts[0],
+      ).galleryPostsPage.items[0],
     ).toMatchObject({ id: createPost.id });
     expect(
       (

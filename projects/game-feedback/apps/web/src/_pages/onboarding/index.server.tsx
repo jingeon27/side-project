@@ -28,7 +28,7 @@ export async function OnboardingRoute(props: IOnboardingRouteProps) {
     redirect(session.user ? returnTo : appRoutes.login(locale, returnTo));
   }
   return (
-    <CommunityPage locale={locale} topbar={<OnboardingTopbar returnTo={returnTo} />}>
+    <CommunityPage screenKey="onboarding" locale={locale} topbar={<OnboardingTopbar returnTo={returnTo} />}>
       <OnboardingPage locale={locale} returnTo={returnTo} />
     </CommunityPage>
   );

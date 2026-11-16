@@ -1,0 +1,102 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { Compass, Heart, House, UserRound } from 'lucide-react';
+
+import { useMyMenuItem } from '@/features/auth';
+import { PUBLIC_LANDING_PATHS, ROUTES } from '@/shared/constants/routes';
+import { cn } from '@/shared/lib/cn.helper';
+import { LegalLinks } from '@/shared/ui/@core/legal-links';
+import { BrandIcon } from '@/shared/ui/@core/top-app-bar';
+
+/** 세션을 만드는 시작 화면은 메뉴 없이 보여 준다. */
+const PATHS_WITHOUT_NAVIGATION = new Set<string>([ROUTES.SIGN, ...PUBLIC_LANDING_PATHS]);
+
+function NavigationLink({
+  href,
+  active,
+  onClick,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      onClick={onClick}
+      className={cn(
+        'flex min-h-touch items-center gap-4 rounded-full px-4 py-3 text-body transition-[background-color,color,transform] active:scale-[0.98]',
+        active
+          ? 'bg-sunken font-bold text-ink hover:bg-neutral-soft active:bg-neutral-soft'
+          : 'text-muted hover:bg-sunken hover:text-ink active:bg-neutral-soft',
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * 데스크톱(1024px 이상) 왼쪽 고정 메뉴. 루트 레이아웃이 한 번만 그려 화면을 옮기거나 불러오는 동안에도 남는다.
+ * `#pc-main`은 `[data-desktop-nav]`가 있을 때만 메뉴 폭만큼 비켜 그린다.
+ */
+export function DesktopNavigation() {
+  const pathname = usePathname();
+  const myMenu = useMyMenuItem('desktop_nav');
+  if (PATHS_WITHOUT_NAVIGATION.has(pathname)) return null;
+  const isFormPage =
+    pathname === ROUTES.GROUP_CREATE ||
+    pathname === ROUTES.ONBOARDING ||
+    /^\/groups\/[^/]+\/(?:edit|write)$/.test(pathname);
+  // main 안에 그려지므로 이름 없는 보조 영역(aside) 대신 안쪽 nav 하나로만 알린다.
+  return (
+    <div
+      data-desktop-nav
+      className="absolute inset-y-0 left-0 z-app-bar hidden w-48 border-r border-line bg-surface desktop:block wide:w-56"
+    >
+      <nav
+        aria-label="주요 메뉴"
+        className="sticky top-0 flex h-dvh flex-col gap-2 overflow-y-auto px-4 py-6 wide:px-5"
+      >
+        <Link
+          href={ROUTES.HOME}
+          aria-label="피식 홈"
+          className="mb-8 flex min-h-touch items-center gap-2.5 px-3 text-title-lg font-extrabold tracking-tighter text-ink active:opacity-60"
+        >
+          <BrandIcon className="size-8" />
+          피식
+        </Link>
+        <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
+          <House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />홈
+        </NavigationLink>
+        <NavigationLink href={ROUTES.EXPLORE} active={pathname === ROUTES.EXPLORE}>
+          <Compass aria-hidden className="size-6" strokeWidth={pathname === ROUTES.EXPLORE ? 2.5 : 1.7} />
+          탐색
+        </NavigationLink>
+        <NavigationLink href={myMenu.href} active={pathname === ROUTES.ME} onClick={myMenu.onClick}>
+          <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
+          {myMenu.label}
+        </NavigationLink>
+        <NavigationLink href={ROUTES.NOTIFICATIONS} active={pathname === ROUTES.NOTIFICATIONS}>
+          <Heart aria-hidden className="size-6" strokeWidth={pathname === ROUTES.NOTIFICATIONS ? 2.5 : 1.7} />
+          알림
+        </NavigationLink>
+        {!isFormPage && (
+          <div className="mt-auto px-3 text-caption text-muted">
+            <p className="text-label">혼자 보기 아까운 순간.</p>
+            <p className="mt-2">우리끼리 모으면 더 피식.</p>
+            <LegalLinks landmark={false} className="mt-3 gap-x-2" />
+            <p className="mt-6">© 피식</p>
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+}

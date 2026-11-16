@@ -10,7 +10,7 @@ function Probe() {
   return <p>{useIsSSR() ? '서버' : '브라우저'}</p>;
 }
 
-afterEach(() => cleanup());
+afterEach(cleanup);
 
 describe('useIsSSR', () => {
   it('서버 렌더링에서는 true여야 한다', () => {

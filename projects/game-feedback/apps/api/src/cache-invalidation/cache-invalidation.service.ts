@@ -5,8 +5,9 @@ import {
   Injectable,
   Logger,
   type OnApplicationBootstrap,
-  type OnApplicationShutdown,
+  type OnModuleDestroy,
 } from '@nestjs/common';
+import dayjs from 'dayjs';
 
 import { CacheTagSchema } from '@game-feedback/contracts';
 
@@ -22,7 +23,7 @@ interface IPendingInvalidation {
 type TTags<T> = readonly string[] | ((result: T) => readonly string[]);
 
 @Injectable()
-export class CacheInvalidationService implements OnApplicationBootstrap, OnApplicationShutdown {
+export class CacheInvalidationService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(CacheInvalidationService.name);
   private timer?: ReturnType<typeof setInterval>;
   private retryAfter = 0;
@@ -65,13 +66,14 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnAppli
     void this.flushPending();
   }
 
-  async onApplicationShutdown() {
+  async onModuleDestroy() {
+    // root의 Sentry 종료 훅보다 먼저 재시도를 멈추고 진행 중인 오류 보고까지 마친다.
     clearInterval(this.timer);
     await this.draining;
   }
 
   async flushPending(): Promise<void> {
-    if (!this.config.cacheRevalidation || this.retryAfter > Date.now()) return;
+    if (!this.config.cacheRevalidation || this.retryAfter > dayjs().valueOf()) return;
     if (this.draining) return this.draining;
     this.draining = this.drain()
       .catch(() => {
@@ -93,7 +95,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnAppli
   }
 
   private failed() {
-    this.retryAfter = Date.now() + 5_000;
+    this.retryAfter = dayjs().valueOf() + 5_000;
     this.logger.warn('Next.js cache invalidation failed; pending tags will be retried.');
     reportUnexpectedError(new Error('Next.js cache invalidation callback failed.'), {
       operation: 'cache-invalidation',
@@ -102,7 +104,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnAppli
 
   private async deliver(pending: IPendingInvalidation[]) {
     const target = this.config.cacheRevalidation;
-    if (!target || !pending.length || this.retryAfter > Date.now()) return;
+    if (!target || !pending.length || this.retryAfter > dayjs().valueOf()) return;
     try {
       for (let offset = 0; offset < pending.length; offset += 64) {
         const batch = pending.slice(offset, offset + 64);

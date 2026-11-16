@@ -3,7 +3,7 @@
 import { Suspense, useContext, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-import { resolveAppRoute } from '@game-feedback/bridge';
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
@@ -11,26 +11,33 @@ import { RouteViewport } from '@/shared/navigation';
 import { ServiceErrorBoundary } from '@/shared/ui';
 
 import { ChatUnreadContext } from './CommunityShell';
-import { GameBoardNavigation } from './GameBoardNavigation';
-import { LeftSidebar } from './LeftSidebar';
+import { GameBoardNavigation } from './navigation/GameBoardNavigation';
+import { LeftSidebar } from './navigation/LeftSidebar';
 
 export function CommunityPage({
   children,
   locale,
   topbar,
+  screenKey,
 }: {
   children: ReactNode;
   locale: string;
   topbar: ReactNode;
+  screenKey: string;
 }) {
   const { t } = useI18n();
   const { session } = useSession();
   const chatUnread = useContext(ChatUnreadContext);
   const userKey = session.user?.id ?? 'anonymous';
-  const home = `/${locale}`;
+  const home = appRoutes.feed(locale);
   return (
     <>
-      <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
+      <ServiceErrorBoundary
+        title={t('상단 메뉴')}
+        resetKey={`${userKey}:${locale}:${screenKey}`}
+        compact
+        fallbackClassName="topbar"
+      >
         {topbar}
       </ServiceErrorBoundary>
       <div className="site-grid">

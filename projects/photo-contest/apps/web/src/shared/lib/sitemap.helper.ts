@@ -10,8 +10,14 @@ export function sitemapIndex(urls: readonly string[]) {
   return `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((url) => `<sitemap><loc>${xml(url)}</loc></sitemap>`).join('')}</sitemapindex>`;
 }
 
-export function sitemapDocument(urls: readonly string[]) {
-  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((url) => `<url><loc>${xml(url)}</loc></url>`).join('')}</urlset>`;
+interface ISitemapUrl {
+  url: string;
+  /** 실제 데이터로 확인한 수정 시각. 근거가 없으면 생략한다. */
+  lastModified?: string;
+}
+
+export function sitemapDocument(urls: readonly ISitemapUrl[]) {
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map(({ url, lastModified }) => `<url><loc>${xml(url)}</loc>${lastModified ? `<lastmod>${xml(lastModified)}</lastmod>` : ''}</url>`).join('')}</urlset>`;
 }
 
 /** 사이트맵 색인이 나열하는 분할 파일 수 */

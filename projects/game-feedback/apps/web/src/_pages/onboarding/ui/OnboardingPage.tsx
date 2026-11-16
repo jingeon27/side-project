@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -11,15 +11,15 @@ import { appRoutes } from '@game-feedback/bridge';
 import { completeOnboardingMutationOptions, sessionOptions } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { LoadingState, useNotify } from '@/shared/ui';
-import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
-import { GameProfileLookup } from '@/widgets/game-profile';
+
+import type { TAccountSetupValues } from '../model/account-setup.schema';
+import { AccountSetupForm } from './account-setup/AccountSetupForm';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const client = useQueryClient();
   const notify = useNotify();
   const { t } = useI18n();
   const router = useRouter();
-  const [playerTag, setPlayerTag] = useState<string | null>(null);
   const {
     data: session,
     isFetching,
@@ -28,12 +28,14 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     ...sessionOptions(),
     refetchOnMount: 'always',
   });
-  const onboarding = useMutation(completeOnboardingMutationOptions(client, notify));
+  const onboarding = useMutation(
+    completeOnboardingMutationOptions(client, () => notify(t('반가워요! 함께 플레이를 나눠봐요.'))),
+  );
   useEffect(() => {
     if (isFetching || error || session.needsOnboarding) return;
     router.replace(session.user ? returnTo : appRoutes.login(locale, returnTo));
   }, [isFetching, error, session.needsOnboarding, session.user, router, locale, returnTo]);
-  async function handleSubmit({ nickname }: TAccountSetupValues) {
+  const handleSubmit = async ({ nickname, playerTag }: TAccountSetupValues) => {
     try {
       await onboarding.mutateAsync({
         nickname,
@@ -45,7 +47,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     } catch {
       // mutation 오류는 폼에 표시하고 닉네임과 동의 초안을 유지한다.
     }
-  }
+  };
   if (error && !isFetching) throw error;
   return (
     <section className="onboarding-page" lang={locale} aria-labelledby="onboarding-title">
@@ -54,7 +56,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
         <AccountSetupForm
           submitLabel={t('가입 완료하기')}
           pending={onboarding.isPending || isFetching}
-          error={onboarding.error?.message}
+          error={onboarding.error ? t(onboarding.error.message) : undefined}
           onSubmit={handleSubmit}
         >
           <div className="login-page-heading">
@@ -65,14 +67,6 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
             <h1 id="onboarding-title">{t('회원가입')}</h1>
             <p>{t('사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')}</p>
           </div>
-          <section className="info-card" aria-labelledby="onboarding-game-profile-title">
-            <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
-            <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
-            <GameProfileLookup
-              disabled={onboarding.isPending || isFetching}
-              onSelectionChange={(profile) => setPlayerTag(profile?.playerTag ?? null)}
-            />
-          </section>
         </AccountSetupForm>
       </div>
     </section>
