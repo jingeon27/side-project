@@ -1,18 +1,19 @@
 """Detect/stage upstream changes; never silently mutate a running battle core."""
-from datetime import datetime, timezone
+
 import hashlib
-from html.parser import HTMLParser
 import json
-from pathlib import Path
 import re
 import tarfile
 import urllib.request
+from datetime import datetime, timezone
+from html.parser import HTMLParser
+from pathlib import Path
 
 from .engine import CARDS, SPEC, rules_identity
 from .storage import atomic_json
 
-OFFICIAL = 'https://supercell.com/en/games/clashroyale/blog/'
-PYPI = 'https://pypi.org/pypi/royalesim/json'
+OFFICIAL = "https://supercell.com/en/games/clashroyale/blog/"
+PYPI = "https://pypi.org/pypi/royalesim/json"
 
 
 def fetch(url):
@@ -22,114 +23,184 @@ def fetch(url):
 
 class Articles(HTMLParser):
     def __init__(self):
-        super().__init__(); self.current = None; self.links = []
+        super().__init__()
+        self.current = None
+        self.links = []
+
     def handle_starttag(self, tag, attrs):
-        if tag == 'a':
-            href = dict(attrs).get('href', '')
-            self.current = [href, []] if '/games/clashroyale/blog/' in href else None
+        if tag == "a":
+            href = dict(attrs).get("href", "")
+            self.current = [href, []] if "/games/clashroyale/blog/" in href else None
+
     def handle_data(self, data):
         if self.current:
             self.current[1].append(data)
+
     def handle_endtag(self, tag):
-        if tag == 'a' and self.current:
-            href, words = self.current; self.current = None
-            label = ' '.join(' '.join(words).split())
-            if 'balance' in label.lower() and 'merge' not in label.lower():
-                self.links.append({'title': label, 'url': 'https://supercell.com' + href if href.startswith('/') else href})
+        if tag == "a" and self.current:
+            href, words = self.current
+            self.current = None
+            label = " ".join(" ".join(words).split())
+            if "balance" in label.lower() and "merge" not in label.lower():
+                self.links.append(
+                    {
+                        "title": label,
+                        "url": "https://supercell.com" + href if href.startswith("/") else href,
+                    }
+                )
 
 
 def old_enough(asset, now=None):
     now = now or datetime.now(timezone.utc)
-    uploaded = datetime.fromisoformat(asset['upload_time_iso_8601'].replace('Z', '+00:00'))
-    return (now - uploaded).total_seconds() >= 86400 and not asset.get('yanked', False)
+    uploaded = datetime.fromisoformat(asset["upload_time_iso_8601"].replace("Z", "+00:00"))
+    return (now - uploaded).total_seconds() >= 86400 and not asset.get("yanked", False)
 
 
-def changed_fields(before, after, path=''):
+def changed_fields(before, after, path=""):
     if isinstance(before, dict) and isinstance(after, dict):
-        return [row for key in sorted(before.keys() | after.keys())
-                for row in changed_fields(before.get(key), after.get(key), f'{path}.{key}'.strip('.'))]
-    return [] if before == after else [{'field': path, 'before': before, 'after': after}]
+        return [
+            row
+            for key in sorted(before.keys() | after.keys())
+            for row in changed_fields(before.get(key), after.get(key), f"{path}.{key}".strip("."))
+        ]
+    return [] if before == after else [{"field": path, "before": before, "after": after}]
 
 
 def relevant_rows(table):
-    names = ('knight', 'firespirit', 'goblinhut', 'graveyard', 'icewizard', 'poison', 'skeleton', 'barblog', 'barbarian', 'speargoblin')
+    names = (
+        "knight",
+        "firespirit",
+        "goblinhut",
+        "graveyard",
+        "icewizard",
+        "poison",
+        "skeleton",
+        "barblog",
+        "barbarian",
+        "speargoblin",
+    )
     rows = {}
-    for group in ('cards', 'units', 'evolutions', 'hero_forms', 'projectiles', 'area_effect_objects', 'buffs'):
+    for group in (
+        "cards",
+        "units",
+        "evolutions",
+        "hero_forms",
+        "projectiles",
+        "area_effect_objects",
+        "buffs",
+    ):
         source = table.get(group, {})
         source = source.values() if isinstance(source, dict) else source
         for row in source:
             if not isinstance(row, dict):
                 continue
-            name = row.get('name', '')
+            name = row.get("name", "")
             if any(part in name.lower() for part in names):
-                rows[f'{group}.{name}'] = row
-    for group in ('globals', 'towers'):
+                rows[f"{group}.{name}"] = row
+    for group in ("globals", "towers"):
         if group in table:
             rows[group] = table[group]
     return rows
 
 
 def stage(data_dir, version):
-    if not re.fullmatch(r'\d+\.\d+\.\d+', version):
-        raise ValueError('Expected a stable numeric engine version')
-    metadata = json.loads(fetch(f'https://pypi.org/pypi/royalesim/{version}/json'))
-    assets = metadata['urls']
-    source_asset = next(row for row in assets if row['filename'].endswith('.tar.gz'))
-    wheel = next(row for row in assets if row['filename'].endswith('macosx_11_0_arm64.whl') and 'abi3' in row['filename'])
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError("Expected a stable numeric engine version")
+    metadata = json.loads(fetch(f"https://pypi.org/pypi/royalesim/{version}/json"))
+    assets = metadata["urls"]
+    source_asset = next(row for row in assets if row["filename"].endswith(".tar.gz"))
+    wheel = next(
+        row
+        for row in assets
+        if row["filename"].endswith("macosx_11_0_arm64.whl") and "abi3" in row["filename"]
+    )
     if not all(old_enough(row) for row in (source_asset, wheel)):
-        raise ValueError('Stable source and Mac wheel must both be at least 24 hours old')
-    root = Path(data_dir) / 'arena/rules/staged' / version
+        raise ValueError("Stable source and Mac wheel must both be at least 24 hours old")
+    root = Path(data_dir) / "arena/rules/staged" / version
     root.mkdir(parents=True, exist_ok=True)
-    source = root / source_asset['filename']
-    payload = fetch(source_asset['url'])
-    if hashlib.sha256(payload).hexdigest() != source_asset['digests']['sha256']:
-        raise ValueError('Source archive checksum mismatch')
+    source = root / source_asset["filename"]
+    payload = fetch(source_asset["url"])
+    if hashlib.sha256(payload).hexdigest() != source_asset["digests"]["sha256"]:
+        raise ValueError("Source archive checksum mismatch")
     source.write_bytes(payload)
     with tarfile.open(source) as archive:
-        tables = [member for member in archive.getmembers()
-                  if re.fullmatch(r'[^/]+/data/derived/cards-\d+-\d{8}\.json', member.name) and member.isfile()]
+        tables = [
+            member
+            for member in archive.getmembers()
+            if re.fullmatch(r"[^/]+/data/derived/cards-\d+-\d{8}\.json", member.name)
+            and member.isfile()
+        ]
         if not tables:
-            raise ValueError('New engine contains no recognized dated client table; manual adapter update required')
-        latest = max(tables, key=lambda member: member.name.rsplit('-', 1)[-1])
+            raise ValueError(
+                "New engine contains no recognized dated client table; manual adapter update required"
+            )
+        latest = max(tables, key=lambda member: member.name.rsplit("-", 1)[-1])
         raw = archive.extractfile(latest).read()
     table = json.loads(raw)
     output = root / Path(latest.name).name
     output.write_bytes(raw)
-    base = Path(data_dir) / 'arena/rules/source' / SPEC['tableFile']
+    base = Path(data_dir) / "arena/rules/source" / SPEC["tableFile"]
     if not base.exists():
-        raise ValueError('Run arena:setup first to verify the pinned source table')
-    if hashlib.sha256(base.read_bytes()).hexdigest() != SPEC['tableSHA256']:
-        raise ValueError('Pinned baseline table was changed locally')
+        raise ValueError("Run arena:setup first to verify the pinned source table")
+    if hashlib.sha256(base.read_bytes()).hexdigest() != SPEC["tableSHA256"]:
+        raise ValueError("Pinned baseline table was changed locally")
     diff = changed_fields(relevant_rows(json.loads(base.read_text())), relevant_rows(table))
-    missing = sorted(set(CARDS) - {row['name'] for row in table.get('cards', [])})
-    candidate = {'format': 'clash-arena-rules-candidate-v1', 'version': version, 'wheel': wheel['filename'],
-                 'wheelSHA256': wheel['digests']['sha256'], 'sourceSHA256': source_asset['digests']['sha256'],
-                 'tableFile': output.name, 'tableVersion': table['version'], 'tableSHA256': hashlib.sha256(raw).hexdigest(),
-                 'baseRulesID': rules_identity()['id'], 'changes': diff, 'missingCards': missing,
-                 'activated': False, 'status': 'requires_engine_pin_update_and_contract_tests',
-                 'requiredChecks': ['8-card forms/spawns/ability/Graveyard contracts', 'public information masking',
-                                    'seat-swapped heldout evaluation', 'Counterpush screen parity'],
-                 'note': 'Data changes do not establish implemented mechanics. New effects require engine support.'}
-    atomic_json(root / 'candidate.json', candidate)
+    missing = sorted(set(CARDS) - {row["name"] for row in table.get("cards", [])})
+    candidate = {
+        "format": "clash-arena-rules-candidate-v1",
+        "version": version,
+        "wheel": wheel["filename"],
+        "wheelSHA256": wheel["digests"]["sha256"],
+        "sourceSHA256": source_asset["digests"]["sha256"],
+        "tableFile": output.name,
+        "tableVersion": table["version"],
+        "tableSHA256": hashlib.sha256(raw).hexdigest(),
+        "baseRulesID": rules_identity()["id"],
+        "changes": diff,
+        "missingCards": missing,
+        "activated": False,
+        "status": "requires_engine_pin_update_and_contract_tests",
+        "requiredChecks": [
+            "8-card forms/spawns/ability/Graveyard contracts",
+            "public information masking",
+            "seat-swapped heldout evaluation",
+            "Counterpush screen parity",
+        ],
+        "note": "Data changes do not establish implemented mechanics. New effects require engine support.",
+    }
+    atomic_json(root / "candidate.json", candidate)
     return candidate
 
 
 def check(data_dir):
-    result = {'format': 'clash-arena-balance-watch-v1', 'checkedAt': datetime.now(timezone.utc).isoformat(),
-              'active': rules_identity(), 'automaticActivation': False, 'errors': []}
+    result = {
+        "format": "clash-arena-balance-watch-v1",
+        "checkedAt": datetime.now(timezone.utc).isoformat(),
+        "active": rules_identity(),
+        "automaticActivation": False,
+        "errors": [],
+    }
     try:
         metadata = json.loads(fetch(PYPI))
-        versions = [version for version, assets in metadata['releases'].items()
-                    if re.fullmatch(r'\d+\.\d+\.\d+', version) and any(old_enough(row) for row in assets)]
-        latest = max(versions, key=lambda version: tuple(map(int, version.split('.'))))
-        result.update({'upstreamVersion': latest, 'engineUpdateAvailable': latest != SPEC['version']})
+        versions = [
+            version
+            for version, assets in metadata["releases"].items()
+            if re.fullmatch(r"\d+\.\d+\.\d+", version) and any(old_enough(row) for row in assets)
+        ]
+        latest = max(versions, key=lambda version: tuple(map(int, version.split("."))))
+        result.update(
+            {"upstreamVersion": latest, "engineUpdateAvailable": latest != SPEC["version"]}
+        )
     except Exception as error:
-        result['errors'].append({'source': PYPI, 'error': str(error)})
+        result["errors"].append({"source": PYPI, "error": str(error)})
     try:
-        parser = Articles(); parser.feed(fetch(OFFICIAL).decode())
-        result['officialBattleBalanceArticles'] = list({row['url']: row for row in parser.links}.values())[:6]
-        result['officialNoticeRequiresReview'] = True
+        parser = Articles()
+        parser.feed(fetch(OFFICIAL).decode())
+        result["officialBattleBalanceArticles"] = list(
+            {row["url"]: row for row in parser.links}.values()
+        )[:6]
+        result["officialNoticeRequiresReview"] = True
     except Exception as error:
-        result['errors'].append({'source': OFFICIAL, 'error': str(error)})
-    atomic_json(Path(data_dir) / 'arena/rules/checks/latest.json', result)
+        result["errors"].append({"source": OFFICIAL, "error": str(error)})
+    atomic_json(Path(data_dir) / "arena/rules/checks/latest.json", result)
     return result
