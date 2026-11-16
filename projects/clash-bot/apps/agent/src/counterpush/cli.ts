@@ -12,6 +12,7 @@ import { readJsonFile } from '../shared/json-file.ts';
 import { readLockOwner, readRunStatus, requestLearningStop } from '../shared/runtime-lock.ts';
 import { CounterpushBrowser } from './browser/browser.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
+import { learningReport } from './learning/report.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
 import { runCounterpushEvaluation } from './loop/evaluation.ts';
 import { championPolicyPath, playFastMatches } from './loop/fast-play.ts';
@@ -26,6 +27,7 @@ const { positionals, values } = parseArgs({
     matches: { type: 'string' },
     profile: { type: 'string' },
     policy: { type: 'string' },
+    last: { type: 'string' },
     background: { type: 'boolean' },
     candidate: { type: 'string' },
     pairs: { type: 'string' },
@@ -86,6 +88,18 @@ const main = async () => {
     );
     return;
   }
+  if (command === 'report') {
+    const last = Number(values.last ?? 50);
+    if (!Number.isInteger(last) || last < 1 || last > 10000) throw new Error('last는 1~10000판입니다.');
+    console.log(
+      JSON.stringify(
+        await learningReport(DATA_DIR, await loadCounterpushProfile(values.profile), last),
+        null,
+        2,
+      ),
+    );
+    return;
+  }
   if (command === 'status') {
     console.log(JSON.stringify(await readRunStatus(control), null, 2));
     return;
@@ -99,7 +113,7 @@ const main = async () => {
     return;
   }
   if (!['start', 'evaluate', 'play'].includes(command))
-    throw new Error('counterpush login|start|evaluate|play|status|audit|rescan|stop');
+    throw new Error('counterpush login|start|evaluate|play|status|audit|report|rescan|stop');
   const hours = Number(values.hours ?? (command === 'evaluate' ? 8 : 0)),
     matches = Number(values.matches ?? 0);
   if (
