@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import mlx.core as mx
 import mlx.nn as nn
 
-from clash_bot.qwen.episodes import confirmed_input, verified_result
+from clash_bot.qwen.episode_events import confirmed_input, verified_result
 from clash_bot.qwen.features import output_token_rows
 from clash_bot.qwen.learning_policy import FORMAT, FinalMLPLoRA, weights_digest
 from clash_bot.qwen.model_specs import MODELS

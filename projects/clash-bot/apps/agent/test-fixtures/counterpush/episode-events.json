@@ -1,0 +1,139 @@
+{
+  "cases": [
+    {
+      "name": "a result read twice from the page",
+      "builder": "result",
+      "args": {
+        "first": { "blue": 2, "red": 1, "outcome": "win", "label": "Crowns: you 2, the opponent 1" },
+        "second": { "blue": 2, "red": 1, "outcome": "win", "label": "Crowns: you 2, the opponent 1" }
+      },
+      "row": {
+        "type": "result",
+        "blue": 2,
+        "red": 1,
+        "outcome": "win",
+        "source": "counterpush_result_dom_verified2",
+        "readings": ["Crowns: you 2, the opponent 1", "Crowns: you 2, the opponent 1"]
+      },
+      "verifiedResult": true,
+      "confirmedInput": false,
+      "confirmedWait": false
+    },
+    {
+      "name": "two different result readings",
+      "builder": "result",
+      "args": {
+        "first": { "blue": 2, "red": 1, "outcome": "win", "label": "Crowns: you 2, the opponent 1" },
+        "second": { "blue": 1, "red": 1, "outcome": "draw", "label": "Crowns: you 1, the opponent 1" }
+      },
+      "row": {
+        "type": "result",
+        "blue": 1,
+        "red": 1,
+        "outcome": "draw",
+        "source": "counterpush_result_dom_verified2",
+        "readings": ["Crowns: you 2, the opponent 1", "Crowns: you 1, the opponent 1"]
+      },
+      "verifiedResult": false,
+      "confirmedInput": false,
+      "confirmedWait": false
+    },
+    {
+      "name": "a card input confirmed by its replacement card and spend",
+      "builder": "inputCheck",
+      "args": {
+        "frame": 7,
+        "check": { "changed": true, "spent": 3.9, "confirmed": true },
+        "expectedCost": 4,
+        "checks": 2,
+        "action": { "slot": 2, "card": "furnace", "target": { "x": 95, "y": 420 } }
+      },
+      "row": {
+        "type": "input_check",
+        "frame": 7,
+        "changed": true,
+        "spent": 3.9,
+        "confirmed": true,
+        "expectedCost": 4,
+        "checks": 2,
+        "action": { "slot": 2, "card": "furnace", "target": { "x": 95, "y": 420 } }
+      },
+      "verifiedResult": false,
+      "confirmedInput": true,
+      "confirmedWait": false
+    },
+    {
+      "name": "a card input whose spend was not confirmed",
+      "builder": "inputCheck",
+      "args": {
+        "frame": 8,
+        "check": { "changed": true, "spent": 0.4, "confirmed": false },
+        "expectedCost": 4,
+        "checks": 4,
+        "action": { "slot": 1, "card": "poison", "target": { "x": 273, "y": 140 } }
+      },
+      "row": {
+        "type": "input_check",
+        "frame": 8,
+        "changed": true,
+        "spent": 0.4,
+        "confirmed": false,
+        "expectedCost": 4,
+        "checks": 4,
+        "action": { "slot": 1, "card": "poison", "target": { "x": 273, "y": 140 } }
+      },
+      "verifiedResult": false,
+      "confirmedInput": false,
+      "confirmedWait": false
+    },
+    {
+      "name": "a confirmed hero ability",
+      "builder": "abilityCheck",
+      "args": {
+        "frame": 9,
+        "check": { "changed": true, "handUnchanged": true, "confirmed": true, "spent": 2 },
+        "checks": 1,
+        "action": {
+          "id": 3,
+          "slot": 0,
+          "card": "ice_wizard",
+          "kind": "ability",
+          "cost": 2,
+          "abilityInstance": 1,
+          "target": { "x": 120, "y": 400 }
+        }
+      },
+      "row": {
+        "type": "ability_check",
+        "frame": 9,
+        "changed": true,
+        "handUnchanged": true,
+        "confirmed": true,
+        "spent": 2,
+        "expectedCost": 2,
+        "checks": 1,
+        "action": {
+          "id": 3,
+          "slot": 0,
+          "card": "ice_wizard",
+          "kind": "ability",
+          "cost": 2,
+          "abilityInstance": 1,
+          "target": { "x": 120, "y": 400 }
+        }
+      },
+      "verifiedResult": false,
+      "confirmedInput": true,
+      "confirmedWait": false
+    },
+    {
+      "name": "a wait that stayed valid",
+      "builder": "waitCheck",
+      "args": { "frame": 10, "valid": true },
+      "row": { "type": "wait_check", "frame": 10, "valid": true },
+      "verifiedResult": false,
+      "confirmedInput": false,
+      "confirmedWait": true
+    }
+  ]
+}

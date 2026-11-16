@@ -30,6 +30,7 @@ import { type CounterpushVisionClient, type UnitScan } from '../perception/visio
 import { candidatesV2, compactPrompt } from '../policy/decision-v2.ts';
 import { fastPrompt } from '../policy/decision-v3.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS, CounterpushBrowser } from './browser.ts';
+import { abilityCheckEvent, inputCheckEvent, resultEvent, waitCheckEvent } from './episode-events.ts';
 
 type OwnFrame = {
   image: Buffer;
@@ -315,14 +316,7 @@ export async function playCounterpushEpisode(options: {
         if (first && second && first.label === second.label && state.seenBattle) {
           Object.assign(state, second, { result: second.outcome });
           await browser.screenshot(join(directory, 'result-page.png'));
-          await log({
-            type: 'result',
-            blue: second.blue,
-            red: second.red,
-            outcome: second.outcome,
-            source: 'counterpush_result_dom_verified2',
-            readings: [first.label, second.label],
-          });
+          await log(resultEvent({ first, second }));
           break;
         }
       }
@@ -502,15 +496,7 @@ export async function playCounterpushEpisode(options: {
         }
         if (!check?.confirmed) state.unconfirmed++;
         state.inputPending = false;
-        await log({
-          type: 'ability_check',
-          frame,
-          ...check,
-          confirmed: check?.confirmed ?? false,
-          expectedCost: 2,
-          checks: checks.length,
-          action: selected,
-        });
+        await log(abilityCheckEvent({ frame, check, checks: checks.length, action: selected }));
         if (state.unconfirmed >= 3) {
           state.inputSuspended = true;
           await log({
@@ -523,11 +509,9 @@ export async function playCounterpushEpisode(options: {
         continue;
       }
       if (selected.slot === 0) {
-        await log({
-          type: 'wait_check',
-          frame,
-          valid: latest.state.battle && Date.now() - before.capturedAt < 8000,
-        });
+        await log(
+          waitCheckEvent({ frame, valid: latest.state.battle && Date.now() - before.capturedAt < 8000 }),
+        );
         continue;
       }
       const choice: QwenPrediction = {
@@ -584,16 +568,15 @@ export async function playCounterpushEpisode(options: {
         memory.ownEvolutions.uncertain();
       }
       state.inputPending = false;
-      await log({
-        type: 'input_check',
-        frame,
-        changed: check?.changed ?? false,
-        spent: check?.spent ?? 0,
-        confirmed: check?.confirmed ?? false,
-        expectedCost: CARD_INFO[selected.card!].cost,
-        checks: checks.length,
-        action,
-      });
+      await log(
+        inputCheckEvent({
+          frame,
+          check,
+          expectedCost: CARD_INFO[selected.card!].cost,
+          checks: checks.length,
+          action,
+        }),
+      );
       if (state.unconfirmed >= 3) {
         state.inputSuspended = true;
         await log({
