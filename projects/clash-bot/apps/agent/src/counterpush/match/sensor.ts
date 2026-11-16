@@ -1,6 +1,7 @@
 import { BattleMemory, type BattleSituation } from '../../core/battle/battle-state.ts';
 import { FieldDynamics } from '../../core/battle/field-dynamics.ts';
 import type { OpponentObservation, UnitScan } from '../../core/battle/observation.ts';
+import { observeFrame, settleOpponent } from '../../core/battle/situation.ts';
 import type { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../../core/deck.ts';
 import type { Profile } from '../../core/profile.ts';
@@ -102,22 +103,16 @@ export class MatchSensor {
       rawElixir: bar.elixir,
       elixirConfidence: bar.elixirConfidence,
     });
-    const situation = this.memory.observe({
+    const reading = {
       at: screenshot.capturedAt,
-      amount: elixir.amount,
       hand: cards,
+      elixir,
+      elixirConfidence: bar.elixirConfidence,
       inputPending: state.inputPending,
-      elixirReliable: bar.elixirConfidence >= 0.9,
-      elixirRange: elixir.range,
-      allies: field.allies,
-      enemies: field.enemies,
-      effects: field.effects,
-      spawners: field.spawners,
       ability,
-    });
-    situation.own.elixir =
-      !state.inputPending && bar.elixirConfidence >= 0.9 ? elixir.range : { min: 0, max: 10 };
-    if (bar.elixirConfidence < 0.9) situation.opponent.elixir = { min: 0, max: 10 };
+      field,
+    };
+    const situation = observeFrame(this.memory, reading);
     this.situations.set(path, situation);
     for (const [key, value] of this.situations)
       if (screenshot.capturedAt - value.at > 12_000) this.situations.delete(key);
@@ -134,13 +129,7 @@ export class MatchSensor {
       await this.trackOpponent(path, screenshot.capturedAt, scan);
       // These plays are known by this frame's decision, while earlier stored
       // snapshots stay unchanged for training without future information.
-      const ledger = this.memory.elixir.snapshot(screenshot.capturedAt);
-      Object.assign(situation.opponent, {
-        elixir: state.inputPending || bar.elixirConfidence < 0.9 ? { min: 0, max: 10 } : ledger.opponent,
-        cycle: this.memory.opponentCycle.snapshot(),
-        evolutions: this.memory.opponentEvolutions.snapshot(),
-        seenSpent: ledger.opponentSeenSpent,
-      });
+      settleOpponent(this.memory, situation, reading);
     }
     await recorder.state({
       version: 1,

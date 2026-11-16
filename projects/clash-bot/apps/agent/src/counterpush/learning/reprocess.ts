@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { BattleMemory, type BattleSituation } from '../../core/battle/battle-state.ts';
 import { FieldDynamics } from '../../core/battle/field-dynamics.ts';
 import type { OpponentObservation } from '../../core/battle/observation.ts';
+import { observeFrame, settleOpponent } from '../../core/battle/situation.ts';
 import type { CardId } from '../../core/cards.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../../core/deck.ts';
 import type { Point } from '../../core/geometry.ts';
@@ -103,19 +104,16 @@ export async function reprocessEpisode(
       (entry) =>
         (entry.sentAt ?? entry.at) <= frame.capturedAt && (!entry.check || frame.capturedAt < entry.check.at),
     );
-    const situation = memory.observe({
+    const reading = {
       at: frame.capturedAt,
-      amount: elixir.amount,
       hand: cards,
-      elixirRange: elixir.range,
-      elixirReliable: bar.elixirConfidence >= 0.9,
+      elixir,
+      elixirConfidence: bar.elixirConfidence,
       inputPending,
-      allies: field.allies,
-      enemies: field.enemies,
-      effects: field.effects,
-      spawners: field.spawners,
       ability: await abilityButton.read(image, frame.capturedAt),
-    });
+      field,
+    };
+    const situation = observeFrame(memory, reading);
     situations.set(frame.image, situation);
     for (const [key, value] of situations) if (frame.capturedAt - value.at > 12_000) situations.delete(key);
     for (const event of tracker.update({ path: frame.image, capturedAt: frame.capturedAt }, scan)) {
@@ -148,6 +146,7 @@ export async function reprocessEpisode(
       }
       observations.push({ ...event, situation: before });
     }
+    settleOpponent(memory, situation, reading);
   }
   const selected = [...COUNTERPUSH_DECK].flatMap((card) =>
     observations
