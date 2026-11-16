@@ -75,15 +75,15 @@ yarn workspace @side/clash-bot check
 
 ## 2026-11-16 구조 변경 검증
 
-| 명령                                                                                                                                    | 결과                                                          |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `yarn workspace @side/clash-bot check`                                                                                                  | 타입 검사, Vitest 113개 통과·실제 CPU 모델 검사 1개 기본 생략 |
-| `check:python`, `test:python`                                                                                                           | Ruff 67개 파일 통과, 모델 없이 계약·통계 검사 15개 통과       |
-| `test:learning`                                                                                                                         | 51개 통과·전체 Qwen 모델 검사 1개 생략                        |
-| `test:arena`, `test:perception`                                                                                                         | 각각 21개·5개 통과, 실제 모델 검사 각각 1개 기본 생략         |
-| `test:arena:model`                                                                                                                      | 분리된 두 프로세스의 실제 전투 완료·합법 명령 확인            |
-| `RUN_COUNTERPUSH_INTEGRATION=1 yarn workspace @clash-bot/agent vitest run src/counterpush/perception/vision-client.integration.spec.ts` | 새 Node → Python 모듈 → 기존 ONNX CPU 모델 연결 통과          |
-| `yarn knip`, `yarn format:check`                                                                                                        | 미사용 검사·저장소 포맷 통과                                  |
+| 명령                                                                                             | 결과                                                          |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `yarn workspace @side/clash-bot check`                                                           | 타입 검사, Vitest 113개 통과·실제 CPU 모델 검사 1개 기본 생략 |
+| `check:python`, `test:python`                                                                    | Ruff 67개 파일 통과, 모델 없이 계약·통계 검사 15개 통과       |
+| `test:learning`                                                                                  | 51개 통과·전체 Qwen 모델 검사 1개 생략                        |
+| `test:arena`, `test:perception`                                                                  | 각각 21개·5개 통과, 실제 모델 검사 각각 1개 기본 생략         |
+| `test:arena:model`                                                                               | 분리된 두 프로세스의 실제 전투 완료·합법 명령 확인            |
+| `yarn workspace @side/clash-bot test:integration` (`RUN_COUNTERPUSH_INTEGRATION=1`, 통합 레인만) | 새 Node → Python 모듈 → 기존 ONNX CPU 모델 연결 통과          |
+| `yarn knip`, `yarn format:check`                                                                 | 미사용 검사·저장소 포맷 통과                                  |
 
 실행 환경 검사는 기존 Python과 모델 경로를 명시했고 개발 검사는 독립된 도구 환경에서 수행했다. 이동 과정에서 드러난 그림·동적 가져오기·mock 경로를 수정한 뒤 재검사했다. 기존 CI 계약 검사 36개도 통과했다.
 
