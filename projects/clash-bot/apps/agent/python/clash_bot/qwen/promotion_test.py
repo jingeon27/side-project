@@ -7,7 +7,8 @@ from types import SimpleNamespace
 
 import mlx.core as mx
 
-from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, atomic_json, weights_digest
+from clash_bot.files import atomic_json
+from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
 from clash_bot.qwen.promotion import publish
 from clash_bot.qwen.runtime import LearningWorker
 

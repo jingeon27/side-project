@@ -10,13 +10,13 @@ from mlx_vlm import load
 from mlx_vlm.prompt_utils import apply_chat_template
 from mlx_vlm.utils import prepare_inputs
 
+from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import CONTRACT, opponent_prompt
 from clash_bot.qwen.feature_cache import FeatureCache
 from clash_bot.qwen.learning_policy import (
     FORMAT,
     FinalMLPLoRA,
     Learner,
-    atomic_json,
     weights_digest,
 )
 from clash_bot.qwen.model_specs import detect_model, verify_model

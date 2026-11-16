@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
+from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import serialize_decision
 
 from .engine import (
@@ -26,7 +27,7 @@ from .engine import (
     rules_identity,
 )
 from .export import render
-from .storage import atomic_json, seed_for
+from .storage import seed_for
 
 ALIASES = [
     "barbarian_barrel",

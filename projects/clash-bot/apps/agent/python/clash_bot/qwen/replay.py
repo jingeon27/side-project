@@ -6,12 +6,12 @@ from pathlib import Path
 
 import mlx.core as mx
 
+from clash_bot.files import atomic_json
+
 
 def remember(learner, dataset, identity, samples):
     if dataset.get("split") != "train" or dataset.get("controllerVersion") != 3:
         return
-    from clash_bot.qwen.learning_policy import atomic_json
-
     atomic_json(
         learner.directory / "replay" / f"{identity}.json",
         {

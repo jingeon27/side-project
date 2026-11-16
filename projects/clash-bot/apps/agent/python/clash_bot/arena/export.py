@@ -7,8 +7,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
+from clash_bot.files import atomic_json
+
 from .engine import FIELDS, TILE, Action, canonical, digest, new_battle
-from .storage import atomic_json, seed_for
+from .storage import seed_for
 
 NAMES = [
     "Barbarian Barrel",

@@ -15,6 +15,8 @@ from pathlib import Path
 
 import numpy as np
 
+from clash_bot.files import atomic_json
+
 from .curriculum import from_selfplay
 from .engine import rules_identity
 from .evaluation import evaluate, pfsp_weights
@@ -22,7 +24,7 @@ from .export import export
 from .parallel import play_frozen_games
 from .policy import Policy
 from .selfplay import replay_samples
-from .storage import atomic_json, read_episode, seed_for, write_episode
+from .storage import read_episode, seed_for, write_episode
 
 
 def initialize(root, rules):

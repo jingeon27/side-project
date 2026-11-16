@@ -8,7 +8,6 @@ No trainable external classifier, vector store, or full-model backward pass.
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
 
 import mlx.core as mx
@@ -16,20 +15,14 @@ import mlx.nn as nn
 import mlx.optimizers as optim
 from mlx.utils import tree_flatten, tree_unflatten
 
+from clash_bot.files import atomic_json
+
 FORMAT = "qwen-final-mlp-lora-ppo-v1"
 MODEL_SHA256 = "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
 
 
 class KLExceeded(ValueError):
     pass
-
-
-def atomic_json(path, value):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(f".{os.getpid()}.tmp")
-    temporary.write_text(json.dumps(value, indent=2) + "\n")
-    temporary.replace(path)
 
 
 def weights_digest(adapter):

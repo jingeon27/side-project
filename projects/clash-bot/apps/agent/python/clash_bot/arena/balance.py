@@ -9,8 +9,9 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
+from clash_bot.files import atomic_json
+
 from .engine import CARDS, SPEC, rules_identity
-from .storage import atomic_json
 
 OFFICIAL = "https://supercell.com/en/games/clashroyale/blog/"
 PYPI = "https://pypi.org/pypi/royalesim/json"

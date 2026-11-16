@@ -8,7 +8,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from clash_bot.qwen.learning_policy import atomic_json
+from clash_bot.files import atomic_json
 from clash_bot.statistics import paired_win_probability
 
 
