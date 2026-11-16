@@ -20,13 +20,17 @@ import { playCounterpushEpisode } from './episode.ts';
 
 const PURPLE = { r: 170, g: 60, b: 210 };
 const EMPTY_SCAN: UnitScan = { entities: [], markers: [], elapsed_ms: 5, allies: [] };
+const ABILITY_PORTRAIT = { left: 317, top: 477, size: 30 };
+const START: CardId[] = ['knight', 'furnace', 'poison', 'skeletons'];
 
-async function battleScreen(profile: Profile, hand: CardId[], elixir: number) {
+type Screen = { hand: CardId[]; elixir: number; ability?: boolean };
+
+async function battleScreen(profile: Profile, screen: Screen) {
   const references = (await loadHandReferences()).references.filter((item) => item.state === 'normal');
   const art = (card: CardId) => references.find((item) => item.card === card)!.bytes;
-  const fill = Math.min(profile.elixir.width, Math.ceil(elixir * 25.6 - 18) + 1);
+  const fill = Math.min(profile.elixir.width, Math.ceil(screen.elixir * 25.6 - 18) + 1);
   const slots = await Promise.all(
-    hand.map(async (card, index) => ({
+    screen.hand.map(async (card, index) => ({
       input: await sharp(art(card))
         .resize(profile.hand[index]!.width, profile.hand[index]!.height, { fit: 'fill' })
         .png()
@@ -40,26 +44,58 @@ async function battleScreen(profile: Profile, hand: CardId[], elixir: number) {
   })
     .png()
     .toBuffer();
+  const button = screen.ability
+    ? [
+        {
+          input: await sharp(
+            await readFile(new URL('../../../assets/counterpush/ice-wizard-ability.png', import.meta.url)),
+          )
+            .resize(ABILITY_PORTRAIT.size, ABILITY_PORTRAIT.size, { fit: 'fill' })
+            .png()
+            .toBuffer(),
+          left: ABILITY_PORTRAIT.left,
+          top: ABILITY_PORTRAIT.top,
+        },
+      ]
+    : [];
   return sharp({ create: { width: 368, height: 652, channels: 3, background: '#20262c' } })
-    .composite([...slots, { input: bar, left: profile.elixir.x, top: profile.elixir.y }])
+    .composite([...slots, { input: bar, left: profile.elixir.x, top: profile.elixir.y }, ...button])
     .png()
     .toBuffer();
 }
 
-type Reply = 'wait' | 'slow' | 'knight';
+type Decision = { pick: 'wait' | 'ability' | CardId; elapsedMs?: number; show?: string };
+type Scenario = {
+  controllerVersion: 1 | 3;
+  screens: Record<string, Screen>;
+  decisions: Decision[];
+  // Screen shown after the n-th card input; without one the input leaves the screen unchanged.
+  afterPlay?: Record<number, string>;
+  afterAbility?: string;
+  // After this many inputs, the result appears once the given number of further captures happen.
+  end?: { inputs: number; captures: number };
+};
 
-// 브라우저·인식 워커·Qwen만 가짜로 두고 실제 손패·엘릭서 판독과 기록을 그대로 실행한다.
-function fakeMatch(profile: Profile, controllerVersion: 1 | 3, replies: Reply[]) {
-  const screens: Record<'before' | 'after', Promise<Buffer>> = {
-    before: battleScreen(profile, ['knight', 'furnace', 'poison', 'skeletons'], 7),
-    after: battleScreen(profile, ['goblin_hut', 'furnace', 'poison', 'skeletons'], 4),
-  };
+// 브라우저·인식 워커·Qwen만 가짜로 두고 실제 손패·엘릭서·능력 버튼 판독과 기록을 그대로 실행한다.
+// 대본의 판단을 모두 쓰면 다음 판단은 대기를 고르고 결과 화면으로 넘어간다.
+function scenarioMatch(profile: Profile, scenario: Scenario) {
+  const screens = Object.fromEntries(
+    Object.entries(scenario.screens).map(([name, screen]) => [name, battleScreen(profile, screen)]),
+  );
   const match = {
     phase: 'setup' as BrowserPhase,
-    screen: 'before' as 'before' | 'after',
+    screen: 'start',
     capturesUntilResult: Infinity,
+    inputs: 0,
     plays: [] as Array<{ slot: number; target: Point }>,
+    abilities: 0,
     requests: [] as LearningDecisionRequest[],
+  };
+  const afterInput = (screen: string | undefined) => {
+    if (screen) match.screen = screen;
+    match.inputs++;
+    if (scenario.end && match.inputs === scenario.end.inputs)
+      match.capturesUntilResult = scenario.end.captures;
   };
   const browser = {
     phase: async () => match.phase,
@@ -68,17 +104,20 @@ function fakeMatch(profile: Profile, controllerVersion: 1 | 3, replies: Reply[])
     },
     capture: async () => {
       if (--match.capturesUntilResult <= 0) match.phase = 'result';
-      return { image: await screens[match.screen], capturedAt: Date.now() };
+      return { image: await screens[match.screen]!, capturedAt: Date.now() };
     },
     play: async (_profile: Profile, slot: number, target: Point) => {
       match.plays.push({ slot, target });
-      match.screen = 'after';
-      match.capturesUntilResult = 1;
+      afterInput(scenario.afterPlay?.[match.plays.length]);
+      return true;
+    },
+    activateAbility: async () => {
+      match.abilities++;
+      afterInput(scenario.afterAbility);
       return true;
     },
     result: async () =>
       match.phase === 'result' ? parseBrowserResult('Crowns: you 1, the opponent 3') : null,
-    activateAbility: async () => false,
     screenshot: async (path: string) => writeFile(path, 'result'),
   } as unknown as CounterpushBrowser;
   const vision = {
@@ -86,20 +125,29 @@ function fakeMatch(profile: Profile, controllerVersion: 1 | 3, replies: Reply[])
     absent: async () => ({ absent: false }),
     guard: async () => ({ graveyardPresence: [0, 0] }),
   } as unknown as CounterpushVisionClient;
-  const pick = (candidates: QwenAction[], reply: Reply) =>
-    reply === 'knight'
-      ? candidates.find((action) => action.card === 'knight' && action.kind !== 'ability')!
-      : candidates.find((action) => action.id === 0)!;
+  const pick = (candidates: QwenAction[], decision: Decision) => {
+    const chosen = candidates.find((action) =>
+      decision.pick === 'wait'
+        ? action.id === 0
+        : decision.pick === 'ability'
+          ? action.kind === 'ability'
+          : action.card === decision.pick && action.kind !== 'ability',
+    );
+    if (!chosen) throw new Error(`no candidate for ${decision.pick}`);
+    return chosen;
+  };
   const client = {
-    status: async () => ({ controller_version: controllerVersion, version: 7 }),
+    status: async () => ({ controller_version: scenario.controllerVersion, version: 7 }),
     choose: async (request: LearningDecisionRequest) => {
       match.requests.push(request);
-      const reply = replies[match.requests.length - 1] ?? 'wait';
+      const decision = scenario.decisions[match.requests.length - 1];
+      if (!decision) match.capturesUntilResult = 1;
+      if (decision?.show) match.screen = decision.show;
       return {
-        text: JSON.stringify({ choice: pick(request.candidates, reply).id }),
-        elapsedMs: reply === 'slow' ? 1500 : 120,
+        text: JSON.stringify({ choice: pick(request.candidates, decision ?? { pick: 'wait' }).id }),
+        elapsedMs: decision?.elapsedMs ?? 120,
         peakGb: 16,
-        behavior: { version: 7, controller_version: controllerVersion },
+        behavior: { version: 7, controller_version: scenario.controllerVersion },
       };
     },
   } as unknown as LearningClient;
@@ -112,116 +160,205 @@ const readLines = async (path: string) =>
     .split('\n')
     .map((line) => JSON.parse(line) as Record<string, unknown>);
 
+const fixture = { dataDir: '', profile: undefined as Profile | undefined };
+beforeEach(async () => {
+  fixture.dataDir = await mkdtemp(join(tmpdir(), 'clash-episode-'));
+  fixture.profile = await loadProfile(
+    fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
+  );
+});
+afterEach(async () => {
+  await rm(fixture.dataDir, { recursive: true, force: true });
+});
+
+async function play(scenario: Scenario) {
+  const fake = scenarioMatch(fixture.profile!, scenario);
+  const outcome = await playCounterpushEpisode({
+    browser: fake.browser,
+    client: fake.client,
+    vision: fake.vision,
+    dataDir: fixture.dataDir,
+    profile: fixture.profile!,
+    signal: new AbortController().signal,
+    report: async () => {},
+    persistPatterns: false,
+  });
+  const events = await readLines(join(outcome.directory, 'events.jsonl'));
+  return { fake, outcome, events, types: events.map((event) => event.type) };
+}
+
+it('reads the synthetic screens like a real battle', async () => {
+  const profile = fixture.profile!;
+  const reading = await counterpushBarReading(
+    await battleScreen(profile, { hand: START, elixir: 7 }),
+    profile,
+  );
+  expect(counterpushElixir(reading, profile).value).toBe(7);
+  expect(reading.elixirConfidence).toBeGreaterThanOrEqual(0.9);
+});
+
 describe.each([
-  { controllerVersion: 3 as const, replies: ['wait', 'slow', 'knight'] as Reply[] },
-  { controllerVersion: 1 as const, replies: ['wait', 'knight'] as Reply[] },
-])('a recorded Counterpush match with controller $controllerVersion', ({ controllerVersion, replies }) => {
-  const state = { dataDir: '', profile: undefined as Profile | undefined };
-  beforeEach(async () => {
-    state.dataDir = await mkdtemp(join(tmpdir(), 'clash-episode-'));
-    state.profile = await loadProfile(
-      fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
-    );
-  });
-  afterEach(async () => {
-    await rm(state.dataDir, { recursive: true, force: true });
-  });
+  {
+    controllerVersion: 3 as const,
+    decisions: [{ pick: 'wait' }, { pick: 'wait', elapsedMs: 1500 }, { pick: 'knight' }],
+  },
+  { controllerVersion: 1 as const, decisions: [{ pick: 'wait' }, { pick: 'knight' }] },
+] satisfies Array<{ controllerVersion: 1 | 3; decisions: Decision[] }>)(
+  'a recorded Counterpush match with controller $controllerVersion',
+  ({ controllerVersion, decisions }) => {
+    it('records decisions, a confirmed card input and the verified result', { timeout: 30_000 }, async () => {
+      const { fake, outcome, events, types } = await play({
+        controllerVersion,
+        screens: {
+          start: { hand: START, elixir: 7 },
+          after: { hand: ['goblin_hut', 'furnace', 'poison', 'skeletons'], elixir: 4 },
+        },
+        decisions,
+        afterPlay: { 1: 'after' },
+        end: { inputs: 1, captures: 1 },
+      });
 
-  it('reads the synthetic screens like a real battle', async () => {
-    const profile = state.profile!;
-    const before = await battleScreen(profile, ['knight', 'furnace', 'poison', 'skeletons'], 7);
-    const reading = await counterpushBarReading(before, profile);
-    expect(counterpushElixir(reading, profile).value).toBe(7);
-    expect(reading.elixirConfidence).toBeGreaterThanOrEqual(0.9);
-  });
+      expect(outcome).toMatchObject({
+        result: 'loss',
+        actions: 1,
+        confirmed: 1,
+        abilityActions: 0,
+        seenBattle: true,
+        opponentActions: 0,
+        learningEligible: true,
+      });
+      expect(types).toEqual(
+        controllerVersion === 3
+          ? [
+              'match_start',
+              'prediction',
+              'wait_check',
+              'prediction',
+              'rejected',
+              'prediction',
+              'input_sent',
+              'input_check',
+              'result',
+            ]
+          : ['match_start', 'prediction', 'wait_check', 'prediction', 'input_sent', 'input_check', 'result'],
+      );
+      expect(events[0]).toMatchObject({ controllerVersion, initialPhase: 'setup', deck: expect.any(Array) });
+      if (controllerVersion === 3)
+        expect(events[4]).toMatchObject({ reason: 'decision_deadline_exceeded', elapsedMs: 1500 });
+      const input = events.find((event) => event.type === 'input_sent')!;
+      const knight = fake.match.requests.at(-1)!.candidates.find((action) => action.card === 'knight')!;
+      expect(fake.match.plays).toEqual([{ slot: knight.slot, target: knight.target }]);
+      expect(input.action).toMatchObject({ slot: knight.slot - 1, card: 'knight' });
+      expect(events.find((event) => event.type === 'input_check')).toMatchObject({
+        confirmed: true,
+        changed: true,
+        spent: 3,
+        expectedCost: 3,
+      });
+      expect(events.at(-1)).toMatchObject({
+        type: 'result',
+        blue: 1,
+        red: 3,
+        outcome: 'loss',
+        readings: ['Crowns: you 1, the opponent 3', 'Crowns: you 1, the opponent 3'],
+      });
+      const predictions = events.filter((event) => event.type === 'prediction');
+      expect(predictions.map((event) => event.frame)).toEqual(predictions.map((_, index) => index + 1));
+      for (const request of fake.match.requests) {
+        expect(request.controllerVersion).toBe(controllerVersion);
+        expect(request.candidates.some((action) => action.id === 0)).toBe(true);
+      }
 
-  it('records decisions, a confirmed card input and the verified result', async () => {
-    const profile = state.profile!;
-    const fake = fakeMatch(profile, controllerVersion, replies);
-    const statuses: Array<Record<string, unknown>> = [];
-    const outcome = await playCounterpushEpisode({
-      browser: fake.browser,
-      client: fake.client,
-      vision: fake.vision,
-      dataDir: state.dataDir,
-      profile,
-      signal: new AbortController().signal,
-      report: async (status) => {
-        statuses.push(status);
+      const summary = JSON.parse(await readFile(join(outcome.directory, 'summary.json'), 'utf8'));
+      expect(summary).toMatchObject({
+        result: 'loss',
+        blue: 1,
+        red: 3,
+        actions: 1,
+        confirmed: 1,
+        decisions: decisions.length,
+      });
+      const observations = JSON.parse(await readFile(join(outcome.directory, 'observations.json'), 'utf8'));
+      expect(observations).toMatchObject({ version: 1, actor: 'red_top', observations: [] });
+      const states = await readLines(join(outcome.directory, 'states.jsonl'));
+      expect(states.length).toBeGreaterThanOrEqual(decisions.length);
+      expect(states.every((row) => row.version === 1 && typeof row.situation === 'object')).toBe(true);
+      expect((await readLines(join(outcome.directory, 'vision.jsonl'))).length).toBe(states.length);
+      expect(await readdir(outcome.directory)).toEqual(
+        expect.arrayContaining(['0001.png', 'frames', 'result-page.png']),
+      );
+    });
+  },
+);
+
+describe('card and ability inputs', () => {
+  it('does not send a decision whose hand changed before the input', { timeout: 30_000 }, async () => {
+    const { fake, outcome, types, events } = await play({
+      controllerVersion: 3,
+      screens: {
+        start: { hand: START, elixir: 7 },
+        swapped: { hand: ['goblin_hut', 'furnace', 'poison', 'skeletons'], elixir: 7 },
       },
-      persistPatterns: false,
+      decisions: [{ pick: 'knight', show: 'swapped' }],
     });
+    expect(fake.match.plays).toEqual([]);
+    expect(types).toEqual(['match_start', 'prediction', 'rejected', 'prediction', 'wait_check', 'result']);
+    expect(events[2]).toMatchObject({ reason: 'stale_or_changed_screen', frame: 1 });
+    expect(outcome).toMatchObject({ actions: 0, confirmed: 0, learningEligible: true });
+  });
 
-    expect(outcome).toMatchObject({
-      result: 'loss',
-      actions: 1,
-      confirmed: 1,
-      abilityActions: 0,
-      seenBattle: true,
-      opponentActions: 0,
-      learningEligible: true,
+  it('stops sending inputs after three unconfirmed card inputs', { timeout: 30_000 }, async () => {
+    const { fake, outcome, types, events } = await play({
+      controllerVersion: 3,
+      screens: { start: { hand: START, elixir: 7 } },
+      decisions: [{ pick: 'knight' }, { pick: 'knight' }, { pick: 'knight' }],
+      end: { inputs: 3, captures: 6 },
     });
-    const events = await readLines(join(outcome.directory, 'events.jsonl'));
-    const types = events.map((event) => event.type);
-    expect(types).toEqual(
-      controllerVersion === 3
-        ? [
-            'match_start',
-            'prediction',
-            'wait_check',
-            'prediction',
-            'rejected',
-            'prediction',
-            'input_sent',
-            'input_check',
-            'result',
-          ]
-        : ['match_start', 'prediction', 'wait_check', 'prediction', 'input_sent', 'input_check', 'result'],
-    );
-    expect(events[0]).toMatchObject({ controllerVersion, initialPhase: 'setup', deck: expect.any(Array) });
-    if (controllerVersion === 3)
-      expect(events[4]).toMatchObject({ reason: 'decision_deadline_exceeded', elapsedMs: 1500 });
-    const input = events.find((event) => event.type === 'input_sent')!;
-    const knight = fake.match.requests.at(-1)!.candidates.find((action) => action.card === 'knight')!;
-    expect(fake.match.plays).toEqual([{ slot: knight.slot, target: knight.target }]);
-    expect(input.action).toMatchObject({ slot: knight.slot - 1, card: 'knight' });
-    expect(events.find((event) => event.type === 'input_check')).toMatchObject({
+    expect(fake.match.plays).toHaveLength(3);
+    const checks = events.filter((event) => event.type === 'input_check');
+    expect(checks).toHaveLength(3);
+    expect(checks.every((event) => event.confirmed === false && event.checks === 4)).toBe(true);
+    expect(types.filter((type) => type === 'input_recovery')).toHaveLength(1);
+    expect(events.find((event) => event.type === 'input_recovery')).toMatchObject({
+      reason: 'three_unconfirmed_card_inputs',
+      learningEligible: false,
+    });
+    expect(types.at(-1)).toBe('result');
+    expect(outcome).toMatchObject({ actions: 3, confirmed: 0, learningEligible: false });
+  });
+
+  it('uses the hero ability only after a confirmed Ice Wizard deployment', { timeout: 30_000 }, async () => {
+    const { fake, outcome, types, events } = await play({
+      controllerVersion: 3,
+      screens: {
+        start: { hand: ['ice_wizard', 'furnace', 'poison', 'skeletons'], elixir: 7 },
+        deployed: { hand: ['goblin_hut', 'furnace', 'poison', 'skeletons'], elixir: 4, ability: true },
+        used: { hand: ['goblin_hut', 'furnace', 'poison', 'skeletons'], elixir: 2 },
+      },
+      decisions: [{ pick: 'ice_wizard' }, { pick: 'ability' }],
+      afterPlay: { 1: 'deployed' },
+      afterAbility: 'used',
+      end: { inputs: 2, captures: 1 },
+    });
+    expect(fake.match.abilities).toBe(1);
+    expect(fake.match.requests[0]!.candidates.some((action) => action.kind === 'ability')).toBe(false);
+    expect(types).toEqual([
+      'match_start',
+      'prediction',
+      'input_sent',
+      'input_check',
+      'prediction',
+      'ability_sent',
+      'ability_check',
+      'result',
+    ]);
+    expect(events.find((event) => event.type === 'ability_check')).toMatchObject({
       confirmed: true,
       changed: true,
-      spent: 3,
-      expectedCost: 3,
+      handUnchanged: true,
+      spent: 2,
+      expectedCost: 2,
     });
-    expect(events.at(-1)).toMatchObject({
-      type: 'result',
-      blue: 1,
-      red: 3,
-      outcome: 'loss',
-      readings: ['Crowns: you 1, the opponent 3', 'Crowns: you 1, the opponent 3'],
-    });
-    const decisions = events.filter((event) => event.type === 'prediction');
-    expect(decisions.map((event) => event.frame)).toEqual(decisions.map((_, index) => index + 1));
-    for (const request of fake.match.requests) {
-      expect(request.controllerVersion).toBe(controllerVersion);
-      expect(request.candidates.some((action) => action.id === 0)).toBe(true);
-    }
-
-    const summary = JSON.parse(await readFile(join(outcome.directory, 'summary.json'), 'utf8'));
-    expect(summary).toMatchObject({
-      result: 'loss',
-      blue: 1,
-      red: 3,
-      actions: 1,
-      confirmed: 1,
-      decisions: replies.length,
-    });
-    const observations = JSON.parse(await readFile(join(outcome.directory, 'observations.json'), 'utf8'));
-    expect(observations).toMatchObject({ version: 1, actor: 'red_top', observations: [] });
-    const states = await readLines(join(outcome.directory, 'states.jsonl'));
-    expect(states.length).toBeGreaterThanOrEqual(replies.length);
-    expect(states.every((row) => row.version === 1 && typeof row.situation === 'object')).toBe(true);
-    expect((await readLines(join(outcome.directory, 'vision.jsonl'))).length).toBe(states.length);
-    const files = await readdir(outcome.directory);
-    expect(files).toEqual(expect.arrayContaining(['0001.png', 'frames', 'result-page.png']));
-    expect(statuses.length).toBeGreaterThanOrEqual(0);
-  }, 30_000);
+    expect(outcome).toMatchObject({ actions: 2, confirmed: 2, abilityActions: 1, abilityConfirmed: 1 });
+  });
 });
