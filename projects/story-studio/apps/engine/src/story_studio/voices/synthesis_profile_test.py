@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import wave
 
 from ..catalog import model_specs
 from .synthesis_profile import read_synthesis_profile
@@ -46,9 +47,55 @@ class SynthesisProfileTests(unittest.TestCase):
             folder, value = fixture(root)
             profile = read_synthesis_profile(root, RUN)
             self.assertEqual(profile.talker_strength, .75)
+            self.assertIsNone(profile.reference)
             (folder / 'synthesis-speaker.safetensors').write_bytes(b'changed')
             with self.assertRaisesRegex(ValueError, '변경'):
                 read_synthesis_profile(root, RUN)
+
+    def test_reference_profile_binds_a_complete_local_waveform_and_its_transcript(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            folder, original = fixture(root)
+            audio = folder / 'synthesis-reference.wav'
+            with wave.open(str(audio), 'wb') as recording:
+                recording.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+                recording.writeframes(b'\x00\x04' * 72000)
+            value = {**original, 'version': 2, 'predictorStrength': 1.5, 'referenceSha256': hashlib.sha256(audio.read_bytes()).hexdigest(), 'referenceText': '원래 말투를 참고하는 대사입니다.'}
+            (folder / 'synthesis.json').write_text(json.dumps(value))
+            profile = read_synthesis_profile(root, RUN)
+            self.assertEqual(profile.reference.audio, audio)
+            self.assertEqual(profile.reference.text, value['referenceText'])
+            self.assertEqual(profile.predictor_strength, 1.5)
+            for changes in [
+                {'referenceSha256': '0' * 64}, {'referenceText': ''},
+                {'referenceText': 42}, {'referenceText': '아' * 1001},
+                {'referenceFile': '../../outside.wav'},
+                {'predictorStrength': 1.51},
+            ]:
+                with self.subTest(changes=changes):
+                    (folder / 'synthesis.json').write_text(json.dumps({**value, **changes}))
+                    with self.assertRaises(ValueError):
+                        read_synthesis_profile(root, RUN)
+
+    def test_rejects_wrong_reference_format_and_truncated_audio_even_with_matching_hash(self):
+        for rate, channels, width, length, truncated in [
+            (16000, 1, 2, 3, False), (24000, 2, 2, 3, False),
+            (24000, 1, 1, 3, False), (24000, 1, 2, 2, False),
+            (24000, 1, 2, 3, True),
+        ]:
+            with self.subTest(rate=rate, channels=channels, width=width, length=length, truncated=truncated), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                folder, original = fixture(root)
+                audio = folder / 'synthesis-reference.wav'
+                with wave.open(str(audio), 'wb') as recording:
+                    recording.setparams((channels, width, rate, 0, 'NONE', 'not compressed'))
+                    recording.writeframes(b'\0' * rate * length * channels * width)
+                if truncated:
+                    audio.write_bytes(audio.read_bytes()[:-200])
+                value = {**original, 'version': 2, 'referenceSha256': hashlib.sha256(audio.read_bytes()).hexdigest(), 'referenceText': '말투 기준 대사입니다.'}
+                (folder / 'synthesis.json').write_text(json.dumps(value))
+                with self.assertRaises(ValueError):
+                    read_synthesis_profile(root, RUN)
 
     def test_rejects_checkpoint_changes_invalid_numbers_and_unknown_paths(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -57,7 +104,7 @@ class SynthesisProfileTests(unittest.TestCase):
             for changes in [
                 {'datasetHash': 'b' * 64}, {'runId': 'another-run'},
                 {'talkerStrength': True}, {'talkerStrength': float('nan')},
-                {'predictorStrength': 0}, {'seed': True},
+                {'predictorStrength': 0}, {'predictorStrength': 1.5}, {'seed': True},
                 {'speakerFile': '../../outside.safetensors'},
             ]:
                 with self.subTest(changes=changes):

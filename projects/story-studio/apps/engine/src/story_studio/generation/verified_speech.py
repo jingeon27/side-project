@@ -1,6 +1,7 @@
 """A calibrated voice checks every text segment locally before exporting audio."""
 import gc
 import json
+from dataclasses import replace
 from pathlib import Path
 import sys
 import tempfile
@@ -12,11 +13,14 @@ class IncompleteSpeechError(ValueError):
     pass
 
 
-def _segment_audio(model, text, temperature):
+def _segment_audio(model, text, profile):
     import numpy as np
+    options = {'voice': 'studio_voice'} if profile.reference is None else {
+        'ref_audio': str(profile.reference.audio), 'ref_text': profile.reference.text,
+    }
     chunks = []
     for result in model.generate(
-        text=text, voice='studio_voice', lang_code='Korean', temperature=temperature,
+        text=text, lang_code='Korean', temperature=profile.temperature, **options,
         max_tokens=1024, split_pattern='', verbose=False,
     ):
         if result.token_count >= 1024:
@@ -38,6 +42,7 @@ def synthesize_verified(root, run_id, profile, text, progress):
     import soundfile as sf
     from mlx_audio.stt.utils import load_model as load_recognizer
     from ..voices.jobs import load_trained
+    from ..voices.synthesis_profile import apply_synthesis_profile
 
     parts = speech_segments(text)
     if not parts or not normalized_text(text):
@@ -45,17 +50,24 @@ def synthesize_verified(root, run_id, profile, text, progress):
     clips = {}
     mx.set_memory_limit(20 * 1024**3)
     pending = list(range(len(parts)))
+    attempts = 3 if profile.reference is not None and profile.predictor_strength > 1 else 2
     with tempfile.TemporaryDirectory(prefix='voice-check-', dir=root / 'local') as temporary:
         folder = Path(temporary)
-        for attempt in range(2):
-            progress('한국어 목소리를 만드는 중' if attempt == 0 else '누락된 대사를 다시 생성하는 중')
+        for attempt in range(attempts):
+            fallback = attempt == 2
+            progress('누락된 대사를 안정적인 설정으로 만드는 중' if fallback else '한국어 목소리를 만드는 중' if attempt == 0 else '누락된 대사를 다시 생성하는 중')
             candidates = {}
             model = load_trained(root, run_id)
             try:
+                # Strong voice detail can suppress words. After both sampled
+                # attempts fail, keep the same speaker/reference and retry only
+                # pending segments at the checkpoint's original predictor scale.
+                if fallback:
+                    apply_synthesis_profile(model, replace(profile, predictor_strength=1))
                 for index in pending:
-                    mx.random.seed((profile.seed + index + attempt * 7011) % 2**31)
+                    mx.random.seed((profile.seed + index + (0 if fallback else attempt * 7011)) % 2**31)
                     try:
-                        candidates[index] = _segment_audio(model, parts[index], profile.temperature)
+                        candidates[index] = _segment_audio(model, parts[index], profile)
                     except IncompleteSpeechError:
                         continue
             finally:

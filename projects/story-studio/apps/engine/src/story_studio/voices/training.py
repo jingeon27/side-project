@@ -33,7 +33,7 @@ class VoiceLoRA(nn.Module):
         return original + (delta * self.scale).astype(original.dtype)
 
     def set_inference_strength(self, strength):
-        if not 0 < strength <= 1:
+        if not 0 < strength <= 1.5:
             raise ValueError('학습 가중치 적용 강도가 올바르지 않습니다')
         self.scale = self.base_scale * strength
 

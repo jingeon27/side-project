@@ -42,6 +42,28 @@ def tiny_loss(talker, sample):
 
 
 class VoiceTrainingTests(unittest.TestCase):
+    def test_acoustic_context_keeps_the_calibrated_identity_without_changing_the_checkpoint(self):
+        from .synthesis_profile import SynthesisProfile, SynthesisReference, apply_synthesis_profile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            speaker = root / 'speaker.safetensors'
+            embedding = mx.ones((1, 8))
+            mx.save_safetensors(str(speaker), {'embedding': embedding})
+            original_bytes = speaker.read_bytes()
+            profile = SynthesisProfile(speaker, root / 'asr', .5, 1, .7, 1281, SynthesisReference(root / 'reference.wav', '말투 기준 대사입니다.'))
+            model = TinyModel()
+            model.talker.model = SimpleNamespace(layers=[])
+            model.talker.code_predictor = SimpleNamespace(model=SimpleNamespace(layers=[]))
+            model.speech_tokenizer = SimpleNamespace(has_encoder=True)
+            model.speaker_encoder = object()
+            apply_synthesis_profile(model, profile)
+            self.assertEqual(model.config.tts_model_type, 'base')
+            self.assertTrue(bool(mx.array_equal(model.extract_speaker_embedding(mx.zeros(24000)), embedding).item()))
+            self.assertEqual(speaker.read_bytes(), original_bytes)
+            model.speech_tokenizer.has_encoder = False
+            with self.assertRaisesRegex(ValueError, '기본 모델'):
+                apply_synthesis_profile(model, profile)
+
     def test_inference_strength_is_idempotent_and_preserves_the_frozen_base(self):
         mx.random.seed(19)
         adapter = training.VoiceLoRA(nn.Linear(8, 8))
@@ -53,9 +75,13 @@ class VoiceTrainingTests(unittest.TestCase):
         adapter.set_inference_strength(.5)
         adapter.set_inference_strength(.5)
         self.assertTrue(bool(mx.allclose(adapter(inputs) - base, full_delta * .5, atol=1e-6).item()))
+        adapter.set_inference_strength(1.5)
+        self.assertTrue(bool(mx.allclose(adapter(inputs) - base, full_delta * 1.5, atol=1e-6).item()))
         self.assertTrue(bool(mx.array_equal(adapter.base.weight, original).item()))
         with self.assertRaises(ValueError):
             adapter.set_inference_strength(0)
+        with self.assertRaises(ValueError):
+            adapter.set_inference_strength(1.51)
 
     def test_zero_adapter_preserves_base_and_resumed_optimizer_matches_uninterrupted_training(self):
         mx.random.seed(17)
