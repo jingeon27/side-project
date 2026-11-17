@@ -1,6 +1,7 @@
 """FLUX.2 Klein scene images with an optional character reference."""
 import random
 from ..assets import asset_path, asset_url, owned_asset
+from ..catalog import IMAGE_MODEL_DIRECTORY
 
 # Klein works on 16 px latents; the video model crops these to its own size.
 SIZES = {
@@ -26,8 +27,9 @@ def generate_image(root, request, progress, examples_dir):
     plan = image_plan(request)
     reference = owned_asset(root, request["reference"], "png", examples_dir) if request.get("reference") else None
     progress("FLUX.2 Klein 로컬 모델을 불러오는 중")
+    # Setup saved the weights in 8 bits; mflux reads that level from the files instead of quantizing again.
     model = (Flux2KleinEdit if reference else Flux2Klein)(
-        quantize=8, model_path=str(root / "local/models/image"), model_config=ModelConfig.flux2_klein_4b())
+        model_path=str(root / "local/models" / IMAGE_MODEL_DIRECTORY), model_config=ModelConfig.flux2_klein_4b())
     progress("인물 기준 이미지를 참고해 장면을 그리는 중" if reference else "장면 이미지를 그리는 중")
     result = model.generate_image(seed=plan["seed"], prompt=plan["prompt"], num_inference_steps=4,
                                   width=plan["width"], height=plan["height"],

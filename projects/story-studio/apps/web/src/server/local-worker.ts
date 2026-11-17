@@ -84,10 +84,10 @@ export function localConfiguration() {
   const voiceReady = runtime && existsSync(dataPath('local', 'models', 'voice', 'model.safetensors'));
   const voiceTrainingReady =
     runtime && existsSync(dataPath('local', 'models', 'voice-train', 'model.safetensors'));
+  // Setup writes ready.json after saving or converting the weights the engine loads, then removes the download.
+  // An earlier Wan2.1 install in `models/video` is therefore not ready.
   const imageReady =
-    runtime &&
-    existsSync(dataPath('local', 'models', 'image', 'transformer', 'diffusion_pytorch_model.safetensors'));
-  // The engine converts Wan2.2 into its own folder; an earlier Wan2.1 install in `models/video` is not ready.
+    runtime && existsSync(dataPath('local', 'models', 'image-flux2-klein-4b-q8', 'ready.json'));
   const videoReady = runtime && existsSync(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'));
   return {
     provider: 'local' as const,
