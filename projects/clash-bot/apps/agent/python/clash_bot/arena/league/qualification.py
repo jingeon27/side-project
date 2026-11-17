@@ -38,7 +38,9 @@ def qualify(control, workers, root, league, rules, learner, pairs):
     result["openingGames"] = []
     # Monitor every completed evaluation, including candidates that lost the win test.
     # Otherwise a stalled learner could stay invisible while the old champion keeps playing.
-    if result["complete"] and not control.stopped():
+    # The audit handles stop requests itself and returns incomplete. Skipping it here could
+    # leave a passing win gate without its required opening check.
+    if result["complete"]:
         control.report({"phase": "opening_audit"})
         audit = opening_audit(
             number,
