@@ -129,7 +129,10 @@ describe('cards and bodies read through the catalogue, not one slot per name', (
     enemyElixir: { min: 4, max: 6 },
     own: [],
     enemy,
-    bodies: { own: [], enemy: [] },
+    bodies: {
+      own: [],
+      enemy: enemy.map(([kind, x, y, variant]) => ({ kind, x, y, variant, velocity: null, hp: null })),
+    },
     actions: [['A', 'wait', null, 0, 0, 0]],
   });
 

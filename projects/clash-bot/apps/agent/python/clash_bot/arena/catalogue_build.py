@@ -278,6 +278,11 @@ def build():
         if card["kind"] == "spell":
             bodies[name] = rounded(spell_vector(card, area))
     unit_bodies = {unit: unit_body(unit) for unit in json.loads(battle.unit_types_json())}
+    # Unified card levels scale every hit point column by the same percentage.
+    percent = next(row for row in table["cards"] if row["name"] == "Knight")["level_scaling"][
+        "multiplier_percent_by_level"
+    ][SPEC["level"] - 1]
+    hitpoints = {}
     # One vector per body: the base record (no evolution or hero suffix, then shortest name).
     for body in sorted(set(unit_bodies.values())):
         records = sorted(
@@ -286,6 +291,8 @@ def build():
         )
         if records and body not in bodies:
             bodies[body] = rounded(unit_vector(units[records[0]]))
+            if units[records[0]].get("hitpoints"):
+                hitpoints[body] = units[records[0]]["hitpoints"] * percent // 100
     # A unit without a record of its own (a tower) reads as an unknown body.
     unit_bodies = {unit: body if body in bodies else "?" for unit, body in unit_bodies.items()}
     # A field unit the screen names by its card (an "archers" unit) reads the card's unit.
@@ -294,6 +301,8 @@ def build():
         summoned = unit_bodies.get(summons.get(card["engine"]) or "")
         if name not in bodies and summoned and summoned != "?":
             bodies[name] = bodies[summoned]
+            if summoned in hitpoints:
+                hitpoints[name] = hitpoints[summoned]
     for name, source in BODY_NAMES.items():
         bodies[name] = bodies[source]
     bodies["?"] = rounded([PRESENCE] + [0.0] * (len(BODY_FEATURES) - 1))
@@ -306,6 +315,8 @@ def build():
         "bodyFeatures": list(BODY_FEATURES),
         "cards": dict(sorted(cards.items())),
         "bodies": dict(sorted(bodies.items())),
+        # Full hit points at the arena level: a seen health bar or HP reads as a fraction of it.
+        "bodyHitpoints": dict(sorted(hitpoints.items())),
         "units": dict(sorted(unit_bodies.items())),
     }
     return {**body, "id": content_id(Catalogue.model_validate(body))}

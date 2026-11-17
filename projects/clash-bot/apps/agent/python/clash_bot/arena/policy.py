@@ -25,9 +25,9 @@ from .fast_features import (
 )
 from .samples import PolicyMetadata, TrainingSample
 
-FORMAT = "clash-arena-policy-value-v3"
+FORMAT = "clash-arena-policy-value-v4"
 # Leagues are kept per policy format; a new format starts its own league directory.
-LEAGUE_KEY = "fast3"
+LEAGUE_KEY = "fast4"
 INITIAL_SCALE = {"encoder.weight": 0.04, "query.weight": 0.04, "action.weight": 0.1}
 
 

@@ -405,7 +405,7 @@ describe('card and ability inputs', () => {
 // 빠른 정책이 기사 카드만 강하게 고르도록 직접 만든 가중치다. 판단은 Qwen 없이 이 프로세스에서 한다.
 // 카드는 카탈로그 특징으로 들어온다. 손패에서 공중을 못 치고 한 마리만 나오는 유닛은 기사뿐이다.
 function knightPolicy() {
-  const column = (feature: string) => 8 + CARD_CATALOGUE.cardFeatures.indexOf(feature);
+  const column = (feature: string) => 9 + CARD_CATALOGUE.cardFeatures.indexOf(feature);
   const zeros = (size: number) => new Float64Array(size);
   const weights: FastWeights = {
     'action.bias': zeros(FAST_POLICY.attention),

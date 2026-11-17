@@ -7,6 +7,11 @@ Its source code is MIT licensed, copyright 2026 RoyaleGym contributors.
 The dependency's LICENSE is retained in its installed distribution.
 The license explicitly excludes raw Supercell game-data tables; those are not
 copied into this repository. Runtime downloads remain in ignored `.data/`.
+`apps/agent/contracts/card-catalogue.json` is derived from the engine's pinned
+table: per card and unit, normalized attribute values, placement classes and
+level-11 hit points, regenerated with `arena catalogue`. It is a reduced
+description for the policy, not the table, and the underlying game data remains
+Supercell's.
 
 Design references requested by the user:
 

@@ -35,6 +35,7 @@ export const CARD_CATALOGUE = z
       }),
     ),
     bodies: z.record(z.string(), vector),
+    bodyHitpoints: z.record(z.string(), z.int().positive()),
     units: z.record(z.string(), z.string()),
   })
   .refine(
@@ -59,3 +60,10 @@ export const catalogueCard = (name: string | null): CatalogueCard | undefined =>
   name === null ? undefined : cards.get(name);
 export const isCatalogueBody = (name: string) => bodies.has(name);
 export const bodyVector = (name: string): number[] => bodies.get(name) ?? bodies.get('?')!;
+const hitpoints = new Map(Object.entries(CARD_CATALOGUE.bodyHitpoints));
+// 본 HP 범위를 그 오브젝트의 최대 HP에 대한 비율로 읽는다. 모르면 null이다.
+export function bodyHealth(name: string, hp: [number, number] | null) {
+  const full = hitpoints.get(name);
+  if (!full || !hp) return null;
+  return Math.min(1, Math.max(0, (hp[0] + hp[1]) / 2 / full));
+}

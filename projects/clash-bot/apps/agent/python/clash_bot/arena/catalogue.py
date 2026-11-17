@@ -49,6 +49,7 @@ class Catalogue(BaseModel):
     bodyFeatures: tuple[str, ...] = Field(min_length=1)
     cards: dict[str, CardEntry]
     bodies: dict[str, tuple[float, ...]]
+    bodyHitpoints: dict[str, int]
     units: dict[str, str]
 
     @model_validator(mode="after")
@@ -59,6 +60,8 @@ class Catalogue(BaseModel):
             raise ValueError("every body needs one value per body feature")
         if "?" not in self.bodies or any(body not in self.bodies for body in self.units.values()):
             raise ValueError("every engine unit needs a body, and unknown units need '?'")
+        if any(body not in self.bodies or hp <= 0 for body, hp in self.bodyHitpoints.items()):
+            raise ValueError("hit points belong to a known body and are positive")
         values = [v for card in self.cards.values() for v in card.features] + [
             v for vector in self.bodies.values() for v in vector
         ]
@@ -102,6 +105,13 @@ class Lookup:
 
     def body_vector(self, name):
         return self.bodies.get(name, self.bodies["?"])
+
+    def health(self, name, hp):
+        """A seen HP range as a fraction of the body's full hit points, or None if unknown."""
+        full = self.catalogue.bodyHitpoints.get(name)
+        if not full or not hp:
+            return None
+        return min(1.0, max(0.0, (hp[0] + hp[1]) / 2 / full))
 
     def lingering(self, name):
         """A spell that stays on the field as an area (poison, graveyard), not a single hit."""

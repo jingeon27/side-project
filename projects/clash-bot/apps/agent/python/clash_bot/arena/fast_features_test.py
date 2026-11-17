@@ -1,5 +1,6 @@
 """The live TypeScript runtime and this module compute the same features, logits and value."""
 
+import copy
 import json
 import math
 import unittest
@@ -7,6 +8,11 @@ import unittest
 import numpy as np
 
 from clash_bot.arena.fast_features import (
+    CATALOGUE,
+    ENEMY_OUT,
+    FIELD,
+    HEAD,
+    RELATIONS,
     STATE_SIZE,
     TOWERS_KNOWN,
     WEIGHT_SHAPES,
@@ -71,6 +77,39 @@ class SharedFastPolicyTest(unittest.TestCase):
         }
         self.assertEqual(checksum(restored), body["weightsSHA256"])
         self.assertEqual(body["stateSize"], STATE_SIZE)
+
+
+class SeenFieldTest(unittest.TestCase):
+    """What v4 reads beyond names: order-free cells, the opponent's cycle and placement relations."""
+
+    context = next(case["context"] for case in CASES if case["context"].get("ownEvolution"))
+
+    def test_body_order_does_not_change_the_cells(self):
+        flipped = copy.deepcopy(self.context)
+        for side in ("own", "enemy"):
+            flipped["bodies"][side].reverse()
+        np.testing.assert_array_equal(context_features(flipped), context_features(self.context))
+
+    def test_cards_out_of_the_opponent_hand_are_read(self):
+        unknown = {**self.context, "enemyCycle": []}
+        state, without = context_features(self.context), context_features(unknown)
+        self.assertGreater(float(state[ENEMY_OUT:FIELD].sum()), 0)
+        self.assertEqual(float(without[ENEMY_OUT:FIELD].sum()), 0)
+
+    def test_placements_carry_their_relations_and_evolution(self):
+        rows = action_features(self.context)
+        relation = {
+            name: HEAD + CATALOGUE.card_size + index for index, name in enumerate(RELATIONS)
+        }
+        wait, knight, poison, furnace, skeletons, ability = rows
+        self.assertFalse(wait[HEAD - 1 :].any() or ability[HEAD + CATALOGUE.card_size :].any())
+        self.assertEqual((knight[HEAD - 1], furnace[HEAD - 1]), (1.0, 0.5))
+        # The knight in front of the invader is closer to the threat than the furnace at the back.
+        self.assertLess(knight[relation["threatDistance"]], furnace[relation["threatDistance"]])
+        # Poison on the push reaches both invaders; a back-row furnace reaches none.
+        self.assertEqual(poison[relation["enemiesInReach"]], 0.5)
+        self.assertEqual(furnace[relation["enemiesInReach"]], 0.0)
+        self.assertEqual((skeletons[relation["leftLane"]], knight[relation["rightLane"]]), (1, 1))
 
 
 if __name__ == "__main__":

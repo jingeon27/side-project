@@ -1,7 +1,7 @@
 {
-  "format": "clash-fast-policy-v3",
+  "format": "clash-fast-policy-v4",
   "grid": {
-    "columns": 6,
+    "columns": 9,
     "rows": 16,
     "width": 18,
     "height": 32
