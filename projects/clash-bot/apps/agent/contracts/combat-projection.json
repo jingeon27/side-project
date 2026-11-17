@@ -1,0 +1,123 @@
+{
+  "format": "observed-motion-damage-v1",
+  "referenceLevel": 11,
+  "counterpushCalibrated": false,
+  "inputDelaySeconds": 0.5,
+  "inputDelayUncertainty": 0.5,
+  "positionUncertaintyTiles": 0.25,
+  "turnUncertaintyTilesPerSecond": 0.4,
+  "stepSeconds": 0.1,
+  "ice_wizard": {
+    "deploySeconds": 1
+  },
+  "barbarian_barrel": {
+    "deploySeconds": 0.5,
+    "speed": 3.3333333333
+  },
+  "poison": {
+    "deploySeconds": 0.5,
+    "tickSeconds": 1,
+    "slowMultiplier": 0.85,
+    "trajectoryHorizonSeconds": 2
+  },
+  "ability": {
+    "markRange": 5.5,
+    "damage": 46,
+    "freezeSeconds": 5,
+    "radius": 2.5
+  },
+  "bodies": {
+    "knight": {
+      "hp": 1766,
+      "speed": 1,
+      "ground": true
+    },
+    "furnace": {
+      "hp": 727,
+      "speed": 1,
+      "ground": true
+    },
+    "ice_wizard": {
+      "hp": 688,
+      "speed": 1,
+      "ground": true
+    },
+    "skeleton": {
+      "hp": 81,
+      "speed": 1.5,
+      "ground": true
+    },
+    "barbarian": {
+      "hp": 716,
+      "speed": 1,
+      "ground": true
+    },
+    "fire_spirit": {
+      "hp": 215,
+      "speed": 2,
+      "ground": true
+    },
+    "spear_goblin": {
+      "hp": 133,
+      "speed": 2,
+      "ground": true
+    },
+    "goblin": {
+      "hp": 202,
+      "speed": 2,
+      "ground": true
+    },
+    "goblin_hut": {
+      "hp": 1180,
+      "speed": 0,
+      "ground": true
+    },
+    "firecracker": {
+      "hp": 304,
+      "speed": 1.5,
+      "ground": true
+    },
+    "goblin_drill": {
+      "hp": 1313,
+      "speed": 0,
+      "ground": true
+    }
+  },
+  "policy": {
+    "noObservedSkillOpportunity": -9,
+    "emptyRoll": -5,
+    "reservedRoll": -9,
+    "emptyPoison": -6,
+    "kingDamage": -7,
+    "kingFootprintRadius": 1.8,
+    "graveyardSpawnRadius": 4,
+    "unsupportedGraveyard": -3,
+    "defenseReserve": -4,
+    "earlyHut": -3,
+    "redundantHut": -4,
+    "redundantPoison": -6,
+    "graveyardCounters": {
+      "P": 4,
+      "I": 3,
+      "H": 4
+    },
+    "thinPoison": -2,
+    "uncertainCounterWeight": 0.5,
+    "unknownCounterWeight": 0.25,
+    "lowReserveBuildup": -4,
+    "buildupMana": {
+      "F": 8,
+      "K": 7,
+      "I": 7,
+      "S": 3
+    },
+    "evolutionCyclePreference": 0.5,
+    "possibleElixirDeficit": -3,
+    "confirmedElixirDeficit": -5,
+    "unansweredGraveyard": -6,
+    "unansweredDrill": -7,
+    "preEmergenceSkeletons": -10,
+    "drillKnightDefense": 6,
+    "graveyardPoisonFollowup": 1.5
+  }
+}

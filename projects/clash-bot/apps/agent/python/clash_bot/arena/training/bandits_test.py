@@ -1,0 +1,41 @@
+import unittest
+
+import numpy as np
+
+from clash_bot.arena.sim.rules import Action
+from clash_bot.arena.training.bandits import pick, root_priors, root_subset
+
+
+class CardBanditsTest(unittest.TestCase):
+    def test_pruning_placements_does_not_inflate_wait(self):
+        actions = [Action(-1), *[Action(5, x, 0) for x in range(250)]]
+        prior = np.array([0.1, *[0.9 / 250] * 250])
+        np.testing.assert_allclose(root_priors(actions, prior, [0, 1]), [0.1, 0.9])
+        np.testing.assert_allclose(root_priors(actions, prior, [0, 1, 2]), [0.1, 0.45, 0.45])
+
+    def test_root_represents_every_card_family_and_always_keeps_wait(self):
+        actions = [Action(-1), Action(-2), *[Action(c, x, 0) for c in range(4) for x in range(80)]]
+        prior = np.ones(len(actions)) / len(actions)
+        for noise in (True, False):
+            kept = root_subset(actions, prior, np.random.default_rng(4), 8, noise)
+            self.assertEqual(len(kept), 8)
+            self.assertEqual({actions[index].card for index in kept}, {-2, -1, 0, 1, 2, 3})
+        kept = root_subset(actions, prior, np.random.default_rng(4), 2, False)
+        self.assertIn(0, kept)
+
+    def test_bandit_uses_card_mass_and_root_coverage_but_can_learn_to_wait(self):
+        actions = [Action(-1), *[Action(5, x, 0) for x in range(4)]]
+        prior, edges, rng = np.array([0.3, *[0.175] * 4]), {}, np.random.default_rng(2)
+        selected = pick(edges, actions, prior, rng, 1.5, cover=True)
+        self.assertEqual(selected.card, 5)
+        for _ in range(len(actions)):
+            selected = pick(edges, actions, prior, rng, 1.5, cover=True)
+            edges[selected]["n"] += 1
+        self.assertTrue(all(edge["n"] for edge in edges.values()))
+        for action, edge in edges.items():
+            edge.update(n=20, w=18 if action.card == -1 else -18)
+        self.assertEqual(pick(edges, actions, prior, rng, 1.5).card, -1)
+
+
+if __name__ == "__main__":
+    unittest.main()

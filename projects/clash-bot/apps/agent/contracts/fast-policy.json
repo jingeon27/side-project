@@ -1,0 +1,13 @@
+{
+  "format": "clash-fast-policy-v4",
+  "choice": "card_marginal_then_position_v1",
+  "grid": {
+    "columns": 9,
+    "rows": 16,
+    "width": 18,
+    "height": 32
+  },
+  "clockSeconds": 300,
+  "hidden": 256,
+  "attention": 64
+}

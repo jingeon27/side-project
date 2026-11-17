@@ -36,6 +36,9 @@ export default defineConfig({
     'packages/design-system': { entry: ['playwright.config.ts'] },
     'projects/photo-contest': { entry: ['scripts/*.ts'] },
     'projects/*/apps/*': { entry: appEntries },
+    'projects/clash-bot/apps/agent': {
+      entry: ['*.config.{ts,mts,cts,js,mjs,cjs}', '**/*.{spec,test,e2e}.{ts,tsx}'],
+    },
     // Python 엔진은 자체 패키지와 검사로 관리하며 JavaScript 진입점이 없다.
     'projects/story-studio/apps/engine': { entry: [] },
     'projects/blog/apps/web': { entry: [...appEntries, 'vercel.ts'] },

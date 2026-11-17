@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "deck": [
+    "furnace",
+    "ice_wizard",
+    "knight",
+    "graveyard",
+    "skeletons",
+    "poison",
+    "goblin_hut",
+    "barbarian_barrel"
+  ],
+  "hand": [
+    {
+      "x": 84,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 153,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 222,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    },
+    {
+      "x": 291,
+      "y": 543,
+      "width": 61,
+      "height": 73
+    }
+  ],
+  "elixir": {
+    "x": 117,
+    "y": 628,
+    "width": 236,
+    "height": 9
+  },
+  "arena": {
+    "x": 15,
+    "y": 80,
+    "width": 338,
+    "height": 425
+  },
+  "riverY": 276,
+  "thresholds": {
+    "cardDistance": 29,
+    "cardMargin": 3
+  },
+  "observedGraveyardCenters": {
+    "source": "winning_opponent_effect_centers",
+    "samples": 61,
+    "corpusSHA256": "e2a922ed44cbf5f5dc7f12116a3bebd6dd3874e36953eda524aebf1986a561a9",
+    "left": [
+      [-1.6, 0.1],
+      [-1.6, 1.0]
+    ],
+    "right": [
+      [1.5, 0.1],
+      [1.5, 0.8]
+    ]
+  }
+}

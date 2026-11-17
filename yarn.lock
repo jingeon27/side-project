@@ -1767,6 +1767,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clash-bot/agent@workspace:projects/clash-bot/apps/agent":
+  version: 0.0.0-use.local
+  resolution: "@clash-bot/agent@workspace:projects/clash-bot/apps/agent"
+  dependencies:
+    "@side/config": "workspace:*"
+    "@types/node": "catalog:"
+    dayjs: "catalog:"
+    es-toolkit: "catalog:"
+    playwright: "npm:1.64.0"
+    sharp: "catalog:"
+    ts-pattern: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
+
 "@commander-js/extra-typings@npm:^15.0.0":
   version: 15.0.0
   resolution: "@commander-js/extra-typings@npm:15.0.0"
@@ -8151,6 +8167,16 @@ __metadata:
 "@side/blog@workspace:projects/blog":
   version: 0.0.0-use.local
   resolution: "@side/blog@workspace:projects/blog"
+  languageName: unknown
+  linkType: soft
+
+"@side/clash-bot@workspace:projects/clash-bot":
+  version: 0.0.0-use.local
+  resolution: "@side/clash-bot@workspace:projects/clash-bot"
+  dependencies:
+    "@side/config": "workspace:*"
+    eslint: "catalog:"
+    jiti: "catalog:"
   languageName: unknown
   linkType: soft
 

@@ -1,0 +1,38 @@
+{
+  "name": "@side/clash-bot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "yarn workspace @clash-bot/agent typecheck",
+    "test": "yarn workspace @clash-bot/agent test",
+    "test:integration": "yarn workspace @clash-bot/agent test:integration",
+    "check": "yarn lint && yarn typecheck && yarn test",
+    "qwen:setup": "yarn workspace @clash-bot/agent qwen:setup",
+    "counterpush": "yarn workspace @clash-bot/agent counterpush",
+    "counterpush:setup": "yarn workspace @clash-bot/agent counterpush:setup",
+    "test:perception": "yarn workspace @clash-bot/agent test:perception",
+    "test:perception:model": "yarn workspace @clash-bot/agent test:perception:model",
+    "test:learning": "yarn workspace @clash-bot/agent test:learning",
+    "test:learning:model": "yarn workspace @clash-bot/agent test:learning:model",
+    "arena": "yarn workspace @clash-bot/agent arena",
+    "arena:setup": "yarn workspace @clash-bot/agent arena:setup",
+    "test:arena": "yarn workspace @clash-bot/agent test:arena",
+    "python:setup": "yarn workspace @clash-bot/agent python:setup",
+    "lint:python": "yarn workspace @clash-bot/agent lint:python",
+    "format:python": "yarn workspace @clash-bot/agent format:python",
+    "format:python:check": "yarn workspace @clash-bot/agent format:python:check",
+    "check:python": "yarn workspace @clash-bot/agent check:python",
+    "test:python": "yarn workspace @clash-bot/agent test:python",
+    "test:arena:model": "yarn workspace @clash-bot/agent test:arena:model",
+    "lint": "eslint --max-warnings 0 .",
+    "trophy": "yarn workspace @clash-bot/agent trophy",
+    "test:trophy": "yarn workspace @clash-bot/agent test:trophy",
+    "test:trophy:model": "yarn workspace @clash-bot/agent test:trophy:model"
+  },
+  "devDependencies": {
+    "@side/config": "workspace:*",
+    "eslint": "catalog:",
+    "jiti": "catalog:"
+  }
+}
