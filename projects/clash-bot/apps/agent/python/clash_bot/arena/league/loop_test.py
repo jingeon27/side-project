@@ -11,8 +11,13 @@ from unittest.mock import patch
 from pydantic import ValidationError
 
 from clash_bot.arena.catalogue import current
-from clash_bot.arena.champions import checkpoint, export_policy, initialize, publish_champion
-from clash_bot.arena.league import run
+from clash_bot.arena.league.champions import (
+    checkpoint,
+    export_policy,
+    initialize,
+    publish_champion,
+)
+from clash_bot.arena.league.loop import run
 from clash_bot.arena.policy.features import checksum
 from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
 from clash_bot.arena.policy.samples import SparseFeatures
@@ -30,14 +35,27 @@ class LeagueTest(unittest.TestCase):
         handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}
         with (
             tempfile.TemporaryDirectory() as directory,
-            patch("clash_bot.arena.league.verify", return_value={"passed": True}),
+            patch("clash_bot.arena.league.loop.verify", return_value={"passed": True}),
             patch(
-                "clash_bot.arena.league.play_frozen_games", side_effect=ValueError("root mismatch")
+                "clash_bot.arena.training.parallel.Workers.map",
+                side_effect=ValueError("root mismatch"),
             ),
         ):
             with self.assertRaisesRegex(ValueError, "root mismatch"):
                 run(directory, hours=0, generations=1, games=1, workers=1)
+            status = json.loads((Path(directory) / "arena/control/status.json").read_text())
         self.assertEqual({sig: signal.getsignal(sig) for sig in handlers}, handlers)
+        self.assertEqual((status["phase"], status["error"]), ("failed", "root mismatch"))
+
+    def test_a_failed_verification_blocks_training_before_any_league_is_initialized(self):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("clash_bot.arena.league.loop.verify", return_value={"passed": False}),
+            patch("clash_bot.arena.league.loop.initialize") as initialize,
+        ):
+            with self.assertRaisesRegex(ValueError, "verification failed"):
+                run(directory, hours=0, generations=1, games=1, workers=1)
+        initialize.assert_not_called()
 
     def test_a_new_league_publishes_the_initial_champion_policy(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -90,6 +90,40 @@ class QualificationTest(unittest.TestCase):
         self.assertFalse(result["gate"]["passed"])
         self.assertEqual(result["gate"]["reason"], "matchup_stratum_regression")
 
+    def test_batched_pairs_keep_pair_order_and_stop_between_batches(self):
+        a = Policy(metadata={"version": 1, "rulesID": "rules-a"})
+        b = Policy(metadata={"version": 0, "rulesID": "rules-a"})
+        batches = []
+
+        def play(jobs):
+            batches.append([job["identity"] for job in jobs])
+            # The challenger wins both seats of even pairs and loses both of odd ones.
+            return [
+                [
+                    {
+                        "winner": seat
+                        if int(job["identity"].rsplit("-", 1)[1]) % 2 == 0
+                        else 1 - seat
+                    }
+                    for seat in (0, 1)
+                ]
+                for job in jobs
+            ]
+
+        result = evaluate(a, b, "rules-a", 2, pairs=5, play_pairs=play, batch=2)
+        self.assertEqual(
+            batches,
+            [["holdout-2-0", "holdout-2-1"], ["holdout-2-2", "holdout-2-3"], ["holdout-2-4"]],
+        )
+        self.assertEqual(result["pairs"], [1, 0, 1, 0, 1])
+        self.assertEqual([game["challengerSeat"] for game in result["games"]], [0, 1] * 5)
+        stops = iter([False, True])
+        result = evaluate(
+            a, b, "rules-a", 2, pairs=5, play_pairs=play, batch=2, should_stop=lambda: next(stops)
+        )
+        self.assertEqual(result["pairs"], [1, 0])
+        self.assertEqual(result["gate"]["reason"], "interrupted_evaluation")
+
     def test_rule_mismatch_and_interrupted_evaluation_do_not_promote(self):
         a = Policy(metadata={"version": 1, "rulesID": "rules-a"})
         with self.assertRaisesRegex(ValueError, "another rule"):

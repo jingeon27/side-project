@@ -3,6 +3,7 @@
 import math
 
 import numpy as np
+from more_itertools import chunked
 
 from clash_bot.statistics import paired_win_probability
 
@@ -52,6 +53,19 @@ def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
     }
 
 
+def play_pair(challenger, champion, rules_id, identity, setup):
+    """The challenger in each seat of the same world, as deployed: no training, no search."""
+    games = []
+    for seat in (0, 1):
+        models = [champion, champion]
+        models[seat] = challenger
+        game = play_game(models, identity, rules_id, simulations=0, training=False, setup=setup)
+        if not game["completed"] or game["rejectedCommands"]:
+            raise ValueError("Unverified or invalid-action evaluation game")
+        games.append({key: value for key, value in game.items() if key != "samples"})
+    return games
+
+
 def evaluate(
     challenger,
     champion,
@@ -60,8 +74,15 @@ def evaluate(
     pairs=16,
     report=None,
     should_stop=None,
+    play_pairs=None,
+    batch=1,
 ):
-    """Paired games as deployed, with the live deck and every configured threat deck."""
+    """Paired games as deployed, with the live deck and every configured threat deck.
+
+    `play_pairs` plays up to `batch` pair jobs ({"identity", "setup"}) at once and returns each
+    pair's two games in order; by default the pairs are played here one after another. Games are
+    seeded by their identity, so the result does not depend on how they are scheduled.
+    """
     for model in (challenger, champion):
         if model.metadata.get("rulesID", rules_id) != rules_id:
             raise ValueError("Evaluation policy belongs to another rule set")
@@ -71,37 +92,37 @@ def evaluate(
     required_pairs = max(pairs, math.ceil(-math.log2(alpha)) + 1) if pairs >= 16 else pairs
     if pairs >= 16:
         required_pairs = max(required_pairs, 2 * (len(DECKS) - 1))
+    play_pairs = play_pairs or (
+        lambda jobs: [
+            play_pair(challenger, champion, rules_id, job["identity"], job["setup"]) for job in jobs
+        ]
+    )
+    jobs = [
+        {"identity": f"holdout-{generation}-{pair}", "setup": evaluation_setup(pair, generation)}
+        for pair in range(required_pairs)
+    ]
     results, pair_scores = [], []
-    for pair in range(required_pairs):
+    for group in chunked(jobs, batch):
         if should_stop and should_stop():
             break
-        identity = f"holdout-{generation}-{pair}"
-        setup = evaluation_setup(pair, generation)
-        scores = []
-        for seat in (0, 1):
-            models = [champion, champion]
-            models[seat] = challenger
-            # Same world seed for the two seats, no training, no search.
-            game = play_game(models, identity, rules_id, simulations=0, training=False, setup=setup)
-            if not game["completed"] or game["rejectedCommands"]:
-                raise ValueError("Unverified or invalid-action evaluation game")
-            score = 0.5 if game["winner"] == 2 else 1 if game["winner"] == seat else 0
-            scores.append(score)
-            results.append(
-                {key: value for key, value in game.items() if key != "samples"}
-                | {"challengerSeat": seat, "score": score}
-            )
-            if report:
-                report(
-                    {
-                        "phase": "evaluating",
-                        "generation": generation,
-                        "pair": pair + 1,
-                        "seat": seat,
-                        "score": score,
-                    }
-                )
-        pair_scores.append(sum(scores) / 2)
+        for games in play_pairs(group):
+            scores = []
+            for seat, game in enumerate(games):
+                # Same world seed for the two seats.
+                score = 0.5 if game["winner"] == 2 else 1 if game["winner"] == seat else 0
+                scores.append(score)
+                results.append(game | {"challengerSeat": seat, "score": score})
+                if report:
+                    report(
+                        {
+                            "phase": "evaluating",
+                            "generation": generation,
+                            "pair": len(pair_scores) + 1,
+                            "seat": seat,
+                            "score": score,
+                        }
+                    )
+            pair_scores.append(sum(scores) / 2)
     # Alpha spending bounds false promotion probability over repeated generations.
     complete = len(pair_scores) == required_pairs
     gate = paired_gate(pair_scores, alpha=alpha)

@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.files import atomic_json
 
-from .policy.network import LEAGUE_KEY, Policy
+from ..policy.network import LEAGUE_KEY, Policy
 
 
 class Opponent(BaseModel):
@@ -80,13 +80,18 @@ def initialize(root, rules, parent=None):
         episodes=[],
         opponents=[Opponent(version=0, wins=0, games=0)],
     ).model_dump()
-    atomic_json(pointer, league)
+    store(root, league)
     publish_champion(root, league)
     return league
 
 
 def checkpoint(root, version):
     return Path(root) / "checkpoints" / f"v{version:06d}"
+
+
+def store(root, league):
+    """Write league.json; the owner calls this after every change it must not lose."""
+    atomic_json(Path(root) / "league.json", league)
 
 
 def parent_champion(parent):
