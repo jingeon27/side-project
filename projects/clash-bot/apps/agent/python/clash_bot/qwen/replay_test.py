@@ -36,8 +36,14 @@ class CachedReplayTest(unittest.TestCase):
                 "samples": rows,
             }
             remember(learner, dataset, "train", samples)
+            # Older, valid rules stay on disk and are not loaded into the current pool.
+            remember(learner, {**dataset, "rulesID": "rules-old"}, "older", samples)
+            remember(learner, dataset, "train", samples)
             result = worker.rehearse({"rounds": 2})
             self.assertTrue(result["updated"])
+            self.assertEqual(result["rulesID"], "rules-a")
+            self.assertEqual(result["pool_samples"], 4)
+            self.assertTrue((learner.directory / "replay/older.json").exists())
             self.assertEqual(learner.metadata.get("search_datasets", []), [])
             self.assertEqual(learner.metadata["tactical_rehearsals"], 2)
             worker.end_candidate()
