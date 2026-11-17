@@ -36,7 +36,9 @@ def qualify(control, workers, root, league, rules, learner, pairs):
     )
     result["openingAudit"] = {"tested": False, "passed": False}
     result["openingGames"] = []
-    if result["gate"]["passed"]:
+    # Monitor every completed evaluation, including candidates that lost the win test.
+    # Otherwise a stalled learner could stay invisible while the old champion keeps playing.
+    if result["complete"] and not control.stopped():
         control.report({"phase": "opening_audit"})
         audit = opening_audit(
             number,
@@ -49,7 +51,7 @@ def qualify(control, workers, root, league, rules, learner, pairs):
         )
         result["openingAudit"] = {key: value for key, value in audit.items() if key != "games"}
         result["openingGames"] = audit["games"]
-        if not audit["passed"]:
+        if result["gate"]["passed"] and not audit["passed"]:
             result["gate"] = {
                 **result["gate"],
                 "passed": False,

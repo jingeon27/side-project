@@ -22,7 +22,7 @@ class NoPlayPromotionTest(unittest.TestCase):
             league["learner"] = 1
             control = SimpleNamespace(report=lambda row: None, stopped=lambda: False)
             workers = SimpleNamespace(count=2)
-            result = {"gate": {"passed": True}, "games": []}
+            result = {"complete": True, "gate": {"passed": True}, "games": []}
             audit = {
                 "tested": True,
                 "complete": True,
@@ -42,6 +42,43 @@ class NoPlayPromotionTest(unittest.TestCase):
             self.assertFalse(recorded["gate"]["passed"])
             self.assertEqual(recorded["gate"]["reason"], "self_opening_deadlock")
             self.assertEqual(league["evaluations"], 1)
+
+    def test_a_losing_candidate_is_also_checked_for_recurring_deadlock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rules = rules_identity()
+            league = initialize(root, rules)
+            policy = Policy.load(root / "checkpoints/v000000", rules["id"])
+            policy.save(root / "checkpoints/v000001", {"version": 1})
+            league["learner"] = 1
+            control = SimpleNamespace(report=lambda row: None, stopped=lambda: False)
+            workers = SimpleNamespace(count=2)
+            result = {
+                "complete": True,
+                "gate": {"passed": False, "reason": "insufficient_evidence_of_improvement"},
+                "games": [],
+            }
+            audit = {
+                "tested": True,
+                "complete": True,
+                "passed": False,
+                "noPlayGames": 4,
+                "games": [],
+            }
+            with (
+                patch("clash_bot.arena.league.qualification.evaluate", return_value=result),
+                patch(
+                    "clash_bot.arena.league.qualification.opening_audit", return_value=audit
+                ) as check,
+                patch("clash_bot.arena.league.qualification.publish_champion") as publish,
+            ):
+                qualify(control, workers, root, league, rules, policy, 22)
+            check.assert_called_once()
+            publish.assert_not_called()
+            recorded = json.loads((root / "evaluations/v000001-e000000.json").read_text())
+            self.assertEqual(recorded["openingAudit"]["noPlayGames"], 4)
+            self.assertEqual(recorded["gate"]["reason"], "insufficient_evidence_of_improvement")
+            self.assertEqual(league["champion"], 0)
 
 
 if __name__ == "__main__":
