@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="840" viewBox="0 0 1080 840">
+  <title>Each project's goal and main reason</title>
+  <desc>A diagram of the goals for the blog, Pisik and Game Mate, the Clash Royale AI and the studio, with the main reason for starting each given as interest, money or study. Only the main reason is listed, and the others are not absent.</desc>
+  <g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+  <rect width="1080" height="840" fill="#f4f1ea"/>
+  <text x="68" y="62" font-size="24" font-weight="400" fill="#62756d" text-anchor="start">01 / Goals by project</text>
+  <text x="68" y="124" font-size="40" font-weight="700" fill="#273b36" text-anchor="start">Each project's goal and main reason</text>
+
+  <text x="96" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">Project</text>
+  <text x="400" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">Goal</text>
+  <text x="700" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">Main reason</text>
+
+  <rect x="68" y="222" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="289" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">Blog</text>
+  <text x="400" y="270" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">Reflection and</text>
+  <text x="400" y="306" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">study notes</text>
+  <rect x="700" y="255" width="110" height="46" rx="10" fill="#e4ece0"/><text x="755" y="287" font-size="24" font-weight="700" fill="#2f5a48" text-anchor="middle">Study</text>
+
+  <rect x="68" y="348" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="396" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">Pisik, Game Mate</text>
+  <text x="96" y="432" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">photo and game services</text>
+  <text x="400" y="414" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">50 users</text>
+  <rect x="700" y="381" width="110" height="46" rx="10" fill="#e4ece0"/><text x="755" y="413" font-size="24" font-weight="700" fill="#2f5a48" text-anchor="middle">Study</text>
+
+  <rect x="68" y="474" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="522" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">Clash Royale AI</text>
+  <text x="96" y="558" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">an AI that plays the game</text>
+  <text x="400" y="540" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">World rank #1</text>
+  <rect x="700" y="507" width="110" height="46" rx="10" fill="#f5e6df"/><text x="755" y="539" font-size="24" font-weight="700" fill="#9c5238" text-anchor="middle">Interest</text>
+  <rect x="822" y="507" width="110" height="46" rx="10" fill="#e4ece0"/><text x="877" y="539" font-size="24" font-weight="700" fill="#2f5a48" text-anchor="middle">Study</text>
+
+  <rect x="68" y="600" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="648" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">Studio</text>
+  <text x="96" y="684" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">a workspace for AI video</text>
+  <text x="400" y="666" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">YouTube side job</text>
+  <rect x="700" y="633" width="110" height="46" rx="10" fill="#f3ead2"/><text x="755" y="665" font-size="24" font-weight="700" fill="#8a6418" text-anchor="middle">Money</text>
+
+  <path d="M 68 750 H 1012" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="68" y="794" font-size="24" font-weight="400" fill="#7d8a84" text-anchor="start">Only the main reason is listed. The others are not absent.</text>
+  </g>
+</svg>

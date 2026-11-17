@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="840" viewBox="0 0 1080 840">
+  <title>프로젝트마다 다른 목표와 시작한 이유</title>
+  <desc>블로그, 피식과 Game Mate, 클래시 로얄 AI, 스튜디오의 목표와 각 프로젝트를 시작한 가장 큰 이유를 흥미, 돈, 공부로 적은 도해예요. 가장 큰 이유만 적었고 나머지가 아예 없다는 뜻은 아니에요.</desc>
+  <g font-family="Apple SD Gothic Neo, AppleGothic, sans-serif">
+  <rect width="1080" height="840" fill="#f4f1ea"/>
+  <text x="68" y="62" font-size="24" font-weight="400" fill="#62756d" text-anchor="start">01 / 프로젝트별 목표</text>
+  <text x="68" y="124" font-size="40" font-weight="700" fill="#273b36" text-anchor="start">프로젝트마다 다른 목표와 시작한 이유</text>
+
+  <text x="96" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">프로젝트</text>
+  <text x="400" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">목표</text>
+  <text x="700" y="193" font-size="24" font-weight="700" fill="#62756d" text-anchor="start">가장 큰 이유</text>
+
+  <rect x="68" y="222" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="289" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">블로그</text>
+  <text x="400" y="288" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">생각과 공부 정리</text>
+  <rect x="700" y="255" width="110" height="46" rx="10" fill="#e4ece0"/><text x="755" y="288" font-size="26" font-weight="700" fill="#2f5a48" text-anchor="middle">공부</text>
+
+  <rect x="68" y="348" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="396" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">피식, Game Mate</text>
+  <text x="96" y="432" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">사진 커뮤니티, 게임 서비스</text>
+  <text x="400" y="414" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">사용자 50명</text>
+  <rect x="700" y="381" width="110" height="46" rx="10" fill="#e4ece0"/><text x="755" y="414" font-size="26" font-weight="700" fill="#2f5a48" text-anchor="middle">공부</text>
+
+  <rect x="68" y="474" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="522" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">클래시 로얄 AI</text>
+  <text x="96" y="558" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">게임을 플레이하는 AI</text>
+  <text x="400" y="540" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">세계 랭킹 1등</text>
+  <rect x="700" y="507" width="110" height="46" rx="10" fill="#f5e6df"/><text x="755" y="540" font-size="26" font-weight="700" fill="#9c5238" text-anchor="middle">흥미</text>
+  <rect x="822" y="507" width="110" height="46" rx="10" fill="#e4ece0"/><text x="877" y="540" font-size="26" font-weight="700" fill="#2f5a48" text-anchor="middle">공부</text>
+
+  <rect x="68" y="600" width="944" height="112" rx="14" fill="#fffef9" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="96" y="648" font-size="30" font-weight="700" fill="#273b36" text-anchor="start">스튜디오</text>
+  <text x="96" y="684" font-size="22" font-weight="400" fill="#7d8a84" text-anchor="start">AI로 영상을 만드는 작업실</text>
+  <text x="400" y="666" font-size="28" font-weight="400" fill="#273b36" text-anchor="start">유튜브 사이드잡</text>
+  <rect x="700" y="633" width="110" height="46" rx="10" fill="#f3ead2"/><text x="755" y="666" font-size="26" font-weight="700" fill="#8a6418" text-anchor="middle">돈</text>
+
+  <path d="M 68 750 H 1012" stroke="#c8ccc2" stroke-width="2"/>
+  <text x="68" y="794" font-size="24" font-weight="400" fill="#7d8a84" text-anchor="start">가장 큰 이유만 적었어요. 나머지가 아예 없다는 뜻은 아니에요.</text>
+  </g>
+</svg>
