@@ -5,7 +5,6 @@ The two action bandits use opposite values. A bounded visible-material heuristic
 bootstraps an untrained value head; this is not claimed to be pure AlphaZero.
 """
 
-import math
 import time
 
 import numpy as np
@@ -17,6 +16,7 @@ from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
 from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
+from .bandits import Node, exploration_prior, pick, root_priors, root_subset
 
 
 def terminal(state, team):
@@ -34,51 +34,10 @@ def position_value(observation):
     return float(np.tanh((hp(own) - hp(enemy)) * 2 + (own["crowns"] - enemy["crowns"]) * 0.6))
 
 
-class Node:
-    def __init__(self):
-        self.own, self.enemy, self.children = {}, {}, {}
-        self.visits = 0
-
-
 class Workspace:
     def __init__(self, particles=2):
         self.worlds = [Arena(index) for index in range(particles)]
         self.scratch = self.worlds[0].clone()
-
-
-def pick(edges, actions, priors, rng, explore):
-    for action, prior in zip(actions, priors):
-        if action not in edges:
-            edges[action] = {"n": 0, "w": 0.0, "p": float(prior), "available": 0}
-        edges[action]["available"] += 1
-
-    # Availability, not visits to unavailable hidden-hand actions, sets the UCB.
-    def score(action):
-        edge = edges[action]
-        return edge["w"] / max(1, edge["n"]) + explore * edge["p"] * math.sqrt(
-            edge["available"]
-        ) / (1 + edge["n"])
-
-    scores = np.array([score(action) for action in actions])
-    return actions[int(rng.choice(np.flatnonzero(scores >= scores.max() - 1e-12)))]
-
-
-def root_subset(actions, prior, rng, size, explore):
-    """Indices of the root candidates search expands: the `size` best by prior.
-
-    While training they are sampled without replacement (Gumbel top-k), so placements the
-    policy does not rank yet still get searched. Waiting is always among them.
-    """
-    if len(actions) <= size:
-        return list(range(len(actions)))
-    scores = np.log(np.maximum(prior, 1e-12))
-    if explore:
-        scores = scores + rng.gumbel(size=len(scores))
-    keep = [int(index) for index in np.argsort(-scores, kind="stable")[:size]]
-    wait = actions.index(Action(-1)) if Action(-1) in actions else None
-    if wait is not None and wait not in keep:
-        keep[-1] = wait
-    return sorted(keep)
 
 
 def reconstruct(sampler, workspace, particles, beliefs=None):
@@ -213,11 +172,12 @@ def search(
     root = Node()
     candidates = [Action(*row) for row in observation["legalActions"]]
     prior, _ = policy.predict(observation, candidates)
-    keep = root_subset(candidates, prior, rng, root_size, noise)
+    # Spend at least half of a normal budget on revisits, rather than one uniform visit per tile.
+    keep = root_subset(candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise)
     root_actions = [candidates[index] for index in keep]
-    root_prior = prior[keep] / prior[keep].sum()
+    root_prior = root_priors(candidates, prior, keep)
     if noise and len(root_actions) > 1:
-        root_prior = 0.75 * root_prior + 0.25 * rng.dirichlet(np.full(len(root_actions), 0.2))
+        root_prior = exploration_prior(root_actions, root_prior, rng)
     snapshots = [world.battle.save() for world in worlds]
     world = workspace.scratch
     roots = {}
@@ -235,7 +195,7 @@ def search(
             if choices is None:
                 break
             own_actions, priors, enemy_actions, enemy_priors = choices
-            ours = pick(node.own, own_actions, priors, rng, 1.5)
+            ours = pick(node.own, own_actions, priors, rng, 1.5, cover=ply == 0)
             theirs = pick(node.enemy, enemy_actions, enemy_priors, rng, 1.5)
             path.append((node, ours, theirs))
             actions = [Action(-1), Action(-1)]
@@ -255,12 +215,9 @@ def search(
                 edges[action]["w"] += result
     visits = np.array([root.own.get(action, {}).get("n", 0) for action in root_actions], np.float32)
     target = visits / visits.sum() if visits.sum() else root_prior
-    others = sorted(set(range(len(candidates))) - set(keep))
     return {
         "actions": root_actions,
         "target": target,
-        # Candidates the policy ranked but search did not expand; training uses some as negatives.
-        "others": [candidates[index] for index in others],
         "values": [
             root.own.get(action, {}).get("w", 0) / max(1, root.own.get(action, {}).get("n", 0))
             for action in root_actions

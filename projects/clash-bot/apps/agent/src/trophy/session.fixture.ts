@@ -48,6 +48,7 @@ async function prepareModels() {
       checkpoint,
       JSON.stringify({
         format: FAST_POLICY.format,
+        choice: FAST_POLICY.choice,
         catalogue: CARD_CATALOGUE.id,
         stateSize: STATE_SIZE,
         actionSize: ACTION_SIZE,

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..policy.network import Policy
 from ..sim.rules import rules_identity
+from .activity import opening_audit
 from .evaluation import evaluate
 from .parallel import Workers, play_frozen_game, play_frozen_pair
 from .selfplay import setup_for
@@ -21,6 +22,34 @@ def interrupt_ignored(_job):
     os.environ.get("RUN_ARENA_INTEGRATION") == "1", "optional native process integration"
 )
 class PackagedParallelTests(unittest.TestCase):
+    def test_frozen_self_openings_start_without_forcing_a_card_or_training(self):
+        with tempfile.TemporaryDirectory() as directory, Workers(2) as workers:
+            rules = rules_identity()["id"]
+            checkpoint = Path(directory) / "candidate"
+            policy = Policy(metadata={"version": 0, "rulesID": rules})
+            policy.save(checkpoint, {"role": "integration_fixture"})
+            before = policy.checksum()
+            result = opening_audit(
+                0,
+                play_pairs=lambda jobs: workers.map(
+                    play_frozen_pair,
+                    [
+                        {
+                            **job,
+                            "rulesID": rules,
+                            "challenger": str(checkpoint),
+                            "champion": str(checkpoint),
+                        }
+                        for job in jobs
+                    ],
+                ),
+                batch=2,
+            )
+            self.assertTrue(result["passed"])
+            self.assertEqual(result["noPlayGames"], 0)
+            self.assertEqual(len(result["games"]), 4)
+            self.assertEqual(Policy.load(checkpoint, rules).checksum(), before)
+
     def test_spawned_workers_complete_matchups_covering_every_pool_deck(self):
         with tempfile.TemporaryDirectory() as directory, Workers(2) as workers:
             rules = rules_identity()

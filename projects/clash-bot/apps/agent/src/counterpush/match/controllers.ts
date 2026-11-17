@@ -1,4 +1,3 @@
-import { maxBy, range } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
 import type { BattleSituation } from '../../core/battle/battle-state.ts';
@@ -126,7 +125,7 @@ export function fastController(policy: FastPolicy): Controller {
     choose: async (request) => {
       const started = performance.now();
       const decision = policy.predict(context(request.input, request.candidates));
-      const best = maxBy(range(request.candidates.length), (index) => decision.probabilities[index]!)!;
+      const best = decision.choice;
       return {
         text: JSON.stringify({ choice: request.candidates[best]!.id }),
         elapsedMs: Math.round(performance.now() - started),

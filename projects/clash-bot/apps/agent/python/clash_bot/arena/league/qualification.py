@@ -3,6 +3,7 @@
 from clash_bot.files import atomic_json
 
 from ..policy.network import Policy
+from ..training.activity import opening_audit
 from ..training.benchmark import benchmark
 from ..training.evaluation import evaluate
 from ..training.parallel import play_frozen_pair
@@ -33,6 +34,29 @@ def qualify(control, workers, root, league, rules, learner, pairs):
         play_pairs=lambda jobs: workers.map(play_frozen_pair, [{**job, **frozen} for job in jobs]),
         batch=workers.count,
     )
+    result["openingAudit"] = {"tested": False, "passed": False}
+    result["openingGames"] = []
+    if result["gate"]["passed"]:
+        control.report({"phase": "opening_audit"})
+        audit = opening_audit(
+            number,
+            play_pairs=lambda jobs: workers.map(
+                play_frozen_pair,
+                [{**job, **frozen, "champion": frozen["challenger"]} for job in jobs],
+            ),
+            batch=workers.count,
+            should_stop=control.stopped,
+        )
+        result["openingAudit"] = {key: value for key, value in audit.items() if key != "games"}
+        result["openingGames"] = audit["games"]
+        if not audit["passed"]:
+            result["gate"] = {
+                **result["gate"],
+                "passed": False,
+                "reason": "self_opening_deadlock"
+                if audit["complete"]
+                else "interrupted_opening_audit",
+            }
     atomic_json(root / "evaluations" / f"v{version:06d}-e{number:06d}.json", result)
     if result["gate"]["passed"]:
         league["champion"] = version
@@ -45,7 +69,9 @@ def qualify(control, workers, root, league, rules, learner, pairs):
     control.report(
         {
             "phase": "evaluated",
-            "evaluation": {key: value for key, value in result.items() if key != "games"},
+            "evaluation": {
+                key: value for key, value in result.items() if key not in ("games", "openingGames")
+            },
             "champion": league["champion"],
         }
     )

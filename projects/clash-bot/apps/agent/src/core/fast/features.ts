@@ -22,6 +22,7 @@ import type { DecisionAction, DecisionContext } from '../policy/decision-v3.ts';
 export const FAST_POLICY = z
   .strictObject({
     format: z.literal('clash-fast-policy-v4'),
+    choice: z.literal('card_marginal_then_position_v1'),
     grid: z.strictObject({
       columns: z.int().positive(),
       rows: z.int().positive(),

@@ -12,6 +12,7 @@ import time
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
+from ..policy.choice import card_choice, sample_card
 from ..policy.features import action_features, context_features
 from ..policy.noise import PerceptionNoise
 from ..policy.samples import SparseFeatures, value_target
@@ -37,7 +38,6 @@ class SelfplaySpec(BaseModel):
     decisionPhaseTicks: tuple[int, int]
     searchTicks: PositiveInt
     rootActions: int = Field(ge=2)
-    negatives: int = Field(ge=0)
     rootPositionToleranceTiles: float = Field(ge=0, le=0.5)
     commandDelayTicks: tuple[int, int]
     levelOffsets: tuple[int, ...] = Field(min_length=1)
@@ -95,18 +95,13 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
-def training_rows(observation, result, screen, rng):
-    """The searched candidates and a few the search left out, read as the side's screen reads them.
-
-    Unsearched candidates are negatives (target 0), so the policy also learns to keep the grid's
-    poor placements below the searched ones it ranks for live play.
-    """
-    others = result["others"]
-    picked = rng.choice(len(others), min(SELFPLAY.negatives, len(others)), replace=False)
-    rows = [*result["actions"], *(others[int(index)] for index in sorted(picked))]
+def training_rows(observation, result, screen, chosen):
+    """Only visited actions are supervised; unsearched placements have no known value."""
+    kept = np.flatnonzero(result["target"] > 0).tolist()
+    rows = [result["actions"][index] for index in kept]
     context = screen.read(observation, rows)
-    target = [*result["target"].tolist(), *[0.0] * len(picked)]
-    return rows, context_features(context), action_features(context), target
+    target = result["target"][kept].tolist()
+    return rows, context_features(context), action_features(context), target, kept.index(chosen)
 
 
 def play_game(
@@ -133,7 +128,6 @@ def play_game(
     # Each side's hidden-hand hypotheses, continued from one of its searches to the next.
     beliefs = [[None] * len(workspace.worlds) for _ in policies]
     choices = np.random.default_rng(seed_for("acting", game_id))
-    negatives = np.random.default_rng(seed_for("negatives", game_id))
     screens = [
         Screen(SELFPLAY.perception, np.random.default_rng(seed_for("perception", game_id, team)))
         for team in (0, 1)
@@ -157,7 +151,7 @@ def play_game(
             decisions += 1
             if simulations == 0:
                 prior = policy.deployed(observation, candidates, screens[team])
-                selected[team] = candidates[int(np.argmax(prior))]
+                selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
             result = None
             if unavailable[team] is None:
@@ -183,21 +177,19 @@ def play_game(
                 # frozen screen policy, but invent no expert targets for these decisions.
                 policy_only[team] += 1
                 prior = policy.deployed(observation, candidates, screens[team])
-                selected[team] = candidates[int(np.argmax(prior))]
+                selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
-            probabilities = result["target"].astype(np.float64)
+            families = [action.card for action in result["actions"]]
             if training:
                 temperature = 1 if state["tick"] < 1200 else 0.35
-                probabilities = probabilities ** (1 / temperature)
-                probabilities /= probabilities.sum()
-                chosen = int(choices.choice(len(probabilities), p=probabilities))
+                chosen = sample_card(families, result["target"], choices, temperature)
             else:
-                chosen = int(np.argmax(probabilities))
+                chosen = card_choice(families, result["target"])
             selected[team] = result["actions"][chosen]
             searches += result["simulations"]
             if training:
-                rows, state_features, action_vectors, target = training_rows(
-                    observation, result, screens[team], negatives
+                rows, state_features, action_vectors, target, stored_choice = training_rows(
+                    observation, result, screens[team], chosen
                 )
                 samples.append(
                     {
@@ -215,11 +207,11 @@ def play_game(
                         "actions": [action.row() for action in rows],
                         "actionFeatures": action_vectors.tolist(),
                         "target": target,
-                        "chosen": chosen,
+                        "chosen": stored_choice,
                         "search": {
                             key: value
                             for key, value in result.items()
-                            if key not in ("actions", "target", "others")
+                            if key not in ("actions", "target")
                         },
                         "outcome": None,
                     }

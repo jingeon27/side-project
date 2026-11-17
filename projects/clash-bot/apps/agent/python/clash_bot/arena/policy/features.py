@@ -36,6 +36,7 @@ class FastPolicySpec(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     format: Literal["clash-fast-policy-v4"]
+    choice: Literal["card_marginal_then_position_v1"]
     grid: Grid
     clockSeconds: PositiveFloat
     hidden: PositiveInt
@@ -277,6 +278,7 @@ def exported(weights, metadata):
     return {
         **metadata,
         "format": SPEC.format,
+        "choice": SPEC.choice,
         "stateSize": STATE_SIZE,
         "actionSize": ACTION_SIZE,
         "weightsSHA256": checksum(weights),

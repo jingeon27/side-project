@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { CARD_CATALOGUE } from '../card-catalogue.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
 import { towerDefense, type TowerDefenseInput } from '../policy/tower-defense.ts';
+import { cardChoice } from './choice.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
 
 // 빠른 정책의 가중치·체크섬·추론이다. Python(clash_bot.arena.policy.network)이 같은 파일을 쓴다.
@@ -28,6 +29,7 @@ const WEIGHT_NAMES = Object.keys(SHAPES).toSorted() as WeightName[];
 
 const policyFileSchema = z.looseObject({
   format: z.literal(FAST_POLICY.format),
+  choice: z.literal(FAST_POLICY.choice),
   stateSize: z.literal(STATE_SIZE),
   actionSize: z.literal(ACTION_SIZE),
   weightsSHA256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -126,7 +128,13 @@ export class FastPolicy {
 
   predict(context: DecisionContext, protection?: TowerDefenseInput) {
     const result = forward(this.weights, contextFeatures(context), actionFeatures(context));
-    if (!protection) return { ...result, towerProtection: undefined };
+    const families = context.actions.map((row) => (row[1] === 'card' ? `card:${row[2]}` : row[1]));
+    if (!protection)
+      return {
+        ...result,
+        choice: cardChoice(families, result.probabilities),
+        towerProtection: undefined,
+      };
     if (
       protection.actions.length !== result.logits.length ||
       protection.actions.some(
@@ -139,6 +147,13 @@ export class FastPolicy {
     const top = Math.max(...logits);
     const exponents = logits.map((logit) => Math.exp(logit - top));
     const total = sum(exponents);
-    return { ...result, logits, probabilities: exponents.map((value) => value / total), towerProtection };
+    const probabilities = exponents.map((value) => value / total);
+    return {
+      ...result,
+      logits,
+      probabilities,
+      choice: cardChoice(families, probabilities),
+      towerProtection,
+    };
   }
 }

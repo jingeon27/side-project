@@ -141,7 +141,6 @@
     "decisionPhaseTicks": [0, 19],
     "searchTicks": 40,
     "rootActions": 16,
-    "negatives": 16,
     "rootPositionToleranceTiles": 0.25,
     "commandDelayTicks": [18, 26],
     "levelOffsets": [-1, 0, 0, 1],

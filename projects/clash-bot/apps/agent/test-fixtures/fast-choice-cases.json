@@ -1,0 +1,47 @@
+{
+  "choice": "card_marginal_then_position_v1",
+  "cases": [
+    {
+      "name": "split_positions_do_not_lose_to_single_wait",
+      "families": ["wait", "knight", "knight", "knight", "knight", "ice", "ice"],
+      "probabilities": [0.25, 0.12, 0.11, 0.1, 0.07, 0.2, 0.15],
+      "choice": 1
+    },
+    {
+      "name": "saving_elixir_can_still_win",
+      "families": ["wait", "knight", "knight"],
+      "probabilities": [0.7, 0.15, 0.15],
+      "choice": 0
+    },
+    {
+      "name": "ready_ability_is_not_required",
+      "families": ["wait", "ability"],
+      "probabilities": [0.8, 0.2],
+      "choice": 0
+    },
+    {
+      "name": "valuable_ability_remains_available",
+      "families": ["wait", "ability"],
+      "probabilities": [0.2, 0.8],
+      "choice": 1
+    },
+    {
+      "name": "more_tiles_with_the_same_card_mass_do_not_change_card_choice",
+      "families": ["wait", "knight", "knight", "knight", "knight", "knight", "knight"],
+      "probabilities": [0.7, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05],
+      "choice": 0
+    },
+    {
+      "name": "no_affordable_card",
+      "families": ["wait"],
+      "probabilities": [1],
+      "choice": 0
+    },
+    {
+      "name": "ties_are_stable",
+      "families": ["wait", "knight", "knight"],
+      "probabilities": [0.5, 0.3, 0.2],
+      "choice": 0
+    }
+  ]
+}

@@ -78,6 +78,7 @@ describe('the live fast policy computes what the Python trainer computes', () =>
 describe('loading an exported policy', () => {
   const exported = (sha: string, catalogue = CARD_CATALOGUE.id) => ({
     format: FAST_POLICY.format,
+    choice: FAST_POLICY.choice,
     stateSize: STATE_SIZE,
     actionSize: ACTION_SIZE,
     weightsSHA256: sha,
@@ -107,6 +108,11 @@ describe('loading an exported policy', () => {
       await expect(FastPolicy.load(path)).rejects.toThrow('체크섬');
       await writeFile(path, JSON.stringify(exported(fixture.deterministicWeightsSHA256, 'c'.repeat(64))));
       await expect(FastPolicy.load(path)).rejects.toThrow('카드 카탈로그');
+      await writeFile(
+        path,
+        JSON.stringify({ ...exported(fixture.deterministicWeightsSHA256), choice: undefined }),
+      );
+      await expect(FastPolicy.load(path)).rejects.toThrow('choice');
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

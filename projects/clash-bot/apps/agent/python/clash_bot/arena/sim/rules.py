@@ -103,7 +103,9 @@ def rules_identity():
         # Visibility and timing alter the information set/returns just as a balance patch does.
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
-        "evaluationSuite": "live_mirror_and_pool_through_the_screen_v3",
+        "evaluationSuite": "live_mirror_pool_and_self_opening_v4",
+        "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
+        "searchPolicy": "card_bandits_covered_roots_visited_targets_v1",
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
         "policyInput": "live_screen_health_bars_v2",
