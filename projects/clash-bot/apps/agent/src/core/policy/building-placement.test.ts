@@ -128,3 +128,64 @@ it('does not retain generic tower-center Graveyard candidates when effect-center
   expect(placements).toHaveLength(4);
   expect(placements.every((row) => row.target.x < 85 || row.target.x > 283)).toBe(true);
 });
+
+it('intercepts an observed Drill near its feet instead of using its HP-bar position', () => {
+  const state = scene();
+  const drill = {
+    card: 'goblin_drill' as const,
+    kind: 'goblin_drill' as const,
+    x: 44,
+    y: 417,
+    confidence: 0.9,
+  };
+  const field = { ...state, opponent: { ...state.opponent, units: [drill] } };
+  const placements = predictivePlacements(
+    { ...profile, riverY: 276, tileScale: { x: 18, y: 130 / 9.5 } },
+    'knight',
+    [drill],
+    field,
+  );
+  expect(placements[0]?.description).toContain('Goblin Drill');
+  expect(Math.abs((placements[0]?.target.y ?? 0) - drill.y)).toBeLessThan(20);
+  expect(placements.some((p) => p.description.includes('behind the King Tower'))).toBe(true);
+});
+
+it('uses real-client tower spacing independently of Counterpush when transferring Graveyard offsets', () => {
+  const calibrated = {
+    ...profile,
+    riverY: 276,
+    tileScale: { x: 18, y: 130 / 9.5 },
+    observedGraveyardCenters: {
+      source: 'winning_opponent_effect_centers' as const,
+      samples: 61,
+      corpusSHA256: 'a'.repeat(64),
+      left: [[-1.6, 0.1]] as [number, number][],
+      right: [[1.5, 0.1]] as [number, number][],
+    },
+  };
+  const positions = predictivePlacements(calibrated, 'graveyard', [], scene());
+  expect(positions[0]?.target.x).toBeCloseTo(56.2);
+  expect(positions[1]?.target.x).toBeCloseTo(310);
+});
+
+it('uses the reviewed outer adjacent tile instead of an inferred Graveyard effect center', () => {
+  const calibrated = {
+    ...profile,
+    riverY: 276,
+    tileScale: { x: 18, y: 130 / 9.5 },
+    graveyardPlacement: 'tower_adjacent_outer_tile' as const,
+    observedGraveyardCenters: {
+      source: 'winning_opponent_effect_centers' as const,
+      samples: 61,
+      corpusSHA256: 'a'.repeat(64),
+      left: [[-1.6, 0.1]] as [number, number][],
+      right: [[1.5, 0.1]] as [number, number][],
+    },
+  };
+  const positions = predictivePlacements(calibrated, 'graveyard', [], scene());
+  expect(positions.map((row) => row.target)).toEqual([
+    screenPoint(calibrated, [2.5, 25.5]),
+    screenPoint(calibrated, [15.5, 25.5]),
+  ]);
+  expect(positions.map((row) => row.target.x)).toEqual([67, 301]);
+});

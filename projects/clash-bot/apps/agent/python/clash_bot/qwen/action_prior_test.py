@@ -8,6 +8,50 @@ from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner
 
 
 class ActionPriorTest(unittest.TestCase):
+    def test_drill_emergence_reserves_skeletons_and_prefers_nearby_knight(self):
+        state = "mana=3;enemyMana=0-10;own=;enemy=;effects=;emergence=2,6.5;drill=?\n"
+        prior = action_prior(state + "A:W B:K2,6.8 C:K8,0.5 D:S2,6.8 E:B2,5q0r0", 5)
+        self.assertGreater(prior[1], prior[0] + 4)
+        self.assertLess(prior[3], prior[0] - 8)
+        active = action_prior(
+            "mana=3;enemyMana=0-10;own=;enemy=d2,6.5;effects=;drill=2,6.5@emerged\nA:W B:S2,6.8 C:G3.5,25.5",
+            3,
+        )
+        emerging = action_prior(
+            "mana=3;enemyMana=0-10;own=;enemy=d2,6.5;effects=;drill=2,6.5@emerging\nA:W B:S2,6.8 C:G3.5,25.5",
+            3,
+        )
+        self.assertGreater(active[1], emerging[1] + 8)
+        self.assertLess(active[2], active[0] - 6)
+
+    def test_unanswered_graveyard_prefers_defense_over_attack_and_rear_buildup(self):
+        prior = action_prior(
+            "mana=5;enemyMana=0-10;own=;enemy=s3.5,6;effects=rG3.5,6.5@2s\nA:W B:P3.5,6.5n0 C:P14.5,25.5n0 D:I3.5,7 E:I8,0.5 F:G14.5,25.5",
+            6,
+        )
+        self.assertGreater(prior[1], prior[2] + 5)
+        self.assertGreater(prior[3], prior[4] + 5)
+        self.assertLess(prior[5], prior[0] - 8)
+
+    def test_graveyard_poison_followup_needs_targets_and_defense_reserve(self):
+        def cast(mana, potential):
+            return action_prior(
+                f"mana={mana};enemyMana=0-10;own=;enemy=I3.5,25;effects=bG3.5,25.5@3s\nA:P3.5,25.5n{potential} B:W",
+                2,
+            )[0]
+
+        self.assertGreater(cast(8, 184), cast(4, 184) + 3)
+        self.assertGreater(cast(8, 184), cast(8, 0) + 4)
+
+    def test_conserve_on_confirmed_or_possible_elixir_deficit_but_keep_close_defense(self):
+        low = action_prior("mana=4;enemyMana=7-10;own=;enemy=;effects=\nA:F8,0.5 B:K8,0.5 C:W", 3)
+        even = action_prior("mana=9;enemyMana=0-4;own=;enemy=;effects=\nA:F8,0.5 B:K8,0.5 C:W", 3)
+        defense = action_prior(
+            "mana=4;enemyMana=7-10;own=;enemy=?3.5,7;effects=\nA:F3.5,7 B:K3.5,7 C:W", 3
+        )
+        self.assertLess(low[0], even[0] - 8)
+        self.assertGreater(defense[1], low[1] + 8)
+
     def test_unknown_counter_is_not_treated_as_confirmed_and_low_mana_buildup_waits(self):
         actions = "\nA:G3.5,25.5 B:W"
         state = "mana=5;enemyMana=4-8;hand=GIKS;own=;enemy=;effects=;enemyCycle="

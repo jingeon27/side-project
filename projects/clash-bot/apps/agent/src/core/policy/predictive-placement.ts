@@ -246,20 +246,29 @@ function poisonPlacements(profile: Profile, situation: PlacementField): Placemen
 
 function graveyardPlacements(profile: Profile, situation: PlacementField): PlacementOption[] {
   const measured = profile.observedGraveyardCenters;
-  const points = measured
-    ? [
-        ...measured.left.map(([dx, dy]) => screenPoint(profile, [3.5 + dx, 25.5 + dy])),
-        ...measured.right.map(([dx, dy]) => screenPoint(profile, [14.5 + dx, 25.5 + dy])),
-      ]
-    : [3.5, 14.5].flatMap((x) =>
-        (
+  // Reviewed input location takes precedence over inferred visual effect centers.
+  const points =
+    profile.graveyardPlacement === 'tower_adjacent_outer_tile'
+      ? (
           [
-            [x, 25.5],
-            [x + (x < 9 ? -1.2 : 1.2), 25],
-            [x, 24.3],
+            [2.5, 25.5],
+            [15.5, 25.5],
           ] as const
-        ).map((tile) => screenPoint(profile, tile)),
-      );
+        ).map((tile) => screenPoint(profile, tile))
+      : measured
+        ? [
+            ...measured.left.map(([dx, dy]) => screenPoint(profile, [3.5 + dx, 25.5 + dy])),
+            ...measured.right.map(([dx, dy]) => screenPoint(profile, [14.5 + dx, 25.5 + dy])),
+          ]
+        : [3.5, 14.5].flatMap((x) =>
+            (
+              [
+                [x, 25.5],
+                [x + (x < 9 ? -1.2 : 1.2), 25],
+                [x, 24.3],
+              ] as const
+            ).map((tile) => screenPoint(profile, tile)),
+          );
   return points
     .map((target) => {
       const defenders = situation.opponent.units
@@ -283,7 +292,10 @@ function graveyardPlacements(profile: Profile, situation: PlacementField): Place
       return {
         target,
         score: support * 2 - defenders - poison + (measured && (target.x < 85 || target.x > 283) ? 0.5 : 0),
-        description: 'Graveyard tower offset; compare observed defenders, tank arrival and enemy Poison',
+        description:
+          profile.graveyardPlacement === 'tower_adjacent_outer_tile'
+            ? 'Graveyard one outer tile beside the tower; compare defenders, tank arrival and enemy Poison'
+            : 'Graveyard tower offset; compare observed defenders, tank arrival and enemy Poison',
       };
     })
     .toSorted((a, b) => b.score - a.score)
@@ -304,6 +316,23 @@ export function predictivePlacements(
   const defensiveThreats = threats.filter((point) => point.y > profile.riverY);
   const existing = unitPlacements(profile, card, defensiveThreats, situation);
   if (['knight', 'furnace', 'skeletons'].includes(card)) {
+    const drill = situation.opponent.units.find(
+      (unit) => unit.kind === 'goblin_drill' && unit.confidence >= 0.75 && unit.y > profile.riverY,
+    );
+    const drillDefense =
+      drill && ['knight', 'skeletons'].includes(card)
+        ? [-12, 12].flatMap((offset) => {
+            const target = ownPoint(profile, card, { x: drill.x + offset, y: drill.y + 5 }, situation);
+            return target
+              ? [
+                  {
+                    target,
+                    description: `${card} intercept emerged Goblin Drill and death-spawned Goblins; compare deployment phase`,
+                  },
+                ]
+              : [];
+          })
+        : [];
     const firecracker = situation.opponent.units.find(
       (unit) => unit.kind === 'firecracker' && unit.confidence >= 0.85 && unit.y > profile.riverY - 55,
     );
@@ -326,11 +355,14 @@ export function predictivePlacements(
       defensiveThreats.length > 0 ||
       graveyardThreat(profile, situation) !== undefined ||
       situation.opponent.units.some((unit) => unit.confidence >= 0.75 && unit.y > profile.riverY - 55);
-    if (urgent)
-      return uniqBy([...centralPull, ...existing], (option) => `${option.target.x}:${option.target.y}`).slice(
-        0,
-        5,
+    if (urgent) {
+      const rear = existing.filter((option) => option.description.includes('behind the King Tower'));
+      const defense = uniqBy(
+        [...drillDefense, ...centralPull, ...existing.filter((option) => !rear.includes(option))],
+        (option) => `${option.target.x}:${option.target.y}`,
       );
+      return [...defense.slice(0, 5 - rear.length), ...rear];
+    }
     const rearTiles =
       card === 'skeletons'
         ? ([[9, 0.5], ...DEPLOYMENT.kingBackTiles] as const)

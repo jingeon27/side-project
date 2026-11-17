@@ -20,6 +20,8 @@ export const profileSchema = z
     elixir: referenceRect,
     arena: referenceRect,
     riverY: z.number().min(100).max(500),
+    tileScale: z.object({ x: z.number().min(10).max(30), y: z.number().min(8).max(25) }).optional(),
+    graveyardPlacement: z.literal('tower_adjacent_outer_tile').optional(),
     thresholds: z.object({
       cardDistance: z.number().min(1).max(100),
       cardMargin: z.number().min(0).max(50),

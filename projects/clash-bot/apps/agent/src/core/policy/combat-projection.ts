@@ -2,7 +2,7 @@ import { match } from 'ts-pattern';
 
 import type { FieldUnit } from '../battle/battle-state.ts';
 import { COMBAT } from '../combat-reference.ts';
-import { tilePoint } from '../geometry.ts';
+import { projectionScale, tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
 
 export type CombatBody = {
@@ -33,11 +33,14 @@ export type EffectForecast = {
   }>;
 };
 
-export function combatBody(profile: Pick<Profile, 'riverY'>, unit: FieldUnit): CombatBody {
+export function combatBody(profile: Pick<Profile, 'riverY' | 'tileScale'>, unit: FieldUnit): CombatBody {
   const point = tilePoint(profile, unit);
   const velocity =
     unit.velocity && unit.motion && unit.motion.samples >= 2 && unit.motion.elapsedMs >= 100
-      ? ([(unit.velocity.xPerSecond * 11) / 178, (-unit.velocity.yPerSecond * 9.5) / 130] as [number, number])
+      ? ([
+          unit.velocity.xPerSecond / projectionScale(profile).x,
+          -unit.velocity.yPerSecond / projectionScale(profile).y,
+        ] as [number, number])
       : null;
   const kind = unit.kind ?? unit.card ?? '?';
   const reference = COMBAT.bodies[kind];

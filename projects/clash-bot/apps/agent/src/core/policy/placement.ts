@@ -22,8 +22,8 @@ export function blockedDeployment(profile: Profile, card: CardId, point: Point, 
   if (point.x > 306 && point.y > 454) return true; // visible hero-control overlay
   if (CARD_INFO[card].role === 'spell') return false;
   const towers = [
-    { x: 95, y: profile.riverY + 130, halfHeight: 31 },
-    { x: 273, y: profile.riverY + 130, halfHeight: 31 },
+    { ...screenPoint(profile, [3.5, 6.5]), halfHeight: 31 },
+    { ...screenPoint(profile, [14.5, 6.5]), halfHeight: 31 },
     { ...screenPoint(profile, DEPLOYMENT.kingTowerTile), halfHeight: 27 },
   ];
   return (

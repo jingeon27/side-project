@@ -55,7 +55,7 @@ def bodies(text):
 
 def contextual_prior(code, facts, state):
     point = coordinate(facts)
-    if code not in ("P", "G", "H", "F", "K", "I", "S") or point is None:
+    if code not in ("P", "G", "H", "F", "K", "I", "S", "B") or point is None:
         return 0
     mana_text = state.get("mana")
     mana = float(mana_text.split("-")[0]) if mana_text is not None else None
@@ -77,10 +77,86 @@ def contextual_prior(code, facts, state):
     )
     king_active = enemy_towers is not None and (enemy_towers[0] < 1 or 0 in enemy_towers[1:])
     total = 0
+    enemy = bodies(state.get("enemy", ""))
+    drill = coordinate(state.get("drill", "?")) or next(
+        ([x, y] for card, x, y in enemy if card == "d" and y < 16), None
+    )
+    emergence = coordinate(state.get("emergence", "?"))
+    graves = [
+        (x, y)
+        for side, card, x, y, age in active
+        if side == "r" and card == "G" and y < 16 and (age is None or age < 9)
+    ]
+    own_poison = [
+        (x, y)
+        for side, card, x, y, age in active
+        if side == "b" and card == "P" and (age is None or age < 6)
+    ]
+    uncovered = [
+        (x, y)
+        for x, y in graves
+        if not any(math.hypot(x - px, y - py) < 3 for px, py in own_poison)
+    ]
+    distance = lambda target: math.hypot(point[0] - target[0], point[1] - target[1])
+    defending_grave = any(
+        distance(target) <= (5 if code == "I" else 3) for target in uncovered
+    ) and code in ("I", "K", "S", "P", "B")
+    defending_drill = (
+        drill is not None and distance(drill) <= 3.5 and code in ("K", "S", "I", "B", "P")
+    )
+    if uncovered and not defending_grave:
+        total += POLICY["unansweredGraveyard"]
+    if drill is not None:
+        if not defending_drill:
+            total += POLICY["unansweredDrill"]
+        elif code == "K" and not any(
+            card == "K" and math.hypot(x - drill[0], y - drill[1]) < 2.5 for card, x, y in own
+        ):
+            total += POLICY["drillKnightDefense"]
+        elif code == "S" and not state.get("drill", "").endswith("@emerged"):
+            total += POLICY["preEmergenceSkeletons"]
+        elif code == "B" and not any(
+            card == "j" and math.hypot(x - drill[0], y - drill[1]) < 3 for card, x, y in enemy
+        ):
+            total += POLICY[
+                "emptyRoll"
+            ]  # rolling a healthy/unknown-HP Drill is not guaranteed cleanup
+    if emergence is not None and distance(emergence) < 4:
+        if code == "S":
+            total += POLICY["preEmergenceSkeletons"]
+        if code == "K" and not any(
+            card == "K" and math.hypot(x - emergence[0], y - emergence[1]) < 2.5
+            for card, x, y in own
+        ):
+            total += POLICY["drillKnightDefense"]
+    useful_defense = (
+        defending_grave
+        or defending_drill
+        or (emergence is not None and distance(emergence) < 4 and code in ("K", "I"))
+        or any(y < 18 and math.hypot(x - point[0], y - point[1]) < 5 for _, x, y in enemy)
+    )
+    if (
+        mana is not None
+        and enemy_max is not None
+        and not useful_defense
+        and code in ("F", "H", "G", "I", "K", "S", "P")
+    ):
+        enemy_min = float(enemy_text.split("-")[0])
+        own_max = float(mana_text.split("-")[-1].rstrip("?"))
+        if own_max < enemy_min:
+            total += POLICY["confirmedElixirDeficit"]
+        elif mana - enemy_max <= -2:
+            tank = any(card in ("K", "F") and y >= 17 for card, _, y in own)
+            reserve = mana - {"F": 4, "H": 4, "G": 5, "I": 3, "K": 3, "S": 1, "P": 4}[code]
+            if reserve < 3 or (code == "G" and not tank):
+                total += POLICY["possibleElixirDeficit"]
     if code in POLICY["buildupMana"]:
         enemy = bodies(state.get("enemy", ""))
-        urgent = any(y < 18 for _, _, y in enemy) or any(
-            side == "r" and card == "G" for side, card, *_ in active
+        urgent = (
+            drill is not None
+            or emergence is not None
+            or any(y < 18 for _, _, y in enemy)
+            or any(side == "r" and card == "G" for side, card, *_ in active)
         )
         if not urgent and mana is not None:
             if mana < POLICY["buildupMana"][code]:
@@ -106,6 +182,19 @@ def contextual_prior(code, facts, state):
             for side, card, x, y, age in active
         )
         potential = re.search(r"n(\d+)", facts)
+        combo = (
+            mana is not None
+            and mana - 4 >= 3
+            and any(
+                side == "b"
+                and card == "G"
+                and math.hypot(point[0] - x, point[1] - y) < 4
+                and (age is None or age < 9)
+                for side, card, x, y, age in active
+            )
+        )
+        if combo and potential is not None and int(potential[1]) > 0:
+            total += POLICY["graveyardPoisonFollowup"]
         if potential is not None and not defending:
             if int(potential[1]) == 0:
                 total += POLICY["emptyPoison"]

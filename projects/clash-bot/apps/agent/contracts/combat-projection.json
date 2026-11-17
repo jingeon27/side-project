@@ -106,6 +106,13 @@
       "I": 7,
       "S": 3
     },
-    "evolutionCyclePreference": 0.5
+    "evolutionCyclePreference": 0.5,
+    "possibleElixirDeficit": -3,
+    "confirmedElixirDeficit": -5,
+    "unansweredGraveyard": -6,
+    "unansweredDrill": -7,
+    "preEmergenceSkeletons": -10,
+    "drillKnightDefense": 6,
+    "graveyardPoisonFollowup": 1.5
   }
 }

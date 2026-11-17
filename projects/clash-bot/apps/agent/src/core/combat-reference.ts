@@ -76,6 +76,13 @@ const parameters = z
       lowReserveBuildup: z.number(),
       buildupMana: z.record(z.string(), z.number()),
       evolutionCyclePreference: z.number(),
+      possibleElixirDeficit: z.number(),
+      confirmedElixirDeficit: z.number(),
+      unansweredGraveyard: z.number(),
+      unansweredDrill: z.number(),
+      preEmergenceSkeletons: z.number(),
+      drillKnightDefense: z.number(),
+      graveyardPoisonFollowup: z.number(),
     }),
   })
   .parse(

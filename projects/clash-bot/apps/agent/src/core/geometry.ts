@@ -16,12 +16,14 @@ export function center(rect: Rect): Point {
 }
 
 // Screen-to-tile calibration: 18×32 tiles, river at y=16, princess towers at (3.5,6.5).
-export const tilePoint = (profile: { riverY: number }, point: Point): [number, number] => [
-  Math.round((9 + ((point.x - 184) * 11) / 178) * 10) / 10,
-  Math.round((16 - ((point.y - profile.riverY) * 9.5) / 130) * 10) / 10,
+type Projection = { riverY: number; tileScale?: { x: number; y: number } };
+export const projectionScale = (profile: Projection) => profile.tileScale ?? { x: 178 / 11, y: 130 / 9.5 };
+export const tilePoint = (profile: Projection, point: Point): [number, number] => [
+  Math.round((9 + (point.x - 184) / projectionScale(profile).x) * 10) / 10,
+  Math.round((16 - (point.y - profile.riverY) / projectionScale(profile).y) * 10) / 10,
 ];
 
-export const screenPoint = (profile: { riverY: number }, [x, y]: readonly [number, number]): Point => ({
-  x: 184 + ((x - 9) * 178) / 11,
-  y: profile.riverY + ((16 - y) * 130) / 9.5,
+export const screenPoint = (profile: Projection, [x, y]: readonly [number, number]): Point => ({
+  x: 184 + (x - 9) * projectionScale(profile).x,
+  y: profile.riverY + (16 - y) * projectionScale(profile).y,
 });
