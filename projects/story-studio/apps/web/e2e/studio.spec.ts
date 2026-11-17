@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { libraryKey } from '../src/lib/library';
-import { sampleProject } from '../src/lib/sample';
+import { libraryKey } from '../src/features/library/model/library';
+import { sampleProject } from '../src/features/story/model/sample';
 
 const config = {
   provider: 'cloud',
@@ -65,23 +65,35 @@ test('연결 없이 예시를 편집하고 한글 원고·JSON 백업을 복원�
 test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ page }) => {
   await connect(page);
   const project = sampleProject();
-  const state = { fail: false };
+  const state = {
+    fail: false,
+    requests: [] as { scenes: unknown[]; beat?: { title: string }; upcoming?: unknown[] }[],
+  };
   await page.route('**/api/studio', async (route) => {
     if (route.request().method() !== 'POST') return route.fallback();
     const body = route.request().postDataJSON();
     if (state.fail)
       return route.fulfill({ status: 502, json: { error: 'AI가 잠시 쉬고 있어요. 다시 시도해 주세요.' } });
+    if (body.action === 'plan')
+      return route.fulfill({
+        json: {
+          ...project,
+          outline: [
+            { title: '미래에서 온 편지', summary: '서우가 편지를 펼친다.' },
+            { title: '새벽의 답장', summary: '서우가 답장을 쓰기 시작한다.' },
+          ],
+        },
+      });
+    state.requests.push(body.input);
+    // The first scene has no earlier manuscript; later ones continue from it.
     return route.fulfill({
       json:
-        body.action === 'continue'
-          ? {
+        body.input.scenes.length === 0
+          ? { ...project.scenes[0], narration: '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.' }
+          : {
               ...project.scenes[0],
               title: '새벽의 답장',
               narration: '서우는 한글로 긴 편지를 쓰기 시작했다.',
-            }
-          : {
-              ...project,
-              scenes: [{ ...project.scenes[0], narration: '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.' }],
             },
     });
   });
@@ -91,18 +103,111 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
     .getByLabel('이야기 아이디어', { exact: true })
     .fill('미래에서 온 편지를 읽은 서우가 자신의 이야기를 소설로 쓰기 시작한다.');
   await page.getByRole('button', { name: '이야기 만들기', exact: true }).click();
+  // One click plans the story, then writes each planned chapter with its own request.
+  await expect(page.getByLabel('본문', { exact: true })).toHaveCount(2);
   await expect(page.getByLabel('본문', { exact: true }).first()).toHaveValue(
     '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.',
   );
-  await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
-  await expect(page.getByLabel('본문', { exact: true })).toHaveCount(2);
   await expect(page.getByLabel('본문', { exact: true }).nth(1)).toHaveValue(
     '서우는 한글로 긴 편지를 쓰기 시작했다.',
   );
+  expect(state.requests.map((request) => request.beat?.title)).toEqual(['미래에서 온 편지', '새벽의 답장']);
+  expect(state.requests.map((request) => request.scenes.length)).toEqual([0, 1]);
+  expect(state.requests.map((request) => request.upcoming?.length)).toEqual([1, 0]);
+  await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
+  await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
+  // The plan is used up, so continuing sends no beat.
+  expect(state.requests.at(-1)?.beat).toBeUndefined();
   state.fail = true;
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByRole('status')).toContainText('AI가 잠시 쉬고 있어요');
+  await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
+});
+
+test('구성한 장을 쓰다 실패해도 쓴 장을 보존하고 남은 구성부터 이어 쓴다', async ({ page }) => {
+  await connect(page);
+  const project = sampleProject();
+  const state = { fail: false, beats: [] as (string | undefined)[] };
+  await page.route('**/api/studio', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    const body = route.request().postDataJSON();
+    if (body.action === 'plan')
+      return route.fulfill({
+        json: {
+          ...project,
+          outline: [
+            { title: '첫 장', summary: '서우가 우체국을 찾는다.' },
+            { title: '둘째 장', summary: '서우가 편지를 받는다.' },
+            { title: '셋째 장', summary: '서우가 밤이를 찾는다.' },
+          ],
+        },
+      });
+    state.beats.push(body.input.beat?.title);
+    if (state.fail && body.input.beat?.title === '둘째 장')
+      return route.fulfill({ status: 502, json: { error: '둘째 장을 쓰지 못했습니다.' } });
+    return route.fulfill({
+      json: {
+        ...project.scenes[0],
+        title: body.input.beat.title,
+        narration: `${body.input.beat.title} 본문`,
+      },
+    });
+  });
+  state.fail = true;
+  await page.goto('/studio');
+  await page.getByRole('button', { name: /소설 문장으로/ }).click();
+  await page
+    .getByLabel('이야기 아이디어', { exact: true })
+    .fill('미래에서 온 편지를 읽은 서우가 자신의 이야기를 소설로 쓰기 시작한다.');
+  await page.getByRole('button', { name: '이야기 만들기', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: '둘째 장을 쓰지 못했습니다.' })).toBeVisible();
+  await expect(page.getByLabel('본문', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('구성해 둔 장이 2개 남았습니다.')).toBeVisible();
+  state.fail = false;
+  await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(2);
+  await expect(page.getByLabel('본문', { exact: true }).nth(1)).toHaveValue('둘째 장 본문');
+  await expect(page.getByText('구성해 둔 장이 1개 남았습니다.')).toBeVisible();
+  expect(state.beats).toEqual(['첫 장', '둘째 장', '둘째 장']);
+});
+
+test('다른 도구에서 만든 이미지를 작품 비율로 가져오고 붙여 넣을 프롬프트를 복사한다', async ({
+  page,
+  context,
+}) => {
+  await connect(page);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([value]));
+    },
+    { key: libraryKey, value: sampleProject() },
+  );
+  await page.goto('/studio');
+  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await page.getByRole('button', { name: '프롬프트 복사' }).first().click();
+  await expect(page.getByRole('status')).toContainText('이미지 프롬프트를 복사했습니다');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('화면 비율: 16:9');
+  // A 3:2 picture, as an external image tool returns it.
+  const picture = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 200;
+    const drawing = canvas.getContext('2d')!;
+    drawing.fillStyle = '#cead88';
+    drawing.fillRect(0, 0, 300, 200);
+    return canvas.toDataURL('image/jpeg').split(',')[1]!;
+  });
+  await page
+    .getByLabel('1번째 장면 이미지 파일', { exact: true })
+    .setInputFiles({ name: 'scene.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(picture, 'base64') });
+  const image = page.locator('.scene-visual img').first();
+  await expect(image).toHaveAttribute('src', /^\/api\/assets\/[a-f0-9-]{36}\.png$/);
+  await expect.poll(() => image.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBe(1920);
+  expect(await image.evaluate((node) => (node as HTMLImageElement).naturalHeight)).toBe(1080);
+  await page.reload();
+  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await expect(page.locator('.scene-visual img').first()).toHaveAttribute('src', /\.png$/);
 });
 test('웹툰 말풍선과 이미지를 미리보고 한글 PNG로 내보낸다', async ({ page }) => {
   await connect(page);

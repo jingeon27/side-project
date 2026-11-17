@@ -1,6 +1,11 @@
-import { voiceRunInputSchema } from '../../../../../lib/voice-training';
-import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../../../server/errors';
-import { startVoiceTraining } from '../../../../../server/voice-training-provider';
+import { voiceRunInputSchema } from '../../../../../features/voice/model/voice-training';
+import { startVoiceTraining } from '../../../../../features/voice/server/voice-training-provider';
+import {
+  errorResponse,
+  readJson,
+  requireLocalRequest,
+  StudioError,
+} from '../../../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {

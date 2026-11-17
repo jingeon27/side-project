@@ -1,5 +1,5 @@
-import { Studio } from '../../components/Studio';
-import { formatSchema } from '../../lib/story';
+import { formatSchema } from '../../features/story/model/story';
+import { Studio } from '../../features/studio/ui/Studio';
 
 export default async function Workspace({
   searchParams,

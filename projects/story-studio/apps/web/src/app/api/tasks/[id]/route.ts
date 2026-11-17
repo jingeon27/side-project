@@ -1,6 +1,6 @@
-import { errorResponse, requireLocalRequest } from '../../../../server/errors';
-import { cancelLocalVideo } from '../../../../server/local-worker';
-import { videoStatus } from '../../../../server/provider';
+import { videoStatus } from '../../../../features/studio/server/provider';
+import { errorResponse, requireLocalRequest } from '../../../../shared/server/errors';
+import { cancelLocalVideo } from '../../../../shared/server/local-worker';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {

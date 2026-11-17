@@ -2,8 +2,8 @@ import Link from 'next/link';
 
 import { ArrowRight, Clapperboard } from 'lucide-react';
 
-import { StudioLink } from '../components/StudioLink';
-import { formats } from '../lib/story';
+import { formats } from '../features/story/model/story';
+import { StudioLink } from '../features/studio/ui/StudioLink';
 
 export default function Home() {
   return (

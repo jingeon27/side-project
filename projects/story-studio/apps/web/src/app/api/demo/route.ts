@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-import { projectSchema } from '../../../lib/story';
-import { dataPath, examplePath } from '../../../server/assets';
-import { errorResponse, requireLocalRequest, StudioError } from '../../../server/errors';
+import { dataPath, examplePath } from '../../../features/media/server/assets';
+import { projectSchema } from '../../../features/story/model/story';
+import { errorResponse, requireLocalRequest, StudioError } from '../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {

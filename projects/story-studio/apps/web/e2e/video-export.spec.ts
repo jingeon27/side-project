@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
-import { libraryKey } from '../src/lib/library';
-import { sampleProject } from '../src/lib/sample';
+import { libraryKey } from '../src/features/library/model/library';
+import { sampleProject } from '../src/features/story/model/sample';
 
 test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친다', async ({ page }, testInfo) => {
   const fixture = await page.evaluate(async () => {

@@ -1,6 +1,10 @@
-import { errorResponse, requireLocalRequest } from '../../../../server/errors';
-import { localConfiguration } from '../../../../server/local-worker';
-import { getVoiceDataset, getVoiceRuns, getVoiceSamples } from '../../../../server/voice-store';
+import {
+  getVoiceDataset,
+  getVoiceRuns,
+  getVoiceSamples,
+} from '../../../../features/voice/server/voice-store';
+import { errorResponse, requireLocalRequest } from '../../../../shared/server/errors';
+import { localConfiguration } from '../../../../shared/server/local-worker';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {

@@ -1,7 +1,11 @@
-import { voiceNameSchema } from '../../../lib/voice-training';
-import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../server/errors';
-import { localConfiguration } from '../../../server/local-worker';
-import { createVoiceDataset, listTrainedVoices, listVoiceDatasets } from '../../../server/voice-store';
+import { voiceNameSchema } from '../../../features/voice/model/voice-training';
+import {
+  createVoiceDataset,
+  listTrainedVoices,
+  listVoiceDatasets,
+} from '../../../features/voice/server/voice-store';
+import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../shared/server/errors';
+import { localConfiguration } from '../../../shared/server/local-worker';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {

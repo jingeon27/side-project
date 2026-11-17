@@ -12,9 +12,11 @@ import time
 import traceback
 
 from .generation.speech import generate_voice
+from .generation.image import generate_image
 from .generation.text import generate_text
-from .generation.visual import generate_visual
+from .generation.video import generate_video
 from .generation.verified_speech import IncompleteSpeechError
+from .materials.sync import delete_materials, sync_materials
 from .media import compose
 from .runtime import JobContext
 from .voices.jobs import train
@@ -26,14 +28,20 @@ def dispatch(request, job, examples_dir):
         return generate_text(job.root, request, job.progress)
     if request['action'] == 'voice':
         return generate_voice(job.root, request, job.progress)
-    if request['action'] in ('image', 'video'):
-        return generate_visual(job.root, request, job.progress, request['action'] == 'image')
+    if request['action'] == 'image':
+        return generate_image(job.root, request, job.progress, examples_dir)
+    if request['action'] == 'video':
+        return generate_video(job.root, request, job.progress, examples_dir)
     if request['action'] == 'compose':
         return compose(job.root, request, examples_dir, job.progress)
     if request['action'] == 'normalize-voice':
         return normalize(job.root, request)
     if request['action'] == 'train-voice':
         return train(job.root, request, job.progress, job.save_task)
+    if request['action'] == 'sync-material':
+        return sync_materials(job.root, request, job.progress)
+    if request['action'] == 'delete-material':
+        return delete_materials(job.root, request)
     raise ValueError('지원하지 않는 작업입니다')
 
 
@@ -41,7 +49,7 @@ def run_request(request, job, examples_dir):
     started = time.monotonic()
     with (job.root / 'local/gpu.lock').open('a') as lock:
         job.progress('로컬 모델 실행 순서를 기다리는 중')
-        uses_model = request['action'] not in ('compose', 'normalize-voice')
+        uses_model = request['action'] not in ('compose', 'normalize-voice', 'delete-material')
         if uses_model:
             fcntl.flock(lock, fcntl.LOCK_EX)
         job.running = True

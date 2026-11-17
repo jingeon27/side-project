@@ -1,7 +1,13 @@
 {
   "text": {
-    "repo": "mlx-community/Qwen3.8-27B-4bit",
-    "revision": "b935172e4bb5dcd0543774a34748fb92422e3027"
+    "repo": "mlx-community/gemma-4-31b-it-4bit",
+    "revision": "696d436c404745a59f30e4939a658162b0a9e57f",
+    "directory": "text-gemma-4-31b-it-4bit"
+  },
+  "embedding": {
+    "repo": "mlx-community/embeddinggemma-2-8bit",
+    "revision": "7505ef2f8ddef45efef6d060865f27989b3c9cec",
+    "directory": "embedding-gemma-2-8bit"
   },
   "voice": {
     "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-4bit",
@@ -16,6 +22,15 @@
     "revision": "78a389c776a5483b2d0d4ea5494e11012e0d6159",
     "directory": "asr-qwen3-1.7b"
   },
-  "wan-source": { "repo": "Wan-AI/Wan2.1-T2V-1.3B", "revision": "37ec512624d61f7aa208f7ea8140a131f93afc9a" },
+  "image": {
+    "repo": "black-forest-labs/FLUX.2-klein-4B",
+    "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "patterns": ["model_index.json", "transformer/*", "text_encoder/*", "vae/*", "tokenizer/*"]
+  },
+  "video-source": {
+    "repo": "Wan-AI/Wan2.2-TI2V-5B",
+    "revision": "921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+    "patterns": ["*.json", "*.safetensors", "*.pth"]
+  },
   "tokenizer": { "repo": "google/umt5-xxl", "revision": "66cb9e7e85526fe440a945569e42c72fb6cbc0ad" }
 }
