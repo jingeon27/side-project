@@ -5,13 +5,9 @@ import numpy as np
 from PIL import Image
 
 from clash_bot.paths import ASSETS_DIR, FIXTURES_DIR
-from clash_bot.perception.vision_worker import (
-    VisionWorker,
-    graveyard_presence,
-    input_guard,
-    poison_rings,
-    red_markers,
-)
+from clash_bot.perception.effects import graveyard_presence, poison_rings
+from clash_bot.perception.markers import red_markers
+from clash_bot.perception.vision_worker import VisionWorker, input_guard
 
 
 class PoisonOutlineTest(unittest.TestCase):
