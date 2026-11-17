@@ -5,7 +5,7 @@ import unittest
 from clash_bot.arena.sim.belief import BeliefSampler, compatible_openings
 from clash_bot.arena.sim.candidates import legal_actions
 from clash_bot.arena.sim.engine import Arena, public_board
-from clash_bot.arena.sim.rules import Action, deck_ids
+from clash_bot.arena.sim.rules import DECKS, TILE, Action, deck_ids
 
 
 class BeliefTest(unittest.TestCase):
@@ -22,7 +22,7 @@ class BeliefTest(unittest.TestCase):
             ]
             arena.play(moves, 60)
         observation = arena.observe(0)
-        sampled = BeliefSampler(observation, 555).sample()
+        sampled, _ = BeliefSampler(observation, 555).conditioned()
         self.assertEqual(sampled.state()["tick"], arena.state()["tick"])
         self.assertEqual(sampled.state()["players"][0]["hand"], arena.state()["players"][0]["hand"])
         self.assertEqual(
@@ -41,11 +41,11 @@ class BeliefTest(unittest.TestCase):
         self.assertTrue(set(state["players"][0]["hand"]) <= set(deck_ids("hog_cycle")))
         self.assertTrue(set(state["players"][1]["hand"]) <= set(deck_ids("giant_beatdown")))
         observation = arena.observe(0)
-        self.assertEqual(observation["decks"], ["hog_cycle", "giant_beatdown"])
-        enemy = compatible_openings(observation, 1)
+        self.assertEqual(observation["decks"], ["hog_cycle", None])
+        enemy = compatible_openings(observation, 1, "giant_beatdown")
         self.assertTrue(all(sorted(order) == sorted(deck_ids("giant_beatdown")) for order in enemy))
-        sampled = BeliefSampler(observation, 4).sample()
-        self.assertEqual(sampled.decks, ["hog_cycle", "giant_beatdown"])
+        sampled, _ = BeliefSampler(observation, 4).conditioned()
+        self.assertEqual(public_board(sampled.state()), public_board(arena.state()))
         self.assertEqual(sampled.state()["players"][0]["hand"], state["players"][0]["hand"])
         with self.assertRaisesRegex(ValueError, "draw order"):
             Arena(1, [deck_ids("bait")] * 2, ["hog_cycle", "hog_cycle"])
@@ -67,7 +67,7 @@ class BeliefTest(unittest.TestCase):
         arena.play([own, Action(-1)], 5)
         observation = arena.observe(0)
         self.assertEqual([row["action"] for row in observation["pending"]], [own.row()])
-        sampled = BeliefSampler(observation, 9).sample()
+        sampled, _ = BeliefSampler(observation, 9).conditioned()
         self.assertEqual(public_board(sampled.state()), public_board(arena.state()))
         self.assertEqual(sampled.pending, arena.pending)
         # The rebuilt world runs our pending play on the same tick as the real one.
@@ -75,6 +75,23 @@ class BeliefTest(unittest.TestCase):
             world.play([Action(-1)] * 2, 30)
         self.assertEqual(public_board(sampled.state()), public_board(arena.state()))
         self.assertEqual(sampled.history[-1]["tick"], arena.history[-1]["tick"])
+
+    def test_enemy_deck_is_inferred_only_after_its_delayed_card_becomes_public(self):
+        own, enemy = deck_ids("counterpush"), deck_ids("drill_control")
+        arena = Arena(1, [own, enemy], ["counterpush", "drill_control"], delays=(22, 22))
+        arena.play([Action(-1)] * 2, 100)
+        drill = Action(enemy[0], round(3.5 * TILE), round(6.5 * TILE))
+        arena.play([Action(-1), drill], 1)
+        observation = arena.observe(0)
+        sampler = BeliefSampler(observation, 77)
+        self.assertEqual(set(sampler.openings[1]), set(DECKS))
+        self.assertEqual(observation["pending"], [])
+        arena.play([Action(-1)] * 2, 25)
+        sampler = BeliefSampler(arena.observe(0), 77)
+        self.assertEqual(set(sampler.openings[1]), {"drill_control"})
+        observation["decks"][1] = "drill_control"
+        with self.assertRaisesRegex(ValueError, "hide the opponent deck"):
+            BeliefSampler(observation, 77)
 
 
 if __name__ == "__main__":

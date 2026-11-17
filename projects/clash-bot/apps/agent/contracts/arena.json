@@ -53,12 +53,90 @@
         "IceSpirits"
       ],
       "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "drill_control": {
+      "cards": [
+        "GoblinDrill",
+        "Firecracker",
+        "BombTower",
+        "Valkyrie",
+        "Wallbreakers",
+        "Goblins",
+        "Fireball",
+        "Log"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "hog_firecracker": {
+      "cards": ["HogRider", "Firecracker", "Tesla", "Knight", "Skeletons", "IceSpirits", "Earthquake", "Log"],
+      "forms": [0, 1, 0, 1, 0, 0, 0, 0]
+    },
+    "pekka_bridge": {
+      "cards": [
+        "Pekka",
+        "BattleRam",
+        "Assassin",
+        "ElectroWizard",
+        "EliteArcher",
+        "Poison",
+        "Zap",
+        "DarkPrince"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "lava_balloon": {
+      "cards": [
+        "LavaHound",
+        "Balloon",
+        "MegaMinion",
+        "SkeletonDragons",
+        "Tombstone",
+        "Fireball",
+        "Arrows",
+        "BarbLog"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "royal_giant": {
+      "cards": [
+        "RoyalGiant",
+        "Fisherman",
+        "Hunter",
+        "ElectroSpirit",
+        "Skeletons",
+        "Ghost",
+        "Fireball",
+        "Log"
+      ],
+      "forms": [1, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "xbow_cycle": {
+      "cards": ["Xbow", "Archer", "Tesla", "Knight", "Skeletons", "IceSpirits", "Fireball", "Log"],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "giant_graveyard": {
+      "cards": ["Giant", "Graveyard", "MiniPekka", "Bats", "SkeletonArmy", "Musketeer", "Arrows", "Snowball"],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "golem": {
+      "cards": [
+        "Golem",
+        "DarkWitch",
+        "RageBarbarian",
+        "BabyDragon",
+        "Tornado",
+        "Lightning",
+        "BarbLog",
+        "MegaMinion"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
     }
   },
   "level": 11,
   "liveCommandDelayTicks": 22,
   "selfplay": {
     "liveMirror": 0.5,
+    "liveAgainstPool": 0.5,
     "decisionTicks": 20,
     "searchTicks": 40,
     "rootActions": 16,

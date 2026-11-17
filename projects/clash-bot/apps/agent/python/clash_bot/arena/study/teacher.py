@@ -30,11 +30,9 @@ class Teacher:
         self.rules_id = rules_identity()["id"]
 
     def label(self, observation, identity, family, horizon=240):
-        root = BeliefSampler(observation, seed_for("tactical_root", identity)).sample(
-            into=self.root
-        )
-        if public_board(root.state()) != public_board(observation["state"]):
-            return None
+        root, _attempts = BeliefSampler(
+            observation, seed_for("tactical_root", identity)
+        ).conditioned(into=self.root)
         team = observation["team"]
         actions = legal_actions(root.battle, team)
         if Action(-1) not in actions:

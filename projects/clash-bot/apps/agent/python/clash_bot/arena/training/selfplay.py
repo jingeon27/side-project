@@ -28,6 +28,7 @@ class SelfplaySpec(BaseModel):
     # Share of games that are the live deck's mirror; the rest pair pool decks so the network
     # learns what card attributes mean rather than one deck's cards.
     liveMirror: float = Field(ge=0, le=1)
+    liveAgainstPool: float = Field(ge=0, le=1)
     decisionTicks: PositiveInt
     searchTicks: PositiveInt
     rootActions: int = Field(ge=2)
@@ -55,6 +56,11 @@ def setup_for(game_id):
     rng = np.random.default_rng(seed_for("setup", game_id))
     if rng.random() < SELFPLAY.liveMirror:
         decks = [LIVE_DECK, LIVE_DECK]
+    elif rng.random() < SELFPLAY.liveAgainstPool:
+        threats = sorted(set(DECKS) - {LIVE_DECK})
+        decks = [LIVE_DECK, threats[int(rng.integers(len(threats)))]]
+        if rng.integers(2):
+            decks.reverse()
     else:
         names = sorted(DECKS)
         decks = [names[int(rng.integers(len(names)))] for _ in range(2)]

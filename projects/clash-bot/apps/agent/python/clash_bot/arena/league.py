@@ -20,6 +20,7 @@ from clash_bot.files import atomic_json
 from .champions import checkpoint, initialize, publish_champion
 from .policy.network import LEAGUE_KEY, Policy
 from .sim.rules import rules_identity
+from .sim.verification import verify
 from .study.curriculum import from_selfplay
 from .study.export import export
 from .training.benchmark import benchmark
@@ -80,6 +81,11 @@ def run(
 
     try:
         rules = rules_identity()
+        verification = verify(data_dir)
+        if not verification["passed"]:
+            raise ValueError(
+                "Native simulator verification failed; inspect arena/verification before training"
+            )
         root = data_dir / "arena/leagues" / f"{rules['id'][:16]}-{LEAGUE_KEY}"
         active = control / "active.json"
         previous = Path(json.loads(active.read_text())["root"]) if active.exists() else None

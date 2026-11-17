@@ -14,8 +14,7 @@ from clash_bot.files import atomic_json
 
 from ..policy.context import NAMES
 from ..sim.engine import Arena
-from ..sim.rules import TILE, Action, digest, rules_identity
-from ..training.selfplay import live_mirror
+from ..sim.rules import LIVE_DECK, TILE, Action, digest, rules_identity
 from .export import render
 from .positions import balanced_positions
 from .teacher import Teacher
@@ -164,7 +163,20 @@ def build(data_dir, count=64, seed=0, split="train"):
 def from_selfplay(data_dir, episodes, count=8):
     teacher = Teacher()
     labels = []
-    for position in balanced_positions(list(filter(live_mirror, episodes)), count * 8):
+    # Only our action vocabulary is eight-card-specific. Keep our live-deck seat against
+    # other decks too, so defensive drill/firecracker observations can reach Qwen.
+    eligible = [
+        {**game, "samples": samples}
+        for game in episodes
+        if (
+            samples := [
+                sample
+                for sample in game["samples"]
+                if sample["observation"]["decks"][sample["observation"]["team"]] == LIVE_DECK
+            ]
+        )
+    ]
+    for position in balanced_positions(eligible, count * 8):
         sample = position["sample"]
         obs = sample["observation"]
         row = teacher.label(

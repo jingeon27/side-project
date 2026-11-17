@@ -2,7 +2,13 @@ import unittest
 from unittest.mock import patch
 
 from clash_bot.arena.policy.network import Policy
-from clash_bot.arena.training.evaluation import evaluate, paired_gate, pfsp_weights
+from clash_bot.arena.sim.rules import DECKS, LIVE_DECK
+from clash_bot.arena.training.evaluation import (
+    evaluate,
+    evaluation_setup,
+    paired_gate,
+    pfsp_weights,
+)
 from clash_bot.arena.training.selfplay import live_setup
 
 
@@ -49,15 +55,40 @@ class QualificationTest(unittest.TestCase):
         self.assertIs(calls[0].args[0][0], a)
         self.assertIs(calls[1].args[0][1], a)
         self.assertTrue(all(call.kwargs["training"] is False for call in calls))
-        # Deployed play: no search, the live deck's mirror at the measured input delay.
+        # Same setup/seed within a pair; both policies control both decks, without search.
         self.assertTrue(all(call.kwargs["simulations"] == 0 for call in calls))
-        self.assertTrue(all(call.kwargs["setup"] == live_setup() for call in calls))
+        self.assertEqual(calls[0].kwargs["setup"], live_setup())
+        self.assertEqual(calls[2].kwargs["setup"], calls[3].kwargs["setup"])
+        self.assertNotEqual(calls[2].kwargs["setup"]["decks"][1], LIVE_DECK)
         with patch(
             "clash_bot.arena.training.evaluation.play_game",
             return_value={**game, "completed": False},
         ):
             with self.assertRaisesRegex(ValueError, "Unverified"):
                 evaluate(a, b, "rules-a", 0, pairs=1)
+
+    def test_full_evaluation_includes_every_threat_deck_before_promotion(self):
+        setups = [evaluation_setup(pair, 3) for pair in range(2 * (len(DECKS) - 1))]
+        self.assertEqual({row["decks"][1] for row in setups}, set(DECKS))
+        self.assertTrue(all(row["decks"][0] == LIVE_DECK for row in setups))
+
+    def test_mixed_matchup_wins_cannot_hide_a_live_mirror_regression(self):
+        challenger = Policy(metadata={"version": 1, "rulesID": "rules-a"})
+        champion = Policy(metadata={"version": 0, "rulesID": "rules-a"})
+
+        def game(models, identity, *args, **kwargs):
+            pair = int(identity.rsplit("-", 1)[1])
+            seat = 0 if models[0] is challenger else 1
+            # All mixed pairs win, four mirror pairs lose, remaining mirrors tie.
+            winner = seat if pair % 2 else 1 - seat if pair < 8 else 2
+            return {"completed": True, "rejectedCommands": 0, "winner": winner, "samples": []}
+
+        with patch("clash_bot.arena.training.evaluation.play_game", side_effect=game):
+            result = evaluate(challenger, champion, "rules-a", 0, pairs=64)
+        self.assertGreater(result["gate"]["score"], 0.55)
+        self.assertLess(result["matchupStrata"]["liveMirror"]["score"], 0.5)
+        self.assertFalse(result["gate"]["passed"])
+        self.assertEqual(result["gate"]["reason"], "matchup_stratum_regression")
 
     def test_rule_mismatch_and_interrupted_evaluation_do_not_promote(self):
         a = Policy(metadata={"version": 1, "rulesID": "rules-a"})

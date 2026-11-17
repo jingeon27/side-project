@@ -28,6 +28,12 @@ class SetupTest(unittest.TestCase):
         mirrors = sum(setup["decks"] == [LIVE_DECK, LIVE_DECK] for setup in setups) / len(setups)
         self.assertGreater(mirrors, 0.45)
         self.assertLess(mirrors, 0.65)
+        own_matchups = sum(
+            LIVE_DECK in setup["decks"] and len(set(setup["decks"])) == 2 for setup in setups
+        ) / len(setups)
+        self.assertGreater(own_matchups, 0.18)
+        self.assertLess(own_matchups, 0.4)
+        self.assertEqual({name for setup in setups for name in setup["decks"]}, set(DECKS))
         low, high = SELFPLAY.commandDelayTicks
         delays = {delay for setup in setups for delay in setup["delays"]}
         self.assertTrue(delays <= set(range(low, high + 1)) and len(delays) > 3)

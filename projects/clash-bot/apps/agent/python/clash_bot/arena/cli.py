@@ -10,6 +10,7 @@ from .champions import checkpoint, export_policy
 from .league import run
 from .policy.network import Policy
 from .sim import balance, catalogue_build
+from .sim.verification import verify
 from .study.curriculum import build
 from .study.export import export
 from .training.benchmark import benchmark
@@ -34,6 +35,9 @@ def main():
     start.add_argument("--evaluate-every", type=int, default=1)
     commands.add_parser("status")
     commands.add_parser("stop")
+    commands.add_parser(
+        "verify", help="Check native pool/interactions; this does not certify live-client parity"
+    )
     exported = commands.add_parser("export")
     exported.add_argument("--samples", type=int, default=8)
     live = commands.add_parser("policy", help="Write one checkpoint for counterpush play --policy")
@@ -92,6 +96,11 @@ def main():
                 DATA, [read_episode(path) for path in league["episodes"][-4:]], args.samples
             )
         }
+    elif args.command == "verify":
+        result = verify(DATA)
+        if not result["passed"]:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            raise SystemExit(1)
     elif args.command == "catalogue":
         result = catalogue_build.write()
     elif args.command == "benchmark":

@@ -54,7 +54,8 @@ class CandidateTest(unittest.TestCase):
             # Two draw orders put every one of the eight cards in an opening hand.
             for order in (ids, ids[4:] + ids[:4]):
                 arena = Arena(5, [order, order], [name, name])
-                arena.play([Action(-1)] * 2, 100)
+                # Full mana also covers the new 7/8-elixir cards; cost filtering is intentional.
+                arena.play([Action(-1)] * 2, 300)
                 for team in (0, 1):
                     for card in arena.state()["players"][team]["hand"]:
                         with self.subTest(deck=name, team=team, card=CARDS[card]):

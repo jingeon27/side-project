@@ -9,7 +9,16 @@ import json
 from fractions import Fraction
 
 from .candidates import dense_actions
-from .rules import FIELDS, LIVE_DECK, SPEC, command, deck_ids, forms_of, new_battle
+from .rules import (
+    FIELDS,
+    LIVE_DECK,
+    OBSERVATION_FORMAT,
+    SPEC,
+    command,
+    deck_ids,
+    forms_of,
+    new_battle,
+)
 
 
 def public_board(state):
@@ -75,7 +84,7 @@ class Arena:
 
         `delays` is each side's input delay in ticks (the live client measured 21-22); a play
         runs and becomes visible that long after it was accepted. `levels` is each side's card
-        level. All three are the public setup of the game, as unit level badges are.
+        level. Only the observer's deck is public; the other list is never sent to it.
         """
         self.decks = list(decks or self.decks)
         self.delays = list(delays or self.delays)
@@ -143,11 +152,12 @@ class Arena:
         # These are public plays. No enemy hand/queue, future RNG or save blob is
         # handed to a policy or search. Each observer gets its own opening and its own
         # accepted plays that have not run yet; the opponent's stay hidden until they run.
-        # Decks, delays and levels are the public setup, as in the Counterpush mirror match.
+        # The opponent deck is inferred from public plays, never read from the match setup.
         observation = {
+            "format": OBSERVATION_FORMAT,
             "team": team,
             "state": state,
-            "decks": self.decks.copy(),
+            "decks": [name if actor == team else None for actor, name in enumerate(self.decks)],
             "delays": self.delays.copy(),
             "levels": self.levels.copy(),
             "history": self.history.copy(),

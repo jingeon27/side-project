@@ -90,18 +90,8 @@ def classify(before_rows, after_rows):
 
 
 def relevant_rows(table):
-    names = (
-        "knight",
-        "firespirit",
-        "goblinhut",
-        "graveyard",
-        "icewizard",
-        "poison",
-        "skeleton",
-        "barblog",
-        "barbarian",
-        "speargoblin",
-    )
+    # A new opponent card's projectile/death-spawn/buff can change a matchup too.
+    # Diff every named object instead of only substrings of the live eight-card deck.
     rows = {}
     for group in (
         "cards",
@@ -118,7 +108,7 @@ def relevant_rows(table):
             if not isinstance(row, dict):
                 continue
             name = row.get("name", "")
-            if any(part in name.lower() for part in names):
+            if name:
                 rows[f"{group}.{name}"] = row
     for group in ("globals", "towers"):
         if group in table:
@@ -191,7 +181,7 @@ def stage(data_dir, version):
             else "requires_engine_pin_update"
         ),
         "requiredChecks": [
-            "8-card forms/spawns/ability/Graveyard contracts",
+            "arena verify and pool-wide deployment/forms/spawns contracts",
             "public information masking",
             "seat-swapped heldout evaluation",
             "Counterpush screen parity",

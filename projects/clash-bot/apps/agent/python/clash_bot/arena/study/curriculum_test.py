@@ -15,7 +15,7 @@ class TacticalCurriculumTest(unittest.TestCase):
     def test_an_unavailable_focus_card_is_not_recorded_as_a_card_opportunity(self):
         sample = {"observation": {"team": 0, "state": {"tick": 100}}}
         positions = [{"gameID": "before", "sample": sample, "focusCard": 3, "stage": 0}]
-        episode = {"setup": {"decks": ["counterpush", "counterpush"]}, "rulesID": "rules"}
+        episode = {"gameID": "before", "samples": [], "rulesID": "rules"}
         with (
             patch("clash_bot.arena.study.curriculum.balanced_positions", return_value=positions),
             patch("clash_bot.arena.study.curriculum.Teacher") as teacher,
@@ -24,6 +24,17 @@ class TacticalCurriculumTest(unittest.TestCase):
             teacher.return_value.label.return_value = {"actions": [[-1, 0, 0]]}
             self.assertEqual(from_selfplay("unused", [episode], count=1), [])
             write.assert_not_called()
+
+    def test_mixed_deck_positions_reach_the_teacher_only_for_our_live_deck_seat(self):
+        ours = {"observation": {"team": 0, "decks": ["counterpush", None]}}
+        enemy = {"observation": {"team": 1, "decks": [None, "drill_control"]}}
+        game = {"gameID": "mixed", "rulesID": "rules", "samples": [ours, enemy]}
+        with (
+            patch("clash_bot.arena.study.curriculum.balanced_positions", return_value=[]) as choose,
+            patch("clash_bot.arena.study.curriculum.Teacher"),
+        ):
+            self.assertEqual(from_selfplay("unused", [game]), [])
+        self.assertEqual(choose.call_args.args[0][0]["samples"], [ours])
 
     def test_ready_skill_and_hut_can_lose_to_waiting_when_the_rollout_finds_no_tower_benefit(self):
         teacher = Teacher()

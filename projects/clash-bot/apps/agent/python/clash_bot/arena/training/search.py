@@ -12,7 +12,7 @@ import numpy as np
 
 from ..sim.belief import BeliefSampler
 from ..sim.candidates import legal_actions
-from ..sim.engine import Arena, public_board
+from ..sim.engine import Arena
 from ..sim.rules import Action, command
 
 
@@ -102,18 +102,10 @@ def search(
     sampler = BeliefSampler(observation, seed)
     workspace = workspace or Workspace(particles)
     worlds, attempts = [], 0
-    visible = public_board(observation["state"])
     for index in range(particles):
-        for _ in range(16):
-            world = sampler.sample(into=workspace.worlds[index])
-            attempts += 1
-            if public_board(world.state()) == visible:
-                worlds.append(world)
-                break
-        else:
-            raise ValueError(
-                "Public history hypotheses cannot reproduce the visible board; refuse imaginary-root search"
-            )
+        world, count = sampler.conditioned(into=workspace.worlds[index])
+        attempts += count
+        worlds.append(world)
     team = observation["team"]
     root = Node()
     candidates = [Action(*row) for row in observation["legalActions"]]
@@ -203,7 +195,8 @@ def search(
         ],
         "simulations": int(visits.sum()),
         "elapsedMs": (time.perf_counter() - began) * 1000,
-        "beliefHypotheses": [len(rows) for rows in sampler.openings],
+        "beliefHypotheses": [sum(map(len, pool.values())) for pool in sampler.openings],
+        "deckHypotheses": [len(pool) for pool in sampler.openings],
         "maxDepth": reached,
         "depthLimit": depth,
         "maxLookaheadSeconds": (

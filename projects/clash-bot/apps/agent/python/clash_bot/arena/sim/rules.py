@@ -19,6 +19,7 @@ from clash_bot.paths import CONTRACTS_DIR
 from ..catalogue import current
 
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
+OBSERVATION_FORMAT = "clash-arena-observation-v2"
 
 
 class DeploymentSpec(BaseModel):
@@ -111,6 +112,13 @@ def rules_identity():
         "decks": {name: deck.model_dump(mode="json") for name, deck in sorted(DECKS.items())},
         "liveDeck": LIVE_DECK,
         "level": SPEC["level"],
+        # Visibility and timing alter the information set/returns just as a balance patch does.
+        "observationFormat": OBSERVATION_FORMAT,
+        "opponentDeck": "public_play_inferred_pool_prior",
+        "evaluationSuite": "live_mirror_and_pool_v2",
+        "tacticalActors": "own_live_deck_any_opponent_v1",
+        "selfplay": SPEC["selfplay"],
+        "liveCommandDelayTicks": SPEC["liveCommandDelayTicks"],
         # Policy inputs read cards through this catalogue; a new one is a new rule set.
         "catalogue": current().id,
     }

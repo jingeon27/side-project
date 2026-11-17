@@ -73,6 +73,20 @@ class BalanceContractsTest(unittest.TestCase):
         flag = classify({"cards.Knight": {"evolves": False}}, {"cards.Knight": {"evolves": True}})
         self.assertEqual(flag[0]["kind"], "mechanics")
 
+    def test_opponent_projectiles_and_death_spawns_outside_the_live_deck_are_watched(self):
+        before = {
+            "units": {"GoblinDrill": {"name": "GoblinDrill", "death_spawn_count": 2}},
+            "projectiles": [{"name": "Firecracker", "damage": 100}],
+        }
+        after = {
+            "units": {"GoblinDrill": {"name": "GoblinDrill", "death_spawn_count": 3}},
+            "projectiles": [{"name": "Firecracker", "damage": 110}],
+        }
+        changes = classify(relevant_rows(before), relevant_rows(after))
+        self.assertEqual(
+            {row["object"] for row in changes}, {"units.GoblinDrill", "projectiles.Firecracker"}
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

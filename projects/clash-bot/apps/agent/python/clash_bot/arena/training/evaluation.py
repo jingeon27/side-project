@@ -6,7 +6,17 @@ import numpy as np
 
 from clash_bot.statistics import paired_win_probability
 
+from ..sim.rules import DECKS, LIVE_DECK
 from .selfplay import live_setup, play_game
+
+
+def evaluation_setup(pair, generation):
+    """Half live mirrors, half fixed threat decks, with both policies taking each seat/deck."""
+    setup = live_setup()
+    others = sorted(set(DECKS) - {LIVE_DECK})
+    if pair % 2:
+        setup["decks"][1] = others[(pair // 2 + generation) % len(others)]
+    return setup
 
 
 def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
@@ -51,7 +61,7 @@ def evaluate(
     report=None,
     should_stop=None,
 ):
-    """Paired games of the two policies as deployed: live setup, no search, no training."""
+    """Paired games as deployed, with the live deck and every configured threat deck."""
     for model in (challenger, champion):
         if model.metadata.get("rulesID", rules_id) != rules_id:
             raise ValueError("Evaluation policy belongs to another rule set")
@@ -59,19 +69,20 @@ def evaluate(
     # even with all wins. Increase the minimum before drawing holdout games.
     alpha = 0.05 / ((generation + 1) * (generation + 2))
     required_pairs = max(pairs, math.ceil(-math.log2(alpha)) + 1) if pairs >= 16 else pairs
+    if pairs >= 16:
+        required_pairs = max(required_pairs, 2 * (len(DECKS) - 1))
     results, pair_scores = [], []
     for pair in range(required_pairs):
         if should_stop and should_stop():
             break
         identity = f"holdout-{generation}-{pair}"
+        setup = evaluation_setup(pair, generation)
         scores = []
         for seat in (0, 1):
             models = [champion, champion]
             models[seat] = challenger
             # Same world seed for the two seats, no training, no search.
-            game = play_game(
-                models, identity, rules_id, simulations=0, training=False, setup=live_setup()
-            )
+            game = play_game(models, identity, rules_id, simulations=0, training=False, setup=setup)
             if not game["completed"] or game["rejectedCommands"]:
                 raise ValueError("Unverified or invalid-action evaluation game")
             score = 0.5 if game["winner"] == 2 else 1 if game["winner"] == seat else 0
@@ -94,10 +105,21 @@ def evaluate(
     # Alpha spending bounds false promotion probability over repeated generations.
     complete = len(pair_scores) == required_pairs
     gate = paired_gate(pair_scores, alpha=alpha)
+    strata = {
+        name: {
+            "pairs": len(scores),
+            "score": sum(scores) / len(scores) if scores else None,
+        }
+        for name, scores in (("liveMirror", pair_scores[::2]), ("mixedDeck", pair_scores[1::2]))
+    }
+    if gate["passed"] and any(
+        row["score"] is None or row["score"] < 0.5 for row in strata.values()
+    ):
+        gate = {**gate, "passed": False, "reason": "matchup_stratum_regression"}
     if not complete:
         gate = {**gate, "passed": False, "reason": "interrupted_evaluation"}
     return {
-        "format": "clash-arena-paired-eval-v1",
+        "format": "clash-arena-paired-eval-v2",
         "rulesID": rules_id,
         "generation": generation,
         "complete": complete,
@@ -108,6 +130,7 @@ def evaluate(
         "champion": {"version": champion.metadata["version"], "weightsSHA256": champion.checksum()},
         "seedDomain": "holdout",
         "trainingGamesIncluded": False,
+        "matchupStrata": strata,
         "pairs": pair_scores,
         "games": results,
         "minimumPairs": pairs,

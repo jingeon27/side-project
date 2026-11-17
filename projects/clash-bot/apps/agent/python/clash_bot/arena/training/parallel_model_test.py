@@ -8,14 +8,14 @@ from pathlib import Path
 from ..policy.network import Policy
 from ..sim.rules import rules_identity
 from .parallel import play_frozen_games
-from .selfplay import live_setup, setup_for
+from .selfplay import setup_for
 
 
 @unittest.skipUnless(
     os.environ.get("RUN_ARENA_INTEGRATION") == "1", "optional native process integration"
 )
 class PackagedParallelTests(unittest.TestCase):
-    def test_two_spawned_workers_complete_a_mirror_and_a_mixed_deck_game(self):
+    def test_spawned_workers_complete_matchups_covering_every_pool_deck(self):
         with tempfile.TemporaryDirectory() as directory:
             rules = rules_identity()
             checkpoint = Path(directory) / "checkpoint"
@@ -26,19 +26,29 @@ class PackagedParallelTests(unittest.TestCase):
                     "current": str(checkpoint),
                     "opponent": str(checkpoint),
                     "rulesID": rules["id"],
-                    "id": f"package-smoke-{seat}",
-                    "setup": setup,
-                    "seat": seat,
+                    "id": f"package-smoke-{index}",
+                    "setup": {**setup_for(f"package-smoke-{index}"), "decks": decks},
+                    "seat": index % 2,
                     "simulations": 2,
                     "depth": 2,
                 }
-                for seat, setup in (
-                    (0, live_setup()),
-                    (1, {**setup_for("package-smoke"), "decks": ["giant_beatdown", "bait"]}),
+                for index, decks in enumerate(
+                    (
+                        ["counterpush", "drill_control"],
+                        ["giant_beatdown", "bait"],
+                        ["golem", "lava_balloon"],
+                        ["pekka_bridge", "royal_giant"],
+                        ["hog_cycle", "hog_firecracker"],
+                        ["xbow_cycle", "giant_graveyard"],
+                    )
                 )
             ]
-            games = play_frozen_games(jobs, 2)
-            self.assertEqual(len(games), 2)
+            games = [
+                game
+                for index in range(0, len(jobs), 2)
+                for game in play_frozen_games(jobs[index : index + 2], 2)
+            ]
+            self.assertEqual(len(games), 6)
             self.assertTrue(
                 all(game["completed"] and game["rejectedCommands"] == 0 for game in games)
             )
