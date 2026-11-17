@@ -13,7 +13,7 @@ import traceback
 
 from .generation.speech import generate_voice
 from .generation.text import generate_text
-from .generation.visual import generate_visual
+from .generation.video import generate_visual
 from .generation.verified_speech import IncompleteSpeechError
 from .media import compose
 from .runtime import JobContext
