@@ -62,7 +62,7 @@ compose() {
     --env-file "$directory/.release.env" -f "$directory/compose.yaml" "$@"
 }
 activate() {
-  local directory=$1
+  local directory=$1 recovery=${2:-false}
   local web_id web_state drain_started
   web_id=$(compose "$directory" ps -q web) || return 1
   drain_started=$SECONDS
@@ -73,10 +73,14 @@ activate() {
       # The proxy probes every second with a one-second timeout. Let the failed probe take effect.
       sleep 3
     else
-      # A failed replacement may already be restarting; it must not block restoring the old images.
-      web_state=$(docker inspect --format '{{.State.Status}}' "$web_id") || return 1
-      [[ "$web_state" == restarting || "$web_state" == exited || "$web_state" == dead || "$web_state" == created ]] || return 1
-      printf 'Skipping drain for non-running web container: %s\n' "$web_state"
+      if [[ "$recovery" == true ]]; then
+        # 재시작 중인 앱은 exec와 inspect 사이에도 running으로 바뀐다. 복구는 stop·재생성·health로 검증한다.
+        printf 'Skipping failed web drain while recovering the previous application images.\n'
+      else
+        web_state=$(docker inspect --format '{{.State.Status}}' "$web_id") || return 1
+        [[ "$web_state" == restarting || "$web_state" == exited || "$web_state" == dead || "$web_state" == created ]] || return 1
+        printf 'Skipping drain for non-running web container: %s\n' "$web_state"
+      fi
     fi
   fi
   # Drain SSR while the old API still serves its in-flight reads.
@@ -199,7 +203,7 @@ if [[ "$ACTION" == deploy ]]; then
   if [[ -n "$old" ]]; then
     keep_failed_logs "$directory" || true
     restore_environment
-    activate "$old"
+    activate "$old" true
     echo 'Previous application images restored. Database migrations remain forward-only.' >&2
     exit 1
   fi
@@ -216,7 +220,7 @@ case "$ACTION" in
     [[ -n "$target" ]]
     if activate "$target"; then mark "$target" "$current"; exit 0; fi
     keep_failed_logs "$target" || true
-    activate "$current"
+    activate "$current" true
     exit 1 ;;
   status) compose "$current" ps ;;
   operator)
