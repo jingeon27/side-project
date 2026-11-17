@@ -64,9 +64,10 @@ def initialize(root, rules):
         league = LeagueState.model_validate_json(pointer.read_text()).model_dump()
         if league["rulesID"] != rules["id"]:
             raise ValueError("Create a separate league directory for changed battle rules")
+        publish_champion(root, league)  # Repairs a stop between a promotion and its live file.
         return league
     atomic_json(root / "rules.json", rules)
-    initial = root / "checkpoints/v000000"
+    initial = checkpoint(root, 0)
     if initial.exists():
         Policy.load(initial, rules["id"])  # Recover a crash before first pointer publication.
     else:
@@ -91,9 +92,18 @@ def checkpoint(root, version):
 
 
 def publish_champion(root, league):
-    """Copy the champion's live policy file where `counterpush play` reads it."""
-    source = checkpoint(root, league["champion"]) / "policy.json"
-    atomic_json(Path(root) / "champion-policy.json", json.loads(source.read_text()))
+    """Write the champion's live policy where `counterpush play` reads it."""
+    policy = Policy.load(checkpoint(root, league["champion"]), league["rulesID"])
+    atomic_json(Path(root) / "champion-policy.json", policy.live(), compact=True)
+
+
+def export_policy(root, version):
+    """Write one checkpoint's live policy for `counterpush play --policy`."""
+    league = LeagueState.model_validate_json((Path(root) / "league.json").read_text())
+    policy = Policy.load(checkpoint(root, version), league.rulesID)
+    path = Path(root) / "policies" / f"v{version:06d}.json"
+    atomic_json(path, policy.live(), compact=True)
+    return {"policy": str(path), "version": version, "weightsSHA256": policy.checksum()}
 
 
 def run(
@@ -296,8 +306,8 @@ def run(
                 atomic_json(root / "evaluations" / f"v{version:06d}-e{number:06d}.json", result)
                 if result["gate"]["passed"]:
                     league["champion"] = version
-                atomic_json(root / "league.json", league)
-                publish_champion(root, league)
+                    atomic_json(root / "league.json", league)
+                    publish_champion(root, league)
                 report(
                     {
                         "phase": "evaluated",

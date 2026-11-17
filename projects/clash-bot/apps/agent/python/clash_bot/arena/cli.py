@@ -9,7 +9,7 @@ from clash_bot.paths import DATA_DIR
 from . import balance
 from .curriculum import build
 from .export import export
-from .league import run
+from .league import export_policy, run
 from .parallel import MAX_WORKERS
 from .storage import read_episode
 
@@ -33,6 +33,8 @@ def main():
     commands.add_parser("stop")
     exported = commands.add_parser("export")
     exported.add_argument("--samples", type=int, default=8)
+    live = commands.add_parser("policy", help="Write one checkpoint for counterpush play --policy")
+    live.add_argument("--version", type=int, required=True)
     rules = commands.add_parser("rules")
     rules.add_argument("--stage-version")
     curriculum = commands.add_parser("curriculum")
@@ -79,6 +81,11 @@ def main():
                 DATA, [read_episode(path) for path in league["episodes"][-4:]], args.samples
             )
         }
+    elif args.command == "policy":
+        if args.version < 0:
+            parser.error("Checkpoint versions start at 0")
+        active = json.loads((control / "active.json").read_text())
+        result = export_policy(Path(active["root"]), args.version)
     elif args.command == "rules":
         result = (
             balance.stage(DATA, args.stage_version) if args.stage_version else balance.check(DATA)

@@ -57,7 +57,7 @@ yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush stop
 ```
 
-`--policy <파일>`로 다른 체크포인트의 `policy.json`을 지정할 수 있습니다. 후보는 시뮬레이터의 합법 행동과 같은 규칙으로 카드별 최대 6곳을 만들며, 엘릭서 8 이상에서도 대기를 유지해 자원 보존과 사용을 비교합니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다. 화면에서 아직 타워 체력을 읽지 않으므로 학습 표본의 절반에서 타워 체력을 가려, 타워 체력 없이도 판단하게 합니다.
+체크포인트에는 압축 가중치만 저장합니다. 다른 버전으로 두려면 `arena policy --version <번호>`로 리그의 `policies/v<번호>.json`을 만든 뒤 `--policy <파일>`로 지정합니다. 후보는 시뮬레이터의 합법 행동과 같은 규칙으로 카드별 최대 6곳을 만들며, 엘릭서 8 이상에서도 대기를 유지해 자원 보존과 사용을 비교합니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다. 화면에서 아직 타워 체력을 읽지 않으므로 학습 표본의 절반에서 타워 체력을 가려, 타워 체력 없이도 판단하게 합니다.
 
 정책 형식이 바뀌어 자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast2`에서 새로 시작합니다. 이전 리그 폴더는 읽지 않습니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
 

@@ -1,4 +1,3 @@
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,7 +34,11 @@ class ExpertIterationTest(unittest.TestCase):
             policy.save(path, {"training": report})
             restored = Policy.load(path, "rules-a")
             self.assertEqual(restored.checksum(), policy.checksum())
-            live = json.loads((path / "policy.json").read_text())
+            # Every learner step keeps only compressed weights; live JSON is written on publish.
+            self.assertEqual(
+                sorted(file.name for file in path.iterdir()), ["metadata.json", "weights.npz"]
+            )
+            live = restored.live()
             self.assertEqual(live["weightsSHA256"], policy.checksum())
             self.assertEqual(live["rulesID"], "rules-a")
             np.testing.assert_array_equal(
@@ -47,6 +50,18 @@ class ExpertIterationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             policy.train([{**row, "outcome": None}], 7)
         self.assertEqual(before, policy.checksum())
+
+    def test_a_checkpoint_with_another_network_layout_is_not_loaded(self):
+        policy = Policy(metadata={"version": 1, "rulesID": "rules-a"})
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "model"
+            policy.save(path, {})
+            np.savez_compressed(
+                path / "weights.npz",
+                **{**policy.weights, "encoder.bias": np.zeros(7, np.float32)},
+            )
+            with self.assertRaisesRegex(ValueError, "LEAGUE_KEY"):
+                Policy.load(path, "rules-a")
 
     def test_truncated_games_never_become_draw_labels(self):
         policy = Policy()

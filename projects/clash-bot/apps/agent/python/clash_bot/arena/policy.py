@@ -1,7 +1,7 @@
 """Small action-conditional policy/value network over the public decision context.
 
-The same network guides local search and, exported as policy.json, decides live Counterpush
-moves in milliseconds (src/core/policy/fast-policy.ts). CPU inference, MLX gradients.
+The same network guides local search and, published as champion-policy.json, decides live
+Counterpush moves in milliseconds (src/core/policy/fast-policy.ts). CPU inference, MLX gradients.
 """
 
 import json
@@ -57,7 +57,16 @@ class Policy:
     def checksum(self):
         return checksum(self.weights)
 
+    def live(self):
+        """What `counterpush play` loads: the same weights and checksum as JSON."""
+        return exported(
+            self.weights,
+            {key: self.metadata[key] for key in ("version", "rulesID") if key in self.metadata},
+        )
+
     def save(self, directory, metadata):
+        # Checkpoints keep only the compressed weights. The six times larger live JSON is
+        # written when a version is published or exported, not for every learner step.
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=False)
         np.savez_compressed(directory / "weights.npz", **self.weights)
@@ -68,12 +77,6 @@ class Policy:
             "weightsSHA256": self.checksum(),
         }
         (directory / "metadata.json").write_text(json.dumps(self.metadata, indent=2) + "\n")
-        # The live runtime reads this file; it carries the same weights and checksum.
-        live = exported(
-            self.weights,
-            {key: self.metadata[key] for key in ("version", "rulesID") if key in self.metadata},
-        )
-        (directory / "policy.json").write_text(json.dumps(live) + "\n")
 
     @classmethod
     def load(cls, directory, rules_id=None):
@@ -82,6 +85,11 @@ class Policy:
         if meta.format != FORMAT or (rules_id and meta.rulesID != rules_id):
             raise ValueError(f"{directory}: policy format or rule set differs from this arena")
         with np.load(directory / "weights.npz", allow_pickle=False) as weights:
+            if {name: weights[name].shape for name in weights.files} != WEIGHT_SHAPES:
+                raise ValueError(
+                    f"{directory}: weights differ from contracts/fast-policy.json; "
+                    "change LEAGUE_KEY when the network layout changes"
+                )
             policy = cls(
                 weights={name: weights[name].copy() for name in weights.files},
                 metadata=meta.model_dump(),

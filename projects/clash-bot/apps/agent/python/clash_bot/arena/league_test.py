@@ -1,4 +1,4 @@
-"""A new league publishes its champion's live policy, and only the current league.json resumes."""
+"""A league publishes its champion's live policy, and only the current league.json resumes."""
 
 import json
 import tempfile
@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from clash_bot.arena.engine import Action, Arena
 from clash_bot.arena.fast_features import checksum
-from clash_bot.arena.league import checkpoint, initialize, publish_champion
+from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
 from clash_bot.arena.policy import Policy, features
 from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import replay_samples
@@ -24,13 +24,33 @@ class LeagueTest(unittest.TestCase):
             root = Path(directory) / "league"
             league = initialize(root, RULES)
             self.assertEqual((league["learner"], league["champion"]), (0, 0))
-            live = json.loads((root / "champion-policy.json").read_text())
+            text = (root / "champion-policy.json").read_text()
+            self.assertEqual(text.count("\n"), 1)  # Compact: the weights are not one per line.
+            live = json.loads(text)
             stored = Policy.load(checkpoint(root, 0), RULES["id"])
             self.assertEqual(live["weightsSHA256"], stored.checksum())
             self.assertEqual(live["weightsSHA256"], checksum(stored.weights))
             self.assertEqual(live["rulesID"], RULES["id"])
-            # Resuming reads the same pointer back through the current schema.
+            self.assertEqual(stored.metadata["role"], "initial_random_policy")
+            self.assertFalse((checkpoint(root, 0) / "policy.json").exists())
+            # Resuming reads the same pointer back and repairs a missing live file.
+            (root / "champion-policy.json").unlink()
             self.assertEqual(initialize(root, RULES), league)
+            self.assertEqual(
+                json.loads((root / "champion-policy.json").read_text())["weightsSHA256"],
+                stored.checksum(),
+            )
+
+    def test_any_checkpoint_can_be_exported_for_live_play(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "league"
+            initialize(root, RULES)
+            learner = Policy(seed=3, metadata={"version": 2, "rulesID": RULES["id"]})
+            learner.save(checkpoint(root, 2), {"role": "unqualified_candidate"})
+            exported = export_policy(root, 2)
+            self.assertEqual(exported["policy"], str(root / "policies/v000002.json"))
+            live = json.loads(Path(exported["policy"]).read_text())
+            self.assertEqual((live["version"], live["weightsSHA256"]), (2, learner.checksum()))
 
     def test_a_promoted_champion_replaces_the_published_policy(self):
         with tempfile.TemporaryDirectory() as directory:

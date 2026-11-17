@@ -95,7 +95,7 @@ yarn workspace @side/clash-bot counterpush evaluate --candidate /absolute/path/t
 
 `counterpush start`의 기본 시간 제한은 없다. 두 실행 모두 `--hours 0`은 정지 요청까지 반복하고 양수는 최대 24시간의 실행 한도다. `--resume`은 단독 평가를 마친 뒤 자동 채택 학습 루프를 시작한다. `counterpush stop`은 현재 경기를 마치고 후보·평가 진행을 저장한다. 다시 `start`하면 같은 평가를 이어간다. 불명확한 결과·검증 오류는 기준 모델을 유지하고 실행을 중단하며 정상적인 성적 미달은 후보 학습을 계속한다. `arena stop`은 현재 게임/평가 쌍과 저장을 마치고 멈춘다. 두 실행은 독립된 상태·정지 요청·저장 위치를 가진다. Mac 절전 해제나 프로세스 자동 재시작 기능은 없다.
 
-자료는 `.data/arena/leagues/<rulesID>/`의 `episodes/`, `checkpoints/`, `evaluations/`, `league.json`에 둔다. Qwen 입력은 `exports/`, 후보는 `qwen/candidates/` 또는 `qwen/training/`, 소비 기록은 `qwen/studies.jsonl`이다. 실전 원본은 `counterpush/runs/`, 비교 결과는 `counterpush/control/evaluations/`, 반복 실행 상태는 `counterpush/control/evolution.json`, 게시 이력은 `promotions.jsonl`이다.
+자료는 `.data/arena/leagues/<rulesID 앞 16자>-fast2/`의 `episodes/`, `checkpoints/`(압축 가중치와 메타데이터), `evaluations/`, `league.json`, 실전용 `champion-policy.json`, `arena policy --version <번호>`로 내보낸 `policies/`에 둔다. 실전용 JSON은 가중치 파일보다 약 6배 커서 챔피언이 바뀌거나 직접 내보낼 때만 쓴다. Qwen 입력은 `exports/`, 후보는 `qwen/candidates/` 또는 `qwen/training/`, 소비 기록은 `qwen/studies.jsonl`이다. 실전 원본은 `counterpush/runs/`, 비교 결과는 `counterpush/control/evaluations/`, 반복 실행 상태는 `counterpush/control/evolution.json`, 게시 이력은 `promotions.jsonl`이다.
 
 ## 밸런스 패치
 
