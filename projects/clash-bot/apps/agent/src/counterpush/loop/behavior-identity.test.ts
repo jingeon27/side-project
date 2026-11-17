@@ -15,8 +15,10 @@ it('prevents resuming frozen evidence after geometry, prior, reference or profil
     await writeFile(join(root, 'src/policy.ts'), 'rear deployment');
     const original = await behaviorIdentity(DEFAULT_PROFILE, root);
     expect(await behaviorIdentity(DEFAULT_PROFILE, root)).toBe(original);
-    await writeFile(join(root, 'src/policy.test.ts'), 'test only');
-    expect(await behaviorIdentity(DEFAULT_PROFILE, root)).toBe(original);
+    for (const path of ['src/policy.test.ts', 'src/policy.fixture.ts', 'python/clash_bot/prior_fixture.py']) {
+      await writeFile(join(root, path), 'test only');
+      expect(await behaviorIdentity(DEFAULT_PROFILE, root)).toBe(original);
+    }
     expect(await behaviorIdentity({ ...DEFAULT_PROFILE, riverY: 276 }, root)).not.toBe(original);
     for (const path of [
       'src/policy.ts',

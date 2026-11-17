@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Profile } from '../../core/profile.ts';
+import { outsideBehavior } from '../../shared/behavior-source.ts';
 
 // A checkpoint alone does not freeze its candidate geometry, priors or perception.
 // Refuse to mix games when any runtime source, contract, reference or profile changes.
@@ -15,11 +16,9 @@ export async function behaviorIdentity(
     const entries = await readdir(directory, { withFileTypes: true });
     const groups = await Promise.all(
       entries.map(async (entry) => {
-        if (entry.name === '__pycache__') return [];
+        if (outsideBehavior(entry.name)) return [];
         const path = join(directory, entry.name);
-        if (entry.isDirectory()) return files(path);
-        if (/(?:\.spec\.ts|\.test\.ts|_test\.py|\.pyc)$/.test(entry.name)) return [];
-        return [path];
+        return entry.isDirectory() ? files(path) : [path];
       }),
     );
     return groups.flat();

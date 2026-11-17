@@ -3,14 +3,15 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { outsideBehavior } from '../shared/behavior-source.ts';
+
 export async function trophyBehaviorIdentity(evidenceFiles: string[]) {
   const root = fileURLToPath(new URL('../../', import.meta.url));
   const files = async (directory: string): Promise<string[]> => {
     const rows = await readdir(directory, { withFileTypes: true });
     const groups = await Promise.all(
       rows.map(async (row) => {
-        if (row.name === '__pycache__' || /(?:\.test\.ts|\.spec\.ts|_test\.py|\.pyc)$/.test(row.name))
-          return [];
+        if (outsideBehavior(row.name)) return [];
         const path = join(directory, row.name);
         return row.isDirectory() ? files(path) : [path];
       }),
