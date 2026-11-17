@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
+import dayjs from 'dayjs';
 
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
+import { mockLibrary } from './library';
 
 const config = {
   provider: 'cloud',
@@ -17,6 +19,9 @@ async function connect(page: Page) {
     route.request().method() === 'GET' ? route.fulfill({ json: config }) : route.fallback(),
   );
 }
+test.beforeEach(async ({ page }) => {
+  await mockLibrary(page);
+});
 test('소개와 작업실을 구분하고 선택한 형식으로 창작을 시작한다', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('당신의 상상에다음 장면을');
@@ -62,63 +67,81 @@ test('연결 없이 예시를 편집하고 한글 원고·JSON 백업을 복원�
   await expect(page.getByRole('navigation', { name: '저장한 작품' }).getByRole('button')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
-test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ page }) => {
-  await connect(page);
-  const project = sampleProject();
-  const state = {
-    fail: false,
-    requests: [] as { scenes: unknown[]; beat?: { title: string }; upcoming?: unknown[] }[],
-  };
+// The server writes into the work itself; the browser starts a job and follows it.
+async function mockWriting(
+  page: Page,
+  write: (body: { action: string; input: Record<string, unknown> }) => object,
+) {
+  const job = { id: crypto.randomUUID(), fail: false, requests: [] as object[], status: {} as object };
   await page.route('**/api/studio', async (route) => {
     if (route.request().method() !== 'POST') return route.fallback();
-    const body = route.request().postDataJSON();
-    if (state.fail)
+    if (job.fail)
       return route.fulfill({ status: 502, json: { error: 'AI가 잠시 쉬고 있어요. 다시 시도해 주세요.' } });
-    if (body.action === 'plan')
-      return route.fulfill({
-        json: {
-          ...project,
-          outline: [
-            { title: '미래에서 온 편지', summary: '서우가 편지를 펼친다.' },
-            { title: '새벽의 답장', summary: '서우가 답장을 쓰기 시작한다.' },
-          ],
-        },
-      });
-    state.requests.push(body.input);
-    // The first scene has no earlier manuscript; later ones continue from it.
+    const body = route.request().postDataJSON();
+    job.requests.push(body);
+    job.status = write(body);
     return route.fulfill({
-      json:
-        body.input.scenes.length === 0
-          ? { ...project.scenes[0], narration: '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.' }
-          : {
-              ...project.scenes[0],
-              title: '새벽의 답장',
-              narration: '서우는 한글로 긴 편지를 쓰기 시작했다.',
-            },
+      json: { id: job.id, status: 'RUNNING', progress: '집필을 준비하는 중', scenes: 0 },
     });
   });
+  await page.route('**/api/writing/*', (route) =>
+    route.fulfill({ json: { id: job.id, progress: '', ...job.status } }),
+  );
+  return job;
+}
+function novelFixture() {
+  const sample = sampleProject();
+  const chapter = (title: string, narration: string) => ({
+    ...sample.scenes[0]!,
+    id: crypto.randomUUID(),
+    title,
+    narration,
+  });
+  const novel = { ...sample, id: crypto.randomUUID(), brief: { ...sample.brief, format: 'novel' as const } };
+  return { novel, chapter };
+}
+async function startNovel(page: Page) {
   await page.goto('/studio');
   await page.getByRole('button', { name: /소설 문장으로/ }).click();
   await page
     .getByLabel('이야기 아이디어', { exact: true })
     .fill('미래에서 온 편지를 읽은 서우가 자신의 이야기를 소설로 쓰기 시작한다.');
   await page.getByRole('button', { name: '이야기 만들기', exact: true }).click();
-  // One click plans the story, then writes each planned chapter with its own request.
+}
+test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ page }) => {
+  await connect(page);
+  const library = await mockLibrary(page);
+  const { novel, chapter } = novelFixture();
+  const job = await mockWriting(page, (body) => {
+    const written = library.projects[0];
+    if (body.action === 'write')
+      library.projects.unshift({
+        ...novel,
+        scenes: [
+          chapter('미래에서 온 편지', '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.'),
+          chapter('새벽의 답장', '서우는 한글로 긴 편지를 쓰기 시작했다.'),
+        ],
+      });
+    else if (written)
+      library.projects[0] = {
+        ...written,
+        scenes: [...written.scenes, chapter('다음 장', '이어 쓴 본문')],
+        updatedAt: dayjs().toISOString(),
+      };
+    return { status: 'SUCCEEDED', projectId: novel.id, scenes: library.projects[0]?.scenes.length };
+  });
+  await startNovel(page);
+  // One click starts the job; the chapters it saved arrive with the work.
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(2);
   await expect(page.getByLabel('본문', { exact: true }).first()).toHaveValue(
     '“안녕, 미래의 나.” 서우가 편지를 펼쳤다.',
   );
-  await expect(page.getByLabel('본문', { exact: true }).nth(1)).toHaveValue(
-    '서우는 한글로 긴 편지를 쓰기 시작했다.',
-  );
-  expect(state.requests.map((request) => request.beat?.title)).toEqual(['미래에서 온 편지', '새벽의 답장']);
-  expect(state.requests.map((request) => request.scenes.length)).toEqual([0, 1]);
-  expect(state.requests.map((request) => request.upcoming?.length)).toEqual([1, 0]);
+  expect(job.requests[0]).toMatchObject({ action: 'write', input: { format: 'novel' } });
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
-  // The plan is used up, so continuing sends no beat.
-  expect(state.requests.at(-1)?.beat).toBeUndefined();
-  state.fail = true;
+  // Continuing names the work only; the server reads the manuscript from its own file.
+  expect(job.requests[1]).toEqual({ action: 'continue', input: { projectId: novel.id } });
+  job.fail = true;
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByRole('status')).toContainText('AI가 잠시 쉬고 있어요');
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
@@ -126,49 +149,32 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
 
 test('구성한 장을 쓰다 실패해도 쓴 장을 보존하고 남은 구성부터 이어 쓴다', async ({ page }) => {
   await connect(page);
-  const project = sampleProject();
-  const state = { fail: false, beats: [] as (string | undefined)[] };
-  await page.route('**/api/studio', async (route) => {
-    if (route.request().method() !== 'POST') return route.fallback();
-    const body = route.request().postDataJSON();
-    if (body.action === 'plan')
-      return route.fulfill({
-        json: {
-          ...project,
-          outline: [
-            { title: '첫 장', summary: '서우가 우체국을 찾는다.' },
-            { title: '둘째 장', summary: '서우가 편지를 받는다.' },
-            { title: '셋째 장', summary: '서우가 밤이를 찾는다.' },
-          ],
-        },
-      });
-    state.beats.push(body.input.beat?.title);
-    if (state.fail && body.input.beat?.title === '둘째 장')
-      return route.fulfill({ status: 502, json: { error: '둘째 장을 쓰지 못했습니다.' } });
-    return route.fulfill({
-      json: {
-        ...project.scenes[0],
-        title: body.input.beat.title,
-        narration: `${body.input.beat.title} 본문`,
-      },
-    });
+  const library = await mockLibrary(page);
+  const { novel, chapter } = novelFixture();
+  const beats = ['둘째 장', '셋째 장'].map((title) => ({ title, summary: `${title}의 사건` }));
+  await mockWriting(page, (body) => {
+    const written = library.projects[0];
+    if (body.action === 'write') {
+      library.projects.unshift({ ...novel, scenes: [chapter('첫 장', '첫 장 본문')], outline: beats });
+      return { status: 'FAILED', projectId: novel.id, scenes: 1, error: '둘째 장을 쓰지 못했습니다.' };
+    }
+    if (written)
+      library.projects[0] = {
+        ...written,
+        scenes: [...written.scenes, chapter('둘째 장', '둘째 장 본문')],
+        outline: beats.slice(1),
+        updatedAt: dayjs().toISOString(),
+      };
+    return { status: 'SUCCEEDED', projectId: novel.id, scenes: 2 };
   });
-  state.fail = true;
-  await page.goto('/studio');
-  await page.getByRole('button', { name: /소설 문장으로/ }).click();
-  await page
-    .getByLabel('이야기 아이디어', { exact: true })
-    .fill('미래에서 온 편지를 읽은 서우가 자신의 이야기를 소설로 쓰기 시작한다.');
-  await page.getByRole('button', { name: '이야기 만들기', exact: true }).click();
+  await startNovel(page);
   await expect(page.getByRole('status').filter({ hasText: '둘째 장을 쓰지 못했습니다.' })).toBeVisible();
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(1);
   await expect(page.getByText('구성해 둔 장이 2개 남았습니다.')).toBeVisible();
-  state.fail = false;
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(2);
   await expect(page.getByLabel('본문', { exact: true }).nth(1)).toHaveValue('둘째 장 본문');
   await expect(page.getByText('구성해 둔 장이 1개 남았습니다.')).toBeVisible();
-  expect(state.beats).toEqual(['첫 장', '둘째 장', '둘째 장']);
 });
 
 test('다른 도구에서 만든 이미지를 작품 비율로 가져오고 붙여 넣을 프롬프트를 복사한다', async ({
@@ -294,31 +300,19 @@ test('손상된 저장본을 보존하고 자동 저장 실패를 알린다', as
 
 test('연속 입력은 한 번 저장하고 즉시 새로고침해도 마지막 편집을 보존한다', async ({ page }) => {
   await connect(page);
-  await page.addInitScript(
-    ({ key, project }) => {
-      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify([project]));
-      const monitor = window as typeof window & { studioWrites: number };
-      monitor.studioWrites = 0;
-      const original = Storage.prototype.setItem;
-      Storage.prototype.setItem = function (name, value) {
-        if (name === key) monitor.studioWrites += 1;
-        original.call(this, name, value);
-      };
-    },
-    { key: libraryKey, project: sampleProject() },
-  );
+  const library = await mockLibrary(page, [sampleProject()]);
   await page.goto('/studio');
   await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
   const title = page.getByLabel('작품 제목', { exact: true });
   await title.fill('');
   await title.pressSequentially('새로운 이야기', { delay: 20 });
-  await expect
-    .poll(() => page.evaluate(() => (window as typeof window & { studioWrites: number }).studioWrites))
-    .toBe(1);
+  await expect.poll(() => library.saves).toBe(1);
   await title.fill('새로고침 직전의 마지막 한국어 편집');
+  // The page closes before the half second delay ends; the unsaved edit is sent on the next visit.
   await page.reload();
   await page.getByRole('button', { name: /새로고침 직전의 마지막 한국어 편집/ }).click();
   await expect(title).toHaveValue('새로고침 직전의 마지막 한국어 편집');
+  expect(library.projects[0]?.title).toBe('새로고침 직전의 마지막 한국어 편집');
 });
 
 test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 영상을 재생한다', async ({ page }, info) => {
@@ -344,38 +338,6 @@ test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 �
   await movie.evaluate((node) => (node as HTMLVideoElement).pause());
   await page.screenshot({ path: info.outputPath('local-animation.png'), fullPage: true });
   expect(external).toEqual([]);
-});
-
-test('긴 소설의 이어쓰기는 전체 원고 대신 최근 여섯 장면만 전송한다', async ({ page }) => {
-  await connect(page);
-  const sample = sampleProject();
-  const novel = {
-    ...sample,
-    brief: { ...sample.brief, format: 'novel' },
-    scenes: Array.from({ length: 12 }, (_, index) => ({
-      ...sample.scenes[0]!,
-      id: crypto.randomUUID(),
-      title: `${index + 1}번째 장`,
-      narration: '긴 원고가 이어집니다. '.repeat(400),
-    })),
-  };
-  await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify([value])), {
-    key: libraryKey,
-    value: novel,
-  });
-  const submitted = Promise.withResolvers<unknown>();
-  await page.route('**/api/studio', async (route) => {
-    if (route.request().method() !== 'POST') return route.fallback();
-    submitted.resolve(route.request().postDataJSON().input);
-    return route.fulfill({ json: { ...sample.scenes[0], title: '새로운 장' } });
-  });
-  await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
-  await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
-  const input = (await submitted.promise) as { scenes: { title: string }[] };
-  expect(input.scenes).toHaveLength(6);
-  expect(input.scenes[0]?.title).toBe('7번째 장');
-  await expect(page.getByLabel('13번째 제목', { exact: true })).toHaveValue('새로운 장');
 });
 
 test('생성 중인 로컬 영상은 중단한 뒤 작품을 삭제한다', async ({ page }) => {

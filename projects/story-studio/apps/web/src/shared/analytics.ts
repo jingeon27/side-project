@@ -1,7 +1,7 @@
 import type { TFormat } from '../features/story/model/story';
 
 export type TStudioAction =
-  | 'plan'
+  | 'write'
   | 'continue'
   | 'image'
   | 'image-import'
@@ -29,6 +29,7 @@ type TAnalyticsProperties = {
   studio_recording_completed: { source: 'microphone' };
   studio_reference_clicked: { action: 'set' | 'clear' };
   studio_prompt_clicked: { action: 'copy' };
+  studio_writing_finished: { status: 'succeeded' | 'failed' | 'cancelled' };
   studio_collection_clicked: { action: 'select' | 'clear' };
   studio_materials_opened: Record<never, never>;
 };

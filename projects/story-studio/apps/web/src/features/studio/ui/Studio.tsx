@@ -13,67 +13,47 @@ import {
   Film,
   FolderOpen,
   LoaderCircle,
-  PenLine,
   Plus,
   Settings2,
-  Sparkles,
   Upload,
   X,
 } from 'lucide-react';
 import { match } from 'ts-pattern';
+import { z } from 'zod';
 
 import { trackStudioEvent, type TStudioAction } from '../../../shared/analytics';
+import { fetchProject } from '../../library/api/library-client';
 import { downloadFile, readBackup } from '../../library/model/library';
 import { useLibrary } from '../../library/ui/use-library';
-import { CollectionPicker } from '../../materials/ui/CollectionPicker';
 import { fitImage } from '../../media/model/image-import';
 import { exportVideo } from '../../media/model/video-export';
 import { updateVideoTasks } from '../../media/model/video-tasks';
 import { exportWebtoon } from '../../media/model/webtoon-export';
-import { defaultBrief, ideas, sampleProject } from '../../story/model/sample';
+import { defaultBrief, sampleProject } from '../../story/model/sample';
 import {
   briefSchema,
   caption,
   formats,
   imagePrompt,
-  makeProject,
-  planSchema,
+  libraryLimit,
   projectSchema,
   referenceImage,
   safeFilename,
   taskSchema,
   voiceSchema,
-  writtenSceneSchema,
-  type TBeat,
+  writingStatusSchema,
   type TBrief,
   type TFormat,
   type TProject,
   type TScene,
+  type TWritingStatus,
 } from '../../story/model/story';
 import { StoryEditor } from '../../story/ui/StoryEditor';
+import { ConnectionPanel, type TConfiguration } from './ConnectionPanel';
+import { CreateForm } from './CreateForm';
 
-type TConfiguration = {
-  configured: boolean;
-  textModel: string;
-  imageModel: string;
-  videoModel: string;
-  provider?: 'local' | 'cloud';
-  voiceModel?: string;
-  materialModel?: string;
-  voiceReady?: boolean;
-  voiceTrainingReady?: boolean;
-  imageReady?: boolean;
-  videoReady?: boolean;
-  demoReady?: boolean;
-};
-// Scenes written one after another from a plan follow a single click; only that click is recorded as one.
-async function request(
-  action: TStudioAction,
-  input: unknown,
-  signal: AbortSignal,
-  clicked = true,
-): Promise<unknown> {
-  if (clicked) void trackStudioEvent('studio_request_clicked', { action });
+async function request(action: TStudioAction, input: unknown, signal: AbortSignal): Promise<unknown> {
+  void trackStudioEvent('studio_request_clicked', { action });
   const response = await fetch('/api/studio', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -86,14 +66,6 @@ async function request(
   void trackStudioEvent('studio_request_succeeded', { action });
   return data;
 }
-function writingLabel(format: TFormat, position: number, total: number) {
-  const unit = match(format)
-    .with('novel', () => '장')
-    .with('webtoon', () => '컷')
-    .with('film', 'drama', 'animation', () => '장면')
-    .exhaustive();
-  return `${total}개 ${unit} 중 ${position}번째 작성 중`;
-}
 export function Studio({
   initialFormat,
   openSample = false,
@@ -103,7 +75,7 @@ export function Studio({
   openSample?: boolean;
   openDemo?: boolean;
 }) {
-  const { projects, setProjects, ready, storageError } = useLibrary();
+  const { projects, setProjects, ready, storageError, adopt, flush } = useLibrary();
   const [selected, setSelected] = useState<string | null>(null);
   const [brief, setBrief] = useState<TBrief>(() => ({
     ...defaultBrief,
@@ -131,6 +103,8 @@ export function Studio({
   const [renderProgress, setRenderProgress] = useState('');
   const [deletePending, setDeletePending] = useState(false);
   const controller = useRef<AbortController | null>(null);
+  // The writing job this screen is watching, so the stop button can end the job and not only the watching.
+  const writing = useRef<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const sampleOpened = useRef(false);
   const demoOpened = useRef(false);
@@ -161,8 +135,8 @@ export function Studio({
           setSelected(demo.id);
           return;
         }
-        if (projects.length >= 50)
-          throw new Error('작품이 50개입니다. 기존 작품을 백업하고 공간을 비워 주세요');
+        if (projects.length >= libraryLimit)
+          throw new Error(`작품이 ${libraryLimit}개입니다. 기존 작품을 백업하고 공간을 비워 주세요`);
         setProjects((current) => [demo, ...current]);
         setSelected(demo.id);
       })
@@ -177,7 +151,7 @@ export function Studio({
       setSelected(existing.id);
       return;
     }
-    if (projects.length >= 50) {
+    if (projects.length >= libraryLimit) {
       setNotice('작품을 백업한 뒤 기존 작품을 삭제해 주세요');
       return;
     }
@@ -202,6 +176,18 @@ export function Studio({
     void loadConfiguration();
     return () => controller.current?.abort();
   }, []);
+  useEffect(() => {
+    if (!ready) return;
+    const abort = new AbortController();
+    void (async () => {
+      const response = await fetch('/api/writing', { signal: abort.signal, cache: 'no-store' });
+      const active = z.object({ jobs: z.array(writingStatusSchema) }).safeParse(await response.json());
+      const running = active.success ? active.data.jobs[0] : undefined;
+      // Writing that was left running is picked up again after a reload or a visit to another page.
+      if (running) void work('이야기 작성 중', (signal) => follow(running.id, signal));
+    })().catch(() => undefined);
+    return () => abort.abort();
+  }, [ready]);
   useEffect(() => {
     if (!taskKey || pollError || !connected) return;
     const abort = new AbortController();
@@ -264,8 +250,8 @@ export function Studio({
     }
   }
   function addProject(item: TProject) {
-    if (projects.length >= 50)
-      throw new Error('작품은 최대 50개까지 저장됩니다. 기존 작품을 백업한 뒤 삭제해 주세요.');
+    if (projects.length >= libraryLimit)
+      throw new Error(`작품은 최대 ${libraryLimit}개까지 저장됩니다. 기존 작품을 백업한 뒤 삭제해 주세요.`);
     setProjects((current) => [item, ...current]);
     setSelected(item.id);
     setDeletePending(false);
@@ -296,64 +282,53 @@ export function Studio({
       setNotice('어떤 이야기를 만들고 싶은지 10자 이상 적어 주세요.');
       return;
     }
-    if (projects.length >= 50) {
-      setNotice('작품을 백업한 뒤 기존 작품을 삭제해 주세요. 최대 50개까지 저장합니다.');
+    if (projects.length >= libraryLimit) {
+      setNotice(`작품을 백업한 뒤 기존 작품을 삭제해 주세요. 최대 ${libraryLimit}개까지 저장합니다.`);
       return;
     }
     void work('이야기 구성 중', async (signal) => {
-      const { outline, ...story } = planSchema.parse(await request('plan', parsed.data, signal));
-      const [first, ...rest] = outline;
-      if (!first) throw new Error('이야기 구성을 받지 못했습니다. 다시 시도해 주세요.');
-      setRenderProgress(writingLabel(parsed.data.format, 1, outline.length));
-      const opening = writtenSceneSchema.parse(
-        await request(
-          'continue',
-          { brief: parsed.data, ...story, scenes: [], beat: first, upcoming: rest },
-          signal,
-          false,
-        ),
-      );
-      const created = {
-        ...makeProject(parsed.data, { ...story, scenes: [opening] }),
-        outline: rest.length ? rest : undefined,
-      };
-      addProject(created);
-      await writeBeats(created, rest, outline.length, signal);
+      const job = writingStatusSchema.parse(await request('write', parsed.data, signal));
+      await follow(job.id, signal);
     });
   }
-  // Each finished scene is saved before the next one starts. A failure or a stop keeps what was written
-  // and leaves the remaining beats in the project, where continuing the story picks them up.
-  async function writeBeats(
-    target: TProject,
-    beats: TBeat[],
-    total: number,
-    signal: AbortSignal,
-  ): Promise<void> {
-    const [beat, ...upcoming] = beats;
-    if (!beat) return;
-    setRenderProgress(writingLabel(target.brief.format, total - beats.length + 1, total));
-    const scene = writtenSceneSchema.parse(
-      await request(
-        'continue',
-        {
-          brief: target.brief,
-          title: target.title,
-          synopsis: target.synopsis,
-          characters: target.characters,
-          scenes: target.scenes.slice(-6),
-          beat,
-          upcoming,
-        },
-        signal,
-        false,
-      ),
-    );
-    const change = {
-      scenes: [...target.scenes, { ...scene, id: crypto.randomUUID() }],
-      outline: upcoming.length ? upcoming : undefined,
-    };
-    patchProject(target.id, change);
-    return writeBeats({ ...target, ...change }, upcoming, total, signal);
+  // Writing runs on the server and saves every finished scene into the work. This only watches it:
+  // leaving the page stops the watching, not the writing.
+  async function follow(id: string, signal: AbortSignal) {
+    writing.current = id;
+    try {
+      const watch = async (seen: number): Promise<TWritingStatus> => {
+        const response = await fetch(`/api/writing/${id}`, { signal, cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(typeof data.error === 'string' ? data.error : '집필 상태를 확인하지 못했습니다.');
+        const status = writingStatusSchema.parse(data);
+        setRenderProgress(status.progress);
+        if (status.projectId && status.scenes !== seen) {
+          adopt(await fetchProject(status.projectId, signal));
+          setSelected(status.projectId);
+        }
+        if (status.status !== 'RUNNING') return status;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return watch(status.scenes);
+      };
+      const ended = await watch(-1);
+      void trackStudioEvent('studio_writing_finished', {
+        status: match(ended.status)
+          .with('SUCCEEDED', () => 'succeeded' as const)
+          .with('CANCELLED', () => 'cancelled' as const)
+          .with('FAILED', 'RUNNING', () => 'failed' as const)
+          .exhaustive(),
+      });
+      if (ended.status !== 'SUCCEEDED')
+        throw new Error(ended.error || '원고를 쓰지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      writing.current = null;
+    }
+  }
+  // Stopping ends the writing itself; scenes already saved stay in the work.
+  function stop() {
+    if (writing.current) void fetch(`/api/writing/${writing.current}`, { method: 'DELETE' });
+    controller.current?.abort();
   }
   function importImage(scene: TScene, file: File) {
     if (!project || project.brief.format === 'novel') return;
@@ -418,27 +393,11 @@ export function Studio({
   }
   function extend() {
     if (!project) return;
-    // A beat left from the plan is written first; after the plan runs out the story continues freely.
-    const [beat, ...upcoming] = project.outline ?? [];
     void work('다음 이야기 작성 중', async (signal) => {
-      const result = writtenSceneSchema.parse(
-        await request(
-          'continue',
-          {
-            brief: project.brief,
-            title: project.title,
-            synopsis: project.synopsis,
-            characters: project.characters,
-            scenes: project.scenes.slice(-6),
-            ...(beat ? { beat, upcoming } : {}),
-          },
-          signal,
-        ),
-      );
-      patchProject(project.id, {
-        scenes: [...project.scenes, { ...result, id: crypto.randomUUID() }],
-        outline: upcoming.length ? upcoming : undefined,
-      });
+      // The job reads the work from the studio's file, so the latest edits are saved first.
+      await flush();
+      const job = writingStatusSchema.parse(await request('continue', { projectId: project.id }, signal));
+      await follow(job.id, signal);
     });
   }
   function voice(scene: TScene) {
@@ -636,11 +595,7 @@ export function Studio({
             </span>
             <Settings2 size={15} />
           </button>
-          <p>
-            작품은 이 브라우저에 저장됩니다.
-            <br />
-            생성한 파일은 이 컴퓨터에 보관됩니다.
-          </p>
+          <p>작품과 생성한 파일은 이 컴퓨터에 저장됩니다.</p>
         </div>
       </aside>
       <div className="main-shell">
@@ -658,7 +613,7 @@ export function Studio({
                 '저장 확인 필요'
               ) : ready ? (
                 <>
-                  <Check size={13} /> 브라우저 자동 저장
+                  <Check size={13} /> 이 컴퓨터에 자동 저장
                 </>
               ) : (
                 '작업실 여는 중'
@@ -668,84 +623,12 @@ export function Studio({
         </header>
         <main id="main-content">
           {settings && (
-            <section className="connection-panel" aria-label="AI 연결 안내">
-              <div className="section-heading">
-                <h2>{local ? '로컬 모델' : '클라우드 연결'}</h2>
-                <button
-                  className="icon-button"
-                  aria-label="연결 안내 닫기"
-                  onClick={() => setSettings(false)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              {local ? (
-                <>
-                  <p>
-                    글, 컷, 영상과 한국어 음성을 이 컴퓨터에서 만듭니다. API 키와 외부 생성 서비스가 필요하지
-                    않습니다.
-                  </p>
-                  <div className="model-list">
-                    <span>
-                      글, 대본<strong>{config?.textModel || 'Gemma 4'}</strong>
-                    </span>
-                    <span>
-                      참고 자료 검색<strong>{config?.materialModel || 'EmbeddingGemma 2'}</strong>
-                    </span>
-                    <span>
-                      이미지<strong>{config?.imageModel || 'FLUX.2 Klein'}</strong>
-                    </span>
-                    <span>
-                      영상<strong>{config?.videoModel || 'Wan 2.2'}</strong>
-                    </span>
-                    <span>
-                      한국어 목소리<strong>{config?.voiceModel || 'Qwen3-TTS'}</strong>
-                    </span>
-                  </div>
-                  <p>
-                    한국어 음성을 먼저 만들고 장면별 영상을 생성한 뒤, 내보내기에서 음성,자막을 담은 MP4로
-                    합칠 수 있어요. 장면 이미지가 있으면 영상은 그 이미지에서 시작합니다. 영상 생성은 성능과
-                    분량에 따라 수분 이상 걸릴 수 있습니다.
-                  </p>
-                  <details>
-                    <summary>처음 사용하는 컴퓨터에서 준비하기</summary>
-                    <p>
-                      Apple Silicon Mac과 Python 3.11이 필요합니다. 아래 명령은 프로젝트 전용 실행 환경과
-                      모델을 설치합니다. 최초 다운로드에는 인터넷과 여유 저장 공간이 필요하며, 설치 후 생성은
-                      오프라인으로 실행합니다.
-                    </p>
-                    <code>yarn workspace @side/story-studio local:setup</code>
-                  </details>
-                  <div className="panel-actions">
-                    {config?.demoReady && (
-                      <Link href="/studio?demo=1">이 컴퓨터에서 만든 애니메이션 열기 →</Link>
-                    )}
-                    <button className="button secondary small" onClick={() => void loadConfiguration()}>
-                      모델 상태 다시 확인
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p>
-                    클라우드 모드는 서버에 명시적으로 설정했을 때만 사용합니다. 싱가포르 Model Studio API 키를
-                    앱의 서버 환경에 설정해 주세요. 요청마다 외부 서비스 사용 요금이 발생합니다.
-                  </p>
-                  <div className="panel-actions">
-                    <a
-                      href="https://www.alibabacloud.com/help/en/model-studio/get-api-key"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      API 키 발급 안내 ↗
-                    </a>
-                    <button className="button secondary small" onClick={() => void loadConfiguration()}>
-                      연결 다시 확인
-                    </button>
-                  </div>
-                </>
-              )}
-            </section>
+            <ConnectionPanel
+              config={config}
+              local={local}
+              onClose={() => setSettings(false)}
+              onRefresh={() => void loadConfiguration()}
+            />
           )}
           {storageError && (
             <div className="notice warning" role="alert">
@@ -786,7 +669,7 @@ export function Studio({
                 </small>
               </span>
               {(local || !['이미지 생성 중', '영상 작업 제출 중'].includes(busy)) && (
-                <button className="text-button" onClick={() => controller.current?.abort()}>
+                <button className="text-button" onClick={stop}>
                   중단
                 </button>
               )}
@@ -861,213 +744,17 @@ export function Studio({
                   예시 작품 열기 <ArrowRight size={15} />
                 </button>
               </div>
-              <section className="create-section" aria-label="새 작품 만들기">
-                <div className="section-heading">
-                  <h2>작품 형식</h2>
-                </div>
-                <div className="format-grid">
-                  {formats.map((format) => (
-                    <button
-                      key={format.id}
-                      className={`format-card ${brief.format === format.id ? 'selected' : ''}`}
-                      aria-pressed={brief.format === format.id}
-                      aria-label={`${format.name} ${format.description}`}
-                      disabled={Boolean(busy)}
-                      onClick={() =>
-                        setBrief((current) => ({
-                          ...current,
-                          format: format.id,
-                          style:
-                            format.id === 'animation'
-                              ? '따뜻한 수채화풍'
-                              : format.id === 'webtoon'
-                                ? '선명한 한국 웹툰 작화'
-                                : format.id === 'novel'
-                                  ? '섬세한 감정 묘사와 자연스러운 한국어 문체'
-                                  : '자연스러운 한국 영화의 시네마틱 연출',
-                          ratio: format.id === 'webtoon' ? '9:16' : current.ratio,
-                        }))
-                      }
-                    >
-                      <strong>{format.name}</strong>
-                    </button>
-                  ))}
-                </div>
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    create();
-                  }}
-                >
-                  <fieldset disabled={Boolean(busy) || !ready}>
-                    <legend className="sr-only">이야기 설정</legend>
-                    <div className="section-heading prompt-heading">
-                      <h2>이야기 아이디어</h2>
-                    </div>
-                    <label className="sr-only" htmlFor="premise">
-                      이야기 아이디어
-                    </label>
-                    <div className="prompt-box">
-                      <textarea
-                        id="premise"
-                        value={brief.premise}
-                        minLength={10}
-                        maxLength={4000}
-                        rows={5}
-                        placeholder="예: 비 오는 날에만 문을 여는 우체국. 어느 날, 10년 뒤의 나에게서 편지가 도착했다."
-                        onChange={(event) =>
-                          setBrief((current) => ({ ...current, premise: event.target.value }))
-                        }
-                      />
-                      <div className="prompt-meta">
-                        <span>
-                          <PenLine size={13} /> 배경, 주인공, 꼭 담고 싶은 장면을 자유롭게 적어 주세요
-                        </span>
-                        <span>{brief.premise.length}/4,000</span>
-                      </div>
-                    </div>
-                    <div className="idea-row">
-                      <span>
-                        <Sparkles size={13} /> 영감이 필요하다면
-                      </span>
-                      {['미래에서 온 편지', '마지막 심야버스', '꿈을 수선하는 가게'].map((label, index) => (
-                        <button
-                          type="button"
-                          key={label}
-                          onClick={() => setBrief((current) => ({ ...current, premise: ideas[index]! }))}
-                        >
-                          {label} <Plus size={11} />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="brief-options">
-                      <label>
-                        장르
-                        <select
-                          value={brief.genre}
-                          onChange={(event) =>
-                            setBrief((current) => ({ ...current, genre: event.target.value }))
-                          }
-                        >
-                          {[
-                            '판타지',
-                            '로맨스',
-                            '일상, 힐링',
-                            '미스터리',
-                            'SF',
-                            '모험',
-                            '코미디',
-                            '공포',
-                            '드라마',
-                          ].map((value) => (
-                            <option key={value}>{value}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="style-field">
-                        {brief.format === 'novel' ? '문체, 분위기' : '그림체, 연출'}
-                        <input
-                          value={brief.style}
-                          maxLength={200}
-                          required
-                          onChange={(event) =>
-                            setBrief((current) => ({ ...current, style: event.target.value }))
-                          }
-                        />
-                      </label>
-                      <label>
-                        {brief.format === 'novel'
-                          ? '이번에 쓸 장'
-                          : brief.format === 'webtoon'
-                            ? '컷 수'
-                            : '장면 수'}
-                        <select
-                          value={brief.count}
-                          onChange={(event) =>
-                            setBrief((current) => ({ ...current, count: Number(event.target.value) }))
-                          }
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
-                            <option key={value} value={value}>
-                              {value}
-                              {brief.format === 'novel'
-                                ? '개 장'
-                                : brief.format === 'webtoon'
-                                  ? '컷'
-                                  : '개 장면'}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      {brief.format !== 'novel' && (
-                        <label>
-                          화면 비율
-                          <select
-                            value={brief.ratio}
-                            onChange={(event) =>
-                              setBrief((current) => ({
-                                ...current,
-                                ratio: event.target.value as TBrief['ratio'],
-                              }))
-                            }
-                          >
-                            <option value="16:9">16:9 가로</option>
-                            <option value="9:16">9:16 세로</option>
-                            <option value="1:1">1:1 정사각형</option>
-                          </select>
-                        </label>
-                      )}
-                      {local && brief.format !== 'novel' && (
-                        <label>
-                          생성 품질
-                          <select
-                            value={brief.quality}
-                            onChange={(event) =>
-                              setBrief((current) => ({
-                                ...current,
-                                quality: event.target.value as TBrief['quality'],
-                              }))
-                            }
-                          >
-                            <option value="draft">빠른 초안</option>
-                            <option value="standard">표준</option>
-                          </select>
-                        </label>
-                      )}
-                    </div>
-                    {config !== null && local && (
-                      <CollectionPicker
-                        value={brief.collections}
-                        onChange={(collections) => setBrief((current) => ({ ...current, collections }))}
-                      />
-                    )}
-                    <div className="create-footer">
-                      <p>
-                        <span className="language-badge">가</span> 원고, 대사, 말풍선, 자막, 모두 한국어로
-                      </p>
-                      <button
-                        className="button primary generate-button"
-                        type="submit"
-                        disabled={!connected || Boolean(busy)}
-                      >
-                        <Sparkles size={16} /> 이야기 만들기 <ArrowRight size={16} />
-                      </button>
-                    </div>
-                  </fieldset>
-                </form>
-                {!connected && config !== null && (
-                  <div className="setup-nudge">
-                    <span>
-                      {local
-                        ? '로컬 모델을 준비하면 시작할 수 있어요'
-                        : 'AI를 연결하면 창작을 시작할 수 있어요'}
-                    </span>
-                    <button className="text-button" onClick={() => setSettings(true)}>
-                      연결 방법 보기 <ArrowRight size={13} />
-                    </button>
-                  </div>
-                )}
-              </section>
+              <CreateForm
+                brief={brief}
+                busy={Boolean(busy)}
+                ready={ready}
+                connected={connected}
+                local={local}
+                known={config !== null}
+                onBriefChange={setBrief}
+                onCreate={create}
+                onShowSettings={() => setSettings(true)}
+              />
             </>
           )}
         </main>

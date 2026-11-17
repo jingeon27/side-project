@@ -1,4 +1,4 @@
-import { videoStatus } from '../../../../features/studio/server/provider';
+import { videoStatus } from '../../../../features/media/server/generation';
 import { errorResponse, requireLocalRequest } from '../../../../shared/server/errors';
 import { cancelLocalVideo } from '../../../../shared/server/local-worker';
 
