@@ -16,7 +16,7 @@ from .generation.image import generate_image
 from .generation.text import generate_text
 from .generation.video import generate_video
 from .generation.verified_speech import IncompleteSpeechError
-from .materials.indexing import delete_materials, index_materials
+from .materials.sync import delete_materials, sync_materials
 from .media import compose
 from .runtime import JobContext
 from .voices.jobs import train
@@ -38,8 +38,8 @@ def dispatch(request, job, examples_dir):
         return normalize(job.root, request)
     if request['action'] == 'train-voice':
         return train(job.root, request, job.progress, job.save_task)
-    if request['action'] == 'index-material':
-        return index_materials(job.root, request, job.progress)
+    if request['action'] == 'sync-material':
+        return sync_materials(job.root, request, job.progress)
     if request['action'] == 'delete-material':
         return delete_materials(job.root, request)
     raise ValueError('지원하지 않는 작업입니다')
