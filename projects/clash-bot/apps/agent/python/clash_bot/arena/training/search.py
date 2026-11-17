@@ -1,8 +1,8 @@
-"""Information-set PUCT with simultaneous responses and sampled hidden draws.
+"""Information-set PUCT against frozen policy responses and sampled hidden draws.
 
 Root worlds come from PUBLIC play history, never the real engine's save/RNG/hand.
-The two action bandits use opposite values. A bounded visible-material heuristic
-bootstraps an untrained value head; this is not claimed to be pure AlphaZero.
+Only our choices are optimized; the opponent follows its saved card/placement policy.
+A visible-material heuristic bootstraps the value head; this is not pure AlphaZero.
 """
 
 import time
@@ -12,6 +12,7 @@ import numpy as np
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
+from ..policy.choice import card_choice
 from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
@@ -210,8 +211,10 @@ def search(
                 break
             own_actions, priors, enemy_actions, enemy_priors = choices
             ours = pick(node.own, own_actions, priors, rng, 1.5, cover=ply == 0)
-            theirs = pick(node.enemy, enemy_actions, enemy_priors, rng, 1.5)
-            path.append((node, ours, theirs))
+            theirs = enemy_actions[
+                card_choice([action.card for action in enemy_actions], enemy_priors)
+            ]
+            path.append((node, ours))
             actions = [Action(-1), Action(-1)]
             actions[team], actions[1 - team] = ours, theirs
             world.play(actions, first_ticks if ply == 0 and first_ticks else step_ticks)
@@ -219,14 +222,10 @@ def search(
             node = node.children.setdefault((ours, theirs), Node())
         else:
             value = leaf_value(world, team, policy)
-        for visited, ours, theirs in reversed(path):
+        for visited, ours in reversed(path):
             visited.visits += 1
-            for edges, action, result in (
-                (visited.own, ours, value),
-                (visited.enemy, theirs, -value),
-            ):
-                edges[action]["n"] += 1
-                edges[action]["w"] += result
+            visited.own[ours]["n"] += 1
+            visited.own[ours]["w"] += value
     visits = np.array([root.own.get(action, {}).get("n", 0) for action in root_actions], np.float32)
     values = np.array(
         [
@@ -261,4 +260,5 @@ def search(
         if observed_prior is not None
         else "exact_public_without_towers",
         "rolloutPrior": "anchors_and_uniform_residual_importance_v1",
+        "opponentResponse": "frozen_card_policy",
     }

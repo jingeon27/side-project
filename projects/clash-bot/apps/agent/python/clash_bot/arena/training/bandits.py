@@ -10,7 +10,7 @@ from ..sim.rules import Action
 
 class Node:
     def __init__(self):
-        self.own, self.enemy, self.children = {}, {}, {}
+        self.own, self.children = {}, {}
         self.visits = 0
 
 

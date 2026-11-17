@@ -118,7 +118,7 @@ def rules_identity():
         ),
         "trainingOpponent": "quarter_fixed_defender_direct_no_teacher_rows_v1",
         "tacticalTeacher": "paired_reactive_sampled_public_defender_v1",
-        "searchPolicy": "matched_root_masked_rollouts_stratified_mass_bounded_updates_v4",
+        "searchPolicy": "matched_view_mass_frozen_response_bounded_updates_v5",
         "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
