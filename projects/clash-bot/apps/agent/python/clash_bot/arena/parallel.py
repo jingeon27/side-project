@@ -19,7 +19,7 @@ def play_frozen_game(job):
         job["rulesID"],
         simulations=job["simulations"],
         depth=job["depth"],
-        decks=job["decks"],
+        setup=job["setup"],
     )
 
 

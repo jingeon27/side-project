@@ -4,8 +4,9 @@ from pathlib import Path
 
 import numpy as np
 
-from clash_bot.arena.engine import Action, Arena
+from clash_bot.arena.engine import Arena
 from clash_bot.arena.policy import Policy, features
+from clash_bot.arena.rules import Action
 from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import play_game, replay_samples
 

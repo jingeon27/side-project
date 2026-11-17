@@ -16,7 +16,7 @@ import royalesim
 from clash_bot.files import atomic_json
 
 from .catalogue import PATH, Catalogue, content_id
-from .engine import SPEC, new_battle
+from .rules import SPEC, new_battle
 
 FORMAT = "clash-card-catalogue-v1"
 CARD_FEATURES = (

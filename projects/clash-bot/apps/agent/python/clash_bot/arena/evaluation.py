@@ -6,7 +6,7 @@ import numpy as np
 
 from clash_bot.statistics import paired_win_probability
 
-from .selfplay import play_game
+from .selfplay import live_setup, play_game
 
 
 def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
@@ -48,11 +48,10 @@ def evaluate(
     rules_id,
     generation,
     pairs=16,
-    simulations=16,
-    depth=5,
     report=None,
     should_stop=None,
 ):
+    """Paired games of the two policies as deployed: live setup, no search, no training."""
     for model in (challenger, champion):
         if model.metadata.get("rulesID", rules_id) != rules_id:
             raise ValueError("Evaluation policy belongs to another rule set")
@@ -69,9 +68,9 @@ def evaluate(
         for seat in (0, 1):
             models = [champion, champion]
             models[seat] = challenger
-            # Same world seed for the two seats, no training or root noise.
+            # Same world seed for the two seats, no training, no search.
             game = play_game(
-                models, identity, rules_id, simulations=simulations, depth=depth, training=False
+                models, identity, rules_id, simulations=0, training=False, setup=live_setup()
             )
             if not game["completed"] or game["rejectedCommands"]:
                 raise ValueError("Unverified or invalid-action evaluation game")

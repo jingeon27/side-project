@@ -33,7 +33,15 @@ apps/agent/
         features.py            고정 특징과 마지막 MLP 어댑터 연결
         episodes.py            결과·사용 확인·학습 자료 검증
         learning_policy.py     LoRA, 목적 함수, 체크포인트
-      arena/                   네이티브 전투·탐색·리그, 판단 문맥(context)·빠른 정책 특징(fast_features)·카드 카탈로그(catalogue, 생성은 catalogue_build)·표본 검증(samples)
+      arena/                   자가대국·탐색·리그
+        rules.py               고정 엔진, 덱 풀, 규칙 ID, 명령 형식
+        engine.py              한 경기: 지연된 실행, 공개 기록, 관측
+        candidates.py          배치 규칙 지점과 칸 단위 후보(fast-candidates.ts와 같은 규칙)
+        belief.py              공개 기록만으로 숨은 손패 가설 재구성
+        context.py, fast_features.py   판단 문맥과 빠른 정책 특징
+        catalogue.py, catalogue_build.py   카드 카탈로그 읽기와 생성
+        selfplay.py, observation_noise.py   경기 설정·학습 표본·화면 인식 오류
+        benchmark.py           규칙 봇 상대 고정 기준 평가
       perception/              CPU 인식·ONNX 변환
       trophy/                  현재 궤적 계약, CPU PPO, 불변 체크포인트와 재시도 receipt
     requirements/              공통·모델·인식·변환·개발 의존성 고정

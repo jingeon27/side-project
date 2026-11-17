@@ -1,31 +1,74 @@
-"""Both seats act through their own observation; only native terminal results train."""
+"""Both seats act through their own observation; only native terminal results train.
+
+Every game draws its setup: a deck matchup, each side's input delay and card level. Sides decide
+every `decisionTicks`, as the live runtime does every capture. Training games search the best of
+the policy's candidates; evaluation games play the policy alone, as it is deployed.
+"""
 
 import time
 
 import numpy as np
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from .engine import DECKS, LIVE_DECK, Arena, legal_actions
-from .policy import features
+from .context import decision_context
+from .engine import Arena
+from .fast_features import action_features, context_features
+from .observation_noise import PerceptionNoise, perceive
+from .rules import DECKS, LIVE_DECK, SPEC, Action
 from .samples import SparseFeatures, value_target
 from .search import Workspace, search
 from .storage import seed_for
 
-# Half the games are the live deck's mirror, which Counterpush plays; the rest pair pool decks so
-# the network learns what card attributes mean rather than one deck's cards.
-LIVE_MIRROR = 0.5
+
+class SelfplaySpec(BaseModel):
+    """contracts/arena.json selfplay."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Share of games that are the live deck's mirror; the rest pair pool decks so the network
+    # learns what card attributes mean rather than one deck's cards.
+    liveMirror: float = Field(ge=0, le=1)
+    decisionTicks: PositiveInt
+    searchTicks: PositiveInt
+    rootActions: int = Field(ge=2)
+    negatives: int = Field(ge=0)
+    commandDelayTicks: tuple[int, int]
+    levelOffsets: tuple[int, ...] = Field(min_length=1)
+    perception: PerceptionNoise
 
 
-def matchup(game_id):
-    rng = np.random.default_rng(seed_for("decks", game_id))
-    if rng.random() < LIVE_MIRROR:
-        return [LIVE_DECK, LIVE_DECK]
-    names = sorted(DECKS)
-    return [names[int(rng.integers(len(names)))] for _ in range(2)]
+SELFPLAY = SelfplaySpec.model_validate(SPEC["selfplay"])
+
+
+def live_setup():
+    """The live game: the live deck's mirror at the measured input delay and the arena level."""
+    delay = SPEC["liveCommandDelayTicks"]
+    return {
+        "decks": [LIVE_DECK, LIVE_DECK],
+        "delays": [delay, delay],
+        "levels": [SPEC["level"]] * 2,
+    }
+
+
+def setup_for(game_id):
+    """A training game's matchup, input delays and card levels, drawn from its id."""
+    rng = np.random.default_rng(seed_for("setup", game_id))
+    if rng.random() < SELFPLAY.liveMirror:
+        decks = [LIVE_DECK, LIVE_DECK]
+    else:
+        names = sorted(DECKS)
+        decks = [names[int(rng.integers(len(names)))] for _ in range(2)]
+    low, high = SELFPLAY.commandDelayTicks
+    return {
+        "decks": decks,
+        "delays": [int(rng.integers(low, high + 1)) for _ in range(2)],
+        "levels": [SPEC["level"] + int(rng.choice(SELFPLAY.levelOffsets)) for _ in range(2)],
+    }
 
 
 def live_mirror(game):
     """Only these games feed the Qwen studies: decision-v3 prompts know the live deck alone."""
-    return game["decks"] == [LIVE_DECK, LIVE_DECK]
+    return game["setup"]["decks"] == [LIVE_DECK, LIVE_DECK]
 
 
 def tower_damage(player):
@@ -34,31 +77,57 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
+def training_rows(observation, result, rng):
+    """The searched candidates and a few the search left out, read as the screen would read them.
+
+    Unsearched candidates are negatives (target 0), so the policy also learns to keep the grid's
+    poor placements below the searched ones it ranks for live play.
+    """
+    others = result["others"]
+    picked = rng.choice(len(others), min(SELFPLAY.negatives, len(others)), replace=False)
+    rows = [*result["actions"], *(others[int(index)] for index in sorted(picked))]
+    context = perceive(decision_context(observation, rows), rng, SELFPLAY.perception)
+    target = [*result["target"].tolist(), *[0.0] * len(picked)]
+    return rows, context_features(context), action_features(context), target
+
+
 def play_game(
     policies,
     game_id,
     rules_id,
     simulations=16,
     depth=5,
-    step_ticks=40,
     training=True,
     max_ticks=6200,
     report=None,
-    decks=None,
+    setup=None,
 ):
+    """`simulations=0` plays each policy's best candidate without search, as deployed."""
     began = time.perf_counter()
-    arena = Arena(seed_for("environment", game_id), decks=decks)
+    setup = setup or live_setup()
+    arena = Arena(
+        seed_for("environment", game_id),
+        decks=setup["decks"],
+        delays=setup["delays"],
+        levels=setup["levels"],
+    )
     workspace = Workspace(particles=2)
     choices = np.random.default_rng(seed_for("acting", game_id))
+    seen = np.random.default_rng(seed_for("perception", game_id))
     samples, rejected, decisions, searches = [], 0, 0, 0
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
         selected = []
         for team, policy in enumerate(policies):
             observation = arena.observe(team)
-            available = legal_actions(arena.battle, team, state)
-            if len(available) == 1:
-                selected.append(available[0])
+            candidates = [Action(*row) for row in observation["legalActions"]]
+            if len(candidates) == 1:
+                selected.append(candidates[0])
+                continue
+            decisions += 1
+            if simulations == 0:
+                prior, _ = policy.predict(observation, candidates)
+                selected.append(candidates[int(np.argmax(prior))])
                 continue
             result = search(
                 observation,
@@ -66,7 +135,9 @@ def play_game(
                 seed_for("search", game_id, state["tick"], team),
                 simulations=simulations,
                 depth=depth,
-                step_ticks=step_ticks,
+                step_ticks=SELFPLAY.searchTicks,
+                first_ticks=SELFPLAY.decisionTicks,
+                root_size=SELFPLAY.rootActions,
                 noise=training,
                 opponent_policy=policies[1 - team],
                 workspace=workspace,
@@ -81,30 +152,36 @@ def play_game(
                 chosen = int(np.argmax(probabilities))
             selected.append(result["actions"][chosen])
             searches += result["simulations"]
-            decisions += 1
             if training:
-                state_features, action_vectors = features(observation, result["actions"])
+                rows, state_features, action_vectors, target = training_rows(
+                    observation, result, seen
+                )
                 samples.append(
                     {
                         "gameID": game_id,
                         "rulesID": rules_id,
                         "team": team,
                         "policyVersion": policy.metadata["version"],
-                        "observation": observation,
+                        # The candidate list is rebuilt by search; keep only the public state.
+                        "observation": {
+                            key: value
+                            for key, value in observation.items()
+                            if key != "legalActions"
+                        },
                         "features": SparseFeatures.of(state_features).model_dump(),
-                        "actions": [action.row() for action in result["actions"]],
+                        "actions": [action.row() for action in rows],
                         "actionFeatures": action_vectors.tolist(),
-                        "target": result["target"].tolist(),
+                        "target": target,
                         "chosen": chosen,
                         "search": {
                             key: value
                             for key, value in result.items()
-                            if key not in ("actions", "target")
+                            if key not in ("actions", "target", "others")
                         },
                         "outcome": None,
                     }
                 )
-        outcomes = arena.play(selected, step_ticks)
+        outcomes = arena.play(selected, SELFPLAY.decisionTicks)
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -130,10 +207,10 @@ def play_game(
             else None
         )
     return {
-        "format": "clash-arena-selfplay-v1",
+        "format": "clash-arena-selfplay-v2",
         "gameID": game_id,
         "rulesID": rules_id,
-        "decks": arena.decks,
+        "setup": setup,
         "policies": [
             {"version": policy.metadata["version"], "weightsSHA256": policy.checksum()}
             for policy in policies

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from clash_bot.arena.evaluation import evaluate, paired_gate, pfsp_weights
 from clash_bot.arena.policy import Policy
+from clash_bot.arena.selfplay import live_setup
 
 
 class QualificationTest(unittest.TestCase):
@@ -38,7 +39,7 @@ class QualificationTest(unittest.TestCase):
         before = (a.checksum(), b.checksum())
         game = {"completed": True, "rejectedCommands": 0, "winner": 0, "samples": []}
         with patch("clash_bot.arena.evaluation.play_game", return_value=game) as play:
-            result = evaluate(a, b, "rules-a", 0, pairs=2, simulations=4)
+            result = evaluate(a, b, "rules-a", 0, pairs=2)
         self.assertEqual(result["pairs"], [0.5, 0.5])
         self.assertFalse(result["gate"]["passed"])
         self.assertEqual((a.checksum(), b.checksum()), before)
@@ -48,6 +49,9 @@ class QualificationTest(unittest.TestCase):
         self.assertIs(calls[0].args[0][0], a)
         self.assertIs(calls[1].args[0][1], a)
         self.assertTrue(all(call.kwargs["training"] is False for call in calls))
+        # Deployed play: no search, the live deck's mirror at the measured input delay.
+        self.assertTrue(all(call.kwargs["simulations"] == 0 for call in calls))
+        self.assertTrue(all(call.kwargs["setup"] == live_setup() for call in calls))
         with patch(
             "clash_bot.arena.evaluation.play_game", return_value={**game, "completed": False}
         ):

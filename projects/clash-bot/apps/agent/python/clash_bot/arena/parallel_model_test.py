@@ -5,9 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .engine import LIVE_DECK, rules_identity
 from .parallel import play_frozen_games
 from .policy import Policy
+from .rules import rules_identity
+from .selfplay import live_setup, setup_for
 
 
 @unittest.skipUnless(
@@ -26,16 +27,19 @@ class PackagedParallelTests(unittest.TestCase):
                     "opponent": str(checkpoint),
                     "rulesID": rules["id"],
                     "id": f"package-smoke-{seat}",
-                    "decks": decks,
+                    "setup": setup,
                     "seat": seat,
                     "simulations": 2,
                     "depth": 2,
                 }
-                for seat, decks in ((0, [LIVE_DECK, LIVE_DECK]), (1, ["giant_beatdown", "bait"]))
+                for seat, setup in (
+                    (0, live_setup()),
+                    (1, {**setup_for("package-smoke"), "decks": ["giant_beatdown", "bait"]}),
+                )
             ]
             games = play_frozen_games(jobs, 2)
             self.assertEqual(len(games), 2)
             self.assertTrue(
                 all(game["completed"] and game["rejectedCommands"] == 0 for game in games)
             )
-            self.assertEqual([game["decks"] for game in games], [job["decks"] for job in jobs])
+            self.assertEqual([game["setup"] for game in games], [job["setup"] for job in jobs])

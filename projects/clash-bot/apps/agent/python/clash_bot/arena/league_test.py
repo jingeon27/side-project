@@ -9,10 +9,11 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from clash_bot.arena.catalogue import current
-from clash_bot.arena.engine import Action, Arena
+from clash_bot.arena.engine import Arena
 from clash_bot.arena.fast_features import checksum
 from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
 from clash_bot.arena.policy import LEAGUE_KEY, Policy, features
+from clash_bot.arena.rules import Action
 from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import replay_samples
 from clash_bot.arena.storage import read_episode, replay_path, write_episode, write_replay

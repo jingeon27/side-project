@@ -15,19 +15,12 @@ from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import serialize_decision
 from clash_bot.qwen.search_data import conservation_frontier
 
+from .belief import BeliefSampler
+from .candidates import legal_actions
 from .context import NAMES, decision_context
-from .engine import (
-    TILE,
-    Action,
-    Arena,
-    BeliefSampler,
-    canonical,
-    digest,
-    legal_actions,
-    public_board,
-    rules_identity,
-)
+from .engine import Arena, public_board
 from .export import render
+from .rules import TILE, Action, canonical, digest, rules_identity
 from .selfplay import live_mirror
 from .storage import seed_for
 

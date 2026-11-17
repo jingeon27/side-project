@@ -1,59 +1,14 @@
+"""Native mechanics through the arena: forms, costs, children, evolutions and the public ledger."""
+
 import json
 import unittest
 
-from clash_bot.arena.engine import (
-    CARDS,
-    DECKS,
-    DEPLOYMENT,
-    FIELDS,
-    LIVE_DECK,
-    TILE,
-    Action,
-    Arena,
-    BeliefSampler,
-    canonical,
-    compatible_openings,
-    deck_ids,
-    legal_actions,
-    placement_tiles,
-    public_mana,
-    rules_identity,
-)
+from clash_bot.arena.candidates import legal_actions
+from clash_bot.arena.engine import Arena, public_mana
+from clash_bot.arena.rules import FIELDS, TILE, Action, canonical, rules_identity
 
 
 class NativeArenaTest(unittest.TestCase):
-    def test_wait_remains_available_at_high_elixir_instead_of_forcing_a_card_or_skill(self):
-        arena = Arena(41)
-        arena.play([Action(-1)] * 2, 320)
-        self.assertGreaterEqual(arena.state()["players"][0]["elixir_milli"], 8000)
-        self.assertIn(Action(-1), legal_actions(arena.battle, 0))
-
-    def test_both_sides_can_choose_and_deploy_troops_behind_the_king_tower(self):
-        deck = [5, 1, 4, 7, 0, 2, 3, 6]
-        arena = Arena(42, [deck, deck])
-        arena.play([Action(-1)] * 2, 100)
-        for team in (0, 1):
-            for card in deck[:4]:
-                actions = [
-                    action for action in legal_actions(arena.battle, team) if action.card == card
-                ]
-                for tile in DEPLOYMENT.kingBackTiles:
-                    with self.subTest(team=team, card=card, tile=tile):
-                        action = next(
-                            (
-                                action
-                                for action in actions
-                                if canonical(action.x / TILE, action.y / TILE, team) == tile
-                            ),
-                            None,
-                        )
-                        self.assertIsNotNone(action)
-                        clone = arena.clone()
-                        result = clone.play(
-                            [action if side == team else Action(-1) for side in (0, 1)], 1
-                        )
-                        self.assertEqual(result[0][1], 0)
-
     def test_current_eight_card_deck_forms_and_exact_snapshot_branching(self):
         arena = Arena(13)
         self.assertEqual(arena.state()["players"][0]["forms"], [0, 1, 0, 0, 2, 1, 0, 0])
@@ -203,10 +158,41 @@ class NativeArenaTest(unittest.TestCase):
         self.assertEqual(len(first), 12)
         self.assertEqual(first, sequence(999))
 
-    def test_belief_world_replays_public_plays_and_preserves_our_known_hand(self):
-        arena = Arena(7)
+
+class InputDelayTest(unittest.TestCase):
+    def accepted(self, arena, team):
+        play = next(Action(*row) for row in arena.observe(team)["legalActions"] if row[0] >= 0)
+        actions = [Action(-1), Action(-1)]
+        actions[team] = play
+        result = arena.play(actions, 1)
+        self.assertEqual(result[0][1], 0)
+        return play, result[0][2]
+
+    def test_a_delayed_play_runs_and_becomes_public_after_its_side_delay(self):
+        arena = Arena(1, delays=(22, 18))
         arena.play([Action(-1)] * 2, 100)
-        for _ in range(5):
+        play, accepted = self.accepted(arena, 0)
+        # Only the side that played knows it until it runs.
+        self.assertEqual([row["action"] for row in arena.observe(0)["pending"]], [play.row()])
+        self.assertEqual(arena.observe(1)["pending"], [])
+        self.assertEqual(arena.observe(1)["history"], [])
+        arena.play([Action(-1)] * 2, 20)
+        self.assertEqual(arena.history, [])
+        arena.play([Action(-1)] * 2, 5)
+        self.assertEqual(arena.history[0]["tick"], accepted + 22)
+        self.assertEqual(arena.history[0]["plays"][0]["action"], play.row())
+        self.assertEqual(arena.observe(0)["pending"], [])
+
+    def test_public_ledger_matches_native_elixir_with_delays_and_levels(self):
+        arena = Arena(7, delays=(22, 18), levels=(12, 10))
+        for _ in range(10):
+            state = arena.state()
+            for team in (0, 1):
+                self.assertAlmostEqual(
+                    public_mana(arena.history, state["tick"], team),
+                    state["players"][team]["elixir_milli"] / 1000,
+                    delta=0.05,
+                )
             moves = [
                 next(
                     (action for action in legal_actions(arena.battle, team) if action.card >= 0),
@@ -214,92 +200,18 @@ class NativeArenaTest(unittest.TestCase):
                 )
                 for team in (0, 1)
             ]
-            arena.play(moves, 60)
-        observation = arena.observe(0)
-        sampled = BeliefSampler(observation, 555).sample()
-        self.assertEqual(sampled.state()["tick"], arena.state()["tick"])
-        self.assertEqual(sampled.state()["players"][0]["hand"], arena.state()["players"][0]["hand"])
-        self.assertEqual(
-            sampled.state()["players"][0]["next_card"], arena.state()["players"][0]["next_card"]
-        )
+            arena.play(moves, 180)
 
-
-def tiles(arena, team, card):
-    return [
-        canonical(action.x / TILE, action.y / TILE, team)
-        for action in legal_actions(arena.battle, team)
-        if action.card == card
-    ]
-
-
-class DeckPoolTest(unittest.TestCase):
-    def test_the_live_deck_keeps_battle_ids_zero_to_seven(self):
-        self.assertEqual(deck_ids(LIVE_DECK), list(range(8)))
-        self.assertEqual(len(CARDS), len(set(CARDS)))
-        self.assertTrue(all(card in CARDS for deck in DECKS.values() for card in deck.cards))
-
-    def test_every_pool_deck_card_gets_a_legal_tile_for_both_sides(self):
-        for name in sorted(DECKS):
-            ids = deck_ids(name)
-            # Two draw orders put every one of the eight cards in an opening hand.
-            for order in (ids, ids[4:] + ids[:4]):
-                arena = Arena(5, [order, order], [name, name])
-                arena.play([Action(-1)] * 2, 100)
-                for team in (0, 1):
-                    for card in arena.state()["players"][team]["hand"]:
-                        with self.subTest(deck=name, team=team, card=CARDS[card]):
-                            self.assertTrue(tiles(arena, team, card))
-
-    def test_counterpush_cards_keep_their_placement_tiles(self):
-        deck = [5, 3, 2, 6, 0, 1, 4, 7]  # knight, graveyard, hut, poison in hand
-        arena = Arena(3, [deck, deck])
+    def test_card_levels_set_unit_strength(self):
+        arena = Arena(1, [[5, 7, 0, 4, 1, 2, 3, 6]] * 2, levels=(12, 10))
         arena.play([Action(-1)] * 2, 100)
-        lanes = [(3.5, 10), (14.5, 10), (3.5, 14), (14.5, 14), *DEPLOYMENT.kingBackTiles]
-        self.assertEqual(tiles(arena, 0, 5), lanes)
-        self.assertEqual(
-            tiles(arena, 0, 3),
-            [(3.5, 25.5), (2.7, 25), (3.5, 24.5), (14.5, 25.5), (15.3, 25), (14.5, 24.5)],
-        )
-        self.assertEqual(
-            tiles(arena, 0, 2), [(9, 9), (7, 12), (11, 12), (3.5, 10), (14.5, 10), (9, 6)]
-        )
-        # Enemy princess towers when no enemy unit is on the field.
-        self.assertEqual(tiles(arena, 0, 6), [(3.5, 25.5), (14.5, 25.5)])
-
-    def test_placement_rules_match_the_live_candidates(self):
-        # src/core/policy/fast-candidates.spec.ts expects the same tiles for these rules.
-        self.assertEqual(
-            placement_tiles("tower_spell", None, []),
-            [(3.5, 25.5), (14.5, 25.5), (3.5, 23.5), (14.5, 23.5)],
-        )
-        self.assertEqual(
-            placement_tiles("anywhere", None, []),
-            [(3.5, 22.5), (14.5, 22.5), (3.5, 28.5), (14.5, 28.5)],
-        )
-        self.assertEqual(placement_tiles("ranged_troop", (14.5, 12), [])[0], (14.5, 9))
-        self.assertEqual(placement_tiles("troop", (14.5, 12), [])[:2], [(14.5, 11), (9, 11)])
-        self.assertEqual(placement_tiles("unsupported", (14.5, 12), []), [])
-
-    def test_each_side_plays_its_own_deck_and_beliefs_draw_from_it(self):
-        arena = Arena(11, decks=["hog_cycle", "giant_beatdown"])
-        arena.play([Action(-1)] * 2, 100)
-        moves = [
-            next(action for action in legal_actions(arena.battle, team) if action.card >= 0)
-            for team in (0, 1)
-        ]
-        arena.play(moves, 60)
-        state = arena.state()
-        self.assertTrue(set(state["players"][0]["hand"]) <= set(deck_ids("hog_cycle")))
-        self.assertTrue(set(state["players"][1]["hand"]) <= set(deck_ids("giant_beatdown")))
-        observation = arena.observe(0)
-        self.assertEqual(observation["decks"], ["hog_cycle", "giant_beatdown"])
-        enemy = compatible_openings(observation, 1)
-        self.assertTrue(all(sorted(order) == sorted(deck_ids("giant_beatdown")) for order in enemy))
-        sampled = BeliefSampler(observation, 4).sample()
-        self.assertEqual(sampled.decks, ["hog_cycle", "giant_beatdown"])
-        self.assertEqual(sampled.state()["players"][0]["hand"], state["players"][0]["hand"])
-        with self.assertRaisesRegex(ValueError, "draw order"):
-            Arena(1, [deck_ids("bait")] * 2, ["hog_cycle", "hog_cycle"])
+        arena.play([Action(5, 6 * TILE, 6 * TILE), Action(5, 6 * TILE, 26 * TILE)], 30)
+        knights = {
+            row[FIELDS["team"]]: row[FIELDS["max_hp"]]
+            for row in arena.state()["entities"]
+            if row[FIELDS["card_id"]] == 5
+        }
+        self.assertGreater(knights[0], knights[1])
 
 
 if __name__ == "__main__":

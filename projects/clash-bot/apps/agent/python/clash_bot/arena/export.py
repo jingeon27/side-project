@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 
 from clash_bot.files import atomic_json
 
-from .engine import FIELDS, TILE, Action, canonical, digest, new_battle
+from .rules import FIELDS, TILE, Action, canonical, digest, new_battle
 from .selfplay import live_mirror
 from .storage import seed_for
 

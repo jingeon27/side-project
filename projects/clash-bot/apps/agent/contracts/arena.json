@@ -56,6 +56,24 @@
     }
   },
   "level": 11,
+  "liveCommandDelayTicks": 22,
+  "selfplay": {
+    "liveMirror": 0.5,
+    "decisionTicks": 20,
+    "searchTicks": 40,
+    "rootActions": 16,
+    "negatives": 16,
+    "commandDelayTicks": [18, 26],
+    "levelOffsets": [-1, 0, 0, 1],
+    "perception": {
+      "missRate": 0.08,
+      "unknownRate": 0.1,
+      "jitterTiles": 0.5,
+      "motionSeenRate": 0.7,
+      "healthSeenRate": 0.3,
+      "effectMissRate": 0.15
+    }
+  },
   "referenceProjects": [
     "https://github.com/itzik123/ClashRoyaleAi",
     "https://www.reddit.com/r/MachineLearning/comments/1wrj0t3/clashroyaleai_an_opensource_deterministic_clash/",

@@ -19,13 +19,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.files import atomic_json
 
+from .benchmark import benchmark
 from .curriculum import from_selfplay
-from .engine import rules_identity
 from .evaluation import evaluate, pfsp_weights
 from .export import export
 from .parallel import play_frozen_games
 from .policy import LEAGUE_KEY, Policy
-from .selfplay import matchup, replay_samples
+from .rules import rules_identity
+from .selfplay import replay_samples, setup_for
 from .storage import read_episode, replay_path, seed_for, write_episode, write_replay
 
 
@@ -245,7 +246,7 @@ def run(
                             "index": index,
                             "seat": (version + index // 2) % 2,
                             "id": game_id,
-                            "decks": matchup(game_id),
+                            "setup": setup_for(game_id),
                             "rulesID": rules["id"],
                             "simulations": simulations,
                             "depth": depth,
@@ -337,8 +338,6 @@ def run(
                     rules["id"],
                     number,
                     pairs=pairs,
-                    simulations=simulations,
-                    depth=depth,
                     report=report,
                     should_stop=stopped,
                 )
@@ -347,6 +346,10 @@ def run(
                     league["champion"] = version
                     atomic_json(root / "league.json", league)
                     publish_champion(root, league)
+                    # The new champion against the fixed rule bots: an absolute progress curve.
+                    measured = benchmark(current, rules["id"], report=report)
+                    atomic_json(root / "benchmarks" / f"v{version:06d}.json", measured)
+                    report({"benchmark": measured["opponents"]})
                 report(
                     {
                         "phase": "evaluated",

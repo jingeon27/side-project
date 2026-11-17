@@ -7,10 +7,12 @@ from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
 from . import balance, catalogue_build
+from .benchmark import benchmark
 from .curriculum import build
 from .export import export
-from .league import export_policy, run
+from .league import checkpoint, export_policy, run
 from .parallel import MAX_WORKERS
+from .policy import Policy
 from .storage import read_episode
 
 DATA = DATA_DIR
@@ -38,6 +40,11 @@ def main():
     commands.add_parser(
         "catalogue", help="Write contracts/card-catalogue.json from the pinned table"
     )
+    measured = commands.add_parser(
+        "benchmark", help="Score a checkpoint against the fixed rule bots"
+    )
+    measured.add_argument("--version", type=int)
+    measured.add_argument("--pairs", type=int, default=8)
     rules = commands.add_parser("rules")
     rules.add_argument("--stage-version")
     curriculum = commands.add_parser("curriculum")
@@ -86,6 +93,15 @@ def main():
         }
     elif args.command == "catalogue":
         result = catalogue_build.write()
+    elif args.command == "benchmark":
+        if not 1 <= args.pairs <= 64:
+            parser.error("Play 1..64 seat-swapped pairs per rule bot")
+        root = Path(json.loads((control / "active.json").read_text())["root"])
+        league = json.loads((root / "league.json").read_text())
+        version = league["champion"] if args.version is None else args.version
+        policy = Policy.load(checkpoint(root, version), league["rulesID"])
+        result = benchmark(policy, league["rulesID"], pairs=args.pairs)
+        atomic_json(root / "benchmarks" / f"v{version:06d}.json", result)
     elif args.command == "policy":
         if args.version < 0:
             parser.error("Checkpoint versions start at 0")

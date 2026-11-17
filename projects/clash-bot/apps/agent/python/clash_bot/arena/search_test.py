@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 
-from clash_bot.arena.engine import Action, Arena
+from clash_bot.arena.engine import Arena
 from clash_bot.arena.policy import Policy, features
+from clash_bot.arena.rules import Action
 from clash_bot.arena.search import Workspace, search
 
 

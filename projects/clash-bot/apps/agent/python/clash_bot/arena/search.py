@@ -10,7 +10,10 @@ import time
 
 import numpy as np
 
-from .engine import Action, Arena, BeliefSampler, command, legal_actions, public_board
+from .belief import BeliefSampler
+from .candidates import legal_actions
+from .engine import Arena, public_board
+from .rules import Action, command
 
 
 def terminal(state, team):
@@ -57,6 +60,24 @@ def pick(edges, actions, priors, rng, explore):
     return actions[int(rng.choice(np.flatnonzero(scores >= scores.max() - 1e-12)))]
 
 
+def root_subset(actions, prior, rng, size, explore):
+    """Indices of the root candidates search expands: the `size` best by prior.
+
+    While training they are sampled without replacement (Gumbel top-k), so placements the
+    policy does not rank yet still get searched. Waiting is always among them.
+    """
+    if len(actions) <= size:
+        return list(range(len(actions)))
+    scores = np.log(np.maximum(prior, 1e-12))
+    if explore:
+        scores = scores + rng.gumbel(size=len(scores))
+    keep = [int(index) for index in np.argsort(-scores, kind="stable")[:size]]
+    wait = actions.index(Action(-1)) if Action(-1) in actions else None
+    if wait is not None and wait not in keep:
+        keep[-1] = wait
+    return sorted(keep)
+
+
 def search(
     observation,
     policy,
@@ -69,7 +90,13 @@ def search(
     max_ms=None,
     opponent_policy=None,
     workspace=None,
+    first_ticks=None,
+    root_size=16,
 ):
+    """Search the best `root_size` of the observation's candidates.
+
+    The first ply lasts `first_ticks` (the decision interval), later plies `step_ticks`.
+    """
     began = time.perf_counter()
     rng = np.random.default_rng(seed)
     sampler = BeliefSampler(observation, seed)
@@ -89,8 +116,11 @@ def search(
             )
     team = observation["team"]
     root = Node()
-    root_actions = [Action(*row) for row in observation["legalActions"]]
-    root_prior, _ = policy.predict(observation, root_actions)
+    candidates = [Action(*row) for row in observation["legalActions"]]
+    prior, _ = policy.predict(observation, candidates)
+    keep = root_subset(candidates, prior, rng, root_size, noise)
+    root_actions = [candidates[index] for index in keep]
+    root_prior = prior[keep] / prior[keep].sum()
     if noise and len(root_actions) > 1:
         root_prior = 0.75 * root_prior + 0.25 * rng.dirichlet(np.full(len(root_actions), 0.2))
     snapshots = [world.battle.save() for world in worlds]
@@ -100,11 +130,7 @@ def search(
         if max_ms is not None and simulation and (time.perf_counter() - began) * 1000 >= max_ms:
             break
         index = simulation % len(worlds)
-        world.battle.load(snapshots[index])
-        world.history = worlds[index].history.copy()
-        world.decks = worlds[index].decks
-        world.initial_hands = worlds[index].initial_hands
-        world.initial_next = worlds[index].initial_next
+        world.adopt(snapshots[index], worlds[index])
         node, path = root, []
         for ply in range(depth):
             state = world.state()
@@ -146,7 +172,7 @@ def search(
             path.append((node, ours, theirs))
             actions = [Action(-1), Action(-1)]
             actions[team], actions[1 - team] = ours, theirs
-            world.play(actions, step_ticks)
+            world.play(actions, first_ticks if ply == 0 and first_ticks else step_ticks)
             reached = max(reached, ply + 1)
             node = node.children.setdefault((ours, theirs), Node())
         else:
@@ -165,9 +191,12 @@ def search(
                 edges[action]["w"] += result
     visits = np.array([root.own.get(action, {}).get("n", 0) for action in root_actions], np.float32)
     target = visits / visits.sum() if visits.sum() else root_prior
+    others = sorted(set(range(len(candidates))) - set(keep))
     return {
         "actions": root_actions,
         "target": target,
+        # Candidates the policy ranked but search did not expand; training uses some as negatives.
+        "others": [candidates[index] for index in others],
         "values": [
             root.own.get(action, {}).get("w", 0) / max(1, root.own.get(action, {}).get("n", 0))
             for action in root_actions
@@ -177,7 +206,10 @@ def search(
         "beliefHypotheses": [len(rows) for rows in sampler.openings],
         "maxDepth": reached,
         "depthLimit": depth,
-        "maxLookaheadSeconds": reached * step_ticks / 20,
+        "maxLookaheadSeconds": (
+            ((first_ticks or step_ticks) + (reached - 1) * step_ticks) / 20 if reached else 0
+        ),
+        "rootCandidates": len(candidates),
         "rootConditioningAttempts": attempts,
         "reconstruction": "public_board_exact",
         "source": "public_history_information_set_puct",

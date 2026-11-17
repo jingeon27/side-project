@@ -12,7 +12,7 @@ import numpy as np
 from more_itertools import partition
 
 from .catalogue import current
-from .engine import CARDS, FIELDS, TILE, canonical, new_battle
+from .rules import CARDS, FIELDS, TILE, canonical, new_battle
 
 CATALOGUE = current()
 # The screen's card names by engine catalogue id ("BarbLog" -> "barbarian_barrel").
@@ -115,11 +115,12 @@ def decision_context(observation, actions, types=None):
             reverse=reverse,
         ):
             uid = row[FIELDS["uid"]]
+            # Motion over the last public snapshots, at most three seconds back.
             seen = [
-                (event["tick"], point)
-                for event in observation["history"]
-                if 0 < state["tick"] - event["tick"] <= 60
-                for point in event.get("positions", [])
+                (tick, point)
+                for tick, points in observation["trail"]
+                if 0 < state["tick"] - tick <= 60
+                for point in points
                 if point[0] == uid
             ]
             old = max(seen, key=lambda value: value[0]) if seen else None
@@ -160,6 +161,11 @@ def decision_context(observation, actions, types=None):
         "enemyElixir": {"min": enemy["elixir_range"][0], "max": enemy["elixir_range"][1]},
         "enemyCycle": cycle,
         "next": [NAMES[own["next_card"]]] if own["next_card"] >= 0 else [],
+        # [card, count, ready, cycle]: normal plays left before the next evolved one.
+        "ownEvolution": [
+            [NAMES[card], 0 if ready else cycle - count, 0 if ready else cycle - count]
+            for card, count, ready, cycle in own["evo"]
+        ],
         "own": sorted(units(ours), key=lambda row: -row[2])[:5],
         "enemy": sorted(units(theirs), key=lambda row: row[2])[:8],
         "bodies": {"own": detailed(ours, True), "enemy": detailed(theirs, False)},
