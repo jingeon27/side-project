@@ -15,7 +15,7 @@ import { fastController } from '../match/controllers.ts';
 import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 
-// 자가대국 리그가 게시한 챔피언의 실시간 정책 파일이다(clash_bot.arena.league.publish_champion).
+// 자가대국 리그가 게시한 챔피언의 실시간 정책 파일이다(clash_bot.arena.league.champions.publish_champion).
 export async function championPolicyPath(dataDir: string) {
   const active = await readJsonFile(
     join(dataDir, 'arena/control/active.json'),

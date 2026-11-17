@@ -38,18 +38,21 @@ apps/agent/
         learning_policy.py     LoRA와 확률·손실 함수
         learner.py             체크포인트·목적별 Adam 상태·챔피언 보호
         policy_gradient.py, imitation.py, search_distillation.py   PPO·상대 모방·수읽기 증류 갱신
-      arena/                   자가대국·탐색·리그 (의존: catalogue ← sim ← policy ← training ← study ← league·cli)
+      arena/                   자가대국·탐색·리그 (의존: catalogue ← sim ← policy ← training ← study ← league ← cli)
         catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
-        sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 배치 후보(candidates),
-                               숨은 손패 가설(belief), 카탈로그 생성(catalogue_build, catalogue_vectors),
-                               밸런스 패치(balance)
+        sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 공개 엘릭서 장부(elixir),
+                               배치 후보(candidates), 숨은 손패 가설과 판단 사이의 유지(belief),
+                               재현 검사(mechanics, verification), 카탈로그 생성(catalogue_build,
+                               catalogue_vectors), 밸런스 패치(balance)
         policy/                판단 문맥(context), 특징(features), 화면 인식 오류(noise), 표본(samples),
                                네트워크와 학습(network)
-        training/              자가대국(selfplay), 탐색(search), 워커(parallel), 채택 평가(evaluation),
-                               규칙 봇 기준 평가(benchmark), 경기 파일(storage)
+        training/              자가대국(selfplay), 탐색(search), 실행 한 번 동안 재사용하는 워커(parallel),
+                               채택 평가(evaluation), 규칙 봇 기준 평가(benchmark), 경기 파일(storage)
         study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, teacher, export)
-        champions.py           리그 포인터·체크포인트·실전 챔피언 파일
-        league.py, cli.py      리그 반복과 명령
+        league/                실행 잠금·정지 요청·상태(control), 한 세대의 대국과 학습(generation),
+                               채택 평가와 게시(qualification), 리그 포인터·체크포인트·실전 챔피언
+                               파일(champions), 반복(loop)
+        cli.py                 명령
       perception/              CPU 인식 워커(vision_worker)와 카드 식별(classifier)·유닛 표식(markers)·
                                독/무덤 효과(effects), 화면 실험(trophy_vision), ONNX 변환
       trophy/                  현재 궤적 계약, CPU PPO, 불변 체크포인트와 재시도 receipt
@@ -68,7 +71,7 @@ Counterpush 실행기 하나가 브라우저·CPU 인식 프로세스·큰 Qwen 
 
 Python의 입력 형식 검증은 Pydantic(strict, 정의하지 않은 필드 거부), 가중치·경기 증거·모델 소유권 검증은 엔진이 담당한다. 잘못된 JSON 뒤에도 다음 정상 요청에 응답한다. 타입을 느슨하게 변환하지 않는다. 승격 확률은 SciPy의 단측 `binomtest`로 계산하며 무승부는 승리로 세지 않는다. 판정 방법·최소 쌍 수·평균 점수 하한·유의수준과 결과 라벨은 `contracts/qualification.json`을 따른다. SciPy 초기화는 실시간 추론 시작 경로에서 제외한다.
 
-CPU 자가대국의 각 프로세스는 별도의 전장과 고정 정책을 갖는다. 경기 파일·학습·체크포인트 쓰기는 부모 실행기만 수행한다. macOS에서는 Metal을 사용한 프로세스를 복제하지 않고 `spawn`으로 CPU 코어 수(최대 16개)까지 시작한다(`arena start --workers`).
+CPU 자가대국의 각 프로세스는 별도의 전장과 고정 정책을 갖는다. 경기 파일·학습·체크포인트 쓰기는 부모 실행기만 수행한다. macOS에서는 Metal을 사용한 프로세스를 복제하지 않고 `spawn`으로 CPU 코어 수(최대 16개)까지 시작한다(`arena start --workers`). 워커는 실행을 시작할 때 한 번 만들어 자가대국과 채택 평가가 함께 쓴다. 평가 경기는 경기 ID로 시드가 정해져 워커 수와 무관하게 같은 결과를 낸다. 워커는 터미널 인터럽트를 무시하고 진행 중인 경기를 끝내며, 정지 여부는 부모 실행기가 판단한다.
 
 트로피 자동개선은 `trophy/learning/control`의 잠금과 `experiments/<행동 지문>`의 상태·경기·가중치를 소유한다. 로컬 화면 어댑터는 검증한 로비에서 `nextMatch`를 받은 뒤 고정 `TrophyActor`로 행동하고, 확인한 입력/대기와 두 결과 화면을 `trajectory.json`으로 봉인한 다음 `complete`를 호출한다. `TrophySession`만 학습 순서·평가·게시를 변경한다. 학습기는 CPU MLX로 작은 빠른 정책만 갱신하며 Counterpush Qwen·arena 리그를 수정하지 않는다. 코드·계약·참조·입력 연결의 지문이 바뀌면 다른 실험으로 구분한다. 상태 조회는 `yarn workspace @side/clash-bot trophy status`, 외부 어댑터용 JSON 통신은 `trophy serve --seed <policy.json> --evidence <파일>`이다.
 
@@ -99,4 +102,4 @@ yarn workspace @side/clash-bot check
 
 `contracts/deployment.json`이 킹타워 중심과 뒤쪽 두 배치 지점을 소유한다. 화면 좌표 변환은 `core/geometry.ts`가 소유하며 TS 후보와 Python 자가대국이 같은 뒤쪽 타일을 사용한다. 킹타워 몸체는 계속 차단하고 뒤쪽 바닥을 손패 UI처럼 잘라내지 않는다.
 
-Qwen은 카드당 최대 5개 후보 안에 뒤쪽 선택지를 유지하고 전방·중앙·수비 후보도 비교한다. 빠른 정책과 자가대국은 카드당 6개 제한을 유지한다. 배치 후보만 넓히며 특징 차원·체크포인트 형식·가중치는 바꾸지 않아 기존 학습을 이어간다. 뒤쪽에 반드시 내도록 강제하지 않는다. 개별 배치의 장기 효과를 별도로 보상하는 학습은 이번 수정에 포함하지 않는다.
+Qwen은 카드당 최대 5개 후보 안에 뒤쪽 선택지를 유지하고 전방·중앙·수비 후보도 비교한다. 빠른 정책과 자가대국의 규칙 지점은 카드당 최대 6개이며 뒤쪽 두 지점을 포함한다. 판단 시점에는 이 규칙 지점에 우리 진영의 모든 칸(유닛·건물·굴림 주문)과 필드의 두 칸마다·상대 유닛 위치(주문)를 더한 후보에 정책이 순위를 매기고, 규칙 지점만 쓰는 곳은 탐색의 안쪽 수와 Qwen 전술 자료다. 뒤쪽에 반드시 내도록 강제하지 않으며 개별 배치의 장기 효과를 따로 보상하지 않는다.
