@@ -59,6 +59,8 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/studio');
+  // 설정을 읽기 전의 로컬 기본값으로 서버 합성을 요청하지 않도록 브라우저 모드 준비를 기다린다.
+  await expect(page.getByRole('button', { name: 'AI 연결이 필요해요' })).toBeVisible();
   await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');

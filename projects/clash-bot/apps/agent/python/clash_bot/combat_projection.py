@@ -114,7 +114,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
             [delay]
             if card == "ice_wizard"
             else [
-                delay + i * COMBAT["stepSeconds"]
+                delay + min(duration, i * COMBAT["stepSeconds"])
                 for i in range(math.ceil(duration / COMBAT["stepSeconds"]) + 1)
             ]
         )
@@ -143,7 +143,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 roll_y = y + (time - delay) * COMBAT[card]["speed"]
                 dx, dy = (
                     abs(px - x) - COMBAT[card]["width"] / 2,
-                    abs(py - roll_y) - COMBAT[card]["width"] / 2,
+                    abs(py - roll_y) - COMBAT[card]["depth"] / 2,
                 )
                 hits.append(
                     [
@@ -184,7 +184,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 central.append(
                     abs(px - x) <= COMBAT[card]["width"] / 2
                     and abs(py - y - (time - delay) * COMBAT[card]["speed"])
-                    <= COMBAT[card]["width"] / 2
+                    <= COMBAT[card]["depth"] / 2
                 )
                 continue
             central.append(math.hypot(px - x, py - y) <= COMBAT[card]["radius"])

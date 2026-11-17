@@ -61,6 +61,8 @@ class TrainingSample(BaseModel):
     actionFeatures: list[list[float]]
     actionBias: list[float]
     actionBiasWithoutTowers: list[float]
+    actionLogMassCorrection: list[float]
+    actionLogMassCorrectionWithoutTowers: list[float]
     target: list[float]
     outcome: int
     value: float = Field(ge=-1, le=1)
@@ -82,11 +84,13 @@ class TrainingSample(BaseModel):
                 self.actionFeatures,
                 self.actionBias,
                 self.actionBiasWithoutTowers,
+                self.actionLogMassCorrection,
+                self.actionLogMassCorrectionWithoutTowers,
             )
         ):
             raise ValueError("target and action features must cover every action")
         if min(self.target) < 0 or abs(sum(self.target) - 1) > 1e-4:
-            raise ValueError("target must be a search visit distribution")
+            raise ValueError("target must be a searched policy distribution")
         if any(len(row) != ACTION_SIZE for row in self.actionFeatures):
             raise ValueError("action features have the wrong width")
         return self

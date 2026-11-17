@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from ..policy.choice import card_choice, sample_card
 from ..policy.noise import PerceptionNoise
-from ..policy.samples import SparseFeatures, value_target
+from ..policy.samples import value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
@@ -180,15 +180,6 @@ def play_game(
             selected[team] = result["actions"][chosen]
             searches += result["simulations"]
             if training:
-                (
-                    rows,
-                    state_features,
-                    action_vectors,
-                    biases,
-                    masked_biases,
-                    target,
-                    stored_choice,
-                ) = training_rows(observation, result, screens[team], chosen)
                 samples.append(
                     {
                         "gameID": game_id,
@@ -201,13 +192,7 @@ def play_game(
                             for key, value in observation.items()
                             if key != "legalActions"
                         },
-                        "features": SparseFeatures.of(state_features).model_dump(),
-                        "actions": [action.row() for action in rows],
-                        "actionFeatures": action_vectors.tolist(),
-                        "actionBias": biases.tolist(),
-                        "actionBiasWithoutTowers": masked_biases.tolist(),
-                        "target": target,
-                        "chosen": stored_choice,
+                        **training_rows(observation, result, screens[team], chosen, policy),
                         "search": {
                             key: value
                             for key, value in result.items()

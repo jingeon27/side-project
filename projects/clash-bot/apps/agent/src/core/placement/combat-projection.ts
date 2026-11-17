@@ -156,7 +156,7 @@ export function forecastEffect(input: {
         ? [delay]
         : Array.from(
             { length: Math.ceil(duration / COMBAT.stepSeconds) + 1 },
-            (_, i) => delay + i * COMBAT.stepSeconds,
+            (_, i) => delay + Math.min(duration, i * COMBAT.stepSeconds),
           );
     const hits = times.map((time) => {
       const point =
@@ -167,7 +167,7 @@ export function forecastEffect(input: {
       if (input.card === 'barbarian_barrel') {
         const rollY = input.y + (time - delay) * COMBAT.barbarian_barrel.speed;
         const dx = Math.abs(point.x - input.x) - COMBAT.barbarian_barrel.width / 2;
-        const dy = Math.abs(point.y - rollY) - COMBAT.barbarian_barrel.width / 2;
+        const dy = Math.abs(point.y - rollY) - COMBAT.barbarian_barrel.depth / 2;
         return [dx + radius <= 0 && dy + radius <= 0, dx - radius <= 0 && dy - radius <= 0];
       }
       const positions = input.card === 'poison' ? [point, position(unit, time)] : [point];
@@ -194,7 +194,7 @@ export function forecastEffect(input: {
         return (
           Math.abs(point.x - input.x) <= COMBAT.barbarian_barrel.width / 2 &&
           Math.abs(point.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) <=
-            COMBAT.barbarian_barrel.width / 2
+            COMBAT.barbarian_barrel.depth / 2
         );
       return (
         Math.hypot(point.x - input.x, point.y - input.y) <=

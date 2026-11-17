@@ -98,7 +98,10 @@ def evaluate(
         ]
     )
     jobs = [
-        {"identity": f"holdout-{generation}-{pair}", "setup": evaluation_setup(pair, generation)}
+        {
+            "identity": f"holdout-{rules_id[:16]}-{generation}-{pair}",
+            "setup": evaluation_setup(pair, generation),
+        }
         for pair in range(required_pairs)
     ]
     results, pair_scores = [], []

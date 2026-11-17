@@ -160,6 +160,8 @@ class CompactReplayTest(unittest.TestCase):
             "actionFeatures": action_vectors.tolist(),
             "actionBias": [0.0] * len(actions),
             "actionBiasWithoutTowers": [0.0] * len(actions),
+            "actionLogMassCorrection": [0.0] * len(actions),
+            "actionLogMassCorrectionWithoutTowers": [0.0] * len(actions),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "outcome": -1,
             "value": -0.7,

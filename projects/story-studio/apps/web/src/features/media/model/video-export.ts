@@ -22,7 +22,11 @@ export async function exportVideo(
   signal: AbortSignal,
   progress: (message: string) => void,
 ) {
-  if (!('MediaRecorder' in window) || !('captureStream' in HTMLCanvasElement.prototype)) {
+  if (
+    !('MediaRecorder' in window) ||
+    !('captureStream' in HTMLCanvasElement.prototype) ||
+    !('requestVideoFrameCallback' in HTMLVideoElement.prototype)
+  ) {
     throw new Error(
       '이 브라우저는 영상 합치기를 지원하지 않습니다. 최신 Chrome에서 열거나 개별 MP4와 자막을 내려받아 주세요.',
     );
@@ -142,14 +146,12 @@ export async function exportVideo(
         }
         frame.id = requestAnimationFrame(draw);
       };
-      draw();
-      if (recorder.state === 'inactive') recorder.start(1000);
-      if (recorder.state === 'paused') recorder.resume();
       await new Promise<void>((resolve, reject) => {
         const dispose = () => {
           video.onended = null;
           video.onerror = null;
           video.ontimeupdate = null;
+          video.cancelVideoFrameCallback(firstFrame);
           signal.removeEventListener('abort', aborted);
           clearTimeout(timeout);
         };
@@ -178,6 +180,18 @@ export async function exportVideo(
           reject(new Error('장면을 재생하지 못했습니다.'));
         };
         signal.addEventListener('abort', aborted, { once: true });
+        // loadeddata 직후에는 drawImage가 아직 영상 표면을 읽지 못할 수 있다.
+        // 첫 디코딩 프레임을 그린 뒤 기록을 시작하거나 재개해야 배경만 저장하지 않는다.
+        const firstFrame = video.requestVideoFrameCallback(() => {
+          try {
+            draw();
+            if (recorder.state === 'inactive') recorder.start(1000);
+            if (recorder.state === 'paused') recorder.resume();
+          } catch {
+            dispose();
+            reject(new Error('장면의 첫 프레임을 기록하지 못했습니다.'));
+          }
+        });
         video.play().catch(() => {
           dispose();
           reject(new Error('영상 재생 권한을 확인해 주세요.'));
