@@ -2,6 +2,7 @@ import type { CardId } from '../cards.ts';
 import { CARD_MECHANICS, type UnitKind } from '../knowledge.ts';
 import { type FieldEffect, type FieldUnit } from './battle-state.ts';
 import { SpawnPatterns, type SpawnCast } from './spawn-patterns.ts';
+import { TowerHealthTracker, type TowerHpReading } from './tower-health.ts';
 
 type UnitTrack = {
   id: string;
@@ -35,9 +36,11 @@ type FieldScan = {
   entities: Array<Omit<FieldUnit, 'kind'> & { kind?: UnitKind | null }>;
   spawnedUnits?: Array<Omit<FieldUnit, 'card'> & { side: 'red' | 'blue' }>;
   effects?: Array<Pick<FieldEffect, 'card' | 'side' | 'x' | 'y' | 'radius' | 'confidence'>>;
+  ownTowerHp?: TowerHpReading[];
 };
 
 export class FieldDynamics {
+  private readonly towerHealth = new TowerHealthTracker();
   readonly episode: string;
   readonly patterns: SpawnPatterns;
   readonly units: UnitTrack[] = [];
@@ -204,6 +207,7 @@ export class FieldDynamics {
     this.units.splice(0, this.units.length, ...this.units.filter((track) => at - track.at < 2000));
     this.state.at = at;
     return {
+      ...(scan.ownTowerHp ? { ownTowerHp: this.towerHealth.observe(scan.ownTowerHp, at) } : {}),
       allies: bodies.filter((body) => body.side === 'blue').slice(0, 18),
       enemies: bodies.filter((body) => body.side === 'red').slice(0, 24),
       effects: fieldEffects,
