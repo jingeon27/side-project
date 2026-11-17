@@ -70,6 +70,8 @@ const loaders = {
   'sentry-observability/en': () => import('../../../../content/posts/sentry-observability/en.mdx'),
   'side-project-design/ko': () => import('../../../../content/posts/side-project-design/ko.mdx'),
   'side-project-design/en': () => import('../../../../content/posts/side-project-design/en.mdx'),
+  'side-project-goals/ko': () => import('../../../../content/posts/side-project-goals/ko.mdx'),
+  'side-project-goals/en': () => import('../../../../content/posts/side-project-goals/en.mdx'),
   'side-project-infrastructure/ko': () =>
     import('../../../../content/posts/side-project-infrastructure/ko.mdx'),
   'side-project-infrastructure/en': () =>

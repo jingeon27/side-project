@@ -1,0 +1,207 @@
+{
+  "note": "The live ElixirLedger (src/core/battle/elixir-ledger.ts) wrote each max: the upper bound on the opponent elixir after that sample of our own bar; its lower bound is always 0. elixir-ledger.spec.ts and arena/policy/screen_test.py check them. at is milliseconds; own and opponent are the plays since the previous sample.",
+  "cases": [
+    {
+      "name": "below the cap with every opponent play recognized",
+      "samples": [
+        { "at": 0, "amount": 5, "own": [], "opponent": [], "max": 5.2 },
+        { "at": 1000, "amount": 5.357, "own": [], "opponent": [], "max": 5.557 },
+        {
+          "at": 2000,
+          "amount": 2.714,
+          "own": [{ "at": 1500, "card": "knight", "cost": 3 }],
+          "opponent": [],
+          "max": 5.914
+        },
+        {
+          "at": 3000,
+          "amount": 3.071,
+          "own": [],
+          "opponent": [{ "at": 2600, "cost": 4 }],
+          "max": 2.271000000000001
+        },
+        { "at": 4000, "amount": 3.428, "own": [], "opponent": [], "max": 2.628 },
+        { "at": 5000, "amount": 3.785, "own": [], "opponent": [], "max": 2.9850000000000003 },
+        {
+          "at": 6000,
+          "amount": 0.142,
+          "own": [{ "at": 5400, "card": "poison", "cost": 4 }],
+          "opponent": [],
+          "max": 3.3419999999999996
+        },
+        {
+          "at": 7000,
+          "amount": 0.499,
+          "own": [],
+          "opponent": [{ "at": 6700, "cost": 3 }],
+          "max": 0.6989999999999998
+        },
+        { "at": 8000, "amount": 0.856, "own": [], "opponent": [], "max": 1.056000000000001 },
+        { "at": 9000, "amount": 1.213, "own": [], "opponent": [], "max": 1.4130000000000003 },
+        {
+          "at": 10000,
+          "amount": 0.57,
+          "own": [{ "at": 9700, "card": "skeletons", "cost": 1 }],
+          "opponent": [],
+          "max": 1.7699999999999996
+        },
+        { "at": 11000, "amount": 0.927, "own": [], "opponent": [], "max": 2.1270000000000007 },
+        {
+          "at": 12000,
+          "amount": 1.284,
+          "own": [],
+          "opponent": [{ "at": 11200, "cost": 5 }],
+          "max": 0.3569999999999993
+        },
+        { "at": 13000, "amount": 1.641, "own": [], "opponent": [], "max": 0.7139999999999986 },
+        { "at": 14000, "amount": 1.998, "own": [], "opponent": [], "max": 1.0709999999999997 }
+      ]
+    },
+    {
+      "name": "our bar stays full, so the fastest gain is assumed",
+      "samples": [
+        { "at": 0, "amount": 5, "own": [], "opponent": [], "max": 5.2 },
+        { "at": 1000, "amount": 5.357, "own": [], "opponent": [], "max": 5.557 },
+        { "at": 2000, "amount": 5.714, "own": [], "opponent": [], "max": 5.914000000000001 },
+        { "at": 3000, "amount": 6.071, "own": [], "opponent": [], "max": 6.271 },
+        { "at": 4000, "amount": 6.428, "own": [], "opponent": [], "max": 6.628 },
+        {
+          "at": 5000,
+          "amount": 6.785,
+          "own": [],
+          "opponent": [{ "at": 4300, "cost": 4 }],
+          "max": 2.9850000000000003
+        },
+        { "at": 6000, "amount": 7.142, "own": [], "opponent": [], "max": 3.3420000000000005 },
+        { "at": 7000, "amount": 7.499, "own": [], "opponent": [], "max": 3.699 },
+        { "at": 8000, "amount": 7.856, "own": [], "opponent": [], "max": 4.055999999999999 },
+        { "at": 9000, "amount": 8.213, "own": [], "opponent": [], "max": 4.4129999999999985 },
+        { "at": 10000, "amount": 8.57, "own": [], "opponent": [], "max": 4.77 },
+        { "at": 11000, "amount": 8.927, "own": [], "opponent": [], "max": 5.126999999999999 },
+        { "at": 12000, "amount": 9.284, "own": [], "opponent": [], "max": 5.484 },
+        {
+          "at": 13000,
+          "amount": 9.641,
+          "own": [],
+          "opponent": [{ "at": 12800, "cost": 6 }],
+          "max": 0.3569999999999993
+        },
+        { "at": 14000, "amount": 9.998, "own": [], "opponent": [], "max": 1.4284285714285705 },
+        { "at": 15000, "amount": 10, "own": [], "opponent": [], "max": 2.4998571428571417 },
+        { "at": 16000, "amount": 10, "own": [], "opponent": [], "max": 3.571285714285713 },
+        { "at": 17000, "amount": 10, "own": [], "opponent": [], "max": 4.642714285714286 },
+        {
+          "at": 18000,
+          "amount": 5,
+          "own": [{ "at": 17300, "card": "graveyard", "cost": 5 }],
+          "opponent": [],
+          "max": 5.714142857142855
+        },
+        { "at": 19000, "amount": 5.357, "own": [], "opponent": [], "max": 6.07114285714286 },
+        { "at": 20000, "amount": 5.714, "own": [], "opponent": [], "max": 6.428142857142859 },
+        { "at": 21000, "amount": 6.071, "own": [], "opponent": [], "max": 6.7851428571428585 },
+        { "at": 22000, "amount": 6.428, "own": [], "opponent": [], "max": 7.142142857142858 }
+      ]
+    },
+    {
+      "name": "no opponent play is recognized",
+      "samples": [
+        { "at": 0, "amount": 5, "own": [], "opponent": [], "max": 5.2 },
+        { "at": 1000, "amount": 5.357, "own": [], "opponent": [], "max": 5.557 },
+        { "at": 2000, "amount": 5.714, "own": [], "opponent": [], "max": 5.914000000000001 },
+        {
+          "at": 3000,
+          "amount": 5.071,
+          "own": [{ "at": 2200, "card": "skeletons", "cost": 1 }],
+          "opponent": [],
+          "max": 6.271
+        },
+        { "at": 4000, "amount": 5.428, "own": [], "opponent": [], "max": 6.628 },
+        { "at": 5000, "amount": 5.785, "own": [], "opponent": [], "max": 6.984999999999999 },
+        { "at": 6000, "amount": 6.142, "own": [], "opponent": [], "max": 7.342 },
+        { "at": 7000, "amount": 6.499, "own": [], "opponent": [], "max": 7.699 },
+        {
+          "at": 8000,
+          "amount": 2.856,
+          "own": [{ "at": 7400, "card": "furnace", "cost": 4 }],
+          "opponent": [],
+          "max": 8.056000000000001
+        },
+        { "at": 9000, "amount": 3.213, "own": [], "opponent": [], "max": 8.413 },
+        { "at": 10000, "amount": 3.57, "own": [], "opponent": [], "max": 8.77 },
+        { "at": 11000, "amount": 3.927, "own": [], "opponent": [], "max": 9.126999999999999 },
+        { "at": 12000, "amount": 4.284, "own": [], "opponent": [], "max": 9.484 },
+        {
+          "at": 13000,
+          "amount": 1.641,
+          "own": [{ "at": 12600, "card": "ice_wizard", "cost": 3 }],
+          "opponent": [],
+          "max": 9.841
+        },
+        { "at": 14000, "amount": 1.998, "own": [], "opponent": [], "max": 10 },
+        { "at": 15000, "amount": 2.355, "own": [], "opponent": [], "max": 10 },
+        { "at": 16000, "amount": 2.712, "own": [], "opponent": [], "max": 10 }
+      ]
+    },
+    {
+      "name": "double then triple elixir with plays on both sides",
+      "samples": [
+        { "at": 0, "amount": 5, "own": [], "opponent": [], "max": 5.2 },
+        {
+          "at": 1000,
+          "amount": 3.714,
+          "own": [{ "at": 900, "card": "barbarian_barrel", "cost": 2 }],
+          "opponent": [],
+          "max": 5.914
+        },
+        { "at": 2000, "amount": 4.428, "own": [], "opponent": [{ "at": 1700, "cost": 3 }], "max": 3.628 },
+        { "at": 3000, "amount": 5.142, "own": [], "opponent": [], "max": 4.3420000000000005 },
+        {
+          "at": 4000,
+          "amount": 2.856,
+          "own": [{ "at": 3300, "card": "knight", "cost": 3 }],
+          "opponent": [],
+          "max": 5.056000000000001
+        },
+        { "at": 5000, "amount": 3.57, "own": [], "opponent": [], "max": 5.77 },
+        {
+          "at": 6000,
+          "amount": 4.641,
+          "own": [],
+          "opponent": [{ "at": 5200, "cost": 4 }],
+          "max": 2.841000000000001
+        },
+        { "at": 7000, "amount": 5.712, "own": [], "opponent": [], "max": 3.911999999999999 },
+        { "at": 8000, "amount": 6.783, "own": [], "opponent": [], "max": 4.9830000000000005 },
+        {
+          "at": 9000,
+          "amount": 3.854,
+          "own": [{ "at": 8800, "card": "poison", "cost": 4 }],
+          "opponent": [],
+          "max": 6.054
+        },
+        { "at": 10000, "amount": 4.925, "own": [], "opponent": [{ "at": 9600, "cost": 2 }], "max": 5.125 },
+        { "at": 11000, "amount": 5.996, "own": [], "opponent": [], "max": 6.1960000000000015 },
+        { "at": 12000, "amount": 7.067, "own": [], "opponent": [], "max": 7.2669999999999995 },
+        { "at": 13000, "amount": 8.138, "own": [], "opponent": [], "max": 8.338000000000001 },
+        {
+          "at": 14000,
+          "amount": 4.209,
+          "own": [{ "at": 13100, "card": "graveyard", "cost": 5 }],
+          "opponent": [],
+          "max": 9.408999999999999
+        },
+        { "at": 15000, "amount": 5.28, "own": [], "opponent": [], "max": 10 },
+        {
+          "at": 16000,
+          "amount": 6.351,
+          "own": [],
+          "opponent": [{ "at": 15400, "cost": 7 }],
+          "max": 4.0710000000000015
+        },
+        { "at": 17000, "amount": 7.422, "own": [], "opponent": [], "max": 5.1419999999999995 },
+        { "at": 18000, "amount": 8.493, "own": [], "opponent": [], "max": 6.212999999999997 }
+      ]
+    }
+  ]
+}

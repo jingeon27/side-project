@@ -1,5 +1,75 @@
 [
   {
+    "category": "perspectives",
+    "tags": ["side-project", "reflection", "learning"],
+    "publishedAt": "2026-11-17",
+    "coverImage": "/images/covers/side-project-goals.avif",
+    "socialImage": "/images/covers/side-project-goals-og.jpg",
+    "title": "사이드프로젝트를 하는 이유",
+    "description": "사이드프로젝트로 최종적으로 이루려는 목표가 뭐냐는 질문에 사람들이 소프트웨어로 편해졌으면 한다고 답했어요. 돌아보니 사이드프로젝트 전체로 정한 목표는 없고 프로젝트마다 목표가 따로 있어서, 각 프로젝트를 왜 시작했고 무엇을 바라는지 적었어요.",
+    "slug": "사이드프로젝트를-하는-이유",
+    "keywords": ["사이드프로젝트", "목표", "회고", "AI 활용", "로컬 LLM"],
+    "id": "side-project-goals",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "프로젝트마다-바라는-것이-달라요",
+        "title": "프로젝트마다 바라는 것이 달라요",
+        "level": 2
+      },
+      {
+        "id": "셋을-다-챙기려다-계획에서-멈췄어요",
+        "title": "셋을 다 챙기려다 계획에서 멈췄어요",
+        "level": 2
+      },
+      {
+        "id": "지금은-하나만-맞아도-시작해요",
+        "title": "지금은 하나만 맞아도 시작해요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "사이드프로젝트를-하는-이유",
+      "en": "why-i-do-side-projects"
+    }
+  },
+  {
+    "category": "perspectives",
+    "tags": ["side-project", "reflection", "learning"],
+    "publishedAt": "2026-11-17",
+    "coverImage": "/images/covers/side-project-goals.avif",
+    "socialImage": "/images/covers/side-project-goals-og.jpg",
+    "title": "Why I do side projects",
+    "description": "Asked what I ultimately want to achieve with my side projects, I said I hope software makes people's lives easier. Looking back, I have no single goal for all of them, only a separate goal for each, so I wrote down why I started each project and what I want from it.",
+    "slug": "why-i-do-side-projects",
+    "keywords": ["side projects", "goals", "reflection", "AI workflow", "local LLM"],
+    "id": "side-project-goals",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "each-project-wants-something-different",
+        "title": "Each project wants something different",
+        "level": 2
+      },
+      {
+        "id": "trying-to-get-all-three-i-stopped-at-the-plan",
+        "title": "Trying to get all three, I stopped at the plan",
+        "level": 2
+      },
+      {
+        "id": "now-one-is-enough-to-start",
+        "title": "Now one is enough to start",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 3,
+    "translations": {
+      "ko": "사이드프로젝트를-하는-이유",
+      "en": "why-i-do-side-projects"
+    }
+  },
+  {
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",

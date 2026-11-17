@@ -1,0 +1,2019 @@
+{
+  "format": "clash-card-catalogue-v1",
+  "id": "78b8c359860f700800e9a3dec3cac5739f2770054a5d82c92bd2f9b660a6e09b",
+  "tableVersion": "cards-160635007-20261103.1",
+  "tableFNV": "69896771bed51201",
+  "cardFeatures": [
+    "elixir",
+    "troop",
+    "building",
+    "spell",
+    "count",
+    "hitpoints",
+    "dps",
+    "range",
+    "speed",
+    "airTargets",
+    "groundTargets",
+    "buildingTargets",
+    "flying",
+    "splash",
+    "spellDamage",
+    "lifetime",
+    "spawns",
+    "control"
+  ],
+  "bodyFeatures": [
+    "presence",
+    "hitpoints",
+    "dps",
+    "range",
+    "speed",
+    "airTargets",
+    "groundTargets",
+    "buildingTargets",
+    "flying",
+    "splash",
+    "building",
+    "spawns",
+    "effect",
+    "effectDamage",
+    "lifetime",
+    "control"
+  ],
+  "cards": {
+    "archer_queen": {
+      "engine": "ArcherQueen",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7199, 0.7243, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "archers": {
+      "engine": "Archer",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.3962, 0.6603, 0.7662, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "arrows": {
+      "engine": "Arrows",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [
+        0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.35, 0.5321, 0.0, 0.0, 0.0
+      ]
+    },
+    "baby_dragon": {
+      "engine": "BabyDragon",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7368, 0.6351, 0.2917, 0.75, 1.0, 1.0, 0.0, 1.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "balloon": {
+      "engine": "Balloon",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.782, 0.8069, 0.0083, 0.5, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "bandit": {
+      "engine": "Assassin",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.708, 0.7247, 0.0625, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "barbarian_barrel": {
+      "engine": "BarbLog",
+      "elixir": 2,
+      "placement": "rolling_spell",
+      "features": [
+        0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.325, 0.6074, 0.0, 0.0, 0.0
+      ]
+    },
+    "barbarian_hut": {
+      "engine": "BarbarianHut",
+      "elixir": 6,
+      "placement": "building",
+      "features": [
+        0.6, 0.0, 1.0, 0.0, 0.25, 0.7382, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "barbarian_launcher": {
+      "engine": "BarbarianLauncher",
+      "elixir": 5,
+      "placement": "building",
+      "features": [
+        0.5, 0.0, 1.0, 0.0, 0.25, 0.7663, 0.048, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "barbarians": {
+      "engine": "Barbarians",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.6462, 0.8735, 0.9333, 0.0583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "bats": {
+      "engine": "Bats",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.6462, 0.6126, 0.8175, 0.1, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "battle_healer": {
+      "engine": "BattleHealer",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7983, 0.6639, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "battle_ram": {
+      "engine": "BattleRam",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7159, 0.9407, 0.0417, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "berserker": {
+      "engine": "Berserker",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.25, 0.7066, 0.7031, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "bomb_tower": {
+      "engine": "BombTower",
+      "elixir": 4,
+      "placement": "building",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.7565, 0.6504, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "bomber": {
+      "engine": "Bomber",
+      "elixir": 2,
+      "placement": "ranged_troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.25, 0.5772, 0.6427, 0.375, 0.5, 0.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "boss_bandit": {
+      "engine": "BossBandit",
+      "elixir": 6,
+      "placement": "troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.8359, 0.7475, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "bowler": {
+      "engine": "Bowler",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.808, 0.6395, 0.3333, 0.375, 0.0, 1.0, 0.0, 0.0, 0.45, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "cannon": {
+      "engine": "Cannon",
+      "elixir": 3,
+      "placement": "building",
+      "features": [
+        0.3, 0.0, 1.0, 0.0, 0.25, 0.6966, 0.7311, 0.4583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0
+      ]
+    },
+    "cannon_cart": {
+      "engine": "MovingCannon",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7912, 0.7484, 0.4583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "clone": {
+      "engine": "Clone",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [
+        0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.025, 0.0, 0.0
+      ]
+    },
+    "dark_magic": {
+      "engine": "DarkMagic",
+      "elixir": 5,
+      "placement": "area_spell",
+      "features": [0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "dark_prince": {
+      "engine": "DarkPrince",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7418, 0.7209, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.275, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "dart_goblin": {
+      "engine": "BlowdartGoblin",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.5588, 0.7112, 0.5417, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "earthquake": {
+      "engine": "Earthquake",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [
+        0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.6255, 0.075, 0.0, 0.5
+      ]
+    },
+    "electro_dragon": {
+      "engine": "ElectroDragon",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7256, 0.6011, 0.2917, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "electro_giant": {
+      "engine": "ElectroGiant",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.25, 0.8853, 0.6196, 0.1, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "electro_spirit": {
+      "engine": "ElectroSpirit",
+      "elixir": 1,
+      "placement": "troop",
+      "features": [
+        0.1, 1.0, 0.0, 0.0, 0.25, 0.5356, 0.8134, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "electro_wizard": {
+      "engine": "ElectroWizard",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6794, 0.5471, 0.4167, 0.75, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "elite_archer": {
+      "engine": "EliteArcher",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6435, 0.6499, 0.5833, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "elite_barbarians": {
+      "engine": "AngryBarbarians",
+      "elixir": 6,
+      "placement": "troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.3962, 0.8386, 0.8962, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "elixir_collector": {
+      "engine": "Elixir Collector",
+      "elixir": 6,
+      "placement": "building",
+      "features": [
+        0.6, 0.0, 1.0, 0.0, 0.25, 0.728, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0
+      ]
+    },
+    "elixir_golem": {
+      "engine": "ElixirGolem",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.774, 0.7526, 0.0667, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "executioner": {
+      "engine": "AxeMan",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7495, 0.7285, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "fire_spirits": {
+      "engine": "FireSpirits",
+      "elixir": 1,
+      "placement": "troop",
+      "features": [
+        0.1, 1.0, 0.0, 0.0, 0.25, 0.5356, 0.9407, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.575, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "fireball": {
+      "engine": "Fireball",
+      "elixir": 4,
+      "placement": "area_spell",
+      "features": [
+        0.4, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.625, 0.7655, 0.0, 0.0, 0.0
+      ]
+    },
+    "firecracker": {
+      "engine": "Firecracker",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.5772, 0.0, 0.5, 0.75, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "fisherman": {
+      "engine": "Fisherman",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.7031, 0.6816, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "flying_machine": {
+      "engine": "DartBarrell",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6613, 0.6955, 0.5, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "freeze": {
+      "engine": "Freeze",
+      "elixir": 4,
+      "placement": "area_spell",
+      "features": [
+        0.4, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.6511, 0.0875, 0.0, 1.0
+      ]
+    },
+    "furnace": {
+      "engine": "FirespiritHut",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6815, 0.6243, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "ghost": {
+      "engine": "Ghost",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.7368, 0.6781, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "giant": {
+      "engine": "Giant",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8857, 0.7015, 0.1, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "giant_buffer": {
+      "engine": "GiantBuffer",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.8444, 0.6196, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "giant_skeleton": {
+      "engine": "GiantSkeleton",
+      "elixir": 6,
+      "placement": "troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.8658, 0.7394, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "global_clone": {
+      "engine": "GlobalClone",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.025, 0.0, 1.0]
+    },
+    "goblin_barrel": {
+      "engine": "GoblinBarrel",
+      "elixir": 3,
+      "placement": "tower_spell",
+      "features": [0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.375, 0.0, 0.0, 1.0, 0.0]
+    },
+    "goblin_cage": {
+      "engine": "GoblinCage",
+      "elixir": 4,
+      "placement": "building",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.6901, 0.0, 0.4167, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.0
+      ]
+    },
+    "goblin_curse": {
+      "engine": "GoblinCurse",
+      "elixir": 2,
+      "placement": "area_spell",
+      "features": [0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.15, 0.0, 0.0]
+    },
+    "goblin_demolisher": {
+      "engine": "GoblinDemolisher",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7514, 0.7024, 0.4167, 0.5, 0.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "goblin_drill": {
+      "engine": "GoblinDrill",
+      "elixir": 4,
+      "placement": "anywhere",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.833, 0.0, 0.1083, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "goblin_gang": {
+      "engine": "GoblinGang",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.5, 0.6598, 0.8179, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "goblin_giant": {
+      "engine": "GoblinGiant",
+      "elixir": 6,
+      "placement": "troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.8564, 0.6423, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "goblin_hut": {
+      "engine": "GoblinHut",
+      "elixir": 4,
+      "placement": "building",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.7397, 0.0, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "goblin_machine": {
+      "engine": "GoblinMachine",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8182, 0.7243, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "goblin_party_hut": {
+      "engine": "GoblinPartyHut",
+      "elixir": 5,
+      "placement": "building",
+      "features": [
+        0.5, 0.0, 1.0, 0.0, 0.25, 0.7397, 0.7417, 0.9167, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "goblin_party_rocket": {
+      "engine": "GoblinPartyRocket",
+      "elixir": 5,
+      "placement": "area_spell",
+      "features": [0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "goblin_rocket_silo": {
+      "engine": "GoblinRocketSilo",
+      "elixir": 7,
+      "placement": "building",
+      "features": [
+        0.7, 0.0, 1.0, 0.0, 0.25, 0.8032, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "goblins": {
+      "engine": "Goblins",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.5805, 0.6943, 0.8656, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "goblinstein": {
+      "engine": "Goblinstein",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8169, 0.5899, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "golden_knight": {
+      "engine": "GoldenKnight",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7905, 0.7188, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "golem": {
+      "engine": "Golem",
+      "elixir": 8,
+      "placement": "troop",
+      "features": [
+        0.8, 1.0, 0.0, 0.0, 0.25, 0.9165, 0.652, 0.0625, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "graveyard": {
+      "engine": "Graveyard",
+      "elixir": 5,
+      "placement": "spawn_spell",
+      "features": [0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.225, 1.0, 0.0]
+    },
+    "guards": {
+      "engine": "SkeletonWarriors",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.5, 0.5515, 0.8232, 0.1333, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "heal": {
+      "engine": "Heal",
+      "elixir": 1,
+      "placement": "area_spell",
+      "features": [
+        0.1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.375, 0.5174, 0.05, 0.0, 0.0
+      ]
+    },
+    "hog_rider": {
+      "engine": "HogRider",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7835, 0.7279, 0.0667, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "hunter": {
+      "engine": "Hunter",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7052, 0.4626, 0.3333, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0175, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "ice_golem": {
+      "engine": "IceGolemite",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.25, 0.7446, 0.4427, 0.0625, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "ice_spirits": {
+      "engine": "IceSpirits",
+      "elixir": 1,
+      "placement": "troop",
+      "features": [
+        0.1, 1.0, 0.0, 0.0, 0.25, 0.5356, 0.8295, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "ice_wizard": {
+      "engine": "IceWizard",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.675, 0.5125, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "inferno_dragon": {
+      "engine": "InfernoDragon",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7509, 0.5979, 0.2917, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "inferno_tower": {
+      "engine": "InfernoTower",
+      "elixir": 5,
+      "placement": "building",
+      "features": [
+        0.5, 0.0, 1.0, 0.0, 0.25, 0.787, 0.6294, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0
+      ]
+    },
+    "knight": {
+      "engine": "Knight",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.7883, 0.7011, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "lava_hound": {
+      "engine": "LavaHound",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.25, 0.8734, 0.497, 0.2917, 0.375, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "lightning": {
+      "engine": "Lightning",
+      "elixir": 6,
+      "placement": "area_spell",
+      "features": [
+        0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.0, 0.0375, 0.0, 0.0
+      ]
+    },
+    "little_prince": {
+      "engine": "LittlePrince",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.6767, 0.5939, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "lumberjack": {
+      "engine": "RageBarbarian",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7497, 0.8069, 0.0583, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mega_knight": {
+      "engine": "MegaKnight",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.25, 0.8865, 0.6906, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.325, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mega_minion": {
+      "engine": "MegaMinion",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.6984, 0.7359, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "merge_maiden": {
+      "engine": "MergeMaiden",
+      "elixir": 6,
+      "placement": "troop",
+      "features": [0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "merge_maiden_mounted": {
+      "engine": "MergeMaiden_Mounted",
+      "elixir": 6,
+      "placement": "ranged_troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.7336, 0.7513, 0.4167, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "merge_maiden_normal": {
+      "engine": "MergeMaiden_Normal",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.7336, 0.7767, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mighty_miner": {
+      "engine": "MightyMiner",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.8174, 0.6294, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "miner": {
+      "engine": "Miner",
+      "elixir": 3,
+      "placement": "anywhere",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.7428, 0.6816, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mini_sparkys": {
+      "engine": "MiniSparkys",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.5, 0.7756, 0.6858, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "minion_giant": {
+      "engine": "MinionGiant",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7917, 0.5992, 0.3333, 0.5, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "minion_horde": {
+      "engine": "MinionHorde",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.7018, 0.7588, 0.8929, 0.2083, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "minions": {
+      "engine": "Minions",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.5, 0.6754, 0.778, 0.2083, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "minipekka": {
+      "engine": "MiniPekka",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7594, 0.8713, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mirror": {
+      "engine": "Mirror",
+      "elixir": 1,
+      "placement": "unsupported",
+      "features": [0.1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "monk": {
+      "engine": "Monk",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8155, 0.7082, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "mortar": {
+      "engine": "Mortar",
+      "elixir": 4,
+      "placement": "building",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.7576, 0.524, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.75, 0.0, 0.0
+      ]
+    },
+    "musketeer": {
+      "engine": "Musketeer",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6806, 0.7431, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "night_witch": {
+      "engine": "DarkWitch",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.708, 0.7608, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "p_e_k_k_a": {
+      "engine": "Pekka",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.25, 0.8793, 0.8698, 0.1, 0.375, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "phoenix": {
+      "engine": "Phoenix",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7259, 0.7431, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "poison": {
+      "engine": "Poison",
+      "elixir": 4,
+      "placement": "area_spell",
+      "features": [
+        0.4, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.7747, 0.2, 0.0, 0.15
+      ]
+    },
+    "prince": {
+      "engine": "Prince",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7983, 0.7846, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "prince_buff": {
+      "engine": "PrinceBuff",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8769, 0.8626, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "princess": {
+      "engine": "Princess",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.5588, 0.0, 0.75, 0.5, 1.0, 1.0, 0.0, 0.0, 0.625, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "rage": {
+      "engine": "Rage",
+      "elixir": 2,
+      "placement": "area_spell",
+      "features": [
+        0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.5828, 0.1125, 0.0, 0.0
+      ]
+    },
+    "ram_rider": {
+      "engine": "RamRider",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7883, 0.6922, 0.0667, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "rascals": {
+      "engine": "Rascals",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7927, 0.6765, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "rocket": {
+      "engine": "Rocket",
+      "elixir": 6,
+      "placement": "area_spell",
+      "features": [
+        0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.5, 0.8702, 0.0, 0.0, 0.0
+      ]
+    },
+    "ronin": {
+      "engine": "Ronin",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7891, 0.788, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "royal_delivery": {
+      "engine": "RoyalDelivery",
+      "elixir": 3,
+      "placement": "rolling_spell",
+      "features": [
+        0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.686, 0.0, 0.0, 0.0
+      ]
+    },
+    "royal_giant": {
+      "engine": "RoyalGiant",
+      "elixir": 6,
+      "placement": "ranged_troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.8585, 0.7031, 0.4167, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "royal_hogs": {
+      "engine": "RoyalHogs",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.5805, 0.8653, 0.7644, 0.0625, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "royal_recruits": {
+      "engine": "RoyalRecruits",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.7018, 0.8631, 0.9151, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "royal_recruits_chess": {
+      "engine": "RoyalRecruits_Chess",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.7925, 0.8943, 0.9629, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "skeleton_army": {
+      "engine": "SkeletonArmy",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 1.0, 0.7446, 1.0, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "skeleton_barrel": {
+      "engine": "SkeletonBalloon",
+      "elixir": 3,
+      "placement": "troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.25, 0.6441, 0.0, 0.0292, 0.75, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "skeleton_dragons": {
+      "engine": "SkeletonDragons",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.3962, 0.7336, 0.6831, 0.2917, 0.75, 1.0, 1.0, 0.0, 1.0, 0.375, 0.0, 0.0, 0.0,
+        0.0
+      ]
+    },
+    "skeleton_king": {
+      "engine": "SkeletonKing",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.82, 0.656, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.325, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "skeleton_warriors_spooky_chess": {
+      "engine": "SkeletonWarriors_SpookyChess",
+      "elixir": 7,
+      "placement": "troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.7925, 0.669, 0.9861, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "skeletons": {
+      "engine": "Skeletons",
+      "elixir": 1,
+      "placement": "troop",
+      "features": [
+        0.1, 1.0, 0.0, 0.0, 0.5, 0.5515, 0.7475, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "snowball": {
+      "engine": "Snowball",
+      "elixir": 2,
+      "placement": "area_spell",
+      "features": [
+        0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.625, 0.5828, 0.0, 0.0, 0.0
+      ]
+    },
+    "sparky": {
+      "engine": "ZapMachine",
+      "elixir": 6,
+      "placement": "ranged_troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.7646, 0.8134, 0.4167, 0.375, 0.0, 1.0, 0.0, 0.0, 0.45, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "spear_goblins": {
+      "engine": "SpearGoblins",
+      "elixir": 2,
+      "placement": "ranged_troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.5, 0.6096, 0.6858, 0.4167, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_archer": {
+      "engine": "SuperArcher",
+      "elixir": 3,
+      "placement": "ranged_troop",
+      "features": [
+        0.3, 1.0, 0.0, 0.0, 0.3962, 0.8508, 0.0, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_elite_archer": {
+      "engine": "SuperEliteArcher",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.7674, 0.0676, 0.5833, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_hog_rider_terry": {
+      "engine": "SuperHogRiderTerry",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.9333, 0.8997, 0.0667, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_ice_golemite": {
+      "engine": "SuperIceGolemite",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.9653, 0.6196, 0.0625, 0.25, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_knight": {
+      "engine": "SuperKnight",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.805, 0.7225, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "super_lava_hound": {
+      "engine": "SuperLavaHound",
+      "elixir": 8,
+      "placement": "troop",
+      "features": [
+        0.8, 1.0, 0.0, 0.0, 0.25, 0.957, 0.5197, 0.2917, 0.375, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "super_mini_pekka": {
+      "engine": "SuperMiniPekka",
+      "elixir": 5,
+      "placement": "troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.8646, 1.0, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "super_witch": {
+      "engine": "SuperWitch",
+      "elixir": 6,
+      "placement": "ranged_troop",
+      "features": [
+        0.6, 1.0, 0.0, 0.0, 0.25, 0.7274, 0.6468, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "suspicious_bush": {
+      "engine": "SuspiciousBush",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.25, 0.4216, 0.0, 0.1333, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "tesla": {
+      "engine": "Tesla",
+      "elixir": 4,
+      "placement": "building",
+      "features": [
+        0.4, 0.0, 1.0, 0.0, 0.25, 0.74, 0.7294, 0.4583, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.625, 0.0, 0.0
+      ]
+    },
+    "the_log": {
+      "engine": "Log",
+      "elixir": 2,
+      "placement": "rolling_spell",
+      "features": [
+        0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.4875, 0.6376, 0.0, 0.0, 0.0
+      ]
+    },
+    "three_musketeers": {
+      "engine": "ThreeMusketeers",
+      "elixir": 9,
+      "placement": "ranged_troop",
+      "features": [
+        0.9, 1.0, 0.0, 0.0, 0.5, 0.8402, 0.8715, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "tombstone": {
+      "engine": "Tombstone",
+      "elixir": 3,
+      "placement": "building",
+      "features": [
+        0.3, 0.0, 1.0, 0.0, 0.25, 0.6435, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 1.0, 0.0
+      ]
+    },
+    "tornado": {
+      "engine": "Tornado",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [
+        0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.5686, 0.0262, 0.0, 0.0
+      ]
+    },
+    "tri_wizards": {
+      "engine": "TriWizards",
+      "elixir": 7,
+      "placement": "ranged_troop",
+      "features": [
+        0.7, 1.0, 0.0, 0.0, 0.25, 0.6861, 0.7431, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "valkyrie": {
+      "engine": "Valkyrie",
+      "elixir": 4,
+      "placement": "troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.7975, 0.7096, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "vines": {
+      "engine": "Vines",
+      "elixir": 3,
+      "placement": "area_spell",
+      "features": [0.3, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "wallbreakers": {
+      "engine": "Wallbreakers",
+      "elixir": 2,
+      "placement": "troop",
+      "features": [
+        0.2, 1.0, 0.0, 0.0, 0.3962, 0.67, 0.882, 0.0417, 1.0, 0.0, 1.0, 1.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "warm_spell": {
+      "engine": "WarmSpell",
+      "elixir": 1,
+      "placement": "area_spell",
+      "features": [0.1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "witch": {
+      "engine": "Witch",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.6988, 0.6499, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 1.0, 0.0
+      ]
+    },
+    "witch_mother": {
+      "engine": "WitchMother",
+      "elixir": 4,
+      "placement": "ranged_troop",
+      "features": [
+        0.4, 1.0, 0.0, 0.0, 0.25, 0.6435, 0.6624, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "wizard": {
+      "engine": "Wizard",
+      "elixir": 5,
+      "placement": "ranged_troop",
+      "features": [
+        0.5, 1.0, 0.0, 0.0, 0.25, 0.6861, 0.7431, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0
+      ]
+    },
+    "x_bow": {
+      "engine": "Xbow",
+      "elixir": 6,
+      "placement": "building",
+      "features": [
+        0.6, 0.0, 1.0, 0.0, 0.25, 0.7764, 0.6858, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0
+      ]
+    },
+    "zap": {
+      "engine": "Zap",
+      "elixir": 2,
+      "placement": "area_spell",
+      "features": [
+        0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.625, 0.686, 0.0, 0.0, 1.0
+      ]
+    }
+  },
+  "bodies": {
+    "?": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "angry_barbarian": [
+      0.5, 0.7551, 0.7814, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "archer": [0.5, 0.5772, 0.6523, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "archer_queen": [0.5, 0.7199, 0.7243, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "archers": [0.5, 0.5772, 0.6523, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "arrows": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.35, 0.0, 0.0, 1.0, 0.5321, 0.0, 0.0],
+    "assassin": [0.5, 0.708, 0.7247, 0.0625, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "axe_man": [0.5, 0.7495, 0.7285, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "baby_dragon": [
+      0.5, 0.7368, 0.6351, 0.2917, 0.75, 1.0, 1.0, 0.0, 1.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "balloon": [0.5, 0.782, 0.8069, 0.0083, 0.5, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "balloon_bomb": [0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "bandit": [0.5, 0.708, 0.7247, 0.0625, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "barbarian": [0.5, 0.6798, 0.6673, 0.0583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "barbarian_barrel": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.325, 0.0, 0.0, 1.0, 0.6074, 0.0, 0.0],
+    "barbarian_hut": [0.5, 0.7382, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.0],
+    "barbarian_launcher": [
+      0.5, 0.7663, 0.048, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0
+    ],
+    "barbarians": [0.5, 0.6798, 0.6673, 0.0583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "barrel": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.325, 0.0, 0.0, 1.0, 0.6074, 0.0, 0.0],
+    "bat": [0.5, 0.4216, 0.5539, 0.1, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "bats": [0.5, 0.4216, 0.5539, 0.1, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "battle_healer": [
+      0.5, 0.7983, 0.6639, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "battle_ram": [0.5, 0.7159, 0.9407, 0.0417, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "berserker": [0.5, 0.7066, 0.7031, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "blowdart_goblin": [
+      0.5, 0.5588, 0.7112, 0.5417, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "bomb_tower": [0.5, 0.7565, 0.6504, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.375, 1.0, 1.0, 0.0, 0.0, 0.75, 0.0],
+    "bomb_tower_bomb": [0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "bomber": [0.5, 0.5772, 0.6427, 0.375, 0.5, 0.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "boss_bandit": [0.5, 0.8359, 0.7475, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "bowler": [0.5, 0.808, 0.6395, 0.3333, 0.375, 0.0, 1.0, 0.0, 0.0, 0.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "broken_cannon": [
+      0.5, 0.7912, 0.7484, 0.4583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0
+    ],
+    "bush_goblin": [0.5, 0.5896, 0.7145, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "cannon": [0.5, 0.6966, 0.7311, 0.4583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0],
+    "cannon_cart": [0.5, 0.7912, 0.7484, 0.4583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "cannoneer": [0.5, 0.8549, 0.6769, 0.625, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "champion_guard": [0.5, 0.7764, 0.7243, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "chef_tower": [0.5, 0.8589, 0.656, 0.625, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "clone": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0, 1.0, 0.0, 0.025, 0.0],
+    "dagger_duchess": [
+      0.5, 0.8617, 0.7412, 0.625, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "dark_magic": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "dark_prince": [0.5, 0.7418, 0.7209, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.275, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "dark_witch": [0.5, 0.708, 0.7608, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "dart_barrell": [0.5, 0.6613, 0.6955, 0.5, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "dart_goblin": [0.5, 0.5588, 0.7112, 0.5417, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "delivery_recruit": [
+      0.5, 0.6475, 0.6196, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "earthquake": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.0, 0.0, 1.0, 0.6255, 0.075, 0.5],
+    "electro_dragon": [
+      0.5, 0.7256, 0.6011, 0.2917, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "electro_dragon_ev1": [
+      0.5, 0.7256, 0.6011, 0.2917, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "electro_giant": [0.5, 0.8853, 0.6196, 0.1, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "electro_spirit": [
+      0.5, 0.5356, 0.8134, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "electro_wizard": [
+      0.5, 0.6794, 0.5471, 0.4167, 0.75, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elite_archer": [
+      0.5, 0.6435, 0.6499, 0.5833, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elite_barbarians": [
+      0.5, 0.7551, 0.7814, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elixir_collector": [0.5, 0.728, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+    "elixir_golem": [
+      0.5, 0.774, 0.7526, 0.0667, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elixir_golem1": [
+      0.5, 0.774, 0.7526, 0.0667, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elixir_golem2": [
+      0.5, 0.6873, 0.6404, 0.0667, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "elixir_golem4": [
+      0.5, 0.5975, 0.5283, 0.0667, 0.75, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "executioner": [0.5, 0.7495, 0.7285, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "fire_spirit": [
+      0.5, 0.5356, 0.9407, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.575, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "fire_spirits": [
+      0.5, 0.5356, 0.9407, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.575, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "fireball": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.625, 0.0, 0.0, 1.0, 0.7655, 0.0, 0.0],
+    "firecracker": [0.5, 0.5772, 0.0, 0.5, 0.75, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "fisherman": [0.5, 0.7031, 0.6816, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "flying_machine": [0.5, 0.6613, 0.6955, 0.5, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "freeze": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0, 1.0, 0.6511, 0.0875, 1.0],
+    "furnace": [0.5, 0.6815, 0.6243, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "ghost": [0.5, 0.7368, 0.6781, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "ghost_ev1_summon_left": [
+      0.5, 0.4216, 0.4893, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "ghost_ev1_summon_right": [
+      0.5, 0.4216, 0.4893, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "giant": [0.5, 0.8857, 0.7015, 0.1, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "giant_buffer": [0.5, 0.8444, 0.6196, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "giant_skeleton": [
+      0.5, 0.8658, 0.7394, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "giant_skeleton_bomb": [0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "global_clone": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.025, 1.0],
+    "goblin": [0.5, 0.5283, 0.6371, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_barrel": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+    "goblin_brawler": [
+      0.5, 0.7336, 0.8001, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_cage": [0.5, 0.6901, 0.0, 0.4167, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.5, 0.0],
+    "goblin_cage_ev1_goblin_brawler": [
+      0.5, 0.7336, 0.8001, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_cage_ev1_tempname": [
+      0.5, 0.6901, 0.0, 0.4167, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.5, 0.0
+    ],
+    "goblin_curse": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0, 1.0, 0.0, 0.15, 0.0],
+    "goblin_curse_goblin": [
+      0.5, 0.5283, 0.6371, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_demolisher": [
+      0.5, 0.7514, 0.7024, 0.4167, 0.5, 0.0, 1.0, 0.0, 0.0, 0.375, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_demolisher_kamikaze_form": [
+      0.5, 0.7514, 0.0, 0.0417, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0
+    ],
+    "goblin_drill": [0.5, 0.7526, 0.0, 0.1667, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.25, 0.0],
+    "goblin_drill_dig": [0.5, 0.833, 0.0, 0.1083, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_drill_ev1_dig": [
+      0.5, 0.833, 0.0, 0.1083, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_dummy": [0.5, 0.4216, 0.5346, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_gang": [0.5, 0.5283, 0.6371, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_giant": [0.5, 0.8564, 0.6423, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_hut": [0.5, 0.7397, 0.0, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.0],
+    "goblin_machine": [0.5, 0.8182, 0.7243, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_party": [0.5, 0.6178, 0.7526, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_party_hut": [
+      0.5, 0.7397, 0.7417, 0.9167, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.0
+    ],
+    "goblin_party_rocket": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "goblin_rocket_silo": [0.5, 0.8032, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblin_rocket_silo1": [
+      0.5, 0.8032, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_rocket_silo2": [
+      0.5, 0.8032, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "goblin_stab": [0.5, 0.5283, 0.6371, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblins": [0.5, 0.5283, 0.6371, 0.0417, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblinstein": [0.5, 0.8169, 0.5899, 0.1, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "goblinstein_doctor": [
+      0.5, 0.6806, 0.5699, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "golden_knight": [0.5, 0.7905, 0.7188, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "golem": [0.5, 0.9165, 0.652, 0.0625, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "golemite": [0.5, 0.7245, 0.4427, 0.0208, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "graveyard": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.225, 0.0],
+    "guards": [0.5, 0.4216, 0.6423, 0.1333, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "heal": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.375, 0.0, 0.0, 1.0, 0.5174, 0.05, 0.0],
+    "heal_spirit": [
+      0.5, 0.5356, 0.8295, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "hog_rider": [0.5, 0.7835, 0.7279, 0.0667, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "hunter": [0.5, 0.7052, 0.4626, 0.3333, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0175, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "ice_golem": [0.5, 0.7446, 0.4427, 0.0625, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "ice_golemite": [
+      0.5, 0.7446, 0.4427, 0.0625, 0.375, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "ice_spirits": [
+      0.5, 0.5356, 0.8295, 0.2083, 1.0, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "ice_wizard": [0.5, 0.675, 0.5125, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "inferno_dragon": [
+      0.5, 0.7509, 0.5979, 0.2917, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "inferno_tower": [0.5, 0.787, 0.6294, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0],
+    "king_tower": [0.5, 0.9384, 0.656, 0.5833, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "knight": [0.5, 0.7883, 0.7011, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "lava_hound": [0.5, 0.8734, 0.497, 0.2917, 0.375, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "lava_pups": [0.5, 0.5356, 0.4983, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "lightning": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.0, 0.0, 1.0, 0.0, 0.0375, 0.0],
+    "little_prince": [
+      0.5, 0.6767, 0.5939, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "lumberjack": [0.5, 0.7497, 0.8069, 0.0583, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mega_knight": [0.5, 0.8865, 0.6906, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.325, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mega_minion": [0.5, 0.6984, 0.7359, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "merge_maiden": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "merge_maiden_mounted": [
+      0.5, 0.7336, 0.7513, 0.4167, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "merge_maiden_normal": [
+      0.5, 0.7336, 0.7767, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "mighty_miner": [0.5, 0.8174, 0.6294, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mighty_miner_bomb": [0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "miner": [0.5, 0.7428, 0.6816, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mini_sparkys": [0.5, 0.6435, 0.5079, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mini_zap_machine": [
+      0.5, 0.6435, 0.5079, 0.375, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "minion": [0.5, 0.5439, 0.5979, 0.2083, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "minion_giant": [0.5, 0.7917, 0.5992, 0.3333, 0.5, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "minion_horde": [
+      0.5, 0.5439, 0.5979, 0.2083, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "minions": [0.5, 0.5439, 0.5979, 0.2083, 0.75, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "minipekka": [0.5, 0.7594, 0.8713, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mirror": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "monk": [0.5, 0.8155, 0.7082, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "mortar": [0.5, 0.7576, 0.524, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0],
+    "moving_cannon": [
+      0.5, 0.7912, 0.7484, 0.4583, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "musketeer": [0.5, 0.6806, 0.7431, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "night_witch": [0.5, 0.708, 0.7608, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "p_e_k_k_a": [0.5, 0.8793, 0.8698, 0.1, 0.375, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "pekka": [0.5, 0.8793, 0.8698, 0.1, 0.375, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "phoenix": [0.5, 0.7259, 0.7431, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "phoenix_egg": [0.5, 0.5821, 0.0, 0.4583, 0.3333, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "phoenix_no_respawn": [
+      0.5, 0.7259, 0.7431, 0.1333, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "poison": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.875, 0.0, 0.0, 1.0, 0.7747, 0.2, 0.15],
+    "prince": [0.5, 0.7983, 0.7846, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "prince_buff": [0.5, 0.8769, 0.8626, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "princess": [0.5, 0.5588, 0.0, 0.75, 0.5, 1.0, 1.0, 0.0, 0.0, 0.625, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "princess_tower": [
+      0.5, 0.8735, 0.6925, 0.625, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "rage": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0, 1.0, 0.5828, 0.1125, 0.0],
+    "rage_barbarian": [
+      0.5, 0.7497, 0.8069, 0.0583, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "rage_barbarian_evo_ghost": [
+      0.5, 0.0836, 0.8069, 0.0583, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "ram": [0.5, 0.7883, 0.6922, 0.0667, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "ram_rider": [0.5, 0.6572, 0.6081, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "rascal_boy": [0.5, 0.7927, 0.6765, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "rascal_girl": [0.5, 0.5588, 0.6527, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "rascals": [0.5, 0.7927, 0.6765, 0.0667, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "recruit": [0.5, 0.6475, 0.6196, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "recruit_chess": [
+      0.5, 0.6441, 0.6196, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "rocket": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 1.0, 0.8702, 0.0, 0.0],
+    "ronin": [0.5, 0.7891, 0.788, 0.1, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "royal_delivery": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.75, 0.0, 0.0, 1.0, 0.686, 0.0, 0.0],
+    "royal_giant": [
+      0.5, 0.8585, 0.7031, 0.4167, 0.375, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "royal_hog": [0.5, 0.6984, 0.5381, 0.0625, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "royal_hog_ev1_grounded": [
+      0.5, 0.6984, 0.5381, 0.0625, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "royal_hogs": [0.5, 0.6984, 0.5381, 0.0625, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "royal_recruits": [
+      0.5, 0.6475, 0.6196, 0.1333, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "royal_recruits_chess": [
+      0.5, 0.6441, 0.6196, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton": [0.5, 0.4216, 0.5679, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "skeleton_army": [
+      0.5, 0.4216, 0.5679, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_army_ev1_general": [
+      0.5, 0.4216, 0.5833, 0.1333, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_army_ev1_soldier": [
+      0.5, 0.4216, 0.5679, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_army_ev1_spectral": [
+      0.5, 0.0836, 0.5679, 0.0417, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_balloon": [
+      0.5, 0.6441, 0.0, 0.0292, 0.75, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_barrel": [
+      0.5, 0.6441, 0.0, 0.0292, 0.75, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_container_new": [
+      0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_dragon": [
+      0.5, 0.6503, 0.5702, 0.2917, 0.75, 1.0, 1.0, 0.0, 1.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_dragons": [
+      0.5, 0.6503, 0.5702, 0.2917, 0.75, 1.0, 1.0, 0.0, 1.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_king": [0.5, 0.82, 0.656, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.325, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "skeleton_king_skeleton": [
+      0.5, 0.4216, 0.5679, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_warrior": [
+      0.5, 0.4216, 0.6423, 0.1333, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_warrior_spooky_chess": [
+      0.5, 0.4216, 0.6423, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeleton_warriors_spooky_chess": [
+      0.5, 0.4216, 0.6423, 0.1333, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "skeletons": [0.5, 0.4216, 0.5679, 0.0417, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "snowball": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.625, 0.0, 0.0, 1.0, 0.5828, 0.0, 0.0],
+    "sparky": [0.5, 0.7646, 0.8134, 0.4167, 0.375, 0.0, 1.0, 0.0, 0.0, 0.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "spear_goblin": [0.5, 0.4787, 0.5079, 0.4167, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "spear_goblin_dummy": [
+      0.5, 0.4787, 0.5079, 0.4167, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "spear_goblin_giant": [
+      0.5, 0.4787, 0.5079, 0.4167, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "spear_goblins": [
+      0.5, 0.4787, 0.5079, 0.4167, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_archer": [0.5, 0.7674, 0.0, 0.4167, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "super_elite_archer": [
+      0.5, 0.7674, 0.0676, 0.5833, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0625, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_hog_rider": [
+      0.5, 0.8735, 0.8535, 0.0667, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_hog_rider_terry": [
+      0.5, 0.9333, 0.8997, 0.0667, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_ice_golemite": [
+      0.5, 0.9653, 0.6196, 0.0625, 0.25, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_knight": [0.5, 0.805, 0.7225, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "super_lava_hound": [
+      0.5, 0.957, 0.5197, 0.2917, 0.375, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_lava_hound2": [
+      0.5, 0.8818, 0.5788, 0.2917, 0.375, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_mini_pekka": [
+      0.5, 0.8646, 1.0, 0.0667, 0.75, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_mini_pekka_pancakes": [
+      0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "super_witch": [0.5, 0.7274, 0.6468, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "suspicious_bush": [0.5, 0.4216, 0.0, 0.1333, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "tesla": [0.5, 0.74, 0.7294, 0.4583, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.625, 0.0],
+    "the_log": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.4875, 0.0, 0.0, 1.0, 0.6376, 0.0, 0.0],
+    "three_musketeer_rework_character_1": [
+      0.5, 0.708, 0.69, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "three_musketeer_rework_character_2": [
+      0.5, 0.708, 0.69, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "three_musketeer_rework_character_3": [
+      0.5, 0.708, 0.69, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "three_musketeers": [0.5, 0.708, 0.69, 0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "tombstone": [0.5, 0.6435, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.75, 0.0],
+    "tornado": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5686, 0.0262, 0.0],
+    "tri_wizard": [0.5, 0.6861, 0.7431, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "tri_wizards": [
+      0.5, 0.6861, 0.7431, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "valkyrie": [0.5, 0.7975, 0.7096, 0.1, 0.5, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "vines": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "voodoo_hog": [0.5, 0.6642, 0.4868, 0.0625, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "wallbreaker": [
+      0.5, 0.5869, 0.7672, 0.0417, 1.0, 0.0, 1.0, 1.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "wallbreaker_mini": [
+      0.5, 0.5033, 0.6858, 0.0417, 1.0, 0.0, 1.0, 1.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "wallbreakers": [
+      0.5, 0.5869, 0.7672, 0.0417, 1.0, 0.0, 1.0, 1.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ],
+    "warm_spell": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    "witch": [0.5, 0.6988, 0.6499, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    "witch_mother": [0.5, 0.6435, 0.6624, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "wizard": [0.5, 0.6861, 0.7431, 0.4583, 0.5, 1.0, 1.0, 0.0, 0.0, 0.375, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "x_bow": [0.5, 0.7764, 0.6858, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0],
+    "xbow": [0.5, 0.7764, 0.6858, 0.9583, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.75, 0.0],
+    "zap": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.625, 0.0, 0.0, 1.0, 0.686, 0.0, 1.0],
+    "zap_machine": [
+      0.5, 0.7646, 0.8134, 0.4167, 0.375, 0.0, 1.0, 0.0, 0.0, 0.45, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    ]
+  },
+  "bodyHitpoints": {
+    "angry_barbarian": 1341,
+    "archer": 304,
+    "archer_queen": 1000,
+    "archers": 304,
+    "assassin": 906,
+    "axe_man": 1280,
+    "baby_dragon": 1152,
+    "balloon": 1676,
+    "bandit": 906,
+    "barbarian": 716,
+    "barbarian_hut": 1164,
+    "barbarian_launcher": 1472,
+    "barbarians": 716,
+    "bat": 81,
+    "bats": 81,
+    "battle_healer": 1920,
+    "battle_ram": 967,
+    "berserker": 896,
+    "blowdart_goblin": 261,
+    "bomb_tower": 1356,
+    "bomber": 304,
+    "boss_bandit": 2624,
+    "bowler": 2081,
+    "broken_cannon": 1809,
+    "bush_goblin": 337,
+    "cannon": 824,
+    "cannon_cart": 1809,
+    "cannoneer": 3072,
+    "champion_guard": 1600,
+    "chef_tower": 3174,
+    "dagger_duchess": 3251,
+    "dark_prince": 1200,
+    "dark_witch": 906,
+    "dart_barrell": 614,
+    "dart_goblin": 261,
+    "delivery_recruit": 547,
+    "electro_dragon": 1049,
+    "electro_dragon_ev1": 1049,
+    "electro_giant": 3952,
+    "electro_spirit": 215,
+    "electro_wizard": 714,
+    "elite_archer": 529,
+    "elite_barbarians": 1341,
+    "elixir_collector": 1070,
+    "elixir_golem": 1569,
+    "elixir_golem1": 1569,
+    "elixir_golem2": 762,
+    "elixir_golem4": 360,
+    "executioner": 1280,
+    "fire_spirit": 215,
+    "fire_spirits": 215,
+    "firecracker": 304,
+    "fisherman": 870,
+    "flying_machine": 614,
+    "furnace": 727,
+    "ghost": 1152,
+    "ghost_ev1_summon_left": 81,
+    "ghost_ev1_summon_right": 81,
+    "giant": 3968,
+    "giant_buffer": 2816,
+    "giant_skeleton": 3361,
+    "goblin": 202,
+    "goblin_brawler": 1121,
+    "goblin_cage": 780,
+    "goblin_cage_ev1_goblin_brawler": 1121,
+    "goblin_cage_ev1_tempname": 780,
+    "goblin_curse_goblin": 202,
+    "goblin_demolisher": 1300,
+    "goblin_demolisher_kamikaze_form": 1300,
+    "goblin_drill": 1313,
+    "goblin_drill_dig": 2560,
+    "goblin_drill_ev1_dig": 2560,
+    "goblin_dummy": 81,
+    "goblin_gang": 202,
+    "goblin_giant": 3110,
+    "goblin_hut": 1180,
+    "goblin_machine": 2265,
+    "goblin_party": 427,
+    "goblin_party_hut": 1180,
+    "goblin_rocket_silo": 1999,
+    "goblin_rocket_silo1": 1999,
+    "goblin_rocket_silo2": 1999,
+    "goblin_stab": 202,
+    "goblins": 202,
+    "goblinstein": 2240,
+    "goblinstein_doctor": 721,
+    "golden_knight": 1799,
+    "golem": 5120,
+    "golemite": 1039,
+    "guards": 81,
+    "heal_spirit": 215,
+    "hog_rider": 1697,
+    "hunter": 885,
+    "ice_golem": 1228,
+    "ice_golemite": 1228,
+    "ice_spirits": 215,
+    "ice_wizard": 688,
+    "inferno_dragon": 1295,
+    "inferno_tower": 1748,
+    "king_tower": 6144,
+    "knight": 1766,
+    "lava_hound": 3581,
+    "lava_pups": 215,
+    "little_prince": 698,
+    "lumberjack": 1282,
+    "mega_knight": 3993,
+    "mega_minion": 837,
+    "merge_maiden_mounted": 1121,
+    "merge_maiden_normal": 1121,
+    "mighty_miner": 2250,
+    "miner": 1210,
+    "mini_sparkys": 529,
+    "mini_zap_machine": 529,
+    "minion": 230,
+    "minion_giant": 1817,
+    "minion_horde": 230,
+    "minions": 230,
+    "minipekka": 1390,
+    "monk": 2214,
+    "mortar": 1369,
+    "moving_cannon": 1809,
+    "musketeer": 721,
+    "night_witch": 906,
+    "p_e_k_k_a": 3760,
+    "pekka": 3760,
+    "phoenix": 1052,
+    "phoenix_egg": 317,
+    "phoenix_no_respawn": 1052,
+    "prince": 1920,
+    "prince_buff": 3686,
+    "princess": 261,
+    "princess_tower": 3584,
+    "rage_barbarian": 1282,
+    "rage_barbarian_evo_ghost": 2,
+    "ram": 1766,
+    "ram_rider": 593,
+    "rascal_boy": 1832,
+    "rascal_girl": 261,
+    "rascals": 1832,
+    "recruit": 547,
+    "recruit_chess": 532,
+    "ronin": 1779,
+    "royal_giant": 3164,
+    "royal_hog": 837,
+    "royal_hog_ev1_grounded": 837,
+    "royal_hogs": 837,
+    "royal_recruits": 547,
+    "royal_recruits_chess": 532,
+    "skeleton": 81,
+    "skeleton_army": 81,
+    "skeleton_army_ev1_general": 81,
+    "skeleton_army_ev1_soldier": 81,
+    "skeleton_army_ev1_spectral": 2,
+    "skeleton_balloon": 532,
+    "skeleton_barrel": 532,
+    "skeleton_dragon": 560,
+    "skeleton_dragons": 560,
+    "skeleton_king": 2298,
+    "skeleton_king_skeleton": 81,
+    "skeleton_warrior": 81,
+    "skeleton_warrior_spooky_chess": 81,
+    "skeleton_warriors_spooky_chess": 81,
+    "skeletons": 81,
+    "sparky": 1451,
+    "spear_goblin": 133,
+    "spear_goblin_dummy": 133,
+    "spear_goblin_giant": 133,
+    "spear_goblins": 133,
+    "super_archer": 1484,
+    "super_elite_archer": 1484,
+    "super_hog_rider": 3584,
+    "super_hog_rider_terry": 5888,
+    "super_ice_golemite": 7680,
+    "super_knight": 2030,
+    "super_lava_hound": 7168,
+    "super_lava_hound2": 3840,
+    "super_mini_pekka": 3328,
+    "super_witch": 1064,
+    "suspicious_bush": 81,
+    "tesla": 1182,
+    "three_musketeer_rework_character_1": 906,
+    "three_musketeer_rework_character_2": 906,
+    "three_musketeer_rework_character_3": 906,
+    "three_musketeers": 906,
+    "tombstone": 529,
+    "tri_wizard": 755,
+    "tri_wizards": 755,
+    "valkyrie": 1907,
+    "voodoo_hog": 629,
+    "wallbreaker": 330,
+    "wallbreaker_mini": 163,
+    "wallbreakers": 330,
+    "witch": 839,
+    "witch_mother": 529,
+    "wizard": 755,
+    "x_bow": 1600,
+    "xbow": 1600,
+    "zap_machine": 1451
+  },
+  "units": {
+    "AngryBarbarian": "angry_barbarian",
+    "AngryBarbarian_EV1": "angry_barbarian",
+    "AngryBarbarian_EV1_2": "angry_barbarian",
+    "Archer": "archer",
+    "ArcherQueen": "archer_queen",
+    "Archer_EV1": "archer",
+    "Assassin": "assassin",
+    "AxeMan": "axe_man",
+    "AxeMan_EV1": "axe_man",
+    "BabyDragon": "baby_dragon",
+    "BabyDragon_EV1": "baby_dragon",
+    "Balloon": "balloon",
+    "BalloonBomb": "balloon_bomb",
+    "BalloonHero": "balloon",
+    "BalloonHero_Bomb": "?",
+    "BarbLogBarbarianHero": "barbarian",
+    "Barbarian": "barbarian",
+    "BarbarianHut": "barbarian_hut",
+    "BarbarianLauncher": "barbarian_launcher",
+    "Barbarian_EV1": "barbarian",
+    "BarrelGoblin": "goblin",
+    "Bat": "bat",
+    "Bat_EV1": "bat",
+    "BattleHealer": "battle_healer",
+    "BattleRam": "battle_ram",
+    "BattleRam_EV1": "battle_ram",
+    "Berserker": "berserker",
+    "BerserkerHero": "berserker",
+    "BlowdartGoblin": "blowdart_goblin",
+    "BlowdartGoblin_EV1": "blowdart_goblin",
+    "BombTower": "bomb_tower",
+    "BombTowerBomb": "bomb_tower_bomb",
+    "Bomber": "bomber",
+    "Bomber_EV1": "bomber",
+    "BossBandit": "boss_bandit",
+    "Bowler": "bowler",
+    "BowlerHero": "bowler",
+    "BowlerHero_Siege": "?",
+    "BrokenCannon": "broken_cannon",
+    "BushGoblin": "bush_goblin",
+    "Cannon": "cannon",
+    "Cannon_EV1": "cannon",
+    "Cannoneer": "cannoneer",
+    "ChampionGuard": "champion_guard",
+    "ChefTower": "chef_tower",
+    "DaggerDuchess": "dagger_duchess",
+    "DarkPrince": "dark_prince",
+    "DarkPrinceHero": "dark_prince",
+    "DarkPrinceHero_Mount": "?",
+    "DarkPrinceHero_Walking": "?",
+    "DarkWitch": "dark_witch",
+    "DartBarrell": "dart_barrell",
+    "DeliveryRecruit": "delivery_recruit",
+    "ElectroDragon": "electro_dragon",
+    "ElectroGiant": "electro_giant",
+    "ElectroGiant_EV1": "electro_giant",
+    "ElectroSpirit": "electro_spirit",
+    "ElectroWizard": "electro_wizard",
+    "ElectroWizardHero": "electro_wizard",
+    "EliteArcher": "elite_archer",
+    "EliteArcherHero": "elite_archer",
+    "EliteArcherHero_Dummy": "?",
+    "ElixirCollector": "elixir_collector",
+    "ElixirGolem1": "elixir_golem1",
+    "ElixirGolem2": "elixir_golem2",
+    "ElixirGolem4": "elixir_golem4",
+    "FireSpirits": "fire_spirit",
+    "Firecracker": "firecracker",
+    "Firecracker_EV1": "firecracker",
+    "Fisherman": "fisherman",
+    "Furnace_EV1": "furnace",
+    "Furnace_rework": "furnace",
+    "Ghost": "ghost",
+    "Ghost_EV1": "ghost",
+    "Ghost_EV1_Summon_Left": "ghost_ev1_summon_left",
+    "Ghost_EV1_Summon_Right": "ghost_ev1_summon_right",
+    "Giant": "giant",
+    "GiantBuffer": "giant_buffer",
+    "GiantHero": "giant",
+    "GiantSkeleton": "giant_skeleton",
+    "GiantSkeletonBomb": "giant_skeleton_bomb",
+    "Giant_EV1": "giant",
+    "Goblin": "goblin",
+    "GoblinBrawler": "goblin_brawler",
+    "GoblinCage": "goblin_cage",
+    "GoblinCage_EV1_GoblinBrawler": "goblin_cage_ev1_goblin_brawler",
+    "GoblinCage_EV1_TEMPNAME": "goblin_cage_ev1_tempname",
+    "GoblinCurseGoblin": "goblin_curse_goblin",
+    "GoblinDemolisher": "goblin_demolisher",
+    "GoblinDemolisher_kamikaze_form": "goblin_demolisher_kamikaze_form",
+    "GoblinDrill": "goblin_drill",
+    "GoblinDrillDig": "goblin_drill_dig",
+    "GoblinDrill_EV1": "goblin_drill",
+    "GoblinDrill_EV1_Dig": "goblin_drill_ev1_dig",
+    "GoblinDummy": "goblin_dummy",
+    "GoblinGiant": "goblin_giant",
+    "GoblinGiant_EV1": "goblin_giant",
+    "GoblinHero": "goblin",
+    "GoblinHero_Flag_Building": "?",
+    "GoblinHut_Rework": "goblin_hut",
+    "GoblinMachine": "goblin_machine",
+    "GoblinParty": "goblin_party",
+    "GoblinPartyHut": "goblin_party_hut",
+    "GoblinRocketSilo": "goblin_rocket_silo",
+    "GoblinRocketSilo1": "goblin_rocket_silo1",
+    "GoblinRocketSilo2": "goblin_rocket_silo2",
+    "Goblin_Stab": "goblin_stab",
+    "Goblin_dummy": "goblin_dummy",
+    "GoldenKnight": "golden_knight",
+    "Golem": "golem",
+    "Golemite": "golemite",
+    "Graveyard_rework_Skeleton": "skeleton",
+    "HealSpirit": "heal_spirit",
+    "HogRider": "hog_rider",
+    "Hunter": "hunter",
+    "Hunter_EV1": "hunter",
+    "IceGolemite": "ice_golemite",
+    "IceGolemiteHero": "ice_golemite",
+    "IceSpirits": "ice_spirits",
+    "IceSpirits_EV1": "ice_spirits",
+    "IceWizard": "ice_wizard",
+    "IceWizardHero": "ice_wizard",
+    "IceWizardHero_IceCube": "?",
+    "InfernoDragon": "inferno_dragon",
+    "InfernoDragon_EV1": "inferno_dragon",
+    "InfernoTower": "inferno_tower",
+    "KingTower": "king_tower",
+    "Knight": "knight",
+    "KnightHero": "knight",
+    "Knight_EV1": "knight",
+    "LavaHound": "lava_hound",
+    "LavaPups": "lava_pups",
+    "LittlePrince": "little_prince",
+    "MegaKnight": "mega_knight",
+    "MegaKnight_EV1": "mega_knight",
+    "MegaMinion": "mega_minion",
+    "MegaMinionHero": "mega_minion",
+    "MergeMaiden_Mounted": "merge_maiden_mounted",
+    "MergeMaiden_Normal": "merge_maiden_normal",
+    "MightyMiner": "mighty_miner",
+    "MightyMinerBomb": "mighty_miner_bomb",
+    "Miner": "miner",
+    "MiniPekka": "minipekka",
+    "MiniPekkaHero": "minipekka",
+    "MiniZapMachine": "mini_zap_machine",
+    "Minion": "minion",
+    "MinionGiant": "minion_giant",
+    "MinionHorde_EV1": "minion_horde",
+    "Monk": "monk",
+    "Mortar": "mortar",
+    "Mortar_EV1": "mortar",
+    "MovingCannon": "moving_cannon",
+    "Musketeer": "musketeer",
+    "MusketeerHero": "musketeer",
+    "MusketeerTurret": "?",
+    "Musketeer_EV1": "musketeer",
+    "Pekka": "pekka",
+    "Pekka_EV1": "pekka",
+    "Phoenix": "phoenix",
+    "PhoenixEgg": "phoenix_egg",
+    "PhoenixNoRespawn": "phoenix_no_respawn",
+    "Prince": "prince",
+    "PrinceBuff": "prince_buff",
+    "Princess": "princess",
+    "PrincessTower": "princess_tower",
+    "Princess_EV1": "princess",
+    "RageBarbarian": "rage_barbarian",
+    "RageBarbarianEvoGhost": "rage_barbarian_evo_ghost",
+    "RageBarbarian_EV1": "rage_barbarian",
+    "Ram": "ram",
+    "RamRider": "ram_rider",
+    "RascalBoy": "rascal_boy",
+    "RascalGirl": "rascal_girl",
+    "Recruit": "recruit",
+    "Recruit_Chess": "recruit_chess",
+    "Recruit_EV1": "recruit",
+    "Ronin": "ronin",
+    "RoyalGiant": "royal_giant",
+    "RoyalGiant_EV1": "royal_giant",
+    "RoyalHog": "royal_hog",
+    "RoyalHog_EV1": "royal_hog",
+    "RoyalHog_EV1_Grounded": "royal_hog_ev1_grounded",
+    "Skeleton": "skeleton",
+    "SkeletonArmy_EV1_General": "skeleton_army_ev1_general",
+    "SkeletonArmy_EV1_Soldier": "skeleton_army_ev1_soldier",
+    "SkeletonArmy_EV1_Spectral": "skeleton_army_ev1_spectral",
+    "SkeletonBalloon": "skeleton_balloon",
+    "SkeletonBalloonEvoDummyAeO_DEATH": "?",
+    "SkeletonBalloonEvoDummyAeO_EXTRA": "?",
+    "SkeletonBalloon_EV1": "skeleton_balloon",
+    "SkeletonContainerNew": "skeleton_container_new",
+    "SkeletonDragon": "skeleton_dragon",
+    "SkeletonKing": "skeleton_king",
+    "SkeletonKingSkeleton": "skeleton_king_skeleton",
+    "SkeletonTrooper": "?",
+    "SkeletonWarrior": "skeleton_warrior",
+    "SkeletonWarrior_SpookyChess": "skeleton_warrior_spooky_chess",
+    "Skeleton_EV1": "skeleton",
+    "SpearGoblin": "spear_goblin",
+    "SpearGoblinGiant": "spear_goblin_giant",
+    "SpearGoblin_Dummy": "spear_goblin_dummy",
+    "SuperArcher": "super_archer",
+    "SuperEliteArcher": "super_elite_archer",
+    "SuperHogRider": "super_hog_rider",
+    "SuperHogRider_Terry": "super_hog_rider_terry",
+    "SuperIceGolemite": "super_ice_golemite",
+    "SuperKnight": "super_knight",
+    "SuperLavaHound": "super_lava_hound",
+    "SuperLavaHound2": "super_lava_hound2",
+    "SuperMiniPekka": "super_mini_pekka",
+    "SuperMiniPekkaPancakes": "super_mini_pekka_pancakes",
+    "SuperWitch": "super_witch",
+    "SuspiciousBush": "suspicious_bush",
+    "Tesla": "tesla",
+    "Tesla_EV1": "tesla",
+    "ThreeMusketeer_Rework_Character_1": "three_musketeer_rework_character_1",
+    "ThreeMusketeer_Rework_Character_2": "three_musketeer_rework_character_2",
+    "ThreeMusketeer_Rework_Character_3": "three_musketeer_rework_character_3",
+    "Tombstone": "tombstone",
+    "TombstoneHero": "tombstone",
+    "TombstoneHero_Monster_Active": "?",
+    "TombstoneHero_Monster_Passive": "?",
+    "TriWizard": "tri_wizard",
+    "Valkyrie": "valkyrie",
+    "ValkyrieHero": "valkyrie",
+    "Valkyrie_EV1": "valkyrie",
+    "VoodooHog": "voodoo_hog",
+    "Wallbreaker": "wallbreaker",
+    "Wallbreaker_EV1": "wallbreaker",
+    "Wallbreaker_mini": "wallbreaker_mini",
+    "Witch": "witch",
+    "WitchMother": "witch_mother",
+    "Witch_EV1": "witch",
+    "Wizard": "wizard",
+    "WizardHero": "wizard",
+    "WizardHero_air": "?",
+    "Wizard_EV1": "wizard",
+    "Xbow": "xbow",
+    "ZapMachine": "zap_machine",
+    "electro_dragon_ev1": "electro_dragon_ev1",
+    "goblinstein": "goblinstein",
+    "goblinstein_doctor": "goblinstein_doctor"
+  }
+}

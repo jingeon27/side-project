@@ -1767,6 +1767,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clash-bot/agent@workspace:projects/clash-bot/apps/agent":
+  version: 0.0.0-use.local
+  resolution: "@clash-bot/agent@workspace:projects/clash-bot/apps/agent"
+  dependencies:
+    "@side/config": "workspace:*"
+    "@types/node": "catalog:"
+    dayjs: "catalog:"
+    es-toolkit: "catalog:"
+    playwright: "npm:1.64.0"
+    sharp: "catalog:"
+    ts-pattern: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
+
 "@commander-js/extra-typings@npm:^15.0.0":
   version: 15.0.0
   resolution: "@commander-js/extra-typings@npm:15.0.0"
@@ -8154,6 +8170,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@side/clash-bot@workspace:projects/clash-bot":
+  version: 0.0.0-use.local
+  resolution: "@side/clash-bot@workspace:projects/clash-bot"
+  dependencies:
+    "@side/config": "workspace:*"
+    eslint: "catalog:"
+    jiti: "catalog:"
+  languageName: unknown
+  linkType: soft
+
 "@side/config@workspace:*, @side/config@workspace:packages/config":
   version: 0.0.0-use.local
   resolution: "@side/config@workspace:packages/config"
@@ -8254,6 +8280,12 @@ __metadata:
     jiti: "catalog:"
     tsx: "catalog:"
     typescript: "catalog:"
+  languageName: unknown
+  linkType: soft
+
+"@side/story-studio@workspace:projects/story-studio":
+  version: 0.0.0-use.local
+  resolution: "@side/story-studio@workspace:projects/story-studio"
   languageName: unknown
   linkType: soft
 
@@ -8363,6 +8395,37 @@ __metadata:
   checksum: 10c0/6eb74cd13e52d5fc74054df51e37d947ef53f3ab9e02c085665dcca3c38c60ece8d735cebbdf18fbb13c775fbcb9becb3f53109b0e092a63f0f7389ce0993fd0
   languageName: node
   linkType: hard
+
+"@story-studio/engine@workspace:projects/story-studio/apps/engine":
+  version: 0.0.0-use.local
+  resolution: "@story-studio/engine@workspace:projects/story-studio/apps/engine"
+  languageName: unknown
+  linkType: soft
+
+"@story-studio/web@workspace:projects/story-studio/apps/web":
+  version: 0.0.0-use.local
+  resolution: "@story-studio/web@workspace:projects/story-studio/apps/web"
+  dependencies:
+    "@amplitude/analytics-browser": "catalog:"
+    "@hookform/resolvers": "catalog:"
+    "@playwright/test": "catalog:"
+    "@side/config": "workspace:*"
+    "@tanstack/react-query": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    dayjs: "catalog:"
+    lucide-react: "catalog:"
+    next: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
 
 "@storybook/addon-a11y@npm:10.6.3":
   version: 10.6.3

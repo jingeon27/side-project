@@ -1,0 +1,89 @@
+{
+  "gates": [
+    {
+      "name": "fifteen pairs",
+      "wins": 15,
+      "ties": 0,
+      "losses": 0,
+      "invalid": 0,
+      "attempt": 0,
+      "qualifies": false
+    },
+    {
+      "name": "a score that is not a pair result",
+      "wins": 15,
+      "ties": 0,
+      "losses": 0,
+      "invalid": 1,
+      "attempt": 0,
+      "qualifies": false
+    },
+    {
+      "name": "six decisive wins at the first attempt",
+      "wins": 6,
+      "ties": 10,
+      "losses": 0,
+      "invalid": 0,
+      "attempt": 0,
+      "qualifies": true
+    },
+    {
+      "name": "six decisive wins at the second attempt",
+      "wins": 6,
+      "ties": 10,
+      "losses": 0,
+      "invalid": 0,
+      "attempt": 1,
+      "qualifies": false
+    },
+    {
+      "name": "seven decisive wins at the second attempt",
+      "wins": 7,
+      "ties": 9,
+      "losses": 0,
+      "invalid": 0,
+      "attempt": 1,
+      "qualifies": true
+    },
+    {
+      "name": "an even split",
+      "wins": 8,
+      "ties": 0,
+      "losses": 8,
+      "invalid": 0,
+      "attempt": 0,
+      "qualifies": false
+    },
+    {
+      "name": "significant but below the mean score floor",
+      "wins": 7,
+      "ties": 93,
+      "losses": 0,
+      "invalid": 0,
+      "attempt": 0,
+      "qualifies": false
+    }
+  ],
+  "resultLabels": [
+    {
+      "label": "Crowns: you 3, the opponent 1",
+      "blue": 3,
+      "red": 1
+    },
+    {
+      "label": "Crowns: you 1, the opponent 1, overtime",
+      "blue": 1,
+      "red": 1
+    },
+    {
+      "label": "Crowns: you 4, the opponent 1",
+      "blue": null,
+      "red": null
+    },
+    {
+      "label": "Crowns: you 1, the opponent 0, rematch",
+      "blue": null,
+      "red": null
+    }
+  ]
+}

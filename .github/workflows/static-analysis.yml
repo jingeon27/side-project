@@ -70,10 +70,31 @@ jobs:
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: node projects/blog/apps/web/scripts/ci-scope.ts
+      - name: Select Clash Bot verification
+        id: clash
+        if: steps.scope.outputs.content-only != 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] ||
+             ! git diff --quiet "$BASE_SHA" HEAD -- projects/clash-bot .github/workflows/static-analysis.yml; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          fi
       - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
         if: steps.scope.outputs.content-only != 'true'
       - run: yarn install --immutable
         if: steps.scope.outputs.content-only != 'true'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        if: steps.clash.outputs.check == 'true'
+        with:
+          python-version: '3.11'
+      - name: Check Clash Bot without model downloads
+        if: steps.clash.outputs.check == 'true'
+        run: |
+          yarn workspace @side/clash-bot python:setup
+          yarn workspace @side/clash-bot check
+          yarn workspace @side/clash-bot check:python
+          yarn workspace @side/clash-bot test:python
       # Services·Blog selection이 고르지 않는 문서·설정 변경도 포맷을 검사하도록 저장소 전체를 확인한다.
       # 블로그 content-only 변경은 Blog verify가 블로그 포맷을 검사한다.
       - run: yarn format:check

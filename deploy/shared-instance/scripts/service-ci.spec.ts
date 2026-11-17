@@ -55,30 +55,35 @@ describe('service CI selection and release gate', () => {
   });
 
   it.each([
-    ['projects/game-feedback/apps/web/src/page.tsx', true, false],
-    ['projects/photo-contest/apps/api/src/post.ts', false, true],
-    ['packages/design-system/src/button.tsx', true, true],
-    ['deploy/shared-instance/scripts/service.sh', true, true],
-    ['.github/workflows/services.yml', true, true],
-    ['yarn.lock', true, true],
-    ['projects/blog/package.json', false, false],
-    ['README.md', false, false],
-  ])('%s selects only affected services', (file, gameFeedback, photoContest) => {
-    expect(selectServices({ files: [file] })).toEqual({ gameFeedback, photoContest });
+    ['projects/game-feedback/apps/web/src/page.tsx', true, false, false],
+    ['projects/photo-contest/apps/api/src/post.ts', false, true, false],
+    ['packages/design-system/src/button.tsx', true, true, true],
+    ['deploy/shared-instance/scripts/service.sh', true, true, true],
+    ['.github/workflows/services.yml', true, true, true],
+    ['yarn.lock', true, true, true],
+    ['projects/blog/package.json', false, false, false],
+    ['README.md', false, false, false],
+    ['projects/story-studio/.env.example', false, false, true],
+  ])('%s selects only affected services', (file, gameFeedback, photoContest, storyStudio) => {
+    expect(selectServices({ files: [file] })).toEqual({ gameFeedback, photoContest, storyStudio });
   });
 
   it('a move between projects selects both the deleted and added paths', () => {
     expect(
       selectServices({ files: ['projects/game-feedback/old.ts', 'projects/photo-contest/new.ts'] }),
-    ).toEqual({ gameFeedback: true, photoContest: true });
+    ).toEqual({ gameFeedback: true, photoContest: true, storyStudio: false });
   });
 
-  it('an unknown base or manual run selects both services', () => {
-    expect(selectServices({ files: [], forceAll: true })).toEqual({ gameFeedback: true, photoContest: true });
+  it('an unknown base or manual run selects every service', () => {
+    expect(selectServices({ files: [], forceAll: true })).toEqual({
+      gameFeedback: true,
+      photoContest: true,
+      storyStudio: true,
+    });
   });
 
   it('a selected failure, cancellation, skip or missing result blocks publication', () => {
-    const selection = { gameFeedback: true, photoContest: true };
+    const selection = { gameFeedback: true, photoContest: true, storyStudio: false };
     const success = Object.fromEntries(requiredChecks(selection).map((name) => [name, 'success']));
     expect(failedChecks({ selection, results: success })).toEqual([]);
     for (const result of ['failure', 'cancelled', 'skipped', 'undefined']) {
@@ -90,7 +95,7 @@ describe('service CI selection and release gate', () => {
   });
 
   it('unaffected service checks may be skipped but shared image verification is required', () => {
-    const selection = { gameFeedback: true, photoContest: false };
+    const selection = { gameFeedback: true, photoContest: false, storyStudio: false };
     const results = Object.fromEntries(requiredChecks(selection).map((name) => [name, 'success']));
     expect(failedChecks({ selection, results: { ...results, 'pc-verify': 'skipped' } })).toEqual([]);
     expect(failedChecks({ selection, results: { ...results, 'shared-contract': 'skipped' } })).toEqual([
@@ -112,5 +117,15 @@ describe('service CI selection and release gate', () => {
     );
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('selection');
+  });
+  it('로컬 창작 스튜디오만 선택되면 해당 검사의 실패와 생략을 차단한다', () => {
+    const selection = { gameFeedback: false, photoContest: false, storyStudio: true };
+    expect(requiredChecks(selection)).toEqual(['selection', 'story-studio']);
+    expect(failedChecks({ selection, results: { selection: 'success', 'story-studio': 'skipped' } })).toEqual(
+      ['story-studio'],
+    );
+    expect(failedChecks({ selection, results: { selection: 'success', 'story-studio': 'success' } })).toEqual(
+      [],
+    );
   });
 });

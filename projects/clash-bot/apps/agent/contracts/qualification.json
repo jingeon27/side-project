@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "method": "paired_exact_wins_v1",
+  "minimumPairs": 16,
+  "minimumMeanScore": 0.55,
+  "familyAlpha": 0.05,
+  "resultLabelPattern": "^Crowns: you ([0-3]), the opponent ([0-3])(?:, overtime)?$"
+}

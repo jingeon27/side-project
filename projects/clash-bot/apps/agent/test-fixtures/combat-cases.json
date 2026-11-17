@@ -1,0 +1,509 @@
+[
+  {
+    "name": "spawn kills a stationary observed skeleton",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "moving target leaves before deployment",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [6, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0],
+      "kills": [0, 0]
+    }
+  },
+  {
+    "name": "rolling corridor hits once",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 12,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "roll does not hit a unit behind its start",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 5,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0]
+    }
+  },
+  {
+    "name": "Poison kills a stationary observed skeleton",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [81, 81],
+      "kills": [1, 1]
+    }
+  },
+  {
+    "name": "moving out of Poison is not eight seconds",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "knight",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [2, 0],
+          "hp": [1000, 1000]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damageUpperBelow": 736,
+      "kills": [0, 0]
+    }
+  },
+  {
+    "name": "unseen HP stays unknown",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 84],
+      "kills": [0, 0],
+      "unknownHealth": 1
+    }
+  },
+  {
+    "name": "no observed skill opportunity",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "ability",
+      "x": 9,
+      "y": 10,
+      "own": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemy": [],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "nearby hero fight is an opportunity, not a verified mark",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "ability",
+      "x": 9,
+      "y": 10,
+      "own": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 12,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "opportunity": 1
+    }
+  },
+  {
+    "name": "available Goblin Barrel reserves our roll",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [],
+      "enemyCycle": [["goblin_barrel", 0, 0]],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "reserveBarrel": true
+    }
+  },
+  {
+    "name": "out of cycle Goblin Barrel does not lock our roll",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [],
+      "enemyCycle": [["goblin_barrel", 4, 4]],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "reserveBarrel": false
+    }
+  },
+  {
+    "name": "unknown movement does not promise a hit",
+    "input": {
+      "card": "ice_wizard",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "skeleton",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": null,
+          "hp": [81, 81]
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 81],
+      "kills": [0, 1]
+    }
+  },
+  {
+    "name": "immobile Hut cannot walk into a distant Poison after eight seconds",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 14.5,
+      "y": 25.9,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 8.6,
+          "y": 23.2,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "damage": [0, 0],
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "a wide possible roll interval is not a trajectory hit",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 5.4,
+      "y": 13.3,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "barbarian",
+          "x": 3,
+          "y": 13.7,
+          "variant": "unknown",
+          "velocity": [0.006, 0.219],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "unseen movement towards a distant Poison is not projected value",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 3.5,
+      "y": 25.9,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 1.6,
+          "y": 14.5,
+          "variant": "unknown",
+          "velocity": null,
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "untracked mobile has no eight-second trajectory value",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": null,
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0
+    }
+  },
+  {
+    "name": "tracked mobile Poison trajectory uses a short horizon",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "ice_wizard",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 184
+    }
+  },
+  {
+    "name": "immobile Hut keeps full reference Poison exposure",
+    "input": {
+      "card": "poison",
+      "kind": "card",
+      "x": 9,
+      "y": 10,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 9,
+          "y": 10,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 736
+    }
+  }
+]

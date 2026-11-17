@@ -1,0 +1,232 @@
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from clash_bot.qwen.inputs.decision_input import CONTRACT, mirror_actor_prompt
+from clash_bot.qwen.records.opponent_data import DEMONSTRATION_FORMAT, load_demonstrations
+
+
+class OpponentDataTest(unittest.TestCase):
+    def test_graveyard_effect_uncertainty_does_not_teach_the_tower_center_as_an_outer_cast(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(
+                directory,
+                card="graveyard",
+                label_kind="placement_region",
+                target_region={"x": 70, "y": 143, "radius": 45},
+                grounding={"x": 298, "y": 409, "box": [228, 339, 368, 479]},
+                choices=[0, 1, 2],
+                target_ids=[1],
+                candidates=[
+                    {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 1, "card": "graveyard", "cost": 5, "target": {"x": 70, "y": 143}},
+                    {"id": 2, "card": "graveyard", "cost": 5, "target": {"x": 95, "y": 146}},
+                ],
+            )
+            load_demonstrations(path)
+            dataset = json.loads(path.read_text())
+            dataset["samples"][0]["target_ids"].append(2)
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "placement region"):
+                load_demonstrations(path)
+
+    def test_old_vertical_only_labels_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(directory)
+            dataset = json.loads(path.read_text())
+            dataset["format"] = "counterpush-mirror-actor-demonstrations-v4"
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "Unsupported"):
+                load_demonstrations(path)
+            dataset["format"] = DEMONSTRATION_FORMAT
+            dataset["samples"][0]["lane"] = dataset["samples"][0]["source_lane"]
+            path.write_text(json.dumps(dataset))
+            with self.assertRaisesRegex(ValueError, "rotate both"):
+                load_demonstrations(path)
+
+    def test_fresh_ice_wizard_teaches_a_buildup_region_but_a_long_gap_does_not(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(
+                directory,
+                card="ice_wizard",
+                after_at=1800,
+                label_kind="placement_region",
+                target_region={"x": 168, "y": 488, "radius": 37.6},
+                grounding={"x": 200, "y": 64, "box": [145, 40, 191, 88]},
+                choices=[0, 1, 2],
+                target_ids=[1],
+                candidates=[
+                    {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 1, "card": "ice_wizard", "cost": 3, "target": {"x": 168, "y": 488}},
+                    {"id": 2, "card": "ice_wizard", "cost": 3, "target": {"x": 95, "y": 366}},
+                ],
+            )
+            load_demonstrations(path)
+            data = json.loads(path.read_text())
+            data["samples"][0]["after_at"] = 2201
+            path.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, "supported by the observed"):
+                load_demonstrations(path)
+
+    def fixture(self, directory, **overrides):
+        directory = Path(directory)
+        (directory / "images").mkdir(exist_ok=True)
+        (directory / "images/before.png").write_bytes(b"before")
+        (directory / "images/after.png").write_bytes(b"after")
+        sample = {
+            "id": "furnace",
+            "actor": "red_top",
+            "verified_actor": True,
+            "absent_before": True,
+            "confidence": 0.95,
+            "hand": None,
+            "elixir": None,
+            "exact_target": None,
+            "evidence": "new_unit_visible",
+            "before_at": 1000,
+            "after_at": 4000,
+            "situation": {
+                "at": 1000,
+                "own": {"units": [], "recentPlays": []},
+                "opponent": {"units": [], "elixir": {"min": 4, "max": 6}},
+            },
+            "river_y": 276,
+            "label_kind": "card_lane",
+            "target_region": None,
+            "image": "images/before.png",
+            "image_sha256": hashlib.sha256(b"before").hexdigest(),
+            "source_before_sha256": hashlib.sha256(b"original-before").hexdigest(),
+            "evidence_image": "images/after.png",
+            "evidence_sha256": hashlib.sha256(b"after").hexdigest(),
+            "choices": [0, 1],
+            "target_ids": [1],
+            "card": "furnace",
+            "source_lane": "right",
+            "lane": "left",
+            "perspective": "rotate_180_about_river_center",
+            "candidates": [
+                {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                {"id": 1, "card": "furnace", "cost": 4, "target": {"x": 95, "y": 350}},
+            ],
+            **overrides,
+        }
+        sample["prompt"] = (
+            mirror_actor_prompt(sample) if isinstance(sample["situation"], dict) else "invalid"
+        )
+        path = directory / "dataset.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "format": DEMONSTRATION_FORMAT,
+                    "source": "counterpush_live_screen",
+                    "deck": [name for name, code in CONTRACT["codes"].items() if code.isupper()],
+                    "teacher_result": {
+                        "type": "result",
+                        "source": "counterpush_result_dom_verified2",
+                        "blue": 0,
+                        "red": 3,
+                        "readings": ["Crowns: you 0, the opponent 3"] * 2,
+                    },
+                    "samples": [sample],
+                }
+            )
+        )
+        return path
+
+    def test_defensive_poison_position_does_not_supervise_every_same_lane_choice(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(
+                directory,
+                card="poison",
+                river_y=294,
+                label_kind="placement_region",
+                target_region={"x": 95, "y": 424, "radius": 24},
+                grounding={"x": 273, "y": 164, "box": [70, 139, 120, 189]},
+                choices=[0, 1, 2],
+                target_ids=[1],
+                candidates=[
+                    {"id": 0, "card": None, "cost": 0, "target": {"x": 0, "y": 0}},
+                    {"id": 1, "card": "poison", "cost": 4, "target": {"x": 95, "y": 424}},
+                    {"id": 2, "card": "poison", "cost": 4, "target": {"x": 95, "y": 164}},
+                ],
+            )
+            load_demonstrations(path)
+            original = json.loads(path.read_text())
+            changed = json.loads(path.read_text())
+            changed["samples"][0]["target_ids"] = [1, 2]
+            path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "placement region"):
+                load_demonstrations(path)
+            changed = json.loads(json.dumps(original))
+            changed["samples"][0]["target_region"]["y"] = 164
+            path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "supported by the observed"):
+                load_demonstrations(path)
+            changed = json.loads(json.dumps(original))
+            changed["teacher_result"] = {
+                "type": "result",
+                "source": "counterpush_result_dom_verified2",
+                "blue": 3,
+                "red": 0,
+                "readings": ["Crowns: you 3, the opponent 0"] * 2,
+            }
+            path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "verified winner"):
+                load_demonstrations(path)
+            original["format"] = "counterpush-card-lane-demonstrations-v2"
+            path.write_text(json.dumps(original))
+            with self.assertRaisesRegex(ValueError, "Unsupported"):
+                load_demonstrations(path)
+
+    def test_validates_evidence_hashes_and_rejects_changed_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(directory)
+            dataset, identity, _ = load_demonstrations(path)
+            self.assertEqual(len(dataset["samples"]), 1)
+            self.assertEqual(len(identity), 64)
+            (Path(directory) / "images/after.png").write_bytes(b"changed")
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                load_demonstrations(path)
+
+    def test_quarantine_also_blocks_an_already_prepared_dataset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_hash = hashlib.sha256(b"original-before").hexdigest()
+            path = self.fixture(directory)
+            quarantine = Path(directory) / "quarantine.json"
+            quarantine.write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "entries": [
+                            {
+                                "card": "furnace",
+                                "before_sha256": source_hash,
+                                "reason": "already_present",
+                            }
+                        ],
+                    }
+                )
+            )
+            load_demonstrations(path)
+            with self.assertRaisesRegex(ValueError, "Quarantined demonstration"):
+                load_demonstrations(path, quarantine)
+
+    def test_rejects_hidden_state_guesses_wrong_actor_and_label_mismatches(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for overrides in (
+                {"elixir": 8},
+                {"verified_actor": False},
+                {"target_ids": [0]},
+                {"confidence": 0.8},
+                {"after_at": 20000},
+                {"situation": None},
+                {"image": "../outside.png"},
+            ):
+                with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                    load_demonstrations(self.fixture(directory, **overrides))
+
+
+if __name__ == "__main__":
+    unittest.main()

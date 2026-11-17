@@ -26,6 +26,12 @@
     }
   },
   "posts": {
+    "side-project-goals": {
+      "title": "Why I do side projects",
+      "slug": "why-i-do-side-projects",
+      "description": "Asked what I ultimately want to achieve with my side projects, I said I hope software makes people's lives easier. Looking back, I have no single goal for all of them, only a separate goal for each, so I wrote down why I started each project and what I want from it.",
+      "keywords": ["side projects", "goals", "reflection", "AI workflow", "local LLM"]
+    },
     "scroll-and-dropdown-states": {
       "title": "How should you test a component? Lessons from library tests",
       "slug": "testing-infinite-scroll-and-dropdown-states",

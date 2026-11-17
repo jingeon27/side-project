@@ -259,6 +259,18 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/side-project-goals-og.jpg": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/side-project-goals.avif": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/side-project-goals.svg": {
+    "width": 1200,
+    "height": 630
+  },
   "/images/covers/side-project-infrastructure-og.jpg": {
     "width": 1200,
     "height": 675
@@ -1306,6 +1318,22 @@
   "/images/posts/side-project-design/captures-2026-11-01/pisik-explore-ko.png": {
     "width": 780,
     "height": 1688
+  },
+  "/images/posts/side-project-goals/01-project-goals-en.avif": {
+    "width": 1080,
+    "height": 840
+  },
+  "/images/posts/side-project-goals/01-project-goals-en.svg": {
+    "width": 1080,
+    "height": 840
+  },
+  "/images/posts/side-project-goals/01-project-goals.avif": {
+    "width": 1080,
+    "height": 840
+  },
+  "/images/posts/side-project-goals/01-project-goals.svg": {
+    "width": 1080,
+    "height": 840
   },
   "/images/posts/testing-standards/01.jpg": {
     "width": 1440,
