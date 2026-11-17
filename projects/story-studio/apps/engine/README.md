@@ -1,6 +1,6 @@
 # Story Studio Python engine
 
-한국어 원고·음성·영상 생성과 음성 QLoRA 학습을 담당하는 독립 Python 앱입니다. 웹 화면은 형제 `web` 앱이 담당합니다. Apple Silicon의 Python 3.11에서 실행하며 `pyproject.toml`이 Python 패키지와 고정 의존성의 기준입니다.
+한국어 원고·음성·이미지·영상 생성과 음성 QLoRA 학습을 담당하는 독립 Python 앱입니다. 웹 화면은 형제 `web` 앱이 담당합니다. Apple Silicon의 Python 3.11에서 실행하며 `pyproject.toml`이 Python 패키지와 고정 의존성의 기준입니다.
 
 ## 설치와 실행
 
@@ -23,7 +23,7 @@ Python 패키지를 설치한 환경에서는 `story-studio-worker`도 같은 �
 src/story_studio/
   worker.py             실행 진입·작업 분기·GPU 잠금
   runtime.py            작업별 진행·상태·취소·정리
-  generation/           한국어 글·음성·영상 생성
+  generation/           한국어 글·음성 생성, FLUX.2 Klein 이미지와 Wan2.2 영상
   voices/
     samples.py          녹음 검증·정규화
     jobs.py             데이터 검증·학습 실행·완료 가중치 로드
@@ -32,7 +32,7 @@ src/story_studio/
   assets.py             개인 자산·공개 예시 경로
   storage.py            원자적 비공개 JSON 저장
   media.py              ffmpeg·자막·영상 합치기
-  setup.py              모델 설치·변환
+  setup.py              모델 설치·Wan2.2 MLX 변환
   catalog.py            패키지에 포함된 모델 설정 읽기
   models.json           고정한 모델 저장소와 revision
 ```
