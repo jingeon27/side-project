@@ -30,21 +30,28 @@ apps/agent/
       qwen/
         protocol.py            Pydantic 입력 계약
         learning_worker.py     JSON 줄 단위 통신과 오류 복구
-        runtime.py             상주 모델·후보·고정 평가 수명
+        runtime.py             상주 모델 적재와 추론(choose·warmup)
+        adapter_roles.py       챔피언·비공개 후보·고정 평가 어댑터의 역할 전환과 게시
+        game_training.py, search_study.py   실전 경기·상대 시범·수읽기 자료 학습 요청
         features.py            고정 특징과 마지막 MLP 어댑터 연결
         episodes.py            결과·사용 확인·학습 자료 검증
-        learning_policy.py     LoRA, 목적 함수, 체크포인트
+        learning_policy.py     LoRA와 확률·손실 함수
+        learner.py             체크포인트·목적별 Adam 상태·챔피언 보호
+        policy_gradient.py, imitation.py, search_distillation.py   PPO·상대 모방·수읽기 증류 갱신
       arena/                   자가대국·탐색·리그 (의존: catalogue ← sim ← policy ← training ← study ← league·cli)
         catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
         sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 배치 후보(candidates),
-                               숨은 손패 가설(belief), 카탈로그 생성(catalogue_build), 밸런스 패치(balance)
+                               숨은 손패 가설(belief), 카탈로그 생성(catalogue_build, catalogue_vectors),
+                               밸런스 패치(balance)
         policy/                판단 문맥(context), 특징(features), 화면 인식 오류(noise), 표본(samples),
                                네트워크와 학습(network)
         training/              자가대국(selfplay), 탐색(search), 워커(parallel), 채택 평가(evaluation),
                                규칙 봇 기준 평가(benchmark), 경기 파일(storage)
-        study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, export)
+        study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, teacher, export)
+        champions.py           리그 포인터·체크포인트·실전 챔피언 파일
         league.py, cli.py      리그 반복과 명령
-      perception/              CPU 인식·ONNX 변환
+      perception/              CPU 인식 워커(vision_worker)와 카드 식별(classifier)·유닛 표식(markers)·
+                               독/무덤 효과(effects), 화면 실험(trophy_vision), ONNX 변환
       trophy/                  현재 궤적 계약, CPU PPO, 불변 체크포인트와 재시도 receipt
     requirements/              공통·모델·인식·변환·개발 의존성 고정
   contracts/                   양쪽 언어가 읽는 모델·규칙·판단·빠른 정책(fast-policy.json)·카드 카탈로그(card-catalogue.json) JSON

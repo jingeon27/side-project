@@ -2,6 +2,7 @@
 
 - 화면만 읽어 Counterpush 웹 게임을 두는 로컬 봇과, 고정 챔피언과 분리된 Qwen 후보 학습·검증 후 채택을 소유한다. Counterpush와 arena에 더해 명시적으로 요청한 로컬 트로피 자동개선은 `src/trophy`·`clash_bot.trophy`가 소유한다. 트로피는 현재 관측·확인된 내 행동·최종 결과만으로 별도 CPU 정책을 학습하고, 상대 모방이나 정확한 비공개 손패를 요구하지 않는다. 화면 입력 연결은 로컬 실험이며 코어 학습기와 구분한다. 실행 기록·모델·계정 프로필·Python 환경은 Git에서 제외된 `.data`가 소유한다.
 - 폴더 소유권과 실행 흐름은 [docs/architecture.md](docs/architecture.md), 학습 판정과 한계는 [docs/learning-design.md](docs/learning-design.md)·[docs/arena-learning.md](docs/arena-learning.md)를 따른다. TypeScript 계층과 모듈 규칙은 `apps/agent/src/AGENTS.md`, Python은 `apps/agent/python/AGENTS.md`에 있다.
+- 코드 파일(TS·Python, 테스트 포함)은 300줄 미만을 목표로 함께 바뀌고 함께 읽히는 책임 단위로 나눈다. 줄 수를 맞추려는 재수출 모듈이나 의미 없는 조각은 만들지 않고, 나눌 때는 동작을 바꾸지 않은 채 가져오는 쪽을 새 위치로 고친다. Python arena의 의존은 `catalogue` ← `sim` ← `policy` ← `training` ← `study` ← `league`·`cli` 한 방향이다.
 - 코드·계약·저장 형식은 [current-code-only](.agents/skills/current-code-only/SKILL.md)를 따른다. legacy 호환 없이 현재 코드와 현재 형식의 기록으로만 동작한다.
 - 다른 실행의 `.data`와 프로세스를 바꾸지 않는다. 학습기(`qwen/selfplay/lock.json`)나 자가대국(`arena/control/lock.json`)이 실행 중이면 setup으로 venv·모델을 바꾸지 않으며, 워커 프로세스가 끝난 뒤에 잠금을 푼다.
 - 적용 모델은 원본 증거를 재검사한 게시 경로로만 바뀐다. 채택 게이트 기준과 결과 라벨은 `apps/agent/contracts/qualification.json`, 빠른 정책의 특징 배치는 `apps/agent/contracts/fast-policy.json`, 카드·필드 오브젝트의 특징은 `apps/agent/contracts/card-catalogue.json` 하나를 TS와 Python이 함께 읽는다. 카탈로그는 손으로 고치지 않고 `arena catalogue`로 고정 엔진 수치표에서 다시 만든다.
