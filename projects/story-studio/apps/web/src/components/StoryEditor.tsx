@@ -1,7 +1,8 @@
 'use client';
 
-import { Download, ImagePlus, Play, Plus, Video, Volume2 } from 'lucide-react';
+import { Download, ImagePlus, Play, Plus, UserRoundCheck, Video, Volume2 } from 'lucide-react';
 
+import { trackStudioEvent } from '../lib/analytics';
 import { downloadFile } from '../lib/library';
 import {
   caption,
@@ -48,6 +49,10 @@ export function StoryEditor({
   const format = formats.find((item) => item.id === project.brief.format);
   const completed = project.scenes.filter((scene) => scene.video?.asset).length;
   const filename = safeFilename(project.title);
+  const handleReferenceChange = (scene: TScene, selected: boolean) => {
+    patch({ referenceSceneId: selected ? scene.id : undefined });
+    void trackStudioEvent('studio_reference_clicked', { action: selected ? 'set' : 'clear' });
+  };
   return (
     <section className="editor" aria-label="작품 편집">
       <div className="editor-heading">
@@ -236,6 +241,7 @@ export function StoryEditor({
             media={(type) => media(scene, type)}
             voice={() => voice(scene)}
             onCancelVideo={() => onCancelVideo(scene)}
+            onReferenceChange={(selected) => handleReferenceChange(scene, selected)}
           />
         ))}
       </div>
@@ -267,6 +273,7 @@ function SceneCard({
   media,
   voice,
   onCancelVideo,
+  onReferenceChange,
 }: {
   scene: TScene;
   index: number;
@@ -279,9 +286,11 @@ function SceneCard({
   media: (type: 'image' | 'video') => void;
   voice: () => void;
   onCancelVideo: () => void;
+  onReferenceChange: (selected: boolean) => void;
 }) {
   const novel = project.brief.format === 'novel';
   const webtoon = project.brief.format === 'webtoon';
+  const reference = project.referenceSceneId === scene.id;
   const pending = scene.video && ['PENDING', 'RUNNING'].includes(scene.video.status);
   const prefix = `scene-${scene.id}`;
   return (
@@ -327,6 +336,15 @@ function SceneCard({
               >
                 <Video size={14} />{' '}
                 {pending ? '영상 만드는 중…' : scene.video?.asset ? '영상 다시 생성' : '영상 생성'}
+              </button>
+            )}
+            {local && scene.image && (
+              <button
+                className="button secondary small"
+                disabled={busy}
+                onClick={() => onReferenceChange(!reference)}
+              >
+                <UserRoundCheck size={14} /> {reference ? '인물 기준 해제' : '인물 기준으로 사용'}
               </button>
             )}
           </div>

@@ -20,6 +20,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
+import { match } from 'ts-pattern';
 
 import { trackStudioEvent, type TStudioAction } from '../lib/analytics';
 import { downloadFile, readBackup } from '../lib/library';
@@ -31,6 +32,7 @@ import {
   formats,
   makeProject,
   projectSchema,
+  referenceImage,
   safeFilename,
   sceneContentSchema,
   taskSchema,
@@ -286,7 +288,13 @@ export function Studio({
   }
   function media(scene: TScene, type: 'image' | 'video') {
     if (!project || project.brief.format === 'novel') return;
-    void work(type === 'image' ? '이미지 생성 중' : '영상 작업 제출 중', async (signal) => {
+    // Only the local engine conditions on a reference image or a first frame.
+    const reference = type === 'image' && local ? referenceImage(project, scene) : undefined;
+    const label = match(type)
+      .with('video', () => '영상 작업 제출 중')
+      .with('image', () => (reference ? '인물 기준을 참고해 이미지 생성 중' : '이미지 생성 중'))
+      .exhaustive();
+    void work(label, async (signal) => {
       const data = await request(
         type,
         {
@@ -296,6 +304,7 @@ export function Studio({
           ratio: project.brief.ratio,
           quality: project.brief.quality,
           scene,
+          ...(type === 'video' && local ? { image: scene.image } : { reference }),
         },
         signal,
       );
@@ -566,7 +575,10 @@ export function Studio({
                       글, 대본<strong>{config?.textModel || 'Qwen 3.8'}</strong>
                     </span>
                     <span>
-                      이미지, 영상<strong>{config?.videoModel || 'Wan 2.1'}</strong>
+                      이미지<strong>{config?.imageModel || 'FLUX.2 Klein'}</strong>
+                    </span>
+                    <span>
+                      영상<strong>{config?.videoModel || 'Wan 2.2'}</strong>
                     </span>
                     <span>
                       한국어 목소리<strong>{config?.voiceModel || 'Qwen3-TTS'}</strong>
@@ -574,7 +586,8 @@ export function Studio({
                   </div>
                   <p>
                     한국어 음성을 먼저 만들고 장면별 영상을 생성한 뒤, 내보내기에서 음성,자막을 담은 MP4로
-                    합칠 수 있어요. 영상 생성은 성능과 분량에 따라 수분 이상 걸릴 수 있습니다.
+                    합칠 수 있어요. 장면 이미지가 있으면 영상은 그 이미지에서 시작합니다. 영상 생성은 성능과
+                    분량에 따라 수분 이상 걸릴 수 있습니다.
                   </p>
                   <details>
                     <summary>처음 사용하는 컴퓨터에서 준비하기</summary>

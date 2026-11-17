@@ -21,6 +21,7 @@ type TAnalyticsProperties = {
   studio_recording_clicked: { action: 'start' | 'stop' | 'cancel' };
   studio_recording_started: { source: 'microphone' };
   studio_recording_completed: { source: 'microphone' };
+  studio_reference_clicked: { action: 'set' | 'clear' };
 };
 type TClient = ReturnType<(typeof import('@amplitude/analytics-browser'))['createInstance']>;
 const connection: { client?: Promise<TClient> } = {};
