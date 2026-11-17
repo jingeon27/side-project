@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { trackStudioEvent } from '../lib/analytics';
-import { materialCatalogQuery } from '../lib/material-client';
+import { materialOverviewQuery } from '../lib/material-client';
 
 // Chooses which material collections the local writer may consult for a work.
 export function CollectionPicker({
@@ -15,10 +15,8 @@ export function CollectionPicker({
   disabled?: boolean;
   onChange: (collections: string[]) => void;
 }) {
-  const catalog = useQuery(materialCatalogQuery);
-  const names = [...new Set((catalog.data?.materials ?? []).map((material) => material.collection))].sort(
-    (first, second) => first.localeCompare(second, 'ko'),
-  );
+  const overview = useQuery(materialOverviewQuery);
+  const names = (overview.data?.collections ?? []).map((collection) => collection.name);
   if (!names.length) return null;
   return (
     <div className="idea-row collection-picker" role="group" aria-label="참고 자료 묶음">

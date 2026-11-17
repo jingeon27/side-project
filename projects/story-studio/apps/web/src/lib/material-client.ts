@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { materialCatalogSchema } from './materials';
+import { materialListSchema, materialOverviewSchema } from './materials';
 
 export async function materialRequest<T>(url: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, cache: 'no-store' });
@@ -11,8 +11,21 @@ export async function materialRequest<T>(url: string, schema: z.ZodType<T>, init
   }
   return schema.parse(data);
 }
-export const materialCatalogQuery = {
+export function materialAction(body: unknown): RequestInit {
+  return { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+}
+// Collections and indexing state: small enough for every screen that only needs the collection names.
+export const materialOverviewQuery = {
   queryKey: ['materials'],
   queryFn: ({ signal }: { signal: AbortSignal }) =>
-    materialRequest('/api/materials', materialCatalogSchema, { signal }),
+    materialRequest('/api/materials', materialOverviewSchema, { signal }),
 };
+export function materialListQuery(collection: string) {
+  return {
+    queryKey: ['materials', collection],
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      materialRequest(`/api/materials?collection=${encodeURIComponent(collection)}`, materialListSchema, {
+        signal,
+      }),
+  };
+}

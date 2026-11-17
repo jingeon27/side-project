@@ -122,7 +122,7 @@ export async function runLocal(
     .with('compose', 'normalize-voice', 'delete-material', () =>
       existsSync(dataPath('local', '.venv', 'bin', 'python')),
     )
-    .with('index-material', () => config.materialReady)
+    .with('sync-material', () => config.materialReady)
     .with('text', () => config.textReady)
     .with('voice', () => (settings?.kind === 'trained' ? config.voiceTrainingReady : config.voiceReady))
     .with('train-voice', () => config.voiceTrainingReady)

@@ -1,16 +1,27 @@
-import { materialUploadSchema } from '../../../lib/materials';
+import { match } from 'ts-pattern';
+
+import { collectionNameSchema, materialActionSchema } from '../../../lib/materials';
 import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../server/errors';
-import { isLocalMode, localConfiguration } from '../../../server/local-worker';
-import { addMaterials, listMaterials } from '../../../server/material-store';
+import {
+  addMaterials,
+  deleteCollection,
+  importInbox,
+  listCollection,
+  materialOverview,
+  startSync,
+  stopSync,
+} from '../../../server/material-store';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
     requireLocalRequest(request);
-    return Response.json(
-      { ready: isLocalMode() && localConfiguration().materialReady, materials: await listMaterials() },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
+    const collection = new URL(request.url).searchParams.get('collection');
+    if (collection !== null && !collectionNameSchema.safeParse(collection).success)
+      throw new StudioError('올바른 자료 묶음이 아닙니다.', 400);
+    return Response.json(collection === null ? await materialOverview() : await listCollection(collection), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error) {
     return errorResponse(error);
   }
@@ -18,16 +29,26 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     requireLocalRequest(request, true);
-    const upload = materialUploadSchema.safeParse(await readJson(request, 6_000_000));
-    if (!upload.success)
+    const input = materialActionSchema.safeParse(await readJson(request, 6_000_000));
+    if (!input.success)
       throw new StudioError(
-        '묶음 이름과 자료 내용을 확인해 주세요. 자료 하나는 30만 자까지 저장합니다.',
+        '묶음 이름과 자료 내용을 확인해 주세요. 자료 하나는 30만 자, 항상 포함할 자료는 6천 자까지 저장합니다.',
         400,
       );
-    return Response.json(
-      { materials: await addMaterials(upload.data, request.signal) },
-      { status: 201, headers: { 'Cache-Control': 'no-store' } },
-    );
+    const data = await match(input.data)
+      .with({ action: 'upload' }, (action) => addMaterials(action.upload))
+      .with({ action: 'import' }, () => importInbox())
+      .with({ action: 'delete-collection' }, (action) => deleteCollection(action.collection))
+      .with({ action: 'sync' }, () => {
+        startSync();
+        return { started: true };
+      })
+      .with({ action: 'stop' }, () => {
+        stopSync();
+        return { stopped: true };
+      })
+      .exhaustive();
+    return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     return errorResponse(error);
   }

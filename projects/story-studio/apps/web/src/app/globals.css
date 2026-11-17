@@ -2570,3 +2570,29 @@ h1 em {
   border-bottom: 0;
   border-top: 1px solid var(--line);
 }
+.material-upload select {
+  margin: 0 0 8px;
+}
+.material-inbox,
+.material-sync {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.material-inbox h2 {
+  margin: 0;
+}
+.material-inbox code {
+  overflow-wrap: anywhere;
+}
+.material-sync:empty {
+  display: none;
+}
+.material-collection > .text-button {
+  margin: 12px 0 20px 16px;
+}

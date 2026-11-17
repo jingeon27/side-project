@@ -47,6 +47,20 @@ describe('참고 자료 업로드 계약', () => {
       );
     expect(batchMaterials([])).toEqual([]);
   });
+  it('항상 포함할 자료는 6천 자까지만 받고, 방식을 정하지 않으면 관련 부분 검색으로 올린다', () => {
+    const short = { title: '인물 설정', text: '가'.repeat(materialLimits.alwaysCharacters) };
+    const long = { title: '긴 설정', text: '가'.repeat(materialLimits.alwaysCharacters + 1) };
+    expect(
+      materialUploadSchema.safeParse({ collection: '묶음', role: 'always', documents: [short] }).success,
+    ).toBe(true);
+    expect(
+      materialUploadSchema.safeParse({ collection: '묶음', role: 'always', documents: [long] }).success,
+    ).toBe(false);
+    expect(materialUploadSchema.parse({ collection: '묶음', documents: [long] }).role).toBe('search');
+    expect(
+      materialUploadSchema.safeParse({ collection: '묶음', role: 'pinned', documents: [short] }).success,
+    ).toBe(false);
+  });
   it('요청 전체 글자 수를 넘거나 자료가 없는 업로드를 거부한다', () => {
     const document = { title: '자료', text: '다'.repeat(materialLimits.characters) };
     expect(

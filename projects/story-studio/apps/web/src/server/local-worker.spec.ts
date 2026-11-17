@@ -91,10 +91,10 @@ it('이전 Qwen 원고 모델만 있으면 준비로 보지 않고, 자료 검�
   await writeFile(dataPath('local', 'models', 'text', 'model.safetensors.index.json'), '{}');
   expect(localConfiguration()).toMatchObject({ configured: false, textReady: false, materialReady: true });
   await expect(runLocal({ action: 'text' })).rejects.toMatchObject({ status: 503 });
-  await expect(runLocal({ action: 'index-material', documents: [] })).resolves.toBeDefined();
+  await expect(runLocal({ action: 'sync-material' })).resolves.toBeDefined();
   await rm(dataPath('local', 'models', 'embedding-gemma-2-8bit'), { recursive: true });
   expect(localConfiguration().materialReady).toBe(false);
-  await expect(runLocal({ action: 'index-material', documents: [] })).rejects.toMatchObject({ status: 503 });
+  await expect(runLocal({ action: 'sync-material' })).rejects.toMatchObject({ status: 503 });
 });
 
 it('색인에서 자료를 지우는 작업은 모델을 쓰지 않아 다른 생성 중에도 실행한다', async () => {

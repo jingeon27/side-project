@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -6,102 +6,180 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { dataPath } from './assets';
 import { StudioError } from './errors';
-import { addMaterials, deleteMaterial, listMaterials } from './material-store';
 
 const worker = vi.hoisted(() => ({ run: vi.fn(), ready: true }));
 vi.mock('./local-worker', () => ({
   localConfiguration: () => ({ materialReady: worker.ready }),
   runLocal: worker.run,
 }));
-type TIndexRequest = { action: string; documents?: { id: string }[]; ids?: string[] };
+type TRequest = { action: string; ids?: string[] };
 const state = { directory: '' };
 const upload = {
   collection: '무협 설정',
+  role: 'search' as const,
   documents: [
     { title: '강호 용어집', text: '경공은 몸을 가볍게 하는 무공이다.' },
     { title: '객잔 묘사', text: '객잔의 저녁은 술 냄새로 시작한다.' },
   ],
 };
-function indexEvery(request: TIndexRequest) {
-  if (request.action === 'delete-material') return { deleted: request.ids?.length };
-  return { documents: request.documents?.map((document) => ({ id: document.id, passages: 1 })) };
+// Each test gets the store with no sync running and no earlier error.
+async function load() {
+  vi.resetModules();
+  Reflect.deleteProperty(globalThis, 'storyStudioMaterials');
+  return import('./material-store');
 }
-async function stored(folder: 'documents' | 'files') {
-  return readdir(dataPath('materials', folder)).catch(() => []);
+type TStore = Awaited<ReturnType<typeof load>>;
+async function settled(store: TStore) {
+  await vi.waitFor(async () => expect((await store.materialOverview()).sync.running).toBe(false));
+  return store.materialOverview();
+}
+async function catalogIds() {
+  const catalog = JSON.parse(await readFile(dataPath('materials', 'catalog.json'), 'utf8')) as {
+    documents: { id: string }[];
+  };
+  return catalog.documents.map((document) => document.id);
+}
+// What the engine records once it has indexed documents.
+async function markIndexed(ids: string[]) {
+  await writeFile(
+    dataPath('materials', 'index-state.json'),
+    JSON.stringify({ documents: Object.fromEntries(ids.map((id) => [id, { passages: 2 }])) }),
+  );
 }
 beforeEach(async () => {
   state.directory = await mkdtemp(path.join(os.tmpdir(), 'story-studio-materials-'));
   vi.stubEnv('STORY_STUDIO_DATA_DIR', state.directory);
   worker.ready = true;
   worker.run.mockReset();
-  worker.run.mockImplementation(async (request: TIndexRequest) => indexEvery(request));
+  worker.run.mockImplementation(async (request: TRequest) => ({ deleted: request.ids?.length }));
 });
 afterEach(async () => {
   vi.unstubAllEnvs();
   await rm(state.directory, { recursive: true, force: true });
 });
 
-it('자료 본문을 저장하고 엔진에 색인을 맡긴 뒤 묶음과 검색 단위 수를 목록에 남긴다', async () => {
-  expect(await listMaterials()).toEqual([]);
-  const added = await addMaterials(upload);
-  expect(added.map((material) => material.title)).toEqual(['강호 용어집', '객잔 묘사']);
-  const request = worker.run.mock.calls[0]?.[0] as TIndexRequest;
-  expect(request).toMatchObject({
-    action: 'index-material',
-    documents: [
-      { id: added[0]?.id, title: '강호 용어집', collection: '무협 설정' },
-      { id: added[1]?.id, title: '객잔 묘사', collection: '무협 설정' },
-    ],
-  });
-  // The engine reads each text from the data folder; the request itself carries no document text.
-  expect(JSON.stringify(request)).not.toContain('경공');
-  expect(await readFile(dataPath('materials', 'files', `${added[0]?.id}.txt`), 'utf8')).toBe(
+it('자료를 목록과 본문으로 저장한 뒤 색인을 맡기고, 색인이 끝나기 전까지 대기로 보여 준다', async () => {
+  const store = await load();
+  expect(await store.addMaterials(upload)).toEqual({ added: 2, skipped: 0 });
+  expect(worker.run.mock.calls[0]?.[0]).toEqual({ action: 'sync-material' });
+  const ids = await catalogIds();
+  expect(await readFile(dataPath('materials', 'files', `${ids[0]}.txt`), 'utf8')).toBe(
     upload.documents[0]?.text,
   );
-  expect(await listMaterials()).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        title: '강호 용어집',
-        collection: '무협 설정',
-        characters: upload.documents[0]?.text.length,
-        passages: 1,
-      }),
-      expect.objectContaining({ title: '객잔 묘사', passages: 1 }),
-    ]),
-  );
-});
-
-it('색인이 실패하면 본문과 일부 색인을 정리해 목록에 남기지 않고, 다시 올릴 수 있다', async () => {
-  worker.run.mockImplementationOnce(async () => {
-    throw new StudioError('로컬 모델 실행에 실패했습니다.');
+  expect((await settled(store)).collections).toEqual([{ name: '무협 설정', documents: 2, pending: 2 }]);
+  await markIndexed(ids);
+  expect((await store.materialOverview()).collections[0]).toMatchObject({ pending: 0 });
+  const listed = await store.listCollection('무협 설정');
+  expect(listed.total).toBe(2);
+  expect(listed.materials.map((material) => material.passages)).toEqual([2, 2]);
+  expect(listed.materials[0]).toMatchObject({
+    role: 'search',
+    digest: expect.stringMatching(/^[a-f0-9]{64}$/),
   });
-  await expect(addMaterials(upload)).rejects.toThrow('로컬 모델 실행');
-  expect(worker.run.mock.calls[1]?.[0]).toMatchObject({ action: 'delete-material' });
-  expect((worker.run.mock.calls[1]?.[0] as TIndexRequest).ids).toHaveLength(2);
-  expect(await stored('documents')).toEqual([]);
-  expect(await stored('files')).toEqual([]);
-  expect(await addMaterials(upload)).toHaveLength(2);
-  expect(await listMaterials()).toHaveLength(2);
 });
 
-it('검색 모델이 없으면 아무것도 저장하지 않고 설치를 안내한다', async () => {
+it('같은 묶음의 같은 자료를 다시 올리면 건너뛰고 색인도 다시 시작하지 않는다', async () => {
+  const store = await load();
+  await store.addMaterials(upload);
+  await settled(store);
+  const extra = {
+    ...upload,
+    documents: [...upload.documents, { title: '새 자료', text: '검기가 허공을 갈랐다.' }],
+  };
+  expect(await store.addMaterials(upload)).toEqual({ added: 0, skipped: 2 });
+  expect(worker.run).toHaveBeenCalledTimes(1);
+  expect(await store.addMaterials(extra)).toEqual({ added: 1, skipped: 2 });
+  expect(await store.addMaterials({ ...upload, collection: '다른 묶음' })).toEqual({ added: 2, skipped: 0 });
+  expect((await settled(store)).collections.map((collection) => collection.documents)).toEqual([2, 3]);
+});
+
+it('색인이 실패해도 등록한 자료는 남기고 사유를 보여 주며, 다시 시작하면 사유를 지운다', async () => {
+  const store = await load();
+  worker.run.mockImplementationOnce(async () => {
+    throw new StudioError(
+      '다른 로컬 생성 작업이 실행 중입니다. 현재 작업이 끝난 뒤 다시 시도해 주세요.',
+      409,
+    );
+  });
+  await store.addMaterials(upload);
+  const failed = await settled(store);
+  expect(failed.sync.error).toContain('다른 로컬 생성 작업');
+  expect(failed.collections[0]).toMatchObject({ documents: 2, pending: 2 });
+  store.startSync();
+  expect((await settled(store)).sync.error).toBeUndefined();
+  expect(worker.run).toHaveBeenCalledTimes(2);
+});
+
+it('색인 중에 자료가 더 들어오면 끝난 뒤 한 번 더 색인하고, 중단하면 이어서 실행하지 않는다', async () => {
+  const store = await load();
+  const first = Promise.withResolvers<unknown>();
+  worker.run.mockImplementationOnce(() => first.promise);
+  await store.addMaterials(upload);
+  expect((await store.materialOverview()).sync.running).toBe(true);
+  await store.addMaterials({ ...upload, collection: '다른 묶음' });
+  expect(worker.run).toHaveBeenCalledTimes(1);
+  first.resolve({});
+  await vi.waitFor(() => expect(worker.run).toHaveBeenCalledTimes(2));
+  await settled(store);
+  const second = Promise.withResolvers<unknown>();
+  worker.run.mockImplementationOnce((_request: TRequest, signal: AbortSignal) => {
+    signal.addEventListener('abort', () => second.reject(new DOMException('중단했습니다.', 'AbortError')));
+    return second.promise;
+  });
+  store.startSync();
+  store.startSync();
+  store.stopSync();
+  expect((await settled(store)).sync.error).toContain('중단');
+  expect(worker.run).toHaveBeenCalledTimes(3);
+});
+
+it('검색 모델이 없어도 자료는 등록해 두고 설치를 안내한다', async () => {
   worker.ready = false;
-  await expect(addMaterials(upload)).rejects.toMatchObject({ status: 503 });
+  const store = await load();
+  expect(await store.addMaterials(upload)).toEqual({ added: 2, skipped: 0 });
+  const overview = await store.materialOverview();
+  expect(overview).toMatchObject({ ready: false, sync: { running: false } });
+  expect(overview.sync.error).toContain('검색 모델');
   expect(worker.run).not.toHaveBeenCalled();
-  expect(await stored('files')).toEqual([]);
 });
 
 it('삭제는 색인에서 먼저 지우고, 색인 삭제가 실패하면 목록에 남겨 다시 시도할 수 있게 한다', async () => {
-  const [first, second] = await addMaterials(upload);
+  const store = await load();
+  await store.addMaterials(upload);
+  await store.addMaterials({ ...upload, collection: '다른 묶음' });
+  await settled(store);
+  const first = (await store.listCollection('무협 설정')).materials[0]!;
   worker.run.mockImplementationOnce(async () => {
     throw new StudioError('로컬 Python 실행 환경을 열지 못했습니다.', 503);
   });
-  await expect(deleteMaterial(first!.id)).rejects.toMatchObject({ status: 503 });
-  expect(await listMaterials()).toHaveLength(2);
-  expect(await deleteMaterial(first!.id)).toEqual({ id: first!.id });
-  expect(worker.run.mock.calls.at(-1)?.[0]).toEqual({ action: 'delete-material', ids: [first!.id] });
-  expect((await listMaterials()).map((material) => material.id)).toEqual([second!.id]);
-  expect(await stored('files')).toEqual([`${second!.id}.txt`]);
-  await expect(deleteMaterial(first!.id)).rejects.toMatchObject({ status: 404 });
-  await expect(deleteMaterial('../documents/x')).rejects.toMatchObject({ status: 400 });
+  await expect(store.deleteMaterial(first.id)).rejects.toMatchObject({ status: 503 });
+  expect((await store.listCollection('무협 설정')).total).toBe(2);
+  expect(await store.deleteMaterial(first.id)).toEqual({ deleted: 1 });
+  expect(worker.run.mock.calls.at(-1)?.[0]).toEqual({ action: 'delete-material', ids: [first.id] });
+  expect((await store.listCollection('무협 설정')).total).toBe(1);
+  expect(await readdir(dataPath('materials', 'files'))).not.toContain(`${first.id}.txt`);
+  await expect(store.deleteMaterial(first.id)).rejects.toMatchObject({ status: 404 });
+  await expect(store.deleteMaterial('../catalog')).rejects.toMatchObject({ status: 400 });
+  expect(await store.deleteCollection('다른 묶음')).toEqual({ deleted: 2 });
+  expect((await store.materialOverview()).collections.map((collection) => collection.name)).toEqual([
+    '무협 설정',
+  ]);
+});
+
+it('받은 폴더의 묶음별 텍스트 파일을 등록하고, 다시 가져오면 건너뛴다', async () => {
+  const store = await load();
+  const inbox = (await store.materialOverview()).inbox;
+  await mkdir(path.join(inbox, '베네수엘라 취재'), { recursive: true });
+  await mkdir(path.join(inbox, "bad'name"), { recursive: true });
+  await writeFile(path.join(inbox, '베네수엘라 취재', '카라카스.txt'), '알타미라 광장의 저녁.');
+  await writeFile(path.join(inbox, '베네수엘라 취재', '메모.MD'), '아레파는 옥수수로 만든다.');
+  await writeFile(path.join(inbox, '베네수엘라 취재', '사진.png'), 'binary');
+  await writeFile(path.join(inbox, "bad'name", '무시.txt'), '등록하지 않는다.');
+  expect(await store.importInbox()).toEqual({ added: 2, skipped: 0 });
+  const listed = await store.listCollection('베네수엘라 취재');
+  expect(listed.materials.map((material) => material.title).sort()).toEqual(['메모', '카라카스']);
+  expect(listed.materials.every((material) => material.role === 'search')).toBe(true);
+  expect(await store.importInbox()).toEqual({ added: 0, skipped: 2 });
+  await settled(store);
+  expect(await readdir(path.join(inbox, '베네수엘라 취재'))).toHaveLength(3);
 });
