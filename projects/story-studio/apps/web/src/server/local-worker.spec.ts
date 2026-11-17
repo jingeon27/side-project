@@ -14,9 +14,17 @@ beforeEach(async () => {
   vi.stubEnv('STORY_STUDIO_PROVIDER', '');
   vi.stubEnv('DASHSCOPE_API_KEY', 'must-not-reach-a-local-worker');
   await mkdir(dataPath('local', '.venv', 'bin'), { recursive: true });
-  for (const model of ['text', 'voice', 'video-wan2.2-ti2v-5b', 'image-flux2-klein-4b-q8'])
+  for (const model of [
+    'text-gemma-4-31b-it-4bit',
+    'voice',
+    'video-wan2.2-ti2v-5b',
+    'image-flux2-klein-4b-q8',
+  ])
     await mkdir(dataPath('local', 'models', model), { recursive: true });
-  await writeFile(dataPath('local', 'models', 'text', 'model.safetensors.index.json'), '{}');
+  await writeFile(
+    dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'),
+    '{}',
+  );
   await writeFile(dataPath('local', 'models', 'voice', 'model.safetensors'), 'fixture');
   await writeFile(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'), '{}');
   await writeFile(dataPath('local', 'models', 'image-flux2-klein-4b-q8', 'ready.json'), '{}');

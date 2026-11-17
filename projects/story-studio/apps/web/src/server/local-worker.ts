@@ -79,8 +79,10 @@ export function isLocalMode() {
 }
 export function localConfiguration() {
   const runtime = existsSync(dataPath('local', '.venv', 'bin', 'python'));
+  // Each model that replaced an earlier one has its own folder, so the earlier install is never reported ready.
   const textReady =
-    runtime && existsSync(dataPath('local', 'models', 'text', 'model.safetensors.index.json'));
+    runtime &&
+    existsSync(dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'));
   const voiceReady = runtime && existsSync(dataPath('local', 'models', 'voice', 'model.safetensors'));
   const voiceTrainingReady =
     runtime && existsSync(dataPath('local', 'models', 'voice-train', 'model.safetensors'));
@@ -98,7 +100,7 @@ export function localConfiguration() {
     videoReady,
     imageReady,
     demoReady: existsSync(dataPath('demo-project.json')) || existsSync(examplePath('project.json')),
-    textModel: 'Qwen3.8-27B, 4bit',
+    textModel: 'Gemma 4 31B, 4bit',
     imageModel: 'FLUX.2 Klein 4B',
     videoModel: 'Wan2.2 TI2V 5B',
     voiceModel: 'Qwen3-TTS 기본 음색 9종',
