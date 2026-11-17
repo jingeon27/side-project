@@ -13,7 +13,7 @@ import traceback
 
 from .generation.speech import generate_voice
 from .generation.image import generate_image
-from .generation.text import generate_text
+from .generation.text import generate_text, text_session
 from .generation.video import generate_video
 from .generation.verified_speech import IncompleteSpeechError
 from .materials.sync import delete_materials, sync_materials
@@ -26,6 +26,8 @@ from .voices.samples import normalize
 def dispatch(request, job, examples_dir):
     if request['action'] == 'text':
         return generate_text(job.root, request, job.progress)
+    if request['action'] == 'text-session':
+        return text_session(job.root, job.progress, job.emit, sys.stdin)
     if request['action'] == 'voice':
         return generate_voice(job.root, request, job.progress)
     if request['action'] == 'image':
@@ -81,7 +83,8 @@ def run_cli():
             TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1', DO_NOT_TRACK='1',
         )
         (job.root / 'local').mkdir(parents=True, exist_ok=True)
-        request = json.load(sys.stdin)
+        # One request per line: a session keeps reading further lines after the first.
+        request = json.loads(sys.stdin.readline())
         if request.get('taskId'):
             if not re.fullmatch(r'local-[a-f0-9-]{36}', request['taskId']):
                 raise ValueError('올바른 로컬 작업이 아닙니다')
