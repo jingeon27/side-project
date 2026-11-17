@@ -176,29 +176,41 @@ const readLines = async (path: string) =>
     .split('\n')
     .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-const fixture = { dataDir: '', profile: undefined as Profile | undefined };
+const fixture = {
+  dataDir: '',
+  profile: undefined as Profile | undefined,
+  abort: new AbortController(),
+  episodes: [] as Array<Promise<unknown>>,
+};
 beforeEach(async () => {
+  fixture.abort = new AbortController();
+  fixture.episodes = [];
   fixture.dataDir = await mkdtemp(join(tmpdir(), 'clash-episode-'));
   fixture.profile = await loadProfile(
     fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
   );
 });
 afterEach(async () => {
+  // 시간 초과로 끝난 테스트의 경기가 마감까지 돌며 지운 기록 폴더에 다시 쓰지 않게 멈추고 기다린다.
+  fixture.abort.abort();
+  await Promise.allSettled(fixture.episodes);
   await rm(fixture.dataDir, { recursive: true, force: true });
 });
 
 async function play(scenario: Scenario, controller?: Controller) {
   const fake = scenarioMatch(fixture.profile!, scenario);
-  const outcome = await playCounterpushEpisode({
+  const episode = playCounterpushEpisode({
     browser: fake.browser,
     controller: controller ?? (await controllerFor(fake.client)),
     vision: fake.vision,
     dataDir: fixture.dataDir,
     profile: fixture.profile!,
-    signal: new AbortController().signal,
+    signal: fixture.abort.signal,
     report: async () => {},
     persistPatterns: false,
   });
+  fixture.episodes.push(episode);
+  const outcome = await episode;
   const events = await readLines(join(outcome.directory, 'events.jsonl'));
   return { fake, outcome, events, types: events.map((event) => event.type) };
 }
