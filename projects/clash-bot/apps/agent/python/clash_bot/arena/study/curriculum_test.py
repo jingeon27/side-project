@@ -8,7 +8,7 @@ import numpy as np
 
 from clash_bot.arena.study.curriculum import from_selfplay, scenario, write_batches
 from clash_bot.arena.study.teacher import Teacher
-from clash_bot.qwen.search_data import load_search_targets
+from clash_bot.qwen.records.search_data import load_search_targets
 
 
 class TacticalCurriculumTest(unittest.TestCase):

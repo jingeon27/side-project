@@ -12,7 +12,7 @@ import { bodyCard } from './candidates.ts';
 import { combatBody, forecastEffect, forecastText, type CombatBody } from './combat-projection.ts';
 import { observedContacts } from './effects.ts';
 
-// 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.decision_input)도 같은 파일을 읽는다.
+// 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.inputs.decision_input)도 같은 파일을 읽는다.
 const contract = z
   .strictObject({
     version: z.literal(3),

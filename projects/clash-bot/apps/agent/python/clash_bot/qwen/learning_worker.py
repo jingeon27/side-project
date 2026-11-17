@@ -7,8 +7,8 @@ import traceback
 
 from clash_bot.channel import protocol_channel
 
+from .learning.training_budget import close_training_budget, training_budget
 from .protocol import parse_learning_request
-from .training_budget import close_training_budget, training_budget
 
 
 def handle_request(worker, request):
@@ -64,8 +64,8 @@ def main():
     emit = protocol_channel()
     import mlx.core as mx
 
-    from .learning_policy import weights_digest
-    from .runtime import LearningWorker
+    from .learning.learning_policy import weights_digest
+    from .worker.runtime import LearningWorker
 
     training_budget()  # Validate an explicit target before loading the model.
     worker = LearningWorker(sys.argv[1], sys.argv[2])

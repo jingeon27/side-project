@@ -17,7 +17,7 @@ import { inside } from '../../shared/paths.ts';
 import { RESULT_LABEL } from '../../shared/qualification.ts';
 import { mirrorActions, mirrorContext, rotateOpponentPoint } from './mirror-policy.ts';
 
-// 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.opponent_data)도 같은 형식 이름을 읽는다.
+// 경기 중 자동 추적한 상대 행동만 모방 자료가 된다. Python(clash_bot.qwen.records.opponent_data)도 같은 형식 이름을 읽는다.
 export const DEMONSTRATION_FORMAT = 'counterpush-mirror-actor-demonstrations-v5';
 export const opponentObservationsSchema = z
   .object({

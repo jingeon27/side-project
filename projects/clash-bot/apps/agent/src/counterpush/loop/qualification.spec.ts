@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { attemptAlpha, QUALIFICATION, realEvaluationGate } from '../../shared/qualification.ts';
 import { parseBrowserResult } from '../browser/browser.ts';
 
-// Python 게시 검사(clash_bot.qwen.promotion_gate_test)도 같은 사례 파일을 같은 결과로 판정해야 한다.
+// Python 게시 검사(clash_bot.qwen.adoption.promotion_gate_test)도 같은 사례 파일을 같은 결과로 판정해야 한다.
 const cases = JSON.parse(
   await readFile(new URL('../../../test-fixtures/qualification-cases.json', import.meta.url), 'utf8'),
 ) as {

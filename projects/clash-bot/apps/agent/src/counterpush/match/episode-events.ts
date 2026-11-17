@@ -1,6 +1,6 @@
 import type { BrowserResult } from '../browser/browser.ts';
 
-// events.jsonl의 학습 증거 행이다. Python 학습기(clash_bot.qwen.episode_events)가 같은 필드로 판정하므로,
+// events.jsonl의 학습 증거 행이다. Python 학습기(clash_bot.qwen.records.episode_events)가 같은 필드로 판정하므로,
 // 필드를 바꾸면 test-fixtures/counterpush/episode-events.json과 양쪽 검사를 함께 갱신한다.
 export const resultEvent = (options: { first: BrowserResult; second: BrowserResult }) => ({
   type: 'result',

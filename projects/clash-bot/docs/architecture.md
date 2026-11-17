@@ -29,17 +29,22 @@ apps/agent/
       channel.py               워커 프로세스가 Node와 공유하는 응답 통로(응답 외 출력은 오류 스트림으로)
       statistics.py            실전·자가대국의 정확 이항 검정
       layers_test.py           패키지 의존 방향 검사
-      qwen/
+      qwen/                    이름으로 실행하는 진입점과 계약은 폴더 바로 아래에 둔다
+        learning_worker.py     JSON 줄 단위 통신과 오류 복구(Node가 실행)
+        action_prior.py        명시적 사전 보정과 읽기 전용 관찰자용 진입점(serve)
         protocol.py            Pydantic 입력 계약
-        learning_worker.py     JSON 줄 단위 통신과 오류 복구
-        runtime.py             상주 모델 적재와 추론(choose·warmup)
-        adapter_roles.py       챔피언·비공개 후보·고정 평가 어댑터의 역할 전환과 게시
-        game_training.py, search_study.py   실전 경기·상대 시범·수읽기 자료 학습 요청
-        features.py            고정 특징과 마지막 MLP 어댑터 연결
-        episodes.py            결과·사용 확인·학습 자료 검증
-        learning_policy.py     LoRA와 확률·손실 함수
-        learner.py             체크포인트·목적별 Adam 상태·챔피언 보호
-        policy_gradient.py, imitation.py, search_distillation.py   PPO·상대 모방·수읽기 증류 갱신
+        setup.py, download.py, model_specs.py   설치와 모델 사양
+        qualification.py       채택 기준 계약 읽기
+        inputs/                모델이 받는 것: 판단 프롬프트(decision_input), 전투 예측(combat_projection),
+                               고정 머리말 캐시(text_prefix), 고정 특징과 캐시(features, feature_cache)
+        learning/              가중치가 바뀌는 방식: LoRA·확률·손실(learning_policy), 체크포인트와 Adam
+                               상태(learner), PPO·상대 모방·수읽기 증류(policy_gradient, imitation,
+                               search_distillation), 배경 학습 부하(training_budget)
+        records/               플레이한 것과 학습 가능한 것: 경기 증거(episodes, episode_events), 상대
+                               시범(opponent_data), 수읽기 감독 자료(search_data), 재생(replay)
+        adoption/              챔피언 교체 전 원본 증거 재검사와 게시(promotion)
+        worker/                상주 모델 프로세스: 적재와 추론(runtime), 어댑터 역할 전환(adapter_roles),
+                               실전·수읽기 학습 요청(game_training, search_study)
       arena/                   자가대국·탐색·리그 (의존: catalogue·placement ← sim ← tables ← policy ← training ← study ← league ← cli)
         catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
         placement.py           배치 유형별 규칙 지점과 격자(엔진 없이 동작, TS 후보와 공유 사례로 일치)
@@ -67,7 +72,7 @@ apps/agent/
   pyproject.toml               Python 직접 의존성·Ruff 설정
 ```
 
-테스트는 구현 옆에 둔다. 공유 계약과 실제 그림을 `src`에서 분리해 두 언어가 같은 파일을 읽는다. 같은 계산을 두 언어가 각각 구현한 곳(빠른 정책의 특징·추론과 배치 지점·격자, 전투 예측, 채택 통계)은 `test-fixtures/`의 공유 사례를 양쪽 검사가 함께 읽는다. Python 패키지는 아래 패키지만 가져오며 `clash_bot/layers_test.py`가, TypeScript는 `eslint.config.ts`가 검사한다. Python 모듈은 `clash_bot.*`로 가져오며 `sys.path`를 바꾸지 않는다. Node의 `shared/python.ts`와 실행기가 `python -m`·`PYTHONPATH`·종료 신호·종료 코드를 처리한다. 설치 모듈은 가져오는 것만으로 설치·다운로드를 시작하지 않는다.
+테스트는 구현 옆에 둔다. 공유 계약과 실제 그림을 `src`에서 분리해 두 언어가 같은 파일을 읽는다. 같은 계산을 두 언어가 각각 구현한 곳(빠른 정책의 특징·추론과 배치 지점·격자, 전투 예측, 채택 통계)은 `test-fixtures/`의 공유 사례를 양쪽 검사가 함께 읽는다. Python 패키지는 아래 패키지만 가져오며 `clash_bot/layers_test.py`가, TypeScript는 `eslint.config.ts`가 검사한다. qwen은 계약 ← `inputs` ← `learning` ← `records` ← `adoption` ← `worker` ← 진입점 한 방향이다. Python 모듈은 `clash_bot.*`로 가져오며 `sys.path`를 바꾸지 않는다. Node의 `shared/python.ts`와 실행기가 `python -m`·`PYTHONPATH`·종료 신호·종료 코드를 처리한다. 설치 모듈은 가져오는 것만으로 설치·다운로드를 시작하지 않는다.
 
 ## 상태와 자원의 소유자
 

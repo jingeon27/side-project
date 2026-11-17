@@ -4,8 +4,8 @@ import unittest
 import mlx.core as mx
 
 from clash_bot.qwen.action_prior import action_prior
-from clash_bot.qwen.learner import Learner
-from clash_bot.qwen.learning_policy import FinalMLPLoRA
+from clash_bot.qwen.learning.learner import Learner
+from clash_bot.qwen.learning.learning_policy import FinalMLPLoRA
 
 
 class ActionPriorTest(unittest.TestCase):

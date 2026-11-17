@@ -8,8 +8,8 @@ import json
 
 import numpy as np
 
-from clash_bot.qwen.decision_input import serialize_decision
-from clash_bot.qwen.search_data import conservation_frontier
+from clash_bot.qwen.inputs.decision_input import serialize_decision
+from clash_bot.qwen.records.search_data import conservation_frontier
 
 from ..policy.context import decision_context
 from ..sim.belief import BeliefSampler

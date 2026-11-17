@@ -6,7 +6,7 @@ import { atomicWrite } from '../../shared/assets.ts';
 const line = (row: unknown) => JSON.stringify(row) + '\n';
 const pretty = (value: unknown) => JSON.stringify(value, null, 2) + '\n';
 
-// 경기 한 판의 원본 기록 폴더다. Python 학습기(clash_bot.qwen.episodes)와 learning/이 같은 파일 이름을 읽는다.
+// 경기 한 판의 원본 기록 폴더다. Python 학습기(clash_bot.qwen.records.episodes)와 learning/이 같은 파일 이름을 읽는다.
 export class MatchRecorder {
   readonly directory: string;
   private constructor(directory: string) {
