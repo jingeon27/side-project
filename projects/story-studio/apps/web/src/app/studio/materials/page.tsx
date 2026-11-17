@@ -1,4 +1,4 @@
-import { MaterialLibrary } from '../../../components/MaterialLibrary';
+import { MaterialLibrary } from '../../../features/materials/ui/MaterialLibrary';
 
 export default function MaterialsPage() {
   return <MaterialLibrary />;

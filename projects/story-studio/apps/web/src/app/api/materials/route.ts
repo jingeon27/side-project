@@ -1,7 +1,6 @@
 import { match } from 'ts-pattern';
 
-import { collectionNameSchema, materialActionSchema } from '../../../lib/materials';
-import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../server/errors';
+import { collectionNameSchema, materialActionSchema } from '../../../features/materials/model/materials';
 import {
   addMaterials,
   deleteCollection,
@@ -10,7 +9,8 @@ import {
   materialOverview,
   startSync,
   stopSync,
-} from '../../../server/material-store';
+} from '../../../features/materials/server/material-store';
+import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request) {

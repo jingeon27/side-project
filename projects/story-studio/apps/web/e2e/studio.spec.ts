@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { libraryKey } from '../src/lib/library';
-import { sampleProject } from '../src/lib/sample';
+import { libraryKey } from '../src/features/library/model/library';
+import { sampleProject } from '../src/features/story/model/sample';
 
 const config = {
   provider: 'cloud',

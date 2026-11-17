@@ -1,5 +1,5 @@
-import { assetResponse } from '../../../../server/assets';
-import { errorResponse, requireLocalRequest } from '../../../../server/errors';
+import { assetResponse } from '../../../../features/media/server/assets';
+import { errorResponse, requireLocalRequest } from '../../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function GET(request: Request, context: { params: Promise<{ filename: string }> }) {

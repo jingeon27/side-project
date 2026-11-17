@@ -1,6 +1,6 @@
-import { errorResponse, requireLocalRequest } from '../../../../../../server/errors';
-import { removeVoiceSample } from '../../../../../../server/voice-store';
-import { uploadVoiceSample } from '../../../../../../server/voice-upload';
+import { removeVoiceSample } from '../../../../../../features/voice/server/voice-store';
+import { uploadVoiceSample } from '../../../../../../features/voice/server/voice-upload';
+import { errorResponse, requireLocalRequest } from '../../../../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 type TContext = { params: Promise<{ id: string; sampleId: string }> };

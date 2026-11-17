@@ -1,8 +1,12 @@
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
-import { briefSchema, continueSchema, mediaRequestSchema, voiceRequestSchema } from '../../../lib/story';
-import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../server/errors';
+import {
+  briefSchema,
+  continueSchema,
+  mediaRequestSchema,
+  voiceRequestSchema,
+} from '../../../features/story/model/story';
 import {
   composeLocal,
   configuration,
@@ -11,7 +15,8 @@ import {
   generateVideo,
   generateVoice,
   writeScene,
-} from '../../../server/provider';
+} from '../../../features/studio/server/provider';
+import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;

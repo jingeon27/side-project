@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
-import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../../server/errors';
-import { getVoiceRun } from '../../../../server/voice-store';
-import { cancelVoiceTraining, resumeVoiceTraining } from '../../../../server/voice-training-provider';
+import { getVoiceRun } from '../../../../features/voice/server/voice-store';
+import {
+  cancelVoiceTraining,
+  resumeVoiceTraining,
+} from '../../../../features/voice/server/voice-training-provider';
+import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 type TContext = { params: Promise<{ id: string }> };

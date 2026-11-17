@@ -1,5 +1,5 @@
-import { errorResponse, requireLocalRequest } from '../../../../server/errors';
-import { deleteMaterial } from '../../../../server/material-store';
+import { deleteMaterial } from '../../../../features/materials/server/material-store';
+import { errorResponse, requireLocalRequest } from '../../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {

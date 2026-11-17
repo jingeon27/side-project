@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { sampleProject } from '../../../lib/sample';
+import { sampleProject } from '../../../features/story/model/sample';
 import { GET, POST } from './route';
 
 beforeEach(() => {

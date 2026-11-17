@@ -1,5 +1,5 @@
-import { saveImage } from '../../../server/assets';
-import { errorResponse, readBody, requireLocalRequest, StudioError } from '../../../server/errors';
+import { saveImage } from '../../../features/media/server/assets';
+import { errorResponse, readBody, requireLocalRequest, StudioError } from '../../../shared/server/errors';
 
 export const runtime = 'nodejs';
 export async function POST(request: Request) {

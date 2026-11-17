@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-import { libraryKey } from '../src/lib/library';
-import { sampleProject } from '../src/lib/sample';
-import type { TVoiceRun, TVoiceSample } from '../src/lib/voice-training';
+import { libraryKey } from '../src/features/library/model/library';
+import { sampleProject } from '../src/features/story/model/sample';
+import type { TVoiceRun, TVoiceSample } from '../src/features/voice/model/voice-training';
 
 const voice = {
   id: '29edf583-4d34-4b0a-99e4-9f66bf1c6400',
