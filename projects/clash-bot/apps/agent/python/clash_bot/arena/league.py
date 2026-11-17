@@ -12,13 +12,12 @@ import signal
 import time
 import uuid
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.files import atomic_json
 
+from .champions import checkpoint, initialize, publish_champion
 from .policy.network import LEAGUE_KEY, Policy
 from .sim.rules import rules_identity
 from .study.curriculum import from_selfplay
@@ -29,115 +28,8 @@ from .training.parallel import play_frozen_games
 from .training.selfplay import replay_samples, setup_for
 from .training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 
-
-class Opponent(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    version: int = Field(ge=0)
-    # A draw counts half a win.
-    wins: float = Field(ge=0)
-    games: int = Field(ge=0)
-
-
-class LeagueState(BaseModel):
-    """league.json: the learner, the qualified champion and the frozen opponent pool."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    format: Literal["clash-arena-league-v1"]
-    rulesID: str
-    learner: int = Field(ge=0)
-    champion: int = Field(ge=0)
-    evaluations: int = Field(ge=0)
-    episodes: list[str]
-    opponents: list[Opponent] = Field(min_length=1)
-
-
 REPLAY_EPISODES = 256
 REPLAY_SAMPLES = 16384
-
-
-def initialize(root, rules, parent=None):
-    """Resume this rule set's league, or start it from the champion of the league before it.
-
-    A balance patch changes some cards' numbers and sometimes their mechanics. Starting from
-    the previous champion keeps what still holds, and self-play under the new rules relearns
-    the rest. Games, replays and evaluations of other rules are never mixed in.
-    """
-    root = Path(root)
-    root.mkdir(parents=True, exist_ok=True)
-    pointer = root / "league.json"
-    if pointer.exists():
-        league = LeagueState.model_validate_json(pointer.read_text()).model_dump()
-        if league["rulesID"] != rules["id"]:
-            raise ValueError("Create a separate league directory for changed battle rules")
-        publish_champion(root, league)  # Repairs a stop between a promotion and its live file.
-        return league
-    atomic_json(root / "rules.json", rules)
-    initial = checkpoint(root, 0)
-    if initial.exists():
-        Policy.load(initial, rules["id"])  # Recover a crash before first pointer publication.
-    else:
-        inherited = parent_champion(parent)
-        if inherited:
-            policy = Policy(
-                weights=inherited.weights, metadata={"version": 0, "rulesID": rules["id"]}
-            )
-            source = {
-                key: inherited.metadata[key] for key in ("rulesID", "version", "weightsSHA256")
-            }
-            policy.save(initial, {"role": "inherited_champion", "inheritedFrom": source})
-        else:
-            policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
-            policy.save(initial, {"role": "initial_random_policy"})
-    league = LeagueState(
-        format="clash-arena-league-v1",
-        rulesID=rules["id"],
-        learner=0,
-        champion=0,
-        evaluations=0,
-        episodes=[],
-        opponents=[Opponent(version=0, wins=0, games=0)],
-    ).model_dump()
-    atomic_json(pointer, league)
-    publish_champion(root, league)
-    return league
-
-
-def checkpoint(root, version):
-    return Path(root) / "checkpoints" / f"v{version:06d}"
-
-
-def parent_champion(parent):
-    """The previous league's champion when that league used this policy format, else None."""
-    if parent is None:
-        return None
-    parent = Path(parent)
-    if not parent.name.endswith(f"-{LEAGUE_KEY}") or not (parent / "league.json").exists():
-        return None
-    league = LeagueState.model_validate_json((parent / "league.json").read_text())
-    # Verifies format, rule set, network layout and checksum; a broken parent stops the start.
-    return Policy.load(checkpoint(parent, league.champion), league.rulesID)
-
-
-def catalogue_of(root):
-    """The card catalogue this league's rule set was created with (its rules.json)."""
-    return json.loads((Path(root) / "rules.json").read_text())["catalogue"]
-
-
-def publish_champion(root, league):
-    """Write the champion's live policy where `counterpush play` reads it."""
-    policy = Policy.load(checkpoint(root, league["champion"]), league["rulesID"])
-    atomic_json(Path(root) / "champion-policy.json", policy.live(catalogue_of(root)), compact=True)
-
-
-def export_policy(root, version):
-    """Write one checkpoint's live policy for `counterpush play --policy`."""
-    league = LeagueState.model_validate_json((Path(root) / "league.json").read_text())
-    policy = Policy.load(checkpoint(root, version), league.rulesID)
-    path = Path(root) / "policies" / f"v{version:06d}.json"
-    atomic_json(path, policy.live(catalogue_of(root)), compact=True)
-    return {"policy": str(path), "version": version, "weightsSHA256": policy.checksum()}
 
 
 def run(

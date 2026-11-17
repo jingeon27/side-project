@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from clash_bot.arena.catalogue import current
-from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
+from clash_bot.arena.champions import checkpoint, export_policy, initialize, publish_champion
 from clash_bot.arena.policy.features import checksum
 from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
 from clash_bot.arena.policy.samples import SparseFeatures

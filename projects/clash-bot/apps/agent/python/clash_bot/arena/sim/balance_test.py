@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from clash_bot.arena.catalogue import current
-from clash_bot.arena.league import initialize
+from clash_bot.arena.champions import initialize
 from clash_bot.arena.sim.balance import (
     Articles,
     changed_fields,

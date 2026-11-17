@@ -5,7 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from clash_bot.arena.study.curriculum import Teacher, scenario, write_batches
+from clash_bot.arena.study.curriculum import scenario, write_batches
+from clash_bot.arena.study.teacher import Teacher
 from clash_bot.qwen.search_data import load_search_targets
 
 
