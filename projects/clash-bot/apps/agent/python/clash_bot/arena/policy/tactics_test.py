@@ -13,5 +13,9 @@ class TacticalOffsetsTest(unittest.TestCase):
             with self.subTest(case=case["name"]):
                 context = case["context"]
                 before = json.dumps(context, sort_keys=True)
-                np.testing.assert_allclose(action_biases(context), case["bias"], atol=1e-5)
+                scores = action_biases(context)
+                if "bias" in case:
+                    np.testing.assert_allclose(scores, case["bias"], atol=1e-5)
+                for better, worse in case.get("preferred", []):
+                    self.assertGreater(scores[better], scores[worse])
                 self.assertEqual(json.dumps(context, sort_keys=True), before)

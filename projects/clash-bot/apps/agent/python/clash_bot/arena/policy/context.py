@@ -186,6 +186,8 @@ def decision_context(observation, actions, types=None):
         "own": sorted(units(ours), key=lambda row: -row[2])[:5],
         "enemy": sorted(units(theirs), key=lambda row: row[2])[:8],
         "bodies": {"own": detailed(ours, True), "enemy": detailed(theirs, False)},
+        # This adapter has not rendered/transcribed hostile deployment clocks.
+        "deployments": [],
         "effects": effects[:4],
         "skill": "ready" if own["abilities"] and own["abilities"][0][0] else "not_visible",
         "actions": [action_row(index, action, team, own) for index, action in enumerate(actions)],

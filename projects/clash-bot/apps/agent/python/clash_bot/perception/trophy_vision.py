@@ -11,6 +11,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from clash_bot.channel import protocol_channel
+from clash_bot.perception.deployment_clocks import clock_matches
 
 
 class ScanInput(BaseModel):
@@ -193,31 +194,6 @@ class TrophyVision:
             "effectCandidates": effects,
             "emergences": clock_matches(pixels, self.clock),
         }
-
-
-def clock_matches(pixels, template):
-    import cv2
-    import numpy as np
-
-    r, g, b = (template[:, :, c].astype(float) for c in range(3))
-    mask = (
-        ((r > 170) & (g > 100) & (b < 160) & (r > b * 1.2))
-        | ((r > 170) & (b > 140) & (g < r * 0.7))
-    ).astype(np.uint8) * 255
-    scores = cv2.matchTemplate(pixels[300:495], template, cv2.TM_SQDIFF_NORMED, mask=mask)
-    height, width = template.shape[:2]
-    rows, columns = np.where(np.isfinite(scores) & (scores < 0.015))
-    result = []
-    for y, x in sorted(zip(rows, columns), key=lambda point: float(scores[point[0], point[1]])):
-        point = {
-            "x": float(x + width / 2),
-            "y": float(y + 300 + height / 2),
-            "score": 1 - float(scores[y, x]),
-            "evidence": "reviewed_hostile_deployment_clock",
-        }
-        if not any(math.hypot(point["x"] - p["x"], point["y"] - p["y"]) < 25 for p in result):
-            result.append(point)
-    return result[:4]
 
 
 def main():

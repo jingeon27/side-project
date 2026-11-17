@@ -1,5 +1,5 @@
 {
-  "format": "clash-fast-tactics-v1",
+  "format": "clash-fast-tactics-v2",
   "reserveElixir": 3,
   "responseSeconds": 2,
   "engagementRadius": 3,
@@ -7,5 +7,21 @@
   "defenseWeight": 6,
   "barbarianInterceptWeight": 2,
   "graveyardCounters": { "poison": 4, "ice_wizard": 3, "goblin_hut": 4 },
-  "supportCards": ["knight", "furnace"]
+  "supportCards": ["knight", "furnace"],
+  "drillPriority": 1.2,
+  "drillBarbarianResponse": 0.85,
+  "deploymentPriority": 0.85,
+  "positions": {
+    "stagingY": 10,
+    "frontWeight": 1.5,
+    "laneWeight": 0.5,
+    "hutX": 9,
+    "hutY": 11.25,
+    "hutXWeight": 0.14,
+    "hutYWeight": 0.12,
+    "hutFrontY": 13,
+    "hutFrontWeight": 0.6,
+    "hutCoverageWeight": 2,
+    "hutPoisonWeight": -5
+  }
 }

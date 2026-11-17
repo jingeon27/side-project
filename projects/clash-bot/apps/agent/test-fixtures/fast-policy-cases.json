@@ -41,7 +41,8 @@
               "hp": null
             }
           ]
-        }
+        },
+        "deployments": []
       },
       "features": [
         [1, 0.7],
@@ -195,7 +196,8 @@
               "hp": null
             }
           ]
-        }
+        },
+        "deployments": []
       },
       "features": [
         [0, 0.318333],
@@ -334,7 +336,8 @@
               "hp": null
             }
           ]
-        }
+        },
+        "deployments": []
       },
       "features": [
         [0, 1.0],
@@ -435,7 +438,8 @@
           ["C", "card", "the_log", 2, 3.5, 10],
           ["D", "card", "cannon", 3, 9, 9]
         ],
-        "clock": 140
+        "clock": 140,
+        "deployments": []
       },
       "features": [
         [0, 0.466667],
@@ -593,7 +597,8 @@
         "towers": {
           "own": [1, 0.4, 1],
           "enemy": [1, 1, 0.8]
-        }
+        },
+        "deployments": []
       },
       "features": [
         [0, 0.67],

@@ -76,6 +76,11 @@
       "hp": 304,
       "speed": 1.5,
       "ground": true
+    },
+    "goblin_drill": {
+      "hp": 1313,
+      "speed": 0,
+      "ground": true
     }
   },
   "policy": {

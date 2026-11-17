@@ -22,7 +22,8 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -5, -5, -4.75, 0, -9]
   },
@@ -58,7 +59,8 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, 8, -11, -10.75, 2, -9]
   },
@@ -86,7 +88,8 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -9, -9, -4.75, 0, -9]
   },
@@ -118,7 +121,8 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -5, -5, 0, 0, -9]
   },
@@ -146,7 +150,8 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -5, -5, -3, 0, -9]
   },
@@ -183,7 +188,8 @@
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0],
         ["G", "card", "ice_wizard", 3, 3.5, 9]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -11, -11, -10.75, -6, -9, 3.6]
   },
@@ -210,8 +216,491 @@
         ["D", "card", "graveyard", 5, 15.3, 25],
         ["E", "card", "knight", 3, 3.5, 9],
         ["F", "ability", "ice_wizard", 2, 0, 0]
-      ]
+      ],
+      "deployments": []
     },
     "bias": [0, -11, -11, -10.75, -4, -9]
+  },
+  {
+    "name": "left Drill: damage to an unrelated right Knight is not Drill defense",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [
+        ["goblin_drill", 3.5, 6.5, "base"],
+        ["knight", 14.5, 10, "base"]
+      ],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 3.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          },
+          {
+            "kind": "knight",
+            "x": 14.5,
+            "y": 10,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 3.5, 2],
+        ["D", "card", "knight", 3, 3.5, 7]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [2, 1],
+      [3, 1],
+      [0, 1]
+    ]
+  },
+  {
+    "name": "right Drill: same lane above the Drill still rolls away from it",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["goblin_drill", 14.5, 6.5, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 14.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 14.5, 11],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 2],
+        ["D", "card", "knight", 3, 14.5, 7]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [2, 1],
+      [3, 1]
+    ]
+  },
+  {
+    "name": "a nearby Hut is not proof that a Drill is covered",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [["goblin_hut", 4, 8, "base"]],
+      "enemy": [["goblin_drill", 3.5, 6.5, "base"]],
+      "bodies": {
+        "own": [
+          {
+            "kind": "goblin_hut",
+            "x": 4,
+            "y": 8,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 3.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 14.5, 2],
+        ["C", "card", "knight", 3, 3.5, 7]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [2, 1],
+      [2, 0]
+    ]
+  },
+  {
+    "name": "observed lethal Drill HP receives more cleanup credit than unknown HP",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [
+        ["goblin_drill", 3.5, 6.5, "base"],
+        ["goblin_drill", 14.5, 6.5, "base"]
+      ],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 3.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": [100, 100]
+          },
+          {
+            "kind": "goblin_drill",
+            "x": 14.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "barbarian_barrel", 2, 3.5, 2],
+        ["B", "card", "barbarian_barrel", 2, 14.5, 2]
+      ],
+      "deployments": []
+    },
+    "preferred": [[0, 1]]
+  },
+  {
+    "name": "a hostile birth clock is not already spawned goblins: hold the roll and Skeletons",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 2],
+        ["C", "card", "skeletons", 1, 3.5, 6.5],
+        ["D", "card", "knight", 3, 3.5, 7]
+      ],
+      "deployments": [[3.5, 6.5]]
+    },
+    "preferred": [
+      [0, 1],
+      [0, 2],
+      [3, 1],
+      [3, 2]
+    ]
+  },
+  {
+    "name": "after birth the actual left goblins can be rolled through",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [
+        ["goblin", 3.5, 6.5, "base"],
+        ["goblin", 4, 6.5, "base"]
+      ],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin",
+            "x": 3.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          },
+          {
+            "kind": "goblin",
+            "x": 4,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 14.5, 2],
+        ["C", "card", "barbarian_barrel", 2, 3.5, 2]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [2, 1],
+      [2, 0]
+    ]
+  },
+  {
+    "name": "empty field build-up keeps rear lane and King-back tiles available",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "knight", 3, 17.5, 14.5],
+        ["B", "card", "knight", 3, 3.5, 3.5],
+        ["C", "card", "furnace", 4, 17.5, 14.5],
+        ["D", "card", "furnace", 4, 8, 1.5],
+        ["E", "card", "ice_wizard", 3, 0.5, 14.5],
+        ["F", "card", "ice_wizard", 3, 14.5, 3.5]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [1, 0],
+      [3, 2],
+      [5, 4]
+    ]
+  },
+  {
+    "name": "urgent defense takes precedence over empty-field staging",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["knight", 3.5, 12, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "knight",
+            "x": 3.5,
+            "y": 12,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "knight", 3, 3.5, 3.5],
+        ["B", "card", "knight", 3, 3.5, 12]
+      ],
+      "deployments": []
+    },
+    "preferred": [[1, 0]]
+  },
+  {
+    "name": "Hut compares central pull space with exposed bridge placement",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 9, 14.5],
+        ["B", "card", "goblin_hut", 4, 9, 11.5],
+        ["C", "card", "goblin_hut", 4, 17.5, 14.5]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
+    ]
+  },
+  {
+    "name": "Hut avoids duplicating a nearby own Hut rather than using one fixed tile",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [["goblin_hut", 7, 11, "base"]],
+      "enemy": [],
+      "bodies": {
+        "own": [
+          {
+            "kind": "goblin_hut",
+            "x": 7,
+            "y": 11,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ],
+        "enemy": []
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 8, 11.5],
+        ["B", "card", "goblin_hut", 4, 14, 11.5]
+      ],
+      "deployments": []
+    },
+    "preferred": [[1, 0]]
+  },
+  {
+    "name": "Hut avoids a visible enemy Poison even near its normal pull region",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [["red", "poison", 8, 11.5, 1]],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 8, 11.5],
+        ["B", "card", "goblin_hut", 4, 14, 11.5]
+      ],
+      "deployments": []
+    },
+    "preferred": [[1, 0]]
+  },
+  {
+    "name": "a visible Drill with a child-spawn timer is already emerged",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["goblin_drill", 3.5, 6.5, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 3.5,
+            "y": 6.5,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 2],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 2],
+        ["D", "card", "skeletons", 1, 3.5, 6.5]
+      ],
+      "deployments": [[3.5, 5.5]]
+    },
+    "preferred": [
+      [1, 2],
+      [3, 0]
+    ]
+  },
+  {
+    "name": "a legal nearby landing can defend Drill even when its exact tile is blocked by a tower",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["goblin_drill", 16.8, 4.7, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 16.8,
+            "y": 4.7,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 15.5, 0.5],
+        ["C", "card", "barbarian_barrel", 2, 15.5, 12.5]
+      ],
+      "deployments": []
+    },
+    "preferred": [
+      [1, 0],
+      [0, 2]
+    ]
   }
 ]

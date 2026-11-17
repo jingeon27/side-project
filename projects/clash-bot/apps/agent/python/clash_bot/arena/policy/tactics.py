@@ -1,55 +1,17 @@
-"""Declared mechanics offsets, identical in search, live inference and residual training.
+"""Mechanics offsets shared by native search, deployment and residual training."""
 
-These are priors, not learned skill. Every legal card/position and waiting remain available.
-"""
-
-import json
 import math
 
 import numpy as np
 
 from clash_bot.combat_projection import COMBAT, forecast_effect
-from clash_bot.paths import CONTRACTS_DIR
 
-from ..catalogue import current
 from ..placement import DEPLOYMENT
+from .defense import fast_defense
+from .position_bias import position_bias
+from .tactics_spec import SPEC
 
-SPEC = json.loads((CONTRACTS_DIR / "fast-tactics.json").read_text())
 POLICY = COMBAT["policy"]
-CATALOGUE = current()
-
-
-def distance(x, y, body):
-    return math.hypot(x - body["x"], y - body["y"])
-
-
-def future(body):
-    velocity = body["velocity"] or [0, 0]
-    return {
-        "x": body["x"] + velocity[0] * SPEC["responseSeconds"],
-        "y": body["y"] + velocity[1] * SPEC["responseSeconds"],
-    }
-
-
-def can_respond(card, body):
-    features = CATALOGUE.cards.get(card)
-    if features is None:
-        return False
-    names = CATALOGUE.catalogue.cardFeatures
-    if features[names.index("spell")] == 1:
-        return True
-    flying = (
-        CATALOGUE.body_vector(body["kind"])[CATALOGUE.catalogue.bodyFeatures.index("flying")] == 1
-    )
-    return features[names.index("airTargets" if flying else "groundTargets")] > 0
-
-
-def active(context, side, card, seconds):
-    return [
-        row
-        for row in context.get("effects", [])
-        if row[0] == side and row[1] == card and (row[4] is None or row[4] < seconds)
-    ]
 
 
 def counter_availability(context):
@@ -82,71 +44,13 @@ def action_bias(context, action):
     )
     if kind == "ability":
         return POLICY["noObservedSkillOpportunity"] if projection["opportunity"] == 0 else 0
-    poisons = active(context, "blue", "poison", 6)
-    graves = [
-        row
-        for row in active(context, "red", "graveyard", 9)
-        if row[3] < 16 and not any(math.hypot(p[2] - row[2], p[3] - row[3]) < 3 for p in poisons)
-    ]
-    threats = [
-        body
-        for body in context["bodies"]["enemy"]
-        if body["kind"] not in ("barrel", "goblin_hut")
-        and future(body)["y"] < SPEC["threatBoundary"]
-        and not any(
-            distance(own["x"], own["y"], body) < SPEC["engagementRadius"]
-            for own in context["bodies"]["own"]
-        )
-    ]
-    responds = lambda body: max(
-        0, 1 - distance(x, y, body) / (5 if card == "ice_wizard" else SPEC["engagementRadius"])
-    )
-    grave_response = max([0, *(responds({"x": row[2], "y": row[3]}) for row in graves)])
-    troop_response = max(
-        [0, *(responds(future(body)) for body in threats if can_respond(card, body))]
-    )
-    intercept = (
-        max(
-            [
-                0,
-                *(
-                    max(
-                        0,
-                        1
-                        - distance(x, y + COMBAT["barbarian_barrel"]["length"], future(body))
-                        / SPEC["engagementRadius"],
-                    )
-                    for body in threats
-                    if COMBAT["bodies"].get(body["kind"], {}).get("ground")
-                ),
-            ]
-        )
-        if card == "barbarian_barrel"
-        else 0
-    )
-    response = (
-        0
-        if card == "graveyard"
-        else max(int(projection["opportunity"] > 0), intercept)
-        if card == "barbarian_barrel"
-        else max(troop_response if projection["opportunity"] > 0 else 0, grave_response)
-        if card == "poison"
-        else max(troop_response, grave_response)
-    )
-    pressure = max(
-        [
-            int(bool(graves)),
-            *(min(1, max(0, (SPEC["threatBoundary"] - future(body)["y"]) / 8)) for body in threats),
-        ]
-    )
-    defense = SPEC["defenseWeight"] * pressure * (2 * response - 1)
+    defense = fast_defense(context, action, projection)
+    empty_roll = POLICY["reservedRoll"] if projection["reserveBarrel"] else POLICY["emptyRoll"]
     barrel = (
         (
-            (POLICY["reservedRoll"] if projection["reserveBarrel"] else POLICY["emptyRoll"])
-            if projection["opportunity"] == 0 and intercept == 0
-            else 0
+            (empty_roll if not defense["usefulRoll"] and defense["intercept"] == 0 else 0)
+            + SPEC["barbarianInterceptWeight"] * defense["intercept"]
         )
-        + SPEC["barbarianInterceptWeight"] * intercept
         if card == "barbarian_barrel"
         else 0
     )
@@ -154,12 +58,18 @@ def action_bias(context, action):
         (
             (
                 POLICY["emptyPoison"]
-                if projection["trajectoryDamage"] == 0 and grave_response == 0
+                if projection["trajectoryDamage"] == 0 and defense["graveResponse"] == 0
                 else 0
             )
             + (
                 POLICY["redundantPoison"]
-                if any(math.hypot(x - p[2], y - p[3]) < 3 for p in poisons)
+                if any(
+                    e[0] == "blue"
+                    and e[1] == "poison"
+                    and (e[4] is None or e[4] < 6)
+                    and math.hypot(x - e[2], y - e[3]) < 3
+                    for e in context.get("effects", [])
+                )
                 else 0
             )
         )
@@ -167,8 +77,8 @@ def action_bias(context, action):
         else 0
     )
     supported = any(
-        body["kind"] in SPEC["supportCards"] and body["y"] >= 17 and abs(x - body["x"]) < 4.5
-        for body in context["bodies"]["own"]
+        b["kind"] in SPEC["supportCards"] and b["y"] >= 17 and abs(x - b["x"]) < 4.5
+        for b in context["bodies"]["own"]
     )
     followup = "poison" in context["hand"] and context["elixir"] >= 9
     graveyard = (
@@ -201,7 +111,7 @@ def action_bias(context, action):
         <= radius + POLICY["kingFootprintRadius"]
         else 0
     )
-    return defense + barrel + poison + graveyard + king
+    return defense["bias"] + barrel + poison + graveyard + king + position_bias(context, action)
 
 
 def action_biases(context):

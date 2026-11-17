@@ -96,3 +96,4 @@ export const COMBAT = {
   poison: { ...PLACEMENT_EFFECTS.poison, ...parameters.poison },
 };
 export const referenceBodyHp = (kind: string) => bodySchema.parse(COMBAT.bodies[kind]).hp;
+export const referenceBodySpeed = (kind: string) => bodySchema.parse(COMBAT.bodies[kind]).speed;

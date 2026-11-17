@@ -14,6 +14,7 @@ apps/agent/
       placement/               배치 금지 구역과 좌표, 카드별 예측 배치(오두막·범위 주문 포함), 전투 예측
       policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 타워 수비 보정
       fast/                    빠른 정책(controller 4): 특징(features), 가중치·추론(policy), 칸 단위 후보(candidates)
+                               공유 전술 보정(tactics), 목표별 수비(defense), 상황별 배치(position-bias)
     counterpush/
       browser/                 전용 Chrome 캡처·입력·결과 판독
       perception/              인식 클라이언트, 손패·엘릭서·스킬 판독, 손패 참조 검증

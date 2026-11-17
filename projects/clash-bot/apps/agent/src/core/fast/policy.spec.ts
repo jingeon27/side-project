@@ -132,6 +132,7 @@ describe('cards and bodies read through the catalogue, not one slot per name', (
       own: [],
       enemy: enemy.map(([kind, x, y, variant]) => ({ kind, x, y, variant, velocity: null, hp: null })),
     },
+    deployments: [],
     actions: [['A', 'wait', null, 0, 0, 0]],
   });
 

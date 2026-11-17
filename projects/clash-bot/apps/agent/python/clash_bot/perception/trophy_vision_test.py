@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from clash_bot.perception.trophy_vision import (
     INPUT,
-    clock_matches,
     side_from_pixels,
     suppress_duplicates,
 )
@@ -38,16 +37,3 @@ class TrophyVisionTest(unittest.TestCase):
             {"kind": "goblin", "side": "red", "x": 43, "y": 414, "confidence": 0.85},
         ]
         self.assertEqual(len(suppress_duplicates(rows)), 2)
-
-    def test_clock_template_does_not_match_flat_arena_or_ui_colors(self):
-        template = np.full((28, 29, 3), [220, 50, 180], dtype=np.uint8)
-        template[4:24, 6:22] = [240, 190, 70]
-        template[9:20, 11:17] = [190, 40, 150]
-        for color in ([0, 0, 0], [225, 180, 145], [235, 190, 70], [200, 40, 170]):
-            pixels = np.full((652, 368, 3), color, dtype=np.uint8)
-            self.assertEqual(clock_matches(pixels, template), [])
-        pixels = np.zeros((652, 368, 3), dtype=np.uint8)
-        pixels[390:418, 30:59] = template
-        matches = clock_matches(pixels, template)
-        self.assertEqual(len(matches), 1)
-        self.assertEqual([matches[0]["x"], matches[0]["y"]], [44.5, 404.0])

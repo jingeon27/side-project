@@ -48,6 +48,8 @@ export type DecisionContext = {
   enemy: DecisionUnit[];
   bodies: { own: CombatBody[]; enemy: CombatBody[] };
   effects?: DecisionEffect[];
+  // Screen-observed hostile deployment clocks, not confirmed unit identities or HP.
+  deployments: Array<[x: number, y: number]>;
   skill?: string;
   actions: DecisionAction[];
   // 문자열로 직렬화하지 않는 빠른 정책 입력이다. 대전 시작 뒤 초, 화면에서 읽은 타워 체력 비율.
@@ -93,6 +95,7 @@ export function decisionContext(
       own: situation.own.units.toSorted((a, b) => a.y - b.y).map((unit) => combatBody(profile, unit)),
       enemy: situation.opponent.units.toSorted((a, b) => b.y - a.y).map((unit) => combatBody(profile, unit)),
     },
+    deployments: [],
     effects: situation.effects
       ?.slice(0, 4)
       .map((effect): DecisionEffect => [

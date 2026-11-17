@@ -32,6 +32,7 @@ export function mirrorContext(
     hand: [null, null, null, null],
     elixir: situation.opponent.elixir,
     enemyElixir: { min: 0, max: 10 },
+    deployments: [],
     enemyCycle: situation.own.recentPlays
       .filter((play) => play.at <= situation.at)
       .slice(-4)
