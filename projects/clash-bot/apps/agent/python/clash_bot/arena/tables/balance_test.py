@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from clash_bot.arena.catalogue import current
 from clash_bot.arena.league.champions import initialize
-from clash_bot.arena.sim.balance import (
+from clash_bot.arena.tables.balance import (
     Articles,
     changed_fields,
     classify,

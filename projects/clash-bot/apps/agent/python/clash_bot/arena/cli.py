@@ -9,10 +9,10 @@ from clash_bot.paths import DATA_DIR
 from .league.champions import checkpoint, export_policy
 from .league.loop import run
 from .policy.network import Policy
-from .sim import balance, catalogue_build
 from .sim.verification import verify
 from .study.curriculum import build
 from .study.export import export
+from .tables import balance, catalogue_build
 from .training.benchmark import benchmark
 from .training.parallel import MAX_WORKERS
 from .training.storage import read_episode

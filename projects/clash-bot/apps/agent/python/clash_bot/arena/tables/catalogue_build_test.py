@@ -3,7 +3,7 @@
 import unittest
 
 from clash_bot.arena.catalogue import Catalogue, current
-from clash_bot.arena.sim.catalogue_build import build
+from clash_bot.arena.tables.catalogue_build import build
 
 
 class CatalogueBuildTest(unittest.TestCase):

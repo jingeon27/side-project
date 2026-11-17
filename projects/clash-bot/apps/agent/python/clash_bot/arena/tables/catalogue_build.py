@@ -14,6 +14,7 @@ import royalesim
 from clash_bot.files import atomic_json
 
 from ..catalogue import PATH, Catalogue, content_id
+from ..sim.rules import SPEC, new_battle
 from .catalogue_vectors import (
     PRESENCE,
     card_vector,
@@ -23,7 +24,6 @@ from .catalogue_vectors import (
     unit_body,
     unit_vector,
 )
-from .rules import SPEC, new_battle
 
 FORMAT = "clash-card-catalogue-v1"
 CARD_FEATURES = (

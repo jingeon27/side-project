@@ -40,13 +40,14 @@ apps/agent/
         learning_policy.py     LoRA와 확률·손실 함수
         learner.py             체크포인트·목적별 Adam 상태·챔피언 보호
         policy_gradient.py, imitation.py, search_distillation.py   PPO·상대 모방·수읽기 증류 갱신
-      arena/                   자가대국·탐색·리그 (의존: catalogue·placement ← sim ← policy ← training ← study ← league ← cli)
+      arena/                   자가대국·탐색·리그 (의존: catalogue·placement ← sim ← tables ← policy ← training ← study ← league ← cli)
         catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
         placement.py           배치 유형별 규칙 지점과 격자(엔진 없이 동작, TS 후보와 공유 사례로 일치)
-        sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 공개 엘릭서 장부(elixir),
-                               배치 후보(candidates), 숨은 손패 가설과 판단 사이의 유지(belief),
-                               재현 검사(mechanics, verification), 카탈로그 생성(catalogue_build,
-                               catalogue_vectors), 밸런스 패치(balance)
+        sim/                   학습이 실행하는 전투 환경: 고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine),
+                               공개 엘릭서 장부(elixir), 배치 후보(candidates), 숨은 손패 가설과 판단
+                               사이의 유지(belief), 학습 전 재현 검사(mechanics, verification)
+        tables/                엔진 수치표 도구: 카탈로그 생성(catalogue_build, catalogue_vectors),
+                               밸런스 패치 감시(balance)
         policy/                판단 문맥(context), 특징(features), 화면 인식 오류(noise), 표본(samples),
                                네트워크와 학습(network)
         training/              자가대국(selfplay), 탐색(search), 실행 한 번 동안 재사용하는 워커(parallel),

@@ -1,7 +1,7 @@
 """contracts/card-catalogue.json: attribute vectors of every simulable card and field body.
 
 src/core/card-catalogue.ts reads the same file. `arena catalogue` writes it from the pinned engine
-table (sim/catalogue_build.py); this module only reads it, so it runs without the native engine.
+table (tables/catalogue_build.py); this module only reads it, so it runs without the native engine.
 """
 
 import hashlib

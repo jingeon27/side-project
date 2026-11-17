@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 # arena, lowest first: a unit may import the units before it.
-ARENA = ["catalogue", "placement", "sim", "policy", "training", "study", "league", "cli"]
+ARENA = ["catalogue", "placement", "sim", "tables", "policy", "training", "study", "league", "cli"]
 # What else each unit may import. `root` is the modules directly under clash_bot.
 ALLOWED = {
     "root": set(),
@@ -52,7 +52,7 @@ def imported(path):
                 else node.module
             )
             for alias in node.names:
-                # `from .sim import balance` names a module; `from .rules import TILE` does not.
+                # `from .tables import balance` names a module; `from .rules import TILE` does not.
                 inner = ROOT.parent.joinpath(*module.split("."), alias.name)
                 is_module = inner.with_suffix(".py").exists() or inner.is_dir()
                 yield f"{module}.{alias.name}" if is_module else module

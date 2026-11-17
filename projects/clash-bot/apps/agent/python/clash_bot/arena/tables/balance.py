@@ -11,7 +11,7 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from .rules import CARDS, SPEC, rules_identity
+from ..sim.rules import CARDS, SPEC, rules_identity
 
 OFFICIAL = "https://supercell.com/en/games/clashroyale/blog/"
 PYPI = "https://pypi.org/pypi/royalesim/json"
