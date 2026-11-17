@@ -5,8 +5,13 @@ import random
 from dataclasses import dataclass
 from functools import lru_cache
 
+from .conditioning import position_error
 from .engine import Arena, Record, public_board
-from .rules import DECKS, OBSERVATION_FORMAT, Action, deck_ids
+from .rules import DECKS, OBSERVATION_FORMAT, TILE, Action, deck_ids
+
+
+class PublicRootMismatch(ValueError):
+    """The public combat facts cannot be reproduced within the requested position bound."""
 
 
 @dataclass
@@ -125,6 +130,7 @@ class BeliefSampler:
         self.deck_order = [self.rng.sample(list(pool), len(pool)) for pool in self.openings]
         self.samples = 0
         self.last_board = None
+        self.conditioning = None
         self.sampled = None
         delays = observation["delays"]
         # Every public play, and the observer's own accepted plays, by the tick each was
@@ -145,16 +151,32 @@ class BeliefSampler:
         # An opponent input accepted before this tick has run and is public by now.
         self.frontier = max(0, self.now - delays[1 - team])
 
-    def conditioned(self, into=None):
+    def matches(self, arena, position_tolerance_tiles):
+        self.last_board = public_board(arena.state())
+        error = position_error(
+            public_board(self.observation["state"]),
+            self.last_board,
+            position_tolerance_tiles * TILE,
+        )
+        self.conditioning = (
+            None
+            if error is None
+            else {
+                "mode": "exact" if error == 0 else "position_bounded",
+                "maxPositionErrorTiles": error / TILE,
+                "positionToleranceTiles": position_tolerance_tiles,
+            }
+        )
+        return error is not None
+
+    def conditioned(self, into=None, position_tolerance_tiles=0):
         """Try every candidate deck before repeating one, and match visible combat/forms."""
-        visible = public_board(self.observation["state"])
         limit = max(16, 2 * max(map(len, self.openings)))
         for attempt in range(1, limit + 1):
             world = self.sample(into)
-            self.last_board = public_board(world.state())
-            if self.last_board == visible:
+            if self.matches(world, position_tolerance_tiles):
                 return world, attempt
-        raise ValueError("Public history hypotheses cannot reproduce the visible board")
+        raise PublicRootMismatch("Public history hypotheses cannot reproduce the visible board")
 
     def sample(self, into=None):
         names = [order[self.samples % len(order)] for order in self.deck_order]
@@ -192,7 +214,7 @@ class BeliefSampler:
         if gap > 0:
             arena.play([Action(-1), Action(-1)], gap)
 
-    def resume(self, particle, into):
+    def resume(self, particle, into, position_tolerance_tiles=0):
         """Continue a kept hypothesis to now, or None when it no longer fits what is public.
 
         It must still be one of the compatible draw orders and reproduce the visible board:
@@ -214,8 +236,7 @@ class BeliefSampler:
         self.replay(arena, self.frontier)
         saved = (arena.battle.save(), Record(arena))
         self.replay(arena, self.now)
-        self.last_board = public_board(arena.state())
-        if self.last_board != public_board(observation["state"]):
+        if not self.matches(arena, position_tolerance_tiles):
             return None
         particle.frontier, particle.saved = self.frontier, saved
         return arena

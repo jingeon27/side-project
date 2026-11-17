@@ -37,6 +37,7 @@ class SelfplaySpec(BaseModel):
     searchTicks: PositiveInt
     rootActions: int = Field(ge=2)
     negatives: int = Field(ge=0)
+    rootPositionToleranceTiles: float = Field(ge=0, le=0.5)
     commandDelayTicks: tuple[int, int]
     levelOffsets: tuple[int, ...] = Field(min_length=1)
     perception: PerceptionNoise

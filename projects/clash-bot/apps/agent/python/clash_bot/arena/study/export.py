@@ -101,7 +101,9 @@ def export(data_dir, episodes, count=8):
         for episode in episodes
         if episode["completed"] and not episode["rejectedCommands"] and live_mirror(episode)
         for row in episode["samples"]
-        if row["search"]["simulations"] >= 8 and row["outcome"] in (-1, 0, 1)
+        if row["search"]["simulations"] >= 8
+        and row["outcome"] in (-1, 0, 1)
+        and row["search"]["reconstruction"] == "public_board_exact"
     ]
     if not eligible:
         return None

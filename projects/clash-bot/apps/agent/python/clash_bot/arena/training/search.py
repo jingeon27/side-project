@@ -16,7 +16,7 @@ from clash_bot.paths import DATA_DIR
 from ..sim.belief import BeliefSampler
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
-from ..sim.rules import CARDS, Action, command, digest, rules_identity
+from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
 
 
 def terminal(state, team):
@@ -87,17 +87,23 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
     `beliefs` holds this observer's hypotheses from its previous decision of the same game. One
     that still fits continues from its save; otherwise a new one is sampled and kept in its place.
     """
-    worlds, attempts, continued = [], 0, 0
+    worlds, attempts, continued, conditioning = [], 0, 0, []
+    tolerance = SPEC["selfplay"]["rootPositionToleranceTiles"]
     for index in range(particles):
         world = None
         if beliefs is not None and beliefs[index] is not None:
-            world = sampler.resume(beliefs[index], into=workspace.worlds[index])
+            world = sampler.resume(
+                beliefs[index], into=workspace.worlds[index], position_tolerance_tiles=tolerance
+            )
         if world is not None:
             continued += 1
             worlds.append(world)
+            conditioning.append(sampler.conditioning)
             continue
         try:
-            world, count = sampler.conditioned(into=workspace.worlds[index])
+            world, count = sampler.conditioned(
+                into=workspace.worlds[index], position_tolerance_tiles=tolerance
+            )
         except ValueError as error:
             observation = sampler.observation
             path = DATA_DIR / "arena/reconstruction-failures" / f"{digest(observation)}.json"
@@ -115,9 +121,10 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
             raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
         attempts += count
         worlds.append(world)
+        conditioning.append(sampler.conditioning)
         if beliefs is not None:
             beliefs[index] = sampler.sampled
-    return worlds, attempts, continued
+    return worlds, attempts, continued, conditioning
 
 
 def first_ply(world, team, root_actions, root_prior, opponent):
@@ -198,7 +205,7 @@ def search(
     rng = np.random.default_rng(seed)
     sampler = BeliefSampler(observation, seed, keep=beliefs is not None)
     workspace = workspace or Workspace(particles)
-    worlds, attempts, continued = reconstruct(sampler, workspace, particles, beliefs)
+    worlds, attempts, continued, conditioning = reconstruct(sampler, workspace, particles, beliefs)
     team = observation["team"]
     opponent = opponent_policy or policy
     root = Node()
@@ -268,6 +275,9 @@ def search(
         "rootCandidates": len(candidates),
         "rootConditioningAttempts": attempts,
         "continuedHypotheses": continued,
-        "reconstruction": "public_board_exact",
+        "reconstruction": "public_board_exact"
+        if all(row["mode"] == "exact" for row in conditioning)
+        else "public_board_position_bounded",
+        "rootConditioning": conditioning,
         "source": "public_history_information_set_puct",
     }

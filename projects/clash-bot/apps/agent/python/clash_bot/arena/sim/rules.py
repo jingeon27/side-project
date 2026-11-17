@@ -109,6 +109,7 @@ def rules_identity():
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",
+        "reconstruction": "bounded_mobile_positions_exact_combat_v1",
         "selfplay": SPEC["selfplay"],
         "liveCommandDelayTicks": SPEC["liveCommandDelayTicks"],
         # Policy inputs read cards through this catalogue; a new one is a new rule set.

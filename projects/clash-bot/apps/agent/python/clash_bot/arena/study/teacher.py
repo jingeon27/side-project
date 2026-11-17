@@ -12,7 +12,7 @@ from clash_bot.qwen.inputs.decision_input import serialize_decision
 from clash_bot.qwen.records.search_data import conservation_frontier
 
 from ..policy.context import decision_context
-from ..sim.belief import BeliefSampler
+from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena, public_board
 from ..sim.rules import TILE, Action, canonical, digest, rules_identity
@@ -30,9 +30,13 @@ class Teacher:
         self.rules_id = rules_identity()["id"]
 
     def label(self, observation, identity, family, horizon=240):
-        root, _attempts = BeliefSampler(
-            observation, seed_for("tactical_root", identity)
-        ).conditioned(into=self.root)
+        # Exact counterfactual labels must never silently use a position-tolerant root.
+        try:
+            root, _attempts = BeliefSampler(
+                observation, seed_for("tactical_root", identity)
+            ).conditioned(into=self.root)
+        except PublicRootMismatch:
+            return None
         team = observation["team"]
         actions = legal_actions(root.battle, team)
         if Action(-1) not in actions:
