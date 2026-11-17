@@ -25,11 +25,12 @@ src/story_studio/
   runtime.py            작업별 진행·상태·취소·정리
   generation/           Gemma 4 한국어 글·음성 생성, FLUX.2 Klein 이미지와 Wan2.2 영상
   materials/
+    store.py            자료 목록·본문·색인 상태의 위치와 소유
     chunks.py           자료를 문단·문장 경계로 나누기
     embedding.py        EmbeddingGemma 2 임베딩
-    index.py            LanceDB 색인 추가·삭제·검색
-    indexing.py         자료 색인과 삭제 작업
-    retrieval.py        글 요청에 맞는 자료 선택
+    index.py            LanceDB 색인 추가·삭제, 의미·키워드 검색, 색인 정리
+    sync.py             목록에 맞춰 색인을 맞추는 동기화와 삭제
+    retrieval.py        자료 역할에 따른 선택과 두 검색 결과 합치기
   voices/
     samples.py          녹음 검증·정규화
     jobs.py             데이터 검증·학습 실행·완료 가중치 로드
@@ -47,17 +48,19 @@ src/story_studio/
 
 ## 계약과 수명
 
-표준 입력으로 JSON 요청 하나를 읽고 표준 출력에 줄 단위 JSON 진행 상태와 결과를 씁니다. 모델 진단은 표준 오류로 분리합니다. 모델 하나를 사용하는 프로세스가 `local/gpu.lock`을 소유하며 작업 후 프로세스 종료로 모델 메모리를 반환합니다. 영상 합치기·녹음 정규화처럼 모델을 쓰지 않는 작업은 GPU 잠금을 점유하지 않습니다.
+표준 입력의 첫 줄에서 JSON 요청 하나를 읽고 표준 출력에 줄 단위 JSON 진행 상태와 결과를 씁니다. 집필 세션만 이어지는 줄을 더 읽습니다. 모델 진단은 표준 오류로 분리합니다. 모델 하나를 사용하는 프로세스가 `local/gpu.lock`을 소유하며 작업 후 프로세스 종료로 모델 메모리를 반환합니다. 영상 합치기·녹음 정규화처럼 모델을 쓰지 않는 작업은 GPU 잠금을 점유하지 않습니다.
 
 데이터 저장 위치는 전달받은 `--data-dir`가 결정합니다. 자산은 `assets`, 영상 상태는 `tasks`, 녹음은 `voices`, 학습 상태와 체크포인트는 `voice-training/runs`에 남습니다. 참고 자료는 웹이 `materials/files`에 본문을 저장하고 엔진이 `materials/index`에 LanceDB 색인을 만듭니다. 폴더 이동이 아니라 코드 소유권을 분리하는 변경이므로 기존 실행과 완료된 가중치를 그대로 조회·재개합니다. 인증·HTTP·사용자 화면의 정책은 웹이 소유합니다.
 
 ## 글 작성과 참고 자료
 
-`text` 작업은 시스템 지시문, 입력, JSON 스키마를 받아 Gemma 4로 스키마에 맞는 JSON을 만들고 `{"output": ..., "sources": [...]}`를 반환합니다. 요청에 `retrieval`(`query`, `collections`)이 있으면 먼저 EmbeddingGemma 2로 질의를 임베딩해 LanceDB에서 가까운 구간을 찾고, 임베딩 모델을 해제한 뒤 작가 모델을 불러옵니다. 찾은 구간은 입력의 `materials`로 들어가며 `sources`는 그 자료 제목입니다. 색인이 없거나 고른 묶음이 비어 있으면 임베딩 모델을 불러오지 않습니다.
+`text` 작업은 시스템 지시문, 입력, JSON 스키마를 받아 Gemma 4로 스키마에 맞는 JSON을 만들고 `{"output": ..., "sources": [...]}`를 반환합니다. `text-session` 작업은 작가 모델을 한 번 불러온 뒤 표준 입력의 줄마다 같은 형식의 요청을 받아 `{"reply": {...}}`로 답하고, 입력이 닫히면 끝납니다. 웹의 집필 작업은 구성과 모든 장면을 한 세션으로 보냅니다. 세션에서는 임베딩 모델도 처음 쓸 때 불러와 세션이 끝날 때까지 유지합니다.
 
-`index-material`은 웹이 저장한 본문을 약 900자 구간(120자 겹침)으로 나누어 임베딩하고, 같은 자료의 이전 구간을 지운 뒤 새로 넣습니다. `delete-material`은 모델을 쓰지 않으므로 GPU 잠금을 점유하지 않습니다. 검색은 코사인 거리의 전수 비교이며 근사 색인은 만들지 않습니다. 자료가 매우 많아져 검색이 느려지면 LanceDB의 벡터 색인을 추가해야 합니다.
+요청에 `retrieval`(`query`, `collections`)이 있으면 자료의 역할에 따라 고릅니다. 항상 포함할 자료는 6천 자까지 순서대로, 관련 부분 검색 자료는 코사인 거리의 의미 검색과 키워드 검색 결과를 순위로 합쳐(RRF) 자료당 2개씩 6개, 문체 참고 자료는 무작위 2개입니다. 앞의 둘은 입력의 `materials`, 문체는 `style_samples`로 들어가며 `sources`는 쓴 자료의 제목입니다. 검색할 자료가 없으면 임베딩 모델을 불러오지 않습니다.
 
-구조화 출력은 mlx-vlm의 llguidance 문법 제약을 사용합니다. 이 제약 없이 Gemma 4 12B를 실행했을 때 `<image|>` 같은 특수 토큰이 본문에 섞인 적이 있습니다. 제약을 쓰는 이 경로에서 같은 문제가 없는지는 Apple Silicon에서 확인해야 합니다.
+자료는 웹이 쓰는 `materials/catalog.json`과 `materials/files`가 기준이고 엔진의 색인은 거기서 만든 결과물입니다. `sync-material`은 목록에 있고 색인에 없는 자료를 색인하고, 목록에서 빠졌거나 본문·제목·묶음·역할이 바뀐 자료의 구간을 지웁니다. 색인한 임베딩 모델 revision과 분할 기준을 `materials/index-state.json`에 기록하며 둘 중 하나가 현재와 다르면 전체를 다시 색인합니다. 진행 상태를 20개마다 저장하므로 중단된 실행은 다시 실행하면 남은 자료부터 이어집니다. 끝나면 키워드 색인(2~3글자 n-gram)을 만들고, 구간이 10만 개를 넘으면 벡터 색인을 만든 뒤 `optimize`로 새 구간을 색인에 반영합니다. `delete-material`은 모델을 쓰지 않으므로 GPU 잠금을 점유하지 않습니다.
+
+LanceDB의 키워드 검색과 색인 생성은 0.41.0 소스를 읽고 맞췄으며 실행해 확인하지 않았습니다. 구조화 출력은 mlx-vlm의 llguidance 문법 제약을 사용합니다. 이 제약 없이 Gemma 4 12B를 실행했을 때 `<image|>` 같은 특수 토큰이 본문에 섞인 적이 있습니다. 제약을 쓰는 이 경로에서 같은 문제가 없는지는 Apple Silicon에서 확인해야 합니다.
 
 ## 목소리별 합성 보정과 대사 확인
 
@@ -86,7 +89,7 @@ PYTHONPATH=src ../web/.data/local/.venv/bin/python -m story_studio.setup \
 yarn workspace @story-studio/engine check
 ```
 
-모델 없이 import·작업 상태 저장·음성 보정 파일 계약을 검사합니다. 참고 자료는 구간 나누기, 검색 결과 선택, 자료 ID 검증과 색인이 없을 때의 경로만 검사합니다. 임베딩과 LanceDB 저장·검색은 `apple-silicon` 추가 의존성이 필요해 이 검사에 포함하지 않습니다. Apple Silicon MLX 추가 의존성이 없으면 네이티브 학습·합성 수명 검사만 명시적으로 건너뜁니다. 실제 학습·재개 결과 일치는 엔진 앱 폴더에서 전용 가상환경으로 실행합니다.
+모델 없이 import·작업 상태 저장·음성 보정 파일 계약을 검사합니다. 참고 자료는 구간 나누기, 두 검색 결과 합치기와 선택, 동기화가 할 일의 판단, 자료 ID 검증과 색인이 없을 때의 경로를 검사합니다. 집필 세션은 모델을 대역으로 바꿔 요청마다 답하고 모델을 한 번만 불러오는지 확인합니다. 임베딩과 LanceDB 저장·검색은 `apple-silicon` 추가 의존성이 필요해 이 검사에 포함하지 않습니다. Apple Silicon MLX 추가 의존성이 없으면 네이티브 학습·합성 수명 검사만 명시적으로 건너뜁니다. 실제 학습·재개 결과 일치는 엔진 앱 폴더에서 전용 가상환경으로 실행합니다.
 
 ```sh
 PYTHONPATH=src ../web/.data/local/.venv/bin/python -m unittest story_studio.voices.training_test

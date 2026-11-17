@@ -49,7 +49,6 @@ type TPlan = z.infer<typeof planSchema>;
 type TDraft = Omit<TPlan, 'outline'> & { scenes: z.infer<typeof sceneContentSchema>[] };
 // Titles of the materials retrieved while a scene was written.
 const sourcesSchema = z.array(z.string().max(120)).max(12);
-export const writtenSceneSchema = sceneContentSchema.extend({ sources: sourcesSchema.optional() });
 export const voiceSchema = z.object({
   asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.wav$/),
   duration: z.number().positive().max(1800),
@@ -102,7 +101,9 @@ export const projectSchema = z.object({
     .optional(),
 });
 export type TProject = z.infer<typeof projectSchema>;
-export const librarySchema = z.array(projectSchema).max(50);
+// Works are files in the data folder; the limit keeps one library load reasonable.
+export const libraryLimit = 200;
+export const librarySchema = z.array(projectSchema).max(libraryLimit);
 export const mediaRequestSchema = z.object({
   format: formatSchema.exclude(['novel']),
   style: briefSchema.shape.style,
@@ -127,6 +128,17 @@ export const continueSchema = z.object({
   upcoming: z.array(beatSchema).max(8).optional(),
 });
 export type TContinueRequest = z.infer<typeof continueSchema>;
+// Writing runs on the server so it survives a closed tab; the browser follows it through this status.
+export const writingStatusSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(['RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED']),
+  progress: z.string().max(200),
+  // Set once the first scene is saved; `scenes` counts what the work holds so far.
+  projectId: z.string().uuid().optional(),
+  scenes: z.number().int().min(0),
+  error: z.string().max(400).optional(),
+});
+export type TWritingStatus = z.infer<typeof writingStatusSchema>;
 
 export function makeProject(brief: TBrief, draft: TDraft, sample = false): TProject {
   const now = dayjs().toISOString();

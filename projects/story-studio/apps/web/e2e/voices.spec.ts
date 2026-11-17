@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
 import type { TVoiceRun, TVoiceSample } from '../src/features/voice/model/voice-training';
+import { mockLibrary } from './library';
 
 const voice = {
   id: '29edf583-4d34-4b0a-99e4-9f66bf1c6400',
@@ -33,6 +34,10 @@ wav.writeUInt16LE(2, 32);
 wav.writeUInt16LE(16, 34);
 wav.write('data', 36);
 wav.writeUInt32LE(48000, 40);
+
+test.beforeEach(async ({ page }) => {
+  await mockLibrary(page);
+});
 
 test('여러 녹음의 부분 저장 실패 후 대본과 녹음 ID를 유지하고 재시도한다', async ({ page }) => {
   const state = { voices: [] as (typeof voice)[], samples: [] as TVoiceSample[], failed: false };

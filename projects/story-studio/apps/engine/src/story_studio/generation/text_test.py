@@ -1,6 +1,8 @@
 """How retrieved materials reach the writer, without loading a model."""
 import unittest
+from unittest.mock import patch
 
+from . import text
 from .text import source_titles, with_materials
 
 
@@ -21,6 +23,30 @@ class MaterialInputTests(unittest.TestCase):
         self.assertEqual(payload['style_samples'], [{'source': '문체 견본', 'text': '칼이 울었다.'}])
         self.assertEqual(source_titles(found), ['무협 용어집', '카라카스 답사', '문체 견본'])
         self.assertNotIn('style_samples', with_materials({}, {'materials': found['materials'], 'style': []}))
+
+
+class SessionTests(unittest.TestCase):
+    def test_every_line_is_answered_with_the_writer_loaded_once(self):
+        loads, replies, queries = [], [], []
+
+        def load(root, progress):
+            loads.append(root)
+            return 'writer'
+
+        def answer(writer, request, found):
+            return {'output': {'echo': request['input']}, 'sources': found['materials']}
+
+        def find(root, retrieval, progress, embed):
+            queries.append(retrieval)
+            return {'materials': [], 'style': []}
+
+        lines = ['{"input": "구성"}\n', '\n', '{"input": "첫 장면", "retrieval": {"query": "객잔"}}\n']
+        with patch.object(text, 'load_writer', load), patch.object(text, 'write', answer), patch.object(text, 'retrieve', find):
+            result = text.text_session('root', print, replies.append, lines)
+        self.assertEqual(result, {'turns': 2})
+        self.assertEqual(loads, ['root'])
+        self.assertEqual([reply['reply']['output'] for reply in replies], [{'echo': '구성'}, {'echo': '첫 장면'}])
+        self.assertEqual(queries, [None, {'query': '객잔'}])
 
 
 if __name__ == '__main__':

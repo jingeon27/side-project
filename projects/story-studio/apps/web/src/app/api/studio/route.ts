@@ -2,27 +2,22 @@ import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 import {
-  briefSchema,
-  continueSchema,
-  mediaRequestSchema,
-  voiceRequestSchema,
-} from '../../../features/story/model/story';
-import {
   composeLocal,
-  configuration,
   generateImage,
-  generatePlan,
   generateVideo,
   generateVoice,
-  writeScene,
-} from '../../../features/studio/server/provider';
+} from '../../../features/media/server/generation';
+import { briefSchema, mediaRequestSchema, voiceRequestSchema } from '../../../features/story/model/story';
+import { continueStory, startStory } from '../../../features/story/server/writing';
 import { errorResponse, readJson, requireLocalRequest, StudioError } from '../../../shared/server/errors';
+import { configuration } from '../../../shared/server/text-model';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 const actionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('plan'), input: briefSchema }),
-  z.object({ action: z.literal('continue'), input: continueSchema }),
+  // Both start a writing job on the server and answer with its status; the scenes arrive in the work itself.
+  z.object({ action: z.literal('write'), input: briefSchema }),
+  z.object({ action: z.literal('continue'), input: z.object({ projectId: z.string().uuid() }) }),
   z.object({ action: z.literal('image'), input: mediaRequestSchema }),
   z.object({ action: z.literal('video'), input: mediaRequestSchema }),
   z.object({ action: z.literal('voice'), input: voiceRequestSchema }),
@@ -61,8 +56,8 @@ export async function POST(request: Request) {
     if (!result.success)
       throw new StudioError('입력 형식이나 분량을 확인해 주세요. 원고는 최대 80개 장면까지 지원합니다.', 400);
     const data = await match(result.data)
-      .with({ action: 'plan' }, (action) => generatePlan(action.input, request.signal))
-      .with({ action: 'continue' }, (action) => writeScene(action.input, request.signal))
+      .with({ action: 'write' }, (action) => startStory(action.input))
+      .with({ action: 'continue' }, (action) => continueStory(action.input.projectId))
       .with({ action: 'voice' }, (action) =>
         generateVoice(action.input.text, request.signal, action.input.settings),
       )
