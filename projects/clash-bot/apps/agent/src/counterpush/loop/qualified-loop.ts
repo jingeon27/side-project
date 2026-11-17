@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { z } from 'zod';
 
-import type { EvaluatedGame } from './evaluation.ts';
+import type { EvaluatedGame } from '../evaluation/evaluation.ts';
 
 // Python 게시 기록은 Path.resolve()로 심볼릭 링크를 푼 경로라서 같은 기준으로 비교한다.
 async function canonicalPath(path: string): Promise<string> {

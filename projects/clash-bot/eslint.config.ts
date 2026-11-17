@@ -3,7 +3,7 @@ import { defineConfig } from 'eslint/config';
 import { baseConfig, tsconfigRootDir } from '@side/config/eslint/base';
 
 const src = 'apps/agent/src';
-// 의존은 shared ← core ← (qwen, arena) ← counterpush/{perception, browser, learning, match} ← loop 한 방향이다.
+// 의존은 shared ← core ← (qwen, arena) ← counterpush/{perception, browser, learning, match} ← evaluation ← loop 한 방향이다.
 // core 안은 기반 모듈 ← battle ← placement ← policy ← fast 순서이고, trophy는 shared·core만 쓰며 다른 실행기가
 // trophy를 가져오지 않는다. 상대 경로의 폴더 이름으로 금지할 계층을 적는다. 진입점(cli.ts)과 loop는 trophy 외의
 // 모든 계층을 쓸 수 있다. 한 파일에 여러 항목이 맞으면 뒤의 항목이 앞의 것을 대신하므로, 좁은 범위의 항목은
@@ -63,28 +63,33 @@ const layers: Array<{ files: string; forbidden: string[]; reason: string }> = [
   },
   {
     files: `${src}/counterpush/profile.ts`,
-    forbidden: [trophy, '^\\./(perception|browser|learning|match|loop)/', '(^|/)(qwen|arena)/'],
+    forbidden: [trophy, '^\\./(perception|browser|learning|match|evaluation|loop)/', '(^|/)(qwen|arena)/'],
     reason: '프로필은 Counterpush 모듈의 기반이다',
   },
   {
     files: `${src}/counterpush/perception/**`,
-    forbidden: [trophy, '^\\.\\./(browser|learning|match|loop)/', '(^|/)(qwen|arena)/'],
+    forbidden: [trophy, '^\\.\\./(browser|learning|match|evaluation|loop)/', '(^|/)(qwen|arena)/'],
     reason: '인식은 화면을 core 상태로 바꾸기만 한다',
   },
   {
     files: `${src}/counterpush/browser/**`,
-    forbidden: [trophy, '^\\.\\./(learning|match|loop)/', '(^|/)(qwen|arena)/'],
+    forbidden: [trophy, '^\\.\\./(learning|match|evaluation|loop)/', '(^|/)(qwen|arena)/'],
     reason: '브라우저는 사이트 조작만 소유한다',
   },
   {
     files: `${src}/counterpush/learning/**`,
-    forbidden: [trophy, '^\\.\\./(browser|match|loop)/', '(^|/)arena/'],
+    forbidden: [trophy, '^\\.\\./(browser|match|evaluation|loop)/', '(^|/)arena/'],
     reason: '학습 자료 준비는 저장된 기록만 읽고 브라우저를 열지 않는다',
   },
   {
     files: `${src}/counterpush/match/**`,
-    forbidden: [trophy, '^\\.\\./(learning|loop)/', '(^|/)arena/'],
+    forbidden: [trophy, '^\\.\\./(learning|evaluation|loop)/', '(^|/)arena/'],
     reason: '경기 한 판은 학습·평가 순서를 알지 못한다',
+  },
+  {
+    files: `${src}/counterpush/evaluation/**`,
+    forbidden: [trophy, '^\\.\\./loop/', '(^|/)arena/'],
+    reason: '고정 평가는 후보 학습과 채택 반복을 알지 못한다',
   },
 ];
 

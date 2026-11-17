@@ -10,10 +10,10 @@ import { atomicWrite } from '../../shared/assets.ts';
 import { readOptionalJsonFile } from '../../shared/json-file.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushBrowser } from '../browser/browser.ts';
+import { behaviorIdentity } from '../evaluation/behavior-identity.ts';
+import { evaluateWithResources } from '../evaluation/evaluation-trial.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
-import { behaviorIdentity } from './behavior-identity.ts';
 import { candidateTraining, initialCandidate, snapshot } from './candidate-training.ts';
-import { evaluateWithResources } from './evaluation-trial.ts';
 import { evolutionStateSchema, qualifiedLearningLoop, type EvolutionState } from './qualified-loop.ts';
 import { goalProgress, resumeTrainingGoal, trainingGoalSchema } from './training-goal.ts';
 
