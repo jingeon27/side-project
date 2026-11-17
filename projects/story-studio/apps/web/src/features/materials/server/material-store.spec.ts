@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { StudioError } from '../../../shared/server/errors';
 import { dataPath } from '../../media/server/assets';
+import * as materialStore from './material-store';
 
 const worker = vi.hoisted(() => ({ run: vi.fn(), ready: true }));
 vi.mock('../../../shared/server/local-worker', () => ({
@@ -22,13 +23,18 @@ const upload = {
     { title: '객잔 묘사', text: '객잔의 저녁은 술 냄새로 시작한다.' },
   ],
 };
-// Each test gets the store with no sync running and no earlier error.
-async function load() {
-  vi.resetModules();
-  Reflect.deleteProperty(globalThis, 'storyStudioMaterials');
-  return import('./material-store');
+// Each test starts with no sync running and no earlier error. The store keeps that state for the
+// whole server process, so it is cleared here instead of loading the module again: a second copy of
+// the module would also get a second StudioError class and stop recognizing the errors thrown below.
+function load() {
+  Object.assign(Reflect.get(globalThis, 'storyStudioMaterials') as object, {
+    sync: undefined,
+    error: undefined,
+    again: false,
+  });
+  return materialStore;
 }
-type TStore = Awaited<ReturnType<typeof load>>;
+type TStore = typeof materialStore;
 async function settled(store: TStore) {
   await vi.waitFor(async () => expect((await store.materialOverview()).sync.running).toBe(false));
   return store.materialOverview();
@@ -59,7 +65,7 @@ afterEach(async () => {
 });
 
 it('자료를 목록과 본문으로 저장한 뒤 색인을 맡기고, 색인이 끝나기 전까지 대기로 보여 준다', async () => {
-  const store = await load();
+  const store = load();
   expect(await store.addMaterials(upload)).toEqual({ added: 2, skipped: 0 });
   expect(worker.run.mock.calls[0]?.[0]).toEqual({ action: 'sync-material' });
   const ids = await catalogIds();
@@ -79,7 +85,7 @@ it('자료를 목록과 본문으로 저장한 뒤 색인을 맡기고, 색인�
 });
 
 it('같은 묶음의 같은 자료를 다시 올리면 건너뛰고 색인도 다시 시작하지 않는다', async () => {
-  const store = await load();
+  const store = load();
   await store.addMaterials(upload);
   await settled(store);
   const extra = {
@@ -94,7 +100,7 @@ it('같은 묶음의 같은 자료를 다시 올리면 건너뛰고 색인도 �
 });
 
 it('색인이 실패해도 등록한 자료는 남기고 사유를 보여 주며, 다시 시작하면 사유를 지운다', async () => {
-  const store = await load();
+  const store = load();
   worker.run.mockImplementationOnce(async () => {
     throw new StudioError(
       '다른 로컬 생성 작업이 실행 중입니다. 현재 작업이 끝난 뒤 다시 시도해 주세요.',
@@ -111,7 +117,7 @@ it('색인이 실패해도 등록한 자료는 남기고 사유를 보여 주며
 });
 
 it('색인 중에 자료가 더 들어오면 끝난 뒤 한 번 더 색인하고, 중단하면 이어서 실행하지 않는다', async () => {
-  const store = await load();
+  const store = load();
   const first = Promise.withResolvers<unknown>();
   worker.run.mockImplementationOnce(() => first.promise);
   await store.addMaterials(upload);
@@ -135,7 +141,7 @@ it('색인 중에 자료가 더 들어오면 끝난 뒤 한 번 더 색인하고
 
 it('검색 모델이 없어도 자료는 등록해 두고 설치를 안내한다', async () => {
   worker.ready = false;
-  const store = await load();
+  const store = load();
   expect(await store.addMaterials(upload)).toEqual({ added: 2, skipped: 0 });
   const overview = await store.materialOverview();
   expect(overview).toMatchObject({ ready: false, sync: { running: false } });
@@ -144,7 +150,7 @@ it('검색 모델이 없어도 자료는 등록해 두고 설치를 안내한다
 });
 
 it('삭제는 색인에서 먼저 지우고, 색인 삭제가 실패하면 목록에 남겨 다시 시도할 수 있게 한다', async () => {
-  const store = await load();
+  const store = load();
   await store.addMaterials(upload);
   await store.addMaterials({ ...upload, collection: '다른 묶음' });
   await settled(store);
@@ -167,7 +173,7 @@ it('삭제는 색인에서 먼저 지우고, 색인 삭제가 실패하면 목�
 });
 
 it('받은 폴더의 묶음별 텍스트 파일을 등록하고, 다시 가져오면 건너뛴다', async () => {
-  const store = await load();
+  const store = load();
   const inbox = (await store.materialOverview()).inbox;
   await mkdir(path.join(inbox, '베네수엘라 취재'), { recursive: true });
   await mkdir(path.join(inbox, "bad'name"), { recursive: true });
