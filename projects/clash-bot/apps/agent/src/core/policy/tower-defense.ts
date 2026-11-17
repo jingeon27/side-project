@@ -7,9 +7,9 @@ import { COMBAT, PLACEMENT_EFFECTS } from '../combat-reference.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { distance, tilePoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
+import { combatBody, forecastEffect } from '../placement/combat-projection.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
-import { combatBody, forecastEffect } from './combat-projection.ts';
 
 export type TowerDefenseInput = {
   profile: Profile;

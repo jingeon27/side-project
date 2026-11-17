@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { BattleMemory } from '../battle/battle-state.ts';
 import { CARD_INFO } from '../cards.ts';
+import { blockedDeployment } from '../placement/placement.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { actionCandidates } from './actions.ts';
-import { blockedDeployment } from './placement.ts';
 
 describe('legal actions proposed to Qwen', () => {
   it('sets up defense and a tank before unsupported graveyard/poison attacks, with three hut placements', () => {

@@ -2,9 +2,9 @@ import type { BattleSituation } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
 import { compactMechanics, KNOWLEDGE_VERSION } from '../knowledge.ts';
+import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from '../placement/placement.ts';
 import type { Profile } from '../profile.ts';
 import { policyContext } from './context.ts';
-import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from './placement.ts';
 
 export type QwenAction = {
   id: number;

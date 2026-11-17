@@ -1,6 +1,6 @@
 import { CARD_INFO, type CardId } from '../../core/cards.ts';
 import type { Point } from '../../core/geometry.ts';
-import { blockedDeployment } from '../../core/policy/placement.ts';
+import { blockedDeployment } from '../../core/placement/placement.ts';
 import type { Profile } from '../../core/profile.ts';
 import { difference } from '../perception/hand.ts';
 

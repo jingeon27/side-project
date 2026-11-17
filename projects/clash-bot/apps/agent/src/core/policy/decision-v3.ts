@@ -6,10 +6,10 @@ import { z } from 'zod';
 import type { BattleSituation, FieldUnit } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import { tilePoint } from '../geometry.ts';
+import { combatBody, forecastEffect, forecastText, type CombatBody } from '../placement/combat-projection.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
 import { bodyCard } from './candidates.ts';
-import { combatBody, forecastEffect, forecastText, type CombatBody } from './combat-projection.ts';
 import { observedContacts } from './effects.ts';
 
 // 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.inputs.decision_input)도 같은 파일을 읽는다.

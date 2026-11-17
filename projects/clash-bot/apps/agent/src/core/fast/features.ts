@@ -13,7 +13,7 @@ import {
   catalogueCard,
   isCatalogueBody,
 } from '../card-catalogue.ts';
-import type { CombatBody } from '../policy/combat-projection.ts';
+import type { CombatBody } from '../placement/combat-projection.ts';
 import type { DecisionAction, DecisionContext } from '../policy/decision-v3.ts';
 
 // 판단 문맥의 특징 배치다. Python(clash_bot.arena.policy.features)이 같은 계약으로 같은 숫자를 만든다.

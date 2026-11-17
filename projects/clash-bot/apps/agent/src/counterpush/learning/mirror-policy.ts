@@ -4,11 +4,11 @@ import { match } from 'ts-pattern';
 import type { BattleSituation, FieldUnit } from '../../core/battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../../core/cards.ts';
 import { tilePoint, type Point } from '../../core/geometry.ts';
+import { combatBody } from '../../core/placement/combat-projection.ts';
+import { predictivePlacements } from '../../core/placement/predictive-placement.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
 import { bodyCard } from '../../core/policy/candidates.ts';
-import { combatBody } from '../../core/policy/combat-projection.ts';
 import type { DecisionUnit, PublicDecisionContext } from '../../core/policy/decision-v3.ts';
-import { predictivePlacements } from '../../core/policy/predictive-placement.ts';
 import type { Profile } from '../../core/profile.ts';
 
 export const rotateOpponentPoint = (profile: Pick<Profile, 'riverY'>, point: Point): Point => ({

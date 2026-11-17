@@ -6,8 +6,8 @@ import { catalogueCard, type CatalogueCard } from '../card-catalogue.ts';
 import type { CardId } from '../cards.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
+import { blockedDeployment } from '../placement/placement.ts';
 import type { QwenAction } from '../policy/actions.ts';
-import { blockedDeployment } from '../policy/placement.ts';
 import type { Profile } from '../profile.ts';
 
 type Tile = readonly [x: number, y: number];

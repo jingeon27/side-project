@@ -3,9 +3,9 @@ import { expect, it } from 'vitest';
 import { BattleMemory, type BattleSituation } from '../battle/battle-state.ts';
 import { COUNTERPUSH_DECK } from '../deck.ts';
 import { screenPoint } from '../geometry.ts';
+import { predictivePlacements } from '../placement/predictive-placement.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { affordableCandidates } from './candidates.ts';
-import { predictivePlacements } from './predictive-placement.ts';
 
 const scene = () =>
   new BattleMemory([...COUNTERPUSH_DECK]).observe({

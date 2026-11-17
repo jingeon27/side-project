@@ -6,10 +6,10 @@ import { BattleMemory, type BattleSituation, type FieldEffect } from '../battle/
 import type { CardId } from '../cards.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
+import { blockedDeployment, ownPoint } from '../placement/placement.ts';
 import { DEFAULT_PROFILE, loadProfile } from '../profile.ts';
 import { actionCandidates } from './actions.ts';
 import { affordableCandidates } from './candidates.ts';
-import { blockedDeployment, ownPoint } from './placement.ts';
 
 const deck: CardId[] = [
   'knight',

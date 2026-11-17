@@ -1,10 +1,10 @@
 import type { BattleSituation, FieldUnit } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
+import { ownPoint } from '../placement/placement.ts';
+import { predictivePlacements } from '../placement/predictive-placement.ts';
 import type { Profile } from '../profile.ts';
 import { actionCandidates, type QwenAction } from './actions.ts';
-import { ownPoint } from './placement.ts';
-import { predictivePlacements } from './predictive-placement.ts';
 
 export function bodyCard(unit: FieldUnit): string | null {
   if (unit.kind) return unit.kind;

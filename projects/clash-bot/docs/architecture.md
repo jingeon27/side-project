@@ -5,13 +5,14 @@ Node는 브라우저·프로세스와 경기 순서를, Python은 모델 계산�
 ```text
 apps/agent/
   src/                         TypeScript 실행기 (의존 방향은 eslint.config.ts가 검사)
-    core/                      실행 환경과 무관한 게임 규칙
+    core/                      실행 환경과 무관한 게임 규칙 (기반 모듈 ← battle ← placement ← policy ← fast)
       cards.ts, deck.ts        카드 정보와 미러전 덱
       card-catalogue.ts        엔진 수치표로 만든 카드·필드 오브젝트 특징(contracts/card-catalogue.json)
       geometry.ts, profile.ts  368×652 화면 좌표와 보정 프로필
       knowledge.ts             카드 수치·진화와 영웅 조건
       battle/                  FIFO, 엘릭서, 필드·생성물·진화 상태, 인식 결과와 상대 관찰 형식
-      policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 수비·배치 보정
+      placement/               배치 금지 구역과 좌표, 카드별 예측 배치(오두막·범위 주문 포함), 전투 예측
+      policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 타워 수비 보정
       fast/                    빠른 정책(controller 4): 특징(features), 가중치·추론(policy), 칸 단위 후보(candidates)
     counterpush/
       browser/                 전용 Chrome 캡처·입력·결과 판독
