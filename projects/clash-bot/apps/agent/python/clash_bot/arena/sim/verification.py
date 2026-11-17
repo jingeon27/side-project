@@ -10,7 +10,8 @@ from clash_bot.files import atomic_json
 
 from . import mechanics
 from .candidates import legal_actions
-from .engine import Arena, public_mana
+from .elixir import public_mana
+from .engine import Arena
 from .rules import CARDS, DECKS, Action, deck_ids, rules_identity
 
 

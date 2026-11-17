@@ -77,6 +77,45 @@ class PublicSearchTest(unittest.TestCase):
         self.assertEqual(results[0]["actions"], results[1]["actions"])
         np.testing.assert_array_equal(results[0]["target"], results[1]["target"])
 
+    def test_kept_hypotheses_continue_between_decisions_without_reading_the_hidden_hand(self):
+        own = list(range(8))
+        games = [Arena(1, [own, own], delays=(22, 18)), Arena(9, [own, own[::-1]], delays=(22, 18))]
+        policy, workspace = Policy(), Workspace()
+        beliefs = [[None, None], [None, None]]
+        for game in games:
+            game.play([Action(-1)] * 2, 100)
+        self.assertNotEqual(
+            games[0].state()["players"][1]["hand"], games[1].state()["players"][1]["hand"]
+        )
+        for step in range(4):
+            results = [
+                search(
+                    game.observe(0),
+                    policy,
+                    40 + step,
+                    simulations=4,
+                    depth=2,
+                    workspace=workspace,
+                    beliefs=kept,
+                )
+                for game, kept in zip(games, beliefs)
+            ]
+            self.assertEqual(results[0]["actions"], results[1]["actions"])
+            np.testing.assert_array_equal(results[0]["target"], results[1]["target"])
+            for result in results:
+                continued, sampled = (
+                    result["continuedHypotheses"],
+                    result["rootConditioningAttempts"],
+                )
+                # Nothing new is public at the second decision; later our own draw may end one.
+                self.assertEqual(
+                    (continued, sampled),
+                    {0: (0, 2), 1: (2, 0)}.get(step, (continued, 2 - continued)),
+                )
+            move = results[0]["actions"][int(np.argmax(results[0]["target"]))]
+            for game in games:
+                game.play([move if step == 1 else Action(-1), Action(-1)], 20)
+
 
 if __name__ == "__main__":
     unittest.main()

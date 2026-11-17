@@ -118,6 +118,8 @@ def play_game(
         levels=setup["levels"],
     )
     workspace = Workspace(particles=2)
+    # Each side's hidden-hand hypotheses, continued from one of its searches to the next.
+    beliefs = [[None] * len(workspace.worlds) for _ in policies]
     choices = np.random.default_rng(seed_for("acting", game_id))
     seen = np.random.default_rng(seed_for("perception", game_id))
     samples, rejected, decisions, searches = [], 0, 0, 0
@@ -147,6 +149,7 @@ def play_game(
                 noise=training,
                 opponent_policy=policies[1 - team],
                 workspace=workspace,
+                beliefs=beliefs[team],
             )
             probabilities = result["target"].astype(np.float64)
             if training:

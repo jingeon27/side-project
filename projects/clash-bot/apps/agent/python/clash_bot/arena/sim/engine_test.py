@@ -7,7 +7,8 @@ import unittest
 import royalesim
 
 from clash_bot.arena.sim.candidates import legal_actions
-from clash_bot.arena.sim.engine import Arena, public_mana
+from clash_bot.arena.sim.elixir import public_mana
+from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.mechanics import field
 from clash_bot.arena.sim.rules import FIELDS, TILE, Action, canonical, rules_identity
 

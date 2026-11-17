@@ -81,10 +81,21 @@ def root_subset(actions, prior, rng, size, explore):
     return sorted(keep)
 
 
-def reconstruct(sampler, workspace, particles):
-    """Worlds that replay the public history onto the visible board; failures keep their evidence."""
-    worlds, attempts = [], 0
+def reconstruct(sampler, workspace, particles, beliefs=None):
+    """Worlds that replay the public history onto the visible board; failures keep their evidence.
+
+    `beliefs` holds this observer's hypotheses from its previous decision of the same game. One
+    that still fits continues from its save; otherwise a new one is sampled and kept in its place.
+    """
+    worlds, attempts, continued = [], 0, 0
     for index in range(particles):
+        world = None
+        if beliefs is not None and beliefs[index] is not None:
+            world = sampler.resume(beliefs[index], into=workspace.worlds[index])
+        if world is not None:
+            continued += 1
+            worlds.append(world)
+            continue
         try:
             world, count = sampler.conditioned(into=workspace.worlds[index])
         except ValueError as error:
@@ -104,7 +115,9 @@ def reconstruct(sampler, workspace, particles):
             raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
         attempts += count
         worlds.append(world)
-    return worlds, attempts
+        if beliefs is not None:
+            beliefs[index] = sampler.sampled
+    return worlds, attempts, continued
 
 
 def first_ply(world, team, root_actions, root_prior, opponent):
@@ -173,16 +186,19 @@ def search(
     workspace=None,
     first_ticks=None,
     root_size=16,
+    beliefs=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
     The first ply lasts `first_ticks` (the decision interval), later plies `step_ticks`.
+    `beliefs` is a list of `particles` slots, None at first, that one observer of one game passes
+    to each of its searches so hidden-hand hypotheses continue between them.
     """
     began = time.perf_counter()
     rng = np.random.default_rng(seed)
-    sampler = BeliefSampler(observation, seed)
+    sampler = BeliefSampler(observation, seed, keep=beliefs is not None)
     workspace = workspace or Workspace(particles)
-    worlds, attempts = reconstruct(sampler, workspace, particles)
+    worlds, attempts, continued = reconstruct(sampler, workspace, particles, beliefs)
     team = observation["team"]
     opponent = opponent_policy or policy
     root = Node()
@@ -251,6 +267,7 @@ def search(
         ),
         "rootCandidates": len(candidates),
         "rootConditioningAttempts": attempts,
+        "continuedHypotheses": continued,
         "reconstruction": "public_board_exact",
         "source": "public_history_information_set_puct",
     }

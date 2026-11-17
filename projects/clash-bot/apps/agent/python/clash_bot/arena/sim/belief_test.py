@@ -130,5 +130,81 @@ class BeliefTest(unittest.TestCase):
             BeliefSampler(observation, 77)
 
 
+def first_card(arena, team):
+    return next(
+        (action for action in legal_actions(arena.battle, team) if action.card >= 0), Action(-1)
+    )
+
+
+class KeptHypothesisTest(unittest.TestCase):
+    def test_a_kept_hypothesis_continues_to_the_world_a_replay_from_the_first_tick_builds(self):
+        arena = Arena(11, decks=["hog_cycle", "giant_beatdown"], delays=(22, 18), levels=(12, 10))
+        arena.play([Action(-1)] * 2, 100)
+        scratch, kept, continued = Arena(0), None, 0
+        for step in range(16):
+            # Both sides play now and then, so delayed, pending and public plays all occur.
+            moves = [first_card(arena, team) if step % 3 == team else Action(-1) for team in (0, 1)]
+            arena.play(moves, 20)
+            observation = arena.observe(0)
+            sampler = BeliefSampler(observation, 100 + step, keep=True)
+            world = sampler.resume(kept, into=scratch) if kept else None
+            if world is None:
+                sampler.conditioned(into=scratch)
+                kept = sampler.sampled
+                continue
+            continued += 1
+            rebuilt = BeliefSampler(observation, 0).world(kept.names, kept.orders, kept.seed)
+            self.assertEqual(world.battle.state_hash(), rebuilt.battle.state_hash())
+            self.assertEqual(world.history, rebuilt.history)
+            self.assertEqual(world.pending, rebuilt.pending)
+            self.assertEqual(public_board(world.state()), public_board(arena.state()))
+            self.assertEqual(kept.frontier, observation["state"]["tick"] - 18)
+        self.assertGreaterEqual(continued, 8)
+        self.assertGreater(len(arena.history), 3)
+
+    def test_a_hypothesis_of_the_wrong_deck_ends_when_the_opponent_card_becomes_public(self):
+        own, enemy = deck_ids("counterpush"), deck_ids("drill_control")
+        arena = Arena(1, [own, enemy], ["counterpush", "drill_control"], delays=(22, 22))
+        arena.play([Action(-1)] * 2, 100)
+        kept = {}
+        for seed in range(40):
+            sampler = BeliefSampler(arena.observe(0), seed, keep=True)
+            sampler.conditioned()
+            kept.setdefault(sampler.sampled.names[1] == "drill_control", sampler.sampled)
+        self.assertEqual(set(kept), {True, False})
+        arena.play([Action(-1), Action(enemy[0], round(3.5 * TILE), round(6.5 * TILE))], 60)
+        sampler = BeliefSampler(arena.observe(0), 9, keep=True)
+        self.assertEqual(set(sampler.openings[1]), {"drill_control"})
+        self.assertIsNone(sampler.resume(kept[False], into=Arena(0)))
+        right = sampler.resume(kept[True], into=Arena(0))
+        # The right deck continues only if its guessed opening hand held the played card.
+        if right is not None:
+            self.assertEqual(public_board(right.state()), public_board(arena.state()))
+
+    def test_a_hypothesis_saved_from_a_different_past_cannot_continue(self):
+        games = [Arena(5, delays=(20, 20)), Arena(5, delays=(20, 20))]
+        for game in games:
+            game.play([Action(-1)] * 2, 100)
+        # Only the second game's opponent played before the save.
+        games[1].play([Action(-1), first_card(games[1], 1)], 60)
+        games[0].play([Action(-1)] * 2, 60)
+        sampler = BeliefSampler(games[0].observe(0), 3, keep=True)
+        sampler.conditioned()
+        kept = sampler.sampled
+        for game in games:
+            game.play([Action(-1)] * 2, 40)
+        self.assertIsNotNone(
+            BeliefSampler(games[0].observe(0), 4, keep=True).resume(kept, into=Arena(0))
+        )
+        sampler = BeliefSampler(games[1].observe(0), 4, keep=True)
+        if all(
+            tuple(order) in pool.get(name, ())
+            for pool, name, order in zip(sampler.openings, kept.names, kept.orders)
+        ):
+            # Its draw order still fits, but its world never saw that play.
+            self.assertIsNone(sampler.resume(kept, into=Arena(0)))
+            self.assertNotEqual(sampler.last_board, public_board(games[1].state()))
+
+
 if __name__ == "__main__":
     unittest.main()
