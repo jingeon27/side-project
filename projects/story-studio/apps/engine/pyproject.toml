@@ -18,6 +18,7 @@ apple-silicon = [
     "mlx-vlm==0.7.12",
     "mlx-audio==0.6.5",
     "mlx==0.32.4",
+    "mflux==0.24.0",
     "mlx-video @ git+https://github.com/Blaizzy/mlx-video.git@87db56a51758fefb748a359b90a5283bb8ba4837",
     "torch==2.15.0",
 ]
