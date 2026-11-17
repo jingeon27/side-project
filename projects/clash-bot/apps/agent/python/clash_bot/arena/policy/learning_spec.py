@@ -10,7 +10,7 @@ from clash_bot.paths import CONTRACTS_DIR
 class LearningSpec(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    format: Literal["clash-search-learning-v3"]
+    format: Literal["clash-search-learning-v4"]
     target: Literal["prior_regularized_action_values"]
     temperature: PositiveFloat
     maxKL: PositiveFloat
@@ -18,6 +18,7 @@ class LearningSpec(BaseModel):
     maxUpdateKL: PositiveFloat
     maxStateKL: PositiveFloat
     probeRows: PositiveInt
+    rolloutSamplesPerCard: PositiveInt
 
 
 SPEC = LearningSpec.model_validate_json((CONTRACTS_DIR / "search-learning.json").read_text())

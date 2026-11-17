@@ -1,10 +1,11 @@
 {
-  "format": "clash-search-learning-v3",
+  "format": "clash-search-learning-v4",
   "target": "prior_regularized_action_values",
   "temperature": 0.25,
   "maxKL": 0.1,
   "projection": "differentiable_card_partition",
   "maxUpdateKL": 0.02,
   "maxStateKL": 0.1,
-  "probeRows": 128
+  "probeRows": 128,
+  "rolloutSamplesPerCard": 8
 }

@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,19 @@ from clash_bot.arena.training.selfplay import play_game, replay_samples
 
 
 class ExpertIterationTest(unittest.TestCase):
+    def test_rollout_predict_does_not_reintroduce_unread_tower_hitpoints(self):
+        arena = Arena(4)
+        arena.play([Action(-1)] * 2, 120)
+        observation = arena.observe(0)
+        changed = deepcopy(observation)
+        changed["state"]["players"][0]["tower_hp"] = [700, 800, 900]
+        changed["state"]["players"][1]["tower_hp"] = [900, 1000, 1100]
+        actions = [Action(*a) for a in observation["legalActions"]]
+        policy = Policy()
+        np.testing.assert_array_equal(
+            policy.predict(observation, actions)[0], policy.predict(changed, actions)[0]
+        )
+
     def test_real_gradient_checkpoint_roundtrip_and_unknown_outcome_rejection(self):
         arena = Arena(1)
         arena.play([Action(-1)] * 2, 100)

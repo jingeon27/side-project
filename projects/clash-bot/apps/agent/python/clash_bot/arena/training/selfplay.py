@@ -146,6 +146,10 @@ def play_game(
                 selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
             result = None
+            context = screens[team].read(observation, candidates)
+            observed_prior = policy.read(
+                {key: value for key, value in context.items() if key != "towers"}
+            )[0]
             if unavailable[team] is None:
                 try:
                     result = search(
@@ -161,6 +165,7 @@ def play_game(
                         opponent_policy=policies[1 - team],
                         workspace=workspace,
                         beliefs=beliefs[team],
+                        observed_prior=observed_prior,
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
@@ -168,8 +173,9 @@ def play_game(
                 # The real native game remains authoritative. Finish with this seat's
                 # frozen screen policy, but invent no expert targets for these decisions.
                 policy_only[team] += 1
-                prior = policy.deployed(observation, candidates, screens[team])
-                selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
+                selected[team] = candidates[
+                    card_choice([a.card for a in candidates], observed_prior)
+                ]
                 continue
             families = [action.card for action in result["actions"]]
             if training:
@@ -192,7 +198,9 @@ def play_game(
                             for key, value in observation.items()
                             if key != "legalActions"
                         },
-                        **training_rows(observation, result, screens[team], chosen, policy),
+                        **training_rows(
+                            observation, result, screens[team], chosen, policy, context=context
+                        ),
                         "search": {
                             key: value
                             for key, value in result.items()

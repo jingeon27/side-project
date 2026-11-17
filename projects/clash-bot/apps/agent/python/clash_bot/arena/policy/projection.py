@@ -27,3 +27,29 @@ def project_logits(scores, families, retained):
         if kept:
             result[kept] += np.logaddexp.reduce(scores[group]) - np.logaddexp.reduce(scores[kept])
     return result[retained]
+
+
+def importance_priors(probabilities, families, multiplicities):
+    """Estimate full card mass, without weighting a sampled tile's conditional position.
+
+    Anchors have weight one; m uniform samples of N residual tiles have weight N/m.
+    Unnormalized card masses are unbiased; normalized finite-sample odds remain approximate.
+    """
+    prior, weights = np.asarray(probabilities, np.float64), np.asarray(multiplicities, np.float64)
+    if (
+        len(prior) != len(families)
+        or prior.shape != weights.shape
+        or not len(prior)
+        or not np.isfinite(prior).all()
+        or not np.isfinite(weights).all()
+        or np.any(prior < 0)
+        or np.any(weights < 1)
+        or prior.sum() <= 0
+    ):
+        raise ValueError("Invalid sampled rollout probabilities")
+    result = np.zeros(len(prior), np.float64)
+    for group in grouped_indices(families):
+        selected = prior[group].sum()
+        if selected > 0:
+            result[group] = prior[group] * float(prior[group] @ weights[group]) / selected
+    return result / result.sum()

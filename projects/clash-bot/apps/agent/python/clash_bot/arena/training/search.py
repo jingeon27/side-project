@@ -18,6 +18,7 @@ from ..sim.engine import Arena
 from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
 from .bandits import Node, exploration_prior, pick, root_priors, root_subset
 from .improvement import improved_policy
+from .rollout import rollout_choices
 
 
 def terminal(state, team):
@@ -89,7 +90,7 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
     return worlds, attempts, continued, conditioning
 
 
-def first_ply(world, team, root_actions, root_prior, opponent):
+def first_ply(world, team, root_actions, root_prior, opponent, rng):
     """One sampled world's root choices, shared by every simulation that starts from it.
 
     Like `later_ply`, returns (value, None) when the position is decided or leaves nothing to
@@ -112,23 +113,20 @@ def first_ply(world, team, root_actions, root_prior, opponent):
         return position_value(world.observe(team, include_legal=False)), None
     priors = np.array([root_prior[root_actions.index(action)] for action in own_actions])
     priors /= priors.sum()
-    enemy_actions = legal_actions(world.battle, 1 - team, state)
-    enemy_priors, _ = opponent.predict(world.observe(1 - team, include_legal=False), enemy_actions)
+    enemy_actions, enemy_priors = rollout_choices(world, 1 - team, opponent, rng)
     return None, (own_actions, priors, enemy_actions, enemy_priors)
 
 
-def later_ply(world, team, policy, opponent):
+def later_ply(world, team, policy, opponent, rng):
     state = world.state()
     value = terminal(state, team)
     if value is not None:
         return value, None
-    own_actions = legal_actions(world.battle, team, state)
-    enemy_actions = legal_actions(world.battle, 1 - team, state)
-    priors, _ = policy.predict(world.observe(team, include_legal=False), own_actions)
+    own_actions, priors = rollout_choices(world, team, policy, rng)
+    enemy_actions, enemy_priors = rollout_choices(world, 1 - team, opponent, rng)
     # Complete a bounded rollout even through new nodes. With 26 simultaneous choices per
     # side, stopping at the first new joint child would otherwise evaluate almost every move
     # only 2s ahead.
-    enemy_priors, _ = opponent.predict(world.observe(1 - team, include_legal=False), enemy_actions)
     return None, (own_actions, priors, enemy_actions, enemy_priors)
 
 
@@ -156,6 +154,7 @@ def search(
     first_ticks=None,
     root_size=16,
     beliefs=None,
+    observed_prior=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
@@ -172,7 +171,18 @@ def search(
     opponent = opponent_policy or policy
     root = Node()
     candidates = [Action(*row) for row in observation["legalActions"]]
-    prior, _ = policy.predict(observation, candidates)
+    prior = observed_prior
+    if prior is None:
+        prior, _ = policy.predict(observation, candidates)
+    prior = np.asarray(prior, np.float64)
+    if (
+        prior.shape != (len(candidates),)
+        or not np.isfinite(prior).all()
+        or np.any(prior < 0)
+        or prior.sum() <= 0
+    ):
+        raise ValueError("Root observation prior must cover every legal candidate")
+    prior = prior / prior.sum()
     # Spend at least half of a normal budget on revisits, rather than one uniform visit per tile.
     keep = root_subset(candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise)
     root_actions = [candidates[index] for index in keep]
@@ -190,10 +200,12 @@ def search(
         index = simulation % len(worlds)
         world.adopt(snapshots[index], worlds[index])
         if index not in roots:
-            roots[index] = first_ply(world, team, root_actions, root_prior, opponent)
+            roots[index] = first_ply(world, team, root_actions, root_prior, opponent, rng)
         node, path = root, []
         for ply in range(depth):
-            value, choices = roots[index] if ply == 0 else later_ply(world, team, policy, opponent)
+            value, choices = (
+                roots[index] if ply == 0 else later_ply(world, team, policy, opponent, rng)
+            )
             if choices is None:
                 break
             own_actions, priors, enemy_actions, enemy_priors = choices
@@ -245,4 +257,8 @@ def search(
         else "public_board_position_bounded",
         "rootConditioning": conditioning,
         "source": "public_history_information_set_puct",
+        "rootPriorSource": "matched_screen_without_towers"
+        if observed_prior is not None
+        else "exact_public_without_towers",
+        "rolloutPrior": "anchors_and_uniform_residual_importance_v1",
     }

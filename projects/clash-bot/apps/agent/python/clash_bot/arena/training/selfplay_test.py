@@ -22,6 +22,40 @@ from clash_bot.arena.training.selfplay import (
 )
 
 
+class MatchedObservationTest(unittest.TestCase):
+    def test_no_improvement_teacher_replays_the_deployed_policy_without_a_second_screen_sample(
+        self,
+    ):
+        policy = Policy()
+        baseline = play_game(
+            [policy, policy],
+            "matched-root-observation",
+            "rules-test",
+            simulations=0,
+            training=False,
+            max_ticks=600,
+        )
+
+        def unchanged(observation, _policy, _seed, **kwargs):
+            return {
+                "actions": [Action(*a) for a in observation["legalActions"]],
+                "target": kwargs["observed_prior"],
+                "simulations": 0,
+            }
+
+        with patch("clash_bot.arena.training.selfplay.search", side_effect=unchanged):
+            searched = play_game(
+                [policy, policy],
+                "matched-root-observation",
+                "rules-test",
+                simulations=16,
+                training=False,
+                max_ticks=600,
+            )
+        self.assertEqual(searched["publicHistory"], baseline["publicHistory"])
+        self.assertEqual(searched["crowns"], baseline["crowns"])
+
+
 class SetupTest(unittest.TestCase):
     def test_scripted_opponent_plays_its_rule_directly_and_never_becomes_a_search_teacher(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})

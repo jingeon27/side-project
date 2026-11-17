@@ -11,13 +11,14 @@ from ..sim.rules import Action
 from .improvement import improved_policy
 
 
-def training_rows(observation, result, screen, chosen, policy):
+def training_rows(observation, result, screen, chosen, policy, context=None):
     """Search only labels visited moves; card mass still belongs to the full legal set."""
     searched = np.flatnonzero(np.asarray(result["visits"]) > 0).tolist()
     rows = [result["actions"][index] for index in searched]
     available = [Action(*row) for row in observation["legalActions"]]
     retained = [available.index(row) for row in rows]
-    context = screen.read(observation, available)
+    if context is None:
+        context = screen.read(observation, available)
     state, vectors = context_features(context), action_features(context)
     biases = action_biases(context)
     masked_biases = action_biases({key: value for key, value in context.items() if key != "towers"})

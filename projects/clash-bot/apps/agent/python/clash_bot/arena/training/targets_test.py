@@ -16,6 +16,29 @@ from clash_bot.arena.training.targets import training_rows
 
 
 class SearchedTargetsTest(unittest.TestCase):
+    def test_teacher_and_saved_masked_target_use_the_same_sampled_screen(self):
+        arena = Arena(7)
+        arena.play([Action(-1)] * 2, 140)
+        observation = arena.observe(0)
+        actions = [Action(*a) for a in observation["legalActions"]]
+        policy = Policy()
+        screen = Screen(SELFPLAY.perception, np.random.default_rng(23))
+        context = screen.read(observation, actions)
+        prior = policy.read({k: v for k, v in context.items() if k != "towers"})[0]
+        result = search(
+            observation, policy, 22, simulations=16, depth=2, noise=True, observed_prior=prior
+        )
+
+        class AlreadySampled:
+            def read(self, *_args):
+                raise AssertionError("The root screen must not be sampled twice")
+
+        chosen = int(np.flatnonzero(np.array(result["visits"]) > 0)[0])
+        row = training_rows(observation, result, AlreadySampled(), chosen, policy, context=context)
+        np.testing.assert_allclose(
+            row["targetWithoutTowers"], result["target"][np.array(result["visits"]) > 0], atol=1e-6
+        )
+
     def test_unvisited_and_unsearched_actions_are_not_negative_labels(self):
         arena = Arena(1)
         arena.play([Action(-1)] * 2, 100)

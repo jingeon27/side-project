@@ -2,10 +2,28 @@ import unittest
 
 import numpy as np
 
-from clash_bot.arena.policy.projection import project_logits
+from clash_bot.arena.policy.projection import importance_priors, project_logits
 
 
 class DensePartitionTest(unittest.TestCase):
+    def test_residual_importance_preserves_card_mass_without_overweighting_sampled_tiles(self):
+        # One anchor and two samples cover a card's 300 legal tiles; wait has one.
+        prior = importance_priors([0.25] * 4, [-1, 5, 5, 5], [1, 1, 149.5, 149.5])
+        self.assertAlmostEqual(prior[0], 1 / 301)
+        self.assertAlmostEqual(sum(prior[1:]), 300 / 301)
+        np.testing.assert_allclose(prior[1:], [100 / 301] * 3)
+
+    def test_fully_evaluated_rollout_and_zero_probability_groups_are_unchanged(self):
+        for probabilities in ([0.3, 0.1, 0.6], [1, 0, 0]):
+            np.testing.assert_allclose(
+                importance_priors(probabilities, [-1, 5, 5], [1, 1, 1]), probabilities
+            )
+
+    def test_invalid_rollout_importance_is_rejected(self):
+        for weights in ([1], [1, 0.5], [1, float("nan")]):
+            with self.assertRaises(ValueError):
+                importance_priors([0.3, 0.7], [-1, 5], weights)
+
     def test_three_hundred_tiles_do_not_change_card_odds_against_one_wait(self):
         scores = np.log([0.3, *([0.7 / 300] * 300)])
         projected = np.exp(project_logits(scores, [-1, *([5] * 300)], [0, 148]))

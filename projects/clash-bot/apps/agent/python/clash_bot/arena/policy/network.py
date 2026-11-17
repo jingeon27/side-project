@@ -46,7 +46,9 @@ class Policy:
         self.metadata = metadata or {"format": FORMAT, "version": 0}
 
     def predict(self, observation, actions):
-        return self.read(decision_context(observation, actions))
+        context = decision_context(observation, actions)
+        del context["towers"]
+        return self.read(context)
 
     def read(self, context):
         """Action probabilities and value of a decision context, however it was read."""

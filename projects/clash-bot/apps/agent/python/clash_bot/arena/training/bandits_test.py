@@ -7,6 +7,18 @@ from clash_bot.arena.training.bandits import pick, root_priors, root_subset
 
 
 class CardBanditsTest(unittest.TestCase):
+    def test_exploration_retains_each_cards_original_best_placement(self):
+        actions = [Action(-1), *[Action(c, x, 0) for c in range(3) for x in range(20)]]
+        prior = np.arange(1, len(actions) + 1, dtype=float)
+        prior /= prior.sum()
+        anchors = [
+            max((i for i, a in enumerate(actions) if a.card == c), key=lambda i: prior[i])
+            for c in (-1, 0, 1, 2)
+        ]
+        for seed in range(20):
+            kept = root_subset(actions, prior, np.random.default_rng(seed), 8, True)
+            self.assertTrue(set(anchors).issubset(kept))
+
     def test_pruning_placements_does_not_inflate_wait(self):
         actions = [Action(-1), *[Action(5, x, 0) for x in range(250)]]
         prior = np.array([0.1, *[0.9 / 250] * 250])

@@ -62,10 +62,11 @@ def root_subset(actions, prior, rng, size, explore):
         return list(range(len(actions)))
     groups = grouped_indices([action.card for action in actions])
     scores = np.log(np.maximum(prior, 1e-12))
+    # 비교 기준인 각 카드의 원래 최선 위치는 잡음으로 지우지 않는다. 남는 예산만 탐색한다.
+    ranked = sorted(groups, key=lambda group: -sum(prior[i] for i in group))
+    keep = [max(group, key=lambda i: prior[i]) for group in ranked[:size]]
     if explore:
         scores = scores + rng.gumbel(size=len(scores))
-    ranked = sorted(groups, key=lambda group: -sum(prior[i] for i in group))
-    keep = [max(group, key=lambda i: scores[i]) for group in ranked[:size]]
     wait = actions.index(Action(-1)) if Action(-1) in actions else None
     if wait is not None and wait not in keep:
         keep[-1] = wait
