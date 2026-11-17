@@ -27,9 +27,9 @@ def next_version(root, league):
 
 
 def scheduled(root, league, rules, version, indexes, settings, rng):
-    """One quarter meet the fixed defender, the rest self/past policies.
+    """The champion teaches; one quarter meet the fixed defender, the rest qualified policies.
 
-    Past opponents the learner loses to more often are picked more often.
+    Past champions the current champion loses to more often are picked more often.
     """
     jobs = []
     for index in indexes:
@@ -40,11 +40,11 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
             if index % 2 == 0 or scripted
             else league["opponents"][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
         )
-        opponent = league["learner"] if selected is None else selected["version"]
+        opponent = league["champion"] if selected is None else selected["version"]
         game_id = f"train-{version}-{index}-{uuid.uuid4().hex[:8]}"
         jobs.append(
             {
-                "current": str(checkpoint(root, league["learner"])),
+                "current": str(checkpoint(root, league["champion"])),
                 "opponent": "scripted:defender" if scripted else str(checkpoint(root, opponent)),
                 "selected": None if selected is None else opponent,
                 "index": index,
@@ -140,9 +140,6 @@ def learn(control, root, league, rules, learner, version):
     )
     temporary.rename(checkpoint(root, version))
     league["learner"] = version
-    league["opponents"] = (league["opponents"] + [{"version": version, "wins": 0, "games": 0}])[-8:]
-    if not any(row["version"] == league["champion"] for row in league["opponents"]):
-        league["opponents"].insert(0, {"version": league["champion"], "wins": 0, "games": 0})
     store(root, league)
     control.report({"phase": "trained", "training": training, "learner": version})
 

@@ -116,7 +116,8 @@ def rules_identity():
                 )
             }
         ),
-        "trainingOpponent": "quarter_fixed_defender_direct_no_teacher_rows_v1",
+        "trainingActor": "champion_anchored_search_teacher_v1",
+        "trainingOpponent": "quarter_fixed_defender_qualified_pool_no_teacher_rows_v2",
         "tacticalTeacher": "paired_reactive_sampled_public_defender_v1",
         "searchPolicy": "matched_view_mass_frozen_response_bounded_updates_v5",
         "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),

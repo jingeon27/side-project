@@ -64,6 +64,10 @@ def qualify(control, workers, root, league, rules, learner, pairs):
     atomic_json(root / "evaluations" / f"v{version:06d}-e{number:06d}.json", result)
     if result["gate"]["passed"]:
         league["champion"] = version
+        if not any(row["version"] == version for row in league["opponents"]):
+            league["opponents"] = (
+                league["opponents"] + [{"version": version, "wins": 0, "games": 0}]
+            )[-8:]
         store(root, league)
         publish_champion(root, league)
         # The new champion against the fixed rule bots: an absolute progress curve.
