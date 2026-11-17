@@ -9,7 +9,7 @@ from .rules import DECKS, OBSERVATION_FORMAT, Action, deck_ids
 
 
 @lru_cache(maxsize=512)
-def draw_orders(deck, plays, opening, first, current, next_card):
+def draw_orders(deck, timeline, opening, first, current, next_card):
     hands = [opening] if opening is not None else itertools.combinations(deck, 4)
     compatible = []
     for hand in hands:
@@ -17,11 +17,16 @@ def draw_orders(deck, plays, opening, first, current, next_card):
             if opening is not None and queue[0] != first:
                 continue
             h, q = list(hand), list(queue)
-            for card in plays:
-                if card not in h:
+            pending = set()
+            for _tick, phase, card in timeline:
+                if card not in h or (phase == 0 and card in pending):
                     break
-                index = h.index(card)
-                h[index], q = q[0], q[1:] + [card]
+                if phase == 0:
+                    pending.add(card)
+                else:
+                    index = h.index(card)
+                    h[index], q = q[0], q[1:] + [card]
+                    pending.remove(card)
             else:
                 if current is None or (tuple(h) == current and q[0] == next_card):
                     compatible.append(tuple(hand) + tuple(queue))
@@ -40,9 +45,26 @@ def public_cards(observation, actor):
 def compatible_openings(observation, actor, deck_name):
     own = actor == observation["team"]
     current = observation["state"]["players"][actor] if own else None
+    # A confirmed card had to be IN HAND when the input was accepted, not merely
+    # when its delayed play ran. At a tick boundary inputs precede that tick's draws.
+    timeline = sorted(
+        entry
+        for event in observation["history"]
+        for play in event["plays"]
+        if play["team"] == actor and play["action"][0] >= 0
+        for entry in (
+            (event["tick"] - observation["delays"][actor], 0, play["action"][0]),
+            (event["tick"], 1, play["action"][0]),
+        )
+    )
+    timeline += [
+        (play["tick"] - observation["delays"][actor], 0, play["action"][0])
+        for play in observation["pending"]
+        if play["team"] == actor and play["action"][0] >= 0
+    ]
     return draw_orders(
         tuple(deck_ids(deck_name)),
-        public_cards(observation, actor),
+        tuple(sorted(timeline)),
         tuple(observation["initial_hand"]) if own else None,
         observation["initial_next"] if own else None,
         tuple(current["hand"]) if own else None,
@@ -80,6 +102,7 @@ class BeliefSampler:
             self.openings.append(pool)
         self.deck_order = [self.rng.sample(list(pool), len(pool)) for pool in self.openings]
         self.samples = 0
+        self.last_board = None
 
     def conditioned(self, into=None):
         """Try every candidate deck before repeating one, and match visible combat/forms."""
@@ -87,7 +110,8 @@ class BeliefSampler:
         limit = max(16, 2 * max(map(len, self.openings)))
         for attempt in range(1, limit + 1):
             world = self.sample(into)
-            if public_board(world.state()) == visible:
+            self.last_board = public_board(world.state())
+            if self.last_board == visible:
                 return world, attempt
         raise ValueError("Public history hypotheses cannot reproduce the visible board")
 

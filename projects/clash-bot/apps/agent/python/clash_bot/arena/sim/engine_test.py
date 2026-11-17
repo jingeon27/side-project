@@ -3,8 +3,11 @@
 import json
 import unittest
 
+import royalesim
+
 from clash_bot.arena.sim.candidates import legal_actions
 from clash_bot.arena.sim.engine import Arena, public_mana
+from clash_bot.arena.sim.mechanics import field
 from clash_bot.arena.sim.rules import FIELDS, TILE, Action, canonical, rules_identity
 
 
@@ -160,6 +163,36 @@ class NativeArenaTest(unittest.TestCase):
 
 
 class InputDelayTest(unittest.TestCase):
+    def test_overtime_input_cutoff_drops_a_pending_card_before_its_planned_tick(self):
+        arena = Arena(1, delays=(22, 22))
+        arena.battle = field(delays=(22, 22), start_tick=5990)
+        result = arena.play([Action(0, 6 * TILE, 6 * TILE), Action(-1)], 40)
+        self.assertEqual(result[0][1], 0)
+        receipt = arena.battle.step_commands_run()[0]
+        self.assertLess(receipt[0], 6012)
+        self.assertEqual(royalesim.DEPLOY_REASONS[receipt[-1]], "GAME_OVER")
+        self.assertEqual(arena.history, [])
+        self.assertEqual(arena.pending, [])
+
+    def test_a_skill_dropped_when_its_hero_dies_is_not_a_public_elixir_spend(self):
+        arena = Arena(1, delays=(22, 22))
+        arena.battle = field(
+            units=[("IceWizardHero", 0, 9, 14, 1), ("Skeleton", 1, 9, 14.6, -1)],
+            delays=(22, 22),
+        )
+        self.assertEqual(arena.battle.check_deploy(0, 4, 0, 0), 0)
+        # Accepted now, but the 1-HP hero dies before the delayed press executes.
+        results = arena.play([Action(-2), Action(-1)], 40)
+        self.assertEqual(results[0][1], 0)
+        runs = arena.battle.step_commands_run()
+        self.assertEqual(len(runs), 1)
+        self.assertNotEqual(runs[0][-1], 0)
+        public_skills = [
+            play for event in arena.history for play in event["plays"] if play["action"][0] == -2
+        ]
+        self.assertEqual(public_skills, [])
+        self.assertEqual(arena.state()["players"][0]["elixir_milli"], 10000)
+
     def accepted(self, arena, team):
         play = next(Action(*row) for row in arena.observe(team)["legalActions"] if row[0] >= 0)
         actions = [Action(-1), Action(-1)]

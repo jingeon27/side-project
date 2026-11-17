@@ -5,10 +5,46 @@ import unittest
 from clash_bot.arena.sim.belief import BeliefSampler, compatible_openings
 from clash_bot.arena.sim.candidates import legal_actions
 from clash_bot.arena.sim.engine import Arena, public_board
-from clash_bot.arena.sim.rules import DECKS, TILE, Action, deck_ids
+from clash_bot.arena.sim.rules import CARD_ID, DECKS, TILE, Action, deck_ids
 
 
 class BeliefTest(unittest.TestCase):
+    def test_fifo_hypotheses_require_the_card_at_acceptance_before_the_previous_draw(self):
+        names = [
+            "Log",
+            "IceSpirits",
+            "Skeletons",
+            "Musketeer",
+            "IceGolemite",
+            "Cannon",
+            "HogRider",
+            "Fireball",
+        ]
+        own = [CARD_ID[name] for name in names]
+        arena = Arena(
+            1, [deck_ids("counterpush"), own], ["counterpush", "hog_cycle"], delays=(24, 21)
+        )
+        arena.play([Action(-1)] * 2, 100)
+        for name, x, y, ticks in [
+            ("Log", 13.5, 20.5, 20),
+            ("Skeletons", 2.5, 25.5, 20),
+            ("IceSpirits", 17.5, 23.5, 20),
+            ("Cannon", 13.5, 24.5, 80),
+            ("IceGolemite", 3.5, 30.5, 100),
+        ]:
+            results = arena.play(
+                [Action(-1), Action(CARD_ID[name], round(x * TILE), round(y * TILE))], ticks
+            )
+            self.assertEqual(results[0][1], 0)
+        # Swapping Cannon's draw later can fit the final hand but makes it absent
+        # at the tick its input was accepted. Such a world must not enter search.
+        orders = compatible_openings(arena.observe(1), 1, "hog_cycle")
+        self.assertEqual(orders, (tuple(own),))
+        for team in (0, 1):
+            for seed in range(5):
+                sampled, _ = BeliefSampler(arena.observe(team), seed).conditioned()
+                self.assertEqual(public_board(sampled.state()), public_board(arena.state()))
+
     def test_belief_world_replays_public_plays_and_preserves_our_known_hand(self):
         arena = Arena(7)
         arena.play([Action(-1)] * 2, 100)

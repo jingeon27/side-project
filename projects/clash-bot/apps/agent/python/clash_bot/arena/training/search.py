@@ -10,10 +10,13 @@ import time
 
 import numpy as np
 
+from clash_bot.files import atomic_json
+from clash_bot.paths import DATA_DIR
+
 from ..sim.belief import BeliefSampler
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
-from ..sim.rules import Action, command
+from ..sim.rules import CARDS, Action, command, digest, rules_identity
 
 
 def terminal(state, team):
@@ -103,7 +106,22 @@ def search(
     workspace = workspace or Workspace(particles)
     worlds, attempts = [], 0
     for index in range(particles):
-        world, count = sampler.conditioned(into=workspace.worlds[index])
+        try:
+            world, count = sampler.conditioned(into=workspace.worlds[index])
+        except ValueError as error:
+            path = DATA_DIR / "arena/reconstruction-failures" / f"{digest(observation)}.json"
+            atomic_json(
+                path,
+                {
+                    "format": "clash-public-root-failure-v1",
+                    "rulesID": rules_identity()["id"],
+                    "cards": CARDS,
+                    "observation": observation,
+                    "deckHypotheses": [list(pool) for pool in sampler.openings],
+                    "lastReconstructedBoard": sampler.last_board,
+                },
+            )
+            raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
         attempts += count
         worlds.append(world)
     team = observation["team"]

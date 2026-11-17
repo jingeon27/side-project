@@ -210,18 +210,40 @@ class Arena:
                 }
             )
         after = self.state()
+        # Accepted is not executed: a hero can die or a placement can stop fitting while
+        # the command waits. Charge only the native execution receipt, not a hand heuristic.
+        # One pending card/button per side is enforced by the native core. A terminal
+        # drop is receipted at GAME_OVER, which can be EARLIER than its planned tick.
+        receipts = {
+            (team, kind, what): (tick, reason)
+            for tick, team, kind, what, reason in self.battle.step_commands_run()
+        }
+
+        def receipt_key(play):
+            card = play["action"][0]
+            return play["team"], "ability" if card == -2 else "deploy", 4 if card == -2 else card
+
+        def executed(play):
+            if self.delays[play["team"]] == 0:
+                return True  # Immediate accepted commands already executed in step's result.
+            tick, reason = receipts[receipt_key(play)]
+            if reason == 0 and tick != play["tick"]:
+                raise ValueError("Native command executed on an unexpected tick")
+            return reason == 0
+
+        def finished(play):
+            return play["tick"] < after["tick"] or receipt_key(play) in receipts
+
         due = sorted(
-            (play for play in self.pending if play["tick"] < after["tick"]),
+            (play for play in self.pending if finished(play)),
             key=lambda play: (play["tick"], play["team"]),
         )
-        self.pending = [play for play in self.pending if play["tick"] >= after["tick"]]
+        self.pending = [play for play in self.pending if not finished(play)]
         for tick, group in itertools.groupby(due, key=lambda play: play["tick"]):
-            # A delayed card that no longer fits is dropped by the engine and stays in hand.
             plays = [
                 {key: play[key] for key in ("team", "action", "cost")}
                 for play in group
-                if play["action"][0] < 0
-                or play["action"][0] not in after["players"][play["team"]]["hand"]
+                if executed(play)
             ]
             if plays:
                 self.history.append({"tick": tick, "plays": plays})

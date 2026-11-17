@@ -117,6 +117,8 @@ def rules_identity():
         "opponentDeck": "public_play_inferred_pool_prior",
         "evaluationSuite": "live_mirror_and_pool_v2",
         "tacticalActors": "own_live_deck_any_opponent_v1",
+        "publicLedger": "confirmed_command_execution_v2",
+        "hiddenDraws": "accept_before_execution_fifo_v2",
         "selfplay": SPEC["selfplay"],
         "liveCommandDelayTicks": SPEC["liveCommandDelayTicks"],
         # Policy inputs read cards through this catalogue; a new one is a new rule set.

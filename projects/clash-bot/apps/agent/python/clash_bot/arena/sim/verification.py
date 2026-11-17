@@ -52,6 +52,28 @@ CHECKS = {
 }
 
 
+def cancelled_skill():
+    arena = Arena(17, delays=(22, 22))
+    arena.battle = mechanics.field(
+        units=[("IceWizardHero", 0, 9, 14, 1), ("Skeleton", 1, 9, 14.6, -1)],
+        delays=(22, 22),
+    )
+    accepted = arena.play([Action(-2), Action(-1)], 40)
+    receipts = arena.battle.step_commands_run()
+    return {
+        "passed": accepted[0][1] == 0
+        and receipts[0][-1] != 0
+        and arena.history == []
+        and arena.state()["players"][0]["elixir_milli"] == 10000,
+        "accepted": accepted,
+        "executedOrDropped": receipts,
+        "publicSpends": len(arena.history),
+    }
+
+
+CHECKS["cancelledDelayedSkill"] = cancelled_skill
+
+
 def verify(data_dir):
     rules = rules_identity()
     checks = {}

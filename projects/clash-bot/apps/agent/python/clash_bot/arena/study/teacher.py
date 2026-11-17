@@ -51,12 +51,7 @@ class Teacher:
         defensive = family in ("scenario-0", "scenario-1", "scenario-2") or own_threat
 
         def finish(action):
-            self.scratch.battle.load(snapshot)
-            self.scratch.history = root.history.copy()
-            self.scratch.initial_hands, self.scratch.initial_next = (
-                root.initial_hands,
-                root.initial_next,
-            )
+            self.scratch.adopt(snapshot, root)
             commands = [Action(-1), Action(-1)]
             commands[team] = action
             outcome = self.scratch.play(commands, horizon)

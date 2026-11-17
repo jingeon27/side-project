@@ -1,4 +1,8 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -9,6 +13,24 @@ from clash_bot.arena.training.search import Workspace, search
 
 
 class PublicSearchTest(unittest.TestCase):
+    def test_a_failed_reconstruction_preserves_public_evidence_without_inventing_a_world(self):
+        observation = Arena(1).observe(0)
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("clash_bot.arena.training.search.DATA_DIR", Path(directory)),
+            patch(
+                "clash_bot.arena.training.search.BeliefSampler.conditioned",
+                side_effect=ValueError("incompatible"),
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "evidence"):
+                search(observation, Policy(), 12)
+            path = next((Path(directory) / "arena/reconstruction-failures").glob("*.json"))
+            recorded = json.loads(path.read_text())
+        self.assertEqual(recorded["observation"]["decks"], ["counterpush", None])
+        self.assertNotIn("hand", recorded["observation"]["state"]["players"][1])
+        self.assertIsNone(recorded["lastReconstructedBoard"])
+
     def test_hidden_enemy_hand_changes_neither_features_nor_search(self):
         own = list(range(8))
         first, second = Arena(1, [own, own]), Arena(9, [own, own[::-1]])

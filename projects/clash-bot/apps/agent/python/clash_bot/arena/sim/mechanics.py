@@ -5,8 +5,11 @@ import json
 from .rules import CARD_ID, FIELDS, TILE, deck_ids, forms_of, new_battle
 
 
-def field(own="counterpush", enemy="counterpush", first=None, units=()):
+def field(
+    own="counterpush", enemy="counterpush", first=None, units=(), delays=(0, 0), start_tick=100
+):
     battle = new_battle()
+    battle.set_command_delay_ticks(*delays)
     order = deck_ids(own)
     if first is not None:
         order = [CARD_ID[first], *[card for card in order if card != CARD_ID[first]]]
@@ -15,7 +18,7 @@ def field(own="counterpush", enemy="counterpush", first=None, units=()):
         seed=17,
         decks=decks,
         shuffle=0,
-        start_tick=100,
+        start_tick=start_tick,
         elixir_milli=[10000, 10000],
         tower_hp=None,
         spawns=[],

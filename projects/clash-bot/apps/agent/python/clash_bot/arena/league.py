@@ -60,7 +60,7 @@ def run(
     lock.flush()
     state = {**owner, "phase": "initializing", "completedGenerations": 0, "completedGames": 0}
     interrupted = []
-    previous = {
+    signal_handlers = {
         sig: signal.signal(sig, lambda *_: interrupted.append(True))
         for sig in (signal.SIGINT, signal.SIGTERM)
     }
@@ -263,7 +263,7 @@ def run(
         report({"phase": "failed", "error": str(error)})
         raise
     finally:
-        for sig, handler in previous.items():
+        for sig, handler in signal_handlers.items():
             signal.signal(sig, handler)
         fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
         lock.close()
