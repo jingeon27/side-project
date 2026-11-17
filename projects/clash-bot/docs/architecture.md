@@ -7,6 +7,7 @@ apps/agent/
   src/                         TypeScript 실행기 (의존 방향은 eslint.config.ts가 검사)
     core/                      실행 환경과 무관한 게임 규칙
       cards.ts, deck.ts        카드 정보와 미러전 덱
+      card-catalogue.ts        엔진 수치표로 만든 카드·필드 오브젝트 특징(contracts/card-catalogue.json)
       geometry.ts, profile.ts  368×652 화면 좌표와 보정 프로필
       knowledge.ts             카드 수치·진화와 영웅 조건
       battle/                  FIFO, 엘릭서, 필드·생성물·진화 상태, 인식 결과와 상대 관찰 형식
@@ -31,10 +32,10 @@ apps/agent/
         features.py            고정 특징과 마지막 MLP 어댑터 연결
         episodes.py            결과·사용 확인·학습 자료 검증
         learning_policy.py     LoRA, 목적 함수, 체크포인트
-      arena/                   네이티브 전투·탐색·리그, 판단 문맥(context)·빠른 정책 특징(fast_features)·표본 검증(samples)
+      arena/                   네이티브 전투·탐색·리그, 판단 문맥(context)·빠른 정책 특징(fast_features)·카드 카탈로그(catalogue, 생성은 catalogue_build)·표본 검증(samples)
       perception/              CPU 인식·ONNX 변환
     requirements/              공통·모델·인식·변환·개발 의존성 고정
-  contracts/                   양쪽 언어가 읽는 모델·규칙·판단·빠른 정책(fast-policy.json) JSON
+  contracts/                   양쪽 언어가 읽는 모델·규칙·판단·빠른 정책(fast-policy.json)·카드 카탈로그(card-catalogue.json) JSON
   assets/counterpush/          계정 정보가 없는 시각 참조, 손패는 manifest로 검증해 직접 읽음
   test-fixtures/               녹화 화면·공유 계약 회귀 자료
   pyproject.toml               Python 직접 의존성·Ruff 설정

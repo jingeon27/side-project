@@ -6,17 +6,22 @@ import { clamp, range, sum, sumBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
+import {
+  BODY_SIZE,
+  bodyVector,
+  CARD_CATALOGUE,
+  CARD_SIZE,
+  catalogueCard,
+  isCatalogueBody,
+} from '../card-catalogue.ts';
 import type { DecisionAction, DecisionContext } from './decision-v3.ts';
 import { towerDefense, type TowerDefenseInput } from './tower-defense.ts';
 
 // 판단 문맥의 특징 배치다. Python(clash_bot.arena.fast_features)이 같은 계약으로 같은 숫자를 만든다.
+// 카드와 필드 오브젝트는 이름 칸이 아니라 카드 카탈로그의 특징으로 들어가 덱이 바뀌어도 가중치 모양이 같다.
 export const FAST_POLICY = z
   .strictObject({
-    format: z.literal('clash-fast-policy-v2'),
-    cards: z.array(z.string()).length(8),
-    spells: z.array(z.string()),
-    bodies: z.array(z.string()).min(1),
-    effects: z.array(z.string()),
+    format: z.literal('clash-fast-policy-v3'),
     grid: z.strictObject({
       columns: z.int().positive(),
       rows: z.int().positive(),
@@ -29,24 +34,33 @@ export const FAST_POLICY = z
   })
   .parse(JSON.parse(readFileSync(new URL('../../../contracts/fast-policy.json', import.meta.url), 'utf8')));
 
-const { cards, bodies, effects, grid, hidden, attention } = FAST_POLICY;
+const { grid, hidden, attention } = FAST_POLICY;
 const CELLS = grid.columns * grid.rows;
 const OFFSET = {
   towersKnown: 5,
   ownTowers: 6,
   enemyTowers: 9,
   hand: 12,
-  next: 12 + 4 * cards.length,
-  units: 12 + 5 * cards.length,
-  effects: 12 + 5 * cards.length + 2 * bodies.length * CELLS,
+  next: 12 + CARD_SIZE,
+  field: 12 + 2 * CARD_SIZE,
 };
-export const STATE_SIZE = OFFSET.effects + 2 * effects.length * CELLS;
-export const ACTION_SIZE = cards.length + 8;
+export const STATE_SIZE = OFFSET.field + 2 * BODY_SIZE * CELLS;
+// [대기, 능력, 카드, 비용, x, y, x², y²]와 카드 특징이다.
+export const ACTION_SIZE = 8 + CARD_SIZE;
 
 // Python의 int()처럼 0 쪽으로 버린 뒤 격자 안으로 자른다.
 const cell = (x: number, y: number) =>
   clamp(Math.trunc(y / (grid.height / grid.rows)), 0, grid.rows - 1) * grid.columns +
   clamp(Math.trunc(x / (grid.width / grid.columns)), 0, grid.columns - 1);
+
+// 오브젝트의 특징을 칸에 더한다. 여러 오브젝트가 겹친 칸은 특징마다 1에서 멈춘다.
+function place(vector: Float64Array, side: number, body: number[], x: number, y: number) {
+  const start = OFFSET.field + side * BODY_SIZE * CELLS + cell(x, y);
+  body.forEach((value, channel) => {
+    const index = start + channel * CELLS;
+    vector[index] = Math.min(1, vector[index]! + value);
+  });
+}
 
 export function contextFeatures(context: DecisionContext) {
   const vector = new Float64Array(STATE_SIZE);
@@ -62,48 +76,37 @@ export function contextFeatures(context: DecisionContext) {
     vector.set(context.towers.own, OFFSET.ownTowers);
     vector.set(context.towers.enemy, OFFSET.enemyTowers);
   }
-  context.hand.slice(0, 4).forEach((card, slot) => {
-    if (card !== null && cards.includes(card))
-      vector[OFFSET.hand + slot * cards.length + cards.indexOf(card)] = 1;
-  });
-  const upcoming = (context.next ?? []).filter((card) => cards.includes(card));
-  for (const card of upcoming) {
-    const index = OFFSET.next + cards.indexOf(card);
-    vector[index] = vector[index]! + 1 / upcoming.length;
+  // 손패는 네 칸 카드 특징의 합을 4로 나눈 묶음이다.
+  for (const card of context.hand.slice(0, 4)) {
+    catalogueCard(card)?.features.forEach((value, index) => {
+      vector[OFFSET.hand + index] = vector[OFFSET.hand + index]! + value / 4;
+    });
   }
+  const upcoming = (context.next ?? []).flatMap((card) => catalogueCard(card) ?? []);
+  for (const card of upcoming)
+    card.features.forEach((value, index) => {
+      vector[OFFSET.next + index] = vector[OFFSET.next + index]! + value / upcoming.length;
+    });
   [context.own, context.enemy].forEach((rows, side) => {
-    for (const [kind, x, y] of rows) {
-      const channel = side * bodies.length + bodies.indexOf(bodies.includes(kind) ? kind : '?');
-      const index = OFFSET.units + channel * CELLS + cell(x, y);
-      vector[index] = Math.min(1, vector[index]! + 0.5);
-    }
+    for (const [kind, x, y] of rows) place(vector, side, bodyVector(kind), x, y);
   });
-  for (const [side, card, x, y] of context.effects ?? []) {
-    if (!effects.includes(card)) continue;
-    const channel = (side === 'blue' ? 0 : 1) * effects.length + effects.indexOf(card);
-    vector[OFFSET.effects + channel * CELLS + cell(x, y)] = 1;
-  }
+  for (const [side, card, x, y] of context.effects ?? [])
+    if (isCatalogueBody(card)) place(vector, side === 'blue' ? 0 : 1, bodyVector(card), x, y);
   return vector;
 }
 
-// [카드 8칸, 대기, 능력, 비용, x, y, x², y², 주문]. 대기와 능력은 위치가 없다.
-const actionVector = ([, kind, card, cost, x, y]: DecisionAction) =>
-  Float64Array.from([
-    ...cards.map((name) => (kind === 'card' && name === card ? 1 : 0)),
-    kind === 'wait' ? 1 : 0,
-    kind === 'ability' ? 1 : 0,
-    cost / 10,
-    ...match(kind)
-      .with('card', () => [
-        x / 18,
-        y / 32,
-        (x / 18) ** 2,
-        (y / 32) ** 2,
-        card !== null && FAST_POLICY.spells.includes(card) ? 1 : 0,
-      ])
-      .with('wait', 'ability', () => [0, 0, 0, 0, 0])
+const NO_CARD: number[] = Array.from({ length: CARD_SIZE }, () => 0);
+// 대기는 카드가 없고, 능력은 영웅 카드의 특징을 갖지만 위치가 없다.
+const actionVector = ([, kind, card, cost, x, y]: DecisionAction) => {
+  const attributes = catalogueCard(card)?.features ?? NO_CARD;
+  return Float64Array.from(
+    match(kind)
+      .with('card', () => [0, 0, 1, cost / 10, x / 18, y / 32, (x / 18) ** 2, (y / 32) ** 2, ...attributes])
+      .with('ability', () => [0, 1, 0, cost / 10, 0, 0, 0, 0, ...attributes])
+      .with('wait', () => [1, 0, 0, cost / 10, 0, 0, 0, 0, ...NO_CARD])
       .exhaustive(),
-  ]);
+  );
+};
 
 export const actionFeatures = (context: DecisionContext) => context.actions.map(actionVector);
 
@@ -126,6 +129,7 @@ const policyFileSchema = z.looseObject({
   stateSize: z.literal(STATE_SIZE),
   actionSize: z.literal(ACTION_SIZE),
   weightsSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  catalogue: z.string().regex(/^[a-f0-9]{64}$/),
   version: z.int().nonnegative().optional(),
   rulesID: z.string().optional(),
   weights: z.record(
@@ -194,6 +198,11 @@ export class FastPolicy {
 
   static async load(path: string) {
     const file = policyFileSchema.parse(JSON.parse(await readFile(path, 'utf8')));
+    // 다른 카드 카탈로그로 학습한 가중치는 같은 카드를 다른 숫자로 읽는다.
+    if (file.catalogue !== CARD_CATALOGUE.id)
+      throw new Error(
+        `${path}: 빠른 정책이 학습한 카드 카탈로그(${file.catalogue.slice(0, 12)})가 현재 계약(${CARD_CATALOGUE.id.slice(0, 12)})과 다릅니다.`,
+      );
     if (Object.keys(file.weights).toSorted().join() !== WEIGHT_NAMES.join())
       throw new Error(`${path}: 빠른 정책의 가중치 이름이 계약과 다릅니다.`);
     const weights = Object.fromEntries(

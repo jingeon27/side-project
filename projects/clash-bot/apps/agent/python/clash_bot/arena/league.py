@@ -119,10 +119,15 @@ def parent_champion(parent):
     return Policy.load(checkpoint(parent, league.champion), league.rulesID)
 
 
+def catalogue_of(root):
+    """The card catalogue this league's rule set was created with (its rules.json)."""
+    return json.loads((Path(root) / "rules.json").read_text())["catalogue"]
+
+
 def publish_champion(root, league):
     """Write the champion's live policy where `counterpush play` reads it."""
     policy = Policy.load(checkpoint(root, league["champion"]), league["rulesID"])
-    atomic_json(Path(root) / "champion-policy.json", policy.live(), compact=True)
+    atomic_json(Path(root) / "champion-policy.json", policy.live(catalogue_of(root)), compact=True)
 
 
 def export_policy(root, version):
@@ -130,7 +135,7 @@ def export_policy(root, version):
     league = LeagueState.model_validate_json((Path(root) / "league.json").read_text())
     policy = Policy.load(checkpoint(root, version), league.rulesID)
     path = Path(root) / "policies" / f"v{version:06d}.json"
-    atomic_json(path, policy.live(), compact=True)
+    atomic_json(path, policy.live(catalogue_of(root)), compact=True)
     return {"policy": str(path), "version": version, "weightsSHA256": policy.checksum()}
 
 

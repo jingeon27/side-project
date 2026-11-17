@@ -48,7 +48,7 @@ yarn workspace @side/clash-bot counterpush stop
 
 ## 실시간 빠른 정책
 
-자가대국 리그의 정책·가치 네트워크(약 82만 매개변수, 6×16 격자)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습하고, 챔피언이 바뀔 때마다 실시간 실행용 `champion-policy.json`을 게시합니다. `counterpush play`는 이 정책으로 실제 Counterpush 경기를 controller 4로 둡니다. 판단은 실행기 Node 프로세스 안에서 하며 이 Mac에서 한 번에 약 0.14ms였습니다(후보 4개, 화면 판독 시간 제외). Qwen 모델을 올리지 않고 학습하지도 않으며, 경기 기록과 결과 한 줄을 `.data/counterpush/control/fast-play.jsonl`에 남깁니다.
+자가대국 리그의 정책·가치 네트워크(약 82만 매개변수, 6×16 격자)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습하고, 카드와 필드 오브젝트를 이름 칸이 아니라 카드 카탈로그의 특징(엘릭서·체력·DPS·사거리·속도·공중/건물 대상·범위·지속 시간 등)으로 읽습니다. 그래서 덱이 바뀌어도 가중치 모양이 같습니다. 이 정책은 챔피언이 바뀔 때마다 실시간 실행용 `champion-policy.json`을 게시합니다. `counterpush play`는 이 정책으로 실제 Counterpush 경기를 controller 4로 둡니다. 판단은 실행기 Node 프로세스 안에서 하며 이 Mac에서 한 번에 약 0.14ms였습니다(후보 4개, 화면 판독 시간 제외). Qwen 모델을 올리지 않고 학습하지도 않으며, 경기 기록과 결과 한 줄을 `.data/counterpush/control/fast-play.jsonl`에 남깁니다.
 
 ```sh
 yarn workspace @side/clash-bot arena start --background --hours 0
@@ -59,7 +59,9 @@ yarn workspace @side/clash-bot counterpush stop
 
 체크포인트에는 압축 가중치만 저장합니다. 다른 버전으로 두려면 `arena policy --version <번호>`로 리그의 `policies/v<번호>.json`을 만든 뒤 `--policy <파일>`로 지정합니다. 후보는 시뮬레이터의 합법 행동과 같은 규칙으로 카드별 최대 6곳을 만들며, 엘릭서 8 이상에서도 대기를 유지해 자원 보존과 사용을 비교합니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다. 화면에서 아직 타워 체력을 읽지 않으므로 학습 표본의 절반에서 타워 체력을 가려, 타워 체력 없이도 판단하게 합니다.
 
-자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast2`에 있습니다. 밸런스 패치로 규칙 ID만 바뀌면 새 리그는 직전에 실행한 리그의 챔피언 가중치에서 시작하고, 경기·리플레이·평가는 섞지 않습니다. 정책 형식이나 네트워크 구조가 바뀌면 이전 리그를 읽지 않고 처음부터 학습합니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
+카드 카탈로그(`contracts/card-catalogue.json`)는 `arena catalogue`가 고정한 엔진 수치표로 만들며, 엔진이 시뮬레이션할 수 있는 카드 143장과 필드 오브젝트(유닛, 진화·영웅형, 주문 효과)의 0~1 특징을 담습니다. 값은 클라이언트 표의 근거값이며 엔진의 정확한 전투 규칙은 아닙니다. 내용이 바뀌면 id(내용 해시)가 바뀌고, 실시간 실행은 다른 카탈로그로 학습한 정책 파일을 읽지 않습니다.
+
+자가대국 리그는 `.data/arena/leagues/<규칙 ID>-fast3`에 있습니다. 규칙 ID에는 카탈로그 id도 들어갑니다. 밸런스 패치로 규칙 ID만 바뀌면 새 리그는 직전에 실행한 리그의 챔피언 가중치에서 시작하고, 경기·리플레이·평가는 섞지 않습니다. 정책 형식이나 특징 목록이 바뀌면 이전 리그를 읽지 않고 처음부터 학습합니다. v2(`-fast2`) 리그는 읽지 않으므로 v3 리그는 처음부터 학습합니다. 실력은 자가대국 규모와 시뮬레이터·Counterpush 규칙 차이에 달려 있으며, 실전 우위는 Counterpush 경기 기록으로 따로 확인해야 합니다.
 
 ## 패배 원인 분석과 학습 곡선
 

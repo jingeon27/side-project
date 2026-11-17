@@ -4,7 +4,7 @@ import unittest
 
 from clash_bot.arena.context import decision_context
 from clash_bot.arena.curriculum import scenario
-from clash_bot.arena.engine import FIELDS, TILE
+from clash_bot.arena.engine import FIELDS, TILE, Action, Arena
 
 
 class PublicSpellPhaseTest(unittest.TestCase):
@@ -68,6 +68,20 @@ class PublicSpellPhaseTest(unittest.TestCase):
         overlapping = copy.deepcopy(observation)
         overlapping["state"]["spells"].append(observation["state"]["spells"][0].copy())
         self.assertTrue(all(row[4] is None for row in decision_context(overlapping, [])["effects"]))
+
+
+class ScreenNamesTest(unittest.TestCase):
+    def test_simulated_furnace_and_hero_ability_read_as_the_screen_names_them(self):
+        deck = [4, 1, 5, 6, 0, 2, 3, 7]
+        arena = Arena(1, [deck, deck])
+        arena.play([Action(-1)] * 2, 100)
+        arena.play([Action(1, 6 * TILE, 5 * TILE), Action(-1)], 1)
+        arena.play([Action(4, 12 * TILE, 6 * TILE), Action(-1)], 60)
+        context = decision_context(arena.observe(0), [Action(-1), Action(-2)])
+        # The engine's Furnace record (Furnace_rework) used to read as an unknown "?" body.
+        self.assertIn("furnace", [row[0] for row in context["own"]])
+        self.assertNotIn("?", [row[0] for row in context["own"]])
+        self.assertEqual(context["actions"][1][1:4], ["ability", "ice_wizard", 2])
 
 
 if __name__ == "__main__":

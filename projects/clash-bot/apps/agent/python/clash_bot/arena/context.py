@@ -9,32 +9,14 @@ import math
 from functools import cache
 
 import numpy as np
-from more_itertools import first_true, partition
+from more_itertools import partition
 
-from .engine import FIELDS, TILE, canonical, new_battle
+from .catalogue import current
+from .engine import CARDS, FIELDS, TILE, canonical, new_battle
 
-ALIASES = (
-    "barbarian_barrel",
-    "furnace",
-    "goblin_hut",
-    "graveyard",
-    "ice_wizard",
-    "knight",
-    "poison",
-    "skeletons",
-)
-COSTS = (2, 4, 4, 5, 3, 3, 4, 1)
-# Engine unit names to the screen's body names. Order matters: "firespirithut" before "firespirit".
-BODY_PATTERNS = (
-    ("firespirithut", "furnace"),
-    ("goblinhut", "goblin_hut"),
-    ("icewizard", "ice_wizard"),
-    ("knight", "knight"),
-    ("firespirit", "fire_spirit"),
-    ("speargoblin", "spear_goblin"),
-    ("skeleton", "skeleton"),
-    ("barbarian", "barbarian"),
-)
+CATALOGUE = current()
+# The screen's card names by engine catalogue id ("BarbLog" -> "barbarian_barrel").
+NAMES = tuple(CATALOGUE.card_name(engine) for engine in CARDS)
 
 
 @cache
@@ -43,8 +25,12 @@ def unit_types():
 
 
 def body(kind):
-    name = kind.lower()
-    return first_true(BODY_PATTERNS, (None, "?"), lambda pattern: pattern[0] in name)[1]
+    """The screen's body name of an engine unit type; evolved and hero forms read as the base."""
+    return CATALOGUE.catalogue.units.get(kind, "?")
+
+
+def name(card):
+    return NAMES[card] if card >= 0 else None
 
 
 def tower_fractions(player):
@@ -56,14 +42,17 @@ def tile(x, y, team):
     return [round(value, 1) for value in canonical(x / TILE, y / TILE, team)]
 
 
-def action_row(index, action, team):
+def action_row(index, action, team, player):
     match action.card:
         case -1:
             kind, card, cost = "wait", None, 0
         case -2:
-            kind, card, cost = "ability", "ice_wizard", 2
+            # [ready, ?, cost, card id, ?]: the hero card that owns the ability and its price.
+            _ready, _state, cost, owner, *_rest = player["abilities"][0]
+            kind, card = "ability", NAMES[owner]
         case played:
-            kind, card, cost = "card", ALIASES[played], COSTS[played]
+            kind, card = "card", NAMES[played]
+            cost = CATALOGUE.card(card).elixir
     return [chr(65 + index), kind, card, cost, *tile(action.x, action.y, team)]
 
 
@@ -100,7 +89,7 @@ def decision_context(observation, actions, types=None):
         if play["team"] != team and play["action"][0] >= 0
     ]
     cycle = [
-        [ALIASES[card], 4 - index, 4 - index]
+        [NAMES[card], 4 - index, 4 - index]
         for index, card in enumerate(reversed(public_plays[-4:]))
     ]
     bodies = [row for row in state["entities"] if row[FIELDS["card_id"]] >= 0]
@@ -154,28 +143,29 @@ def decision_context(observation, actions, types=None):
             )
         return result
 
+    # Lingering areas only (poison, graveyard): the screen does not see a flying or rolling hit.
     effects = [
         [
             "blue" if row[0] == team else "red",
-            ALIASES[row[1]],
+            NAMES[row[1]],
             *tile(row[3], row[4], team),
             public_spell_age(observation, row),
         ]
         for row in state["spells"]
-        if row[1] in (3, 6)
+        if CATALOGUE.lingering(NAMES[row[1]])
     ]
     return {
-        "hand": [ALIASES[card] for card in own["hand"]],
+        "hand": [name(card) for card in own["hand"]],
         "elixir": round(own["elixir_milli"] / 1000, 1),
         "enemyElixir": {"min": enemy["elixir_range"][0], "max": enemy["elixir_range"][1]},
         "enemyCycle": cycle,
-        "next": [ALIASES[own["next_card"]]],
+        "next": [NAMES[own["next_card"]]] if own["next_card"] >= 0 else [],
         "own": sorted(units(ours), key=lambda row: -row[2])[:5],
         "enemy": sorted(units(theirs), key=lambda row: row[2])[:8],
         "bodies": {"own": detailed(ours, True), "enemy": detailed(theirs, False)},
         "effects": effects[:4],
         "skill": "ready" if own["abilities"] and own["abilities"][0][0] else "not_visible",
-        "actions": [action_row(index, action, team) for index, action in enumerate(actions)],
+        "actions": [action_row(index, action, team, own) for index, action in enumerate(actions)],
         "clock": state["tick"] / 20,
         "towers": {"own": tower_fractions(own), "enemy": tower_fractions(enemy)},
     }

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from clash_bot.arena.catalogue import current
 from clash_bot.arena.engine import Action, Arena
 from clash_bot.arena.fast_features import checksum
 from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
@@ -16,7 +17,8 @@ from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import replay_samples
 from clash_bot.arena.storage import read_episode, replay_path, write_episode, write_replay
 
-RULES = {"id": "r" * 64}
+CATALOGUE = current().id
+RULES = {"id": "r" * 64, "catalogue": CATALOGUE}
 
 
 class LeagueTest(unittest.TestCase):
@@ -45,7 +47,7 @@ class LeagueTest(unittest.TestCase):
     def test_a_new_rule_set_starts_from_the_previous_champion(self):
         with tempfile.TemporaryDirectory() as directory:
             previous = Path(directory) / f"old-{LEAGUE_KEY}"
-            old = {"id": "o" * 64}
+            old = {"id": "o" * 64, "catalogue": CATALOGUE}
             league = initialize(previous, old)
             champion = Policy(seed=9, metadata={"version": 1, "rulesID": old["id"]})
             champion.save(checkpoint(previous, 1), {"role": "qualified_champion"})
@@ -69,7 +71,7 @@ class LeagueTest(unittest.TestCase):
     def test_a_league_of_another_policy_format_is_not_inherited(self):
         with tempfile.TemporaryDirectory() as directory:
             previous = Path(directory) / "old-fast1"
-            initialize(previous, {"id": "o" * 64})
+            initialize(previous, {"id": "o" * 64, "catalogue": CATALOGUE})
             root = Path(directory) / f"new-{LEAGUE_KEY}"
             initialize(root, RULES, parent=previous)
             start = Policy.load(checkpoint(root, 0), RULES["id"])

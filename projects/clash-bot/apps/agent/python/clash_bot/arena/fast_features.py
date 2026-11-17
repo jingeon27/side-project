@@ -1,8 +1,10 @@
 """Feature vectors of the public decision context; the TypeScript runtime computes the same numbers.
 
 The context is the decision-v3 description that both the live screen and the simulator produce.
-Tower hit points are optional: the live screen does not read them yet, so training hides them for
-part of the samples and the network also learns to act without them.
+Cards and field bodies enter through their attribute vectors in contracts/card-catalogue.json, not
+one slot per name: the weights keep their shape for any deck, and a balance patch moves numbers.
+Tower hit points are optional: the live screen does not always read them, so training hides them
+for part of the samples and the network also learns to act without them.
 """
 
 import hashlib
@@ -10,9 +12,11 @@ import math
 from typing import Literal
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveFloat, PositiveInt
 
 from clash_bot.paths import CONTRACTS_DIR
+
+from .catalogue import current
 
 
 class Grid(BaseModel):
@@ -29,11 +33,7 @@ class FastPolicySpec(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    format: Literal["clash-fast-policy-v2"]
-    cards: tuple[str, ...] = Field(min_length=8, max_length=8)
-    spells: tuple[str, ...]
-    bodies: tuple[str, ...] = Field(min_length=1)
-    effects: tuple[str, ...]
+    format: Literal["clash-fast-policy-v3"]
     grid: Grid
     clockSeconds: PositiveFloat
     hidden: PositiveInt
@@ -41,14 +41,17 @@ class FastPolicySpec(BaseModel):
 
 
 SPEC = FastPolicySpec.model_validate_json((CONTRACTS_DIR / "fast-policy.json").read_text())
+CATALOGUE = current()
 CELLS = SPEC.grid.columns * SPEC.grid.rows
 TOWERS_KNOWN = 5
 HAND = 12
-NEXT = HAND + 4 * len(SPEC.cards)
-UNITS = NEXT + len(SPEC.cards)
-FIELD_EFFECTS = UNITS + 2 * len(SPEC.bodies) * CELLS
-STATE_SIZE = FIELD_EFFECTS + 2 * len(SPEC.effects) * CELLS
-ACTION_SIZE = len(SPEC.cards) + 8
+NEXT = HAND + CATALOGUE.card_size
+FIELD = NEXT + CATALOGUE.card_size
+STATE_SIZE = FIELD + 2 * CATALOGUE.body_size * CELLS
+# [wait, ability, card, cost, x, y, x², y²] and the card's attributes.
+ACTION_SIZE = 8 + CATALOGUE.card_size
+CHANNELS = np.arange(CATALOGUE.body_size) * CELLS
+NO_CARD = np.zeros(CATALOGUE.card_size, np.float32)
 
 
 def cell(x, y):
@@ -56,6 +59,12 @@ def cell(x, y):
     column = min(SPEC.grid.columns - 1, max(0, int(x / (SPEC.grid.width / SPEC.grid.columns))))
     row = min(SPEC.grid.rows - 1, max(0, int(y / (SPEC.grid.height / SPEC.grid.rows))))
     return row * SPEC.grid.columns + column
+
+
+def place(vector, side, body, x, y):
+    """Add a body's attributes to its cell; a crowded cell saturates at 1 per attribute."""
+    index = FIELD + side * CATALOGUE.body_size * CELLS + CHANNELS + cell(x, y)
+    vector[index] = np.minimum(1, vector[index] + body)
 
 
 def context_features(context):
@@ -72,21 +81,21 @@ def context_features(context):
         vector[TOWERS_KNOWN] = 1
         vector[6:9] = towers["own"]
         vector[9:12] = towers["enemy"]
-    for slot, card in enumerate(context["hand"][:4]):
-        if card in SPEC.cards:
-            vector[HAND + slot * len(SPEC.cards) + SPEC.cards.index(card)] = 1
-    upcoming = [card for card in context.get("next") or [] if card in SPEC.cards]
+    # The hand as a bag: four slots' attributes summed and divided by four.
+    for card in context["hand"][:4]:
+        if card in CATALOGUE.cards:
+            vector[HAND:NEXT] += CATALOGUE.cards[card] / 4
+    upcoming = [
+        CATALOGUE.cards[card] for card in context.get("next") or [] if card in CATALOGUE.cards
+    ]
     for card in upcoming:
-        vector[NEXT + SPEC.cards.index(card)] += 1 / len(upcoming)
+        vector[NEXT:FIELD] += card / len(upcoming)
     for side, rows in enumerate((context["own"], context["enemy"])):
         for kind, x, y, _variant in rows:
-            body = kind if kind in SPEC.bodies else "?"
-            index = UNITS + (side * len(SPEC.bodies) + SPEC.bodies.index(body)) * CELLS + cell(x, y)
-            vector[index] = min(1.0, vector[index] + 0.5)
+            place(vector, side, CATALOGUE.body_vector(kind), x, y)
     for side, card, x, y, *_age in context.get("effects") or []:
-        if card in SPEC.effects:
-            channel = (0 if side == "blue" else 1) * len(SPEC.effects) + SPEC.effects.index(card)
-            vector[FIELD_EFFECTS + channel * CELLS + cell(x, y)] = 1
+        if card in CATALOGUE.bodies:
+            place(vector, 0 if side == "blue" else 1, CATALOGUE.bodies[card], x, y)
     return vector
 
 
@@ -97,17 +106,19 @@ def hide_towers(vector):
 
 
 def action_vector(row):
-    """[8 cards, wait, ability, cost, x, y, x², y², spell]; waiting and the ability have no position."""
+    """Waiting has no card; the ability carries its hero card's attributes but no position."""
     _letter, kind, card, cost, x, y = row
+    attributes = CATALOGUE.cards.get(card, NO_CARD) if card is not None else NO_CARD
     match kind:
         case "card":
-            onehot = [float(card == name) for name in SPEC.cards]
-            place = [x / 18, y / 32, (x / 18) ** 2, (y / 32) ** 2, float(card in SPEC.spells)]
-        case "wait" | "ability":
-            onehot, place = [0.0] * len(SPEC.cards), [0.0] * 5
+            head = [0.0, 0.0, 1.0, cost / 10, x / 18, y / 32, (x / 18) ** 2, (y / 32) ** 2]
+        case "ability":
+            head = [0.0, 1.0, 0.0, cost / 10, 0.0, 0.0, 0.0, 0.0]
+        case "wait":
+            head, attributes = [1.0, 0.0, 0.0, cost / 10, 0.0, 0.0, 0.0, 0.0], NO_CARD
         case _:
             raise ValueError(f"Unknown decision action kind: {kind}")
-    return [*onehot, float(kind == "wait"), float(kind == "ability"), cost / 10, *place]
+    return [*head, *attributes.tolist()]
 
 
 def action_features(context):
@@ -149,7 +160,11 @@ def checksum(weights):
 
 
 def exported(weights, metadata):
-    """The JSON file the live runtime loads. Values are float32 in row-major order."""
+    """The JSON file the live runtime loads. Values are float32 in row-major order.
+
+    metadata names the version, rule set and card catalogue (`catalogue`) the weights learned
+    with; the runtime refuses a catalogue other than its own.
+    """
     return {
         **metadata,
         "format": SPEC.format,

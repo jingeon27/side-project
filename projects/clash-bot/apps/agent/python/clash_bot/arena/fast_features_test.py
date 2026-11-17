@@ -62,7 +62,7 @@ class SharedFastPolicyTest(unittest.TestCase):
 
     def test_exported_policy_carries_the_checked_weights(self):
         weights = deterministic_weights()
-        body = exported(weights, {"version": 3, "rulesID": "rules-a"})
+        body = exported(weights, {"version": 3, "rulesID": "rules-a", "catalogue": "c" * 64})
         self.assertEqual(body["weightsSHA256"], checksum(weights))
         self.assertEqual(body["weightsSHA256"], FIXTURE["deterministicWeightsSHA256"])
         restored = {

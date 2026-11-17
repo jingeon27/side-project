@@ -38,9 +38,9 @@ class ExpertIterationTest(unittest.TestCase):
             self.assertEqual(
                 sorted(file.name for file in path.iterdir()), ["metadata.json", "weights.npz"]
             )
-            live = restored.live()
+            live = restored.live("c" * 64)
             self.assertEqual(live["weightsSHA256"], policy.checksum())
-            self.assertEqual(live["rulesID"], "rules-a")
+            self.assertEqual((live["rulesID"], live["catalogue"]), ("rules-a", "c" * 64))
             np.testing.assert_array_equal(
                 restored.predict(obs, actions)[0], policy.predict(obs, actions)[0]
             )

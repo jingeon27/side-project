@@ -9,6 +9,7 @@ from clash_bot.arena.balance import (
     old_enough,
     relevant_rows,
 )
+from clash_bot.arena.catalogue import current
 from clash_bot.arena.league import initialize
 
 
@@ -40,9 +41,9 @@ class BalanceContractsTest(unittest.TestCase):
             [{"field": "units.FireSpirit.damage", "before": 10, "after": 12}],
         )
         with tempfile.TemporaryDirectory() as directory:
-            initialize(directory, {"id": "rules-a"})
+            initialize(directory, {"id": "rules-a", "catalogue": current().id})
             with self.assertRaisesRegex(ValueError, "separate league"):
-                initialize(directory, {"id": "rules-b"})
+                initialize(directory, {"id": "rules-b", "catalogue": current().id})
 
     def test_a_patch_separates_number_changes_from_mechanic_changes(self):
         base = {

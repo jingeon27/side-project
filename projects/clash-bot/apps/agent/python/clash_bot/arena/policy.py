@@ -25,9 +25,9 @@ from .fast_features import (
 )
 from .samples import PolicyMetadata, TrainingSample
 
-FORMAT = "clash-arena-policy-value-v2"
+FORMAT = "clash-arena-policy-value-v3"
 # Leagues are kept per policy format; a new format starts its own league directory.
-LEAGUE_KEY = "fast2"
+LEAGUE_KEY = "fast3"
 INITIAL_SCALE = {"encoder.weight": 0.04, "query.weight": 0.04, "action.weight": 0.1}
 
 
@@ -57,11 +57,21 @@ class Policy:
     def checksum(self):
         return checksum(self.weights)
 
-    def live(self):
-        """What `counterpush play` loads: the same weights and checksum as JSON."""
+    def live(self, catalogue):
+        """What `counterpush play` loads: the same weights and checksum as JSON.
+
+        `catalogue` is the card catalogue id of the rule set the weights learned under.
+        """
         return exported(
             self.weights,
-            {key: self.metadata[key] for key in ("version", "rulesID") if key in self.metadata},
+            {
+                **{
+                    key: self.metadata[key]
+                    for key in ("version", "rulesID")
+                    if key in self.metadata
+                },
+                "catalogue": catalogue,
+            },
         )
 
     def save(self, directory, metadata):

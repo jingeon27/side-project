@@ -17,6 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.paths import CONTRACTS_DIR
 
+from .catalogue import current
+
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
 
 
@@ -76,6 +78,8 @@ def rules_identity():
         "cards": CARDS,
         "forms": FORMS,
         "level": SPEC["level"],
+        # Policy inputs read cards through this catalogue; a new one is a new rule set.
+        "catalogue": current().id,
     }
     if identity["tableFNV"] != SPEC["tableFNV"] or identity["commit"] != SPEC["commit"]:
         raise ValueError("Native rules/provenance mismatch")

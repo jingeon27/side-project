@@ -15,7 +15,7 @@ from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import serialize_decision
 from clash_bot.qwen.search_data import conservation_frontier
 
-from .context import ALIASES, decision_context
+from .context import NAMES, decision_context
 from .engine import (
     TILE,
     Action,
@@ -282,11 +282,11 @@ def build(data_dir, count=64, seed=0, split="train"):
         "attempted": count,
         "targetCards": {
             name: sum(
-                ("wait" if card == -1 else "ability" if card == -2 else ALIASES[card]) == name
+                ("wait" if card == -1 else "ability" if card == -2 else NAMES[card]) == name
                 for row in labels
                 for card in [row["actions"][int(np.argmax(row["target"]))][0]]
             )
-            for name in (*ALIASES, "wait", "ability")
+            for name in (*NAMES, "wait", "ability")
         },
     }
 
