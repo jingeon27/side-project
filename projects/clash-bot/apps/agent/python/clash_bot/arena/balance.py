@@ -67,6 +67,28 @@ def changed_fields(before, after, path=""):
     return [] if before == after else [{"field": path, "before": before, "after": after}]
 
 
+def is_number(value):
+    return isinstance(value, int | float) and not isinstance(value, bool)
+
+
+def classify(before_rows, after_rows):
+    """Per changed card, unit or effect: only numbers moved ("stats") or behavior did ("mechanics").
+
+    A patch usually retunes a few numbers, which the engine table and a league that starts from
+    the current champion absorb. Added or removed objects and fields, or changed text, lists or
+    flags, are mechanics that the engine and the card contracts must support first.
+    """
+    objects = []
+    for key in sorted(before_rows.keys() | after_rows.keys()):
+        fields = changed_fields(before_rows.get(key), after_rows.get(key), key)
+        if fields:
+            stats = all(is_number(row["before"]) and is_number(row["after"]) for row in fields)
+            objects.append(
+                {"object": key, "kind": "stats" if stats else "mechanics", "fields": fields}
+            )
+    return objects
+
+
 def relevant_rows(table):
     names = (
         "knight",
@@ -145,10 +167,11 @@ def stage(data_dir, version):
         raise ValueError("Run arena:setup first to verify the pinned source table")
     if hashlib.sha256(base.read_bytes()).hexdigest() != SPEC["tableSHA256"]:
         raise ValueError("Pinned baseline table was changed locally")
-    diff = changed_fields(relevant_rows(json.loads(base.read_text())), relevant_rows(table))
+    changes = classify(relevant_rows(json.loads(base.read_text())), relevant_rows(table))
+    mechanics = [row["object"] for row in changes if row["kind"] == "mechanics"]
     missing = sorted(set(CARDS) - {row["name"] for row in table.get("cards", [])})
     candidate = {
-        "format": "clash-arena-rules-candidate-v1",
+        "format": "clash-arena-rules-candidate-v2",
         "version": version,
         "wheel": wheel["filename"],
         "wheelSHA256": wheel["digests"]["sha256"],
@@ -157,10 +180,16 @@ def stage(data_dir, version):
         "tableVersion": table["version"],
         "tableSHA256": hashlib.sha256(raw).hexdigest(),
         "baseRulesID": rules_identity()["id"],
-        "changes": diff,
+        "changes": changes,
+        "mechanicsChanged": mechanics,
         "missingCards": missing,
         "activated": False,
-        "status": "requires_engine_pin_update_and_contract_tests",
+        # Numbers only: pin the new engine and the next arena start continues from the champion.
+        "status": (
+            "requires_engine_support_and_contract_tests"
+            if mechanics or missing
+            else "requires_engine_pin_update"
+        ),
         "requiredChecks": [
             "8-card forms/spawns/ability/Graveyard contracts",
             "public information masking",

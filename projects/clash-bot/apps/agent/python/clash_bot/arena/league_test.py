@@ -1,4 +1,5 @@
-"""A league publishes its champion's live policy, and only the current league.json resumes."""
+"""A league publishes its champion's live policy, starts from the previous rules' champion and
+resumes only the current league.json."""
 
 import json
 import tempfile
@@ -10,7 +11,7 @@ from pydantic import ValidationError
 from clash_bot.arena.engine import Action, Arena
 from clash_bot.arena.fast_features import checksum
 from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
-from clash_bot.arena.policy import Policy, features
+from clash_bot.arena.policy import LEAGUE_KEY, Policy, features
 from clash_bot.arena.samples import SparseFeatures
 from clash_bot.arena.selfplay import replay_samples
 from clash_bot.arena.storage import read_episode, replay_path, write_episode, write_replay
@@ -40,6 +41,40 @@ class LeagueTest(unittest.TestCase):
                 json.loads((root / "champion-policy.json").read_text())["weightsSHA256"],
                 stored.checksum(),
             )
+
+    def test_a_new_rule_set_starts_from_the_previous_champion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path(directory) / f"old-{LEAGUE_KEY}"
+            old = {"id": "o" * 64}
+            league = initialize(previous, old)
+            champion = Policy(seed=9, metadata={"version": 1, "rulesID": old["id"]})
+            champion.save(checkpoint(previous, 1), {"role": "qualified_champion"})
+            (previous / "league.json").write_text(json.dumps({**league, "champion": 1}))
+
+            root = Path(directory) / f"new-{LEAGUE_KEY}"
+            started = initialize(root, RULES, parent=previous)
+            self.assertEqual((started["learner"], started["champion"]), (0, 0))
+            self.assertEqual(started["episodes"], [])  # No game of the old rules comes along.
+            start = Policy.load(checkpoint(root, 0), RULES["id"])
+            self.assertEqual(start.checksum(), champion.checksum())
+            self.assertEqual(start.metadata["role"], "inherited_champion")
+            self.assertEqual(
+                start.metadata["inheritedFrom"],
+                {"rulesID": old["id"], "version": 1, "weightsSHA256": champion.checksum()},
+            )
+            live = json.loads((root / "champion-policy.json").read_text())
+            self.assertEqual((live["rulesID"], live["version"]), (RULES["id"], 0))
+            self.assertEqual(live["weightsSHA256"], champion.checksum())
+
+    def test_a_league_of_another_policy_format_is_not_inherited(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path(directory) / "old-fast1"
+            initialize(previous, {"id": "o" * 64})
+            root = Path(directory) / f"new-{LEAGUE_KEY}"
+            initialize(root, RULES, parent=previous)
+            start = Policy.load(checkpoint(root, 0), RULES["id"])
+            self.assertEqual(start.metadata["role"], "initial_random_policy")
+            self.assertNotIn("inheritedFrom", start.metadata)
 
     def test_any_checkpoint_can_be_exported_for_live_play(self):
         with tempfile.TemporaryDirectory() as directory:

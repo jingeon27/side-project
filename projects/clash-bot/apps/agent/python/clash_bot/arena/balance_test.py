@@ -2,7 +2,13 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from clash_bot.arena.balance import Articles, changed_fields, old_enough, relevant_rows
+from clash_bot.arena.balance import (
+    Articles,
+    changed_fields,
+    classify,
+    old_enough,
+    relevant_rows,
+)
 from clash_bot.arena.league import initialize
 
 
@@ -37,6 +43,34 @@ class BalanceContractsTest(unittest.TestCase):
             initialize(directory, {"id": "rules-a"})
             with self.assertRaisesRegex(ValueError, "separate league"):
                 initialize(directory, {"id": "rules-b"})
+
+    def test_a_patch_separates_number_changes_from_mechanic_changes(self):
+        base = {
+            "cards": [{"name": "Poison", "damage": 100, "radius": 3500}, {"name": "Knight"}],
+            "units": {"Skeleton": {"name": "Skeleton", "hitpoints": 81, "targets": "ground"}},
+        }
+        patched = {
+            "cards": [{"name": "Poison", "damage": 95, "radius": 3500}, {"name": "Knight"}],
+            "units": {
+                "Skeleton": {"name": "Skeleton", "hitpoints": 81, "targets": "air_ground"},
+                "SpearGoblin": {"name": "SpearGoblin", "hitpoints": 133},
+            },
+        }
+        changes = classify(relevant_rows(base), relevant_rows(patched))
+        self.assertEqual(
+            [(row["object"], row["kind"]) for row in changes],
+            [
+                ("cards.Poison", "stats"),
+                ("units.Skeleton", "mechanics"),
+                ("units.SpearGoblin", "mechanics"),
+            ],
+        )
+        self.assertEqual(
+            changes[0]["fields"], [{"field": "cards.Poison.damage", "before": 100, "after": 95}]
+        )
+        # A flag is not a number even though Python treats bool as int.
+        flag = classify({"cards.Knight": {"evolves": False}}, {"cards.Knight": {"evolves": True}})
+        self.assertEqual(flag[0]["kind"], "mechanics")
 
 
 if __name__ == "__main__":

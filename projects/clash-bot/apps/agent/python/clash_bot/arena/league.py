@@ -56,7 +56,13 @@ REPLAY_EPISODES = 256
 REPLAY_SAMPLES = 16384
 
 
-def initialize(root, rules):
+def initialize(root, rules, parent=None):
+    """Resume this rule set's league, or start it from the champion of the league before it.
+
+    A balance patch changes some cards' numbers and sometimes their mechanics. Starting from
+    the previous champion keeps what still holds, and self-play under the new rules relearns
+    the rest. Games, replays and evaluations of other rules are never mixed in.
+    """
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     pointer = root / "league.json"
@@ -71,8 +77,18 @@ def initialize(root, rules):
     if initial.exists():
         Policy.load(initial, rules["id"])  # Recover a crash before first pointer publication.
     else:
-        policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
-        policy.save(initial, {"role": "initial_random_policy"})
+        inherited = parent_champion(parent)
+        if inherited:
+            policy = Policy(
+                weights=inherited.weights, metadata={"version": 0, "rulesID": rules["id"]}
+            )
+            source = {
+                key: inherited.metadata[key] for key in ("rulesID", "version", "weightsSHA256")
+            }
+            policy.save(initial, {"role": "inherited_champion", "inheritedFrom": source})
+        else:
+            policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
+            policy.save(initial, {"role": "initial_random_policy"})
     league = LeagueState(
         format="clash-arena-league-v1",
         rulesID=rules["id"],
@@ -89,6 +105,18 @@ def initialize(root, rules):
 
 def checkpoint(root, version):
     return Path(root) / "checkpoints" / f"v{version:06d}"
+
+
+def parent_champion(parent):
+    """The previous league's champion when that league used this policy format, else None."""
+    if parent is None:
+        return None
+    parent = Path(parent)
+    if not parent.name.endswith(f"-{LEAGUE_KEY}") or not (parent / "league.json").exists():
+        return None
+    league = LeagueState.model_validate_json((parent / "league.json").read_text())
+    # Verifies format, rule set, network layout and checksum; a broken parent stops the start.
+    return Policy.load(checkpoint(parent, league.champion), league.rulesID)
 
 
 def publish_champion(root, league):
@@ -155,12 +183,16 @@ def run(
     try:
         rules = rules_identity()
         root = data_dir / "arena/leagues" / f"{rules['id'][:16]}-{LEAGUE_KEY}"
-        league = initialize(root, rules)
-        atomic_json(control / "active.json", {"root": str(root), "rulesID": rules["id"]})
+        active = control / "active.json"
+        previous = Path(json.loads(active.read_text())["root"]) if active.exists() else None
+        league = initialize(root, rules, parent=None if previous == root else previous)
+        atomic_json(active, {"root": str(root), "rulesID": rules["id"]})
+        start = json.loads((checkpoint(root, 0) / "metadata.json").read_text())
         report(
             {
                 "root": str(root),
                 "rulesID": rules["id"],
+                "inheritedFrom": start.get("inheritedFrom"),
                 "champion": league["champion"],
                 "learner": league["learner"],
                 "settings": {
