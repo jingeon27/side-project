@@ -52,11 +52,11 @@ export async function readBody(request: Request, limit = 1_500_000) {
     reader.releaseLock();
   }
 }
-export async function readJson(request: Request) {
+export async function readJson(request: Request, limit?: number) {
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new StudioError('JSON 형식의 요청이 필요합니다.', 415);
   try {
-    return JSON.parse((await readBody(request)).toString('utf8')) as unknown;
+    return JSON.parse((await readBody(request, limit)).toString('utf8')) as unknown;
   } catch (error) {
     if (error instanceof StudioError) throw error;
     throw new StudioError('입력한 내용을 확인해 주세요.', 400);
