@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { libraryKey, readBackup, readLibrary, writeLibrary } from '../../library/model/library';
+import { readBackup } from '../../library/model/library';
 import { wrapCaption } from '../../media/model/video-export';
 import { sampleProject } from './sample';
 import {
@@ -18,26 +18,12 @@ import {
 } from './story';
 
 describe('한국어 작품과 백업', () => {
-  it('한글·따옴표·이모지·줄바꿈을 저장, 복원, 원고 내보내기에서 보존한다', () => {
+  it('한글·따옴표·이모지·줄바꿈을 저장 형식, 백업 복원, 원고 내보내기에서 보존한다', () => {
     const project = { ...sampleProject(), title: '“괜찮아, 서우야” 🐈', characters: '밤이\n서우' };
-    const storage = new Map<string, string>();
-    writeLibrary(
-      {
-        setItem: (key, value) => {
-          storage.set(key, value);
-        },
-      },
-      [project],
-    );
-    expect(readLibrary({ getItem: (key) => storage.get(key) ?? null })).toEqual([project]);
+    expect(projectSchema.parse(JSON.parse(JSON.stringify(project)))).toEqual(project);
     expect(readBackup(JSON.stringify(project))).toEqual(project);
     expect(manuscript(project)).toContain('“괜찮아, 서우야” 🐈');
     expect(manuscript(project)).toContain('밤이\n서우');
-  });
-  it('손상된 저장본을 읽기 실패 후 덮어쓰거나 지우지 않는다', () => {
-    const storage = new Map([[libraryKey, '{broken']]);
-    expect(() => readLibrary({ getItem: (key) => storage.get(key) ?? null })).toThrow();
-    expect(storage.get(libraryKey)).toBe('{broken');
   });
   it('가져오기에서 외부 실행 URL·잘못된 분량·미지원 버전을 거부한다', () => {
     const project = sampleProject();

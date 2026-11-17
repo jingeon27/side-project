@@ -5,7 +5,14 @@ import path from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { dataPath, readTask, storeTask } from '../../features/media/server/assets';
-import { cancelLocalVideo, isLocalMode, localConfiguration, localWorkerBusy, runLocal } from './local-worker';
+import {
+  cancelLocalVideo,
+  isLocalMode,
+  localConfiguration,
+  localWorkerBusy,
+  openLocalSession,
+  runLocal,
+} from './local-worker';
 
 const state = { directory: '' };
 beforeEach(async () => {
@@ -35,8 +42,25 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = process.argv[process.argv.indexOf('--data-dir') + 1];
 const chunks = [];
-process.stdin.on('data', chunk => chunks.push(chunk));
+const session = { open: false, turns: 0, rest: '' };
+process.stdin.on('data', chunk => {
+  if (!session.open && !chunks.length && String(chunk).startsWith('{"action":"text-session"}\\n')) {
+    session.open = true;
+    fs.appendFileSync(path.join(root, 'started.log'), 'text-session\\n');
+  }
+  if (!session.open) return chunks.push(chunk);
+  const lines = (session.rest + String(chunk)).split('\\n');
+  session.rest = lines.pop();
+  for (const line of lines.filter(Boolean)) {
+    const request = JSON.parse(line);
+    if (request.action === 'text-session') continue;
+    if (request.input === 'crash') return process.exit(3);
+    session.turns += 1;
+    console.log(JSON.stringify({ reply: { output: { echo: request.input }, sources: [] } }));
+  }
+});
 process.stdin.on('end', () => {
+  if (session.open) return console.log(JSON.stringify({ result: { turns: session.turns } }));
   const input = JSON.parse(Buffer.concat(chunks).toString());
   fs.appendFileSync(path.join(root, 'started.log'), input.action + '\\n');
   if (input.taskId) fs.writeFileSync(path.join(root, 'local/active.json'), JSON.stringify({ pid: process.pid, taskId: input.taskId }));
@@ -138,4 +162,23 @@ it('실제 스튜디오 자식 프로세스만 중단하고 종료 상태를 보
   await ended;
   expect((await readTask(id)).error).toContain('사용자가');
   await expect(cancelLocalVideo('cloud-task-1234')).rejects.toMatchObject({ status: 400 });
+});
+
+it('집필 세션은 한 프로세스로 요청을 차례로 답하고, 닫으면 실행 잠금을 푼다', async () => {
+  const session = await openLocalSession();
+  expect(localWorkerBusy()).toBe(true);
+  await expect(runLocal({ action: 'voice', text: 'blocked' })).rejects.toMatchObject({ status: 409 });
+  expect(await session.send({ input: '구성' })).toEqual({ output: { echo: '구성' }, sources: [] });
+  expect(await session.send({ input: '첫 장면' })).toEqual({ output: { echo: '첫 장면' }, sources: [] });
+  await session.close();
+  expect(localWorkerBusy()).toBe(false);
+  expect((await readFile(dataPath('started.log'), 'utf8')).trim()).toBe('text-session');
+});
+
+it('집필 세션의 프로세스가 죽으면 기다리던 요청이 실패하고 잠금을 푼다', async () => {
+  const session = await openLocalSession();
+  await expect(session.send({ input: 'crash' })).rejects.toThrow('로컬 로그');
+  await session.close();
+  expect(localWorkerBusy()).toBe(false);
+  await expect(runLocal({ action: 'voice', text: 'retry' })).resolves.toBeDefined();
 });
