@@ -13,7 +13,7 @@ import numpy as np
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
-from ..sim.belief import BeliefSampler
+from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
 from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
@@ -104,7 +104,7 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
             world, count = sampler.conditioned(
                 into=workspace.worlds[index], position_tolerance_tiles=tolerance
             )
-        except ValueError as error:
+        except PublicRootMismatch as error:
             observation = sampler.observation
             path = DATA_DIR / "arena/reconstruction-failures" / f"{digest(observation)}.json"
             atomic_json(
@@ -118,7 +118,9 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
                     "lastReconstructedBoard": sampler.last_board,
                 },
             )
-            raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
+            raise PublicRootMismatch(
+                f"Public root reconstruction failed; evidence: {path}"
+            ) from error
         attempts += count
         worlds.append(world)
         conditioning.append(sampler.conditioning)

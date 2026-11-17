@@ -7,6 +7,7 @@ from unittest.mock import patch
 import numpy as np
 
 from clash_bot.arena.policy.network import Policy, features
+from clash_bot.arena.sim.belief import PublicRootMismatch
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import DECKS, Action, deck_ids
 from clash_bot.arena.training.search import Workspace, search
@@ -20,10 +21,10 @@ class PublicSearchTest(unittest.TestCase):
             patch("clash_bot.arena.training.search.DATA_DIR", Path(directory)),
             patch(
                 "clash_bot.arena.training.search.BeliefSampler.conditioned",
-                side_effect=ValueError("incompatible"),
+                side_effect=PublicRootMismatch("incompatible"),
             ),
         ):
-            with self.assertRaisesRegex(ValueError, "evidence"):
+            with self.assertRaisesRegex(PublicRootMismatch, "evidence"):
                 search(observation, Policy(), 12)
             path = next((Path(directory) / "arena/reconstruction-failures").glob("*.json"))
             recorded = json.loads(path.read_text())

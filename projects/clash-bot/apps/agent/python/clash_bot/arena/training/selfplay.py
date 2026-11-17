@@ -16,6 +16,7 @@ from ..policy.features import action_features, context_features
 from ..policy.noise import PerceptionNoise
 from ..policy.samples import SparseFeatures, value_target
 from ..policy.screen import Screen
+from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
 from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
 from .search import Workspace, search
@@ -140,6 +141,7 @@ def play_game(
     # The tick of each side's next decision; the second clock runs `phase` ticks behind.
     due = [0, setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
+    unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
         selected = [Action(-1), Action(-1)]
@@ -157,20 +159,32 @@ def play_game(
                 prior = policy.deployed(observation, candidates, screens[team])
                 selected[team] = candidates[int(np.argmax(prior))]
                 continue
-            result = search(
-                observation,
-                policy,
-                seed_for("search", game_id, state["tick"], team),
-                simulations=simulations,
-                depth=depth,
-                step_ticks=SELFPLAY.searchTicks,
-                first_ticks=SELFPLAY.decisionTicks,
-                root_size=SELFPLAY.rootActions,
-                noise=training,
-                opponent_policy=policies[1 - team],
-                workspace=workspace,
-                beliefs=beliefs[team],
-            )
+            result = None
+            if unavailable[team] is None:
+                try:
+                    result = search(
+                        observation,
+                        policy,
+                        seed_for("search", game_id, state["tick"], team),
+                        simulations=simulations,
+                        depth=depth,
+                        step_ticks=SELFPLAY.searchTicks,
+                        first_ticks=SELFPLAY.decisionTicks,
+                        root_size=SELFPLAY.rootActions,
+                        noise=training,
+                        opponent_policy=policies[1 - team],
+                        workspace=workspace,
+                        beliefs=beliefs[team],
+                    )
+                except PublicRootMismatch as error:
+                    unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
+            if result is None:
+                # The real native game remains authoritative. Finish with this seat's
+                # frozen screen policy, but invent no expert targets for these decisions.
+                policy_only[team] += 1
+                prior = policy.deployed(observation, candidates, screens[team])
+                selected[team] = candidates[int(np.argmax(prior))]
+                continue
             probabilities = result["target"].astype(np.float64)
             if training:
                 temperature = 1 if state["tick"] < 1200 else 0.35
@@ -252,6 +266,8 @@ def play_game(
         "rejectedCommands": rejected,
         "decisions": decisions,
         "searchSimulations": searches,
+        "searchUnavailable": unavailable,
+        "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),

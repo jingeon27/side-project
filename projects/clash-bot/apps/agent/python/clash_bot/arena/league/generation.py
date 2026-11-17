@@ -100,7 +100,12 @@ def selfplay(control, workers, root, league, rules, version, settings):
                 )
             store(root, league)
             control.report(
-                {"game": job["index"] + 1, "completedGames": control.state["completedGames"]}
+                {
+                    "game": job["index"] + 1,
+                    "completedGames": control.state["completedGames"],
+                    "lastPolicyOnlyDecisions": game["policyOnlyDecisions"],
+                    "lastSearchUnavailable": game["searchUnavailable"],
+                }
             )
     return played
 
