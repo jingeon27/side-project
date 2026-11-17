@@ -83,6 +83,8 @@ export function localConfiguration() {
   const textReady =
     runtime &&
     existsSync(dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'));
+  const materialReady =
+    runtime && existsSync(dataPath('local', 'models', 'embedding-gemma-2-8bit', 'model.safetensors'));
   const voiceReady = runtime && existsSync(dataPath('local', 'models', 'voice', 'model.safetensors'));
   const voiceTrainingReady =
     runtime && existsSync(dataPath('local', 'models', 'voice-train', 'model.safetensors'));
@@ -99,8 +101,10 @@ export function localConfiguration() {
     voiceTrainingReady,
     videoReady,
     imageReady,
+    materialReady,
     demoReady: existsSync(dataPath('demo-project.json')) || existsSync(examplePath('project.json')),
     textModel: 'Gemma 4 31B, 4bit',
+    materialModel: 'EmbeddingGemma 2',
     imageModel: 'FLUX.2 Klein 4B',
     videoModel: 'Wan2.2 TI2V 5B',
     voiceModel: 'Qwen3-TTS 기본 음색 9종',
@@ -115,7 +119,10 @@ export async function runLocal(
   const config = localConfiguration();
   const settings = input.settings as { kind?: string } | undefined;
   const ready = match(input.action)
-    .with('compose', 'normalize-voice', () => existsSync(dataPath('local', '.venv', 'bin', 'python')))
+    .with('compose', 'normalize-voice', 'delete-material', () =>
+      existsSync(dataPath('local', '.venv', 'bin', 'python')),
+    )
+    .with('index-material', () => config.materialReady)
     .with('text', () => config.textReady)
     .with('voice', () => (settings?.kind === 'trained' ? config.voiceTrainingReady : config.voiceReady))
     .with('train-voice', () => config.voiceTrainingReady)
@@ -125,7 +132,7 @@ export async function runLocal(
   if (!ready)
     throw new StudioError('로컬 모델 준비가 필요합니다. 연결 안내의 로컬 설치 방법을 확인해 주세요.', 503);
   signal?.throwIfAborted();
-  const usesModel = input.action !== 'compose' && input.action !== 'normalize-voice';
+  const usesModel = !['compose', 'normalize-voice', 'delete-material'].includes(String(input.action));
   if (usesModel && localWorkerBusy())
     throw new StudioError(
       '다른 로컬 생성 작업이 실행 중입니다. 현재 작업이 끝난 뒤 다시 시도해 주세요.',

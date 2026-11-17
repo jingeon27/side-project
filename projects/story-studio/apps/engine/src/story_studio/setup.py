@@ -84,7 +84,7 @@ def main():
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
     specs = model_specs()
-    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'voice', 'voice-train', 'image', 'video-source'])
+    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'embedding', 'voice', 'voice-train', 'image', 'video-source'])
     for name in selected:
         spec = specs[name]
         if prepared(root, name, spec):
@@ -119,7 +119,7 @@ def main():
     snapshot_download(spec['repo'], revision=spec['revision'], local_dir=root / 'models/tokenizer',
                       allow_patterns=['tokenizer*.json', 'special_tokens_map.json', 'spiece.model', 'config.json'])
     (root / 'ready.json').write_text(json.dumps(specs, ensure_ascii=False, indent=2))
-    print('로컬 글, 음성, 이미지, 영상 모델 준비 완료', flush=True)
+    print('로컬 글, 자료 검색, 음성, 이미지, 영상 모델 준비 완료', flush=True)
 
 
 if __name__ == '__main__':

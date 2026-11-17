@@ -4,6 +4,11 @@
     "revision": "696d436c404745a59f30e4939a658162b0a9e57f",
     "directory": "text-gemma-4-31b-it-4bit"
   },
+  "embedding": {
+    "repo": "mlx-community/embeddinggemma-2-8bit",
+    "revision": "7505ef2f8ddef45efef6d060865f27989b3c9cec",
+    "directory": "embedding-gemma-2-8bit"
+  },
   "voice": {
     "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-4bit",
     "revision": "f35faf19b0cc2160865af64ecf0f22f83d335135"

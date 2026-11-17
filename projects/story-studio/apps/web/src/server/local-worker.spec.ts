@@ -16,6 +16,7 @@ beforeEach(async () => {
   await mkdir(dataPath('local', '.venv', 'bin'), { recursive: true });
   for (const model of [
     'text-gemma-4-31b-it-4bit',
+    'embedding-gemma-2-8bit',
     'voice',
     'video-wan2.2-ti2v-5b',
     'image-flux2-klein-4b-q8',
@@ -25,6 +26,7 @@ beforeEach(async () => {
     dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'),
     '{}',
   );
+  await writeFile(dataPath('local', 'models', 'embedding-gemma-2-8bit', 'model.safetensors'), 'fixture');
   await writeFile(dataPath('local', 'models', 'voice', 'model.safetensors'), 'fixture');
   await writeFile(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'), '{}');
   await writeFile(dataPath('local', 'models', 'image-flux2-klein-4b-q8', 'ready.json'), '{}');
@@ -81,6 +83,24 @@ it('이미지와 영상 모델을 따로 확인하고 이전 Wan2.1 설치나 �
   await mkdir(dataPath('local', 'models', 'image', 'transformer'), { recursive: true });
   await writeFile(dataPath('local', 'models', 'image', 'model_index.json'), '{}');
   expect(localConfiguration().imageReady).toBe(false);
+});
+
+it('이전 Qwen 원고 모델만 있으면 준비로 보지 않고, 자료 검색 모델은 원고 모델과 따로 확인한다', async () => {
+  await rm(dataPath('local', 'models', 'text-gemma-4-31b-it-4bit'), { recursive: true });
+  await mkdir(dataPath('local', 'models', 'text'), { recursive: true });
+  await writeFile(dataPath('local', 'models', 'text', 'model.safetensors.index.json'), '{}');
+  expect(localConfiguration()).toMatchObject({ configured: false, textReady: false, materialReady: true });
+  await expect(runLocal({ action: 'text' })).rejects.toMatchObject({ status: 503 });
+  await expect(runLocal({ action: 'index-material', documents: [] })).resolves.toBeDefined();
+  await rm(dataPath('local', 'models', 'embedding-gemma-2-8bit'), { recursive: true });
+  expect(localConfiguration().materialReady).toBe(false);
+  await expect(runLocal({ action: 'index-material', documents: [] })).rejects.toMatchObject({ status: 503 });
+});
+
+it('색인에서 자료를 지우는 작업은 모델을 쓰지 않아 다른 생성 중에도 실행한다', async () => {
+  const generating = runLocal({ action: 'voice', text: 'first' });
+  await expect(runLocal({ action: 'delete-material', ids: [] })).resolves.toBeDefined();
+  await generating;
 });
 
 it('동시에 들어온 생성 요청을 모델 로딩 전에 거절하고 완료 후 다시 실행한다', async () => {
