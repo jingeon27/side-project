@@ -23,20 +23,23 @@ import {
 import { match } from 'ts-pattern';
 
 import { trackStudioEvent, type TStudioAction } from '../lib/analytics';
+import { fitImage } from '../lib/image-import';
 import { downloadFile, readBackup } from '../lib/library';
 import { defaultBrief, ideas, sampleProject } from '../lib/sample';
 import {
   briefSchema,
   caption,
-  draftSchema,
   formats,
+  imagePrompt,
   makeProject,
+  planSchema,
   projectSchema,
   referenceImage,
   safeFilename,
-  sceneContentSchema,
   taskSchema,
   voiceSchema,
+  writtenSceneSchema,
+  type TBeat,
   type TBrief,
   type TFormat,
   type TProject,
@@ -45,6 +48,7 @@ import {
 import { exportVideo } from '../lib/video-export';
 import { updateVideoTasks } from '../lib/video-tasks';
 import { exportWebtoon } from '../lib/webtoon-export';
+import { CollectionPicker } from './CollectionPicker';
 import { StoryEditor } from './StoryEditor';
 import { useLibrary } from './use-library';
 
@@ -55,14 +59,21 @@ type TConfiguration = {
   videoModel: string;
   provider?: 'local' | 'cloud';
   voiceModel?: string;
+  materialModel?: string;
   voiceReady?: boolean;
   voiceTrainingReady?: boolean;
   imageReady?: boolean;
   videoReady?: boolean;
   demoReady?: boolean;
 };
-async function request(action: TStudioAction, input: unknown, signal: AbortSignal): Promise<unknown> {
-  void trackStudioEvent('studio_request_clicked', { action });
+// Scenes written one after another from a plan follow a single click; only that click is recorded as one.
+async function request(
+  action: TStudioAction,
+  input: unknown,
+  signal: AbortSignal,
+  clicked = true,
+): Promise<unknown> {
+  if (clicked) void trackStudioEvent('studio_request_clicked', { action });
   const response = await fetch('/api/studio', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -74,6 +85,14 @@ async function request(action: TStudioAction, input: unknown, signal: AbortSigna
     throw new Error(typeof data.error === 'string' ? data.error : '요청을 처리하지 못했습니다.');
   void trackStudioEvent('studio_request_succeeded', { action });
   return data;
+}
+function writingLabel(format: TFormat, position: number, total: number) {
+  const unit = match(format)
+    .with('novel', () => '장')
+    .with('webtoon', () => '컷')
+    .with('film', 'drama', 'animation', () => '장면')
+    .exhaustive();
+  return `${total}개 ${unit} 중 ${position}번째 작성 중`;
 }
 export function Studio({
   initialFormat,
@@ -281,10 +300,89 @@ export function Studio({
       setNotice('작품을 백업한 뒤 기존 작품을 삭제해 주세요. 최대 50개까지 저장합니다.');
       return;
     }
-    void work('원고 작성 중', async (signal) => {
-      const draft = draftSchema.parse(await request('draft', parsed.data, signal));
-      addProject(makeProject(parsed.data, draft));
+    void work('이야기 구성 중', async (signal) => {
+      const { outline, ...story } = planSchema.parse(await request('plan', parsed.data, signal));
+      const [first, ...rest] = outline;
+      if (!first) throw new Error('이야기 구성을 받지 못했습니다. 다시 시도해 주세요.');
+      setRenderProgress(writingLabel(parsed.data.format, 1, outline.length));
+      const opening = writtenSceneSchema.parse(
+        await request(
+          'continue',
+          { brief: parsed.data, ...story, scenes: [], beat: first, upcoming: rest },
+          signal,
+          false,
+        ),
+      );
+      const created = {
+        ...makeProject(parsed.data, { ...story, scenes: [opening] }),
+        outline: rest.length ? rest : undefined,
+      };
+      addProject(created);
+      await writeBeats(created, rest, outline.length, signal);
     });
+  }
+  // Each finished scene is saved before the next one starts. A failure or a stop keeps what was written
+  // and leaves the remaining beats in the project, where continuing the story picks them up.
+  async function writeBeats(
+    target: TProject,
+    beats: TBeat[],
+    total: number,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const [beat, ...upcoming] = beats;
+    if (!beat) return;
+    setRenderProgress(writingLabel(target.brief.format, total - beats.length + 1, total));
+    const scene = writtenSceneSchema.parse(
+      await request(
+        'continue',
+        {
+          brief: target.brief,
+          title: target.title,
+          synopsis: target.synopsis,
+          characters: target.characters,
+          scenes: target.scenes.slice(-6),
+          beat,
+          upcoming,
+        },
+        signal,
+        false,
+      ),
+    );
+    const change = {
+      scenes: [...target.scenes, { ...scene, id: crypto.randomUUID() }],
+      outline: upcoming.length ? upcoming : undefined,
+    };
+    patchProject(target.id, change);
+    return writeBeats({ ...target, ...change }, upcoming, total, signal);
+  }
+  function importImage(scene: TScene, file: File) {
+    if (!project || project.brief.format === 'novel') return;
+    void work('이미지 가져오는 중', async (signal) => {
+      void trackStudioEvent('studio_request_clicked', { action: 'image-import' });
+      const response = await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body: await fitImage(file, project.brief.ratio),
+        signal,
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(typeof data.error === 'string' ? data.error : '이미지를 저장하지 못했습니다.');
+      if (typeof data.asset !== 'string' || !/^\/api\/assets\/[a-f0-9-]{36}\.png$/.test(data.asset))
+        throw new Error('이미지 응답을 확인하지 못했습니다.');
+      void trackStudioEvent('studio_request_succeeded', { action: 'image-import' });
+      patchScene(project.id, scene.id, { image: data.asset });
+    });
+  }
+  async function copyPrompt(scene: TScene) {
+    if (!project) return;
+    void trackStudioEvent('studio_prompt_clicked', { action: 'copy' });
+    try {
+      await navigator.clipboard.writeText(imagePrompt(project, scene));
+      setNotice('이미지 프롬프트를 복사했습니다. 만든 이미지는 이 장면의 이미지 가져오기로 넣어 주세요.');
+    } catch {
+      setNotice('프롬프트를 복사하지 못했습니다. 브라우저의 복사 권한을 확인해 주세요.');
+    }
   }
   function media(scene: TScene, type: 'image' | 'video') {
     if (!project || project.brief.format === 'novel') return;
@@ -320,8 +418,10 @@ export function Studio({
   }
   function extend() {
     if (!project) return;
+    // A beat left from the plan is written first; after the plan runs out the story continues freely.
+    const [beat, ...upcoming] = project.outline ?? [];
     void work('다음 이야기 작성 중', async (signal) => {
-      const result = sceneContentSchema.parse(
+      const result = writtenSceneSchema.parse(
         await request(
           'continue',
           {
@@ -330,11 +430,15 @@ export function Studio({
             synopsis: project.synopsis,
             characters: project.characters,
             scenes: project.scenes.slice(-6),
+            ...(beat ? { beat, upcoming } : {}),
           },
           signal,
         ),
       );
-      patchProject(project.id, { scenes: [...project.scenes, { ...result, id: crypto.randomUUID() }] });
+      patchProject(project.id, {
+        scenes: [...project.scenes, { ...result, id: crypto.randomUUID() }],
+        outline: upcoming.length ? upcoming : undefined,
+      });
     });
   }
   function voice(scene: TScene) {
@@ -482,6 +586,17 @@ export function Studio({
         >
           목소리 학습 <ArrowRight size={15} />
         </Link>
+        {local && (
+          <Link
+            className="voice-nav-link material-nav-link"
+            href="/studio/materials"
+            onClick={(event) => {
+              if (busy) event.preventDefault();
+            }}
+          >
+            참고 자료실 <ArrowRight size={15} />
+          </Link>
+        )}
         <div className="sidebar-footer">
           <button
             className="text-button"
@@ -572,7 +687,10 @@ export function Studio({
                   </p>
                   <div className="model-list">
                     <span>
-                      글, 대본<strong>{config?.textModel || 'Qwen 3.8'}</strong>
+                      글, 대본<strong>{config?.textModel || 'Gemma 4'}</strong>
+                    </span>
+                    <span>
+                      참고 자료 검색<strong>{config?.materialModel || 'EmbeddingGemma 2'}</strong>
                     </span>
                     <span>
                       이미지<strong>{config?.imageModel || 'FLUX.2 Klein'}</strong>
@@ -689,6 +807,8 @@ export function Studio({
                 voice={voice}
                 extend={extend}
                 render={render}
+                onImportImage={importImage}
+                onCopyPrompt={(scene) => void copyPrompt(scene)}
               />
               <footer className="project-footer">
                 <span>마지막 수정 {dayjs(project.updatedAt).format('YYYY.MM.DD HH:mm')}</span>
@@ -915,6 +1035,12 @@ export function Studio({
                         </label>
                       )}
                     </div>
+                    {config !== null && local && (
+                      <CollectionPicker
+                        value={brief.collections}
+                        onChange={(collections) => setBrief((current) => ({ ...current, collections }))}
+                      />
+                    )}
                     <div className="create-footer">
                       <p>
                         <span className="language-badge">가</span> 원고, 대사, 말풍선, 자막, 모두 한국어로

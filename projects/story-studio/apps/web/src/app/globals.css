@@ -2502,3 +2502,71 @@ h1 em {
     print-color-adjust: exact;
   }
 }
+.material-nav-link {
+  margin-top: 0;
+}
+.collection-picker button[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dark);
+}
+.collection-picker button:disabled {
+  opacity: 0.5;
+}
+.import-button {
+  cursor: pointer;
+}
+.import-button[aria-disabled='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.import-button:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.scene-sources {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.material-upload {
+  display: grid;
+  gap: 10px;
+  max-width: 560px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.material-upload input {
+  margin: 0 0 8px;
+}
+.material-upload button {
+  justify-self: start;
+}
+.material-upload p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.material-collection {
+  border-bottom: 1px solid var(--line);
+}
+.material-collection > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+.material-collection > summary span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.material-collection .voice-library-item {
+  padding: 14px 0 14px 16px;
+  border-bottom: 0;
+  border-top: 1px solid var(--line);
+}

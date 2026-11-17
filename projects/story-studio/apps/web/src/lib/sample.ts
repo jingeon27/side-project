@@ -8,6 +8,7 @@ export const defaultBrief: TBrief = {
   count: 3,
   ratio: '16:9',
   quality: 'draft',
+  collections: [],
 };
 export const ideas = [
   '비 오는 날에만 문을 여는 우체국. 잃어버린 고양이를 찾는 아이에게 10년 뒤의 자신이 보낸 편지가 도착한다.',

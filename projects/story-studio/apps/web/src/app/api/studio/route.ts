@@ -6,17 +6,17 @@ import { errorResponse, readJson, requireLocalRequest, StudioError } from '../..
 import {
   composeLocal,
   configuration,
-  continueStory,
-  generateDraft,
   generateImage,
+  generatePlan,
   generateVideo,
   generateVoice,
+  writeScene,
 } from '../../../server/provider';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 const actionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('draft'), input: briefSchema }),
+  z.object({ action: z.literal('plan'), input: briefSchema }),
   z.object({ action: z.literal('continue'), input: continueSchema }),
   z.object({ action: z.literal('image'), input: mediaRequestSchema }),
   z.object({ action: z.literal('video'), input: mediaRequestSchema }),
@@ -56,8 +56,8 @@ export async function POST(request: Request) {
     if (!result.success)
       throw new StudioError('입력 형식이나 분량을 확인해 주세요. 원고는 최대 80개 장면까지 지원합니다.', 400);
     const data = await match(result.data)
-      .with({ action: 'draft' }, (action) => generateDraft(action.input, request.signal))
-      .with({ action: 'continue' }, (action) => continueStory(action.input, request.signal))
+      .with({ action: 'plan' }, (action) => generatePlan(action.input, request.signal))
+      .with({ action: 'continue' }, (action) => writeScene(action.input, request.signal))
       .with({ action: 'voice' }, (action) =>
         generateVoice(action.input.text, request.signal, action.input.settings),
       )

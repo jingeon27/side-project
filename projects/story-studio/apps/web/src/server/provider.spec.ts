@@ -7,12 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sampleProject } from '../lib/sample';
 import { type TMediaRequest } from '../lib/story';
 import { storeTask } from './assets';
-import { continueStory, generateDraft, generateImage, generateVideo, videoStatus } from './provider';
+import { generateImage, generatePlan, generateVideo, videoStatus, writeScene } from './provider';
 
 const state = { directory: '' };
 const completion = (value: unknown, finish = 'stop') =>
   Response.json({ choices: [{ finish_reason: finish, message: { content: JSON.stringify(value) } }] });
 const project = sampleProject();
+const plan = {
+  ...project,
+  outline: project.scenes.map((scene) => ({ title: scene.title, summary: scene.narration })),
+};
 const input: TMediaRequest = {
   format: 'animation',
   style: project.brief.style,
@@ -34,10 +38,10 @@ afterEach(async () => {
   await rm(state.directory, { recursive: true, force: true });
 });
 describe('Qwen·Wan 공식 API 연결', () => {
-  it('한국어 원고를 JSON으로 검증하고 사용자 입력을 메시지 데이터로 전달한다', async () => {
-    const mock = vi.fn().mockResolvedValue(completion(project));
+  it('이야기 구성을 JSON으로 검증하고 사용자 입력을 메시지 데이터로 전달한다', async () => {
+    const mock = vi.fn().mockResolvedValue(completion(plan));
     vi.stubGlobal('fetch', mock);
-    expect((await generateDraft(project.brief)).title).toBe(project.title);
+    expect((await generatePlan(project.brief)).title).toBe(project.title);
     const body = JSON.parse(mock.mock.calls[0]![1].body);
     expect(body.model).toBe('qwen3.8-max');
     expect(body.response_format.type).toBe('json_object');
@@ -47,21 +51,24 @@ describe('Qwen·Wan 공식 API 연결', () => {
   it('잘린 응답·잘못된 JSON·요청과 다른 장면 수를 성공으로 취급하지 않는다', async () => {
     const mock = vi
       .fn()
-      .mockResolvedValueOnce(completion(project, 'length'))
+      .mockResolvedValueOnce(completion(plan, 'length'))
       .mockResolvedValueOnce(completion({ nonsense: true }))
-      .mockResolvedValueOnce(completion({ ...project, scenes: [project.scenes[0]] }));
+      .mockResolvedValueOnce(completion({ ...plan, outline: plan.outline.slice(0, 1) }));
     vi.stubGlobal('fetch', mock);
-    await expect(generateDraft(project.brief)).rejects.toThrow('끝까지');
-    await expect(generateDraft(project.brief)).rejects.toThrow('형식');
-    await expect(generateDraft(project.brief)).rejects.toThrow('장면 수');
+    await expect(generatePlan(project.brief)).rejects.toThrow('끝까지');
+    await expect(generatePlan(project.brief)).rejects.toThrow('형식');
+    await expect(generatePlan(project.brief)).rejects.toThrow('장면 수');
   });
   it('이어쓰기에 인물 설정과 직전 장면을 포함한다', async () => {
     const mock = vi.fn().mockResolvedValue(completion(project.scenes[0]));
     vi.stubGlobal('fetch', mock);
-    expect((await continueStory(project)).title).toBe(project.scenes[0]!.title);
-    const input = JSON.parse(JSON.parse(mock.mock.calls[0]![1].body).messages[1].content);
+    expect((await writeScene(project)).title).toBe(project.scenes[0]!.title);
+    const body = JSON.parse(mock.mock.calls[0]![1].body);
+    const input = JSON.parse(body.messages[1].content);
     expect(input.characters).toContain('노란 우비');
     expect(input.scenes.at(-1).title).toBe('언제나 네 곁에');
+    // The cloud writer has no local index: nothing is retrieved and no material rule is added.
+    expect(body.messages[0].content).not.toContain('materials');
   });
   it('한국어 시각 묘사를 영어로 번역한 뒤 Qwen Image를 호출하고 원본을 보관한다', async () => {
     const mock = vi
@@ -151,7 +158,7 @@ describe('Qwen·Wan 공식 API 연결', () => {
           Response.json({ code: 'InvalidApiKey', message: 'test-private-key' }, { status: 401 }),
         ),
     );
-    await expect(generateDraft(project.brief)).rejects.toThrow('API 키');
-    await expect(generateDraft(project.brief)).rejects.not.toThrow('test-private-key');
+    await expect(generatePlan(project.brief)).rejects.toThrow('API 키');
+    await expect(generatePlan(project.brief)).rejects.not.toThrow('test-private-key');
   });
 });

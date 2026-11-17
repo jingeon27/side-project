@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
+import { collectionNameSchema } from './materials';
 import { defaultVoiceSettings, voiceSettingsSchema } from './voice-training';
 
 export const formats = [
@@ -20,6 +21,8 @@ export const briefSchema = z.object({
   count: z.number().int().min(1).max(8),
   ratio: z.enum(['16:9', '9:16', '1:1']),
   quality: z.enum(['draft', 'standard']).default('draft'),
+  // Material collections the writer may consult. Only the local engine retrieves from them.
+  collections: z.array(collectionNameSchema).max(8).default([]),
 });
 export type TBrief = z.infer<typeof briefSchema>;
 export const sceneContentSchema = z.object({
@@ -29,14 +32,24 @@ export const sceneContentSchema = z.object({
   visual: z.string().max(2000),
   duration: z.number().int().min(2).max(15),
 });
-export const draftSchema = z.object({
+// One planned scene: what happens in it and where it ends. The writer turns each beat into a scene.
+export const beatSchema = z.object({
+  title: z.string().min(1).max(150),
+  summary: z.string().min(1).max(600),
+});
+export type TBeat = z.infer<typeof beatSchema>;
+export const planSchema = z.object({
   title: z.string().min(1).max(150),
   logline: z.string().max(500),
   synopsis: z.string().max(6000),
   characters: z.string().max(6000),
-  scenes: z.array(sceneContentSchema).min(1).max(8),
+  outline: z.array(beatSchema).min(1).max(8),
 });
-export type TDraft = z.infer<typeof draftSchema>;
+type TPlan = z.infer<typeof planSchema>;
+type TDraft = Omit<TPlan, 'outline'> & { scenes: z.infer<typeof sceneContentSchema>[] };
+// Titles of the materials retrieved while a scene was written.
+const sourcesSchema = z.array(z.string().max(120)).max(12);
+export const writtenSceneSchema = sceneContentSchema.extend({ sources: sourcesSchema.optional() });
 export const voiceSchema = z.object({
   asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.wav$/),
   duration: z.number().positive().max(1800),
@@ -64,6 +77,7 @@ export const sceneSchema = sceneContentSchema.extend({
   video: taskSchema.optional(),
   voice: voiceSchema.optional(),
   voiceSettings: voiceSettingsSchema.optional(),
+  sources: sourcesSchema.optional(),
 });
 export type TScene = z.infer<typeof sceneSchema>;
 export const projectSchema = z.object({
@@ -77,6 +91,8 @@ export const projectSchema = z.object({
   scenes: z.array(sceneSchema).min(1).max(80),
   // The scene whose current image keeps the same people across newly generated images.
   referenceSceneId: z.string().uuid().optional(),
+  // Planned beats that are not written yet; continuing the story writes the first one.
+  outline: z.array(beatSchema).max(8).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   sample: z.boolean(),
@@ -104,8 +120,13 @@ export const continueSchema = z.object({
   title: z.string().min(1).max(150),
   synopsis: z.string().max(6000),
   characters: z.string().max(6000),
-  scenes: z.array(sceneContentSchema).min(1).max(80),
+  // Scenes written so far; empty while the first scene is being written.
+  scenes: z.array(sceneContentSchema).max(80),
+  // The planned beat to write now, and the beats after it so this scene does not run ahead of them.
+  beat: beatSchema.optional(),
+  upcoming: z.array(beatSchema).max(8).optional(),
 });
+export type TContinueRequest = z.infer<typeof continueSchema>;
 
 export function makeProject(brief: TBrief, draft: TDraft, sample = false): TProject {
   const now = dayjs().toISOString();
@@ -125,6 +146,23 @@ export function referenceImage(project: TProject, scene: TScene) {
   // Regenerating the reference scene itself starts fresh instead of copying its own image.
   if (project.referenceSceneId === scene.id) return undefined;
   return project.scenes.find((item) => item.id === project.referenceSceneId)?.image;
+}
+// A Korean brief to paste into an external image tool; the resulting image is imported into the scene.
+export function imagePrompt(
+  project: Pick<TProject, 'brief' | 'characters'>,
+  scene: Pick<TScene, 'visual' | 'narration'>,
+) {
+  return [
+    `${formats.find((format) => format.id === project.brief.format)?.name ?? '이야기'} 장면 이미지를 한 장 그려 주세요.`,
+    `그림체와 연출: ${project.brief.style}`,
+    `화면 비율: ${project.brief.ratio}`,
+    `등장인물 설정:\n${project.characters}`,
+    `장면: ${scene.visual}`,
+    scene.narration.trim() ? `상황: ${scene.narration.trim()}` : '',
+    '글자, 자막, 말풍선, 워터마크는 넣지 마세요. 기준 이미지를 첨부했다면 인물의 얼굴과 의상을 그대로 유지해 주세요.',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 export function caption(scene: Pick<TScene, 'dialogue' | 'narration'>) {
   return scene.dialogue.trim() || scene.narration.trim();

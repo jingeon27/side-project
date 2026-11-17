@@ -4,8 +4,11 @@ import { libraryKey, readBackup, readLibrary, writeLibrary } from './library';
 import { sampleProject } from './sample';
 import {
   briefSchema,
+  continueSchema,
+  imagePrompt,
   manuscript,
   mediaRequestSchema,
+  planSchema,
   projectSchema,
   referenceImage,
   safeFilename,
@@ -79,6 +82,41 @@ describe('한국어 작품과 백업', () => {
       false,
     );
     expect(projectSchema.safeParse({ ...project, referenceSceneId: '../scene' }).success).toBe(false);
+  });
+  it('이전에 저장한 작품은 참고 자료 묶음 없이 열리고, 남은 구성과 참고한 자료를 함께 보존한다', () => {
+    const project = sampleProject();
+    const { collections, ...legacyBrief } = project.brief;
+    expect(collections).toEqual([]);
+    expect(projectSchema.parse({ ...project, brief: legacyBrief }).brief.collections).toEqual([]);
+    const planned = {
+      ...project,
+      brief: { ...project.brief, collections: ['무협 설정', 'venezuela-notes'] },
+      outline: [{ title: '다음 장', summary: '서우가 답장을 쓴다.' }],
+      scenes: project.scenes.map((scene) => ({ ...scene, sources: ['강호 용어집'] })),
+    };
+    expect(projectSchema.parse(planned)).toEqual(planned);
+    expect(briefSchema.safeParse({ ...project.brief, collections: ["a' OR 1=1"] }).success).toBe(false);
+  });
+  it('구성은 장면마다 제목과 사건 요약을 요구하고, 첫 장면은 앞선 원고 없이 요청한다', () => {
+    const project = sampleProject();
+    const beat = { title: '지도에 없는 우체국', summary: '서우가 처음 보는 우체국을 발견한다.' };
+    expect(planSchema.safeParse({ ...project, outline: [beat] }).success).toBe(true);
+    expect(planSchema.safeParse({ ...project, outline: [] }).success).toBe(false);
+    expect(planSchema.safeParse({ ...project, outline: [{ title: '제목만' }] }).success).toBe(false);
+    const first = continueSchema.parse({ ...project, scenes: [], beat, upcoming: [beat] });
+    expect(first).toMatchObject({ scenes: [], beat, upcoming: [beat] });
+    expect(continueSchema.parse(project).beat).toBeUndefined();
+  });
+  it('외부 이미지 도구에 붙여 넣을 프롬프트에 그림체, 비율, 인물 설정과 장면을 담는다', () => {
+    const project = sampleProject();
+    const prompt = imagePrompt(project, project.scenes[0]!);
+    expect(prompt).toContain('애니메이션 장면 이미지');
+    expect(prompt).toContain('따뜻한 수채화풍');
+    expect(prompt).toContain('화면 비율: 16:9');
+    expect(prompt).toContain('노란 우비와 빨간 장화');
+    expect(prompt).toContain('비 내리는 오래된 한국 골목');
+    expect(prompt).toContain('글자, 자막, 말풍선, 워터마크는 넣지 마세요');
+    expect(imagePrompt(project, { ...project.scenes[0]!, narration: '  ' })).not.toContain('상황:');
   });
   it('파일명에서 경로 문자를 제거하고 한국어를 유지한다', () => {
     expect(safeFilename('서우/밤이: 편지?')).toBe('서우_밤이_ 편지_');

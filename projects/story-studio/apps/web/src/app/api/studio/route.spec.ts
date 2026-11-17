@@ -28,21 +28,21 @@ describe('로컬 창작 API 경계', () => {
     const upstream = vi.fn();
     vi.stubGlobal('fetch', upstream);
     expect(
-      (await POST(post({ action: 'draft', input: sampleProject().brief }, 'https://evil.example'))).status,
+      (await POST(post({ action: 'plan', input: sampleProject().brief }, 'https://evil.example'))).status,
     ).toBe(403);
     expect((await GET(new Request('http://public.example/api/studio'))).status).toBe(403);
     expect(upstream).not.toHaveBeenCalled();
   });
   it('키가 없으면 생성했다고 가장하지 않고 연결 필요 오류를 반환한다', async () => {
     vi.stubEnv('DASHSCOPE_API_KEY', '');
-    const response = await POST(post({ action: 'draft', input: sampleProject().brief }));
+    const response = await POST(post({ action: 'plan', input: sampleProject().brief }));
     expect(response.status).toBe(503);
     expect((await response.json()).error).toContain('AI 연결');
   });
   it('잘못된 입력과 너무 큰 요청을 유료 호출 전에 거부한다', async () => {
     const upstream = vi.fn();
     vi.stubGlobal('fetch', upstream);
-    expect((await POST(post({ action: 'draft', input: {} }))).status).toBe(400);
+    expect((await POST(post({ action: 'plan', input: {} }))).status).toBe(400);
     expect((await POST(post({ value: '가'.repeat(510000) }))).status).toBe(413);
     expect(upstream).not.toHaveBeenCalled();
   });

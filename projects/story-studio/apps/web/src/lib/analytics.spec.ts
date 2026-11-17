@@ -12,8 +12,9 @@ afterEach(() => {
 it('키가 없는 로컬 사용에서는 SDK를 초기화하거나 전송하지 않는다', async () => {
   vi.stubGlobal('window', {});
   vi.stubEnv('NEXT_PUBLIC_STORY_STUDIO_AMPLITUDE_KEY', '');
-  await trackStudioEvent('studio_request_clicked', { action: 'draft' });
-  await trackStudioEvent('studio_request_succeeded', { action: 'draft' });
+  await trackStudioEvent('studio_request_clicked', { action: 'plan' });
+  await trackStudioEvent('studio_request_succeeded', { action: 'plan' });
+  await trackStudioEvent('studio_materials_opened', {});
   await trackStudioEvent('studio_recording_clicked', { action: 'start' });
   await trackStudioEvent('studio_recording_started', { source: 'microphone' });
   await trackStudioEvent('studio_recording_completed', { source: 'microphone' });

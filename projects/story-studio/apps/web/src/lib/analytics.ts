@@ -1,9 +1,12 @@
 import type { TFormat } from './story';
 
 export type TStudioAction =
-  | 'draft'
+  | 'plan'
   | 'continue'
   | 'image'
+  | 'image-import'
+  | 'material-add'
+  | 'material-delete'
   | 'video'
   | 'voice'
   | 'compose'
@@ -22,6 +25,9 @@ type TAnalyticsProperties = {
   studio_recording_started: { source: 'microphone' };
   studio_recording_completed: { source: 'microphone' };
   studio_reference_clicked: { action: 'set' | 'clear' };
+  studio_prompt_clicked: { action: 'copy' };
+  studio_collection_clicked: { action: 'select' | 'clear' };
+  studio_materials_opened: Record<never, never>;
 };
 type TClient = ReturnType<(typeof import('@amplitude/analytics-browser'))['createInstance']>;
 const connection: { client?: Promise<TClient> } = {};
