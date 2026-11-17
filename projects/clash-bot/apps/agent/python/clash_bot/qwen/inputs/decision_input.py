@@ -3,8 +3,8 @@
 import json
 import math
 
+from clash_bot.combat_projection import forecast_effect, forecast_text, screen_body
 from clash_bot.paths import CONTRACTS_DIR
-from clash_bot.qwen.inputs.combat_projection import forecast_effect, forecast_text, screen_body
 
 CONTRACT = json.loads((CONTRACTS_DIR / "decision-v3.json").read_text())
 EFFECTS = json.loads((CONTRACTS_DIR / "placement-effects.json").read_text())

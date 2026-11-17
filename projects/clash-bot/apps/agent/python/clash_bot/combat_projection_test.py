@@ -1,8 +1,8 @@
 import json
 import unittest
 
+from clash_bot.combat_projection import forecast_effect
 from clash_bot.paths import FIXTURES_DIR
-from clash_bot.qwen.inputs.combat_projection import forecast_effect
 
 
 class CombatProjectionTest(unittest.TestCase):

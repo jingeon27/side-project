@@ -5,7 +5,8 @@ import json
 import math
 from pathlib import Path
 
-from ..inputs.combat_projection import COMBAT
+from clash_bot.combat_projection import COMBAT
+
 from ..inputs.decision_input import CONTRACT, mirror_actor_prompt
 from .episode_events import verified_result
 

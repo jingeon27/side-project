@@ -30,6 +30,7 @@ apps/agent/
       paths.py                 cwd와 모듈 깊이에 의존하지 않는 경로
       channel.py               워커 프로세스가 Node와 공유하는 응답 통로(응답 외 출력은 오류 스트림으로)
       statistics.py            실전·자가대국의 정확 이항 검정
+      combat_projection.py     Qwen·빠른 정책이 함께 쓰는 순수 이동·피해 예측
       layers_test.py           패키지 의존 방향 검사
       qwen/                    이름으로 실행하는 진입점과 계약은 폴더 바로 아래에 둔다
         learning_worker.py     JSON 줄 단위 통신과 오류 복구(Node가 실행)
@@ -37,7 +38,7 @@ apps/agent/
         protocol.py            Pydantic 입력 계약
         setup.py, download.py, model_specs.py   설치와 모델 사양
         qualification.py       채택 기준 계약 읽기
-        inputs/                모델이 받는 것: 판단 프롬프트(decision_input), 전투 예측(combat_projection),
+        inputs/                모델이 받는 것: 판단 프롬프트(decision_input),
                                고정 머리말 캐시(text_prefix), 고정 특징과 캐시(features, feature_cache)
         learning/              가중치가 바뀌는 방식: LoRA·확률·손실(learning_policy), 체크포인트와 Adam
                                상태(learner), PPO·상대 모방·수읽기 증류(policy_gradient, imitation,

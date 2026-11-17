@@ -1,4 +1,4 @@
-"""Reference damage intervals from public motion and visible health only."""
+"""Shared, pure damage projections from public motion and visible health only."""
 
 import json
 import math
