@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .engine import rules_identity
+from .engine import LIVE_DECK, rules_identity
 from .parallel import play_frozen_games
 from .policy import Policy
 
@@ -14,7 +14,7 @@ from .policy import Policy
     os.environ.get("RUN_ARENA_INTEGRATION") == "1", "optional native process integration"
 )
 class PackagedParallelTests(unittest.TestCase):
-    def test_two_spawned_workers_complete_separate_games(self):
+    def test_two_spawned_workers_complete_a_mirror_and_a_mixed_deck_game(self):
         with tempfile.TemporaryDirectory() as directory:
             rules = rules_identity()
             checkpoint = Path(directory) / "checkpoint"
@@ -26,14 +26,16 @@ class PackagedParallelTests(unittest.TestCase):
                     "opponent": str(checkpoint),
                     "rulesID": rules["id"],
                     "id": f"package-smoke-{seat}",
+                    "decks": decks,
                     "seat": seat,
                     "simulations": 2,
                     "depth": 2,
                 }
-                for seat in (0, 1)
+                for seat, decks in ((0, [LIVE_DECK, LIVE_DECK]), (1, ["giant_beatdown", "bait"]))
             ]
             games = play_frozen_games(jobs, 2)
             self.assertEqual(len(games), 2)
             self.assertTrue(
                 all(game["completed"] and game["rejectedCommands"] == 0 for game in games)
             )
+            self.assertEqual([game["decks"] for game in games], [job["decks"] for job in jobs])

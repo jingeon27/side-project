@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from clash_bot.files import atomic_json
 
 from .engine import FIELDS, TILE, Action, canonical, digest, new_battle
+from .selfplay import live_mirror
 from .storage import seed_for
 
 NAMES = [
@@ -98,7 +99,7 @@ def export(data_dir, episodes, count=8):
     eligible = [
         row
         for episode in episodes
-        if episode["completed"] and not episode["rejectedCommands"]
+        if episode["completed"] and not episode["rejectedCommands"] and live_mirror(episode)
         for row in episode["samples"]
         if row["search"]["simulations"] >= 8 and row["outcome"] in (-1, 0, 1)
     ]

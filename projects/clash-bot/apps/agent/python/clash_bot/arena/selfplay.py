@@ -4,11 +4,28 @@ import time
 
 import numpy as np
 
-from .engine import Arena, legal_actions
+from .engine import DECKS, LIVE_DECK, Arena, legal_actions
 from .policy import features
 from .samples import SparseFeatures, value_target
 from .search import Workspace, search
 from .storage import seed_for
+
+# Half the games are the live deck's mirror, which Counterpush plays; the rest pair pool decks so
+# the network learns what card attributes mean rather than one deck's cards.
+LIVE_MIRROR = 0.5
+
+
+def matchup(game_id):
+    rng = np.random.default_rng(seed_for("decks", game_id))
+    if rng.random() < LIVE_MIRROR:
+        return [LIVE_DECK, LIVE_DECK]
+    names = sorted(DECKS)
+    return [names[int(rng.integers(len(names)))] for _ in range(2)]
+
+
+def live_mirror(game):
+    """Only these games feed the Qwen studies: decision-v3 prompts know the live deck alone."""
+    return game["decks"] == [LIVE_DECK, LIVE_DECK]
 
 
 def tower_damage(player):
@@ -27,9 +44,10 @@ def play_game(
     training=True,
     max_ticks=6200,
     report=None,
+    decks=None,
 ):
     began = time.perf_counter()
-    arena = Arena(seed_for("environment", game_id))
+    arena = Arena(seed_for("environment", game_id), decks=decks)
     workspace = Workspace(particles=2)
     choices = np.random.default_rng(seed_for("acting", game_id))
     samples, rejected, decisions, searches = [], 0, 0, 0
@@ -115,6 +133,7 @@ def play_game(
         "format": "clash-arena-selfplay-v1",
         "gameID": game_id,
         "rulesID": rules_id,
+        "decks": arena.decks,
         "policies": [
             {"version": policy.metadata["version"], "weightsSHA256": policy.checksum()}
             for policy in policies

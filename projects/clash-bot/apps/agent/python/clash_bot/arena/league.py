@@ -25,7 +25,7 @@ from .evaluation import evaluate, pfsp_weights
 from .export import export
 from .parallel import play_frozen_games
 from .policy import LEAGUE_KEY, Policy
-from .selfplay import replay_samples
+from .selfplay import matchup, replay_samples
 from .storage import read_episode, replay_path, seed_for, write_episode, write_replay
 
 
@@ -236,6 +236,7 @@ def run(
                         else league["opponents"][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
                     )
                     opponent = league["learner"] if selected is None else selected["version"]
+                    game_id = f"train-{version}-{index}-{uuid.uuid4().hex[:8]}"
                     jobs.append(
                         {
                             "current": str(checkpoint(root, league["learner"])),
@@ -243,7 +244,8 @@ def run(
                             "selected": None if selected is None else opponent,
                             "index": index,
                             "seat": (version + index // 2) % 2,
-                            "id": f"train-{version}-{index}-{uuid.uuid4().hex[:8]}",
+                            "id": game_id,
+                            "decks": matchup(game_id),
                             "rulesID": rules["id"],
                             "simulations": simulations,
                             "depth": depth,

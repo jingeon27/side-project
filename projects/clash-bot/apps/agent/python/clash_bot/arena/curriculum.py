@@ -28,6 +28,7 @@ from .engine import (
     rules_identity,
 )
 from .export import render
+from .selfplay import live_mirror
 from .storage import seed_for
 
 
@@ -294,7 +295,7 @@ def build(data_dir, count=64, seed=0, split="train"):
 def from_selfplay(data_dir, episodes, count=8):
     teacher = Teacher()
     labels = []
-    for episode in episodes:
+    for episode in filter(live_mirror, episodes):
         for sample in episode["samples"][::3]:
             obs = sample["observation"]
             if len(obs["state"]["entities"]) < 8:

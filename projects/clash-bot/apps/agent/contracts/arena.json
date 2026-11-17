@@ -9,17 +9,52 @@
   "tableFile": "cards-160635007-20261103.json",
   "tableVersion": "cards-160635007-20261103.1",
   "tableFNV": "69896771bed51201",
-  "cards": [
-    "BarbLog",
-    "FirespiritHut",
-    "GoblinHut",
-    "Graveyard",
-    "IceWizard",
-    "Knight",
-    "Poison",
-    "Skeletons"
-  ],
-  "forms": [0, 1, 0, 0, 2, 1, 0, 0],
+  "liveDeck": "counterpush",
+  "decks": {
+    "counterpush": {
+      "cards": [
+        "BarbLog",
+        "FirespiritHut",
+        "GoblinHut",
+        "Graveyard",
+        "IceWizard",
+        "Knight",
+        "Poison",
+        "Skeletons"
+      ],
+      "forms": [0, 1, 0, 0, 2, 1, 0, 0]
+    },
+    "hog_cycle": {
+      "cards": [
+        "HogRider",
+        "Musketeer",
+        "Cannon",
+        "IceSpirits",
+        "Skeletons",
+        "IceGolemite",
+        "Log",
+        "Fireball"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "giant_beatdown": {
+      "cards": ["Giant", "Wizard", "BabyDragon", "MiniPekka", "Minions", "Valkyrie", "Arrows", "Zap"],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "bait": {
+      "cards": [
+        "GoblinBarrel",
+        "Princess",
+        "GoblinGang",
+        "Knight",
+        "InfernoTower",
+        "Rocket",
+        "Log",
+        "IceSpirits"
+      ],
+      "forms": [0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  },
   "level": 11,
   "referenceProjects": [
     "https://github.com/itzik123/ClashRoyaleAi",

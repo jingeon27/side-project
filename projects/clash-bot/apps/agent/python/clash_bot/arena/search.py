@@ -102,6 +102,7 @@ def search(
         index = simulation % len(worlds)
         world.battle.load(snapshots[index])
         world.history = worlds[index].history.copy()
+        world.decks = worlds[index].decks
         world.initial_hands = worlds[index].initial_hands
         world.initial_next = worlds[index].initial_next
         node, path = root, []

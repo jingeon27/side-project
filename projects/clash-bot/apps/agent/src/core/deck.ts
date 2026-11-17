@@ -1,4 +1,4 @@
-// 양쪽 모두 이 덱으로 두는 미러전이다. Python(contracts/arena.json)도 같은 덱을 쓴다.
+// 양쪽 모두 이 덱으로 두는 미러전이다. 자가대국의 실전 덱(contracts/arena.json의 liveDeck)과 같다.
 export const COUNTERPUSH_DECK = [
   'barbarian_barrel',
   'furnace',

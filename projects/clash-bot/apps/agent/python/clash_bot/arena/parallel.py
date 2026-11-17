@@ -14,7 +14,12 @@ def play_frozen_game(job):
     policies = [opponent, opponent]
     policies[job["seat"]] = current
     return play_game(
-        policies, job["id"], job["rulesID"], simulations=job["simulations"], depth=job["depth"]
+        policies,
+        job["id"],
+        job["rulesID"],
+        simulations=job["simulations"],
+        depth=job["depth"],
+        decks=job["decks"],
     )
 
 

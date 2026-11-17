@@ -10,10 +10,11 @@ import json
 import random
 from dataclasses import dataclass
 from fractions import Fraction
+from functools import cache
 from typing import Annotated, Literal
 
 import royalesim
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from clash_bot.paths import CONTRACTS_DIR
 
@@ -33,9 +34,33 @@ class DeploymentSpec(BaseModel):
     ]
 
 
+class DeckSpec(BaseModel):
+    """Eight engine cards and each card's form: 0 the card, 1 its evolution, 2 its hero."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    cards: tuple[str, ...] = Field(min_length=8, max_length=8)
+    forms: tuple[Literal[0, 1, 2], ...] = Field(min_length=8, max_length=8)
+
+    @model_validator(mode="after")
+    def distinct(self):
+        if len(set(self.cards)) != len(self.cards):
+            raise ValueError("a deck holds eight different cards")
+        return self
+
+
 DEPLOYMENT = DeploymentSpec.model_validate_json((CONTRACTS_DIR / "deployment.json").read_text())
-CARDS = SPEC["cards"]
-FORMS = SPEC["forms"]
+DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+# The deck the live screen plays; Counterpush is a mirror match of it.
+LIVE_DECK = SPEC["liveDeck"]
+if LIVE_DECK not in DECKS:
+    raise ValueError("The live deck must be one of the arena decks")
+# One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7,
+# which the Qwen study exports of live-mirror games still index.
+CARDS = list(
+    dict.fromkeys(card for name in (LIVE_DECK, *sorted(DECKS)) for card in DECKS[name].cards)
+)
+CARD_ID = {card: index for index, card in enumerate(CARDS)}
 TILE = 1000 * royalesim.SUBTILE_PER_MILLITILE
 FIELDS = {name: index for index, name in enumerate(royalesim.ENTITY_FIELDS)}
 EXPECTED_FIELDS = ["uid", "team", "kind", "card_id", "tower_slot", "x", "y", "hp", "max_hp"]
@@ -47,6 +72,15 @@ def digest(value):
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def deck_ids(name):
+    return [CARD_ID[card] for card in DECKS[name].cards]
+
+
+def forms_of(name, order):
+    form = dict(zip(deck_ids(name), DECKS[name].forms))
+    return [form[card] for card in order]
 
 
 def new_battle():
@@ -76,7 +110,8 @@ def rules_identity():
         "wheelSHA256": SPEC["sha256"],
         "calibrationSHA256": hashlib.sha256((data / "calibration.json").read_bytes()).hexdigest(),
         "cards": CARDS,
-        "forms": FORMS,
+        "decks": {name: deck.model_dump(mode="json") for name, deck in sorted(DECKS.items())},
+        "liveDeck": LIVE_DECK,
         "level": SPEC["level"],
         # Policy inputs read cards through this catalogue; a new one is a new rule set.
         "catalogue": current().id,
@@ -88,7 +123,7 @@ def rules_identity():
 
 @dataclass(frozen=True)
 class Action:
-    card: int  # -1 wait, -2 ability; otherwise index in CARDS, never a hidden hand slot
+    card: int  # -1 wait, -2 ability; otherwise the battle catalogue id (CARDS), never a hand slot
     x: int = 0
     y: int = 0
 
@@ -155,22 +190,28 @@ def public_mana(history, tick, team):
 
 
 class Arena:
-    def __init__(self, seed, initial_decks=None):
+    def __init__(self, seed, initial_decks=None, decks=None):
         self.battle = new_battle()
         self.catalogue = json.loads(self.battle.catalogue_json())
-        self.reset(seed, initial_decks)
+        self.reset(seed, initial_decks, decks or [LIVE_DECK, LIVE_DECK])
 
-    def reset(self, seed, initial_decks=None):
-        decks = initial_decks or [list(range(8)), list(range(8))]
+    def reset(self, seed, initial_decks=None, decks=None):
+        """`decks` names each side's pool deck; `initial_decks` is an exact draw order of it."""
+        if decks is not None:
+            self.decks = list(decks)
+        orders = initial_decks or [deck_ids(name) for name in self.decks]
+        for name, order in zip(self.decks, orders):
+            if sorted(order) != sorted(deck_ids(name)):
+                raise ValueError(f"A draw order must hold exactly the {name} deck's cards")
         self.battle.reset(
             seed=seed,
-            decks=decks,
+            decks=orders,
             shuffle=0 if initial_decks else 1,
             start_tick=0,
             elixir_milli=[5000, 5000],
             tower_hp=None,
             spawns=[],
-            forms=[[FORMS[card] for card in deck] for deck in decks],
+            forms=[forms_of(name, order) for name, order in zip(self.decks, orders)],
         )
         initial = self.state()
         self.initial_hands = [player["hand"] for player in initial["players"]]
@@ -185,6 +226,7 @@ class Arena:
         copy.battle = new_battle()
         copy.battle.load(self.battle.save())
         copy.catalogue = self.catalogue
+        copy.decks = self.decks.copy()
         copy.initial_hands = [hand.copy() for hand in self.initial_hands]
         copy.initial_next = self.initial_next.copy()
         copy.history = self.history.copy()
@@ -209,9 +251,11 @@ class Arena:
                 row[FIELDS[field]] = -1 if field != "ability_ticks" else 0
         # These are public plays. No enemy hand/queue, future RNG or save blob is
         # handed to a policy or search. Each observer gets its own opening only.
+        # Both deck lists are part of the public setup, as in the Counterpush mirror match.
         observation = {
             "team": team,
             "state": state,
+            "decks": self.decks.copy(),
             "history": self.history.copy(),
             "initial_hand": self.initial_hands[team].copy(),
             "initial_next": self.initial_next[team],
@@ -256,6 +300,53 @@ class Arena:
         return results
 
 
+@cache
+def placements():
+    """Each battle card's placement rule from the card catalogue, by battle catalogue id."""
+    lookup = current()
+    return [lookup.card(lookup.card_name(card)).placement for card in CARDS]
+
+
+LANES = [(3.5, 10), (14.5, 10), (3.5, 14), (14.5, 14), *DEPLOYMENT.kingBackTiles]
+ENEMY_TOWERS = [(3.5, 25.5), (14.5, 25.5)]
+
+
+def placement_tiles(placement, threat, targets):
+    """Up to six own-frame tiles per card; src/core/policy/fast-candidates.ts has the same rules."""
+    match placement:
+        case "spawn_spell":  # Graveyard: centre / outer / forward in both lanes
+            points = [
+                (x + dx, y)
+                for x in (3.5, 14.5)
+                for dx, y in ((0, 25.5), (-0.8 if x < 9 else 0.8, 25), (0, 24.5))
+            ]
+        case "area_spell":
+            points = ([threat] if threat else []) + targets[:3] + ENEMY_TOWERS
+        case "building":
+            points = [(9, 9), (7, 12), (11, 12), (3.5, 10), (14.5, 10), (9, 6)]
+        case "troop" | "ranged_troop" | "rolling_spell":
+            points = list(LANES)
+            if threat:
+                x, y = threat
+                gap = 3 if placement == "ranged_troop" else 1
+                points[:2] = [
+                    (max(0.6, min(17.4, x)), max(1, min(15, y - gap))),
+                    (9, max(2, min(13, y - 1))),
+                ]
+        case "tower_spell":
+            points = [*ENEMY_TOWERS, (3.5, 23.5), (14.5, 23.5)]
+        case "anywhere":
+            points = ([threat] if threat else []) + [
+                (3.5, 22.5),
+                (14.5, 22.5),
+                (3.5, 28.5),
+                (14.5, 28.5),
+            ]
+        case _:
+            points = []
+    return points[:6]
+
+
 def legal_actions(battle, team, state=None):
     state = state or json.loads(battle.state_json())
     player = state["players"][team]
@@ -276,34 +367,15 @@ def legal_actions(battle, team, state=None):
         default=None,
     )
     threat = canonical(nearest["x"] / TILE, nearest["y"] / TILE, team) if nearest else None
+    targets = [
+        canonical(unit["x"] / TILE, unit["y"] / TILE, team)
+        for unit in units
+        if unit["team"] != team
+    ]
     for card in player["hand"]:
         if card < 0:
             continue
-        if card == 3:  # Graveyard: centre / outer / forward in both lanes
-            points = [
-                (x + dx, y)
-                for x in (3.5, 14.5)
-                for dx, y in ((0, 25.5), (-0.8 if x < 9 else 0.8, 25), (0, 24.5))
-            ]
-        elif card == 6:
-            targets = [
-                canonical(unit["x"] / TILE, unit["y"] / TILE, team)
-                for unit in units
-                if unit["team"] != team
-            ]
-            points = ([threat] if threat else []) + targets[:3] + [(3.5, 25.5), (14.5, 25.5)]
-        elif card == 2:
-            points = [(9, 9), (7, 12), (11, 12), (3.5, 10), (14.5, 10), (9, 6)]
-        else:
-            points = [(3.5, 10), (14.5, 10), (3.5, 14), (14.5, 14), *DEPLOYMENT.kingBackTiles]
-            if threat:
-                x, y = threat
-                gap = 3 if card in (1, 4) else 1
-                points[:2] = [
-                    (max(0.6, min(17.4, x)), max(1, min(15, y - gap))),
-                    (9, max(2, min(13, y - 1))),
-                ]
-        for x, y in points[:6]:
+        for x, y in placement_tiles(placements()[card], threat, targets):
             x, y = canonical(x, y, team)
             action = Action(card, round(x * TILE), round(y * TILE))
             cmd = (team, player["hand"].index(card), action.x, action.y)
@@ -317,17 +389,18 @@ def legal_actions(battle, team, state=None):
 
 def compatible_openings(observation, actor):
     own = actor == observation["team"]
+    deck = deck_ids(observation["decks"][actor])
     plays = [
         play["action"][0]
         for event in observation["history"]
         for play in event["plays"]
         if play["team"] == actor and play["action"][0] >= 0
     ]
-    hands = [tuple(observation["initial_hand"])] if own else itertools.combinations(range(8), 4)
+    hands = [tuple(observation["initial_hand"])] if own else itertools.combinations(deck, 4)
     current = observation["state"]["players"][actor] if own else None
     compatible = []
     for hand in hands:
-        for queue in itertools.permutations(card for card in range(8) if card not in hand):
+        for queue in itertools.permutations(card for card in deck if card not in hand):
             if own and queue[0] != observation["initial_next"]:
                 continue
             h, q = list(hand), list(queue)
@@ -355,11 +428,11 @@ class BeliefSampler:
         self.openings = [compatible_openings(observation, team) for team in (0, 1)]
 
     def sample(self, into=None):
-        decks = [self.rng.choice(rows) for rows in self.openings]
+        orders = [self.rng.choice(rows) for rows in self.openings]
         seed = self.rng.getrandbits(32)
-        arena = into or Arena(seed, decks)
+        arena = into or Arena(seed, orders, self.observation["decks"])
         if into:
-            arena.reset(seed, decks)
+            arena.reset(seed, orders, self.observation["decks"])
         for event in self.observation["history"]:
             gap = event["tick"] - arena.state()["tick"]
             if gap > 0:

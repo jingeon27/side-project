@@ -78,6 +78,42 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
     expect(tiles(profile, invaded, 'poison')[0]).toEqual([14.5, 12]);
   });
 
+  it("gives another deck's cards the simulator's tiles for their placement rule", () => {
+    const profile = state.profile!;
+    const calm = fastCandidates(
+      profile,
+      ['musketeer', 'fireball', 'goblin_barrel', 'goblin_drill'],
+      10,
+      situation(),
+    );
+    expect(tiles(profile, calm, 'musketeer')).toEqual([
+      [3.5, 10],
+      [14.5, 10],
+      [3.5, 14],
+      [14.5, 14],
+      [8, 0.5],
+      [10, 0.5],
+    ]);
+    expect(tiles(profile, calm, 'fireball')).toEqual([
+      [3.5, 25.5],
+      [14.5, 25.5],
+    ]);
+    expect(tiles(profile, calm, 'goblin_barrel')).toEqual([
+      [3.5, 25.5],
+      [14.5, 25.5],
+      [3.5, 23.5],
+      [14.5, 23.5],
+    ]);
+    expect(tiles(profile, calm, 'goblin_drill')).toEqual([
+      [3.5, 22.5],
+      [14.5, 22.5],
+      [3.5, 28.5],
+      [14.5, 28.5],
+    ]);
+    const invaded = fastCandidates(profile, ['musketeer'], 10, situation([enemy(profile, 14.5, 12)]));
+    expect(tiles(profile, invaded, 'musketeer')[0]).toEqual([14.5, 9]);
+  });
+
   it('skips unaffordable cards and keeps waiting available at high elixir like the simulator', () => {
     const profile = state.profile!;
     const poor = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 3, situation());
