@@ -35,7 +35,14 @@ export class TrophyLearnerClient implements TrophyLearnerPort {
   }
   async initialize(seed: string, behaviorSHA256: string) {
     await this.client.ready();
-    return trophySnapshotSchema.parse(await this.client.request({ op: 'initialize', seed, behaviorSHA256 }));
+    const reply = trophySnapshotSchema
+      .extend({ type: z.literal('result') })
+      .parse(await this.client.request({ op: 'initialize', seed, behaviorSHA256 }));
+    return {
+      checkpoint: reply.checkpoint,
+      version: reply.version,
+      weightsSHA256: reply.weightsSHA256,
+    };
   }
   async train(
     policy: TrophySnapshot,
