@@ -4,7 +4,15 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { assetResponse, dataPath, readTask, saveAsset, storeTask, trustedAssetUrl } from './assets';
+import {
+  assetResponse,
+  dataPath,
+  readTask,
+  saveAsset,
+  saveImage,
+  storeTask,
+  trustedAssetUrl,
+} from './assets';
 
 const state = { directory: '' };
 const filename = '12345678-1234-1234-1234-123456789abc.mp4';
@@ -18,6 +26,21 @@ afterEach(async () => {
   await rm(state.directory, { recursive: true, force: true });
 });
 describe('생성 자산 격리와 영상 재생', () => {
+  it('가져온 이미지는 PNG만 저장하고 기존 자산 주소로 다시 읽는다', async () => {
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.alloc(200, 7),
+    ]);
+    const asset = await saveImage(png);
+    expect(asset).toMatch(/^\/api\/assets\/[a-f0-9-]{36}\.png$/);
+    const response = await assetResponse(path.basename(asset), null);
+    expect(response.headers.get('Content-Type')).toBe('image/png');
+    expect(Buffer.from(await response.arrayBuffer()).equals(png)).toBe(true);
+    await expect(saveImage(Buffer.from('<svg onload="alert(1)"></svg>'.padEnd(200)))).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(saveImage(png.subarray(0, 20))).rejects.toMatchObject({ status: 400 });
+  });
   it('HTTPS Alibaba 자산만 저장하며 로컬 주소·유사 도메인·인증정보를 거부한다', () => {
     expect(trustedAssetUrl('https://result.oss-ap-southeast-1.aliyuncs.com/image.png').protocol).toBe(
       'https:',

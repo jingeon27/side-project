@@ -70,6 +70,24 @@ export async function saveAsset(url: string, extension: 'png' | 'mp4') {
     throw error;
   }
 }
+const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+// A scene image made outside the studio. The browser has already converted it to a PNG in the project ratio.
+export async function saveImage(bytes: Buffer) {
+  if (bytes.byteLength < 100 || !bytes.subarray(0, 8).equals(pngSignature))
+    throw new StudioError('PNG 이미지만 저장할 수 있습니다.', 400);
+  const filename = `${randomUUID()}.png`;
+  await mkdir(dataPath('assets'), { recursive: true });
+  const destination = dataPath('assets', filename);
+  const partial = `${destination}.partial`;
+  try {
+    await writeFile(partial, bytes, { flag: 'wx', mode: 0o600 });
+    await rename(partial, destination);
+    return `/api/assets/${filename}`;
+  } catch (error) {
+    await rm(partial, { force: true });
+    throw error;
+  }
+}
 export async function storeTask(task: TVideoTask) {
   await mkdir(dataPath('tasks'), { recursive: true });
   const filename = dataPath('tasks', `${task.id}.json`);
