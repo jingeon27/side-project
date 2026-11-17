@@ -19,15 +19,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from clash_bot.files import atomic_json
 
-from .benchmark import benchmark
-from .curriculum import from_selfplay
-from .evaluation import evaluate, pfsp_weights
-from .export import export
-from .parallel import play_frozen_games
-from .policy import LEAGUE_KEY, Policy
-from .rules import rules_identity
-from .selfplay import replay_samples, setup_for
-from .storage import read_episode, replay_path, seed_for, write_episode, write_replay
+from .policy.network import LEAGUE_KEY, Policy
+from .sim.rules import rules_identity
+from .study.curriculum import from_selfplay
+from .study.export import export
+from .training.benchmark import benchmark
+from .training.evaluation import evaluate, pfsp_weights
+from .training.parallel import play_frozen_games
+from .training.selfplay import replay_samples, setup_for
+from .training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 
 
 class Opponent(BaseModel):

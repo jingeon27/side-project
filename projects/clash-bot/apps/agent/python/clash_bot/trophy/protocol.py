@@ -7,7 +7,7 @@ from typing import Literal
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from clash_bot.arena.fast_features import ACTION_SIZE, STATE_SIZE
+from clash_bot.arena.policy.features import ACTION_SIZE, STATE_SIZE
 from clash_bot.paths import CONTRACTS_DIR
 
 SETTINGS = json.loads((CONTRACTS_DIR / "trophy-learning.json").read_text())

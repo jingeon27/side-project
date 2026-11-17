@@ -11,7 +11,8 @@ apps/agent/
       geometry.ts, profile.ts  368×652 화면 좌표와 보정 프로필
       knowledge.ts             카드 수치·진화와 영웅 조건
       battle/                  FIFO, 엘릭서, 필드·생성물·진화 상태, 인식 결과와 상대 관찰 형식
-      policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 빠른 정책 특징·추론·후보(controller 4)
+      policy/                  합법 후보, Qwen 판단 계약(controller 1·3), 수비·배치 보정
+      fast/                    빠른 정책(controller 4): 특징(features), 가중치·추론(policy), 칸 단위 후보(candidates)
     counterpush/
       browser/                 전용 Chrome 캡처·입력·결과 판독
       perception/              인식 클라이언트, 손패·엘릭서·스킬 판독, 손패 참조 검증
@@ -33,15 +34,16 @@ apps/agent/
         features.py            고정 특징과 마지막 MLP 어댑터 연결
         episodes.py            결과·사용 확인·학습 자료 검증
         learning_policy.py     LoRA, 목적 함수, 체크포인트
-      arena/                   자가대국·탐색·리그
-        rules.py               고정 엔진, 덱 풀, 규칙 ID, 명령 형식
-        engine.py              한 경기: 지연된 실행, 공개 기록, 관측
-        candidates.py          배치 규칙 지점과 칸 단위 후보(fast-candidates.ts와 같은 규칙)
-        belief.py              공개 기록만으로 숨은 손패 가설 재구성
-        context.py, fast_features.py   판단 문맥과 빠른 정책 특징
-        catalogue.py, catalogue_build.py   카드 카탈로그 읽기와 생성
-        selfplay.py, observation_noise.py   경기 설정·학습 표본·화면 인식 오류
-        benchmark.py           규칙 봇 상대 고정 기준 평가
+      arena/                   자가대국·탐색·리그 (의존: catalogue ← sim ← policy ← training ← study ← league·cli)
+        catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
+        sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 배치 후보(candidates),
+                               숨은 손패 가설(belief), 카탈로그 생성(catalogue_build), 밸런스 패치(balance)
+        policy/                판단 문맥(context), 특징(features), 화면 인식 오류(noise), 표본(samples),
+                               네트워크와 학습(network)
+        training/              자가대국(selfplay), 탐색(search), 워커(parallel), 채택 평가(evaluation),
+                               규칙 봇 기준 평가(benchmark), 경기 파일(storage)
+        study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, export)
+        league.py, cli.py      리그 반복과 명령
       perception/              CPU 인식·ONNX 변환
       trophy/                  현재 궤적 계약, CPU PPO, 불변 체크포인트와 재시도 receipt
     requirements/              공통·모델·인식·변환·개발 의존성 고정

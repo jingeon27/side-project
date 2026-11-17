@@ -7,13 +7,8 @@ import sharp from 'sharp';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
 import { CARD_CATALOGUE } from '../core/card-catalogue.ts';
-import {
-  ACTION_SIZE,
-  FAST_POLICY,
-  STATE_SIZE,
-  weightsChecksum,
-  type FastWeights,
-} from '../core/policy/fast-policy.ts';
+import { ACTION_SIZE, FAST_POLICY, STATE_SIZE } from '../core/fast/features.ts';
+import { weightsChecksum, type FastWeights } from '../core/fast/policy.ts';
 import type { TrophyLearnerPort } from './learner-client.ts';
 import { TROPHY_LEARNING, type TrophyPlan, type TrophyResult, type TrophySnapshot } from './protocol.ts';
 import { TrophySession } from './session.ts';

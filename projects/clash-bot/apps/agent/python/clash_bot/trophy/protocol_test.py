@@ -3,7 +3,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from clash_bot.arena.fast_features import ACTION_SIZE
+from clash_bot.arena.policy.features import ACTION_SIZE
 from clash_bot.paths import FIXTURES_DIR
 from clash_bot.trophy.protocol import (
     Episode,

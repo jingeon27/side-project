@@ -9,14 +9,14 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from clash_bot.arena.catalogue import current
-from clash_bot.arena.engine import Arena
-from clash_bot.arena.fast_features import checksum
 from clash_bot.arena.league import checkpoint, export_policy, initialize, publish_champion
-from clash_bot.arena.policy import LEAGUE_KEY, Policy, features
-from clash_bot.arena.rules import Action
-from clash_bot.arena.samples import SparseFeatures
-from clash_bot.arena.selfplay import replay_samples
-from clash_bot.arena.storage import read_episode, replay_path, write_episode, write_replay
+from clash_bot.arena.policy.features import checksum
+from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
+from clash_bot.arena.policy.samples import SparseFeatures
+from clash_bot.arena.sim.engine import Arena
+from clash_bot.arena.sim.rules import Action
+from clash_bot.arena.training.selfplay import replay_samples
+from clash_bot.arena.training.storage import read_episode, replay_path, write_episode, write_replay
 
 CATALOGUE = current().id
 RULES = {"id": "r" * 64, "catalogue": CATALOGUE}

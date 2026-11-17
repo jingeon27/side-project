@@ -3,12 +3,12 @@ import { match } from 'ts-pattern';
 
 import type { BattleSituation } from '../../core/battle/battle-state.ts';
 import type { CardId } from '../../core/cards.ts';
+import { fastCandidates } from '../../core/fast/candidates.ts';
+import type { FastPolicy } from '../../core/fast/policy.ts';
 import type { Point } from '../../core/geometry.ts';
 import { actionCandidates, choicePrompt, type QwenAction } from '../../core/policy/actions.ts';
 import { affordableCandidates } from '../../core/policy/candidates.ts';
 import { decisionContext, decisionPrompt, serializeDecision } from '../../core/policy/decision-v3.ts';
-import { fastCandidates } from '../../core/policy/fast-candidates.ts';
-import type { FastPolicy } from '../../core/policy/fast-policy.ts';
 import type { Profile } from '../../core/profile.ts';
 import {
   controllerVersionOf,

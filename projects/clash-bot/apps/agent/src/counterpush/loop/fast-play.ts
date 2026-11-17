@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
-import { FastPolicy } from '../../core/policy/fast-policy.ts';
+import { FastPolicy } from '../../core/fast/policy.ts';
 import type { Profile } from '../../core/profile.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { readJsonFile } from '../../shared/json-file.ts';

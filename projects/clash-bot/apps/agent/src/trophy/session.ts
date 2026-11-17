@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
-import { FastPolicy } from '../core/policy/fast-policy.ts';
+import { FastPolicy } from '../core/fast/policy.ts';
 import { atomicWrite } from '../shared/assets.ts';
 import { readOptionalJsonFile } from '../shared/json-file.ts';
 import {

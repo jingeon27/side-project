@@ -1,5 +1,5 @@
 {
-  "note": "Python fast_features writes these values; src/core/policy/fast-policy.spec.ts and fast_features_test.py check them.",
+  "note": "Python clash_bot.arena.policy.features writes these values; src/core/fast/policy.spec.ts and policy/features_test.py check them.",
   "deterministicWeightsSHA256": "0aab28600ec3b9fdaf0bd2b3aedd92e96f6b8af5772a7e86f8352652a5889830",
   "cases": [
     {

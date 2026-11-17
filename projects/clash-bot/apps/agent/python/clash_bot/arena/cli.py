@@ -6,14 +6,14 @@ from pathlib import Path
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
-from . import balance, catalogue_build
-from .benchmark import benchmark
-from .curriculum import build
-from .export import export
 from .league import checkpoint, export_policy, run
-from .parallel import MAX_WORKERS
-from .policy import Policy
-from .storage import read_episode
+from .policy.network import Policy
+from .sim import balance, catalogue_build
+from .study.curriculum import build
+from .study.export import export
+from .training.benchmark import benchmark
+from .training.parallel import MAX_WORKERS
+from .training.storage import read_episode
 
 DATA = DATA_DIR
 

@@ -9,15 +9,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { UnitScan } from '../../core/battle/observation.ts';
 import { CARD_CATALOGUE } from '../../core/card-catalogue.ts';
 import type { CardId } from '../../core/cards.ts';
+import { ACTION_SIZE, FAST_POLICY, STATE_SIZE } from '../../core/fast/features.ts';
+import { FastPolicy, type FastWeights } from '../../core/fast/policy.ts';
 import type { Point } from '../../core/geometry.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
-import {
-  ACTION_SIZE,
-  FAST_POLICY,
-  FastPolicy,
-  STATE_SIZE,
-  type FastWeights,
-} from '../../core/policy/fast-policy.ts';
 import { loadProfile, type Profile } from '../../core/profile.ts';
 import type { LearningClient, LearningDecisionRequest } from '../../qwen/learning-client.ts';
 import { parseBrowserResult, type BrowserPhase, type CounterpushBrowser } from '../browser/browser.ts';

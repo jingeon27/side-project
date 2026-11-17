@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { z } from 'zod';
 
-import { ACTION_SIZE, STATE_SIZE } from '../core/policy/fast-policy.ts';
+import { ACTION_SIZE, STATE_SIZE } from '../core/fast/features.ts';
 
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
 export const TROPHY_LEARNING = z

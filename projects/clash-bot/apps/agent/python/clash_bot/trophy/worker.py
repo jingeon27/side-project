@@ -67,7 +67,7 @@ class Worker:
                 load_weights(value["snapshot"]["checkpoint"])
                 return value["snapshot"]
             weights = load_weights(request.seed)
-            from clash_bot.arena.fast_features import checksum
+            from clash_bot.arena.policy.features import checksum
 
             snapshot = save_checkpoint(
                 self.root,
@@ -113,7 +113,7 @@ class Worker:
                 or metadata["championParentSHA256"] != request.championParentSHA256
             ):
                 raise ValueError("Unrelated immutable checkpoint occupies the next version")
-            from clash_bot.arena.fast_features import checksum
+            from clash_bot.arena.policy.features import checksum
 
             actual = checksum(load_weights(next_directory / "policy.json"))
             if actual != metadata["weightsSHA256"]:
@@ -127,7 +127,7 @@ class Worker:
             return receipt
         checkpoint = within(self.root, request.policy.checkpoint)
         weights = load_weights(checkpoint)
-        from clash_bot.arena.fast_features import checksum
+        from clash_bot.arena.policy.features import checksum
 
         if checksum(weights) != request.policy.weightsSHA256:
             raise ValueError("Requested collection checkpoint changed")

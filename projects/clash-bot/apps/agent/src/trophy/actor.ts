@@ -1,13 +1,8 @@
 import { createHash } from 'node:crypto';
 
+import { actionFeatures, contextFeatures, STATE_SIZE } from '../core/fast/features.ts';
+import { FastPolicy, forward } from '../core/fast/policy.ts';
 import type { DecisionContext } from '../core/policy/decision-v3.ts';
-import {
-  actionFeatures,
-  contextFeatures,
-  FastPolicy,
-  forward,
-  STATE_SIZE,
-} from '../core/policy/fast-policy.ts';
 import type { TowerDefenseInput } from '../core/policy/tower-defense.ts';
 import { TROPHY_LEARNING, type TrophySnapshot, type TrophyTransition } from './protocol.ts';
 

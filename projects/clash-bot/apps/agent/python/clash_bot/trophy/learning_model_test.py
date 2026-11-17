@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from clash_bot.arena.fast_features import (
+from clash_bot.arena.policy.features import (
     ACTION_SIZE,
     CATALOGUE,
     WEIGHT_SHAPES,
