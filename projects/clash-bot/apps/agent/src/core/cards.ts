@@ -19,6 +19,9 @@ export const CARD_INFO = {
   poison: { cost: 4, role: 'spell', name: '독' },
   goblin_hut: { cost: 4, role: 'defender', name: '고블린 오두막' },
   barbarian_barrel: { cost: 2, role: 'spell', name: '바바리안 통' },
+  goblin_drill: { cost: 4, role: 'tank', name: '고블린 드릴' },
+  goblin_barrel: { cost: 3, role: 'spell', name: '고블린 통' },
+  firecracker: { cost: 3, role: 'support', name: '로켓병' },
 } as const;
 export type CardId = keyof typeof CARD_INFO;
 export const cardIdSchema = z.enum(Object.keys(CARD_INFO) as [CardId, ...CardId[]]);

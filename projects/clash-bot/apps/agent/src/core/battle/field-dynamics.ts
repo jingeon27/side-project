@@ -1,7 +1,6 @@
 import type { CardId } from '../cards.ts';
 import { CARD_MECHANICS, type UnitKind } from '../knowledge.ts';
 import { type FieldEffect, type FieldUnit } from './battle-state.ts';
-import type { UnitScan } from './observation.ts';
 import { SpawnPatterns, type SpawnCast } from './spawn-patterns.ts';
 
 type UnitTrack = {
@@ -31,6 +30,13 @@ type EffectTrack = {
   seenSkeletons: Set<string>;
 };
 
+type FieldScan = {
+  allies: Array<Omit<FieldUnit, 'kind'> & { kind?: UnitKind | null }>;
+  entities: Array<Omit<FieldUnit, 'kind'> & { kind?: UnitKind | null }>;
+  spawnedUnits?: Array<Omit<FieldUnit, 'card'> & { side: 'red' | 'blue' }>;
+  effects?: Array<Pick<FieldEffect, 'card' | 'side' | 'x' | 'y' | 'radius' | 'confidence'>>;
+};
+
 export class FieldDynamics {
   readonly episode: string;
   readonly patterns: SpawnPatterns;
@@ -44,7 +50,7 @@ export class FieldDynamics {
     this.patterns = patterns;
   }
 
-  observe(scan: UnitScan, at: number) {
+  observe(scan: FieldScan, at: number) {
     const gap = this.state.at ? at - this.state.at : Infinity;
     if (gap > 1500)
       this.effects.forEach((effect) => {
@@ -58,7 +64,7 @@ export class FieldDynamics {
         sourceCard: undefined as CardId | undefined,
       })),
       ...scan.entities
-        .filter((unit) => !['graveyard', 'poison'].includes(unit.card))
+        .filter((unit) => !['graveyard', 'poison'].includes(unit.card ?? ''))
         .map((unit) => ({ ...unit, side: 'red' as const, sourceCard: undefined as CardId | undefined })),
       ...(scan.spawnedUnits ?? []).map((unit) => ({ ...unit, card: null, variant: 'base' as const })),
     ];
@@ -94,7 +100,7 @@ export class FieldDynamics {
       if (!existing) this.units.push(track);
       const seconds = (at - track.at) / 1000;
       const velocity =
-        kind !== 'goblin_hut' && existing && seconds > 0.05
+        !['goblin_hut', 'goblin_drill'].includes(kind ?? '') && existing && seconds > 0.05
           ? {
               vx: 0.7 * track.vx + (0.3 * (unit.x - track.x)) / seconds,
               vy: 0.7 * track.vy + (0.3 * (unit.y - track.y)) / seconds,

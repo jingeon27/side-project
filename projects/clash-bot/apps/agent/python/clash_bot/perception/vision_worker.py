@@ -405,7 +405,7 @@ class VisionWorker:
             if row[4] >= 0.25 and row[2] - row[0] > 5
         ]
 
-    def classify(self, image, boxes):
+    def classify(self, image, boxes, include_labels=False):
         crops = []
         for left, top, right, bottom in boxes:
             crop = image.crop(
@@ -476,6 +476,10 @@ class VisionWorker:
                     "poison",
                 )
             }
+            if include_labels:
+                result["label_scores"] = {
+                    label: float(value) for label, value in zip(self.classes, row)
+                }
             if self.atlas_features is not None:
                 scores = self.atlas_features @ (feature / (np.linalg.norm(feature) + 1e-8))
                 grouped = {

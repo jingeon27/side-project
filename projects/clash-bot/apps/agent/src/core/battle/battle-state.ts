@@ -107,7 +107,7 @@ const clamp = (amount: number) => Math.max(0, Math.min(10, amount));
 export class ElixirLedger {
   readonly samples: Array<{ at: number; amount: number; range?: { min: number; max: number } }> = [];
   readonly own: Array<{ at: number; card: CardId; cost: number; kind: 'card' | 'ability' }> = [];
-  readonly opponent: Array<{ earliest: number; latest: number; card: CardId }> = [];
+  readonly opponent: Array<{ earliest: number; latest: number; card: CardId | null; cost: number }> = [];
   observeOwn(at: number, amount: number, range?: { min: number; max: number }) {
     this.samples.push({ at, amount: clamp(amount), range });
   }
@@ -118,7 +118,19 @@ export class ElixirLedger {
     this.own.push({ at, card: 'ice_wizard', cost: 2, kind: 'ability' });
   }
   spendOpponent(earliest: number, latest: number, card: CardId) {
-    this.opponent.push({ earliest, latest, card });
+    this.opponent.push({ earliest, latest, card, cost: CARD_INFO[card].cost });
+  }
+  observeOpponentSpend(earliest: number, latest: number, cost: number) {
+    if (
+      !Number.isFinite(earliest) ||
+      !Number.isFinite(latest) ||
+      earliest > latest ||
+      !Number.isFinite(cost) ||
+      cost < 1 ||
+      cost > 11
+    )
+      throw new Error('관측한 상대 지출의 시간·비용 범위가 올바르지 않습니다.');
+    this.opponent.push({ earliest, latest, card: null, cost });
   }
   snapshot(at: number) {
     const samples = this.samples.filter((sample) => sample.at <= at);
@@ -155,7 +167,7 @@ export class ElixirLedger {
         );
         const cost = this.opponent
           .filter((play) => play.earliest + 0.001 > state.previous.at && play.earliest + 0.001 <= sample.at)
-          .reduce((sum, play) => sum + CARD_INFO[play.card].cost, 0);
+          .reduce((sum, play) => sum + play.cost, 0);
         return {
           previous: sample,
           ownSpent: totalOwnSpent,
@@ -181,7 +193,7 @@ export class ElixirLedger {
       ownSpent: result.ownSpent,
       opponentSeenSpent: this.opponent
         .filter((play) => play.latest <= at)
-        .reduce((sum, play) => sum + CARD_INFO[play.card].cost, 0),
+        .reduce((sum, play) => sum + play.cost, 0),
       ownLeakUpper: result.leakUpper,
       coverage: 'partial' as const,
     };

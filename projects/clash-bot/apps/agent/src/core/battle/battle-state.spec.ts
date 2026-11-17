@@ -36,6 +36,19 @@ describe('four-card FIFO cycle', () => {
 });
 
 describe('shared regeneration and capped elixir', () => {
+  it('accounts for an identified enemy cost without assuming the rest of its deck', () => {
+    const ledger = new ElixirLedger();
+    ledger.observeOwn(1000, 8);
+    ledger.observeOpponentSpend(1100, 1500, 4);
+    ledger.observeOwn(1600, 8.2);
+    const estimate = ledger.snapshot(1600);
+    expect(estimate.opponentSeenSpent).toBe(4);
+    expect(estimate.opponent.min).toBe(0);
+    expect(estimate.opponent.max).toBeLessThan(5);
+    expect(estimate.coverage).toBe('partial');
+    expect(() => ledger.observeOpponentSpend(2000, 1900, 4)).toThrow();
+    expect(() => ledger.observeOpponentSpend(2000, 2100, Number.NaN)).toThrow();
+  });
   it('adds back our own costs and subtracts observed enemy costs', () => {
     const ledger = new ElixirLedger();
     ledger.observeOwn(1000, 5);

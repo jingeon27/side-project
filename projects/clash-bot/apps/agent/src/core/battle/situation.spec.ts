@@ -6,10 +6,7 @@ import { FieldDynamics } from './field-dynamics.ts';
 import { observeFrame, settleOpponent, type FrameReading } from './situation.ts';
 
 const HAND = ['knight', 'furnace', 'poison', 'skeletons'] as const;
-const field = new FieldDynamics('situation-spec').observe(
-  { entities: [], markers: [], elapsed_ms: 1, allies: [] },
-  1_000,
-);
+const field = new FieldDynamics('situation-spec').observe({ entities: [], allies: [] }, 1_000);
 const frame = (at: number, overrides: Partial<FrameReading> = {}): FrameReading => ({
   at,
   hand: [...HAND],

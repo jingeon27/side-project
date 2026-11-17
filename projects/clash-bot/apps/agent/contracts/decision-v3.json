@@ -16,6 +16,8 @@
     "fire_spirit": "f",
     "spear_goblin": "g",
     "goblin_barrel": "t",
-    "firecracker": "c"
+    "firecracker": "c",
+    "goblin_drill": "d",
+    "goblin": "j"
   }
 }

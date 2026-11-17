@@ -99,6 +99,8 @@ export const UNIT_KINDS = [
   'goblin_hut',
   'barrel',
   'firecracker',
+  'goblin_drill',
+  'goblin',
 ] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
