@@ -26,7 +26,9 @@ apps/agent/
   python/
     clash_bot/
       paths.py                 cwd와 모듈 깊이에 의존하지 않는 경로
+      channel.py               워커 프로세스가 Node와 공유하는 응답 통로(응답 외 출력은 오류 스트림으로)
       statistics.py            실전·자가대국의 정확 이항 검정
+      layers_test.py           패키지 의존 방향 검사
       qwen/
         protocol.py            Pydantic 입력 계약
         learning_worker.py     JSON 줄 단위 통신과 오류 복구
@@ -38,8 +40,9 @@ apps/agent/
         learning_policy.py     LoRA와 확률·손실 함수
         learner.py             체크포인트·목적별 Adam 상태·챔피언 보호
         policy_gradient.py, imitation.py, search_distillation.py   PPO·상대 모방·수읽기 증류 갱신
-      arena/                   자가대국·탐색·리그 (의존: catalogue ← sim ← policy ← training ← study ← league ← cli)
+      arena/                   자가대국·탐색·리그 (의존: catalogue·placement ← sim ← policy ← training ← study ← league ← cli)
         catalogue.py           카드 카탈로그 읽기(엔진 없이 동작)
+        placement.py           배치 유형별 규칙 지점과 격자(엔진 없이 동작, TS 후보와 공유 사례로 일치)
         sim/                   고정 엔진·덱 풀·규칙 ID(rules), 한 경기(engine), 공개 엘릭서 장부(elixir),
                                배치 후보(candidates), 숨은 손패 가설과 판단 사이의 유지(belief),
                                재현 검사(mechanics, verification), 카탈로그 생성(catalogue_build,
@@ -63,7 +66,7 @@ apps/agent/
   pyproject.toml               Python 직접 의존성·Ruff 설정
 ```
 
-테스트는 구현 옆에 둔다. 공유 계약과 실제 그림을 `src`에서 분리해 두 언어가 같은 파일을 읽는다. Python 모듈은 `clash_bot.*`로 가져오며 `sys.path`를 바꾸지 않는다. Node의 `shared/python.ts`와 실행기가 `python -m`·`PYTHONPATH`·종료 신호·종료 코드를 처리한다. 설치 모듈은 가져오는 것만으로 설치·다운로드를 시작하지 않는다.
+테스트는 구현 옆에 둔다. 공유 계약과 실제 그림을 `src`에서 분리해 두 언어가 같은 파일을 읽는다. 같은 계산을 두 언어가 각각 구현한 곳(빠른 정책의 특징·추론과 배치 지점·격자, 전투 예측, 채택 통계)은 `test-fixtures/`의 공유 사례를 양쪽 검사가 함께 읽는다. Python 패키지는 아래 패키지만 가져오며 `clash_bot/layers_test.py`가, TypeScript는 `eslint.config.ts`가 검사한다. Python 모듈은 `clash_bot.*`로 가져오며 `sys.path`를 바꾸지 않는다. Node의 `shared/python.ts`와 실행기가 `python -m`·`PYTHONPATH`·종료 신호·종료 코드를 처리한다. 설치 모듈은 가져오는 것만으로 설치·다운로드를 시작하지 않는다.
 
 ## 상태와 자원의 소유자
 

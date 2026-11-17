@@ -1,6 +1,8 @@
 import contextlib
 import io
 import json
+import subprocess
+import sys
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -90,3 +92,45 @@ class WorkerProtocolTests(unittest.TestCase):
             serve(worker, [request], replies.append)
         self.assertEqual([row["type"] for row in replies], ["error", "error"])
         worker.train.assert_not_called()
+
+    def test_the_worker_process_keeps_model_output_off_the_reply_channel(self):
+        # The real entry point with a stand-in model that writes to stdout both ways.
+        script = "\n".join(
+            [
+                "import os, sys, types",
+                "class LearningWorker:",
+                "    evaluation_backup = None",
+                "    def __init__(self, model, data):",
+                "        os.write(1, b'native model log\\n')",
+                "        print('python model log', flush=True)",
+                "        self.learner = types.SimpleNamespace(metadata={'version': 7}, adapter=None)",
+                "    def candidate_active(self):",
+                "        return False",
+                "    def status(self):",
+                "        os.write(1, b'native status log\\n')",
+                "        return {'version': 7}",
+                "runtime = types.ModuleType('clash_bot.qwen.runtime')",
+                "runtime.LearningWorker = LearningWorker",
+                "policy = types.ModuleType('clash_bot.qwen.learning_policy')",
+                "policy.weights_digest = lambda adapter: 'digest'",
+                "mlx, core = types.ModuleType('mlx'), types.ModuleType('mlx.core')",
+                "mlx.core, core.get_peak_memory = core, lambda: 0",
+                "sys.modules.update({'mlx': mlx, 'mlx.core': core})",
+                "sys.modules.update({runtime.__name__: runtime, policy.__name__: policy})",
+                "sys.argv = ['worker', 'model', 'data']",
+                "from clash_bot.qwen.learning_worker import main",
+                "main()",
+            ]
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            input='{"op":"status"}\n{\n',
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        replies = [json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual([row["type"] for row in replies], ["ready", "result", "error"])
+        self.assertEqual((replies[0]["weights_sha256"], replies[1]["version"]), ("digest", 7))
+        for log in ("native model log", "python model log", "native status log"):
+            self.assertIn(log, result.stderr)

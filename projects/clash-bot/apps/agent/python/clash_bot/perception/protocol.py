@@ -1,7 +1,6 @@
 """JSON-lines wire contract of the CPU perception worker, kept free of model imports."""
 
 import json
-import os
 import sys
 import time
 import traceback
@@ -59,16 +58,3 @@ def serve(handlers, requests, emit):
         except Exception as error:
             traceback.print_exc(file=sys.stderr)
             emit({"type": "error", "message": str(error)})
-
-
-def protocol_channel():
-    # Replies get their own descriptor; fd 1 then points at stderr, so Python or native
-    # library output can never appear between replies and shift them.
-    channel = os.fdopen(os.dup(1), "w", buffering=1)
-    os.dup2(2, 1)
-
-    def emit(value):
-        channel.write(json.dumps(value) + "\n")
-        channel.flush()
-
-    return emit

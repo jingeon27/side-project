@@ -1,17 +1,14 @@
 """JSON-line transport for the resident model; no game inputs live here."""
 
 import contextlib
-import json
 import sys
 import time
 import traceback
 
+from clash_bot.channel import protocol_channel
+
 from .protocol import parse_learning_request
 from .training_budget import close_training_budget, training_budget
-
-
-def emit(value):
-    print(json.dumps(value), flush=True)
 
 
 def handle_request(worker, request):
@@ -42,7 +39,7 @@ def handle_request(worker, request):
             raise ValueError("Unsupported learning operation")
 
 
-def serve(worker, requests, emit_result=emit, peak_memory=lambda: 0.0):
+def serve(worker, requests, emit_result, peak_memory=lambda: 0.0):
     for line in requests:
         started = time.monotonic()
         try:
@@ -63,14 +60,15 @@ def serve(worker, requests, emit_result=emit, peak_memory=lambda: 0.0):
 
 
 def main():
-    with contextlib.redirect_stdout(sys.stderr):
-        import mlx.core as mx
+    # From here stdout is the error stream: model libraries cannot write between replies.
+    emit = protocol_channel()
+    import mlx.core as mx
 
-        from .learning_policy import weights_digest
-        from .runtime import LearningWorker
+    from .learning_policy import weights_digest
+    from .runtime import LearningWorker
 
-        training_budget()  # Validate an explicit target before loading the model.
-        worker = LearningWorker(sys.argv[1], sys.argv[2])
+    training_budget()  # Validate an explicit target before loading the model.
+    worker = LearningWorker(sys.argv[1], sys.argv[2])
     emit(
         {
             "type": "ready",
@@ -79,7 +77,7 @@ def main():
         }
     )
     try:
-        serve(worker, sys.stdin, peak_memory=lambda: mx.get_peak_memory() / 1024**3)
+        serve(worker, sys.stdin, emit, peak_memory=lambda: mx.get_peak_memory() / 1024**3)
     finally:
         close_training_budget()
 

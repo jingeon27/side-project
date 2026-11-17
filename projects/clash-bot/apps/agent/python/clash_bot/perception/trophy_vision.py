@@ -10,7 +10,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
-from clash_bot.perception.protocol import protocol_channel
+from clash_bot.channel import protocol_channel
 
 
 class ScanInput(BaseModel):

@@ -10,10 +10,11 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
+from clash_bot.channel import protocol_channel
 from clash_bot.perception.classifier import CropClassifier
 from clash_bot.perception.effects import SpellEffects, graveyard_presence
 from clash_bot.perception.markers import UnitMarkers, red_markers
-from clash_bot.perception.protocol import protocol_channel, serve
+from clash_bot.perception.protocol import serve
 
 cv2.setNumThreads(1)
 

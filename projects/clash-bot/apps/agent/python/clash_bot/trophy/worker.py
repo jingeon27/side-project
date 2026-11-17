@@ -9,8 +9,8 @@ from typing import Annotated, Literal
 
 from pydantic import Field, TypeAdapter
 
+from clash_bot.channel import protocol_channel
 from clash_bot.files import atomic_json
-from clash_bot.perception.protocol import protocol_channel
 
 from .learner import load_weights, save_checkpoint, train
 from .protocol import Episode, Snapshot, Strict
