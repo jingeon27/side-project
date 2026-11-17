@@ -8,7 +8,8 @@ from unittest.mock import Mock
 import mlx.core as mx
 
 from clash_bot.qwen import search_data_test as fixtures
-from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
+from clash_bot.qwen.learner import Learner
+from clash_bot.qwen.learning_policy import FinalMLPLoRA, weights_digest
 from clash_bot.qwen.runtime import LearningWorker
 
 

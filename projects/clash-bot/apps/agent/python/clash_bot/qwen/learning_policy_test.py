@@ -5,7 +5,8 @@ from pathlib import Path
 
 import mlx.core as mx
 
-from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
+from clash_bot.qwen.learner import Learner
+from clash_bot.qwen.learning_policy import FinalMLPLoRA, weights_digest
 
 
 class LearningPolicyTest(unittest.TestCase):
@@ -38,7 +39,7 @@ class LearningPolicyTest(unittest.TestCase):
                 calls.append(True)
                 return clipped_loss(*args) + (1 if len(calls) >= 3 else 0)
 
-            with patch("clash_bot.qwen.learning_policy.clipped_loss", side_effect=worsened):
+            with patch("clash_bot.qwen.policy_gradient.clipped_loss", side_effect=worsened):
                 with self.assertRaisesRegex(KLExceeded, "full episode objective"):
                     learner._train_once([sample], -1, "worse", 3e-5, 0)
             self.assertEqual(weights_digest(learner.adapter), original)
@@ -218,7 +219,7 @@ class LearningPolicyTest(unittest.TestCase):
                 {"episode": "tab-1", "reward": 1, "samples": [self.sample(learner)]},
                 {"episode": "tab-2", "reward": -1, "samples": [self.sample(learner)]},
             ]
-            with patch("clash_bot.qwen.learning_policy.clipped_loss", new=measured):
+            with patch("clash_bot.qwen.policy_gradient.clipped_loss", new=measured):
                 report = learner.train_batch(games)
             self.assertTrue(report["updated"])
             self.assertGreaterEqual(len(advantages), 2)

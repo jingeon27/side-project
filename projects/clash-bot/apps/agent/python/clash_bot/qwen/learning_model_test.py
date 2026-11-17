@@ -11,7 +11,8 @@ from PIL import Image
 
 from clash_bot.paths import DATA_DIR
 from clash_bot.qwen.decision_input import CONTRACT
-from clash_bot.qwen.learning_policy import FinalMLPLoRA, Learner, weights_digest
+from clash_bot.qwen.learner import Learner
+from clash_bot.qwen.learning_policy import FinalMLPLoRA, weights_digest
 from clash_bot.qwen.model_specs import MODEL
 from clash_bot.qwen.runtime import LearningWorker
 

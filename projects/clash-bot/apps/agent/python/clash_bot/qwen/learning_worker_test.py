@@ -261,7 +261,7 @@ class LearningEpisodeTest(unittest.TestCase):
             worker.choose = Mock(side_effect=choose)
             path = Path(directory) / "dataset.json"
             with patch(
-                "clash_bot.qwen.runtime.load_demonstrations",
+                "clash_bot.qwen.game_training.load_demonstrations",
                 return_value=({"samples": [observation]}, "digest", path),
             ):
                 report = worker.imitate({"dataset": str(path)})
