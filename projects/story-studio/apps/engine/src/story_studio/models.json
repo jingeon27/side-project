@@ -16,6 +16,15 @@
     "revision": "78a389c776a5483b2d0d4ea5494e11012e0d6159",
     "directory": "asr-qwen3-1.7b"
   },
-  "wan-source": { "repo": "Wan-AI/Wan2.1-T2V-1.3B", "revision": "37ec512624d61f7aa208f7ea8140a131f93afc9a" },
+  "image": {
+    "repo": "black-forest-labs/FLUX.2-klein-4B",
+    "revision": "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+    "patterns": ["model_index.json", "transformer/*", "text_encoder/*", "vae/*", "tokenizer/*"]
+  },
+  "video-source": {
+    "repo": "Wan-AI/Wan2.2-TI2V-5B",
+    "revision": "921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+    "patterns": ["*.json", "*.safetensors", "*.pth"]
+  },
   "tokenizer": { "repo": "google/umt5-xxl", "revision": "66cb9e7e85526fe440a945569e42c72fb6cbc0ad" }
 }

@@ -14,11 +14,15 @@ beforeEach(async () => {
   vi.stubEnv('STORY_STUDIO_PROVIDER', '');
   vi.stubEnv('DASHSCOPE_API_KEY', 'must-not-reach-a-local-worker');
   await mkdir(dataPath('local', '.venv', 'bin'), { recursive: true });
-  for (const model of ['text', 'voice', 'video'])
+  for (const model of ['text', 'voice', 'video-wan2.2-ti2v-5b', 'image/transformer'])
     await mkdir(dataPath('local', 'models', model), { recursive: true });
   await writeFile(dataPath('local', 'models', 'text', 'model.safetensors.index.json'), '{}');
   await writeFile(dataPath('local', 'models', 'voice', 'model.safetensors'), 'fixture');
-  await writeFile(dataPath('local', 'models', 'video', 'ready.json'), '{}');
+  await writeFile(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'), '{}');
+  await writeFile(
+    dataPath('local', 'models', 'image', 'transformer', 'diffusion_pytorch_model.safetensors'),
+    'fixture',
+  );
   const shim = `#!${process.execPath}
 const fs = require('node:fs');
 const path = require('node:path');
@@ -59,6 +63,17 @@ it('설정 없이 로컬 모드를 고르고 키를 전달하지 않으며 오�
     source: path.resolve(process.cwd(), '../engine/src'),
     examples: path.join(process.cwd(), 'public/examples'),
   });
+});
+
+it('이미지와 영상 모델을 따로 확인하고 이전 Wan2.1 설치는 영상 준비로 보지 않는다', async () => {
+  await rm(dataPath('local', 'models', 'video-wan2.2-ti2v-5b'), { recursive: true });
+  await mkdir(dataPath('local', 'models', 'video'), { recursive: true });
+  await writeFile(dataPath('local', 'models', 'video', 'ready.json'), '{}');
+  expect(localConfiguration()).toMatchObject({ imageReady: true, videoReady: false });
+  await expect(runLocal({ action: 'video', prompt: 'x' })).rejects.toMatchObject({ status: 503 });
+  await expect(runLocal({ action: 'image', text: '이미지' })).resolves.toBeDefined();
+  await rm(dataPath('local', 'models', 'image'), { recursive: true });
+  expect(localConfiguration().imageReady).toBe(false);
 });
 
 it('동시에 들어온 생성 요청을 모델 로딩 전에 거절하고 완료 후 다시 실행한다', async () => {

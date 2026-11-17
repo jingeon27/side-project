@@ -1,11 +1,19 @@
 """Download pinned public models and prepare MLX weights. No API key or inference service."""
 import argparse
 import fcntl
+from fnmatch import fnmatch
 import gc
 import hashlib
 import json
-from .catalog import model_specs
+from .catalog import VIDEO_MODEL_DIRECTORY, model_specs
 from pathlib import Path
+
+
+def wanted_files(siblings, patterns):
+    """Weights and configs a pinned snapshot must contain, limited to the requested patterns."""
+    return [entry for entry in siblings
+            if entry.rfilename.endswith(('.safetensors', '.json'))
+            and (patterns is None or any(fnmatch(entry.rfilename, pattern) for pattern in patterns))]
 
 
 def main():
@@ -17,16 +25,15 @@ def main():
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
     specs = model_specs()
-    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'voice', 'voice-train', 'wan-source'])
+    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'voice', 'voice-train', 'image', 'video-source'])
     for name in selected:
         spec = specs[name]
         print(f'모델 준비: {name} ({spec["repo"]})', flush=True)
-        patterns = ['*.json', '*.safetensors', '*.pth', 'google/umt5-xxl/*'] if name == 'wan-source' else None
+        patterns = spec.get('patterns')
         folder = root / 'models' / spec.get('directory', name)
         info = model_info(spec['repo'], revision=spec['revision'], files_metadata=True)
         # Adopt an existing identical local copy without re-downloading large files.
-        wanted = [entry for entry in info.siblings if entry.rfilename.endswith(('.safetensors', '.json'))]
-        if not all((folder / entry.rfilename).is_file() and (folder / entry.rfilename).stat().st_size == entry.size for entry in wanted):
+        if not all((folder / entry.rfilename).is_file() and (folder / entry.rfilename).stat().st_size == entry.size for entry in wanted_files(info.siblings, patterns)):
             snapshot_download(spec['repo'], revision=spec['revision'], local_dir=folder, allow_patterns=patterns, max_workers=4)
         for entry in info.siblings:
             target = folder / entry.rfilename
@@ -44,31 +51,34 @@ def main():
     spec = specs['tokenizer']
     snapshot_download(spec['repo'], revision=spec['revision'], local_dir=root / 'models/tokenizer',
                       allow_patterns=['tokenizer*.json', 'special_tokens_map.json', 'spiece.model', 'config.json'])
-    if not (root / 'models/video/ready.json').is_file():
+    video = root / 'models' / VIDEO_MODEL_DIRECTORY
+    ready = video / 'ready.json'
+    if not (ready.is_file() and json.loads(ready.read_text()) == specs['video-source']):
         with (root / 'gpu.lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             import mlx.core as mx
             from mlx_video.models.wan_2 import convert
-            # Keep conversions in bf16 and use a file-backed torch load to bound unified-memory use.
+            # Use a file-backed torch load to bound unified-memory use. Keep each tensor's stored
+            # precision: the T5 encoder ships in bf16 and the Wan2.2 VAE decodes in float32.
             def load_weights(filename):
                 import torch
                 tensors = torch.load(filename, map_location='cpu', weights_only=True, mmap=True)
                 weights = {}
                 for key, tensor in tensors.items():
                     if isinstance(tensor, torch.Tensor):
-                        value = mx.array(tensor.float().numpy()).astype(mx.bfloat16)
+                        value = mx.array(tensor.float().numpy()).astype(mx.bfloat16 if tensor.dtype == torch.bfloat16 else mx.float32)
                         mx.eval(value)
                         weights[key] = value
                 return weights
             convert.load_torch_weights = load_weights
             mx.set_cache_limit(256 * 1024**2)
-            print('Wan 영상을 위한 MLX 변환 중', flush=True)
-            convert.convert_wan_checkpoint(str(root / 'models/wan-source'), str(root / 'models/video'),
-                                           dtype='bfloat16', model_version='2.1', quantize=True, bits=8)
+            print('Wan2.2 영상을 위한 MLX 변환 중', flush=True)
+            convert.convert_wan_checkpoint(str(root / 'models/video-source'), str(video),
+                                           dtype='bfloat16', model_version='2.2', quantize=True, bits=8)
             gc.collect(); mx.clear_cache()
-            (root / 'models/video/ready.json').write_text(json.dumps(specs['wan-source']))
+            ready.write_text(json.dumps(specs['video-source']))
     (root / 'ready.json').write_text(json.dumps(specs, ensure_ascii=False, indent=2))
-    print('로컬 글·음성·영상 모델 준비 완료', flush=True)
+    print('로컬 글, 음성, 이미지, 영상 모델 준비 완료', flush=True)
 
 
 if __name__ == '__main__':

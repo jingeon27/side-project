@@ -12,8 +12,9 @@ import time
 import traceback
 
 from .generation.speech import generate_voice
+from .generation.image import generate_image
 from .generation.text import generate_text
-from .generation.video import generate_visual
+from .generation.video import generate_video
 from .generation.verified_speech import IncompleteSpeechError
 from .media import compose
 from .runtime import JobContext
@@ -26,8 +27,10 @@ def dispatch(request, job, examples_dir):
         return generate_text(job.root, request, job.progress)
     if request['action'] == 'voice':
         return generate_voice(job.root, request, job.progress)
-    if request['action'] in ('image', 'video'):
-        return generate_visual(job.root, request, job.progress, request['action'] == 'image')
+    if request['action'] == 'image':
+        return generate_image(job.root, request, job.progress, examples_dir)
+    if request['action'] == 'video':
+        return generate_video(job.root, request, job.progress, examples_dir)
     if request['action'] == 'compose':
         return compose(job.root, request, examples_dir, job.progress)
     if request['action'] == 'normalize-voice':

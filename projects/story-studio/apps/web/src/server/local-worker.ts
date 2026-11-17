@@ -84,7 +84,11 @@ export function localConfiguration() {
   const voiceReady = runtime && existsSync(dataPath('local', 'models', 'voice', 'model.safetensors'));
   const voiceTrainingReady =
     runtime && existsSync(dataPath('local', 'models', 'voice-train', 'model.safetensors'));
-  const videoReady = runtime && existsSync(dataPath('local', 'models', 'video', 'ready.json'));
+  const imageReady =
+    runtime &&
+    existsSync(dataPath('local', 'models', 'image', 'transformer', 'diffusion_pytorch_model.safetensors'));
+  // The engine converts Wan2.2 into its own folder; an earlier Wan2.1 install in `models/video` is not ready.
+  const videoReady = runtime && existsSync(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'));
   return {
     provider: 'local' as const,
     configured: textReady,
@@ -92,11 +96,11 @@ export function localConfiguration() {
     voiceReady,
     voiceTrainingReady,
     videoReady,
-    imageReady: videoReady,
+    imageReady,
     demoReady: existsSync(dataPath('demo-project.json')) || existsSync(examplePath('project.json')),
     textModel: 'Qwen3.8-27B, 4bit',
-    imageModel: 'Wan2.1 정지 컷',
-    videoModel: 'Wan2.1 1.3B',
+    imageModel: 'FLUX.2 Klein 4B',
+    videoModel: 'Wan2.2 TI2V 5B',
     voiceModel: 'Qwen3-TTS 기본 음색 9종',
   };
 }
@@ -113,7 +117,8 @@ export async function runLocal(
     .with('text', () => config.textReady)
     .with('voice', () => (settings?.kind === 'trained' ? config.voiceTrainingReady : config.voiceReady))
     .with('train-voice', () => config.voiceTrainingReady)
-    .with('image', 'video', () => config.videoReady)
+    .with('image', () => config.imageReady)
+    .with('video', () => config.videoReady)
     .otherwise(() => false);
   if (!ready)
     throw new StudioError('로컬 모델 준비가 필요합니다. 연결 안내의 로컬 설치 방법을 확인해 주세요.', 503);
