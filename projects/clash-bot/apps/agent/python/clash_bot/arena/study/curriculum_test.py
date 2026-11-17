@@ -2,15 +2,29 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
-from clash_bot.arena.study.curriculum import scenario, write_batches
+from clash_bot.arena.study.curriculum import from_selfplay, scenario, write_batches
 from clash_bot.arena.study.teacher import Teacher
 from clash_bot.qwen.search_data import load_search_targets
 
 
 class TacticalCurriculumTest(unittest.TestCase):
+    def test_an_unavailable_focus_card_is_not_recorded_as_a_card_opportunity(self):
+        sample = {"observation": {"team": 0, "state": {"tick": 100}}}
+        positions = [{"gameID": "before", "sample": sample, "focusCard": 3, "stage": 0}]
+        episode = {"setup": {"decks": ["counterpush", "counterpush"]}, "rulesID": "rules"}
+        with (
+            patch("clash_bot.arena.study.curriculum.balanced_positions", return_value=positions),
+            patch("clash_bot.arena.study.curriculum.Teacher") as teacher,
+            patch("clash_bot.arena.study.curriculum.write_batches") as write,
+        ):
+            teacher.return_value.label.return_value = {"actions": [[-1, 0, 0]]}
+            self.assertEqual(from_selfplay("unused", [episode], count=1), [])
+            write.assert_not_called()
+
     def test_ready_skill_and_hut_can_lose_to_waiting_when_the_rollout_finds_no_tower_benefit(self):
         teacher = Teacher()
         observed = scenario(1004, 4)

@@ -17,6 +17,7 @@ from ..sim.engine import Arena
 from ..sim.rules import TILE, Action, digest, rules_identity
 from ..training.selfplay import live_mirror
 from .export import render
+from .positions import balanced_positions
 from .teacher import Teacher
 
 
@@ -163,20 +164,21 @@ def build(data_dir, count=64, seed=0, split="train"):
 def from_selfplay(data_dir, episodes, count=8):
     teacher = Teacher()
     labels = []
-    for episode in filter(live_mirror, episodes):
-        for sample in episode["samples"][::3]:
-            obs = sample["observation"]
-            if len(obs["state"]["entities"]) < 8:
-                continue
-            row = teacher.label(
-                obs,
-                f"{sample['gameID']}-s{sample['team']}-t{obs['state']['tick']}",
-                "selfplay-hard-position",
-            )
-            if row:
-                labels.append(row)
-            if len(labels) >= count:
-                break
+    for position in balanced_positions(list(filter(live_mirror, episodes)), count * 8):
+        sample = position["sample"]
+        obs = sample["observation"]
+        row = teacher.label(
+            obs,
+            f"{position['gameID']}-s{obs['team']}-t{obs['state']['tick']}",
+            "selfplay-hard-position",
+        )
+        if row and any(action[0] == position["focusCard"] for action in row["actions"]):
+            row["evidence"]["sampling"] = {
+                "scheme": "before_card_opportunities_v1",
+                "focusCard": NAMES[position["focusCard"]],
+                "timeBucket": position["stage"],
+            }
+            labels.append(row)
         if len(labels) >= count:
             break
     return write_batches(data_dir, labels, episodes[0]["rulesID"]) if labels else []
