@@ -4,6 +4,7 @@ import type { CardId } from '../cards.ts';
 import { COMBAT, PLACEMENT_EFFECTS } from '../combat-reference.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { screenPoint, tilePoint, type Point } from '../geometry.ts';
+import { CARD_MECHANICS } from '../knowledge.ts';
 import type { Profile } from '../profile.ts';
 import { combatBody, forecastEffect } from './combat-projection.ts';
 import {
@@ -356,9 +357,43 @@ export function predictivePlacements(
       graveyardThreat(profile, situation) !== undefined ||
       situation.opponent.units.some((unit) => unit.confidence >= 0.75 && unit.y > profile.riverY - 55);
     if (urgent) {
+      const intercepts = situation.opponent.units.flatMap((unit) => {
+        if (
+          unit.confidence < 0.75 ||
+          unit.y < profile.riverY - 25 ||
+          !unit.velocity ||
+          !unit.motion ||
+          unit.motion.samples < 2 ||
+          unit.motion.elapsedMs < 100
+        )
+          return [];
+        const delay = COMBAT.inputDelaySeconds + (CARD_MECHANICS[card]?.deploySeconds ?? 1);
+        const target = ownPoint(
+          profile,
+          card,
+          {
+            x: unit.x + unit.velocity.xPerSecond * delay,
+            y: unit.y + unit.velocity.yPerSecond * delay + 5,
+          },
+          situation,
+        );
+        return target
+          ? [
+              {
+                target,
+                description: `${card} intercept at observed position after input and deployment delay`,
+              },
+            ]
+          : [];
+      });
       const rear = existing.filter((option) => option.description.includes('behind the King Tower'));
       const defense = uniqBy(
-        [...drillDefense, ...centralPull, ...existing.filter((option) => !rear.includes(option))],
+        [
+          ...drillDefense,
+          ...intercepts,
+          ...centralPull,
+          ...existing.filter((option) => !rear.includes(option)),
+        ],
         (option) => `${option.target.x}:${option.target.y}`,
       );
       return [...defense.slice(0, 5 - rear.length), ...rear];

@@ -7,6 +7,7 @@ import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 import type { DecisionAction, DecisionContext } from './decision-v3.ts';
+import { towerDefense, type TowerDefenseInput } from './tower-defense.ts';
 
 // 판단 문맥의 특징 배치다. Python(clash_bot.arena.fast_features)이 같은 계약으로 같은 숫자를 만든다.
 export const FAST_POLICY = z
@@ -212,7 +213,21 @@ export class FastPolicy {
     return policy;
   }
 
-  predict(context: DecisionContext) {
-    return forward(this.weights, contextFeatures(context), actionFeatures(context));
+  predict(context: DecisionContext, protection?: TowerDefenseInput) {
+    const result = forward(this.weights, contextFeatures(context), actionFeatures(context));
+    if (!protection) return { ...result, towerProtection: undefined };
+    if (
+      protection.actions.length !== result.logits.length ||
+      protection.actions.some(
+        (action, index) => action.id !== index || action.card !== context.actions[index]?.[2],
+      )
+    )
+      throw new Error('타워 수비 후보와 정책 후보의 순서가 다릅니다.');
+    const towerProtection = towerDefense(protection);
+    const logits = result.logits.map((logit, index) => logit + (towerProtection.actions[index]?.bias ?? 0));
+    const top = Math.max(...logits);
+    const exponents = logits.map((logit) => Math.exp(logit - top));
+    const total = sum(exponents);
+    return { ...result, logits, probabilities: exponents.map((value) => value / total), towerProtection };
   }
 }

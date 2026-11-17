@@ -189,3 +189,20 @@ it('uses the reviewed outer adjacent tile instead of an inferred Graveyard effec
   ]);
   expect(positions.map((row) => row.target.x)).toEqual([67, 301]);
 });
+
+it('offers a Knight intercept where a moving threat will be after deployment', () => {
+  const state = scene();
+  const enemy = {
+    card: null,
+    kind: 'goblin' as const,
+    x: 150,
+    y: profile.riverY + 50,
+    confidence: 0.95,
+    motion: { samples: 3, elapsedMs: 1000 },
+    velocity: { xPerSecond: 18, yPerSecond: 10, speedPixelsPerSecond: 20.6 },
+  };
+  const field = { ...state, opponent: { ...state.opponent, units: [enemy] } };
+  const positions = predictivePlacements(profile, 'knight', [enemy], field);
+  expect(positions[0]?.description).toContain('after input and deployment delay');
+  expect(positions[0]?.target).toEqual({ x: 177, y: profile.riverY + 70 });
+});
