@@ -4,7 +4,7 @@ import type { BattleSituation, FieldEffect } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import { PLACEMENT_EFFECTS } from '../combat-reference.ts';
 import { DEPLOYMENT } from '../deployment.ts';
-import { screenPoint, type Point } from '../geometry.ts';
+import { distance, screenPoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
 import type { Profile } from '../profile.ts';
 
@@ -15,7 +15,6 @@ export type PlacementField = {
 };
 
 export type PlacementOption = { target: Point; description: string };
-const distance = (first: Point, second: Point) => Math.hypot(first.x - second.x, first.y - second.y);
 
 // Conservative image-space footprints, not access to the game's collision map.
 export function blockedDeployment(profile: Profile, card: CardId, point: Point, situation?: PlacementField) {

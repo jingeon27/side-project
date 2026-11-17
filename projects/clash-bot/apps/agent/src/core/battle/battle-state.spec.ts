@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CardId } from '../cards.ts';
-import { BattleMemory, CardCycle, ElixirLedger } from './battle-state.ts';
+import { BattleMemory } from './battle-state.ts';
+import { CardCycle } from './card-cycle.ts';
+import { ElixirLedger } from './elixir-ledger.ts';
 
 const hand: CardId[] = ['knight', 'furnace', 'ice_wizard', 'graveyard'];
 const queue: CardId[] = ['skeletons', 'poison', 'goblin_hut', 'barbarian_barrel'];

@@ -15,6 +15,8 @@ export function center(rect: Rect): Point {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
 }
 
+export const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+
 // Screen-to-tile calibration: 18×32 tiles, river at y=16, princess towers at (3.5,6.5).
 type Projection = { riverY: number; tileScale?: { x: number; y: number } };
 export const projectionScale = (profile: Projection) => profile.tileScale ?? { x: 178 / 11, y: 130 / 9.5 };

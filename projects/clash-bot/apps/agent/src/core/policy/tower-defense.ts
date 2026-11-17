@@ -5,7 +5,7 @@ import type { TowerHpSnapshot } from '../battle/tower-health.ts';
 import { CARD_INFO } from '../cards.ts';
 import { COMBAT, PLACEMENT_EFFECTS } from '../combat-reference.ts';
 import { DEPLOYMENT } from '../deployment.ts';
-import { tilePoint, type Point } from '../geometry.ts';
+import { distance, tilePoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
 import type { Profile } from '../profile.ts';
 import type { QwenAction } from './actions.ts';
@@ -31,7 +31,6 @@ type Threat = {
   enemyIndex: number | null;
 };
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
-const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 const targetCoverage = (targets: 'ground' | 'air_and_ground', ground: boolean | null) => {
   if (targets !== 'ground' || ground === true) return 1;
   if (ground === false) return 0;

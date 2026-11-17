@@ -14,7 +14,7 @@ import { CounterpushBrowser } from './browser/browser.ts';
 import { activeOpponentCoverage, learningAudit } from './learning/audit.ts';
 import { learningReport } from './learning/report.ts';
 import { reprocessEpisode } from './learning/reprocess.ts';
-import { runCounterpushEvaluation } from './loop/evaluation.ts';
+import { runCounterpushEvaluation } from './loop/evaluation-runner.ts';
 import { championPolicyPath, playFastMatches } from './loop/fast-play.ts';
 import { runCounterpush } from './loop/runner.ts';
 import { CounterpushVisionClient } from './perception/vision-client.ts';

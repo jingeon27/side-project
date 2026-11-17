@@ -1,10 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { appendFile, mkdir, readFile, statfs } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { appendFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
-import { z } from 'zod';
-
-import { studyNext } from '../../arena/study.ts';
 import { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
 import type { Profile } from '../../core/profile.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
@@ -13,61 +10,12 @@ import { atomicWrite } from '../../shared/assets.ts';
 import { readOptionalJsonFile } from '../../shared/json-file.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushBrowser } from '../browser/browser.ts';
-import { controllerFor } from '../match/controllers.ts';
-import { playCounterpushEpisode } from '../match/episode.ts';
 import { CounterpushVisionClient } from '../perception/vision-client.ts';
 import { behaviorIdentity } from './behavior-identity.ts';
-import { learnCounterpushEpisodes } from './episode-learning.ts';
-import { evaluateWithResources } from './evaluation.ts';
-import {
-  evolutionStateSchema,
-  qualifiedLearningLoop,
-  type EvolutionState,
-  type PolicySnapshot,
-} from './qualified-loop.ts';
+import { candidateTraining, initialCandidate, snapshot } from './candidate-training.ts';
+import { evaluateWithResources } from './evaluation-trial.ts';
+import { evolutionStateSchema, qualifiedLearningLoop, type EvolutionState } from './qualified-loop.ts';
 import { goalProgress, resumeTrainingGoal, trainingGoalSchema } from './training-goal.ts';
-
-const snapshot = (record: Record<string, unknown>): PolicySnapshot => {
-  const row = z
-    .object({
-      version: z.int().nonnegative(),
-      weights_sha256: z.string().length(64),
-      directory: z.string(),
-      checkpoint: z.string(),
-      qualification: z.object({ report: z.string() }).passthrough().optional(),
-    })
-    .passthrough()
-    .parse(record);
-  return {
-    version: row.version,
-    weightsSHA256: row.weights_sha256,
-    directory: row.directory,
-    checkpoint: row.checkpoint,
-    ...(row.qualification ? { qualificationReport: row.qualification.report } : {}),
-  };
-};
-
-async function initialCandidate(dataDir: string, champion: PolicySnapshot) {
-  const raw = await readFile(join(dataDir, 'arena/qwen/studies.jsonl'), 'utf8').catch(
-    (error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return '';
-      throw error;
-    },
-  );
-  const rows = raw
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as Record<string, unknown>);
-  const found = rows
-    .reverse()
-    .find(
-      (row) =>
-        row.updated === true &&
-        row.baseline_sha256 === champion.weightsSHA256 &&
-        typeof row.candidate_checkpoint === 'string',
-    );
-  return found ? dirname(dirname(String(found.candidate_checkpoint))) : null;
-}
 
 export async function runCounterpush(options: {
   dataDir: string;
@@ -192,10 +140,6 @@ export async function runCounterpush(options: {
       return stopRequested(join(dataDir, 'qwen/selfplay'), lock.owner.id);
     };
     await report({ phase: 'ready', policy, champion });
-    const studyCurrentCandidate = () => {
-      if (!state.candidateDirectory) throw new Error('후보 없이 탐색 자료를 학습할 수 없습니다.');
-      return studyNext(client, dataDir, { mode: 'candidate', learner: state.candidateDirectory });
-    };
     const result = await qualifiedLearningLoop({
       state,
       trainingMatches,
@@ -203,87 +147,18 @@ export async function runCounterpush(options: {
       newCandidateDirectory: () => join(dataDir, 'arena/qwen/training', randomUUID()),
       newEvaluationFile: () =>
         join(control, 'evaluations', `${new Date().toISOString().replaceAll(':', '-')}-${randomUUID()}.json`),
-      begin: async (directory) => {
-        await client.beginCandidate(directory);
-        const configured = await client.configureCandidate();
-        await report({ phase: 'warming_fast_policy' });
-        await client.warmup();
-        const base = Number(configured.warmup_base_datasets ?? 0);
-        for (const round of [1, 2, 3, 4]) {
-          const current = await client.status();
-          if ((Array.isArray(current.search_datasets) ? current.search_datasets.length : 0) >= base + 4)
-            break;
-          await report({ phase: 'curriculum_warmup', warmupRound: round });
-          const study = await studyNext(client, dataDir, { mode: 'candidate', learner: directory });
-          if (!study.updated) break;
-          await report({ searchStudy: study });
-        }
-        return snapshot(await client.status());
-      },
-      restore: async () => {
-        const current = await client.endCandidate();
-        await report({ policy: current });
-        return snapshot(current);
-      },
-      play: async () => {
-        const disk = await statfs(dataDir);
-        if (disk.bavail * disk.bsize < 8 * 1024 ** 3) throw new Error('남은 디스크가 8GB 미만입니다.');
-        const episode = await playCounterpushEpisode({
-          ...options,
-          controller: await controllerFor(client),
-          vision,
-          browser,
-          patterns,
-          persistPatterns: false,
-          report: async (update) =>
-            report({ ...update, phase: 'candidate_training', activeRole: 'candidate_training' }),
-        });
-        runtime.completed++;
-        await atomicWrite(
-          join(episode.directory, 'qualification.json'),
-          JSON.stringify({ role: 'candidate_training', directory: state.candidateDirectory }) + '\n',
-        );
-        return episode;
-      },
-      learn: async (episode) => {
-        await report({ phase: 'candidate_learning', activeRole: 'candidate_training' });
-        const trained = (await learnCounterpushEpisodes(client, dataDir, [episode], options.profile))[0]!;
-        if (trained.training.updated) runtime.updates++;
-        await appendFile(
-          join(control, 'matches.jsonl'),
-          JSON.stringify({
-            ...episode,
-            training: trained.training,
-            deployment: 'private_candidate',
-            at: new Date().toISOString(),
-          }) + '\n',
-          { mode: 0o600 },
-        );
-        await patterns.save();
-        await report({
-          candidatePolicy: await client.status(),
-          training: trained.training,
-          lastResult: episode.result,
-          completed: runtime.completed,
-          updates: runtime.updates,
-        });
-        const replayReceipt = join(episode.directory, 'candidate-rehearsal.json');
-        const previousReplay = await readFile(replayReceipt, 'utf8').catch((error: NodeJS.ErrnoException) => {
-          if (error.code === 'ENOENT') return null;
-          throw error;
-        });
-        if (!previousReplay) {
-          const searchStudy = await studyCurrentCandidate();
-          const rehearsal = await client.rehearse(4);
-          await atomicWrite(replayReceipt, JSON.stringify({ searchStudy, rehearsal }) + '\n');
-          await report({ searchStudy, rehearsal, candidatePolicy: await client.status() });
-        }
-      },
-      study: async () => {
-        await report({ phase: 'candidate_study' });
-        const searchStudy = await studyCurrentCandidate();
-        await report({ searchStudy, candidatePolicy: await client.status() });
-      },
+      ...candidateTraining({
+        options,
+        dataDir,
+        control,
+        state,
+        runtime,
+        client,
+        vision,
+        browser,
+        patterns,
+        report,
+      }),
       evaluate: async (candidate, evaluationFile) => {
         const evaluation = await evaluateWithResources({
           ...options,
