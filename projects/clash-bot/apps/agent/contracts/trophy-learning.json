@@ -1,0 +1,18 @@
+{
+  "format": "trophy-own-policy-learning-v1",
+  "trainingMatches": 2,
+  "minimumTransitions": 8,
+  "maximumTransitions": 128,
+  "selection": { "temperature": 1, "urgentTemperature": 0.5, "exploration": 0.01 },
+  "ppo": {
+    "epochs": 3,
+    "batchSize": 16,
+    "learningRate": 0.0001,
+    "clipRatio": 0.2,
+    "entropyWeight": 0.005,
+    "valueWeight": 0.5,
+    "gradientNorm": 1,
+    "maximumKL": 0.02,
+    "backtracks": 4
+  }
+}

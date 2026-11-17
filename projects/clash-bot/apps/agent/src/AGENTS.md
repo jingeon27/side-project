@@ -2,6 +2,8 @@
 
 의존은 `shared` ← `core` ← (`qwen`, `arena`) ← `counterpush/{perception, browser, learning, match}` ← `counterpush/loop` 한 방향이다. 프로젝트의 `eslint.config.ts`가 폴더별로 아래 계층의 import를 막는다. 규칙을 바꿀 때는 이유를 같은 파일에 남긴다.
 
+`trophy/`는 `shared`·`core`만 사용하는 별도 실험 경로다. `session.ts`가 내 행동 수집 계획·CPU 학습·고정 평가·채택·중단 복구를, `actor.ts`가 한 경기의 고정 모델과 실제 선택 확률을 소유한다. 화면 캡처·ADB·개인 참조 연결은 로컬 어댑터가 소유하고 학습기는 UI를 조작하지 않는다. CLI는 상태 조회와 JSON 통신을 제공한다.
+
 - `core/`는 실행 환경에 의존하지 않는 게임 규칙이다. 카드·덱·화면 좌표와 프로필, `battle/`(카드 순환·엘릭서·필드 추적·진화와 능력 상태·인식 결과와 상대 관찰의 형식), `policy/`(합법 후보와 Qwen 판단 계약)를 소유한다. 전략적 선호로 사용 가능한 손패를 지우지 않는다. Python 시뮬레이션과 입력 형식을 바꾸면 공유 계약 검사도 갱신한다.
 - `counterpush/cli.ts`는 공개 명령과 인자만 소유한다. `counterpush/profile.ts`는 저장소 프로필을 읽고 덱을 확인한다.
 - `counterpush/browser/`는 전용 Chrome의 화면 캡처·입력·덱 확인·결과 판독만 소유한다.

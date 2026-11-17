@@ -2,7 +2,7 @@
 
 [Counterpush](https://playcounterpush.com/) 웹 게임을 전용 Chrome에서 화면만 읽어 플레이하고, 경기 결과로 Qwen 후보를 학습한 뒤 고정 평가를 통과한 후보만 적용하는 로컬 봇입니다. **Qwen3.8-27B 4bit**가 합법 배치 후보 중 다음 행동을 고르고, 로컬 자가대국(arena)이 수읽기 자료를 만듭니다.
 
-Counterpush는 사용자가 지정한 참고 서비스이며 이 프로젝트에 Counterpush의 모델·게임 엔진은 포함되지 않습니다. 실제 클래시로얄 클라이언트의 자동 조작은 지원하지 않습니다. [Supercell 이용약관](https://supercell.com/en/terms-of-service/)이 봇·자동화 소프트웨어 사용을 금지합니다.
+Counterpush는 사용자가 지정한 참고 서비스이며 이 프로젝트에 Counterpush의 모델·게임 엔진은 포함되지 않습니다. 명시적으로 요청한 트로피 자동개선은 현재 화면·확인된 내 행동·결과만 사용하는 별도 CPU 정책입니다. 개인 화면 입력 연결과 인식 참조는 로컬 실험으로 관리하며, Counterpush·자가대국·트로피의 학습과 실력 평가를 구분합니다.
 
 사용자가 설명한 필드 상황, 엘릭서 10 상한과 공유 재생, 8장 덱/4장 손패/FIFO, 카드별 역할과 구현 범위는 [학습 요구사항과 구조](docs/learning-design.md)에 있습니다.
 
@@ -45,6 +45,18 @@ yarn workspace @side/clash-bot counterpush stop
 한 계정에서는 한 탭만 실행합니다. 2026-11-15 실제 화면에서 사이트가 다른 탭/창에서 게임을 시작하면 기존 경기를 닫는다고 안내했습니다. 결과가 확인되지 않은 경기는 학습하지 않습니다.
 
 `audit`은 이번 실행 시작 이후 카드별 내 확인된 사용, 상대 발견, 행동 전 상태 포함, 학습 선별, 실제 가중치 학습 건수와 승패를 나눠 보여줍니다. 인식되지 않았거나 학습되지 않은 카드는 0으로 표시하며 승률 개선을 자동 선언하지 않습니다.
+
+## 트로피 자기 행동 자동개선
+
+로컬 화면 연결은 `TrophySession`의 고정 경기 계획을 받아 현재 관측과 내 행동을 수집합니다. 확인된 새 학습 경기 2판마다 별도 작은 CPU 정책을 갱신하고, 기존 모델과 최소 16쌍의 고정 평가를 통과한 후보만 채택합니다. 이전 읽기 전용 기록·평가·미확인 입력을 학습으로 바꾸지 않습니다. 평가 중 학습을 멈추고 원본 화면·선택 확률·결과를 채택 전에 다시 검사합니다.
+
+```sh
+yarn workspace @side/clash-bot trophy status
+yarn workspace @side/clash-bot test:trophy
+yarn workspace @side/clash-bot test:trophy:model
+```
+
+`test:trophy:model`은 설치된 MLX 환경을 사용한 합성 자료 검사이며 실전 실력의 증거가 아닙니다. 로컬 화면 어댑터는 별도 ADB 연결·검토된 개인 화면 참조가 필요합니다. 학습 코어의 JSON 연결은 `trophy serve --seed <policy.json> --evidence <실행 파일>`이며 자세한 기록·수집·학습·평가 계약은 [트로피 학습 설계](docs/learning-design.md#트로피-내-행동의-자동개선)에 있습니다.
 
 ## 실시간 빠른 정책
 

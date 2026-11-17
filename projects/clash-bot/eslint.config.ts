@@ -8,15 +8,20 @@ const src = 'apps/agent/src';
 const layers: Array<{ files: string; forbidden: string[]; reason: string }> = [
   {
     files: `${src}/shared/**`,
-    forbidden: ['(^|/)(core|counterpush|qwen|arena)/'],
+    forbidden: ['(^|/)(core|counterpush|qwen|arena|trophy)/'],
     reason: 'shared는 파일·프로세스 기반 기능만 소유한다',
   },
   {
     files: `${src}/core/**`,
-    forbidden: ['(^|/)(counterpush|qwen|arena)/'],
+    forbidden: ['(^|/)(counterpush|qwen|arena|trophy)/'],
     reason: 'core는 실행 환경에 의존하지 않는 게임 규칙과 판단 계약이다',
   },
   { files: `${src}/qwen/**`, forbidden: ['(^|/)(counterpush|arena)/'], reason: 'qwen은 모델 클라이언트다' },
+  {
+    files: `${src}/trophy/**`,
+    forbidden: ['(^|/)(counterpush|qwen|arena)/'],
+    reason: '트로피의 자기 행동 학습·평가는 다른 게임 실행기와 독립적이다',
+  },
   {
     files: `${src}/arena/**`,
     forbidden: ['(^|/)counterpush/'],
