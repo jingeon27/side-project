@@ -77,27 +77,14 @@ def placement_grid(placement, targets):
 
 
 def threat_and_targets(state, team):
-    units = [
-        dict(zip(royalesim.ENTITY_FIELDS, row))
-        for row in state["entities"]
-        if row[FIELDS["card_id"]] >= 0
-    ]
-    invaders = [
-        unit
-        for unit in units
-        if unit["team"] != team and canonical(unit["x"] / TILE, unit["y"] / TILE, team)[1] < 16
-    ]
-    nearest = min(
-        invaders,
-        key=lambda unit: canonical(unit["x"] / TILE, unit["y"] / TILE, team)[1],
-        default=None,
-    )
-    threat = canonical(nearest["x"] / TILE, nearest["y"] / TILE, team) if nearest else None
+    """The enemy unit nearest our king's row, if one is in our half, and every enemy unit."""
+    x, y, owner, card = (FIELDS[name] for name in ("x", "y", "team", "card_id"))
     targets = [
-        canonical(unit["x"] / TILE, unit["y"] / TILE, team)
-        for unit in units
-        if unit["team"] != team
+        canonical(row[x] / TILE, row[y] / TILE, team)
+        for row in state["entities"]
+        if row[card] >= 0 and row[owner] != team
     ]
+    threat = min((point for point in targets if point[1] < 16), key=lambda p: p[1], default=None)
     return threat, targets
 
 

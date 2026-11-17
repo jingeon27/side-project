@@ -1,5 +1,6 @@
 """Native mechanics through the arena: forms, costs, children, evolutions and the public ledger."""
 
+import copy
 import json
 import unittest
 
@@ -221,11 +222,16 @@ class InputDelayTest(unittest.TestCase):
         for _ in range(10):
             state = arena.state()
             for team in (0, 1):
+                estimate = public_mana(arena.history, state["tick"], team)
                 self.assertAlmostEqual(
-                    public_mana(arena.history, state["tick"], team),
-                    state["players"][team]["elixir_milli"] / 1000,
-                    delta=0.05,
+                    estimate, state["players"][team]["elixir_milli"] / 1000, delta=0.05
                 )
+                # The observer's running ledger, also in a branch, equals the full recount.
+                for world in (arena, arena.clone()):
+                    self.assertEqual(
+                        world.observe(1 - team)["state"]["players"][team]["elixir_range"],
+                        [max(0, estimate - 0.05), min(10, estimate + 0.05)],
+                    )
             moves = [
                 next(
                     (action for action in legal_actions(arena.battle, team) if action.card >= 0),
@@ -234,6 +240,27 @@ class InputDelayTest(unittest.TestCase):
                 for team in (0, 1)
             ]
             arena.play(moves, 180)
+
+    def test_observing_leaves_the_shared_state_unchanged_and_a_step_reads_it_again(self):
+        arena = Arena(7)
+        arena.battle = field(units=[("Giant", 0, 9, 13, -1), ("Skeleton", 1, 9, 14.6, -1)])
+        arena.play([Action(-1)] * 2, 20)
+        raw = arena.state()
+        before = copy.deepcopy(raw)
+        observed = [arena.observe(team) for team in (0, 1)]
+        self.assertIs(arena.state(), raw)
+        self.assertEqual(raw, before)
+        target = FIELDS["target_uid"]
+        self.assertTrue(any(row[target] != -1 for row in raw["entities"]))
+        for team, view in enumerate(observed):
+            self.assertTrue(all(row[target] == -1 for row in view["state"]["entities"]))
+            self.assertIn("hand", view["state"]["players"][team])
+            self.assertNotIn("hand", view["state"]["players"][1 - team])
+        arena.play([Action(-1)] * 2, 1)
+        self.assertIsNot(arena.state(), raw)
+        self.assertEqual(raw, before)
+        arena.battle = field(start_tick=300)
+        self.assertEqual(arena.state()["tick"], 300)
 
     def test_card_levels_set_unit_strength(self):
         arena = Arena(1, [[5, 7, 0, 4, 1, 2, 3, 6]] * 2, levels=(12, 10))

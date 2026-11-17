@@ -6,7 +6,6 @@ input delay after it was accepted; until then only its own side knows it.
 
 import itertools
 import json
-from fractions import Fraction
 
 from .candidates import dense_actions
 from .rules import (
@@ -37,37 +36,74 @@ def public_board(state):
     }
 
 
-def public_mana(history, tick, team):
-    """Reconstruct from public clock and confirmed costs; overflow is discarded.
+class ElixirLedger:
+    """One side's public elixir: the clock and its confirmed costs; overflow is discarded.
 
-    50ms ticks, 2.8s/elixir, 2x from 120s and 3x after 240s are pinned native rules.
-    Fractions avoid a drifting reconstruction; tests compare with native balances.
+    50ms ticks, 2.8s/elixir, 2x from 120s and 3x after 240s are pinned native rules. A tick adds
+    125/7 milli-elixir, so the balance is kept in sevenths of a milli-elixir: exact integers that
+    cannot drift. Tests compare with native balances.
     """
-    mana, previous = Fraction(5000), 0
 
-    def gain(start, end):
-        edges = sorted({start, end, *[edge for edge in (2400, 4800) if start < edge < end]})
-        return sum(
-            Fraction((b - a) * 50000 * (1 if a < 2400 else 2 if a < 4800 else 3), 2800)
+    CAP = 10000 * 7
+
+    def __init__(self, balance=5000 * 7, tick=0):
+        self.balance, self.tick = balance, tick
+
+    def copy(self):
+        return ElixirLedger(self.balance, self.tick)
+
+    def accrued(self, tick):
+        edges = sorted(
+            {self.tick, tick, *[edge for edge in (2400, 4800) if self.tick < edge < tick]}
+        )
+        gain = sum(
+            125 * (b - a) * (1 if a < 2400 else 2 if a < 4800 else 3)
             for a, b in zip(edges, edges[1:])
         )
+        return min(self.CAP, self.balance + gain)
 
+    def spend(self, tick, cost):
+        self.balance, self.tick = self.accrued(tick) - cost * 7000, tick
+
+    def at(self, tick):
+        return self.accrued(tick) / 7 / 1000
+
+
+def public_mana(history, tick, team):
+    """A side's elixir at `tick`, from the public record alone."""
+    ledger = ElixirLedger()
     for event in history:
         if event["tick"] > tick:
             break
-        mana = min(Fraction(10000), mana + gain(previous, event["tick"]))
-        previous = event["tick"]
         for play in event["plays"]:
             if play["team"] == team:
-                mana -= play["cost"] * 1000
-    return float(min(Fraction(10000), mana + gain(previous, tick))) / 1000
+                ledger.spend(event["tick"], play["cost"])
+    return ledger.at(tick)
 
 
 # Recent public positions kept for unit motion: one snapshot per step, the last few seconds.
 TRAIL = 6
+# Target ids, tunnel destinations and exact private ability timers are not policy inputs.
+HIDDEN = [
+    (FIELDS[name], value)
+    for name, value in (("target_uid", -1), ("dest_x", -1), ("dest_y", -1), ("ability_ticks", 0))
+]
+
+
+def visible(row):
+    row = row.copy()
+    for index, value in HIDDEN:
+        row[index] = value
+    return row
 
 
 class Arena:
+    """The native battle with its public record.
+
+    `state()` is parsed once per step and shared by every reader until the next one, so nothing
+    may change it in place; an observation is built as new containers around it.
+    """
+
     def __init__(self, seed, initial_decks=None, decks=None, delays=(0, 0), levels=None):
         self.battle = new_battle()
         self.catalogue = json.loads(self.battle.catalogue_json())
@@ -78,6 +114,19 @@ class Arena:
             delays,
             levels or [SPEC["level"], SPEC["level"]],
         )
+
+    @property
+    def battle(self):
+        return self._battle
+
+    @battle.setter
+    def battle(self, battle):
+        self._battle = battle
+        self.changed()
+
+    def changed(self):
+        """The native battle moved: drop what was read from it."""
+        self._state = self._entities = None
 
     def reset(self, seed, initial_decks=None, decks=None, delays=None, levels=None):
         """`decks` names each side's pool deck and `initial_decks` an exact draw order of it.
@@ -105,23 +154,29 @@ class Arena:
             forms=[forms_of(name, order) for name, order in zip(self.decks, orders)],
             levels=[[level] * len(order) for level, order in zip(self.levels, orders)],
         )
+        self.changed()
         initial = self.state()
         self.initial_hands = [player["hand"] for player in initial["players"]]
         self.initial_next = [player["next_card"] for player in initial["players"]]
         self.history = []
+        self.ledgers = [ElixirLedger(), ElixirLedger()]
         # Accepted plays that have not run yet: {"tick": public tick, "team", "action", "cost"}.
         self.pending = []
         self.trail = []
 
     def state(self):
-        return json.loads(self.battle.state_json())
+        if self._state is None:
+            self._state = json.loads(self.battle.state_json())
+        return self._state
 
     def adopt(self, snapshot, source):
         """Load a saved battle with the public bookkeeping of the arena it came from."""
         self.battle.load(snapshot)
+        self.changed()
         self.decks, self.delays, self.levels = source.decks, source.delays, source.levels
         self.initial_hands, self.initial_next = source.initial_hands, source.initial_next
         self.history = source.history.copy()
+        self.ledgers = [ledger.copy() for ledger in source.ledgers]
         self.pending = [play.copy() for play in source.pending]
         self.trail = source.trail.copy()
         return self
@@ -135,8 +190,9 @@ class Arena:
     def observe(self, team, include_legal=True):
         state = self.state()
         enemy = state["players"][1 - team]
-        estimate = public_mana(self.history, state["tick"], 1 - team)
-        state["players"][1 - team] = {
+        estimate = self.ledgers[1 - team].at(state["tick"])
+        players = list(state["players"])
+        players[1 - team] = {
             "team": 1 - team,
             "elixir_range": [max(0, estimate - 0.05), min(10, estimate + 0.05)],
             "crowns": enemy["crowns"],
@@ -144,11 +200,9 @@ class Arena:
             "tower_max_hp": enemy["tower_max_hp"],
             "king_active": enemy["king_active"],
         }
-        # Target ids, tunnel destinations and exact private ability timers are
-        # not policy inputs. The network uses only visible unit fields below.
-        for row in state["entities"]:
-            for field in ("target_uid", "dest_x", "dest_y", "ability_ticks"):
-                row[FIELDS[field]] = -1 if field != "ability_ticks" else 0
+        # The network uses only visible unit fields; both observers share these rows.
+        if self._entities is None:
+            self._entities = [visible(row) for row in state["entities"]]
         # These are public plays. No enemy hand/queue, future RNG or save blob is
         # handed to a policy or search. Each observer gets its own opening and its own
         # accepted plays that have not run yet; the opponent's stay hidden until they run.
@@ -156,7 +210,7 @@ class Arena:
         observation = {
             "format": OBSERVATION_FORMAT,
             "team": team,
-            "state": state,
+            "state": {**state, "players": players, "entities": self._entities},
             "decks": [name if actor == team else None for actor, name in enumerate(self.decks)],
             "delays": self.delays.copy(),
             "levels": self.levels.copy(),
@@ -168,7 +222,7 @@ class Arena:
         }
         if include_legal:
             observation["legalActions"] = [
-                action.row() for action in dense_actions(self.battle, team)
+                action.row() for action in dense_actions(self.battle, team, state)
             ]
         return observation
 
@@ -192,6 +246,7 @@ class Arena:
                 commands.append(cmd)
                 proposed.append((team, action))
         results = self.battle.step(commands, ticks)
+        self.changed()
         for (team, action), result in zip(proposed, results):
             if result[1] != 0:
                 continue
@@ -247,4 +302,6 @@ class Arena:
             ]
             if plays:
                 self.history.append({"tick": tick, "plays": plays})
+                for play in plays:
+                    self.ledgers[play["team"]].spend(tick, play["cost"])
         return results
