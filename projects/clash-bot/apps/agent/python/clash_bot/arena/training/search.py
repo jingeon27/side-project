@@ -81,6 +81,84 @@ def root_subset(actions, prior, rng, size, explore):
     return sorted(keep)
 
 
+def reconstruct(sampler, workspace, particles):
+    """Worlds that replay the public history onto the visible board; failures keep their evidence."""
+    worlds, attempts = [], 0
+    for index in range(particles):
+        try:
+            world, count = sampler.conditioned(into=workspace.worlds[index])
+        except ValueError as error:
+            observation = sampler.observation
+            path = DATA_DIR / "arena/reconstruction-failures" / f"{digest(observation)}.json"
+            atomic_json(
+                path,
+                {
+                    "format": "clash-public-root-failure-v1",
+                    "rulesID": rules_identity()["id"],
+                    "cards": CARDS,
+                    "observation": observation,
+                    "deckHypotheses": [list(pool) for pool in sampler.openings],
+                    "lastReconstructedBoard": sampler.last_board,
+                },
+            )
+            raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
+        attempts += count
+        worlds.append(world)
+    return worlds, attempts
+
+
+def first_ply(world, team, root_actions, root_prior, opponent):
+    """One sampled world's root choices, shared by every simulation that starts from it.
+
+    Like `later_ply`, returns (value, None) when the position is decided or leaves nothing to
+    play, else (None, (own actions, their priors, enemy actions, their priors)).
+    """
+    state = world.state()
+    value = terminal(state, team)
+    if value is not None:
+        return value, None
+    own_actions = [
+        action
+        for action in root_actions
+        if action.card == -1
+        or (
+            (cmd := command(world.battle, action, team, state)) is not None
+            and world.battle.check_deploy(*cmd) == 0
+        )
+    ]
+    if not own_actions:
+        return position_value(world.observe(team, include_legal=False)), None
+    priors = np.array([root_prior[root_actions.index(action)] for action in own_actions])
+    priors /= priors.sum()
+    enemy_actions = legal_actions(world.battle, 1 - team, state)
+    enemy_priors, _ = opponent.predict(world.observe(1 - team, include_legal=False), enemy_actions)
+    return None, (own_actions, priors, enemy_actions, enemy_priors)
+
+
+def later_ply(world, team, policy, opponent):
+    state = world.state()
+    value = terminal(state, team)
+    if value is not None:
+        return value, None
+    own_actions = legal_actions(world.battle, team, state)
+    enemy_actions = legal_actions(world.battle, 1 - team, state)
+    priors, _ = policy.predict(world.observe(team, include_legal=False), own_actions)
+    # Complete a bounded rollout even through new nodes. With 26 simultaneous choices per
+    # side, stopping at the first new joint child would otherwise evaluate almost every move
+    # only 2s ahead.
+    enemy_priors, _ = opponent.predict(world.observe(1 - team, include_legal=False), enemy_actions)
+    return None, (own_actions, priors, enemy_actions, enemy_priors)
+
+
+def leaf_value(world, team, policy):
+    own = world.observe(team, include_legal=False)
+    value = terminal(own["state"], team)
+    if value is not None:
+        return value
+    _, estimate = policy.predict(own, legal_actions(world.battle, team, world.state()))
+    return 0.75 * estimate + 0.25 * position_value(own)
+
+
 def search(
     observation,
     policy,
@@ -104,27 +182,9 @@ def search(
     rng = np.random.default_rng(seed)
     sampler = BeliefSampler(observation, seed)
     workspace = workspace or Workspace(particles)
-    worlds, attempts = [], 0
-    for index in range(particles):
-        try:
-            world, count = sampler.conditioned(into=workspace.worlds[index])
-        except ValueError as error:
-            path = DATA_DIR / "arena/reconstruction-failures" / f"{digest(observation)}.json"
-            atomic_json(
-                path,
-                {
-                    "format": "clash-public-root-failure-v1",
-                    "rulesID": rules_identity()["id"],
-                    "cards": CARDS,
-                    "observation": observation,
-                    "deckHypotheses": [list(pool) for pool in sampler.openings],
-                    "lastReconstructedBoard": sampler.last_board,
-                },
-            )
-            raise ValueError(f"Public root reconstruction failed; evidence: {path}") from error
-        attempts += count
-        worlds.append(world)
+    worlds, attempts = reconstruct(sampler, workspace, particles)
     team = observation["team"]
+    opponent = opponent_policy or policy
     root = Node()
     candidates = [Action(*row) for row in observation["legalActions"]]
     prior, _ = policy.predict(observation, candidates)
@@ -135,48 +195,21 @@ def search(
         root_prior = 0.75 * root_prior + 0.25 * rng.dirichlet(np.full(len(root_actions), 0.2))
     snapshots = [world.battle.save() for world in worlds]
     world = workspace.scratch
+    roots = {}
     reached = 0
     for simulation in range(simulations):
         if max_ms is not None and simulation and (time.perf_counter() - began) * 1000 >= max_ms:
             break
         index = simulation % len(worlds)
         world.adopt(snapshots[index], worlds[index])
+        if index not in roots:
+            roots[index] = first_ply(world, team, root_actions, root_prior, opponent)
         node, path = root, []
         for ply in range(depth):
-            state = world.state()
-            value = terminal(state, team)
-            if value is not None:
+            value, choices = roots[index] if ply == 0 else later_ply(world, team, policy, opponent)
+            if choices is None:
                 break
-            own = world.observe(team, include_legal=False)
-            own_actions = (
-                [
-                    action
-                    for action in root_actions
-                    if action.card == -1
-                    or (
-                        (cmd := command(world.battle, action, team, state)) is not None
-                        and world.battle.check_deploy(*cmd) == 0
-                    )
-                ]
-                if ply == 0
-                else legal_actions(world.battle, team, state)
-            )
-            if not own_actions:
-                value = position_value(own)
-                break
-            enemy_actions = legal_actions(world.battle, 1 - team, state)
-            priors, estimate = policy.predict(own, own_actions)
-            if ply == 0:
-                priors = np.array(
-                    [root_prior[root_actions.index(action)] for action in own_actions]
-                )
-                priors /= priors.sum()
-            # Complete a bounded rollout even through new nodes. With 26
-            # simultaneous choices per side, stopping at the first new joint
-            # child would otherwise evaluate almost every move only 2s ahead.
-            enemy_priors, _ = (opponent_policy or policy).predict(
-                world.observe(1 - team, include_legal=False), enemy_actions
-            )
+            own_actions, priors, enemy_actions, enemy_priors = choices
             ours = pick(node.own, own_actions, priors, rng, 1.5)
             theirs = pick(node.enemy, enemy_actions, enemy_priors, rng, 1.5)
             path.append((node, ours, theirs))
@@ -186,11 +219,7 @@ def search(
             reached = max(reached, ply + 1)
             node = node.children.setdefault((ours, theirs), Node())
         else:
-            own = world.observe(team, include_legal=False)
-            _, estimate = policy.predict(own, legal_actions(world.battle, team))
-            value = terminal(own["state"], team)
-            if value is None:
-                value = 0.75 * estimate + 0.25 * position_value(own)
+            value = leaf_value(world, team, policy)
         for visited, ours, theirs in reversed(path):
             visited.visits += 1
             for edges, action, result in (
