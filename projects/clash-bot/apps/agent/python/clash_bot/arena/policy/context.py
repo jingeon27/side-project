@@ -139,9 +139,14 @@ def decision_context(observation, actions, types=None):
             point = tile(row[FIELDS["x"]], row[FIELDS["y"]], team)
             previous = tile(old[1][1], old[1][2], team) if old else None
             seconds = (state["tick"] - old[0]) / 20 if old else None
+            kind = body(types[row[FIELDS["unit_type"]]])
+            # The screen reads a health bar, not hit points: the share of this unit's own full
+            # health, scaled to the catalogue's reference. A unit's level cannot be read from it.
+            full = CATALOGUE.catalogue.bodyHitpoints.get(kind) or row[FIELDS["max_hp"]]
+            health = full * row[FIELDS["hp"]] / max(1, row[FIELDS["max_hp"]])
             result.append(
                 {
-                    "kind": body(types[row[FIELDS["unit_type"]]]),
+                    "kind": kind,
                     "x": point[0],
                     "y": point[1],
                     "variant": "?",
@@ -151,7 +156,7 @@ def decision_context(observation, actions, types=None):
                     ]
                     if previous and seconds
                     else None,
-                    "hp": [row[FIELDS["hp"]], row[FIELDS["hp"]]],
+                    "hp": [health, health],
                 }
             )
         return result

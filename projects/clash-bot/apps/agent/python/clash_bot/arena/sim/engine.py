@@ -101,7 +101,8 @@ class Arena:
 
         `delays` is each side's input delay in ticks (the live client measured 21-22); a play
         runs and becomes visible that long after it was accepted. `levels` is each side's card
-        level. Only the observer's deck is public; the other list is never sent to it.
+        and crown tower level. Only the observer's deck is public; the other list is never sent
+        to it.
         """
         self.decks = list(decks or self.decks)
         self.delays = list(delays or self.delays)
@@ -121,6 +122,8 @@ class Arena:
             spawns=[],
             forms=[forms_of(name, order) for name, order in zip(self.decks, orders)],
             levels=[[level] * len(order) for level, order in zip(self.levels, orders)],
+            # A side's crown towers are as strong as its cards, as a player's level sets both.
+            tower_levels=list(self.levels),
         )
         self.changed()
         initial = self.state()

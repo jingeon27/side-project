@@ -6,6 +6,7 @@ import unittest
 
 import royalesim
 
+from clash_bot.arena.sim.belief import BeliefSampler
 from clash_bot.arena.sim.candidates import legal_actions
 from clash_bot.arena.sim.elixir import public_mana
 from clash_bot.arena.sim.engine import Arena
@@ -273,6 +274,27 @@ class InputDelayTest(unittest.TestCase):
             if row[FIELDS["card_id"]] == 5
         }
         self.assertGreater(knights[0], knights[1])
+
+    def test_each_sides_towers_are_as_strong_as_its_cards(self):
+        towers = {
+            levels: [
+                player["tower_max_hp"] for player in Arena(1, levels=levels).state()["players"]
+            ]
+            for levels in ((11, 11), (12, 10), (10, 12))
+        }
+        level = {11: towers[(11, 11)][0], 12: towers[(12, 10)][0], 10: towers[(12, 10)][1]}
+        self.assertEqual(towers[(11, 11)], [level[11], level[11]])
+        self.assertEqual(towers[(10, 12)], [level[10], level[12]])
+        for slot in range(3):
+            self.assertLess(level[10][slot], level[11][slot])
+            self.assertLess(level[11][slot], level[12][slot])
+        # A rebuilt hypothesis world gets the same towers as the game it replays.
+        arena = Arena(7, levels=(12, 10))
+        arena.play([Action(-1)] * 2, 100)
+        world, _attempts = BeliefSampler(arena.observe(0), 5).conditioned()
+        self.assertEqual(
+            [player["tower_max_hp"] for player in world.state()["players"]], towers[(12, 10)]
+        )
 
 
 if __name__ == "__main__":

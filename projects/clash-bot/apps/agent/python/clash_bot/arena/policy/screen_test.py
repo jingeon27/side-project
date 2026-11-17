@@ -5,12 +5,12 @@ import unittest
 import numpy as np
 
 from clash_bot.arena.policy.context import cycle_rows, decision_context
-from clash_bot.arena.policy.features import TOWERS_KNOWN, context_features
+from clash_bot.arena.policy.features import CATALOGUE, TOWERS_KNOWN, context_features
 from clash_bot.arena.policy.noise import PerceptionNoise
 from clash_bot.arena.policy.screen import Screen
 from clash_bot.arena.sim.candidates import legal_actions
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import Action
+from clash_bot.arena.sim.rules import FIELDS, Action
 
 
 def noise(play_miss):
@@ -92,6 +92,24 @@ class LiveCardCycleTest(unittest.TestCase):
         live = Screen(noise(0), np.random.default_rng(1)).read(observation, [], towers=False)
         self.assertNotIn("towers", live)
         self.assertEqual(context_features(live)[TOWERS_KNOWN], 0)
+
+
+class HealthBarTest(unittest.TestCase):
+    def test_full_health_reads_the_same_at_every_level_and_damage_as_a_share_of_the_bar(self):
+        readings = {}
+        for level in (10, 11, 12):
+            arena = Arena(7, levels=(level, level))
+            arena.play([Action(-1)] * 2, 100)
+            move = next(move for move in legal_actions(arena.battle, 0) if move.card >= 0)
+            arena.play([move, Action(-1)], 30)
+            row = next(row for row in arena.state()["entities"] if row[FIELDS["card_id"]] >= 0)
+            self.assertEqual(row[FIELDS["hp"]], row[FIELDS["max_hp"]])
+            body = decision_context(arena.observe(0), [])["bodies"]["own"][0]
+            readings[level] = (row[FIELDS["max_hp"]], CATALOGUE.health(body["kind"], body["hp"]))
+        # The engine's hit points grow with level; the bar is full at each.
+        self.assertLess(readings[10][0], readings[11][0])
+        self.assertLess(readings[11][0], readings[12][0])
+        self.assertEqual({health for _full, health in readings.values()}, {1.0})
 
 
 if __name__ == "__main__":

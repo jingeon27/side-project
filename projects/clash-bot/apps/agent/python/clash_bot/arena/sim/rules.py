@@ -104,8 +104,10 @@ def rules_identity():
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
         "evaluationSuite": "live_mirror_and_pool_through_the_screen_v3",
-        # What a policy is given: the live screen's elixir bound and card cycle, not the exact ones.
-        "policyInput": "live_screen_v1",
+        # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
+        # the engine's exact balances and hit points.
+        "policyInput": "live_screen_health_bars_v2",
+        "towerLevels": "each_side_card_level_v1",
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",
