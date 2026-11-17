@@ -1,7 +1,7 @@
-"""Retain card probability mass when a dense placement set becomes a training subset.
+"""Current card marginals and conditional probabilities of the visited placements.
 
-These offsets reproduce the collecting policy exactly. They are frozen sampled partitions,
-not claims about the later learner's unseen placements or new tactical mechanics.
+The optimizer differentiates through the full partition too; a representative tile
+must not receive its entire card's gradient.
 """
 
 import numpy as np
@@ -9,7 +9,7 @@ import numpy as np
 from .choice import grouped_indices
 
 
-def log_mass_correction(scores, families, retained):
+def project_logits(scores, families, retained):
     scores = np.asarray(scores, np.float64)
     if (
         len(scores) != len(families)
@@ -20,10 +20,10 @@ def log_mass_correction(scores, families, retained):
         or max(retained) >= len(scores)
     ):
         raise ValueError("Invalid dense policy projection")
-    offsets = np.zeros(len(scores), np.float64)
+    result = scores.copy()
     chosen = set(retained)
     for group in grouped_indices(families):
         kept = [i for i in group if i in chosen]
         if kept:
-            offsets[kept] = np.logaddexp.reduce(scores[group]) - np.logaddexp.reduce(scores[kept])
-    return offsets[retained].astype(np.float32)
+            result[kept] += np.logaddexp.reduce(scores[group]) - np.logaddexp.reduce(scores[kept])
+    return result[retained]
