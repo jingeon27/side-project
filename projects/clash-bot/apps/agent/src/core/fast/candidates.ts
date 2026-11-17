@@ -18,9 +18,10 @@ const ENEMY_TOWERS: Tile[] = [
   [14.5, 25.5],
 ];
 
-// 시뮬레이터(clash_bot.arena.sim.candidates.placement_tiles)와 같은 배치 유형별 지점이다. 카드 이름이 아니라
+// 시뮬레이터(clash_bot.arena.placement.placement_tiles)와 같은 배치 유형별 지점이다. 카드 이름이 아니라
 // 카드 카탈로그의 배치 유형으로 정하므로 어느 덱의 카드든 같은 규칙을 쓴다. 각 카드는 앞의 6곳까지만 쓴다.
-const placementTiles = (
+// 두 언어의 지점과 격자는 test-fixtures/fast-candidate-cases.json의 공유 사례로 맞춘다.
+export const placementTiles = (
   placement: CatalogueCard['placement'],
   threat: Tile | null,
   enemies: Tile[],
@@ -64,10 +65,10 @@ const placementTiles = (
     .slice(0, 6);
 
 // 배치 유형 지점 뒤에 붙는 격자다. 유닛·건물은 우리 진영의 모든 칸, 주문은 상대 유닛 위치와 필드의 두 칸마다다.
-// 정책이 모두 비교한다. 시뮬레이터(clash_bot.arena.sim.candidates.placement_grid)와 같은 순서다.
+// 정책이 모두 비교한다. 시뮬레이터(clash_bot.arena.placement.placement_grid)와 같은 순서다.
 const OWN_GRID: Tile[] = range(15).flatMap((y) => range(18).map((x): Tile => [x + 0.5, y + 0.5]));
 const FIELD_GRID: Tile[] = range(16).flatMap((y) => range(9).map((x): Tile => [2 * x + 1, 2 * y + 1]));
-const placementGrid = (placement: CatalogueCard['placement'], enemies: Tile[]): Tile[] =>
+export const placementGrid = (placement: CatalogueCard['placement'], enemies: Tile[]): Tile[] =>
   match(placement)
     .with('troop', 'ranged_troop', 'building', 'rolling_spell', () => OWN_GRID)
     .with('area_spell', 'spawn_spell', 'tower_spell', 'anywhere', () => [...enemies, ...FIELD_GRID])

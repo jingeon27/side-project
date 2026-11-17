@@ -9,7 +9,7 @@ arena module uses; it never plays a game itself.
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Annotated, Literal
+from typing import Literal
 
 import royalesim
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -20,17 +20,6 @@ from ..catalogue import current
 
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
 OBSERVATION_FORMAT = "clash-arena-observation-v2"
-
-
-class DeploymentSpec(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    format: Literal["clash-deployment-v1"]
-    kingTowerTile: tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]]
-    kingBackTiles: tuple[
-        tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]],
-        tuple[Annotated[float, Field(ge=0, le=18)], Annotated[float, Field(ge=0, le=16)]],
-    ]
 
 
 class DeckSpec(BaseModel):
@@ -48,7 +37,6 @@ class DeckSpec(BaseModel):
         return self
 
 
-DEPLOYMENT = DeploymentSpec.model_validate_json((CONTRACTS_DIR / "deployment.json").read_text())
 DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
 # The deck the live screen plays; Counterpush is a mirror match of it.
 LIVE_DECK = SPEC["liveDeck"]

@@ -2,9 +2,10 @@
 
 import unittest
 
-from clash_bot.arena.sim.candidates import dense_actions, legal_actions, placement_tiles
+from clash_bot.arena.placement import DEPLOYMENT
+from clash_bot.arena.sim.candidates import dense_actions, legal_actions
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import CARDS, DECKS, DEPLOYMENT, TILE, Action, canonical, deck_ids
+from clash_bot.arena.sim.rules import CARDS, DECKS, TILE, Action, canonical, deck_ids
 
 
 def tiles(arena, team, card):
@@ -76,20 +77,6 @@ class CandidateTest(unittest.TestCase):
         )
         # Enemy princess towers when no enemy unit is on the field.
         self.assertEqual(tiles(arena, 0, 6), [(3.5, 25.5), (14.5, 25.5)])
-
-    def test_placement_rules_match_the_live_candidates(self):
-        # src/core/fast/candidates.spec.ts expects the same tiles for these rules.
-        self.assertEqual(
-            placement_tiles("tower_spell", None, []),
-            [(3.5, 25.5), (14.5, 25.5), (3.5, 23.5), (14.5, 23.5)],
-        )
-        self.assertEqual(
-            placement_tiles("anywhere", None, []),
-            [(3.5, 22.5), (14.5, 22.5), (3.5, 28.5), (14.5, 28.5)],
-        )
-        self.assertEqual(placement_tiles("ranged_troop", (14.5, 12), [])[0], (14.5, 9))
-        self.assertEqual(placement_tiles("troop", (14.5, 12), [])[:2], [(14.5, 11), (9, 11)])
-        self.assertEqual(placement_tiles("unsupported", (14.5, 12), []), [])
 
 
 class DenseCandidateTest(unittest.TestCase):

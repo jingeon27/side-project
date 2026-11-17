@@ -1,13 +1,48 @@
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-import { countBy } from 'es-toolkit';
+import { chunk, countBy } from 'es-toolkit';
+import { match } from 'ts-pattern';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation, type FieldUnit } from '../battle/battle-state.ts';
+import type { CatalogueCard } from '../card-catalogue.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../deck.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
 import { loadProfile, type Profile } from '../profile.ts';
-import { fastCandidates } from './candidates.ts';
+import { fastCandidates, placementGrid, placementTiles } from './candidates.ts';
+
+type Tile = [x: number, y: number];
+// Python(clash_bot.arena.placement)이 쓴 사례다. arena/placement_test.py도 같은 파일을 검사한다.
+const shared = JSON.parse(
+  await readFile(new URL('../../../test-fixtures/fast-candidate-cases.json', import.meta.url), 'utf8'),
+) as {
+  ownGrid: number[];
+  fieldGrid: number[];
+  cases: Array<{
+    placement: CatalogueCard['placement'];
+    threat: Tile | null;
+    targets: Tile[];
+    rule: Tile[];
+    grid: 'own' | 'field' | 'none';
+  }>;
+};
+
+describe('placement tiles and grids are the ones the simulator trains on', () => {
+  it.each(shared.cases.map((item, index) => [index, item.placement, item] as const))(
+    'shared case %i (%s)',
+    (_index, _placement, item) => {
+      expect(placementTiles(item.placement, item.threat, item.targets)).toEqual(item.rule);
+      expect(placementGrid(item.placement, item.targets)).toEqual(
+        match(item.grid)
+          .with('own', () => chunk(shared.ownGrid, 2))
+          .with('field', () => [...item.targets, ...chunk(shared.fieldGrid, 2)])
+          .with('none', () => [])
+          .exhaustive(),
+      );
+    },
+  );
+});
 
 const state = { profile: undefined as Profile | undefined };
 beforeAll(async () => {

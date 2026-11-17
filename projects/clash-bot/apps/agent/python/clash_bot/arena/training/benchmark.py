@@ -10,7 +10,8 @@ import math
 
 import numpy as np
 
-from ..sim.rules import DEPLOYMENT, FIELDS, TILE, canonical
+from ..placement import DEPLOYMENT
+from ..sim.rules import FIELDS, TILE, canonical
 from .selfplay import live_setup, play_game
 from .storage import seed_for
 
