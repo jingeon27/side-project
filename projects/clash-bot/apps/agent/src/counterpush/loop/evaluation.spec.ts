@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  frozenComparison,
-  realEvaluationGate,
-  requiredEvaluationPairs,
-  retryInputRecovery,
-} from './evaluation.ts';
+import { realEvaluationGate, requiredEvaluationPairs } from '../../shared/qualification.ts';
+import { frozenComparison, retryInputRecovery } from './evaluation.ts';
 
 describe('frozen Counterpush comparison', () => {
   it('excludes an input recovery game instead of treating it as assessment evidence', async () => {

@@ -9,7 +9,12 @@ import { LearningClient } from '../../qwen/learning-client.ts';
 import { MODEL } from '../../qwen/model.ts';
 import { atomicWrite } from '../../shared/assets.ts';
 import { readJsonFile, readOptionalJsonFile } from '../../shared/json-file.ts';
-import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
+import {
+  attemptAlpha,
+  QUALIFICATION,
+  realEvaluationGate,
+  requiredEvaluationPairs,
+} from '../../shared/qualification.ts';
 import { acquireLearningLock, stopRequested } from '../../shared/runtime-lock.ts';
 import { CounterpushBrowser } from '../browser/browser.ts';
 import { controllerFor } from '../match/controllers.ts';
@@ -42,49 +47,6 @@ export async function retryInputRecovery<T extends { learningEligible?: boolean 
   if (episode.learningEligible !== false) return episode;
   await excluded(episode);
   return retryInputRecovery(play, excluded, attemptsLeft - 1);
-}
-
-export function requiredEvaluationPairs(minimum: number, alpha: number) {
-  if (minimum < QUALIFICATION.minimumPairs) return minimum; // Small manual smoke runs cannot qualify.
-  return Math.max(minimum, Math.ceil(-Math.log2(alpha)) + 1);
-}
-
-export function realEvaluationGate(pairScores: number[], alpha = QUALIFICATION.familyAlpha) {
-  const enough = (mean: number) =>
-    pairScores.length >= QUALIFICATION.minimumPairs && mean >= QUALIFICATION.minimumMeanScore;
-  if (
-    !pairScores.length ||
-    !Number.isFinite(alpha) ||
-    alpha <= 0 ||
-    alpha > QUALIFICATION.familyAlpha ||
-    pairScores.some((score) => !Number.isFinite(score) || score < 0 || score > 1)
-  )
-    return { passed: false, reason: 'invalid_or_missing_pairs' };
-  const mean = pairScores.reduce((sum, value) => sum + value, 0) / pairScores.length;
-  if (pairScores.some((value) => ![0, 0.5, 1].includes(value)))
-    return { passed: false, reason: 'invalid_win_pair_score' };
-  const wins = pairScores.filter((value) => value > 0.5).length,
-    losses = pairScores.filter((value) => value < 0.5).length;
-  const decisive = wins + losses;
-  const sum = { combination: 1, tail: 0 };
-  for (const count of Array.from({ length: decisive + 1 }, (_, index) => index)) {
-    if (count >= wins) sum.tail += sum.combination;
-    sum.combination *= (decisive - count) / (count + 1);
-  }
-  const probability = decisive ? sum.tail / 2 ** decisive : 1;
-  const passed = enough(mean) && probability <= alpha;
-  return {
-    passed,
-    reason: passed ? 'qualified' : 'insufficient_evidence_of_improvement',
-    pairs: pairScores.length,
-    score: mean,
-    deltaWinRate: 2 * mean - 1,
-    pairWins: wins,
-    pairLosses: losses,
-    oneSidedP: probability,
-    test: 'exact_paired_binomial',
-    alpha,
-  };
 }
 
 export async function frozenComparison(options: {

@@ -2,9 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
-import { attemptAlpha, QUALIFICATION } from '../../shared/qualification.ts';
+import { attemptAlpha, QUALIFICATION, realEvaluationGate } from '../../shared/qualification.ts';
 import { parseBrowserResult } from '../browser/browser.ts';
-import { realEvaluationGate } from './evaluation.ts';
 
 // Python 게시 검사(clash_bot.qwen.promotion_gate_test)도 같은 사례 파일을 같은 결과로 판정해야 한다.
 const cases = JSON.parse(
