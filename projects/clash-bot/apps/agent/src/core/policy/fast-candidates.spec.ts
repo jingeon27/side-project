@@ -49,7 +49,7 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
   it('offers lane defense without a threat and moves the first two troop spots in front of an invader', () => {
     const profile = state.profile!;
     const calm = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 5, situation());
-    expect(tiles(profile, calm, 'knight')).toEqual([
+    expect(tiles(profile, calm, 'knight').slice(0, 6)).toEqual([
       [3.5, 10],
       [14.5, 10],
       [3.5, 14],
@@ -57,7 +57,12 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
       [8, 0.5],
       [10, 0.5],
     ]);
-    expect(tiles(profile, calm, 'graveyard')).toHaveLength(6);
+    // The placement-rule tiles lead; the grid follows: every own-side tile, every second field tile.
+    expect(tiles(profile, calm, 'knight').length).toBeGreaterThan(200);
+    expect(tiles(profile, calm, 'graveyard').slice(6, 8)).toEqual([
+      [1, 1],
+      [3, 1],
+    ]);
     expect(calm[0]).toMatchObject({ id: 0, slot: 0, card: null });
 
     const invaded = fastCandidates(
@@ -70,7 +75,7 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
       [14.5, 11],
       [9, 11],
     ]);
-    expect(tiles(profile, invaded, 'knight').slice(-2)).toEqual([
+    expect(tiles(profile, invaded, 'knight').slice(4, 6)).toEqual([
       [8, 0.5],
       [10, 0.5],
     ]);
@@ -86,7 +91,7 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
       10,
       situation(),
     );
-    expect(tiles(profile, calm, 'musketeer')).toEqual([
+    expect(tiles(profile, calm, 'musketeer').slice(0, 6)).toEqual([
       [3.5, 10],
       [14.5, 10],
       [3.5, 14],
@@ -94,17 +99,17 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
       [8, 0.5],
       [10, 0.5],
     ]);
-    expect(tiles(profile, calm, 'fireball')).toEqual([
+    expect(tiles(profile, calm, 'fireball').slice(0, 2)).toEqual([
       [3.5, 25.5],
       [14.5, 25.5],
     ]);
-    expect(tiles(profile, calm, 'goblin_barrel')).toEqual([
+    expect(tiles(profile, calm, 'goblin_barrel').slice(0, 4)).toEqual([
       [3.5, 25.5],
       [14.5, 25.5],
       [3.5, 23.5],
       [14.5, 23.5],
     ]);
-    expect(tiles(profile, calm, 'goblin_drill')).toEqual([
+    expect(tiles(profile, calm, 'goblin_drill').slice(0, 4)).toEqual([
       [3.5, 22.5],
       [14.5, 22.5],
       [3.5, 28.5],
@@ -117,10 +122,20 @@ describe('fast policy candidates follow the simulator legal-action rules', () =>
   it('skips unaffordable cards and keeps waiting available at high elixir like the simulator', () => {
     const profile = state.profile!;
     const poor = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 3, situation());
-    expect(countBy(poor, (action) => action.card ?? 'wait')).toEqual({ wait: 1, knight: 6 });
+    expect(Object.keys(countBy(poor, (action) => action.card ?? 'wait')).toSorted()).toEqual([
+      'knight',
+      'wait',
+    ]);
     const full = fastCandidates(profile, ['knight', 'furnace', 'graveyard', 'poison'], 8, situation());
     expect(full.some((action) => action.id === 0)).toBe(true);
     expect(full.map((action) => action.id)).toEqual(full.map((_, index) => index));
-    expect(full.length).toBeLessThanOrEqual(26);
+    // No tile repeats for a card, and no own-side card lands past the river.
+    const keys = full.map((action) => `${action.card}:${tilePoint(profile, action.target).join()}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(
+      full
+        .filter((action) => action.card === 'knight' || action.card === 'furnace')
+        .every((action) => tilePoint(profile, action.target)[1] < 15),
+    ).toBe(true);
   });
 });

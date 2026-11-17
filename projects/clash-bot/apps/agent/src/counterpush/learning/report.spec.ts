@@ -8,7 +8,7 @@ import { BattleMemory } from '../../core/battle/battle-state.ts';
 import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../../core/deck.ts';
 import { DEFAULT_PROFILE } from '../../core/profile.ts';
 import type { LossAnalysis } from './loss-analysis.ts';
-import { learningReport } from './report.ts';
+import { learningReport, wilson } from './report.ts';
 
 const fixture = { dataDir: '' };
 beforeEach(async () => {
@@ -73,6 +73,7 @@ it('groups finished matches by controller and policy version and skips unfinishe
   expect(report.groups['controller 4 policy 7']).toMatchObject({
     matches: 1,
     results: { win: 1 },
+    score: 1,
     crowns: { own: 2, enemy: 1 },
     perMatch: { fullElixirSeconds: 4, waitedAtFull: 2, undefendedAttacks: 1, waitedUnderAttack: 2 },
     reactionMedianMs: 800,
@@ -82,6 +83,18 @@ it('groups finished matches by controller and policy version and skips unfinishe
   expect(report.groups['controller 4 policy ?']).toMatchObject({
     matches: 1,
     results: { loss: 1 },
+    score: 0,
     unconfirmedInputRate: null,
   });
+  // One win is not evidence of strength: the interval still spans most of 0..1.
+  const [low, high] = report.groups['controller 4 policy 7']!.scoreInterval;
+  expect(low).toBeLessThan(0.25);
+  expect(high).toBe(1);
+});
+
+it('narrows the score interval only as matches accumulate', () => {
+  const [few, many] = [wilson(6, 10), wilson(60, 100)];
+  expect(few[0]).toBeLessThan(many[0]);
+  expect(few[1]).toBeGreaterThan(many[1]);
+  expect(wilson(0, 0)).toEqual([0, 1]);
 });
