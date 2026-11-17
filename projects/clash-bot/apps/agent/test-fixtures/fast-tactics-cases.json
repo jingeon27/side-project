@@ -1,0 +1,217 @@
+[
+  {
+    "name": "empty field: save a two-elixir barrel and unsupported opening Graveyard",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, -5, -5, -4.75, 0, -9]
+  },
+  {
+    "name": "left Knight: roll through it, never spend on the other lane",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["knight", 3.5, 10, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "knight",
+            "x": 3.5,
+            "y": 10,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, 8, -11, -10.75, 2, -9]
+  },
+  {
+    "name": "reserve barrel for a possible Goblin Barrel",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "enemyCycle": [["goblin_barrel", 0, 0]],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, -9, -9, -4.75, 0, -9]
+  },
+  {
+    "name": "Graveyard counters are known out of cycle and three elixir remain",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "enemyCycle": [
+        ["poison", 4, 4],
+        ["ice_wizard", 2, 2],
+        ["goblin_hut", 1, 1]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, -5, -5, 0, 0, -9]
+  },
+  {
+    "name": "a known ready Poison makes unsupported Graveyard less attractive",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [],
+      "enemyCycle": [["poison", 0, 0]],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, -5, -5, -3, 0, -9]
+  },
+  {
+    "name": "flying enemy: Knight and barrel are not anti-air defenders",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["minion", 3.5, 10, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "minion",
+            "x": 3.5,
+            "y": 10,
+            "variant": "base",
+            "velocity": [0, 0],
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0],
+        ["G", "card", "ice_wizard", 3, 3.5, 9]
+      ]
+    },
+    "bias": [0, -11, -11, -10.75, -6, -9, 3.6]
+  },
+  {
+    "name": "Graveyard effect without spawned bodies is not a guaranteed rolling hit",
+    "context": {
+      "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "effects": [["red", "graveyard", 3.5, 6.5, 0]],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 3.5, 5.5],
+        ["C", "card", "barbarian_barrel", 2, 14.5, 5.5],
+        ["D", "card", "graveyard", 5, 15.3, 25],
+        ["E", "card", "knight", 3, 3.5, 9],
+        ["F", "ability", "ice_wizard", 2, 0, 0]
+      ]
+    },
+    "bias": [0, -11, -11, -10.75, -4, -9]
+  }
+]

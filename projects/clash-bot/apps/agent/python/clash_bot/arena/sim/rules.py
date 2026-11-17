@@ -105,6 +105,19 @@ def rules_identity():
         "opponentDeck": "public_play_inferred_pool_prior",
         "evaluationSuite": "live_mirror_pool_and_self_opening_v4",
         "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
+        "policyMechanics": digest(
+            {
+                name: json.loads((CONTRACTS_DIR / name).read_text())
+                for name in (
+                    "fast-tactics.json",
+                    "combat-projection.json",
+                    "placement-effects.json",
+                    "deployment.json",
+                )
+            }
+        ),
+        "trainingOpponent": "quarter_fixed_defender_direct_no_teacher_rows_v1",
+        "tacticalTeacher": "paired_reactive_sampled_public_defender_v1",
         "searchPolicy": "card_bandits_covered_roots_visited_targets_v1",
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.

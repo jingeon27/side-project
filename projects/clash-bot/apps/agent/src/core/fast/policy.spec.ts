@@ -12,6 +12,7 @@ import { UNIT_KINDS } from '../knowledge.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
 import { FastPolicy, forward, weightsChecksum, type FastWeights } from './policy.ts';
+import { fastActionBias } from './tactics.ts';
 
 type Case = {
   context: DecisionContext;
@@ -101,8 +102,9 @@ describe('loading an exported policy', () => {
       const policy = await FastPolicy.load(path);
       expect(policy.version).toBe(4);
       const decision = policy.predict(fixture.cases[0]!.context);
+      const bias = fastActionBias(fixture.cases[0]!.context);
       decision.logits.forEach((logit, index) =>
-        expect(logit).toBeCloseTo(fixture.cases[0]!.logits[index]!, 4),
+        expect(logit).toBeCloseTo(fixture.cases[0]!.logits[index]! + bias[index]!, 4),
       );
       await writeFile(path, JSON.stringify(exported('0'.repeat(64))));
       await expect(FastPolicy.load(path)).rejects.toThrow('체크섬');

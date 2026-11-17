@@ -1,0 +1,11 @@
+{
+  "format": "clash-fast-tactics-v1",
+  "reserveElixir": 3,
+  "responseSeconds": 2,
+  "engagementRadius": 3,
+  "threatBoundary": 18,
+  "defenseWeight": 6,
+  "barbarianInterceptWeight": 2,
+  "graveyardCounters": { "poison": 4, "ice_wizard": 3, "goblin_hut": 4 },
+  "supportCards": ["knight", "furnace"]
+}

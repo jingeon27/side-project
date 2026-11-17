@@ -4,6 +4,7 @@ import type { BattleSituation } from '../../core/battle/battle-state.ts';
 import type { CardId } from '../../core/cards.ts';
 import { fastCandidates } from '../../core/fast/candidates.ts';
 import type { FastPolicy } from '../../core/fast/policy.ts';
+import { FAST_TACTICS } from '../../core/fast/tactics.ts';
 import type { Point } from '../../core/geometry.ts';
 import { actionCandidates, choicePrompt, type QwenAction } from '../../core/policy/actions.ts';
 import { affordableCandidates } from '../../core/policy/candidates.ts';
@@ -135,6 +136,7 @@ export function fastController(policy: FastPolicy): Controller {
           version: policy.version,
           weightsSHA256: policy.sha256,
           probabilities: decision.probabilities,
+          mechanics: { format: FAST_TACTICS.format, bias: decision.mechanicsBias },
           value: decision.value,
         },
       };

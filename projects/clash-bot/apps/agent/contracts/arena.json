@@ -137,6 +137,7 @@
   "selfplay": {
     "liveMirror": 0.5,
     "liveAgainstPool": 0.5,
+    "scriptedDefenderEvery": 4,
     "decisionTicks": 20,
     "decisionPhaseTicks": [0, 19],
     "searchTicks": 40,

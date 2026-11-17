@@ -19,7 +19,16 @@ def write_episode(path, episode):
 
 
 # Training reads only these fields; the full episode keeps observations for exports.
-REPLAY_FIELDS = ("features", "actions", "actionFeatures", "target", "outcome", "value")
+REPLAY_FIELDS = (
+    "features",
+    "actions",
+    "actionFeatures",
+    "actionBias",
+    "actionBiasWithoutTowers",
+    "target",
+    "outcome",
+    "value",
+)
 
 
 def replay_path(path):

@@ -1,7 +1,7 @@
-"""Counterfactual labels: every legal move against waiting, rolled forward from the same field.
+"""Counterfactual labels: legal moves against a reactive fixed defender from the same field.
 
 The root world is rebuilt from public plays only. Tower-HP changes and the elixir left after the
-same rollout decide the label; no future enemy deployment is supplied.
+same rollout decide the label; future enemy deployments are hypothetical policy responses.
 """
 
 import json
@@ -16,6 +16,7 @@ from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
 from ..sim.engine import Arena, public_board
 from ..sim.rules import TILE, Action, canonical, digest, rules_identity
+from ..training.response import RESPONSE_POLICY, rollout
 from ..training.storage import seed_for
 
 
@@ -56,12 +57,9 @@ class Teacher:
 
         def finish(action):
             self.scratch.adopt(snapshot, root)
-            commands = [Action(-1), Action(-1)]
-            commands[team] = action
-            outcome = self.scratch.play(commands, horizon)
-            if any(row[1] != 0 for row in outcome):
-                raise ValueError("Counterfactual action was not legal")
-            end = self.scratch.state()
+            end, deployments = rollout(
+                self.scratch, team, action, horizon, seed_for("teacher_response", identity)
+            )
             weights = np.array([2.0, 1.0, 1.0])
             own = np.array(end["players"][team]["tower_hp"]) @ weights
             enemy = np.array(end["players"][1 - team]["tower_hp"]) @ weights
@@ -69,12 +67,13 @@ class Teacher:
                 float(own if defensive else own - enemy),
                 end["players"][team]["elixir_milli"],
                 end["tick"],
+                deployments,
             )
 
-        baseline, baseline_elixir, end_tick = finish(Action(-1))
+        baseline, baseline_elixir, end_tick, baseline_deployments = finish(Action(-1))
         ends = [finish(action) for action in actions]
-        values = np.array([score - baseline for score, _, _ in ends])
-        elixir = [mana for _, mana, _ in ends]
+        values = np.array([score - baseline for score, _, _, _ in ends])
+        elixir = [mana for _, mana, _, _ in ends]
         best = float(values.max())
         viable = values >= best - 35
         costs = np.array(
@@ -88,7 +87,7 @@ class Teacher:
         # regeneration and the ten-elixir cap, not accumulated nominal savings.
         conserving = family in ("scenario-4", "scenario-5") or best < 80
         frontier = conservation_frontier(values, elixir)
-        if conserving and (all(frontier) or any(tick != end_tick for _, _, tick in ends)):
+        if conserving and (all(frontier) or any(tick != end_tick for _, _, tick, _ in ends)):
             return None
         target = (
             np.array(frontier, dtype=float)
@@ -103,9 +102,9 @@ class Teacher:
             "actions": [action.row() for action in actions],
             "target": target.tolist(),
             "evidence": {
-                "kind": "paired_elixir_conservation_rollout"
+                "kind": "paired_reactive_elixir_conservation_rollout"
                 if conserving
-                else "paired_passive_future_rollout",
+                else "paired_reactive_future_rollout",
                 "family": family,
                 "horizonTicks": horizon,
                 "actionOrder": "seeded_permutation",
@@ -116,7 +115,10 @@ class Teacher:
                 else "own_tower_preservation"
                 if defensive
                 else "tower_damage_difference",
-                "futureEnemyDeployments": 0,
+                "responsePolicy": RESPONSE_POLICY,
+                "futureEnemyDeployments": "hypothetical_policy_responses",
+                "enemyDeploymentCounts": [count for _, _, _, count in ends],
+                "baselineEnemyDeployments": baseline_deployments,
                 "towerImprovement": values.tolist(),
                 "bestImprovement": best,
                 "baselineTowerScore": baseline,

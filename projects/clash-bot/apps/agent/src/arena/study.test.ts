@@ -20,7 +20,7 @@ async function dataWithExports(names: string[]) {
   const datasets = await Promise.all(
     names.map(async (name) => {
       const path = join(dataDir, 'arena/exports', name, 'dataset.json');
-      const raw = JSON.stringify({ format: 'counterpush-tactical-targets-v3', controllerVersion: 3, name });
+      const raw = JSON.stringify({ format: 'counterpush-tactical-targets-v4', controllerVersion: 3, name });
       await mkdir(join(dataDir, 'arena/exports', name), { recursive: true });
       await writeFile(path, raw);
       return { path, sha256: createHash('sha256').update(raw).digest('hex') };

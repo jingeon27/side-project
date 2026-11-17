@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { actionFeatures, contextFeatures, STATE_SIZE } from '../core/fast/features.ts';
 import { FastPolicy, forward } from '../core/fast/policy.ts';
 import type { DecisionContext } from '../core/policy/decision-v3.ts';
-import type { TowerDefenseInput } from '../core/policy/tower-defense.ts';
+import { towerDefense, type TowerDefenseInput } from '../core/policy/tower-defense.ts';
 import { TROPHY_LEARNING, type TrophySnapshot, type TrophyTransition } from './protocol.ts';
 
 export function trophyProbabilities(
@@ -65,11 +65,20 @@ export class TrophyActor {
     frame: { at: number; image: string; bytes: Buffer },
     random = Math.random,
   ) {
-    const base = this.policy.predict(context);
-    const defended = this.policy.predict(context, protection);
+    // Trophy PPO owns its recorded mechanics offsets. Do not silently add the native
+    // self-play priors to it a second time or change its stored probability contract.
+    const base = forward(this.policy.weights, contextFeatures(context), actionFeatures(context));
+    if (
+      protection.actions.length !== context.actions.length ||
+      protection.actions.some(
+        (action, index) => action.id !== index || action.card !== context.actions[index]?.[2],
+      )
+    )
+      throw new Error('타워 수비 후보와 정책 후보의 순서가 다릅니다.');
+    const towerProtection = towerDefense(protection);
     if (mechanicsBias.length !== base.logits.length) throw new Error('사전 보정과 후보 수가 다릅니다.');
-    const bias = mechanicsBias.map((v, i) => v + (defended.towerProtection?.actions[i]?.bias ?? 0));
-    const temperature = defended.towerProtection?.urgent
+    const bias = mechanicsBias.map((v, i) => v + (towerProtection.actions[i]?.bias ?? 0));
+    const temperature = towerProtection.urgent
       ? TROPHY_LEARNING.selection.urgentTemperature
       : TROPHY_LEARNING.selection.temperature;
     const exploration = TROPHY_LEARNING.selection.exploration;
@@ -95,6 +104,6 @@ export class TrophyActor {
       chosen,
       value: base.value,
     };
-    return { chosen, draft, towerProtection: defended.towerProtection };
+    return { chosen, draft, towerProtection };
   }
 }

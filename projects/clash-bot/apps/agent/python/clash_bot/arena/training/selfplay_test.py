@@ -1,6 +1,7 @@
 """Self-play draws a setup per game; training reads candidates through the screen's errors."""
 
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -10,6 +11,8 @@ from clash_bot.arena.policy.noise import PerceptionNoise, perceive
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, SPEC, Action
 from clash_bot.arena.study.export import export
+from clash_bot.arena.training.benchmark import ScriptedPolicy, defender_bot
+from clash_bot.arena.training.search import search
 from clash_bot.arena.training.selfplay import (
     SELFPLAY,
     live_mirror,
@@ -20,6 +23,23 @@ from clash_bot.arena.training.selfplay import (
 
 
 class SetupTest(unittest.TestCase):
+    def test_scripted_opponent_plays_its_rule_directly_and_never_becomes_a_search_teacher(self):
+        policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})
+        scripted = ScriptedPolicy("defender", defender_bot, 4)
+        with patch("clash_bot.arena.training.selfplay.search", wraps=search) as observed:
+            game = play_game(
+                [policy, scripted],
+                "defender-training",
+                "rules-a",
+                simulations=2,
+                depth=1,
+                max_ticks=400,
+            )
+        self.assertTrue(observed.call_args_list)
+        self.assertEqual({call.args[0]["team"] for call in observed.call_args_list}, {0})
+        self.assertEqual(game["policies"][1]["scripted"], "defender")
+        self.assertEqual(game["rejectedCommands"], 0)
+
     def test_setups_are_seeded_by_game_and_half_are_the_live_mirror(self):
         games = [f"train-1-{index}" for index in range(400)]
         setups = [setup_for(game) for game in games]

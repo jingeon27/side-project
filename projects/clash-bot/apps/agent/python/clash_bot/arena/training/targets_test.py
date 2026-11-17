@@ -7,7 +7,8 @@ from clash_bot.arena.policy.screen import Screen
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
 from clash_bot.arena.training.search import search
-from clash_bot.arena.training.selfplay import SELFPLAY, training_rows
+from clash_bot.arena.training.selfplay import SELFPLAY
+from clash_bot.arena.training.targets import training_rows
 
 
 class SearchedTargetsTest(unittest.TestCase):
@@ -22,7 +23,9 @@ class SearchedTargetsTest(unittest.TestCase):
         }
         screen = Screen(SELFPLAY.perception, np.random.default_rng(1))
         screen.watch(observation)
-        rows, _state, _features, target, chosen = training_rows(observation, result, screen, 2)
+        rows, _state, _features, _biases, _masked_biases, target, chosen = training_rows(
+            observation, result, screen, 2
+        )
         self.assertEqual(rows, [candidates[0], candidates[2]])
         self.assertEqual(target, [0.4, 0.6])
         self.assertEqual(chosen, 1)

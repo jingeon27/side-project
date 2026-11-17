@@ -6,9 +6,9 @@ import { z } from 'zod';
 
 import { CARD_CATALOGUE } from '../card-catalogue.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
-import { towerDefense, type TowerDefenseInput } from '../policy/tower-defense.ts';
 import { cardChoice } from './choice.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
+import { fastActionBias } from './tactics.ts';
 
 // 빠른 정책의 가중치·체크섬·추론이다. Python(clash_bot.arena.policy.network)이 같은 파일을 쓴다.
 const { hidden, attention } = FAST_POLICY;
@@ -126,24 +126,11 @@ export class FastPolicy {
     return policy;
   }
 
-  predict(context: DecisionContext, protection?: TowerDefenseInput) {
+  predict(context: DecisionContext) {
     const result = forward(this.weights, contextFeatures(context), actionFeatures(context));
     const families = context.actions.map((row) => (row[1] === 'card' ? `card:${row[2]}` : row[1]));
-    if (!protection)
-      return {
-        ...result,
-        choice: cardChoice(families, result.probabilities),
-        towerProtection: undefined,
-      };
-    if (
-      protection.actions.length !== result.logits.length ||
-      protection.actions.some(
-        (action, index) => action.id !== index || action.card !== context.actions[index]?.[2],
-      )
-    )
-      throw new Error('타워 수비 후보와 정책 후보의 순서가 다릅니다.');
-    const towerProtection = towerDefense(protection);
-    const logits = result.logits.map((logit, index) => logit + (towerProtection.actions[index]?.bias ?? 0));
+    const mechanicsBias = fastActionBias(context);
+    const logits = result.logits.map((logit, index) => logit + (mechanicsBias[index] ?? 0));
     const top = Math.max(...logits);
     const exponents = logits.map((logit) => Math.exp(logit - top));
     const total = sum(exponents);
@@ -153,7 +140,7 @@ export class FastPolicy {
       logits,
       probabilities,
       choice: cardChoice(families, probabilities),
-      towerProtection,
+      mechanicsBias,
     };
   }
 }

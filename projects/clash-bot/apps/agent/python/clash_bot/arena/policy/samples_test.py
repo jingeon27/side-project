@@ -17,6 +17,8 @@ ROW = {
     "features": {"index": [1, 7, STATE_SIZE - 1], "value": [0.4, 1.0, 0.5]},
     "actions": [[-1, 0, 0], [5, 3000, 9000]],
     "actionFeatures": [[0.0] * ACTION_SIZE, [0.0] * ACTION_SIZE],
+    "actionBias": [0.0, 0.0],
+    "actionBiasWithoutTowers": [0.0, 0.0],
     "target": [0.25, 0.75],
     "outcome": -1,
     "value": -0.6,
@@ -42,9 +44,16 @@ class TrainingSampleTest(unittest.TestCase):
             {"value": -1.5},
             {"actionFeatures": [[0.0] * ACTION_SIZE, [0.0] * (ACTION_SIZE + 1)]},
             {"target": [float("nan"), 1.0]},
+            {"actionBias": [0.0]},
+            {"actionBias": [0.0, float("nan")]},
         ]:
             with self.subTest(change=sorted(change)), self.assertRaises(ValidationError):
                 TrainingSample.model_validate({**ROW, **change})
+
+        with self.assertRaises(ValidationError):
+            TrainingSample.model_validate(
+                {key: value for key, value in ROW.items() if key != "actionBias"}
+            )
 
 
 class StoredValueTest(unittest.TestCase):

@@ -1,7 +1,7 @@
 """Counterfactual tactical supervision, not invented full-match win labels.
 
-Compare legal moves against waiting from the SAME public field. No future enemy
-deployments are supplied. Keep measured tower-HP improvements and resource
+Compare legal moves against waiting from the SAME public field, with a fixed
+reactive opponent in each sampled future. Keep simulated tower-HP improvements and resource
 tradeoffs; this limited horizon still needs real-game qualification.
 """
 
@@ -121,8 +121,8 @@ def write_batches(data_dir, labels, rules_id, batch_size=8, split="train"):
         atomic_json(
             path,
             {
-                "format": "counterpush-tactical-targets-v3",
-                "source": "local_native_counterfactual_v2",
+                "format": "counterpush-tactical-targets-v4",
+                "source": "local_native_counterfactual_v3",
                 "controllerVersion": 3,
                 "rulesID": rules_id,
                 "teacherQualifiedForRealGame": False,

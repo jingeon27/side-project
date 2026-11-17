@@ -24,6 +24,7 @@ from .features import (
     hide_towers,
 )
 from .samples import PolicyMetadata, TrainingSample
+from .tactics import action_biases
 
 FORMAT = "clash-arena-policy-value-v4"
 # Leagues are kept per policy format; a new format starts its own league directory.
@@ -54,9 +55,12 @@ class Policy:
 
     def read(self, context):
         """Action probabilities and value of a decision context, however it was read."""
-        _logits, probabilities, value = forward(
+        logits, _probabilities, value = forward(
             self.weights, context_features(context), action_features(context)
         )
+        scores = logits + action_biases(context)
+        probabilities = np.exp(scores - scores.max())
+        probabilities /= probabilities.sum()
         return probabilities, value
 
     def deployed(self, observation, actions, screen):
@@ -151,8 +155,9 @@ class Policy:
         )
         optimizer = optim.Adam(learning_rate=3e-4)
 
-        def loss(model, states, actions, masks, targets, value_targets):
+        def loss(model, states, actions, biases, masks, targets, value_targets):
             logits, values = model(states, actions)
+            logits = logits + biases
             logits = mx.where(masks, logits, -1e9)
             logp = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
             policy_loss = -mx.mean(mx.sum(targets * logp, axis=-1))
@@ -166,26 +171,29 @@ class Policy:
             for batch in chunked((rows[index] for index in rng.permutation(len(rows))), batch_size):
                 width = max(len(row.actions) for row in batch)
                 # The live screen does not read tower hit points yet; learn both with and without them.
+                masked = [rng.random() < 0.5 for row in batch]
                 states = np.stack(
                     [
-                        hide_towers(row.features.dense())
-                        if rng.random() < 0.5
-                        else row.features.dense()
-                        for row in batch
+                        hide_towers(row.features.dense()) if hide else row.features.dense()
+                        for row, hide in zip(batch, masked)
                     ]
                 )
                 acts = np.zeros((len(batch), width, ACTION_SIZE), np.float32)
                 masks = np.zeros((len(batch), width), bool)
+                biases = np.zeros((len(batch), width), np.float32)
                 targets = np.zeros((len(batch), width), np.float32)
                 for index, row in enumerate(batch):
                     count = len(row.actions)
                     acts[index, :count] = row.actionFeatures
+                    biases[index, :count] = (
+                        row.actionBiasWithoutTowers if masked[index] else row.actionBias
+                    )
                     masks[index, :count] = True
                     targets[index, :count] = row.target
                 # The value head learns the terminal result blended with the tower margin.
                 value_targets = np.array([row.value for row in batch], np.float32)
                 value, grads = gradient(
-                    model, *map(mx.array, (states, acts, masks, targets, value_targets))
+                    model, *map(mx.array, (states, acts, biases, masks, targets, value_targets))
                 )
                 mx.eval(value, grads)
                 if not np.isfinite(float(value.item())):

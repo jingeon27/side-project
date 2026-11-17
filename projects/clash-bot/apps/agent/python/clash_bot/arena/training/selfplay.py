@@ -13,7 +13,6 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from ..policy.choice import card_choice, sample_card
-from ..policy.features import action_features, context_features
 from ..policy.noise import PerceptionNoise
 from ..policy.samples import SparseFeatures, value_target
 from ..policy.screen import Screen
@@ -22,6 +21,7 @@ from ..sim.engine import Arena
 from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
 from .search import Workspace, search
 from .storage import seed_for
+from .targets import training_rows
 
 
 class SelfplaySpec(BaseModel):
@@ -33,6 +33,7 @@ class SelfplaySpec(BaseModel):
     # learns what card attributes mean rather than one deck's cards.
     liveMirror: float = Field(ge=0, le=1)
     liveAgainstPool: float = Field(ge=0, le=1)
+    scriptedDefenderEvery: int = Field(ge=2)
     decisionTicks: PositiveInt
     # The second side decides this many ticks after the first, drawn per game.
     decisionPhaseTicks: tuple[int, int]
@@ -95,15 +96,6 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
-def training_rows(observation, result, screen, chosen):
-    """Only visited actions are supervised; unsearched placements have no known value."""
-    kept = np.flatnonzero(result["target"] > 0).tolist()
-    rows = [result["actions"][index] for index in kept]
-    context = screen.read(observation, rows)
-    target = result["target"][kept].tolist()
-    return rows, context_features(context), action_features(context), target, kept.index(chosen)
-
-
 def play_game(
     policies,
     game_id,
@@ -149,7 +141,7 @@ def play_game(
             if len(candidates) == 1:
                 continue
             decisions += 1
-            if simulations == 0:
+            if simulations == 0 or "scripted" in policy.metadata:
                 prior = policy.deployed(observation, candidates, screens[team])
                 selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
@@ -188,9 +180,15 @@ def play_game(
             selected[team] = result["actions"][chosen]
             searches += result["simulations"]
             if training:
-                rows, state_features, action_vectors, target, stored_choice = training_rows(
-                    observation, result, screens[team], chosen
-                )
+                (
+                    rows,
+                    state_features,
+                    action_vectors,
+                    biases,
+                    masked_biases,
+                    target,
+                    stored_choice,
+                ) = training_rows(observation, result, screens[team], chosen)
                 samples.append(
                     {
                         "gameID": game_id,
@@ -206,6 +204,8 @@ def play_game(
                         "features": SparseFeatures.of(state_features).model_dump(),
                         "actions": [action.row() for action in rows],
                         "actionFeatures": action_vectors.tolist(),
+                        "actionBias": biases.tolist(),
+                        "actionBiasWithoutTowers": masked_biases.tolist(),
                         "target": target,
                         "chosen": stored_choice,
                         "search": {
@@ -247,7 +247,15 @@ def play_game(
         "rulesID": rules_id,
         "setup": setup,
         "policies": [
-            {"version": policy.metadata["version"], "weightsSHA256": policy.checksum()}
+            {
+                "version": policy.metadata["version"],
+                "weightsSHA256": policy.checksum(),
+                **(
+                    {"scripted": policy.metadata["scripted"]}
+                    if "scripted" in policy.metadata
+                    else {}
+                ),
+            }
             for policy in policies
         ],
         "completed": completed,

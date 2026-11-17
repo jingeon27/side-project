@@ -27,7 +27,7 @@ def load_search_targets(path):
     path = Path(path).resolve()
     raw = path.read_bytes()
     data = json.loads(raw)
-    tactical = data.get("format") == "counterpush-tactical-targets-v3"
+    tactical = data.get("format") == "counterpush-tactical-targets-v4"
     if (
         not (
             (
@@ -36,7 +36,7 @@ def load_search_targets(path):
             )
             or (
                 tactical
-                and data.get("source") == "local_native_counterfactual_v2"
+                and data.get("source") == "local_native_counterfactual_v3"
                 and data.get("controllerVersion") == 3
             )
         )
@@ -71,16 +71,27 @@ def load_search_targets(path):
             if (
                 row.get("controllerVersion") != 3
                 or evidence.get("kind")
-                not in ("paired_passive_future_rollout", "paired_elixir_conservation_rollout")
+                not in (
+                    "paired_reactive_future_rollout",
+                    "paired_reactive_elixir_conservation_rollout",
+                )
                 or evidence.get("actionOrder") != "seeded_permutation"
-                or evidence.get("futureEnemyDeployments") != 0
+                or evidence.get("futureEnemyDeployments") != "hypothetical_policy_responses"
+                or evidence.get("responsePolicy") != "public_sampled_world_defender_v1"
+                or type(evidence.get("baselineEnemyDeployments")) is not int
+                or evidence["baselineEnemyDeployments"] < 0
+                or len(evidence.get("enemyDeploymentCounts", [])) != len(choices)
+                or any(
+                    type(count) is not int or count < 0
+                    for count in evidence["enemyDeploymentCounts"]
+                )
                 or evidence.get("horizonTicks", 0) < 160
                 or len(gains) != len(choices)
                 or any(not math.isfinite(value) for value in gains)
                 or abs(max(gains) - evidence["bestImprovement"]) > 1e-5
             ):
                 raise ValueError("Unverified tactical improvement target")
-            if evidence["kind"] == "paired_elixir_conservation_rollout":
+            if evidence["kind"] == "paired_reactive_elixir_conservation_rollout":
                 costs = evidence["elixirCosts"]
                 elixir = evidence["retainedElixirMilli"]
                 baseline = evidence["baselineElixirMilli"]

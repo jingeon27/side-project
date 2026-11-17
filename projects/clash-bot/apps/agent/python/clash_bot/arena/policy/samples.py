@@ -59,6 +59,8 @@ class TrainingSample(BaseModel):
     features: SparseFeatures
     actions: list[list[int]] = Field(min_length=1)
     actionFeatures: list[list[float]]
+    actionBias: list[float]
+    actionBiasWithoutTowers: list[float]
     target: list[float]
     outcome: int
     value: float = Field(ge=-1, le=1)
@@ -73,7 +75,15 @@ class TrainingSample(BaseModel):
 
     @model_validator(mode="after")
     def distribution(self):
-        if len(self.target) != len(self.actions) or len(self.actionFeatures) != len(self.actions):
+        if any(
+            len(rows) != len(self.actions)
+            for rows in (
+                self.target,
+                self.actionFeatures,
+                self.actionBias,
+                self.actionBiasWithoutTowers,
+            )
+        ):
             raise ValueError("target and action features must cover every action")
         if min(self.target) < 0 or abs(sum(self.target) - 1) > 1e-4:
             raise ValueError("target must be a search visit distribution")

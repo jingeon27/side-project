@@ -46,8 +46,10 @@ class TacticalCurriculumTest(unittest.TestCase):
         cards = [action[0] for action in label["actions"]]
         self.assertIn(-2, cards)
         self.assertIn(2, cards)
-        self.assertEqual(label["evidence"]["kind"], "paired_elixir_conservation_rollout")
-        self.assertEqual(label["evidence"]["futureEnemyDeployments"], 0)
+        self.assertEqual(label["evidence"]["kind"], "paired_reactive_elixir_conservation_rollout")
+        self.assertEqual(
+            label["evidence"]["futureEnemyDeployments"], "hypothetical_policy_responses"
+        )
         self.assertGreater(label["target"][cards.index(-1)], 0)
         self.assertEqual(label["target"][cards.index(-2)], 0)
         self.assertTrue(all(p == 0 for card, p in zip(cards, label["target"]) if card == 2))
@@ -74,7 +76,7 @@ class TacticalCurriculumTest(unittest.TestCase):
         self.assertEqual(json.dumps(observed, sort_keys=True), before)
         evidence = label["evidence"]
         self.assertEqual(evidence["objective"], "own_tower_preservation")
-        self.assertEqual(evidence["futureEnemyDeployments"], 0)
+        self.assertEqual(evidence["futureEnemyDeployments"], "hypothetical_policy_responses")
         self.assertGreaterEqual(evidence["bestImprovement"], 80)
         self.assertNotIn("terminalOutcome", label)
         for gain, probability in zip(evidence["towerImprovement"], label["target"]):
