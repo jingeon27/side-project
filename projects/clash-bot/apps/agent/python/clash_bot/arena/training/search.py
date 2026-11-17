@@ -17,6 +17,7 @@ from ..sim.candidates import legal_actions
 from ..sim.engine import Arena
 from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
 from .bandits import Node, exploration_prior, pick, root_priors, root_subset
+from .improvement import improved_policy
 
 
 def terminal(state, team):
@@ -176,6 +177,7 @@ def search(
     keep = root_subset(candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise)
     root_actions = [candidates[index] for index in keep]
     root_prior = root_priors(candidates, prior, keep)
+    learning_prior = root_prior.copy()
     if noise and len(root_actions) > 1:
         root_prior = exploration_prior(root_actions, root_prior, rng)
     snapshots = [world.battle.save() for world in worlds]
@@ -214,14 +216,18 @@ def search(
                 edges[action]["n"] += 1
                 edges[action]["w"] += result
     visits = np.array([root.own.get(action, {}).get("n", 0) for action in root_actions], np.float32)
-    target = visits / visits.sum() if visits.sum() else root_prior
-    return {
-        "actions": root_actions,
-        "target": target,
-        "values": [
+    values = np.array(
+        [
             root.own.get(action, {}).get("w", 0) / max(1, root.own.get(action, {}).get("n", 0))
             for action in root_actions
-        ],
+        ]
+    )
+    return {
+        "actions": root_actions,
+        **improved_policy(learning_prior, values, visits),
+        "prior": learning_prior.tolist(),
+        "visits": visits.tolist(),
+        "values": values.tolist(),
         "simulations": int(visits.sum()),
         "elapsedMs": (time.perf_counter() - began) * 1000,
         "beliefHypotheses": [sum(map(len, pool.values())) for pool in sampler.openings],

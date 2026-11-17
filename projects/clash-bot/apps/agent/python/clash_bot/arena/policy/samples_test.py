@@ -19,6 +19,8 @@ ROW = {
     "actionFeatures": [[0.0] * ACTION_SIZE, [0.0] * ACTION_SIZE],
     "actionBias": [0.0, 0.0],
     "actionBiasWithoutTowers": [0.0, 0.0],
+    "actionLogMassCorrection": [0.0, 0.0],
+    "actionLogMassCorrectionWithoutTowers": [0.0, 0.0],
     "target": [0.25, 0.75],
     "outcome": -1,
     "value": -0.6,
@@ -46,6 +48,8 @@ class TrainingSampleTest(unittest.TestCase):
             {"target": [float("nan"), 1.0]},
             {"actionBias": [0.0]},
             {"actionBias": [0.0, float("nan")]},
+            {"actionLogMassCorrection": [0.0]},
+            {"actionLogMassCorrectionWithoutTowers": [0.0, float("nan")]},
         ]:
             with self.subTest(change=sorted(change)), self.assertRaises(ValidationError):
                 TrainingSample.model_validate({**ROW, **change})
@@ -53,6 +57,10 @@ class TrainingSampleTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             TrainingSample.model_validate(
                 {key: value for key, value in ROW.items() if key != "actionBias"}
+            )
+        with self.assertRaises(ValidationError):
+            TrainingSample.model_validate(
+                {key: value for key, value in ROW.items() if key != "actionLogMassCorrection"}
             )
 
 

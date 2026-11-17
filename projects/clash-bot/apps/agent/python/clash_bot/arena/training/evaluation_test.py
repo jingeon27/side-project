@@ -115,7 +115,11 @@ class QualificationTest(unittest.TestCase):
         result = evaluate(a, b, "rules-a", 2, pairs=5, play_pairs=play, batch=2)
         self.assertEqual(
             batches,
-            [["holdout-2-0", "holdout-2-1"], ["holdout-2-2", "holdout-2-3"], ["holdout-2-4"]],
+            [
+                ["holdout-rules-a-2-0", "holdout-rules-a-2-1"],
+                ["holdout-rules-a-2-2", "holdout-rules-a-2-3"],
+                ["holdout-rules-a-2-4"],
+            ],
         )
         self.assertEqual(result["pairs"], [1, 0, 1, 0, 1])
         self.assertEqual([game["challengerSeat"] for game in result["games"]], [0, 1] * 5)
@@ -133,6 +137,16 @@ class QualificationTest(unittest.TestCase):
         result = evaluate(a, a, "rules-a", 0, should_stop=lambda: True)
         self.assertFalse(result["complete"])
         self.assertEqual(result["gate"]["reason"], "interrupted_evaluation")
+
+    def test_a_new_rule_set_has_disjoint_holdout_worlds(self):
+        identities = []
+        game = {"completed": True, "rejectedCommands": 0, "winner": 0, "samples": []}
+        for rules in ("rules-a", "rules-b"):
+            policy = Policy(metadata={"version": 0, "rulesID": rules})
+            with patch("clash_bot.arena.training.evaluation.play_game", return_value=game) as play:
+                evaluate(policy, policy, rules, 0, pairs=2)
+            identities.append({call.args[1] for call in play.call_args_list})
+        self.assertTrue(identities[0].isdisjoint(identities[1]))
 
 
 if __name__ == "__main__":

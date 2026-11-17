@@ -1,0 +1,7 @@
+{
+  "format": "clash-search-learning-v2",
+  "target": "prior_regularized_action_values",
+  "temperature": 0.25,
+  "maxKL": 0.1,
+  "projection": "frozen_card_partition"
+}

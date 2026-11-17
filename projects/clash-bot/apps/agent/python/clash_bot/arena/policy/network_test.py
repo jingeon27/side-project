@@ -25,13 +25,19 @@ class ExpertIterationTest(unittest.TestCase):
             "actionFeatures": action_vectors.tolist(),
             "actionBias": [0.7] + [-0.5] * (len(actions) - 1),
             "actionBiasWithoutTowers": [1.3] + [-0.8] * (len(actions) - 1),
+            "actionLogMassCorrection": [0.2] + [0.8] * (len(actions) - 1),
+            "actionLogMassCorrectionWithoutTowers": [0.4] + [0.1] * (len(actions) - 1),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "outcome": 1,
             "value": 0.8,
         }
         policy = Policy(metadata={"version": 1, "rulesID": "rules-a"})
         logits, _probabilities, value = forward(policy.weights, hide_towers(state), action_vectors)
-        scores = logits + np.array(row["actionBiasWithoutTowers"])
+        scores = (
+            logits
+            + np.array(row["actionBiasWithoutTowers"])
+            + np.array(row["actionLogMassCorrectionWithoutTowers"])
+        )
         logp = scores - np.logaddexp.reduce(scores)
         expected = -logp[0] + (value - row["value"]) ** 2
         report = policy.train([row], 2, epochs=1)

@@ -59,8 +59,9 @@ apps/agent/
                                밸런스 패치 감시(balance)
         policy/                판단 문맥(context), 특징(features), 한 진영의 화면이 경기 동안 읽은 것(screen:
                                실전 장부와 같은 상대 엘릭서 상한 opponent_elixir, 인식 오류 noise),
-                               표본(samples), 네트워크와 학습(network)
-        training/              자가대국(selfplay), 탐색(search), 실행 한 번 동안 재사용하는 워커(parallel),
+                               표본(samples), 후보 축소의 고정 카드 분할(projection), 네트워크와 학습(network)
+        training/              자가대국(selfplay), 탐색(search), 제한된 가치 기반 정책 개선(improvement),
+                               화면·정규화가 일치하는 학습 행(targets), 실행 중 재사용하는 워커(parallel),
                                채택 평가(evaluation), 규칙 봇 기준 평가(benchmark), 경기 파일(storage)
         study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, teacher, export)
         league/                실행 잠금·정지 요청·상태(control), 한 세대의 대국과 학습(generation),

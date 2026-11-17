@@ -185,8 +185,12 @@ class Policy:
                 for index, row in enumerate(batch):
                     count = len(row.actions)
                     acts[index, :count] = row.actionFeatures
-                    biases[index, :count] = (
+                    biases[index, :count] = np.array(
                         row.actionBiasWithoutTowers if masked[index] else row.actionBias
+                    ) + np.array(
+                        row.actionLogMassCorrectionWithoutTowers
+                        if masked[index]
+                        else row.actionLogMassCorrection
                     )
                     masks[index, :count] = True
                     targets[index, :count] = row.target

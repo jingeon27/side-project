@@ -58,7 +58,7 @@
     }
   },
   {
-    "name": "rolling corridor hits once",
+    "name": "rolling corridor projects one hit but narrower depth keeps the uncertainty bound",
     "input": {
       "card": "barbarian_barrel",
       "kind": "card",
@@ -82,8 +82,9 @@
       }
     },
     "expected": {
-      "damage": [81, 81],
-      "kills": [1, 1]
+      "damage": [0, 81],
+      "kills": [0, 1],
+      "trajectoryDamage": 215
     }
   },
   {
@@ -504,6 +505,147 @@
     },
     "expected": {
       "trajectoryDamage": 736
+    }
+  },
+  {
+    "name": "barrel front depth is 0.6 tiles, not its 1.3-tile side radius",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 4,
+      "y": 4,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 4,
+          "y": 9.2,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0,
+      "opportunity": 0
+    }
+  },
+  {
+    "name": "barrel time sampling never extends its 4.5-tile roll",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 4,
+      "y": 4,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 4,
+          "y": 9.15,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0
+    }
+  },
+  {
+    "name": "barrel exact last point still reaches the front edge",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 4,
+      "y": 4,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 4,
+          "y": 9.05,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 215
+    }
+  },
+  {
+    "name": "barrel back depth does not hit 0.8 tiles behind deployment",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 4,
+      "y": 4,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 4,
+          "y": 3.2,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 0
+    }
+  },
+  {
+    "name": "barrel retains its wider side hitbox",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 4,
+      "y": 4,
+      "own": [],
+      "enemy": [
+        {
+          "kind": "goblin_hut",
+          "x": 5.2,
+          "y": 6,
+          "variant": "base",
+          "velocity": [0, 0],
+          "hp": null
+        }
+      ],
+      "enemyCycle": [],
+      "enemyMana": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    "expected": {
+      "trajectoryDamage": 215
     }
   }
 ]
