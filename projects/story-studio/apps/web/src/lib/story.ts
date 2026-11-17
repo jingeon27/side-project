@@ -57,12 +57,10 @@ export const taskSchema = z.object({
   progress: z.string().max(200).optional(),
 });
 export type TVideoTask = z.infer<typeof taskSchema>;
+const imageAssetSchema = z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.png$/);
 export const sceneSchema = sceneContentSchema.extend({
   id: z.string().uuid(),
-  image: z
-    .string()
-    .regex(/^\/api\/assets\/[a-f0-9-]{36}\.png$/)
-    .optional(),
+  image: imageAssetSchema.optional(),
   video: taskSchema.optional(),
   voice: voiceSchema.optional(),
   voiceSettings: voiceSettingsSchema.optional(),
@@ -77,6 +75,8 @@ export const projectSchema = z.object({
   synopsis: z.string().max(6000),
   characters: z.string().max(6000),
   scenes: z.array(sceneSchema).min(1).max(80),
+  // The scene whose current image keeps the same people across newly generated images.
+  referenceSceneId: z.string().uuid().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   sample: z.boolean(),
@@ -94,6 +94,9 @@ export const mediaRequestSchema = z.object({
   ratio: briefSchema.shape.ratio,
   quality: z.enum(['draft', 'standard']).default('draft'),
   scene: sceneContentSchema,
+  // A video starts from the scene image; a new image keeps the people of the reference image.
+  image: imageAssetSchema.optional(),
+  reference: imageAssetSchema.optional(),
 });
 export type TMediaRequest = z.infer<typeof mediaRequestSchema>;
 export const continueSchema = z.object({
@@ -118,6 +121,11 @@ export function makeProject(brief: TBrief, draft: TDraft, sample = false): TProj
   };
 }
 
+export function referenceImage(project: TProject, scene: TScene) {
+  // Regenerating the reference scene itself starts fresh instead of copying its own image.
+  if (project.referenceSceneId === scene.id) return undefined;
+  return project.scenes.find((item) => item.id === project.referenceSceneId)?.image;
+}
 export function caption(scene: Pick<TScene, 'dialogue' | 'narration'>) {
   return scene.dialogue.trim() || scene.narration.trim();
 }

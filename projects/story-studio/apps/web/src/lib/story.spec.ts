@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import { libraryKey, readBackup, readLibrary, writeLibrary } from './library';
 import { sampleProject } from './sample';
-import { briefSchema, manuscript, mediaRequestSchema, projectSchema, safeFilename, subtitles } from './story';
+import {
+  briefSchema,
+  manuscript,
+  mediaRequestSchema,
+  projectSchema,
+  referenceImage,
+  safeFilename,
+  subtitles,
+  type TScene,
+} from './story';
 import { wrapCaption } from './video-export';
 
 describe('한국어 작품과 백업', () => {
@@ -38,6 +47,38 @@ describe('한국어 작품과 백업', () => {
     ).toBe(false);
     expect(briefSchema.safeParse({ ...project.brief, count: 9 }).success).toBe(false);
     expect(mediaRequestSchema.safeParse({ format: 'novel' }).success).toBe(false);
+  });
+  it('인물 기준 장면의 현재 이미지를 다른 장면에만 참조로 넘긴다', () => {
+    const project = sampleProject();
+    const [first, second] = project.scenes as [TScene, TScene];
+    const image = '/api/assets/12345678-1234-1234-1234-123456789abc.png';
+    const pictured = { ...first, image };
+    const scenes = [pictured, second];
+    expect(referenceImage({ ...project, scenes }, second)).toBeUndefined();
+    const referenced = { ...project, scenes, referenceSceneId: first.id };
+    expect(projectSchema.parse(referenced).referenceSceneId).toBe(first.id);
+    expect(referenceImage(referenced, second)).toBe(image);
+    expect(referenceImage(referenced, pictured)).toBeUndefined();
+    expect(referenceImage({ ...referenced, scenes: [first, second] }, second)).toBeUndefined();
+  });
+  it('생성 요청의 첫 프레임과 인물 기준은 이 앱의 PNG 자산만 받는다', () => {
+    const project = sampleProject();
+    const input = {
+      format: 'drama',
+      style: project.brief.style,
+      characters: project.characters,
+      ratio: '16:9',
+      scene: project.scenes[0],
+    };
+    const image = '/api/assets/12345678-1234-1234-1234-123456789abc.png';
+    expect(mediaRequestSchema.safeParse({ ...input, image, reference: image }).success).toBe(true);
+    expect(mediaRequestSchema.safeParse({ ...input, reference: 'https://example.com/a.png' }).success).toBe(
+      false,
+    );
+    expect(mediaRequestSchema.safeParse({ ...input, image: image.replace('.png', '.mp4') }).success).toBe(
+      false,
+    );
+    expect(projectSchema.safeParse({ ...project, referenceSceneId: '../scene' }).success).toBe(false);
   });
   it('파일명에서 경로 문자를 제거하고 한국어를 유지한다', () => {
     expect(safeFilename('서우/밤이: 편지?')).toBe('서우_밤이_ 편지_');

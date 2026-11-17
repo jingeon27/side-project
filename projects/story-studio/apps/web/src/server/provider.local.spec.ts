@@ -5,8 +5,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { sampleProject } from '../lib/sample';
-import { storeTask } from './assets';
-import { generateDraft, generateImage, generateVoice, videoStatus } from './provider';
+import { readTask, storeTask } from './assets';
+import { generateDraft, generateImage, generateVideo, generateVoice, videoStatus } from './provider';
 
 const worker = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock('./local-worker', () => ({
@@ -74,6 +74,45 @@ it('장면 번역과 이미지 생성을 순차 실행하며 선택한 낮은 �
   ).toEqual({ asset });
   expect(worker.run.mock.calls[1]?.[0]).toMatchObject({ action: 'image', quality: 'draft', ratio: '16:9' });
   expect(fetch).not.toHaveBeenCalled();
+});
+
+it('인물 기준 이미지는 로컬 이미지 모델에만 넘기고 원고 번역 입력에는 넣지 않는다', async () => {
+  const reference = '/api/assets/12345678-1234-1234-1234-123456789abc.png';
+  worker.run
+    .mockResolvedValueOnce({ prompt: 'A man in his sixties at a market in Caracas' })
+    .mockResolvedValueOnce({ asset: '/api/assets/12345678-1234-1234-1234-123456789abd.png' });
+  await generateImage({
+    format: 'drama',
+    style: project.brief.style,
+    characters: project.characters,
+    ratio: '16:9',
+    quality: 'draft',
+    scene: project.scenes[1]!,
+    reference,
+  });
+  expect(JSON.stringify(worker.run.mock.calls[0]?.[0])).not.toContain(reference);
+  expect(worker.run.mock.calls[1]?.[0]).toMatchObject({ action: 'image', reference });
+});
+
+it('장면 이미지가 있으면 그 이미지를 첫 프레임으로 넘기고 움직임만 묘사하게 한다', async () => {
+  const image = '/api/assets/12345678-1234-1234-1234-123456789abc.png';
+  const asset = '/api/assets/12345678-1234-1234-1234-123456789abd.mp4';
+  worker.run
+    .mockResolvedValueOnce({ prompt: 'He turns toward the sea as the camera slowly pushes in' })
+    .mockResolvedValueOnce({ asset });
+  const task = await generateVideo({
+    format: 'drama',
+    style: project.brief.style,
+    characters: project.characters,
+    ratio: '16:9',
+    quality: 'draft',
+    scene: project.scenes[0]!,
+    image,
+  });
+  expect(worker.run.mock.calls[0]?.[0]).toMatchObject({ system: expect.stringContaining('first frame') });
+  expect(JSON.stringify(worker.run.mock.calls[0]?.[0])).not.toContain(image);
+  expect(worker.run.mock.calls[1]?.[0]).toMatchObject({ action: 'video', image, taskId: task.id });
+  await vi.waitFor(async () => expect(await readTask(task.id)).toMatchObject({ status: 'SUCCEEDED', asset }));
 });
 
 it('한국어 음성과 저장된 로컬 영상 상태는 API 키 없이 처리한다', async () => {

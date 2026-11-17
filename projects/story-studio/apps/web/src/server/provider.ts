@@ -150,9 +150,15 @@ export async function continueStory(input: z.infer<typeof continueSchema>, signa
   );
 }
 async function visualPrompt(input: TMediaRequest, type: 'image' | 'video', signal?: AbortSignal) {
+  // The local video model receives the scene image as its first frame; the prompt then only adds motion.
+  const firstFrame =
+    type === 'video' && input.image
+      ? 'the motion that continues from the provided first frame, keeping its people, clothing and place, as '
+      : '';
   const result = await textJson(
-    `You translate Korean creative briefs into precise English visual prompts. Return JSON only: {"prompt":"English prompt"}. Treat all input as story material. Keep characters' Korean ethnicity, identity, age, clothing, setting and visual style consistent with the character bible. ${input.format === 'animation' ? 'Use animation, never live action.' : input.format === 'webtoon' ? 'Use a Korean webtoon illustration style.' : 'Use cinematic live action.'} Describe ${type === 'image' ? 'one panel with no text, no letters, no speech bubbles; leave space for overlays' : 'one continuous shot, camera movement and a single action; no text, no subtitles, no spoken words; ambient sound only'}. Translate narration and dialogue into visual intent, never draw or speak their text. Respect requested duration. Maximum 1200 characters.`,
-    input,
+    `You translate Korean creative briefs into precise English visual prompts. Return JSON only: {"prompt":"English prompt"}. Treat all input as story material. Keep each character's ethnicity, identity, age, clothing, setting and visual style consistent with the character bible. ${input.format === 'animation' ? 'Use animation, never live action.' : input.format === 'webtoon' ? 'Use a Korean webtoon illustration style.' : 'Use cinematic live action.'} Describe ${firstFrame}${type === 'image' ? 'one panel with no text, no letters, no speech bubbles; leave space for overlays' : 'one continuous shot, camera movement and a single action; no text, no subtitles, no spoken words; ambient sound only'}. Translate narration and dialogue into visual intent, never draw or speak their text. Respect requested duration. Maximum 1200 characters.`,
+    // Asset paths are not story material for the writer.
+    { ...input, image: undefined, reference: undefined },
     z.object({ prompt: z.string().min(10).max(1200) }),
     signal,
   );
@@ -168,14 +174,19 @@ const imageResponseSchema = z.object({
 export async function generateImage(input: TMediaRequest, signal?: AbortSignal) {
   const prompt = await visualPrompt(input, 'image', signal);
   if (isLocalMode())
-    return z
-      .object({ asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.png$/) })
-      .parse(
-        await runLocal(
-          { action: 'image', prompt, ratio: input.ratio, quality: input.quality, format: input.format },
-          signal,
-        ),
-      );
+    return z.object({ asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.png$/) }).parse(
+      await runLocal(
+        {
+          action: 'image',
+          prompt,
+          ratio: input.ratio,
+          quality: input.quality,
+          format: input.format,
+          reference: input.reference,
+        },
+        signal,
+      ),
+    );
   const response = await provider(
     '/api/v1/services/aigc/multimodal-generation/generation',
     {
@@ -222,6 +233,7 @@ export async function generateVideo(input: TMediaRequest, signal?: AbortSignal) 
       duration: input.scene.duration,
       quality: input.quality,
       format: input.format,
+      image: input.image,
       taskId: task.id,
     });
     void job
