@@ -27,6 +27,8 @@ export type PolicySnapshot = z.infer<typeof policySnapshotSchema>;
 const trainingEpisodeSchema = z.strictObject({
   directory: z.string(),
   result: z.string(),
+  blue: z.int().min(0).max(3).nullable(),
+  red: z.int().min(0).max(3).nullable(),
   actions: z.int().nonnegative(),
   confirmed: z.int().nonnegative(),
   abilityActions: z.int().nonnegative(),

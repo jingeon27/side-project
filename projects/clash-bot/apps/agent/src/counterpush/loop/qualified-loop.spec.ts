@@ -12,6 +12,8 @@ import {
 const episode = (directory: string, changes: Partial<TrainingEpisode> = {}): TrainingEpisode => ({
   directory,
   result: 'loss',
+  blue: 0,
+  red: 1,
   actions: 1,
   confirmed: 1,
   abilityActions: 0,
@@ -187,9 +189,11 @@ describe('qualified model lifecycle', () => {
   it('recovers a completed training episode instead of playing or learning another match first', async () => {
     const { state, options } = harness();
     state.pendingEpisode = episode('/pending');
-    await qualifiedLearningLoop(options);
+    const resumed = evolutionStateSchema.parse(JSON.parse(JSON.stringify(state)));
+    expect(resumed.pendingEpisode).toMatchObject({ blue: 0, red: 1 });
+    await qualifiedLearningLoop({ ...options, state: resumed });
     expect(options.play).not.toHaveBeenCalled();
     expect(options.learn).toHaveBeenCalledWith(expect.objectContaining({ directory: '/pending' }));
-    expect(state.pendingEpisode).toBeNull();
+    expect(resumed.pendingEpisode).toBeNull();
   });
 });
