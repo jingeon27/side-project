@@ -9,6 +9,7 @@ from clash_bot.qwen.learner import Learner
 from clash_bot.qwen.learning_policy import FinalMLPLoRA, weights_digest
 from clash_bot.qwen.replay import rehearse, remember
 from clash_bot.qwen.search_data import load_search_targets
+from clash_bot.qwen.training_budget import training_work
 
 
 class SearchStudy:
@@ -99,28 +100,29 @@ class SearchStudy:
             }
         samples = []
         for row in dataset["samples"]:
-            feature = self.learner.directory / "features" / identity / f"{len(samples):03d}.npz"
-            behavior = self.choose(
-                {
-                    "images": [str(path.parent / row["image"])],
-                    "prompt": row["prompt"],
-                    "choices": row["choices"],
-                    "feature_path": str(feature),
-                    "controller_version": row.get("controllerVersion", 1),
-                }
-            )["behavior"]
-            samples.append(
-                {
-                    **mx.load(str(feature)),
-                    "labels": behavior["labels"],
-                    "version": behavior["version"],
-                    "old_log_probs": mx.array(behavior["old_log_probs"]),
-                    "search_target": row["target"],
-                }
-            )
-            # Search targets supervise the raw head; their KL anchor is not
-            # the mechanics-adjusted categorical behavior distribution.
-            samples[-1]["old_log_probs"] = mx.stop_gradient(self.learner.log_probs(samples[-1]))
+            with training_work():
+                feature = self.learner.directory / "features" / identity / f"{len(samples):03d}.npz"
+                behavior = self.choose(
+                    {
+                        "images": [str(path.parent / row["image"])],
+                        "prompt": row["prompt"],
+                        "choices": row["choices"],
+                        "feature_path": str(feature),
+                        "controller_version": row.get("controllerVersion", 1),
+                    }
+                )["behavior"]
+                samples.append(
+                    {
+                        **mx.load(str(feature)),
+                        "labels": behavior["labels"],
+                        "version": behavior["version"],
+                        "old_log_probs": mx.array(behavior["old_log_probs"]),
+                        "search_target": row["target"],
+                    }
+                )
+                # Search targets supervise the raw head; their KL anchor is not
+                # the mechanics-adjusted categorical behavior distribution.
+                samples[-1]["old_log_probs"] = mx.stop_gradient(self.learner.log_probs(samples[-1]))
         report = self.learner.distill_search(
             samples, identity, dataset["rulesID"], epochs=dataset.get("trainingEpochs", 1)
         )

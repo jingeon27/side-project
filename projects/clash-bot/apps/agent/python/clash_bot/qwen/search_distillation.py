@@ -7,6 +7,7 @@ import mlx.nn as nn
 from mlx.utils import tree_flatten, tree_unflatten
 
 from clash_bot.qwen.learning_policy import search_distillation_loss, weights_digest
+from clash_bot.qwen.training_budget import training_work
 
 
 class SearchDistillation:
@@ -51,21 +52,22 @@ class SearchDistillation:
                 self.optimizer.state = tree_unflatten(list(optimizer_before.items()))
                 self.optimizer.learning_rate = min(original_rate, 1e-5) * 0.25**attempt
                 for sample in samples * epochs:
-                    loss, gradients = grad_fn(
-                        self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
-                    )
-                    flat = tree_flatten(gradients)
-                    norm = mx.sqrt(sum(mx.sum(g * g) for _, g in flat))
-                    mx.eval(loss, norm)
-                    if not math.isfinite(float(loss.item())) or not math.isfinite(
-                        float(norm.item())
-                    ):
-                        raise ValueError("Nonfinite search distillation gradient")
-                    scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
-                    self.optimizer.update(
-                        self.adapter, tree_unflatten([(name, g * scale) for name, g in flat])
-                    )
-                    mx.eval(self.adapter.parameters(), self.optimizer.state)
+                    with training_work():
+                        loss, gradients = grad_fn(
+                            self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
+                        )
+                        flat = tree_flatten(gradients)
+                        norm = mx.sqrt(sum(mx.sum(g * g) for _, g in flat))
+                        mx.eval(loss, norm)
+                        if not math.isfinite(float(loss.item())) or not math.isfinite(
+                            float(norm.item())
+                        ):
+                            raise ValueError("Nonfinite search distillation gradient")
+                        scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
+                        self.optimizer.update(
+                            self.adapter, tree_unflatten([(name, g * scale) for name, g in flat])
+                        )
+                        mx.eval(self.adapter.parameters(), self.optimizer.state)
                 final_loss = sum(cross_entropy(sample) for sample in samples) / len(samples)
                 kls = [
                     float(

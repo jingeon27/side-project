@@ -7,6 +7,7 @@ import mlx.core as mx
 from clash_bot.files import atomic_json
 from clash_bot.qwen.decision_input import mirror_actor_prompt
 from clash_bot.qwen.opponent_data import load_demonstrations
+from clash_bot.qwen.training_budget import training_work
 
 from .episodes import episode_samples
 
@@ -66,32 +67,34 @@ class GameTraining:
             }
         samples = []
         for observation in dataset["samples"]:
-            # The fast controller reads only the BEFORE situation text. The after
-            # frame validated the tracked label and is never an inference input.
-            feature_path = path.parent / "features" / f"{observation['id']}.npz"
-            prediction = self.choose(
-                {
-                    "images": [str(path.parent / observation["image"])],
-                    "prompt": mirror_actor_prompt(observation),
-                    "choices": observation["choices"],
-                    "feature_path": str(feature_path),
-                    "controller_version": 3,
-                }
-            )
-            behavior = prediction["behavior"]
-            samples.append(
-                {
-                    **mx.load(str(feature_path)),
-                    "id": observation["id"],
-                    "labels": behavior["labels"],
-                    "version": behavior["version"],
-                    "old_log_probs": mx.array(behavior["old_log_probs"]),
-                    "targets": [
-                        observation["choices"].index(target) for target in observation["target_ids"]
-                    ],
-                    "confidence": observation["confidence"],
-                }
-            )
+            with training_work():
+                # The fast controller reads only the BEFORE situation text. The after
+                # frame validated the tracked label and is never an inference input.
+                feature_path = path.parent / "features" / f"{observation['id']}.npz"
+                prediction = self.choose(
+                    {
+                        "images": [str(path.parent / observation["image"])],
+                        "prompt": mirror_actor_prompt(observation),
+                        "choices": observation["choices"],
+                        "feature_path": str(feature_path),
+                        "controller_version": 3,
+                    }
+                )
+                behavior = prediction["behavior"]
+                samples.append(
+                    {
+                        **mx.load(str(feature_path)),
+                        "id": observation["id"],
+                        "labels": behavior["labels"],
+                        "version": behavior["version"],
+                        "old_log_probs": mx.array(behavior["old_log_probs"]),
+                        "targets": [
+                            observation["choices"].index(target)
+                            for target in observation["target_ids"]
+                        ],
+                        "confidence": observation["confidence"],
+                    }
+                )
         report = self.learner.imitate(samples, identity)
         report.update(
             {

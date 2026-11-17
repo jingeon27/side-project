@@ -7,6 +7,7 @@ import mlx.nn as nn
 from mlx.utils import tree_flatten, tree_unflatten
 
 from clash_bot.qwen.learning_policy import KLExceeded, clipped_loss, weights_digest
+from clash_bot.qwen.training_budget import training_work
 
 
 class PolicyGradient:
@@ -120,25 +121,28 @@ class PolicyGradient:
         losses = []
         try:
             for sample in selected:
-                advantage = advantage_of(sample)
-                loss, gradients = grad_fn(
-                    self.adapter,
-                    sample,
-                    advantage,
-                    self.norm_weight,
-                    self.norm_eps,
-                    self.token_rows,
-                )
-                mx.eval(loss, gradients)
-                flat = tree_flatten(gradients)
-                norm = mx.sqrt(sum(mx.sum(g * g) for _, g in flat))
-                scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
-                gradients = tree_unflatten([(name, g * scale) for name, g in flat])
-                if not math.isfinite(float(loss.item())) or not math.isfinite(float(norm.item())):
-                    raise ValueError("Nonfinite learning loss or gradient")
-                self.optimizer.update(self.adapter, gradients)
-                mx.eval(self.adapter.parameters(), self.optimizer.state)
-                losses.append(float(loss.item()))
+                with training_work():
+                    advantage = advantage_of(sample)
+                    loss, gradients = grad_fn(
+                        self.adapter,
+                        sample,
+                        advantage,
+                        self.norm_weight,
+                        self.norm_eps,
+                        self.token_rows,
+                    )
+                    mx.eval(loss, gradients)
+                    flat = tree_flatten(gradients)
+                    norm = mx.sqrt(sum(mx.sum(g * g) for _, g in flat))
+                    scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
+                    gradients = tree_unflatten([(name, g * scale) for name, g in flat])
+                    if not math.isfinite(float(loss.item())) or not math.isfinite(
+                        float(norm.item())
+                    ):
+                        raise ValueError("Nonfinite learning loss or gradient")
+                    self.optimizer.update(self.adapter, gradients)
+                    mx.eval(self.adapter.parameters(), self.optimizer.state)
+                    losses.append(float(loss.item()))
             kls = [
                 float(
                     mx.sum(

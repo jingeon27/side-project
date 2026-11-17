@@ -7,6 +7,7 @@ import time
 import traceback
 
 from .protocol import parse_learning_request
+from .training_budget import close_training_budget, training_budget
 
 
 def emit(value):
@@ -68,6 +69,7 @@ def main():
         from .learning_policy import weights_digest
         from .runtime import LearningWorker
 
+        training_budget()  # Validate an explicit target before loading the model.
         worker = LearningWorker(sys.argv[1], sys.argv[2])
     emit(
         {
@@ -76,7 +78,10 @@ def main():
             "weights_sha256": weights_digest(worker.learner.adapter),
         }
     )
-    serve(worker, sys.stdin, peak_memory=lambda: mx.get_peak_memory() / 1024**3)
+    try:
+        serve(worker, sys.stdin, peak_memory=lambda: mx.get_peak_memory() / 1024**3)
+    finally:
+        close_training_budget()
 
 
 if __name__ == "__main__":

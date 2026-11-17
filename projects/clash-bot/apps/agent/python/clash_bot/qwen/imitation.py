@@ -9,6 +9,7 @@ import mlx.nn as nn
 from mlx.utils import tree_flatten, tree_unflatten
 
 from clash_bot.qwen.learning_policy import KLExceeded, imitation_loss, weights_digest
+from clash_bot.qwen.training_budget import training_work
 
 
 class Imitation:
@@ -98,21 +99,24 @@ class Imitation:
         losses = []
         try:
             for sample in samples:
-                loss, gradients = grad_fn(
-                    self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
-                )
-                mx.eval(loss, gradients)
-                flat = tree_flatten(gradients)
-                norm = mx.sqrt(sum(mx.sum(gradient * gradient) for _, gradient in flat))
-                if not math.isfinite(float(loss.item())) or not math.isfinite(float(norm.item())):
-                    raise ValueError("Nonfinite imitation loss or gradient")
-                scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
-                self.optimizer.update(
-                    self.adapter,
-                    tree_unflatten([(name, gradient * scale) for name, gradient in flat]),
-                )
-                mx.eval(self.adapter.parameters(), self.optimizer.state)
-                losses.append(float(loss.item()))
+                with training_work():
+                    loss, gradients = grad_fn(
+                        self.adapter, sample, self.norm_weight, self.norm_eps, self.token_rows
+                    )
+                    mx.eval(loss, gradients)
+                    flat = tree_flatten(gradients)
+                    norm = mx.sqrt(sum(mx.sum(gradient * gradient) for _, gradient in flat))
+                    if not math.isfinite(float(loss.item())) or not math.isfinite(
+                        float(norm.item())
+                    ):
+                        raise ValueError("Nonfinite imitation loss or gradient")
+                    scale = mx.minimum(1.0, 0.5 / (norm + 1e-8))
+                    self.optimizer.update(
+                        self.adapter,
+                        tree_unflatten([(name, gradient * scale) for name, gradient in flat]),
+                    )
+                    mx.eval(self.adapter.parameters(), self.optimizer.state)
+                    losses.append(float(loss.item()))
             kls = [
                 float(
                     mx.sum(
