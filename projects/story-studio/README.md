@@ -1,15 +1,15 @@
 # 장면 | 한국어 AI 창작 스튜디오
 
-영화, 드라마, 짧은 애니메이션, 웹툰과 소설을 만들고 편집하는 독립 프로젝트입니다. 소개는 `/`, 작업실은 `/studio`에 있습니다. 기본값은 **API 키 없는 로컬 생성**입니다.
+영화, 드라마, 짧은 애니메이션, 웹툰과 소설을 만들고 편집하는 독립 프로젝트입니다. 소개는 `/`, 작업실은 `/studio`에 있습니다. 기본값은 **API 키 없는 로컬 생성**입니다. 원고, 목소리, 영상은 이 컴퓨터의 모델로 만들고, 장면 이미지는 이 컴퓨터에서 생성하거나 다른 도구에서 만든 파일을 가져옵니다.
 
 ## 실행
 
-현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 설치할 때 약 85GB의 여유 공간과 인터넷 연결이 필요하고, 설치를 마치면 약 50GB가 남습니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
+현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 설치할 때 약 89GB의 여유 공간과 인터넷 연결이 필요하고, 설치를 마치면 약 54GB가 남습니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
 
-이전 설치를 갱신하면 `local:setup`이 새 이미지·영상 모델만 추가로 준비합니다. 기존 Wan2.1 파일(약 30GB 추정)은 자동으로 지우지 않습니다. 더 이상 사용하지 않으므로 필요 없으면 저장소 루트에서 지웁니다. `STORY_STUDIO_DATA_DIR`을 쓴다면 그 경로의 `local/models` 아래 두 폴더입니다.
+이전 설치를 갱신하면 `local:setup`이 새 원고, 자료 검색, 이미지, 영상 모델만 추가로 준비합니다. 기존 Wan2.1 파일(약 30GB 추정)과 이전 원고 모델인 Qwen3.8-27B(약 16GB)는 자동으로 지우지 않습니다. 더 이상 사용하지 않으므로 필요 없으면 저장소 루트에서 지웁니다. `STORY_STUDIO_DATA_DIR`을 쓴다면 그 경로의 `local/models` 아래 세 폴더입니다.
 
 ```sh
-rm -rf projects/story-studio/apps/web/.data/local/models/wan-source projects/story-studio/apps/web/.data/local/models/video
+rm -rf projects/story-studio/apps/web/.data/local/models/wan-source projects/story-studio/apps/web/.data/local/models/video projects/story-studio/apps/web/.data/local/models/text
 ```
 
 저장소의 Node.js 24와 Yarn 4.17.0을 사용합니다. 저장소 루트에서 실행합니다.
@@ -21,39 +21,62 @@ yarn workspace @side/story-studio local:setup
 yarn workspace @side/story-studio dev
 ```
 
-[소개](http://127.0.0.1:3400), [작업실](http://127.0.0.1:3400/studio), [목소리 학습](http://127.0.0.1:3400/studio/voices), [실제 생성한 한국어 애니메이션](http://127.0.0.1:3400/studio?demo=1)
+[소개](http://127.0.0.1:3400), [작업실](http://127.0.0.1:3400/studio), [목소리 학습](http://127.0.0.1:3400/studio/voices), [참고 자료실](http://127.0.0.1:3400/studio/materials), [실제 생성한 한국어 애니메이션](http://127.0.0.1:3400/studio?demo=1)
 
 예시 원고 편집과 이미 생성한 예시 영상 재생에는 모델 설치가 필요하지 않습니다. 모델 준비 전에는 생성 버튼이 비활성화됩니다. 운영용 빌드는 `yarn workspace @side/story-studio build`, 실행은 `yarn workspace @side/story-studio start`입니다.
 
 ## 코드 구성
 
-- `apps/web`: 한국어 작업실, HTTP 계약, 브라우저 상태와 생성 요청
-- `apps/engine`: Python 패키지, 모델 준비·생성·음성 가중치 학습, 작업 상태와 GPU 실행 수명
+- `apps/web`: 한국어 작업실, HTTP 계약, 브라우저 상태와 생성 요청, 참고 자료의 본문과 목록
+- `apps/engine`: Python 패키지, 모델 준비·생성·음성 가중치 학습, 참고 자료 색인과 검색, 작업 상태와 GPU 실행 수명
 
 Python의 설치 의존성과 모델 revision, 테스트는 엔진이 소유합니다. 웹은 `python -m story_studio`에 JSON 작업을 전달하고 결과·진행 상태만 받습니다. 현재 체크아웃의 엔진을 실행하도록 경로를 명시하므로 공유 데이터 폴더의 가상환경이 다른 worktree에 설치되어 있어도 코드를 혼동하지 않습니다. 데이터·모델·가상환경의 기존 경로는 그대로 사용합니다. 자세한 구조와 독립 실행은 [엔진 안내](apps/engine/README.md)를 참고하세요.
 
 ## 모델과 제작 순서
 
-| 역할                                  | 로컬 모델                                          | 실행 방식                                 |
-| ------------------------------------- | -------------------------------------------------- | ----------------------------------------- |
-| 한국어 원고, 이어쓰기, 시각 묘사 번역 | Qwen3.8-27B의 mlx-community 4비트 변환본           | MLX VLM                                   |
-| 장면 이미지                           | 공식 FLUX.2 Klein 4B를 설치 때 8비트로 저장        | mflux, 인물 기준 이미지가 있으면 참조     |
-| 짧은 영상                             | 공식 Wan2.2-TI2V-5B를 설치 때 MLX 8비트로 변환     | MLX Video, 장면 이미지가 있으면 첫 프레임 |
-| 한국어 목소리                         | Qwen3-TTS-12Hz-1.7B-CustomVoice의 MLX 4비트 변환본 | 기본 음색 9종과 말투 선택                 |
-| 목소리 가중치 학습                    | Qwen3-TTS-12Hz-1.7B-Base의 MLX 4비트 변환본        | 로컬 QLoRA 미세학습                       |
-| 자막, 음성, 장면 합치기               | 모델 계산 없이 로컬 ffmpeg                         | H.264 MP4, AAC 음성                       |
+| 역할                              | 로컬 모델                                          | 실행 방식                                 |
+| --------------------------------- | -------------------------------------------------- | ----------------------------------------- |
+| 한국어 구성, 집필, 시각 묘사 번역 | Gemma 4 31B의 mlx-community 4비트 변환본           | MLX VLM, 장면마다 따로 작성               |
+| 참고 자료 검색                    | EmbeddingGemma 2의 mlx-community 8비트 변환본      | MLX VLM 임베딩, LanceDB 파일 색인         |
+| 장면 이미지                       | 공식 FLUX.2 Klein 4B를 설치 때 8비트로 저장        | mflux, 인물 기준 이미지가 있으면 참조     |
+| 짧은 영상                         | 공식 Wan2.2-TI2V-5B를 설치 때 MLX 8비트로 변환     | MLX Video, 장면 이미지가 있으면 첫 프레임 |
+| 한국어 목소리                     | Qwen3-TTS-12Hz-1.7B-CustomVoice의 MLX 4비트 변환본 | 기본 음색 9종과 말투 선택                 |
+| 목소리 가중치 학습                | Qwen3-TTS-12Hz-1.7B-Base의 MLX 4비트 변환본        | 로컬 QLoRA 미세학습                       |
+| 자막, 음성, 장면 합치기           | 모델 계산 없이 로컬 ffmpeg                         | H.264 MP4, AAC 음성                       |
 
-1. 한국어 아이디어, 인물과 스타일을 입력해 원고를 만듭니다
-2. 장면별 한국어 음성을 먼저 생성합니다
-3. 장면 이미지를 생성합니다. 같은 인물이 이어져야 하면 인물이 잘 보이는 장면에서 **인물 기준으로 사용**을 누릅니다. 이후 다른 장면의 이미지는 그 이미지를 참고해 그립니다
-4. 필요한 장면의 영상을 생성합니다. 장면 이미지가 있으면 영상은 그 이미지에서 시작합니다
-5. 내보내기에서 한국어 음성과 자막을 넣은 MP4, 말풍선을 넣은 웹툰 PNG, 원고 또는 JSON 백업을 저장합니다
+1. 참고할 글이 있으면 **참고 자료실**에 묶음 이름을 정해 텍스트 파일을 올립니다
+2. 한국어 아이디어, 인물과 스타일을 입력하고 참고할 자료 묶음을 골라 원고를 만듭니다
+3. 장면별 한국어 음성을 먼저 생성합니다
+4. 장면 이미지를 생성하거나, **프롬프트 복사**로 다른 이미지 도구에서 만든 뒤 **이미지 가져오기**로 넣습니다. 같은 인물이 이어져야 하면 인물이 잘 보이는 장면에서 **인물 기준으로 사용**을 누릅니다. 이후 이 앱에서 생성하는 다른 장면의 이미지는 그 이미지를 참고해 그립니다
+5. 필요한 장면의 영상을 생성합니다. 장면 이미지가 있으면 영상은 그 이미지에서 시작합니다
+6. 내보내기에서 한국어 음성과 자막을 넣은 MP4, 말풍선을 넣은 웹툰 PNG, 원고 또는 JSON 백업을 저장합니다
 
 인물 기준은 작품에 저장되며 지정한 장면의 현재 이미지를 사용합니다. 그 장면의 이미지를 다시 만들 때는 자기 자신을 참조하지 않고 새로 그립니다. 참조와 첫 프레임은 로컬 모드에서만 사용하며 클라우드 연결은 기존처럼 글로만 생성합니다.
 
 한 번에 1~8개 장면, 컷, 장을 작성하고 이어쓰기로 작품당 최대 80개까지 확장합니다. 장편은 회차별로 쓰는 방식입니다. 참조 이미지는 얼굴과 의상을 가깝게 유지하도록 돕지만 영화 수준의 인물 일관성을 보장하지 않으며, 립싱크, 긴 연속 영상이나 전문 편집 타임라인은 포함하지 않습니다. 한국어 글자와 말풍선은 앱이 합성하므로 시각 모델의 문자 생성에 의존하지 않습니다.
 
-모델과 런타임은 [모델 revision](apps/engine/src/story_studio/models.json), [Python 패키지와 의존성](apps/engine/pyproject.toml)에 고정했습니다. 공식 모델 설명: [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [FLUX.2 Klein 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B), [Wan2.2-TI2V-5B](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B). 원고와 목소리의 MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다. 이미지와 영상은 공식 가중치를 이 컴퓨터에서 8비트로 저장하거나 변환하며, 두 모델 모두 Apache-2.0입니다.
+모델과 런타임은 [모델 revision](apps/engine/src/story_studio/models.json), [Python 패키지와 의존성](apps/engine/pyproject.toml)에 고정했습니다. 공식 모델 설명: [Gemma 4 31B](https://huggingface.co/google/gemma-4-31B-it), [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [FLUX.2 Klein 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B), [Wan2.2-TI2V-5B](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B). 원고, 자료 검색과 목소리의 MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다. Gemma 4와 EmbeddingGemma 2의 모델 카드는 Apache-2.0을 표시합니다. 원고 모델을 Qwen3.8-27B에서 Gemma 4 31B로 바꾼 뒤 두 모델의 한국어 원고를 같은 조건으로 비교한 결과는 아직 없습니다. 이미지와 영상은 공식 가중치를 이 컴퓨터에서 8비트로 저장하거나 변환하며, 두 모델 모두 Apache-2.0입니다.
+
+### 원고를 쓰는 순서
+
+원고는 한 번의 긴 응답으로 만들지 않습니다. 먼저 제목, 줄거리, 인물 설정과 장면별 사건 요약을 정하는 **구성**을 만들고, 이어서 장면을 하나씩 따로 씁니다. 장면을 쓸 때는 지금 쓸 사건, 뒤따를 사건, 직전까지 쓴 원고를 함께 넘겨 앞 장면에서 이어 쓰고 뒤 사건을 앞당기지 않게 합니다. 긴 응답이 뒤로 갈수록 같은 내용을 되풀이하던 문제를 피하려는 구조입니다.
+
+장면 하나를 쓸 때마다 작품에 바로 저장합니다. 중간에 실패하거나 중단해도 쓴 장면은 남고, 아직 쓰지 않은 구성은 작품에 보관합니다. **이어 쓰기**를 누르면 남은 구성의 다음 순서부터 쓰고, 구성을 다 쓴 뒤에는 줄거리를 따라 자유롭게 이어 씁니다. 로컬 모드에서는 장면마다 모델을 다시 불러오므로 한 번에 쓰던 때보다 시간이 더 걸릴 수 있습니다. 걸리는 시간은 아직 재지 않았습니다.
+
+### 참고 자료
+
+참고 자료실(`/studio/materials`)에 올린 `.txt`, `.md` 파일은 약 900자 단위로 나누어 EmbeddingGemma 2로 임베딩하고 LanceDB에 저장합니다. LanceDB는 별도 서버 없이 `.data/materials/index` 폴더의 파일로 동작합니다. 작품에서 자료 묶음을 고르면 구성과 각 장면을 쓰기 전에 그 묶음에서 관련된 부분을 최대 6개 찾아 작가 모델의 입력에 넣습니다. 한 자료가 결과를 독차지하지 않도록 자료 하나에서 최대 2개만 씁니다. 장면에는 참고한 자료의 제목을 남깁니다.
+
+- 자료 하나는 30만 자까지이며 더 긴 파일은 화면에서 번호를 붙여 여러 자료로 나눕니다. 자료는 5,000개까지 저장합니다
+- 같은 묶음에 같은 제목과 분량의 자료가 있으면 건너뛰므로, 일부만 올라간 뒤에도 같은 파일을 다시 선택해 이어서 올릴 수 있습니다
+- 색인에 실패한 자료는 본문과 일부 색인을 정리하고 목록에 남기지 않습니다. 삭제는 색인에서 먼저 지웁니다
+- 작가 모델에는 자료를 사실, 설정, 용어와 분위기의 근거로만 쓰고 문장을 그대로 옮기지 않도록 지시합니다. 다만 모델이 이 지시를 항상 지킨다고 보장하지 않으므로, 남의 글을 자료로 썼다면 결과를 직접 확인해야 합니다
+- PDF, 문서 파일, 이미지 자료는 지원하지 않습니다. 검색은 벡터 유사도만 사용하며 검색 품질은 아직 평가하지 않았습니다
+- 참고 자료 검색은 로컬 모드에서만 동작합니다
+
+### 다른 도구에서 만든 이미지
+
+장면의 **프롬프트 복사**는 그림체, 화면 비율, 인물 설정과 장면 묘사를 한국어 프롬프트로 복사합니다. 다른 이미지 도구에서 만든 PNG, JPG, WebP 파일을 **이미지 가져오기**로 넣으면 브라우저가 작품 비율에 맞춰 가운데를 기준으로 잘라 PNG로 저장합니다(16:9는 1920×1080). 가져온 이미지도 영상의 첫 프레임과 인물 기준으로 쓸 수 있습니다. 변환 과정에서 원본 파일의 메타데이터는 남지 않으므로, AI로 만든 이미지라는 표시가 필요한 곳에는 직접 표시해야 합니다.
 
 ## 목소리 학습
 
@@ -103,13 +126,13 @@ yarn workspace @story-studio/web local:setup:voice
 - 이어쓰기는 최근 6개 장면만 전송하고, 첫 장면 뒤의 영상과 음성은 필요할 때 불러옵니다
 - 외부 웹 폰트 요청을 제거하고 설치된 한글 글꼴을 사용합니다
 
-`mx.set_memory_limit`은 엄격한 상한이 아닌 할당 가이드입니다. 이를 20GB 메모리 제한이 보장된다고 해석하지 않습니다. [MLX 문서](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.set_memory_limit.html), [공식 Wan T5 설정](https://github.com/Wan-Video/Wan2.1/blob/main/wan/configs/shared_config.py)
+`mx.set_memory_limit`은 엄격한 상한이 아닌 할당 가이드입니다. 원고 모델에는 24GB를 지정하지만 이를 24GB 메모리 제한이 보장된다고 해석하지 않습니다. Gemma 4 31B의 가중치는 약 17GiB이며 실제 최대 할당은 아직 재지 않았습니다. [MLX 문서](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.set_memory_limit.html), [공식 Wan T5 설정](https://github.com/Wan-Video/Wan2.1/blob/main/wan/configs/shared_config.py)
 
 ## 저장과 복구
 
 원고는 브라우저의 `story-studio.library.v1`에 최대 50개 작품까지 저장합니다. 저장본 손상, 용량 초과와 다른 창의 수정을 알리고 원본을 보존합니다. 브라우저 데이터를 지우기 전에 작품 JSON을 백업하세요.
 
-개인 생성 파일은 앱의 `.data/assets`, 영상 상태는 `.data/tasks`, 모델과 설치 환경은 `.data/local`에 있습니다. `STORY_STUDIO_DATA_DIR`로 전용 저장 폴더를 지정할 수 있습니다. 이 폴더, 로그, 모델 가중치와 `.env.local`은 Git에서 제외됩니다.
+개인 생성 파일은 앱의 `.data/assets`, 영상 상태는 `.data/tasks`, 모델과 설치 환경은 `.data/local`에 있습니다. 참고 자료는 `.data/materials`에 본문(`files`), 목록 정보(`documents`), 검색 색인(`index`)으로 나누어 저장합니다. `STORY_STUDIO_DATA_DIR`로 전용 저장 폴더를 지정할 수 있습니다. 이 폴더, 로그, 모델 가중치와 `.env.local`은 Git에서 제외됩니다.
 
 목소리 이름과 녹음별 대본은 `.data/voices`, 학습 실행과 가중치는 `.data/voice-training/runs`에 저장합니다. 목소리를 다른 컴퓨터로 옮길 때는 두 폴더와 `.data/assets`, 동일 revision의 Base 모델을 함께 보존하세요. 작품 JSON 백업에 목소리 가중치는 포함되지 않습니다.
 
@@ -119,14 +142,14 @@ yarn workspace @story-studio/web local:setup:voice
 
 실행 중에는 `HF_HUB_OFFLINE`, `TRANSFORMERS_OFFLINE`을 적용하고 원격 코드 실행을 끕니다. 기본 로컬 모드에 외부 내용 심사 API는 없습니다. 모델에 학습된 응답 거절 성향은 남을 수 있으며 모든 콘텐츠에 대한 응답을 보장하지 않습니다. 기존 클라우드 어댑터는 명시적으로 `STORY_STUDIO_PROVIDER=cloud`일 때만 선택합니다.
 
-## Qwen에 직접 질문하기
+## Gemma에 직접 질문하기
 
 일반적인 기본 설치에서 앱 폴더를 연 뒤 실행합니다. 작업실의 원고용 시스템 지시문과 JSON 응답 제약을 사용하지 않습니다.
 
 ```sh
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 .data/local/.venv/bin/python -m mlx_vlm.generate \
-  --model .data/local/models/text \
+  --model .data/local/models/text-gemma-4-31b-it-4bit \
   --prompt "한국어로 답해줘. 여기에 원하는 질문을 입력하세요" \
   --thinking-mode disabled --max-tokens 512
 ```
@@ -143,7 +166,7 @@ yarn workspace @side/story-studio build
 
 Python 엔진의 모델 없는 검사도 위 `check`에 포함됩니다. 별도 실행은 `yarn workspace @story-studio/engine check`입니다. 실제 MLX 가중치 변경·기본 가중치 보존·옵티마이저 복원 검사는 [엔진 개발 안내](apps/engine/README.md)의 Apple Silicon 명령을 사용합니다. MLX가 없는 환경의 검사는 이 한 가지 네이티브 검사를 명시적으로 건너뜁니다.
 
-Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 차단, 프로세스 중단, 실패 후 재시도, 원고 검증, 자산 범위 요청과 상태 변경 시의 참조 보존을 확인합니다. 모델 계산은 가벼운 자식 프로세스나 모의 응답으로 대체합니다. Playwright는 별도 포트 3411, `.e2e-build`, 별도 저장 폴더에서 모바일과 데스크톱의 편집, 백업, 실패 복구, 영상 및 음성 재생을 확인합니다.
+Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 차단, 프로세스 중단, 실패 후 재시도, 원고 검증, 자산 범위 요청과 상태 변경 시의 참조 보존을 확인합니다. 구성과 장면별 집필 요청, 참고 자료 검색 요청, 자료 저장과 실패 후 정리, 가져온 이미지 저장도 확인합니다. 참고 자료의 임베딩과 LanceDB 검색 자체는 모델과 패키지가 필요해 CI에서 실행하지 않습니다. 모델 계산은 가벼운 자식 프로세스나 모의 응답으로 대체합니다. Playwright는 별도 포트 3411, `.e2e-build`, 별도 저장 폴더에서 모바일과 데스크톱의 편집, 백업, 실패 복구, 영상 및 음성 재생을 확인합니다.
 
 실제 모델로 만든 [공개 예시](apps/web/public/examples/project.json)는 약 13.4초의 한국어 음성 및 자막 포함 MP4입니다. Qwen 원고, Qwen3-TTS 음성과 이전 영상 모델인 Wan2.1 1.3B의 생성 프레임을 ffmpeg로 합쳤으며 정지 이미지 이동 효과로 대체하지 않았습니다. 모델의 미적 품질이나 인물 일관성에 대한 광범위한 평가는 하지 않았습니다.
 
@@ -152,6 +175,8 @@ Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 �
 ## 행동 측정과 접근 경계
 
 로컬 기본 설정은 측정 키가 없어 SDK를 로드하거나 이벤트를 전송하지 않습니다. 측정을 명시적으로 구성한 경우에만 `landing_start_clicked`, `studio_opened`, `studio_request_clicked`, `studio_request_succeeded`를 보냅니다. 속성은 고정된 진입 종류와 작업 종류뿐이며 원고, 제목, 인물, 파일명, 경로와 사용자 ID를 수집하지 않습니다. 영상의 HTTP 제출 성공은 영상 계산 완료와 구분합니다.
+
+원고 요청의 작업 종류는 구성(`plan`)과 장면 집필(`continue`)입니다. 구성 뒤에 이어지는 장면 집필은 사용자가 누른 것이 아니므로 `studio_request_clicked` 없이 `studio_request_succeeded`만 남깁니다. 참고 자료실 진입은 속성 없는 `studio_materials_opened`, 자료 추가와 삭제는 기존 요청 이벤트의 `material-add`, `material-delete`, 자료 묶음 선택은 `studio_collection_clicked`의 고정된 `action`(select, clear)으로 측정합니다. 묶음 이름, 자료 제목과 본문은 보내지 않습니다. 외부 이미지 가져오기는 요청 이벤트의 `image-import`, 프롬프트 복사는 `studio_prompt_clicked`의 `action`(copy)이며 프롬프트 내용은 보내지 않습니다.
 
 인물 기준 지정은 `studio_reference_clicked`의 고정된 `action`(set, clear)으로만 측정합니다. 브라우저 원고만 바꾸는 동작이라 서버 성공 이벤트는 없습니다. 기준 이미지를 참고한 생성의 요청과 성공은 기존 `studio_request_clicked`, `studio_request_succeeded`의 `image`로 남으며, 장면 ID와 이미지 경로는 보내지 않습니다.
 

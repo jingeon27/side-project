@@ -1,6 +1,6 @@
 # Story Studio Python engine
 
-한국어 원고·음성·이미지·영상 생성과 음성 QLoRA 학습을 담당하는 독립 Python 앱입니다. 웹 화면은 형제 `web` 앱이 담당합니다. Apple Silicon의 Python 3.11에서 실행하며 `pyproject.toml`이 Python 패키지와 고정 의존성의 기준입니다.
+한국어 원고·음성·이미지·영상 생성, 참고 자료 색인과 검색, 음성 QLoRA 학습을 담당하는 독립 Python 앱입니다. 웹 화면은 형제 `web` 앱이 담당합니다. Apple Silicon의 Python 3.11에서 실행하며 `pyproject.toml`이 Python 패키지와 고정 의존성의 기준입니다.
 
 ## 설치와 실행
 
@@ -23,7 +23,13 @@ Python 패키지를 설치한 환경에서는 `story-studio-worker`도 같은 �
 src/story_studio/
   worker.py             실행 진입·작업 분기·GPU 잠금
   runtime.py            작업별 진행·상태·취소·정리
-  generation/           한국어 글·음성 생성, FLUX.2 Klein 이미지와 Wan2.2 영상
+  generation/           Gemma 4 한국어 글·음성 생성, FLUX.2 Klein 이미지와 Wan2.2 영상
+  materials/
+    chunks.py           자료를 문단·문장 경계로 나누기
+    embedding.py        EmbeddingGemma 2 임베딩
+    index.py            LanceDB 색인 추가·삭제·검색
+    indexing.py         자료 색인과 삭제 작업
+    retrieval.py        글 요청에 맞는 자료 선택
   voices/
     samples.py          녹음 검증·정규화
     jobs.py             데이터 검증·학습 실행·완료 가중치 로드
@@ -43,7 +49,15 @@ src/story_studio/
 
 표준 입력으로 JSON 요청 하나를 읽고 표준 출력에 줄 단위 JSON 진행 상태와 결과를 씁니다. 모델 진단은 표준 오류로 분리합니다. 모델 하나를 사용하는 프로세스가 `local/gpu.lock`을 소유하며 작업 후 프로세스 종료로 모델 메모리를 반환합니다. 영상 합치기·녹음 정규화처럼 모델을 쓰지 않는 작업은 GPU 잠금을 점유하지 않습니다.
 
-데이터 저장 위치는 전달받은 `--data-dir`가 결정합니다. 자산은 `assets`, 영상 상태는 `tasks`, 녹음은 `voices`, 학습 상태와 체크포인트는 `voice-training/runs`에 남습니다. 폴더 이동이 아니라 코드 소유권을 분리하는 변경이므로 기존 실행과 완료된 가중치를 그대로 조회·재개합니다. 인증·HTTP·사용자 화면의 정책은 웹이 소유합니다.
+데이터 저장 위치는 전달받은 `--data-dir`가 결정합니다. 자산은 `assets`, 영상 상태는 `tasks`, 녹음은 `voices`, 학습 상태와 체크포인트는 `voice-training/runs`에 남습니다. 참고 자료는 웹이 `materials/files`에 본문을 저장하고 엔진이 `materials/index`에 LanceDB 색인을 만듭니다. 폴더 이동이 아니라 코드 소유권을 분리하는 변경이므로 기존 실행과 완료된 가중치를 그대로 조회·재개합니다. 인증·HTTP·사용자 화면의 정책은 웹이 소유합니다.
+
+## 글 작성과 참고 자료
+
+`text` 작업은 시스템 지시문, 입력, JSON 스키마를 받아 Gemma 4로 스키마에 맞는 JSON을 만들고 `{"output": ..., "sources": [...]}`를 반환합니다. 요청에 `retrieval`(`query`, `collections`)이 있으면 먼저 EmbeddingGemma 2로 질의를 임베딩해 LanceDB에서 가까운 구간을 찾고, 임베딩 모델을 해제한 뒤 작가 모델을 불러옵니다. 찾은 구간은 입력의 `materials`로 들어가며 `sources`는 그 자료 제목입니다. 색인이 없거나 고른 묶음이 비어 있으면 임베딩 모델을 불러오지 않습니다.
+
+`index-material`은 웹이 저장한 본문을 약 900자 구간(120자 겹침)으로 나누어 임베딩하고, 같은 자료의 이전 구간을 지운 뒤 새로 넣습니다. `delete-material`은 모델을 쓰지 않으므로 GPU 잠금을 점유하지 않습니다. 검색은 코사인 거리의 전수 비교이며 근사 색인은 만들지 않습니다. 자료가 매우 많아져 검색이 느려지면 LanceDB의 벡터 색인을 추가해야 합니다.
+
+구조화 출력은 mlx-vlm의 llguidance 문법 제약을 사용합니다. 이 제약 없이 Gemma 4 12B를 실행했을 때 `<image|>` 같은 특수 토큰이 본문에 섞인 적이 있습니다. 제약을 쓰는 이 경로에서 같은 문제가 없는지는 Apple Silicon에서 확인해야 합니다.
 
 ## 목소리별 합성 보정과 대사 확인
 
@@ -72,7 +86,7 @@ PYTHONPATH=src ../web/.data/local/.venv/bin/python -m story_studio.setup \
 yarn workspace @story-studio/engine check
 ```
 
-모델 없이 import·작업 상태 저장·음성 보정 파일 계약을 검사합니다. Apple Silicon MLX 추가 의존성이 없으면 네이티브 학습·합성 수명 검사만 명시적으로 건너뜁니다. 실제 학습·재개 결과 일치는 엔진 앱 폴더에서 전용 가상환경으로 실행합니다.
+모델 없이 import·작업 상태 저장·음성 보정 파일 계약을 검사합니다. 참고 자료는 구간 나누기, 검색 결과 선택, 자료 ID 검증과 색인이 없을 때의 경로만 검사합니다. 임베딩과 LanceDB 저장·검색은 `apple-silicon` 추가 의존성이 필요해 이 검사에 포함하지 않습니다. Apple Silicon MLX 추가 의존성이 없으면 네이티브 학습·합성 수명 검사만 명시적으로 건너뜁니다. 실제 학습·재개 결과 일치는 엔진 앱 폴더에서 전용 가상환경으로 실행합니다.
 
 ```sh
 PYTHONPATH=src ../web/.data/local/.venv/bin/python -m unittest story_studio.voices.training_test
