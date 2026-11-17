@@ -4,9 +4,13 @@
 
 ## 실행
 
-현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 모델을 다운로드하고 변환할 때 약 90GB 이상의 여유 공간과 인터넷 연결이 필요합니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치이며, 그중 Wan2.2 원본이 약 34GB, FLUX.2 Klein이 약 16GB입니다. 설치 후 생성은 오프라인으로 실행합니다.
+현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 설치할 때 약 85GB의 여유 공간과 인터넷 연결이 필요하고, 설치를 마치면 약 50GB가 남습니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
 
-이전 설치를 갱신하면 `local:setup`이 새 이미지·영상 모델만 추가로 받습니다. 기존 Wan2.1 파일인 `.data/local/models/wan-source`와 `.data/local/models/video`는 더 이상 사용하지 않으므로 지워도 됩니다.
+이전 설치를 갱신하면 `local:setup`이 새 이미지·영상 모델만 추가로 준비합니다. 기존 Wan2.1 파일(약 30GB 추정)은 자동으로 지우지 않습니다. 더 이상 사용하지 않으므로 필요 없으면 저장소 루트에서 지웁니다. `STORY_STUDIO_DATA_DIR`을 쓴다면 그 경로의 `local/models` 아래 두 폴더입니다.
+
+```sh
+rm -rf projects/story-studio/apps/web/.data/local/models/wan-source projects/story-studio/apps/web/.data/local/models/video
+```
 
 저장소의 Node.js 24와 Yarn 4.17.0을 사용합니다. 저장소 루트에서 실행합니다.
 
@@ -33,7 +37,7 @@ Python의 설치 의존성과 모델 revision, 테스트는 엔진이 소유합�
 | 역할                                  | 로컬 모델                                          | 실행 방식                                 |
 | ------------------------------------- | -------------------------------------------------- | ----------------------------------------- |
 | 한국어 원고, 이어쓰기, 시각 묘사 번역 | Qwen3.8-27B의 mlx-community 4비트 변환본           | MLX VLM                                   |
-| 장면 이미지                           | 공식 FLUX.2 Klein 4B, 불러올 때 8비트 양자화       | mflux, 인물 기준 이미지가 있으면 참조     |
+| 장면 이미지                           | 공식 FLUX.2 Klein 4B를 설치 때 8비트로 저장        | mflux, 인물 기준 이미지가 있으면 참조     |
 | 짧은 영상                             | 공식 Wan2.2-TI2V-5B를 설치 때 MLX 8비트로 변환     | MLX Video, 장면 이미지가 있으면 첫 프레임 |
 | 한국어 목소리                         | Qwen3-TTS-12Hz-1.7B-CustomVoice의 MLX 4비트 변환본 | 기본 음색 9종과 말투 선택                 |
 | 목소리 가중치 학습                    | Qwen3-TTS-12Hz-1.7B-Base의 MLX 4비트 변환본        | 로컬 QLoRA 미세학습                       |
@@ -49,7 +53,7 @@ Python의 설치 의존성과 모델 revision, 테스트는 엔진이 소유합�
 
 한 번에 1~8개 장면, 컷, 장을 작성하고 이어쓰기로 작품당 최대 80개까지 확장합니다. 장편은 회차별로 쓰는 방식입니다. 참조 이미지는 얼굴과 의상을 가깝게 유지하도록 돕지만 영화 수준의 인물 일관성을 보장하지 않으며, 립싱크, 긴 연속 영상이나 전문 편집 타임라인은 포함하지 않습니다. 한국어 글자와 말풍선은 앱이 합성하므로 시각 모델의 문자 생성에 의존하지 않습니다.
 
-모델과 런타임은 [모델 revision](apps/engine/src/story_studio/models.json), [Python 패키지와 의존성](apps/engine/pyproject.toml)에 고정했습니다. 공식 모델 설명: [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [FLUX.2 Klein 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B), [Wan2.2-TI2V-5B](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B). 원고와 목소리의 MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다. 이미지와 영상은 공식 가중치를 이 컴퓨터에서 불러오거나 변환하며, 두 모델 모두 Apache-2.0입니다.
+모델과 런타임은 [모델 revision](apps/engine/src/story_studio/models.json), [Python 패키지와 의존성](apps/engine/pyproject.toml)에 고정했습니다. 공식 모델 설명: [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), [FLUX.2 Klein 4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B), [Wan2.2-TI2V-5B](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B). 원고와 목소리의 MLX 변환본은 커뮤니티 배포이며 공식 원본과 구분합니다. 이미지와 영상은 공식 가중치를 이 컴퓨터에서 8비트로 저장하거나 변환하며, 두 모델 모두 Apache-2.0입니다.
 
 ## 목소리 학습
 

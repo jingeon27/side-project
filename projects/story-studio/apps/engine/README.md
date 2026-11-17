@@ -32,7 +32,7 @@ src/story_studio/
   assets.py             개인 자산·공개 예시 경로
   storage.py            원자적 비공개 JSON 저장
   media.py              ffmpeg·자막·영상 합치기
-  setup.py              모델 설치·Wan2.2 MLX 변환
+  setup.py              모델 설치, Klein 8비트 저장과 Wan2.2 MLX 변환, 준비 후 원본 정리
   catalog.py            패키지에 포함된 모델 설정 읽기
   models.json           고정한 모델 저장소와 revision
 ```
