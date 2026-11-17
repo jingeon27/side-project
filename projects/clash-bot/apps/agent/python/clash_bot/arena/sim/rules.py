@@ -103,7 +103,9 @@ def rules_identity():
         # Visibility and timing alter the information set/returns just as a balance patch does.
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
-        "evaluationSuite": "live_mirror_and_pool_v2",
+        "evaluationSuite": "live_mirror_and_pool_through_the_screen_v3",
+        # What a policy is given: the live screen's elixir bound and card cycle, not the exact ones.
+        "policyInput": "live_screen_v1",
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",

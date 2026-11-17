@@ -21,6 +21,8 @@ class PerceptionNoise(BaseModel):
     motionSeenRate: float = Field(ge=0, le=1)
     healthSeenRate: float = Field(ge=0, le=1)
     effectMissRate: float = Field(ge=0, le=1)
+    # Share of opponent plays the screen never recognizes: they stay in its elixir bound.
+    playMissRate: float = Field(ge=0, le=1)
 
 
 def perceive(context, rng, noise):

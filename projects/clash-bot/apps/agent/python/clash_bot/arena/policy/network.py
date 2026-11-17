@@ -50,9 +50,18 @@ class Policy:
         self.metadata = metadata or {"format": FORMAT, "version": 0}
 
     def predict(self, observation, actions):
-        state, acts = features(observation, actions)
-        _logits, probabilities, value = forward(self.weights, state, acts)
+        return self.read(decision_context(observation, actions))
+
+    def read(self, context):
+        """Action probabilities and value of a decision context, however it was read."""
+        _logits, probabilities, value = forward(
+            self.weights, context_features(context), action_features(context)
+        )
         return probabilities, value
+
+    def deployed(self, observation, actions, screen):
+        """Probabilities as live play gets them: through its screen, without tower hit points."""
+        return self.read(screen.read(observation, actions, towers=False))[0]
 
     def checksum(self):
         return checksum(self.weights)

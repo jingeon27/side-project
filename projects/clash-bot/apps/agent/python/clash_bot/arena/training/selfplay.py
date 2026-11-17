@@ -1,8 +1,10 @@
 """Both seats act through their own observation; only native terminal results train.
 
-Every game draws its setup: a deck matchup, each side's input delay and card level. Sides decide
-every `decisionTicks`, as the live runtime does every capture. Training games search the best of
-the policy's candidates; evaluation games play the policy alone, as it is deployed.
+Every game draws its setup: a deck matchup, each side's input delay and card level, and how far
+the second side's decision clock runs behind the first. Each side decides every `decisionTicks`
+on its own clock, as the live runtime does every capture while its opponent acts whenever.
+Training games search the best of the policy's candidates; evaluation games play the policy
+alone, as it is deployed: through its screen (`policy.screen`), which reads no tower hit points.
 """
 
 import time
@@ -10,10 +12,10 @@ import time
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from ..policy.context import decision_context
 from ..policy.features import action_features, context_features
-from ..policy.noise import PerceptionNoise, perceive
+from ..policy.noise import PerceptionNoise
 from ..policy.samples import SparseFeatures, value_target
+from ..policy.screen import Screen
 from ..sim.engine import Arena
 from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
 from .search import Workspace, search
@@ -30,6 +32,8 @@ class SelfplaySpec(BaseModel):
     liveMirror: float = Field(ge=0, le=1)
     liveAgainstPool: float = Field(ge=0, le=1)
     decisionTicks: PositiveInt
+    # The second side decides this many ticks after the first, drawn per game.
+    decisionPhaseTicks: tuple[int, int]
     searchTicks: PositiveInt
     rootActions: int = Field(ge=2)
     negatives: int = Field(ge=0)
@@ -41,13 +45,17 @@ class SelfplaySpec(BaseModel):
 SELFPLAY = SelfplaySpec.model_validate(SPEC["selfplay"])
 
 
-def live_setup():
-    """The live game: the live deck's mirror at the measured input delay and the arena level."""
+def live_setup(index=0):
+    """The live game: the live deck's mirror at the measured input delay and the arena level.
+
+    Games of a series differ by `index` only in how far apart the two decision clocks run.
+    """
     delay = SPEC["liveCommandDelayTicks"]
     return {
         "decks": [LIVE_DECK, LIVE_DECK],
         "delays": [delay, delay],
         "levels": [SPEC["level"]] * 2,
+        "phase": (7 * index) % SELFPLAY.decisionTicks,
     }
 
 
@@ -65,10 +73,12 @@ def setup_for(game_id):
         names = sorted(DECKS)
         decks = [names[int(rng.integers(len(names)))] for _ in range(2)]
     low, high = SELFPLAY.commandDelayTicks
+    first, last = SELFPLAY.decisionPhaseTicks
     return {
         "decks": decks,
         "delays": [int(rng.integers(low, high + 1)) for _ in range(2)],
         "levels": [SPEC["level"] + int(rng.choice(SELFPLAY.levelOffsets)) for _ in range(2)],
+        "phase": int(rng.integers(first, last + 1)),
     }
 
 
@@ -83,8 +93,8 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
-def training_rows(observation, result, rng):
-    """The searched candidates and a few the search left out, read as the screen would read them.
+def training_rows(observation, result, screen, rng):
+    """The searched candidates and a few the search left out, read as the side's screen reads them.
 
     Unsearched candidates are negatives (target 0), so the policy also learns to keep the grid's
     poor placements below the searched ones it ranks for live play.
@@ -92,7 +102,7 @@ def training_rows(observation, result, rng):
     others = result["others"]
     picked = rng.choice(len(others), min(SELFPLAY.negatives, len(others)), replace=False)
     rows = [*result["actions"], *(others[int(index)] for index in sorted(picked))]
-    context = perceive(decision_context(observation, rows), rng, SELFPLAY.perception)
+    context = screen.read(observation, rows)
     target = [*result["target"].tolist(), *[0.0] * len(picked)]
     return rows, context_features(context), action_features(context), target
 
@@ -121,21 +131,30 @@ def play_game(
     # Each side's hidden-hand hypotheses, continued from one of its searches to the next.
     beliefs = [[None] * len(workspace.worlds) for _ in policies]
     choices = np.random.default_rng(seed_for("acting", game_id))
-    seen = np.random.default_rng(seed_for("perception", game_id))
+    negatives = np.random.default_rng(seed_for("negatives", game_id))
+    screens = [
+        Screen(SELFPLAY.perception, np.random.default_rng(seed_for("perception", game_id, team)))
+        for team in (0, 1)
+    ]
+    # The tick of each side's next decision; the second clock runs `phase` ticks behind.
+    due = [0, setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
-        selected = []
+        selected = [Action(-1), Action(-1)]
         for team, policy in enumerate(policies):
+            if due[team] > state["tick"]:
+                continue
+            due[team] += SELFPLAY.decisionTicks
             observation = arena.observe(team)
+            screens[team].watch(observation)
             candidates = [Action(*row) for row in observation["legalActions"]]
             if len(candidates) == 1:
-                selected.append(candidates[0])
                 continue
             decisions += 1
             if simulations == 0:
-                prior, _ = policy.predict(observation, candidates)
-                selected.append(candidates[int(np.argmax(prior))])
+                prior = policy.deployed(observation, candidates, screens[team])
+                selected[team] = candidates[int(np.argmax(prior))]
                 continue
             result = search(
                 observation,
@@ -159,11 +178,11 @@ def play_game(
                 chosen = int(choices.choice(len(probabilities), p=probabilities))
             else:
                 chosen = int(np.argmax(probabilities))
-            selected.append(result["actions"][chosen])
+            selected[team] = result["actions"][chosen]
             searches += result["simulations"]
             if training:
                 rows, state_features, action_vectors, target = training_rows(
-                    observation, result, seen
+                    observation, result, screens[team], negatives
                 )
                 samples.append(
                     {
@@ -190,7 +209,7 @@ def play_game(
                         "outcome": None,
                     }
                 )
-        outcomes = arena.play(selected, SELFPLAY.decisionTicks)
+        outcomes = arena.play(selected, min(due) - state["tick"])
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(

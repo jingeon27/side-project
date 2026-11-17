@@ -138,6 +138,7 @@
     "liveMirror": 0.5,
     "liveAgainstPool": 0.5,
     "decisionTicks": 20,
+    "decisionPhaseTicks": [0, 19],
     "searchTicks": 40,
     "rootActions": 16,
     "negatives": 16,
@@ -149,7 +150,8 @@
       "jitterTiles": 0.5,
       "motionSeenRate": 0.7,
       "healthSeenRate": 0.3,
-      "effectMissRate": 0.15
+      "effectMissRate": 0.15,
+      "playMissRate": 0.15
     }
   },
   "referenceProjects": [

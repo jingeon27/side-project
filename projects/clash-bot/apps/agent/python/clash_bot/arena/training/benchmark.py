@@ -30,6 +30,9 @@ class ScriptedPolicy:
         probabilities[self.choose(observation, actions, self.rng)] = 1
         return probabilities, 0.0
 
+    def deployed(self, observation, actions, _screen):
+        return self.predict(observation, actions)[0]
+
     def checksum(self):
         return hashlib.sha256(self.name.encode()).hexdigest()
 
@@ -108,7 +111,7 @@ def benchmark(policy, rules_id, pairs=8, report=None):
                     rules_id,
                     simulations=0,
                     training=False,
-                    setup=live_setup(),
+                    setup=live_setup(pair),
                 )
                 if not game["completed"] or game["rejectedCommands"]:
                     raise ValueError("Unverified or invalid-action benchmark game")

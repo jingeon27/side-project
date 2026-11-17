@@ -77,7 +77,21 @@ def public_spell_age(observation, spell):
     return math.floor((observation["state"]["tick"] - max(ticks)) / 20 + 0.5) if ticks else None
 
 
+def cycle_rows(cards):
+    """[card, least, most] plays before each opponent card seen so far can return to hand.
+
+    As the live tracker reports it (src/core/battle/card-cycle.ts): it always allows for plays it
+    missed, so only the latest card is known to need four more plays; any earlier one may already
+    be back.
+    """
+    if not cards:
+        return []
+    earlier = [card for card in dict.fromkeys(cards) if card != cards[-1]]
+    return [*([NAMES[card], 0, 3] for card in earlier), [NAMES[cards[-1]], 4, 4]]
+
+
 def decision_context(observation, actions, types=None):
+    """The context with every public play recognized; `policy.screen` reads it as a real screen."""
     types = types or unit_types()
     state, team = observation["state"], observation["team"]
     own, enemy = state["players"][team], state["players"][1 - team]
@@ -88,10 +102,8 @@ def decision_context(observation, actions, types=None):
         for play in event["plays"]
         if play["team"] != team and play["action"][0] >= 0
     ]
-    cycle = [
-        [NAMES[card], 4 - index, 4 - index]
-        for index, card in enumerate(reversed(public_plays[-4:]))
-    ]
+    # The live ledger gives no lower bound and adds its 0.2 reading margin to the upper one.
+    estimate = sum(enemy["elixir_range"]) / 2
     bodies = [row for row in state["entities"] if row[FIELDS["card_id"]] >= 0]
     theirs, ours = map(list, partition(lambda row: row[FIELDS["team"]] == team, bodies))
 
@@ -158,8 +170,8 @@ def decision_context(observation, actions, types=None):
     return {
         "hand": [name(card) for card in own["hand"]],
         "elixir": round(own["elixir_milli"] / 1000, 1),
-        "enemyElixir": {"min": enemy["elixir_range"][0], "max": enemy["elixir_range"][1]},
-        "enemyCycle": cycle,
+        "enemyElixir": {"min": 0.0, "max": min(10.0, estimate + 0.2)},
+        "enemyCycle": cycle_rows(public_plays),
         "next": [NAMES[own["next_card"]]] if own["next_card"] >= 0 else [],
         # [card, count, ready, cycle]: normal plays left before the next evolved one.
         "ownEvolution": [

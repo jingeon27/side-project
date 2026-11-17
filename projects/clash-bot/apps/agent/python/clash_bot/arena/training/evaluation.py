@@ -13,7 +13,7 @@ from .selfplay import live_setup, play_game
 
 def evaluation_setup(pair, generation):
     """Half live mirrors, half fixed threat decks, with both policies taking each seat/deck."""
-    setup = live_setup()
+    setup = live_setup(pair + generation)
     others = sorted(set(DECKS) - {LIVE_DECK})
     if pair % 2:
         setup["decks"][1] = others[(pair // 2 + generation) % len(others)]

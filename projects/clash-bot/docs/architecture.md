@@ -55,8 +55,9 @@ apps/agent/
                                사이의 유지(belief), 학습 전 재현 검사(mechanics, verification)
         tables/                엔진 수치표 도구: 카탈로그 생성(catalogue_build, catalogue_vectors),
                                밸런스 패치 감시(balance)
-        policy/                판단 문맥(context), 특징(features), 화면 인식 오류(noise), 표본(samples),
-                               네트워크와 학습(network)
+        policy/                판단 문맥(context), 특징(features), 한 진영의 화면이 경기 동안 읽은 것(screen:
+                               실전 장부와 같은 상대 엘릭서 상한 opponent_elixir, 인식 오류 noise),
+                               표본(samples), 네트워크와 학습(network)
         training/              자가대국(selfplay), 탐색(search), 실행 한 번 동안 재사용하는 워커(parallel),
                                채택 평가(evaluation), 규칙 봇 기준 평가(benchmark), 경기 파일(storage)
         study/                 자가대국 장면으로 만드는 Qwen 감독 자료(curriculum, teacher, export)

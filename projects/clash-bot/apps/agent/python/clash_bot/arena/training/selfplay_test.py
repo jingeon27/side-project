@@ -40,6 +40,17 @@ class SetupTest(unittest.TestCase):
         levels = {level for setup in setups for level in setup["levels"]}
         self.assertEqual(levels, {SPEC["level"] + offset for offset in SELFPLAY.levelOffsets})
         self.assertEqual(live_setup()["delays"], [SPEC["liveCommandDelayTicks"]] * 2)
+        first, last = SELFPLAY.decisionPhaseTicks
+        phases = {setup["phase"] for setup in setups}
+        self.assertTrue(phases <= set(range(first, last + 1)) and len(phases) > 10)
+        self.assertLess(last, SELFPLAY.decisionTicks)
+        # A series of live games differs only in how far apart the two clocks run.
+        series = [live_setup(index) for index in range(SELFPLAY.decisionTicks)]
+        self.assertEqual(len({setup["phase"] for setup in series}), SELFPLAY.decisionTicks)
+        self.assertEqual(
+            {key: value for key, value in series[3].items() if key != "phase"},
+            {key: value for key, value in live_setup().items() if key != "phase"},
+        )
 
     def test_a_mixed_deck_game_runs_with_delays_and_stays_out_of_the_qwen_studies(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})
@@ -68,6 +79,46 @@ class SetupTest(unittest.TestCase):
         self.assertEqual((game["searchSimulations"], game["samples"]), (0, []))
         self.assertGreater(game["decisions"], 0)
 
+    def test_each_side_decides_on_its_own_clock_through_its_own_screen(self):
+        class Recorder:
+            """Waits, and records when it was asked and what its screen had read."""
+
+            metadata = {"version": 0}
+
+            def __init__(self):
+                self.asked = []
+
+            def deployed(self, observation, actions, screen):
+                context = screen.read(observation, actions, towers=False)
+                self.asked.append((observation["state"]["tick"], context))
+                return np.eye(len(actions))[0]
+
+            def checksum(self):
+                return "0" * 64
+
+        for phase in (0, 7):
+            sides = [Recorder(), Recorder()]
+            setup = {**live_setup(), "phase": phase}
+            play_game(
+                sides,
+                "clocks",
+                "rules-a",
+                simulations=0,
+                training=False,
+                max_ticks=300,
+                setup=setup,
+            )
+            with self.subTest(phase=phase):
+                for team, side in enumerate(sides):
+                    ticks = [tick for tick, _context in side.asked]
+                    self.assertGreater(len(ticks), 5)
+                    self.assertEqual(
+                        {tick % SELFPLAY.decisionTicks for tick in ticks}, {phase * team}
+                    )
+                    for _tick, context in side.asked:
+                        self.assertNotIn("towers", context)
+                        self.assertEqual(context["enemyElixir"]["min"], 0)
+
 
 class PerceptionNoiseTest(unittest.TestCase):
     def test_training_reads_a_noisy_copy_and_leaves_the_true_context(self):
@@ -92,6 +143,7 @@ class PerceptionNoiseTest(unittest.TestCase):
             motionSeenRate=1,
             healthSeenRate=1,
             effectMissRate=0,
+            playMissRate=0,
         )
         self.assertEqual(
             perceive(context, np.random.default_rng(1), never)["bodies"], context["bodies"]
