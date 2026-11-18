@@ -238,8 +238,8 @@ class Arena:
         after = self.state()
         # Accepted is not executed: a hero can die or a placement can stop fitting while
         # the command waits. Charge only the native execution receipt, not a hand heuristic.
-        # One pending card/button per side is enforced by the native core. A terminal
-        # drop is receipted at GAME_OVER, which can be EARLIER than its planned tick.
+        # Different slots can be in flight at the same time. A terminal drop is
+        # receipted at GAME_OVER, possibly earlier than its planned tick.
         receipts = {
             (team, kind, what): (tick, reason)
             for tick, team, kind, what, reason in self.battle.step_commands_run()

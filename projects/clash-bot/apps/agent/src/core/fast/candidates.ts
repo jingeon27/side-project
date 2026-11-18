@@ -84,6 +84,10 @@ export function fastCandidates(
   situation: BattleSituation,
 ): QwenAction[] {
   const enemies = situation.opponent.units.map((unit): Tile => tilePoint(profile, unit));
+  const graves = (situation.effects ?? [])
+    .filter((effect) => effect.side === 'red' && effect.card === 'graveyard')
+    .map((effect): Tile => tilePoint(profile, effect))
+    .filter(([, y]) => y < 16);
   const threat =
     minBy(
       enemies.filter(([, y]) => y < 16),
@@ -92,8 +96,13 @@ export function fastCandidates(
   const plays = cards.flatMap((card, index) => {
     const entry = catalogueCard(card);
     if (card === null || !entry || entry.elixir > elixir) return [];
+    const anchors = card === 'poison' ? graves : [];
     return uniqBy(
-      [...placementTiles(entry.placement, threat, enemies), ...placementGrid(entry.placement, enemies)],
+      [
+        ...anchors,
+        ...placementTiles(entry.placement, threat, enemies),
+        ...placementGrid(entry.placement, enemies),
+      ],
       ([x, y]) => `${x.toFixed(1)}:${y.toFixed(1)}`,
     )
       .map((tile) => ({ tile, target: screenPoint(profile, tile) }))

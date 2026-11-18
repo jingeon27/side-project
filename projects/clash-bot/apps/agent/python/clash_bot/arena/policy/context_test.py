@@ -9,6 +9,25 @@ from clash_bot.arena.study.curriculum import scenario
 
 
 class PublicSpellPhaseTest(unittest.TestCase):
+    def test_one_tick_of_fractional_motion_survives_rounding_for_both_sides(self):
+        deck = [5, 7, 4, 0, 1, 2, 3, 6]
+        arena = Arena(1, [deck, deck])
+        arena.play([Action(-1)] * 2, 100)
+        arena.play([Action(5, 9 * TILE, 8 * TILE), Action(-1)], 30)
+        for team, side, direction in ((0, "own", 1), (1, "enemy", -1)):
+            with self.subTest(team=team):
+                observation = copy.deepcopy(arena.observe(team))
+                row = next(
+                    row for row in observation["state"]["entities"] if row[FIELDS["card_id"]] == 5
+                )
+                tick = observation["state"]["tick"]
+                uid, x, y = row[FIELDS["uid"]], 9 * TILE, row[FIELDS["y"]]
+                row[FIELDS["x"]] = x
+                observation["trail"] = [[tick - 1, [[uid, x - TILE // 50, y - TILE // 100]]]]
+                velocity = decision_context(observation, [])["bodies"][side][0]["velocity"]
+                self.assertAlmostEqual(velocity[0], direction * 0.4)
+                self.assertAlmostEqual(velocity[1], direction * 0.2)
+
     def test_body_motion_uses_prior_public_positions_and_ignores_future_positions(self):
         observation = scenario(1004, 2)
         row = next(

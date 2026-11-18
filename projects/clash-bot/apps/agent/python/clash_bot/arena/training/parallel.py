@@ -6,19 +6,21 @@ import signal
 from concurrent.futures import ProcessPoolExecutor
 
 from ..policy.network import Policy
-from .benchmark import ScriptedPolicy, defender_bot
+from .deck_practice import practice_orders
 from .evaluation import play_pair
+from .pressure import opening_orders, pressure_policy
 from .selfplay import play_game
-from .storage import seed_for
 
 
 def play_frozen_game(job):
     current = Policy.load(job["current"], job["rulesID"])
-    opponent = (
-        ScriptedPolicy("defender", defender_bot, seed_for("training-defender", job["id"]))
-        if job["opponent"] == "scripted:defender"
-        else Policy.load(job["opponent"], job["rulesID"])
-    )
+    setup = job["setup"]
+    if "pressure" in setup:
+        opponent = pressure_policy(setup, job["id"])
+        orders = opening_orders(setup, job["seat"], job["id"])
+    else:
+        opponent = Policy.load(job["opponent"], job["rulesID"])
+        orders = practice_orders(setup, job["seat"], job["id"]) if "practiceDeck" in setup else None
     policies = [opponent, opponent]
     policies[job["seat"]] = current
     return play_game(
@@ -27,7 +29,8 @@ def play_frozen_game(job):
         job["rulesID"],
         simulations=job["simulations"],
         depth=job["depth"],
-        setup=job["setup"],
+        setup=setup,
+        initial_orders=orders,
     )
 
 

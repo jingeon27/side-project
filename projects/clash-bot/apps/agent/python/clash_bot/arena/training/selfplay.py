@@ -19,6 +19,8 @@ from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
 from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from .deck_practice import open_practice
+from .defense_rollout import focus_families, observed_attack
 from .search import Workspace, search
 from .storage import seed_for
 from .targets import training_rows
@@ -33,7 +35,7 @@ class SelfplaySpec(BaseModel):
     # learns what card attributes mean rather than one deck's cards.
     liveMirror: float = Field(ge=0, le=1)
     liveAgainstPool: float = Field(ge=0, le=1)
-    scriptedDefenderEvery: int = Field(ge=2)
+    pressureEvery: int = Field(ge=2)
     decisionTicks: PositiveInt
     # The second side decides this many ticks after the first, drawn per game.
     decisionPhaseTicks: tuple[int, int]
@@ -106,12 +108,14 @@ def play_game(
     max_ticks=6200,
     report=None,
     setup=None,
+    initial_orders=None,
 ):
     """`simulations=0` plays each policy's best candidate without search, as deployed."""
     began = time.perf_counter()
     setup = setup or live_setup()
     arena = Arena(
         seed_for("environment", game_id),
+        initial_decks=initial_orders,
         decks=setup["decks"],
         delays=setup["delays"],
         levels=setup["levels"],
@@ -125,7 +129,8 @@ def play_game(
         for team in (0, 1)
     ]
     # The tick of each side's next decision; the second clock runs `phase` ticks behind.
-    due = [0, setup.get("phase", 0)]
+    opening_tick = open_practice(arena, setup, training)
+    due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
@@ -146,6 +151,11 @@ def play_game(
                 selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
             result = None
+            context = screens[team].read(observation, candidates)
+            attack = observed_attack(context)
+            observed_prior = policy.read(
+                {key: value for key, value in context.items() if key != "towers"}
+            )[0]
             if unavailable[team] is None:
                 try:
                     result = search(
@@ -154,13 +164,14 @@ def play_game(
                         seed_for("search", game_id, state["tick"], team),
                         simulations=simulations,
                         depth=depth,
-                        step_ticks=SELFPLAY.searchTicks,
-                        first_ticks=SELFPLAY.decisionTicks,
                         root_size=SELFPLAY.rootActions,
                         noise=training,
                         opponent_policy=policies[1 - team],
                         workspace=workspace,
                         beliefs=beliefs[team],
+                        observed_prior=observed_prior,
+                        focus=focus_families(context, attack),
+                        defense=attack if training else None,
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
@@ -168,8 +179,9 @@ def play_game(
                 # The real native game remains authoritative. Finish with this seat's
                 # frozen screen policy, but invent no expert targets for these decisions.
                 policy_only[team] += 1
-                prior = policy.deployed(observation, candidates, screens[team])
-                selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
+                selected[team] = candidates[
+                    card_choice([a.card for a in candidates], observed_prior)
+                ]
                 continue
             families = [action.card for action in result["actions"]]
             if training:
@@ -192,7 +204,9 @@ def play_game(
                             for key, value in observation.items()
                             if key != "legalActions"
                         },
-                        **training_rows(observation, result, screens[team], chosen, policy),
+                        **training_rows(
+                            observation, result, screens[team], chosen, policy, context=context
+                        ),
                         "search": {
                             key: value
                             for key, value in result.items()
@@ -257,17 +271,3 @@ def play_game(
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }
-
-
-def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
-    valid = []
-    for episode in episodes:
-        if not episode["completed"]:
-            continue
-        if episode["rulesID"] != rules_id:
-            continue  # A patch's dynamics/returns must not silently mix with this one.
-        valid.extend(row for row in episode["samples"] if row["outcome"] in (-1, 0, 1))
-    if len(valid) <= max_samples:
-        return valid
-    order = np.random.default_rng(seed).choice(len(valid), max_samples, replace=False)
-    return [valid[index] for index in order]

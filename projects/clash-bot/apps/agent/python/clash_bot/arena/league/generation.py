@@ -7,9 +7,13 @@ import numpy as np
 
 from ..study.curriculum import from_selfplay
 from ..study.export import export
+from ..training.coverage import card_coverage
+from ..training.deck_practice import schedule_deck
 from ..training.evaluation import pfsp_weights
 from ..training.parallel import play_frozen_game
-from ..training.selfplay import SELFPLAY, replay_samples, setup_for
+from ..training.pressure import schedule_pressure
+from ..training.replay import replay_coverage, replay_samples
+from ..training.selfplay import SELFPLAY, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
 
@@ -27,32 +31,44 @@ def next_version(root, league):
 
 
 def scheduled(root, league, rules, version, indexes, settings, rng):
-    """One quarter meet the fixed defender, the rest self/past policies.
+    """The champion teaches; one quarter meet tactical attackers, the rest qualified policies.
 
-    Past opponents the learner loses to more often are picked more often.
+    Past champions the current champion loses to more often are picked more often.
     """
     jobs = []
+    every = SELFPLAY.pressureEvery
     for index in indexes:
-        scripted = index % SELFPLAY.scriptedDefenderEvery == SELFPLAY.scriptedDefenderEvery - 1
+        scripted = index % every == every - 1
         rates = [(row["wins"] + 1) / (row["games"] + 2) for row in league["opponents"]]
         selected = (
             None
             if index % 2 == 0 or scripted
             else league["opponents"][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
         )
-        opponent = league["learner"] if selected is None else selected["version"]
+        opponent = league["champion"] if selected is None else selected["version"]
         game_id = f"train-{version}-{index}-{uuid.uuid4().hex[:8]}"
+        setup = setup_for(game_id)
+        seat = (version + index // (every if scripted else 2)) % 2
+        if scripted:
+            slot = index // every
+            setup = schedule_pressure(
+                setup,
+                (version - 1) * (settings["games"] // every) + slot,
+                seat,
+                (version + slot // 2) % 2 == 1,
+            )
+        elif index % every == 0:
+            slots = (settings["games"] + every - 1) // every
+            setup = schedule_deck(setup, (version - 1) * slots + index // every, seat)
         jobs.append(
             {
-                "current": str(checkpoint(root, league["learner"])),
-                "opponent": "scripted:defender" if scripted else str(checkpoint(root, opponent)),
+                "current": str(checkpoint(root, league["champion"])),
+                "opponent": None if scripted else str(checkpoint(root, opponent)),
                 "selected": None if selected is None else opponent,
                 "index": index,
-                "seat": (version + index // SELFPLAY.scriptedDefenderEvery) % 2
-                if scripted
-                else (version + index // 2) % 2,
+                "seat": seat,
                 "id": game_id,
-                "setup": setup_for(game_id),
+                "setup": setup,
                 "rulesID": rules["id"],
                 "simulations": settings["simulations"],
                 "depth": settings["depth"],
@@ -110,6 +126,8 @@ def selfplay(control, workers, root, league, rules, version, settings):
                     "lastSearchUnavailable": game["searchUnavailable"],
                 }
             )
+    if played:
+        control.report({"trainingCoverage": card_coverage(played)})
     return played
 
 
@@ -123,6 +141,7 @@ def learn(control, root, league, rules, learner, version):
         history, rules["id"], max_samples=REPLAY_SAMPLES, seed=seed_for("replay", version)
     )
     training = learner.train(samples, seed=seed_for("optimizer", version))
+    training["optimizerCoverage"] = replay_coverage(samples)
     if not training["updated"]:
         raise ValueError("Completed self-play data did not change policy weights")
     temporary = checkpoint(root, version).with_suffix(".pending")
@@ -140,9 +159,6 @@ def learn(control, root, league, rules, learner, version):
     )
     temporary.rename(checkpoint(root, version))
     league["learner"] = version
-    league["opponents"] = (league["opponents"] + [{"version": version, "wins": 0, "games": 0}])[-8:]
-    if not any(row["version"] == league["champion"] for row in league["opponents"]):
-        league["opponents"].insert(0, {"version": league["champion"], "wins": 0, "games": 0})
     store(root, league)
     control.report({"phase": "trained", "training": training, "learner": version})
 

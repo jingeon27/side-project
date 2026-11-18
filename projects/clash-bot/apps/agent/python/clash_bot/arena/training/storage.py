@@ -25,9 +25,10 @@ REPLAY_FIELDS = (
     "actionFeatures",
     "actionBias",
     "actionBiasWithoutTowers",
-    "actionLogMassCorrection",
-    "actionLogMassCorrectionWithoutTowers",
+    "source",
     "target",
+    "targetWithoutTowers",
+    "defensePairs",
     "outcome",
     "value",
 )

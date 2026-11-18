@@ -18,12 +18,13 @@ from clash_bot.arena.league.champions import (
     publish_champion,
 )
 from clash_bot.arena.league.loop import run
+from clash_bot.arena.policy.dense import DenseActions
 from clash_bot.arena.policy.features import checksum
 from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
 from clash_bot.arena.policy.samples import SparseFeatures
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
-from clash_bot.arena.training.selfplay import replay_samples
+from clash_bot.arena.training.replay import replay_samples
 from clash_bot.arena.training.storage import read_episode, replay_path, write_episode, write_replay
 
 CATALOGUE = current().id
@@ -160,9 +161,16 @@ class CompactReplayTest(unittest.TestCase):
             "actionFeatures": action_vectors.tolist(),
             "actionBias": [0.0] * len(actions),
             "actionBiasWithoutTowers": [0.0] * len(actions),
-            "actionLogMassCorrection": [0.0] * len(actions),
-            "actionLogMassCorrectionWithoutTowers": [0.0] * len(actions),
+            "source": DenseActions.pack(
+                action_vectors,
+                [a.card for a in actions],
+                [0.0] * len(actions),
+                [0.0] * len(actions),
+                list(range(len(actions))),
+            ).model_dump(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
+            "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
+            "defensePairs": [],
             "outcome": -1,
             "value": -0.7,
         }

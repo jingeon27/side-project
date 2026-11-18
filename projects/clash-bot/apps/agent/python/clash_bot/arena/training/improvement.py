@@ -4,25 +4,9 @@ Exponentially tilt the unnoised prior by searched action values, within a KL bud
 The estimated value can improve; imperfect short-horizon estimates do not guarantee wins.
 """
 
-from typing import Literal
-
 import numpy as np
-from pydantic import BaseModel, ConfigDict, PositiveFloat
 
-from clash_bot.paths import CONTRACTS_DIR
-
-
-class LearningSpec(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    format: Literal["clash-search-learning-v2"]
-    target: Literal["prior_regularized_action_values"]
-    temperature: PositiveFloat
-    maxKL: PositiveFloat
-    projection: Literal["frozen_card_partition"]
-
-
-SPEC = LearningSpec.model_validate_json((CONTRACTS_DIR / "search-learning.json").read_text())
+from ..policy.learning_spec import SPEC
 
 
 def improved_policy(prior, values, visits):

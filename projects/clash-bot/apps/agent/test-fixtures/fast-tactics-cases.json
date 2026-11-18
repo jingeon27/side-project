@@ -62,7 +62,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, 8, -11, -10.75, 2, -9]
+    "bias": [0, 9.125, -11, -10.75, 2, -9]
   },
   {
     "name": "reserve barrel for a possible Goblin Barrel",
@@ -701,6 +701,107 @@
     "preferred": [
       [1, 0],
       [0, 2]
+    ]
+  },
+  {
+    "name": "fresh Graveyard and enemy Poison: cover the area with lasting defense, avoid fragile troops inside",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 1],
+        ["red", "poison", 2.5, 7, 1]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2],
+      [1, 5],
+      [4, 3]
+    ]
+  },
+  {
+    "name": "new friendly Poison covers the remaining Graveyard window",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 5],
+        ["blue", "poison", 4.5, 7, 1]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [[0, 1]]
+  },
+  {
+    "name": "a nearly expired friendly Poison leaves time for fresh enemy Graveyard spawns",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 1],
+        ["blue", "poison", 4.5, 7, 7]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
     ]
   }
 ]

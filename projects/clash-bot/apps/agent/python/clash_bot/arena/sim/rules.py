@@ -20,6 +20,7 @@ from ..catalogue import current
 
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
 OBSERVATION_FORMAT = "clash-arena-observation-v2"
+ROLLOUT_CLOCK = "staggered_public_decision_clock_v1"
 
 
 class DeckSpec(BaseModel):
@@ -116,13 +117,15 @@ def rules_identity():
                 )
             }
         ),
-        "trainingOpponent": "quarter_fixed_defender_direct_no_teacher_rows_v1",
-        "tacticalTeacher": "paired_reactive_sampled_public_defender_v1",
-        "searchPolicy": "card_bandits_regularized_q_targets_frozen_partitions_v2",
+        "trainingActor": "champion_anchored_search_teacher_v1",
+        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_decks_v4",
+        "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
+        "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
+        "rolloutTiming": ROLLOUT_CLOCK,
         "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
-        "policyInput": "live_screen_health_bars_v2",
+        "policyInput": "live_screen_health_bars_subtile_motion_v3",
         "towerLevels": "each_side_card_level_v1",
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",

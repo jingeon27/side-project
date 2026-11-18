@@ -4,14 +4,17 @@ import { z } from 'zod';
 
 export const FAST_TACTICS = z
   .strictObject({
-    format: z.literal('clash-fast-tactics-v2'),
+    format: z.literal('clash-fast-tactics-v3'),
     reserveElixir: z.number().nonnegative(),
     responseSeconds: z.number().positive(),
     engagementRadius: z.number().positive(),
     threatBoundary: z.number().positive(),
     defenseWeight: z.number().positive(),
     barbarianInterceptWeight: z.number().positive(),
+    barrelContactWeight: z.number().positive(),
     graveyardCounters: z.record(z.string(), z.number().positive()),
+    graveyardSeconds: z.number().positive(),
+    graveyardDefense: z.record(z.string(), z.number().positive()),
     supportCards: z.array(z.string()),
     drillPriority: z.number().positive(),
     drillBarbarianResponse: z.number().min(0).max(1),
