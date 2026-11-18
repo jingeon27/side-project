@@ -9,8 +9,8 @@ import { Spinner } from '../spinner/Spinner';
 
 export const buttonVariants = cva(
   [
-    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 border border-transparent bg-clip-padding text-button whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    'transition-[background-color,border-color,color,transform] duration-150 active:not-data-disabled:scale-[0.98]',
+    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 border border-transparent bg-clip-padding text-button whitespace-nowrap select-none disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    'motion-safe:transition-[background-color,border-color,color,transform] motion-safe:duration-150 active:not-aria-[haspopup]:translate-y-px active:not-data-disabled:scale-[0.98] motion-reduce:active:not-aria-[haspopup]:translate-y-0 motion-reduce:active:not-data-disabled:scale-100',
     'data-disabled:cursor-not-allowed data-disabled:opacity-45',
   ],
   {
@@ -25,9 +25,9 @@ export const buttonVariants = cva(
        */
       variant: {
         primary:
-          'bg-brand text-on-brand [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-brand-strong active:not-data-disabled:bg-brand-strong',
+          'bg-brand text-on-brand shadow-card [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-brand-strong active:not-data-disabled:bg-brand-strong',
         secondary:
-          'border border-line-strong bg-surface text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-sunken active:not-data-disabled:bg-sunken',
+          'border-line-strong bg-surface text-ink shadow-card [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-sunken active:not-data-disabled:bg-sunken',
         ghost:
           'bg-transparent text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
         danger:
