@@ -8417,6 +8417,8 @@ __metadata:
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
     dayjs: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
     lucide-react: "catalog:"
     next: "catalog:"
     react: "catalog:"
