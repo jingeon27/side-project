@@ -19,7 +19,7 @@ export default function Home() {
             장면<small>STORY STUDIO</small>
           </span>
         </Link>
-        <StudioLink className="button secondary" source="blank">
+        <StudioLink variant="secondary" source="blank">
           작업실 열기 <ArrowRight size={16} />
         </StudioLink>
       </header>
@@ -37,7 +37,7 @@ export default function Home() {
               쓰고, 다듬고, 완성하는 한국어 창작 스튜디오
             </p>
             <div className="landing-actions">
-              <StudioLink className="button primary" source="blank">
+              <StudioLink variant="primary" className="landing-start" source="blank">
                 이야기 시작하기 <ArrowRight size={17} />
               </StudioLink>
               <StudioLink className="landing-sample-link" source="sample">

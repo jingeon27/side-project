@@ -5,9 +5,11 @@ import dynamic from 'next/dynamic';
 
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { ArrowRight, Check, ChevronRight, LoaderCircle, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, X } from 'lucide-react';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
+
+import { Button, IconButton, Spinner } from '@side/design-system';
 
 import { trackStudioEvent } from '../../../shared/analytics';
 import { fetchProject } from '../../library/api/library-client';
@@ -506,28 +508,30 @@ export function Studio({
           {notice && (
             <div className="notice" role="status">
               <span>{notice}</span>
-              <button className="icon-button" aria-label="알림 닫기" onClick={() => setNotice('')}>
+              <IconButton label="알림 닫기" onClick={() => setNotice('')}>
                 <X size={16} />
-              </button>
+              </IconButton>
             </div>
           )}
           {pollError && (
             <div className="notice warning" role="alert">
               <span>{pollError}</span>
-              <button
-                className="button secondary small"
+              <Button
+                variant="secondary"
+                size="sm"
+
                 onClick={() => {
                   setPollError('');
                   setPollEpoch((value) => value + 1);
                 }}
               >
                 기존 영상 상태 다시 확인
-              </button>
+              </Button>
             </div>
           )}
           {busy && (
             <div className="work-status" role="status">
-              <LoaderCircle className="spinner" size={17} />
+              <Spinner className="size-4" />
               <span>
                 {renderProgress || busy}{' '}
                 <small>
@@ -537,9 +541,9 @@ export function Studio({
                 </small>
               </span>
               {(local || !['이미지 생성 중', '영상 작업 제출 중'].includes(busy)) && (
-                <button className="text-button" onClick={stop}>
+                <Button variant="ghost" size="sm" onClick={stop}>
                   중단
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -563,8 +567,10 @@ export function Studio({
               />
               <footer className="project-footer">
                 <span>마지막 수정 {dayjs(project.updatedAt).format('YYYY.MM.DD HH:mm')}</span>
-                <button
-                  className="text-button danger"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-danger"
                   disabled={Boolean(busy)}
                   onClick={() => {
                     if (
@@ -588,7 +594,7 @@ export function Studio({
                   }}
                 >
                   {deletePending ? '이 작품의 원고를 삭제할까요? 한 번 더 눌러 확인' : '이 작품 삭제'}
-                </button>
+                </Button>
               </footer>
             </>
           ) : (
@@ -598,8 +604,9 @@ export function Studio({
                   <h1>새 작품 만들기</h1>
                   <p>형식과 아이디어를 정하면 원고부터 시작해요</p>
                 </div>
-                <button
-                  className="button secondary"
+                <Button
+                  variant="secondary"
+
                   disabled={Boolean(busy) || !ready}
                   onClick={() => {
                     try {
@@ -610,7 +617,7 @@ export function Studio({
                   }}
                 >
                   예시 작품 열기 <ArrowRight size={15} />
-                </button>
+                </Button>
               </div>
               <CreateForm
                 brief={brief}

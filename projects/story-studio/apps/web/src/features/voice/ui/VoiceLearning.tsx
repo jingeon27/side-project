@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +8,11 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod';
 
+import { Button, FormField, Input, Textarea } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
+
 import { trackStudioEvent } from '../../../shared/analytics';
+import { FilePickerButton } from '../../../shared/ui/FilePickerButton';
 import { jsonRequest, voiceCatalogQuery, voiceDetailQuery, voiceRequest } from '../api/voice-client';
 import { MicrophoneRecorder } from '../model/microphone-recorder';
 import {
@@ -119,30 +122,33 @@ export function VoiceLearning({ id }: { id: string }) {
   const pending = upload.isPending || remove.isPending || train.isPending || control.isPending;
   const locked = Boolean(active || pending || recording.phase !== 'idle');
   const unsaved = clips.fields.length > 0;
-  const handleFilesChange = (files: FileList | null) => {
-    if (!files) return;
+  const handleFilesChange = (files: File[]) => {
     const remaining = Math.max(0, 50 - (detail.data?.samples.length ?? 0) - clips.fields.length);
     if (files.length > remaining) {
       uploadForm.setError('root.files', { message: `녹음은 ${remaining}개 더 선택할 수 있습니다` });
       return;
     }
     uploadForm.clearErrors('root.files');
-    clips.append(Array.from(files).map((file) => ({ clipId: crypto.randomUUID(), file, transcript: '' })));
+    clips.append(files.map((file) => ({ clipId: crypto.randomUUID(), file, transcript: '' })));
   };
   return (
     <div className="voice-page learning-page">
       <header className="voice-page-header">
-        <Link href="/studio/voices">목소리 목록</Link>
-        <Link href="/studio">작업실로</Link>
+        <ButtonLink variant="ghost" size="sm" href="/studio/voices">
+          목소리 목록
+        </ButtonLink>
+        <ButtonLink variant="ghost" size="sm" href="/studio">
+          작업실로
+        </ButtonLink>
       </header>
       <main className="voice-page-content">
         {detail.isPending && <p role="status">학습 자료를 불러오는 중</p>}
         {detail.error && (
           <p role="alert">
             {detail.error.message}{' '}
-            <button className="text-button" onClick={() => void detail.refetch()}>
+            <Button variant="ghost" size="sm" onClick={() => void detail.refetch()}>
               다시 불러오기
-            </button>
+            </Button>
           </p>
         )}
         {detail.data && (
@@ -173,13 +179,15 @@ export function VoiceLearning({ id }: { id: string }) {
                 <article className="voice-clip" key={sample.id}>
                   <div className="voice-section-heading">
                     <strong>{sample.filename}</strong>
-                    <button
-                      className="text-button danger"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-danger"
                       disabled={locked || unsaved}
                       onClick={() => remove.mutate(sample.id)}
                     >
                       삭제
-                    </button>
+                    </Button>
                   </div>
                   <audio
                     controls
@@ -203,22 +211,16 @@ export function VoiceLearning({ id }: { id: string }) {
             />
             <form id="voice-upload" onSubmit={uploadForm.handleSubmit((input) => upload.mutate(input))}>
               <fieldset disabled={locked} className="voice-upload-fields">
-                <label className="voice-file-picker">
-                  <span>녹음 선택</span>
-                  <span>여러 파일을 함께 선택할 수 있어요</span>
-                  <input
-                    className="sr-only"
-                    aria-label="녹음 선택"
-                    type="file"
+                <div className="voice-file-picker">
+                  <FilePickerButton
+                    label="녹음 선택"
                     multiple
                     accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.webm"
                     disabled={locked || detail.data.samples.length + clips.fields.length >= 50}
-                    onChange={(event) => {
-                      handleFilesChange(event.target.files);
-                      event.target.value = '';
-                    }}
+                    onFiles={handleFilesChange}
                   />
-                </label>
+                  <span>여러 파일을 함께 선택할 수 있어요</span>
+                </div>
                 <p className="fine-print">
                   WAV, MP3, M4A, FLAC, OGG, WebM 지원. 배경 음악과 다른 사람의 말소리가 없는 녹음이 좋아요.
                 </p>
@@ -226,19 +228,20 @@ export function VoiceLearning({ id }: { id: string }) {
                   <article className="voice-clip" key={clip.id}>
                     <div className="voice-section-heading">
                       <strong>{clip.file.name}</strong>
-                      <button type="button" className="text-button" onClick={() => clips.remove(index)}>
+                      <Button variant="ghost" size="sm" type="button" onClick={() => clips.remove(index)}>
                         선택 해제
-                      </button>
+                      </Button>
                     </div>
                     <RecordingPreview file={clip.file} />
-                    <label htmlFor={`transcript-${clip.clipId}`}>녹음한 대본</label>
-                    <textarea
-                      id={`transcript-${clip.clipId}`}
-                      rows={3}
-                      maxLength={2000}
-                      placeholder="녹음에서 읽은 말을 그대로 입력해 주세요"
-                      {...uploadForm.register(`samples.${index}.transcript`)}
-                    />
+                    <FormField label="녹음한 대본">
+                      <Textarea
+                        id={`transcript-${clip.clipId}`}
+                        rows={3}
+                        maxLength={2000}
+                        placeholder="녹음에서 읽은 말을 그대로 입력해 주세요"
+                        {...uploadForm.register(`samples.${index}.transcript`)}
+                      />
+                    </FormField>
                     {uploadForm.formState.errors.samples?.[index]?.transcript && (
                       <p role="alert">{uploadForm.formState.errors.samples[index]?.transcript?.message}</p>
                     )}
@@ -265,15 +268,16 @@ export function VoiceLearning({ id }: { id: string }) {
                 목소리는 장면의 음성 메뉴에서 선택할 수 있어요.
               </p>
               <form id="voice-train" onSubmit={learningForm.handleSubmit((input) => train.mutate(input))}>
-                <label htmlFor="voice-epochs">전체 녹음 반복 횟수</label>
-                <input
-                  id="voice-epochs"
-                  type="number"
-                  min={1}
-                  max={20}
-                  disabled={locked}
-                  {...learningForm.register('epochs', { valueAsNumber: true })}
-                />
+                <FormField label="전체 녹음 반복 횟수">
+                  <Input
+                    id="voice-epochs"
+                    type="number"
+                    min={1}
+                    max={20}
+                    disabled={locked}
+                    {...learningForm.register('epochs', { valueAsNumber: true })}
+                  />
+                </FormField>
                 {learningForm.formState.errors.epochs && <p role="alert">1~20 사이로 입력해 주세요</p>}
               </form>
               <p className="fine-print">
@@ -297,21 +301,28 @@ export function VoiceLearning({ id }: { id: string }) {
               .with({ unsaved: true }, () => (
                 <>
                   <span>선택한 녹음 {clips.fields.length}개</span>
-                  <button className="button primary" form="voice-upload" disabled={locked}>
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    form="voice-upload"
+                    disabled={locked}
+                    loading={upload.isPending}
+                  >
                     {upload.isPending ? '녹음을 저장하는 중' : '녹음과 대본 저장'}
-                  </button>
+                  </Button>
                 </>
               ))
               .with({ run: { status: P.union('PENDING', 'RUNNING') } }, ({ run }) => (
                 <>
                   <span>학습 중에도 이 화면을 나가도 됩니다</span>
-                  <button
-                    className="button secondary"
+                  <Button
+                    variant="secondary"
+
                     disabled={pending}
                     onClick={() => control.mutate({ runId: run.id, action: 'cancel' })}
                   >
                     학습 중단
-                  </button>
+                  </Button>
                 </>
               ))
               .otherwise(() => (
@@ -322,21 +333,25 @@ export function VoiceLearning({ id }: { id: string }) {
                       : '학습은 이 컴퓨터에서 실행합니다'}
                   </span>
                   {run && ['FAILED', 'CANCELLED'].includes(run.status) && run.checkpoint && (
-                    <button
-                      className="button secondary"
+                    <Button
+                      variant="secondary"
+
                       disabled={locked || !detail.data?.trainingReady}
                       onClick={() => control.mutate({ runId: run.id, action: 'resume' })}
                     >
                       이어서 학습
-                    </button>
+                    </Button>
                   )}
-                  <button
-                    className="button primary"
+                  <Button
+                    variant="primary"
+                    type="submit"
+
                     form="voice-train"
+                    loading={train.isPending}
                     disabled={locked || !detail.data?.trainingReady || (detail.data?.samples.length ?? 0) < 2}
                   >
                     {train.isPending ? '학습을 시작하는 중' : '새 학습 시작'}
-                  </button>
+                  </Button>
                 </>
               ))}
           </div>
@@ -386,7 +401,11 @@ function TrainingProgress({ run }: { run: TVoiceRun }) {
           {run.peakMemoryGiB !== undefined && `, 최대 모델 메모리 ${run.peakMemoryGiB.toFixed(1)}GB`}
         </small>
       )}
-      {run.status === 'SUCCEEDED' && <Link href="/studio">작업실에서 목소리 사용하기 →</Link>}
+      {run.status === 'SUCCEEDED' && (
+        <ButtonLink variant="ghost" size="sm" href="/studio">
+          작업실에서 목소리 사용하기 →
+        </ButtonLink>
+      )}
     </div>
   );
 }

@@ -50,6 +50,10 @@
   text-align: left;
   font-size: 13px;
 }
+.project,
+.tools > :is(a, button) {
+  justify-content: flex-start;
+}
 .project {
   width: 100%;
   padding: 10px;

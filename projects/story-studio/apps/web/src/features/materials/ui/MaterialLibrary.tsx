@@ -1,12 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+import {
+  Button,
+  Disclosure,
+  DisclosureTrigger,
+  FormField,
+  Input,
+  NativeSelect,
+  NativeSelectOption,
+} from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 
 import { trackStudioEvent, type TStudioAction } from '../../../shared/analytics';
 import { materialAction, materialOverviewQuery, materialRequest } from '../api/material-client';
@@ -103,7 +113,9 @@ export function MaterialLibrary() {
   return (
     <div className="voice-page">
       <header className="voice-page-header">
-        <Link href="/studio">작업실로</Link>
+        <ButtonLink variant="ghost" size="sm" href="/studio">
+          작업실로
+        </ButtonLink>
         <span>참고 자료실</span>
       </header>
       <main className="voice-page-content">
@@ -120,38 +132,41 @@ export function MaterialLibrary() {
           </p>
         )}
         <form className="material-upload" onSubmit={form.handleSubmit((input) => add.mutate(input))}>
-          <label htmlFor="material-collection">묶음 이름</label>
-          <input
-            id="material-collection"
-            placeholder="예: 무협 설정, 베네수엘라 취재"
-            maxLength={40}
-            list="material-collections"
-            {...form.register('collection')}
-          />
+          <FormField label="묶음 이름">
+            <Input
+              id="material-collection"
+              placeholder="예: 무협 설정, 베네수엘라 취재"
+              maxLength={40}
+              list="material-collections"
+              {...form.register('collection')}
+            />
+          </FormField>
           <datalist id="material-collections">
             {data?.collections.map((collection) => (
-              <option key={collection.name} value={collection.name} />
+              <NativeSelectOption key={collection.name} value={collection.name} />
             ))}
           </datalist>
-          <label htmlFor="material-role">원고에 넣는 방식</label>
-          <select id="material-role" {...form.register('role')}>
-            {materialRoles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}, {role.description}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="material-files">텍스트 파일 (.txt, .md)</label>
-          <input
-            id="material-files"
-            type="file"
-            multiple
-            accept=".txt,.md,text/plain,text/markdown"
-            {...form.register('files')}
-          />
-          <button className="button primary" disabled={add.isPending}>
+          <FormField label="원고에 넣는 방식">
+            <NativeSelect id="material-role" {...form.register('role')}>
+              {materialRoles.map((role) => (
+                <NativeSelectOption key={role.id} value={role.id}>
+                  {role.name}, {role.description}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </FormField>
+          <FormField label="텍스트 파일 (.txt, .md)">
+            <Input
+              id="material-files"
+              type="file"
+              multiple
+              accept=".txt,.md,text/plain,text/markdown"
+              {...form.register('files')}
+            />
+          </FormField>
+          <Button variant="primary" type="submit" loading={add.isPending}>
             {add.isPending ? '올리는 중' : '자료 추가'}
-          </button>
+          </Button>
           {(form.formState.errors.collection || form.formState.errors.files) && (
             <p role="alert">묶음 이름은 한글, 영문, 숫자로 40자까지 쓰고 파일을 하나 이상 선택해 주세요.</p>
           )}
@@ -172,34 +187,38 @@ export function MaterialLibrary() {
             부분 검색 자료로 등록하며, 이미 등록한 파일은 건너뜁니다.
           </p>
           {data && <code>{data.inbox}</code>}
-          <button
-            className="button secondary small"
+          <Button
+            variant="secondary"
+            size="sm"
+
             disabled={control.isPending}
             onClick={() => control.mutate('material-import')}
           >
             폴더에서 가져오기
-          </button>
+          </Button>
         </section>
         <section aria-label="색인 상태" className="material-sync">
           {data?.sync.running && (
             <p role="status">
               {data.sync.progress || '색인하는 중'}{' '}
-              <button className="text-button" onClick={() => control.mutate('material-stop')}>
+              <Button variant="ghost" size="sm" onClick={() => control.mutate('material-stop')}>
                 색인 중단
-              </button>
+              </Button>
             </p>
           )}
           {data && !data.sync.running && data.sync.error && <p role="alert">{data.sync.error}</p>}
           {data && !data.sync.running && pending > 0 && (
             <p>
               아직 색인하지 않은 자료가 {pending}개 있습니다. 색인한 자료만 원고에 쓰입니다.{' '}
-              <button
-                className="text-button"
+              <Button
+                variant="ghost"
+                size="sm"
+
                 disabled={control.isPending || !data.ready}
                 onClick={() => control.mutate('material-sync')}
               >
                 색인 시작
-              </button>
+              </Button>
             </p>
           )}
           {control.error && <p role="alert">{control.error.message}</p>}
@@ -210,14 +229,14 @@ export function MaterialLibrary() {
           {overview.error && (
             <p role="alert">
               {overview.error.message}{' '}
-              <button className="text-button" onClick={() => void overview.refetch()}>
+              <Button variant="ghost" size="sm" onClick={() => void overview.refetch()}>
                 다시 불러오기
-              </button>
+              </Button>
             </p>
           )}
           {data?.collections.length === 0 && <p>아직 등록한 자료가 없어요</p>}
           {data?.collections.map((collection) => (
-            <details
+            <Disclosure
               className="material-collection"
               key={collection.name}
               onToggle={(event) => {
@@ -229,15 +248,15 @@ export function MaterialLibrary() {
                 );
               }}
             >
-              <summary>
+              <DisclosureTrigger>
                 <strong>{collection.name}</strong>
-                <span>
+                <span className="collection-count">
                   자료 {collection.documents}개
                   {collection.pending > 0 && `, 색인 대기 ${collection.pending}개`}
                 </span>
-              </summary>
+              </DisclosureTrigger>
               {opened.includes(collection.name) && <MaterialCollection name={collection.name} />}
-            </details>
+            </Disclosure>
           ))}
         </section>
       </main>

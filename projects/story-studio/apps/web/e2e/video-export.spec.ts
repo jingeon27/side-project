@@ -64,7 +64,7 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
   await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: /자막 넣어 영상 합치기/ }).click();
+  await page.getByRole('menuitem', { name: /자막 넣어 영상 합치기/ }).click();
   const download = await downloading;
   const bytes = await readFile((await download.path())!);
   expect(bytes.length).toBeGreaterThan(1000);

@@ -22,6 +22,8 @@ export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };
   studio_menu_toggled: { expanded: boolean };
+  studio_format_selected: { format: TFormat };
+  studio_export_menu_toggled: { expanded: boolean };
   studio_opened: { source: TStudioSource };
   studio_request_clicked: { action: TStudioAction };
   studio_request_succeeded: { action: TStudioAction };

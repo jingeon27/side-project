@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { Button } from '@side/design-system';
+
 import { trackStudioEvent } from '../../../shared/analytics';
 import { materialOverviewQuery } from '../api/material-client';
 
@@ -24,7 +26,10 @@ export function CollectionPicker({
       {names.map((name) => {
         const selected = value.includes(name);
         return (
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
+            shape="pill"
             type="button"
             key={name}
             aria-pressed={selected}
@@ -36,7 +41,7 @@ export function CollectionPicker({
             }}
           >
             {name}
-          </button>
+          </Button>
         );
       })}
     </div>

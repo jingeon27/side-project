@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   poweredByHeader: false,
+  transpilePackages: ['@side/design-system'],
+  experimental: { optimizePackageImports: ['@side/design-system'] },
   devIndicators: false,
   distDir: process.env.NEXT_DIST_DIR || '.next',
   async headers() {

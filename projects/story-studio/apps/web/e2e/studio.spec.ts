@@ -84,7 +84,7 @@ test('연결 없이 예시를 편집하고 한글 원고·JSON 백업을 복원�
   await dialogue.fill('서우: 괜찮아, 이번엔 내가 기다릴게.');
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: '작품 백업 (.json)', exact: true }).click();
+  await page.getByRole('menuitem', { name: '작품 백업 (.json)', exact: true }).click();
   const download = await downloading;
   const content = await readFile((await download.path())!, 'utf8');
   expect(JSON.parse(content).scenes[0].dialogue).toContain('이번엔 내가 기다릴게');
@@ -239,13 +239,23 @@ test('다른 도구에서 만든 이미지를 작품 비율로 가져오고 붙�
     drawing.fillRect(0, 0, 300, 200);
     return canvas.toDataURL('image/jpeg').split(',')[1]!;
   });
-  await page
-    .getByLabel('1번째 장면 이미지 파일', { exact: true })
-    .setInputFiles({ name: 'scene.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(picture, 'base64') });
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: '이미지 가져오기', exact: true }).first().click(),
+  ]);
+  const file = { name: 'scene.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(picture, 'base64') };
+  await chooser.setFiles(file);
   const image = page.locator('.scene-visual img').first();
   await expect(image).toHaveAttribute('src', /^\/api\/assets\/[a-f0-9-]{36}\.png$/);
   await expect.poll(() => image.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBe(1920);
   expect(await image.evaluate((node) => (node as HTMLImageElement).naturalHeight)).toBe(1080);
+  const originalAsset = await image.getAttribute('src');
+  const fileInput = page.getByLabel('1번째 장면 이미지 파일', { exact: true });
+  await expect(fileInput).toHaveValue('');
+  await expect(fileInput).toBeEnabled();
+  await fileInput.setInputFiles(file);
+  await expect(image).not.toHaveAttribute('src', originalAsset!);
+
   await page.reload();
   await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await expect(page.locator('.scene-visual img').first()).toHaveAttribute('src', /\.png$/);
@@ -286,7 +296,7 @@ test('웹툰 말풍선과 이미지를 미리보고 한글 PNG로 내보낸다',
   await expect(page.locator('.speech-bubble')).toHaveText('서우: 미래의 나야, 안녕!');
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: '한글 말풍선 포함 웹툰 (.png)' }).click();
+  await page.getByRole('menuitem', { name: '한글 말풍선 포함 웹툰 (.png)' }).click();
   const download = await downloading;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   const png = await readFile((await download.path())!);

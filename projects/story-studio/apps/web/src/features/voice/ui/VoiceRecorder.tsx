@@ -4,6 +4,8 @@ import { useCallback, useSyncExternalStore } from 'react';
 
 import { match } from 'ts-pattern';
 
+import { Button } from '@side/design-system';
+
 import { trackStudioEvent } from '../../../shared/analytics';
 import type { MicrophoneRecorder } from '../model/microphone-recorder';
 
@@ -45,14 +47,15 @@ export function VoiceRecorder({
       {match(snapshot)
         .with({ phase: 'idle' }, (state) => (
           <>
-            <button
+            <Button
+              variant="secondary"
               type="button"
-              className="button secondary"
+
               disabled={disabled}
               onClick={() => void handleStart()}
             >
               마이크로 녹음 시작
-            </button>
+            </Button>
             {state.error && <p role="alert">{state.error}</p>}
           </>
         ))
@@ -79,9 +82,9 @@ export function RecordingControls({ recorder }: { recorder: MicrophoneRecorder }
     .with({ phase: 'requesting' }, { phase: 'processing' }, () => (
       <>
         <span>녹음을 준비하는 중</span>
-        <button type="button" className="button secondary" onClick={handleCancel}>
+        <Button variant="secondary" type="button" onClick={handleCancel}>
           녹음 취소
-        </button>
+        </Button>
       </>
     ))
     .with({ phase: 'recording' }, (state) => (
@@ -89,12 +92,12 @@ export function RecordingControls({ recorder }: { recorder: MicrophoneRecorder }
         <span className="recording-clock" role="timer" aria-label="녹음 시간">
           녹음 중 {state.seconds}초 / 30초
         </span>
-        <button type="button" className="button secondary" onClick={handleCancel}>
+        <Button variant="secondary" type="button" onClick={handleCancel}>
           녹음 취소
-        </button>
-        <button type="button" className="button primary" onClick={handleStop}>
+        </Button>
+        <Button variant="primary" type="button" onClick={handleStop}>
           녹음 마치기
-        </button>
+        </Button>
       </>
     ))
     .exhaustive();

@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-
 import { X } from 'lucide-react';
+
+import { Button, Disclosure, DisclosureTrigger, IconButton } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 
 import type { TConfiguration } from '../api/studio-client';
 
@@ -22,9 +23,9 @@ export function ConnectionPanel({
     <section className="connection-panel" aria-label="AI 연결 안내">
       <div className="section-heading">
         <h2>{local ? '로컬 모델' : '클라우드 연결'}</h2>
-        <button className="icon-button" aria-label="연결 안내 닫기" onClick={onClose}>
+        <IconButton label="연결 안내 닫기" onClick={onClose}>
           <X size={18} />
-        </button>
+        </IconButton>
       </div>
       {local ? (
         <>
@@ -54,8 +55,8 @@ export function ConnectionPanel({
             있어요. 장면 이미지가 있으면 영상은 그 이미지에서 시작합니다. 영상 생성은 성능과 분량에 따라 수분
             이상 걸릴 수 있습니다.
           </p>
-          <details>
-            <summary>처음 사용하는 컴퓨터에서 준비하기</summary>
+          <Disclosure>
+            <DisclosureTrigger>처음 사용하는 컴퓨터에서 준비하기</DisclosureTrigger>
             <p>
               Apple Silicon Mac과 Python 3.11이 필요합니다. 아래 명령은 프로젝트 전용 실행 환경과 모델을
               설치합니다. 최초 다운로드에는 인터넷과 여유 저장 공간이 필요하며, 설치 후 생성은 오프라인으로
@@ -65,12 +66,16 @@ export function ConnectionPanel({
             <code>yarn workspace @side/story-studio local:setup:image</code>
             <p>음성, 영상, 참고 자료 검색까지 전체 설치</p>
             <code>yarn workspace @side/story-studio local:setup</code>
-          </details>
+          </Disclosure>
           <div className="panel-actions">
-            {config?.demoReady && <Link href="/studio?demo=1">이 컴퓨터에서 만든 애니메이션 열기 →</Link>}
-            <button className="button secondary small" onClick={onRefresh}>
+            {config?.demoReady && (
+              <ButtonLink variant="ghost" size="sm" href="/studio?demo=1">
+                이 컴퓨터에서 만든 애니메이션 열기 →
+              </ButtonLink>
+            )}
+            <Button variant="secondary" size="sm" onClick={onRefresh}>
               모델 상태 다시 확인
-            </button>
+            </Button>
           </div>
         </>
       ) : (
@@ -80,16 +85,19 @@ export function ConnectionPanel({
             서버 환경에 설정해 주세요. 요청마다 외부 서비스 사용 요금이 발생합니다.
           </p>
           <div className="panel-actions">
-            <a
+            <ButtonLink
+              variant="ghost"
+              size="sm"
+              prefetch={false}
               href="https://www.alibabacloud.com/help/en/model-studio/get-api-key"
               target="_blank"
               rel="noreferrer"
             >
               API 키 발급 안내 ↗
-            </a>
-            <button className="button secondary small" onClick={onRefresh}>
+            </ButtonLink>
+            <Button variant="secondary" size="sm" onClick={onRefresh}>
               연결 다시 확인
-            </button>
+            </Button>
           </div>
         </>
       )}

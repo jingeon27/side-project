@@ -16,7 +16,11 @@ import {
   Upload,
 } from 'lucide-react';
 
+import { Button } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
+
 import { trackStudioEvent } from '../../../shared/analytics';
+import { FilePickerButton } from '../../../shared/ui/FilePickerButton';
 import { formats, type TProject } from '../../story/model/story';
 import type { TConfiguration } from '../api/studio-client';
 import styles from './StudioSidebar.module.css';
@@ -52,7 +56,6 @@ export function StudioSidebar({
 }: TProps) {
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   const label = connectionLabel(config);
 
   function select(id: string | null) {
@@ -77,7 +80,8 @@ export function StudioSidebar({
           장면<small>STORY STUDIO</small>
         </span>
       </Link>
-      <button
+      <Button
+        variant="secondary"
         ref={toggle}
         className={styles.toggle}
         aria-expanded={open}
@@ -88,22 +92,24 @@ export function StudioSidebar({
         }}
       >
         <LibraryBig size={16} /> 작업실 메뉴 <ChevronDown size={14} />
-      </button>
+      </Button>
       <div id="studio-library" className={styles.library} data-open={open}>
-        <button
-          className={`button primary ${styles.newProject}`}
+        <Button
+          variant="primary"
+          className={styles.newProject}
           disabled={busy || !ready}
           onClick={() => select(null)}
         >
           <Plus size={17} /> 새 이야기 만들기
-        </button>
+        </Button>
         <div className={styles.libraryHeading}>
           <span>내 작품</span>
           <span>{projects.length}</span>
         </div>
         <nav className={styles.projects} aria-label="저장한 작품">
           {projects.map((item) => (
-            <button
+            <Button
+              variant="ghost"
               key={item.id}
               className={styles.project}
               disabled={busy}
@@ -118,7 +124,7 @@ export function StudioSidebar({
                   {item.brief.format === 'novel' ? '개 장' : '개 장면'}
                 </small>
               </span>
-            </button>
+            </Button>
           ))}
           {ready && projects.length === 0 && (
             <p className={styles.empty}>
@@ -128,32 +134,29 @@ export function StudioSidebar({
           )}
         </nav>
         <div className={styles.tools}>
-          <Link href="/studio/voices" onClick={guardNavigation}>
+          <ButtonLink variant="ghost" size="sm" href="/studio/voices" onClick={guardNavigation}>
             <Mic2 size={16} /> 목소리 학습
-          </Link>
+          </ButtonLink>
           {config && config.provider !== 'cloud' && (
-            <Link href="/studio/materials" onClick={guardNavigation}>
+            <ButtonLink variant="ghost" size="sm" href="/studio/materials" onClick={guardNavigation}>
               <LibraryBig size={16} /> 참고 자료실
-            </Link>
+            </ButtonLink>
           )}
-          <button disabled={busy || !ready} onClick={() => fileInput.current?.click()}>
-            <Upload size={16} /> 작품 가져오기
-          </button>
-          <input
-            hidden
-            type="file"
+          <FilePickerButton
+            label="작품 가져오기"
+            inputLabel="작품 백업 파일"
+            variant="ghost"
+            icon={<Upload size={16} aria-hidden />}
             accept="application/json,.json"
-            ref={fileInput}
-            aria-label="작품 백업 파일"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
+            disabled={busy || !ready}
+            onFiles={([file]) => {
               if (file) void onImport(file);
-              event.target.value = '';
             }}
           />
         </div>
       </div>
-      <button
+      <Button
+        variant="secondary"
         className={styles.connection}
         aria-label={label}
         title={label}
@@ -163,7 +166,7 @@ export function StudioSidebar({
         <i aria-hidden data-connected={Boolean(config?.configured)} />
         <span>{label}</span>
         <Settings2 size={16} />
-      </button>
+      </Button>
     </aside>
   );
 }
