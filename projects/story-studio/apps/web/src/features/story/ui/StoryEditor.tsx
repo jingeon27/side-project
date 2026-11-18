@@ -20,6 +20,8 @@ import {
 import { ButtonLink } from '@side/design-system/next';
 
 import { trackStudioEvent } from '../../../shared/analytics';
+import { timedSubtitles } from '../../../shared/subtitles';
+import { CaptionedVideo } from '../../../shared/ui/CaptionedMedia';
 import { downloadFile } from '../../library/model/library';
 import { CollectionPicker } from '../../materials/ui/CollectionPicker';
 import {
@@ -160,7 +162,8 @@ export function StoryEditor({
       </div>
       {project.renderedVideo && (
         <section className="finished-video" aria-label="마지막 합본 영상">
-          <video
+          <CaptionedVideo
+            captions={project.renderedCues ? timedSubtitles(project.renderedCues) : subtitles(project.scenes)}
             controls
             playsInline
             preload="metadata"
@@ -272,7 +275,6 @@ export function StoryEditor({
             index={index}
             project={project}
             busy={busy}
-            connected={connected}
             capabilities={capabilities}
             local={local}
             patch={(change) => patchScene(scene.id, change)}

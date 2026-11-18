@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
+import { readCaptions } from './captions';
 import { mockLibrary, openLibraryMenu, openSavedProject } from './library';
 
 const config = {
@@ -157,7 +158,7 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
           chapter('새벽의 답장', '서우는 한글로 긴 편지를 쓰기 시작했다.'),
         ],
       });
-    else if (written)
+    if (body.action === 'continue' && written)
       library.projects[0] = {
         ...written,
         scenes: [...written.scenes, chapter('다음 장', '이어 쓴 본문')],
@@ -180,6 +181,61 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByRole('status')).toContainText('AI가 잠시 쉬고 있어요');
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
+});
+
+test('원고 저장 실패 시 이어쓰기를 보류하고 저장이 복구되면 수정한 원고로 재시도한다', async ({ page }) => {
+  await connect(page);
+  const { novel } = novelFixture();
+  const library = await mockLibrary(page, [novel]);
+  const job = await mockWriting(page, () => ({
+    status: 'SUCCEEDED',
+    projectId: novel.id,
+    scenes: novel.scenes.length,
+  }));
+  const save = { unavailable: true };
+  await page.route(`**/api/projects/${novel.id}`, (route) => {
+    if (save.unavailable && route.request().method() === 'PUT') {
+      return route.fulfill({ status: 503, json: { error: '저장소가 응답하지 않습니다.' } });
+    }
+    return route.fallback();
+  });
+  await page.goto('/studio');
+  await openSavedProject(page, new RegExp(novel.title));
+  await page.getByLabel('본문', { exact: true }).first().fill('최근에 바꾼 첫 장의 본문');
+  const extend = page.getByRole('button', { name: '다음 장 이어 쓰기' });
+  await extend.click();
+  await expect(page.getByRole('status').filter({ hasText: '최신 원고를 저장하지 못해' })).toBeVisible();
+  expect(job.requests).toHaveLength(0);
+  save.unavailable = false;
+  await extend.click();
+  await expect.poll(() => job.requests.length).toBe(1);
+  expect(library.projects[0]?.scenes[0]?.narration).toBe('최근에 바꾼 첫 장의 본문');
+});
+
+test('집필 중인 작업을 다시 열고 중단 실패 후 동일한 작업에 재시도한다', async ({ page }) => {
+  await connect(page);
+  const status = { id: crypto.randomUUID(), status: 'RUNNING', progress: '둘째 장 집필 중', scenes: 0 };
+  const requests = { stops: 0, starts: 0 };
+  await page.route('**/api/studio', (route) => {
+    if (route.request().method() === 'POST') requests.starts += 1;
+    return route.fallback();
+  });
+  await page.route('**/api/writing', (route) => route.fulfill({ json: { jobs: [status] } }));
+  await page.route(`**/api/writing/${status.id}`, (route) => {
+    if (route.request().method() !== 'DELETE') return route.fulfill({ json: status });
+    requests.stops += 1;
+    if (requests.stops === 1)
+      return route.fulfill({ status: 503, json: { error: '집필 서버가 잠시 응답하지 않습니다.' } });
+    return route.fulfill({ json: { ...status, status: 'CANCELLED' } });
+  });
+  await page.goto('/studio');
+  await expect(page.getByText('둘째 장 집필 중', { exact: false })).toBeVisible();
+  const stop = page.getByRole('button', { name: '중단', exact: true });
+  await stop.click();
+  await expect(page.getByText('집필 서버가 잠시 응답하지 않습니다.')).toBeVisible();
+  await stop.click();
+  await expect(stop).toHaveCount(0);
+  expect(requests).toEqual({ stops: 2, starts: 0 });
 });
 
 test('구성한 장을 쓰다 실패해도 쓴 장을 보존하고 남은 구성부터 이어 쓴다', async ({ page }) => {
@@ -360,10 +416,13 @@ test('연속 입력은 한 번 저장하고 즉시 새로고침해도 마지막 
   expect(library.projects[0]?.title).toBe('새로고침 직전의 마지막 한국어 편집');
 });
 
-test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 영상을 재생한다', async ({ page }, info) => {
+test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 영상을 재생한다', async ({
+  page,
+  baseURL,
+}, info) => {
   const external: string[] = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).hostname !== '127.0.0.1') external.push(request.url());
+    if (new URL(request.url()).origin !== baseURL) external.push(request.url());
   });
   await page.goto('/studio?demo=1');
   await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('별빛을 안은 고양이');
@@ -372,6 +431,9 @@ test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 �
   expect(await movie.evaluate((node) => (node as HTMLVideoElement).videoWidth)).toBe(640);
   const voice = page.getByLabel('1번째 한국어 음성', { exact: true });
   await expect.poll(() => voice.evaluate((node) => (node as HTMLAudioElement).duration)).toBeGreaterThan(12);
+  const expectedText = await page.getByLabel('지문, 내레이션', { exact: true }).first().inputValue();
+  await expect.poll(() => readCaptions(movie)).toEqual([{ text: expectedText, start: 0, end: 13.36 }]);
+  await expect.poll(() => readCaptions(voice)).toEqual([{ text: expectedText, start: 0, end: 12.96 }]);
   await movie.evaluate(async (node) => {
     const video = node as HTMLVideoElement;
     video.muted = true;

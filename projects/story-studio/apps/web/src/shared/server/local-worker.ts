@@ -62,7 +62,8 @@ export async function stopLocalWorker(id: string) {
   process.kill(active.pid, 'SIGTERM');
   // A terminal status can be saved just before MLX releases the process and GPU.
   // Do not return a resumable state until the worker is actually gone.
-  for (const _attempt of Array.from({ length: 100 })) {
+  const deadline = performance.now() + 10_000;
+  do {
     await pause(100);
     try {
       process.kill(active.pid, 0);
@@ -70,7 +71,7 @@ export async function stopLocalWorker(id: string) {
       if ((error as NodeJS.ErrnoException).code === 'ESRCH') return;
       throw error;
     }
-  }
+  } while (performance.now() < deadline);
   throw new StudioError('중단을 요청했습니다. 모델 계산이 정리되면 다시 실행할 수 있습니다.', 409);
 }
 

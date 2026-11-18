@@ -1,13 +1,15 @@
 import { z } from 'zod';
 
+import { readJsonResponse } from '../../../shared/api/read-json-response';
 import { projectSchema, type TProject } from '../../story/model/story';
 
 const librarySchema = z.object({ projects: z.array(projectSchema), unreadable: z.number().int().min(0) });
-async function answer(response: Response) {
-  const data: unknown = await response.json();
-  if (response.ok) return data;
-  const error = z.object({ error: z.string() }).safeParse(data);
-  throw new Error(error.success ? error.data.error : '작품 요청을 처리하지 못했습니다.');
+function answer(response: Response) {
+  return readJsonResponse(response, '작품 요청을 처리하지 못했습니다.');
+}
+export async function fetchDemoProject(source: 'bundled' | 'local', signal: AbortSignal) {
+  const response = await fetch(source === 'bundled' ? '/examples/project.json' : '/api/demo', { signal });
+  return projectSchema.parse(await readJsonResponse(response, '생성 결과를 읽지 못했습니다.'));
 }
 export async function fetchLibrary(signal?: AbortSignal) {
   return librarySchema.parse(await answer(await fetch('/api/projects', { signal, cache: 'no-store' })));

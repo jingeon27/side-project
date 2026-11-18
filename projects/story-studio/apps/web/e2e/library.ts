@@ -29,8 +29,7 @@ export async function mockLibrary(page: Page, projects: TProject[] = []) {
         json: { error: '이 작품이 다른 곳에서 바뀌었습니다.', project: current },
       });
     library.saves += 1;
-    if (current) library.projects[index] = body.project;
-    else library.projects.unshift(body.project);
+    library.projects.splice(current ? index : 0, current ? 1 : 0, body.project);
     return route.fulfill({ json: body.project });
   });
   return library;

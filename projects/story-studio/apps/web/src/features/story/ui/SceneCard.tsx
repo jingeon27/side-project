@@ -14,10 +14,12 @@ import {
 } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
+import { clipCaptions } from '../../../shared/subtitles';
+import { CaptionedAudio, CaptionedVideo } from '../../../shared/ui/CaptionedMedia';
 import { FilePickerButton } from '../../../shared/ui/FilePickerButton';
 import { downloadFile } from '../../library/model/library';
 import { VoiceSelector } from '../../voice/ui/VoiceSelector';
-import { caption, safeFilename, subtitles, type TProject, type TScene } from '../model/story';
+import { caption, safeFilename, spokenCaption, subtitles, type TProject, type TScene } from '../model/story';
 
 export type TCapabilities = { image: boolean; video: boolean; voice: boolean; voiceTraining: boolean };
 // One scene: its picture and video on one side, its text and voice on the other.
@@ -26,7 +28,6 @@ export function SceneCard({
   index,
   project,
   busy,
-  connected,
   capabilities,
   local,
   patch,
@@ -41,7 +42,6 @@ export function SceneCard({
   index: number;
   project: TProject;
   busy: boolean;
-  connected: boolean;
   capabilities: TCapabilities;
   local: boolean;
   patch: (change: Partial<TScene>) => void;
@@ -62,7 +62,8 @@ export function SceneCard({
       {!novel && (
         <div className="scene-visual">
           {scene.video?.asset && !webtoon ? (
-            <video
+            <CaptionedVideo
+              captions={clipCaptions(caption(scene), scene.duration)}
               controls
               playsInline
               preload={index === 0 ? 'metadata' : 'none'}
@@ -171,7 +172,7 @@ export function SceneCard({
             {scene.video?.asset && (
               <Button
                 variant="ghost"
-                onClick={() => downloadFile(subtitles([scene]), `${safeFilename(scene.title)}.srt`)}
+                onClick={() => downloadFile(subtitles([scene], 'srt'), `${safeFilename(scene.title)}.srt`)}
               >
                 이 장면 자막
               </Button>
@@ -269,7 +270,8 @@ export function SceneCard({
           <span>대사가 있으면 대사, 없으면 본문을 읽어요</span>
           {scene.voice && (
             <>
-              <audio
+              <CaptionedAudio
+                captions={clipCaptions(spokenCaption(scene), scene.voice.duration)}
                 controls
                 preload={index === 0 ? 'metadata' : 'none'}
                 src={scene.voice.asset}

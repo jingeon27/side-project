@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch, type Control } from 'react-hook-form';
 import { match, P } from 'ts-pattern';
 import { z } from 'zod';
 
@@ -12,6 +12,8 @@ import { Button, FormField, Input, Textarea } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
 import { trackStudioEvent } from '../../../shared/analytics';
+import { clipCaptions } from '../../../shared/subtitles';
+import { CaptionedAudio } from '../../../shared/ui/CaptionedMedia';
 import { FilePickerButton } from '../../../shared/ui/FilePickerButton';
 import { jsonRequest, voiceCatalogQuery, voiceDetailQuery, voiceRequest } from '../api/voice-client';
 import { MicrophoneRecorder } from '../model/microphone-recorder';
@@ -189,13 +191,15 @@ export function VoiceLearning({ id }: { id: string }) {
                       삭제
                     </Button>
                   </div>
-                  <audio
+                  <CaptionedAudio
+                    captions={clipCaptions(sample.transcript, sample.duration)}
+                    aria-describedby={`saved-transcript-${sample.id}`}
                     controls
                     preload="none"
                     src={sample.asset}
                     aria-label={`${sample.filename} 저장한 녹음`}
                   />
-                  <p>{sample.transcript}</p>
+                  <p id={`saved-transcript-${sample.id}`}>{sample.transcript}</p>
                   <small>{sample.duration.toFixed(1)}초</small>
                 </article>
               ))}
@@ -232,7 +236,12 @@ export function VoiceLearning({ id }: { id: string }) {
                         선택 해제
                       </Button>
                     </div>
-                    <RecordingPreview file={clip.file} />
+                    <RecordingPreview
+                      file={clip.file}
+                      control={uploadForm.control}
+                      index={index}
+                      transcriptId={`transcript-${clip.clipId}`}
+                    />
                     <FormField label="녹음한 대본">
                       <Textarea
                         id={`transcript-${clip.clipId}`}
@@ -361,7 +370,19 @@ export function VoiceLearning({ id }: { id: string }) {
   );
 }
 
-function RecordingPreview({ file }: { file: File }) {
+function RecordingPreview({
+  file,
+  control,
+  index,
+  transcriptId,
+}: {
+  file: File;
+  control: Control<z.infer<typeof uploadSchema>>;
+  index: number;
+  transcriptId: string;
+}) {
+  const transcript = useWatch({ control, name: `samples.${index}.transcript`, defaultValue: '' });
+  const [duration, setDuration] = useState(0);
   const audioRef = useCallback(
     (node: HTMLAudioElement | null) => {
       if (!node) return;
@@ -375,7 +396,17 @@ function RecordingPreview({ file }: { file: File }) {
     },
     [file],
   );
-  return <audio controls preload="none" ref={audioRef} aria-label={`${file.name} 선택한 녹음`} />;
+  return (
+    <CaptionedAudio
+      controls
+      preload="none"
+      ref={audioRef}
+      aria-label={`${file.name} 선택한 녹음`}
+      aria-describedby={transcriptId}
+      onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+      captions={clipCaptions(transcript, duration)}
+    />
+  );
 }
 function TrainingProgress({ run }: { run: TVoiceRun }) {
   const label = match(run.status)

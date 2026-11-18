@@ -3,6 +3,7 @@ import type { TFormat } from '../features/story/model/story';
 export type TStudioAction =
   | 'write'
   | 'continue'
+  | 'writing-stop'
   | 'image'
   | 'image-import'
   | 'material-add'
@@ -11,6 +12,7 @@ export type TStudioAction =
   | 'material-stop'
   | 'material-delete'
   | 'video'
+  | 'video-stop'
   | 'voice'
   | 'compose'
   | 'voice-create'
