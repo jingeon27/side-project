@@ -8,10 +8,10 @@ import { sampleProject } from '../../story/model/sample';
 import { readTask, storeTask } from './assets';
 import { generateImage, generateVideo, generateVoice, videoStatus } from './generation';
 
-const worker = vi.hoisted(() => ({ run: vi.fn() }));
+const worker = vi.hoisted(() => ({ run: vi.fn(), config: vi.fn() }));
 vi.mock('../../../shared/server/local-worker', () => ({
   isLocalMode: () => true,
-  localConfiguration: () => ({ provider: 'local', videoReady: true }),
+  localConfiguration: worker.config,
   runLocal: worker.run,
 }));
 const state = { directory: '' };
@@ -28,11 +28,31 @@ beforeEach(async () => {
     }),
   );
   worker.run.mockReset();
+  worker.config.mockReturnValue({ provider: 'local', textReady: true, imageReady: true, videoReady: true });
 });
 afterEach(async () => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   await rm(state.directory, { recursive: true, force: true });
+});
+
+it.each([
+  [false, false],
+  [false, true],
+  [true, false],
+])('로컬 모델이 빠지면 번역도 시작하지 않는다 (Gemma %s, FLUX %s)', async (textReady, imageReady) => {
+  worker.config.mockReturnValue({ provider: 'local', textReady, imageReady });
+  await expect(
+    generateImage({
+      format: 'webtoon',
+      style: '수채화',
+      characters: '',
+      ratio: '9:16',
+      quality: 'draft',
+      scene: project.scenes[0]!,
+    }),
+  ).rejects.toMatchObject({ status: 503 });
+  expect(worker.run).not.toHaveBeenCalled();
 });
 
 it('장면 번역과 이미지 생성을 순차 실행하며 선택한 낮은 부하 설정을 전달한다', async () => {

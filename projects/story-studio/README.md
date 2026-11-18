@@ -4,7 +4,7 @@
 
 ## 실행
 
-현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 설치할 때 약 89GB의 여유 공간과 인터넷 연결이 필요하고, 설치를 마치면 약 54GB가 남습니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
+현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 전체 모델을 처음 설치할 때는 약 89GB의 여유 공간과 인터넷 연결이 필요하며, 설치된 모델이 차지하는 공간은 약 54GB입니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
 
 이전 설치를 갱신하면 `local:setup`이 새 원고, 자료 검색, 이미지, 영상 모델만 추가로 준비합니다. 기존 Wan2.1 파일(약 30GB 추정)과 이전 원고 모델인 Qwen3.8-27B(약 16GB)는 자동으로 지우지 않습니다. 더 이상 사용하지 않으므로 필요 없으면 저장소 루트에서 지웁니다. `STORY_STUDIO_DATA_DIR`을 쓴다면 그 경로의 `local/models` 아래 세 폴더입니다.
 
@@ -20,6 +20,8 @@ cp projects/story-studio/apps/web/.env.example projects/story-studio/apps/web/.e
 yarn workspace @side/story-studio local:setup
 yarn workspace @side/story-studio dev
 ```
+
+한국어 웹툰이나 장면 이미지만 만들 때는 설치 단계에서 `yarn workspace @side/story-studio local:setup:image`를 실행합니다. 이 명령은 한국어 장면을 그림 설명으로 옮기는 Gemma 4 31B와 한 컷을 그리는 FLUX.2 Klein 4B를 준비합니다. 검증한 Mac에서 설치 후 두 모델 폴더는 합계 약 27GB였고, 변환 중에는 FLUX 원본 약 16GB도 필요했습니다. Python 환경과 캐시는 별도입니다. 작업실에서 작품을 열면 두 모델이 준비되는 대로 장면의 **이미지 생성** 버튼이 켜집니다. 설치 상태는 연결 안내의 **모델 상태 다시 확인**에서도 갱신할 수 있습니다.
 
 [소개](http://127.0.0.1:3400), [작업실](http://127.0.0.1:3400/studio), [목소리 학습](http://127.0.0.1:3400/studio/voices), [참고 자료실](http://127.0.0.1:3400/studio/materials), [실제 생성한 한국어 애니메이션](http://127.0.0.1:3400/studio?demo=1)
 

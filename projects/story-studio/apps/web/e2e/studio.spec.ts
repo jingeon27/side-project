@@ -39,6 +39,33 @@ test('소개에서 예시를 열면 작업실의 편집 화면으로 바로 이�
   await expect(page).toHaveURL(/\/studio\?sample=1/);
   await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('비가 오면, 편지가 도착해');
 });
+test('작업실을 열어 둬도 Gemma와 FLUX가 모두 준비된 뒤에만 이미지 버튼이 켜진다', async ({ page }) => {
+  await page.clock.install();
+  const models = { textReady: false, imageReady: false };
+  await page.route('**/api/studio', (route) =>
+    route.fulfill({
+      json: { ...config, provider: 'local', configured: models.textReady, ...models },
+    }),
+  );
+  await page.goto('/studio?sample=1');
+  const image = page.getByRole('button', { name: '이미지 생성', exact: true }).first();
+  await expect(image).toBeVisible();
+  await expect(image).toBeDisabled();
+  for (const [textReady, imageReady] of [
+    [false, true],
+    [true, false],
+    [true, true],
+  ] as const) {
+    Object.assign(models, { textReady, imageReady });
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().endsWith('/api/studio') && response.request().method() === 'GET',
+      ),
+      page.clock.fastForward(16_000),
+    ]);
+    await expect(image).toBeEnabled({ enabled: textReady && imageReady });
+  }
+});
 test('연결 없이 예시를 편집하고 한글 원고·JSON 백업을 복원한다', async ({ page }) => {
   await page.goto('/studio');
   await expect(page.getByRole('heading', { name: '새 작품 만들기', exact: true })).toBeVisible();

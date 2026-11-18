@@ -29,10 +29,21 @@ beforeEach(async () => {
     'image-flux2-klein-4b-q8',
   ])
     await mkdir(dataPath('local', 'models', model), { recursive: true });
+  const writer = dataPath('local', 'models', 'text-gemma-4-31b-it-4bit');
+  const shards = ['model-00001-of-00002.safetensors', 'model-00002-of-00002.safetensors'];
   await writeFile(
-    dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'),
-    '{}',
+    path.join(writer, 'model.safetensors.index.json'),
+    JSON.stringify({ weight_map: { a: shards[0], b: shards[1] } }),
   );
+  for (const name of [
+    ...shards,
+    'config.json',
+    'tokenizer.json',
+    'tokenizer_config.json',
+    'processor_config.json',
+    'chat_template.jinja',
+  ])
+    await writeFile(path.join(writer, name), 'fixture');
   await writeFile(dataPath('local', 'models', 'embedding-gemma-2-8bit', 'model.safetensors'), 'fixture');
   await writeFile(dataPath('local', 'models', 'voice', 'model.safetensors'), 'fixture');
   await writeFile(dataPath('local', 'models', 'video-wan2.2-ti2v-5b', 'ready.json'), '{}');
@@ -119,6 +130,18 @@ it('이전 Qwen 원고 모델만 있으면 준비로 보지 않고, 자료 검�
   await rm(dataPath('local', 'models', 'embedding-gemma-2-8bit'), { recursive: true });
   expect(localConfiguration().materialReady).toBe(false);
   await expect(runLocal({ action: 'sync-material' })).rejects.toMatchObject({ status: 503 });
+});
+
+it('Gemma 인덱스가 먼저 도착해도 가중치 조각과 채팅 템플릿까지 있어야 준비된다', async () => {
+  const writer = dataPath('local', 'models', 'text-gemma-4-31b-it-4bit');
+  const shard = path.join(writer, 'model-00002-of-00002.safetensors');
+  await rm(shard);
+  expect(localConfiguration()).toMatchObject({ textReady: false, imageReady: true });
+  await writeFile(shard, 'fixture');
+  await rm(path.join(writer, 'chat_template.jinja'));
+  expect(localConfiguration().textReady).toBe(false);
+  await writeFile(path.join(writer, 'chat_template.jinja'), 'fixture');
+  expect(localConfiguration().textReady).toBe(true);
 });
 
 it('색인에서 자료를 지우는 작업은 모델을 쓰지 않아 다른 생성 중에도 실행한다', async () => {
