@@ -118,9 +118,9 @@ def rules_identity():
             }
         ),
         "trainingActor": "champion_anchored_search_teacher_v1",
-        "trainingOpponent": "quarter_fixed_defender_qualified_pool_no_teacher_rows_v2",
+        "trainingOpponent": "quarter_scripted_pressure_qualified_pool_v3",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
-        "searchPolicy": "matched_view_mass_frozen_response_bounded_updates_v5",
+        "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
         "rolloutTiming": ROLLOUT_CLOCK,
         "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not

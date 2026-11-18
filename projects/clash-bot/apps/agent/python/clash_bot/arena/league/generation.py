@@ -7,8 +7,10 @@ import numpy as np
 
 from ..study.curriculum import from_selfplay
 from ..study.export import export
+from ..training.coverage import card_coverage
 from ..training.evaluation import pfsp_weights
 from ..training.parallel import play_frozen_game
+from ..training.pressure import schedule_pressure
 from ..training.selfplay import SELFPLAY, replay_samples, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
@@ -27,13 +29,14 @@ def next_version(root, league):
 
 
 def scheduled(root, league, rules, version, indexes, settings, rng):
-    """The champion teaches; one quarter meet the fixed defender, the rest qualified policies.
+    """The champion teaches; one quarter meet tactical attackers, the rest qualified policies.
 
     Past champions the current champion loses to more often are picked more often.
     """
     jobs = []
     for index in indexes:
-        scripted = index % SELFPLAY.scriptedDefenderEvery == SELFPLAY.scriptedDefenderEvery - 1
+        every = SELFPLAY.pressureEvery
+        scripted = index % every == every - 1
         rates = [(row["wins"] + 1) / (row["games"] + 2) for row in league["opponents"]]
         selected = (
             None
@@ -42,17 +45,25 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
         )
         opponent = league["champion"] if selected is None else selected["version"]
         game_id = f"train-{version}-{index}-{uuid.uuid4().hex[:8]}"
+        setup = setup_for(game_id)
+        seat = (version + index // (every if scripted else 2)) % 2
+        if scripted:
+            slot = index // every
+            setup = schedule_pressure(
+                setup,
+                (version - 1) * (settings["games"] // every) + slot,
+                seat,
+                (version + slot // 2) % 2 == 1,
+            )
         jobs.append(
             {
                 "current": str(checkpoint(root, league["champion"])),
-                "opponent": "scripted:defender" if scripted else str(checkpoint(root, opponent)),
+                "opponent": None if scripted else str(checkpoint(root, opponent)),
                 "selected": None if selected is None else opponent,
                 "index": index,
-                "seat": (version + index // SELFPLAY.scriptedDefenderEvery) % 2
-                if scripted
-                else (version + index // 2) % 2,
+                "seat": seat,
                 "id": game_id,
-                "setup": setup_for(game_id),
+                "setup": setup,
                 "rulesID": rules["id"],
                 "simulations": settings["simulations"],
                 "depth": settings["depth"],
@@ -110,6 +121,8 @@ def selfplay(control, workers, root, league, rules, version, settings):
                     "lastSearchUnavailable": game["searchUnavailable"],
                 }
             )
+    if played:
+        control.report({"trainingCoverage": card_coverage(played)})
     return played
 
 

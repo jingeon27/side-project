@@ -18,7 +18,7 @@ from ..policy.samples import value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from ..sim.rules import CARD_ID, DECKS, LIVE_DECK, SPEC, Action
 from .search import Workspace, search
 from .storage import seed_for
 from .targets import training_rows
@@ -33,7 +33,7 @@ class SelfplaySpec(BaseModel):
     # learns what card attributes mean rather than one deck's cards.
     liveMirror: float = Field(ge=0, le=1)
     liveAgainstPool: float = Field(ge=0, le=1)
-    scriptedDefenderEvery: int = Field(ge=2)
+    pressureEvery: int = Field(ge=2)
     decisionTicks: PositiveInt
     # The second side decides this many ticks after the first, drawn per game.
     decisionPhaseTicks: tuple[int, int]
@@ -96,6 +96,18 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
+def defense_families(context):
+    """Reserve a second comparison for plausible counters in the same screen sample."""
+    if any(
+        side == "red" and card == "graveyard" and y < 16
+        for side, card, _x, y, _age in context.get("effects", [])
+    ):
+        return (CARD_ID["Poison"], CARD_ID["IceWizard"], CARD_ID["BarbLog"])
+    if any(body["y"] < 18 for body in context["bodies"]["enemy"]):
+        return (CARD_ID["BarbLog"],)
+    return ()
+
+
 def play_game(
     policies,
     game_id,
@@ -106,12 +118,14 @@ def play_game(
     max_ticks=6200,
     report=None,
     setup=None,
+    initial_orders=None,
 ):
     """`simulations=0` plays each policy's best candidate without search, as deployed."""
     began = time.perf_counter()
     setup = setup or live_setup()
     arena = Arena(
         seed_for("environment", game_id),
+        initial_decks=initial_orders,
         decks=setup["decks"],
         delays=setup["delays"],
         levels=setup["levels"],
@@ -164,6 +178,7 @@ def play_game(
                         workspace=workspace,
                         beliefs=beliefs[team],
                         observed_prior=observed_prior,
+                        focus=defense_families(context),
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}

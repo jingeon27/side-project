@@ -2,11 +2,23 @@ import unittest
 
 import numpy as np
 
-from clash_bot.arena.sim.rules import Action
+from clash_bot.arena.sim.rules import TILE, Action
 from clash_bot.arena.training.bandits import pick, root_priors, root_subset
 
 
 class CardBanditsTest(unittest.TestCase):
+    def test_root_compares_spaced_positions_for_a_low_prior_defender_before_more_barrel_tiles(self):
+        actions = [
+            Action(-1),
+            *[Action(0, TILE * x, 0) for x in range(8)],
+            *[Action(6, TILE * x, 0) for x in range(4)],
+        ]
+        prior = np.array([0.05, *([0.1] * 8), 0.06, 0.05, 0.03, 0.01])
+        kept = root_subset(actions, prior, np.random.default_rng(4), 5, False, focus=(6,))
+        self.assertEqual([actions[i].card for i in kept], [-1, 0, 0, 6, 6])
+        self.assertEqual([actions[i].x for i in kept if actions[i].card == 6], [0, 2 * TILE])
+        self.assertEqual([actions[i].x for i in kept if actions[i].card == 0], [0, 2 * TILE])
+
     def test_exploration_retains_each_cards_original_best_placement(self):
         actions = [Action(-1), *[Action(c, x, 0) for c in range(3) for x in range(20)]]
         prior = np.arange(1, len(actions) + 1, dtype=float)

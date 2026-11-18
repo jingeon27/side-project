@@ -140,6 +140,7 @@ def search(
     root_size=16,
     beliefs=None,
     observed_prior=None,
+    focus=(),
 ):
     """Search the best `root_size` of the observation's candidates.
 
@@ -173,7 +174,9 @@ def search(
         raise ValueError("Root observation prior must cover every legal candidate")
     prior = prior / prior.sum()
     # Spend at least half of a normal budget on revisits, rather than one uniform visit per tile.
-    keep = root_subset(candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise)
+    keep = root_subset(
+        candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise, focus
+    )
     root_actions = [candidates[index] for index in keep]
     root_prior = root_priors(candidates, prior, keep)
     learning_prior = root_prior.copy()
@@ -258,4 +261,5 @@ def search(
         "responseTiming": ROLLOUT_CLOCK,
         "opponentPhaseSource": phase_source,
         "opponentOffsetsTicks": offsets,
+        "focusedFamilies": list(focus),
     }

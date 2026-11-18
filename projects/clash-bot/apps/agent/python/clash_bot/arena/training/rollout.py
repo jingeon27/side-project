@@ -14,7 +14,7 @@ from ..sim.candidates import dense_actions, legal_actions
 def rollout_choices(world, team, policy, rng):
     state = world.state()
     full = dense_actions(world.battle, team, state)
-    if len(full) == 1:  # While a command is pending the native engine permits only waiting.
+    if len(full) == 1:
         return full, [1.0]
     lookup = {action: index for index, action in enumerate(full)}
     anchors = {lookup[action] for action in legal_actions(world.battle, team, state)}
