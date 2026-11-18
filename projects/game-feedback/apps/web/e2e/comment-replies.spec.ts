@@ -1,4 +1,5 @@
 import { CommentSchema, NotificationListSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
 
 import { expect, test, type APIRequestContext } from './support/test';
 
@@ -81,7 +82,7 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   await page.setViewportSize({ width: 393, height: 852 });
   await page.locator('.comments-section').screenshot({ path: testInfo.outputPath('reply-mobile.png') });
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(replies.locator('.comment-bubble')).toHaveCSS('color', 'rgb(244, 241, 235)');
+  await expect(replies.locator('.comment-bubble')).toHaveCSS('color', themeColorRgb('ink', 'dark'));
   await page.locator('.comments-section').screenshot({ path: testInfo.outputPath('reply-mobile-dark.png') });
 
   await signIn(page.request, parentName, origin);

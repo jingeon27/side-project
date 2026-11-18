@@ -1,3 +1,5 @@
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -67,7 +69,7 @@ test('a slow language change keeps the screen visible and preserves route filter
     await page.getByRole('option', { name: 'English', exact: true }).click();
     const progress = page.getByRole('status').filter({ hasText: '언어를 변경하고 있어요' });
     await expect(progress).toBeVisible();
-    await expect(progress).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(progress).toHaveCSS('background-color', themeColorRgb('surface', 'dark'));
     await expect(page.getByRole('heading', { name: '전투 모집', exact: true })).toBeVisible();
     await expect(page.locator('.page-loading-screen')).toHaveCount(0);
     await expect(language).toBeDisabled();
