@@ -4,13 +4,14 @@ import { bodyVector, CARD_CATALOGUE, catalogueCard } from '../card-catalogue.ts'
 import { COMBAT, referenceBodyHp, referenceBodySpeed } from '../combat-reference.ts';
 import type { CombatBody, EffectForecast } from '../placement/combat-projection.ts';
 import type { DecisionAction, DecisionContext } from '../policy/decision-v3.ts';
+import { graveyardDefense } from './graveyard.ts';
 import { FAST_TACTICS } from './tactics-spec.ts';
 
 const distance = (x: number, y: number, body: Pick<CombatBody, 'x' | 'y'>) =>
   Math.hypot(x - body.x, y - body.y);
-const future = (body: CombatBody) => ({
-  x: body.x + (body.velocity?.[0] ?? 0) * FAST_TACTICS.responseSeconds,
-  y: body.y + (body.velocity?.[1] ?? 0) * FAST_TACTICS.responseSeconds,
+const future = (body: CombatBody, seconds = FAST_TACTICS.responseSeconds) => ({
+  x: body.x + (body.velocity?.[0] ?? 0) * seconds,
+  y: body.y + (body.velocity?.[1] ?? 0) * seconds,
 });
 const responds = (action: DecisionAction, point: Pick<CombatBody, 'x' | 'y'>) =>
   Math.max(
@@ -19,10 +20,8 @@ const responds = (action: DecisionAction, point: Pick<CombatBody, 'x' | 'y'>) =>
       distance(action[4], action[5], point) /
         (action[2] === 'ice_wizard' ? 5 : FAST_TACTICS.engagementRadius),
   );
-const active = (context: DecisionContext, side: string, card: string, seconds: number) =>
-  (context.effects ?? []).filter(
-    (row) => row[0] === side && row[1] === card && (row[4] === null || row[4] < seconds),
-  );
+const durableFirecracker = (body: CombatBody) =>
+  body.kind === 'firecracker' && (body.hp === null || body.hp[1] > COMBAT.barbarian_barrel.damage);
 
 function canRespond(card: string | null, body: CombatBody) {
   const features = catalogueCard(card)?.features;
@@ -42,10 +41,7 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
         (body) => ['goblin_drill', 'goblin_hut'].includes(body.kind) && distance(x, y, body) < 3,
       ),
   );
-  const poisons = active(context, 'blue', 'poison', 6);
-  const graves = active(context, 'red', 'graveyard', 9).filter(
-    (row) => row[3] < 16 && !poisons.some((p) => Math.hypot(p[2] - row[2], p[3] - row[3]) < 3),
-  );
+  const grave = graveyardDefense(context, action);
   const threats = context.bodies.enemy.flatMap((body, index) => {
     if (['barrel', 'goblin_hut'].includes(body.kind) || future(body).y >= FAST_TACTICS.threatBoundary)
       return [];
@@ -92,12 +88,17 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
       );
     }
     if (!COMBAT.bodies[body.kind]?.ground) return 0;
-    return Math.max(
+    const landing =
+      COMBAT.inputDelaySeconds +
+      COMBAT.barbarian_barrel.deploySeconds +
+      COMBAT.barbarian_barrel.length / COMBAT.barbarian_barrel.speed;
+    const catchScore = Math.max(
       0,
       1 -
-        distance(action[4], action[5] + COMBAT.barbarian_barrel.length, future(body)) /
+        distance(action[4], action[5] + COMBAT.barbarian_barrel.length, future(body, landing)) /
           FAST_TACTICS.engagementRadius,
     );
+    return durableFirecracker(body) ? catchScore * 0.4 : catchScore;
   };
   const usefulRoll = projection.targets.some(
     (hit) =>
@@ -122,7 +123,8 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
           });
           return cleanup || goblins ? 1 : intercept(body);
         }
-        return Math.max(hit && hit.trajectoryDamage > 0 ? 1 : 0, intercept(body));
+        const direct = hit && hit.trajectoryDamage > 0 ? 1 : 0;
+        return Math.max(direct * (durableFirecracker(body) ? 0.35 : 1), intercept(body));
       })
       .with('poison', () => (hit && hit.trajectoryDamage > 0 ? (hit.kill === 'yes' ? 0.9 : 0.3) : 0))
       .with('goblin_hut', () => responds(action, future(body)) * 0.2)
@@ -130,10 +132,6 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
         action[2] !== 'graveyard' && canRespond(action[2], body) ? responds(action, future(body)) : 0,
       );
   };
-  const graveResponse =
-    action[2] === 'barbarian_barrel' || action[2] === 'graveyard'
-      ? 0
-      : Math.max(0, ...graves.map((row) => responds(action, { x: row[2], y: row[3] })));
   const pendingResponse =
     action[2] === 'graveyard' ||
     action[2] === 'poison' ||
@@ -143,13 +141,13 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
       : Math.max(0, ...deployments.map(([x, y]) => responds(action, { x, y })));
   const pressure = Math.max(
     0,
-    graves.length ? 1 : 0,
+    grave.pressure,
     deployments.length ? FAST_TACTICS.deploymentPriority : 0,
     ...threats.map((t) => t.pressure),
   );
   const benefit = Math.max(
     0,
-    graveResponse,
+    grave.response,
     pendingResponse * FAST_TACTICS.deploymentPriority,
     ...threats.map((t) => t.pressure * troopResponse(t)),
   );
@@ -174,14 +172,28 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
         t.body.kind === 'goblin_drill' && t.pressure >= FAST_TACTICS.drillPriority && troopResponse(t) < 0.2,
     ) ||
     (deployments.length > 0 && pendingResponse < 0.2);
+  const contact =
+    action[2] === 'barbarian_barrel' && !unansweredDrill
+      ? Math.max(
+          0,
+          ...threats.map((t) => {
+            const hit = projection.targets.find((target) => target.index === t.index);
+            if (!hit || durableFirecracker(t.body)) return 0;
+            const lethal = hit.hp !== null && hit.hp[1] <= COMBAT.barbarian_barrel.damage;
+            const followup = lethal ? 1 : Math.max(0.2, intercept(t.body));
+            return Math.min(1, t.pressure) * hit.trajectoryQuality * followup;
+          }),
+        )
+      : 0;
   return {
     bias:
       FAST_TACTICS.defenseWeight * (2 * benefit - pressure) +
+      FAST_TACTICS.barrelContactWeight * contact +
       COMBAT.policy.drillKnightDefense * drillKnight +
       (prematureSkeletons ? COMBAT.policy.preEmergenceSkeletons : 0) +
       (unansweredDrill ? COMBAT.policy.unansweredDrill : 0),
     intercept: Math.max(0, ...threats.map((t) => intercept(t.body))),
     usefulRoll,
-    graveResponse,
+    graveResponse: grave.response,
   };
 }

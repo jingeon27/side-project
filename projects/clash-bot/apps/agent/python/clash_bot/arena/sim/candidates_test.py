@@ -17,6 +17,20 @@ def tiles(arena, team, card):
 
 
 class CandidateTest(unittest.TestCase):
+    def test_both_sides_offer_legal_poison_at_the_observed_enemy_graveyard(self):
+        deck = [3, 6, 4, 7, 0, 1, 2, 5]
+        point = 3.7, 7
+        for team in (0, 1):
+            arena = Arena(41, [deck, deck])
+            arena.play([Action(-1)] * 2, 220)
+            x, y = canonical(*point, team)
+            moves = [Action(-1), Action(-1)]
+            moves[1 - team] = Action(3, round(x * TILE), round(y * TILE))
+            arena.play(moves, 22)
+            (grave,) = arena.state()["spells"]
+            observed = canonical(grave[3] / TILE, grave[4] / TILE, team)
+            self.assertEqual(tiles(arena, team, 6)[0], observed)
+
     def test_wait_remains_available_at_high_elixir_instead_of_forcing_a_card_or_skill(self):
         arena = Arena(41)
         arena.play([Action(-1)] * 2, 320)
