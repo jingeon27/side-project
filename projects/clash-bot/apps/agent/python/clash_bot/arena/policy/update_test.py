@@ -29,6 +29,7 @@ class ConservativeUpdateTest(unittest.TestCase):
                 "source": source.model_dump(),
                 "target": [0.4, 0.6],
                 "targetWithoutTowers": [0.6, 0.4],
+                "defensePairs": [[2, 1]],
                 "outcome": -1,
                 "value": -0.6,
             }

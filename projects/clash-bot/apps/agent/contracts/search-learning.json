@@ -1,5 +1,5 @@
 {
-  "format": "clash-search-learning-v5",
+  "format": "clash-search-learning-v6",
   "target": "prior_regularized_action_values",
   "temperature": 0.25,
   "maxKL": 0.1,
@@ -8,5 +8,6 @@
   "maxStateKL": 0.1,
   "probeRows": 128,
   "rolloutSamplesPerCard": 8,
+  "defensePreferenceWeight": 0.25,
   "opponentResponse": "frozen_card_policy"
 }

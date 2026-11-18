@@ -18,7 +18,9 @@ from ..policy.samples import value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import CARD_ID, DECKS, LIVE_DECK, SPEC, Action
+from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from .deck_practice import open_practice
+from .defense_rollout import focus_families, observed_attack
 from .search import Workspace, search
 from .storage import seed_for
 from .targets import training_rows
@@ -96,18 +98,6 @@ def tower_damage(player):
     return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
-def defense_families(context):
-    """Reserve a second comparison for plausible counters in the same screen sample."""
-    if any(
-        side == "red" and card == "graveyard" and y < 16
-        for side, card, _x, y, _age in context.get("effects", [])
-    ):
-        return (CARD_ID["Poison"], CARD_ID["IceWizard"], CARD_ID["BarbLog"])
-    if any(body["y"] < 18 for body in context["bodies"]["enemy"]):
-        return (CARD_ID["BarbLog"],)
-    return ()
-
-
 def play_game(
     policies,
     game_id,
@@ -139,7 +129,8 @@ def play_game(
         for team in (0, 1)
     ]
     # The tick of each side's next decision; the second clock runs `phase` ticks behind.
-    due = [0, setup.get("phase", 0)]
+    opening_tick = open_practice(arena, setup, training)
+    due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
@@ -161,6 +152,7 @@ def play_game(
                 continue
             result = None
             context = screens[team].read(observation, candidates)
+            attack = observed_attack(context)
             observed_prior = policy.read(
                 {key: value for key, value in context.items() if key != "towers"}
             )[0]
@@ -178,7 +170,8 @@ def play_game(
                         workspace=workspace,
                         beliefs=beliefs[team],
                         observed_prior=observed_prior,
-                        focus=defense_families(context),
+                        focus=focus_families(context, attack),
+                        defense=attack if training else None,
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
@@ -278,17 +271,3 @@ def play_game(
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }
-
-
-def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
-    valid = []
-    for episode in episodes:
-        if not episode["completed"]:
-            continue
-        if episode["rulesID"] != rules_id:
-            continue  # A patch's dynamics/returns must not silently mix with this one.
-        valid.extend(row for row in episode["samples"] if row["outcome"] in (-1, 0, 1))
-    if len(valid) <= max_samples:
-        return valid
-    order = np.random.default_rng(seed).choice(len(valid), max_samples, replace=False)
-    return [valid[index] for index in order]

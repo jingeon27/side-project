@@ -6,6 +6,7 @@ import numpy as np
 from more_itertools import chunked
 
 from .features import ACTION_SIZE, SPEC, STATE_SIZE, checksum, hide_towers
+from .learning_spec import SPEC as LEARNING
 from .samples import TrainingSample
 from .update import bounded_update
 
@@ -21,6 +22,24 @@ def project_scores(scores, families, retained, source_mask, retained_mask):
     full_mass = mx.logsumexp(mx.where(full_group, scores[:, None, :], -1e9), axis=-1)
     kept_mass = mx.logsumexp(mx.where(kept_group, kept[:, None, :], -1e9), axis=-1)
     return mx.where(retained_mask, kept + full_mass - kept_mass, -1e9)
+
+
+def defense_loss(scores, families, source_mask, pairs, pair_mask):
+    """Rank positions within a card and full card masses across different cards."""
+    import mlx.core as mx
+
+    if not pairs.shape[1]:
+        return mx.array(0.0)
+    flat = pairs.reshape((pairs.shape[0], -1))
+    picked = mx.take_along_axis(scores, flat, axis=1).reshape(pairs.shape)
+    cards = mx.take_along_axis(families, flat, axis=1).reshape(pairs.shape)
+    groups = (cards[..., None] == families[:, None, None, :]) & source_mask[:, None, None, :]
+    mass = mx.logsumexp(mx.where(groups, scores[:, None, None, :], -1e9), axis=-1)
+    same = cards[..., 0] == cards[..., 1]
+    compared = mx.where(same[..., None], picked, mass)
+    difference = compared[..., 0] - compared[..., 1]
+    losses = mx.where(pair_mask, mx.logaddexp(0.0, -difference), 0.0)
+    return mx.sum(losses) / mx.maximum(1, mx.sum(pair_mask))
 
 
 def batch_arrays(rows, hidden):
@@ -39,6 +58,8 @@ def batch_arrays(rows, hidden):
     retained_mask = np.zeros((len(rows), keep), bool)
     retained = np.zeros((len(rows), keep), np.int32)
     targets = np.zeros((len(rows), keep), np.float32)
+    pairs = np.zeros((len(rows), max(len(row.defensePairs) for row in rows), 2), np.int32)
+    pair_mask = np.zeros(pairs.shape[:2], bool)
     for index, (row, hide) in enumerate(zip(rows, hidden)):
         matrix = row.source.decode()
         count, selected = row.source.count, len(row.actions)
@@ -49,8 +70,23 @@ def batch_arrays(rows, hidden):
         retained_mask[index, :selected] = True
         retained[index, :selected] = row.source.retained
         targets[index, :selected] = row.targetWithoutTowers if hide else row.target
+        if row.defensePairs:
+            pairs[index, : len(row.defensePairs)] = row.defensePairs
+            pair_mask[index, : len(row.defensePairs)] = True
     values = np.array([row.value for row in rows], np.float32)
-    return states, actions, biases, families, retained, source_mask, retained_mask, targets, values
+    return (
+        states,
+        actions,
+        biases,
+        families,
+        retained,
+        source_mask,
+        retained_mask,
+        targets,
+        values,
+        pairs,
+        pair_mask,
+    )
 
 
 def train(weights, samples, seed, epochs=3, batch_size=32):
@@ -95,11 +131,17 @@ def train(weights, samples, seed, epochs=3, batch_size=32):
         retained_mask,
         targets,
         values,
+        pairs,
+        pair_mask,
     ):
         logits, predictions = model(states, actions)
-        scores = project_scores(logits + biases, families, retained, source_mask, retained_mask)
+        dense = logits + biases
+        scores = project_scores(dense, families, retained, source_mask, retained_mask)
         logp = scores - mx.logsumexp(scores, axis=-1, keepdims=True)
-        return -mx.mean(mx.sum(targets * logp, axis=-1)) + mx.mean((predictions - values) ** 2)
+        policy = -mx.mean(mx.sum(targets * logp, axis=-1))
+        value = mx.mean((predictions - values) ** 2)
+        paired = defense_loss(dense, families, source_mask, pairs, pair_mask)
+        return policy + value + LEARNING.defensePreferenceWeight * paired
 
     gradient = nn.value_and_grad(model, loss)
     rng = np.random.default_rng(seed)

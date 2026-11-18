@@ -24,7 +24,7 @@ from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
 from clash_bot.arena.policy.samples import SparseFeatures
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
-from clash_bot.arena.training.selfplay import replay_samples
+from clash_bot.arena.training.replay import replay_samples
 from clash_bot.arena.training.storage import read_episode, replay_path, write_episode, write_replay
 
 CATALOGUE = current().id
@@ -170,6 +170,7 @@ class CompactReplayTest(unittest.TestCase):
             ).model_dump(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
+            "defensePairs": [],
             "outcome": -1,
             "value": -0.7,
         }

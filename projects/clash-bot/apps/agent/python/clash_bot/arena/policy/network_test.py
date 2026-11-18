@@ -8,13 +8,39 @@ import numpy as np
 from clash_bot.arena.policy.dense import DenseActions
 from clash_bot.arena.policy.features import forward, hide_towers
 from clash_bot.arena.policy.network import Policy, features
+from clash_bot.arena.policy.optimizer import defense_loss
 from clash_bot.arena.policy.samples import SparseFeatures
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
-from clash_bot.arena.training.selfplay import play_game, replay_samples
+from clash_bot.arena.training.replay import replay_samples
+from clash_bot.arena.training.selfplay import play_game
 
 
 class ExpertIterationTest(unittest.TestCase):
+    def test_defense_loss_ranks_tiles_and_differentiates_full_card_mass(self):
+        import mlx.core as mx
+
+        scores = mx.array([[0.0, 0.0, 0.0, 10.0]])
+        families = mx.array([[0, 0, 1, 1]])
+        source = mx.array([[True, True, True, False]])
+
+        def gradient(left, right):
+            pairs = mx.array([[[left, right]]])
+            return np.asarray(
+                mx.grad(
+                    lambda logits: defense_loss(logits, families, source, pairs, mx.array([[True]]))
+                )(scores)
+            )[0]
+
+        self.assertLess(gradient(0, 1)[0], 0)
+        self.assertGreater(gradient(0, 1)[1], 0)
+        self.assertEqual(gradient(0, 1)[2], 0)
+        across = gradient(0, 2)
+        self.assertLess(across[0], 0)
+        self.assertAlmostEqual(across[0], across[1])
+        self.assertGreater(across[2], 0)
+        self.assertEqual(across[3], 0)
+
     def test_rollout_predict_does_not_reintroduce_unread_tower_hitpoints(self):
         arena = Arena(4)
         arena.play([Action(-1)] * 2, 120)
@@ -49,6 +75,7 @@ class ExpertIterationTest(unittest.TestCase):
             ).model_dump(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
+            "defensePairs": [],
             "outcome": 1,
             "value": 0.8,
         }

@@ -7,9 +7,31 @@ from unittest.mock import patch
 import numpy as np
 
 from clash_bot.arena.league.generation import learn, scheduled
+from clash_bot.arena.sim.engine import Arena
+from clash_bot.arena.sim.rules import CARDS, DECKS, LIVE_DECK, deck_ids
+from clash_bot.arena.training.deck_practice import open_practice, practice_orders, schedule_deck
 
 
 class TrainingOpponentsTest(unittest.TestCase):
+    def test_pool_rotation_reaches_every_deck_and_opens_with_its_lead_card_affordable(self):
+        covered = set()
+        for index in range(len(DECKS) - 1):
+            seat = index % 2
+            setup = schedule_deck({}, index, seat)
+            deck = setup["practiceDeck"]
+            self.assertEqual(setup["decks"][1 - seat], LIVE_DECK)
+            covered.add(deck)
+            orders = practice_orders(setup, seat, f"round-{index}")
+            arena = Arena(index, orders, setup["decks"])
+            self.assertGreater(open_practice(arena, setup, True), 0)
+            lead = deck_ids(deck)[0]
+            self.assertIn(lead, arena.initial_hands[seat], CARDS[lead])
+            self.assertIn(
+                lead, [row[0] for row in arena.observe(seat)["legalActions"]], CARDS[lead]
+            )
+            self.assertEqual(arena.history, [])
+        self.assertEqual(covered | {LIVE_DECK}, set(DECKS))
+
     def test_pressure_curriculum_uses_a_quarter_without_updating_the_qualified_pool(self):
         league = {"learner": 4, "champion": 3, "opponents": [{"version": 2, "wins": 0, "games": 8}]}
         jobs = scheduled(
@@ -31,6 +53,14 @@ class TrainingOpponentsTest(unittest.TestCase):
             all(job["setup"]["decks"][job["seat"]] == "counterpush" for job in scripted)
         )
         self.assertEqual(sum(job["selected"] == 2 for job in jobs), 4)
+        practice = [job for job in jobs if "practiceDeck" in job["setup"]]
+        self.assertEqual(len(practice), 4)
+        self.assertTrue(
+            all(
+                job["setup"]["decks"][job["seat"]] == job["setup"]["practiceDeck"]
+                for job in practice
+            )
+        )
         self.assertTrue(all(job["current"] == "/unused/checkpoints/v000003" for job in jobs))
         self.assertTrue(all("v000004" not in job["opponent"] for job in jobs if job["opponent"]))
         self.assertTrue(

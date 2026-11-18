@@ -8,10 +8,12 @@ import numpy as np
 from ..study.curriculum import from_selfplay
 from ..study.export import export
 from ..training.coverage import card_coverage
+from ..training.deck_practice import schedule_deck
 from ..training.evaluation import pfsp_weights
 from ..training.parallel import play_frozen_game
 from ..training.pressure import schedule_pressure
-from ..training.selfplay import SELFPLAY, replay_samples, setup_for
+from ..training.replay import replay_coverage, replay_samples
+from ..training.selfplay import SELFPLAY, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
 
@@ -34,8 +36,8 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
     Past champions the current champion loses to more often are picked more often.
     """
     jobs = []
+    every = SELFPLAY.pressureEvery
     for index in indexes:
-        every = SELFPLAY.pressureEvery
         scripted = index % every == every - 1
         rates = [(row["wins"] + 1) / (row["games"] + 2) for row in league["opponents"]]
         selected = (
@@ -55,6 +57,9 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
                 seat,
                 (version + slot // 2) % 2 == 1,
             )
+        elif index % every == 0:
+            slots = (settings["games"] + every - 1) // every
+            setup = schedule_deck(setup, (version - 1) * slots + index // every, seat)
         jobs.append(
             {
                 "current": str(checkpoint(root, league["champion"])),
@@ -136,6 +141,7 @@ def learn(control, root, league, rules, learner, version):
         history, rules["id"], max_samples=REPLAY_SAMPLES, seed=seed_for("replay", version)
     )
     training = learner.train(samples, seed=seed_for("optimizer", version))
+    training["optimizerCoverage"] = replay_coverage(samples)
     if not training["updated"]:
         raise ValueError("Completed self-play data did not change policy weights")
     temporary = checkpoint(root, version).with_suffix(".pending")

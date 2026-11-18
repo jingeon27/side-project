@@ -34,6 +34,7 @@ def training_rows(observation, result, screen, chosen, policy, context=None):
         return improved_policy(prior, values, visits)
 
     normal, masked = target(scores), target(masked_scores)
+    comparison = result.get("defenseComparison") or {"pairs": []}
     return {
         "features": SparseFeatures.of(state).model_dump(),
         "actions": [row.row() for row in rows],
@@ -45,6 +46,7 @@ def training_rows(observation, result, screen, chosen, policy, context=None):
         ).model_dump(),
         "target": normal["target"].tolist(),
         "targetWithoutTowers": masked["target"].tolist(),
+        "defensePairs": [[pair["preferred"], pair["other"]] for pair in comparison["pairs"]],
         "learning": {
             view: {key: value for key, value in label.items() if key != "target"}
             for view, label in (("normal", normal), ("withoutTowers", masked))

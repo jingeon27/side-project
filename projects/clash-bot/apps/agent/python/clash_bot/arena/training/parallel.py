@@ -6,6 +6,7 @@ import signal
 from concurrent.futures import ProcessPoolExecutor
 
 from ..policy.network import Policy
+from .deck_practice import practice_orders
 from .evaluation import play_pair
 from .pressure import opening_orders, pressure_policy
 from .selfplay import play_game
@@ -19,7 +20,7 @@ def play_frozen_game(job):
         orders = opening_orders(setup, job["seat"], job["id"])
     else:
         opponent = Policy.load(job["opponent"], job["rulesID"])
-        orders = None
+        orders = practice_orders(setup, job["seat"], job["id"]) if "practiceDeck" in setup else None
     policies = [opponent, opponent]
     policies[job["seat"]] = current
     return play_game(

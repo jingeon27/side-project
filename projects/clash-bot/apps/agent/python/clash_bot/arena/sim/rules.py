@@ -118,7 +118,7 @@ def rules_identity():
             }
         ),
         "trainingActor": "champion_anchored_search_teacher_v1",
-        "trainingOpponent": "quarter_scripted_pressure_qualified_pool_v3",
+        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_decks_v4",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
         "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
         "rolloutTiming": ROLLOUT_CLOCK,

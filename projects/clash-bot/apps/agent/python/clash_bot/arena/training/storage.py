@@ -28,6 +28,7 @@ REPLAY_FIELDS = (
     "source",
     "target",
     "targetWithoutTowers",
+    "defensePairs",
     "outcome",
     "value",
 )

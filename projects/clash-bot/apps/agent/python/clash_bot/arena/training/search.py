@@ -19,6 +19,7 @@ from ..sim.clock import DECISION_TICKS, PLANNING_TICKS, advance_window, opponent
 from ..sim.engine import Arena
 from ..sim.rules import CARDS, ROLLOUT_CLOCK, SPEC, Action, command, digest, rules_identity
 from .bandits import Node, exploration_prior, pick, root_priors, root_subset
+from .defense_rollout import comparisons
 from .improvement import improved_policy
 from .rollout import frozen_move, rollout_choices
 
@@ -141,6 +142,7 @@ def search(
     beliefs=None,
     observed_prior=None,
     focus=(),
+    defense=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
@@ -232,6 +234,12 @@ def search(
             for action in root_actions
         ]
     )
+    exact = all(row["mode"] == "exact" for row in conditioning)
+    defense_comparison = (
+        comparisons(world, worlds, snapshots, team, candidates, prior, defense)
+        if defense is not None and exact and len(worlds) >= 2
+        else None
+    )
     return {
         "actions": root_actions,
         **improved_policy(learning_prior, values, visits),
@@ -248,9 +256,7 @@ def search(
         "rootCandidates": len(candidates),
         "rootConditioningAttempts": attempts,
         "continuedHypotheses": continued,
-        "reconstruction": "public_board_exact"
-        if all(row["mode"] == "exact" for row in conditioning)
-        else "public_board_position_bounded",
+        "reconstruction": "public_board_exact" if exact else "public_board_position_bounded",
         "rootConditioning": conditioning,
         "source": "public_history_information_set_puct",
         "rootPriorSource": "matched_screen_without_towers"
@@ -262,4 +268,5 @@ def search(
         "opponentPhaseSource": phase_source,
         "opponentOffsetsTicks": offsets,
         "focusedFamilies": list(focus),
+        "defenseComparison": defense_comparison,
     }
