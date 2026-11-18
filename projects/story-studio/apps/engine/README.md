@@ -6,6 +6,8 @@
 
 기본 설치는 저장소 루트에서 `yarn workspace @side/story-studio local:setup`을 실행합니다. 웹 설치 도구가 전용 가상환경에 이 패키지의 `apple-silicon` 추가 의존성을 설치하고 고정 revision의 공개 모델을 준비합니다. 기존 `.data`와 `STORY_STUDIO_DATA_DIR`는 그대로 사용합니다.
 
+한국어 장면 이미지만 설치하려면 `yarn workspace @side/story-studio local:setup:image`를 사용합니다. `image` 추가 의존성과 `python -m story_studio.setup --data-dir <데이터 폴더> --only image`로 Gemma와 FLUX를 준비합니다. 전체 설치와 같은 모델 폴더를 사용하므로 이미 받은 파일과 변환한 가중치를 재사용합니다.
+
 웹과 같은 작업은 이 앱 폴더에서 다음처럼 독립 실행할 수 있습니다. 가상환경과 데이터 경로는 실제 설치 위치로 바꿉니다. `--examples-dir`는 읽을 수 있는 공개 예시 폴더를 명시합니다.
 
 ```sh

@@ -6,6 +6,7 @@ import { cloudRequest, configuration, textJson } from '../../../shared/server/te
 import { voiceSchema, type TMediaRequest, type TVideoTask } from '../../story/model/story';
 import { defaultVoiceSettings, type TVoiceSettings } from '../../voice/model/voice-training';
 import { resolveTrainedVoice } from '../../voice/server/voice-store';
+import { localImageReady } from '../model/image-generation';
 import { readTask, saveAsset, storeTask } from './assets';
 
 async function visualPrompt(input: TMediaRequest, type: 'image' | 'video', signal?: AbortSignal) {
@@ -32,6 +33,11 @@ const imageResponseSchema = z.object({
   }),
 });
 export async function generateImage(input: TMediaRequest, signal?: AbortSignal) {
+  if (isLocalMode() && !localImageReady(localConfiguration()))
+    throw new StudioError(
+      '이미지 생성에는 Gemma와 FLUX가 모두 필요합니다. 연결 안내에서 이미지 전용 설치 명령을 확인해 주세요.',
+      503,
+    );
   const prompt = await visualPrompt(input, 'image', signal);
   if (isLocalMode())
     return z.object({ asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.png$/) }).parse(

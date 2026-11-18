@@ -12,6 +12,7 @@ export type TConfiguration = {
   provider?: 'local' | 'cloud';
   voiceModel?: string;
   materialModel?: string;
+  textReady?: boolean;
   voiceReady?: boolean;
   voiceTrainingReady?: boolean;
   imageReady?: boolean;
@@ -73,6 +74,9 @@ export function ConnectionPanel({
               설치합니다. 최초 다운로드에는 인터넷과 여유 저장 공간이 필요하며, 설치 후 생성은 오프라인으로
               실행합니다.
             </p>
+            <p>한국어 이미지 생성용 Gemma와 FLUX만 설치</p>
+            <code>yarn workspace @side/story-studio local:setup:image</code>
+            <p>음성, 영상, 참고 자료 검색까지 전체 설치</p>
             <code>yarn workspace @side/story-studio local:setup</code>
           </details>
           <div className="panel-actions">

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
+import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
   ArrowRight,
@@ -25,6 +26,7 @@ import { trackStudioEvent, type TStudioAction } from '../../../shared/analytics'
 import { fetchProject } from '../../library/api/library-client';
 import { downloadFile, readBackup } from '../../library/model/library';
 import { useLibrary } from '../../library/ui/use-library';
+import { localImageReady } from '../../media/model/image-generation';
 import { fitImage } from '../../media/model/image-import';
 import { exportVideo } from '../../media/model/video-export';
 import { updateVideoTasks } from '../../media/model/video-tasks';
@@ -94,7 +96,6 @@ export function Studio({
         }
       : {}),
   }));
-  const [config, setConfig] = useState<TConfiguration | null>(null);
   const [settings, setSettings] = useState(false);
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
@@ -109,10 +110,27 @@ export function Studio({
   const sampleOpened = useRef(false);
   const demoOpened = useRef(false);
   const project = projects.find((item) => item.id === selected);
+  const configuration = useQuery({
+    queryKey: ['studio', 'configuration'],
+    queryFn: async ({ signal }): Promise<TConfiguration> => {
+      const response = await fetch('/api/studio', { signal, cache: 'no-store' });
+      if (!response.ok)
+        throw new Error('AI 연결 상태를 확인하지 못했습니다. 서버가 실행 중인지 확인해 주세요.');
+      return response.json();
+    },
+    refetchOnWindowFocus: 'always',
+    refetchInterval: ({ state }) =>
+      (settings || (project && project.brief.format !== 'novel')) &&
+      state.data?.provider === 'local' &&
+      !localImageReady(state.data)
+        ? 15_000
+        : false,
+  });
+  const config = configuration.data ?? null;
   const connected = config?.configured === true;
   const local = config?.provider !== 'cloud';
   const capabilities = {
-    image: config?.imageReady ?? connected,
+    image: local ? localImageReady(config) : connected,
     video: config?.videoReady ?? connected,
     voice: config?.voiceReady === true,
     voiceTraining: config?.voiceTrainingReady === true,
@@ -160,20 +178,14 @@ export function Studio({
     setSelected(sample.id);
   }, [ready, openSample, projects, setProjects]);
 
-  async function loadConfiguration() {
-    try {
-      const response = await fetch('/api/studio');
-      if (!response.ok) throw new Error();
-      setConfig(await response.json());
-    } catch {
+  useEffect(() => {
+    if (configuration.error)
       setNotice('AI 연결 상태를 확인하지 못했습니다. 서버가 실행 중인지 확인해 주세요.');
-    }
-  }
+  }, [configuration.error]);
   useEffect(() => {
     void trackStudioEvent('studio_opened', {
       source: openDemo ? 'demo' : openSample ? 'sample' : initialFormat || 'blank',
     });
-    void loadConfiguration();
     return () => controller.current?.abort();
   }, []);
   useEffect(() => {
@@ -627,7 +639,7 @@ export function Studio({
               config={config}
               local={local}
               onClose={() => setSettings(false)}
-              onRefresh={() => void loadConfiguration()}
+              onRefresh={() => void configuration.refetch()}
             />
           )}
           {storageError && (

@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "check": "yarn typecheck && yarn test",
     "local:setup": "node --env-file-if-exists=.env.local scripts/setup-local.ts",
+    "local:setup:image": "node --env-file-if-exists=.env.local scripts/setup-local.ts --image",
     "local:setup:voice": "node --env-file-if-exists=.env.local scripts/setup-local.ts --voice-training"
   },
   "dependencies": {
