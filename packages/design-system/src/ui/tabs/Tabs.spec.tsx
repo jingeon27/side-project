@@ -35,8 +35,16 @@ it.each(['horizontal', 'vertical'] as const)(
 );
 
 it.each([
-  ['default', ['h-9', 'rounded-badge', 'data-active:bg-surface', 'data-active:shadow-card']],
-  ['line', ['min-h-touch', 'data-active:border-ink', 'data-[orientation=horizontal]:border-b-2']],
+  ['default', ['h-9', 'rounded-badge', 'data-active:bg-brand', 'data-active:text-on-brand']],
+  [
+    'line',
+    [
+      'min-h-touch',
+      'data-active:border-accent-ink',
+      'data-active:text-ink',
+      'data-[orientation=horizontal]:border-b-2',
+    ],
+  ],
 ] as const)('%s 목록의 탭은 공통 토큰으로 그 모양을 따라야 한다', (variant, classes) => {
   render(
     <Tabs defaultValue="latest">
@@ -47,7 +55,7 @@ it.each([
     </Tabs>,
   );
   const tab = screen.getByRole('tab', { name: '최신 글' });
-  expect(tab).toHaveClass('text-label', 'text-muted', 'data-active:text-ink', ...classes);
+  expect(tab).toHaveClass('text-label', 'text-muted', ...classes);
   // registry 원본의 shadcn 글자·그림자 클래스는 쓰지 않는다.
   expect(tab.className).not.toMatch(/foreground|shadow-sm|text-sm|font-medium/);
 });

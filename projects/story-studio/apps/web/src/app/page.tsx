@@ -1,9 +1,11 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
-import { ArrowRight, Clapperboard } from 'lucide-react';
+import { ArrowRight, Clapperboard, Play } from 'lucide-react';
 
 import { formats } from '../features/story/model/story';
 import { StudioLink } from '../features/studio/ui/StudioLink';
+import styles from './page.module.css';
 
 export default function Home() {
   return (
@@ -17,7 +19,7 @@ export default function Home() {
             장면<small>STORY STUDIO</small>
           </span>
         </Link>
-        <StudioLink className="button secondary" source="blank">
+        <StudioLink variant="secondary" source="blank">
           작업실 열기 <ArrowRight size={16} />
         </StudioLink>
       </header>
@@ -35,7 +37,7 @@ export default function Home() {
               쓰고, 다듬고, 완성하는 한국어 창작 스튜디오
             </p>
             <div className="landing-actions">
-              <StudioLink className="button primary" source="blank">
+              <StudioLink variant="primary" className="landing-start" source="blank">
                 이야기 시작하기 <ArrowRight size={17} />
               </StudioLink>
               <StudioLink className="landing-sample-link" source="sample">
@@ -43,36 +45,25 @@ export default function Home() {
               </StudioLink>
             </div>
           </div>
-          <div className="landing-preview">
-            <div className="preview-paper">
-              <div className="preview-paper-meta">
-                <span>예시 원고</span>
-                <span>애니메이션, 3개 장면</span>
+          <StudioLink source="demo" className={styles.film}>
+            <Image
+              src="/examples/starlight-kitten.webp"
+              alt=""
+              width={640}
+              height={368}
+              preload
+              unoptimized
+            />
+            <div className={styles.caption}>
+              <div>
+                <span>완성작 · 한국어 애니메이션</span>
+                <h2>별빛을 안은 고양이</h2>
               </div>
-              <h2>
-                비가 오면,
-                <br />
-                편지가 도착해
-              </h2>
-              <p>
-                비가 쏟아지는 골목 끝<br />
-                지도에도 없는 우체국에 불이 켜졌다
-              </p>
-              <blockquote>“그런데… 보낸 사람이 저예요?”</blockquote>
-              <div className="paper-scene">
-                <span>장면 1</span>
-                <strong>지도에 없는 우체국</strong>
-                <p>
-                  빗방울이 노란 우비 위로 톡톡 떨어졌다
-                  <br />
-                  서우는 처음 보는 주황빛 창문을 발견했다
-                </p>
-              </div>
-              <StudioLink source="sample">
-                이 이야기를 작업실에서 열기 <ArrowRight size={15} />
-              </StudioLink>
+              <span className={styles.play}>
+                <Play size={17} aria-hidden /> 작품 열기
+              </span>
             </div>
-          </div>
+          </StudioLink>
         </section>
         <section className="landing-formats" aria-labelledby="formats-heading">
           <h2 id="formats-heading">어떤 이야기도, 나만의 방식으로</h2>
@@ -116,7 +107,6 @@ export default function Home() {
         </section>
         <p className="landing-note">
           API 키 없이, 이 컴퓨터의 로컬 모델로 글, 영상, 한국어 목소리를 만들어요
-          <StudioLink source="demo">실제로 만든 한국어 애니메이션 보기</StudioLink>
         </p>
       </main>
       <footer className="landing-footer">

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 
 import { PostSchema, SessionSchema } from '@game-feedback/contracts';
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
 
 import { expect, test } from './support/test';
 import { touchScroll } from './support/touch-scroll';
@@ -42,7 +43,7 @@ for (const width of [320, 360, 390, 1440]) {
       await page.emulateMedia({ colorScheme: theme });
       await expect
         .poll(() => page.locator('body').evaluate((node) => getComputedStyle(node).backgroundColor))
-        .toBe(theme === 'dark' ? 'rgb(20, 19, 18)' : 'rgb(255, 255, 255)');
+        .toBe(themeColorRgb('canvas', theme));
       await expect
         .poll(() =>
           toolbar
@@ -50,7 +51,7 @@ for (const width of [320, 360, 390, 1440]) {
             .first()
             .evaluate((node) => getComputedStyle(node).color),
         )
-        .toBe(theme === 'dark' ? 'rgb(244, 241, 235)' : 'rgb(16, 16, 16)');
+        .toBe(themeColorRgb('ink', theme));
       const screenshot = testInfo.outputPath(`${stage}-${width}-${theme}.png`);
       await page.screenshot({ path: screenshot });
       await testInfo.attach(`${stage}-${width}-${theme}`, { path: screenshot, contentType: 'image/png' });

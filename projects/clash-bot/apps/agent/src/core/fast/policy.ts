@@ -1,31 +1,19 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-import { range, sum, sumBy } from 'es-toolkit';
 import { z } from 'zod';
 
 import { CARD_CATALOGUE } from '../card-catalogue.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
 import { cardChoice } from './choice.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
+import { forward, WEIGHT_SHAPES, type FastWeights } from './network.ts';
 import { fastActionBias } from './tactics.ts';
 
-// 빠른 정책의 가중치·체크섬·추론이다. Python(clash_bot.arena.policy.network)이 같은 파일을 쓴다.
-const { hidden, attention } = FAST_POLICY;
+type WeightName = keyof typeof WEIGHT_SHAPES;
+export { forward, type FastWeights } from './network.ts';
 
-const SHAPES = {
-  'action.bias': [attention],
-  'action.weight': [attention, ACTION_SIZE],
-  'encoder.bias': [hidden],
-  'encoder.weight': [hidden, STATE_SIZE],
-  'query.bias': [attention],
-  'query.weight': [attention, hidden],
-  'value.bias': [1],
-  'value.weight': [1, hidden],
-} satisfies Record<string, number[]>;
-type WeightName = keyof typeof SHAPES;
-export type FastWeights = Record<WeightName, Float64Array>;
-const WEIGHT_NAMES = Object.keys(SHAPES).toSorted() as WeightName[];
+const WEIGHT_NAMES = Object.keys(WEIGHT_SHAPES).toSorted() as WeightName[];
 
 const policyFileSchema = z.looseObject({
   format: z.literal(FAST_POLICY.format),
@@ -52,44 +40,6 @@ export function weightsChecksum(weights: FastWeights) {
   return digest.digest('hex');
 }
 
-const relu = (value: number) => Math.max(0, value);
-// 행렬 [rows, columns]의 한 행과 입력의 곱이다. columns는 값이 있는 칸만 넘긴다.
-const dot = (matrix: Float64Array, row: number, width: number, columns: number[], input: ArrayLike<number>) =>
-  sumBy(columns, (column) => matrix[row * width + column]! * input[column]!);
-
-// 상태 특징은 대부분 0이라 값이 있는 칸만 곱한다. 한 번의 판단은 1ms 안쪽이다.
-export function forward(weights: FastWeights, state: Float64Array, actions: Float64Array[]) {
-  const active = range(STATE_SIZE).filter((index) => state[index] !== 0);
-  const h = range(hidden).map((row) =>
-    relu(dot(weights['encoder.weight'], row, STATE_SIZE, active, state) + weights['encoder.bias'][row]!),
-  );
-  const everyHidden = range(hidden);
-  const query = range(attention).map(
-    (row) => dot(weights['query.weight'], row, hidden, everyHidden, h) + weights['query.bias'][row]!,
-  );
-  const everyAction = range(ACTION_SIZE);
-  const logits = actions.map(
-    (action) =>
-      sum(
-        query.map(
-          (q, row) =>
-            q *
-            relu(
-              dot(weights['action.weight'], row, ACTION_SIZE, everyAction, action) +
-                weights['action.bias'][row]!,
-            ),
-        ),
-      ) / Math.sqrt(attention),
-  );
-  const top = Math.max(...logits);
-  const exponents = logits.map((logit) => Math.exp(logit - top));
-  const total = sum(exponents);
-  const value = Math.tanh(
-    dot(weights['value.weight'], 0, hidden, everyHidden, h) + weights['value.bias'][0]!,
-  );
-  return { logits, probabilities: exponents.map((item) => item / total), value };
-}
-
 export class FastPolicy {
   readonly weights: FastWeights;
   readonly version: number | null;
@@ -113,8 +63,8 @@ export class FastPolicy {
       WEIGHT_NAMES.map((name) => {
         const item = file.weights[name]!;
         if (
-          item.shape.join() !== SHAPES[name].join() ||
-          item.values.length !== SHAPES[name].reduce((a, b) => a * b)
+          item.shape.join() !== WEIGHT_SHAPES[name].join() ||
+          item.values.length !== WEIGHT_SHAPES[name].reduce((a, b) => a * b)
         )
           throw new Error(`${path}: 빠른 정책의 ${name} 형태가 계약과 다릅니다.`);
         return [name, Float64Array.from(item.values)];
@@ -127,19 +77,12 @@ export class FastPolicy {
   }
 
   predict(context: DecisionContext) {
-    const result = forward(this.weights, contextFeatures(context), actionFeatures(context));
-    const families = context.actions.map((row) => (row[1] === 'card' ? `card:${row[2]}` : row[1]));
     const mechanicsBias = fastActionBias(context);
-    const logits = result.logits.map((logit, index) => logit + (mechanicsBias[index] ?? 0));
-    const top = Math.max(...logits);
-    const exponents = logits.map((logit) => Math.exp(logit - top));
-    const total = sum(exponents);
-    const probabilities = exponents.map((value) => value / total);
+    const result = forward(this.weights, contextFeatures(context), actionFeatures(context), mechanicsBias);
+    const families = context.actions.map((row) => (row[1] === 'card' ? `card:${row[2]}` : row[1]));
     return {
       ...result,
-      logits,
-      probabilities,
-      choice: cardChoice(families, probabilities),
+      choice: cardChoice(families, result.probabilities),
       mechanicsBias,
     };
   }

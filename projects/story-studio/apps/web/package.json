@@ -7,10 +7,11 @@
     "dev": "next dev --hostname 127.0.0.1 --port 3400",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3400",
+    "lint": "eslint --max-warnings 0 .",
     "typecheck": "tsc7 --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "yarn typecheck && yarn test",
+    "check": "yarn lint && yarn typecheck && yarn test",
     "local:setup": "node --env-file-if-exists=.env.local scripts/setup-local.ts",
     "local:setup:image": "node --env-file-if-exists=.env.local scripts/setup-local.ts --image",
     "local:setup:voice": "node --env-file-if-exists=.env.local scripts/setup-local.ts --voice-training"
@@ -18,6 +19,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "catalog:",
     "@hookform/resolvers": "catalog:",
+    "@side/design-system": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "dayjs": "catalog:",
     "lucide-react": "catalog:",
@@ -31,10 +33,19 @@
   "devDependencies": {
     "@playwright/test": "catalog:",
     "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
   }
 }

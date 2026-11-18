@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
 import type { TVoiceRun, TVoiceSample } from '../src/features/voice/model/voice-training';
-import { mockLibrary } from './library';
+import { readCaptions } from './captions';
+import { mockLibrary, openSavedProject } from './library';
 
 const voice = {
   id: '29edf583-4d34-4b0a-99e4-9f66bf1c6400',
@@ -62,7 +63,8 @@ test('여러 녹음의 부분 저장 실패 후 대본과 녹음 ID를 유지하
     const value = {
       ...sample,
       id,
-      transcript: body.includes('두 번째 별') ? '두 번째 별도 빛나요' : '첫 번째 별이 빛나요',
+      transcript: body.includes('두 번째 별') ? '두 번째 별도 빛나요' : '첫 번째 별이 빛나요!',
+      duration: 1,
     };
     if (!state.samples.some((item) => item.id === id)) state.samples.push(value);
     return route.fulfill({ json: value });
@@ -76,7 +78,18 @@ test('여러 녹음의 부분 저장 실패 후 대본과 녹음 ID를 유지하
     { name: '첫 녹음.wav', mimeType: 'audio/wav', buffer: wav },
     { name: '둘째 녹음.wav', mimeType: 'audio/wav', buffer: wav },
   ]);
+  const preview = page.getByLabel('첫 녹음.wav 선택한 녹음');
+  await preview.evaluate((node) => {
+    const audio = node as HTMLAudioElement;
+    audio.preload = 'metadata';
+    audio.load();
+  });
   await page.getByLabel('녹음한 대본', { exact: true }).nth(0).fill('첫 번째 별이 빛나요');
+  await expect.poll(() => readCaptions(preview)).toEqual([{ text: '첫 번째 별이 빛나요', start: 0, end: 1 }]);
+  await page.getByLabel('녹음한 대본', { exact: true }).nth(0).fill('첫 번째 별이 빛나요!');
+  await expect
+    .poll(() => readCaptions(preview))
+    .toEqual([{ text: '첫 번째 별이 빛나요!', start: 0, end: 1 }]);
   await page.getByLabel('녹음한 대본', { exact: true }).nth(1).fill('두 번째 별도 빛나요');
   await page.getByRole('button', { name: '녹음과 대본 저장', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: '둘째 녹음 저장 실패' })).toBeVisible();
@@ -84,6 +97,9 @@ test('여러 녹음의 부분 저장 실패 후 대본과 녹음 ID를 유지하
   await page.getByRole('button', { name: '녹음과 대본 저장', exact: true }).click();
   await expect(page.getByLabel('녹음한 대본', { exact: true })).toHaveCount(0);
   await expect(page.getByLabel('저장한 녹음').getByRole('article')).toHaveCount(2);
+  await expect
+    .poll(() => readCaptions(page.getByLabel('첫 녹음.wav 저장한 녹음').first()))
+    .toEqual([{ text: '첫 번째 별이 빛나요!', start: 0, end: 1 }]);
   expect(state.samples).toHaveLength(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const action = page.getByRole('button', { name: '새 학습 시작', exact: true });
@@ -184,7 +200,7 @@ test('장면마다 기본 음색과 말투, 학습한 목소리를 선택해 합
   });
   await page.route('**/api/assets/*.wav', (route) => route.fulfill({ contentType: 'audio/wav', body: wav }));
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   const speaker = page.getByLabel('목소리', { exact: true }).first();
   await speaker.selectOption('ryan');
   await page.getByLabel('말투', { exact: true }).first().selectOption('bright');

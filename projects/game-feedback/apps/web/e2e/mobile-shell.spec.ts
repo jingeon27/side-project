@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -54,7 +56,7 @@ for (const { width, locale, menu, actions } of [
       animations: 'disabled',
     });
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(20, 19, 18)');
+    await expect(page.locator('body')).toHaveCSS('background-color', themeColorRgb('canvas', 'dark'));
     await page.screenshot({
       path: testInfo.outputPath(`brand-header-${locale}-${width}-dark.png`),
       animations: 'disabled',

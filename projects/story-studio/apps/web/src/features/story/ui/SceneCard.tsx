@@ -2,9 +2,24 @@
 
 import { Copy, Download, ImagePlus, Upload, UserRoundCheck, Video, Volume2 } from 'lucide-react';
 
+import {
+  Button,
+  Disclosure,
+  DisclosureTrigger,
+  FormField,
+  Input,
+  NativeSelect,
+  NativeSelectOption,
+  Textarea,
+} from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
+
+import { clipCaptions } from '../../../shared/subtitles';
+import { CaptionedAudio, CaptionedVideo } from '../../../shared/ui/CaptionedMedia';
+import { FilePickerButton } from '../../../shared/ui/FilePickerButton';
 import { downloadFile } from '../../library/model/library';
 import { VoiceSelector } from '../../voice/ui/VoiceSelector';
-import { caption, safeFilename, subtitles, type TProject, type TScene } from '../model/story';
+import { caption, safeFilename, spokenCaption, subtitles, type TProject, type TScene } from '../model/story';
 
 export type TCapabilities = { image: boolean; video: boolean; voice: boolean; voiceTraining: boolean };
 // One scene: its picture and video on one side, its text and voice on the other.
@@ -13,7 +28,6 @@ export function SceneCard({
   index,
   project,
   busy,
-  connected,
   capabilities,
   local,
   patch,
@@ -28,7 +42,6 @@ export function SceneCard({
   index: number;
   project: TProject;
   busy: boolean;
-  connected: boolean;
   capabilities: TCapabilities;
   local: boolean;
   patch: (change: Partial<TScene>) => void;
@@ -49,7 +62,8 @@ export function SceneCard({
       {!novel && (
         <div className="scene-visual">
           {scene.video?.asset && !webtoon ? (
-            <video
+            <CaptionedVideo
+              captions={clipCaptions(caption(scene), scene.duration)}
               controls
               playsInline
               preload={index === 0 ? 'metadata' : 'none'}
@@ -72,50 +86,52 @@ export function SceneCard({
           )}
           {scene.video?.asset && !webtoon && <div className="preview-caption">{caption(scene)}</div>}
           <div className="media-toolbar">
-            <button
-              className="button secondary small"
+            <Button
+              variant="secondary"
+              size="sm"
+
               disabled={busy || !capabilities.image}
               onClick={() => media('image')}
             >
               <ImagePlus size={14} /> {scene.image ? '이미지 다시 생성' : '이미지 생성'}
-            </button>
+            </Button>
             {!webtoon && (
-              <button
-                className="button secondary small"
+              <Button
+                variant="secondary"
+                size="sm"
+
                 disabled={busy || !capabilities.video || Boolean(pending)}
                 onClick={() => media('video')}
               >
                 <Video size={14} />{' '}
                 {pending ? '영상 만드는 중…' : scene.video?.asset ? '영상 다시 생성' : '영상 생성'}
-              </button>
+              </Button>
             )}
             {local && scene.image && (
-              <button
-                className="button secondary small"
+              <Button
+                variant="secondary"
+                size="sm"
+
                 disabled={busy}
                 onClick={() => onReferenceChange(!reference)}
               >
                 <UserRoundCheck size={14} /> {reference ? '인물 기준 해제' : '인물 기준으로 사용'}
-              </button>
+              </Button>
             )}
-            <button className="button secondary small" disabled={busy} onClick={onCopyPrompt}>
+            <Button variant="secondary" size="sm" disabled={busy} onClick={onCopyPrompt}>
               <Copy size={14} /> 프롬프트 복사
-            </button>
-            <label className="button secondary small import-button" aria-disabled={busy}>
-              <Upload size={14} /> 이미지 가져오기
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={busy}
-                aria-label={`${index + 1}번째 장면 이미지 파일`}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) onImportImage(file);
-                  event.target.value = '';
-                }}
-              />
-            </label>
+            </Button>
+            <FilePickerButton
+              label="이미지 가져오기"
+              inputLabel={`${index + 1}번째 장면 이미지 파일`}
+              accept="image/png,image/jpeg,image/webp"
+              size="sm"
+              icon={<Upload size={14} aria-hidden />}
+              disabled={busy}
+              onFiles={([file]) => {
+                if (file) onImportImage(file);
+              }}
+            />
           </div>
           {pending && (
             <p className="job-status" role="status">
@@ -125,26 +141,41 @@ export function SceneCard({
             </p>
           )}
           {local && scene.video?.status === 'RUNNING' && (
-            <button className="text-button" disabled={busy} onClick={onCancelVideo}>
+            <Button variant="ghost" size="sm" disabled={busy} onClick={onCancelVideo}>
               영상 생성 중단
-            </button>
+            </Button>
           )}
           {scene.video?.error && <p className="inline-error">{scene.video.error}</p>}
           <div className="asset-downloads">
             {scene.image && (
-              <a href={scene.image} download={`${safeFilename(project.title)}-${index + 1}.png`}>
+              <ButtonLink
+                variant="ghost"
+                size="sm"
+                prefetch={false}
+                href={scene.image}
+                download={`${safeFilename(project.title)}-${index + 1}.png`}
+              >
                 <Download size={12} /> PNG 원본
-              </a>
+              </ButtonLink>
             )}
             {scene.video?.asset && (
-              <a href={scene.video.asset} download={`${safeFilename(project.title)}-${index + 1}.mp4`}>
+              <ButtonLink
+                variant="ghost"
+                size="sm"
+                prefetch={false}
+                href={scene.video.asset}
+                download={`${safeFilename(project.title)}-${index + 1}.mp4`}
+              >
                 <Download size={12} /> MP4 원본
-              </a>
+              </ButtonLink>
             )}
             {scene.video?.asset && (
-              <button onClick={() => downloadFile(subtitles([scene]), `${safeFilename(scene.title)}.srt`)}>
+              <Button
+                variant="ghost"
+                onClick={() => downloadFile(subtitles([scene], 'srt'), `${safeFilename(scene.title)}.srt`)}
+              >
                 이 장면 자막
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -155,10 +186,8 @@ export function SceneCard({
         </legend>
         <div className="scene-topline">
           <span className="scene-number">{String(index + 1).padStart(2, '0')}</span>
-          <label className="sr-only" htmlFor={`${prefix}-title`}>
-            {index + 1}번째 제목
-          </label>
-          <input
+          <Input
+            aria-label={`${index + 1}번째 제목`}
             id={`${prefix}-title`}
             className="scene-title"
             value={scene.title}
@@ -168,53 +197,55 @@ export function SceneCard({
             }}
           />
           {!novel && !webtoon && (
-            <label className="duration">
-              <span className="sr-only">{index + 1}번째 장면 길이</span>
-              <select
-                value={scene.duration}
-                disabled={Boolean(pending || scene.video?.asset)}
-                onChange={(event) => patch({ duration: Number(event.target.value) })}
-              >
-                {Array.from({ length: 14 }, (_, index) => index + 2).map((value) => (
-                  <option key={value} value={value}>
-                    {value}초
-                  </option>
-                ))}
-              </select>
-            </label>
+            <NativeSelect
+              className="duration"
+              aria-label={`${index + 1}번째 장면 길이`}
+              value={scene.duration}
+              disabled={Boolean(pending || scene.video?.asset)}
+              onChange={(event) => patch({ duration: Number(event.target.value) })}
+            >
+              {Array.from({ length: 14 }, (_, index) => index + 2).map((value) => (
+                <NativeSelectOption key={value} value={value}>
+                  {value}초
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
           )}
         </div>
-        <label htmlFor={`${prefix}-narration`}>{novel ? '본문' : '지문, 내레이션'}</label>
-        <textarea
-          id={`${prefix}-narration`}
-          className={novel ? 'novel-body' : ''}
-          value={scene.narration}
-          maxLength={12000}
-          rows={novel ? 14 : 3}
-          onChange={(event) => patch({ narration: event.target.value })}
-        />
+        <FormField label={novel ? '본문' : '지문, 내레이션'}>
+          <Textarea
+            id={`${prefix}-narration`}
+            className={novel ? 'novel-body' : ''}
+            value={scene.narration}
+            maxLength={12000}
+            rows={novel ? 14 : 3}
+            onChange={(event) => patch({ narration: event.target.value })}
+          />
+        </FormField>
         {!novel && (
           <>
-            <label htmlFor={`${prefix}-dialogue`}>{webtoon ? '한국어 말풍선' : '한국어 대사, 자막'}</label>
-            <textarea
-              id={`${prefix}-dialogue`}
-              value={scene.dialogue}
-              maxLength={4000}
-              rows={2}
-              placeholder="인물 이름: 대사를 입력하세요"
-              onChange={(event) => patch({ dialogue: event.target.value })}
-            />
-            <details className="visual-direction">
-              <summary>장면 연출 수정</summary>
-              <label htmlFor={`${prefix}-visual`}>장소, 인물 외형, 구도, 움직임</label>
-              <textarea
-                id={`${prefix}-visual`}
-                rows={3}
-                value={scene.visual}
-                maxLength={2000}
-                onChange={(event) => patch({ visual: event.target.value })}
+            <FormField label={webtoon ? '한국어 말풍선' : '한국어 대사, 자막'}>
+              <Textarea
+                id={`${prefix}-dialogue`}
+                value={scene.dialogue}
+                maxLength={4000}
+                rows={2}
+                placeholder="인물 이름: 대사를 입력하세요"
+                onChange={(event) => patch({ dialogue: event.target.value })}
               />
-            </details>
+            </FormField>
+            <Disclosure className="visual-direction">
+              <DisclosureTrigger>장면 연출 수정</DisclosureTrigger>
+              <FormField label="장소, 인물 외형, 구도, 움직임">
+                <Textarea
+                  id={`${prefix}-visual`}
+                  rows={3}
+                  value={scene.visual}
+                  maxLength={2000}
+                  onChange={(event) => patch({ visual: event.target.value })}
+                />
+              </FormField>
+            </Disclosure>
           </>
         )}
         <div className="voice-section">
@@ -223,8 +254,10 @@ export function SceneCard({
             value={scene.voiceSettings}
             onChange={(value) => patch({ voiceSettings: value })}
           />
-          <button
-            className="button secondary small"
+          <Button
+            variant="secondary"
+            size="sm"
+
             disabled={
               busy ||
               !(scene.voiceSettings?.kind === 'trained' ? capabilities.voiceTraining : capabilities.voice) ||
@@ -233,19 +266,26 @@ export function SceneCard({
             onClick={voice}
           >
             <Volume2 size={15} /> {scene.voice ? '한국어 음성 다시 생성' : '한국어 음성 생성'}
-          </button>
+          </Button>
           <span>대사가 있으면 대사, 없으면 본문을 읽어요</span>
           {scene.voice && (
             <>
-              <audio
+              <CaptionedAudio
+                captions={clipCaptions(spokenCaption(scene), scene.voice.duration)}
                 controls
                 preload={index === 0 ? 'metadata' : 'none'}
                 src={scene.voice.asset}
                 aria-label={`${index + 1}번째 한국어 음성`}
               />
-              <a href={scene.voice.asset} download={`${safeFilename(scene.title)}.wav`}>
+              <ButtonLink
+                variant="ghost"
+                size="sm"
+                prefetch={false}
+                href={scene.voice.asset}
+                download={`${safeFilename(scene.title)}.wav`}
+              >
                 한국어 음성 저장, {scene.voice.duration.toFixed(1)}초
-              </a>
+              </ButtonLink>
             </>
           )}
         </div>

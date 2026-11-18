@@ -5,7 +5,8 @@ import dayjs from 'dayjs';
 
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
-import { mockLibrary } from './library';
+import { readCaptions } from './captions';
+import { mockLibrary, openLibraryMenu, openSavedProject } from './library';
 
 const config = {
   provider: 'cloud',
@@ -38,6 +39,13 @@ test('소개에서 예시를 열면 작업실의 편집 화면으로 바로 이�
   await page.getByRole('link', { name: '예시 작품 둘러보기' }).click();
   await expect(page).toHaveURL(/\/studio\?sample=1/);
   await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('비가 오면, 편지가 도착해');
+});
+test('소개에 표시한 애니메이션 원본을 작업실에서 연다', async ({ page }) => {
+  await page.route('**/api/demo', (route) => route.fulfill({ status: 404 }));
+  await page.goto('/');
+  await page.getByRole('link', { name: /별빛을 안은 고양이/ }).click();
+  await expect(page).toHaveURL(/demo=bundled/);
+  await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('별빛을 안은 고양이');
 });
 test('작업실을 열어 둬도 Gemma와 FLUX가 모두 준비된 뒤에만 이미지 버튼이 켜진다', async ({ page }) => {
   await page.clock.install();
@@ -77,16 +85,17 @@ test('연결 없이 예시를 편집하고 한글 원고·JSON 백업을 복원�
   await dialogue.fill('서우: 괜찮아, 이번엔 내가 기다릴게.');
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: '작품 백업 (.json)', exact: true }).click();
+  await page.getByRole('menuitem', { name: '작품 백업 (.json)', exact: true }).click();
   const download = await downloading;
   const content = await readFile((await download.path())!, 'utf8');
   expect(JSON.parse(content).scenes[0].dialogue).toContain('이번엔 내가 기다릴게');
   await page.reload();
-  await page.getByRole('button', { name: /서울에서 온 편지/ }).click();
+  await openSavedProject(page, /서울에서 온 편지/);
   await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('서울에서 온 편지 🐈');
   await expect(page.getByLabel('한국어 대사, 자막', { exact: true }).first()).toHaveValue(
     '서우: 괜찮아, 이번엔 내가 기다릴게.',
   );
+  await openLibraryMenu(page);
   await page
     .getByLabel('작품 백업 파일')
     .setInputFiles({ name: '작품.json', mimeType: 'application/json', buffer: Buffer.from(content) });
@@ -149,7 +158,7 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
           chapter('새벽의 답장', '서우는 한글로 긴 편지를 쓰기 시작했다.'),
         ],
       });
-    else if (written)
+    if (body.action === 'continue' && written)
       library.projects[0] = {
         ...written,
         scenes: [...written.scenes, chapter('다음 장', '이어 쓴 본문')],
@@ -172,6 +181,61 @@ test('소설 생성과 이어쓰기, 실패 후 기존 원고 보존', async ({ 
   await page.getByRole('button', { name: '다음 장 이어 쓰기' }).click();
   await expect(page.getByRole('status')).toContainText('AI가 잠시 쉬고 있어요');
   await expect(page.getByLabel('본문', { exact: true })).toHaveCount(3);
+});
+
+test('원고 저장 실패 시 이어쓰기를 보류하고 저장이 복구되면 수정한 원고로 재시도한다', async ({ page }) => {
+  await connect(page);
+  const { novel } = novelFixture();
+  const library = await mockLibrary(page, [novel]);
+  const job = await mockWriting(page, () => ({
+    status: 'SUCCEEDED',
+    projectId: novel.id,
+    scenes: novel.scenes.length,
+  }));
+  const save = { unavailable: true };
+  await page.route(`**/api/projects/${novel.id}`, (route) => {
+    if (save.unavailable && route.request().method() === 'PUT') {
+      return route.fulfill({ status: 503, json: { error: '저장소가 응답하지 않습니다.' } });
+    }
+    return route.fallback();
+  });
+  await page.goto('/studio');
+  await openSavedProject(page, new RegExp(novel.title));
+  await page.getByLabel('본문', { exact: true }).first().fill('최근에 바꾼 첫 장의 본문');
+  const extend = page.getByRole('button', { name: '다음 장 이어 쓰기' });
+  await extend.click();
+  await expect(page.getByRole('status').filter({ hasText: '최신 원고를 저장하지 못해' })).toBeVisible();
+  expect(job.requests).toHaveLength(0);
+  save.unavailable = false;
+  await extend.click();
+  await expect.poll(() => job.requests.length).toBe(1);
+  expect(library.projects[0]?.scenes[0]?.narration).toBe('최근에 바꾼 첫 장의 본문');
+});
+
+test('집필 중인 작업을 다시 열고 중단 실패 후 동일한 작업에 재시도한다', async ({ page }) => {
+  await connect(page);
+  const status = { id: crypto.randomUUID(), status: 'RUNNING', progress: '둘째 장 집필 중', scenes: 0 };
+  const requests = { stops: 0, starts: 0 };
+  await page.route('**/api/studio', (route) => {
+    if (route.request().method() === 'POST') requests.starts += 1;
+    return route.fallback();
+  });
+  await page.route('**/api/writing', (route) => route.fulfill({ json: { jobs: [status] } }));
+  await page.route(`**/api/writing/${status.id}`, (route) => {
+    if (route.request().method() !== 'DELETE') return route.fulfill({ json: status });
+    requests.stops += 1;
+    if (requests.stops === 1)
+      return route.fulfill({ status: 503, json: { error: '집필 서버가 잠시 응답하지 않습니다.' } });
+    return route.fulfill({ json: { ...status, status: 'CANCELLED' } });
+  });
+  await page.goto('/studio');
+  await expect(page.getByText('둘째 장 집필 중', { exact: false })).toBeVisible();
+  const stop = page.getByRole('button', { name: '중단', exact: true });
+  await stop.click();
+  await expect(page.getByText('집필 서버가 잠시 응답하지 않습니다.')).toBeVisible();
+  await stop.click();
+  await expect(stop).toHaveCount(0);
+  expect(requests).toEqual({ stops: 2, starts: 0 });
 });
 
 test('구성한 장을 쓰다 실패해도 쓴 장을 보존하고 남은 구성부터 이어 쓴다', async ({ page }) => {
@@ -217,7 +281,7 @@ test('다른 도구에서 만든 이미지를 작품 비율로 가져오고 붙�
     { key: libraryKey, value: sampleProject() },
   );
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByRole('button', { name: '프롬프트 복사' }).first().click();
   await expect(page.getByRole('status')).toContainText('이미지 프롬프트를 복사했습니다');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('화면 비율: 16:9');
@@ -231,15 +295,25 @@ test('다른 도구에서 만든 이미지를 작품 비율로 가져오고 붙�
     drawing.fillRect(0, 0, 300, 200);
     return canvas.toDataURL('image/jpeg').split(',')[1]!;
   });
-  await page
-    .getByLabel('1번째 장면 이미지 파일', { exact: true })
-    .setInputFiles({ name: 'scene.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(picture, 'base64') });
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: '이미지 가져오기', exact: true }).first().click(),
+  ]);
+  const file = { name: 'scene.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(picture, 'base64') };
+  await chooser.setFiles(file);
   const image = page.locator('.scene-visual img').first();
   await expect(image).toHaveAttribute('src', /^\/api\/assets\/[a-f0-9-]{36}\.png$/);
   await expect.poll(() => image.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBe(1920);
   expect(await image.evaluate((node) => (node as HTMLImageElement).naturalHeight)).toBe(1080);
+  const originalAsset = await image.getAttribute('src');
+  const fileInput = page.getByLabel('1번째 장면 이미지 파일', { exact: true });
+  await expect(fileInput).toHaveValue('');
+  await expect(fileInput).toBeEnabled();
+  await fileInput.setInputFiles(file);
+  await expect(image).not.toHaveAttribute('src', originalAsset!);
+
   await page.reload();
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await expect(page.locator('.scene-visual img').first()).toHaveAttribute('src', /\.png$/);
 });
 test('웹툰 말풍선과 이미지를 미리보고 한글 PNG로 내보낸다', async ({ page }) => {
@@ -272,13 +346,13 @@ test('웹툰 말풍선과 이미지를 미리보고 한글 PNG로 내보낸다',
     }),
   );
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByLabel('한국어 말풍선', { exact: true }).fill('서우: 미래의 나야, 안녕!');
   await page.getByText('세로 웹툰 미리보기', { exact: true }).click();
   await expect(page.locator('.speech-bubble')).toHaveText('서우: 미래의 나야, 안녕!');
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: '한글 말풍선 포함 웹툰 (.png)' }).click();
+  await page.getByRole('menuitem', { name: '한글 말풍선 포함 웹툰 (.png)' }).click();
   const download = await downloading;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   const png = await readFile((await download.path())!);
@@ -306,11 +380,11 @@ test('영상 작업은 중복 제출 없이 새로고침 후 상태를 확인한
     });
   });
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByRole('button', { name: '영상 생성', exact: true }).first().click();
   await expect(page.getByRole('button', { name: '영상 만드는 중…' }).first()).toBeDisabled();
   await page.reload();
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await expect(page.getByText('검증용 영상 생성 실패. 원고는 유지됩니다.')).toBeVisible();
   expect(state.posts).toBe(1);
   expect(state.polls).toBeGreaterThan(0);
@@ -329,7 +403,7 @@ test('연속 입력은 한 번 저장하고 즉시 새로고침해도 마지막 
   await connect(page);
   const library = await mockLibrary(page, [sampleProject()]);
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   const title = page.getByLabel('작품 제목', { exact: true });
   await title.fill('');
   await title.pressSequentially('새로운 이야기', { delay: 20 });
@@ -337,15 +411,18 @@ test('연속 입력은 한 번 저장하고 즉시 새로고침해도 마지막 
   await title.fill('새로고침 직전의 마지막 한국어 편집');
   // The page closes before the half second delay ends; the unsaved edit is sent on the next visit.
   await page.reload();
-  await page.getByRole('button', { name: /새로고침 직전의 마지막 한국어 편집/ }).click();
+  await openSavedProject(page, /새로고침 직전의 마지막 한국어 편집/);
   await expect(title).toHaveValue('새로고침 직전의 마지막 한국어 편집');
   expect(library.projects[0]?.title).toBe('새로고침 직전의 마지막 한국어 편집');
 });
 
-test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 영상을 재생한다', async ({ page }, info) => {
+test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 영상을 재생한다', async ({
+  page,
+  baseURL,
+}, info) => {
   const external: string[] = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).hostname !== '127.0.0.1') external.push(request.url());
+    if (new URL(request.url()).origin !== baseURL) external.push(request.url());
   });
   await page.goto('/studio?demo=1');
   await expect(page.getByLabel('작품 제목', { exact: true })).toHaveValue('별빛을 안은 고양이');
@@ -354,6 +431,9 @@ test('API 키 없이 실제 로컬 생성 예시의 한국어 음성과 완성 �
   expect(await movie.evaluate((node) => (node as HTMLVideoElement).videoWidth)).toBe(640);
   const voice = page.getByLabel('1번째 한국어 음성', { exact: true });
   await expect.poll(() => voice.evaluate((node) => (node as HTMLAudioElement).duration)).toBeGreaterThan(12);
+  const expectedText = await page.getByLabel('지문, 내레이션', { exact: true }).first().inputValue();
+  await expect.poll(() => readCaptions(movie)).toEqual([{ text: expectedText, start: 0, end: 13.36 }]);
+  await expect.poll(() => readCaptions(voice)).toEqual([{ text: expectedText, start: 0, end: 12.96 }]);
   await movie.evaluate(async (node) => {
     const video = node as HTMLVideoElement;
     video.muted = true;
@@ -389,7 +469,7 @@ test('생성 중인 로컬 영상은 중단한 뒤 작품을 삭제한다', asyn
     }),
   );
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByRole('button', { name: '이 작품 삭제', exact: true }).click();
   await expect(
     page.getByText('영상 생성이 진행 중입니다. 해당 장면에서 생성을 중단한 뒤 작품을 삭제해 주세요.', {

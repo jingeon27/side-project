@@ -3,6 +3,7 @@ import type { TFormat } from '../features/story/model/story';
 export type TStudioAction =
   | 'write'
   | 'continue'
+  | 'writing-stop'
   | 'image'
   | 'image-import'
   | 'material-add'
@@ -11,6 +12,7 @@ export type TStudioAction =
   | 'material-stop'
   | 'material-delete'
   | 'video'
+  | 'video-stop'
   | 'voice'
   | 'compose'
   | 'voice-create'
@@ -21,6 +23,9 @@ export type TStudioAction =
 export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };
+  studio_menu_toggled: { expanded: boolean };
+  studio_format_selected: { format: TFormat };
+  studio_export_menu_toggled: { expanded: boolean };
   studio_opened: { source: TStudioSource };
   studio_request_clicked: { action: TStudioAction };
   studio_request_succeeded: { action: TStudioAction };

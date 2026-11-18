@@ -1,3 +1,5 @@
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test, type Page } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -16,7 +18,7 @@ for (const width of [400, 1440]) {
     await expect(mode).toHaveText('기기 설정에 맞춤');
     const light = await background(page);
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect.poll(() => background(page)).toBe('rgb(20, 19, 18)');
+    await expect.poll(() => background(page)).toBe(themeColorRgb('canvas', 'dark'));
     const dark = await background(page);
     await mode.click();
     await page.getByRole('option', { name: '라이트 모드', exact: true }).click();
@@ -37,7 +39,7 @@ for (const width of [400, 1440]) {
     const write = page.getByRole('button', { name: '글쓰기', exact: true });
     await write.click();
     const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
-    await expect(required).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(required).toHaveCSS('background-color', themeColorRgb('surface', 'dark'));
     await required.getByRole('button', { name: '로그인하기', exact: true }).click();
     const login = page.getByRole('dialog');
     if (width <= 760) {
@@ -49,7 +51,7 @@ for (const width of [400, 1440]) {
     if (width > 760) {
       await expect(login).toBeVisible();
       await expect(login.getByRole('button', { name: 'Google로 시작하기', exact: true })).toBeVisible();
-      await expect(login).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+      await expect(login).toHaveCSS('background-color', themeColorRgb('surface', 'dark'));
       await login.getByRole('button', { name: '닫기', exact: true }).click();
     }
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_theme')?.value).toBe('dark');
@@ -68,7 +70,10 @@ test('the server applies a saved dark preference before JavaScript runs', async 
     await page.goto('/ko/posts/sample-post-0');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('.detail-card')).toBeVisible();
-    await expect(page.locator('.detail-card')).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(page.locator('.detail-card')).toHaveCSS(
+      'background-color',
+      themeColorRgb('surface', 'dark'),
+    );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally {
     await context.close();

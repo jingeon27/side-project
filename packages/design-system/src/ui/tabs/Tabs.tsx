@@ -21,13 +21,14 @@ function Tabs({ className, orientation = 'horizontal', ...props }: TStyledProps<
   );
 }
 
-/** default는 Photo Contest SegmentedControl과 같은 채운 칸에 선택 칸 테두리를 더하고, line은 밑줄 탭이다. */
+/** 기본 탭은 선택한 칸을 채우고, line 탭은 선택한 가장자리를 강조한다. */
 const tabsListVariants = cva(
   'group/tabs-list inline-flex items-center text-muted group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col group-data-[orientation=vertical]/tabs:items-stretch',
   {
     variants: {
       variant: {
-        default: 'w-fit gap-1 rounded-control bg-sunken p-1',
+        default:
+          'w-fit max-w-full gap-1 rounded-control bg-sunken p-1 group-data-[orientation=horizontal]/tabs:rounded-full',
         line: 'w-full gap-1 border-line group-data-[orientation=horizontal]/tabs:border-b group-data-[orientation=vertical]/tabs:w-fit group-data-[orientation=vertical]/tabs:border-l',
       },
     },
@@ -39,21 +40,18 @@ type TTabsListVariant = NonNullable<VariantProps<typeof tabsListVariants>['varia
 
 const tabsTriggerVariants = cva(
   [
-    'relative inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 px-3 text-label whitespace-nowrap text-muted transition-colors select-none',
-    'hover:text-ink data-active:text-ink data-disabled:pointer-events-none data-disabled:opacity-45',
+    'relative inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 px-3.5 text-label whitespace-nowrap text-muted motion-safe:transition-colors select-none',
+    '[@media(hover:hover)]:[&:where(:hover:not([data-active],[data-disabled]))]:text-ink data-disabled:pointer-events-none data-disabled:opacity-45 forced-colors:data-active:underline',
     'data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start',
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ],
   {
     variants: {
       variant: {
-        /**
-         * 보이는 칸은 36px이고 누르는 영역은 테두리와 관계없이 가운데 44px로 넓힌다. 다크 모드에서는 칸 바탕(1.07:1)과
-         * 글자색(1.97:1)만으로 선택 칸이 구분되지 않아 3:1 이상인 control-border 테두리를 더한다.
-         */
+        // 가로 탭의 터치 영역은 44px이다. 세로 탭은 보이는 칸도 44px로 두어 인접 터치 영역이 겹치지 않는다.
         default:
-          "h-9 rounded-badge border border-transparent before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-[''] data-active:border-control-border data-active:bg-surface data-active:shadow-card",
-        line: 'min-h-touch border-transparent active:bg-sunken data-active:border-ink data-[orientation=horizontal]:-mb-px data-[orientation=horizontal]:border-b-2 data-[orientation=vertical]:-ml-px data-[orientation=vertical]:border-l-2',
+          "h-9 rounded-badge border border-transparent before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-[''] data-active:border-brand data-active:bg-brand data-active:text-on-brand data-[orientation=horizontal]:rounded-full data-[orientation=vertical]:min-h-touch",
+        line: 'min-h-touch border-transparent active:bg-sunken data-active:border-accent-ink data-active:text-ink data-[orientation=horizontal]:-mb-px data-[orientation=horizontal]:border-b-2 data-[orientation=vertical]:-ml-px data-[orientation=vertical]:border-l-2',
       },
     },
     defaultVariants: { variant: 'default' },

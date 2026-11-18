@@ -19,7 +19,7 @@ const twMerge = extendTailwindMerge({
         'micro',
       ],
       radius: ['badge', 'control', 'card', 'sheet'],
-      shadow: ['app', 'card', 'sheet', 'toast'],
+      shadow: ['app', 'button', 'card', 'popover', 'sheet', 'toast'],
       spacing: ['app-bar', 'bottom-nav', 'cta', 'touch'],
       breakpoint: ['pc', 'tablet', 'desktop', 'wide'],
     },

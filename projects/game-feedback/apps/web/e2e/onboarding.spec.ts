@@ -1,3 +1,5 @@
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test, type Page } from './support/test';
 
 const destination = '/ko/boards/coaching?coachingRole=STUDENT';
@@ -45,8 +47,8 @@ test('mobile OAuth opens a signup page, permits reading terms, and completes bac
   await expect(submit).toBeEnabled();
   await page.screenshot({ path: testInfo.outputPath('onboarding-mobile.png'), fullPage: true });
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(nicknameField(page)).toHaveCSS('color', 'rgb(244, 241, 235)');
-  await expect(submit).toHaveCSS('background-color', 'rgb(244, 241, 235)');
+  await expect(nicknameField(page)).toHaveCSS('color', themeColorRgb('ink', 'dark'));
+  await expect(submit).toHaveCSS('background-color', themeColorRgb('brand', 'dark'));
   await page.screenshot({ path: testInfo.outputPath('onboarding-mobile-dark.png'), fullPage: true });
   await page.setViewportSize({ width: 320, height: 690 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

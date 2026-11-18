@@ -1,23 +1,27 @@
 import { spawn } from 'node:child_process';
-import { closeSync, openSync } from 'node:fs';
+import { closeSync, existsSync, openSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { DATA_DIR } from '../shared/data-dir.ts';
 import { pythonEnvironment, pythonExecutable } from '../shared/python.ts';
-import { runStudy } from './study.ts';
 
 const args = process.argv.slice(2);
 const background = args.includes('--background');
 const main = async () => {
-  if (args[0] === 'study') return runStudy(DATA_DIR, args.slice(1));
+  if (args[0] === 'study') {
+    const { runStudy } = await import('./study.ts');
+    return runStudy(DATA_DIR, args.slice(1));
+  }
   if (background && args[0] !== 'start') throw new Error('--background는 start에서만 지원합니다.');
   const directory = join(DATA_DIR, 'arena/control');
-  await mkdir(directory, { recursive: true, mode: 0o700 });
+  if (background) await mkdir(directory, { recursive: true, mode: 0o700 });
   const output = background ? openSync(join(directory, 'console.log'), 'a', 0o600) : null;
+  const python = pythonExecutable();
+  const inspection = args[0] === 'status' || args[0] === 'stop';
   try {
     const child = spawn(
-      pythonExecutable(),
+      inspection && !process.env.CLASH_BOT_PYTHON && !existsSync(python) ? 'python3' : python,
       ['-u', '-m', 'clash_bot.arena.cli', ...args.filter((arg) => arg !== '--background')],
       {
         env: {
@@ -42,7 +46,7 @@ const main = async () => {
     process.once('SIGINT', () => child.kill('SIGINT'));
     process.once('SIGTERM', () => child.kill('SIGTERM'));
     await new Promise<void>((resolve) =>
-      child.once('exit', (code) => {
+      child.once('close', (code) => {
         process.exitCode = code ?? 1;
         resolve();
       }),

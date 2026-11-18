@@ -9,7 +9,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 # Lowest first: a unit may import the units before it in its own list.
-ARENA = ["catalogue", "placement", "sim", "tables", "policy", "training", "study", "league", "cli"]
+ARENA = [
+    "catalogue",
+    "placement",
+    "sim",
+    "tables",
+    "policy",
+    "training",
+    "study",
+    "league",
+    "commands",
+    "cli",
+]
 # `qwen` is the contract modules directly under qwen; `entry` the modules started by name.
 QWEN = ["qwen", "qwen.inputs", "qwen.learning", "qwen.records", "qwen.adoption", "qwen.worker"]
 QWEN_ENTRIES = {"learning_worker", "setup", "download"}

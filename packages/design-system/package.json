@@ -11,6 +11,7 @@
     "./next": "./src/next.ts",
     "./styles.css": "./src/styles.css",
     "./theme.css": "./src/styles/theme.css",
+    "./testing/color-tokens": "./src/test/color-tokens.ts",
     "./lib/cn.helper": "./src/lib/cn.helper.ts",
     "./lib/use-scroll-visibility": "./src/lib/use-scroll-visibility.ts",
     "./lib/use-motion-preference": "./src/lib/use-motion-preference.ts",

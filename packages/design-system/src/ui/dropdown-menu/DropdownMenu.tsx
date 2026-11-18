@@ -36,7 +36,7 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           // tw-animate-css 대신 Base UI의 starting/ending style 속성으로 열고 닫는 전환을 만든다.
           className={cn(
-            'z-popover max-h-(--available-height) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-control bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 transition-[opacity,scale] duration-100 outline-hidden data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-closed:overflow-hidden',
+            'z-popover max-h-(--available-height) max-w-(--available-width) min-w-[min(12rem,var(--available-width))] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-card border border-line-strong bg-popover p-1 text-popover-foreground shadow-popover transition-[opacity,scale] duration-100 outline-hidden data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-closed:overflow-hidden',
             className,
           )}
           {...props}
