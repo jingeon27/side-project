@@ -158,8 +158,6 @@ def play_game(
                         seed_for("search", game_id, state["tick"], team),
                         simulations=simulations,
                         depth=depth,
-                        step_ticks=SELFPLAY.searchTicks,
-                        first_ticks=SELFPLAY.decisionTicks,
                         root_size=SELFPLAY.rootActions,
                         noise=training,
                         opponent_policy=policies[1 - team],

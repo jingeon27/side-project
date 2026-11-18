@@ -6,20 +6,21 @@ A visible-material heuristic bootstraps the value head; this is not pure AlphaZe
 """
 
 import time
+from functools import partial
 
 import numpy as np
 
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
-from ..policy.choice import card_choice
 from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
+from ..sim.clock import DECISION_TICKS, PLANNING_TICKS, advance_window, opponent_offsets
 from ..sim.engine import Arena
-from ..sim.rules import CARDS, SPEC, Action, command, digest, rules_identity
+from ..sim.rules import CARDS, ROLLOUT_CLOCK, SPEC, Action, command, digest, rules_identity
 from .bandits import Node, exploration_prior, pick, root_priors, root_subset
 from .improvement import improved_policy
-from .rollout import rollout_choices
+from .rollout import frozen_move, rollout_choices
 
 
 def terminal(state, team):
@@ -91,11 +92,10 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
     return worlds, attempts, continued, conditioning
 
 
-def first_ply(world, team, root_actions, root_prior, opponent, rng):
+def first_ply(world, team, root_actions, root_prior):
     """One sampled world's root choices, shared by every simulation that starts from it.
 
-    Like `later_ply`, returns (value, None) when the position is decided or leaves nothing to
-    play, else (None, (own actions, their priors, enemy actions, their priors)).
+    Returns (value, None) when there are no choices, otherwise (None, (actions, priors)).
     """
     state = world.state()
     value = terminal(state, team)
@@ -114,21 +114,7 @@ def first_ply(world, team, root_actions, root_prior, opponent, rng):
         return position_value(world.observe(team, include_legal=False)), None
     priors = np.array([root_prior[root_actions.index(action)] for action in own_actions])
     priors /= priors.sum()
-    enemy_actions, enemy_priors = rollout_choices(world, 1 - team, opponent, rng)
-    return None, (own_actions, priors, enemy_actions, enemy_priors)
-
-
-def later_ply(world, team, policy, opponent, rng):
-    state = world.state()
-    value = terminal(state, team)
-    if value is not None:
-        return value, None
-    own_actions, priors = rollout_choices(world, team, policy, rng)
-    enemy_actions, enemy_priors = rollout_choices(world, 1 - team, opponent, rng)
-    # Complete a bounded rollout even through new nodes. With 26 simultaneous choices per
-    # side, stopping at the first new joint child would otherwise evaluate almost every move
-    # only 2s ahead.
-    return None, (own_actions, priors, enemy_actions, enemy_priors)
+    return None, (own_actions, priors)
 
 
 def leaf_value(world, team, policy):
@@ -146,20 +132,19 @@ def search(
     seed,
     simulations=32,
     depth=5,
-    step_ticks=40,
     particles=2,
     noise=False,
     max_ms=None,
     opponent_policy=None,
     workspace=None,
-    first_ticks=None,
     root_size=16,
     beliefs=None,
     observed_prior=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
-    The first ply lasts `first_ticks` (the decision interval), later plies `step_ticks`.
+    The first window lasts one decision interval, later windows span the configured planning
+    interval. Both sides can respond at their native ticks between planned moves.
     `beliefs` is a list of `particles` slots, None at first, that one observer of one game passes
     to each of its searches so hidden-hand hypotheses continue between them.
     """
@@ -169,7 +154,10 @@ def search(
     workspace = workspace or Workspace(particles)
     worlds, attempts, continued, conditioning = reconstruct(sampler, workspace, particles, beliefs)
     team = observation["team"]
-    opponent = opponent_policy or policy
+    enemy_move = partial(frozen_move, policy=opponent_policy or policy, rng=rng)
+    own_move = partial(frozen_move, policy=policy, rng=rng)
+    offsets, phase_source = opponent_offsets(observation, rng, len(worlds))
+    root_tick = observation["state"]["tick"]
     root = Node()
     candidates = [Action(*row) for row in observation["legalActions"]]
     prior = observed_prior
@@ -194,34 +182,42 @@ def search(
     snapshots = [world.battle.save() for world in worlds]
     world = workspace.scratch
     roots = {}
-    reached = 0
+    reached, elapsed_ticks = 0, 0
     for simulation in range(simulations):
         if max_ms is not None and simulation and (time.perf_counter() - began) * 1000 >= max_ms:
             break
         index = simulation % len(worlds)
         world.adopt(snapshots[index], worlds[index])
         if index not in roots:
-            roots[index] = first_ply(world, team, root_actions, root_prior, opponent, rng)
+            roots[index] = first_ply(world, team, root_actions, root_prior)
         node, path = root, []
         for ply in range(depth):
-            value, choices = (
-                roots[index] if ply == 0 else later_ply(world, team, policy, opponent, rng)
-            )
-            if choices is None:
-                break
-            own_actions, priors, enemy_actions, enemy_priors = choices
+            if ply == 0:
+                value, choices = roots[index]
+                if choices is None:
+                    break
+                own_actions, priors = choices
+            else:
+                value = terminal(world.state(), team)
+                if value is not None:
+                    break
+                own_actions, priors = rollout_choices(world, team, policy, rng)
             ours = pick(node.own, own_actions, priors, rng, 1.5, cover=ply == 0)
-            theirs = enemy_actions[
-                card_choice([action.card for action in enemy_actions], enemy_priors)
-            ]
             path.append((node, ours))
-            actions = [Action(-1), Action(-1)]
-            actions[team], actions[1 - team] = ours, theirs
-            world.play(actions, first_ticks if ply == 0 and first_ticks else step_ticks)
+            branch = advance_window(
+                world,
+                team,
+                ours,
+                DECISION_TICKS if ply == 0 else PLANNING_TICKS,
+                offsets[index],
+                enemy_move,
+                own_move,
+            )
             reached = max(reached, ply + 1)
-            node = node.children.setdefault((ours, theirs), Node())
+            node = node.children.setdefault(branch, Node())
         else:
             value = leaf_value(world, team, policy)
+        elapsed_ticks = max(elapsed_ticks, world.state()["tick"] - root_tick)
         for visited, ours in reversed(path):
             visited.visits += 1
             visited.own[ours]["n"] += 1
@@ -245,9 +241,7 @@ def search(
         "deckHypotheses": [len(pool) for pool in sampler.openings],
         "maxDepth": reached,
         "depthLimit": depth,
-        "maxLookaheadSeconds": (
-            ((first_ticks or step_ticks) + (reached - 1) * step_ticks) / 20 if reached else 0
-        ),
+        "maxLookaheadSeconds": elapsed_ticks / 20,
         "rootCandidates": len(candidates),
         "rootConditioningAttempts": attempts,
         "continuedHypotheses": continued,
@@ -261,4 +255,7 @@ def search(
         else "exact_public_without_towers",
         "rolloutPrior": "anchors_and_uniform_residual_importance_v1",
         "opponentResponse": "frozen_card_policy",
+        "responseTiming": ROLLOUT_CLOCK,
+        "opponentPhaseSource": phase_source,
+        "opponentOffsetsTicks": offsets,
     }

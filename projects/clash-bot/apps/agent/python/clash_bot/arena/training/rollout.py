@@ -5,7 +5,7 @@ weight residual probabilities by inclusion probability. This is an approximation
 not the exact dense partition used by the root and gradient.
 """
 
-from ..policy.choice import grouped_indices
+from ..policy.choice import card_choice, grouped_indices
 from ..policy.learning_spec import SPEC
 from ..policy.projection import importance_priors
 from ..sim.candidates import dense_actions, legal_actions
@@ -14,6 +14,8 @@ from ..sim.candidates import dense_actions, legal_actions
 def rollout_choices(world, team, policy, rng):
     state = world.state()
     full = dense_actions(world.battle, team, state)
+    if len(full) == 1:  # While a command is pending the native engine permits only waiting.
+        return full, [1.0]
     lookup = {action: index for index, action in enumerate(full)}
     anchors = {lookup[action] for action in legal_actions(world.battle, team, state)}
     selected = {index: 1.0 for index in anchors}
@@ -29,3 +31,8 @@ def rollout_choices(world, team, policy, rng):
     return actions, importance_priors(
         prior, [action.card for action in actions], [selected[index] for index in indexes]
     )
+
+
+def frozen_move(world, team, policy, rng):
+    actions, prior = rollout_choices(world, team, policy, rng)
+    return actions[card_choice([action.card for action in actions], prior)]

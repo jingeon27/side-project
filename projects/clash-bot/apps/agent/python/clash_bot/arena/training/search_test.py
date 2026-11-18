@@ -33,7 +33,7 @@ class PublicSearchTest(unittest.TestCase):
             )
         self.assertEqual(result["opponentResponse"], "frozen_card_policy")
         self.assertEqual(result["simulations"], 24)
-        self.assertEqual(len(played.call_args_list), 72)
+        self.assertEqual(sum(call.args[1] for call in played.call_args_list), 24 * 100)
         self.assertTrue(all(call.args[0][1] == Action(-1) for call in played.call_args_list))
 
     def test_a_failed_reconstruction_preserves_public_evidence_without_inventing_a_world(self):
@@ -76,7 +76,7 @@ class PublicSearchTest(unittest.TestCase):
         self.assertAlmostEqual(float(a["target"].sum()), 1)
         self.assertEqual(a["simulations"], 8)
         self.assertEqual(a["maxDepth"], 4)
-        self.assertEqual(a["maxLookaheadSeconds"], 8)
+        self.assertEqual(a["maxLookaheadSeconds"], 7)
         self.assertEqual(a["reconstruction"], "public_board_exact")
         self.assertEqual(a["deckHypotheses"], [1, len(DECKS)])
         self.assertTrue(

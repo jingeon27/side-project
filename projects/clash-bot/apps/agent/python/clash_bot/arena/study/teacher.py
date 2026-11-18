@@ -14,8 +14,9 @@ from clash_bot.qwen.records.search_data import conservation_frontier
 from ..policy.context import decision_context
 from ..sim.belief import BeliefSampler, PublicRootMismatch
 from ..sim.candidates import legal_actions
+from ..sim.clock import opponent_offsets
 from ..sim.engine import Arena, public_board
-from ..sim.rules import TILE, Action, canonical, digest, rules_identity
+from ..sim.rules import ROLLOUT_CLOCK, TILE, Action, canonical, digest, rules_identity
 from ..training.response import RESPONSE_POLICY, rollout
 from ..training.storage import seed_for
 
@@ -49,6 +50,10 @@ class Teacher:
         if len(actions) < 2:
             return None
         snapshot = root.battle.save()
+        offsets, phase_source = opponent_offsets(
+            observation, np.random.default_rng(seed_for("teacher_clock", identity)), 1
+        )
+        offset = offsets[0]
         own_threat = any(
             row[0] != team and row[1] == 3 and canonical(row[3] / TILE, row[4] / TILE, team)[1] < 16
             for row in root.state()["spells"]
@@ -58,7 +63,7 @@ class Teacher:
         def finish(action):
             self.scratch.adopt(snapshot, root)
             end, deployments = rollout(
-                self.scratch, team, action, horizon, seed_for("teacher_response", identity)
+                self.scratch, team, action, horizon, seed_for("teacher_response", identity), offset
             )
             weights = np.array([2.0, 1.0, 1.0])
             own = np.array(end["players"][team]["tower_hp"]) @ weights
@@ -116,6 +121,9 @@ class Teacher:
                 if defensive
                 else "tower_damage_difference",
                 "responsePolicy": RESPONSE_POLICY,
+                "responseTiming": ROLLOUT_CLOCK,
+                "opponentPhaseSource": phase_source,
+                "opponentOffsetTicks": offset,
                 "futureEnemyDeployments": "hypothetical_policy_responses",
                 "enemyDeploymentCounts": [count for _, _, _, count in ends],
                 "baselineEnemyDeployments": baseline_deployments,

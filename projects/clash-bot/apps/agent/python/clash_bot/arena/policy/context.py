@@ -136,9 +136,19 @@ def decision_context(observation, actions, types=None):
                 if point[0] == uid
             ]
             old = max(seen, key=lambda value: value[0]) if seen else None
-            point = tile(row[FIELDS["x"]], row[FIELDS["y"]], team)
-            previous = tile(old[1][1], old[1][2], team) if old else None
+            x, y = row[FIELDS["x"]], row[FIELDS["y"]]
+            point = tile(x, y, team)
             seconds = (state["tick"] - old[0]) / 20 if old else None
+            direction = 1 if team == 0 else -1
+            # Rounding both positions to tenths first loses most movement over short steps.
+            velocity = (
+                [
+                    direction * (x - old[1][1]) / TILE / seconds,
+                    direction * (y - old[1][2]) / TILE / seconds,
+                ]
+                if old and seconds
+                else None
+            )
             kind = body(types[row[FIELDS["unit_type"]]])
             # The screen reads a health bar, not hit points: the share of this unit's own full
             # health, scaled to the catalogue's reference. A unit's level cannot be read from it.
@@ -150,12 +160,7 @@ def decision_context(observation, actions, types=None):
                     "x": point[0],
                     "y": point[1],
                     "variant": "?",
-                    "velocity": [
-                        (point[0] - previous[0]) / seconds,
-                        (point[1] - previous[1]) / seconds,
-                    ]
-                    if previous and seconds
-                    else None,
+                    "velocity": velocity,
                     "hp": [health, health],
                 }
             )
