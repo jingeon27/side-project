@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { Upload } from 'lucide-react';
+
 import { Button, StatusAnimation } from '@side/design-system';
 
 export function StatusAnimationsExample() {
@@ -9,7 +11,7 @@ export function StatusAnimationsExample() {
       <h1 className="mb-6 text-title text-ink">상태 애니메이션</h1>
       <Button onClick={() => setRenderAnimations((value) => !value)}>그림 표시 전환</Button>
       {renderAnimations ? (
-        <div className="mt-6 grid grid-cols-2 justify-items-center gap-8">
+        <section aria-label="상태 그림" className="mt-6 grid grid-cols-2 justify-items-center gap-8">
           <StatusAnimation variant="loading" label="불러오는 중" />
           <StatusAnimation variant="success" label="저장 완료" />
           <StatusAnimation variant="error" label="오류 안내" className="text-danger" />
@@ -21,10 +23,13 @@ export function StatusAnimationsExample() {
             label="고양이"
             className="col-span-2 aspect-5/4 h-auto w-full max-w-app"
           />
-        </div>
+        </section>
       ) : null}
       <Button loading className="mt-6">
         저장하는 중
+      </Button>
+      <Button loading icon={<Upload aria-hidden="true" />}>
+        업로드하는 중
       </Button>
     </main>
   );

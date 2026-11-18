@@ -8,9 +8,15 @@ test('Lottie는 모바일과 넓은 화면에서 실제 SVG를 그리고 키보�
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/?example=motion');
-    await expect(page.locator('[data-motion-player] svg')).toHaveCount(8);
+    const gallery = page.getByRole('region', { name: '상태 그림' });
+    await expect(gallery.locator('[data-motion-player] svg')).toHaveCount(7);
     await expect(page.getByRole('img', { name: '고양이' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '저장하는 중' })).toHaveAttribute('aria-busy', 'true');
+    const save = page.getByRole('button', { name: '저장하는 중' });
+    const upload = page.getByRole('button', { name: '업로드하는 중' });
+    await expect(save).toHaveAttribute('aria-busy', 'true');
+    await expect(save.locator('[data-slot="button-progress"]')).toBeVisible();
+    await expect(upload).toHaveAttribute('aria-busy', 'true');
+    await expect(upload.locator('[data-motion-player] svg')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const rotating = page.getByRole('img', { name: '불러오는 중' }).locator('g[transform]').first();
     const firstFrame = await rotating.getAttribute('transform');
@@ -18,8 +24,9 @@ test('Lottie는 모바일과 넓은 화면에서 실제 SVG를 그리고 키보�
     await page.screenshot({ path: testInfo.outputPath(`motion-${width}.png`), fullPage: true });
     await page.getByRole('button', { name: '그림 표시 전환' }).focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('img', { name: '고양이' })).toHaveCount(0);
-    await expect(page.locator('[data-motion-player] svg')).toHaveCount(1);
+    await expect(gallery).toHaveCount(0);
+    await expect(save.locator('[data-slot="button-progress"]')).toBeVisible();
+    await expect(upload.locator('[data-motion-player] svg')).toBeVisible();
   }
   expect(errors).toEqual([]);
 });
