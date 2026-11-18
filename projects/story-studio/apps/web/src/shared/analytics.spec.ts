@@ -17,6 +17,7 @@ it('키가 없는 로컬 사용에서는 SDK를 초기화하거나 전송하지 
   await trackStudioEvent('studio_writing_finished', { status: 'succeeded' });
   await trackStudioEvent('studio_materials_opened', {});
   await trackStudioEvent('studio_recording_clicked', { action: 'start' });
+  await trackStudioEvent('studio_menu_toggled', { expanded: true });
   await trackStudioEvent('studio_recording_started', { source: 'microphone' });
   await trackStudioEvent('studio_recording_completed', { source: 'microphone' });
   expect(sdk.create).not.toHaveBeenCalled();
@@ -32,6 +33,7 @@ it('명시적 측정 설정에서만 클릭과 서버 성공을 구분하고 자
   await trackStudioEvent('studio_request_clicked', { action: 'image' });
   await trackStudioEvent('studio_request_succeeded', { action: 'image' });
   await trackStudioEvent('studio_recording_clicked', { action: 'start' });
+  await trackStudioEvent('studio_menu_toggled', { expanded: true });
   await trackStudioEvent('studio_recording_started', { source: 'microphone' });
   await trackStudioEvent('studio_recording_clicked', { action: 'stop' });
   await trackStudioEvent('studio_recording_completed', { source: 'microphone' });
@@ -50,6 +52,7 @@ it('명시적 측정 설정에서만 클릭과 서버 성공을 구분하고 자
     ['studio_request_clicked', { action: 'image' }],
     ['studio_request_succeeded', { action: 'image' }],
     ['studio_recording_clicked', { action: 'start' }],
+    ['studio_menu_toggled', { expanded: true }],
     ['studio_recording_started', { source: 'microphone' }],
     ['studio_recording_clicked', { action: 'stop' }],
     ['studio_recording_completed', { source: 'microphone' }],

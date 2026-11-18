@@ -12,7 +12,7 @@ export default async function Workspace({
     <Studio
       initialFormat={format.success ? format.data : undefined}
       openSample={query.sample === '1'}
-      openDemo={query.demo === '1'}
+      demoSource={query.demo === 'bundled' ? 'bundled' : query.demo === '1' ? 'local' : undefined}
     />
   );
 }

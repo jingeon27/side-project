@@ -1,37 +1,22 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import {
-  ArrowRight,
-  BookOpen,
-  Check,
-  ChevronRight,
-  Clapperboard,
-  Film,
-  FolderOpen,
-  LoaderCircle,
-  Plus,
-  Settings2,
-  Upload,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, LoaderCircle, X } from 'lucide-react';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
-import { trackStudioEvent, type TStudioAction } from '../../../shared/analytics';
+import { trackStudioEvent } from '../../../shared/analytics';
 import { fetchProject } from '../../library/api/library-client';
 import { downloadFile, readBackup } from '../../library/model/library';
 import { useLibrary } from '../../library/ui/use-library';
 import { localImageReady } from '../../media/model/image-generation';
-import { fitImage } from '../../media/model/image-import';
-import { exportVideo } from '../../media/model/video-export';
 import { updateVideoTasks } from '../../media/model/video-tasks';
-import { exportWebtoon } from '../../media/model/webtoon-export';
-import { defaultBrief, sampleProject } from '../../story/model/sample';
+import { defaultBrief, withFormat } from '../../story/model/brief';
+import { sampleProject } from '../../story/model/sample';
 import {
   briefSchema,
   caption,
@@ -50,52 +35,31 @@ import {
   type TScene,
   type TWritingStatus,
 } from '../../story/model/story';
-import { StoryEditor } from '../../story/ui/StoryEditor';
-import { ConnectionPanel, type TConfiguration } from './ConnectionPanel';
+import { getStudioConfiguration, requestStudio } from '../api/studio-client';
 import { CreateForm } from './CreateForm';
+import { StudioSidebar } from './StudioSidebar';
 
-async function request(action: TStudioAction, input: unknown, signal: AbortSignal): Promise<unknown> {
-  void trackStudioEvent('studio_request_clicked', { action });
-  const response = await fetch('/api/studio', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, input }),
-    signal,
-  });
-  const data = await response.json();
-  if (!response.ok)
-    throw new Error(typeof data.error === 'string' ? data.error : '요청을 처리하지 못했습니다.');
-  void trackStudioEvent('studio_request_succeeded', { action });
-  return data;
-}
+const StoryEditor = dynamic(() => import('../../story/ui/StoryEditor').then((module) => module.StoryEditor), {
+  loading: () => <p role="status">작품 여는 중…</p>,
+});
+const ConnectionPanel = dynamic(() => import('./ConnectionPanel').then((module) => module.ConnectionPanel), {
+  loading: () => <p role="status">연결 설정 여는 중…</p>,
+});
+
 export function Studio({
   initialFormat,
   openSample = false,
-  openDemo = false,
+  demoSource,
 }: {
   initialFormat?: TFormat;
   openSample?: boolean;
-  openDemo?: boolean;
+  demoSource?: 'bundled' | 'local';
 }) {
   const { projects, setProjects, ready, storageError, adopt, flush } = useLibrary();
   const [selected, setSelected] = useState<string | null>(null);
-  const [brief, setBrief] = useState<TBrief>(() => ({
-    ...defaultBrief,
-    ...(initialFormat
-      ? {
-          format: initialFormat,
-          style:
-            initialFormat === 'novel'
-              ? '섬세한 감정 묘사와 자연스러운 한국어 문체'
-              : initialFormat === 'webtoon'
-                ? '선명한 한국 웹툰 작화'
-                : initialFormat === 'animation'
-                  ? defaultBrief.style
-                  : '자연스러운 한국 영화의 시네마틱 연출',
-          ratio: initialFormat === 'webtoon' ? '9:16' : '16:9',
-        }
-      : {}),
-  }));
+  const [brief, setBrief] = useState<TBrief>(() =>
+    withFormat(defaultBrief, initialFormat ?? defaultBrief.format),
+  );
   const [settings, setSettings] = useState(false);
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
@@ -106,18 +70,12 @@ export function Studio({
   const controller = useRef<AbortController | null>(null);
   // The writing job this screen is watching, so the stop button can end the job and not only the watching.
   const writing = useRef<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   const sampleOpened = useRef(false);
   const demoOpened = useRef(false);
   const project = projects.find((item) => item.id === selected);
   const configuration = useQuery({
     queryKey: ['studio', 'configuration'],
-    queryFn: async ({ signal }): Promise<TConfiguration> => {
-      const response = await fetch('/api/studio', { signal, cache: 'no-store' });
-      if (!response.ok)
-        throw new Error('AI 연결 상태를 확인하지 못했습니다. 서버가 실행 중인지 확인해 주세요.');
-      return response.json();
-    },
+    queryFn: ({ signal }) => getStudioConfiguration(signal),
     refetchOnWindowFocus: 'always',
     refetchInterval: ({ state }) =>
       (settings || (project && project.brief.format !== 'novel')) &&
@@ -135,16 +93,18 @@ export function Studio({
     voice: config?.voiceReady === true,
     voiceTraining: config?.voiceTrainingReady === true,
   };
-  const videoTasks = projects.flatMap((item) =>
-    item.scenes.flatMap((scene) =>
-      scene.video && ['PENDING', 'RUNNING'].includes(scene.video.status) ? [scene.video.id] : [],
-    ),
-  );
-  const taskKey = [...new Set(videoTasks)].join(',');
+  const taskKey = useMemo(() => {
+    const pending = projects.flatMap((item) =>
+      item.scenes.flatMap((scene) =>
+        scene.video && ['PENDING', 'RUNNING'].includes(scene.video.status) ? [scene.video.id] : [],
+      ),
+    );
+    return [...new Set(pending)].join(',');
+  }, [projects]);
   useEffect(() => {
-    if (!ready || !openDemo || demoOpened.current) return;
+    if (!ready || !demoSource || demoOpened.current) return;
     demoOpened.current = true;
-    void fetch('/api/demo')
+    void fetch(demoSource === 'bundled' ? '/examples/project.json' : '/api/demo')
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || '생성 결과를 읽지 못했습니다');
@@ -159,7 +119,7 @@ export function Studio({
         setSelected(demo.id);
       })
       .catch((error) => setNotice(error instanceof Error ? error.message : '생성 결과를 읽지 못했습니다'));
-  }, [ready, openDemo, projects, setProjects]);
+  }, [ready, demoSource, projects, setProjects]);
 
   useEffect(() => {
     if (!ready || !openSample || sampleOpened.current) return;
@@ -184,7 +144,7 @@ export function Studio({
   }, [configuration.error]);
   useEffect(() => {
     void trackStudioEvent('studio_opened', {
-      source: openDemo ? 'demo' : openSample ? 'sample' : initialFormat || 'blank',
+      source: demoSource ? 'demo' : openSample ? 'sample' : initialFormat || 'blank',
     });
     return () => controller.current?.abort();
   }, []);
@@ -299,7 +259,7 @@ export function Studio({
       return;
     }
     void work('이야기 구성 중', async (signal) => {
-      const job = writingStatusSchema.parse(await request('write', parsed.data, signal));
+      const job = writingStatusSchema.parse(await requestStudio('write', parsed.data, signal));
       await follow(job.id, signal);
     });
   }
@@ -345,6 +305,7 @@ export function Studio({
   function importImage(scene: TScene, file: File) {
     if (!project || project.brief.format === 'novel') return;
     void work('이미지 가져오는 중', async (signal) => {
+      const { fitImage } = await import('../../media/model/image-import');
       void trackStudioEvent('studio_request_clicked', { action: 'image-import' });
       const response = await fetch('/api/assets', {
         method: 'POST',
@@ -380,7 +341,7 @@ export function Studio({
       .with('image', () => (reference ? '인물 기준을 참고해 이미지 생성 중' : '이미지 생성 중'))
       .exhaustive();
     void work(label, async (signal) => {
-      const data = await request(
+      const data = await requestStudio(
         type,
         {
           format: project.brief.format,
@@ -408,7 +369,9 @@ export function Studio({
     void work('다음 이야기 작성 중', async (signal) => {
       // The job reads the work from the studio's file, so the latest edits are saved first.
       await flush();
-      const job = writingStatusSchema.parse(await request('continue', { projectId: project.id }, signal));
+      const job = writingStatusSchema.parse(
+        await requestStudio('continue', { projectId: project.id }, signal),
+      );
       await follow(job.id, signal);
     });
   }
@@ -416,7 +379,7 @@ export function Studio({
     if (!project) return;
     void work('한국어 음성 생성 중', async (signal) => {
       const result = voiceSchema.parse(
-        await request('voice', { text: caption(scene), settings: scene.voiceSettings }, signal),
+        await requestStudio('voice', { text: caption(scene), settings: scene.voiceSettings }, signal),
       );
       patchScene(project.id, scene.id, {
         voice: result,
@@ -438,12 +401,13 @@ export function Studio({
     if (!project) return;
     void work(project.brief.format === 'webtoon' ? '웹툰 저장 중' : '영상 합치는 중', async (signal) => {
       if (project.brief.format === 'webtoon') {
+        const { exportWebtoon } = await import('../../media/model/webtoon-export');
         downloadFile(await exportWebtoon(project, signal), `${safeFilename(project.title)}.png`);
         setNotice('한글 말풍선을 넣은 웹툰을 내려받았습니다.');
         return;
       }
       if (local || project.scenes.some((scene) => scene.voice)) {
-        const result = (await request(
+        const result = (await requestStudio(
           'compose',
           {
             scenes: project.scenes.map((scene) => ({
@@ -464,6 +428,7 @@ export function Studio({
         setNotice('한국어 음성과 자막을 넣은 영상을 저장했습니다');
         return;
       }
+      const { exportVideo } = await import('../../media/model/video-export');
       const result = await exportVideo(project, signal, setRenderProgress);
       downloadFile(result.blob, `${safeFilename(project.title)}.${result.extension}`);
       setNotice('한국어 자막을 넣은 영상을 내려받았습니다.');
@@ -486,132 +451,23 @@ export function Studio({
   }
   return (
     <div className="studio-shell">
-      <aside className="sidebar">
-        <Link
-          className="brand"
-          href="/"
-          onClick={(event) => {
-            if (busy) event.preventDefault();
-          }}
-        >
-          <span className="brand-mark">
-            <Clapperboard size={22} />
-          </span>
-          <span>
-            장면<small>STORY STUDIO</small>
-          </span>
-        </Link>
-        <button
-          className="button primary new-project"
-          disabled={Boolean(busy) || !ready}
-          onClick={() => {
-            setSelected(null);
-            setNotice('');
-            setDeletePending(false);
-          }}
-        >
-          <Plus size={17} /> 새 이야기 만들기
-        </button>
-        <div className="library-label">
-          <span>나의 작업실</span>
-          <span>{projects.length.toString().padStart(2, '0')}</span>
-        </div>
-        <nav className="project-nav" aria-label="저장한 작품">
-          {projects.map((item) => (
-            <button
-              key={item.id}
-              className={`project-link ${selected === item.id ? 'active' : ''}`}
-              disabled={Boolean(busy)}
-              onClick={() => {
-                setSelected(item.id);
-                setDeletePending(false);
-                setNotice('');
-              }}
-            >
-              {item.brief.format === 'novel' ? <BookOpen size={17} /> : <Film size={17} />}
-              <span>
-                {item.title}
-                <small>
-                  {formats.find((format) => format.id === item.brief.format)?.name}, {item.scenes.length}
-                  {item.brief.format === 'novel' ? '개 장' : '개 장면'}
-                </small>
-              </span>
-            </button>
-          ))}
-          {ready && projects.length === 0 && (
-            <div className="empty-library">
-              <FolderOpen size={24} />
-              <p>
-                아직 빈 작업실이에요.
-                <br />첫 이야기를 시작해 보세요.
-              </p>
-            </div>
-          )}
-        </nav>
-        <Link
-          className="voice-nav-link"
-          href="/studio/voices"
-          onClick={(event) => {
-            if (busy) event.preventDefault();
-          }}
-        >
-          목소리 학습 <ArrowRight size={15} />
-        </Link>
-        {local && (
-          <Link
-            className="voice-nav-link material-nav-link"
-            href="/studio/materials"
-            onClick={(event) => {
-              if (busy) event.preventDefault();
-            }}
-          >
-            참고 자료실 <ArrowRight size={15} />
-          </Link>
-        )}
-        <div className="sidebar-footer">
-          <button
-            className="text-button"
-            disabled={Boolean(busy) || !ready}
-            onClick={() => fileInput.current?.click()}
-          >
-            <Upload size={16} /> 작품 가져오기
-          </button>
-          <input
-            className="sr-only"
-            type="file"
-            accept="application/json,.json"
-            ref={fileInput}
-            aria-label="작품 백업 파일"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void importProject(file);
-              event.target.value = '';
-            }}
-          />
-          <button
-            className="connection-button"
-            aria-expanded={settings}
-            onClick={() => setSettings(!settings)}
-          >
-            <span className={`status-light ${connected ? 'connected' : ''}`} />
-            <span>
-              {config === null
-                ? 'AI 연결 확인 중'
-                : local
-                  ? connected
-                    ? '로컬 모델 사용 중'
-                    : '로컬 모델 준비 필요'
-                  : connected
-                    ? 'AI 연결 설정됨'
-                    : 'AI 연결이 필요해요'}
-            </span>
-            <Settings2 size={15} />
-          </button>
-          <p>작품과 생성한 파일은 이 컴퓨터에 저장됩니다.</p>
-        </div>
-      </aside>
+      <StudioSidebar
+        projects={projects}
+        selected={selected}
+        ready={ready}
+        busy={Boolean(busy)}
+        config={config}
+        settingsOpen={settings}
+        onSettings={() => setSettings((open) => !open)}
+        onImport={importProject}
+        onSelect={(id) => {
+          setSelected(id);
+          setNotice('');
+          setDeletePending(false);
+        }}
+      />
       <div className="main-shell">
-        <header className="topbar">
+        <header className="topbar" data-view={project ? 'editor' : 'create'}>
           <span>
             나의 작업실 <ChevronRight size={13} />{' '}
             <strong>

@@ -35,3 +35,14 @@ export async function mockLibrary(page: Page, projects: TProject[] = []) {
   });
   return library;
 }
+
+// On a phone, project switching and backup import share the workspace menu.
+export async function openLibraryMenu(page: Page) {
+  const menu = page.getByRole('button', { name: '작업실 메뉴' });
+  if ((await menu.isVisible()) && (await menu.getAttribute('aria-expanded')) === 'false') await menu.click();
+}
+
+export async function openSavedProject(page: Page, title: RegExp) {
+  await openLibraryMenu(page);
+  await page.getByRole('navigation', { name: '저장한 작품' }).getByRole('button', { name: title }).click();
+}

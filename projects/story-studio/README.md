@@ -221,6 +221,8 @@ Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 �
 
 원고 요청의 작업 종류는 새 작품 집필(`write`)과 이어 쓰기(`continue`)입니다. `studio_request_succeeded`는 서버가 집필 작업을 받았다는 뜻이며, 작업이 끝난 결과는 `studio_writing_finished`의 고정된 `status`(succeeded, failed, cancelled)로 따로 남깁니다. 화면을 닫은 뒤 끝난 작업은 이 이벤트를 남기지 않습니다. 참고 자료실 진입은 속성 없는 `studio_materials_opened`, 자료 추가와 삭제, 폴더 가져오기, 색인 시작과 중단은 기존 요청 이벤트의 `material-add`, `material-delete`, `material-import`, `material-sync`, `material-stop`, 자료 묶음 선택은 `studio_collection_clicked`의 고정된 `action`(select, clear)으로 측정합니다. 묶음 이름, 자료 제목과 본문은 보내지 않습니다. 외부 이미지 가져오기는 요청 이벤트의 `image-import`, 프롬프트 복사는 `studio_prompt_clicked`의 `action`(copy)이며 프롬프트 내용은 보내지 않습니다.
 
+모바일 작업실 메뉴를 직접 열거나 닫으면 `studio_menu_toggled`에 열림 여부(`expanded`)만 남깁니다.
+
 인물 기준 지정은 `studio_reference_clicked`의 고정된 `action`(set, clear)으로만 측정합니다. 브라우저 원고만 바꾸는 동작이라 서버 성공 이벤트는 없습니다. 기준 이미지를 참고한 생성의 요청과 성공은 기존 `studio_request_clicked`, `studio_request_succeeded`의 `image`로 남으며, 장면 ID와 이미지 경로는 보내지 않습니다.
 
 이 앱은 127.0.0.1에 바인딩된 개인용 도구입니다. 네트워크 공개, 공동 작업과 로그인은 이번 범위에 포함하지 않습니다. 공개 서비스로 전환하려면 인증과 작품 소유권을 별도로 설계해야 합니다.

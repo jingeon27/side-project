@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
 import type { TVoiceRun, TVoiceSample } from '../src/features/voice/model/voice-training';
-import { mockLibrary } from './library';
+import { mockLibrary, openSavedProject } from './library';
 
 const voice = {
   id: '29edf583-4d34-4b0a-99e4-9f66bf1c6400',
@@ -184,7 +184,7 @@ test('장면마다 기본 음색과 말투, 학습한 목소리를 선택해 합
   });
   await page.route('**/api/assets/*.wav', (route) => route.fulfill({ contentType: 'audio/wav', body: wav }));
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   const speaker = page.getByLabel('목소리', { exact: true }).first();
   await speaker.selectOption('ryan');
   await page.getByLabel('말투', { exact: true }).first().selectOption('bright');

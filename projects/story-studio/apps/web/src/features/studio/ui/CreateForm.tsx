@@ -2,11 +2,32 @@
 
 import { type Dispatch, type SetStateAction } from 'react';
 
-import { ArrowRight, PenLine, Plus, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Clapperboard,
+  GalleryVerticalEnd,
+  PanelsTopLeft,
+  PenLine,
+  Plus,
+  Sparkles,
+  TvMinimalPlay,
+} from 'lucide-react';
 
 import { CollectionPicker } from '../../materials/ui/CollectionPicker';
+import { withFormat } from '../../story/model/brief';
 import { ideas } from '../../story/model/sample';
-import { formats, type TBrief } from '../../story/model/story';
+import { formats, type TBrief, type TFormat } from '../../story/model/story';
+import styles from './CreateForm.module.css';
+
+const formatIcons = {
+  film: Clapperboard,
+  drama: TvMinimalPlay,
+  animation: GalleryVerticalEnd,
+  webtoon: PanelsTopLeft,
+  novel: BookOpen,
+} satisfies Record<TFormat, typeof BookOpen>;
 
 // The brief for a new work: format, idea, genre, style and how much to write first.
 export function CreateForm({
@@ -36,33 +57,27 @@ export function CreateForm({
       <div className="section-heading">
         <h2>작품 형식</h2>
       </div>
-      <div className="format-grid">
-        {formats.map((format) => (
-          <button
-            key={format.id}
-            className={`format-card ${brief.format === format.id ? 'selected' : ''}`}
-            aria-pressed={brief.format === format.id}
-            aria-label={`${format.name} ${format.description}`}
-            disabled={busy}
-            onClick={() =>
-              onBriefChange((current) => ({
-                ...current,
-                format: format.id,
-                style:
-                  format.id === 'animation'
-                    ? '따뜻한 수채화풍'
-                    : format.id === 'webtoon'
-                      ? '선명한 한국 웹툰 작화'
-                      : format.id === 'novel'
-                        ? '섬세한 감정 묘사와 자연스러운 한국어 문체'
-                        : '자연스러운 한국 영화의 시네마틱 연출',
-                ratio: format.id === 'webtoon' ? '9:16' : current.ratio,
-              }))
-            }
-          >
-            <strong>{format.name}</strong>
-          </button>
-        ))}
+      <div className={styles.formats}>
+        {formats.map((format) => {
+          const Icon = formatIcons[format.id];
+          const selected = brief.format === format.id;
+          return (
+            <button
+              type="button"
+              key={format.id}
+              className={styles.format}
+              aria-pressed={selected}
+              aria-label={`${format.name} ${format.description}`}
+              disabled={busy}
+              onClick={() => onBriefChange((current) => withFormat(current, format.id))}
+            >
+              <Icon className={styles.formatIcon} size={21} strokeWidth={1.65} aria-hidden />
+              <strong>{format.name}</strong>
+              <span className={styles.description}>{format.description}</span>
+              {selected && <Check size={14} className={styles.check} aria-hidden />}
+            </button>
+          );
+        })}
       </div>
       <form
         onSubmit={(event) => {

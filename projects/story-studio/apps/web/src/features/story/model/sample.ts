@@ -1,15 +1,6 @@
-import { makeProject, type TBrief } from './story';
+import { defaultBrief } from './brief';
+import { makeProject } from './story';
 
-export const defaultBrief: TBrief = {
-  format: 'animation',
-  premise: '',
-  genre: '판타지',
-  style: '따뜻한 수채화풍',
-  count: 3,
-  ratio: '16:9',
-  quality: 'draft',
-  collections: [],
-};
 export const ideas = [
   '비 오는 날에만 문을 여는 우체국. 잃어버린 고양이를 찾는 아이에게 10년 뒤의 자신이 보낸 편지가 도착한다.',
   '서울의 마지막 심야버스를 운전하는 신입 기사. 오늘 탄 승객들은 모두 아직 끝내지 못한 이야기를 가지고 있다.',

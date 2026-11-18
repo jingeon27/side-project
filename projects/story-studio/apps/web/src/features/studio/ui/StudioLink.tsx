@@ -19,7 +19,7 @@ export function StudioLink({
   const href = match(source)
     .with('blank', () => '/studio')
     .with('sample', () => '/studio?sample=1')
-    .with('demo', () => '/studio?demo=1')
+    .with('demo', () => '/studio?demo=bundled')
     .otherwise((format) => `/studio?format=${format}`);
   return (
     <Link

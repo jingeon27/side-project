@@ -4,21 +4,8 @@ import Link from 'next/link';
 
 import { X } from 'lucide-react';
 
-export type TConfiguration = {
-  configured: boolean;
-  textModel: string;
-  imageModel: string;
-  videoModel: string;
-  provider?: 'local' | 'cloud';
-  voiceModel?: string;
-  materialModel?: string;
-  textReady?: boolean;
-  voiceReady?: boolean;
-  voiceTrainingReady?: boolean;
-  imageReady?: boolean;
-  videoReady?: boolean;
-  demoReady?: boolean;
-};
+import type { TConfiguration } from '../api/studio-client';
+
 // How the studio is connected: the local models in use, or the cloud key to set.
 export function ConnectionPanel({
   config,
