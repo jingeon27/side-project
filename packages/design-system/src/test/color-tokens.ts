@@ -42,9 +42,18 @@ export function resolveColor(token: string, mode: TColorMode) {
   return value;
 }
 
+function rgbChannels(hex: string) {
+  return [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16));
+}
+
+/** 소비 앱의 Playwright 검사가 실제 브라우저 색을 지정한 테마의 토큰과 비교할 때 쓴다. */
+export function themeColorRgb(token: string, mode: TColorMode) {
+  return `rgb(${rgbChannels(resolveColor(token, mode)).join(', ')})`;
+}
+
 function luminance(hex: string) {
-  const channels = [1, 3, 5].map((start) => {
-    const value = parseInt(hex.slice(start, start + 2), 16) / 255;
+  const channels = rgbChannels(hex).map((channel) => {
+    const value = channel / 255;
     return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
