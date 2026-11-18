@@ -115,11 +115,13 @@ export function contextFeatures(context: DecisionContext) {
     if (entry && low > 0) addInto(vector, OFFSET.enemyOut, entry.features, Math.min(low, 4) / 16);
   }
   // 칸마다 먼저 더한 뒤 한 번에 잘라 오브젝트 순서와 무관하게 한다.
-  const field = new Float64Array(2 * CHANNELS * CELLS);
+  const occupied = new Set<number>();
   const add = (side: number, index: number, values: readonly number[], first: number) =>
     values.forEach((value, channel) => {
+      if (value === 0) return;
       const at = (side * CHANNELS + first + channel) * CELLS + index;
-      field[at] = field[at]! + value;
+      vector[OFFSET.field + at] = vector[OFFSET.field + at]! + value;
+      occupied.add(at);
     });
   [context.bodies.own, context.bodies.enemy].forEach((bodies, side) => {
     for (const body of bodies) {
@@ -130,10 +132,10 @@ export function contextFeatures(context: DecisionContext) {
   });
   for (const [side, card, x, y] of context.effects ?? [])
     if (isCatalogueBody(card)) add(side === 'blue' ? 0 : 1, cell(x, y), bodyVector(card), 0);
-  field.forEach((value, at) => {
+  for (const at of occupied) {
     const channel = Math.floor(at / CELLS) % CHANNELS;
-    vector[OFFSET.field + at] = clamp(value, channel >= BODY_SIZE + 2 ? -1 : 0, 1);
-  });
+    vector[OFFSET.field + at] = clamp(vector[OFFSET.field + at]!, channel >= BODY_SIZE + 2 ? -1 : 0, 1);
+  }
   return vector;
 }
 
