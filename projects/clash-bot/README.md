@@ -64,11 +64,14 @@ yarn workspace @side/clash-bot test:trophy:model
 
 ```sh
 yarn workspace @side/clash-bot arena start --background --hours 0
+yarn workspace @side/clash-bot arena status --summary
 yarn workspace @side/clash-bot arena benchmark
 yarn workspace @side/clash-bot counterpush play --background --matches 20
 yarn workspace @side/clash-bot counterpush status
 yarn workspace @side/clash-bot counterpush stop
 ```
+
+`arena status`는 터미널에서 진행 단계, 완료한 경기 수, 후보와 챔피언 버전, 마지막 평가 결과를 표시합니다. 파이프 또는 `--json`은 전체 기록을 반환합니다. 상태 조회는 Python 표준 라이브러리만 사용합니다.
 
 - **입력(정책 형식 v4):** 카드와 필드 오브젝트를 이름 칸이 아니라 카드 카탈로그의 특징으로 읽습니다. 그래서 덱이 바뀌어도 가중치 모양이 같습니다. 필드는 두 타일 단위 격자(9×16)이고, 칸마다 오브젝트 특징과 화면에서 본 체력(최대 체력 대비)·이동 방향을 더합니다. 상대가 쓴 뒤 아직 손에 돌아오지 않은 카드, 내 진화 준비 상태도 넣습니다. 화면이 타워 체력을 늘 읽지는 못하므로 학습 표본의 절반은 타워 체력을 가립니다.
 - **배치:** 후보는 배치 규칙 지점에 더해 우리 진영의 모든 칸(유닛·건물·굴림 주문)과 필드의 두 칸마다·상대 유닛 위치(주문)입니다. 카드 넷이면 수백 곳이 됩니다. 각 후보는 가장 가까운 적·위협까지의 거리와 방향, 범위 안의 적 수와 체력, 주변 아군, 양쪽 타워까지의 거리, 라인을 함께 읽습니다. 이 Mac에서 후보 754개로 후보 생성부터 추론까지 한 번의 판단이 약 7.2ms였습니다(화면 판독 시간 제외).
