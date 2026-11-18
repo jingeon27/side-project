@@ -45,7 +45,7 @@ it('shadcn 입력의 레이블과 오류, RHF ref를 연결하고 선택한 값�
   const title = screen.getByRole('textbox', { name: '제목' });
   await waitFor(() => expect(title).toHaveFocus());
   expect(title).toHaveAttribute('aria-invalid', 'true');
-  expect(title).toHaveAccessibleDescription('글의 제목 제목을 확인해주세요');
+  expect(title).toHaveAccessibleDescription('제목을 확인해주세요 글의 제목');
   await user.type(title, '친추판매 모집');
   await user.selectOptions(screen.getByRole('combobox', { name: '분류' }), 'FRIEND_SALE');
   await user.type(

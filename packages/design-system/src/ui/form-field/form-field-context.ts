@@ -18,7 +18,7 @@ type TControlAria = Pick<
 
 /** 레이블·도움말·오류 연결. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 덮어쓰지 않고 설명은 뒤에 덧붙인다. */
 export function getFieldAria(field: IFormFieldContext, props: TControlAria): TControlAria {
-  const describedBy = [props['aria-describedby'], field.descriptionId, field.errorId]
+  const describedBy = [props['aria-describedby'], field.errorId, field.descriptionId]
     .filter(Boolean)
     .join(' ');
   return {

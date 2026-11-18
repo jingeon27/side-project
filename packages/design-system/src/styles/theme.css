@@ -110,6 +110,8 @@
 
   --shadow-app: 0 0 0 1px rgb(0 0 0 / 0.04);
   --shadow-card: 0 1px 2px rgb(45 36 18 / 0.06), 0 3px 8px -5px rgb(45 36 18 / 0.12);
+  --shadow-button: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 2px 4px -1px rgb(36 29 16 / 0.24);
+  --shadow-popover: 0 3px 8px -4px rgb(36 29 16 / 0.18), 0 12px 28px -12px rgb(36 29 16 / 0.24);
   --shadow-sheet: 0 8px 48px rgb(0 0 0 / 0.16);
   --shadow-toast: 0 8px 24px rgb(0 0 0 / 0.16);
   /* 그라데이션 표면 아래에 같은 색으로 번지는 그림자 */
@@ -128,6 +130,17 @@
   --spacing-bottom-nav: 76px;
   --spacing-cta: 50px;
   --spacing-touch: 44px;
+
+  --animate-button-progress: button-progress 1.2s ease-in-out infinite;
+
+  @keyframes button-progress {
+    from {
+      transform: translateX(-200%);
+    }
+    to {
+      transform: translateX(200%);
+    }
+  }
 
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }

@@ -10,15 +10,16 @@ const colorTokens = new Set(Object.keys(readThemeTokens()));
 
 /** 클래스 목록에서 `prefix` 뒤가 색 토큰인 첫 값을 고른다(`text-label` 같은 글자 크기는 건너뛴다). */
 function colorOf(element: HTMLElement, prefix: string) {
-  return element.className
+  const token = element.className
     .split(/\s+/)
     .map((name) => (name.startsWith(prefix) ? name.slice(prefix.length) : ''))
     .find((token) => colorTokens.has(token));
+  if (!token) throw new Error(`${prefix} 색 토큰을 찾을 수 없습니다.`);
+  return token;
 }
 
-// 다크 모드에서 선택 칸 바탕(surface/sunken 1.07:1)과 글자색(ink/muted 1.97:1)만으로는 선택 칸이 구분되지 않았다.
 it.each(colorModes)(
-  '%s 모드에서 기본 탭의 선택 칸은 비선택 칸과 3:1 이상 구분돼야 한다(WCAG 1.4.11)',
+  '%s 모드에서 선택 탭의 바탕 대비는 3:1 이상이고 그 위의 글자 대비는 4.5:1 이상이어야 한다',
   (mode) => {
     render(
       <Tabs defaultValue="latest">
@@ -30,16 +31,11 @@ it.each(colorModes)(
     );
     const list = screen.getByRole('tablist', { name: '피드 분류' });
     const tab = screen.getByRole('tab', { name: '최신 글' });
-    const listBackground = colorOf(list, 'bg-');
-    const pairs = [
-      [colorOf(tab, 'data-active:text-'), colorOf(tab, 'text-')],
-      [colorOf(tab, 'data-active:bg-'), listBackground],
-      [colorOf(tab, 'data-active:border-'), listBackground],
-    ].filter((pair): pair is [string, string] => pair.every(Boolean));
-    const ratios = pairs.map(([active, inactive]) =>
-      contrastRatio(resolveColor(active, mode), resolveColor(inactive, mode)),
-    );
-    expect(Math.max(...ratios), pairs.join(' | ')).toBeGreaterThanOrEqual(3);
+    const listBackground = resolveColor(colorOf(list, 'bg-'), mode);
+    const selectedBackground = resolveColor(colorOf(tab, 'data-active:bg-'), mode);
+    const selectedText = resolveColor(colorOf(tab, 'data-active:text-'), mode);
+    expect(contrastRatio(selectedBackground, listBackground)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(selectedText, selectedBackground)).toBeGreaterThanOrEqual(4.5);
   },
 );
 

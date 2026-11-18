@@ -9,9 +9,9 @@ import { Spinner } from '../spinner/Spinner';
 
 export const buttonVariants = cva(
   [
-    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 border border-transparent bg-clip-padding text-button whitespace-nowrap select-none disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    'motion-safe:transition-[background-color,border-color,color,transform] motion-safe:duration-150 active:not-aria-[haspopup]:translate-y-px active:not-data-disabled:scale-[0.98] motion-reduce:active:not-aria-[haspopup]:translate-y-0 motion-reduce:active:not-data-disabled:scale-100',
-    'data-disabled:cursor-not-allowed data-disabled:opacity-45',
+    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 border border-transparent bg-clip-padding text-button whitespace-nowrap select-none disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    'motion-safe:transition-[background-color,border-color,color,box-shadow,transform] motion-safe:duration-150 active:not-aria-[haspopup]:not-data-disabled:translate-y-px active:not-data-disabled:scale-[0.98] motion-reduce:active:not-aria-[haspopup]:not-data-disabled:translate-y-0 motion-reduce:active:not-data-disabled:scale-100',
+    'data-disabled:not-aria-busy:cursor-not-allowed data-disabled:not-aria-busy:opacity-45 aria-busy:cursor-progress',
   ],
   {
     variants: {
@@ -25,9 +25,9 @@ export const buttonVariants = cva(
        */
       variant: {
         primary:
-          'bg-brand text-on-brand shadow-card [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-brand-strong active:not-data-disabled:bg-brand-strong',
+          'bg-brand text-on-brand shadow-button active:not-data-disabled:shadow-none [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-brand-strong active:not-data-disabled:bg-brand-strong',
         secondary:
-          'border-line-strong bg-surface text-ink shadow-card [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-sunken active:not-data-disabled:bg-sunken',
+          'border-line-strong bg-surface text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-sunken active:not-data-disabled:bg-sunken',
         ghost:
           'bg-transparent text-ink [@media(hover:hover)]:[&:where(:hover:not([data-disabled]))]:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
         danger:
@@ -44,7 +44,7 @@ export const buttonVariants = cva(
         /** 50×50 아이콘 버튼 */
         'icon-lg': 'size-cta',
         /** 50px. 화면의 주 행동(하단 CTA, 시트 제출) */
-        lg: 'h-cta px-5',
+        lg: 'h-cta px-6',
         /** 44px. 보조 행동 */
         md: 'h-touch px-4',
         /**
@@ -54,7 +54,7 @@ export const buttonVariants = cva(
         sm: "h-9 px-3 text-label before:absolute before:inset-x-0 before:top-1/2 before:h-touch before:-translate-y-1/2 before:content-['']",
       },
       shape: {
-        /** 입력과 같은 8px 모서리 */
+        /** 입력과 같은 모서리 */
         rounded: 'rounded-control',
         /** 알약 모양. 피식은 만들기 진입(그룹 만들기·글쓰기·대회 개최하기)에 쓴다. */
         pill: 'rounded-full',
@@ -108,8 +108,15 @@ export function Button({
         className,
       )}
     >
-      {loading ? <Spinner className="size-4" /> : icon}
+      {loading && icon ? <Spinner className="size-4" /> : icon}
       {children}
+      {loading && !icon && (
+        <span
+          aria-hidden="true"
+          data-slot="button-progress"
+          className="pointer-events-none absolute inset-x-3 bottom-1 h-0.5 overflow-hidden rounded-full bg-current/15 after:mx-auto after:block after:h-full after:w-1/3 after:rounded-full after:bg-current motion-safe:after:animate-button-progress forced-colors:after:bg-[ButtonText]"
+        />
+      )}
     </BaseButton>
   );
 }
