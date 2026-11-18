@@ -18,6 +18,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "catalog:",
     "@hookform/resolvers": "catalog:",
+    "@side/design-system": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "dayjs": "catalog:",
     "lucide-react": "catalog:",
@@ -31,10 +32,17 @@
   "devDependencies": {
     "@playwright/test": "catalog:",
     "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
   }
 }
