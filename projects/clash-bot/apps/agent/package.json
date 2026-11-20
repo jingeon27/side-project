@@ -20,6 +20,7 @@
     "check:python": "yarn lint:python && yarn format:python:check",
     "test:python": "OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 node src/shared/python-cli.ts --tools unittest clash_bot.statistics_test clash_bot.layers_test clash_bot.channel_test clash_bot.arena.league.control_test clash_bot.arena.placement_test clash_bot.arena.policy.opponent_elixir_test clash_bot.runtime_guard_test clash_bot.downloads_test clash_bot.files_test clash_bot.perception.protocol_test clash_bot.arena.catalogue_test clash_bot.arena.policy.features_test clash_bot.arena.policy.samples_test clash_bot.combat_projection_test clash_bot.perception.health_test clash_bot.qwen.action_prior_protocol_test clash_bot.trophy.protocol_test clash_bot.arena.sim.conditioning_test clash_bot.arena.policy.choice_test clash_bot.arena.policy.tactics_test clash_bot.arena.policy.projection_test clash_bot.arena.training.improvement_test clash_bot.arena.policy.dense_test clash_bot.arena.policy.update_test",
     "test:arena:model": "RUN_ARENA_INTEGRATION=1 node src/shared/python-cli.ts unittest clash_bot.arena.training.parallel_model_test",
+    "loop": "node src/loop/cli.ts",
     "trophy": "node src/trophy/cli.ts",
     "test:trophy": "node src/shared/python-cli.ts --tools unittest clash_bot.trophy.protocol_test",
     "test:trophy:model": "RUN_TROPHY_MODEL_INTEGRATION=1 node src/shared/python-cli.ts unittest clash_bot.trophy.learning_model_test"

@@ -22,6 +22,7 @@
     "test:python": "yarn workspace @clash-bot/agent test:python",
     "test:arena:model": "yarn workspace @clash-bot/agent test:arena:model",
     "lint": "eslint --max-warnings 0 .",
+    "loop": "yarn workspace @clash-bot/agent loop",
     "trophy": "yarn workspace @clash-bot/agent trophy",
     "test:trophy": "yarn workspace @clash-bot/agent test:trophy",
     "test:trophy:model": "yarn workspace @clash-bot/agent test:trophy:model"

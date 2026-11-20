@@ -38,6 +38,8 @@ export default defineConfig({
     'projects/*/apps/*': { entry: appEntries },
     'projects/clash-bot/apps/agent': {
       entry: ['*.config.{ts,mts,cts,js,mjs,cjs}', '**/*.{spec,test,e2e}.{ts,tsx}'],
+      // 자가개선 감독이 맥의 잠자기를 막을 때 부르는 macOS 기본 명령이다.
+      ignoreBinaries: ['caffeinate'],
     },
     // Python 엔진은 자체 패키지와 검사로 관리하며 JavaScript 진입점이 없다.
     'projects/story-studio/apps/engine': { entry: [] },
