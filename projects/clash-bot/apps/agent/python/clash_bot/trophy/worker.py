@@ -22,6 +22,16 @@ class Initialize(Strict):
     behaviorSHA256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
+class Import(Strict):
+    """A simulator champion that the self-improvement loop handed over for a real-match trial."""
+
+    op: Literal["import"]
+    policy: str
+    version: int = Field(ge=1)
+    behaviorSHA256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    championSHA256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
 class Train(Strict):
     op: Literal["train"]
     policy: Snapshot
@@ -30,7 +40,7 @@ class Train(Strict):
     championParentSHA256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
-REQUEST = TypeAdapter(Annotated[Initialize | Train, Field(discriminator="op")])
+REQUEST = TypeAdapter(Annotated[Initialize | Import | Train, Field(discriminator="op")])
 
 
 def within(root, path):
@@ -57,7 +67,41 @@ class Worker:
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
 
+    def import_policy(self, request):
+        """Store the champion under imports/<sha>, outside the PPO version sequence.
+
+        Importing the same weights again returns the stored snapshot, so a session that stopped
+        between the import and its state write resumes without a second copy.
+        """
+        from clash_bot.arena.policy.features import checksum
+
+        weights = load_weights(request.policy)
+        digest = checksum(weights)
+        directory = self.root / "imports" / digest
+        if (directory / "metadata.json").exists():
+            metadata = json.loads((directory / "metadata.json").read_text())
+            stored = load_weights(directory / "policy.json")
+            if metadata["behaviorSHA256"] != request.behaviorSHA256 or checksum(stored) != digest:
+                raise ValueError("An imported simulator policy changed")
+            return {
+                "checkpoint": str(directory / "policy.json"),
+                "version": metadata["version"],
+                "weightsSHA256": digest,
+            }
+        return save_checkpoint(
+            self.root,
+            weights,
+            request.version,
+            request.behaviorSHA256,
+            request.championSHA256,
+            {"type": "simulation_champion", "sourcePolicy": request.policy},
+            directory=directory,
+            source="simulator_self_play_champion",
+        )
+
     def handle(self, request):
+        if request.op == "import":
+            return self.import_policy(request)
         if request.op == "initialize":
             path = self.root / "seed.json"
             if path.exists():

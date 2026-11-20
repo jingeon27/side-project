@@ -10,9 +10,10 @@ import { readOptionalJsonFile } from '../shared/json-file.ts';
 import { acquireLearningLock } from '../shared/runtime-lock.ts';
 import { TrophyActor } from './actor.ts';
 import { TrophyLearnerClient, type TrophyLearnerPort } from './learner-client.ts';
-import { TROPHY_LEARNING, trophyPlanSchema, type TrophyPlan } from './protocol.ts';
+import { TROPHY_LEARNING, trophyControl, trophyPlanSchema, type TrophyPlan } from './protocol.ts';
 import { verifiedTrophyEpisode } from './result.ts';
 import { initialState, stateSchema, type Completed, type State } from './session-state.ts';
+import { adoptSimulationOffer, candidateSource, settleSimulationTrial } from './simulation.ts';
 import {
   publishChampion,
   registerTrial,
@@ -54,14 +55,14 @@ export class TrophySession {
   ) {
     this.options = options;
     this.root = root;
-    this.control = join(options.dataDir, 'trophy/learning/control');
+    this.control = trophyControl(options.dataDir);
     this.learner = learner;
     this.state = state;
     this.lock = lock;
   }
 
   static async open(options: Options, port?: TrophyLearnerPort) {
-    const control = join(options.dataDir, 'trophy/learning/control');
+    const control = trophyControl(options.dataDir);
     const behaviorSHA256 = await options.behaviorIdentity();
     const root = join(options.dataDir, 'trophy/learning/experiments', behaviorSHA256);
     const lock = await acquireLearningLock(control);
@@ -138,6 +139,7 @@ export class TrophySession {
       trial: this.state.trial,
       lastUpdate: this.state.lastUpdate,
       lastEvaluation: this.state.lastEvaluation,
+      simulation: this.state.simulation,
     };
   }
 
@@ -146,6 +148,7 @@ export class TrophySession {
     if (this.state.pending) throw new Error('이전 경기가 끝나기 전에 새 경기를 시작할 수 없습니다.');
     if (this.state.consecutiveExcluded >= 3) throw new Error('입력·결과 검증이 3경기 연속 실패했습니다.');
     if (this.state.phase === 'learning') await this.learn();
+    if (!this.state.trial && !this.state.batch.length) await this.offerSimulation();
     const trial = this.state.trial;
     const role = trial
       ? trial.order[Math.floor(trial.games.length / 2)]?.[trial.games.length % 2]
@@ -247,6 +250,14 @@ export class TrophySession {
     await this.save();
   }
 
+  // 학습 묶음과 평가가 비어 있을 때 감독이 넘긴 시뮬레이터 챔피언을 같은 실전 게이트로 비교한다.
+  private async offerSimulation() {
+    if (!(await adoptSimulationOffer(this.control, this.state, this.learner))) return;
+    this.state.trial = await registerTrial(this.experiment());
+    this.state.phase = 'evaluating';
+    await this.save();
+  }
+
   private async finishEvaluation() {
     const trial = this.state.trial;
     if (!trial) return;
@@ -254,7 +265,8 @@ export class TrophySession {
     if (!complete && !futile) return;
     await this.assertBehavior();
     await verifyTrial(trial, this.experiment());
-    const report = trialReport(trial, this.state.behaviorSHA256);
+    const source = candidateSource(this.state);
+    const report = { ...trialReport(trial, this.state.behaviorSHA256), candidateSource: source };
     const passed = report.gate.passed;
     const reportPath = join(this.root, 'evaluations', trial.id + '.json');
     await atomicWrite(reportPath, JSON.stringify(report, null, 2) + '\n');
@@ -263,7 +275,8 @@ export class TrophySession {
       this.state.champion = trial.candidate;
       this.state.promotions++;
     }
-    this.state.lastEvaluation = { report: reportPath, passed, gate: report.gate };
+    settleSimulationTrial(this.state, passed);
+    this.state.lastEvaluation = { report: reportPath, passed, gate: report.gate, candidateSource: source };
     this.state.trial = null;
     this.state.phase = 'training';
     await this.save();
