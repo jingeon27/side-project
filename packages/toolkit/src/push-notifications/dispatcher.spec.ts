@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { range } from 'es-toolkit';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -9,7 +10,7 @@ import {
   type IPushMessage,
 } from './index';
 
-const now = new Date('2026-10-25T00:00:00Z');
+const now = dayjs('2026-10-25T00:00:00Z').toDate();
 const message: IPushMessage = {
   to: 'ExpoPushToken[aaaaaaaaaaaaaaaaaaaa]',
   title: '새 알림',
@@ -97,7 +98,11 @@ describe('durable Expo dispatch', () => {
     await state.dispatcher.run(now);
     expect(state.jobs.get('1')?.status).toBe('TICKET');
     state.fetch.mockResolvedValueOnce(Response.json({ data: { 'ticket-1': { status: 'ok' } } }));
-    await state.dispatcher.run(new Date(now.getTime() + 15 * 60_000));
+    await state.dispatcher.run(
+      dayjs(now)
+        .add(15 * 60_000, 'millisecond')
+        .toDate(),
+    );
     expect(state.jobs.get('1')?.status).toBe('DELIVERED');
     expect(state.jobs.get('2')?.status).toBe('TICKET');
     expect(state.fetch.mock.calls.every(([url]) => String(url).endsWith('/getReceipts'))).toBe(true);
@@ -108,10 +113,18 @@ describe('durable Expo dispatch', () => {
     state.add('1');
     state.fetch.mockResolvedValue(new Response('provider detail must not leak', { status: 503 }));
     for (const attempt of range(6))
-      await state.dispatcher.run(new Date(now.getTime() + attempt * 2 * 60 * 60_000));
+      await state.dispatcher.run(
+        dayjs(now)
+          .add(attempt * 2 * 60 * 60_000, 'millisecond')
+          .toDate(),
+      );
     expect(state.jobs.get('1')).toMatchObject({ status: 'FAILED', attempts: 6 });
     state.add('old');
-    await state.dispatcher.run(new Date(now.getTime() + 24 * 60 * 60_000));
+    await state.dispatcher.run(
+      dayjs(now)
+        .add(24 * 60 * 60_000, 'millisecond')
+        .toDate(),
+    );
     expect(state.jobs.get('old')?.status).toBe('FAILED');
     expect(state.fetch).toHaveBeenCalledTimes(6);
   });

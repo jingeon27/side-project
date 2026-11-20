@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { range } from 'es-toolkit';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -10,7 +11,7 @@ import {
   type IPushMessage,
 } from './index';
 
-const now = new Date('2026-10-30T00:00:00Z');
+const now = dayjs('2026-10-30T00:00:00Z').toDate();
 const receiptDelay = 15 * 60_000;
 const message: IPushMessage = {
   to: 'ExpoPushToken[aaaaaaaaaaaaaaaaaaaa]',
@@ -120,7 +121,7 @@ describe('한 번에 PUSH_BATCH_SIZE보다 많은 작업', () => {
     const state = setupMany(PUSH_BATCH_SIZE + 1);
     await state.dispatcher.run(now);
     expect([...state.jobs.values()].every((job) => job.status === 'TICKET')).toBe(true);
-    await state.dispatcher.run(new Date(now.getTime() + receiptDelay));
+    await state.dispatcher.run(dayjs(now).add(receiptDelay, 'millisecond').toDate());
     expect([...state.jobs.values()].every((job) => job.status === 'DELIVERED')).toBe(true);
     expect(state.sizes()).toEqual(['send:100', 'send:1', 'getReceipts:100', 'getReceipts:1']);
   });
@@ -147,10 +148,10 @@ describe('전달 영수증의 일시적인 기기 전송 제한', () => {
     expect(state.job).toMatchObject({ status: 'PENDING', attempts: 1, ticketId: null });
     expect(state.prepare).not.toHaveBeenCalled();
     await state.dispatcher.run(now);
-    await state.dispatcher.run(new Date(now.getTime() + 29_999));
+    await state.dispatcher.run(dayjs(now).add(29_999, 'millisecond').toDate());
     expect(state.fetcher).toHaveBeenCalledTimes(1);
 
-    const resendAt = new Date(now.getTime() + 30_000);
+    const resendAt = dayjs(now).add(30_000, 'millisecond').toDate();
     state.fetcher.mockResolvedValueOnce(Response.json({ data: [{ status: 'ok', id: 'new-ticket' }] }));
     await Promise.all([state.dispatcher.run(resendAt), state.dispatcher.run(resendAt)]);
     expect(state.job).toMatchObject({ status: 'TICKET', attempts: 1, ticketId: 'new-ticket' });
@@ -158,7 +159,7 @@ describe('전달 영수증의 일시적인 기기 전송 제한', () => {
     expect(state.fetcher).toHaveBeenCalledTimes(2);
 
     state.fetcher.mockResolvedValueOnce(Response.json({ data: { 'new-ticket': { status: 'ok' } } }));
-    await state.dispatcher.run(new Date(resendAt.getTime() + receiptDelay));
+    await state.dispatcher.run(dayjs(resendAt).add(receiptDelay, 'millisecond').toDate());
     expect(state.job.status).toBe('DELIVERED');
     expect(state.fetcher.mock.calls.map(([url]) => String(url).split('/').at(-1))).toEqual([
       'getReceipts',
@@ -181,9 +182,13 @@ describe('전달 영수증의 일시적인 기기 전송 제한', () => {
       status: 'PENDING',
       attempts: attempts + 1,
       ticketId: null,
-      nextAttemptAt: new Date(now.getTime() + delay),
+      nextAttemptAt: dayjs(now).add(delay, 'millisecond').toDate(),
     });
-    await state.dispatcher.run(new Date(now.getTime() + delay - 1));
+    await state.dispatcher.run(
+      dayjs(now)
+        .add(delay - 1, 'millisecond')
+        .toDate(),
+    );
     expect(state.fetcher).toHaveBeenCalledTimes(1);
   });
 
@@ -192,12 +197,20 @@ describe('전달 영수증의 일시적인 기기 전송 제한', () => {
     state.fetcher.mockResolvedValueOnce(rateLimitedReceipt());
     await state.dispatcher.run(now);
     expect(state.job).toMatchObject({ status: 'FAILED', attempts: 6, ticketId: null });
-    await state.dispatcher.run(new Date(now.getTime() + 60 * 60_000));
+    await state.dispatcher.run(
+      dayjs(now)
+        .add(60 * 60_000, 'millisecond')
+        .toDate(),
+    );
     expect(state.fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('24시간 지난 작업은 영수증을 다시 조회하거나 재전송하지 않아야 한다', async () => {
-    const state = setup({ createdAt: new Date(now.getTime() - 24 * 60 * 60_000) });
+    const state = setup({
+      createdAt: dayjs(now)
+        .subtract(24 * 60 * 60_000, 'millisecond')
+        .toDate(),
+    });
     await state.dispatcher.run(now);
     expect(state.job.status).toBe('FAILED');
     expect(state.fetcher).not.toHaveBeenCalled();
@@ -213,7 +226,7 @@ describe('전달 영수증의 일시적인 기기 전송 제한', () => {
     await state.dispatcher.run(now);
     expect(state.job.status).toBe('FAILED');
     expect(state.disable).toHaveBeenCalledExactlyOnceWith('device');
-    await state.dispatcher.run(new Date(now.getTime() + receiptDelay));
+    await state.dispatcher.run(dayjs(now).add(receiptDelay, 'millisecond').toDate());
     expect(state.fetcher).toHaveBeenCalledTimes(1);
   });
 });
