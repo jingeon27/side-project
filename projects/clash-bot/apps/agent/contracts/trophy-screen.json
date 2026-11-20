@@ -1,0 +1,21 @@
+{
+  "format": "trophy-screen-v1",
+  "size": [368, 652],
+  "riverY": 276,
+  "tileScale": { "x": 18, "y": 13.68421052631579 },
+  "hand": [
+    [84, 543, 145, 616],
+    [153, 543, 214, 616],
+    [222, 543, 283, 616],
+    [291, 543, 352, 616]
+  ],
+  "referenceNext": [17, 610, 51, 651],
+  "referenceElixirBar": [117, 628, 353, 637],
+  "next": [20, 606, 49, 644],
+  "elixirBar": [99, 629, 355, 640],
+  "reviewPerDay": 20,
+  "newCoverageFrames": 20,
+  "measurement": { "objects": 1000, "slots": 600, "perElixir": 10 },
+  "coverage": { "perBody": 30, "perSide": 10 },
+  "handGate": { "minimumPerCard": 10, "maximumClassRegression": 0.02 }
+}

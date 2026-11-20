@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { readArenaChampion, readArenaRun, runArenaJson, startArenaInBackground } from '../arena/process.ts';
 import { processAlive } from '../shared/runtime-lock.ts';
+import { readLabelResult } from '../trophy/labels/commands.ts';
 import { handOff } from './handoff.ts';
 import { due, needsHandoff, observeArena, shouldStartArena, withFailure } from './plan.ts';
 import { writeReport } from './report.ts';
@@ -13,11 +14,13 @@ import { recordEvent, SELF_IMPROVEMENT, type LoopState, type SelfImprovementSett
 // 프로세스를 띄우거나 네트워크를 쓰는 부분이다. 검사에서는 바꿔 끼운다.
 export type LoopPorts = {
   startArena: (dataDir: string, args: string[]) => Promise<{ pid: number }>;
+  maintainLabels: (dataDir: string) => Promise<unknown>;
   checkRules: (dataDir: string) => Promise<unknown>;
   lowerPriority: (pid: number, niceness: number) => void;
 };
 const defaultPorts: LoopPorts = {
   startArena: startArenaInBackground,
+  maintainLabels: (dataDir) => readLabelResult(dataDir, 'label-maintain'),
   checkRules: (dataDir) => runArenaJson(dataDir, ['rules']),
   lowerPriority: (pid, niceness) => setPriority(pid, niceness),
 };
@@ -107,6 +110,16 @@ export async function tick(
   const rulesCheckedAt = due(state.rulesCheckedAt, settings.rulesCheckHours, now)
     ? await checkRules(dataDir, now, ports)
     : state.rulesCheckedAt;
+  // New sealed matches and confirmed labels can arrive between daily reports.
+  try {
+    await ports.maintainLabels(dataDir);
+  } catch (error) {
+    await recordEvent(dataDir, {
+      at: now.toISOString(),
+      type: 'label_maintenance_failed',
+      error: message(error),
+    });
+  }
   const next = { ...state, arena, handoff, rulesCheckedAt };
   return { ...next, reportedAt: await reportIfDue(dataDir, next, now, settings) };
 }

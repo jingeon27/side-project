@@ -6,6 +6,25 @@
 
 사용자가 설명한 필드 상황, 엘릭서 10 상한과 공유 재생, 8장 덱/4장 손패/FIFO, 카드별 역할과 구현 범위는 [학습 요구사항과 구조](docs/learning-design.md)에 있습니다.
 
+## 카드 스펙과 학습 현황
+
+`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 체력과 피해의 기준 레벨과 배율은 각 레코드의 `level_scaling`을 따릅니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다.
+
+```sh
+yarn workspace @side/clash-bot trophy card-status --card knight
+yarn workspace @side/clash-bot arena verify
+yarn workspace @side/clash-bot arena coverage
+yarn workspace @side/clash-bot loop status
+```
+
+자가대국은 실전 기준 덱 12개와 검증된 카드를 배분한 연습 덱 21개를 사용합니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
+
+## 트로피전 화면 라벨링
+
+`trophy label-import <experiments 또는 경기 디렉터리>`로 확인된 화면을 등록하고 `trophy label`이 출력하는 로컬 주소에서 판독합니다. `trophy label-status`는 표본 수, `trophy perception-eval`은 현재 가중치로 재실행한 결과, `trophy card-status`는 카드별 확인 수준을 보여줍니다. 명령 앞에는 `yarn workspace @side/clash-bot`을 붙입니다. 인식에는 `perception:setup`과 해당 환경에서 검토한 손패·배치 시계 참조가 필요합니다.
+
+새 어댑터는 활성 경기의 정규화된 PNG를 저장한 직후 `trophy serve`에 `frame`을 보냅니다. 필드는 `matchId, sequence, image, imageSHA256, at, raw`입니다. 순번은 1부터 연속이며 `raw`는 그 프레임에서 실제 실행한 인식 출력입니다. 마지막에 `seal-frames`로 `matchId, total`을 보내고 경기를 완료합니다. 감독이 완료 후 자료를 가져옵니다. 과거 판단 화면의 재실행과 전체 프레임을 기록한 경기는 평가에 따로 표시됩니다. 사람의 블라인드 전체 경기 표본과 카드별 기준이 충족된 후보만 인식에 채택합니다.
+
 ## 설치
 
 저장소 루트에서 Node 24, Yarn 4.17.0을 사용합니다. 실행 환경은 Apple Silicon과 `python3.11`이 필요합니다.

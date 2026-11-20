@@ -4,6 +4,8 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { outsideBehavior } from '../shared/behavior-source.ts';
+import { DATA_DIR } from '../shared/data-dir.ts';
+import { readLabelResult } from './labels/commands.ts';
 
 export async function trophyBehaviorIdentity(evidenceFiles: string[]) {
   const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -34,5 +36,6 @@ export async function trophyBehaviorIdentity(evidenceFiles: string[]) {
       .update('\0')
       .update(await readFile(path))
       .update('\0');
-  return hash.digest('hex');
+  const perception = await readLabelResult(DATA_DIR, 'perception-identity');
+  return hash.update(JSON.stringify(perception)).digest('hex');
 }

@@ -1,0 +1,178 @@
+:root {
+  color-scheme: dark;
+  font:
+    16px/1.45 Inter,
+    system-ui,
+    sans-serif;
+  color: #eef3f1;
+  background: #101917;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+header,
+nav,
+.row,
+footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+header {
+  justify-content: space-between;
+  margin-bottom: 23px;
+}
+h1 {
+  font-size: clamp(20px, 3vw, 30px);
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(235px, 368px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+figure {
+  margin: 0;
+  position: sticky;
+  top: 16px;
+}
+img {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  cursor: crosshair;
+  aspect-ratio: 368/652;
+  background: #26332e;
+}
+figcaption,
+p,
+output {
+  color: #b4c4ba;
+  font-size: 0.875rem;
+}
+figcaption {
+  margin-top: 9px;
+}
+fieldset {
+  border: 1px solid #374b42;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 0 0 14px;
+}
+legend {
+  color: #bdeecb;
+  font-weight: 650;
+  padding: 0 5px;
+}
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+fieldset > label {
+  display: flex;
+}
+select,
+input,
+button {
+  font: inherit;
+  color: inherit;
+  border: 1px solid #4b6055;
+  border-radius: 6px;
+  background: #1a2922;
+  padding: 6px;
+  max-width: 100%;
+}
+input[type='number'] {
+  width: 80px;
+}
+input[type='checkbox'] {
+  accent-color: #9be6ac;
+}
+.towers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.towers label {
+  justify-content: space-between;
+}
+button {
+  cursor: pointer;
+  padding: 7px 12px;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #aaf9bc;
+  outline-offset: 2px;
+}
+#save {
+  background: #adf0bd;
+  color: #102519;
+  font-weight: 700;
+}
+#save:disabled {
+  opacity: 0.55;
+}
+footer {
+  position: sticky;
+  bottom: 0;
+  background: #101917;
+  padding: 12px 0;
+}
+ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+li button {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+}
+@media (max-width: 720px) {
+  main {
+    padding: 14px;
+  }
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  figure {
+    position: static;
+    max-width: min(100%, 330px);
+    margin: auto;
+  }
+  nav {
+    gap: 8px;
+  }
+  .row {
+    gap: 6px;
+  }
+  fieldset {
+    padding: 10px;
+  }
+}
+
+.board {
+  position: relative;
+}
+#marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
