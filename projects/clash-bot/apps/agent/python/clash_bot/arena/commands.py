@@ -7,6 +7,7 @@ from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
 from .league.champions import checkpoint, export_policy
+from .league.coverage import training_coverage
 from .league.loop import run
 from .policy.network import Policy
 from .sim.verification import verify
@@ -82,6 +83,7 @@ COMMANDS = {
     "start": start,
     "verify": verification,
     "policy": live_policy,
+    "coverage": lambda _args, _parser: training_coverage(*active_league()),
     "catalogue": lambda _args, _parser: catalogue_build.write(),
     "benchmark": measure,
     "rules": rules,

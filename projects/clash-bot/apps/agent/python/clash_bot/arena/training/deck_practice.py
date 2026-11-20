@@ -5,7 +5,7 @@ from functools import cache
 import numpy as np
 
 from ..catalogue import current
-from ..sim.rules import DECKS, LIVE_DECK, Action, deck_ids
+from ..sim.rules import DECKS, LIVE_DECK, OMIT_OPENING, PRACTICE_DECKS, Action, deck_ids
 from .storage import seed_for
 
 # Both players wait through their normal elixir recharge. Even the most expensive pool card
@@ -18,7 +18,11 @@ def rotation():
     lookup = current()
     return sorted(
         set(DECKS) - {LIVE_DECK},
-        key=lambda name: (-lookup.card(lookup.card_name(DECKS[name].cards[0])).elixir, name),
+        key=lambda name: (
+            name not in PRACTICE_DECKS,
+            -lookup.card(lookup.card_name(DECKS[name].cards[0])).elixir,
+            name,
+        ),
     )
 
 
@@ -27,13 +31,16 @@ def schedule_deck(setup, index, seat):
     deck = names[index % len(names)]
     decks = [LIVE_DECK, LIVE_DECK]
     decks[seat] = deck
-    return {**setup, "decks": decks, "practiceDeck": deck}
+    eligible = [card for card in DECKS[deck].cards if card not in OMIT_OPENING]
+    lead = eligible[(index // len(names)) % len(eligible)]
+    return {**setup, "decks": decks, "practiceDeck": deck, "practiceLead": lead}
 
 
 def practice_orders(setup, seat, game_id):
     rng = np.random.default_rng(seed_for("deck_practice_opening", game_id))
     orders = [rng.permutation(deck_ids(deck)).tolist() for deck in setup["decks"]]
-    lead = deck_ids(setup["practiceDeck"])[0]
+    deck = setup["practiceDeck"]
+    lead = deck_ids(deck)[DECKS[deck].cards.index(setup["practiceLead"])]
     orders[seat].remove(lead)
     orders[seat].insert(0, lead)
     return orders

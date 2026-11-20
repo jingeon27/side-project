@@ -11,6 +11,7 @@ import json
 
 import royalesim
 
+from clash_bot.card_specs import engine_specs
 from clash_bot.files import atomic_json
 
 from ..catalogue import PATH, Catalogue, content_id
@@ -167,6 +168,16 @@ def build():
 
 
 def write():
+    from .practice_pool import PATH as practice_path
+    from .practice_pool import verified_pool
+
     body = build()
+    specs = engine_specs(body)
+    atomic_json(practice_path, verified_pool(body, specs, SPEC))
     atomic_json(PATH, body)
-    return {"catalogue": str(PATH), "id": body["id"], "cards": len(body["cards"])}
+    return {
+        "catalogue": str(PATH),
+        "id": body["id"],
+        "cards": len(body["cards"]),
+        "specTableSHA256": specs["tableSHA256"],
+    }

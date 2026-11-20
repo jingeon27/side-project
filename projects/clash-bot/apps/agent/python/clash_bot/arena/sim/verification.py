@@ -10,14 +10,15 @@ from clash_bot.files import atomic_json
 
 from . import mechanics
 from .candidates import legal_actions
+from .card_checks import catalogue_deployments
 from .elixir import public_mana
 from .engine import Arena
-from .rules import CARDS, DECKS, Action, deck_ids, rules_identity
+from .rules import CARDS, MATCHUP_DECKS, Action, deck_ids, rules_identity
 
 
 def pool_deployments():
     plays = 0
-    for name in sorted(DECKS):
+    for name in sorted(MATCHUP_DECKS):
         for card in deck_ids(name):
             order = [card, *[other for other in deck_ids(name) if other != card]]
             arena = Arena(17, [order, order], [name, name])
@@ -39,13 +40,15 @@ def pool_deployments():
     return {
         "passed": True,
         "deckCardDeployments": plays,
-        "distinctCards": len(CARDS),
-        "decks": len(DECKS),
+        "distinctCards": len({c for d in MATCHUP_DECKS.values() for c in d.cards}),
+        "decks": len(MATCHUP_DECKS),
     }
 
 
 CHECKS = {
     "poolDeploymentsAndElixir": pool_deployments,
+    "catalogueBaseDeployment": catalogue_deployments,
+    "knightAggroOutsideAttackRange": mechanics.knight_aggro,
     "drillBarrelDeathSpawn": mechanics.drill_barrel,
     "poisonMovingExposure": mechanics.poison_exposure,
     "iceWizardArrivalDamage": mechanics.ice_wizard_arrival,

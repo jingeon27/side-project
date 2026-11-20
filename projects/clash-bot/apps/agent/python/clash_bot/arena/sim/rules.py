@@ -38,14 +38,32 @@ class DeckSpec(BaseModel):
         return self
 
 
-DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+MATCHUP_DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+practice = json.loads((CONTRACTS_DIR / "arena-practice.json").read_bytes())
+# A changed table needs fresh receipts before its extra cards can enter the learner.
+OMIT_OPENING = frozenset(practice["omitFromStartingHand"])
+MINIMUM_LEVELS = practice["minimumLevels"]
+FRIENDLY_SPELLS = frozenset(practice["friendlySpells"])
+PRACTICE_DECKS = (
+    {
+        name: DeckSpec(cards=tuple(cards), forms=(0,) * 8)
+        for name, cards in practice["decks"].items()
+    }
+    if practice["tableSHA256"] == SPEC["tableSHA256"] and practice["catalogueID"] == current().id
+    else {}
+)
+DECKS = {**MATCHUP_DECKS, **PRACTICE_DECKS}
 # The deck the live Trophy screen plays; half of the self-play games mirror it.
 LIVE_DECK = SPEC["liveDeck"]
 if LIVE_DECK not in DECKS:
     raise ValueError("The live deck must be one of the arena decks")
 # One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7.
 CARDS = list(
-    dict.fromkeys(card for name in (LIVE_DECK, *sorted(DECKS)) for card in DECKS[name].cards)
+    dict.fromkeys(
+        card
+        for name in (LIVE_DECK, *sorted(MATCHUP_DECKS), *sorted(PRACTICE_DECKS))
+        for card in DECKS[name].cards
+    )
 )
 CARD_ID = {card: index for index, card in enumerate(CARDS)}
 TILE = 1000 * royalesim.SUBTILE_PER_MILLITILE
@@ -125,7 +143,8 @@ def rules_identity():
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
         "policyInput": "live_screen_health_bars_subtile_motion_v3",
-        "towerLevels": "each_side_card_level_v1",
+        "towerLevels": "side_level_with_rarity_minimum_for_cards_v2",
+        "practiceSpec": digest(practice) if PRACTICE_DECKS else None,
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",

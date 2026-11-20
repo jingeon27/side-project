@@ -130,3 +130,22 @@ def graveyard_defense():
             raise ValueError(f"Verification command rejected: {results}")
         hp.append(sum(json.loads(battle.state_json())["players"][0]["tower_hp"]))
     return {"passed": hp[1] > hp[0], "unansweredTowerHP": hp[0], "defendedTowerHP": hp[1]}
+
+
+def knight_aggro():
+    """At four tiles the Knight acquires a Skeleton outside melee range. At seven it does not."""
+    cases = {}
+    for gap in (4, 7):
+        battle = field(units=[("Knight", 0, 5, 12, -1), ("Skeleton", 1, 5 + gap, 12, -1)])
+        before = dict(bodies(battle))["Skeleton"][FIELDS["hp"]]
+        battle.step([], 1)
+        rows = dict(bodies(battle))
+        cases[str(gap)] = {
+            "acquired": rows["Knight"][FIELDS["target_uid"]] == rows["Skeleton"][FIELDS["uid"]],
+            "immediateDamage": before - rows["Skeleton"][FIELDS["hp"]],
+        }
+    return {
+        "passed": cases["4"] == {"acquired": True, "immediateDamage": 0}
+        and not cases["7"]["acquired"],
+        "byCenterDistanceTiles": cases,
+    }

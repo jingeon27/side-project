@@ -8,7 +8,7 @@ import royalesim
 
 from ..catalogue import current
 from ..placement import placement_grid, placement_tiles
-from .rules import CARD_ID, CARDS, FIELDS, TILE, Action, canonical
+from .rules import CARD_ID, CARDS, FIELDS, FRIENDLY_SPELLS, TILE, Action, canonical
 
 
 @cache
@@ -40,11 +40,18 @@ def candidate_actions(battle, team, tiles, state=None):
         if row[0] != team and row[1] == CARD_ID["Graveyard"]
         if (point := canonical(row[3] / TILE, row[4] / TILE, team))[1] < 16
     ]
+    allies = [
+        canonical(row[FIELDS["x"]] / TILE, row[FIELDS["y"]] / TILE, team)
+        for row in state["entities"]
+        if row[FIELDS["team"]] == team and row[FIELDS["card_id"]] >= 0
+    ]
     actions, seen = [Action(-1)], {Action(-1)}
     for card in player["hand"]:
         if card < 0:
             continue
         anchors = graves if card == CARD_ID["Poison"] else []
+        if CARDS[card] in FRIENDLY_SPELLS:
+            anchors = [*allies, (3.5, 6.5), (14.5, 6.5)]
         for x, y in [*anchors, *tiles(placements()[card], threat, targets)]:
             x, y = canonical(x, y, team)
             action = Action(card, round(x * TILE), round(y * TILE))

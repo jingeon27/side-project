@@ -7,7 +7,7 @@ from functools import lru_cache
 
 from .conditioning import position_error
 from .engine import Arena, Record, public_board
-from .rules import DECKS, OBSERVATION_FORMAT, TILE, Action, deck_ids
+from .rules import DECKS, MATCHUP_DECKS, OBSERVATION_FORMAT, TILE, Action, deck_ids
 
 
 class PublicRootMismatch(ValueError):
@@ -127,7 +127,16 @@ class BeliefSampler:
             if not pool:
                 raise ValueError("Public plays/hand contradict every deck in the configured prior")
             self.openings.append(pool)
-        self.deck_order = [self.rng.sample(list(pool), len(pool)) for pool in self.openings]
+        self.deck_order = []
+        for pool in self.openings:
+            order = self.rng.sample(list(pool), len(pool))
+            # Most training games use a real matchup. Prefer that prior on the first draw,
+            # while retaining every compatible practice deck in the subsequent search.
+            standard = [name for name in order if name in MATCHUP_DECKS]
+            if standard and len(standard) != len(order) and self.rng.random() < 0.75:
+                first = standard[0]
+                order = [first, *[name for name in order if name != first]]
+            self.deck_order.append(order)
         self.samples = 0
         self.last_board = None
         self.conditioning = None

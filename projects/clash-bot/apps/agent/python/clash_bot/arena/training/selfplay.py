@@ -18,7 +18,7 @@ from ..policy.samples import value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from ..sim.rules import LIVE_DECK, MATCHUP_DECKS, SPEC, Action
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
 from .search import Workspace, search
@@ -70,12 +70,12 @@ def setup_for(game_id):
     if rng.random() < SELFPLAY.liveMirror:
         decks = [LIVE_DECK, LIVE_DECK]
     elif rng.random() < SELFPLAY.liveAgainstPool:
-        threats = sorted(set(DECKS) - {LIVE_DECK})
+        threats = sorted(set(MATCHUP_DECKS) - {LIVE_DECK})
         decks = [LIVE_DECK, threats[int(rng.integers(len(threats)))]]
         if rng.integers(2):
             decks.reverse()
     else:
-        names = sorted(DECKS)
+        names = sorted(MATCHUP_DECKS)
         decks = [names[int(rng.integers(len(names)))] for _ in range(2)]
     low, high = SELFPLAY.commandDelayTicks
     first, last = SELFPLAY.decisionPhaseTicks

@@ -9,7 +9,7 @@ from clash_bot.arena.policy.context import decision_context
 from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.policy.noise import PerceptionNoise, perceive
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, MATCHUP_DECKS, SPEC, Action
 from clash_bot.arena.training.benchmark import ScriptedPolicy, defender_bot
 from clash_bot.arena.training.search import search
 from clash_bot.arena.training.selfplay import (
@@ -85,7 +85,7 @@ class SetupTest(unittest.TestCase):
         ) / len(setups)
         self.assertGreater(own_matchups, 0.18)
         self.assertLess(own_matchups, 0.4)
-        self.assertEqual({name for setup in setups for name in setup["decks"]}, set(DECKS))
+        self.assertEqual({name for setup in setups for name in setup["decks"]}, set(MATCHUP_DECKS))
         low, high = SELFPLAY.commandDelayTicks
         delays = {delay for setup in setups for delay in setup["delays"]}
         self.assertTrue(delays <= set(range(low, high + 1)) and len(delays) > 3)
