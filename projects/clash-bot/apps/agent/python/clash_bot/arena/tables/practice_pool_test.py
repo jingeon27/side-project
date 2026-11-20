@@ -45,6 +45,10 @@ class PracticePoolTest(unittest.TestCase):
         self.assertEqual(specs["unlinkedBodies"], [])
         knight = specs["cards"]["knight"]["combat"]["base"]
         self.assertEqual((knight["aggroRangeTiles"], knight["attackRangeTiles"]), (5.5, 1.2))
+        control = catalogue["cardFeatures"].index("control")
+        self.assertEqual(catalogue["cards"]["firecracker"]["features"][control], 0)
+        self.assertEqual(catalogue["cards"]["ice_wizard"]["features"][control], 0.3)
+        self.assertGreater(catalogue["cards"]["bowler"]["features"][control], 0)
         for index in range(8 * len(rotation())):
             self.assertNotIn(schedule_deck({}, index, 0)["practiceLead"], OMIT_OPENING)
 

@@ -8,6 +8,7 @@ alone, as it is deployed: through its screen (`policy.screen`), which reads no t
 """
 
 import time
+from collections import Counter
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
@@ -19,6 +20,7 @@ from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
 from ..sim.rules import LIVE_DECK, MATCHUP_DECKS, SPEC, Action
+from ..sim.status_effects import control_observations
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
 from .form_usage import count_form_plays, form_counts
@@ -129,12 +131,15 @@ def play_game(
     due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     forms = form_counts()
+    controls = Counter()
     policy_seats = {
         seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
     }
     unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
+        if training:
+            controls.update(control_observations(state["entities"]))
         selected = [Action(-1), Action(-1)]
         for team, policy in enumerate(policies):
             if due[team] > state["tick"]:
@@ -273,7 +278,7 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
-        **({"formExecutions": forms} if training else {}),
+        **({"formExecutions": forms, "controlUnitFrames": dict(controls)} if training else {}),
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }

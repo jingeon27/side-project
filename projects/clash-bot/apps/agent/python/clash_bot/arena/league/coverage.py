@@ -18,9 +18,10 @@ def training_coverage(root, league):
         raise ValueError("Active league and card catalogue differ")
     counts = {name: Counter() for name in CARDS}
     forms = form_counts()
+    control_frames = Counter()
     for episode in league["episodes"]:
         path = Path(episode)
-        cache = root / "coverage" / (path.name + ".v2.json")
+        cache = root / "coverage" / (path.name + ".v3.json")
         if cache.exists():
             small = json.loads(cache.read_bytes())
         else:
@@ -30,12 +31,14 @@ def training_coverage(root, league):
             small = {
                 "cards": card_coverage([game])["allCards"],
                 "forms": game.get("formExecutions", {}),
+                "controlUnitFrames": game.get("controlUnitFrames", {}),
             }
             atomic_json(cache, small, compact=True)
         for name, facts in small["cards"].items():
             counts[name].update(facts)
         for key, values in small["forms"].items():
             forms[key].update(values)
+        control_frames.update(small["controlUnitFrames"])
     for path in sorted((root / "checkpoints").glob("v[0-9]*/metadata.json")):
         m = json.loads(path.read_bytes())
         if m["rulesID"] != rules:
@@ -63,6 +66,7 @@ def training_coverage(root, league):
             for name, flag in (("evolution", 1), ("hero", 2))
         },
         "formExecutions": forms,
+        "controlUnitFrames": dict(control_frames),
         "cardsByStage": summary,
         "cards": {card: dict(v) for card, v in counts.items()},
     }

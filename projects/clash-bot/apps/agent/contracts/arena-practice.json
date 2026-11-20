@@ -115,7 +115,7 @@
   "omitFromStartingHand": ["Elixir Collector", "Mirror"],
   "format": "verified-card-practice-v2",
   "tableSHA256": "31ef8141a4b83534fc85c4aeb2b6437a5855d82dc741cb637e406c6df2fe6700",
-  "catalogueID": "f55e2998088bfe1c499f4f9d1a866753b88248201c7066b592e33d8655ad7d96",
+  "catalogueID": "6fb05fec0f1ba655e758b9256f89d72d24f980676a722fafeeb065ab22442ecd",
   "decks": {
     "practice_01": [
       "BossBandit",

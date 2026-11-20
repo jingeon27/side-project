@@ -66,12 +66,23 @@ def spawns(record, projectiles):
     )
 
 
-def slows(record):
-    buff = record.get("buff_on_damage") or (record.get("buff") if "buff" in record else None)
-    if not isinstance(buff, dict):
-        return 0.0
-    change = buff.get("speed_multiplier_raw") or buff.get("hit_speed_multiplier_raw") or 0
-    return ratio(-change, 100)
+def control_strength(record):
+    """A bounded descriptor for the policy. Actual duration, resistance and overlap are simulated."""
+    projectile = record.get("projectile")
+    shot = projectile if isinstance(projectile, dict) else {}
+    buffs = (record.get("buff_on_damage"), record.get("buff"), shot.get("target_buff"))
+    slow = max(
+        (
+            ratio(-(buff.get(key) or 0), 100)
+            for buff in buffs
+            if isinstance(buff, dict)
+            for key in ("speed_multiplier_raw", "hit_speed_multiplier_raw")
+        ),
+        default=0.0,
+    )
+    # AttackPushBack is the shooter's own recoil (Firecracker, Sparky).
+    push = max(record.get("pushback_milli") or 0, shot.get("pushback_milli") or 0)
+    return max(slow, ratio(push, 3000))
 
 
 def unit_vector(record, projectiles):
@@ -92,7 +103,7 @@ def unit_vector(record, projectiles):
         0.0,
         0.0,
         ratio(record.get("lifetime_ms"), 40000),
-        slows(record),
+        control_strength(record),
     ]
 
 
@@ -114,7 +125,6 @@ def spell_vector(card, area):
         or (area or {}).get("radius_milli")
         or projectile.get("radius_milli")
     )
-    change = ((area or {}).get("buff") or {}).get("speed_multiplier_raw") or 0
     return [
         PRESENCE,
         *[0.0] * 8,
@@ -124,7 +134,7 @@ def spell_vector(card, area):
         1.0,
         scaled(damage, 1500),
         ratio((lingering or {}).get("life_duration_ms"), 40000),
-        ratio(-change, 100),
+        max(control_strength(card), control_strength(area or {})),
     ]
 
 
@@ -168,7 +178,7 @@ def card_vector(card, row, units, area, projectiles):
             or bool((area or {}).get("spawn_character"))
             or bool(projectile.get("spawn_character"))
         ),
-        max(slows(record), slows(area) if area else 0.0),
+        max(control_strength(record), control_strength(area or {})),
     ]
 
 

@@ -10,6 +10,21 @@ from clash_bot.paths import CONTRACTS_DIR, DATA_DIR
 RULES = json.loads((CONTRACTS_DIR / "arena.json").read_bytes())
 
 
+def buff_records(node):
+    """Forms can embed a named buff inside an ability or projectile, outside the global buff map."""
+    if isinstance(node, list):
+        for item in node:
+            yield from buff_records(item)
+    elif isinstance(node, dict):
+        if node.get("name") and (
+            "speed_multiplier_raw" in node or "hit_speed_multiplier_raw" in node
+        ):
+            yield node
+        else:
+            for value in node.values():
+                yield from buff_records(value)
+
+
 def combat_stats(row):
     """Raw numbers use the record's rarity-local base level; the untouched scaling table accompanies them."""
 
@@ -17,6 +32,7 @@ def combat_stats(row):
         value = row.get(field)
         return None if value is None else value / 1000
 
+    shot = row.get("projectile") if isinstance(row.get("projectile"), dict) else {}
     return {
         "aggroRangeTiles": tiles("sight_range_milli"),
         "attackRangeTiles": tiles("range_milli"),
@@ -28,6 +44,16 @@ def combat_stats(row):
         "attackIntervalMs": row.get("hit_speed_ms"),
         "loadTimeMs": row.get("load_time_ms"),
         "loadFirstHit": row.get("load_first_hit"),
+        "control": {
+            "ignoresKnockback": row.get("ignore_pushback"),
+            "ignoredBuffs": row.get("ignore_buffs"),
+            "attackRecoilTiles": tiles("attack_pushback_milli"),
+            "projectilePushbackTiles": shot["pushback_milli"] / 1000
+            if shot.get("pushback_milli") is not None
+            else None,
+            "projectileTargetBuff": shot.get("target_buff"),
+            "projectileBuffDurationMs": shot.get("buff_time_ms"),
+        },
         "speedRaw": row.get("speed"),
         "deployDelayMs": row.get("deploy_time_ms"),
         "spawnRules": {
