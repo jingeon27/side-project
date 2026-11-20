@@ -17,15 +17,8 @@ export class ChatLifecycleMiddleware implements NestMiddleware {
       // Capture before a controller rotates the session or deletes its user.
       const userId = req.gfSession?.userId;
       const sessionHash = req.gfSession?.tokenHash;
-      let deletedPeers: string[] = [];
-      if (req.method === 'DELETE' && req.path === '/api/me' && userId) {
-        deletedPeers = (
-          await this.db.chatConversation.findMany({
-            where: { OR: [{ firstUserId: userId }, { secondUserId: userId }] },
-            select: { firstUserId: true, secondUserId: true },
-          })
-        ).map((row) => (row.firstUserId === userId ? row.secondUserId : row.firstUserId));
-      }
+      const deletedPeers =
+        req.method === 'DELETE' && req.path === '/api/me' && userId ? await this.peersOf(userId) : [];
       res.once('finish', () => {
         // Publish only after successful mutations have committed.
         if (res.statusCode !== 200 || !userId) return;
@@ -60,5 +53,13 @@ export class ChatLifecycleMiddleware implements NestMiddleware {
     } catch (error) {
       next(error);
     }
+  }
+
+  private async peersOf(userId: string) {
+    const conversations = await this.db.chatConversation.findMany({
+      where: { OR: [{ firstUserId: userId }, { secondUserId: userId }] },
+      select: { firstUserId: true, secondUserId: true },
+    });
+    return conversations.map((row) => (row.firstUserId === userId ? row.secondUserId : row.firstUserId));
   }
 }

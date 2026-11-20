@@ -1,5 +1,6 @@
 import { Module, type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import dayjs from 'dayjs';
 import type { NextFunction, Response } from 'express';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -86,8 +87,8 @@ const fixture = async (options: AppOptions = {}) => {
       user: null,
       pendingSubject: 'pending-subject',
       pendingProvider: 'google',
-      expiresAt: new Date(Date.now() + 60_000),
-      createdAt: new Date(),
+      expiresAt: dayjs().add(60_000, 'millisecond').toDate(),
+      createdAt: dayjs().toDate(),
     };
     next();
   });

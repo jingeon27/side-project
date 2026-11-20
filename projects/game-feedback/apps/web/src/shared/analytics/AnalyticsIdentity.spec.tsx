@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ANALYTICS_EVENT } from './analytics.catalog';
@@ -89,7 +90,7 @@ describe('분석 식별과 로그인 성공 이벤트', () => {
   });
   it('30분이 지난 로그인 표시는 성공 횟수에 넣지 않아야 한다', () => {
     initAnalytics('test');
-    savePendingLogin('discord', Date.now() - LOGIN_MARKER_TTL - 1);
+    savePendingLogin('discord', dayjs().valueOf() - LOGIN_MARKER_TTL - 1);
     render(<AnalyticsIdentity userId="one" needsOnboarding={false} />);
     expect(sdk.track).not.toHaveBeenCalled();
   });

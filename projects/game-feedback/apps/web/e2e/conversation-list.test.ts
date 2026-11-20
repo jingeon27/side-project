@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -6,7 +8,7 @@ const headers = { Origin: origin };
 test('conversation rows stay compact with a verified peer and a long multiline preview', async ({ page }) => {
   const login = await page.request.post('/api/auth/demo', {
     headers,
-    data: { nickname: `목록확인_${Date.now().toString(36)}` },
+    data: { nickname: `목록확인_${dayjs().valueOf().toString(36)}` },
   });
   expect(login.ok()).toBe(true);
   const created = await page.request.post('/api/conversations', {

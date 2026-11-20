@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { themeColorRgb } from '@side/design-system/testing/color-tokens';
 
 import { expect, test } from './support/test';
@@ -78,7 +80,7 @@ test('mobile notification indicator and chat count follow persisted unread state
 }) => {
   const owner = await browser.newContext({ baseURL: origin, viewport: { width: 320, height: 844 } });
   const peer = await browser.newContext({ baseURL: origin });
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   try {
     const login = await owner.request.post('/api/auth/demo', {
       headers: { Origin: origin },

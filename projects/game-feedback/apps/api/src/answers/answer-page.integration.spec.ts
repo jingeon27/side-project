@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -99,7 +100,7 @@ describe('post answers paged like comments with deployed migrations', () => {
     const blocked = await login('답변페이지차단대상');
     const viewer = await login('답변페이지열람자');
     const post = await createPost(author.agent);
-    const start = Date.now() - 3_600_000;
+    const start = dayjs().valueOf() - 3_600_000;
     const total = ANSWER_PAGE + 4;
     await state.db.answer.createMany({
       data: Array.from({ length: total }, (_, index) => ({
@@ -110,7 +111,7 @@ describe('post answers paged like comments with deployed migrations', () => {
         // 늦게 달린 두 답변이 도움됨이라 맨 앞에 와야 한다.
         helpful: index === total - 1 || index === total - 2,
         hidden: index === 7,
-        createdAt: new Date(start + index * 1000),
+        createdAt: dayjs(start + index * 1000).toDate(),
       })),
     });
     const visible = Array.from({ length: total }, (_, index) => index).filter((index) => index !== 7);

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 test('community boards publish and edit formatting, stay separate from feedback and render without JavaScript', async ({
@@ -11,7 +13,7 @@ test('community boards publish and edit formatting, stay separate from feedback 
     headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
   });
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   for (const slug of ['friend-sale', 'friendly']) {
     await page.goto(`/ko/boards/${slug}`);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
@@ -233,7 +235,7 @@ test('mobile composition can switch categories from a board and persist friend s
   await expect(price).toHaveCount(0);
   await editor.getByLabel('Category', { exact: true }).selectOption('FRIEND_SALE');
   await expect(price).toHaveValue('');
-  const title = `Friend slot sale ${Date.now().toString(36)}`;
+  const title = `Friend slot sale ${dayjs().valueOf().toString(36)}`;
   await editor.getByLabel('Title', { exact: true }).fill(title);
   await expect(editor.getByRole('textbox', { name: 'Content', exact: true })).toContainText(body);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

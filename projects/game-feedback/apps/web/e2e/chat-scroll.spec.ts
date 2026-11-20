@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { expect, test, type Locator } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -14,7 +16,7 @@ for (const width of [400, 1440]) {
     browser,
   }) => {
     const peer = await browser.newContext({ baseURL: origin });
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     try {
       const login = await page.request.post('/api/auth/demo', {
         headers: { Origin: origin },

@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -326,7 +327,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .expect(200);
     await db.user.update({
       where: { id: requesterId },
-      data: { bannedAt: new Date(), banReason: '문의 경계 확인' },
+      data: { bannedAt: dayjs().toDate(), banReason: '문의 경계 확인' },
     });
     try {
       expect(await bodies(requester)).toEqual(['문의 본문입니다.']);

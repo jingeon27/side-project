@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { getSession, listCategories, listPosts } from '@game-feedback/sdk';
 
 import {
@@ -43,7 +45,7 @@ test('request → answer → notification → helpful, with ownership and origin
     baseURL: origin,
     extraHTTPHeaders: { Origin: origin },
   });
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   try {
     const owner = await signIn(requester, `요청자_${suffix}`);
     const provider = await signIn(coach, `코치_${suffix}`);
@@ -131,7 +133,7 @@ test('players create a profile-backed request and exchange helpful feedback in t
   page,
   browser,
 }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: 'http://127.0.0.1:3301' },
     data: { accountId: 'sample-user-0' },

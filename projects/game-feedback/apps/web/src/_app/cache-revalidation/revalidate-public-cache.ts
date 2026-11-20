@@ -21,14 +21,17 @@ export async function revalidatePublicCache(request: Request) {
   const text = await request.text();
   if (Buffer.byteLength(text) > 16_384)
     return Response.json({ ok: false }, { status: 413, headers: noStore });
-  let body: unknown;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    return Response.json({ ok: false }, { status: 400, headers: noStore });
-  }
-  const parsed = CacheRevalidationSchema.safeParse(body);
+  // JSON이 아닌 본문은 undefined가 되어 스키마 검증에서 같은 400으로 거절된다.
+  const parsed = CacheRevalidationSchema.safeParse(parseJson(text));
   if (!parsed.success) return Response.json({ ok: false }, { status: 400, headers: noStore });
   for (const tag of new Set(parsed.data.tags)) revalidateTag(tag, { expire: 0 });
   return Response.json({ ok: true }, { headers: noStore });
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }

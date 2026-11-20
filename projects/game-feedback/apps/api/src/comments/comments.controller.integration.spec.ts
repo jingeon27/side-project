@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -126,7 +127,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       .set('Origin', origin)
       .send({ body: '숨긴 대댓글에 답글', parentId: first.id })
       .expect(404);
-    await db.comment.update({ where: { id: root.id }, data: { deletedAt: new Date(), body: '' } });
+    await db.comment.update({ where: { id: root.id }, data: { deletedAt: dayjs().toDate(), body: '' } });
     await commenter.agent
       .post(`/api/posts/${post.id}/comments`)
       .set('Origin', origin)

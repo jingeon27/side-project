@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { NotificationListSchema } from '@game-feedback/contracts';
 
 import { expect, test } from './support/test';
@@ -11,7 +13,7 @@ test('새 채팅의 실제 메시지 개수를 탭에 표시하고 알림에서 
 }) => {
   const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   const headers = { Origin: origin };
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });

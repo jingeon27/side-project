@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -39,12 +40,12 @@ async function actor(banned = false) {
       nickname: '제재 경합 사용자',
       termsVersion: 'test',
       ageConfirmed: true,
-      bannedAt: banned ? new Date() : null,
+      bannedAt: banned ? dayjs().toDate() : null,
     },
   });
   const raw = token();
   await db.session.create({
-    data: { userId: user.id, tokenHash: hash(raw), expiresAt: new Date(Date.now() + 60_000) },
+    data: { userId: user.id, tokenHash: hash(raw), expiresAt: dayjs().add(60_000, 'millisecond').toDate() },
   });
   return { id: user.id, http: supertest.agent(app.getHttpServer()).set('Authorization', `Bearer ${raw}`) };
 }
@@ -88,7 +89,7 @@ describe('제재 확정 뒤 사용자 쓰기 잠금 재검사', () => {
       const banning = db.$transaction(
         async (tx) => {
           await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
-          await tx.user.update({ where: { id: user.id }, data: { bannedAt: new Date() } });
+          await tx.user.update({ where: { id: user.id }, data: { bannedAt: dayjs().toDate() } });
           const [row] = await tx.$queryRaw<Array<{ pid: number }>>`SELECT pg_backend_pid() AS pid`;
           blocker.pid = row?.pid ?? 0;
           locked.resolve();

@@ -1,5 +1,6 @@
 import type { MessageEvent } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
+import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -32,7 +33,7 @@ function setup() {
     sessions.set(tokenHash, {
       tokenHash,
       userId,
-      expiresAt: new Date(Date.now() + 3_600_000),
+      expiresAt: dayjs().add(3_600_000, 'millisecond').toDate(),
       user: { demoKey: null },
     });
   }

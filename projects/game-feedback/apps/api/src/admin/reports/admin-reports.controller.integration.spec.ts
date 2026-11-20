@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -58,7 +59,7 @@ describe('administrator report queue by status and cursor', () => {
     });
     admin = await login('sample-test-admin');
     reporter = await login('sample-user-0');
-    const base = Date.parse('2026-10-01T00:00:00.000Z');
+    const base = dayjs('2026-10-01T00:00:00.000Z').valueOf();
     // Two rows share a timestamp so the id tie-break decides the order across a page boundary.
     const rows = Array.from({ length: 18 }, (_, index) => ({
       reporterId: 'sample-user-0',
@@ -66,7 +67,7 @@ describe('administrator report queue by status and cursor', () => {
       targetId: `queue-target-${index}`,
       reason: 'SPAM',
       status: index < 15 ? 'OPEN' : index < 17 ? 'REVIEWED' : 'DISMISSED',
-      createdAt: new Date(base + Math.min(index, 13) * 60_000),
+      createdAt: dayjs(base + Math.min(index, 13) * 60_000).toDate(),
     }));
     await db.report.createMany({ data: rows });
     const open = await db.report.findMany({

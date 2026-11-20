@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { CommentSchema, PostSchema } from '@game-feedback/contracts';
 
 import { expect, test } from './support/test';
@@ -6,7 +8,7 @@ test('200개가 넘는 한 스레드의 답글을 마지막까지 중복 없이 
   test.setTimeout(120_000);
   const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   const headers = { Origin: origin };
-  const nickname = `답글페이징_${Date.now().toString(36)}`;
+  const nickname = `답글페이징_${dayjs().valueOf().toString(36)}`;
   const login = await page.request.post('/api/auth/demo', { headers, data: { nickname } });
   expect(login.ok()).toBe(true);
   const created = await page.request.post('/api/posts', {

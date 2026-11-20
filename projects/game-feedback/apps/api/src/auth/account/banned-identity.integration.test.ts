@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -165,7 +166,7 @@ describe('banned social identities after account deletion', () => {
         challenge: createHash('sha256').update(verifier).digest('base64url'),
         subject: 'kakao-banned-subject',
         provider: 'kakao',
-        expiresAt: new Date(Date.now() + 60_000),
+        expiresAt: dayjs().add(60_000, 'millisecond').toDate(),
       },
     });
     const exchange = await supertest(app.getHttpServer())
@@ -181,7 +182,7 @@ describe('banned social identities after account deletion', () => {
         tokenHash: hash(raw),
         pendingSubject: 'kakao-banned-subject',
         pendingProvider: 'kakao',
-        expiresAt: new Date(Date.now() + 60_000),
+        expiresAt: dayjs().add(60_000, 'millisecond').toDate(),
       },
     });
     const before = await db.user.count();

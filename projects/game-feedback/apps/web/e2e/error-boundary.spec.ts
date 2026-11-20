@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { ChatMessageList, PostDetail } from '@game-feedback/contracts';
 
 import { expect, test, type Page } from './support/test';
@@ -11,21 +13,19 @@ test.afterEach(async ({ page }) => {
 
 async function injectDateRenderFailure(page: Page) {
   // The browser owns fault injection; the application has no test-only crash switch.
-  await page.addInitScript((timestamp) => {
+  // The init script runs inside the page without dayjs, so it receives the epoch milliseconds computed here.
+  await page.addInitScript((time) => {
     const original = Date.prototype.toLocaleDateString;
     Date.prototype.toLocaleDateString = function (
       locales?: Intl.LocalesArgument,
       options?: Intl.DateTimeFormatOptions,
     ) {
-      if (
-        this.getTime() === new Date(timestamp).getTime() &&
-        sessionStorage.getItem('date-render-fault') !== 'off'
-      ) {
+      if (this.getTime() === time && sessionStorage.getItem('date-render-fault') !== 'off') {
         throw new Error('Injected date render failure');
       }
       return original.call(this, locales, options);
     };
-  }, marker);
+  }, dayjs(marker).valueOf());
 }
 
 test('a comment render failure preserves the post and answers and recovers within its own boundary', async ({

@@ -1,9 +1,11 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 
 test('post and comment forms edit, cancel deletion, and delete through their overlays', async ({ page }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const signedIn = await page.request.post('/api/auth/demo', {
     headers: { Origin: origin },
     data: { nickname: `폼작성자_${suffix}` },
@@ -81,7 +83,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
 
 test('feed filters survive opening a post, returning, and reloading the shared URL', async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 844 });
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.request.post('/api/auth/demo', {
     headers: { Origin: origin },
     data: { nickname: `검색작성자_${suffix}` },

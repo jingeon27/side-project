@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest, { type Response } from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -346,7 +347,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
       await tx.user.update({
         where: { id: user.id },
-        data: { bannedAt: new Date(), banReason: '동시 제재' },
+        data: { bannedAt: dayjs().toDate(), banReason: '동시 제재' },
       });
       locked.resolve();
       await gate.promise;

@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -103,7 +104,7 @@ describe('bounded reply pages preserve every visible reply', () => {
   it('retrieves all 201 replies through bounded pages and keeps another root visible', async () => {
     const { db, agent, authorId } = fixture();
     const { post, root } = await thread();
-    const createdAt = new Date('2026-10-29T00:00:00.000Z');
+    const createdAt = dayjs('2026-10-29T00:00:00.000Z').toDate();
     const replies = Array.from({ length: 201 }, (_, index) => ({
       id: `${root.id}-reply-${String(index).padStart(3, '0')}`,
       authorId,
@@ -163,7 +164,13 @@ describe('bounded reply pages preserve every visible reply', () => {
       data: { authorId, postId: post.id, parentId: root.id, body: '숨긴 답글', hidden: true },
     });
     await db.comment.create({
-      data: { authorId, postId: post.id, parentId: root.id, body: '삭제한 답글', deletedAt: new Date() },
+      data: {
+        authorId,
+        postId: post.id,
+        parentId: root.id,
+        body: '삭제한 답글',
+        deletedAt: dayjs().toDate(),
+      },
     });
     const endpoint = `/api/comments/${root.id}/replies`;
     expect(
@@ -182,7 +189,7 @@ describe('bounded reply pages preserve every visible reply', () => {
     });
     const block = await db.block.create({ data: { userId: viewerId, blockedUserId: authorId } });
     await agent.get(endpoint).expect(404);
-    await db.comment.update({ where: { id: root.id }, data: { deletedAt: new Date(), body: '' } });
+    await db.comment.update({ where: { id: root.id }, data: { deletedAt: dayjs().toDate(), body: '' } });
     expect(
       CommentPageSchema.parse((await agent.get(endpoint).expect(200)).body).items.map((item) => item.id),
     ).toEqual([reply.id]);
@@ -191,9 +198,12 @@ describe('bounded reply pages preserve every visible reply', () => {
     await db.post.update({ where: { id: post.id }, data: { hidden: true } });
     await agent.get(endpoint).expect(404);
     await db.post.update({ where: { id: post.id }, data: { hidden: false } });
-    await db.comment.update({ where: { id: reply.id }, data: { deletedAt: new Date(), body: '' } });
+    await db.comment.update({ where: { id: reply.id }, data: { deletedAt: dayjs().toDate(), body: '' } });
     expect(CommentPageSchema.parse((await agent.get(endpoint).expect(200)).body).items).toHaveLength(1);
-    await db.comment.updateMany({ where: { parentId: root.id }, data: { deletedAt: new Date(), body: '' } });
+    await db.comment.updateMany({
+      where: { parentId: root.id },
+      data: { deletedAt: dayjs().toDate(), body: '' },
+    });
     await agent.get(endpoint).expect(404);
   });
 });

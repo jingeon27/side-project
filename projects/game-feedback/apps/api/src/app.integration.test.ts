@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -329,7 +330,11 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     await db.userFollow.create({ data: { followerId: follower.id, followingId: author.id } });
     const accessToken = token();
     await db.session.create({
-      data: { tokenHash: hash(accessToken), userId: author.id, expiresAt: new Date(Date.now() + 60000) },
+      data: {
+        tokenHash: hash(accessToken),
+        userId: author.id,
+        expiresAt: dayjs().add(60000, 'millisecond').toDate(),
+      },
     });
     const singleConnectionUrl = new URL(url);
     singleConnectionUrl.searchParams.set('connection_limit', '1');
