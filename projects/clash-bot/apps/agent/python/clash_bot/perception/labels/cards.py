@@ -32,7 +32,30 @@ def card_status(selected=None):
     specs, checks = engine_specs(), current_checks()
     deployments = checks.get("catalogueBaseDeployment", {}).get("byCard", {})
     forms = checks.get("catalogueFormExecution", {}).get("byCard", {})
+    shot_spawns = checks.get("buildingProjectileSpawnEligibility", {}).get("byEngine", {})
     if selected is not None:
+        tower_names = {"princess_tower": "PrincessTower", "king_tower": "KingTower"}
+        if selected in tower_names:
+            row = next(t for t in specs["towers"] if t["name"] == tower_names[selected])
+            verified = checks.get("crownTowerCombat", {})
+            return {
+                "id": selected,
+                "tableVersion": specs["tableVersion"],
+                "tableSHA256": specs["tableSHA256"],
+                "raw": row,
+                "baseCombat": combat_stats(row),
+                "nativeByLevel": verified.get("byTower", {}).get(selected),
+                **(
+                    {"nativeApproachingKnight": verified.get("approachingKnight")}
+                    if selected == "princess_tower"
+                    else {}
+                ),
+                **(
+                    {"nativeActivation": verified.get("kingActivation")}
+                    if selected == "king_tower"
+                    else {}
+                ),
+            }
         card = specs["cards"].get(selected)
         if card is None:
             raise ValueError("Unknown catalogue card: " + selected)
@@ -48,13 +71,31 @@ def card_status(selected=None):
                     }
                 else:
                     units[name] = specs["units"][name]
+        timing = checks.get("unitAttackTiming", {})
+        waves = checks.get("spawnerWaves", {})
         return {
             "tableVersion": specs["tableVersion"],
             "tableSHA256": specs["tableSHA256"],
             "id": selected,
             **card,
             "unitSpecs": units,
+            "nativeAttackTiming": {
+                n: s for n, s in timing.get("alreadyDeployed", {}).items() if n in units
+            },
+            "nativeSpawning": {
+                k: {n: s for n, s in waves.get(k, {}).items() if n in units}
+                for k in ("periodic", "onDeath")
+            },
+            **(
+                {
+                    "nativeActivation": checks.get("hutActivation"),
+                    "nativeFirstChildAttack": timing.get("firstChildOfActiveHut"),
+                }
+                if selected == "goblin_hut"
+                else {}
+            ),
             "baseDeployment": deployments.get(selected),
+            "nativeProjectileSpawn": shot_spawns.get(card["engine"]),
             "formExecution": forms.get(selected),
         }
     refs = defaultdict(list)
@@ -106,6 +147,7 @@ def card_status(selected=None):
             "reviewedHandReferences": refs[card],
             "fieldAppearance": "pending_review",
             "baseDeployment": deployments.get(card),
+            "nativeProjectileSpawn": shot_spawns.get(entry["engine"]),
             "formExecution": forms.get(card),
             "poolDeploymentVerified": bool(checks.get("poolDeploymentsAndElixir", {}).get("passed"))
             if entry["engine"] in pool

@@ -8,16 +8,17 @@
 
 ## 카드 스펙과 학습 현황
 
-`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 체력과 피해의 기준 레벨과 배율은 각 레코드의 `level_scaling`을 따릅니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다. 카드별 `createdByForm`은 각 형태가 소환·변신·발사하는 대상의 엔진 ID를 담습니다. 얼음 마법사 히어로의 얼음 큐브처럼 전용 유닛도 수치로 조회할 수 있습니다.
+`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 일반 유닛의 기준 레벨과 배율은 각 레코드의 `level_scaling`에 있습니다. 기본 프린세스 타워와 킹타워의 체력·한 발 피해는 레벨별 전투에서 측정합니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다. 카드별 `createdByForm`은 각 형태가 소환·변신·발사하는 대상의 엔진 ID를 담습니다. 얼음 마법사 히어로의 얼음 큐브처럼 전용 유닛도 수치로 조회할 수 있습니다.
 
 ```sh
 yarn workspace @side/clash-bot trophy card-status --card knight
+yarn workspace @side/clash-bot trophy card-status --card king_tower
 yarn workspace @side/clash-bot arena verify
 yarn workspace @side/clash-bot arena coverage
 yarn workspace @side/clash-bot loop status
 ```
 
-자가대국은 실전 기준 덱 12개, 기본 카드 연습 덱 21개, 추가 형태 연습 덱 20개를 사용합니다. 진화 44종은 양 진영에서 필요한 횟수만큼 카드를 순환해 충전한 뒤 진화 배치를 확인했습니다. 히어로 18종과 액티브 능력이 있는 챔피언 8종은 양측 스킬 실행을 확인했고, 나머지 챔피언 등급 이벤트 카드 1종은 액티브 능력이 없습니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. `formExecutions`는 실제 실행된 진화 배치, 히어로 배치와 스킬 사용을 카드별로 집계합니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
+자가대국에서 사용할 수 있는 기본 카드는 142장입니다. 이벤트 카드 바바리안 발사대는 현재 엔진에서 포탄이 명중해도 바바리안이 생성되지 않아 연습 덱에서 제외합니다. 엔진 교체 후 같은 검사를 통과하면 카탈로그 재생성 시 다시 들어갑니다. 자가대국은 실전 기준 덱 12개, 기본 카드 연습 덱 21개, 추가 형태 연습 덱 20개를 사용합니다. 진화 44종은 양 진영에서 필요한 횟수만큼 카드를 순환해 충전한 뒤 진화 배치를 확인했습니다. 히어로 18종과 액티브 능력이 있는 챔피언 8종은 양측 스킬 실행을 확인했고, 나머지 챔피언 등급 이벤트 카드 1종은 액티브 능력이 없습니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. `formExecutions`는 실제 실행된 진화 배치, 히어로 배치와 스킬 사용을 카드별로 집계합니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
 
 ## 트로피전 화면 라벨링
 
@@ -63,7 +64,7 @@ yarn workspace @side/clash-bot arena policy --version <번호>
 
 체크포인트에는 압축 가중치만 저장합니다. 다른 버전을 실전에 쓰려면 `arena policy --version <번호>`로 리그의 `policies/v<번호>.json`을 만든 뒤 `trophy serve --seed <파일>`로 지정합니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다.
 
-카드 카탈로그(`contracts/card-catalogue.json`)는 `arena catalogue`가 고정한 엔진 수치표로 만들며, 엔진이 시뮬레이션할 수 있는 카드 143장과 필드 오브젝트(유닛, 진화·영웅형, 주문 효과)의 0~1 특징, 레벨 11 최대 체력을 담습니다. 값은 클라이언트 표의 근거값이며 엔진의 정확한 전투 규칙은 아닙니다. 내용이 바뀌면 id(내용 해시)가 바뀌고, 실시간 실행은 다른 카탈로그로 학습한 정책 파일을 읽지 않습니다.
+카드 카탈로그(`contracts/card-catalogue.json`)는 `arena catalogue`가 고정한 엔진 수치표로 만들며, 엔진이 배치할 수 있는 카드 143장과 필드 오브젝트(유닛, 진화·영웅형, 주문 효과)의 0~1 특징, 레벨 11 최대 체력을 담습니다. 값은 클라이언트 표의 근거값이며 엔진의 정확한 전투 규칙은 아닙니다. 내용이 바뀌면 id(내용 해시)가 바뀌고, 실시간 실행은 다른 카탈로그로 학습한 정책 파일을 읽지 않습니다.
 
 자가대국은 `contracts/arena.json`의 덱 풀(실전 덱과 11개 상대 덱)로 절반은 실전 덱 미러전, 나머지는 덱 조합을 둡니다. 실전 덱의 계약 키 이름은 `liveDeck: "counterpush"`이며, 바꾸면 `rulesID`가 바뀌어 새 리그가 시작되므로 그대로 두었습니다. 판단 간격·탐색 후보 수·입력 지연·레벨·인식 오류 비율도 같은 파일의 `selfplay`가 정합니다. 실전 덱을 바꾸려면 `liveDeck`과 덱 풀, 프로필의 덱 8장을 함께 바꿔야 하며, 판단 계약 decision-v3와 행동 사전 보정은 현재 덱의 카드 코드만 다룹니다.
 

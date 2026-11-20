@@ -8,13 +8,16 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from . import mechanics
+from . import building_checks, mechanics
+from .attack_timing import unit_attack_timing
 from .candidates import legal_actions
 from .card_checks import catalogue_deployments
+from .crown_towers import crown_tower_combat
 from .elixir import public_mana
 from .engine import Arena
 from .form_checks import form_checks
 from .rules import CARDS, MATCHUP_DECKS, Action, deck_ids, rules_identity
+from .shot_spawns import shot_spawn_eligibility
 
 
 def pool_deployments():
@@ -51,6 +54,13 @@ CHECKS = {
     "catalogueBaseDeployment": catalogue_deployments,
     "catalogueFormExecution": form_checks,
     "knightAggroOutsideAttackRange": mechanics.knight_aggro,
+    "unitAttackTiming": unit_attack_timing,
+    "crownTowerCombat": crown_tower_combat,
+    "hutActivation": building_checks.hut_activation,
+    "spawnerWaves": building_checks.spawner_waves,
+    "buildingTargeting": building_checks.building_targeting,
+    "buildingEffects": building_checks.building_effects,
+    "buildingProjectileSpawnEligibility": shot_spawn_eligibility,
     "drillBarrelDeathSpawn": mechanics.drill_barrel,
     "poisonMovingExposure": mechanics.poison_exposure,
     "iceWizardArrivalDamage": mechanics.ice_wizard_arrival,

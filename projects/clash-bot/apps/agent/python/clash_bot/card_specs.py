@@ -26,15 +26,34 @@ def combat_stats(row):
         "hitpoints": row.get("hitpoints"),
         "damage": row.get("damage"),
         "attackIntervalMs": row.get("hit_speed_ms"),
-        "firstHitLoadMs": row.get("load_time_ms"),
+        "loadTimeMs": row.get("load_time_ms"),
+        "loadFirstHit": row.get("load_first_hit"),
         "speedRaw": row.get("speed"),
         "deployDelayMs": row.get("deploy_time_ms"),
+        "spawnRules": {
+            k: row[k]
+            for k in (
+                "spawner",
+                "life_state_spawner",
+                "interval_spawner",
+                "death_spawn",
+                "death_spawn_projectile",
+                "spawn_pathfind",
+                "stage_schedule",
+                "mana",
+            )
+            if row.get(k) is not None
+        },
         "targets": {
             "air": row.get("attacks_air"),
             "ground": row.get("attacks_ground"),
             "buildingsOnly": row.get("target_only_buildings"),
         },
-        "levelScaling": row.get("level_scaling"),
+        # The raw table also assigns a card-rarity ladder to crown towers. Their actual
+        # max HP and damage follow separate tower ladders, measured in crownTowerCombat.
+        "levelScaling": None
+        if row.get("name") in ("KingTower", "PrincessTower")
+        else row.get("level_scaling"),
     }
 
 
