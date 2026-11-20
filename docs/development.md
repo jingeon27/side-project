@@ -52,7 +52,7 @@ yarn prettier --write packages/design-system/src/index.ts
 
 PR의 `Static analysis` 안에 있는 커밋 검사는 대상 브랜치에 더해지는 모든 일반 커밋에서 fixup·WIP·형식 오류·Co-Authored-By를 거부합니다. 검사 도입 직전의 공유 이력(`ebe5571f`)만 고정 SHA로 제외하므로 develop → main 릴리스가 과거 squash 제목 때문에 막히지 않습니다. 이후 커밋은 이미 develop에 병합됐어도 검사하며, PR 제목에는 이 검사가 적용되지 않습니다. 합성 merge를 checkout해 정적 검사를 실행하되 커밋 검사는 이벤트의 실제 base·head SHA 범위만 봅니다. 별도 Commits workflow와 runner는 사용하지 않습니다.
 
-merge commit 병합은 루트 AGENTS.md 규칙과 리뷰로 지키며, 저장소 안의 검사는 병합 방식을 확인하지 않습니다. GitHub 저장소 설정이 squash·rebase 병합을 막는지는 저장소 밖 설정이라 이 문서로 확인할 수 없고, 규칙 도입(#98) 뒤에도 부모가 하나인 커밋으로 들어간 PR이 있습니다. 설정으로 막을지와 릴리스 merge 커밋에 버전 태그를 붙일지는 저장소 소유자가 정할 일로 남아 있습니다. 지금은 태그가 없고 릴리스 버전은 PR 제목과 merge 커밋 메시지(`Release v<버전>`)에 남습니다.
+merge commit 병합은 루트 AGENTS.md 규칙과 리뷰로 지키며, 저장소 안의 검사는 병합 방식을 확인하지 않습니다. GitHub 저장소 설정이 squash·rebase 병합을 막는지는 저장소 밖 설정이라 이 문서로 확인할 수 없고, 규칙 도입(#98) 뒤에도 부모가 하나인 커밋으로 들어간 PR이 있습니다. #97까지의 PR과 그 뒤의 #133·#163·#167·#172·#200·#206·#213·#218은 develop 이력에 커밋 하나로 남았으므로 `gh pr view <번호> --json commits`로 원래 커밋을 봅니다. 설정으로 막을지와 릴리스 merge 커밋에 버전 태그를 붙일지는 저장소 소유자가 정할 일로 남아 있습니다. 지금은 태그가 없고 릴리스 버전은 PR 제목과 merge 커밋 메시지(`Release v<버전>`)에 남습니다.
 
 새 worktree는 다음 명령으로 만들면 기본 worktree의 로컬 `.env*`도 함께 복사합니다. 루트와 환경변수 예제가 있는 프로젝트·앱 디렉터리만 대상으로 하며, 기존 대상 파일과 예제 파일은 보존합니다. 복사본 권한은 `600`이며 값은 출력하지 않습니다.
 

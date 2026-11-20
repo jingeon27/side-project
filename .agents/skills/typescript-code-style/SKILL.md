@@ -9,8 +9,8 @@ description: 이 모노레포의 TypeScript와 React 코드를 작성하거나 �
 
 ## 타입과 계산
 
-- `const`와 순수 반환값을 사용한다. `let`을 없애려고 임시 객체 속성을 재할당하거나 ref·class로 가변 상태를 숨기지 않는다.
-- 날짜 생성·파싱·계산·비교는 `dayjs`를 사용하고 `new Date()`, `Date.now()`, `Date.parse()`를 새로 쓰지 않는다. Prisma·Intl·외부 라이브러리처럼 native Date가 필요한 경계에서만 `.toDate()`로 변환한다. 정해진 시각을 다루는 테스트도 같은 규칙을 따른다. TTL처럼 경과 시간을 계산할 때는 초·시간 단위로 기존 밀리초 의미를 보존하고, 달력 날짜·UTC·표시 시간대 정책을 바꾸지 않는다. 성능 측정용 단조 시계 `performance.now()`와 생성 코드·외부 계약의 Date 타입은 기계적으로 치환하지 않는다.
+- `const`와 순수 반환값을 사용한다. `side/no-let`이 함수 안의 `let`을 막고 모듈 수준 store 상태와 테스트 준비값은 허용한다. `let`을 없애려고 임시 객체 속성을 재할당하거나 ref·class로 가변 상태를 숨기지 않는다. 함수가 소유한 연결 대상처럼 규칙이 구분하지 못하는 상태는 이유를 적은 줄 단위 disable로 둔다.
+- 날짜 생성·파싱·계산·비교는 `dayjs`를 쓰고, `side/no-native-date`가 테스트를 포함해 native `Date` 생성·파싱을 막는다. Prisma·Intl·외부 라이브러리처럼 native Date가 필요한 경계에서는 `.toDate()`로 변환한다. dayjs는 시간대 없는 문자열을 기기 시간으로 읽고 없는 월을 다음 해로 보정한다. 그래서 GraphQL `DateTime`, 커서, `datetime-local`처럼 외부 문자열을 엄격히 검증하는 경계만 이유를 적고 `Date.parse`를 쓰며, 날짜만 쓴 리터럴은 `'2026-01-01T00:00:00Z'`처럼 UTC를 명시한다. TTL처럼 경과 시간을 계산할 때는 초·시간 단위로 기존 밀리초 의미를 보존하고, 달력 날짜·UTC·표시 시간대 정책을 바꾸지 않는다. 성능 측정용 단조 시계 `performance.now()`와 생성 코드·외부 계약의 Date 타입은 기계적으로 치환하지 않는다.
 - `else` 대신 가드·조기 반환을 쓴다. `interface I*`, `type T*`, named export와 필요한 이름의 명시적 re-export를 사용한다. 프레임워크가 요구하는 default export와 프로젝트가 정한 테스트의 타입 예외는 유지한다. 일반 구현에 any·non-null assertion·enum을 새로 추가하지 않는다.
 - 설정·조회표는 `satisfies`로 모양을 검사하고 리터럴이 필요할 때만 `as const satisfies T`를 쓴다. 유니온 키 표는 Record/Partial로 누락·추가를 검사한다. 프레임워크 export·의도적으로 넓은 사전·인라인 인자 타입을 기계적으로 좁히지 않는다.
 - 같은 판별 값의 3갈래 이상 분기·중첩 삼항·닫힌 switch는 `ts-pattern`의 exhaustive match로 쓴다. 열린 오류 문자열만 otherwise로 처리한다. 단순 이항 조건·가드·뜨거운 반복문은 일반 코드로 둔다. **피식 mobile·bridge는 ts-pattern을 추가하지 않고 판별 유니온·satisfies 표를 쓴다.**

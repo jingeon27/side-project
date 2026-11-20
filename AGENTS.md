@@ -32,8 +32,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`). 허용 범위�
 - 전용 폼 페이지에는 사이트 푸터를 표시하지 않는다. 같은 편집 목적의 정보·사진 변경은 하단 저장 버튼 하나로 처리하고, 저장 실패 시 초안을 보존한다.
 - `packageManager`에 고정한 Yarn 4.17.0 CLI를 직접 설치하고 `yarn`으로 실행한다. 최초 설치는 `npm install --global @yarnpkg/cli-dist@4.17.0 --force`를 사용한다.
 - 여러 워크스페이스가 사용하는 외부 의존성은 루트 `.yarnrc.yml`의 `catalog`에 정확한 버전을 두고 각 `dependencies`·`devDependencies`에서 `catalog:`로 참조한다. React·React DOM도 웹·Expo 앱이 같은 catalog를 사용한다. Expo 권장 버전과 다른 패치는 React Native의 peer 범위를 확인하고 모바일 검사·두 플랫폼 번들을 검증한다. `peerDependencies`는 호환 범위를 유지한다. 버전을 바꾸면 catalog와 `yarn.lock`을 함께 갱신하고, 실행 중인 해당 개발 서버를 재시작한다.
-- 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수 반환값으로 전달한다.
-- class의 비공개 필드·메서드는 `#` 대신 TypeScript의 `private`로 명시한다.
+- 단계별 결과는 `let` 재대입 대신 함수 반환값으로 전달한다. 함수 안의 `let`, `#` 비공개 멤버, native `Date` 생성·파싱은 공통 ESLint 규칙이 막는다. 예외 기준은 [typescript-code-style](.agents/skills/typescript-code-style/SKILL.md)에 있다.
 - 새 worktree는 `yarn worktree:add <경로> -b <브랜치> origin/develop`로 만든다. 기본 worktree의 로컬 `.env*`가 복사되며 기존 대상 파일과 `.env*.example`은 보존한다. 직접 `git worktree add`를 썼다면 새 worktree에서 `yarn install --immutable`로 설정 복사와 hook 설치를 완료한다. 환경변수 값은 로그·커밋에 남기지 않고, 복사된 DB·포트로 다른 개발 서버를 동시에 실행하지 않는다.
 - 워크스페이스 이름: 프로젝트 집계는 `@side/<project>`, 앱과 프로젝트 패키지는 `@<project>/<name>`.
 - 테스트 러너는 앱(또는 패키지)이 소유한다. Vitest·Playwright 설정, 러너 의존성, 테스트 파일은 그 앱 안에 둔다. 프로젝트 스크립트의 단위 테스트는 대상 스크립트 옆에 두고 관련 앱의 러너가 수집한다. 루트와 프로젝트 루트에는 테스트 파일·러너 설정·러너 의존성을 두지 않고, test/check 스크립트는 위임만 한다. 프로젝트 전체를 도는 공용 e2e 워크스페이스를 만들지 않는다.
@@ -47,7 +46,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`). 허용 범위�
 - CI workflow는 `Services`, `Blog`, `Static analysis` 세 개로 관리한다. PR·develop은 검증, main은 운영 배포 대상으로 구분하며 블로그 Vercel Git 자동 배포는 main만 허용하고 develop·PR 미리보기를 차단한다. 공용 이미지 검증은 Services가, 커밋·Terraform 검사는 Static analysis가 소유한다.
 - 모든 변경은 기능 브랜치 → develop → main 순서로 반영한다. 기능·수정 PR의 base는 develop이며 main에는 develop에서만 PR을 올린다. 배포 장애 수정도 같은 경로를 따른다.
 - 일반 PR 제목은 `<type>(<scope>): <내용>` 형식을 쓴다. `develop → main` 릴리스 PR 제목은 `Release v<SemVer>` 형식으로 정한다(예: `Release v0.1.1-beta.2`). 릴리스 PR에서도 개별 커밋 메시지는 기존 커밋 컨벤션을 따른다.
-- PR은 squash가 아니라 merge commit으로 합친다. #97까지의 PR(규칙은 #98에서 도입)과 그 뒤에도 부모 하나인 커밋으로 들어간 #133·#163·#167·#172·#200·#206·#213·#218은 `gh pr view <번호> --json commits`로 원래 커밋을 본다. 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Static analysis` 안에 있는 커밋 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.
+- PR은 squash가 아니라 merge commit으로 합친다. 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). `Static analysis`의 커밋 검사가 브랜치의 모든 커밋을 확인한다. 한 커밋으로 들어간 예전 PR의 원래 커밋을 찾는 방법은 [개발 가이드의 Git hook](docs/development.md#git-hook)에 있다.
 - 병합은 PR 최신 head에서 필수 검사 `knip`·`Service verification`·`Blog verification`이 모두 성공한 뒤에 한다. 릴리스 PR도 같으며 실패하거나 진행 중인 검사를 두고 병합하지 않는다. 필수 검사 지정은 [개발 가이드의 검증](docs/development.md#검증)을 따른다.
 
 - TypeScript CLI는 공통 `@side/config`의 `tsc7`(7.0.2)을 사용한다. JavaScript compiler API 의존 도구는 `typescript` 6.0.2를 사용하며, `typescript/bin/tsc` 경로를 직접 가정하지 않는다.
@@ -58,5 +57,6 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`). 허용 범위�
 ## 지침과 스킬의 소유권
 
 - AGENTS.md는 해당 경로의 구조·제품 결정·안전 경계와 스킬 진입점을 둔다. 공통 규칙은 루트 스킬 한 곳에, 앱별 실행·테스트 절차는 프로젝트 스킬의 references에 둔다. 사용자의 코드 리뷰 피드백은 개인 메모리가 아니라 적용 범위의 스킬(공통은 루트 스킬)에 기록한다.
+- 규칙을 더하기 전에 lint·hook·검사 스크립트로 막을 수 있는지 먼저 본다. 도구로 막으면 지침에는 규칙 이름과 예외만 남긴다. PR 번호 목록 같은 지난 이력은 지침이 아니라 docs에 둔다.
 - 프로젝트 진입점에서 필요한 주제만 선택한다. 모든 앱 스킬·참조를 미리 전부 읽거나 같은 규칙을 여러 프로젝트에 복제하지 않는다.
 - 공통 코드 규칙을 공유해도 Apollo/REST, 쿠키/관리자 세션, DB·포트·S3 격리와 네이티브 기능 차이는 각 서비스가 소유한다. 블로그 글쓰기와 문체 피드백은 저장소의 [blog-writer](projects/blog/.agents/skills/blog-writer/SKILL.md)에서 관리한다.
