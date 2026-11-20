@@ -1,5 +1,6 @@
 import type { CardId } from './cards.ts';
 import { COMBAT, PLACEMENT_EFFECTS, referenceBodyHp } from './combat-reference.ts';
+import { HUT_NOMINAL_RANGE } from './hut-activation.ts';
 
 // Level-11 reference values checked 2026-11-15. The live Trophy client has not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
@@ -185,13 +186,17 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     spawn: { unit: 'barbarian', intervalSeconds: null, count: 1, condition: 'after the ground-only roll' },
   },
   goblin_hut: {
-    structure: { hp: referenceBodyHp('goblin_hut'), triggerRangeTiles: 6, lifetimeSeconds: 30 },
+    structure: {
+      hp: referenceBodyHp('goblin_hut'),
+      triggerRangeTiles: HUT_NOMINAL_RANGE,
+      lifetimeSeconds: 30,
+    },
     deploySeconds: 1,
     spawn: {
       unit: 'spear_goblin',
       intervalSeconds: 2.2,
       lifetimeSeconds: 30,
-      triggerRangeTiles: 6,
+      triggerRangeTiles: HUT_NOMINAL_RANGE,
       onDeath: 1,
       condition: 'spawner activation and existing targets matter; not a damage-dealing cannon',
     },

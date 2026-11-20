@@ -2,22 +2,14 @@
 
 import json
 
-import royalesim
-
 from ..catalogue import current
-from .rules import SPEC, TILE
+from .rules import TILE, new_battle
 
 
 def deployment(name):
     fillers = ["Knight", "Archer", "Minions", "Giant", "Fireball", "Zap", "Skeletons", "Musketeer"]
     names = list(dict.fromkeys([name, *fillers]))[:8]
-    battle = royalesim.Battle(
-        card_names=names,
-        slot_of_k=[[0, 1, 2], [0, 1, 2]],
-        level=SPEC["level"],
-        tower_level=SPEC["level"],
-        calibration_overrides={"cards.CARD_TABLE": json.dumps(SPEC["table"])},
-    )
+    battle = new_battle(names)
     deck = list(range(8))
     battle.set_command_delay_ticks(1, 1)
     battle.reset(

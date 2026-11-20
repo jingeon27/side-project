@@ -1,4 +1,5 @@
 import { COMBAT } from '../combat-reference.ts';
+import { wakesHut } from '../hut-activation.ts';
 import type { DecisionAction, DecisionContext } from '../policy/decision-v3.ts';
 import { FAST_TACTICS } from './tactics-spec.ts';
 
@@ -11,11 +12,7 @@ export function positionBias(context: DecisionContext, action: DecisionAction) {
   if (card === 'goblin_hut') {
     const huts = context.bodies.own.filter((b) => b.kind === 'goblin_hut');
     const coverage = context.bodies.enemy.filter(
-      (b) =>
-        b.y < 18 &&
-        COMBAT.bodies[b.kind]?.speed !== 0 &&
-        Math.hypot(b.x - x, b.y - y) <= 6 &&
-        !huts.some((h) => Math.hypot(b.x - h.x, b.y - h.y) <= 6),
+      (b) => wakesHut(b.kind, b.x - x, b.y - y) && !huts.some((h) => wakesHut(b.kind, b.x - h.x, b.y - h.y)),
     ).length;
     const stacked = huts.some((h) => Math.hypot(x - h.x, y - h.y) < 6);
     const poison = context.effects?.some(

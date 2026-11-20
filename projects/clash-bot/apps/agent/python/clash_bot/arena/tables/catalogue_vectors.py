@@ -51,9 +51,19 @@ def dps(record):
     return (damage or 0) / (hit / 1000) if hit else 0.0
 
 
-def spawns(record):
+def spawns(record, projectiles):
     graph = record.get("action_graph") or {}
-    return float(bool(record.get("spawner") or graph.get("spawns") or record.get("death_spawn")))
+    death_shot = projectiles.get(record.get("death_spawn_projectile")) or {}
+    return float(
+        bool(
+            graph.get("spawns")
+            or death_shot.get("spawn_character")
+            or any(
+                record.get(k)
+                for k in ("spawner", "interval_spawner", "life_state_spawner", "death_spawn")
+            )
+        )
+    )
 
 
 def slows(record):
@@ -64,7 +74,7 @@ def slows(record):
     return ratio(-change, 100)
 
 
-def unit_vector(record, effect=None):
+def unit_vector(record, projectiles):
     building = (record.get("speed") or 0) == 0 and bool(record.get("lifetime_ms"))
     return [
         PRESENCE,
@@ -78,7 +88,7 @@ def unit_vector(record, effect=None):
         float((record.get("flying_height") or 0) > 0),
         ratio(record.get("area_damage_radius_milli"), 4000),
         float(building),
-        spawns(record),
+        spawns(record, projectiles),
         0.0,
         0.0,
         ratio(record.get("lifetime_ms"), 40000),
@@ -118,7 +128,7 @@ def spell_vector(card, area):
     ]
 
 
-def card_vector(card, row, units, area):
+def card_vector(card, row, units, area, projectiles):
     spell = card["kind"] == "spell"
     count = 0 if spell else card.get("count") or 1
     summoned = units.get(card.get("summon_character") or "", {})
@@ -154,7 +164,7 @@ def card_vector(card, row, units, area):
             40000,
         ),
         float(
-            spawns(record)
+            spawns(record, projectiles)
             or bool((area or {}).get("spawn_character"))
             or bool(projectile.get("spawn_character"))
         ),

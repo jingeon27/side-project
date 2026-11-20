@@ -1,10 +1,19 @@
 """Declared staging and Hut pull geometry, with legal placements kept available."""
 
+import json
 import math
 
 from clash_bot.combat_projection import COMBAT
+from clash_bot.paths import CONTRACTS_DIR
 
 from .tactics_spec import SPEC
+
+HUT_REACH = json.loads((CONTRACTS_DIR / "hut-activation.json").read_bytes())["centerReachByBody"]
+
+
+def wakes_hut(body, x, y):
+    reach = HUT_REACH.get(body["kind"])
+    return reach is not None and math.hypot(body["x"] - x, body["y"] - y) <= reach
 
 
 def position_bias(context, action):
@@ -13,10 +22,7 @@ def position_bias(context, action):
     if card == "goblin_hut":
         huts = [b for b in context["bodies"]["own"] if b["kind"] == "goblin_hut"]
         coverage = sum(
-            b["y"] < 18
-            and COMBAT["bodies"].get(b["kind"], {}).get("speed") != 0
-            and math.hypot(b["x"] - x, b["y"] - y) <= 6
-            and not any(math.hypot(b["x"] - h["x"], b["y"] - h["y"]) <= 6 for h in huts)
+            wakes_hut(b, x, y) and not any(wakes_hut(b, h["x"], h["y"]) for h in huts)
             for b in context["bodies"]["enemy"]
         )
         stacked = any(math.hypot(x - h["x"], y - h["y"]) < 6 for h in huts)

@@ -1,4 +1,5 @@
 import { distance, screenPoint, tilePoint } from '../geometry.ts';
+import { wakesHut } from '../hut-activation.ts';
 import type { Profile } from '../profile.ts';
 import { combatBody } from './combat-projection.ts';
 import { graveyardThreat, ownPoint, type PlacementField, type PlacementOption } from './placement.ts';
@@ -8,8 +9,14 @@ import { graveyardThreat, ownPoint, type PlacementField, type PlacementOption } 
 export function hutPlacements(profile: Profile, situation: PlacementField): PlacementOption[] {
   const enemy = situation.opponent.units
     .filter((unit) => unit.confidence >= 0.75)
-    .map((unit) => combatBody(profile, unit));
+    .map((unit) => combatBody(profile, unit))
+    .map((unit) => ({
+      kind: unit.kind,
+      x: unit.x + (unit.velocity?.[0] ?? 0),
+      y: unit.y + (unit.velocity?.[1] ?? 0),
+    }));
   const existing = situation.own.units.filter((unit) => (unit.kind ?? unit.card) === 'goblin_hut');
+  const existingTiles = existing.map((hut) => tilePoint(profile, hut));
   const points = [5, 6.5, 8, 9, 10, 11.5, 13].flatMap((x) =>
     [6.5, 8, 9.5, 11, 12.5, 14].map((y) => [x, y] as const),
   );
@@ -18,15 +25,9 @@ export function hutPlacements(profile: Profile, situation: PlacementField): Plac
       const target = ownPoint(profile, 'goblin_hut', screenPoint(profile, tile), situation);
       if (!target) return [];
       const [x, y] = tilePoint(profile, target);
-      const nearby = enemy.filter(
-        (unit) =>
-          Math.hypot(unit.x + (unit.velocity?.[0] ?? 0) - x, unit.y + (unit.velocity?.[1] ?? 0) - y) <= 6,
-      );
+      const nearby = enemy.filter((unit) => wakesHut(unit.kind, unit.x - x, unit.y - y));
       const covered = nearby.filter((unit) =>
-        existing.some((hut) => {
-          const other = tilePoint(profile, hut);
-          return Math.hypot(unit.x - other[0], unit.y - other[1]) <= 6;
-        }),
+        existingTiles.some(([hx, hy]) => wakesHut(unit.kind, unit.x - hx, unit.y - hy)),
       ).length;
       const stacked = existing.filter((hut) => distance(target, hut) < 70).length;
       const poison =

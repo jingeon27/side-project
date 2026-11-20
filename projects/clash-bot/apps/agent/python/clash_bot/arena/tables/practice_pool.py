@@ -6,6 +6,7 @@ from clash_bot.paths import CONTRACTS_DIR
 
 from ..sim.card_checks import catalogue_deployments
 from ..sim.form_checks import verified_forms
+from ..sim.shot_spawns import building_shot_spawns
 
 PATH = CONTRACTS_DIR / "arena-practice.json"
 ANCHORS = ("Knight", "Archer", "Zap", "Giant", "Minions", "Fireball", "Skeletons", "Musketeer")
@@ -45,11 +46,24 @@ def form_decks(specs, standard, receipts):
     return decks
 
 
-def build_pool(catalogue, specs, standard_decks, verified, forms):
+def build_pool(catalogue, specs, standard_decks, verified, forms, shot_spawns):
     original = {name for deck in standard_decks.values() for name in deck["cards"]}
+    excluded = {
+        name: result["expectedChild"]
+        for name, result in shot_spawns.items()
+        if not result["reproduced"]
+    }
+    if original & excluded.keys():
+        raise ValueError(
+            "A fixed matchup deck requires a building with an unverified projectile spawn"
+        )
     rows = []
     for name, card in specs["cards"].items():
-        if card["engine"] not in original and verified.get(name, {}).get("passed") is True:
+        if (
+            card["engine"] not in original
+            and card["engine"] not in excluded
+            and verified.get(name, {}).get("passed") is True
+        ):
             base = card["forms"].get("base") or card["forms"]["champion"]
             rows.append((card["engine"], base["kind"], base["elixir"], "champion" in card["forms"]))
     size = max(ceil(len(rows) / 4), sum(v[3] for v in rows))
@@ -94,7 +108,16 @@ def build_pool(catalogue, specs, standard_decks, verified, forms):
         "tableSHA256": specs["tableSHA256"],
         "catalogueID": catalogue["id"],
         "decks": decks,
-        "formDecks": form_decks(specs, standard_decks, forms),
+        "formDecks": form_decks(
+            specs,
+            standard_decks,
+            {
+                name: row
+                for name, row in forms.items()
+                if specs["cards"][name]["engine"] not in excluded
+            },
+        ),
+        "missingProjectileSpawns": excluded,
     }
 
 
@@ -106,4 +129,5 @@ def verified_pool(catalogue, specs, rules):
         rules["decks"],
         catalogue_deployments(engines)["byCard"],
         verified_forms(specs),
+        building_shot_spawns(),
     )

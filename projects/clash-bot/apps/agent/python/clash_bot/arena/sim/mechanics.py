@@ -4,9 +4,23 @@ import json
 
 from .rules import CARD_ID, FIELDS, TILE, deck_ids, forms_of, new_battle
 
+TICK_MS = 50
+STATIONARY_TARGET = "GoblinRocketSilo"  # No decay or attacks before its first stage change.
+
 
 def field(
-    own="counterpush", enemy="counterpush", first=None, units=(), delays=(0, 0), start_tick=100
+    own="counterpush",
+    enemy="counterpush",
+    first=None,
+    units=(),
+    delays=(0, 0),
+    start_tick=100,
+    *,
+    tower_levels=None,
+    tower_hp=None,
+    king_wake_ms=None,
+    unit_deploy_ticks=None,
+    initial_elixir=(10000, 10000),
 ):
     battle = new_battle()
     battle.set_command_delay_ticks(*delays)
@@ -19,8 +33,11 @@ def field(
         decks=decks,
         shuffle=0,
         start_tick=start_tick,
-        elixir_milli=[10000, 10000],
-        tower_hp=None,
+        elixir_milli=list(initial_elixir),
+        tower_hp=tower_hp,
+        tower_levels=tower_levels,
+        king_wake_ms=king_wake_ms,
+        unit_deploy_ticks=unit_deploy_ticks,
         spawns=[],
         forms=[forms_of(name, cards) for name, cards in zip((own, enemy), decks)],
         unit_spawns=[

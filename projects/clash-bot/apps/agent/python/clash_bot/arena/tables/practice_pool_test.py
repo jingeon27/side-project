@@ -36,7 +36,11 @@ class PracticePoolTest(unittest.TestCase):
         for deck in practice["formDecks"].values():
             self.assertLessEqual(deck["forms"].count(2), 1)
             self.assertLessEqual(deck["forms"].count(1), 2)
-        self.assertEqual({c["engine"] for c in specs["cards"].values()}, set(CARDS))
+        missing = practice["missingProjectileSpawns"]
+        self.assertEqual(missing, {"BarbarianLauncher": "Barbarian"})
+        self.assertEqual(
+            {c["engine"] for c in specs["cards"].values()} - missing.keys(), set(CARDS)
+        )
         self.assertTrue(set(MATCHUP_DECKS).isdisjoint(PRACTICE_DECKS))
         self.assertEqual(specs["unlinkedBodies"], [])
         knight = specs["cards"]["knight"]["combat"]["base"]

@@ -94,16 +94,25 @@ def forms_of(name, order):
     return [form[card] for card in order]
 
 
-def new_battle():
+def new_battle(card_names=None):
     if royalesim.__version__ != SPEC["version"]:
         raise RuntimeError("Engine version differs from the pinned arena rules")
     return royalesim.Battle(
-        card_names=CARDS,
+        card_names=CARDS if card_names is None else card_names,
         slot_of_k=[[0, 1, 2], [0, 1, 2]],
         level=SPEC["level"],
         tower_level=SPEC["level"],
         calibration_overrides={"cards.CARD_TABLE": json.dumps(SPEC["table"])},
     )
+
+
+def pinned_table():
+    """The client table compiled into the pinned wheel, the one new_battle() runs."""
+    stem = SPEC["tableFile"].removeprefix("cards-").removesuffix(".json").replace("-", "_")
+    table = json.loads(getattr(royalesim, f"EMBEDDED_CARDS_{stem}_JSON"))
+    if table["version"] != SPEC["tableVersion"] or table["version"] != new_battle().card_table():
+        raise ValueError("Embedded card table differs from the pinned rules table")
+    return table
 
 
 def rules_identity():
@@ -134,6 +143,7 @@ def rules_identity():
                 name: json.loads((CONTRACTS_DIR / name).read_text())
                 for name in (
                     "fast-tactics.json",
+                    "hut-activation.json",
                     "combat-projection.json",
                     "placement-effects.json",
                     "deployment.json",
