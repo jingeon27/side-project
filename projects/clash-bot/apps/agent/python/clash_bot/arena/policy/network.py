@@ -1,7 +1,7 @@
 """Small action-conditional policy/value network over the public decision context.
 
 The same network guides local search and, published as champion-policy.json, decides live
-Counterpush moves in milliseconds (src/core/fast/policy.ts). CPU inference, MLX gradients.
+live Trophy decisions in milliseconds (src/core/fast/policy.ts). CPU inference, MLX gradients.
 """
 
 import json
@@ -68,7 +68,7 @@ class Policy:
         return checksum(self.weights)
 
     def live(self, catalogue):
-        """What `counterpush play` loads: the same weights and checksum as JSON.
+        """What `trophy serve --seed` loads: the same weights and checksum as JSON.
 
         `catalogue` is the card catalogue id of the rule set the weights learned under.
         """

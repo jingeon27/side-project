@@ -1,7 +1,7 @@
 """Persistent expert iteration, frozen opponents and qualification, on one Mac.
 
 The learner advances after verified terminal games. The champion pointer moves
-only after disjoint, seat-swapped evaluation passes. Neither is a Qwen pointer.
+only after disjoint, seat-swapped evaluation passes.
 """
 
 import json
@@ -16,7 +16,7 @@ from ..sim.verification import verify
 from ..training.parallel import Workers
 from .champions import checkpoint, initialize
 from .control import Control
-from .generation import learn, next_version, qwen_datasets, selfplay
+from .generation import learn, next_version, selfplay
 from .qualification import qualify
 
 
@@ -79,7 +79,6 @@ def run(
             if not played:
                 break
             learn(control, root, league, rules, learner, version)
-            qwen_datasets(control, data_dir, played)
             if version % evaluate_every == 0 and not control.stopped():
                 qualify(control, pool, root, league, rules, learner, pairs)
             control.state["completedGenerations"] += 1

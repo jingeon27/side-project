@@ -1,12 +1,10 @@
 import type { BattleSituation } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
-import { compactMechanics, KNOWLEDGE_VERSION } from '../knowledge.ts';
 import { graveyardThreat, ownPoint, unitPlacements, type PlacementOption } from '../placement/placement.ts';
 import type { Profile } from '../profile.ts';
-import { policyContext } from './context.ts';
 
-export type QwenAction = {
+export type ActionOption = {
   id: number;
   slot: number;
   card: CardId | null;
@@ -23,7 +21,7 @@ export function actionCandidates(
   elixir: number,
   threats: Point[],
   situation?: BattleSituation,
-): QwenAction[] {
+): ActionOption[] {
   const nearest = threats.toSorted((a, b) => b.y - a.y)[0];
   const graveyard = graveyardThreat(profile, situation);
   const cluster = threats
@@ -158,7 +156,7 @@ export function actionCandidates(
       .map((item) => ({ slot: index + 1, card, ...item }));
   });
   const ability = situation?.own.ability;
-  const abilityMoves: Omit<QwenAction, 'id'>[] =
+  const abilityMoves: Omit<ActionOption, 'id'>[] =
     ability?.availability === 'ready' && ability.cost <= elixir
       ? [
           {
@@ -186,49 +184,4 @@ export function actionCandidates(
         ...actions,
       ]
     : actions;
-}
-
-export function choicePrompt(
-  cards: Array<CardId | null>,
-  elixir: number,
-  threats: Point[],
-  actions: QwenAction[],
-  format: 'json' | 'letter' = 'json',
-  situation?: BattleSituation,
-): string {
-  const knownCards = [
-    ...new Set(
-      [
-        ...cards,
-        ...(situation?.own.units.flatMap((unit) => [unit.card, unit.sourceCard ?? null]) ?? []),
-        ...(situation?.opponent.units.flatMap((unit) => [unit.card, unit.sourceCard ?? null]) ?? []),
-        ...actions.filter((action) => action.kind === 'ability').map((action) => action.card),
-      ].filter((card): card is CardId => card !== null),
-    ),
-  ];
-  const reply =
-    format === 'letter' ? 'Reply exactly ONE action letter.' : 'Return ONLY {"choice":ACTION_ID}.';
-  const rows = actions.map((action, index) => [
-    format === 'letter' ? String.fromCharCode(65 + index) : action.id,
-    action.kind ?? (action.card ? 'card' : 'wait'),
-    action.card,
-    action.cost ?? (action.card ? CARD_INFO[action.card].cost : 0),
-    action.target.x,
-    action.target.y,
-    action.description,
-  ]);
-  return [
-    'Play BLUE bottom vs RED top, 368x652 pixels. Choose one legal action. ' + reply,
-    'Both regenerate equally, cap 10, lose overflow. Deck8/hand4/FIFO4; a card returns after4 subsequent plays. Enemy resources and cycle are partial ranges.',
-    'Skill does NOT draw a card or charge evolution. Only the latest deployed hero/champion owns its skill; normally once per deployment, Boss Bandit is the exception. Enemy skill state is unknown.',
-    'Evolution charges only by deploying that SAME card. Predicted next form is not an observed active form. Knight reduction requires not attacking; Furnace fast spawning requires hot+attacking. Unknown variants have no assumed bonus.',
-    'Compare travel velocity, deploy/first-hit delay, range, splash, child spawns and Poison. Protect ranged support and spawners. Graveyard defense needs spawn phase/area coverage; one melee unit or Barrel cannot cover all. Attack Graveyard with tank arrival and consider defenders. Do not wait at full elixir.',
-    'Knowledge ' +
-      KNOWLEDGE_VERSION +
-      ' is a level11 reference, not verified Counterpush physics. Movement class is not tiles/sec. Fixed Graveyard predictions estimate first visibility only. ' +
-      JSON.stringify(compactMechanics(knownCards)),
-    'Hand=' + cards.join(',') + '; elixir=' + elixir + '; threats=' + JSON.stringify(threats),
-    situation ? 'BEFORE state=' + JSON.stringify(policyContext(situation)) : '',
-    'Action columns=[id,kind,card,cost,x,y,intent]. Actions=' + JSON.stringify(rows),
-  ].join('\n');
 }

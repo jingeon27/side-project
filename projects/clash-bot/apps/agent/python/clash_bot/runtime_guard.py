@@ -1,4 +1,4 @@
-"""Refuse setup work that would change files a running learner or self-play is using."""
+"""Refuse setup work that would change files a running Trophy learner or self-play is using."""
 
 import fcntl
 import json
@@ -10,7 +10,7 @@ from clash_bot.paths import DATA_DIR
 def _learner_running():
     # An empty or malformed lock was left by a crash and has no live owner.
     try:
-        owner = json.loads((DATA_DIR / "qwen/selfplay/lock.json").read_text())
+        owner = json.loads((DATA_DIR / "trophy/learning/control/lock.json").read_text())
         pid = int(owner["pid"])
     except (FileNotFoundError, ValueError, KeyError, TypeError):
         return False

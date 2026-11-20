@@ -1,14 +1,14 @@
 import { expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation } from '../battle/battle-state.ts';
-import { COUNTERPUSH_DECK } from '../deck.ts';
+import { LIVE_DECK } from '../deck.ts';
 import { screenPoint } from '../geometry.ts';
 import { predictivePlacements } from '../placement/predictive-placement.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { affordableCandidates } from './candidates.ts';
 
 const scene = () =>
-  new BattleMemory([...COUNTERPUSH_DECK]).observe({
+  new BattleMemory([...LIVE_DECK]).observe({
     at: 10000,
     amount: 10,
     hand: ['goblin_hut', 'poison', 'barbarian_barrel', 'graveyard'],

@@ -8,11 +8,11 @@ import { CARD_INFO, type CardId } from '../cards.ts';
 import { tilePoint } from '../geometry.ts';
 import { combatBody, forecastEffect, forecastText, type CombatBody } from '../placement/combat-projection.ts';
 import type { Profile } from '../profile.ts';
-import type { QwenAction } from './actions.ts';
+import type { ActionOption } from './actions.ts';
 import { bodyCard } from './candidates.ts';
 import { observedContacts } from './effects.ts';
 
-// 판단 계약 v3의 머리말과 카드 코드다. Python(clash_bot.qwen.inputs.decision_input)도 같은 파일을 읽는다.
+// 판단 계약 v3의 머리말과 카드 코드다. 이 문자열은 Python 행동 사전 보정(clash_bot.qwen.action_prior)이 읽는다.
 const contract = z
   .strictObject({
     version: z.literal(3),
@@ -61,7 +61,7 @@ export function decisionContext(
   profile: Profile,
   cards: Array<CardId | null>,
   elixir: number,
-  actions: QwenAction[],
+  actions: ActionOption[],
   situation: BattleSituation,
   clock?: number,
 ): DecisionContext {
@@ -185,12 +185,12 @@ export function serializeDecision(context: PublicDecisionContext) {
   );
 }
 
-// 후보 판단(controller 3)의 Qwen 입력이다. 상황을 타입으로 만든 뒤 v3 문자열로만 바꾼다.
+// 화면 어댑터가 행동 사전 보정에 보내는 판단 문자열이다. 상황을 타입으로 만든 뒤 v3 문자열로만 바꾼다.
 export function decisionPrompt(
   profile: Profile,
   cards: Array<CardId | null>,
   elixir: number,
-  actions: QwenAction[],
+  actions: ActionOption[],
   situation: BattleSituation,
 ) {
   return serializeDecision(decisionContext(profile, cards, elixir, actions, situation));

@@ -52,8 +52,14 @@ def load_weights(path):
     return weights
 
 
-def save_checkpoint(root, weights, version, behavior_sha, parent_sha, receipt):
-    directory = Path(root) / "checkpoints" / f"v{version:06}"
+OWN_PLAY = "own_screen_actions_and_verified_terminal_result"
+
+
+def save_checkpoint(
+    root, weights, version, behavior_sha, parent_sha, receipt, *, directory=None, source=OWN_PLAY
+):
+    """Write one immutable checkpoint. PPO versions live under checkpoints/, imports elsewhere."""
+    directory = Path(directory) if directory else Path(root) / "checkpoints" / f"v{version:06}"
     policy = exported(
         weights,
         {"version": version, "rulesID": "trophy-visible-screen-v1", "catalogue": CATALOGUE.id},
@@ -65,7 +71,7 @@ def save_checkpoint(root, weights, version, behavior_sha, parent_sha, receipt):
         "behaviorSHA256": behavior_sha,
         "championParentSHA256": parent_sha,
         "receipt": receipt,
-        "source": "own_screen_actions_and_verified_terminal_result",
+        "source": source,
     }
     directory.parent.mkdir(parents=True, exist_ok=True)
     if directory.exists():

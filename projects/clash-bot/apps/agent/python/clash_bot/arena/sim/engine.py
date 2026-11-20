@@ -1,6 +1,6 @@
 """One simulated game: delayed plays, the public record and what each side may observe.
 
-No Counterpush internal state or API is used. A play runs, and becomes public, its side's
+No live-client internal state or API is used. A play runs, and becomes public, its side's
 input delay after it was accepted; until then only its own side knows it.
 """
 

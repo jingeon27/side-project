@@ -1,0 +1,5 @@
+-r core.lock
+mlx==0.32.4
+mlx-metal==0.32.4
+opencv-python==5.0.0.93
+pillow==13.0.0

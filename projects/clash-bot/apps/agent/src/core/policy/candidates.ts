@@ -4,7 +4,7 @@ import type { Point } from '../geometry.ts';
 import { ownPoint } from '../placement/placement.ts';
 import { predictivePlacements } from '../placement/predictive-placement.ts';
 import type { Profile } from '../profile.ts';
-import { actionCandidates, type QwenAction } from './actions.ts';
+import { actionCandidates, type ActionOption } from './actions.ts';
 
 export function bodyCard(unit: FieldUnit): string | null {
   if (unit.kind) return unit.kind;
@@ -16,7 +16,7 @@ export function affordableCandidates(
   elixir: number,
   threats: Point[],
   situation: BattleSituation,
-): QwenAction[] {
+): ActionOption[] {
   // 후보 판단 계약(controller 3)은 지불 가능한 모든 손패를 비교한다. 유닛 이름이 불확실해도 승리 카드를 지우지 않는다.
   const normalize = (unit: FieldUnit) => ({
     ...unit,

@@ -29,9 +29,9 @@ def arguments():
     commands.add_parser(
         "verify", help="Check native pool/interactions; this does not certify live-client parity"
     )
-    exported = commands.add_parser("export")
-    exported.add_argument("--samples", type=int, default=8)
-    live = commands.add_parser("policy", help="Write one checkpoint for counterpush play --policy")
+    live = commands.add_parser(
+        "policy", help="Write one checkpoint as a live policy for trophy serve --seed"
+    )
     live.add_argument("--version", type=int, required=True)
     commands.add_parser(
         "catalogue", help="Write contracts/card-catalogue.json from the pinned table"
@@ -43,10 +43,6 @@ def arguments():
     measured.add_argument("--pairs", type=int, default=8)
     rules = commands.add_parser("rules")
     rules.add_argument("--stage-version")
-    curriculum = commands.add_parser("curriculum")
-    curriculum.add_argument("--positions", type=int, default=64)
-    curriculum.add_argument("--seed", type=int, default=1000)
-    curriculum.add_argument("--split", choices=["train", "holdout"], default="train")
     return parser, parser.parse_args()
 
 

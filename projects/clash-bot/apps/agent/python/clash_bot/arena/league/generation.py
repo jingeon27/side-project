@@ -5,8 +5,6 @@ import uuid
 
 import numpy as np
 
-from ..study.curriculum import from_selfplay
-from ..study.export import export
 from ..training.coverage import card_coverage
 from ..training.deck_practice import schedule_deck
 from ..training.evaluation import pfsp_weights
@@ -161,13 +159,3 @@ def learn(control, root, league, rules, learner, version):
     league["learner"] = version
     store(root, league)
     control.report({"phase": "trained", "training": training, "learner": version})
-
-
-def qwen_datasets(control, data_dir, games):
-    """Supervision for the separate Qwen candidate, made from this generation's games."""
-    dataset = export(data_dir, games)
-    if dataset:
-        control.report({"qwenSearchDataset": dataset})
-    tactical = from_selfplay(data_dir, games)
-    if tactical:
-        control.report({"qwenTacticalDatasets": tactical})

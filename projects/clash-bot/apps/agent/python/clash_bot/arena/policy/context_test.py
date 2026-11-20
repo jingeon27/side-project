@@ -5,7 +5,7 @@ import unittest
 from clash_bot.arena.policy.context import decision_context
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import FIELDS, TILE, Action
-from clash_bot.arena.study.curriculum import scenario
+from clash_bot.arena.sim.scenario_fixture import scenario
 
 
 class PublicSpellPhaseTest(unittest.TestCase):

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { z } from 'zod';
 
-// Level 11 reference potential, not measured Counterpush damage or future hits.
+// Level 11 reference potential, not measured live-screen damage or future hits.
 export const PLACEMENT_EFFECTS = z
   .strictObject({
     format: z.literal('level11-placement-reference-v2'),

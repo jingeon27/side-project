@@ -1,4 +1,4 @@
-"""Commands that use the native simulator, model or study data."""
+"""Commands that use the native simulator or a league checkpoint."""
 
 import json
 from pathlib import Path
@@ -10,12 +10,9 @@ from .league.champions import checkpoint, export_policy
 from .league.loop import run
 from .policy.network import Policy
 from .sim.verification import verify
-from .study.curriculum import build
-from .study.export import export
 from .tables import balance, catalogue_build
 from .training.benchmark import benchmark
 from .training.parallel import MAX_WORKERS
-from .training.storage import read_episode
 
 DATA = DATA_DIR
 CONTROL = DATA / "arena/control"
@@ -51,20 +48,6 @@ def start(args, parser):
     )
 
 
-def curriculum(args, parser):
-    if not 1 <= args.positions <= 256:
-        parser.error("Generate 1..256 tactical positions per run")
-    return build(DATA, args.positions, args.seed, args.split)
-
-
-def export_dataset(args, parser):
-    if not 1 <= args.samples <= 16:
-        parser.error("Export 1..16 positions per Qwen study batch")
-    _root, league = active_league()
-    episodes = [read_episode(path) for path in league["episodes"][-4:]]
-    return {"dataset": export(DATA, episodes, args.samples)}
-
-
 def verification(_args, _parser):
     result = verify(DATA)
     if not result["passed"]:
@@ -98,10 +81,8 @@ def rules(args, _parser):
 COMMANDS = {
     "start": start,
     "verify": verification,
-    "export": export_dataset,
     "policy": live_policy,
     "catalogue": lambda _args, _parser: catalogue_build.write(),
     "benchmark": measure,
     "rules": rules,
-    "curriculum": curriculum,
 }

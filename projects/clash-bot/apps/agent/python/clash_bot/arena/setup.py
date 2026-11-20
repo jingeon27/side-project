@@ -9,7 +9,7 @@ import tarfile
 import urllib.request
 
 from clash_bot.downloads import download
-from clash_bot.paths import CONTRACTS_DIR, DATA_DIR, QWEN_PYTHON
+from clash_bot.paths import CONTRACTS_DIR, DATA_DIR, RUNTIME_PYTHON
 from clash_bot.runtime_guard import refuse_while_running
 
 
@@ -17,10 +17,10 @@ def main():
     spec = json.loads((CONTRACTS_DIR / "arena.json").read_text())
     if sys.platform != "darwin" or platform.machine() != "arm64":
         raise RuntimeError("The pinned engine wheel currently supports Apple Silicon macOS.")
-    python = QWEN_PYTHON
+    python = RUNTIME_PYTHON
     if not python.exists():
         raise RuntimeError(
-            "Run qwen:setup first; the local arena uses the project Python environment."
+            "Run runtime:setup first; the local arena uses the project Python environment."
         )
     refuse_while_running("자가대국 엔진을 준비")
     metadata = json.load(
