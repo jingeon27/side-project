@@ -6213,6 +6213,7 @@ __metadata:
     "@types/node": "catalog:"
     "@types/qs": "catalog:"
     "@types/react": "catalog:"
+    dayjs: "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
     expo: "catalog:"
