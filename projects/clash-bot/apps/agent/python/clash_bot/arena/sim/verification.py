@@ -13,6 +13,7 @@ from .candidates import legal_actions
 from .card_checks import catalogue_deployments
 from .elixir import public_mana
 from .engine import Arena
+from .form_checks import form_checks
 from .rules import CARDS, MATCHUP_DECKS, Action, deck_ids, rules_identity
 
 
@@ -48,6 +49,7 @@ def pool_deployments():
 CHECKS = {
     "poolDeploymentsAndElixir": pool_deployments,
     "catalogueBaseDeployment": catalogue_deployments,
+    "catalogueFormExecution": form_checks,
     "knightAggroOutsideAttackRange": mechanics.knight_aggro,
     "drillBarrelDeathSpawn": mechanics.drill_barrel,
     "poisonMovingExposure": mechanics.poison_exposure,
@@ -98,7 +100,7 @@ def verify(data_dir):
         "checks": checks,
         "unverified": [
             "live targeting/collision parity",
-            "all skills/evolutions",
+            "live damage, targeting and timing of each activated skill or evolution",
             "current balance parity",
         ],
     }

@@ -5,12 +5,47 @@ from math import ceil
 from clash_bot.paths import CONTRACTS_DIR
 
 from ..sim.card_checks import catalogue_deployments
+from ..sim.form_checks import verified_forms
 
 PATH = CONTRACTS_DIR / "arena-practice.json"
 ANCHORS = ("Knight", "Archer", "Zap", "Giant", "Minions", "Fireball", "Skeletons", "Musketeer")
 
 
-def build_pool(catalogue, specs, standard_decks, verified):
+def form_decks(specs, standard, receipts):
+    equipped = {(c, f) for d in standard.values() for c, f in zip(d["cards"], d["forms"])}
+    costs = {
+        row["engine"]: (row["forms"].get("base") or row["forms"]["champion"])["elixir"]
+        for row in specs["cards"].values()
+    }
+    groups = []
+    for kind, form, limit in (("evolution", 1, 2), ("hero", 2, 1)):
+        eligible = [
+            specs["cards"][card]["engine"]
+            for card, proofs in receipts.items()
+            if proofs.get(kind, {}).get("passed")
+            and (specs["cards"][card]["engine"], form) not in equipped
+        ]
+        size = ceil(len(eligible) / limit)
+        groups.extend({} for _ in range(max(0, size - len(groups))))
+        for name in sorted(eligible, key=lambda n: (-costs[n], n)):
+            choices = [g for g in groups if name not in g and list(g.values()).count(form) < limit]
+            if not choices:
+                groups.append({})
+                choices = [groups[-1]]
+            group = min(choices, key=lambda g: (len(g), sum(costs[n] for n in g)))
+            group[name] = form
+    decks = {}
+    for i, slots in enumerate(groups, 1):
+        featured = sorted(slots, key=lambda n: (-slots[n], n))
+        cards = featured + [name for name in ANCHORS if name not in slots][: 8 - len(slots)]
+        decks[f"practice_forms_{i:02d}"] = {
+            "cards": cards,
+            "forms": [slots.get(name, 0) for name in cards],
+        }
+    return decks
+
+
+def build_pool(catalogue, specs, standard_decks, verified, forms):
     original = {name for deck in standard_decks.values() for name in deck["cards"]}
     rows = []
     for name, card in specs["cards"].items():
@@ -55,13 +90,20 @@ def build_pool(catalogue, specs, standard_decks, verified):
         "minimumLevels": {k: v for k, v in sorted(minimum.items()) if v > 1},
         "friendlySpells": sorted(friendly),
         "omitFromStartingHand": blocked,
-        "format": "verified-card-practice-v1",
+        "format": "verified-card-practice-v2",
         "tableSHA256": specs["tableSHA256"],
         "catalogueID": catalogue["id"],
         "decks": decks,
+        "formDecks": form_decks(specs, standard_decks, forms),
     }
 
 
 def verified_pool(catalogue, specs, rules):
     engines = {card: row["engine"] for card, row in catalogue["cards"].items()}
-    return build_pool(catalogue, specs, rules["decks"], catalogue_deployments(engines)["byCard"])
+    return build_pool(
+        catalogue,
+        specs,
+        rules["decks"],
+        catalogue_deployments(engines)["byCard"],
+        verified_forms(specs),
+    )

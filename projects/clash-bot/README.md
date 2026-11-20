@@ -17,7 +17,7 @@ yarn workspace @side/clash-bot arena coverage
 yarn workspace @side/clash-bot loop status
 ```
 
-자가대국은 실전 기준 덱 12개와 검증된 카드를 배분한 연습 덱 21개를 사용합니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
+자가대국은 실전 기준 덱 12개, 기본 카드 연습 덱 21개, 추가 형태 연습 덱 20개를 사용합니다. 진화 44종은 양 진영에서 필요한 횟수만큼 카드를 순환해 충전한 뒤 진화 배치를 확인했습니다. 히어로 18종과 액티브 능력이 있는 챔피언 8종은 양측 스킬 실행을 확인했고, 나머지 챔피언 등급 이벤트 카드 1종은 액티브 능력이 없습니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. `formExecutions`는 실제 실행된 진화 배치, 히어로 배치와 스킬 사용을 카드별로 집계합니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
 
 ## 트로피전 화면 라벨링
 

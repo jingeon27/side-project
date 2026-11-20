@@ -21,6 +21,7 @@ from ..sim.engine import Arena
 from ..sim.rules import LIVE_DECK, MATCHUP_DECKS, SPEC, Action
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
+from .form_usage import count_form_plays, form_counts
 from .search import Workspace, search
 from .storage import seed_for
 from .targets import training_rows
@@ -127,6 +128,10 @@ def play_game(
     opening_tick = open_practice(arena, setup, training)
     due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
+    forms = form_counts()
+    policy_seats = {
+        seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
+    }
     unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
@@ -210,7 +215,12 @@ def play_game(
                         "outcome": None,
                     }
                 )
+        history_size = len(arena.history)
         outcomes = arena.play(selected, min(due) - state["tick"])
+        if training and len(arena.history) > history_size:
+            count_form_plays(
+                forms, state, arena.state(), arena.history[history_size:], policy_seats
+            )
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -263,6 +273,7 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
+        **({"formExecutions": forms} if training else {}),
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }

@@ -23,7 +23,19 @@ class PracticePoolTest(unittest.TestCase):
     def test_every_verified_card_is_available_and_pool_is_reproducible(self):
         catalogue = current().catalogue.model_dump(mode="json")
         specs = engine_specs(catalogue)
-        self.assertEqual(verified_pool(catalogue, specs, SPEC), json.loads(PATH.read_bytes()))
+        practice = verified_pool(catalogue, specs, SPEC)
+        self.assertEqual(practice, json.loads(PATH.read_bytes()))
+        lineups = [*SPEC["decks"].values(), *practice["formDecks"].values()]
+        for kind, flag in (("evolution", 1), ("hero", 2)):
+            equipped = {
+                card for d in lineups for card, f in zip(d["cards"], d["forms"]) if f == flag
+            }
+            self.assertEqual(
+                equipped, {c["engine"] for c in specs["cards"].values() if kind in c["forms"]}
+            )
+        for deck in practice["formDecks"].values():
+            self.assertLessEqual(deck["forms"].count(2), 1)
+            self.assertLessEqual(deck["forms"].count(1), 2)
         self.assertEqual({c["engine"] for c in specs["cards"].values()}, set(CARDS))
         self.assertTrue(set(MATCHUP_DECKS).isdisjoint(PRACTICE_DECKS))
         self.assertEqual(specs["unlinkedBodies"], [])

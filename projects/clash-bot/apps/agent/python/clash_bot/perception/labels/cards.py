@@ -12,8 +12,26 @@ from clash_bot.perception.labels.schema import CATALOGUE, UNKNOWN
 from clash_bot.perception.labels.store import ROOT, database, labeled
 
 
+def current_checks():
+    path = DATA_DIR / "arena/control/active.json"
+    if not path.exists():
+        return {}
+    active = json.loads(path.read_bytes())
+    rules = (
+        active.get("rulesID")
+        or json.loads((Path(active["root"]) / "league.json").read_bytes())["rulesID"]
+    )
+    path = DATA_DIR / "arena/verification" / (rules + ".json")
+    if not path.exists():
+        return {}
+    report = json.loads(path.read_bytes())
+    return report["checks"] if report["table"] == RULES["tableVersion"] else {}
+
+
 def card_status(selected=None):
-    specs = engine_specs()
+    specs, checks = engine_specs(), current_checks()
+    deployments = checks.get("catalogueBaseDeployment", {}).get("byCard", {})
+    forms = checks.get("catalogueFormExecution", {}).get("byCard", {})
     if selected is not None:
         card = specs["cards"].get(selected)
         if card is None:
@@ -36,6 +54,8 @@ def card_status(selected=None):
             "id": selected,
             **card,
             "unitSpecs": units,
+            "baseDeployment": deployments.get(selected),
+            "formExecution": forms.get(selected),
         }
     refs = defaultdict(list)
     if (REFERENCES / "manifest.json").exists():
@@ -67,14 +87,6 @@ def card_status(selected=None):
         if report.exists()
         else {}
     )
-    active = DATA_DIR / "arena/control/active.json"
-    league = (
-        json.loads((Path(json.loads(active.read_bytes())["root"]) / "league.json").read_bytes())
-        if active.exists()
-        else {}
-    )
-    verification = DATA_DIR / "arena/verification" / (str(league.get("rulesID")) + ".json")
-    checks = json.loads(verification.read_bytes())["checks"] if verification.exists() else {}
     pool = {name for deck in RULES["decks"].values() for name in deck["cards"]}
     bodies = {
         body: {
@@ -93,7 +105,8 @@ def card_status(selected=None):
             "objects": entry["objects"],
             "reviewedHandReferences": refs[card],
             "fieldAppearance": "pending_review",
-            "baseDeployment": checks.get("catalogueBaseDeployment", {}).get("byCard", {}).get(card),
+            "baseDeployment": deployments.get(card),
+            "formExecution": forms.get(card),
             "poolDeploymentVerified": bool(checks.get("poolDeploymentsAndElixir", {}).get("passed"))
             if entry["engine"] in pool
             else None,

@@ -113,7 +113,7 @@
   },
   "friendlySpells": ["Clone", "GlobalClone", "Heal", "Rage"],
   "omitFromStartingHand": ["Elixir Collector", "Mirror"],
-  "format": "verified-card-practice-v1",
+  "format": "verified-card-practice-v2",
   "tableSHA256": "31ef8141a4b83534fc85c4aeb2b6437a5855d82dc741cb637e406c6df2fe6700",
   "catalogueID": "78b8c359860f700800e9a3dec3cac5739f2770054a5d82c92bd2f9b660a6e09b",
   "decks": {
@@ -291,5 +291,87 @@
       "Zap",
       "Giant"
     ]
+  },
+  "formDecks": {
+    "practice_forms_01": {
+      "cards": ["ElectroGiant", "Wallbreakers", "Knight", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_02": {
+      "cards": ["MegaKnight", "Zap", "Knight", "Archer", "Giant", "Minions", "Fireball", "Skeletons"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_03": {
+      "cards": ["Giant", "IceSpirits", "Pekka", "Knight", "Archer", "Zap", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_04": {
+      "cards": ["Wizard", "RoyalRecruits", "Skeletons", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_05": {
+      "cards": ["DarkPrince", "AngryBarbarians", "Bomber", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_06": {
+      "cards": ["ElectroWizard", "GoblinGiant", "Snowball", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_07": {
+      "cards": ["EliteArcher", "AxeMan", "BlowdartGoblin", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_08": {
+      "cards": ["MiniPekka", "Barbarians", "Cannon", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_09": {
+      "cards": ["Musketeer", "ElectroDragon", "Ghost", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_10": {
+      "cards": ["Valkyrie", "Giant", "GoblinBarrel", "Knight", "Archer", "Zap", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_11": {
+      "cards": ["Knight", "MinionHorde", "Princess", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_12": {
+      "cards": ["MegaMinion", "RoyalHogs", "SkeletonArmy", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_13": {
+      "cards": ["Tombstone", "SkeletonBalloon", "Witch", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_14": {
+      "cards": ["Balloon", "Bats", "Wizard", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_15": {
+      "cards": ["BarbLog", "BabyDragon", "Mortar", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_16": {
+      "cards": ["Berserker", "BattleRam", "Musketeer", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_17": {
+      "cards": ["Goblins", "GoblinCage", "RageBarbarian", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_18": {
+      "cards": ["IceGolemite", "GoblinDrill", "Tesla", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_19": {
+      "cards": ["Hunter", "Valkyrie", "Knight", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_20": {
+      "cards": ["Bowler", "Archer", "InfernoDragon", "Knight", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    }
   }
 }

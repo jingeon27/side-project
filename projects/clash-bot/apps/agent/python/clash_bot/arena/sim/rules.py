@@ -46,8 +46,14 @@ MINIMUM_LEVELS = practice["minimumLevels"]
 FRIENDLY_SPELLS = frozenset(practice["friendlySpells"])
 PRACTICE_DECKS = (
     {
-        name: DeckSpec(cards=tuple(cards), forms=(0,) * 8)
-        for name, cards in practice["decks"].items()
+        **{
+            name: DeckSpec(cards=tuple(cards), forms=(0,) * 8)
+            for name, cards in practice["decks"].items()
+        },
+        **{
+            name: DeckSpec.model_validate(deck)
+            for name, deck in practice.get("formDecks", {}).items()
+        },
     }
     if practice["tableSHA256"] == SPEC["tableSHA256"] and practice["catalogueID"] == current().id
     else {}
@@ -135,7 +141,7 @@ def rules_identity():
             }
         ),
         "trainingActor": "champion_anchored_search_teacher_v1",
-        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_decks_v4",
+        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_card_forms_v5",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
         "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
         "rolloutTiming": ROLLOUT_CLOCK,

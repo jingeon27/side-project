@@ -1,6 +1,7 @@
 """Regular deck coverage through legal opening positions and frozen-policy games."""
 
 from functools import cache
+from itertools import zip_longest
 
 import numpy as np
 
@@ -16,14 +17,19 @@ OPENING_TICKS = 224
 @cache
 def rotation():
     lookup = current()
-    return sorted(
-        set(DECKS) - {LIVE_DECK},
-        key=lambda name: (
-            name not in PRACTICE_DECKS,
-            -lookup.card(lookup.card_name(DECKS[name].cards[0])).elixir,
-            name,
-        ),
+
+    def by_cost(names):
+        return sorted(
+            names, key=lambda n: (-lookup.card(lookup.card_name(DECKS[n].cards[0])).elixir, n)
+        )
+
+    forms = {n for n, d in PRACTICE_DECKS.items() if any(d.forms)}
+    groups = (
+        by_cost(forms),
+        by_cost(PRACTICE_DECKS.keys() - forms),
+        by_cost(DECKS.keys() - PRACTICE_DECKS.keys() - {LIVE_DECK}),
     )
+    return [name for batch in zip_longest(*groups) for name in batch if name is not None]
 
 
 def schedule_deck(setup, index, seat):

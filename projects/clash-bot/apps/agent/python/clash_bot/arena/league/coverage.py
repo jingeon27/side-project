@@ -6,8 +6,9 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from ..sim.rules import CARDS, rules_identity
+from ..sim.rules import CARDS, DECKS, rules_identity
 from ..training.coverage import card_coverage
+from ..training.form_usage import form_counts
 from ..training.storage import read_episode
 
 
@@ -16,19 +17,25 @@ def training_coverage(root, league):
     if league["rulesID"] != rules:
         raise ValueError("Active league and card catalogue differ")
     counts = {name: Counter() for name in CARDS}
+    forms = form_counts()
     for episode in league["episodes"]:
         path = Path(episode)
-        cache = root / "coverage" / (path.name + ".json")
+        cache = root / "coverage" / (path.name + ".v2.json")
         if cache.exists():
             small = json.loads(cache.read_bytes())
         else:
             game = read_episode(path)
             if game["rulesID"] != rules or not game["completed"]:
                 raise ValueError("Unsealed or foreign training episode")
-            small = card_coverage([game])["allCards"]
+            small = {
+                "cards": card_coverage([game])["allCards"],
+                "forms": game.get("formExecutions", {}),
+            }
             atomic_json(cache, small, compact=True)
-        for name, facts in small.items():
+        for name, facts in small["cards"].items():
             counts[name].update(facts)
+        for key, values in small["forms"].items():
+            forms[key].update(values)
     for path in sorted((root / "checkpoints").glob("v[0-9]*/metadata.json")):
         m = json.loads(path.read_bytes())
         if m["rulesID"] != rules:
@@ -44,6 +51,18 @@ def training_coverage(root, league):
         "rulesID": rules,
         "completedTrainingGames": len(league["episodes"]),
         "availableCards": len(CARDS),
+        "availableForms": {
+            name: len(
+                {
+                    card
+                    for deck in DECKS.values()
+                    for card, form in zip(deck.cards, deck.forms)
+                    if form == flag
+                }
+            )
+            for name, flag in (("evolution", 1), ("hero", 2))
+        },
+        "formExecutions": forms,
         "cardsByStage": summary,
         "cards": {card: dict(v) for card, v in counts.items()},
     }
