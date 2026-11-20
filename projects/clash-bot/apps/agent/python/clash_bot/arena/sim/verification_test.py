@@ -39,6 +39,15 @@ class SimulatorVerificationTest(unittest.TestCase):
         wake = towers["kingActivation"]["kingDamaged"]
         self.assertEqual(wake["firstReleaseMs"] - wake["triggerMs"], 4000)
         self.assertEqual(towers["approachingKnight"]["survivesFirstShot"]["towerHpLost"], 202)
+        ram = checks["deathChildren"]["byParent"]
+        for side in ("blue", "red"):
+            self.assertEqual(
+                ram["BattleRam"][side]["buildingContact"]["childDeployTicks"], [20, 20]
+            )
+            self.assertIsNone(ram["BattleRam_EV1"][side]["buildingContact"]["deathTick"])
+        control = checks["crowdControl"]
+        self.assertEqual(control["motion"]["frozenKnightWalkTiles"], 0)
+        self.assertGreater(control["motion"]["frozenTargetKnockedTiles"], 0.5)
         child = checks["unitAttackTiming"]["firstChildOfActiveHut"]
         self.assertEqual(
             [child[k] for k in ("appearedMs", "firstReleaseMs", "firstImpactMs")],

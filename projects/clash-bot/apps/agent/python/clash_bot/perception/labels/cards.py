@@ -4,7 +4,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from clash_bot.card_specs import RULES, combat_stats, engine_specs
+from clash_bot.card_specs import RULES, buff_records, combat_stats, engine_specs
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 from clash_bot.perception.labels.reader import REFERENCES, checksum, references
@@ -73,15 +73,42 @@ def card_status(selected=None):
                     units[name] = specs["units"][name]
         timing = checks.get("unitAttackTiming", {})
         waves = checks.get("spawnerWaves", {})
+        death = checks.get("deathChildren", {}).get("byParent", {})
         return {
             "tableVersion": specs["tableVersion"],
             "tableSHA256": specs["tableSHA256"],
             "id": selected,
             **card,
             "unitSpecs": units,
+            "nativeDeathSpawns": {n: sample for n, sample in death.items() if n in units},
+            "buffSpecsByForm": {
+                form: {
+                    **{
+                        n: (card["forms"][form].get("tables") or {}).get("buffs", {}).get(n)
+                        or specs["buffs"][n]
+                        for n in refs["buffs"]
+                    },
+                    **{b["name"]: b for b in buff_records(card["forms"][form])},
+                }
+                for form, refs in card["createdByForm"].items()
+            },
             "nativeAttackTiming": {
                 n: s for n, s in timing.get("alreadyDeployed", {}).items() if n in units
             },
+            **(
+                {
+                    "nativeChargeInterruption": checks.get("ramChargeInterruption", {}).get(
+                        "byParent"
+                    )
+                }
+                if selected == "battle_ram"
+                else {}
+            ),
+            **(
+                {"nativeIceCube": checks.get("heroIceCubeControl")}
+                if selected == "ice_wizard"
+                else {}
+            ),
             "nativeSpawning": {
                 k: {n: s for n, s in waves.get(k, {}).items() if n in units}
                 for k in ("periodic", "onDeath")

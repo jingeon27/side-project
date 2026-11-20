@@ -12,10 +12,13 @@ from . import building_checks, mechanics
 from .attack_timing import unit_attack_timing
 from .candidates import legal_actions
 from .card_checks import catalogue_deployments
+from .control_checks import crowd_control, ram_interruptions
 from .crown_towers import crown_tower_combat
+from .death_children import death_children
 from .elixir import public_mana
 from .engine import Arena
 from .form_checks import form_checks
+from .ice_cube_check import ice_cube_control
 from .rules import CARDS, MATCHUP_DECKS, Action, deck_ids, rules_identity
 from .shot_spawns import shot_spawn_eligibility
 
@@ -60,6 +63,10 @@ CHECKS = {
     "spawnerWaves": building_checks.spawner_waves,
     "buildingTargeting": building_checks.building_targeting,
     "buildingEffects": building_checks.building_effects,
+    "deathChildren": death_children,
+    "crowdControl": crowd_control,
+    "heroIceCubeControl": ice_cube_control,
+    "ramChargeInterruption": ram_interruptions,
     "buildingProjectileSpawnEligibility": shot_spawn_eligibility,
     "drillBarrelDeathSpawn": mechanics.drill_barrel,
     "poisonMovingExposure": mechanics.poison_exposure,

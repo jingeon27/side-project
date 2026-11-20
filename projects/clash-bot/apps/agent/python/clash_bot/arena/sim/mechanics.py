@@ -21,10 +21,11 @@ def field(
     king_wake_ms=None,
     unit_deploy_ticks=None,
     initial_elixir=(10000, 10000),
+    own_cards=None,
 ):
     battle = new_battle()
     battle.set_command_delay_ticks(*delays)
-    order = deck_ids(own)
+    order = deck_ids(own) if own_cards is None else [CARD_ID[name] for name in own_cards]
     if first is not None:
         order = [CARD_ID[first], *[card for card in order if card != CARD_ID[first]]]
     decks = [order, deck_ids(enemy)]
@@ -39,7 +40,10 @@ def field(
         king_wake_ms=king_wake_ms,
         unit_deploy_ticks=unit_deploy_ticks,
         spawns=[],
-        forms=[forms_of(name, cards) for name, cards in zip((own, enemy), decks)],
+        forms=[
+            forms_of(own, order) if own_cards is None else [0] * len(order),
+            forms_of(enemy, decks[1]),
+        ],
         unit_spawns=[
             (name, team, round(x * TILE), round(y * TILE), hp, 11, 0)
             for name, team, x, y, hp in units
