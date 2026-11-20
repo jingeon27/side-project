@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation, type FieldUnit } from '../battle/battle-state.ts';
 import type { CatalogueCard } from '../card-catalogue.ts';
-import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../deck.ts';
+import { LIVE_DECK, LIVE_DECK_EVOLUTIONS } from '../deck.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
 import { loadProfile, type Profile } from '../profile.ts';
 import { fastCandidates, placementGrid, placementTiles } from './candidates.ts';
@@ -52,7 +52,7 @@ beforeAll(async () => {
 });
 
 const situation = (enemies: FieldUnit[] = []): BattleSituation => {
-  const observed = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS).observe({
+  const observed = new BattleMemory([...LIVE_DECK], LIVE_DECK_EVOLUTIONS).observe({
     at: 1_000,
     amount: 5,
     hand: ['knight', 'furnace', 'graveyard', 'poison'],

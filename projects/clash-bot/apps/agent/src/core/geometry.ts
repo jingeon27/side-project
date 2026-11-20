@@ -8,12 +8,7 @@ export const rectSchema = z.object({
   width: z.int().positive(),
   height: z.int().positive(),
 });
-export type Rect = z.infer<typeof rectSchema>;
 export type Point = { x: number; y: number };
-
-export function center(rect: Rect): Point {
-  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
-}
 
 export const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 

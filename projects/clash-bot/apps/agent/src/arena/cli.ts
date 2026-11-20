@@ -9,10 +9,6 @@ import { pythonEnvironment, pythonExecutable } from '../shared/python.ts';
 const args = process.argv.slice(2);
 const background = args.includes('--background');
 const main = async () => {
-  if (args[0] === 'study') {
-    const { runStudy } = await import('./study.ts');
-    return runStudy(DATA_DIR, args.slice(1));
-  }
   if (background && args[0] !== 'start') throw new Error('--background는 start에서만 지원합니다.');
   const directory = join(DATA_DIR, 'arena/control');
   if (background) await mkdir(directory, { recursive: true, mode: 0o700 });

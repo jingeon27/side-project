@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-qwen = ["mlx==0.32.4", "mlx-vlm==0.6.17"]
+runtime = ["mlx==0.32.4", "opencv-python==5.0.0.93", "pillow==13.0.0"]
 arena = ["royalesim==0.1.53", "pillow==13.0.0"]
 perception = ["onnxruntime==1.31.1", "opencv-python==5.0.0.93", "pillow==13.0.0"]
 

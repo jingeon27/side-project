@@ -6,7 +6,7 @@ import shutil
 import subprocess
 
 from clash_bot.downloads import digest, download
-from clash_bot.paths import ASSETS_DIR, DATA_DIR, PROJECT_DIR, QWEN_PYTHON, REQUIREMENTS_DIR
+from clash_bot.paths import ASSETS_DIR, DATA_DIR, PROJECT_DIR, REQUIREMENTS_DIR, RUNTIME_PYTHON
 from clash_bot.runtime_guard import refuse_while_running
 
 DATA = DATA_DIR
@@ -25,9 +25,9 @@ def main():
     args.add_argument("--verify-only", action="store_true")
     options = args.parse_args()
     directory = DATA / "counterpush/detector"
-    python = QWEN_PYTHON
+    python = RUNTIME_PYTHON
     if not python.exists():
-        raise SystemExit("먼저 yarn workspace @side/clash-bot qwen:setup 을 실행해주세요.")
+        raise SystemExit("먼저 yarn workspace @side/clash-bot runtime:setup 을 실행해주세요.")
     if not options.verify_only:
         refuse_while_running("인식 모델을 준비")
         directory.mkdir(parents=True, exist_ok=True)

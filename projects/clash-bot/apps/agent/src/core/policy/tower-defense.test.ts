@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation, type FieldUnit } from '../battle/battle-state.ts';
-import { COUNTERPUSH_DECK } from '../deck.ts';
+import { LIVE_DECK } from '../deck.ts';
 import { screenPoint } from '../geometry.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
-import type { QwenAction } from './actions.ts';
+import type { ActionOption } from './actions.ts';
 import { towerDefense } from './tower-defense.ts';
 
 const profile = { ...DEFAULT_PROFILE, riverY: 276, tileScale: { x: 18, y: 130 / 9.5 } };
@@ -15,7 +15,7 @@ const body = (kind: FieldUnit['kind'], x: number, y: number): FieldUnit => ({
   confidence: 0.95,
 });
 const state = (enemies: FieldUnit[], allies: FieldUnit[] = []): BattleSituation =>
-  new BattleMemory([...COUNTERPUSH_DECK]).observe({
+  new BattleMemory([...LIVE_DECK]).observe({
     at: 10000,
     amount: 6,
     hand: ['knight', 'poison', 'graveyard', 'ice_wizard'],
@@ -23,7 +23,7 @@ const state = (enemies: FieldUnit[], allies: FieldUnit[] = []): BattleSituation 
     enemies,
     inputPending: false,
   });
-const actions: QwenAction[] = [
+const actions: ActionOption[] = [
   { id: 0, slot: 0, card: null, target: { x: 0, y: 0 }, description: 'wait' },
   { id: 1, slot: 1, card: 'knight', target: screenPoint(profile, [3.5, 8]), description: 'left defense' },
   { id: 2, slot: 1, card: 'knight', target: screenPoint(profile, [14.5, 8]), description: 'right defense' },

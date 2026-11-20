@@ -112,13 +112,13 @@ def catalogue_of(root):
 
 
 def publish_champion(root, league):
-    """Write the champion's live policy where `counterpush play` reads it."""
+    """Write the champion's live policy, the file `trophy serve --seed` and the loop read."""
     policy = Policy.load(checkpoint(root, league["champion"]), league["rulesID"])
     atomic_json(Path(root) / "champion-policy.json", policy.live(catalogue_of(root)), compact=True)
 
 
 def export_policy(root, version):
-    """Write one checkpoint's live policy for `counterpush play --policy`."""
+    """Write one checkpoint's live policy for `trophy serve --seed`."""
     league = LeagueState.model_validate_json((Path(root) / "league.json").read_text())
     policy = Policy.load(checkpoint(root, version), league.rulesID)
     path = Path(root) / "policies" / f"v{version:06d}.json"

@@ -1,1 +1,1 @@
-"""Own screen/action/result learning, separate from simulator and Qwen champions."""
+"""Own screen/action/result learning on real Trophy matches, gated against its champion."""

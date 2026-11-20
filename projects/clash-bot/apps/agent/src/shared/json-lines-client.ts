@@ -76,7 +76,7 @@ export class JsonLineClient {
         void this.close();
         throw new Error('작업 실행기가 JSON 응답이 아닌 줄을 출력해 통신을 닫았습니다.');
       }
-      if (value.type === 'error') throw new Error(`Qwen: ${String(value.message)}`);
+      if (value.type === 'error') throw new Error(`Python worker: ${String(value.message)}`);
       return value;
     } finally {
       clearTimeout(timer.id);

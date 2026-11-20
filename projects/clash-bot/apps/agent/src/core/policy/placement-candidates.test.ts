@@ -33,7 +33,7 @@ const scene = (effects: FieldEffect[] = []) =>
   });
 
 describe('placement constraints and Graveyard defense regressions', () => {
-  it('keeps legal King-rear troop choices within the Qwen action budget, including against a visible threat', async () => {
+  it('keeps legal King-rear troop choices within the action budget, including against a visible threat', async () => {
     const profile = await loadProfile(
       fileURLToPath(new URL('../../../../../profiles/counterpush.json', import.meta.url)),
     );

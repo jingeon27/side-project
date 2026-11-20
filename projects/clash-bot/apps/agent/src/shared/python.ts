@@ -6,7 +6,7 @@ import { DATA_DIR } from './data-dir.ts';
 export const PYTHON_SOURCE_DIR = fileURLToPath(new URL('../../python', import.meta.url));
 
 export function pythonExecutable(dataDir = DATA_DIR) {
-  return process.env.CLASH_BOT_PYTHON ?? join(dataDir, 'qwen/.venv/bin/python');
+  return process.env.CLASH_BOT_PYTHON ?? join(dataDir, 'python/.venv/bin/python');
 }
 
 export function pythonToolsExecutable() {

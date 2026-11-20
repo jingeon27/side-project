@@ -11,5 +11,5 @@ CONTRACTS_DIR = AGENT_DIR / "contracts"
 FIXTURES_DIR = AGENT_DIR / "test-fixtures"
 REQUIREMENTS_DIR = AGENT_DIR / "python/requirements"
 # Same rule as Node's pythonExecutable. Never resolve it: a venv's python is a link to its base.
-DEFAULT_QWEN_PYTHON = DATA_DIR / "qwen/.venv/bin/python"
-QWEN_PYTHON = Path(os.environ.get("CLASH_BOT_PYTHON") or DEFAULT_QWEN_PYTHON)
+DEFAULT_RUNTIME_PYTHON = DATA_DIR / "python/.venv/bin/python"
+RUNTIME_PYTHON = Path(os.environ.get("CLASH_BOT_PYTHON") or DEFAULT_RUNTIME_PYTHON)
