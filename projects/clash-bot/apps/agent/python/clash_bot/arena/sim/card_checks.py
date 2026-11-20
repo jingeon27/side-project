@@ -52,11 +52,13 @@ def deployment(name):
     }
 
 
-def catalogue_deployments():
+def catalogue_deployments(engines=None):
+    if engines is None:
+        engines = {card: row.engine for card, row in current().catalogue.cards.items()}
     results = {}
-    for card, row in current().catalogue.cards.items():
+    for card, engine in engines.items():
         try:
-            results[card] = deployment(row.engine)
+            results[card] = deployment(engine)
         except (ValueError, RuntimeError) as exc:
             results[card] = {"passed": False, "reason": str(exc)}
     return {"passed": all(r["passed"] for r in results.values()), "byCard": results}

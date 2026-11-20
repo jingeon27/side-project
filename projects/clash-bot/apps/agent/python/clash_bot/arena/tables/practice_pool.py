@@ -63,4 +63,5 @@ def build_pool(catalogue, specs, standard_decks, verified):
 
 
 def verified_pool(catalogue, specs, rules):
-    return build_pool(catalogue, specs, rules["decks"], catalogue_deployments()["byCard"])
+    engines = {card: row["engine"] for card, row in catalogue["cards"].items()}
+    return build_pool(catalogue, specs, rules["decks"], catalogue_deployments(engines)["byCard"])

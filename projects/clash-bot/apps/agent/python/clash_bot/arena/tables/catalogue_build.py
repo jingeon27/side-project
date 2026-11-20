@@ -167,14 +167,24 @@ def build():
     return {**body, "id": content_id(Catalogue.model_validate(body))}
 
 
+def write_contract(path, value):
+    # Keep the repository formatter's layout when the pinned data did not change.
+    try:
+        if json.loads(path.read_bytes()) == value:
+            return
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    atomic_json(path, value)
+
+
 def write():
     from .practice_pool import PATH as practice_path
     from .practice_pool import verified_pool
 
     body = build()
     specs = engine_specs(body)
-    atomic_json(practice_path, verified_pool(body, specs, SPEC))
-    atomic_json(PATH, body)
+    write_contract(practice_path, verified_pool(body, specs, SPEC))
+    write_contract(PATH, body)
     return {
         "catalogue": str(PATH),
         "id": body["id"],
