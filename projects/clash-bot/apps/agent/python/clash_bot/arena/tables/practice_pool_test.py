@@ -31,3 +31,17 @@ class PracticePoolTest(unittest.TestCase):
         self.assertEqual((knight["aggroRangeTiles"], knight["attackRangeTiles"]), (5.5, 1.2))
         for index in range(8 * len(rotation())):
             self.assertNotIn(schedule_deck({}, index, 0)["practiceLead"], OMIT_OPENING)
+
+    def test_creation_links_distinguish_targets_and_follow_summons(self):
+        from clash_bot.perception.labels.cards import card_status
+
+        cards = engine_specs()["cards"]
+        self.assertEqual(cards["knight"]["objects"], ["knight"])
+        self.assertEqual(cards["ice_wizard"]["objects"], ["ice_wizard"])
+        self.assertIn("goblin_curse_goblin", cards["goblin_curse"]["objects"])
+        self.assertIn("skeleton", cards["graveyard"]["objects"])
+        self.assertIn("goblin", cards["goblin_drill"]["objects"])
+        wizard = card_status("ice_wizard")
+        self.assertIn("IceWizardHero_IceCube", wizard["createdByForm"]["hero"]["units"])
+        self.assertIn("IceWizardHero_IceCube", wizard["unitSpecs"])
+        self.assertNotIn("GoblinCurseGoblin", wizard["unitSpecs"])

@@ -4,7 +4,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from clash_bot.card_specs import RULES, engine_specs
+from clash_bot.card_specs import RULES, combat_stats, engine_specs
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 from clash_bot.perception.labels.reader import REFERENCES, checksum, references
@@ -18,12 +18,24 @@ def card_status(selected=None):
         card = specs["cards"].get(selected)
         if card is None:
             raise ValueError("Unknown catalogue card: " + selected)
+        units = {}
+        for form, created in card["createdByForm"].items():
+            local = card["forms"][form].get("tables", {}).get("units", {})
+            for name in created["units"]:
+                if name in local:
+                    units[name] = {
+                        "raw": local[name],
+                        "combat": combat_stats(local[name]),
+                        "body": CATALOGUE["units"].get(name),
+                    }
+                else:
+                    units[name] = specs["units"][name]
         return {
             "tableVersion": specs["tableVersion"],
             "tableSHA256": specs["tableSHA256"],
             "id": selected,
             **card,
-            "unitSpecs": {k: v for k, v in specs["units"].items() if v["body"] in card["objects"]},
+            "unitSpecs": units,
         }
     refs = defaultdict(list)
     if (REFERENCES / "manifest.json").exists():

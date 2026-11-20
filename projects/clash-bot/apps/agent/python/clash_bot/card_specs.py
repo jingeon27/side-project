@@ -2,50 +2,12 @@
 
 import json
 
+from clash_bot.card_objects import body_labels, created_by_form
 from clash_bot.downloads import digest
 from clash_bot.files import atomic_json
 from clash_bot.paths import CONTRACTS_DIR, DATA_DIR
 
 RULES = json.loads((CONTRACTS_DIR / "arena.json").read_bytes())
-
-
-def linked_objects(table, catalogue, forms, card):
-    # Follow only structured references to named units, projectiles or areas. Avoid backtracking
-    # from a shared skeleton to every card that can spawn it.
-    tables = [table[k] for k in ("units", "projectiles", "area_effect_objects")]
-    found = set()
-    visited = set()
-
-    def visit(value):
-        if isinstance(value, dict):
-            for key, item in value.items():
-                if key not in (
-                    "display_name",
-                    "damage_source",
-                    "provenance",
-                    "rarity",
-                    "defaults_applied",
-                ):
-                    visit(item)
-        elif isinstance(value, list):
-            for item in value:
-                visit(item)
-        elif isinstance(value, str) and value not in visited:
-            visited.add(value)
-            name = catalogue["units"].get(value)
-            if name and name != "?":
-                found.add(name)
-            for group in tables:
-                if value in group:
-                    visit(group[value])
-
-    for row in forms.values():
-        visit(row)
-    if card in catalogue["bodies"]:
-        found.add(card)
-    if card == "barbarian_barrel" and "barrel" in catalogue["bodies"]:
-        found.add("barrel")
-    return sorted(found)
 
 
 def combat_stats(row):
@@ -95,12 +57,14 @@ def engine_specs(catalogue=None):
         forms = {k: f[engine] for k, f in fields.items() if engine in f}
         if forms["base"]["rarity"] == "Champion":
             forms["champion"] = forms.pop("base")
+        created = {kind: created_by_form(table, row) for kind, row in forms.items()}
         cards[card] = {
             "engine": engine,
             "placement": entry["placement"],
             "forms": forms,
             "combat": {k: combat_stats(r) for k, r in forms.items()},
-            "objects": linked_objects(table, catalogue, forms, card),
+            "createdByForm": created,
+            "objects": body_labels(catalogue, created, card),
         }
     linked = {b for entry in cards.values() for b in entry["objects"]}
     missing = catalogue["bodies"].keys() - linked - {"?"}

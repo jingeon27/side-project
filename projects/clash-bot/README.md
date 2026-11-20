@@ -8,7 +8,7 @@
 
 ## 카드 스펙과 학습 현황
 
-`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 체력과 피해의 기준 레벨과 배율은 각 레코드의 `level_scaling`을 따릅니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다.
+`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 체력과 피해의 기준 레벨과 배율은 각 레코드의 `level_scaling`을 따릅니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다. 카드별 `createdByForm`은 각 형태가 소환·변신·발사하는 대상의 엔진 ID를 담습니다. 얼음 마법사 히어로의 얼음 큐브처럼 전용 유닛도 수치로 조회할 수 있습니다.
 
 ```sh
 yarn workspace @side/clash-bot trophy card-status --card knight
@@ -39,7 +39,7 @@ yarn workspace @side/clash-bot perception:setup
 
 `arena:setup`은 같은 환경에 고정 버전의 네이티브 전투 엔진을 설치하고 엔진 수치표를 `.data/arena/rules/source/`에 둡니다. `perception:setup`은 고정 revision·SHA-256의 카드 분류기와 박스 제안 모델을 `.data/counterpush/detector/`에 내려받아 ONNX로 변환합니다. 원본 약 119MB와 변환본, 변환에만 쓰는 PyTorch 설치 공간이 추가로 필요합니다. 인식 워커는 ONNX CPU를 기본 1스레드로 사용합니다. 두 명령은 `runtime:setup`의 환경이 없으면 멈추고, 세 명령 모두 트로피 학습기나 자가대국이 실행 중이면 환경을 바꾸지 않습니다.
 
-인식 자산과 모델 경로의 `counterpush` 이름(`apps/agent/assets/counterpush`, `.data/counterpush/detector`, `profiles/counterpush.json`)은 저장소 밖 어댑터가 읽으므로 그대로 두었습니다. 분석 좌표는 368×652이며 `profiles/counterpush.json`이 덱 8장, 손패 네 영역, 엘릭서 막대, 아레나 영역과 강 위치를 소유하고 core 배치 검사도 이 프로필을 읽습니다. 이 자산과 프로필은 Counterpush 화면에서 만든 것이라 실제 클래시로얄 화면에서의 인식 정확도는 측정하지 않았습니다. 다시 만드는 일은 계획 문서의 라벨링 단계에서 합니다.
+인식 자산과 모델 경로의 `counterpush` 이름(`apps/agent/assets/counterpush`, `.data/counterpush/detector`, `profiles/counterpush.json`)은 저장소 밖 어댑터가 읽으므로 그대로 두었습니다. 분석 좌표는 368×652이며 `profiles/counterpush.json`이 덱 8장, 손패 네 영역, 엘릭서 막대, 아레나 영역과 강 위치를 소유하고 core 배치 검사도 이 프로필을 읽습니다. 이 자산과 프로필은 Counterpush 화면에서 만들었습니다. 현재 실제 트로피 화면의 파일럿 인식 결과는 `trophy perception-eval`로 확인할 수 있습니다. 전체 카드의 실전 인식률은 블라인드 측정 대기열에서 표본을 확보해 평가합니다.
 
 ## 자가대국과 빠른 정책
 
