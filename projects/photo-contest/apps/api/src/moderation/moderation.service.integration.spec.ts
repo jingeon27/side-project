@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -228,10 +229,14 @@ describe('신고·숨김·삭제', () => {
 
     // 업로드 행은 바로 만료시켜 두고, 정리 작업이 유예 시간이 지난 뒤 지운다.
     const expired = await api.db.upload.findUniqueOrThrow({ where: { id: upload.id } });
-    expect(expired.expiresAt.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(expired.expiresAt.getTime()).toBeLessThanOrEqual(dayjs().valueOf());
     await api.db.upload.update({
       where: { id: upload.id },
-      data: { expiresAt: new Date(Date.now() - 6 * 60 * 1000) },
+      data: {
+        expiresAt: dayjs()
+          .subtract(6 * 60 * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     await api.runScheduledWork();
     expect(await api.db.upload.count({ where: { id: upload.id } })).toBe(0);

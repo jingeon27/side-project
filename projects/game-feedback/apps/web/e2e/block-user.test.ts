@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -13,7 +15,7 @@ test('blocking a post author closes the confirmation and leaves the post before 
   const reads = Promise.withResolvers<void>();
   try {
     await page.setViewportSize({ width: 393, height: 852 });
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     await page.request.post('/api/auth/demo', { headers, data: { nickname: `차단확인_${suffix}` } });
     const { user: author } = await (
       await peer.request.post('/api/auth/demo', { headers, data: { nickname: `차단상대_${suffix}` } })
@@ -82,7 +84,7 @@ test('blocking a chat peer returns to the inbox before message refresh completes
   const peer = await browser.newContext({ baseURL: origin });
   const reads = Promise.withResolvers<void>();
   try {
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     await page.request.post('/api/auth/demo', { headers, data: { nickname: `대화차단_${suffix}` } });
     const { user: author } = await (
       await peer.request.post('/api/auth/demo', { headers, data: { nickname: `대화상대_${suffix}` } })
@@ -141,7 +143,7 @@ test('blocking a comment author hides their comment while keeping the current po
 }) => {
   const peer = await browser.newContext({ baseURL: origin });
   try {
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     await page.request.post('/api/auth/demo', { headers, data: { nickname: `댓글차단_${suffix}` } });
     await peer.request.post('/api/auth/demo', { headers, data: { nickname: `댓글상대_${suffix}` } });
     const categories = await (await page.request.get('/api/categories')).json();

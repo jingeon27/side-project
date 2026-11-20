@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -115,7 +116,7 @@ describe('링크 게시물과 미디어 저장', () => {
       expect(decodeURIComponent(url.pathname).includes(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
       // 동영상은 느린 연결에서도 재생·저장이 끊기지 않게 10분, 사진은 60초다.
       expect(url.searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
-      const remaining = Date.parse(download.expiresAt ?? '') - Date.now();
+      const remaining = dayjs(download.expiresAt ?? '').valueOf() - dayjs().valueOf();
       expect(remaining).toBeGreaterThan(video ? 595_000 : 55_000);
       expect(remaining).toBeLessThanOrEqual(video ? 600_000 : 60_000);
       expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.png');
@@ -176,7 +177,7 @@ describe('링크 게시물과 미디어 저장', () => {
     expect(url.searchParams.get('X-Amz-Signature')).toMatch(/^[a-f0-9]{64}$/);
     expect(url.searchParams.get('response-content-disposition')).toContain('attachment;');
     expect(url.searchParams.get('response-cache-control')).toBe('private, no-store');
-    expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
+    expect(dayjs(postDownload.expiresAt ?? '').valueOf() - dayjs().valueOf()).toBeGreaterThan(55_000);
     expect((await api.gqlFail(outsider.cookie, DOWNLOAD, { id: post.id })).code).toBe('NOT_FOUND');
   });
 });

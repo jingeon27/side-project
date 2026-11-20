@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { buildContestDefaults, createContestSchema, createGroupContestSchema } from './contest.schema';
@@ -9,7 +10,7 @@ const issuesOf = (input: Record<string, string>) => {
 
 describe('createContestSchema', () => {
   it('그룹 대회 좋아요 한도는 기본 1이며 1~100의 정수만 허용해야 한다', () => {
-    const input = { ...buildContestDefaults(new Date()), title: '좋아요 한도 대회' };
+    const input = { ...buildContestDefaults(dayjs().toDate()), title: '좋아요 한도 대회' };
     expect(createGroupContestSchema.parse(input).likeLimit).toBe(1);
     expect(createGroupContestSchema.parse({ ...input, likeLimit: 3 }).likeLimit).toBe(3);
     for (const likeLimit of [0, 101, 1.5, Number.NaN])
@@ -17,7 +18,7 @@ describe('createContestSchema', () => {
   });
   it('기본값은 바로 제출할 수 있어야 하고 ISO 시각으로 바뀌어야 한다', () => {
     const defaults = {
-      ...buildContestDefaults(new Date('2026-10-14T03:00:00.000Z')),
+      ...buildContestDefaults(dayjs('2026-10-14T03:00:00.000Z').toDate()),
       title: ' 가을 사진전 ',
     };
     const result = createContestSchema.parse(defaults);
@@ -30,7 +31,7 @@ describe('createContestSchema', () => {
   });
 
   it('제목이 없으면 알려야 한다', () => {
-    expect(issuesOf({ ...buildContestDefaults(new Date()), title: '   ' })).toEqual([
+    expect(issuesOf({ ...buildContestDefaults(dayjs().toDate()), title: '   ' })).toEqual([
       ['title', '대회 제목을 입력해 주세요.'],
     ]);
   });

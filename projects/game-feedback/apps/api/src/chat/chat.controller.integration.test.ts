@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import type { AddressInfo } from 'node:net';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -572,7 +573,7 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     });
     const raw = randomUUID();
     await db.session.create({
-      data: { userId: real.id, tokenHash: hash(raw), expiresAt: new Date(Date.now() + 60000) },
+      data: { userId: real.id, tokenHash: hash(raw), expiresAt: dayjs().add(60000, 'millisecond').toDate() },
     });
     const realCookie = `${COOKIE}=${raw}`;
     const existing = (
@@ -619,7 +620,7 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     const events = await stream(outsider);
     await db.session.updateMany({
       where: { userId: outsider.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: dayjs().subtract(1000, 'millisecond').toDate() },
     });
     await within(events.ended(), 7500, 'SSE close after session expiration');
     events.close();

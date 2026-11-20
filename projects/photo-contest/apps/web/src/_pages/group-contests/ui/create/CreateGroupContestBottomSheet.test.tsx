@@ -2,6 +2,7 @@ import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/cli
 import { ApolloProvider } from '@apollo/client/react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import dayjs from 'dayjs';
 import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -168,12 +169,12 @@ describe('CreateGroupContestBottomSheet', () => {
 
   it('시작을 지금으로 당기면 이미 지난 접수 마감을 그 칸에 알리고 개최하지 않아야 한다', async () => {
     const { user, operations } = await openSheet();
-    const now = Date.now();
+    const now = dayjs().valueOf();
     fireEvent.change(screen.getByLabelText('시작 시각', { exact: false }), {
-      target: { value: toDateTimeLocalValue(new Date(now - 2 * HOUR)) },
+      target: { value: toDateTimeLocalValue(dayjs(now - 2 * HOUR).toDate()) },
     });
     fireEvent.change(screen.getByLabelText('게시물 접수 마감', { exact: false }), {
-      target: { value: toDateTimeLocalValue(new Date(now - HOUR)) },
+      target: { value: toDateTimeLocalValue(dayjs(now - HOUR).toDate()) },
     });
 
     await submit(user);

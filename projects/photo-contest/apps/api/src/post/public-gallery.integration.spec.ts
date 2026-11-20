@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -48,7 +49,7 @@ describe('공개 그룹 전체 게시물', () => {
         );
         await api.db.post.update({
           where: { id: post.id },
-          data: { createdAt: new Date(`2100-01-0${index + 1}T00:00:00Z`), hidden: index === 5 },
+          data: { createdAt: dayjs(`2100-01-0${index + 1}T00:00:00Z`).toDate(), hidden: index === 5 },
         });
         if (visibility === 'PUBLIC' && index < 5) visibleIds.unshift(post.id);
       }

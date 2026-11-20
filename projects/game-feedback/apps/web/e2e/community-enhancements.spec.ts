@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import dayjs from 'dayjs';
+
 import { POST_TITLE_MAX_LENGTH } from '@game-feedback/contracts';
 
 import { adminApi } from './admin-api';
@@ -41,7 +43,7 @@ for (const scenario of [
     await page.goto('/ko/boards/coaching');
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
-    const title = `${scenario.type} 코칭 모집 ${Date.now().toString(36)}`;
+    const title = `${scenario.type} 코칭 모집 ${dayjs().valueOf().toString(36)}`;
     await editor.getByRole('radio', { name: scenario.roleLabel, exact: true }).check();
     await editor.getByRole('radio', { name: scenario.pricingLabel, exact: true }).check();
     if (scenario.type === 'GOAL') {
@@ -112,7 +114,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
     'maxlength',
     String(POST_TITLE_MAX_LENGTH),
   );
-  const title = `본문 미디어 삽입 ${Date.now().toString(36)}`;
+  const title = `본문 미디어 삽입 ${dayjs().valueOf().toString(36)}`;
   await editor.getByLabel('제목', { exact: true }).fill(title);
   await editor
     .getByRole('textbox', { name: '내용', exact: true })
@@ -201,7 +203,7 @@ test('verification opens a private admin chat and an administrator reviews user 
   browser,
 }) => {
   test.setTimeout(120000);
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const session = await (
     await page.request.post('/api/auth/demo', {
       headers: { Origin: origin },

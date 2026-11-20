@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { createTestUser } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
@@ -85,7 +87,7 @@ test(
     await page.goto('/me');
     await page.getByRole('link', { name: '회원가입', exact: true }).click();
     const signup = page.getByRole('tabpanel', { name: '회원가입', exact: true });
-    const loginId = `keep_${testInfo.project.name.startsWith('mobile') ? 'ios' : 'web'}_${Date.now().toString(36)}`;
+    const loginId = `keep_${testInfo.project.name.startsWith('mobile') ? 'ios' : 'web'}_${dayjs().valueOf().toString(36)}`;
     await signup.getByLabel('아이디', { exact: true }).fill(loginId);
     await signup.getByLabel('닉네임', { exact: true }).fill('기록을 이어가는 회원');
     await signup.getByLabel('비밀번호', { exact: true }).fill('star2026');

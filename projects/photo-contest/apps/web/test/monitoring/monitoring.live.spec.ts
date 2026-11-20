@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
 import { expect, test, type Request } from '@playwright/test';
+import dayjs from 'dayjs';
 
 function payload(request: Request) {
   const raw = request.postDataBuffer();
@@ -85,7 +86,7 @@ test('실제 Sentry 오류와 Amplitude 페이지뷰가 개인정보 없이 수�
   await mkdir(directory, { recursive: true });
   const report = {
     service: 'photo-contest',
-    checkedAt: new Date().toISOString(),
+    checkedAt: dayjs().toISOString(),
     sentry: {
       status: sentryResponse.status(),
       eventId: event?.event_id,

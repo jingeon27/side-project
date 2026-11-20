@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -230,15 +231,15 @@ describe('그룹 카테고리와 게시물 분류', () => {
   it('대회 참여 글에도 카테고리를 지정할 수 있어야 한다', async () => {
     const groupId = await group();
     const cat = await category(groupId);
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const { createGroupContest: contest } = await api.gqlOk<{ createGroupContest: { id: string } }>(
       owner.cookie,
       'mutation($g:ID!,$start:DateTime!,$close:DateTime!,$end:DateTime!){createGroupContest(groupId:$g,title:"분류 대회",startsAt:$start,submissionEndsAt:$close,endsAt:$end){id}}',
       {
         g: groupId,
-        start: new Date(now).toISOString(),
-        close: new Date(now + 3600000).toISOString(),
-        end: new Date(now + 7200000).toISOString(),
+        start: dayjs(now).toISOString(),
+        close: dayjs(now + 3600000).toISOString(),
+        end: dayjs(now + 7200000).toISOString(),
       },
     );
     expect(

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -38,7 +39,7 @@ describe('사용자별 저장 용량 상한', () => {
         userId: owner.id,
         groupId,
         tokenHash: randomUUID(),
-        expiresAt: new Date(0),
+        expiresAt: dayjs(0).toDate(),
         kind: 'VIDEO',
         contentType: 'video/mp4',
         byteSize,
@@ -65,7 +66,7 @@ describe('사용자별 저장 용량 상한', () => {
         userId: anonymous.id,
         groupId,
         tokenHash: randomUUID(),
-        expiresAt: new Date(0),
+        expiresAt: dayjs(0).toDate(),
         kind: 'VIDEO',
         contentType: 'video/mp4',
         byteSize: ANONYMOUS_STORAGE_QUOTA_BYTES - LEFT_BYTES,

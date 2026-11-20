@@ -19,12 +19,22 @@ describe('FSD layer boundaries', () => {
   it('rejects else branches and accepts an early return', async () => {
     const source = 'export function choose(value: boolean) { if (value) return 1; else return 0; }';
     const [invalid] = await eslint.lintText(source, { filePath: 'src/shared/lib/sample.ts' });
-    expect(invalid!.messages.some((message) => message.ruleId === 'no-restricted-syntax')).toBe(true);
+    expect(invalid!.messages.some((message) => message.ruleId === 'side/no-else')).toBe(true);
     const [valid] = await eslint.lintText(
       'export function choose(value: boolean) { if (value) return 1; return 0; }',
       { filePath: 'src/shared/lib/sample.ts' },
     );
-    expect(valid!.messages.some((message) => message.ruleId === 'no-restricted-syntax')).toBe(false);
+    expect(valid!.messages.some((message) => message.ruleId === 'side/no-else')).toBe(false);
+  });
+
+  it('applies the shared let, date and private member rules', async () => {
+    const [result] = await eslint.lintText(
+      'export function stamp() { let value = Date.now(); return value; }\nexport class Queue { #items = 0; }',
+      { filePath: 'src/shared/lib/sample.ts' },
+    );
+    expect(result!.messages.map((message) => message.ruleId).sort()).toEqual(
+      expect.arrayContaining(['side/no-hash-private', 'side/no-let', 'side/no-native-date']),
+    );
   });
 
   it.each([

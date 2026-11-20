@@ -1,3 +1,5 @@
+import { once } from 'es-toolkit';
+
 /**
  * 같은 목록에서 나온 형제 노드들이 처음 요청될 때 한 번에 불러오도록 결과를 공유한다.
  * GraphQL 목록의 항목마다 필드 리졸버가 따로 조회하면 N+1이 되기 때문이다.
@@ -7,9 +9,8 @@ export function siblingLoader<TKey, TValue>(
   load: (keys: readonly TKey[]) => Promise<Map<TKey, TValue>>,
   fallback: TValue,
 ) {
-  let pending: Promise<Map<TKey, TValue>> | undefined;
+  const loadAll = once(() => load(keys));
   return async function loadSibling(key: TKey): Promise<TValue> {
-    pending ??= load(keys);
-    return (await pending).get(key) ?? fallback;
+    return (await loadAll()).get(key) ?? fallback;
   };
 }

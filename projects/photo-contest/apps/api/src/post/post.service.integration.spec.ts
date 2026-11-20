@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -103,7 +104,7 @@ describe('상시 그룹 게시물', () => {
     const recent = await create(member, '이달 최신');
     await api.db.post.update({
       where: { id: old.id },
-      data: { createdAt: new Date(koreanMonth().gte.getTime() - 1) },
+      data: { createdAt: dayjs(koreanMonth().gte).subtract(1, 'millisecond').toDate() },
     });
     const like = 'mutation($id:ID!){likePost(postId:$id){id likeCount likedByMe}}';
     await api.gqlOk(owner.cookie, like, { id: old.id });
@@ -214,7 +215,7 @@ describe('상시 그룹 게시물', () => {
       );
     await api.db.postComment.updateMany({
       where: { postId: post.id },
-      data: { createdAt: new Date('2026-10-17T00:00:00Z') },
+      data: { createdAt: dayjs('2026-10-17T00:00:00Z').toDate() },
     });
     const page = await api.gqlOk<{ postComments: IComment[] }>(member.cookie, COMMENTS, {
       id: post.id,

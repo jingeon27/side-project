@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -85,13 +86,13 @@ describe('대회', () => {
   });
 
   it('권한을 입력 검사보다 먼저 확인해야 한다', async () => {
-    const variables = { groupId: group.id, title: '', ...contestSchedule(Date.now() - DAY_MS) };
+    const variables = { groupId: group.id, title: '', ...contestSchedule(dayjs().valueOf() - DAY_MS) };
     expect(await api.gqlFail(member.cookie, CREATE_CONTEST, variables)).toEqual(GROUP_FORBIDDEN);
   });
 
   it('일정은 시작·제출 마감·투표 마감 순서로 90일 이내여야 하고 시작은 지금 이후여야 한다', async () => {
-    const now = Date.now();
-    const iso = (offset: number) => new Date(now + offset).toISOString();
+    const now = dayjs().valueOf();
+    const iso = (offset: number) => dayjs(now + offset).toISOString();
     const invalid = [
       { startsAt: iso(-2 * MINUTE_MS), submissionEndsAt: iso(DAY_MS), endsAt: iso(2 * DAY_MS) },
       { startsAt: iso(DAY_MS), submissionEndsAt: iso(DAY_MS), endsAt: iso(2 * DAY_MS) },
@@ -209,7 +210,13 @@ describe('대회', () => {
     const contestId = await createContest(api, owner, group.id, '숨긴 사진 대회');
     const older = await submitPhoto(api, member, contestId, '먼저 숨긴 사진');
     const newer = await submitPhoto(api, voter, contestId, '나중 숨긴 사진');
-    await setSubmittedAt(api, older, new Date(Date.now() - 10 * MINUTE_MS));
+    await setSubmittedAt(
+      api,
+      older,
+      dayjs()
+        .subtract(10 * MINUTE_MS, 'millisecond')
+        .toDate(),
+    );
     await moveContestTo(api, contestId, 'VOTING');
     await api.gqlOk(owner.cookie, CAST_VOTE, { contestId, submissionId: newer });
     for (const id of [older, newer]) await api.gqlOk(owner.cookie, HIDE, { id });

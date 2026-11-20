@@ -1,4 +1,5 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import dayjs from 'dayjs';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
@@ -49,14 +50,14 @@ async function execute<TResult, TVariables extends Record<string, unknown>>(
   return result.data;
 }
 async function createContest(groupId: string, title: string) {
-  const now = Date.now();
+  const now = dayjs().valueOf();
   return (
     await execute(owner, CreateGroupContestDocument, {
       groupId,
       title,
-      startsAt: new Date(now - 1_000).toISOString(),
-      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-      endsAt: new Date(now + 7_200_000).toISOString(),
+      startsAt: dayjs(now - 1_000).toISOString(),
+      submissionEndsAt: dayjs(now + 3_600_000).toISOString(),
+      endsAt: dayjs(now + 7_200_000).toISOString(),
     })
   ).createGroupContest;
 }

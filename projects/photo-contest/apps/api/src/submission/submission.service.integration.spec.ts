@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -38,7 +39,9 @@ describe('사진 목록', () => {
       c: await submitPhoto(api, second, contestId, '사진 C'),
       d: await submitPhoto(api, third, contestId, '사진 D'),
     };
-    const base = new Date(Date.now() - 60 * 60 * 1000);
+    const base = dayjs()
+      .subtract(60 * 60 * 1000, 'millisecond')
+      .toDate();
     await setSubmittedAt(api, photos.a, base);
     await setSubmittedAt(api, photos.b, minutesFrom(base, 1));
     await setSubmittedAt(api, photos.c, minutesFrom(base, 2));
@@ -79,7 +82,9 @@ describe('사진 목록', () => {
       await submitPhoto(api, second, tiedContest, '동시각 2'),
       await submitPhoto(api, third, tiedContest, '동시각 3'),
     ];
-    const sameTime = new Date(Date.now() - 60 * 1000);
+    const sameTime = dayjs()
+      .subtract(60 * 1000, 'millisecond')
+      .toDate();
     for (const id of tied) await setSubmittedAt(api, id, sameTime);
     const ascending = [...tied].sort();
 
@@ -125,7 +130,9 @@ describe('사진 목록', () => {
     const older = await submitPhoto(api, first, pagedContest, '먼저 낸 사진');
     const hidden = await submitPhoto(api, second, pagedContest, '숨길 사진');
     const newer = await submitPhoto(api, third, pagedContest, '나중에 낸 사진');
-    const base = new Date(Date.now() - 30 * 60 * 1000);
+    const base = dayjs()
+      .subtract(30 * 60 * 1000, 'millisecond')
+      .toDate();
     await setSubmittedAt(api, older, base);
     await setSubmittedAt(api, hidden, minutesFrom(base, 1));
     await setSubmittedAt(api, newer, minutesFrom(base, 2));

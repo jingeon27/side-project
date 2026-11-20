@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 
@@ -59,7 +60,7 @@ describe('cookie request origin', () => {
 });
 describe('cursor and request validation', () => {
   it('round trips cursor timestamp and id without lossy ordering', () => {
-    const row = { id: 'request-x', createdAt: new Date('2026-10-16T00:00:00.000Z') };
+    const row = { id: 'request-x', createdAt: dayjs('2026-10-16T00:00:00.000Z').toDate() };
     expect(decodeCursor(encodeCursor(row))).toEqual(row);
   });
   it('rejects malformed pagination cursors', () => {

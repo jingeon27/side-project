@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { ChatMessage, Session } from '@game-feedback/contracts';
 
 import { expect, test, type Page } from './support/test';
@@ -21,7 +23,7 @@ async function selectTestAccount(page: Page, nickname: string) {
 test('prepared accounts can write posts and comments, switch identities, and exchange private chat', async ({
   page,
 }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.goto('/ko');
   await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
   const player = await selectTestAccount(page, '새벽의호그');

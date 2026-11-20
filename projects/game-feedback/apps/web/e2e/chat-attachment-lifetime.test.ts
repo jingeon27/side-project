@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -15,7 +17,7 @@ test('첨부 메시지 전송 중 다른 화면으로 이동해도 전송 전에
     data: { accountId: 'sample-user-0' },
   });
   await page.goto(path);
-  const name = `in-flight-${Date.now()}.jpg`;
+  const name = `in-flight-${dayjs().valueOf()}.jpg`;
   await page
     .getByLabel('이미지 또는 동영상 첨부')
     .setInputFiles({ name, mimeType: 'image/jpeg', buffer: image });

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -40,7 +41,7 @@ describe('모든 내 그룹의 사진 피드', () => {
   let api: ITestApi, viewer: ITestUser, friend: ITestUser;
   let groupA: ITestGroup, groupB: ITestGroup;
   let older: string, newer: string, past: string;
-  const base = new Date(Date.now() - 3_600_000);
+  const base = dayjs().subtract(3_600_000, 'millisecond').toDate();
   const list = async (cookie: string | undefined, variables: Record<string, unknown> = {}) =>
     (await api.gqlOk<{ myPhotoFeed: IFeedItem[] }>(cookie, FEED, variables)).myPhotoFeed;
 

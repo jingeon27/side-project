@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -158,7 +159,7 @@ describe('게시글 S3 직접 업로드', () => {
     const plan = await reserve();
     const policy = JSON.parse(Buffer.from(plan.fields.Policy ?? '', 'base64').toString());
     expect(policy.conditions).toContainEqual(['content-length-range', png.length, png.length]);
-    expect(Date.parse(plan.expiresAt) - Date.now()).toBeGreaterThan(290_000);
+    expect(dayjs(plan.expiresAt).valueOf() - dayjs().valueOf()).toBeGreaterThan(290_000);
     expect((await transfer(plan, Buffer.concat([png, Buffer.from('extra')]))).ok).toBe(false);
     expect((await transfer(plan)).status).toBe(204);
     const replies = await Promise.all([
@@ -219,20 +220,26 @@ describe('게시글 S3 직접 업로드', () => {
     expect((await transfer(late)).status).toBe(204);
     await state.db.postMedia.update({
       where: { id: late.id },
-      data: { createdAt: new Date(Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000) },
+      data: {
+        createdAt: dayjs()
+          .subtract((MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     await state.owner.post(`/api/post-media/${late.id}/complete`).set('Origin', origin).expect(200);
     const expired = await reserve();
     await state.db.postMedia.update({
       where: { id: expired.id },
       data: {
-        createdAt: new Date(
-          Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000,
-        ),
+        createdAt: dayjs()
+          .subtract((MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000, 'millisecond')
+          .toDate(),
       },
     });
     await state.owner.post(`/api/post-media/${expired.id}/complete`).set('Origin', origin).expect(409);
-    const old = new Date(Date.now() - 2 * 86_400_000);
+    const old = dayjs()
+      .subtract(2 * 86_400_000, 'millisecond')
+      .toDate();
     const row = await state.db.postMedia.update({ where: { id: invalid.id }, data: { createdAt: old } });
     await state.db.mediaObject.update({ where: { id: row.objectId ?? '' }, data: { createdAt: old } });
     const result = await state.app.get(MediaStorage).prune();

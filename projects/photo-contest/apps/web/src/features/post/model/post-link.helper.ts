@@ -19,15 +19,18 @@ export function youtubeVideoId(value: string): string | null {
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
-    const paths = url.pathname.split('/').filter(Boolean);
-    let id: string | null | undefined;
-    if (url.hostname === 'youtu.be' && paths.length === 1) id = paths[0];
-    if (['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname)) {
-      if (url.pathname === '/watch') id = parseSearch(url.search).v;
-      if (paths.length === 2 && ['shorts', 'embed', 'live'].includes(paths[0] ?? '')) id = paths[1];
-    }
+    const id = youtubeIdCandidate(url);
     return id && /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
   } catch {
     return null;
   }
+}
+
+function youtubeIdCandidate(url: URL) {
+  const paths = url.pathname.split('/').filter(Boolean);
+  if (url.hostname === 'youtu.be' && paths.length === 1) return paths[0];
+  if (!['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname)) return null;
+  if (url.pathname === '/watch') return parseSearch(url.search).v;
+  if (paths.length === 2 && ['shorts', 'embed', 'live'].includes(paths[0] ?? '')) return paths[1];
+  return null;
 }

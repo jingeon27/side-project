@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -86,9 +87,13 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
         {
           tokenHash: hash(state.accessToken),
           userId: state.authorId,
-          expiresAt: new Date(Date.now() + 60000),
+          expiresAt: dayjs().add(60000, 'millisecond').toDate(),
         },
-        { tokenHash: hash(state.adminToken), userId: state.adminId, expiresAt: new Date(Date.now() + 60000) },
+        {
+          tokenHash: hash(state.adminToken),
+          userId: state.adminId,
+          expiresAt: dayjs().add(60000, 'millisecond').toDate(),
+        },
       ],
     });
   }, 30000);
@@ -183,7 +188,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
     const category = await state.db.category.create({
       data: { slug: 'repository-pagination', name: '정렬 검증' },
     });
-    const createdAt = new Date('2026-10-19T01:00:00Z');
+    const createdAt = dayjs('2026-10-19T01:00:00Z').toDate();
     await state.db.post.createMany({
       data: [
         ...['a', 'b', 'c'].map((id) => ({
@@ -196,7 +201,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
           ...postData(state.authorId, 'page-deleted'),
           categoryId: category.id,
           createdAt,
-          deletedAt: new Date(),
+          deletedAt: dayjs().toDate(),
         },
         { ...postData(state.readerId, 'page-excluded'), categoryId: category.id, createdAt },
       ],
@@ -229,7 +234,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
     await state.db.block.deleteMany({ where: { userId: state.authorId, blockedUserId: state.readerId } });
   });
   it('기록 삭제의 동일 시각 경계를 내 DB 조회에만 적용해야 한다', async () => {
-    const at = new Date('2026-10-19T01:00:00Z');
+    const at = dayjs('2026-10-19T01:00:00Z').toDate();
     const conversation = await state.db.chatConversation.create({
       data: {
         firstUserId: state.authorId,
@@ -421,7 +426,11 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
       .expect(400);
     const secondToken = token();
     await state.db.session.create({
-      data: { tokenHash: hash(secondToken), userId: state.readerId, expiresAt: new Date(Date.now() + 60000) },
+      data: {
+        tokenHash: hash(secondToken),
+        userId: state.readerId,
+        expiresAt: dayjs().add(60000, 'millisecond').toDate(),
+      },
     });
     await request
       .post('/api/reports')

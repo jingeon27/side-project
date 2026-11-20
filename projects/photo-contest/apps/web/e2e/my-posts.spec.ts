@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { productRequest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
@@ -5,7 +7,7 @@ test(
   'MY에서 올린 게시물을 그룹별로 필터하고 새로고침·수정·삭제 후에도 목록을 유지해야 한다',
   { tag: ['@ios', '@desktop'] },
   async ({ page, signIn }) => {
-    const cookie = await signIn(`MY-${Date.now().toString(36)}`);
+    const cookie = await signIn(`MY-${dayjs().valueOf().toString(36)}`);
     const first = await seedGroup(cookie, 'MY 첫 그룹');
     const second = await seedGroup(cookie, 'MY 두 번째 그룹');
     for (const [groupId, title] of [

@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -49,7 +50,7 @@ describe('administrator support inbox pages, status filter and direct thread', (
         firstUserId: firstUserId ?? '',
         secondUserId: secondUserId ?? '',
         // 대화가 늦게 갱신된 문의일수록 목록 위에 와야 한다.
-        updatedAt: new Date(Date.UTC(2026, 9, 1, 0, 0, index)),
+        updatedAt: dayjs('2026-10-01T00:00:00Z').add(index, 'second').toDate(),
       },
     });
     return state.db.supportConversation.create({

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { createTestUser } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
@@ -10,7 +12,7 @@ test(
   async ({ page, signIn }) => {
     await signIn('홈 신규 사용자');
     const owner = await createTestUser(API_URL, { nickname: '홈 목록 그룹장', origin: WEB_ORIGIN });
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     const group = await seedGroup(owner, `공개 목록 ${suffix}`, 'PUBLIC');
     const secret = await seedGroup(owner, `비공개 목록 ${suffix}`, 'PRIVATE');
     const hidden = await seedGroup(owner, `숨긴 목록 ${suffix}`, 'PUBLIC');
@@ -57,7 +59,7 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page }) => {
     const owner = await createTestUser(API_URL, { nickname: '익명홈 목록 그룹장', origin: WEB_ORIGIN });
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     const group = await seedGroup(owner, `익명 공개 ${suffix}`, 'PUBLIC');
     const secret = await seedGroup(owner, `익명 비공개 ${suffix}`, 'PRIVATE');
     await seedPost(owner, secret.id, `익명 비밀 ${suffix}`);

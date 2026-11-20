@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, inject, it, vi } from 'vitest';
 
 import { uploadToStorage } from '../../test/support/app';
@@ -10,7 +11,12 @@ describe('실제 S3 미디어 저장소', () => {
     for (const [name, value] of Object.entries(inject('s3Env'))) vi.stubEnv(name, value);
     const storage = new MediaStorage();
     const key = createMediaKey('png');
-    const form = await storage.presignUpload(key, 'image/png', 4, new Date(Date.now() + 300_000));
+    const form = await storage.presignUpload(
+      key,
+      'image/png',
+      4,
+      dayjs().add(300_000, 'millisecond').toDate(),
+    );
     const grant = {
       url: form.url,
       fields: Object.entries(form.fields).map(([name, value]) => ({ name, value })),

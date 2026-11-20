@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -20,7 +21,9 @@ const REPORT =
   'mutation($id: ID!, $reason: String!) { reportSubmission(submissionId: $id, reason: $reason) }';
 
 function minutesAgo(minutes: number) {
-  return new Date(Date.now() - minutes * MINUTE_MS);
+  return dayjs()
+    .subtract(minutes * MINUTE_MS, 'millisecond')
+    .toDate();
 }
 
 function randomHash() {
@@ -53,7 +56,7 @@ describe('주기 작업', () => {
   async function drainCompletedContests() {
     for (let run = 0; run < 20; run++) {
       const pending = await api.db.contest.count({
-        where: { endsAt: { lte: new Date() }, completionTrackedAt: null },
+        where: { endsAt: { lte: dayjs().toDate() }, completionTrackedAt: null },
       });
       if (pending === 0) return;
       await api.runScheduledWork();

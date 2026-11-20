@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { appRoutes } from '@game-feedback/bridge';
 
 import { adminApi } from './admin-api';
@@ -6,7 +8,7 @@ import { expect, test, type Page } from './support/test';
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 async function createFeedback(page: Page) {
-  const q = `feedback-${Date.now().toString(36)}`;
+  const q = `feedback-${dayjs().valueOf().toString(36)}`;
   const game = q;
   const login = (accountId: string) =>
     page.request.post('/api/auth/test-login', {

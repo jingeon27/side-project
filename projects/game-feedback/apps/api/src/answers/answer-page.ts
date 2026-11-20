@@ -35,6 +35,7 @@ export function decodeAnswerCursor(value?: string): IAnswerPosition | null {
       !parsed[2]
     )
       throw new Error();
+    // eslint-disable-next-line side/no-native-date -- 외부 커서를 엄격히 읽는다. dayjs는 2026-13-01 같은 시간대 없는 값을 다음 해로 보정해 받아들인다.
     const timestamp = Date.parse(parsed[1]);
     if (Number.isNaN(timestamp)) throw new Error();
     return { helpful: parsed[0], createdAt: dayjs(timestamp).toDate(), id: parsed[2] };

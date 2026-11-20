@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { adminApi } from './admin-api';
 import { expect, test } from './support/test';
 
@@ -6,7 +8,7 @@ const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 test('the feed combines general posts and paid coaching and connects a student to the coach', async ({
   page,
 }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
     data: { accountId: 'sample-user-3' },
@@ -66,7 +68,7 @@ test('the feed combines general posts and paid coaching and connects a student t
 test('a new game receives five boards while coaching posts remain fixed to Clash Royale', async ({
   page,
 }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
     data: { accountId: 'sample-test-admin' },

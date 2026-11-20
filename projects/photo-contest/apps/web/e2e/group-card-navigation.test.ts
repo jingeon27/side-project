@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, seedGroup, startAnonymousSession, test } from './support/test';
 
 test(
@@ -5,7 +7,7 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, context, signIn }, testInfo) => {
     const owner = await signIn('카드 이동 그룹장');
-    const name = `둘러보기-${testInfo.project.name}-${Date.now()}`;
+    const name = `둘러보기-${testInfo.project.name}-${dayjs().valueOf()}`;
     const group = await seedGroup(owner, name);
     await context.clearCookies();
     await startAnonymousSession(context);
@@ -30,7 +32,7 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, context, signIn }, testInfo) => {
     const owner = await signIn('비공개 카드 그룹장');
-    const name = `비공개 카드-${testInfo.project.name}-${Date.now()}`;
+    const name = `비공개 카드-${testInfo.project.name}-${dayjs().valueOf()}`;
     const group = await seedGroup(owner, name, 'PRIVATE');
     await context.clearCookies();
     await startAnonymousSession(context);

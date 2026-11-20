@@ -1,9 +1,10 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { rankResults } from './result-ranking';
 
 function photo(id: string, voteCount: number, likeCount = 0, createdAt = '2026-10-13T00:00:00Z') {
-  return { id, voteCount, likeCount, createdAt: new Date(createdAt) };
+  return { id, voteCount, likeCount, createdAt: dayjs(createdAt).toDate() };
 }
 
 function summary(items: ReturnType<typeof photo>[]) {

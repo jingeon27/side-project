@@ -66,14 +66,7 @@ export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}
     cache: 'no-store',
     headers,
   });
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') throw error;
-    if (response.ok) throw new ApiResponseValidationError(response.status);
-    payload = null;
-  }
+  const payload = await responseJson(response);
   if (!response.ok) {
     const error = errorPayloadSchema.parse(payload);
     throw new ApiError(response.status, error.errorCode, error.message);
@@ -81,4 +74,15 @@ export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}
   const result = schema.safeParse(applyResponseFallbacks(schema, payload));
   if (!result.success) throw new ApiResponseValidationError(response.status, result.error.issues);
   return result.data;
+}
+
+// 성공 응답의 본문은 JSON이어야 한다. 실패 응답은 본문이 비어도 상태 코드로 오류를 만들 수 있게 null로 둔다.
+async function responseJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    if (response.ok) throw new ApiResponseValidationError(response.status);
+    return null;
+  }
 }

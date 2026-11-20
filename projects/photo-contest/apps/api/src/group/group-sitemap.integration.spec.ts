@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -30,7 +31,7 @@ describe('공개 그룹 사이트맵 수정 시각', () => {
         authorId: owner.id,
         title: '사이트맵 게시물',
         linkUrl: 'https://example.com/post',
-        createdAt: new Date(createdAt),
+        createdAt: dayjs(createdAt).toDate(),
         hidden,
       },
     });

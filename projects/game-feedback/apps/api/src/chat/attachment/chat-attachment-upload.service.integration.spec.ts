@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -205,16 +206,20 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
     expect((await transfer(late)).status).toBe(204);
     await state.db.chatAttachment.update({
       where: { id: late.id },
-      data: { createdAt: new Date(Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000) },
+      data: {
+        createdAt: dayjs()
+          .subtract((MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     await state.owner.post(`${path}/${late.id}/complete`).set('Origin', origin).expect(200);
     const expired = await reserve(conversation.id);
     await state.db.chatAttachment.update({
       where: { id: expired.id },
       data: {
-        createdAt: new Date(
-          Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000,
-        ),
+        createdAt: dayjs()
+          .subtract((MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000, 'millisecond')
+          .toDate(),
       },
     });
     await state.owner.post(`${path}/${expired.id}/complete`).set('Origin', origin).expect(409);

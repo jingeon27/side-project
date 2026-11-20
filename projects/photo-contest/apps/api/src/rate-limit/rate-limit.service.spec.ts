@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ERROR_CODE } from '../common/errors';
@@ -25,7 +26,7 @@ describe('rateLimitBucket', () => {
     expect(rateLimitBucket('UPLOAD_BYTES:address:203.0.113.1', windowMs, start + windowMs - 1)).toEqual(
       first,
     );
-    expect(first.expiresAt).toEqual(new Date(start + windowMs));
+    expect(first.expiresAt).toEqual(dayjs(start + windowMs).toDate());
     expect(rateLimitBucket('UPLOAD_BYTES:address:203.0.113.1', windowMs, start + windowMs).keyHash).not.toBe(
       first.keyHash,
     );

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -130,7 +131,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
         userId: owner.id,
         groupId,
         tokenHash: randomUUID(),
-        expiresAt: new Date(0),
+        expiresAt: dayjs(0).toDate(),
         kind: 'VIDEO',
         contentType: 'video/mp4',
         byteSize,
@@ -151,7 +152,7 @@ describe('업로드 발급과 IP 예산의 원자성 회귀', () => {
 
   it('미완료 티켓 상한으로 거절된 게시물·프로필 요청은 발급 예산에 남기지 않아야 한다', async () => {
     const { owner, groupId } = await ownerGroup('예산-대기');
-    const expiresAt = new Date(Date.now() + 60_000);
+    const expiresAt = dayjs().add(60_000, 'millisecond').toDate();
     const prefix = inject('s3Env').S3_KEY_PREFIX ?? `tests/budget-${randomUUID()}`;
     await api().db.postUpload.createMany({
       data: Array.from({ length: MAX_PENDING_UPLOADS }, () => ({

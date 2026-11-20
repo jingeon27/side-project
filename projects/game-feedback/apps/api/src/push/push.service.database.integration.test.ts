@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ExpoPushTransport } from '@side/toolkit/push-notifications';
@@ -87,7 +88,11 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
       data: { nickname: '푸시 임대 사용자', termsVersion: 'test', ageConfirmed: true },
     });
     const session = await db.session.create({
-      data: { userId: user.id, tokenHash: hash(token()), expiresAt: new Date(Date.now() + 60_000) },
+      data: {
+        userId: user.id,
+        tokenHash: hash(token()),
+        expiresAt: dayjs().add(60_000, 'millisecond').toDate(),
+      },
     });
     const device = await db.pushDevice.create({
       data: {
@@ -98,7 +103,7 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
         platform: 'ios',
       },
     });
-    const now = new Date();
+    const now = dayjs().toDate();
     const job = await db.pushDelivery.create({
       data: {
         deviceId: device.id,
@@ -129,7 +134,7 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
         attempts: 1,
         ticketId: null,
         leaseToken: null,
-        nextAttemptAt: new Date(now.getTime() + 30_000),
+        nextAttemptAt: dayjs(now).add(30_000, 'millisecond').toDate(),
       });
     } finally {
       gate.release();

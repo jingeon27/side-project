@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -23,7 +25,7 @@ for (const width of [400, 1440]) {
     await expect(page).toHaveURL(/\/write\?board=friendly&battleMode=TEAM$/);
     const editor = page.getByRole('form', { name: '글쓰기', exact: true });
     await expect(editor.getByRole('combobox', { name: '전투 유형', exact: true })).toHaveValue('TEAM');
-    const title = `팀전 모집 ${width} ${Date.now().toString(36)}`;
+    const title = `팀전 모집 ${width} ${dayjs().valueOf().toString(36)}`;
     await editor.getByLabel('제목', { exact: true }).fill(title);
     await editor.getByRole('textbox', { name: '내용', exact: true }).fill('같이 전투할 분을 구해요.');
     await editor.getByRole('button', { name: '게시글 등록', exact: true }).click();

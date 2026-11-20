@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { ExpoPushTransport, type IPushMessage } from '@side/toolkit/push-notifications';
@@ -131,7 +132,7 @@ describe('세션에 연결한 앱 푸시', () => {
     const device = await api.db.pushDevice.findUniqueOrThrow({ where: { id } });
     await api.db.session.update({
       where: { tokenHash: device.sessionKey },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate() },
     });
     expect(await run()).toEqual([]);
     expect(await api.db.pushDevice.findUnique({ where: { id } })).toBeNull();

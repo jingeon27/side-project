@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -153,7 +154,7 @@ describe('그룹 사진과 소개', () => {
     await api.gqlOk(owner.cookie, UPDATE, values({ avatarId: active }));
     await api.db.groupAvatar.updateMany({
       where: { id: { in: [active, orphan] } },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate() },
     });
     expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId: orphan }))).code).toBe(
       'BAD_USER_INPUT',
@@ -252,7 +253,7 @@ describe('그룹 사진과 소개', () => {
     );
     expect(publicRead.group.coverUrl).toBe(saved.coverUrl);
     expect((await api.http().get(endpoint)).status).toBe(307);
-    await api.db.groupAvatar.update({ where: { id: coverId }, data: { expiresAt: new Date(0) } });
+    await api.db.groupAvatar.update({ where: { id: coverId }, data: { expiresAt: dayjs(0).toDate() } });
     await api.app.get(MaintenanceService).cleanup();
     expect(await api.db.groupAvatar.findUnique({ where: { id: coverId } })).not.toBeNull();
     await api.gqlOk(owner.cookie, update, values({ removeCover: true }));

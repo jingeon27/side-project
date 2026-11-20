@@ -1,5 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 
+import dayjs from 'dayjs';
+
 import { createTestImage, createTestUser, createTestVideo, moveTestContest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
@@ -208,15 +210,15 @@ test(
   async ({ page, context, signIn }) => {
     const owner = await signIn('비공개 대회장');
     const group = await seedGroup(owner, '숨긴 대회 그룹', 'PRIVATE');
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const { createGroupContest: contest } = await productRequest<{ createGroupContest: { id: string } }>(
       owner,
       'mutation($groupId:ID!,$startsAt:DateTime!,$submissionEndsAt:DateTime!,$endsAt:DateTime!){createGroupContest(groupId:$groupId,title:"비공개 대회 제목 유출 금지",startsAt:$startsAt,submissionEndsAt:$submissionEndsAt,endsAt:$endsAt){id}}',
       {
         groupId: group.id,
-        startsAt: new Date(now).toISOString(),
-        submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-        endsAt: new Date(now + 7_200_000).toISOString(),
+        startsAt: dayjs(now).toISOString(),
+        submissionEndsAt: dayjs(now + 3_600_000).toISOString(),
+        endsAt: dayjs(now + 7_200_000).toISOString(),
       },
     );
     const paths = [

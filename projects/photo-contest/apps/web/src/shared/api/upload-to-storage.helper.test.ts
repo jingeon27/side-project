@@ -1,12 +1,13 @@
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getUploadTimeoutMs, StorageUploadError, uploadToStorage } from './upload-to-storage.helper';
 
-const NOW = Date.parse('2026-10-22T00:00:00.000Z');
+const NOW = dayjs('2026-10-22T00:00:00.000Z').valueOf();
 const ticket = (expiresInMs: number) => ({
   url: 'https://storage.example/bucket',
   fields: [],
-  expiresAt: new Date(NOW + expiresInMs).toISOString(),
+  expiresAt: dayjs(NOW + expiresInMs).toISOString(),
 });
 
 /** 응답 없이 기다리다 신호가 끊기면(이미 끊겼으면 바로) 브라우저처럼 AbortError로 거절한다. */
@@ -63,9 +64,9 @@ describe('uploadToStorage', () => {
 
 describe('getUploadTimeoutMs', () => {
   it('티켓 만료까지 기다리되 기기 시계가 어긋나도 1분~15분 안에 둬야 한다', () => {
-    expect(getUploadTimeoutMs(new Date(NOW + 5 * 60_000).toISOString(), NOW)).toBe(5 * 60_000);
-    expect(getUploadTimeoutMs(new Date(NOW - 60 * 60_000).toISOString(), NOW)).toBe(60_000);
-    expect(getUploadTimeoutMs(new Date(NOW + 24 * 60 * 60_000).toISOString(), NOW)).toBe(15 * 60_000);
+    expect(getUploadTimeoutMs(dayjs(NOW + 5 * 60_000).toISOString(), NOW)).toBe(5 * 60_000);
+    expect(getUploadTimeoutMs(dayjs(NOW - 60 * 60_000).toISOString(), NOW)).toBe(60_000);
+    expect(getUploadTimeoutMs(dayjs(NOW + 24 * 60 * 60_000).toISOString(), NOW)).toBe(15 * 60_000);
     expect(getUploadTimeoutMs('not-a-date', NOW)).toBe(15 * 60_000);
   });
 });

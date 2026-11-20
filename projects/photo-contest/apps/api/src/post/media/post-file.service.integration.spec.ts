@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { expect, test, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -112,7 +113,11 @@ fileTest(
     const ticket = await api.db.postUpload.findUniqueOrThrow({ where: { id: uploadId } });
     expect(ticket.expiresAt?.getTime()).toBe(0);
     expect(await api.storage.head(key)).toMatchObject({ contentType: 'image/png' });
-    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 3 * 60 * 60_000));
+    await api.app.get(MaintenanceService).cleanup(
+      dayjs()
+        .add(3 * 60 * 60_000, 'millisecond')
+        .toDate(),
+    );
     expect(await api.db.postUpload.findUnique({ where: { id: uploadId } })).toBeNull();
     await expect(api.storage.head(key)).rejects.toThrow();
   },

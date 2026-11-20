@@ -25,18 +25,33 @@ export const testFiles = [
   '**/vitest.*.{ts,mts}',
 ];
 
+/**
+ * side 플러그인과 common 규칙만 켠다. web 규칙은 reactConfig·nextConfig가 켠다.
+ * typescript-eslint를 등록하지 않으므로 eslint-config-next가 이미 등록한 blog web도 이 설정만 더할 수 있다.
+ */
+export const commonRulesConfig: Linter.Config[] = [
+  {
+    name: 'side/common',
+    plugins: { side: sidePlugin },
+    rules: {
+      'side/no-else': 'error',
+      'side/no-hash-private': 'error',
+      'side/no-let': 'error',
+      'side/no-native-date': 'error',
+      'side/no-wildcard-exports': 'error',
+    },
+  },
+  // beforeEach에서 다시 대입하는 테스트 준비값은 테스트 수명에 묶여 있어 let을 허용한다. 날짜 규칙은 테스트에도 남긴다.
+  { name: 'side/common-tests', files: testFiles, rules: { 'side/no-let': 'off' } },
+];
+
 export const baseConfig: Linter.Config[] = [
   { ignores: buildArtifactIgnores },
   ...tseslint.configs.recommended,
+  ...commonRulesConfig,
   {
     name: 'side/base',
-    plugins: { side: sidePlugin },
-    // common 규칙만 켠다. web 규칙은 reactConfig·nextConfig가 켠다.
-    rules: {
-      'side/no-else': 'error',
-      'side/no-wildcard-exports': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    },
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }] },
   },
 ];
 

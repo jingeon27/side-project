@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
@@ -20,7 +21,7 @@ it('signs with the current time without calling Date.now()', () => {
   const shared = publicServerOptions().headers;
   expect(dateNow).not.toHaveBeenCalled();
   dateNow.mockRestore();
-  const seconds = Date.now() / 1000;
+  const seconds = dayjs().valueOf() / 1000;
   for (const headers of [signed, shared])
     expect(Math.abs(Number(headers['x-gf-client-timestamp']) - seconds)).toBeLessThanOrEqual(2);
 });

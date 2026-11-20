@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -74,7 +75,9 @@ describe('프로필 사진과 가입 설정', () => {
     expect(
       (await api.gqlFail(other.cookie, UPDATE, { nickname: '다른회원', avatarId: upload.id })).code,
     ).toBe('FORBIDDEN');
-    const expired = new Date(Date.now() - UPLOAD_TICKET_TTL_MS * 2);
+    const expired = dayjs()
+      .subtract(UPLOAD_TICKET_TTL_MS * 2, 'millisecond')
+      .toDate();
     await api.db.profileUpload.update({
       where: { id: upload.id },
       data: { expiresAt: expired, policyExpiresAt: expired },
@@ -99,7 +102,7 @@ describe('프로필 사진과 가입 설정', () => {
     );
     await api.db.profileUpload.update({
       where: { id: upload.id },
-      data: { expiresAt: new Date(Date.now() - 1) },
+      data: { expiresAt: dayjs().subtract(1, 'millisecond').toDate() },
     });
     expect((await api.gqlFail(owner.cookie, COMPLETE, { uploadId: upload.id })).code).toBe('FORBIDDEN');
   });
@@ -109,7 +112,9 @@ describe('프로필 사진과 가입 설정', () => {
     const upload = await ticket(body);
     await uploadToStorage(upload, body, 'image/png');
     const row = await api.db.profileUpload.findUniqueOrThrow({ where: { id: upload.id } });
-    const past = new Date(Date.now() - UPLOAD_TICKET_TTL_MS * 2);
+    const past = dayjs()
+      .subtract(UPLOAD_TICKET_TTL_MS * 2, 'millisecond')
+      .toDate();
     await api.db.profileUpload.update({
       where: { id: upload.id },
       data: { expiresAt: past, policyExpiresAt: past },

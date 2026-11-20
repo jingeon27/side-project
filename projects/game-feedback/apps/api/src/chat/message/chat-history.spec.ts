@@ -1,8 +1,9 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
 
-const at = new Date('2026-10-19T01:00:00.000Z');
+const at = dayjs('2026-10-19T01:00:00.000Z').toDate();
 const row = {
   firstUserId: 'first',
   firstClearedAt: at,
@@ -30,17 +31,19 @@ describe('채팅 기록 경계', () => {
     { id: 'message-c', time: at.getTime(), visible: true },
     { id: 'message-a', time: at.getTime() + 1, visible: true },
   ])('삭제 경계 뒤의 메시지만 유효한 재전송으로 처리해야 한다: $id / $time', ({ id, time, visible }) => {
-    expect(advancesBoundary({ id, createdAt: new Date(time) }, historyBoundary(row, 'first'))).toBe(visible);
+    expect(advancesBoundary({ id, createdAt: dayjs(time).toDate() }, historyBoundary(row, 'first'))).toBe(
+      visible,
+    );
   });
   it('삭제 경계가 없으면 과거 메시지도 읽을 수 있어야 한다', () => {
-    expect(advancesBoundary({ id: 'old', createdAt: new Date(0) }, { at: null, id: null })).toBe(true);
+    expect(advancesBoundary({ id: 'old', createdAt: dayjs(0).toDate() }, { at: null, id: null })).toBe(true);
   });
   it('문의 대화는 문의 시작 이전 기록을 두 참여자 모두에게 숨겨야 한다', () => {
-    const started = new Date(at.getTime() + 1000);
+    const started = dayjs(at).add(1000, 'millisecond').toDate();
     const support = { ...row, support: { historyStartAt: started, historyStartId: 'message-s' } };
     expect(historyBoundary(support, 'first')).toEqual({ at: started, id: 'message-s' });
     expect(historyBoundary(support, 'second')).toEqual({ at: started, id: 'message-s' });
-    const cleared = new Date(started.getTime() + 1000);
+    const cleared = dayjs(started).add(1000, 'millisecond').toDate();
     expect(historyBoundary({ ...support, firstClearedAt: cleared }, 'first')).toEqual({
       at: cleared,
       id: 'message-b',
@@ -51,7 +54,7 @@ describe('채팅 기록 경계', () => {
   });
   it('기존 데이터에 경계 ID가 없으면 같은 시각의 메시지를 ID 순서로 처리해야 한다', () => {
     const boundary = { at, id: null };
-    expect(advancesBoundary({ id: 'message-a', createdAt: new Date(at) }, boundary)).toBe(true);
+    expect(advancesBoundary({ id: 'message-a', createdAt: dayjs(at).toDate() }, boundary)).toBe(true);
     expect(historyWhere({ ...row, firstClearedId: null }, 'first')).toEqual({
       OR: [{ createdAt: { gt: at } }, { createdAt: at, id: { gt: '' } }],
     });

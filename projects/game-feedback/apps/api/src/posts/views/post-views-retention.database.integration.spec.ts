@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
 import { assertDatabaseUrl } from '../../database/database-url';
@@ -42,14 +43,14 @@ it('48시간 지난 중복 방지 기록만 배치 삭제하고 누적 조회수
   const post = await db.post.create({
     data: { categoryId: category.id, authorId: user.id, title: '조회 정리', body: '본문', viewCount: 123 },
   });
-  const now = new Date();
-  const cutoff = new Date(now.getTime() - POST_VIEW_RETENTION_MS);
+  const now = dayjs().toDate();
+  const cutoff = dayjs(now).subtract(POST_VIEW_RETENTION_MS, 'millisecond').toDate();
   await db.postView.createMany({
     data: [
       ...['old-a', 'old-b', 'renewed'].map((visitorHash) => ({
         postId: post.id,
         visitorHash,
-        lastViewedAt: new Date(cutoff.getTime() - 1),
+        lastViewedAt: dayjs(cutoff).subtract(1, 'millisecond').toDate(),
       })),
       { postId: post.id, visitorHash: 'boundary', lastViewedAt: cutoff },
       { postId: post.id, visitorHash: 'fresh', lastViewedAt: now },

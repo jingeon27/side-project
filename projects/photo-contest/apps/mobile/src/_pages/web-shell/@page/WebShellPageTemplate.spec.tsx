@@ -3,6 +3,7 @@ import { AppState, BackHandler, Platform, Share } from 'react-native';
 import { getUserId, reset, setUserId, track } from '@amplitude/analytics-react-native';
 import { captureMessage } from '@sentry/react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import dayjs from 'dayjs';
 import { setStringAsync } from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { addEventListener as addLinkingListener, openURL } from 'expo-linking';
@@ -567,7 +568,7 @@ describe('WebShellPageTemplate', () => {
     renderShell();
     const handleBackListener = addBackListener.mock.calls[0]?.[1];
     function pressBack() {
-      return handleBackListener?.({ type: 'hardwareBackPress', timeStamp: Date.now() });
+      return handleBackListener?.({ type: 'hardwareBackPress', timeStamp: dayjs().valueOf() });
     }
 
     // 웹이 아직 준비되지 않았고 기록도 없으면 앱을 닫는다.

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -26,7 +28,7 @@ test.describe('mobile chat input', () => {
     await input.press('Enter');
     await input.pressSequentially('Second line');
     await expect(input).toHaveValue('First line\nSecond line');
-    const name = `practice-${Date.now()}.jpg`;
+    const name = `practice-${dayjs().valueOf()}.jpg`;
     await page
       .getByLabel('이미지 또는 동영상 첨부')
       .setInputFiles({ name, mimeType: 'image/jpeg', buffer: imageFixture });
@@ -115,7 +117,7 @@ test('sends a playable video without text and supports authenticated byte ranges
     setTimeout(() => recorder.stop(), 200);
     return result;
   });
-  const name = `practice-${Date.now()}.webm`;
+  const name = `practice-${dayjs().valueOf()}.webm`;
   await page
     .getByLabel('이미지 또는 동영상 첨부')
     .setInputFiles({ name, mimeType: 'video/webm', buffer: Buffer.from(bytes) });
