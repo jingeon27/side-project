@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { z } from 'zod';
 
@@ -36,6 +37,19 @@ export const trophySnapshotSchema = z.strictObject({
   weightsSHA256: sha,
 });
 export type TrophySnapshot = z.infer<typeof trophySnapshotSchema>;
+// 잠금·상태·게시 포인터와 시뮬레이터 후보 인계 파일을 두는 곳이다.
+export const trophyControl = (dataDir: string) => join(dataDir, 'trophy/learning/control');
+// 자가개선 감독이 control 폴더에 넘기는 시뮬레이터 챔피언이다. policy는 가중치 해시 이름으로 복사한 변하지 않는 사본이다.
+export const SIMULATION_CANDIDATE_FILE = 'simulation-candidate.json';
+export const simulationCandidateSchema = z.strictObject({
+  format: z.literal('trophy-simulation-candidate-v1'),
+  policy: z.string().min(1),
+  weightsSHA256: sha,
+  league: z.string().min(1),
+  version: z.int().nonnegative(),
+  publishedAt: z.iso.datetime(),
+});
+
 export const trophyResultSchema = z
   .strictObject({
     blue: z.int().min(0).max(3),

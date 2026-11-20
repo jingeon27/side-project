@@ -87,11 +87,6 @@ def setup_for(game_id):
     }
 
 
-def live_mirror(game):
-    """Only these games feed the Qwen studies: decision-v3 prompts know the live deck alone."""
-    return game["setup"]["decks"] == [LIVE_DECK, LIVE_DECK]
-
-
 def tower_damage(player):
     """Share of this side's total tower hit points destroyed by the end of the game."""
     hp = np.asarray(player["tower_hp"], np.float64)

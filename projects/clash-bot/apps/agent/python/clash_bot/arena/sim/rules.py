@@ -39,12 +39,11 @@ class DeckSpec(BaseModel):
 
 
 DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
-# The deck the live screen plays; Counterpush is a mirror match of it.
+# The deck the live Trophy screen plays; half of the self-play games mirror it.
 LIVE_DECK = SPEC["liveDeck"]
 if LIVE_DECK not in DECKS:
     raise ValueError("The live deck must be one of the arena decks")
-# One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7,
-# which the Qwen study exports of live-mirror games still index.
+# One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7.
 CARDS = list(
     dict.fromkeys(card for name in (LIVE_DECK, *sorted(DECKS)) for card in DECKS[name].cards)
 )

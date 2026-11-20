@@ -17,6 +17,7 @@ const fixtures = {
   root: '',
   baseline: null as TrophySnapshot | null,
   candidate: null as TrophySnapshot | null,
+  simulation: null as TrophySnapshot | null,
 };
 // 검사 파일이 맨 위에서 한 번 부른다. 기준·후보 두 정책 파일을 임시 폴더에 만들고 끝나면 지운다.
 export function useTrophyModels() {
@@ -66,6 +67,13 @@ async function prepareModels() {
   };
   fixtures.baseline = await save(0);
   fixtures.candidate = await save(1);
+  fixtures.simulation = await save(2);
+}
+// 자가개선 감독이 넘기는 시뮬레이터 챔피언 역할의 정책들이다. 0은 시작 챔피언과 같은 가중치다.
+export function models() {
+  const { baseline, candidate, simulation } = fixtures;
+  if (!baseline || !candidate || !simulation) throw new Error('Fixture missing');
+  return { baseline, candidate, simulation };
 }
 
 export class FakeLearner implements TrophyLearnerPort {
@@ -73,6 +81,14 @@ export class FakeLearner implements TrophyLearnerPort {
   async initialize() {
     if (!fixtures.baseline) throw new Error('Fixture missing');
     return fixtures.baseline;
+  }
+  imports: string[] = [];
+  // 실제 learner는 요청한 번호로 저장한다. 검사용 정책은 번호가 가치 출력에 묶여 있어 파일의 번호를 그대로 쓴다.
+  async importPolicy(policy: string) {
+    this.imports.push(policy);
+    const found = Object.values(models()).find((model) => model.checkpoint === policy);
+    if (!found) throw new Error('Unknown simulator policy');
+    return found;
   }
   async train() {
     this.calls++;

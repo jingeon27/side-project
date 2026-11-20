@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CARD_CATALOGUE, catalogueCard, isCatalogueBody } from '../card-catalogue.ts';
 import { CARD_INFO } from '../cards.ts';
-import { COUNTERPUSH_DECK } from '../deck.ts';
+import { LIVE_DECK } from '../deck.ts';
 import { UNIT_KINDS } from '../knowledge.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
@@ -155,7 +155,7 @@ describe('cards and bodies read through the catalogue, not one slot per name', (
   });
 
   it('every card and unit the live screen can name has catalogue attributes', () => {
-    for (const card of COUNTERPUSH_DECK) expect(catalogueCard(card), card).toBeDefined();
+    for (const card of LIVE_DECK) expect(catalogueCard(card), card).toBeDefined();
     for (const card of Object.keys(CARD_INFO)) expect(catalogueCard(card), card).toBeDefined();
     for (const kind of UNIT_KINDS) expect(isCatalogueBody(kind), kind).toBe(true);
     for (const effect of ['graveyard', 'poison']) expect(isCatalogueBody(effect), effect).toBe(true);

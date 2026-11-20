@@ -6,7 +6,7 @@ import { blockedDeployment } from '../placement/placement.ts';
 import { DEFAULT_PROFILE } from '../profile.ts';
 import { actionCandidates } from './actions.ts';
 
-describe('legal actions proposed to Qwen', () => {
+describe('legal actions offered to the policy', () => {
   it('sets up defense and a tank before unsupported graveyard/poison attacks, with three hut placements', () => {
     const cards = ['graveyard', 'poison', 'goblin_hut', 'furnace'] as const;
     const memory = new BattleMemory([

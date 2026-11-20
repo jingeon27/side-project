@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../deck.ts';
+import { LIVE_DECK, LIVE_DECK_EVOLUTIONS } from '../deck.ts';
 import { BattleMemory } from './battle-state.ts';
 import { FieldDynamics } from './field-dynamics.ts';
 import { observeFrame, settleOpponent, type FrameReading } from './situation.ts';
@@ -19,7 +19,7 @@ const frame = (at: number, overrides: Partial<FrameReading> = {}): FrameReading 
 
 describe('a situation read from one frame', () => {
   it('uses the read bar range only while no input is pending and the bar is reliable', () => {
-    const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
+    const memory = new BattleMemory([...LIVE_DECK], LIVE_DECK_EVOLUTIONS);
     expect(observeFrame(memory, frame(1_000)).own.elixir).toEqual({ min: 5.9, max: 7.1 });
     expect(observeFrame(memory, frame(1_400, { inputPending: true })).own.elixir).toEqual({
       min: 0,
@@ -31,7 +31,7 @@ describe('a situation read from one frame', () => {
   });
 
   it('adds an opponent play seen in this frame without changing earlier stored situations', () => {
-    const memory = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS);
+    const memory = new BattleMemory([...LIVE_DECK], LIVE_DECK_EVOLUTIONS);
     const earlier = observeFrame(memory, frame(1_000));
     settleOpponent(memory, earlier, frame(1_000));
     const stored = structuredClone(earlier);

@@ -20,7 +20,7 @@ const runStatusSchema = z.looseObject({
 const FINISHED_PHASES = ['stopped', 'failed', 'interrupted'];
 type LockOwner = z.infer<typeof ownerSchema>;
 
-const alive = (pid: number) => {
+export const processAlive = (pid: number) => {
   try {
     process.kill(pid, 0);
     return true;
@@ -75,7 +75,7 @@ export async function acquireLearningLock(directory: string) {
   };
   if (await create()) return held;
   const current = await readLockOwner(directory);
-  if (current && alive(current.pid)) throw running();
+  if (current && processAlive(current.pid)) throw running();
   // 죽은 소유자의 잠금은 rename으로 한 프로세스만 가져간다. 다른 프로세스가 먼저 가져갔으면 ENOENT다.
   const claimed = `${path}.${owner.id}.stale`;
   try {
@@ -86,7 +86,7 @@ export async function acquireLearningLock(directory: string) {
     throw running();
   }
   const taken = parseOwner(await readFile(claimed, 'utf8'));
-  if (taken && alive(taken.pid)) {
+  if (taken && processAlive(taken.pid)) {
     // 확인과 rename 사이에 살아 있는 실행이 새 잠금을 만들었다. 그 잠금을 되돌리고 물러난다.
     try {
       await link(claimed, path);
@@ -103,7 +103,7 @@ export async function acquireLearningLock(directory: string) {
 
 export async function requestLearningStop(directory: string) {
   const owner = await readLockOwner(directory);
-  if (!owner || !alive(owner.pid)) throw new Error('현재 실행 중인 작업이 없습니다.');
+  if (!owner || !processAlive(owner.pid)) throw new Error('현재 실행 중인 작업이 없습니다.');
   await atomicWrite(
     join(directory, 'stop.json'),
     JSON.stringify({ id: owner.id, requestedAt: dayjs().toISOString() }),
@@ -118,5 +118,5 @@ export async function stopRequested(directory: string, ownerId: string): Promise
 
 export async function readRunStatus(directory: string) {
   const status = await readJsonFile(join(directory, 'status.json'), runStatusSchema);
-  return { ...status, running: alive(status.pid) && !FINISHED_PHASES.includes(status.phase) };
+  return { ...status, running: processAlive(status.pid) && !FINISHED_PHASES.includes(status.phase) };
 }

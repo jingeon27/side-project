@@ -18,7 +18,7 @@ from clash_bot.arena.policy.features import (
 from clash_bot.trophy.learner import load_weights, prepare_rows
 from clash_bot.trophy.protocol import Episode, probabilities
 from clash_bot.trophy.protocol_test import episode, transition
-from clash_bot.trophy.worker import Initialize, Train, Worker
+from clash_bot.trophy.worker import Import, Initialize, Train, Worker
 
 
 @unittest.skipUnless(
@@ -129,6 +129,40 @@ class RealOwnPolicyTrainingTest(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 worker.handle(request)
+
+    def test_simulator_champion_import_is_immutable_and_outside_ppo_versions(self):
+        weights = {name: np.full(shape, 0.02, np.float32) for name, shape in WEIGHT_SHAPES.items()}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            policy = root / "champion-policy.json"
+            policy.write_text(
+                json.dumps(exported(weights, {"version": 3, "catalogue": CATALOGUE.id}))
+            )
+            worker = Worker(root / "owned")
+            request = Import(
+                op="import",
+                policy=str(policy),
+                version=5,
+                behaviorSHA256="b" * 64,
+                championSHA256="c" * 64,
+            )
+            snapshot = worker.handle(request)
+            self.assertEqual(snapshot["weightsSHA256"], checksum(weights))
+            self.assertEqual(Path(snapshot["checkpoint"]).parent.parent.name, "imports")
+            self.assertFalse((worker.root / "checkpoints").exists())
+            metadata = json.loads(
+                (Path(snapshot["checkpoint"]).parent / "metadata.json").read_text()
+            )
+            self.assertEqual(metadata["source"], "simulator_self_play_champion")
+            self.assertEqual(metadata["championParentSHA256"], "c" * 64)
+            # The same weights resume to the stored snapshot even with another version number.
+            again = worker.handle(request.model_copy(update={"version": 9}))
+            self.assertEqual(again, snapshot)
+            with self.assertRaises(ValueError):
+                worker.handle(request.model_copy(update={"behaviorSHA256": "d" * 64}))
+            self.assertEqual(
+                checksum(load_weights(snapshot["checkpoint"])), snapshot["weightsSHA256"]
+            )
 
 
 if __name__ == "__main__":

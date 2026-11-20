@@ -22,7 +22,7 @@ class RuntimeGuardTests(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def write_learning_lock(self, text):
-        path = self.data / "qwen/selfplay/lock.json"
+        path = self.data / "trophy/learning/control/lock.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 

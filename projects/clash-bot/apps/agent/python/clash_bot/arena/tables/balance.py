@@ -184,7 +184,7 @@ def stage(data_dir, version):
             "arena verify and pool-wide deployment/forms/spawns contracts",
             "public information masking",
             "seat-swapped heldout evaluation",
-            "Counterpush screen parity",
+            "live Trophy screen parity",
         ],
         "note": "Data changes do not establish implemented mechanics. New effects require engine support.",
     }

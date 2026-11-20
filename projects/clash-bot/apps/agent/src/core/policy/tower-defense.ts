@@ -9,12 +9,12 @@ import { distance, tilePoint, type Point } from '../geometry.ts';
 import { CARD_MECHANICS, UNIT_MECHANICS } from '../knowledge.ts';
 import { combatBody, forecastEffect } from '../placement/combat-projection.ts';
 import type { Profile } from '../profile.ts';
-import type { QwenAction } from './actions.ts';
+import type { ActionOption } from './actions.ts';
 
 export type TowerDefenseInput = {
   profile: Profile;
   situation: BattleSituation;
-  actions: QwenAction[];
+  actions: ActionOption[];
   ownTowerHp?: TowerHpSnapshot[];
   emergences?: Point[];
 };
@@ -177,7 +177,7 @@ export function towerDefense(input: TowerDefenseInput) {
     .filter((row) => row.urgency > 0.05);
   const pressure = threats.reduce((sum, row) => sum + row.pressure, 0);
 
-  const coverage = (action: QwenAction, row: Threat, forecast: ReturnType<typeof forecastEffect>) => {
+  const coverage = (action: ActionOption, row: Threat, forecast: ReturnType<typeof forecastEffect>) => {
     if (!action.card || action.kind === 'ability') return 0;
     const [x, y] = tilePoint(input.profile, action.target);
     if (y > 16) return 0;

@@ -5,8 +5,6 @@ from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.sim.belief import BeliefSampler, PublicRootMismatch
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import FIELDS, TILE, Action
-from clash_bot.arena.study.export import export
-from clash_bot.arena.study.teacher import Teacher
 from clash_bot.arena.training.search import search
 
 
@@ -26,23 +24,6 @@ def shifted(observation, tiles):
 
 
 class BoundedBeliefTest(unittest.TestCase):
-    def test_visual_qwen_export_also_rejects_position_bounded_search_labels(self):
-        game = {
-            "completed": True,
-            "rejectedCommands": 0,
-            "setup": {"decks": ["counterpush", "counterpush"]},
-            "samples": [
-                {
-                    "outcome": 1,
-                    "search": {
-                        "simulations": 16,
-                        "reconstruction": "public_board_position_bounded",
-                    },
-                }
-            ],
-        }
-        self.assertIsNone(export("/unused", [game]))
-
     def test_mobile_drift_is_recorded_without_replacing_the_observed_board(self):
         observation = shifted(position().observe(0), 0.1)
         sampler = BeliefSampler(observation, 11)
@@ -56,10 +37,6 @@ class BoundedBeliefTest(unittest.TestCase):
         self.assertTrue(
             all(row["maxPositionErrorTiles"] <= 0.25 for row in result["rootConditioning"])
         )
-
-    def test_strict_teacher_skips_a_position_that_only_the_bounded_search_accepts(self):
-        observation = shifted(position().observe(0), 0.1)
-        self.assertIsNone(Teacher().label(observation, "bounded-is-not-exact", "scenario-2"))
 
     def test_excessive_position_error_or_any_hp_error_still_stops_reconstruction(self):
         original = position().observe(0)

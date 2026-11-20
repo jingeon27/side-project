@@ -10,12 +10,10 @@ from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.policy.noise import PerceptionNoise, perceive
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, SPEC, Action
-from clash_bot.arena.study.export import export
 from clash_bot.arena.training.benchmark import ScriptedPolicy, defender_bot
 from clash_bot.arena.training.search import search
 from clash_bot.arena.training.selfplay import (
     SELFPLAY,
-    live_mirror,
     live_setup,
     play_game,
     setup_for,
@@ -106,7 +104,7 @@ class SetupTest(unittest.TestCase):
             {key: value for key, value in live_setup().items() if key != "phase"},
         )
 
-    def test_a_mixed_deck_game_runs_with_delays_and_stays_out_of_the_qwen_studies(self):
+    def test_a_mixed_deck_game_runs_with_delays_and_is_not_a_live_mirror(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})
         setup = {"decks": ["bait", "hog_cycle"], "delays": [18, 26], "levels": [10, 12]}
         game = play_game(
@@ -121,9 +119,7 @@ class SetupTest(unittest.TestCase):
         self.assertEqual(game["setup"], setup)
         self.assertGreater(game["decisions"], 0)
         self.assertEqual(game["rejectedCommands"], 0)
-        self.assertFalse(live_mirror(game))
-        completed = {**game, "completed": True, "samples": [{"search": {"simulations": 8}}]}
-        self.assertIsNone(export("/nonexistent", [completed]))
+        self.assertNotEqual(game["setup"]["decks"], [LIVE_DECK, LIVE_DECK])
 
     def test_deployed_play_needs_no_search(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})

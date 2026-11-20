@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { DATA_DIR } from '../shared/data-dir.ts';
 import { trophyBehaviorIdentity } from './fingerprint.ts';
-import { trophyPlanSchema } from './protocol.ts';
+import { trophyControl, trophyPlanSchema } from './protocol.ts';
 import { TrophySession } from './session.ts';
 
 const requestSchema = z.discriminatedUnion('op', [
@@ -22,7 +22,7 @@ async function main() {
     options: { seed: { type: 'string' }, evidence: { type: 'string', multiple: true } },
   });
   const command = args.positionals[0] ?? 'status';
-  const control = join(DATA_DIR, 'trophy/learning/control');
+  const control = trophyControl(DATA_DIR);
   if (command === 'status') {
     const status = await readFile(join(control, 'status.json'), 'utf8').catch(
       (error: NodeJS.ErrnoException) => {
