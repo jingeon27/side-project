@@ -3148,6 +3148,7 @@ __metadata:
     "@testing-library/dom": "catalog:"
     "@testing-library/react": "catalog:"
     "@types/react": "catalog:"
+    dayjs: "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
     expo: "catalog:"
