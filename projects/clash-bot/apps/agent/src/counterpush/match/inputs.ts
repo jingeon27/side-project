@@ -1,5 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
+import dayjs from 'dayjs';
+
 import { CARD_INFO } from '../../core/cards.ts';
 import type { QwenAction } from '../../core/policy/actions.ts';
 import type { Profile } from '../../core/profile.ts';
@@ -36,14 +38,14 @@ export async function useHeroAbility(context: InputContext, decision: Decision) 
   const beforeAbility = before.situation.own.ability;
   const latestAbility = latest.situation.own.ability;
   if (
-    !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, Date.now()) ||
+    !canUseHeroAbility(beforeAbility, latestAbility, latest.state.elixir, dayjs().valueOf()) ||
     latest.elixirConfidence < 0.9
   ) {
     await recorder.event({ type: 'rejected', frame, reason: 'ability_no_longer_ready' });
     return;
   }
   state.inputPending = true;
-  const sentAt = Date.now();
+  const sentAt = dayjs().valueOf();
   if (!(await browser.activateAbility())) {
     state.inputPending = false;
     return;
@@ -89,13 +91,20 @@ export async function useHeroAbility(context: InputContext, decision: Decision) 
 export async function playCard(context: InputContext, decision: Decision) {
   const { browser, sensor, recorder, state, profile, signal } = context;
   const { frame, selected, before, latest } = decision;
-  const action = confirmPlacement(selected, before.cards, before.state, latest.state, profile, Date.now());
+  const action = confirmPlacement(
+    selected,
+    before.cards,
+    before.state,
+    latest.state,
+    profile,
+    dayjs().valueOf(),
+  );
   if (!action || latest.elixirConfidence < 0.9) {
     await recorder.event({ type: 'rejected', frame, reason: 'stale_or_changed_screen' });
     return;
   }
   state.inputPending = true;
-  const sentAt = Date.now();
+  const sentAt = dayjs().valueOf();
   if (!(await browser.play(profile, selected.slot, selected.target))) {
     state.inputPending = false;
     return;

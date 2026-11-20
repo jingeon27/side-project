@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 
+import dayjs from 'dayjs';
 import { match } from 'ts-pattern';
 
 import type { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
@@ -106,7 +107,7 @@ async function decideAndAct(context: InputContext, controller: Controller, befor
     situation: before.situation,
     projection: projection(),
     perceptionMs: before.perceptionMs,
-    captureToDecisionMs: Date.now() - before.capturedAt,
+    captureToDecisionMs: dayjs().valueOf() - before.capturedAt,
     ...output,
   });
   if ((await browser.phase()) !== 'battle') return;
@@ -129,7 +130,7 @@ async function decideAndAct(context: InputContext, controller: Controller, befor
     .with({ kind: 'ability' }, () => useHeroAbility(context, decision))
     .with({ slot: 0 }, () =>
       recorder.event(
-        waitCheckEvent({ frame, valid: latest.state.battle && Date.now() - before.capturedAt < 8000 }),
+        waitCheckEvent({ frame, valid: latest.state.battle && dayjs().valueOf() - before.capturedAt < 8000 }),
       ),
     )
     .otherwise(() => playCard(context, decision));
@@ -170,22 +171,22 @@ export async function playCounterpushEpisode(options: {
     initialPhase,
     controllerVersion: controller.version,
   });
-  const deadline = Date.now() + 900_000;
+  const deadline = dayjs().valueOf() + 900_000;
   try {
-    while (Date.now() < deadline) {
+    while (dayjs().valueOf() < deadline) {
       signal.throwIfAborted();
       const phase = await browser.phase();
       if (phase === 'battle') state.waitingSince = 0;
       if (phase !== 'battle') {
-        if (!state.waitingSince) state.waitingSince = Date.now();
-        if (Date.now() - state.waitingSince > 45_000)
+        if (!state.waitingSince) state.waitingSince = dayjs().valueOf();
+        if (dayjs().valueOf() - state.waitingSince > 45_000)
           throw new Error(`대전/결과 화면을 45초 동안 확인하지 못했습니다: ${phase}`);
-        if (Date.now() - state.waitingReportedAt > 5000) {
-          state.waitingReportedAt = Date.now();
+        if (dayjs().valueOf() - state.waitingReportedAt > 5000) {
+          state.waitingReportedAt = dayjs().valueOf();
           await options.report({
             phase: phase === 'result' ? 'waiting_for_result' : 'waiting_for_battle',
             episode: recorder.directory,
-            waitingMs: Date.now() - state.waitingSince,
+            waitingMs: dayjs().valueOf() - state.waitingSince,
           });
         }
       }
@@ -217,7 +218,7 @@ export async function playCounterpushEpisode(options: {
       await decideAndAct(context, controller, before);
     }
   } finally {
-    sensor.dynamics.finishOldEffects(Date.now(), true);
+    sensor.dynamics.finishOldEffects(dayjs().valueOf(), true);
     if (options.persistPatterns !== false) await options.patterns?.save();
     const selected = [...COUNTERPUSH_DECK].flatMap((card) =>
       sensor.observations
@@ -237,7 +238,7 @@ export async function playCounterpushEpisode(options: {
     await recorder.summary({
       ...state,
       opponentActions: sensor.observations.length,
-      elapsedMs: Date.now() - state.startedAt,
+      elapsedMs: dayjs().valueOf() - state.startedAt,
     });
   }
   return {

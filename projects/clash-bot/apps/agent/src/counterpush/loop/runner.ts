@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import dayjs from 'dayjs';
+
 import { SpawnPatterns } from '../../core/battle/spawn-patterns.ts';
 import type { Profile } from '../../core/profile.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
@@ -46,7 +48,7 @@ export async function runCounterpush(options: {
   const status = {
     id: lock.owner.id,
     pid: process.pid,
-    startedAt: new Date().toISOString(),
+    startedAt: dayjs().toISOString(),
     model: MODEL.name,
     phase: 'loading',
     completed: 0,
@@ -71,7 +73,7 @@ export async function runCounterpush(options: {
   const writes = { tail: Promise.resolve() };
   const report = (update: Record<string, unknown>) => {
     const write = writes.tail.then(async () => {
-      Object.assign(status, update, { updatedAt: new Date().toISOString() });
+      Object.assign(status, update, { updatedAt: dayjs().toISOString() });
       await atomicWrite(join(control, 'status.json'), JSON.stringify(status, null, 2) + '\n');
     });
     writes.tail = write.catch(() => {});
@@ -111,7 +113,7 @@ export async function runCounterpush(options: {
       promotions: 0,
       evaluationFile: null,
     };
-    const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
+    const deadline = options.hours ? dayjs().valueOf() + options.hours * 3_600_000 : Infinity;
     const goalFile = join(control, 'training-goal.json');
     const previousGoal = options.trainingGoal
       ? await readOptionalJsonFile(goalFile, trainingGoalSchema)
@@ -132,7 +134,7 @@ export async function runCounterpush(options: {
     const stopped = async () => {
       if (
         signal.aborted ||
-        Date.now() >= deadline ||
+        dayjs().valueOf() >= deadline ||
         (options.matches > 0 && runtime.completed >= options.matches)
       )
         return true;
@@ -146,7 +148,7 @@ export async function runCounterpush(options: {
       stopped,
       newCandidateDirectory: () => join(dataDir, 'arena/qwen/training', randomUUID()),
       newEvaluationFile: () =>
-        join(control, 'evaluations', `${new Date().toISOString().replaceAll(':', '-')}-${randomUUID()}.json`),
+        join(control, 'evaluations', `${dayjs().toISOString().replaceAll(':', '-')}-${randomUUID()}.json`),
       ...candidateTraining({
         options,
         dataDir,
@@ -191,7 +193,7 @@ export async function runCounterpush(options: {
         const publication = await client.promote(candidate.checkpoint, evaluationFile);
         await appendFile(
           join(control, 'promotions.jsonl'),
-          JSON.stringify({ ...publication, at: new Date().toISOString() }) + '\n',
+          JSON.stringify({ ...publication, at: dayjs().toISOString() }) + '\n',
           { mode: 0o600 },
         );
         await report({ publication });

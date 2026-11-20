@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import dayjs from 'dayjs';
+
 import type { Profile } from '../../core/profile.ts';
 import { LearningClient } from '../../qwen/learning-client.ts';
 import { MODEL } from '../../qwen/model.ts';
@@ -33,7 +35,7 @@ export async function runCounterpushEvaluation(options: {
   const status = {
     id: lock.owner.id,
     pid: process.pid,
-    startedAt: new Date().toISOString(),
+    startedAt: dayjs().toISOString(),
     phase: 'evaluation_loading',
     behaviorSHA256,
     model: MODEL.name,
@@ -42,7 +44,7 @@ export async function runCounterpushEvaluation(options: {
     candidate: options.candidate,
   };
   const report = async (update: Record<string, unknown>) => {
-    Object.assign(status, update, { updatedAt: new Date().toISOString() });
+    Object.assign(status, update, { updatedAt: dayjs().toISOString() });
     await atomicWrite(join(control, 'status.json'), JSON.stringify(status, null, 2) + '\n');
   };
   const abort = () => {
@@ -56,7 +58,7 @@ export async function runCounterpushEvaluation(options: {
     await vision.ready();
     const browser = await CounterpushBrowser.open(dataDir);
     resources.browser = browser;
-    const deadline = options.hours ? Date.now() + options.hours * 3_600_000 : Infinity;
+    const deadline = options.hours ? dayjs().valueOf() + options.hours * 3_600_000 : Infinity;
     const result = await evaluateWithResources({
       ...options,
       behaviorSHA256,
@@ -66,7 +68,7 @@ export async function runCounterpushEvaluation(options: {
       file: join(control, 'evaluations', `${status.startedAt.replaceAll(':', '-')}-${randomUUID()}.json`),
       report,
       stopped: async () => {
-        if (signal.aborted || Date.now() >= deadline) return true;
+        if (signal.aborted || dayjs().valueOf() >= deadline) return true;
         return stopRequested(join(dataDir, 'qwen/selfplay'), lock.owner.id);
       },
     });

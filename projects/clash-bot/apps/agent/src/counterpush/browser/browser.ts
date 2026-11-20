@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+import dayjs from 'dayjs';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import sharp from 'sharp';
 
@@ -127,7 +128,7 @@ export class CounterpushBrowser {
   }
 
   async capture(fast = false): Promise<{ image: Buffer; capturedAt: number }> {
-    const capturedAt = Date.now();
+    const capturedAt = dayjs().valueOf();
     const surface = this.page.locator('#touch');
     const box = fast ? await surface.boundingBox() : null;
     const viewport = this.page.viewportSize();

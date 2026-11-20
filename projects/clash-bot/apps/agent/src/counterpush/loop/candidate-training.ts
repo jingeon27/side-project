@@ -1,6 +1,7 @@
 import { appendFile, readFile, statfs } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { studyNext } from '../../arena/study.ts';
@@ -137,7 +138,7 @@ export function candidateTraining({
           ...episode,
           training: trained.training,
           deployment: 'private_candidate',
-          at: new Date().toISOString(),
+          at: dayjs().toISOString(),
         }) + '\n',
         { mode: 0o600 },
       );

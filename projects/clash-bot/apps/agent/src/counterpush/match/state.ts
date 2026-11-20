@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 // 경기 한 판의 진행 수치다. summary.json이 이 객체를 그대로 기록하므로 필드 순서도 기록 형식이다.
 export type MatchState = {
   frames: number;
@@ -32,7 +34,7 @@ export const newMatchState = (): MatchState => ({
   result: 'unknown',
   blue: 0,
   red: 0,
-  startedAt: Date.now(),
+  startedAt: dayjs().valueOf(),
   inputPending: false,
   firstBattleAt: 0,
   unconfirmed: 0,

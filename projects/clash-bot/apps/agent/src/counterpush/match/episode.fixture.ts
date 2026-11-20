@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import dayjs from 'dayjs';
 import sharp from 'sharp';
 import { afterEach, beforeEach } from 'vitest';
 
@@ -111,7 +112,7 @@ function scenarioMatch(profile: Profile, scenario: Scenario) {
     },
     capture: async () => {
       if (--match.capturesUntilResult <= 0) match.phase = 'result';
-      return { image: await screens[match.screen]!, capturedAt: Date.now() };
+      return { image: await screens[match.screen]!, capturedAt: dayjs().valueOf() };
     },
     play: async (_profile: Profile, slot: number, target: Point) => {
       match.plays.push({ slot, target });

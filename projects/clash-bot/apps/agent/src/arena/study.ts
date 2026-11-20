@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import { LearningClient } from '../qwen/learning-client.ts';
@@ -84,7 +85,7 @@ export async function studyNext(
       ...target,
       datasetSHA256: identity,
       dataset: path,
-      at: new Date().toISOString(),
+      at: dayjs().toISOString(),
     };
     await appendFile(journal, JSON.stringify(report) + '\n', { mode: 0o600 });
     return report;

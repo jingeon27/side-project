@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z } from 'zod';
 
 import type { EvolutionState } from './qualified-loop.ts';
@@ -23,7 +24,7 @@ export const trainingGoal = (count: number, state: EvolutionState): TrainingGoal
     requestedTrainingGames: count,
     startTrainingEpisodes: state.trainingEpisodes,
     startComparisons: state.comparisons,
-    createdAt: new Date().toISOString(),
+    createdAt: dayjs().toISOString(),
     completedTrainingGames: 0,
     learningComplete: false,
     complete: false,
@@ -57,7 +58,7 @@ export function goalProgress(goal: TrainingGoal, state: EvolutionState): Trainin
     complete,
     ...(complete
       ? {
-          completedAt: goal.completedAt ?? new Date().toISOString(),
+          completedAt: goal.completedAt ?? dayjs().toISOString(),
           evaluationReport: state.lastDecision?.report,
         }
       : {}),

@@ -1,6 +1,8 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import dayjs from 'dayjs';
+
 import { atomicWrite } from '../../shared/assets.ts';
 
 const line = (row: unknown) => JSON.stringify(row) + '\n';
@@ -14,13 +16,13 @@ export class MatchRecorder {
   }
 
   static async create(dataDir: string) {
-    const directory = join(dataDir, 'counterpush/runs', new Date().toISOString().replaceAll(':', '-'));
+    const directory = join(dataDir, 'counterpush/runs', dayjs().toISOString().replaceAll(':', '-'));
     await mkdir(join(directory, 'frames'), { recursive: true, mode: 0o700 });
     return new MatchRecorder(directory);
   }
 
   event(row: Record<string, unknown>) {
-    return appendFile(join(this.directory, 'events.jsonl'), line({ ...row, at: Date.now() }), {
+    return appendFile(join(this.directory, 'events.jsonl'), line({ ...row, at: dayjs().valueOf() }), {
       mode: 0o600,
     });
   }
