@@ -10,6 +10,7 @@ export class DateTimeScalar implements CustomScalar<string, Date> {
 
   parseValue(value: unknown) {
     if (typeof value !== 'string') fail('올바른 날짜를 입력해 주세요.');
+    // eslint-disable-next-line side/no-native-date -- 외부 입력을 엄격히 읽는다. dayjs는 날짜만 쓴 값을 기기 시간대로 읽고 2026-13-01을 다음 해로 보정한다.
     const timestamp = Date.parse(value);
     if (!Number.isFinite(timestamp)) fail('올바른 날짜를 입력해 주세요.');
     return dayjs(timestamp).toDate();

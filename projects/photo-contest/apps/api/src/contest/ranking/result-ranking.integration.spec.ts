@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -124,7 +125,7 @@ describe('대회 결과', () => {
   it('득표수와 좋아요 수가 같으면 먼저 낸 사진, 같은 시각이면 id 순이어야 한다', async () => {
     const { contestId, photos } = await contestWithPhotos('제출 순서', [ara, bora, chan]);
     const [araPhoto = '', boraPhoto = '', chanPhoto = ''] = photos;
-    const base = new Date('2026-01-01T00:00:00.000Z');
+    const base = dayjs('2026-01-01T00:00:00.000Z').toDate();
     await setSubmittedAt(api, boraPhoto, base);
     await setSubmittedAt(api, araPhoto, minutesFrom(base, 5));
     await setSubmittedAt(api, chanPhoto, minutesFrom(base, 5));

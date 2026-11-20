@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { buildSchema, parse, validate } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
@@ -39,8 +40,8 @@ describe('queryCostLimit', () => {
           : `fragment F${index} on Group { ...F${index - 1} ...F${index - 1} }`,
       )
       .join('\n');
-    const started = Date.now();
+    const started = dayjs().valueOf();
     expect(errorsOf(`${fragments}\n{ groups { ...F29 } }`)).toEqual([QUERY_COST_MESSAGE.FIELDS]);
-    expect(Date.now() - started).toBeLessThan(1000);
+    expect(dayjs().valueOf() - started).toBeLessThan(1000);
   });
 });

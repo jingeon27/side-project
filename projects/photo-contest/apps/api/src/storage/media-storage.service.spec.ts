@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { s3KeyPrefix } from '../config/env';
@@ -22,30 +23,32 @@ describe('미디어 저장소 서명 POST', () => {
     const storage = new MediaStorage();
     const key = createMediaKey('png');
     expect(key).toMatch(/^game-feedback\/photo-contest\/[a-f0-9-]{36}\.png$/);
-    const expiresAt = new Date(Date.now() + 5 * 60_000);
+    const expiresAt = dayjs()
+      .add(5 * 60_000, 'millisecond')
+      .toDate();
     const form = await storage.presignUpload(key, 'image/png', 4, expiresAt);
     const policy = JSON.parse(Buffer.from(form.fields.Policy ?? '', 'base64').toString());
     expect(policy.conditions).toEqual(
       expect.arrayContaining([['content-length-range', 4, 4], ['eq', '$Content-Type', 'image/png'], { key }]),
     );
-    expect(Date.parse(policy.expiration)).toBeLessThanOrEqual(expiresAt.getTime());
-    expect(Date.parse(policy.expiration)).toBeGreaterThan(expiresAt.getTime() - 2_000);
+    expect(dayjs(policy.expiration).valueOf()).toBeLessThanOrEqual(expiresAt.getTime());
+    expect(dayjs(policy.expiration).valueOf()).toBeGreaterThan(expiresAt.getTime() - 2_000);
     expect(new URL(form.url).hostname).toBe('unit-signing-only.s3.ap-northeast-2.amazonaws.com');
   });
 
   it('만료한 티켓과 서버가 만들지 않은 키로는 서명하지 않아야 한다', async () => {
     useSigningConfig();
     const storage = new MediaStorage();
-    expect(() => storage.presignUpload(createMediaKey('jpg'), 'image/jpeg', 1, new Date())).toThrow();
+    expect(() => storage.presignUpload(createMediaKey('jpg'), 'image/jpeg', 1, dayjs().toDate())).toThrow();
     for (const key of [
       '../secret.png',
       '/etc/passwd',
       'clip.mp4',
       '00000000-0000-0000-0000-000000000000.svg',
     ])
-      expect(() => storage.presignUpload(key, 'image/png', 1, new Date(Date.now() + 60_000))).toThrow(
-        'Invalid media key',
-      );
+      expect(() =>
+        storage.presignUpload(key, 'image/png', 1, dayjs().add(60_000, 'millisecond').toDate()),
+      ).toThrow('Invalid media key');
     await expect(storage.delete('../secret.png')).rejects.toThrow('Invalid media key');
   });
 
@@ -53,8 +56,14 @@ describe('미디어 저장소 서명 POST', () => {
     useSigningConfig();
     const storage = new MediaStorage();
     const sign = async () =>
-      (await storage.presignUpload(createMediaKey('png'), 'image/png', 1, new Date(Date.now() + 60_000)))
-        .fields;
+      (
+        await storage.presignUpload(
+          createMediaKey('png'),
+          'image/png',
+          1,
+          dayjs().add(60_000, 'millisecond').toDate(),
+        )
+      ).fields;
     const issued = await sign();
     expect(issued['X-Amz-Credential']).toMatch(/^unit-signing-key\//);
     expect(issued).not.toHaveProperty('X-Amz-Security-Token');
@@ -92,9 +101,9 @@ describe('S3 설정', () => {
 
   it('버킷이 없으면 저장소를 사용하지 않아야 한다', () => {
     vi.stubEnv('S3_BUCKET', '');
-    expect(() => new MediaStorage().presignUpload(createMediaKey('png'), 'image/png', 1, new Date())).toThrow(
-      'S3_BUCKET',
-    );
+    expect(() =>
+      new MediaStorage().presignUpload(createMediaKey('png'), 'image/png', 1, dayjs().toDate()),
+    ).toThrow('S3_BUCKET');
   });
 
   it.each(['../other', '/absolute', 'one//two', 's3://bucket', 'one/../../other'])(

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { ITestApi } from './app';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -14,9 +16,9 @@ const SCHEDULE_HOURS: Record<TContestPhase, [number, number, number]> = {
 
 /** 대회 일정을 옮겨 지금 시각이 phase에 속하게 한다. */
 export async function moveContestTo(api: ITestApi, contestId: string, phase: TContestPhase) {
-  const now = Date.now();
-  const [startsAt, submissionEndsAt, endsAt] = SCHEDULE_HOURS[phase].map(
-    (hours) => new Date(now + hours * HOUR_MS),
+  const now = dayjs().valueOf();
+  const [startsAt, submissionEndsAt, endsAt] = SCHEDULE_HOURS[phase].map((hours) =>
+    dayjs(now + hours * HOUR_MS).toDate(),
   );
   await api.db.contest.update({ where: { id: contestId }, data: { startsAt, submissionEndsAt, endsAt } });
 }
@@ -28,5 +30,7 @@ export async function setSubmittedAt(api: ITestApi, submissionId: string, create
 
 /** 기준 시각에서 minutes분 떨어진 시각 */
 export function minutesFrom(base: Date, minutes: number) {
-  return new Date(base.getTime() + minutes * 60 * 1000);
+  return dayjs(base)
+    .add(minutes * 60 * 1000, 'millisecond')
+    .toDate();
 }

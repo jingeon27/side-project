@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
@@ -16,20 +17,24 @@ describe('대회 시작·종료 알림', () => {
       member = await api.signIn('일정알림회원');
     const group = await createGroup(api, owner, '일정알림 그룹', [member]);
     const id = await createContest(api, owner, group.id, '알림 시점 대회');
-    const start = new Date(Date.now() + 60_000),
-      end = new Date(start.getTime() + 120_000);
+    const start = dayjs().add(60_000, 'millisecond').toDate(),
+      end = dayjs(start).add(120_000, 'millisecond').toDate();
     await api.db.contest.update({
       where: { id },
-      data: { startsAt: start, submissionEndsAt: new Date(start.getTime() + 60_000), endsAt: end },
+      data: {
+        startsAt: start,
+        submissionEndsAt: dayjs(start).add(60_000, 'millisecond').toDate(),
+        endsAt: end,
+      },
     });
     const worker = api.app.get(ContestNotificationService);
-    await worker.sendDue(new Date(start.getTime() - 1));
+    await worker.sendDue(dayjs(start).subtract(1, 'millisecond').toDate());
     expect(await api.db.notification.count({ where: { contestId: id } })).toBe(0);
     await Promise.all([worker.sendDue(start), worker.sendDue(start)]);
     expect(await api.db.notification.count({ where: { contestId: id, type: 'CONTEST_STARTED' } })).toBe(2);
     await Promise.all([worker.sendDue(end), worker.sendDue(end)]);
     expect(await api.db.notification.count({ where: { contestId: id, type: 'CONTEST_ENDED' } })).toBe(2);
-    await worker.sendDue(new Date(end.getTime() + 1000));
+    await worker.sendDue(dayjs(end).add(1000, 'millisecond').toDate());
     expect(await api.db.notification.count({ where: { contestId: id } })).toBe(4);
   });
 
@@ -37,17 +42,17 @@ describe('대회 시작·종료 알림', () => {
     const owner = await api.signIn('종료알림관리');
     const group = await createGroup(api, owner, '종료알림 그룹');
     const id = await createContest(api, owner, group.id, '늦게 처리한 대회');
-    const now = new Date();
+    const now = dayjs().toDate();
     await api.db.groupMember.update({
       where: { groupId_userId: { groupId: group.id, userId: owner.id } },
-      data: { joinedAt: new Date(now.getTime() - 240_000) },
+      data: { joinedAt: dayjs(now).subtract(240_000, 'millisecond').toDate() },
     });
     await api.db.contest.update({
       where: { id },
       data: {
-        startsAt: new Date(now.getTime() - 180_000),
-        submissionEndsAt: new Date(now.getTime() - 120_000),
-        endsAt: new Date(now.getTime() - 60_000),
+        startsAt: dayjs(now).subtract(180_000, 'millisecond').toDate(),
+        submissionEndsAt: dayjs(now).subtract(120_000, 'millisecond').toDate(),
+        endsAt: dayjs(now).subtract(60_000, 'millisecond').toDate(),
       },
     });
     await api.app.get(ContestNotificationService).sendDue(now);

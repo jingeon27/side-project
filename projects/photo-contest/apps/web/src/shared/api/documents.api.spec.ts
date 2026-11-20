@@ -1,4 +1,5 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import dayjs from 'dayjs';
 import { print } from 'graphql';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
@@ -135,13 +136,13 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
   });
 
   it('구대회 생성 문서는 종료 응답을 받는다', async () => {
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const result = await execute(CreateContestDocument, owner, {
       groupId,
       title: '종료된 생성',
-      startsAt: new Date(now).toISOString(),
-      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-      endsAt: new Date(now + 7_200_000).toISOString(),
+      startsAt: dayjs(now).toISOString(),
+      submissionEndsAt: dayjs(now + 3_600_000).toISOString(),
+      endsAt: dayjs(now + 7_200_000).toISOString(),
     });
     expect(result.errors?.[0]).toMatchObject({ extensions: { code: 'FORBIDDEN' } });
   });
@@ -193,13 +194,13 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
   });
 
   it('그룹 대회 문서는 좋아요 한도 기본값 1과 지정값을 보존해야 한다', async () => {
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const schedule = {
       groupId,
       title: '문서 좋아요 한도',
-      startsAt: new Date(now).toISOString(),
-      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-      endsAt: new Date(now + 7_200_000).toISOString(),
+      startsAt: dayjs(now).toISOString(),
+      submissionEndsAt: dayjs(now + 3_600_000).toISOString(),
+      endsAt: dayjs(now + 7_200_000).toISOString(),
     };
     expect((await ok(CreateGroupContestDocument, owner, schedule)).createGroupContest.likeLimit).toBe(1);
     expect(
@@ -373,7 +374,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
       // 동영상 서명은 재생·저장이 끊기지 않게 10분, 사진은 60초다.
       expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
-      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(video ? 595_000 : 55_000);
+      expect(dayjs(postDownload.expiresAt ?? '').valueOf() - dayjs().valueOf()).toBeGreaterThan(
+        video ? 595_000 : 55_000,
+      );
       expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.png$/);
       const saved = await fetch(postDownload.url);
       expect(saved.headers.get('content-disposition')).toContain('attachment;');

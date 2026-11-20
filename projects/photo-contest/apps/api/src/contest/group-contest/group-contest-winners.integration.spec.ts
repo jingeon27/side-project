@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -33,7 +34,7 @@ describe('그룹 대회 수상작', () => {
     title: string,
     from: number,
     to: number,
-    createdAt = new Date(),
+    createdAt = dayjs().toDate(),
   ) => {
     const post = await api.db.post.create({
       data: {
@@ -53,14 +54,14 @@ describe('그룹 대회 수상작', () => {
   it('목록의 우승작은 최다 득표 공동 우승만 한 번에 집계하고 숨긴 글·무투표 대회는 비워야 한다', async () => {
     const decided = await createGroupContest(api, owner, groupId, '공동 우승 대회');
     const silent = await createGroupContest(api, owner, groupId, '무투표 대회');
-    const base = Date.parse('2026-10-01T00:00:00Z');
-    const later = await entry(decided, '늦게 낸 공동 우승', 0, 2, new Date(base + 2000));
-    const earlier = await entry(decided, '먼저 낸 공동 우승', 2, 4, new Date(base + 1000));
-    await entry(decided, '한 표', 4, 5, new Date(base));
+    const base = dayjs('2026-10-01T00:00:00Z').valueOf();
+    const later = await entry(decided, '늦게 낸 공동 우승', 0, 2, dayjs(base + 2000).toDate());
+    const earlier = await entry(decided, '먼저 낸 공동 우승', 2, 4, dayjs(base + 1000).toDate());
+    await entry(decided, '한 표', 4, 5, dayjs(base).toDate());
     // 표를 가장 많이 받았어도 숨긴 참여작은 결과에서 빠진다.
-    const hidden = await entry(decided, '숨긴 글', 5, 8, new Date(base));
+    const hidden = await entry(decided, '숨긴 글', 5, 8, dayjs(base).toDate());
     await api.db.post.update({ where: { id: hidden.id }, data: { hidden: true } });
-    await entry(silent, '표 없는 글', 0, 0, new Date(base));
+    await entry(silent, '표 없는 글', 0, 0, dayjs(base).toDate());
     for (const id of [decided, silent]) await moveGroupContest(api, id, 'COMPLETED');
 
     const winnersOf = vi.spyOn(

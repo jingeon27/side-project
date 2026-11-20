@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
@@ -53,7 +54,7 @@ describe('기존 사진의 갤러리 이관', () => {
           title: '기존 사진',
           hidden: true,
           legacySubmissionId: 'photo',
-          createdAt: new Date('2026-09-01T00:00:00Z'),
+          createdAt: dayjs('2026-09-01T00:00:00Z').toDate(),
         },
       ]);
       expect(await tx.$queryRawUnsafe('SELECT "storageKey",kind FROM "PostUpload"')).toEqual([

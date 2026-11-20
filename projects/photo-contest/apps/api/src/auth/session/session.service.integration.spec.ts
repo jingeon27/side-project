@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -71,7 +72,9 @@ describe('로그인 세션', () => {
     const token = cookieValue(findSetCookie(response, SESSION_COOKIE)!);
     expect(await api.db.session.findUnique({ where: { tokenHash: token } })).toBeNull();
     const stored = await api.db.session.findUnique({ where: { tokenHash: sha256Hex(token) } });
-    expect(stored?.expiresAt.getTime()).toBeGreaterThan(Date.now() + (SESSION_MAX_AGE_SECONDS - 60) * 1000);
+    expect(stored?.expiresAt.getTime()).toBeGreaterThan(
+      dayjs().valueOf() + (SESSION_MAX_AGE_SECONDS - 60) * 1000,
+    );
   });
 
   it('같은 닉네임으로 다시 로그인하면 같은 사용자의 새 세션이어야 한다', async () => {
@@ -112,7 +115,7 @@ describe('로그인 세션', () => {
     const user = await api.signIn('세션-만료');
     await api.db.session.updateMany({
       where: { userId: user.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: dayjs().subtract(1000, 'millisecond').toDate() },
     });
     expect(await viewerWith(user.cookie)).toBeNull();
     expect(await api.gqlFail(user.cookie, '{ myGroups { id } }')).toEqual({

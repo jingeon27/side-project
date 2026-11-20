@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { productRequest } from './support/photos';
 import { authenticate, expect, seedGroup, test, waitForHydrationOnLoad } from './support/test';
 
@@ -5,9 +7,9 @@ test(
   '다른 탭에서 계정이 바뀌면 복귀한 MY에서 이전 개인 프로필·그룹·게시물을 남기지 않아야 한다',
   { tag: ['@desktop'] },
   async ({ page, context, signIn }, testInfo) => {
-    const suffix = `${testInfo.project.name}-${Date.now().toString(36)}`;
-    const alice = `이전-${Date.now().toString(36)}`;
-    const bob = `새계정-${Date.now().toString(36)}`;
+    const suffix = `${testInfo.project.name}-${dayjs().valueOf().toString(36)}`;
+    const alice = `이전-${dayjs().valueOf().toString(36)}`;
+    const bob = `새계정-${dayjs().valueOf().toString(36)}`;
     const cookie = await signIn(alice);
     const groupName = `이전 계정 그룹-${suffix}`;
     const postTitle = `이전 계정 개인 게시물-${suffix}`;

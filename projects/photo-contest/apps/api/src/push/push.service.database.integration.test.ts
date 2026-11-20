@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ExpoPushTransport } from '@side/toolkit/push-notifications';
@@ -51,7 +52,7 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
       data: {
         userId: user.id,
         tokenHash: sha256Hex(randomToken()),
-        expiresAt: new Date(Date.now() + 60_000),
+        expiresAt: dayjs().add(60_000, 'millisecond').toDate(),
       },
     });
     const device = await api.db.pushDevice.create({
@@ -63,7 +64,7 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
         platform: 'android',
       },
     });
-    const now = new Date();
+    const now = dayjs().toDate();
     const job = await api.db.pushDelivery.create({
       data: {
         deviceId: device.id,
@@ -108,7 +109,7 @@ describe('푸시 작업의 오래된 due 조회 결과', () => {
         attempts: 1,
         ticketId: null,
         leaseToken: null,
-        nextAttemptAt: new Date(now.getTime() + 30_000),
+        nextAttemptAt: dayjs(now).add(30_000, 'millisecond').toDate(),
       });
     } finally {
       gate.release();

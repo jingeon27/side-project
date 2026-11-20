@@ -1,5 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 
+import dayjs from 'dayjs';
+
 import { WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';
 import { authenticate, expect, seedGroup, test, waitForHydrationOnLoad } from './support/test';
@@ -9,7 +11,7 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, context, signIn }, testInfo) => {
     const owner = await signIn(`탐색-${testInfo.project.name}`);
-    const name = `공개-${testInfo.project.name}-${Date.now()}`;
+    const name = `공개-${testInfo.project.name}-${dayjs().valueOf()}`;
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
@@ -27,7 +29,7 @@ test(
       'mutation($id:ID!){createPostComment(postId:$id,body:"공개 사진 이야기"){id}}',
       { id: postId },
     );
-    const secret = await seedGroup(owner, `색인 제외-${Date.now()}`, 'PRIVATE');
+    const secret = await seedGroup(owner, `색인 제외-${dayjs().valueOf()}`, 'PRIVATE');
     const secretTitle = '공개 응답에 나오면 안 되는 비공개 사진';
     await seedPost(owner, secret.id, secretTitle);
 
@@ -176,7 +178,7 @@ test(
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
-    await form.getByLabel('그룹 이름').fill(`승인-${testInfo.project.name}-${Date.now()}`);
+    await form.getByLabel('그룹 이름').fill(`승인-${testInfo.project.name}-${dayjs().valueOf()}`);
     await form.getByRole('radio', { name: /^비공개 그룹/ }).check();
     await form.getByRole('button', { name: '그룹 만들기', exact: true }).click();
     await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);

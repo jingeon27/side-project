@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const script = fileURLToPath(
@@ -68,7 +69,7 @@ describe('공유 호스트 이미지 보존', () => {
     const result = execute({
       ...Object.fromEntries(state.protected.map((image) => [image, old])),
       [eligible]: old,
-      [recent]: new Date().toISOString(),
+      [recent]: dayjs().toISOString(),
       'ghcr.io/another/project-api@sha256:unowned': old,
     });
     expect(result.status, result.stderr).toBe(0);

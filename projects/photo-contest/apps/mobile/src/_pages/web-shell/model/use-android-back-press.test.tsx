@@ -1,6 +1,7 @@
 import { BackHandler, Platform } from 'react-native';
 
 import { act, renderHook } from '@testing-library/react';
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createNativeRouter } from '@photo-contest/bridge/native';
@@ -27,7 +28,7 @@ describe('useAndroidBackPress', () => {
       useAndroidBackPress({ router, isWebReady: () => true, canGoBack: () => true, goBack }),
     );
     act(() => {
-      listener.mock.calls[0]?.[1]({ type: 'hardwareBackPress', timeStamp: Date.now() });
+      listener.mock.calls[0]?.[1]({ type: 'hardwareBackPress', timeStamp: dayjs().valueOf() });
     });
     unmount();
     await act(async () => router.dispose());

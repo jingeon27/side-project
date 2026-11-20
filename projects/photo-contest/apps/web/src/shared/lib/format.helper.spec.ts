@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -20,7 +21,7 @@ describe('format.helper', () => {
   });
 
   it('마감까지 남은 시간을 가장 큰 단위로 보여 주고 지났으면 null이어야 한다', () => {
-    const now = new Date('2026-10-14T00:00:00.000Z');
+    const now = dayjs('2026-10-14T00:00:00.000Z').toDate();
     expect(formatTimeLeft('2026-10-16T05:00:00.000Z', now)).toBe('2일 남음');
     expect(formatTimeLeft('2026-10-14T05:30:00.000Z', now)).toBe('5시간 남음');
     expect(formatTimeLeft('2026-10-14T00:12:00.000Z', now)).toBe('12분 남음');
@@ -29,7 +30,7 @@ describe('format.helper', () => {
   });
 
   it('datetime-local 값과 ISO 시각을 서로 바꿀 수 있어야 한다', () => {
-    const value = toDateTimeLocalValue(new Date('2026-10-14T06:05:00.000Z'));
+    const value = toDateTimeLocalValue(dayjs('2026-10-14T06:05:00.000Z').toDate());
     expect(value).toBe('2026-10-14T15:05');
     expect(fromDateTimeLocalValue(value)).toBe('2026-10-14T06:05:00.000Z');
     expect(fromDateTimeLocalValue('2026-10-14')).toBeNull();

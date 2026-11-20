@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 import { uploadToStorage, type ITestApi, type ITestUser } from './app';
@@ -75,13 +77,13 @@ export async function moveGroupContest(
     COMPLETED: [-3, -2, -1],
   }[target];
   const [start = 0, submission = 0, end = 0] = offsets;
-  const now = Date.now();
+  const now = dayjs().valueOf();
   await api.db.contest.update({
     where: { id },
     data: {
-      startsAt: new Date(now + start * 3_600_000),
-      submissionEndsAt: new Date(now + submission * 3_600_000),
-      endsAt: new Date(now + end * 3_600_000),
+      startsAt: dayjs(now + start * 3_600_000).toDate(),
+      submissionEndsAt: dayjs(now + submission * 3_600_000).toDate(),
+      endsAt: dayjs(now + end * 3_600_000).toDate(),
     },
   });
 }

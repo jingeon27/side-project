@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
@@ -24,16 +25,18 @@ describe('ContestNotificationService 회귀', () => {
     const stuck = await createGroupContest(api, owner, group.id, '먼저 실패할 대회');
     const next = await createGroupContest(api, owner, group.id, '다음 대회');
     // 다른 파일의 대회보다 앞서 처리되도록 시작 시각을 아주 이르게 둔다. 종료는 아직이다.
-    const endsAt = new Date(Date.now() + 120 * MINUTE_MS);
+    const endsAt = dayjs()
+      .add(120 * MINUTE_MS, 'millisecond')
+      .toDate();
     for (const [id, startsAt] of [
-      [stuck, new Date('2000-01-01T00:00:00Z')],
-      [next, new Date('2000-01-01T00:01:00Z')],
+      [stuck, dayjs('2000-01-01T00:00:00Z').toDate()],
+      [next, dayjs('2000-01-01T00:01:00Z').toDate()],
     ] as const)
       await api.db.contest.update({
         where: { id },
         data: {
           startsAt,
-          submissionEndsAt: new Date(endsAt.getTime() - MINUTE_MS),
+          submissionEndsAt: dayjs(endsAt).subtract(MINUTE_MS, 'millisecond').toDate(),
           endsAt,
           startNotifiedAt: null,
         },
@@ -43,7 +46,7 @@ describe('ContestNotificationService 회귀', () => {
       api.db.notification.count({ where: { contestId, type: 'CONTEST_STARTED' } });
 
     vi.spyOn(api.app.get(UnitOfWork), 'run').mockRejectedValueOnce(new Error('알림 쓰기 실패'));
-    const now = new Date();
+    const now = dayjs().toDate();
     await expect(worker.sendDue(now)).resolves.toBeGreaterThanOrEqual(2);
     expect(await started(stuck)).toBe(0);
     expect(await started(next)).toBe(2);
@@ -52,9 +55,13 @@ describe('ContestNotificationService 회귀', () => {
     });
 
     // 기다리는 동안에는 다시 잡지 않고, 대기가 지나면 같은 알림을 한 번씩만 보낸다.
-    await worker.sendDue(new Date(now.getTime() + 30_000));
+    await worker.sendDue(dayjs(now).add(30_000, 'millisecond').toDate());
     expect(await started(stuck)).toBe(0);
-    await worker.sendDue(new Date(now.getTime() + MINUTE_MS + 1000));
+    await worker.sendDue(
+      dayjs(now)
+        .add(MINUTE_MS + 1000, 'millisecond')
+        .toDate(),
+    );
     expect(await started(stuck)).toBe(2);
     expect(await started(next)).toBe(2);
     expect((await api.db.contest.findUniqueOrThrow({ where: { id: stuck } })).startNotifiedAt).not.toBeNull();

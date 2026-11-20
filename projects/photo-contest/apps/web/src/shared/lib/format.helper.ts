@@ -71,6 +71,7 @@ export function toDateTimeLocalValue(date: Date) {
 /** `<input type="datetime-local">` 값을 서버에 보낼 ISO 시각으로 바꾼다. 형식이 틀리면 null. */
 export function fromDateTimeLocalValue(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  // eslint-disable-next-line side/no-native-date -- 형식은 맞지만 없는 월(2026-13-01T10:00)을 거부한다. dayjs는 다음 해로 보정해 받아들인다.
   const date = dayjs(Date.parse(value));
   return date.isValid() ? date.toISOString() : null;
 }

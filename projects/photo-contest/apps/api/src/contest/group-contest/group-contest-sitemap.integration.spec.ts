@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -27,10 +28,10 @@ describe('공개 대회 사이트맵 수정 시각', () => {
     await api.db.contest.update({
       where: { id },
       data: {
-        createdAt: new Date('2026-01-01T00:00:00.000Z'),
-        startsAt: new Date('2026-01-02T00:00:00.000Z'),
-        submissionEndsAt: new Date('2026-01-03T00:00:00.000Z'),
-        endsAt: new Date('2026-01-04T00:00:00.000Z'),
+        createdAt: dayjs('2026-01-01T00:00:00.000Z').toDate(),
+        startsAt: dayjs('2026-01-02T00:00:00.000Z').toDate(),
+        submissionEndsAt: dayjs('2026-01-03T00:00:00.000Z').toDate(),
+        endsAt: dayjs('2026-01-04T00:00:00.000Z').toDate(),
       },
     });
     return id;
@@ -43,7 +44,7 @@ describe('공개 대회 사이트맵 수정 시각', () => {
         authorId: owner.id,
         title: '사이트맵 참여작',
         linkUrl: 'https://example.com/entry',
-        createdAt: new Date(createdAt),
+        createdAt: dayjs(createdAt).toDate(),
         hidden,
       },
     });
@@ -72,7 +73,7 @@ describe('공개 대회 사이트맵 수정 시각', () => {
     const { endsAt } = await api.db.contest.findUniqueOrThrow({ where: { id } });
     const lastModified = await lastModifiedOf(id);
 
-    expect(Date.parse(lastModified ?? '')).toBeLessThanOrEqual(Date.now());
-    expect(Date.parse(lastModified ?? '')).toBeLessThan(endsAt.getTime());
+    expect(dayjs(lastModified ?? '').valueOf()).toBeLessThanOrEqual(dayjs().valueOf());
+    expect(dayjs(lastModified ?? '').valueOf()).toBeLessThan(endsAt.getTime());
   });
 });

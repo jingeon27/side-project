@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
 import { match } from 'ts-pattern';
 
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -38,13 +39,13 @@ export class TestingService {
       .with(PHASE.VOTING, () => [-2, -1, 1] as const)
       .with(PHASE.COMPLETED, () => [-3, -2, -1] as const)
       .exhaustive();
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const result = await this.db.contest.updateMany({
       where: { id: contestId },
       data: {
-        startsAt: new Date(now + offsets[0] * STEP_MS),
-        submissionEndsAt: new Date(now + offsets[1] * STEP_MS),
-        endsAt: new Date(now + offsets[2] * STEP_MS),
+        startsAt: dayjs(now + offsets[0] * STEP_MS).toDate(),
+        submissionEndsAt: dayjs(now + offsets[1] * STEP_MS).toDate(),
+        endsAt: dayjs(now + offsets[2] * STEP_MS).toDate(),
       },
     });
     if (!result.count) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);

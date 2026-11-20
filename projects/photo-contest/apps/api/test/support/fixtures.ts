@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { ITestApi, ITestUser } from './app';
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -27,11 +29,11 @@ const CREATE_GROUP =
 const JOIN_GROUP = 'mutation($token: String!) { joinGroup(token: $token) { id role } }';
 
 /** 지금 시작해 제출 1시간, 투표 1시간인 일정 */
-export function contestSchedule(now = Date.now()): IContestSchedule {
+export function contestSchedule(now = dayjs().valueOf()): IContestSchedule {
   return {
-    startsAt: new Date(now).toISOString(),
-    submissionEndsAt: new Date(now + HOUR_MS).toISOString(),
-    endsAt: new Date(now + 2 * HOUR_MS).toISOString(),
+    startsAt: dayjs(now).toISOString(),
+    submissionEndsAt: dayjs(now + HOUR_MS).toISOString(),
+    endsAt: dayjs(now + 2 * HOUR_MS).toISOString(),
   };
 }
 

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -71,7 +72,7 @@ describe('익명 계정의 대회 투표', () => {
   it('기존 대회도 익명 계정의 투표를 받지 않아야 한다', async () => {
     const contestId = await createContest(api, owner, groupId, '익명 기존 대회');
     const upload = await api.db.upload.create({
-      data: { tokenHash: randomUUID(), userId: owner.id, contestId, expiresAt: new Date() },
+      data: { tokenHash: randomUUID(), userId: owner.id, contestId, expiresAt: dayjs().toDate() },
     });
     const photo = await api.db.submission.create({
       data: { contestId, authorId: owner.id, caption: '기존 사진', uploadId: upload.id },

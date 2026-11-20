@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
@@ -7,17 +8,19 @@ const DAY_MS = 86_400_000;
 
 describe('대회 정책', () => {
   const contest = {
-    startsAt: new Date('2026-10-13T01:00:00Z'),
-    submissionEndsAt: new Date('2026-10-14T01:00:00Z'),
-    endsAt: new Date('2026-10-15T01:00:00Z'),
+    startsAt: dayjs('2026-10-13T01:00:00Z').toDate(),
+    submissionEndsAt: dayjs('2026-10-14T01:00:00Z').toDate(),
+    endsAt: dayjs('2026-10-15T01:00:00Z').toDate(),
   };
 
   it('제출·투표 마감 경계에서 다음 단계로 전환해야 한다', () => {
-    expect(phase(contest, new Date('2026-10-13T00:59:59Z'))).toBe(PHASE.UPCOMING);
+    expect(phase(contest, dayjs('2026-10-13T00:59:59Z').toDate())).toBe(PHASE.UPCOMING);
     expect(phase(contest, contest.startsAt)).toBe(PHASE.SUBMISSION);
-    expect(phase(contest, new Date(contest.submissionEndsAt.getTime() - 1))).toBe(PHASE.SUBMISSION);
+    expect(phase(contest, dayjs(contest.submissionEndsAt).subtract(1, 'millisecond').toDate())).toBe(
+      PHASE.SUBMISSION,
+    );
     expect(phase(contest, contest.submissionEndsAt)).toBe(PHASE.VOTING);
-    expect(phase(contest, new Date(contest.endsAt.getTime() - 1))).toBe(PHASE.VOTING);
+    expect(phase(contest, dayjs(contest.endsAt).subtract(1, 'millisecond').toDate())).toBe(PHASE.VOTING);
     expect(phase(contest, contest.endsAt)).toBe(PHASE.COMPLETED);
   });
 
@@ -44,18 +47,20 @@ describe('대회 정책', () => {
   });
 
   it('막 지난 시작 시각은 1분까지 허용해야 한다', () => {
-    const now = new Date(contest.startsAt.getTime() + 60_000);
+    const now = dayjs(contest.startsAt).add(60_000, 'millisecond').toDate();
     expect(() => contestDates(contest.startsAt, contest.submissionEndsAt, contest.endsAt, now)).not.toThrow();
-    const late = new Date(contest.startsAt.getTime() + 60_001);
+    const late = dayjs(contest.startsAt).add(60_001, 'millisecond').toDate();
     expect(() => contestDates(contest.startsAt, contest.submissionEndsAt, contest.endsAt, late)).toThrow();
   });
 
   it('전체 기간이 90일을 넘으면 거부해야 한다', () => {
-    const endsAt = new Date(contest.startsAt.getTime() + 90 * DAY_MS);
+    const endsAt = dayjs(contest.startsAt)
+      .add(90 * DAY_MS, 'millisecond')
+      .toDate();
     expect(() =>
       contestDates(contest.startsAt, contest.submissionEndsAt, endsAt, contest.startsAt),
     ).not.toThrow();
-    const tooLong = new Date(endsAt.getTime() + 1);
+    const tooLong = dayjs(endsAt).add(1, 'millisecond').toDate();
     expect(() =>
       contestDates(contest.startsAt, contest.submissionEndsAt, tooLong, contest.startsAt),
     ).toThrow();
@@ -75,25 +80,31 @@ describe('대회 정책', () => {
 
 describe('대회 수정 시각', () => {
   const contest = {
-    createdAt: new Date('2026-10-12T00:00:00Z'),
-    startsAt: new Date('2026-10-13T00:00:00Z'),
-    submissionEndsAt: new Date('2026-10-14T00:00:00Z'),
-    endsAt: new Date('2026-10-15T00:00:00Z'),
+    createdAt: dayjs('2026-10-12T00:00:00Z').toDate(),
+    startsAt: dayjs('2026-10-13T00:00:00Z').toDate(),
+    submissionEndsAt: dayjs('2026-10-14T00:00:00Z').toDate(),
+    endsAt: dayjs('2026-10-15T00:00:00Z').toDate(),
   };
 
   it('시작 전에는 미래의 단계 경계가 아니라 생성 시각이어야 한다', () => {
-    expect(contestLastModifiedAt(contest, null, new Date('2026-10-12T12:00:00Z'))).toEqual(contest.createdAt);
+    expect(contestLastModifiedAt(contest, null, dayjs('2026-10-12T12:00:00Z').toDate())).toEqual(
+      contest.createdAt,
+    );
   });
 
   it('지나간 단계 경계 중 가장 늦은 값이어야 하고 경계 시각 자체는 지난 것으로 본다', () => {
-    expect(contestLastModifiedAt(contest, null, new Date('2026-10-13T12:00:00Z'))).toEqual(contest.startsAt);
+    expect(contestLastModifiedAt(contest, null, dayjs('2026-10-13T12:00:00Z').toDate())).toEqual(
+      contest.startsAt,
+    );
     expect(contestLastModifiedAt(contest, null, contest.endsAt)).toEqual(contest.endsAt);
   });
 
   it('단계 경계보다 늦은 참여작만 수정 시각을 앞당겨야 한다', () => {
-    const now = new Date('2026-10-13T12:00:00Z');
-    const entry = new Date('2026-10-13T06:00:00Z');
+    const now = dayjs('2026-10-13T12:00:00Z').toDate();
+    const entry = dayjs('2026-10-13T06:00:00Z').toDate();
     expect(contestLastModifiedAt(contest, entry, now)).toEqual(entry);
-    expect(contestLastModifiedAt(contest, new Date('2026-10-12T06:00:00Z'), now)).toEqual(contest.startsAt);
+    expect(contestLastModifiedAt(contest, dayjs('2026-10-12T06:00:00Z').toDate(), now)).toEqual(
+      contest.startsAt,
+    );
   });
 });

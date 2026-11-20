@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -162,7 +163,7 @@ describe('사진 업로드와 열람', () => {
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
     expect(new URL(ticket.url).protocol).toBe('https:');
     expect(new URL(ticket.url).hostname).toContain(inject('s3Env').S3_BUCKET);
-    const ttl = Date.parse(ticket.expiresAt) - Date.now();
+    const ttl = dayjs(ticket.expiresAt).valueOf() - dayjs().valueOf();
     expect(ttl).toBeGreaterThan(4.5 * 60_000);
     expect(ttl).toBeLessThanOrEqual(5 * 60_000);
     expect((await postPhoto(ticket, Buffer.concat([bytes, Buffer.from('extra')]))).ok).toBe(false);
@@ -219,7 +220,11 @@ describe('사진 업로드와 열람', () => {
         )
       ).code,
     ).toBe('BAD_USER_INPUT');
-    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 24 * 60 * 60_000));
+    await api.app.get(MaintenanceService).cleanup(
+      dayjs()
+        .add(24 * 60 * 60_000, 'millisecond')
+        .toDate(),
+    );
     expect((await getPhoto(created.createSubmission.id, friend.cookie)).status).toBe(307);
   });
 
@@ -230,7 +235,7 @@ describe('사진 업로드와 열람', () => {
     await postPhoto(expired, bytes);
     await api.db.upload.update({
       where: { id: expired.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: dayjs().subtract(1000, 'millisecond').toDate() },
     });
     expect((await api.gqlFail(friend.cookie, COMPLETE_UPLOAD, { id: expired.id })).code).toBe(
       'BAD_USER_INPUT',
@@ -286,7 +291,7 @@ describe('사진 업로드와 열람', () => {
     // 만료된 티켓은 한도에서 빠진다.
     await api.db.upload.update({
       where: { id: tickets[0]!.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: dayjs().subtract(1000, 'millisecond').toDate() },
     });
     await requestUpload(api, voter.cookie, contestId);
   });
