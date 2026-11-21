@@ -8,11 +8,65 @@ import numpy as np
 
 from clash_bot.arena.league.generation import learn, scheduled
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import CARDS, DECKS, LIVE_DECK
+from clash_bot.arena.sim.rules import CARD_ID, CARDS, DECKS, FIELDS, LIVE_DECK, TILE, canonical
+from clash_bot.arena.training.coverage import card_coverage
 from clash_bot.arena.training.deck_practice import open_practice, practice_orders, schedule_deck
 
 
 class TrainingOpponentsTest(unittest.TestCase):
+    def test_funded_attacks_alternate_seats_and_prepare_a_real_tank_without_crediting_its_play(
+        self,
+    ):
+        league = {"learner": 0, "champion": 0, "opponents": [{"version": 0, "wins": 0, "games": 0}]}
+        setups = set()
+        lanes = set()
+        for version in range(1, 16, 2):
+            [job] = scheduled(
+                Path("/unused"),
+                league,
+                {"id": "r"},
+                version,
+                [2],
+                {"games": 4, "simulations": 16, "depth": 8},
+                np.random.default_rng(version),
+            )
+            setup, seat = job["setup"], job["seat"]
+            opening = setup["offenseOpening"]
+            setups.add((seat, opening["knight"]))
+            orders = practice_orders(setup, seat, job["id"])
+            arena = Arena(version, orders, setup["decks"], setup["delays"], setup["levels"])
+            tick = open_practice(arena, setup, True)
+            player = arena.state()["players"][seat]
+            self.assertIn(CARD_ID["Graveyard"], player["hand"])
+            self.assertGreaterEqual(player["elixir_milli"], 8000)
+            if opening["knight"]:
+                units = [
+                    e
+                    for e in arena.state()["entities"]
+                    if e[FIELDS["team"]] == seat
+                    and e[FIELDS["tower_slot"]] < 0
+                    and e[FIELDS["card_id"]] == CARD_ID["Knight"]
+                ]
+                self.assertEqual(len(units), 1)
+                x, y = canonical(units[0][FIELDS["x"]] / TILE, units[0][FIELDS["y"]] / TILE, seat)
+                self.assertGreaterEqual(y, 17)
+                lanes.add((seat, x > 9))
+                self.assertEqual(x > 9, opening["right"])
+            recorded = card_coverage(
+                [
+                    {
+                        "setup": setup,
+                        "samples": [],
+                        "publicHistory": arena.history,
+                        "trainingStartTick": tick,
+                        "policies": [{}, {}],
+                    }
+                ]
+            )
+            self.assertEqual(recorded["cards"]["Knight"]["executed"], 0)
+        self.assertEqual(setups, {(s, k) for s in (0, 1) for k in (False, True)})
+        self.assertEqual(lanes, {(s, r) for s in (0, 1) for r in (False, True)})
+
     def test_pool_rotation_reaches_every_deck_and_opens_with_its_lead_card_affordable(self):
         covered = set()
         for index in range(len(DECKS) - 1):

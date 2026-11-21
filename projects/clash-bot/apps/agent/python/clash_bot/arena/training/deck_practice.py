@@ -6,7 +6,17 @@ from itertools import zip_longest
 import numpy as np
 
 from ..catalogue import current
-from ..sim.rules import DECKS, LIVE_DECK, OMIT_OPENING, PRACTICE_DECKS, Action, deck_ids
+from ..sim.rules import (
+    CARD_ID,
+    DECKS,
+    LIVE_DECK,
+    OMIT_OPENING,
+    PRACTICE_DECKS,
+    TILE,
+    Action,
+    canonical,
+    deck_ids,
+)
 from .storage import seed_for
 
 # Both players wait through their normal elixir recharge. Even the most expensive pool card
@@ -49,10 +59,28 @@ def practice_orders(setup, seat, game_id):
     lead = deck_ids(deck)[DECKS[deck].cards.index(setup["practiceLead"])]
     orders[seat].remove(lead)
     orders[seat].insert(0, lead)
+    if setup.get("offenseOpening", {}).get("knight"):
+        index = orders[seat].index(CARD_ID["Knight"])
+        if index >= 4:
+            orders[seat][3], orders[seat][index] = orders[seat][index], orders[seat][3]
     return orders
 
 
 def open_practice(arena, setup, training):
     if training and "practiceDeck" in setup:
         arena.play([Action(-1), Action(-1)], OPENING_TICKS)
+        opening = setup.get("offenseOpening")
+        if opening and opening["knight"]:
+            seat = opening["seat"]
+            x, y = canonical(14.5 if opening["right"] else 3.5, 8, seat)
+            knight = Action(CARD_ID["Knight"], round(x * TILE), round(y * TILE))
+            moves = [Action(-1), Action(-1)]
+            moves[seat] = knight
+            arena.play(moves, 200)
+            if not any(
+                play["team"] == seat and play["action"] == knight.row()
+                for event in arena.history
+                for play in event["plays"]
+            ):
+                raise ValueError("Offensive practice needs the Knight's native execution receipt")
     return arena.state()["tick"]

@@ -30,8 +30,12 @@ def trial_due(history, tick, context, actions, baseline):
     funded = any(a.card == CARD_ID["Graveyard"] for a in actions)
     if not funded and (context["elixir"] < 3 or actions[baseline].card == -1):
         return False
-    previous = history.get(funded, [])
-    if len(previous) >= 2 or (previous and tick - previous[-1] < 180):
+    supported = funded and any(
+        b["kind"] in ("knight", "furnace") and b["y"] >= 17 for b in context["bodies"]["own"]
+    )
+    key = (funded, supported)
+    previous = history.get(key, [])
+    if len(previous) >= (1 if funded else 2) or (previous and tick - previous[-1] < 180):
         return False
-    history.setdefault(funded, []).append(tick)
+    history.setdefault(key, []).append(tick)
     return True

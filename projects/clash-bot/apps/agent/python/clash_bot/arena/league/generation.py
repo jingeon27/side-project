@@ -40,6 +40,7 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
     every = SELFPLAY.pressureEvery
     for index in indexes:
         slot_in_cycle = index % every
+        cycle = (version - 1) * ((settings["games"] + every - 1) // every) + index // every
         scripted = slot_in_cycle == every - 1
         learner_mirror = slot_in_cycle == 1 and not scripted
         rates = [(row["wins"] + 1) / (row["games"] + 2) for row in league["opponents"]]
@@ -53,7 +54,7 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
         setup = setup_for(game_id)
         seat = (version + index // (every if scripted else 2)) % 2
         if learner_mirror:
-            seat = ((version - 1) * ((settings["games"] + every - 1) // every) + index // every) % 2
+            seat = cycle % 2
         if scripted:
             slot = index // every
             setup = schedule_pressure(
@@ -67,13 +68,20 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
             setup = schedule_deck(setup, (version - 1) * slots + index // every, seat)
         elif learner_mirror:
             setup = live_setup(seed_for("training-mirror", game_id))
-        elif slot_in_cycle == 2 and (version + index // every) % 2:
+        elif slot_in_cycle == 2 and cycle % 2 == 0:
+            exercise = cycle // 2
+            seat = exercise % 2
             setup = {
                 **setup,
                 "decks": [LIVE_DECK, LIVE_DECK],
                 "practiceDeck": LIVE_DECK,
                 "practiceLead": "Graveyard",
                 "offensePractice": True,
+                "offenseOpening": {
+                    "seat": seat,
+                    "right": bool((exercise // 4 + seat) % 2),
+                    "knight": exercise // 2 % 2 == 0,
+                },
             }
         jobs.append(
             {

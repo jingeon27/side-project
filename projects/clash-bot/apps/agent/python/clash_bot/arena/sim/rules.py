@@ -152,7 +152,7 @@ def rules_identity():
         ),
         "trainingActor": "champion_search_deployed_learner_mirror_v2",
         "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
-        "trainingOpponent": "rotating_forms_pressure_and_funded_offense_v6",
+        "trainingOpponent": "rotating_forms_pressure_funded_and_supported_mirror_v7",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
         "searchPolicy": "public_outcome_validated_leaf_and_family_trials_v7",
         "rolloutTiming": ROLLOUT_CLOCK,

@@ -285,6 +285,7 @@ def play_game(
         "publicHistory": arena.history,
         **(
             {
+                "trainingStartTick": opening_tick,
                 "formExecutions": forms,
                 "controlUnitFrames": dict(controls),
                 "leafExamples": examples(samples) if completed else [],
