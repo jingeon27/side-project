@@ -44,6 +44,7 @@ def run(
     evaluate_every=1,
     workers=1,
     practice_games=0,
+    pool_games=0,
 ):
     data_dir = Path(data_dir)
     settings = {
@@ -54,6 +55,7 @@ def run(
         "evaluateEvery": evaluate_every,
         "workers": workers,
         "practiceGames": practice_games,
+        "poolGames": pool_games,
     }
     with Control(data_dir, hours) as control, Workers(workers) as pool:
         rules = rules_identity()

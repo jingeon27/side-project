@@ -52,7 +52,7 @@ def initialize_priority(root, parent, rules):
     cards = {name: Counter() for name in rules["cards"]}
     forms = {"evolvedDeployments": Counter(), "abilityUses": Counter()}
     for episode in league["episodes"]:
-        cache = parent / "coverage" / (Path(episode).name + ".v4.json")
+        cache = parent / "coverage" / (Path(episode).name + ".v5.json")
         if cache.exists():
             entry = json.loads(cache.read_bytes())
         else:

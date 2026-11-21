@@ -6,12 +6,13 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from ..sim.rules import CARD_ID, CARDS, DECKS, LIVE_DECK, rules_identity
+from ..sim.rules import CARD_ID, CARDS, DECKS, LIVE_DECK, POOL_DECKS, rules_identity
 from ..training.coverage import card_coverage
 from ..training.focus_opening import KINDS, goal_decks
 from ..training.form_usage import form_counts
 from ..training.storage import read_episode
 from .champions import learner_history
+from .pool_play import deck_receipt
 from .practice import practice_history
 
 
@@ -20,7 +21,7 @@ def feedback_counts(samples):
     for row in samples:
         counts["learnerDecisions"] += row["behavior"] == "deployed_learner"
         trial = row["search"]["attackComparison"]
-        if not trial:
+        if not trial or "poolAttackCard" in trial:
             continue
         counts["matchedTrials"] += 1
         cards = {i: a[0] for i, a in zip(trial["tried"], trial["actions"], strict=True)}
@@ -88,9 +89,10 @@ def training_coverage(root, league):
     forms = form_counts()
     control_frames = Counter()
     feedback = Counter()
+    direct = {name: Counter() for name in POOL_DECKS}
     for episode in league["episodes"]:
         path = Path(episode)
-        cache = root / "coverage" / (path.name + ".v4.json")
+        cache = root / "coverage" / (path.name + ".v5.json")
         if cache.exists():
             small = json.loads(cache.read_bytes())
         else:
@@ -102,6 +104,7 @@ def training_coverage(root, league):
                 "forms": game.get("formExecutions", {}),
                 "controlUnitFrames": game.get("controlUnitFrames", {}),
                 "feedback": feedback_counts(game["samples"]),
+                "poolPlay": deck_receipt(game),
             }
             atomic_json(cache, small, compact=True)
         for name, facts in small["cards"].items():
@@ -110,11 +113,19 @@ def training_coverage(root, league):
             forms[key].update(values)
         control_frames.update(small["controlUnitFrames"])
         feedback.update(small["feedback"])
+        if (play := small["poolPlay"]) is not None:
+            counts_for_deck = direct[play["deck"]]
+            counts_for_deck["games"] += 1
+            counts_for_deck[f"seat{play['seat']}"] += 1
+            counts_for_deck.update({k: v for k, v in play.items() if k not in ("deck", "seat")})
     goals = Counter()
+    latest_direct = {}
     for metadata in learner_history(root, league):
         optimizer = metadata["training"]["optimizerCoverage"]
         trained = optimizer["cardsWithTarget"]
         goals.update(optimizer["practiceGoals"])
+        if metadata["version"] == league["learner"]:
+            latest_direct = optimizer["directDeckRows"]
         for card, count in trained.items():
             counts[card]["optimizerTargetRows"] += count
     summary = {
@@ -157,6 +168,10 @@ def training_coverage(root, league):
     return {
         "rulesID": rules,
         "completedTrainingGames": len(league["episodes"]),
+        "poolDeckPlay": {
+            name: {**counts, "latestOptimizerRows": latest_direct.get(name, 0)}
+            for name, counts in direct.items()
+        },
         "availableCards": len(CARDS),
         "focusedPractice": focused,
         "practiceBaseline": baseline,

@@ -16,12 +16,14 @@ def labeled_cards(row):
 
 
 def replay_coverage(samples):
-    cards, goals = Counter(), Counter()
+    cards, goals, decks = Counter(), Counter(), Counter()
     defense_rows = defense_pairs = attack_pairs = 0
     for row in samples:
         cards.update(labeled_cards(row))
         if "practiceGoal" in row:
             goals[row["practiceGoal"]] += 1
+        if "learnerDeck" in row:
+            decks[row["learnerDeck"]] += 1
         defense_rows += bool(row["defensePairs"])
         defense_pairs += len(row["defensePairs"])
         attack_pairs += len(row["attackPairs"])
@@ -29,6 +31,7 @@ def replay_coverage(samples):
         "cardsWithTarget": {card: cards[index] for index, card in enumerate(CARDS)},
         "abilityWithTarget": cards[-2],
         "practiceGoals": dict(goals),
+        "directDeckRows": dict(decks),
         "missingCards": [card for index, card in enumerate(CARDS) if not cards[index]],
         "defenseRows": defense_rows,
         "defensePairs": defense_pairs,

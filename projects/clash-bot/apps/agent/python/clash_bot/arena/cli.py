@@ -17,6 +17,12 @@ def arguments():
     start.add_argument("--generations", type=int, default=0)
     start.add_argument("--games", type=int, default=4)
     start.add_argument(
+        "--pool-games",
+        type=int,
+        default=0,
+        help="Additional full learner matches with a rotating non-live deck",
+    )
+    start.add_argument(
         "--practice-games",
         type=int,
         default=0,

@@ -56,7 +56,7 @@ def write_replay(path, episode):
             "samples": [
                 {
                     **{key: row[key] for key in REPLAY_FIELDS},
-                    **({"practiceGoal": row["practiceGoal"]} if "practiceGoal" in row else {}),
+                    **{key: row[key] for key in ("practiceGoal", "learnerDeck") if key in row},
                 }
                 for row in episode["samples"]
             ],

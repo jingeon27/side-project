@@ -171,7 +171,7 @@
 
 **지금 돌아가는 것:** `yarn workspace @side/clash-bot loop start [--background] [--keep-awake] | status | stop`(`src/loop/*`, `contracts/self-improvement.json`).
 
-- 60초마다 점검한다. 자가대국(`arena start --hours 0 --games 4 --practice-games 56 --workers 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4`)을 nice 10으로 유지하고, 자신이 시작한 실행이 실패하면 60·300·1800초 뒤 다시 시작한다. 6시간 안에 3번 실패하면 멈추고 마지막 오류를 남긴다. 자신이 시작한 실행이 정상 정지하면 사용자의 정지로 보고 다음 `loop start`까지 기다린다. 자신이 시작하지 않은 자가대국은 멈추지 않는다.
+- 60초마다 점검한다. 자가대국(`arena start --hours 0 --games 4 --pool-games 4 --practice-games 56 --workers 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4`)을 nice 10으로 유지하고, 자신이 시작한 실행이 실패하면 60·300·1800초 뒤 다시 시작한다. 6시간 안에 3번 실패하면 멈추고 마지막 오류를 남긴다. 자신이 시작한 실행이 정상 정지하면 사용자의 정지로 보고 다음 `loop start`까지 기다린다. 자신이 시작하지 않은 자가대국은 멈추지 않는다.
 - 리그 챔피언(버전 0 초과)이 바뀌면 정책을 `.data/loop/simulation-champions/<sha>.json`으로 복사하고 트로피 인계 파일(`.data/trophy/learning/control/simulation-candidate.json`)을 쓴다. 트로피는 평가가 없고 학습 묶음이 빌 때 이를 가져와 기존 16쌍 실전 게이트로 비교한다. 통과하면 트로피 챔피언이 되고 PPO가 그 위에서 이어 학습하며, 탈락하면 학습 중이던 PPO 후보로 돌아간다.
 - 24시간마다 `arena rules`를 실행해 엔진 갱신 여부와 오류를 사건으로 남긴다. 새 표는 자동으로 켜지 않는다. 바뀐 카드 목록은 사람이 `arena rules --stage-version`으로 준비할 때 만들어진다.
 - 24시간마다 `.data/loop/reports/YYYY-MM-DD-HHmm.json`에 자가대국·트로피 상태, 감독 상태, 사건과 아직 자동화하지 않은 작업 목록(`notYetAutomated`)을 남긴다. 사건은 `.data/loop/events.jsonl`에 쌓인다.

@@ -19,6 +19,7 @@ from ..training.replay import replay_coverage, replay_samples
 from ..training.selfplay import SELFPLAY, live_setup, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
+from .pool_play import pool_jobs
 from .practice import focused_jobs, practice_history
 
 REPLAY_EPISODES = 256
@@ -116,8 +117,9 @@ def selfplay(control, workers, root, league, rules, version, settings):
     parent = json.loads((checkpoint(root, league["learner"]) / "metadata.json").read_bytes())
     leaf_weights = parent.get("training", {}).get("publicLeaf", {}).get("weights")
     focus = focused_jobs(root, league, rules, version, settings.get("practiceGames", 0))
+    pool = pool_jobs(root, league, rules, version, settings)
     regular = scheduled(root, league, rules, version, range(games), settings, rng)
-    for jobs in chunked(chain(focus, regular), workers.count):
+    for jobs in chunked(chain(pool, focus, regular), workers.count):
         if control.stopped():
             break
         for job in jobs:
@@ -126,7 +128,10 @@ def selfplay(control, workers, root, league, rules, version, settings):
             {
                 "phase": "selfplay",
                 "game": len(played) + 1,
-                "scheduledGames": len(focus) + games,
+                "scheduledGames": len(pool) + len(focus) + games,
+                "poolLearnerDecks": [
+                    j["setup"]["decks"][j["seat"]] for j in jobs if "poolLearnerSeat" in j["setup"]
+                ],
                 "practiceGoals": [
                     j["setup"]["focusGoal"] for j in jobs if "focusGoal" in j["setup"]
                 ],
