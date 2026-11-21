@@ -19,7 +19,15 @@ export type TStudioAction =
   | 'voice-upload'
   | 'voice-train'
   | 'voice-resume'
-  | 'voice-cancel';
+  | 'voice-cancel'
+  | 'shorts-setup-voice'
+  | 'shorts-status'
+  | 'shorts-leads'
+  | 'shorts-capture'
+  | 'shorts-boards'
+  | 'shorts-daily'
+  | 'shorts-render'
+  | 'shorts-verify';
 export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };
