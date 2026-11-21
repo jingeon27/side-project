@@ -7,14 +7,14 @@ from ..training.activity import opening_audit
 from ..training.benchmark import benchmark
 from ..training.evaluation import evaluate
 from ..training.parallel import play_frozen_pair
-from .champions import checkpoint, publish_champion, store
+from .champions import checkpoint, evaluation_offset, publish_champion, store
 
 
 def qualify(control, workers, root, league, rules, learner, pairs):
     """Evaluate the learner against the champion; a pass moves the pointer and the live file."""
     version = league["learner"]
     champion = Policy.load(checkpoint(root, league["champion"]), rules["id"])
-    number = league["evaluations"]
+    number = evaluation_offset(root) + league["evaluations"]
     league["evaluations"] += 1
     store(root, league)  # Spend before play, including crashes.
     frozen = {
