@@ -10,6 +10,19 @@
   "tableVersion": "cards-160635007-20261103.1",
   "tableFNV": "69896771bed51201",
   "liveDeck": "counterpush",
+  "poolAttackCards": {
+    "bait": ["GoblinBarrel"],
+    "drill_control": ["GoblinDrill", "Wallbreakers"],
+    "giant_beatdown": ["Giant"],
+    "giant_graveyard": ["Giant", "Graveyard"],
+    "golem": ["Golem"],
+    "hog_cycle": ["HogRider"],
+    "hog_firecracker": ["HogRider"],
+    "lava_balloon": ["LavaHound", "Balloon"],
+    "pekka_bridge": ["BattleRam", "Pekka"],
+    "royal_giant": ["RoyalGiant"],
+    "xbow_cycle": ["Xbow"]
+  },
   "decks": {
     "counterpush": {
       "cards": [
@@ -137,7 +150,8 @@
   "selfplay": {
     "liveMirror": 0.5,
     "liveAgainstPool": 0.5,
-    "scriptedDefenderEvery": 4,
+    "pressureEvery": 4,
+    "familyExploration": 0.2,
     "decisionTicks": 20,
     "decisionPhaseTicks": [0, 19],
     "searchTicks": 40,

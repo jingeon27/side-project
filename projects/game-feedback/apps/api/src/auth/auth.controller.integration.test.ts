@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -111,8 +112,8 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect(String(issued.headers['set-cookie'])).toContain('HttpOnly');
     const raw: string = issued.body.accessToken;
     const session = await db.session.findUniqueOrThrow({ where: { tokenHash: hash(raw) } });
-    expect(session.expiresAt.getTime() - Date.now()).toBeGreaterThan(59 * 60 * 1000);
-    expect(session.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(60 * 60 * 1000);
+    expect(session.expiresAt.getTime() - dayjs().valueOf()).toBeGreaterThan(59 * 60 * 1000);
+    expect(session.expiresAt.getTime() - dayjs().valueOf()).toBeLessThanOrEqual(60 * 60 * 1000);
     await request.get('/api/notifications').set('Authorization', `Bearer ${raw}`).expect(200);
     await request.get('/api/notifications').set('Authorization', 'Bearer invalid').expect(401);
     await request
@@ -128,7 +129,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .expect(200);
     await db.session.update({
       where: { tokenHash: hash(expired.body.accessToken) },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate() },
     });
     await request
       .get('/api/notifications')
@@ -138,13 +139,13 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
 
   it('prunes expired OAuth attempts and sessions when new ones are issued', async () => {
     const { request, db } = fixture();
-    const past = new Date(Date.now() - 1000);
+    const past = dayjs().subtract(1000, 'millisecond').toDate();
     const attempt = (stateHash: string, expiresAt: Date) =>
       db.oAuthAttempt.create({
         data: { provider: 'google', stateHash, nonce: 'n', verifier: 'v', expiresAt },
       });
     await attempt(hash('expired-oauth-state'), past);
-    await attempt(hash('live-oauth-state'), new Date(Date.now() + 60_000));
+    await attempt(hash('live-oauth-state'), dayjs().add(60_000, 'millisecond').toDate());
     await request.get('/api/auth/social/google').expect(302);
     expect(
       await db.oAuthAttempt.findUnique({ where: { stateHash: hash('expired-oauth-state') } }),
@@ -204,7 +205,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       expect(response.body.items.length).toBeGreaterThan(0);
       const detail = await request.get(`/api/posts/${response.body.items[0].id}`).expect(200);
       expect(detail.body.post.body.length).toBeGreaterThan(0);
-      expect(Number.isNaN(Date.parse(detail.body.post.createdAt))).toBe(false);
+      expect(Number.isNaN(dayjs(detail.body.post.createdAt).valueOf())).toBe(false);
       expect(detail.body.post.viewCount).toBeGreaterThanOrEqual(0);
     }
     const detail = await request.get('/api/posts/sample-post-0').expect(200);
@@ -315,7 +316,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     });
     const raw = randomBytes(32).toString('base64url');
     await db.session.create({
-      data: { userId: user.id, tokenHash: hash(raw), expiresAt: new Date(Date.now() + 60000) },
+      data: { userId: user.id, tokenHash: hash(raw), expiresAt: dayjs().add(60000, 'millisecond').toDate() },
     });
     const token = `Bearer ${raw}`;
     const room = (
@@ -363,7 +364,11 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .expect(200, { viewCount: 2 });
     await db.postView.update({
       where: { postId_visitorHash: { postId: id, visitorHash: hash(`visitor:${visitorId}`) } },
-      data: { lastViewedAt: new Date(Date.now() - 25 * 60 * 60 * 1000) },
+      data: {
+        lastViewedAt: dayjs()
+          .subtract(25 * 60 * 60 * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     await request
       .post(`/api/posts/${id}/views`)

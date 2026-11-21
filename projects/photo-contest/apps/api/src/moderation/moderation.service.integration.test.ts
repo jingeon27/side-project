@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -40,7 +41,11 @@ describe('ModerationService 회귀', () => {
 
     await api.db.upload.update({
       where: { id: upload.id },
-      data: { expiresAt: new Date(Date.now() - 6 * 60 * 1000) },
+      data: {
+        expiresAt: dayjs()
+          .subtract(6 * 60 * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     await api.runScheduledWork();
     expect(await storedPhotoExists(api, imageKey)).toBe(false);

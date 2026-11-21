@@ -84,23 +84,7 @@ export class MediaStorage implements OnModuleDestroy {
     )
       throw new ApiError(400, 'INVALID_MEDIA', '업로드 요청을 다시 시작해주세요.');
     const source = file.object.key;
-    let etag: string;
-    try {
-      const metadata = await this.s3.send(new HeadObjectCommand({ Bucket: storage.bucket, Key: source }));
-      if (metadata.ContentLength !== file.size || metadata.ContentType !== file.mimeType || !metadata.ETag)
-        throw new ApiError(400, 'INVALID_ATTACHMENT', '업로드한 파일의 크기와 형식을 확인해주세요.');
-      etag = metadata.ETag;
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      const name = error instanceof Error ? error.name : undefined;
-      const status = this.storageStatus(error);
-      if (
-        name !== 'NoSuchBucket' &&
-        (status === 404 || (status === undefined && (name === 'NotFound' || name === 'NoSuchKey')))
-      )
-        throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
-      throw this.storageError(error, '파일 업로드 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
-    }
+    const etag = await this.stagedEtag(source, file);
     const validated = validateMediaHeader({
       name: file.name,
       mimeType: file.mimeType,
@@ -124,6 +108,28 @@ export class MediaStorage implements OnModuleDestroy {
       throw this.storageError(error, '파일을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
     return { bytes: null, objectId: object.id, name: validated.name };
+  }
+
+  // 임시 객체의 크기·형식이 요청과 같은지 HEAD로 확인하고, 이후 읽기와 복사에 조건으로 쓸 ETag를 돌려준다.
+  private async stagedEtag(key: string, file: { size: number; mimeType: string }) {
+    try {
+      const metadata = await this.s3.send(
+        new HeadObjectCommand({ Bucket: this.config.mediaStorage.bucket, Key: key }),
+      );
+      if (metadata.ContentLength !== file.size || metadata.ContentType !== file.mimeType || !metadata.ETag)
+        throw new ApiError(400, 'INVALID_ATTACHMENT', '업로드한 파일의 크기와 형식을 확인해주세요.');
+      return metadata.ETag;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      const name = error instanceof Error ? error.name : undefined;
+      const status = this.storageStatus(error);
+      if (
+        name !== 'NoSuchBucket' &&
+        (status === 404 || (status === undefined && (name === 'NotFound' || name === 'NoSuchKey')))
+      )
+        throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+      throw this.storageError(error, '파일 업로드 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
   }
 
   private async stagedHeader(key: string, etag: string, length: number) {

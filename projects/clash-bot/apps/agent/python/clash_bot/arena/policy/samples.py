@@ -3,6 +3,7 @@
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .dense import DenseActions
 from .features import ACTION_SIZE, STATE_SIZE
 
 
@@ -61,7 +62,11 @@ class TrainingSample(BaseModel):
     actionFeatures: list[list[float]]
     actionBias: list[float]
     actionBiasWithoutTowers: list[float]
+    source: DenseActions
     target: list[float]
+    targetWithoutTowers: list[float]
+    defensePairs: list[tuple[int, int]] = Field(max_length=2)
+    attackPairs: list[tuple[int, int]] = Field(max_length=1)
     outcome: int
     value: float = Field(ge=-1, le=1)
 
@@ -82,11 +87,29 @@ class TrainingSample(BaseModel):
                 self.actionFeatures,
                 self.actionBias,
                 self.actionBiasWithoutTowers,
+                self.targetWithoutTowers,
             )
         ):
             raise ValueError("target and action features must cover every action")
-        if min(self.target) < 0 or abs(sum(self.target) - 1) > 1e-4:
-            raise ValueError("target must be a search visit distribution")
+        for target in (self.target, self.targetWithoutTowers):
+            if min(target) < 0 or abs(sum(target) - 1) > 1e-4:
+                raise ValueError("target must be a searched policy distribution")
         if any(len(row) != ACTION_SIZE for row in self.actionFeatures):
             raise ValueError("action features have the wrong width")
+        if any(
+            left == right or min(left, right) < 0 or max(left, right) >= self.source.count
+            for left, right in (*self.defensePairs, *self.attackPairs)
+        ):
+            raise ValueError("Matched preferences need distinct actions in the full candidate set")
+        matrix = self.source.decode()[self.source.retained]
+        if len(matrix) != len(self.actions) or not np.array_equal(
+            matrix[:, ACTION_SIZE], [row[0] for row in self.actions]
+        ):
+            raise ValueError("Retained actions differ from the full source tensor")
+        if not np.array_equal(matrix[:, :ACTION_SIZE], np.asarray(self.actionFeatures, np.float32)):
+            raise ValueError("Retained features differ from the full source tensor")
+        if not np.array_equal(
+            matrix[:, -2:], np.array([self.actionBias, self.actionBiasWithoutTowers], np.float32).T
+        ):
+            raise ValueError("Retained biases differ from the full source tensor")
         return self

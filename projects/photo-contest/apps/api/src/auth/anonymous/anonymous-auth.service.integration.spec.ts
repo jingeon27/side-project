@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../../test/support/app';
@@ -106,7 +107,7 @@ describe('익명 세션', () => {
     const { cookie, user } = await start();
     await api.db.session.updateMany({
       where: { userId: user.id },
-      data: { expiresAt: new Date(Date.now() - 1) },
+      data: { expiresAt: dayjs().subtract(1, 'millisecond').toDate() },
     });
     expect(await api.gqlOk(cookie, '{ me { id } }')).toEqual({ me: null });
     await api.http().post('/auth/logout').set('Origin', TEST_WEB_ORIGIN).set('Cookie', cookie).expect(200);

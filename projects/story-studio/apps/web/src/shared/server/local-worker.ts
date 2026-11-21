@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { closeSync, existsSync, openSync, readFileSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, statSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
@@ -62,7 +62,8 @@ export async function stopLocalWorker(id: string) {
   process.kill(active.pid, 'SIGTERM');
   // A terminal status can be saved just before MLX releases the process and GPU.
   // Do not return a resumable state until the worker is actually gone.
-  for (const _attempt of Array.from({ length: 100 })) {
+  const deadline = performance.now() + 10_000;
+  do {
     await pause(100);
     try {
       process.kill(active.pid, 0);
@@ -70,19 +71,45 @@ export async function stopLocalWorker(id: string) {
       if ((error as NodeJS.ErrnoException).code === 'ESRCH') return;
       throw error;
     }
-  }
+  } while (performance.now() < deadline);
   throw new StudioError('중단을 요청했습니다. 모델 계산이 정리되면 다시 실행할 수 있습니다.', 409);
 }
 
 export function isLocalMode() {
   return process.env.STORY_STUDIO_PROVIDER !== 'cloud';
 }
+function writerModelReady() {
+  const directory = dataPath('local', 'models', 'text-gemma-4-31b-it-4bit');
+  try {
+    // The Hub publishes each completed file separately. The index can arrive before the weights.
+    const index = JSON.parse(readFileSync(path.join(directory, 'model.safetensors.index.json'), 'utf8')) as {
+      weight_map: Record<string, unknown>;
+    };
+    const shards = [...new Set(Object.values(index.weight_map))];
+    const hasFile = (name: string) => {
+      const file = statSync(path.join(directory, name), { throwIfNoEntry: false });
+      return file?.isFile() === true && file.size > 0;
+    };
+    return (
+      shards.length > 0 &&
+      shards.every(
+        (name) => typeof name === 'string' && /^model-\d+-of-\d+\.safetensors$/.test(name) && hasFile(name),
+      ) &&
+      [
+        'config.json',
+        'tokenizer.json',
+        'tokenizer_config.json',
+        'processor_config.json',
+        'chat_template.jinja',
+      ].every(hasFile)
+    );
+  } catch {
+    return false;
+  }
+}
 export function localConfiguration() {
   const runtime = existsSync(dataPath('local', '.venv', 'bin', 'python'));
-  // Each model that replaced an earlier one has its own folder, so the earlier install is never reported ready.
-  const textReady =
-    runtime &&
-    existsSync(dataPath('local', 'models', 'text-gemma-4-31b-it-4bit', 'model.safetensors.index.json'));
+  const textReady = runtime && writerModelReady();
   const materialReady =
     runtime && existsSync(dataPath('local', 'models', 'embedding-gemma-2-8bit', 'model.safetensors'));
   const voiceReady = runtime && existsSync(dataPath('local', 'models', 'voice', 'model.safetensors'));

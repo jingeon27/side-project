@@ -21,11 +21,11 @@ export function compareVersions(left: string, right: string) {
   const leftParts = normalizeVersion(left)?.split('.').map(Number);
   const rightParts = normalizeVersion(right)?.split('.').map(Number);
   if (!leftParts || !rightParts) return null;
-  for (let index = 0; index < 3; index += 1) {
-    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
-    if (difference !== 0) return difference > 0 ? 1 : -1;
-  }
-  return 0;
+  const difference = [0, 1, 2]
+    .map((index) => (leftParts[index] ?? 0) - (rightParts[index] ?? 0))
+    .find((value) => value !== 0);
+  if (!difference) return 0;
+  return difference > 0 ? 1 : -1;
 }
 
 /** 버전을 읽을 수 없으면 막지 않는다. 잘못된 설정 하나로 모든 사용자가 갇히지 않게 하기 위해서다. */

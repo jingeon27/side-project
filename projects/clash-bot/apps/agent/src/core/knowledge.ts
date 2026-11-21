@@ -1,9 +1,9 @@
 import type { CardId } from './cards.ts';
 import { COMBAT, PLACEMENT_EFFECTS, referenceBodyHp } from './combat-reference.ts';
+import { HUT_NOMINAL_RANGE } from './hut-activation.ts';
 
-// Level-11 reference values checked 2026-11-15. Counterpush's physics have not
+// Level-11 reference values checked 2026-11-15. The live Trophy client has not
 // been calibrated against all of them. Engine speed units are NOT tiles/sec.
-export const KNOWLEDGE_VERSION = 'cr-level11-2026-11-14';
 export const UNIT_MECHANICS = {
   knight: {
     hp: referenceBodyHp('knight'),
@@ -186,13 +186,17 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     spawn: { unit: 'barbarian', intervalSeconds: null, count: 1, condition: 'after the ground-only roll' },
   },
   goblin_hut: {
-    structure: { hp: referenceBodyHp('goblin_hut'), triggerRangeTiles: 6, lifetimeSeconds: 30 },
+    structure: {
+      hp: referenceBodyHp('goblin_hut'),
+      triggerRangeTiles: HUT_NOMINAL_RANGE,
+      lifetimeSeconds: 30,
+    },
     deploySeconds: 1,
     spawn: {
       unit: 'spear_goblin',
       intervalSeconds: 2.2,
       lifetimeSeconds: 30,
-      triggerRangeTiles: 6,
+      triggerRangeTiles: HUT_NOMINAL_RANGE,
       onDeath: 1,
       condition: 'spawner activation and existing targets matter; not a damage-dealing cannon',
     },
@@ -201,7 +205,7 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     spell: {
       radiusTiles: 4,
       durationSeconds: 9,
-      pattern: 'fixed order; orientation and exact offsets must be measured in Counterpush',
+      pattern: 'fixed order; orientation and exact offsets must be measured on the live screen',
       exactSpawnOffsets: null,
     },
     spawn: {
@@ -220,50 +224,3 @@ export const CARD_MECHANICS: Partial<Record<CardId, CardMechanic>> = {
     },
   },
 };
-
-// The complete registry remains versioned above. Send each body/child's numeric
-// row only once, rather than repeating long stat keys inside every card entry.
-export function compactMechanics(cards: CardId[]) {
-  const bodies = [
-    ...new Set(
-      cards.flatMap((card) => {
-        const info = CARD_MECHANICS[card];
-        return [info?.body, info?.spawn?.unit].filter(
-          (kind): kind is keyof typeof UNIT_MECHANICS => !!kind && kind in UNIT_MECHANICS,
-        );
-      }),
-    ),
-  ];
-  return {
-    unitColumns: [
-      'kind',
-      'hp',
-      'damage',
-      'rangeTiles',
-      'hitS',
-      'firstHitS',
-      'movement',
-      'splashTiles',
-      'targets',
-    ],
-    units: bodies.map((kind) => {
-      const unit = UNIT_MECHANICS[kind];
-      return [
-        kind,
-        unit.hp,
-        unit.damage,
-        unit.rangeTiles,
-        unit.hitSeconds,
-        unit.firstHitSeconds,
-        unit.movement,
-        unit.splashTiles,
-        unit.targets,
-      ];
-    }),
-    iceWizardExtra: bodies.includes('ice_wizard')
-      ? { deployDamage: 84, deployRadius: 3, slowPercent: 30, slowS: 2.5 }
-      : undefined,
-    fireSpiritExtra: bodies.includes('fire_spirit') ? { selfDestructsOnHit: true } : undefined,
-    cards: cards.map((card) => ({ card, ...CARD_MECHANICS[card] })),
-  };
-}

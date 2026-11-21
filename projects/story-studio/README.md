@@ -4,7 +4,7 @@
 
 ## 실행
 
-현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 처음 설치할 때 약 89GB의 여유 공간과 인터넷 연결이 필요하고, 설치를 마치면 약 54GB가 남습니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
+현재 로컬 모델 실행은 **Apple Silicon Mac, Python 3.11, 메모리 32GB 이상 권장** 환경을 대상으로 합니다. 실제 검증 장비는 M5 Pro 48GB입니다. 전체 모델을 처음 설치할 때는 약 89GB의 여유 공간과 인터넷 연결이 필요하며, 설치된 모델이 차지하는 공간은 약 54GB입니다. 공개 저장소의 파일 크기와 변환 결과를 더한 추정치입니다. 설치 도구는 FLUX.2 Klein 원본(약 16GB)을 8비트로 저장하고 Wan2.2 원본(약 34GB)을 MLX로 변환한 뒤 각 원본을 지웁니다. 다시 설치를 실행해도 준비를 마친 모델의 원본은 받지 않으며, 고정 revision이 바뀌면 원본을 다시 받아 준비합니다. 설치 후 생성은 오프라인으로 실행합니다.
 
 이전 설치를 갱신하면 `local:setup`이 새 원고, 자료 검색, 이미지, 영상 모델만 추가로 준비합니다. 기존 Wan2.1 파일(약 30GB 추정)과 이전 원고 모델인 Qwen3.8-27B(약 16GB)는 자동으로 지우지 않습니다. 더 이상 사용하지 않으므로 필요 없으면 저장소 루트에서 지웁니다. `STORY_STUDIO_DATA_DIR`을 쓴다면 그 경로의 `local/models` 아래 세 폴더입니다.
 
@@ -21,9 +21,17 @@ yarn workspace @side/story-studio local:setup
 yarn workspace @side/story-studio dev
 ```
 
+한국어 웹툰이나 장면 이미지만 만들 때는 설치 단계에서 `yarn workspace @side/story-studio local:setup:image`를 실행합니다. 이 명령은 한국어 장면을 그림 설명으로 옮기는 Gemma 4 31B와 한 컷을 그리는 FLUX.2 Klein 4B를 준비합니다. 검증한 Mac에서 설치 후 두 모델 폴더는 합계 약 27GB였고, 변환 중에는 FLUX 원본 약 16GB도 필요했습니다. Python 환경과 캐시는 별도입니다. 작업실에서 작품을 열면 두 모델이 준비되는 대로 장면의 **이미지 생성** 버튼이 켜집니다. 설치 상태는 연결 안내의 **모델 상태 다시 확인**에서도 갱신할 수 있습니다.
+
 [소개](http://127.0.0.1:3400), [작업실](http://127.0.0.1:3400/studio), [목소리 학습](http://127.0.0.1:3400/studio/voices), [참고 자료실](http://127.0.0.1:3400/studio/materials), [실제 생성한 한국어 애니메이션](http://127.0.0.1:3400/studio?demo=1)
 
 예시 원고 편집과 이미 생성한 예시 영상 재생에는 모델 설치가 필요하지 않습니다. 모델 준비 전에는 생성 버튼이 비활성화됩니다. 운영용 빌드는 `yarn workspace @side/story-studio build`, 실행은 `yarn workspace @side/story-studio start`입니다.
+
+## 30초 다큐 쇼츠
+
+저장소 루트에서 `projects/story-studio/shorts status`로 오늘 제작함을 연다. 첫 설치는 `projects/story-studio/shorts setup-voice`로 한국어 화자를 준비한다. 로컬 에이전트의 [쇼츠 제작 스킬](.agents/skills/shorts-producer/SKILL.md)은 실베 후보와 1차 출처를 확인하고 대본과 컷을 준비한다. `projects/story-studio/shorts daily`는 준비된 원고에서 하루 두 편까지 한국어 내레이션·자막·브금을 합성한다. MP4와 편집 자료는 기본 `~/Movies/실베다큐`에 놓인다. [캡처·편집 명령](.agents/skills/shorts-producer/references/production.md) · [첫 14일 홍보 계획](.agents/skills/shorts-producer/references/promotion.md)
+
+`STORY_STUDIO_SHORTS_AMPLITUDE_KEY`를 지정한 CLI 실행은 명령의 실행 시도와 성공을 Amplitude에 기록한다. 이벤트 속성 `action`은 고정된 명령 이름이며 실행마다 새 임의 ID를 쓴다. 명령 인수, 로컬 경로, 원고, 출처 주소와 사용자 ID는 수집하지 않는다.
 
 ## 코드 구성
 
@@ -217,7 +225,9 @@ Vitest는 로컬 기본값, 키 미전달, 오프라인 환경, 동시 생성 �
 
 로컬 기본 설정은 측정 키가 없어 SDK를 로드하거나 이벤트를 전송하지 않습니다. 측정을 명시적으로 구성한 경우에만 `landing_start_clicked`, `studio_opened`, `studio_request_clicked`, `studio_request_succeeded`를 보냅니다. 속성은 고정된 진입 종류와 작업 종류뿐이며 원고, 제목, 인물, 파일명, 경로와 사용자 ID를 수집하지 않습니다. 영상의 HTTP 제출 성공은 영상 계산 완료와 구분합니다.
 
-원고 요청의 작업 종류는 새 작품 집필(`write`)과 이어 쓰기(`continue`)입니다. `studio_request_succeeded`는 서버가 집필 작업을 받았다는 뜻이며, 작업이 끝난 결과는 `studio_writing_finished`의 고정된 `status`(succeeded, failed, cancelled)로 따로 남깁니다. 화면을 닫은 뒤 끝난 작업은 이 이벤트를 남기지 않습니다. 참고 자료실 진입은 속성 없는 `studio_materials_opened`, 자료 추가와 삭제, 폴더 가져오기, 색인 시작과 중단은 기존 요청 이벤트의 `material-add`, `material-delete`, `material-import`, `material-sync`, `material-stop`, 자료 묶음 선택은 `studio_collection_clicked`의 고정된 `action`(select, clear)으로 측정합니다. 묶음 이름, 자료 제목과 본문은 보내지 않습니다. 외부 이미지 가져오기는 요청 이벤트의 `image-import`, 프롬프트 복사는 `studio_prompt_clicked`의 `action`(copy)이며 프롬프트 내용은 보내지 않습니다.
+새 작품 집필은 `write`, 이어 쓰기는 `continue`로 기록합니다. 집필 중단(`writing-stop`)과 영상 중단(`video-stop`)도 클릭과 서버 응답 성공을 각각 기록합니다. `studio_request_succeeded`는 서버가 집필 작업을 받았다는 뜻이며, 작업이 끝난 결과는 `studio_writing_finished`의 고정된 `status`(succeeded, failed, cancelled)로 따로 남깁니다. 화면을 닫은 뒤 끝난 작업은 이 이벤트를 남기지 않습니다. 참고 자료실 진입은 속성 없는 `studio_materials_opened`, 자료 추가와 삭제, 폴더 가져오기, 색인 시작과 중단은 기존 요청 이벤트의 `material-add`, `material-delete`, `material-import`, `material-sync`, `material-stop`, 자료 묶음 선택은 `studio_collection_clicked`의 고정된 `action`(select, clear)으로 측정합니다. 묶음 이름, 자료 제목과 본문은 보내지 않습니다. 외부 이미지 가져오기는 요청 이벤트의 `image-import`, 프롬프트 복사는 `studio_prompt_clicked`의 `action`(copy)이며 프롬프트 내용은 보내지 않습니다.
+
+작품 형식을 바꾸면 `studio_format_selected`에 선택한 형식(`format`)을 기록합니다. 작업실 메뉴와 원고 내보내기 메뉴는 각각 `studio_menu_toggled`와 `studio_export_menu_toggled`에 열림 여부(`expanded`)만 남깁니다.
 
 인물 기준 지정은 `studio_reference_clicked`의 고정된 `action`(set, clear)으로만 측정합니다. 브라우저 원고만 바꾸는 동작이라 서버 성공 이벤트는 없습니다. 기준 이미지를 참고한 생성의 요청과 성공은 기존 `studio_request_clicked`, `studio_request_succeeded`의 `image`로 남으며, 장면 ID와 이미지 경로는 보내지 않습니다.
 

@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { Button } from '@side/design-system';
+
 import { trackStudioEvent } from '../../../shared/analytics';
 import {
   materialAction,
@@ -60,13 +62,15 @@ export function MaterialCollection({ name }: { name: string }) {
             {materialRoles.find((role) => role.id === material.role)?.name},{' '}
             {material.characters.toLocaleString('ko-KR')}자,{' '}
             {material.passages === undefined ? '색인 대기' : `검색 단위 ${material.passages}개`}{' '}
-            <button
-              className="text-button danger"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-danger"
               disabled={remove.isPending}
               onClick={() => confirm(material.id, { id: material.id })}
             >
               {marked === material.id ? '한 번 더 눌러 삭제' : '삭제'}
-            </button>
+            </Button>
           </span>
         </div>
       ))}
@@ -75,13 +79,15 @@ export function MaterialCollection({ name }: { name: string }) {
           최근 {list.data.materials.length}개만 표시합니다. 이 묶음에는 자료가 {list.data.total}개 있습니다.
         </p>
       )}
-      <button
-        className="text-button danger"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-danger"
         disabled={remove.isPending}
         onClick={() => confirm('collection', { collection: name })}
       >
         {marked === 'collection' ? '묶음의 자료를 모두 삭제할까요? 한 번 더 눌러 확인' : '이 묶음 삭제'}
-      </button>
+      </Button>
     </>
   );
 }

@@ -1,0 +1,142 @@
+.formats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.format {
+  position: relative;
+  display: grid;
+  align-content: start;
+  justify-content: stretch;
+  justify-items: start;
+  gap: 3px;
+  min-width: 0;
+  height: auto;
+  white-space: normal;
+  padding: 15px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--panel);
+  text-align: start;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.formatIcon {
+  box-sizing: content-box;
+  width: 19px;
+  height: 19px;
+  margin-bottom: 8px;
+  padding: 7px;
+  border-radius: 9px;
+  background: var(--raised);
+  color: #cfced0;
+}
+
+.format strong {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.description {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.format[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: #302923;
+}
+
+.format[aria-pressed='true'] .formatIcon {
+  background: var(--accent);
+  color: var(--accent-dark);
+}
+
+.check {
+  position: absolute;
+  inset-block-start: 15px;
+  inset-inline-end: 15px;
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .format:enabled:hover {
+    background: var(--raised);
+    border-color: #67645f;
+  }
+  .format[aria-pressed='true']:enabled:hover {
+    background: #382e26;
+    border-color: var(--accent);
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) {
+  .format {
+    padding: 12px;
+  }
+  .description {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .formats {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+
+  .format {
+    flex: 1 0 auto;
+    align-content: center;
+    justify-items: center;
+    min-width: 44px;
+    min-height: 54px;
+    gap: 3px;
+    padding: 4px;
+    border-color: transparent;
+    border-radius: 10px;
+    background: transparent;
+  }
+  .format strong {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .formatIcon {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+  }
+  .format[aria-pressed='true'],
+  .format[aria-pressed='true']:enabled:hover {
+    background: var(--accent);
+    color: var(--accent-dark);
+  }
+  .format[aria-pressed='true'] .formatIcon {
+    background: transparent;
+    color: inherit;
+  }
+  .description,
+  .check {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .format[aria-pressed='true'] {
+    border: 2px solid Highlight;
+    text-decoration: underline;
+  }
+}

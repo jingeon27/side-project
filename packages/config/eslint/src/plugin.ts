@@ -1,6 +1,9 @@
 import type { ESLint } from 'eslint';
 
 import { noElse } from './rules/common/no-else/no-else';
+import { noHashPrivate } from './rules/common/no-hash-private/no-hash-private';
+import { noLet } from './rules/common/no-let/no-let';
+import { noNativeDate } from './rules/common/no-native-date/no-native-date';
 import { noWildcardExports } from './rules/common/no-wildcard-exports/no-wildcard-exports';
 import { noComponentFetch } from './rules/web/no-component-fetch/no-component-fetch';
 import { noFormStateCopy } from './rules/web/no-form-state-copy/no-form-state-copy';
@@ -8,7 +11,13 @@ import { noOverlayState } from './rules/web/no-overlay-state/no-overlay-state';
 import { noRequestErrorState } from './rules/web/no-request-error-state/no-request-error-state';
 import { noSubtleText } from './rules/web/no-subtle-text/no-subtle-text';
 
-const commonRules = { 'no-else': noElse, 'no-wildcard-exports': noWildcardExports };
+const commonRules = {
+  'no-else': noElse,
+  'no-hash-private': noHashPrivate,
+  'no-let': noLet,
+  'no-native-date': noNativeDate,
+  'no-wildcard-exports': noWildcardExports,
+};
 const webRules = {
   'no-component-fetch': noComponentFetch,
   'no-form-state-copy': noFormStateCopy,

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -16,7 +18,7 @@ for (const width of [400, 1440]) {
     await page.goto(`/ko/messages/${conversationId}`);
     if (width <= 760) await expect(page.getByRole('contentinfo')).toBeHidden();
     const input = page.getByRole('textbox', { name: '메시지 내용' });
-    const firstLine = `데스크톱 키보드 ${width} ${Date.now().toString(36)}`;
+    const firstLine = `데스크톱 키보드 ${width} ${dayjs().valueOf().toString(36)}`;
     await input.fill(firstLine);
     await input.dispatchEvent('keydown', { key: 'Enter', code: 'Enter', isComposing: true });
     await expect(input).toHaveValue(firstLine);

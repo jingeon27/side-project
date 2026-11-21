@@ -16,12 +16,15 @@ export async function resolveBackPress(
   askWeb: () => Promise<{ handled: boolean }>,
   canGoBack: () => boolean,
 ): Promise<TBackPressAction> {
-  let webHandled = false;
-  try {
-    webHandled = (await askWeb()).handled;
-  } catch {
-    webHandled = false;
-  }
+  const webHandled = await handledByWeb(askWeb);
   // 웹 응답을 기다리는 동안 기록이 바뀌었을 수 있어 응답 뒤에 읽는다.
   return decideBackPress({ webHandled, canGoBack: canGoBack() });
+}
+
+async function handledByWeb(askWeb: () => Promise<{ handled: boolean }>) {
+  try {
+    return (await askWeb()).handled;
+  } catch {
+    return false;
+  }
 }

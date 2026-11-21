@@ -18,12 +18,13 @@ from clash_bot.arena.league.champions import (
     publish_champion,
 )
 from clash_bot.arena.league.loop import run
+from clash_bot.arena.policy.dense import DenseActions
 from clash_bot.arena.policy.features import checksum
 from clash_bot.arena.policy.network import LEAGUE_KEY, Policy, features
 from clash_bot.arena.policy.samples import SparseFeatures
 from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
-from clash_bot.arena.training.selfplay import replay_samples
+from clash_bot.arena.training.replay import replay_samples
 from clash_bot.arena.training.storage import read_episode, replay_path, write_episode, write_replay
 
 CATALOGUE = current().id
@@ -86,7 +87,9 @@ class LeagueTest(unittest.TestCase):
             league = initialize(previous, old)
             champion = Policy(seed=9, metadata={"version": 1, "rulesID": old["id"]})
             champion.save(checkpoint(previous, 1), {"role": "qualified_champion"})
-            (previous / "league.json").write_text(json.dumps({**league, "champion": 1}))
+            (previous / "league.json").write_text(
+                json.dumps({**league, "champion": 1, "evaluations": 44})
+            )
 
             root = Path(directory) / f"new-{LEAGUE_KEY}"
             started = initialize(root, RULES, parent=previous)
@@ -95,6 +98,8 @@ class LeagueTest(unittest.TestCase):
             start = Policy.load(checkpoint(root, 0), RULES["id"])
             self.assertEqual(start.checksum(), champion.checksum())
             self.assertEqual(start.metadata["role"], "inherited_champion")
+            self.assertEqual(start.metadata["evaluationOffset"], 44)
+            self.assertEqual(started["evaluations"], 0)
             self.assertEqual(
                 start.metadata["inheritedFrom"],
                 {"rulesID": old["id"], "version": 1, "weightsSHA256": champion.checksum()},
@@ -130,7 +135,7 @@ class LeagueTest(unittest.TestCase):
             league = initialize(root, RULES)
             promoted = Policy(seed=5, metadata={"version": 1, "rulesID": RULES["id"]})
             promoted.save(checkpoint(root, 1), {"role": "qualified_champion"})
-            publish_champion(root, {**league, "champion": 1})
+            publish_champion(root, {**league, "champion": 1, "evaluations": 44})
             live = json.loads((root / "champion-policy.json").read_text())
             self.assertEqual(live["weightsSHA256"], promoted.checksum())
             self.assertEqual(live["version"], 1)
@@ -160,11 +165,27 @@ class CompactReplayTest(unittest.TestCase):
             "actionFeatures": action_vectors.tolist(),
             "actionBias": [0.0] * len(actions),
             "actionBiasWithoutTowers": [0.0] * len(actions),
+            "source": DenseActions.pack(
+                action_vectors,
+                [a.card for a in actions],
+                [0.0] * len(actions),
+                [0.0] * len(actions),
+                list(range(len(actions))),
+            ).model_dump(),
             "target": [1.0] + [0.0] * (len(actions) - 1),
+            "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
+            "defensePairs": [],
+            "attackPairs": [],
             "outcome": -1,
             "value": -0.7,
         }
-        episode = {"completed": True, "rulesID": RULES["id"], "samples": [sample]}
+        episode = {
+            "completed": True,
+            "gameID": "train-fixture",
+            "rulesID": RULES["id"],
+            "leafExamples": [],
+            "samples": [sample],
+        }
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "episodes" / "game.json.gz"
             write_episode(path, episode)

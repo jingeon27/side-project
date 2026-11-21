@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { assertContestParticipation } from './group-contest.policy';
@@ -6,9 +7,9 @@ describe('게시물의 대회 참여', () => {
   const contest = {
     format: 'POST',
     groupId: 'group',
-    startsAt: new Date('2026-10-19T00:00:00Z'),
-    submissionEndsAt: new Date('2026-10-20T00:00:00Z'),
-    endsAt: new Date('2026-10-21T00:00:00Z'),
+    startsAt: dayjs('2026-10-19T00:00:00Z').toDate(),
+    submissionEndsAt: dayjs('2026-10-20T00:00:00Z').toDate(),
+    endsAt: dayjs('2026-10-21T00:00:00Z').toDate(),
   };
   it('같은 그룹의 접수 기간 시작 시각부터 참여해야 한다', () => {
     expect(() => assertContestParticipation(contest, 'group', contest.startsAt)).not.toThrow();
@@ -16,7 +17,7 @@ describe('게시물의 대회 참여', () => {
   it.each(['2026-10-18T23:59:59Z', '2026-10-20T00:00:00Z', '2026-10-21T00:00:00Z'])(
     '%s에는 참여할 수 없어야 한다',
     (time) => {
-      expect(() => assertContestParticipation(contest, 'group', new Date(time))).toThrow(
+      expect(() => assertContestParticipation(contest, 'group', dayjs(time).toDate())).toThrow(
         '게시물을 접수 중인 대회만 참여할 수 있습니다.',
       );
     },

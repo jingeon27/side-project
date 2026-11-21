@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -25,13 +26,13 @@ describe('직접 업로드 파일 정리 회귀', () => {
     const second = await postUpload(api, owner, groupId);
     await api.db.postUpload.updateMany({
       where: { id: { in: [first, second] } },
-      data: { expiresAt: new Date(0), policyExpiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate(), policyExpiresAt: dayjs(0).toDate() },
     });
     const [failing, removed] = await Promise.all(
       [first, second].map((id) => api.db.postUpload.findUniqueOrThrow({ where: { id } })),
     );
     const expired = await api.db.session.create({
-      data: { tokenHash: randomUUID(), userId: owner.id, expiresAt: new Date(0) },
+      data: { tokenHash: randomUUID(), userId: owner.id, expiresAt: dayjs(0).toDate() },
     });
     const originalDelete = api.storage.delete.bind(api.storage);
     const deletion = vi.spyOn(api.storage, 'delete').mockImplementation(async (key) => {
@@ -63,7 +64,7 @@ describe('직접 업로드 파일 정리 회귀', () => {
     );
     expect((await uploadToStorage(ticket, body, 'image/png')).status).toBe(204);
     const { stagingKey } = await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } });
-    const expiredAt = new Date(Date.now() - 1000);
+    const expiredAt = dayjs().subtract(1000, 'millisecond').toDate();
     await api.db.postUpload.update({
       where: { id: ticket.id },
       data: { expiresAt: expiredAt, policyExpiresAt: expiredAt },
@@ -74,7 +75,11 @@ describe('직접 업로드 파일 정리 회귀', () => {
     expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } })).stagingKey).toBe(
       stagingKey,
     );
-    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 6 * 60_000));
+    await api.app.get(MaintenanceService).cleanup(
+      dayjs()
+        .add(6 * 60_000, 'millisecond')
+        .toDate(),
+    );
     await expect(api.storage.head(stagingKey ?? '')).rejects.toThrow();
     expect(await api.db.postUpload.findUnique({ where: { id: ticket.id } })).toBeNull();
   });

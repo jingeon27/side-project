@@ -30,6 +30,7 @@ export type EffectForecast = {
     hp: [number, number] | null;
     kill: 'yes' | 'no' | 'possible' | 'unknown';
     trajectoryDamage: number;
+    trajectoryQuality: number;
   }>;
 };
 
@@ -156,7 +157,7 @@ export function forecastEffect(input: {
         ? [delay]
         : Array.from(
             { length: Math.ceil(duration / COMBAT.stepSeconds) + 1 },
-            (_, i) => delay + i * COMBAT.stepSeconds,
+            (_, i) => delay + Math.min(duration, i * COMBAT.stepSeconds),
           );
     const hits = times.map((time) => {
       const point =
@@ -167,7 +168,7 @@ export function forecastEffect(input: {
       if (input.card === 'barbarian_barrel') {
         const rollY = input.y + (time - delay) * COMBAT.barbarian_barrel.speed;
         const dx = Math.abs(point.x - input.x) - COMBAT.barbarian_barrel.width / 2;
-        const dy = Math.abs(point.y - rollY) - COMBAT.barbarian_barrel.width / 2;
+        const dy = Math.abs(point.y - rollY) - COMBAT.barbarian_barrel.depth / 2;
         return [dx + radius <= 0 && dy + radius <= 0, dx - radius <= 0 && dy - radius <= 0];
       }
       const positions = input.card === 'poison' ? [point, position(unit, time)] : [point];
@@ -181,26 +182,40 @@ export function forecastEffect(input: {
         ),
       ];
     });
-    const central = times.map((time) => {
-      if (
-        input.card === 'poison' &&
-        reference?.speed !== 0 &&
-        (unit.velocity === null || time > delay + COMBAT.poison.trajectoryHorizonSeconds)
-      )
-        return false;
-      const point =
-        input.card === 'poison' ? poisonPosition(unit, time, input.x, input.y, delay) : position(unit, time);
-      if (input.card === 'barbarian_barrel')
-        return (
-          Math.abs(point.x - input.x) <= COMBAT.barbarian_barrel.width / 2 &&
-          Math.abs(point.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) <=
-            COMBAT.barbarian_barrel.width / 2
-        );
-      return (
-        Math.hypot(point.x - input.x, point.y - input.y) <=
-        (input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius)
-      );
-    });
+    const rollContacts =
+      input.card === 'barbarian_barrel'
+        ? times.map((time) => {
+            const point = position(unit, time);
+            const cross = Math.abs(point.x - input.x) / (COMBAT.barbarian_barrel.width / 2);
+            const along =
+              Math.abs(point.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) /
+              (COMBAT.barbarian_barrel.depth / 2);
+            return {
+              hit: cross <= 1 && along <= 1,
+              quality:
+                Math.max(0, 1 - cross) * Math.max(0, 1 - along) * (1 - (0.25 * (time - delay)) / duration),
+            };
+          })
+        : [];
+    const central =
+      input.card === 'barbarian_barrel'
+        ? rollContacts.map((contact) => contact.hit)
+        : times.map((time) => {
+            if (
+              input.card === 'poison' &&
+              reference?.speed !== 0 &&
+              (unit.velocity === null || time > delay + COMBAT.poison.trajectoryHorizonSeconds)
+            )
+              return false;
+            const point =
+              input.card === 'poison'
+                ? poisonPosition(unit, time, input.x, input.y, delay)
+                : position(unit, time);
+            return (
+              Math.hypot(point.x - input.x, point.y - input.y) <=
+              (input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius)
+            );
+          });
     const trajectoryPotential = () => {
       if (input.card === 'poison')
         return (
@@ -252,6 +267,7 @@ export function forecastEffect(input: {
         hp: unit.hp,
         kill,
         trajectoryDamage,
+        trajectoryQuality: Math.max(0, ...rollContacts.map((contact) => contact.quality)),
       },
     ];
   });

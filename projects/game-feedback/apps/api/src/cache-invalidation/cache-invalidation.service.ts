@@ -8,6 +8,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 import dayjs from 'dayjs';
+import { chunk } from 'es-toolkit';
 
 import { CacheTagSchema } from '@game-feedback/contracts';
 
@@ -106,8 +107,7 @@ export class CacheInvalidationService implements OnApplicationBootstrap, OnModul
     const target = this.config.cacheRevalidation;
     if (!target || !pending.length || this.retryAfter > dayjs().valueOf()) return;
     try {
-      for (let offset = 0; offset < pending.length; offset += 64) {
-        const batch = pending.slice(offset, offset + 64);
+      for (const batch of chunk(pending, 64)) {
         const response = await fetch(target.url, {
           method: 'POST',
           redirect: 'error',

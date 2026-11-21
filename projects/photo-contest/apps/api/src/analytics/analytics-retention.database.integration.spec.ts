@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, expect, inject, it } from 'vitest';
 
 import { createDatabaseClient } from '@photo-contest/test-kit';
@@ -12,17 +13,17 @@ import { archiveAnalyticsEvents } from './analytics-retention.repository';
 
 const db = createDatabaseClient(inject('databaseUrl'));
 afterAll(() => db.$disconnect());
-const now = new Date('2026-10-29T12:00:00Z');
-const cutoff = new Date(now.getTime() - ANALYTICS_RETENTION_MS);
+const now = dayjs('2026-10-29T12:00:00Z').toDate();
+const cutoff = dayjs(now).subtract(ANALYTICS_RETENTION_MS, 'millisecond').toDate();
 
 it('90일 지난 원본만 UTC 일자·종류별로 집계하고 경계·최근 원본은 보존한다', async () => {
   const type = `retention-${randomUUID()}`;
-  const day = new Date('2026-01-01T00:00:00Z');
+  const day = dayjs('2026-01-01T00:00:00Z').toDate();
   await db.analyticsEvent.createMany({
     data: [
       { id: randomUUID(), type, createdAt: day, properties: { old: true } },
-      { id: randomUUID(), type, createdAt: new Date('2026-01-01T23:59:59Z'), properties: {} },
-      { id: randomUUID(), type, createdAt: new Date('2026-01-02T00:00:00Z'), properties: {} },
+      { id: randomUUID(), type, createdAt: dayjs('2026-01-01T23:59:59Z').toDate(), properties: {} },
+      { id: randomUUID(), type, createdAt: dayjs('2026-01-02T00:00:00Z').toDate(), properties: {} },
       { id: randomUUID(), type, createdAt: cutoff, properties: { keep: true } },
       { id: randomUUID(), type, createdAt: now, properties: { keep: true } },
     ],
@@ -32,7 +33,7 @@ it('90일 지난 원본만 UTC 일자·종류별로 집계하고 경계·최근 
   expect(await db.analyticsDailySummary.findMany({ where: { type }, orderBy: { day: 'asc' } })).toMatchObject(
     [
       { day, eventCount: 2n },
-      { day: new Date('2026-01-02T00:00:00Z'), eventCount: 1n },
+      { day: dayjs('2026-01-02T00:00:00Z').toDate(), eventCount: 1n },
     ],
   );
   expect(await archiveAnalyticsEvents({ client: db, now })).toBe(0);
@@ -47,7 +48,10 @@ it('원본을 지운 뒤 같은 id를 재시도해도 다시 기록·집계하�
   };
   await Promise.all([recordEvent(db, event), recordEvent(db, event)]);
   expect(await db.analyticsEvent.count({ where: { id: event.id } })).toBe(1);
-  await db.analyticsEvent.update({ where: { id: event.id }, data: { createdAt: new Date('2026-02-01') } });
+  await db.analyticsEvent.update({
+    where: { id: event.id },
+    data: { createdAt: dayjs('2026-02-01T00:00:00Z').toDate() },
+  });
   expect(await archiveAnalyticsEvents({ client: db, now })).toBe(1);
   await recordEvent(db, event);
   expect(await db.analyticsEvent.findUnique({ where: { id: event.id } })).toBeNull();
@@ -58,7 +62,7 @@ it('원본을 지운 뒤 같은 id를 재시도해도 다시 기록·집계하�
 
 it('집계와 삭제가 함께 롤백되고 동시 배치도 같은 원본을 두 번 세지 않는다', async () => {
   const type = `retention-${randomUUID()}`;
-  const day = new Date('2026-03-01');
+  const day = dayjs('2026-03-01T00:00:00Z').toDate();
   await db.analyticsEvent.createMany({
     data: Array.from({ length: 6 }, () => ({ id: randomUUID(), type, createdAt: day, properties: {} })),
   });

@@ -1,0 +1,154 @@
+"""Raw forms, summon chains and units in the pinned client table, independent of the policy vectors."""
+
+import json
+
+from clash_bot.card_objects import body_labels, created_by_form
+from clash_bot.downloads import digest
+from clash_bot.files import atomic_json
+from clash_bot.paths import CONTRACTS_DIR, DATA_DIR
+
+RULES = json.loads((CONTRACTS_DIR / "arena.json").read_bytes())
+
+
+def buff_records(node):
+    """Forms can embed a named buff inside an ability or projectile, outside the global buff map."""
+    if isinstance(node, list):
+        for item in node:
+            yield from buff_records(item)
+    elif isinstance(node, dict):
+        if node.get("name") and (
+            "speed_multiplier_raw" in node or "hit_speed_multiplier_raw" in node
+        ):
+            yield node
+        else:
+            for value in node.values():
+                yield from buff_records(value)
+
+
+def combat_stats(row):
+    """Raw numbers use the record's rarity-local base level; the untouched scaling table accompanies them."""
+
+    def tiles(field):
+        value = row.get(field)
+        return None if value is None else value / 1000
+
+    shot = row.get("projectile") if isinstance(row.get("projectile"), dict) else {}
+    return {
+        "aggroRangeTiles": tiles("sight_range_milli"),
+        "attackRangeTiles": tiles("range_milli"),
+        "minimumAttackRangeTiles": tiles("minimum_range_milli"),
+        "collisionRadiusTiles": tiles("collision_radius_milli"),
+        "areaDamageRadiusTiles": tiles("area_damage_radius_milli"),
+        "hitpoints": row.get("hitpoints"),
+        "damage": row.get("damage"),
+        "attackIntervalMs": row.get("hit_speed_ms"),
+        "loadTimeMs": row.get("load_time_ms"),
+        "loadFirstHit": row.get("load_first_hit"),
+        "control": {
+            "ignoresKnockback": row.get("ignore_pushback"),
+            "ignoredBuffs": row.get("ignore_buffs"),
+            "attackRecoilTiles": tiles("attack_pushback_milli"),
+            "projectilePushbackTiles": shot["pushback_milli"] / 1000
+            if shot.get("pushback_milli") is not None
+            else None,
+            "projectileTargetBuff": shot.get("target_buff"),
+            "projectileBuffDurationMs": shot.get("buff_time_ms"),
+        },
+        "speedRaw": row.get("speed"),
+        "deployDelayMs": row.get("deploy_time_ms"),
+        "spawnRules": {
+            k: row[k]
+            for k in (
+                "spawner",
+                "life_state_spawner",
+                "interval_spawner",
+                "death_spawn",
+                "death_spawn_projectile",
+                "spawn_pathfind",
+                "stage_schedule",
+                "mana",
+            )
+            if row.get(k) is not None
+        },
+        "targets": {
+            "air": row.get("attacks_air"),
+            "ground": row.get("attacks_ground"),
+            "buildingsOnly": row.get("target_only_buildings"),
+        },
+        # The raw table also assigns a card-rarity ladder to crown towers. Their actual
+        # max HP and damage follow separate tower ladders, measured in crownTowerCombat.
+        "levelScaling": None
+        if row.get("name") in ("KingTower", "PrincessTower")
+        else row.get("level_scaling"),
+    }
+
+
+def engine_specs(catalogue=None):
+    catalogue = catalogue or json.loads((CONTRACTS_DIR / "card-catalogue.json").read_bytes())
+    path = DATA_DIR / "arena/rules/source" / RULES["tableFile"]
+    if digest(path) != RULES["tableSHA256"]:
+        raise ValueError("Pinned card table checksum mismatch")
+    table = json.loads(path.read_bytes())
+    if table["version"] != catalogue["tableVersion"] or table["version"] != RULES["tableVersion"]:
+        raise ValueError("Card table version changed")
+    fields = {
+        "base": {r["name"]: r for r in table["cards"]},
+        "evolution": {r["name"].removesuffix("_EV1"): r for r in table["evolutions"]},
+        "hero": {r["name"].removesuffix("_hero"): r for r in table["hero_forms"]},
+    }
+    cards = {}
+    for card, entry in catalogue["cards"].items():
+        engine = entry["engine"]
+        forms = {k: f[engine] for k, f in fields.items() if engine in f}
+        if forms["base"]["rarity"] == "Champion":
+            forms["champion"] = forms.pop("base")
+        created = {kind: created_by_form(table, row) for kind, row in forms.items()}
+        cards[card] = {
+            "engine": engine,
+            "placement": entry["placement"],
+            "forms": forms,
+            "combat": {k: combat_stats(r) for k, r in forms.items()},
+            "createdByForm": created,
+            "objects": body_labels(catalogue, created, card),
+        }
+    linked = {b for entry in cards.values() for b in entry["objects"]}
+    missing = catalogue["bodies"].keys() - linked - {"?"}
+    towers = {"king_tower", "princess_tower", "chef_tower", "cannoneer", "dagger_duchess"}
+    unsupported = {
+        catalogue["units"].get(row.get("summon_character")): row["name"]
+        for row in table["cards"]
+        if row["name"] not in {c["engine"] for c in cards.values()}
+    }
+    exclusions = {
+        b: {
+            "reason": "arena_tower" if b in towers else "unsupported_engine_card",
+            "source": unsupported.get(b),
+        }
+        for b in missing
+        if b in towers or b in unsupported
+    }
+    result = {
+        "objectOrigins": exclusions,
+        "tableVersion": table["version"],
+        "tableSHA256": RULES["tableSHA256"],
+        "level": RULES["level"],
+        "conventions": table["conventions"],
+        "units": {
+            name: {"raw": unit, "combat": combat_stats(unit), "body": catalogue["units"].get(name)}
+            for name, unit in table["units"].items()
+        },
+        "projectiles": table["projectiles"],
+        "effects": table["area_effect_objects"],
+        "buffs": table["buffs"],
+        "towers": table["towers"],
+        "unsupportedCards": {
+            row["name"]: row
+            for row in table["cards"]
+            if row["name"] not in {c["engine"] for c in cards.values()}
+        },
+        "cards": cards,
+        "unlinkedBodies": sorted(missing - exclusions.keys()),
+        "unknownSentinel": "?",
+    }
+    atomic_json(DATA_DIR / "arena/rules/engine-specs.json", result, compact=True)
+    return result

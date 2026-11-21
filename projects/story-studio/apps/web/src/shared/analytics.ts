@@ -3,6 +3,7 @@ import type { TFormat } from '../features/story/model/story';
 export type TStudioAction =
   | 'write'
   | 'continue'
+  | 'writing-stop'
   | 'image'
   | 'image-import'
   | 'material-add'
@@ -11,16 +12,28 @@ export type TStudioAction =
   | 'material-stop'
   | 'material-delete'
   | 'video'
+  | 'video-stop'
   | 'voice'
   | 'compose'
   | 'voice-create'
   | 'voice-upload'
   | 'voice-train'
   | 'voice-resume'
-  | 'voice-cancel';
+  | 'voice-cancel'
+  | 'shorts-setup-voice'
+  | 'shorts-status'
+  | 'shorts-leads'
+  | 'shorts-capture'
+  | 'shorts-boards'
+  | 'shorts-daily'
+  | 'shorts-render'
+  | 'shorts-verify';
 export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };
+  studio_menu_toggled: { expanded: boolean };
+  studio_format_selected: { format: TFormat };
+  studio_export_menu_toggled: { expanded: boolean };
   studio_opened: { source: TStudioSource };
   studio_request_clicked: { action: TStudioAction };
   studio_request_succeeded: { action: TStudioAction };

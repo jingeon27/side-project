@@ -52,15 +52,18 @@ function copyWithTextarea(text: string, doc: Document) {
   doc.body.append(textarea);
   textarea.select();
   textarea.setSelectionRange(0, text.length);
-  let copied = false;
-  try {
-    copied = doc.execCommand('copy');
-  } catch {
-    copied = false;
-  }
+  const copied = execCopy(doc);
   textarea.remove();
   if (active instanceof HTMLElement) active.focus();
   return copied;
+}
+
+function execCopy(doc: Document) {
+  try {
+    return doc.execCommand('copy');
+  } catch {
+    return false;
+  }
 }
 
 /** 앱 clipboard.copy → navigator.clipboard → 숨긴 textarea 순서로 복사한다. 성공한 경로를, 모두 실패하면 null을 돌려준다. */

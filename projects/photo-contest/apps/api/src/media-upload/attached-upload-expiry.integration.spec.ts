@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -37,7 +38,7 @@ describe('붙은 업로드의 만료', () => {
         groupId,
         tokenHash: randomUUID(),
         storageKey: createMediaKey('png'),
-        expiresAt: new Date(Date.now() + HOUR_MS),
+        expiresAt: dayjs().add(HOUR_MS, 'millisecond').toDate(),
         kind: 'PHOTO',
         contentType: 'image/png',
         byteSize: 128,
@@ -45,7 +46,8 @@ describe('붙은 업로드의 만료', () => {
     });
   const expiryOf = async (id: string) =>
     (await api.db.postUpload.findUnique({ where: { id }, select: { expiresAt: true } }))?.expiresAt;
-  const cleanupLater = (ms: number) => api.app.get(MaintenanceService).cleanup(new Date(Date.now() + ms));
+  const cleanupLater = (ms: number) =>
+    api.app.get(MaintenanceService).cleanup(dayjs().add(ms, 'millisecond').toDate());
 
   it('게시물에 붙인 업로드는 만료를 비우고 정리 작업이 기한 뒤에도 지우지 않아야 한다', async () => {
     const upload = await completedUpload();
@@ -65,7 +67,7 @@ describe('붙은 업로드의 만료', () => {
         contestId,
         imageKey: upload.storageKey,
         mediaUploadId: upload.id,
-        expiresAt: new Date(Date.now() + HOUR_MS),
+        expiresAt: dayjs().add(HOUR_MS, 'millisecond').toDate(),
       },
     });
     await api.gqlOk(owner.cookie, CREATE_SUBMISSION, { contestId, uploadId: grant.id, caption: '만료 없음' });
@@ -79,7 +81,7 @@ describe('붙은 업로드의 만료', () => {
         groupId,
         mediaUploadId: upload.id,
         storageKey: upload.storageKey ?? '',
-        expiresAt: new Date(Date.now() + HOUR_MS),
+        expiresAt: dayjs().add(HOUR_MS, 'millisecond').toDate(),
       },
     });
     await api.gqlOk(owner.cookie, UPDATE_PROFILE, { groupId, avatarId: avatar.id, remove: false });
@@ -103,7 +105,7 @@ describe('붙은 업로드의 만료', () => {
         contestId,
         imageKey: upload.storageKey,
         mediaUploadId: upload.id,
-        expiresAt: new Date(Date.now() + HOUR_MS),
+        expiresAt: dayjs().add(HOUR_MS, 'millisecond').toDate(),
       },
     });
     await cleanupLater(3 * HOUR_MS);
@@ -123,7 +125,7 @@ describe('붙은 업로드의 만료', () => {
         userId: owner.id,
         contestId,
         imageKey: createMediaKey('png'),
-        expiresAt: new Date(),
+        expiresAt: dayjs().toDate(),
       },
     });
     const submission = await api.db.submission.create({
@@ -141,6 +143,6 @@ describe('붙은 업로드의 만료', () => {
     await api.gqlOk(owner.cookie, 'mutation($id:ID!){deleteSubmission(submissionId:$id)}', {
       id: submission.id,
     });
-    expect((await expiryOf(upload.id))?.getTime()).toBeLessThanOrEqual(Date.now());
+    expect((await expiryOf(upload.id))?.getTime()).toBeLessThanOrEqual(dayjs().valueOf());
   });
 });

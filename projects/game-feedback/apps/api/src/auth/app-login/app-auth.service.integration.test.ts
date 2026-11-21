@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -88,7 +89,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const body = await issue();
     const stored = await db.appLoginTicket.findUniqueOrThrow({ where: { codeHash: hash(body.code) } });
     expect(stored.challenge).toBe(challenge);
-    expect(stored.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(120_000);
+    expect(stored.expiresAt.getTime() - dayjs().valueOf()).toBeLessThanOrEqual(120_000);
     const webview = supertest.agent(app.getHttpServer());
     const result = await exchange(body, webview).expect(200);
     expect(result.body.user.nickname).toBe('앱사용자');
@@ -112,7 +113,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const expired = await issue();
     await db.appLoginTicket.update({
       where: { codeHash: hash(expired.code) },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: dayjs(0).toDate() },
     });
     await exchange(expired).expect(400);
     const body = await issue();

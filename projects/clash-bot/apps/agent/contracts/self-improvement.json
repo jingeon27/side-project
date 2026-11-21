@@ -1,0 +1,32 @@
+{
+  "format": "clash-self-improvement-v1",
+  "tickSeconds": 60,
+  "arena": {
+    "start": [
+      "--hours",
+      "0",
+      "--games",
+      "4",
+      "--pool-games",
+      "4",
+      "--practice-games",
+      "56",
+      "--workers",
+      "4",
+      "--simulations",
+      "16",
+      "--depth",
+      "8",
+      "--pairs",
+      "32",
+      "--evaluate-every",
+      "4"
+    ],
+    "niceness": 10,
+    "restartDelaysSeconds": [60, 300, 1800],
+    "failureWindowHours": 6,
+    "maxFailures": 3
+  },
+  "rulesCheckHours": 24,
+  "reportHours": 24
+}

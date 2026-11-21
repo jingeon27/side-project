@@ -9,8 +9,7 @@ import { Button, buttonVariants } from '../button/Button';
 const iconButtonShape = cva(
   [
     'relative inline-flex size-touch shrink-0 items-center justify-center rounded-full select-none',
-    'transition-[background-color,color,transform] duration-150 active:not-data-disabled:scale-95',
-    'data-disabled:cursor-not-allowed data-disabled:opacity-45',
+    'motion-safe:active:not-data-disabled:scale-95',
   ],
   {
     variants: {

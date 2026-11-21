@@ -20,6 +20,7 @@ from ..catalogue import current
 
 SPEC = json.loads((CONTRACTS_DIR / "arena.json").read_text())
 OBSERVATION_FORMAT = "clash-arena-observation-v2"
+ROLLOUT_CLOCK = "staggered_public_decision_clock_v1"
 
 
 class DeckSpec(BaseModel):
@@ -37,15 +38,45 @@ class DeckSpec(BaseModel):
         return self
 
 
-DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
-# The deck the live screen plays; Counterpush is a mirror match of it.
+MATCHUP_DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+practice = json.loads((CONTRACTS_DIR / "arena-practice.json").read_bytes())
+# A changed table needs fresh receipts before its extra cards can enter the learner.
+OMIT_OPENING = frozenset(practice["omitFromStartingHand"])
+MINIMUM_LEVELS = practice["minimumLevels"]
+FRIENDLY_SPELLS = frozenset(practice["friendlySpells"])
+PRACTICE_DECKS = (
+    {
+        **{
+            name: DeckSpec(cards=tuple(cards), forms=(0,) * 8)
+            for name, cards in practice["decks"].items()
+        },
+        **{
+            name: DeckSpec.model_validate(deck)
+            for name, deck in practice.get("formDecks", {}).items()
+        },
+    }
+    if practice["tableSHA256"] == SPEC["tableSHA256"] and practice["catalogueID"] == current().id
+    else {}
+)
+DECKS = {**MATCHUP_DECKS, **PRACTICE_DECKS}
+# The deck the live Trophy screen plays; half of the self-play games mirror it.
 LIVE_DECK = SPEC["liveDeck"]
+POOL_DECKS = tuple(sorted(MATCHUP_DECKS.keys() - {LIVE_DECK}))
+POOL_ATTACKS = SPEC["poolAttackCards"]
+if set(POOL_ATTACKS) != set(POOL_DECKS) or any(
+    not cards or not set(cards) <= set(MATCHUP_DECKS[deck].cards)
+    for deck, cards in POOL_ATTACKS.items()
+):
+    raise ValueError("Each non-live matchup deck needs attack cards from its own deck")
 if LIVE_DECK not in DECKS:
     raise ValueError("The live deck must be one of the arena decks")
-# One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7,
-# which the Qwen study exports of live-mirror games still index.
+# One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7.
 CARDS = list(
-    dict.fromkeys(card for name in (LIVE_DECK, *sorted(DECKS)) for card in DECKS[name].cards)
+    dict.fromkeys(
+        card
+        for name in (LIVE_DECK, *sorted(MATCHUP_DECKS), *sorted(PRACTICE_DECKS))
+        for card in DECKS[name].cards
+    )
 )
 CARD_ID = {card: index for index, card in enumerate(CARDS)}
 TILE = 1000 * royalesim.SUBTILE_PER_MILLITILE
@@ -70,16 +101,25 @@ def forms_of(name, order):
     return [form[card] for card in order]
 
 
-def new_battle():
+def new_battle(card_names=None):
     if royalesim.__version__ != SPEC["version"]:
         raise RuntimeError("Engine version differs from the pinned arena rules")
     return royalesim.Battle(
-        card_names=CARDS,
+        card_names=CARDS if card_names is None else card_names,
         slot_of_k=[[0, 1, 2], [0, 1, 2]],
         level=SPEC["level"],
         tower_level=SPEC["level"],
         calibration_overrides={"cards.CARD_TABLE": json.dumps(SPEC["table"])},
     )
+
+
+def pinned_table():
+    """The client table compiled into the pinned wheel, the one new_battle() runs."""
+    stem = SPEC["tableFile"].removeprefix("cards-").removesuffix(".json").replace("-", "_")
+    table = json.loads(getattr(royalesim, f"EMBEDDED_CARDS_{stem}_JSON"))
+    if table["version"] != SPEC["tableVersion"] or table["version"] != new_battle().card_table():
+        raise ValueError("Embedded card table differs from the pinned rules table")
+    return table
 
 
 def rules_identity():
@@ -103,26 +143,37 @@ def rules_identity():
         # Visibility and timing alter the information set/returns just as a balance patch does.
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
-        "evaluationSuite": "live_mirror_pool_and_self_opening_v4",
+        "evaluationSuite": "live_mirror_and_oriented_mixed_with_same_deck_incumbent_v6",
         "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
         "policyMechanics": digest(
             {
                 name: json.loads((CONTRACTS_DIR / name).read_text())
                 for name in (
                     "fast-tactics.json",
+                    "hut-activation.json",
                     "combat-projection.json",
                     "placement-effects.json",
                     "deployment.json",
                 )
             }
         ),
-        "trainingOpponent": "quarter_fixed_defender_direct_no_teacher_rows_v1",
-        "tacticalTeacher": "paired_reactive_sampled_public_defender_v1",
-        "searchPolicy": "card_bandits_covered_roots_visited_targets_v1",
+        "trainingActor": "champion_search_learner_live_and_pool_decks_with_matched_form_trials_v4",
+        "poolAttackTrials": {
+            "cards": POOL_ATTACKS,
+            "choice": "matched_save_or_spend_with_living_princess_towers_v2",
+        },
+        "candidatePlacement": "native_legal_with_public_mirror_target_v2",
+        "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
+        "trainingOpponent": "rotating_forms_pressure_funded_and_supported_mirror_v7",
+        "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
+        "searchPolicy": "public_outcome_validated_leaf_and_family_trials_v7",
+        "rolloutTiming": ROLLOUT_CLOCK,
+        "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
-        "policyInput": "live_screen_health_bars_v2",
-        "towerLevels": "each_side_card_level_v1",
+        "policyInput": "live_screen_health_bars_subtile_motion_v3",
+        "towerLevels": "side_level_with_rarity_minimum_for_cards_v2",
+        "practiceSpec": digest(practice) if PRACTICE_DECKS else None,
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",

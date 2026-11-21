@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -69,7 +70,11 @@ describe('dedicated administrator credentials and private sessions', () => {
     state.userId = user.id;
     state.publicToken = token();
     await state.db.session.create({
-      data: { userId: user.id, tokenHash: hash(state.publicToken), expiresAt: new Date(Date.now() + 60000) },
+      data: {
+        userId: user.id,
+        tokenHash: hash(state.publicToken),
+        expiresAt: dayjs().add(60000, 'millisecond').toDate(),
+      },
     });
   }, 30000);
   afterAll(async () => {
@@ -125,7 +130,7 @@ describe('dedicated administrator credentials and private sessions', () => {
     const raw = cookie.split('=')[1] ?? '';
     expect((await request().get('/api/session').set('Authorization', `Bearer ${raw}`)).body.user).toBeNull();
     const row = await state.db.adminSession.findUniqueOrThrow({ where: { tokenHash: hash(raw) } });
-    expect(row.expiresAt.getTime() - Date.now()).toBeGreaterThan(3500000);
+    expect(row.expiresAt.getTime() - dayjs().valueOf()).toBeGreaterThan(3500000);
     await request().post('/api/admin/auth/logout').set('Cookie', combined).set('Origin', origin).expect(200);
     expect((await request().get('/api/admin/auth/session').set('Cookie', cookie)).body.user).toBeNull();
     expect((await request().get('/api/session').set('Cookie', combined)).body.user.id).toBe(state.userId);
@@ -206,10 +211,13 @@ describe('dedicated administrator credentials and private sessions', () => {
     expect((await request().get('/api/admin/auth/session').set('Cookie', cookie)).body.user).toBeNull();
     expect((await login()).status).toBe(401);
     const fresh = adminCookie(await login('operator', 'changed-admin-password'));
-    await state.db.adminSession.updateMany({ data: { expiresAt: new Date(0) } });
+    await state.db.adminSession.updateMany({ data: { expiresAt: dayjs(0).toDate() } });
     expect((await request().get('/api/admin/auth/session').set('Cookie', fresh)).body.user).toBeNull();
     const active = adminCookie(await login('operator', 'changed-admin-password'));
-    await state.db.adminAccount.update({ where: { username: 'operator' }, data: { disabledAt: new Date() } });
+    await state.db.adminAccount.update({
+      where: { username: 'operator' },
+      data: { disabledAt: dayjs().toDate() },
+    });
     expect((await request().get('/api/admin/auth/session').set('Cookie', active)).body.user).toBeNull();
     expect((await login('operator', 'changed-admin-password')).status).toBe(401);
   });

@@ -1,6 +1,8 @@
 import { instant } from '@next/playwright';
 import { expect, test, type Page, type Request } from '@playwright/test';
 
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 const origin = 'http://127.0.0.1:3353';
 
 function trackPrefetches({ page, contentOnly = false }: { page: Page; contentOnly?: boolean }) {
@@ -242,7 +244,10 @@ test('the static document applies a saved appearance before hydration and keeps 
     const response = await page.goto('/ko/posts/sample-post-0');
     expect(response?.ok()).toBe(true);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(page.locator('.detail-card:visible')).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(page.locator('.detail-card:visible')).toHaveCSS(
+      'background-color',
+      themeColorRgb('surface', 'dark'),
+    );
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
       'https://feedback.example/ko/posts/sample-post-0',
@@ -297,7 +302,10 @@ test('initial documents render public content without JavaScript and inaccessibl
     }
     await page.goto('/ko/posts/sample-post-0');
     await expect(page.locator('.detail-card:visible')).toBeVisible();
-    await expect(page.locator('.detail-card:visible')).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(page.locator('.detail-card:visible')).toHaveCSS(
+      'background-color',
+      themeColorRgb('surface', 'dark'),
+    );
     await expect(page).toHaveTitle(/ \| Game Mate$/);
     const missing = await context.request.get('/ko/posts/missing-post');
     expect(missing.status()).toBe(404);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { COUNTERPUSH_DECK } from '../deck.ts';
+import { LIVE_DECK } from '../deck.ts';
 import { BattleMemory } from './battle-state.ts';
 import { FieldDynamics } from './field-dynamics.ts';
 import type { UnitScan } from './observation.ts';
@@ -39,7 +39,7 @@ describe('field dynamics', () => {
     expect(
       second.allies.find((unit) => unit.kind === 'fire_spirit')?.velocity?.speedPixelsPerSecond,
     ).toBeGreaterThan(0);
-    const state = new BattleMemory([...COUNTERPUSH_DECK]).observe({
+    const state = new BattleMemory([...LIVE_DECK]).observe({
       at: 1500,
       amount: 5,
       hand: ['knight', 'furnace', 'ice_wizard', 'skeletons'],

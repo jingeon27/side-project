@@ -91,7 +91,7 @@ describe('글자 토큰 대비', () => {
   });
 });
 
-// subtle(라이트 흰 바탕 2.52:1)은 aria-hidden 장식 아이콘에만 쓴다. 글자인 자리표시와 조작 요소의 표시는 아래 토큰이 맡는다.
+// subtle은 aria-hidden 장식 아이콘에만 쓴다. 글자인 자리표시와 조작 요소의 표시는 아래 토큰이 맡는다.
 describe('자리표시와 시트 손잡이 대비', () => {
   const sheetCss = readFileSync(join(uiDir, 'bottom-sheet/bottom-sheet.css'), 'utf8');
 

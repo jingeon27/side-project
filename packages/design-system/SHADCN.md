@@ -24,7 +24,7 @@ Game Feedback의 실제 작성/수정/신고/로그인/언어/검색/채팅 폼�
 
 ## Select와 Sonner
 
-Select는 공식 base-nova의 Base UI Root/Trigger/Value/Portal/Positioner/Popup/List/Item/Indicator/ScrollArrow 구성을 사용한다. 공통 토큰, 16px 글자와 44px 트리거/옵션, popover 레이어에 맞췄다. hideIcon은 아이콘만 표시하는 트리거에서 기본 화살표를 숨기며 접근성 이름과 선택값은 앱이 제공한다. 언어와 화면 모드 설정에서 사용하고 RHF의 native 폼은 기존 NativeSelect를 유지한다.
+Select는 공식 base-nova의 Base UI Root/Trigger/Value/Portal/Positioner/Popup/List/Item/Indicator/ScrollArrow 구성을 사용한다. 공통 토큰, 16px 글자와 44px 트리거, 최소 44px의 여러 줄 옵션, popover 레이어에 맞췄다. hideIcon은 아이콘만 표시하는 트리거에서 기본 화살표를 숨기며 접근성 이름과 선택값은 앱이 제공한다. 언어와 화면 모드 설정에서 사용하고 RHF의 native 폼은 기존 NativeSelect를 유지한다.
 
 Toaster는 같은 registry의 Sonner 조합을 named function으로 제공한다. 앱이 theme을 전달하므로 next-themes를 중복 설치하지 않는다. 색/모서리/폰트/44px 닫기는 공통 패키지가 소유하며, 위치/시간/번역/업무 알림은 앱에서 설정한다. Sonner 2.0.8을 이 패키지 의존성으로 선언하고 toast를 함께 내보낸다. Radix UI 의존성은 추가하지 않는다.
 

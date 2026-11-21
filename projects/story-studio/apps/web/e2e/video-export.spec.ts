@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import { libraryKey } from '../src/features/library/model/library';
 import { sampleProject } from '../src/features/story/model/sample';
-import { mockLibrary } from './library';
+import { mockLibrary, openSavedProject } from './library';
 
 test.beforeEach(async ({ page }) => {
   await mockLibrary(page);
@@ -59,10 +59,12 @@ test('장면들을 한글 자막을 담은 재생 가능한 영상으로 합친�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/studio');
-  await page.getByRole('button', { name: /비가 오면, 편지가 도착해/ }).click();
+  // 설정을 읽기 전의 로컬 기본값으로 서버 합성을 요청하지 않도록 브라우저 모드 준비를 기다린다.
+  await expect(page.getByRole('button', { name: 'AI 연결이 필요해요' })).toBeVisible();
+  await openSavedProject(page, /비가 오면, 편지가 도착해/);
   await page.getByText('내보내기', { exact: true }).click();
   const downloading = page.waitForEvent('download');
-  await page.getByRole('button', { name: /자막 넣어 영상 합치기/ }).click();
+  await page.getByRole('menuitem', { name: /자막 넣어 영상 합치기/ }).click();
   const download = await downloading;
   const bytes = await readFile((await download.path())!);
   expect(bytes.length).toBeGreaterThan(1000);

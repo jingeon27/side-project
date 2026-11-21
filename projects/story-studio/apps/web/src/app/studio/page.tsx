@@ -8,11 +8,14 @@ export default async function Workspace({
 }) {
   const query = await searchParams;
   const format = formatSchema.safeParse(query.format);
+  const demoSource = query.demo === 'bundled' ? 'bundled' : query.demo === '1' ? 'local' : undefined;
+  const openSample = query.sample === '1';
   return (
     <Studio
+      key={JSON.stringify([format.data, openSample, demoSource])}
       initialFormat={format.success ? format.data : undefined}
-      openSample={query.sample === '1'}
-      openDemo={query.demo === '1'}
+      openSample={openSample}
+      demoSource={demoSource}
     />
   );
 }

@@ -62,7 +62,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, 8, -11, -10.75, 2, -9]
+    "bias": [0, 9.125, -11, -10.75, 2, -9]
   },
   {
     "name": "reserve barrel for a possible Goblin Barrel",
@@ -702,5 +702,172 @@
       [1, 0],
       [0, 2]
     ]
+  },
+  {
+    "name": "fresh Graveyard and enemy Poison: cover the area with lasting defense, avoid fragile troops inside",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 1],
+        ["red", "poison", 2.5, 7, 1]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2],
+      [1, 5],
+      [4, 3]
+    ]
+  },
+  {
+    "name": "new friendly Poison covers the remaining Graveyard window",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 5],
+        ["blue", "poison", 4.5, 7, 1]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [[0, 1]]
+  },
+  {
+    "name": "a nearly expired friendly Poison leaves time for fresh enemy Graveyard spawns",
+    "context": {
+      "hand": ["poison", "ice_wizard", "skeletons", "barbarian_barrel"],
+      "elixir": 7,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "deployments": [],
+      "effects": [
+        ["red", "graveyard", 4.5, 7, 1],
+        ["blue", "poison", 4.5, 7, 7]
+      ],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 4.5, 7],
+        ["C", "card", "poison", 4, 14.5, 7],
+        ["D", "card", "ice_wizard", 3, 4.5, 7],
+        ["E", "card", "ice_wizard", 3, 6.1, 7],
+        ["F", "card", "skeletons", 1, 4.5, 7]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
+    ]
+  },
+  {
+    "name": "An enemy Cannon 7.8 tiles away across the river wakes the nearer Hut",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["cannon", 12.5, 19.3, "?"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "cannon",
+            "x": 12.5,
+            "y": 19.3,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 5.5, 11.5],
+        ["B", "card", "goblin_hut", 4, 12.5, 11.5]
+      ],
+      "deployments": []
+    },
+    "bias": [-0.52, 1.48]
+  },
+  {
+    "name": "An enemy crown tower alone gives no Hut activation credit",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["king_tower", 12.5, 19.3, "?"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "king_tower",
+            "x": 12.5,
+            "y": 19.3,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 5.5, 11.5],
+        ["B", "card", "goblin_hut", 4, 12.5, 11.5]
+      ],
+      "deployments": []
+    },
+    "bias": [-0.52, -0.52]
   }
 ]

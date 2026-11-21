@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -61,7 +62,11 @@ describe('persistent private media with a regular user session', () => {
     ).id;
     state.token = token();
     await state.db.session.create({
-      data: { userId: state.userId, tokenHash: hash(state.token), expiresAt: new Date(Date.now() + 3600000) },
+      data: {
+        userId: state.userId,
+        tokenHash: hash(state.token),
+        expiresAt: dayjs().add(3600000, 'millisecond').toDate(),
+      },
     });
   }, 30000);
   afterAll(async () => {
@@ -103,14 +108,22 @@ describe('persistent private media with a regular user session', () => {
     const storage = state.app.get(MediaStorage);
     await state.db.mediaObject.update({
       where: { id: file.objectId ?? 'missing' },
-      data: { createdAt: new Date(Date.now() - 2 * 86400000) },
+      data: {
+        createdAt: dayjs()
+          .subtract(2 * 86400000, 'millisecond')
+          .toDate(),
+      },
     });
     expect(await storage.prune()).toEqual({ removed: 0, failed: 0 });
     // Seven-day backups can still restore a deleted object during the fourteen-day grace period.
     expect(await s3.read(file.object?.key ?? '')).toEqual(bytes);
     await state.db.mediaObject.update({
       where: { id: file.objectId ?? 'missing' },
-      data: { retiredAt: new Date(Date.now() - 15 * 86400000) },
+      data: {
+        retiredAt: dayjs()
+          .subtract(15 * 86400000, 'millisecond')
+          .toDate(),
+      },
     });
     expect(await storage.prune()).toEqual({ removed: 1, failed: 0 });
     expect(await s3.exists(file.object?.key ?? '')).toBe(false);

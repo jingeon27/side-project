@@ -77,12 +77,8 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
   file: File,
   codec: IImageCodec<TImage>,
 ): Promise<IPreparedImage> {
-  let image: TImage;
-  try {
-    image = await codec.decode(file);
-  } catch {
-    return keepOriginal(file);
-  }
+  const image = await decodeOrNull(codec, file);
+  if (!image) return keepOriginal(file);
   try {
     const size = fitWithin(image.width, image.height, UPLOAD_MAX_SIDE);
     const blob = await codec.encodeJpeg(image, size, UPLOAD_JPEG_QUALITY);
@@ -91,6 +87,14 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
       : keepOriginal(file, { width: image.width, height: image.height });
   } finally {
     image.close();
+  }
+}
+
+async function decodeOrNull<TImage extends IDecodedImage>(codec: IImageCodec<TImage>, file: File) {
+  try {
+    return await codec.decode(file);
+  } catch {
+    return null;
   }
 }
 

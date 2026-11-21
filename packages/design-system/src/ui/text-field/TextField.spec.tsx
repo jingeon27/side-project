@@ -94,7 +94,7 @@ describe('FormField', () => {
     );
     const input = screen.getByRole('textbox', { name: '연결할 태그' });
     expect(ref.current).toBe(input);
-    expect(input).toHaveAccessibleDescription('#으로 시작해요 태그를 확인해 주세요');
+    expect(input).toHaveAccessibleDescription('태그를 확인해 주세요 #으로 시작해요');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('alert')).toHaveTextContent('태그를 확인해 주세요');
   });

@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { BattleMemory, type BattleSituation, type FieldUnit } from '../battle/battle-state.ts';
 import type { CatalogueCard } from '../card-catalogue.ts';
-import { COUNTERPUSH_DECK, COUNTERPUSH_EVOLUTIONS } from '../deck.ts';
+import { LIVE_DECK, LIVE_DECK_EVOLUTIONS } from '../deck.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
 import { loadProfile, type Profile } from '../profile.ts';
 import { fastCandidates, placementGrid, placementTiles } from './candidates.ts';
@@ -52,7 +52,7 @@ beforeAll(async () => {
 });
 
 const situation = (enemies: FieldUnit[] = []): BattleSituation => {
-  const observed = new BattleMemory([...COUNTERPUSH_DECK], COUNTERPUSH_EVOLUTIONS).observe({
+  const observed = new BattleMemory([...LIVE_DECK], LIVE_DECK_EVOLUTIONS).observe({
     at: 1_000,
     amount: 5,
     hand: ['knight', 'furnace', 'graveyard', 'poison'],
@@ -71,6 +71,28 @@ const tiles = (profile: Profile, actions: ReturnType<typeof fastCandidates>, car
   actions.filter((action) => action.card === card).map((action) => tilePoint(profile, action.target));
 
 describe('fast policy candidates follow the simulator legal-action rules', () => {
+  it('offers Poison at the observed friendly-side Graveyard before any skeleton is seen', () => {
+    const profile = state.profile!;
+    const point = [3.7, 7] as const;
+    const observed = situation();
+    const actions = fastCandidates(profile, ['poison', 'knight', 'furnace', 'graveyard'], 5, {
+      ...observed,
+      effects: [
+        {
+          ...screenPoint(profile, point),
+          card: 'graveyard',
+          side: 'red',
+          radius: 52,
+          confidence: 0.98,
+          visibleAgeMs: 800,
+          onsetCertain: true,
+          source: 'visual',
+        },
+      ],
+    });
+    expect(tiles(profile, actions, 'poison')[0]).toEqual(point);
+  });
+
   it('round-trips tile and screen coordinates', () => {
     const profile = state.profile!;
     for (const tile of [

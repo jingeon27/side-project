@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { Response } from 'supertest';
 
 /** 응답의 Set-Cookie 헤더 전부 */
@@ -35,5 +36,9 @@ export function cookieAttributes(setCookie: string): string[] {
 /** 브라우저가 쿠키를 지우게 하는 Set-Cookie인지 (만료일이 과거) */
 export function isClearingCookie(setCookie: string): boolean {
   const expires = cookieAttributes(setCookie).find((attribute) => attribute.startsWith('Expires='));
-  return cookieValue(setCookie) === '' && expires !== undefined && Date.parse(expires.slice(8)) < Date.now();
+  return (
+    cookieValue(setCookie) === '' &&
+    expires !== undefined &&
+    dayjs(expires.slice(8)).valueOf() < dayjs().valueOf()
+  );
 }

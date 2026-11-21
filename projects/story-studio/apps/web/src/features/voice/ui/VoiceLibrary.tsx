@@ -8,6 +8,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { Button, FormField, Input } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
+
 import { trackStudioEvent } from '../../../shared/analytics';
 import { jsonRequest, voiceCatalogQuery, voiceRequest } from '../api/voice-client';
 import { voiceDatasetSchema, voiceNameSchema } from '../model/voice-training';
@@ -34,7 +37,9 @@ export function VoiceLibrary() {
   return (
     <div className="voice-page">
       <header className="voice-page-header">
-        <Link href="/studio">작업실로</Link>
+        <ButtonLink variant="ghost" size="sm" href="/studio">
+          작업실로
+        </ButtonLink>
         <span>목소리 학습</span>
       </header>
       <main className="voice-page-content">
@@ -44,17 +49,18 @@ export function VoiceLibrary() {
           한 사람의 여러 녹음과 대본으로 음성 가중치를 학습해요. 녹음과 학습 결과는 이 컴퓨터에 저장됩니다.
         </p>
         <form className="voice-create" onSubmit={form.handleSubmit((input) => create.mutate(input))}>
-          <label htmlFor="voice-name">새 목소리 이름</label>
           <div>
-            <input
-              id="voice-name"
-              placeholder="예: 별을 읽어주는 목소리"
-              maxLength={60}
-              {...form.register('name')}
-            />
-            <button className="button primary" disabled={create.isPending}>
+            <FormField label="새 목소리 이름">
+              <Input
+                id="voice-name"
+                placeholder="예: 별을 읽어주는 목소리"
+                maxLength={60}
+                {...form.register('name')}
+              />
+            </FormField>
+            <Button variant="primary" type="submit" loading={create.isPending}>
               {create.isPending ? '만드는 중' : '목소리 만들기'}
-            </button>
+            </Button>
           </div>
           {form.formState.errors.name && <p role="alert">{form.formState.errors.name.message}</p>}
           {create.error && <p role="alert">{create.error.message}</p>}
@@ -65,9 +71,9 @@ export function VoiceLibrary() {
           {catalog.error && (
             <p role="alert">
               {catalog.error.message}{' '}
-              <button className="text-button" onClick={() => void catalog.refetch()}>
+              <Button variant="ghost" size="sm" onClick={() => void catalog.refetch()}>
                 다시 불러오기
-              </button>
+              </Button>
             </p>
           )}
           {catalog.data?.voices.length === 0 && <p>아직 등록한 목소리가 없어요</p>}

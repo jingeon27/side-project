@@ -1,6 +1,6 @@
 """One simulated game: delayed plays, the public record and what each side may observe.
 
-No Counterpush internal state or API is used. A play runs, and becomes public, its side's
+No live-client internal state or API is used. A play runs, and becomes public, its side's
 input delay after it was accepted; until then only its own side knows it.
 """
 
@@ -9,9 +9,12 @@ import json
 
 from .candidates import dense_actions
 from .elixir import ElixirLedger
+from .native_replay import Steps, restore
 from .rules import (
+    CARDS,
     FIELDS,
     LIVE_DECK,
+    MINIMUM_LEVELS,
     OBSERVATION_FORMAT,
     SPEC,
     command,
@@ -57,6 +60,7 @@ class Record:
     """An arena's public bookkeeping at one moment; with a battle save, enough to `adopt` later."""
 
     def __init__(self, arena):
+        self.initial_save, self.steps = arena.initial_save, arena.steps
         self.decks, self.delays, self.levels = arena.decks, arena.delays, arena.levels
         self.initial_hands, self.initial_next = arena.initial_hands, arena.initial_next
         self.history = arena.history.copy()
@@ -74,7 +78,6 @@ class Arena:
 
     def __init__(self, seed, initial_decks=None, decks=None, delays=(0, 0), levels=None):
         self.battle = new_battle()
-        self.catalogue = json.loads(self.battle.catalogue_json())
         self.reset(
             seed,
             initial_decks,
@@ -89,6 +92,7 @@ class Arena:
 
     @battle.setter
     def battle(self, battle):
+        self.initial_save, self.steps = None, None
         self._battle = battle
         self.changed()
 
@@ -121,11 +125,15 @@ class Arena:
             tower_hp=None,
             spawns=[],
             forms=[forms_of(name, order) for name, order in zip(self.decks, orders)],
-            levels=[[level] * len(order) for level, order in zip(self.levels, orders)],
-            # A side's crown towers are as strong as its cards, as a player's level sets both.
+            levels=[
+                [max(level, MINIMUM_LEVELS.get(CARDS[card], 1)) for card in order]
+                for level, order in zip(self.levels, orders)
+            ],
+            # A side's towers keep their rolled level; Champion cards start at level 11.
             tower_levels=list(self.levels),
         )
         self.changed()
+        self.initial_save, self.steps = self.battle.save(), None
         initial = self.state()
         self.initial_hands = [player["hand"] for player in initial["players"]]
         self.initial_next = [player["next_card"] for player in initial["players"]]
@@ -142,7 +150,8 @@ class Arena:
 
     def adopt(self, snapshot, source):
         """Load a saved battle with the public bookkeeping of the arena or record it came from."""
-        self.battle.load(snapshot)
+        restore(self.battle, snapshot, source.initial_save, source.steps)
+        self.initial_save, self.steps = source.initial_save, source.steps
         self.changed()
         self.decks, self.delays, self.levels = source.decks, source.delays, source.levels
         self.initial_hands, self.initial_next = source.initial_hands, source.initial_next
@@ -155,7 +164,6 @@ class Arena:
     def clone(self):
         copy = object.__new__(Arena)
         copy.battle = new_battle()
-        copy.catalogue = self.catalogue
         return copy.adopt(self.battle.save(), self)
 
     def observe(self, team, include_legal=True):
@@ -217,14 +225,16 @@ class Arena:
                 commands.append(cmd)
                 proposed.append((team, action))
         results = self.battle.step(commands, ticks)
+        self.steps = Steps(self.steps, tuple(commands), ticks)
         self.changed()
         for (team, action), result in zip(proposed, results):
             if result[1] != 0:
                 continue
+            player = before["players"][team]
             cost = (
-                before["players"][team]["abilities"][0][2]
+                player["abilities"][0][2]
                 if action.card == -2
-                else self.catalogue[action.card][2]
+                else player["hand_costs"][player["hand"].index(action.card)]
             )
             # A play runs, and is seen, the side's delay after the tick it was accepted on.
             self.pending.append(
@@ -238,8 +248,8 @@ class Arena:
         after = self.state()
         # Accepted is not executed: a hero can die or a placement can stop fitting while
         # the command waits. Charge only the native execution receipt, not a hand heuristic.
-        # One pending card/button per side is enforced by the native core. A terminal
-        # drop is receipted at GAME_OVER, which can be EARLIER than its planned tick.
+        # Different slots can be in flight at the same time. A terminal drop is
+        # receipted at GAME_OVER, possibly earlier than its planned tick.
         receipts = {
             (team, kind, what): (tick, reason)
             for tick, team, kind, what, reason in self.battle.step_commands_run()

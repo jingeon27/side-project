@@ -6,12 +6,108 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from clash_bot.arena.league.champions import initialize
-from clash_bot.arena.league.qualification import qualify
+from clash_bot.arena.league.qualification import promising, qualify
 from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.sim.rules import rules_identity
 
 
 class NoPlayPromotionTest(unittest.TestCase):
+    def test_promising_score_uses_an_independent_fixed_challenger_before_publishing(self):
+        rules = rules_identity()
+        audit = {"complete": True, "passed": True, "tested": True, "games": []}
+
+        def result(score):
+            return {
+                "complete": True,
+                "gate": {
+                    "passed": False,
+                    "reason": "insufficient_evidence_of_improvement",
+                    "score": score,
+                },
+                "games": [],
+                "matchupStrata": {"liveMirror": {"score": score}, "mixedDeck": {"score": score}},
+                "poolComparison": {"nonRegressing": True},
+            }
+
+        self.assertFalse(
+            promising(
+                {**result(0.59), "openingAudit": audit, "poolComparison": {"nonRegressing": False}}
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            league = initialize(root, rules)
+            learner = Policy.load(root / "checkpoints/v000000", rules["id"])
+            learner.save(root / "checkpoints/v000001", {"version": 1})
+            league["learner"] = 1
+            control = SimpleNamespace(report=lambda row: None, stopped=lambda: False)
+            with (
+                patch(
+                    "clash_bot.arena.league.qualification.evaluate",
+                    side_effect=[result(0.59), result(0.48)],
+                ) as play,
+                patch("clash_bot.arena.league.qualification.opening_audit", return_value=audit),
+                patch("clash_bot.arena.league.qualification.publish_champion") as publish,
+            ):
+                qualify(control, SimpleNamespace(count=1), root, league, rules, learner, 32)
+            self.assertEqual([call.args[3] for call in play.call_args_list], [0, 1])
+            self.assertEqual([call.kwargs["pairs"] for call in play.call_args_list], [32, 128])
+            self.assertIs(play.call_args_list[0].args[0], play.call_args_list[1].args[0])
+            self.assertIs(play.call_args_list[0].args[1], play.call_args_list[1].args[1])
+            publish.assert_not_called()
+            self.assertEqual((league["evaluations"], league["champion"]), (2, 0))
+            second = json.loads((root / "evaluations/v000001-e000001.json").read_text())
+            self.assertEqual(second["confirmationOf"], 0)
+            self.assertEqual(second["gate"]["score"], 0.48)
+
+            passed = result(0.64)
+            passed["gate"].update(passed=True, reason="qualified")
+            with (
+                patch(
+                    "clash_bot.arena.league.qualification.evaluate",
+                    side_effect=[result(0.57), passed],
+                ),
+                patch("clash_bot.arena.league.qualification.opening_audit", return_value=audit),
+                patch(
+                    "clash_bot.arena.league.qualification.benchmark", return_value={"opponents": {}}
+                ),
+                patch("clash_bot.arena.league.qualification.publish_champion") as publish,
+            ):
+                qualify(control, SimpleNamespace(count=1), root, league, rules, learner, 32)
+            publish.assert_called_once()
+            self.assertEqual((league["evaluations"], league["champion"]), (4, 1))
+            confirmed = json.loads((root / "evaluations/v000001-e000003.json").read_text())
+            self.assertEqual(confirmed["confirmationOf"], 2)
+            self.assertTrue(confirmed["gate"]["passed"])
+
+    def test_only_a_candidate_passing_both_gates_enters_the_teacher_opponent_pool(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rules = rules_identity()
+            league = initialize(root, rules)
+            policy = Policy.load(root / "checkpoints/v000000", rules["id"])
+            policy.save(root / "checkpoints/v000001", {"version": 1})
+            league["learner"] = 1
+            control = SimpleNamespace(report=lambda row: None, stopped=lambda: False)
+            workers = SimpleNamespace(count=2)
+            result = {"complete": True, "gate": {"passed": True}, "games": []}
+            audit = {"tested": True, "complete": True, "passed": True, "games": []}
+            with (
+                patch("clash_bot.arena.league.qualification.evaluate", return_value=result),
+                patch("clash_bot.arena.league.qualification.opening_audit", return_value=audit),
+                patch(
+                    "clash_bot.arena.league.qualification.benchmark", return_value={"opponents": {}}
+                ),
+                patch("clash_bot.arena.league.qualification.publish_champion") as publish,
+            ):
+                qualify(control, workers, root, league, rules, policy, 22)
+            self.assertEqual(league["champion"], 1)
+            self.assertEqual([row["version"] for row in league["opponents"]], [0, 1])
+            saved = json.loads((root / "league.json").read_text())
+            self.assertEqual(saved["opponents"], league["opponents"])
+            publish.assert_called_once()
+
     def test_stop_after_the_win_test_cannot_skip_opening_check_and_publish(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -33,6 +129,7 @@ class NoPlayPromotionTest(unittest.TestCase):
                 qualify(control, workers, root, league, rules, policy, 22)
             publish.assert_not_called()
             self.assertEqual(league["champion"], 0)
+            self.assertEqual([row["version"] for row in league["opponents"]], [0])
             recorded = json.loads((root / "evaluations/v000001-e000000.json").read_text())
             self.assertFalse(recorded["gate"]["passed"])
             self.assertEqual(recorded["gate"]["reason"], "interrupted_opening_audit")
@@ -64,6 +161,7 @@ class NoPlayPromotionTest(unittest.TestCase):
                 qualify(control, workers, root, league, rules, policy, 22)
             publish.assert_not_called()
             self.assertEqual(league["champion"], 0)
+            self.assertEqual([row["version"] for row in league["opponents"]], [0])
             recorded = json.loads((root / "evaluations/v000001-e000000.json").read_text())
             self.assertFalse(recorded["gate"]["passed"])
             self.assertEqual(recorded["gate"]["reason"], "self_opening_deadlock")
@@ -105,6 +203,7 @@ class NoPlayPromotionTest(unittest.TestCase):
             self.assertEqual(recorded["openingAudit"]["noPlayGames"], 4)
             self.assertEqual(recorded["gate"]["reason"], "insufficient_evidence_of_improvement")
             self.assertEqual(league["champion"], 0)
+            self.assertEqual([row["version"] for row in league["opponents"]], [0])
 
 
 if __name__ == "__main__":

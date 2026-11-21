@@ -5,12 +5,12 @@ import math
 import numpy as np
 
 from ..policy.choice import grouped_indices
-from ..sim.rules import Action
+from ..sim.rules import TILE, Action
 
 
 class Node:
     def __init__(self):
-        self.own, self.enemy, self.children = {}, {}, {}
+        self.own, self.children = {}, {}
         self.visits = 0
 
 
@@ -56,24 +56,55 @@ def pick(edges, actions, priors, rng, explore, cover=False):
     return actions[group[best([placement_score(i) for i in group], rng)]]
 
 
-def root_subset(actions, prior, rng, size, explore):
-    """Represent every family when the budget permits, then add promising placements."""
+def root_subset(actions, prior, rng, size, explore, focus=()):
+    """Keep the original best of each family, then compare separated alternatives."""
     if len(actions) <= size:
         return list(range(len(actions)))
     groups = grouped_indices([action.card for action in actions])
     scores = np.log(np.maximum(prior, 1e-12))
+    # 비교 기준인 각 카드의 원래 최선 위치는 잡음으로 지우지 않는다. 남는 예산만 탐색한다.
+    ranked = sorted(groups, key=lambda group: -sum(prior[i] for i in group))
+    keep = [max(group, key=lambda i: prior[i]) for group in ranked[:size]]
     if explore:
         scores = scores + rng.gumbel(size=len(scores))
-    ranked = sorted(groups, key=lambda group: -sum(prior[i] for i in group))
-    keep = [max(group, key=lambda i: scores[i]) for group in ranked[:size]]
     wait = actions.index(Action(-1)) if Action(-1) in actions else None
     if wait is not None and wait not in keep:
         keep[-1] = wait
-    for index in np.argsort(-scores, kind="stable"):
+    by_family = {}
+    ranked_extra = np.argsort(-scores, kind="stable").tolist()
+    for index in ranked_extra:
+        by_family.setdefault(actions[index].card, []).append(index)
+    order = [actions[group[0]].card for group in ranked]
+    if explore:
+        rng.shuffle(order)
+    order.sort(key=lambda family: family not in focus)
+    retained = {family: [i for i in keep if actions[i].card == family] for family in order}
+    separation = (1.5 * TILE) ** 2
+
+    def spaced(index, family):
+        candidate = actions[index]
+        return all(
+            (candidate.x - actions[other].x) ** 2 + (candidate.y - actions[other].y) ** 2
+            >= separation
+            for other in retained[family]
+        )
+
+    while len(keep) < size:
+        before = len(keep)
+        for family in order:
+            index = next((i for i in by_family[family] if spaced(i, family)), None)
+            if index is not None:
+                keep.append(index)
+                retained[family].append(index)
+            if len(keep) == size:
+                break
+        if len(keep) == before:
+            break
+    for index in ranked_extra:
         if len(keep) >= size:
             break
-        if int(index) not in keep:
-            keep.append(int(index))
+        if index not in keep:
+            keep.append(index)
     return sorted(keep)
 
 
@@ -90,6 +121,23 @@ def root_priors(actions, prior, keep):
                 result[retained] = prior[retained] * mass / selected
     selected = result[keep]
     return selected / selected.sum()
+
+
+def retain_reference(actions, prior, keep, reference):
+    """Try the student's deployed move without evicting the teacher's best tile for a card."""
+    if reference is None:
+        return keep
+    wanted = actions.index(reference)
+    if wanted in keep:
+        return keep
+    anchors = {
+        max(group, key=lambda i: prior[i]) for group in grouped_indices([a.card for a in actions])
+    }
+    extras = [i for i in keep if i not in anchors]
+    if not extras:
+        return keep
+    removed = min(extras, key=lambda i: (actions[i].card != reference.card, prior[i]))
+    return sorted([i for i in keep if i != removed] + [wanted])
 
 
 def exploration_prior(actions, prior, rng):

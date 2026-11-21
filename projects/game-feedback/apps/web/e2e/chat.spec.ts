@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import type { ChatMessage, Conversation } from '@game-feedback/contracts';
 import { listChatMessages, listConversations } from '@game-feedback/sdk';
 
@@ -53,7 +55,7 @@ async function conversation(context: BrowserContext, recipientId: string): Promi
 test('two players exchange persistent private messages live, with unread and read receipts', async ({
   browser,
 }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const author = await participant(browser, `채팅작성자_${suffix}`);
   const coach = await participant(browser, `채팅코치_${suffix}`);
   try {
@@ -122,7 +124,7 @@ test('two players exchange persistent private messages live, with unread and rea
 });
 
 test('a failed send preserves the draft and retries with the same idempotency key', async ({ browser }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const sender = await participant(browser, `재전송_${suffix}`);
   const peer = await participant(browser, `대화상대_${suffix}`);
   try {
@@ -165,7 +167,7 @@ test('a failed send preserves the draft and retries with the same idempotency ke
 });
 
 test('SSE reconnect fetches missed messages after offline and stops after logout', async ({ browser }) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const viewer = await participant(browser, `연결복구_${suffix}`);
   const peer = await participant(browser, `연결상대_${suffix}`);
   try {

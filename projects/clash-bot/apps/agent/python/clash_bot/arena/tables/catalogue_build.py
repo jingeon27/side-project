@@ -11,10 +11,11 @@ import json
 
 import royalesim
 
+from clash_bot.card_specs import engine_specs
 from clash_bot.files import atomic_json
 
 from ..catalogue import PATH, Catalogue, content_id
-from ..sim.rules import SPEC, new_battle
+from ..sim.rules import SPEC, new_battle, pinned_table
 from .catalogue_vectors import (
     PRESENCE,
     card_vector,
@@ -89,15 +90,6 @@ def rounded(vector):
     return [round(float(value), 4) for value in vector]
 
 
-def pinned_table():
-    """The client table compiled into the pinned wheel, the one new_battle() runs."""
-    stem = SPEC["tableFile"].removeprefix("cards-").removesuffix(".json").replace("-", "_")
-    table = json.loads(getattr(royalesim, f"EMBEDDED_CARDS_{stem}_JSON"))
-    if table["version"] != SPEC["tableVersion"] or table["version"] != new_battle().card_table():
-        raise ValueError("Embedded card table differs from the pinned rules table")
-    return table
-
-
 def build():
     battle = new_battle()
     table = pinned_table()
@@ -117,12 +109,12 @@ def build():
             "engine": card["name"],
             "elixir": card["elixir"],
             "placement": placement(row, card, area),
-            "features": rounded(card_vector(card, row, units, area)),
+            "features": rounded(card_vector(card, row, units, area, table["projectiles"])),
         }
         if card["kind"] == "spell":
             bodies[name] = rounded(spell_vector(card, area))
     unit_bodies = {unit: unit_body(unit) for unit in json.loads(battle.unit_types_json())}
-    # Unified card levels scale every hit point column by the same percentage.
+    # Ordinary bodies use the unified card level. Crown towers use their own ladder below.
     percent = next(row for row in table["cards"] if row["name"] == "Knight")["level_scaling"][
         "multiplier_percent_by_level"
     ][SPEC["level"] - 1]
@@ -134,9 +126,21 @@ def build():
             key=lambda unit: ("_EV" in unit or "Hero" in unit, len(unit), unit),
         )
         if records and body not in bodies:
-            bodies[body] = rounded(unit_vector(units[records[0]]))
+            bodies[body] = rounded(unit_vector(units[records[0]], table["projectiles"]))
             if units[records[0]].get("hitpoints"):
                 hitpoints[body] = units[records[0]]["hitpoints"] * percent // 100
+    # Crown towers have their own level ladder, including when their raw rarity reads Common.
+    battle.reset(
+        seed=0,
+        decks=[list(range(8))] * 2,
+        shuffle=0,
+        start_tick=0,
+        elixir_milli=[5000, 5000],
+        tower_hp=None,
+        spawns=[],
+    )
+    king, princess, _other = json.loads(battle.state_json())["players"][0]["tower_max_hp"]
+    hitpoints.update(king_tower=king, princess_tower=princess)
     # A unit without a record of its own (a tower) reads as an unknown body.
     unit_bodies = {unit: body if body in bodies else "?" for unit, body in unit_bodies.items()}
     # A field unit the screen names by its card (an "archers" unit) reads the card's unit.
@@ -166,7 +170,30 @@ def build():
     return {**body, "id": content_id(Catalogue.model_validate(body))}
 
 
+def write_contract(path, value):
+    # Keep the repository formatter's layout when the pinned data did not change.
+    try:
+        if json.loads(path.read_bytes()) == value:
+            return
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    atomic_json(path, value)
+
+
 def write():
+    from .hut_geometry import PATH as hut_path
+    from .hut_geometry import build_hut_geometry
+    from .practice_pool import PATH as practice_path
+    from .practice_pool import verified_pool
+
     body = build()
-    atomic_json(PATH, body)
-    return {"catalogue": str(PATH), "id": body["id"], "cards": len(body["cards"])}
+    specs = engine_specs(body)
+    write_contract(hut_path, build_hut_geometry(body, specs))
+    write_contract(practice_path, verified_pool(body, specs, SPEC))
+    write_contract(PATH, body)
+    return {
+        "catalogue": str(PATH),
+        "id": body["id"],
+        "cards": len(body["cards"]),
+        "specTableSHA256": specs["tableSHA256"],
+    }

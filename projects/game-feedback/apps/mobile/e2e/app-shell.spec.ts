@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
@@ -5,7 +7,7 @@ test('WebView test account persists posts, comments and private chat across relo
   page,
   nativeHost,
 }, testInfo) => {
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();

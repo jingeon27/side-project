@@ -4,13 +4,28 @@ import json
 
 from .rules import CARD_ID, FIELDS, TILE, deck_ids, forms_of, new_battle
 
+TICK_MS = 50
+STATIONARY_TARGET = "GoblinRocketSilo"  # No decay or attacks before its first stage change.
+
 
 def field(
-    own="counterpush", enemy="counterpush", first=None, units=(), delays=(0, 0), start_tick=100
+    own="counterpush",
+    enemy="counterpush",
+    first=None,
+    units=(),
+    delays=(0, 0),
+    start_tick=100,
+    *,
+    tower_levels=None,
+    tower_hp=None,
+    king_wake_ms=None,
+    unit_deploy_ticks=None,
+    initial_elixir=(10000, 10000),
+    own_cards=None,
 ):
     battle = new_battle()
     battle.set_command_delay_ticks(*delays)
-    order = deck_ids(own)
+    order = deck_ids(own) if own_cards is None else [CARD_ID[name] for name in own_cards]
     if first is not None:
         order = [CARD_ID[first], *[card for card in order if card != CARD_ID[first]]]
     decks = [order, deck_ids(enemy)]
@@ -19,10 +34,16 @@ def field(
         decks=decks,
         shuffle=0,
         start_tick=start_tick,
-        elixir_milli=[10000, 10000],
-        tower_hp=None,
+        elixir_milli=list(initial_elixir),
+        tower_hp=tower_hp,
+        tower_levels=tower_levels,
+        king_wake_ms=king_wake_ms,
+        unit_deploy_ticks=unit_deploy_ticks,
         spawns=[],
-        forms=[forms_of(name, cards) for name, cards in zip((own, enemy), decks)],
+        forms=[
+            forms_of(own, order) if own_cards is None else [0] * len(order),
+            forms_of(enemy, decks[1]),
+        ],
         unit_spawns=[
             (name, team, round(x * TILE), round(y * TILE), hp, 11, 0)
             for name, team, x, y, hp in units
@@ -130,3 +151,22 @@ def graveyard_defense():
             raise ValueError(f"Verification command rejected: {results}")
         hp.append(sum(json.loads(battle.state_json())["players"][0]["tower_hp"]))
     return {"passed": hp[1] > hp[0], "unansweredTowerHP": hp[0], "defendedTowerHP": hp[1]}
+
+
+def knight_aggro():
+    """At four tiles the Knight acquires a Skeleton outside melee range. At seven it does not."""
+    cases = {}
+    for gap in (4, 7):
+        battle = field(units=[("Knight", 0, 5, 12, -1), ("Skeleton", 1, 5 + gap, 12, -1)])
+        before = dict(bodies(battle))["Skeleton"][FIELDS["hp"]]
+        battle.step([], 1)
+        rows = dict(bodies(battle))
+        cases[str(gap)] = {
+            "acquired": rows["Knight"][FIELDS["target_uid"]] == rows["Skeleton"][FIELDS["uid"]],
+            "immediateDamage": before - rows["Skeleton"][FIELDS["hp"]],
+        }
+    return {
+        "passed": cases["4"] == {"acquired": True, "immediateDamage": 0}
+        and not cases["7"]["acquired"],
+        "byCenterDistanceTiles": cases,
+    }

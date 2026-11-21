@@ -13,9 +13,9 @@ from pathlib import Path
 
 def wanted_files(siblings, patterns):
     """Weights and configs a pinned snapshot must contain, limited to the requested patterns."""
-    return [entry for entry in siblings
-            if entry.rfilename.endswith(('.safetensors', '.json'))
-            and (patterns is None or any(fnmatch(entry.rfilename, pattern) for pattern in patterns))]
+    if patterns is not None:
+        return [entry for entry in siblings if any(fnmatch(entry.rfilename, pattern) for pattern in patterns)]
+    return [entry for entry in siblings if entry.rfilename.endswith(('.safetensors', '.json', '.jinja'))]
 
 
 def prepared(root, name, spec):
@@ -73,19 +73,32 @@ def prepare_video(root, source, spec):
 
 
 PREPARE = {'image': prepare_image, 'video-source': prepare_video}
+MODEL_GROUPS = {
+    'all': ('text', 'embedding', 'voice', 'voice-train', 'image', 'video-source'),
+    'image': ('text', 'image'),
+    'voice-training': ('voice-train',),
+    'voice-verification': ('voice-asr',),
+    'shorts-voice': ('shorts-conversation', 'shorts-voice', 'voice'),
+}
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', required=True)
-    parser.add_argument('--only', choices=['all', 'voice-training', 'voice-verification'], default='all')
+    parser.add_argument('--only', choices=MODEL_GROUPS, default='all')
     args = parser.parse_args()
-    from huggingface_hub import model_info, snapshot_download
     root = Path(args.data_dir).resolve() / 'local'
     root.mkdir(parents=True, exist_ok=True)
+    # The full and image-only installers share download and conversion directories.
+    with (root / 'setup.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        install_models(root, args.only)
+
+
+def install_models(root, profile):
+    from huggingface_hub import model_info, snapshot_download
     specs = model_specs()
-    selected = {'voice-training': ['voice-train'], 'voice-verification': ['voice-asr']}.get(args.only, ['text', 'embedding', 'voice', 'voice-train', 'image', 'video-source'])
-    for name in selected:
+    for name in MODEL_GROUPS[profile]:
         spec = specs[name]
         if prepared(root, name, spec):
             print(f'모델 준비됨: {name} ({spec["repo"]})', flush=True)
@@ -109,10 +122,16 @@ def main():
             # The prepared folder holds every weight the engine loads. Drop the verified source
             # (about 16 GB for Klein, 34 GB for Wan2.2) only after its ready.json is written.
             shutil.rmtree(folder)
-    if args.only == 'voice-training':
+    if profile == 'image':
+        print('한국어 이미지 생성용 Gemma와 FLUX 준비 완료', flush=True)
+        return
+    if profile == 'voice-training':
         print('로컬 음성 학습 모델 준비 완료', flush=True)
         return
-    if args.only == 'voice-verification':
+    if profile == 'shorts-voice':
+        print('쇼츠용 한국어 내레이터 준비 완료', flush=True)
+        return
+    if profile == 'voice-verification':
         print('로컬 대사 확인 모델 준비 완료', flush=True)
         return
     spec = specs['tokenizer']

@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -57,7 +59,7 @@ test('post detail uses a compact game breadcrumb and one contact action with unb
 test('profile shows only the signed-in user’s posts and keeps every classification readable', async ({
   page,
 }) => {
-  const title = `내 프로필 작성글 ${Date.now().toString(36)}`;
+  const title = `내 프로필 작성글 ${dayjs().valueOf().toString(36)}`;
   await page.request.post('/api/auth/test-login', { headers, data: { accountId: 'sample-user-0' } });
   const categories = await (await page.request.get('/api/categories')).json();
   expect(
@@ -129,7 +131,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
 }) => {
   await page.request.post('/api/auth/demo', {
     headers,
-    data: { nickname: `태그검증_${Date.now().toString(36)}` },
+    data: { nickname: `태그검증_${dayjs().valueOf().toString(36)}` },
   });
   const responseReady = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();

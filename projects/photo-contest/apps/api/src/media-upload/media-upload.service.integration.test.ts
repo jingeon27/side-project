@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -31,7 +32,11 @@ describe('MediaUploadService 완료 기한 회귀', () => {
 
   /** 요청 10분 뒤에 도는 정리 작업. 업로드 티켓(5분)과 정리 유예(5분)가 모두 지난 시각이다. */
   const cleanupTenMinutesLater = () =>
-    api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 10 * MINUTE_MS + 1000));
+    api.app.get(MaintenanceService).cleanup(
+      dayjs()
+        .add(10 * MINUTE_MS + 1000, 'millisecond')
+        .toDate(),
+    );
 
   it('완료한 그룹 대표 사진은 요청 5분 뒤에도 지정할 수 있고 정리 작업이 지우지 않아야 한다', async () => {
     // 완료가 PostUpload 기한만 늘려 GroupAvatar는 요청 5분 뒤 만료되고 10분 뒤 파일까지 지워졌다.
@@ -43,7 +48,7 @@ describe('MediaUploadService 완료 기한 회귀', () => {
     await api.gqlOk(owner.cookie, COMPLETE_AVATAR, { id: ticket.id });
 
     const avatar = await api.db.groupAvatar.findUniqueOrThrow({ where: { id: ticket.id } });
-    expect(avatar.expiresAt.getTime()).toBeGreaterThan(Date.now() + 50 * MINUTE_MS);
+    expect(avatar.expiresAt.getTime()).toBeGreaterThan(dayjs().valueOf() + 50 * MINUTE_MS);
     await cleanupTenMinutesLater();
     expect(await api.db.groupAvatar.count({ where: { id: ticket.id } })).toBe(1);
     expect(await storedPhotoExists(api, avatar.storageKey)).toBe(true);
@@ -60,7 +65,7 @@ describe('MediaUploadService 완료 기한 회귀', () => {
     const contestId = await createContest(api, owner, groupId, '완료 기한 대회');
     const uploadId = await uploadPhoto(api, owner.cookie, contestId);
     const upload = await api.db.upload.findUniqueOrThrow({ where: { id: uploadId } });
-    expect(upload.expiresAt.getTime()).toBeGreaterThan(Date.now() + 50 * MINUTE_MS);
+    expect(upload.expiresAt.getTime()).toBeGreaterThan(dayjs().valueOf() + 50 * MINUTE_MS);
     await cleanupTenMinutesLater();
     expect(await api.db.upload.count({ where: { id: uploadId } })).toBe(1);
     expect(await storedPhotoExists(api, upload.imageKey ?? '')).toBe(true);

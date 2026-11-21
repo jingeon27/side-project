@@ -6,6 +6,7 @@ import { performance } from 'node:perf_hooks';
 
 import type { Page, Request } from '@playwright/test';
 import type { TestCase, TestResult } from '@playwright/test/reporter';
+import dayjs from 'dayjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { boundedSetting, percentiles, requestKind, RequestMeasurement } from './measurement';
@@ -106,7 +107,7 @@ describe('chat benchmark measurement', () => {
           ],
         } as TestResult,
       );
-      await reporter.onEnd({ status: 'failed', startTime: new Date(), duration: 0 });
+      await reporter.onEnd({ status: 'failed', startTime: dayjs().toDate(), duration: 0 });
       await expect(readFile(context, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
       expect(await readFile(json, 'utf8')).toBe('{"samples":[]}');
       expect(process.stdout.write).not.toHaveBeenCalledWith(

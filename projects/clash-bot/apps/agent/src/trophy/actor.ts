@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 
 import { actionFeatures, contextFeatures, STATE_SIZE } from '../core/fast/features.ts';
-import { FastPolicy, forward } from '../core/fast/policy.ts';
+import { networkScores } from '../core/fast/network.ts';
+import { FastPolicy } from '../core/fast/policy.ts';
 import type { DecisionContext } from '../core/policy/decision-v3.ts';
 import { towerDefense, type TowerDefenseInput } from '../core/policy/tower-defense.ts';
 import { TROPHY_LEARNING, type TrophySnapshot, type TrophyTransition } from './protocol.ts';
@@ -46,7 +47,7 @@ export class TrophyActor {
     sample.features.index.forEach((index, i) => {
       state[index] = sample.features.value[i] ?? 0;
     });
-    const raw = forward(
+    const raw = networkScores(
       this.policy.weights,
       state,
       sample.actionFeatures.map((row) => Float64Array.from(row)),
@@ -67,7 +68,9 @@ export class TrophyActor {
   ) {
     // Trophy PPO owns its recorded mechanics offsets. Do not silently add the native
     // self-play priors to it a second time or change its stored probability contract.
-    const base = forward(this.policy.weights, contextFeatures(context), actionFeatures(context));
+    const dense = contextFeatures(context);
+    const actions = actionFeatures(context);
+    const base = networkScores(this.policy.weights, dense, actions);
     if (
       protection.actions.length !== context.actions.length ||
       protection.actions.some(
@@ -86,17 +89,19 @@ export class TrophyActor {
     const draw = random();
     if (!Number.isFinite(draw) || draw < 0 || draw >= 1)
       throw new Error('난수는 0 이상 1 미만이어야 합니다.');
-    const accumulated = probabilities.map((_, i) => probabilities.slice(0, i + 1).reduce((a, b) => a + b, 0));
+    const accumulated = probabilities.reduce<number[]>((prefix, probability) => {
+      prefix.push((prefix.at(-1) ?? 0) + probability);
+      return prefix;
+    }, []);
     const found = accumulated.findIndex((v) => v > draw);
     const chosen = found < 0 ? probabilities.length - 1 : found;
-    const dense = contextFeatures(context);
-    const index = Array.from(dense.keys()).filter((i) => dense[i] !== 0);
+    const index = base.activeState;
     const draft: Omit<TrophyTransition, 'confirmation'> = {
       at: frame.at,
       image: frame.image,
       imageSHA256: createHash('sha256').update(frame.bytes).digest('hex'),
       features: { index, value: index.map((i) => dense[i] ?? 0) },
-      actionFeatures: actionFeatures(context).map((row) => Array.from(row)),
+      actionFeatures: actions.map((row) => Array.from(row)),
       bias,
       temperature,
       exploration,

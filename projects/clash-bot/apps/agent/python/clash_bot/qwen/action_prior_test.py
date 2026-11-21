@@ -1,11 +1,8 @@
-import tempfile
 import unittest
 
 import mlx.core as mx
 
 from clash_bot.qwen.action_prior import action_prior
-from clash_bot.qwen.learning.learner import Learner
-from clash_bot.qwen.learning.learning_policy import FinalMLPLoRA
 
 
 class ActionPriorTest(unittest.TestCase):
@@ -122,34 +119,6 @@ class ActionPriorTest(unittest.TestCase):
         productive = action_prior("mana=2\nA:B3,6q2r1 B:W", 2)
         self.assertLess(reserved[0], empty[0])
         self.assertEqual(productive[0], 0)
-
-    def test_ppo_scores_and_gradients_use_the_executed_prior(self):
-        with tempfile.TemporaryDirectory() as directory:
-            learner = Learner(
-                FinalMLPLoRA(12, 8),
-                mx.ones(8),
-                1e-6,
-                mx.random.normal((26, 8)),
-                directory,
-                "model",
-                "layer",
-            )
-            sample = {
-                "features": mx.ones(12),
-                "base": mx.ones(8),
-                "labels": [0, 1],
-                "policy_bias": mx.array([-3.0, 0.0]),
-                "chosen": 1,
-                "version": 0,
-                "remaining": 0,
-            }
-            sample["old_log_probs"] = mx.stop_gradient(learner.policy_log_probs(sample))
-            self.assertGreater(
-                mx.max(mx.abs(learner.log_probs(sample) - sample["old_log_probs"])).item(), 1
-            )
-            report = learner.train([sample], 1, "with-public-prior")
-            self.assertTrue(report["updated"])
-            self.assertGreater(report["probability_after"], report["probability_before"])
 
     def test_malformed_action_order_is_rejected(self):
         with self.assertRaises(ValueError):

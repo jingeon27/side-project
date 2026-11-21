@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -28,7 +30,7 @@ test('following a player delivers new posts, persists notification preferences a
       'true',
     );
     await expect(page.getByRole('button', { name: '새 글 알림 켜짐', exact: true })).toBeVisible();
-    const title = `팔로우한 플레이어의 새 이야기 ${Date.now().toString(36)}`;
+    const title = `팔로우한 플레이어의 새 이야기 ${dayjs().valueOf().toString(36)}`;
     const created = await author.request.post('/api/posts', {
       headers,
       data: {

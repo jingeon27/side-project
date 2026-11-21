@@ -29,9 +29,19 @@ export async function mockLibrary(page: Page, projects: TProject[] = []) {
         json: { error: '이 작품이 다른 곳에서 바뀌었습니다.', project: current },
       });
     library.saves += 1;
-    if (current) library.projects[index] = body.project;
-    else library.projects.unshift(body.project);
+    library.projects.splice(current ? index : 0, current ? 1 : 0, body.project);
     return route.fulfill({ json: body.project });
   });
   return library;
+}
+
+// On a phone, project switching and backup import share the workspace menu.
+export async function openLibraryMenu(page: Page) {
+  const menu = page.getByRole('button', { name: '작업실 메뉴' });
+  if ((await menu.isVisible()) && (await menu.getAttribute('aria-expanded')) === 'false') await menu.click();
+}
+
+export async function openSavedProject(page: Page, title: RegExp) {
+  await openLibraryMenu(page);
+  await page.getByRole('navigation', { name: '저장한 작품' }).getByRole('button', { name: title }).click();
 }

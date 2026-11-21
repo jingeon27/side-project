@@ -1,6 +1,7 @@
 import type { Server } from 'node:http';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import type { Express } from 'express';
 import request from 'supertest';
 import { inject } from 'vitest';
@@ -192,7 +193,11 @@ export async function createTestApp(
     });
     const raw = randomToken();
     await db.session.create({
-      data: { userId: user.id, tokenHash: sha256Hex(raw), expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
+      data: {
+        userId: user.id,
+        tokenHash: sha256Hex(raw),
+        expiresAt: dayjs().add(SESSION_TTL_MS, 'millisecond').toDate(),
+      },
     });
     return `${sessionCookieName()}=${raw}`;
   }
@@ -202,12 +207,11 @@ export async function createTestApp(
     query: string,
     variables: Record<string, unknown> = {},
   ): Promise<IGraphqlResult<TData>> {
-    let pending = http()
+    const request = http()
       .post('/graphql')
       .set('Origin', TEST_WEB_ORIGIN)
       .set('Apollo-Require-Preflight', 'true');
-    if (cookie) pending = pending.set('Cookie', cookie);
-    const response = await pending.send({ query, variables });
+    const response = await (cookie ? request.set('Cookie', cookie) : request).send({ query, variables });
     return response.body as IGraphqlResult<TData>;
   }
 

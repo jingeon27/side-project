@@ -7,7 +7,7 @@ import type { CardId } from '../cards.ts';
 import { DEPLOYMENT } from '../deployment.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
 import { blockedDeployment } from '../placement/placement.ts';
-import type { QwenAction } from '../policy/actions.ts';
+import type { ActionOption } from '../policy/actions.ts';
 import type { Profile } from '../profile.ts';
 
 type Tile = readonly [x: number, y: number];
@@ -82,8 +82,12 @@ export function fastCandidates(
   cards: Array<CardId | null>,
   elixir: number,
   situation: BattleSituation,
-): QwenAction[] {
+): ActionOption[] {
   const enemies = situation.opponent.units.map((unit): Tile => tilePoint(profile, unit));
+  const graves = (situation.effects ?? [])
+    .filter((effect) => effect.side === 'red' && effect.card === 'graveyard')
+    .map((effect): Tile => tilePoint(profile, effect))
+    .filter(([, y]) => y < 16);
   const threat =
     minBy(
       enemies.filter(([, y]) => y < 16),
@@ -92,8 +96,13 @@ export function fastCandidates(
   const plays = cards.flatMap((card, index) => {
     const entry = catalogueCard(card);
     if (card === null || !entry || entry.elixir > elixir) return [];
+    const anchors = card === 'poison' ? graves : [];
     return uniqBy(
-      [...placementTiles(entry.placement, threat, enemies), ...placementGrid(entry.placement, enemies)],
+      [
+        ...anchors,
+        ...placementTiles(entry.placement, threat, enemies),
+        ...placementGrid(entry.placement, enemies),
+      ],
       ([x, y]) => `${x.toFixed(1)}:${y.toFixed(1)}`,
     )
       .map((tile) => ({ tile, target: screenPoint(profile, tile) }))

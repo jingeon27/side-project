@@ -1,7 +1,7 @@
 """Persistent expert iteration, frozen opponents and qualification, on one Mac.
 
 The learner advances after verified terminal games. The champion pointer moves
-only after disjoint, seat-swapped evaluation passes. Neither is a Qwen pointer.
+only after disjoint, seat-swapped evaluation passes.
 """
 
 import json
@@ -16,7 +16,8 @@ from ..sim.verification import verify
 from ..training.parallel import Workers
 from .champions import checkpoint, initialize
 from .control import Control
-from .generation import learn, next_version, qwen_datasets, selfplay
+from .generation import learn, next_version, selfplay
+from .practice import initialize_priority
 from .qualification import qualify
 
 
@@ -26,6 +27,8 @@ def open_league(control, data_dir, rules):
     active = control.directory / "active.json"
     previous = Path(json.loads(active.read_text())["root"]) if active.exists() else None
     league = initialize(root, rules, parent=None if previous == root else previous)
+    if previous != root:
+        initialize_priority(root, previous, rules)
     atomic_json(active, {"root": str(root), "rulesID": rules["id"]})
     return root, league
 
@@ -40,6 +43,8 @@ def run(
     pairs=16,
     evaluate_every=1,
     workers=1,
+    practice_games=0,
+    pool_games=0,
 ):
     data_dir = Path(data_dir)
     settings = {
@@ -49,6 +54,8 @@ def run(
         "pairs": pairs,
         "evaluateEvery": evaluate_every,
         "workers": workers,
+        "practiceGames": practice_games,
+        "poolGames": pool_games,
     }
     with Control(data_dir, hours) as control, Workers(workers) as pool:
         rules = rules_identity()
@@ -79,7 +86,6 @@ def run(
             if not played:
                 break
             learn(control, root, league, rules, learner, version)
-            qwen_datasets(control, data_dir, played)
             if version % evaluate_every == 0 and not control.stopped():
                 qualify(control, pool, root, league, rules, learner, pairs)
             control.state["completedGenerations"] += 1

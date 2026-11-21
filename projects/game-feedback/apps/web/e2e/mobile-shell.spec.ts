@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -54,7 +58,7 @@ for (const { width, locale, menu, actions } of [
       animations: 'disabled',
     });
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(20, 19, 18)');
+    await expect(page.locator('body')).toHaveCSS('background-color', themeColorRgb('canvas', 'dark'));
     await page.screenshot({
       path: testInfo.outputPath(`brand-header-${locale}-${width}-dark.png`),
       animations: 'disabled',
@@ -76,7 +80,7 @@ test('mobile notification indicator and chat count follow persisted unread state
 }) => {
   const owner = await browser.newContext({ baseURL: origin, viewport: { width: 320, height: 844 } });
   const peer = await browser.newContext({ baseURL: origin });
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   try {
     const login = await owner.request.post('/api/auth/demo', {
       headers: { Origin: origin },

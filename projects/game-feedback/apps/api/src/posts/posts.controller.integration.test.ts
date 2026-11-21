@@ -849,7 +849,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
             authorId: reviewerId,
             body: '상대의 카드 순환을 확인한 뒤 공격해보세요.',
             hidden: label === 'hidden',
-            deletedAt: label === 'deleted' ? new Date() : null,
+            deletedAt: label === 'deleted' ? dayjs().toDate() : null,
           },
         });
     }

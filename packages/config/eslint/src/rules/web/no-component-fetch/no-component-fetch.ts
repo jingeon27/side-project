@@ -10,13 +10,12 @@ function staticName(node: TSESTree.Node, computed: boolean) {
 }
 
 // window.fetch, globalThis.window['fetch'], const { fetch } = self처럼 전역 객체를 거쳐 fetch에 닿는 노드를 찾는다.
-function fetchThroughGlobal(identifier: TSESTree.Identifier): TSESTree.Node | null {
-  let node: TSESTree.Node = identifier;
-  while (node.parent?.type === 'MemberExpression' && node.parent.object === node) {
+function fetchThroughGlobal(node: TSESTree.Node): TSESTree.Node | null {
+  if (node.parent?.type === 'MemberExpression' && node.parent.object === node) {
     const name = staticName(node.parent.property, node.parent.computed);
     if (name === 'fetch') return node.parent;
     if (!name || !GLOBAL_OBJECTS.has(name)) return null;
-    node = node.parent;
+    return fetchThroughGlobal(node.parent);
   }
   const declarator = node.parent;
   if (

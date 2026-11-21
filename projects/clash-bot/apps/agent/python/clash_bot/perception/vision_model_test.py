@@ -6,7 +6,8 @@ from clash_bot.perception.vision_worker import VisionWorker
 
 
 @unittest.skipUnless(
-    os.environ.get("RUN_COUNTERPUSH_INTEGRATION") == "1", "Optional local ONNX model integration"
+    os.environ.get("RUN_PERCEPTION_MODEL_INTEGRATION") == "1",
+    "Optional local ONNX model integration",
 )
 class VisionModelTest(unittest.TestCase):
     def test_real_effects_and_spawned_units_keep_their_distinct_meanings(self):

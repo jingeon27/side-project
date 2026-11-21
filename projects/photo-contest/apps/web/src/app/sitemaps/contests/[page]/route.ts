@@ -1,5 +1,6 @@
 import { connection } from 'next/server';
 
+import dayjs from 'dayjs';
 import { sortBy } from 'es-toolkit';
 
 import {
@@ -31,7 +32,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
   if (!contests.length) return new Response(null, { status: 404 });
   // 같은 키는 Map에 마지막으로 넣은 값이 남는다. 오래된 순으로 넣어 목록 화면이 가장 늦은 대회의 시각을 갖게 한다.
   const lastModifiedByPath = new Map(
-    sortBy(contests, [(contest) => Date.parse(contest.lastModifiedAt)]).flatMap((contest) => [
+    sortBy(contests, [(contest) => dayjs(contest.lastModifiedAt).valueOf()]).flatMap((contest) => [
       [ROUTES.GROUP_CONTEST(contest.groupId, contest.id), contest.lastModifiedAt] as const,
       // 빈 목록 화면은 색인할 내용이 없으므로 이 대회가 실제로 보이는 목록만 올린다.
       [

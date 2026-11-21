@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "shorts": "yarn workspace @story-studio/web shorts",
     "dev": "yarn workspace @story-studio/web dev",
     "build": "yarn workspace @story-studio/web build",
     "start": "yarn workspace @story-studio/web start",
@@ -11,6 +12,7 @@
     "test": "yarn workspace @story-studio/web test && yarn workspace @story-studio/engine test",
     "test:e2e": "yarn workspace @story-studio/web test:e2e",
     "check": "yarn workspace @story-studio/web check && yarn workspace @story-studio/engine check",
-    "local:setup": "yarn workspace @story-studio/web local:setup"
+    "local:setup": "yarn workspace @story-studio/web local:setup",
+    "local:setup:image": "yarn workspace @story-studio/web local:setup:image"
   }
 }

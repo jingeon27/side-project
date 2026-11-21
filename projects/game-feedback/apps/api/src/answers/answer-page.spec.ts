@@ -1,8 +1,9 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import { afterAnswer, decodeAnswerCursor, encodeAnswerCursor } from './answer-page';
 
-const createdAt = new Date('2026-10-27T01:02:03.004Z');
+const createdAt = dayjs('2026-10-27T01:02:03.004Z').toDate();
 
 describe('answer page cursor', () => {
   it('round-trips the helpful flag, time and id of the last answer', () => {

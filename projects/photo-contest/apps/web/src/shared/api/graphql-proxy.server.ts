@@ -63,19 +63,25 @@ export async function proxyGraphql(request: Request) {
 async function readJsonBody(request: Request): Promise<string | false> {
   const reader = request.body?.getReader();
   if (!reader) return '';
-  const chunks: Uint8Array[] = [];
-  let byteLength = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    byteLength += value.byteLength;
-    if (byteLength > GRAPHQL_PROXY_BODY_LIMIT) {
-      await reader.cancel();
-      return false;
-    }
-    chunks.push(value);
+  const chunks = await readWithinLimit(reader, [], 0);
+  return chunks && new TextDecoder().decode(Buffer.concat(chunks));
+}
+
+// 한도를 넘는 순간 남은 본문을 받지 않도록 스트림을 취소한다.
+async function readWithinLimit(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  chunks: Uint8Array[],
+  byteLength: number,
+): Promise<Uint8Array[] | false> {
+  const { done, value } = await reader.read();
+  if (done) return chunks;
+  const total = byteLength + value.byteLength;
+  if (total > GRAPHQL_PROXY_BODY_LIMIT) {
+    await reader.cancel();
+    return false;
   }
-  return new TextDecoder().decode(Buffer.concat(chunks));
+  chunks.push(value);
+  return readWithinLimit(reader, chunks, total);
 }
 
 function readMutation(body: string) {

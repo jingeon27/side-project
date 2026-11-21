@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../../test/support/app';
@@ -51,7 +52,7 @@ describe('PostModerationService 회귀', () => {
     // Post.hidden만 비교해 이미 풀린 상태로 보고 아무것도 바꾸지 않았다. 숨긴 목록에는 남고 해제할 방법이 없었다.
     const contestId = await createContest(api, owner, groupId, '이관 숨김 대회');
     const upload = await api.db.upload.create({
-      data: { tokenHash: randomUUID(), userId: owner.id, contestId, expiresAt: new Date() },
+      data: { tokenHash: randomUUID(), userId: owner.id, contestId, expiresAt: dayjs().toDate() },
     });
     const submission = await api.db.submission.create({
       data: { contestId, authorId: owner.id, caption: '이관 사진', uploadId: upload.id, hidden: true },

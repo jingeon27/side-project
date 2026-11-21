@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
@@ -57,8 +58,8 @@ describe('PostService 회귀', () => {
     expect(await api.gqlOk(owner.cookie, DELETE, { id: post.id })).toEqual({ deletePost: true });
     await expect(api.storage.head(key)).rejects.toThrow();
     const retained = await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } });
-    expect(retained.expiresAt?.getTime()).toBeLessThanOrEqual(Date.now());
-    expect(retained.policyExpiresAt?.getTime()).toBeGreaterThan(Date.now());
+    expect(retained.expiresAt?.getTime()).toBeLessThanOrEqual(dayjs().valueOf());
+    expect(retained.policyExpiresAt?.getTime()).toBeGreaterThan(dayjs().valueOf());
     // 지운 업로드는 다시 게시에 쓰지 못한다.
     expect((await api.gqlFail(owner.cookie, CREATE, { group: groupId, upload: ticket.id })).code).toBe(
       'BAD_USER_INPUT',
@@ -69,7 +70,11 @@ describe('PostService 회귀', () => {
     expect(await api.storage.head(key)).toMatchObject({ byteSize: body.length });
     expect(await api.db.postUpload.findUnique({ where: { id: ticket.id } })).not.toBeNull();
 
-    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 21 * 60_000));
+    await api.app.get(MaintenanceService).cleanup(
+      dayjs()
+        .add(21 * 60_000, 'millisecond')
+        .toDate(),
+    );
     await expect(api.storage.head(key)).rejects.toThrow();
     expect(await api.db.postUpload.findUnique({ where: { id: ticket.id } })).toBeNull();
   });

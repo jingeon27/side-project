@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from pydantic import ValidationError
 
+from clash_bot.arena.policy.dense import DenseActions
 from clash_bot.arena.policy.features import ACTION_SIZE, STATE_SIZE
 from clash_bot.arena.policy.samples import (
     PolicyMetadata,
@@ -19,7 +20,13 @@ ROW = {
     "actionFeatures": [[0.0] * ACTION_SIZE, [0.0] * ACTION_SIZE],
     "actionBias": [0.0, 0.0],
     "actionBiasWithoutTowers": [0.0, 0.0],
+    "source": DenseActions.pack(
+        np.zeros((2, ACTION_SIZE)), [-1, 5], [0, 0], [0, 0], [0, 1]
+    ).model_dump(),
     "target": [0.25, 0.75],
+    "targetWithoutTowers": [0.25, 0.75],
+    "defensePairs": [[1, 0]],
+    "attackPairs": [],
     "outcome": -1,
     "value": -0.6,
     "observation": {"ignored": True},
@@ -46,6 +53,13 @@ class TrainingSampleTest(unittest.TestCase):
             {"target": [float("nan"), 1.0]},
             {"actionBias": [0.0]},
             {"actionBias": [0.0, float("nan")]},
+            {"targetWithoutTowers": [0.0]},
+            {"targetWithoutTowers": [0.0, float("nan")]},
+            {"source": {**ROW["source"], "count": 3}},
+            {"defensePairs": [[1, 1]]},
+            {"defensePairs": [[1, 2]]},
+            {"defensePairs": [[-1, 0]]},
+            {"attackPairs": [[1, 2]]},
         ]:
             with self.subTest(change=sorted(change)), self.assertRaises(ValidationError):
                 TrainingSample.model_validate({**ROW, **change})
@@ -53,6 +67,10 @@ class TrainingSampleTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             TrainingSample.model_validate(
                 {key: value for key, value in ROW.items() if key != "actionBias"}
+            )
+        with self.assertRaises(ValidationError):
+            TrainingSample.model_validate(
+                {key: value for key, value in ROW.items() if key != "source"}
             )
 
 

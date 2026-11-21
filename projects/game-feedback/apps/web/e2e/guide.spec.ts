@@ -1,3 +1,5 @@
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
+
 import { expect, test } from './support/test';
 
 for (const { width, locale } of [
@@ -32,7 +34,7 @@ for (const { width, locale } of [
       animations: 'disabled',
     });
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(20, 19, 18)');
+    await expect(page.locator('body')).toHaveCSS('background-color', themeColorRgb('canvas', 'dark'));
     await page.screenshot({
       path: testInfo.outputPath(`guide-${locale}-${width}-dark.png`),
       fullPage: true,

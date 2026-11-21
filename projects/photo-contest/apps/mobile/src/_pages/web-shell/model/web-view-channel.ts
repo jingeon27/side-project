@@ -13,6 +13,7 @@ export interface IWebViewChannel {
  * 라우터를 만들 때 넘겨도 렌더 중 ref를 읽는 것으로 오해받지 않게 ref 대신 쓴다.
  */
 export function createWebViewChannel(): IWebViewChannel {
+  // eslint-disable-next-line side/no-let -- WebView를 다시 만들 때마다 바뀌는 연결 대상이다. 단계 계산이 아니라 채널이 소유한 상태다.
   let target: WebView | null = null;
   return {
     attach: (webView) => {

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../test/support/app';
@@ -64,13 +65,13 @@ describe('테스트 fixture API', () => {
       cookie,
       'mutation { createGroup(name: "fixture-그룹") { id } }',
     );
-    const now = Date.now();
+    const now = dayjs().valueOf();
     const contest = await post('/testing/legacy-contests', {
       groupId: group.createGroup.id,
       title: 'fixture',
-      startsAt: new Date(now),
-      submissionEndsAt: new Date(now + 60_000),
-      endsAt: new Date(now + 120_000),
+      startsAt: dayjs(now).toDate(),
+      submissionEndsAt: dayjs(now + 60_000).toDate(),
+      endsAt: dayjs(now + 120_000).toDate(),
     });
     expect(contest.status).toBe(201);
     for (const phase of ['UPCOMING', 'SUBMISSION', 'VOTING', 'COMPLETED']) {

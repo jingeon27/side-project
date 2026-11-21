@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -196,7 +197,7 @@ describe('세션에 연결한 앱 푸시', () => {
     );
     const device = await db.pushDevice.findUniqueOrThrow({ where: { id } });
     await send(sender.agent, room.id);
-    await db.session.update({ where: { id: device.sessionKey }, data: { expiresAt: new Date(0) } });
+    await db.session.update({ where: { id: device.sessionKey }, data: { expiresAt: dayjs(0).toDate() } });
     expect(await run()).toEqual([]);
     expect(await db.pushDevice.findUnique({ where: { id } })).toBeNull();
   });

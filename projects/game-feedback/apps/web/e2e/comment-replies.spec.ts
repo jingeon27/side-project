@@ -1,4 +1,7 @@
+import dayjs from 'dayjs';
+
 import { CommentSchema, NotificationListSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+import { themeColorRgb } from '@side/design-system/testing/color-tokens';
 
 import { expect, test, type APIRequestContext } from './support/test';
 
@@ -31,7 +34,7 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const parentName = `원댓글_${suffix}`;
   const replyName = `답글_${suffix}`;
   await signIn(page.request, parentName, origin);
@@ -81,7 +84,7 @@ test('mobile readers can reply, retry their draft, edit, and preserve replies af
   await page.setViewportSize({ width: 393, height: 852 });
   await page.locator('.comments-section').screenshot({ path: testInfo.outputPath('reply-mobile.png') });
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(replies.locator('.comment-bubble')).toHaveCSS('color', 'rgb(244, 241, 235)');
+  await expect(replies.locator('.comment-bubble')).toHaveCSS('color', themeColorRgb('ink', 'dark'));
   await page.locator('.comments-section').screenshot({ path: testInfo.outputPath('reply-mobile-dark.png') });
 
   await signIn(page.request, parentName, origin);
@@ -131,7 +134,7 @@ test('blocking a parent hides the entire thread in both the API and cached HTML'
 }) => {
   const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   const headers = { Origin: origin };
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   await signIn(page.request, `게시자_${suffix}`, origin);
   const post = await createPost(page.request, origin);
   const parentAuthor = await signIn(page.request, `댓글작성자_${suffix}`, origin);
@@ -185,7 +188,7 @@ test('a reply notifies both authors, updates unread counts and opens the exact r
   const author = await browser.newContext({ baseURL: origin });
   const parent = await browser.newContext({ baseURL: origin });
   try {
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     await signIn(author.request, `알림게시자_${suffix}`, origin);
     const post = await createPost(author.request, origin);
     await signIn(parent.request, `알림원댓글_${suffix}`, origin);
@@ -258,7 +261,7 @@ test('replying to a reply mentions its author at the same depth and moves modera
   baseURL,
 }) => {
   const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
-  const suffix = Date.now().toString(36);
+  const suffix = dayjs().valueOf().toString(36);
   const parentName = `스레드_${suffix}`;
   const replyName = `멘션_${suffix}`;
   await signIn(page.request, parentName, origin);

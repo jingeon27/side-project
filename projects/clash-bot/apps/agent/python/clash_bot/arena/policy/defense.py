@@ -5,6 +5,7 @@ import math
 from clash_bot.combat_projection import COMBAT
 
 from ..catalogue import current
+from .graveyard import graveyard_defense
 from .tactics_spec import SPEC
 
 CATALOGUE = current()
@@ -14,11 +15,11 @@ def distance(x, y, body):
     return math.hypot(x - body["x"], y - body["y"])
 
 
-def future(body):
+def future(body, seconds=SPEC["responseSeconds"]):
     vx, vy = body["velocity"] or [0, 0]
     return {
-        "x": body["x"] + vx * SPEC["responseSeconds"],
-        "y": body["y"] + vy * SPEC["responseSeconds"],
+        "x": body["x"] + vx * seconds,
+        "y": body["y"] + vy * seconds,
     }
 
 
@@ -31,12 +32,10 @@ def responds(action, point):
     )
 
 
-def active(context, side, card, seconds):
-    return [
-        row
-        for row in context.get("effects", [])
-        if row[0] == side and row[1] == card and (row[4] is None or row[4] < seconds)
-    ]
+def durable_firecracker(body):
+    return body["kind"] == "firecracker" and (
+        body["hp"] is None or body["hp"][1] > COMBAT["barbarian_barrel"]["damage"]
+    )
 
 
 def can_respond(card, body):
@@ -62,12 +61,7 @@ def fast_defense(context, action, projection):
             for body in context["bodies"]["enemy"]
         )
     ]
-    poisons = active(context, "blue", "poison", 6)
-    graves = [
-        g
-        for g in active(context, "red", "graveyard", 9)
-        if g[3] < 16 and not any(math.hypot(p[2] - g[2], p[3] - g[3]) < 3 for p in poisons)
-    ]
+    grave_pressure, grave_response = graveyard_defense(context, action)
     threats = []
     for index, body in enumerate(context["bodies"]["enemy"]):
         if body["kind"] in ("barrel", "goblin_hut") or future(body)["y"] >= SPEC["threatBoundary"]:
@@ -109,12 +103,17 @@ def fast_defense(context, action, projection):
             )
         if not COMBAT["bodies"].get(body["kind"], {}).get("ground"):
             return 0
-        return max(
+        roll = COMBAT["barbarian_barrel"]
+        landing = (
+            COMBAT["inputDelaySeconds"] + roll["deploySeconds"] + roll["length"] / roll["speed"]
+        )
+        catch = max(
             0,
             1
-            - distance(action[4], action[5] + COMBAT["barbarian_barrel"]["length"], future(body))
+            - distance(action[4], action[5] + roll["length"], future(body, landing))
             / SPEC["engagementRadius"],
         )
+        return catch * 0.4 if durable_firecracker(body) else catch
 
     useful = any(
         hit["trajectoryDamage"] > 0
@@ -143,7 +142,8 @@ def fast_defense(context, action, projection):
                     for child in projection["targets"]
                 )
                 return 1 if cleanup or goblins else intercept(body)
-            return max(int(hit is not None and hit["trajectoryDamage"] > 0), intercept(body))
+            direct = int(hit is not None and hit["trajectoryDamage"] > 0)
+            return max(direct * (0.35 if durable_firecracker(body) else 1), intercept(body))
         if action[2] == "poison":
             return (
                 (0.9 if hit["kill"] == "yes" else 0.3)
@@ -158,11 +158,6 @@ def fast_defense(context, action, projection):
             else 0
         )
 
-    grave_response = (
-        0
-        if action[2] in ("barbarian_barrel", "graveyard")
-        else max([0, *(responds(action, {"x": g[2], "y": g[3]}) for g in graves)])
-    )
     pending_response = (
         0
         if action[2] in ("graveyard", "poison", "barbarian_barrel", "skeletons")
@@ -171,7 +166,7 @@ def fast_defense(context, action, projection):
     pressure = max(
         [
             0,
-            int(bool(graves)),
+            grave_pressure,
             SPEC["deploymentPriority"] if deployments else 0,
             *(p for _, _, p in threats),
         ]
@@ -211,8 +206,20 @@ def fast_defense(context, action, projection):
         and response(body, index) < 0.2
         for body, index, urgency in threats
     ) or (bool(deployments) and pending_response < 0.2)
+    contact = 0.0
+    if action[2] == "barbarian_barrel" and not unanswered_drill:
+        for body, index, urgency in threats:
+            hit = next((row for row in projection["targets"] if row["index"] == index), None)
+            if hit is not None and not durable_firecracker(body):
+                # A hit on a surviving target is more useful if the Barbarian can follow it up.
+                lethal = (
+                    hit["hp"] is not None and hit["hp"][1] <= COMBAT["barbarian_barrel"]["damage"]
+                )
+                followup = 1 if lethal else max(0.2, intercept(body))
+                contact = max(contact, min(1, urgency) * hit["trajectoryQuality"] * followup)
     return {
         "bias": SPEC["defenseWeight"] * (2 * benefit - pressure)
+        + SPEC["barrelContactWeight"] * contact
         + COMBAT["policy"]["drillKnightDefense"] * drill_knight
         + (COMBAT["policy"]["preEmergenceSkeletons"] if premature else 0)
         + (COMBAT["policy"]["unansweredDrill"] if unanswered_drill else 0),

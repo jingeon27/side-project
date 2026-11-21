@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
@@ -87,7 +89,7 @@ for (const width of [320, 1440]) {
     if (width <= 760) await expect(page.locator('.mobile-nav:visible')).toHaveCount(0);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
     const form = page.getByRole('form', { name: '글쓰기', exact: true });
-    const title = `짧은 글쓰기 ${width} ${Date.now().toString(36)}`;
+    const title = `짧은 글쓰기 ${width} ${dayjs().valueOf().toString(36)}`;
     await form.getByLabel('분류', { exact: true }).selectOption('FREE');
     await form.getByLabel('제목', { exact: true }).fill(title);
     await form.getByRole('button', { name: '게시글 등록', exact: true }).click();

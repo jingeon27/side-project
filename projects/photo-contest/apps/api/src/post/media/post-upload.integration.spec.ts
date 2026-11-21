@@ -1,4 +1,5 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import dayjs from 'dayjs';
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
@@ -69,7 +70,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     if (tickets.size)
       await api.db.postUpload.updateMany({
         where: { id: { in: [...tickets] }, post: null },
-        data: { expiresAt: new Date(0) },
+        data: { expiresAt: dayjs(0).toDate() },
       });
     tickets.clear();
   });
@@ -107,9 +108,9 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
         { key: row.stagingKey },
       ]),
     );
-    expect(Date.parse(policy.expiration)).toBeLessThanOrEqual(Date.parse(grant.expiresAt));
-    expect(Date.parse(grant.expiresAt) - Date.now()).toBeGreaterThan(14 * 60_000);
-    expect(Date.parse(grant.expiresAt) - Date.now()).toBeLessThanOrEqual(15 * 60_000);
+    expect(dayjs(policy.expiration).valueOf()).toBeLessThanOrEqual(dayjs(grant.expiresAt).valueOf());
+    expect(dayjs(grant.expiresAt).valueOf() - dayjs().valueOf()).toBeGreaterThan(14 * 60_000);
+    expect(dayjs(grant.expiresAt).valueOf() - dayjs().valueOf()).toBeLessThanOrEqual(15 * 60_000);
     await expect(api.storage.head(row.stagingKey ?? '')).rejects.toThrow();
   });
 
@@ -189,7 +190,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     });
     const row = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
     expect(row).toMatchObject({ storageKey: pending.stagingKey, stagingKey: null });
-    expect((row.expiresAt?.getTime() ?? 0) - Date.now()).toBeGreaterThan(59 * 60_000);
+    expect((row.expiresAt?.getTime() ?? 0) - dayjs().valueOf()).toBeGreaterThan(59 * 60_000);
     expect(await api.storage.head(row.storageKey ?? '')).toEqual({
       byteSize: image.length,
       contentType: 'image/png',
@@ -322,7 +323,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
   it('만료된 티켓과 완료 전에 멤버십이 사라진 사용자의 첨부를 거부해야 한다', async () => {
     const image = await createTestImage();
     const expired = await ticket(image);
-    await api.db.postUpload.update({ where: { id: expired.id }, data: { expiresAt: new Date(0) } });
+    await api.db.postUpload.update({ where: { id: expired.id }, data: { expiresAt: dayjs(0).toDate() } });
     expect((await api.gqlFail(member.cookie, COMPLETE, { id: expired.id })).code).toBe('FORBIDDEN');
     const peer = await api.signIn('직접 전송 탈퇴 회원');
     const group = (await createGroup(api, owner, '직접 전송 권한 재검사', [peer], 'PRIVATE')).id;

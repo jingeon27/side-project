@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
+import { timedSubtitles } from '../../../shared/subtitles';
 import { collectionNameSchema } from '../../materials/model/materials';
 import { defaultVoiceSettings, voiceSettingsSchema } from '../../voice/model/voice-training';
 
@@ -53,6 +54,7 @@ export const voiceSchema = z.object({
   asset: z.string().regex(/^\/api\/assets\/[a-f0-9-]{36}\.wav$/),
   duration: z.number().positive().max(1800),
   settings: voiceSettingsSchema.optional(),
+  transcript: z.string().max(4000).optional(),
 });
 export const voiceRequestSchema = z.object({
   text: z.string().trim().min(1).max(4000),
@@ -95,6 +97,10 @@ export const projectSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   sample: z.boolean(),
+  renderedCues: z
+    .array(z.object({ text: z.string().max(12000), duration: z.number().positive().max(1801) }))
+    .max(80)
+    .optional(),
   renderedVideo: z
     .string()
     .regex(/^\/api\/assets\/[a-f0-9-]{36}\.mp4$/)
@@ -179,23 +185,17 @@ export function imagePrompt(
 export function caption(scene: Pick<TScene, 'dialogue' | 'narration'>) {
   return scene.dialogue.trim() || scene.narration.trim();
 }
-function timestamp(seconds: number, separator = '.') {
-  const ms = Math.round(seconds * 1000);
-  return `${String(Math.floor(ms / 3600000)).padStart(2, '0')}:${String(Math.floor(ms / 60000) % 60).padStart(2, '0')}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}${separator}${String(ms % 1000).padStart(3, '0')}`;
+export function spokenCaption(scene: TScene) {
+  return scene.voice?.transcript ?? caption(scene);
 }
 export function sceneDuration(scene: TScene) {
   return scene.voice ? Math.max(2, scene.voice.duration + 0.4) : scene.duration;
 }
 export function subtitles(scenes: TScene[], format: 'vtt' | 'srt' = 'vtt') {
-  const entries = scenes.map((scene, index) => {
-    const start = scenes.slice(0, index).reduce((sum, item) => sum + sceneDuration(item), 0);
-    const text = caption(scene)
-      .replace(/-->/g, '→')
-      .replace(/[<>]/g, '')
-      .replace(/\n\s*\n/g, '\n');
-    return `${index + 1}\n${timestamp(start, format === 'srt' ? ',' : '.')} --> ${timestamp(start + sceneDuration(scene), format === 'srt' ? ',' : '.')}\n${text || ' '}`;
-  });
-  return `${format === 'vtt' ? 'WEBVTT\n\n' : ''}${entries.join('\n\n')}\n`;
+  return timedSubtitles(
+    scenes.map((scene) => ({ text: caption(scene), duration: sceneDuration(scene) })),
+    format,
+  );
 }
 export function manuscript(project: TProject) {
   return `# ${project.title}\n\n${project.logline}\n\n## 줄거리\n\n${project.synopsis}\n\n## 등장인물\n\n${project.characters}\n\n${project.scenes.map((scene, index) => `## ${index + 1}. ${scene.title}\n\n${scene.narration}${scene.dialogue ? `\n\n${scene.dialogue}` : ''}${project.brief.format !== 'novel' ? `\n\n장면 묘사: ${scene.visual}\n길이: ${scene.duration}초` : ''}`).join('\n\n')}`;

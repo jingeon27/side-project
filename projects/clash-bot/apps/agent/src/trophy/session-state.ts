@@ -28,6 +28,18 @@ export const trialSchema = z.strictObject({
   games: z.array(completedSchema),
 });
 export type Trial = z.infer<typeof trialSchema>;
+// 시뮬레이터 챔피언 평가 기록이다. tried는 한 번 비교한 가중치, parked는 그동안 보관한 PPO 후보다.
+const simulationSchema = z.strictObject({
+  tried: z.array(z.string().length(64)),
+  current: z
+    .strictObject({
+      league: z.string(),
+      version: z.int().nonnegative(),
+      weightsSHA256: z.string().length(64),
+    })
+    .nullable(),
+  parked: trophySnapshotSchema.nullable(),
+});
 // state.json: 한 실험(행동 지문)의 학습·평가·채택 진행이다.
 export const stateSchema = z.strictObject({
   format: z.literal('trophy-own-policy-learning-v1'),
@@ -47,6 +59,7 @@ export const stateSchema = z.strictObject({
   consecutiveExcluded: z.int().nonnegative(),
   lastUpdate: z.record(z.string(), z.unknown()).nullable(),
   lastEvaluation: z.record(z.string(), z.unknown()).nullable(),
+  simulation: simulationSchema,
 });
 export type State = z.infer<typeof stateSchema>;
 
@@ -68,6 +81,7 @@ export const initialState = (behaviorSHA256: string, seed: TrophySnapshot): Stat
   consecutiveExcluded: 0,
   lastUpdate: null,
   lastEvaluation: null,
+  simulation: { tried: [], current: null, parked: null },
 });
 
 // 쌍마다 후보 승리와 기준 승리의 차이를 0, 0.5, 1로 센다. 무승부는 승리가 아니다.

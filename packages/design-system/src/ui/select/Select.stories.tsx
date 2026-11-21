@@ -71,3 +71,25 @@ export const GroupedOptions: Story = {
     </Select>
   ),
 };
+
+const digestOptions = [
+  { value: 'immediate', label: '활동이 생길 때마다 바로 알림 받기' },
+  { value: 'weekly', label: '참여한 프로젝트에 달린 새 댓글과 피드백을 매주 한 번 모아서 받기' },
+];
+
+export const LongLabels: Story = {
+  render: () => (
+    <Select items={digestOptions} defaultValue="weekly">
+      <SelectTrigger aria-label="알림 주기" className="w-52">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent alignItemWithTrigger={false}>
+        {digestOptions.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  ),
+};

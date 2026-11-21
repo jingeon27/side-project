@@ -13,7 +13,11 @@ const Select = SelectPrimitive.Root;
 
 function SelectGroup({ className, ...props }: TStyledProps<SelectPrimitive.Group.Props>) {
   return (
-    <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...props} />
+    <SelectPrimitive.Group
+      data-slot="select-group"
+      className={cn('scroll-my-1 py-1 first:pt-0 last:pb-0', className)}
+      {...props}
+    />
   );
 }
 
@@ -21,7 +25,7 @@ function SelectValue({ className, ...props }: TStyledProps<SelectPrimitive.Value
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn('flex flex-1 text-left', className)}
+      className={cn('block min-w-0 flex-1 truncate text-start', className)}
       {...props}
     />
   );
@@ -39,15 +43,18 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-touch w-fit items-center justify-between gap-1.5 rounded-control border border-input-border bg-surface text-ink py-2 pr-2 pl-2.5 text-input whitespace-nowrap transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "group/select flex h-touch w-fit min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-control-border bg-surface px-3.5 py-2 text-input text-ink motion-safe:transition-colors select-none data-popup-open:border-focus-ring data-placeholder:text-muted data-disabled:cursor-not-allowed data-disabled:bg-sunken data-disabled:text-muted aria-invalid:border-danger aria-invalid:bg-danger-soft [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
     >
       {children}
       {!hideIcon && (
-        <SelectPrimitive.Icon>
-          <ChevronDownIcon aria-hidden="true" className="pointer-events-none size-4 text-muted-foreground" />
+        <SelectPrimitive.Icon className="grid size-6 shrink-0 place-items-center rounded-badge bg-neutral-soft text-muted group-data-popup-open/select:bg-accent-soft group-data-popup-open/select:text-accent-ink">
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="size-3.5 motion-safe:transition-transform group-data-popup-open/select:rotate-180"
+          />
         </SelectPrimitive.Icon>
       )}
     </SelectPrimitive.Trigger>
@@ -83,13 +90,13 @@ function SelectContent({
           data-align-trigger={alignItemWithTrigger}
           // tw-animate-css 대신 Base UI의 starting/ending style 속성으로 열고 닫는 전환을 만든다.
           className={cn(
-            'relative isolate z-popover max-h-(--available-height) w-(--anchor-width) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-control bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 transition-[opacity,scale] duration-100 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-[align-trigger=true]:transition-none',
+            'relative isolate z-popover max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[min(10rem,var(--available-width))] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-card border border-line-strong bg-popover text-popover-foreground shadow-popover transition-[opacity,scale] duration-100 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-[align-trigger=true]:transition-none',
             className,
           )}
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          <SelectPrimitive.List className="p-1">{children}</SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -101,7 +108,7 @@ function SelectLabel({ className, ...props }: TStyledProps<SelectPrimitive.Group
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn('px-1.5 py-1 text-xs text-muted-foreground', className)}
+      className={cn('px-3 py-1.5 text-caption font-semibold text-muted', className)}
       {...props}
     />
   );
@@ -111,23 +118,22 @@ function SelectItem({ className, children, ...props }: TStyledProps<SelectPrimit
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      // 방향키 이동은 실제 포커스를 항목으로 옮긴다. 강조 배경은 팝업 바탕과 약 1.1:1이라 전역 포커스 링을 지우지 않고,
-      // 여백 없는 목록의 overflow에 잘리지 않게 링을 항목 안쪽에 그린다.
+      // 키보드로 가리킨 항목에는 안쪽 포커스 링을, 선택을 확정한 항목에는 체크 표시를 그린다.
       className={cn(
-        "relative flex min-h-touch w-full cursor-default items-center gap-1.5 rounded-control py-2 pr-8 pl-3 text-input -outline-offset-3 select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex min-h-touch w-full cursor-default items-center gap-2 rounded-control py-2 ps-3 pe-9 text-input -outline-offset-3 select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-selected:bg-accent-soft data-selected:text-accent-ink data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
     >
-      <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
+      <SelectPrimitive.ItemText className="flex min-w-0 flex-1 items-center gap-2 text-start whitespace-normal wrap-anywhere">
         {children}
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
+          <span className="pointer-events-none absolute end-3 flex size-4 items-center justify-center" />
         }
       >
-        <CheckIcon aria-hidden="true" className="pointer-events-none" />
+        <CheckIcon aria-hidden="true" strokeWidth={2.5} />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   );
@@ -137,7 +143,7 @@ function SelectSeparator({ className, ...props }: TStyledProps<SelectPrimitive.S
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)}
+      className={cn('pointer-events-none mx-2 my-1 h-px bg-line', className)}
       {...props}
     />
   );

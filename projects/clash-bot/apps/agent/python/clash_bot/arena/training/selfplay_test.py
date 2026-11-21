@@ -9,17 +9,86 @@ from clash_bot.arena.policy.context import decision_context
 from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.policy.noise import PerceptionNoise, perceive
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, SPEC, Action
-from clash_bot.arena.study.export import export
+from clash_bot.arena.sim.rules import DECKS, LIVE_DECK, MATCHUP_DECKS, SPEC, Action
 from clash_bot.arena.training.benchmark import ScriptedPolicy, defender_bot
 from clash_bot.arena.training.search import search
 from clash_bot.arena.training.selfplay import (
     SELFPLAY,
-    live_mirror,
     live_setup,
     play_game,
     setup_for,
 )
+
+
+class MatchedObservationTest(unittest.TestCase):
+    def test_learner_collects_its_deployed_board_while_champion_labels_it(self):
+        teacher = Policy(seed=3, metadata={"version": 0})
+        student = Policy(seed=71, metadata={"version": 5})
+        setup = live_setup(3)
+        deployed = play_game(
+            [teacher, student],
+            "training-student-trajectory",
+            "r",
+            setup=setup,
+            simulations=0,
+            training=False,
+            max_ticks=340,
+        )
+        from clash_bot.arena.training.search import search
+        from clash_bot.arena.training.targets import training_rows
+
+        with (
+            patch("clash_bot.arena.training.selfplay.search", wraps=search) as expert,
+            patch("clash_bot.arena.training.selfplay.training_rows", wraps=training_rows) as labels,
+        ):
+            collected = play_game(
+                [teacher, teacher],
+                "training-student-trajectory",
+                "r",
+                setup=setup,
+                collector=(1, student),
+                label_reference=student,
+                simulations=2,
+                depth=1,
+                max_ticks=340,
+            )
+        self.assertEqual(collected["publicHistory"], deployed["publicHistory"])
+        self.assertGreater(len(labels.call_args_list), 0)
+        self.assertTrue(all(c.args[1] is teacher for c in expert.call_args_list))
+        self.assertTrue(all(c.args[4] is student for c in labels.call_args_list))
+        self.assertEqual([p["version"] for p in collected["policies"]], [0, 5])
+
+    def test_no_improvement_teacher_replays_the_deployed_policy_without_a_second_screen_sample(
+        self,
+    ):
+        policy = Policy()
+        baseline = play_game(
+            [policy, policy],
+            "matched-root-observation",
+            "rules-test",
+            simulations=0,
+            training=False,
+            max_ticks=600,
+        )
+
+        def unchanged(observation, _policy, _seed, **kwargs):
+            return {
+                "actions": [Action(*a) for a in observation["legalActions"]],
+                "target": kwargs["observed_prior"],
+                "simulations": 0,
+            }
+
+        with patch("clash_bot.arena.training.selfplay.search", side_effect=unchanged):
+            searched = play_game(
+                [policy, policy],
+                "matched-root-observation",
+                "rules-test",
+                simulations=16,
+                training=False,
+                max_ticks=600,
+            )
+        self.assertEqual(searched["publicHistory"], baseline["publicHistory"])
+        self.assertEqual(searched["crowns"], baseline["crowns"])
 
 
 class SetupTest(unittest.TestCase):
@@ -53,7 +122,7 @@ class SetupTest(unittest.TestCase):
         ) / len(setups)
         self.assertGreater(own_matchups, 0.18)
         self.assertLess(own_matchups, 0.4)
-        self.assertEqual({name for setup in setups for name in setup["decks"]}, set(DECKS))
+        self.assertEqual({name for setup in setups for name in setup["decks"]}, set(MATCHUP_DECKS))
         low, high = SELFPLAY.commandDelayTicks
         delays = {delay for setup in setups for delay in setup["delays"]}
         self.assertTrue(delays <= set(range(low, high + 1)) and len(delays) > 3)
@@ -72,7 +141,7 @@ class SetupTest(unittest.TestCase):
             {key: value for key, value in live_setup().items() if key != "phase"},
         )
 
-    def test_a_mixed_deck_game_runs_with_delays_and_stays_out_of_the_qwen_studies(self):
+    def test_a_mixed_deck_game_runs_with_delays_and_is_not_a_live_mirror(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})
         setup = {"decks": ["bait", "hog_cycle"], "delays": [18, 26], "levels": [10, 12]}
         game = play_game(
@@ -87,9 +156,7 @@ class SetupTest(unittest.TestCase):
         self.assertEqual(game["setup"], setup)
         self.assertGreater(game["decisions"], 0)
         self.assertEqual(game["rejectedCommands"], 0)
-        self.assertFalse(live_mirror(game))
-        completed = {**game, "completed": True, "samples": [{"search": {"simulations": 8}}]}
-        self.assertIsNone(export("/nonexistent", [completed]))
+        self.assertNotEqual(game["setup"]["decks"], [LIVE_DECK, LIVE_DECK])
 
     def test_deployed_play_needs_no_search(self):
         policy = Policy(metadata={"version": 0, "rulesID": "rules-a"})

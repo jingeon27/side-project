@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+studio_dir="$(dirname "$(realpath "$0")")"
+if [[ "$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || true)" != "24" ]]; then
+  shorts_nvm="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+  if [[ -s "$shorts_nvm" ]]; then
+    . "$shorts_nvm" --no-use
+    nvm use --silent 24 >/dev/null
+  fi
+fi
+if [[ "$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || true)" != "24" ]]; then
+  echo '쇼츠 제작에는 저장소에 지정한 Node.js 24가 필요합니다.' >&2
+  exit 1
+fi
+exec node "$studio_dir/apps/web/scripts/shorts.ts" "$@"

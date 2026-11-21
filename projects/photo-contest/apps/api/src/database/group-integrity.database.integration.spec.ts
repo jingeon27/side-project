@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, expect, inject, it } from 'vitest';
 
 import { createDatabaseClient } from '@photo-contest/test-kit';
@@ -34,9 +35,9 @@ async function fixture() {
       groupId: first.id,
       title: '제약 대회',
       format: 'POST',
-      startsAt: new Date('2026-01-01'),
-      submissionEndsAt: new Date('2026-01-02'),
-      endsAt: new Date('2026-01-03'),
+      startsAt: dayjs('2026-01-01T00:00:00Z').toDate(),
+      submissionEndsAt: dayjs('2026-01-02T00:00:00Z').toDate(),
+      endsAt: dayjs('2026-01-03T00:00:00Z').toDate(),
     },
   });
   return { owner, peer, first, second, contest };

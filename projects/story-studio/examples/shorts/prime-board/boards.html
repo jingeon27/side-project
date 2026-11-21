@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>열 칸에 숨은 소수</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      [data-shot] {
+        box-sizing: border-box;
+        display: grid;
+        align-content: center;
+        gap: 64px;
+        width: 1080px;
+        height: 1920px;
+        padding: 72px;
+        background: #edf1fb;
+        color: #102245;
+      }
+      h1 {
+        margin: 0;
+        font-size: 88px;
+        letter-spacing: -0.05em;
+      }
+      .numbers {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 8px;
+        font-size: 40px;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+      }
+      .numbers span {
+        border-radius: 12px;
+        background: #fff;
+        padding-block: 16px;
+      }
+      .numbers .prime {
+        background: #1642aa;
+        color: #fff;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <template id="panel">
+      <section data-shot>
+        <h1>열 칸에 숨은 소수</h1>
+        <div class="numbers"></div>
+        <div class="numbers"></div>
+      </section>
+    </template>
+    <script>
+      const template = document.querySelector('#panel');
+      const numbers = [
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [91, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+      ];
+      const highlights = [new Set(), new Set([2, 3, 5, 7]), new Set([2, 3, 5, 7, 97])];
+      for (const primes of highlights) {
+        const panel = template.content.cloneNode(true);
+        for (const [index, row] of [...panel.querySelectorAll('.numbers')].entries()) {
+          for (const number of numbers[index]) {
+            const cell = document.createElement('span');
+            cell.textContent = number;
+            if (primes.has(number)) cell.className = 'prime';
+            row.append(cell);
+          }
+        }
+        document.body.append(panel);
+      }
+    </script>
+  </body>
+</html>

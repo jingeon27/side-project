@@ -14,6 +14,28 @@ from clash_bot.arena.training.search import Workspace, search
 
 
 class PublicSearchTest(unittest.TestCase):
+    def test_simulations_keep_the_frozen_opponents_response_even_after_value_backups(self):
+        class WaitingOpponent:
+            def predict(self, _observation, actions):
+                return np.array([float(action == Action(-1)) for action in actions]), 0.0
+
+        world, workspace = Arena(1), Workspace()
+        world.play([Action(-1)] * 2, 100)
+        with patch.object(workspace.scratch, "play", wraps=workspace.scratch.play) as played:
+            result = search(
+                world.observe(0),
+                Policy(),
+                91,
+                simulations=24,
+                depth=3,
+                opponent_policy=WaitingOpponent(),
+                workspace=workspace,
+            )
+        self.assertEqual(result["opponentResponse"], "frozen_card_policy")
+        self.assertEqual(result["simulations"], 24)
+        self.assertEqual(sum(call.args[1] for call in played.call_args_list), 24 * 100)
+        self.assertTrue(all(call.args[0][1] == Action(-1) for call in played.call_args_list))
+
     def test_a_failed_reconstruction_preserves_public_evidence_without_inventing_a_world(self):
         observation = Arena(1).observe(0)
         with (
@@ -54,7 +76,7 @@ class PublicSearchTest(unittest.TestCase):
         self.assertAlmostEqual(float(a["target"].sum()), 1)
         self.assertEqual(a["simulations"], 8)
         self.assertEqual(a["maxDepth"], 4)
-        self.assertEqual(a["maxLookaheadSeconds"], 8)
+        self.assertEqual(a["maxLookaheadSeconds"], 7)
         self.assertEqual(a["reconstruction"], "public_board_exact")
         self.assertEqual(a["deckHypotheses"], [1, len(DECKS)])
         self.assertTrue(

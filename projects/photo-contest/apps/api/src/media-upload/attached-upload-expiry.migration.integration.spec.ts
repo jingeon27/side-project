@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
@@ -66,11 +67,11 @@ UPDATE "Group" SET "avatarId" = 'avatar', "coverId" = 'cover' WHERE id = 'group'
         expect(Object.fromEntries(rows.map(({ id, expiresAt }) => [id, expiresAt]))).toEqual({
           'current-avatar': null,
           'current-cover': null,
-          'old-avatar': new Date('2026-01-01T00:00:00Z'),
-          'pending-photo': new Date('2026-01-01T00:00:00Z'),
+          'old-avatar': dayjs('2026-01-01T00:00:00Z').toDate(),
+          'pending-photo': dayjs('2026-01-01T00:00:00Z').toDate(),
           posted: null,
           submitted: null,
-          unused: new Date('2026-01-01T00:00:00Z'),
+          unused: dayjs('2026-01-01T00:00:00Z').toDate(),
         });
         await tx.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
       },

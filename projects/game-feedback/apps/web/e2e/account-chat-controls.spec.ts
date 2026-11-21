@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
+
 import { expect, test, type BrowserContext } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
@@ -61,7 +63,7 @@ test('chat reports a peer, preserves history on failure and deletes only the vie
   const viewer = await browser.newContext({ baseURL: origin });
   const peer = await browser.newContext({ baseURL: origin });
   try {
-    const suffix = Date.now().toString(36);
+    const suffix = dayjs().valueOf().toString(36);
     const login = async (context: BrowserContext, nickname: string) => {
       const response = await context.request.post('/api/auth/demo', { headers, data: { nickname } });
       expect(response.ok()).toBe(true);

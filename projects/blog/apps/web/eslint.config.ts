@@ -3,6 +3,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
+import { commonRulesConfig } from '@side/config/eslint/base';
 import { handlerNamesConfig, hooksDependencyConfig } from '@side/config/eslint/react';
 
 const layers = ['shared', 'features', 'widgets', 'app'];
@@ -31,17 +32,8 @@ export default defineConfig([
   handlerNamesConfig,
   hooksDependencyConfig,
   ...boundaries,
-  {
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'IfStatement[alternate!=null]',
-          message: 'Use guard clauses or exhaustive matching instead of else.',
-        },
-      ],
-    },
-  },
+  // eslint-config-next가 typescript-eslint를 등록하므로 baseConfig 대신 공통 side 규칙만 더한다.
+  ...commonRulesConfig,
   globalIgnores([
     '.next/**',
     'playwright-report/**',

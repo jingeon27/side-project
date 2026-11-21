@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
-import { baseConfig, testOverrides } from './base';
+import { baseConfig, commonRulesConfig, testOverrides } from './base';
 import { expoConfig } from './expo';
 import { nextConfig } from './next';
 import { reactConfig } from './react';
@@ -185,6 +185,39 @@ describe('테스트 파일의 집중 실행 금지', () => {
       filename: path.join(import.meta.dirname, 'mode.spec.ts'),
     });
     expect(messages.some(({ ruleId }) => ruleId === 'no-restricted-syntax')).toBe(true);
+  });
+});
+
+const commonRuleCode = `export function stamp() {
+  let value = Date.now();
+  return value;
+}
+class Queue { #items = []; }
+`;
+
+function commonRuleIds(config: Linter.Config[], filename: string) {
+  return new Linter({ configType: 'flat' })
+    .verify(commonRuleCode, config, { filename: path.join(import.meta.dirname, filename) })
+    .map(({ ruleId }) => ruleId)
+    .filter(
+      (ruleId) =>
+        ruleId === 'side/no-let' || ruleId === 'side/no-native-date' || ruleId === 'side/no-hash-private',
+    )
+    .sort();
+}
+
+describe('common 규칙의 테스트 예외', () => {
+  // blog web은 eslint-config-next가 TypeScript 파일과 typescript-eslint를 등록하고 그 뒤에 commonRulesConfig만 더한다.
+  it.each([
+    ['baseConfig', baseConfig],
+    ['TypeScript 파일 등록 + commonRulesConfig', [{ files: ['**/*.ts'] }, ...commonRulesConfig]],
+  ])('%s는 테스트 준비값의 let만 허용하고 날짜와 # 비공개 멤버는 테스트에서도 막아야 한다', (_, config) => {
+    expect(commonRuleIds(config, 'stamp.ts')).toEqual([
+      'side/no-hash-private',
+      'side/no-let',
+      'side/no-native-date',
+    ]);
+    expect(commonRuleIds(config, 'stamp.spec.ts')).toEqual(['side/no-hash-private', 'side/no-native-date']);
   });
 });
 

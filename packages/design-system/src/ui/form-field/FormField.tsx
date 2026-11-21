@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 
+import { CircleAlert } from 'lucide-react';
+
 import { cn } from '../../lib/cn.helper';
 import { FormFieldContext, getFieldAria, type IFormFieldContext } from './form-field-context';
 
@@ -64,14 +66,19 @@ export function FormField({ label, children, description, error, labelSuffix, cl
           labelText
         )}
         {controls}
+        {error ? (
+          <small
+            id={field.errorId}
+            role="alert"
+            className="flex items-start gap-1.5 text-caption text-danger"
+          >
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+            <span>{error}</span>
+          </small>
+        ) : null}
         {description ? (
           <small id={field.descriptionId} className="text-caption text-muted">
             {description}
-          </small>
-        ) : null}
-        {error ? (
-          <small id={field.errorId} role="alert" className="text-caption text-danger">
-            {error}
           </small>
         ) : null}
       </label>

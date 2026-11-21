@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
@@ -46,7 +47,7 @@ describe('대회 목록·명예의 전당 SEO와 사이트맵', () => {
     let privateContestId = '';
     for (let index = 0; index < PUBLIC_CONTEST_SITEMAP_SIZE + 2; index++) {
       const secret = index === PUBLIC_CONTEST_SITEMAP_SIZE + 1;
-      const now = Date.now();
+      const now = dayjs().valueOf();
       const result = await graphqlRequest<{ createGroupContest: { id: string } }>(url, {
         cookie,
         origin,
@@ -54,9 +55,9 @@ describe('대회 목록·명예의 전당 SEO와 사이트맵', () => {
         variables: {
           groupId: secret ? privateId : groupId,
           title: `사이트맵 대회 ${index}`,
-          startsAt: new Date(now - 1_000).toISOString(),
-          submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-          endsAt: new Date(now + 7_200_000).toISOString(),
+          startsAt: dayjs(now - 1_000).toISOString(),
+          submissionEndsAt: dayjs(now + 3_600_000).toISOString(),
+          endsAt: dayjs(now + 7_200_000).toISOString(),
         },
       });
       if (!result.data) throw new Error(JSON.stringify(result.errors));
@@ -78,7 +79,7 @@ describe('대회 목록·명예의 전당 SEO와 사이트맵', () => {
     expect(new Set(allIds).size).toBe(count);
     expect(allIds).toEqual(expect.arrayContaining(ids));
     expect(allIds).not.toContain(privateContestId);
-    for (const contest of pages.flat()) expect(Date.parse(contest.lastModifiedAt)).not.toBeNaN();
+    for (const contest of pages.flat()) expect(dayjs(contest.lastModifiedAt).valueOf()).not.toBeNaN();
     expect((await getGroupContestsSeoData(groupId, GROUP_CONTESTS_LISTING))?.contests).toHaveLength(24);
     expect((await getGroupContestsSeoData(groupId, GROUP_HALL_OF_FAME_LISTING))?.contests).toEqual([]);
     expect((await getGroupContestsSeoData(privateId, GROUP_CONTESTS_LISTING))?.contests).toEqual([]);

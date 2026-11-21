@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { hydrateRoot, type Root } from 'react-dom/client';
+import { hydrateRoot } from 'react-dom/client';
 import { prerender } from 'react-dom/static';
 
 import {
@@ -75,19 +75,18 @@ export async function hydrateOnClient(html: string, client: ApolloClient, ui: Re
   container.innerHTML = html;
   document.body.append(container);
   const recoverableErrors: unknown[] = [];
-  let root: Root | undefined;
-  await act(async () => {
-    root = hydrateRoot(container, <ApolloProvider client={client}>{ui}</ApolloProvider>, {
+  const root = await act(async () =>
+    hydrateRoot(container, <ApolloProvider client={client}>{ui}</ApolloProvider>, {
       onRecoverableError: (error) => {
         recoverableErrors.push(error);
       },
-    });
-  });
+    }),
+  );
   return {
     container,
     recoverableErrors,
     unmount: () => {
-      act(() => root?.unmount());
+      act(() => root.unmount());
       container.remove();
     },
   };

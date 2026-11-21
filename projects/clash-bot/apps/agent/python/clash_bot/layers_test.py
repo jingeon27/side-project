@@ -9,41 +9,40 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 # Lowest first: a unit may import the units before it in its own list.
-ARENA = ["catalogue", "placement", "sim", "tables", "policy", "training", "study", "league", "cli"]
-# `qwen` is the contract modules directly under qwen; `entry` the modules started by name.
-QWEN = ["qwen", "qwen.inputs", "qwen.learning", "qwen.records", "qwen.adoption", "qwen.worker"]
-QWEN_ENTRIES = {"learning_worker", "setup", "download"}
+ARENA = [
+    "catalogue",
+    "placement",
+    "sim",
+    "tables",
+    "policy",
+    "training",
+    "league",
+    "commands",
+    "cli",
+]
 # What else each unit may import. `root` is the modules directly under clash_bot.
 ALLOWED = {
     "root": set(),
     "perception": {"root"},
     "arena.setup": {"root"},
-    # The tactical teacher writes Qwen supervision in Qwen's own input and record formats.
-    "arena.study": {"qwen", "qwen.inputs", "qwen.records"},
+    # Only the action prior remains here; a Git-external screen adapter starts it by name.
+    "qwen": {"root"},
     # The trophy learner reuses the arena policy's features and weights, never its simulator.
     "trophy": {"root", "arena.catalogue", "arena.placement", "arena.policy"},
 }
 
 
 def unit(module):
-    """`arena.sim` for clash_bot.arena.sim.engine, `qwen.worker` for clash_bot.qwen.worker.runtime."""
+    """`arena.sim` for clash_bot.arena.sim.engine, `root` for clash_bot.paths."""
     parts = module.split(".")[1:]
     if not parts or (ROOT / f"{parts[0]}.py").exists():
         return "root"
     if parts[0] == "arena" and len(parts) > 1:
         return f"arena.{parts[1]}"
-    if parts[0] == "qwen" and len(parts) > 1:
-        if (ROOT / "qwen" / parts[1]).is_dir():
-            return f"qwen.{parts[1]}"
-        return "qwen.entry" if parts[1] in QWEN_ENTRIES else "qwen"
     return parts[0]
 
 
 def allowed(source):
-    if source == "qwen.entry":
-        return {"root", *QWEN}
-    if source in QWEN:
-        return {"root", *QWEN[: QWEN.index(source)]}
     if not source.startswith("arena.") or source == "arena.setup":
         return ALLOWED[source]
     below = ARENA[: ARENA.index(source.split(".")[1])]
@@ -100,7 +99,7 @@ class LayerTest(unittest.TestCase):
             unit(".".join(path.relative_to(ROOT.parent).with_suffix("").parts))
             for path in implementation()
         }
-        named = {"root", *ALLOWED, *QWEN, "qwen.entry", *(f"arena.{name}" for name in ARENA)}
+        named = {"root", *ALLOWED, *(f"arena.{name}" for name in ARENA)}
         self.assertEqual(units - named, set())
 
     def test_an_upward_import_is_reported(self):
@@ -108,11 +107,7 @@ class LayerTest(unittest.TestCase):
         self.assertEqual(unit("clash_bot.paths"), "root")
         self.assertNotIn("arena.league", allowed("arena.sim"))
         self.assertNotIn("qwen", allowed("arena.training"))
-        self.assertEqual(unit("clash_bot.qwen.worker.runtime"), "qwen.worker")
-        self.assertEqual(unit("clash_bot.qwen.learning_worker"), "qwen.entry")
-        self.assertEqual(unit("clash_bot.qwen.protocol"), "qwen")
-        self.assertNotIn("qwen.worker", allowed("qwen.learning"))
-        self.assertNotIn("qwen.entry", allowed("qwen.worker"))
+        self.assertEqual(unit("clash_bot.qwen.action_prior"), "qwen")
         self.assertIn("arena.sim", allowed("arena.league"))
         self.assertNotIn("arena.sim", allowed("trophy"))
         self.assertNotIn("perception", allowed("trophy"))

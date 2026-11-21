@@ -1,0 +1,362 @@
+{
+  "minimumLevels": {
+    "ArcherQueen": 11,
+    "Assassin": 9,
+    "AxeMan": 6,
+    "BabyDragon": 6,
+    "Balloon": 6,
+    "BarbLog": 6,
+    "BarbarianHut": 3,
+    "BattleHealer": 3,
+    "BattleRam": 3,
+    "BlowdartGoblin": 3,
+    "BombTower": 3,
+    "BossBandit": 11,
+    "Bowler": 6,
+    "Clone": 6,
+    "DarkMagic": 6,
+    "DarkPrince": 6,
+    "DarkWitch": 9,
+    "DartBarrell": 3,
+    "Earthquake": 3,
+    "ElectroDragon": 6,
+    "ElectroGiant": 6,
+    "ElectroWizard": 9,
+    "EliteArcher": 9,
+    "Elixir Collector": 3,
+    "ElixirGolem": 3,
+    "Fireball": 3,
+    "FirespiritHut": 3,
+    "Fisherman": 9,
+    "Freeze": 6,
+    "Ghost": 9,
+    "Giant": 3,
+    "GiantBuffer": 6,
+    "GiantSkeleton": 6,
+    "GlobalClone": 6,
+    "GoblinBarrel": 6,
+    "GoblinCage": 3,
+    "GoblinCurse": 6,
+    "GoblinDemolisher": 3,
+    "GoblinDrill": 6,
+    "GoblinGiant": 6,
+    "GoblinHut": 3,
+    "GoblinMachine": 9,
+    "GoblinPartyHut": 9,
+    "GoblinPartyRocket": 9,
+    "GoblinRocketSilo": 9,
+    "Goblinstein": 11,
+    "GoldenKnight": 11,
+    "Golem": 6,
+    "Graveyard": 9,
+    "Heal": 3,
+    "HogRider": 3,
+    "Hunter": 6,
+    "IceGolemite": 3,
+    "IceWizard": 9,
+    "InfernoDragon": 9,
+    "InfernoTower": 3,
+    "LavaHound": 9,
+    "Lightning": 6,
+    "LittlePrince": 11,
+    "Log": 9,
+    "MegaKnight": 9,
+    "MegaMinion": 3,
+    "MergeMaiden": 9,
+    "MergeMaiden_Mounted": 9,
+    "MergeMaiden_Normal": 9,
+    "MightyMiner": 11,
+    "Miner": 9,
+    "MiniPekka": 3,
+    "MiniSparkys": 3,
+    "MinionGiant": 3,
+    "Mirror": 6,
+    "Monk": 11,
+    "MovingCannon": 6,
+    "Musketeer": 3,
+    "Pekka": 6,
+    "Phoenix": 9,
+    "Poison": 6,
+    "Prince": 6,
+    "PrinceBuff": 6,
+    "Princess": 9,
+    "Rage": 6,
+    "RageBarbarian": 9,
+    "RamRider": 9,
+    "Rocket": 3,
+    "Ronin": 9,
+    "RoyalHogs": 3,
+    "SkeletonArmy": 6,
+    "SkeletonKing": 11,
+    "SkeletonWarriors": 6,
+    "SuperArcher": 9,
+    "SuperEliteArcher": 9,
+    "SuperHogRiderTerry": 11,
+    "SuperIceGolemite": 9,
+    "SuperKnight": 9,
+    "SuperLavaHound": 9,
+    "SuperMiniPekka": 9,
+    "SuperWitch": 9,
+    "SuspiciousBush": 3,
+    "ThreeMusketeers": 3,
+    "Tombstone": 3,
+    "Tornado": 6,
+    "TriWizards": 9,
+    "Valkyrie": 3,
+    "Vines": 6,
+    "Wallbreakers": 6,
+    "Witch": 6,
+    "WitchMother": 9,
+    "Wizard": 3,
+    "Xbow": 6,
+    "ZapMachine": 9
+  },
+  "friendlySpells": ["Clone", "GlobalClone", "Heal", "Rage"],
+  "omitFromStartingHand": ["Elixir Collector", "Mirror"],
+  "format": "verified-card-practice-v2",
+  "tableSHA256": "31ef8141a4b83534fc85c4aeb2b6437a5855d82dc741cb637e406c6df2fe6700",
+  "catalogueID": "6fb05fec0f1ba655e758b9256f89d72d24f980676a722fafeeb065ab22442ecd",
+  "decks": {
+    "practice_01": [
+      "BossBandit",
+      "ZapMachine",
+      "InfernoDragon",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant",
+      "Minions"
+    ],
+    "practice_02": [
+      "ArcherQueen",
+      "GoblinGiant",
+      "DartBarrell",
+      "FireSpirits",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_03": [
+      "Goblinstein",
+      "MergeMaiden_Mounted",
+      "GiantBuffer",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant",
+      "Minions"
+    ],
+    "practice_04": ["Monk", "SuperWitch", "GoblinDemolisher", "Knight", "Archer", "Zap", "Giant", "Minions"],
+    "practice_05": [
+      "GoldenKnight",
+      "Vines",
+      "MovingCannon",
+      "BlowdartGoblin",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_06": [
+      "MightyMiner",
+      "GoblinCurse",
+      "ElectroDragon",
+      "SuperIceGolemite",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_07": [
+      "SkeletonKing",
+      "Rage",
+      "GoblinMachine",
+      "SuperKnight",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_08": ["SuperHogRiderTerry", "Heal", "Bowler", "Phoenix", "Knight", "Archer", "Zap", "Giant"],
+    "practice_09": [
+      "LittlePrince",
+      "RoyalDelivery",
+      "MinionHorde",
+      "WitchMother",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_10": [
+      "GoblinRocketSilo",
+      "GiantSkeleton",
+      "SuperMiniPekka",
+      "SpearGoblins",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_11": [
+      "BarbarianHut",
+      "SkeletonWarriors_SpookyChess",
+      "Witch",
+      "SuspiciousBush",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_12": [
+      "Elixir Collector",
+      "TriWizards",
+      "BattleHealer",
+      "Miner",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_13": [
+      "GoblinPartyHut",
+      "MegaKnight",
+      "RamRider",
+      "SkeletonBalloon",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_14": ["GoblinCage", "AxeMan", "MiniSparkys", "Mirror", "Knight", "Archer", "Zap", "Giant"],
+    "practice_15": ["Mortar", "WarmSpell", "Barbarians", "MinionGiant", "Knight", "Archer", "Zap", "Giant"],
+    "practice_16": [
+      "MergeMaiden",
+      "AngryBarbarians",
+      "Rascals",
+      "SkeletonWarriors",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_17": ["DarkMagic", "RoyalRecruits", "Ronin", "SuperArcher", "Knight", "Archer", "Zap", "Giant"],
+    "practice_18": [
+      "GoblinPartyRocket",
+      "RoyalRecruits_Chess",
+      "RoyalHogs",
+      "Berserker",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_19": ["Freeze", "ElectroGiant", "Prince", "ElixirGolem", "Knight", "Archer", "Zap", "Giant"],
+    "practice_20": [
+      "Clone",
+      "ThreeMusketeers",
+      "SuperEliteArcher",
+      "Bomber",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ],
+    "practice_21": [
+      "GlobalClone",
+      "SuperLavaHound",
+      "PrinceBuff",
+      "MergeMaiden_Normal",
+      "Knight",
+      "Archer",
+      "Zap",
+      "Giant"
+    ]
+  },
+  "formDecks": {
+    "practice_forms_01": {
+      "cards": ["ElectroGiant", "Wallbreakers", "Knight", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_02": {
+      "cards": ["MegaKnight", "Zap", "Knight", "Archer", "Giant", "Minions", "Fireball", "Skeletons"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_03": {
+      "cards": ["Giant", "IceSpirits", "Pekka", "Knight", "Archer", "Zap", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_04": {
+      "cards": ["Wizard", "RoyalRecruits", "Skeletons", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_05": {
+      "cards": ["DarkPrince", "AngryBarbarians", "Bomber", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_06": {
+      "cards": ["ElectroWizard", "GoblinGiant", "Snowball", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_07": {
+      "cards": ["EliteArcher", "AxeMan", "BlowdartGoblin", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_08": {
+      "cards": ["MiniPekka", "Barbarians", "Cannon", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_09": {
+      "cards": ["Musketeer", "ElectroDragon", "Ghost", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_10": {
+      "cards": ["Valkyrie", "Giant", "GoblinBarrel", "Knight", "Archer", "Zap", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_11": {
+      "cards": ["Knight", "MinionHorde", "Princess", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_12": {
+      "cards": ["MegaMinion", "RoyalHogs", "SkeletonArmy", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_13": {
+      "cards": ["Tombstone", "SkeletonBalloon", "Witch", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_14": {
+      "cards": ["Balloon", "Bats", "Wizard", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_15": {
+      "cards": ["BarbLog", "BabyDragon", "Mortar", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_16": {
+      "cards": ["Berserker", "BattleRam", "Musketeer", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_17": {
+      "cards": ["Goblins", "GoblinCage", "RageBarbarian", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_18": {
+      "cards": ["IceGolemite", "GoblinDrill", "Tesla", "Knight", "Archer", "Zap", "Giant", "Minions"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_19": {
+      "cards": ["Hunter", "Valkyrie", "Knight", "Archer", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [1, 1, 0, 0, 0, 0, 0, 0]
+    },
+    "practice_forms_20": {
+      "cards": ["Bowler", "Archer", "InfernoDragon", "Knight", "Zap", "Giant", "Minions", "Fireball"],
+      "forms": [2, 1, 1, 0, 0, 0, 0, 0]
+    }
+  },
+  "missingProjectileSpawns": {
+    "BarbarianLauncher": "Barbarian"
+  }
+}

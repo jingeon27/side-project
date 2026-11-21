@@ -79,45 +79,44 @@ export async function migrateLegacyMedia(
         }),
     },
   ];
+  const migrateFile = async (source: (typeof sources)[number], file: ILegacyFile) => {
+    if (file.size < 1 || file.size > 25 * 1024 * 1024) throw new Error('Legacy media size is invalid.');
+    const bytes = await legacyBytes(file, options.directory);
+    if (bytes.length !== file.size) throw new Error('Legacy media size does not match its database record.');
+    const key = `${config.keyPrefix ? `${config.keyPrefix}/` : ''}objects/${randomUUID()}`;
+    const object = await db.mediaObject.create({ data: { backend: 'S3', key } });
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: file.mimeType,
+        IfNoneMatch: '*',
+        ContentMD5: createHash('md5').update(bytes).digest('base64'),
+      }),
+    );
+    const head = await s3.send(new HeadObjectCommand({ Bucket: config.bucket, Key: key }));
+    if (head.ContentLength !== file.size || head.ContentType !== file.mimeType || !head.ETag)
+      throw new Error('S3 verification failed.');
+    const uploaded = await s3.send(
+      new GetObjectCommand({ Bucket: config.bucket, Key: key, IfMatch: head.ETag }),
+    );
+    const verified = await uploaded.Body?.transformToByteArray();
+    if (!verified || digest(verified) !== digest(bytes)) throw new Error('S3 checksum verification failed.');
+    const updated = await db.$transaction((tx) => source.replace(tx, file, object.id));
+    result.migrated += updated.count;
+    result.changed += updated.count ? 0 : 1;
+  };
+  // dry-run에서는 행이 조건에 남으므로 직전 id 다음부터 한 건씩 읽는다.
+  const migrateFrom = async (source: (typeof sources)[number], after: string): Promise<void> => {
+    const [file] = await source.find(after);
+    if (!file) return;
+    result.found += 1;
+    if (options.apply) await migrateFile(source, file);
+    return migrateFrom(source, file.id);
+  };
   try {
-    for (const source of sources) {
-      let after = '';
-      for (;;) {
-        const [file] = await source.find(after);
-        if (!file) break;
-        after = file.id;
-        result.found += 1;
-        if (!options.apply) continue;
-        if (file.size < 1 || file.size > 25 * 1024 * 1024) throw new Error('Legacy media size is invalid.');
-        const bytes = await legacyBytes(file, options.directory);
-        if (bytes.length !== file.size)
-          throw new Error('Legacy media size does not match its database record.');
-        const key = `${config.keyPrefix ? `${config.keyPrefix}/` : ''}objects/${randomUUID()}`;
-        const object = await db.mediaObject.create({ data: { backend: 'S3', key } });
-        await s3.send(
-          new PutObjectCommand({
-            Bucket: config.bucket,
-            Key: key,
-            Body: bytes,
-            ContentType: file.mimeType,
-            IfNoneMatch: '*',
-            ContentMD5: createHash('md5').update(bytes).digest('base64'),
-          }),
-        );
-        const head = await s3.send(new HeadObjectCommand({ Bucket: config.bucket, Key: key }));
-        if (head.ContentLength !== file.size || head.ContentType !== file.mimeType || !head.ETag)
-          throw new Error('S3 verification failed.');
-        const uploaded = await s3.send(
-          new GetObjectCommand({ Bucket: config.bucket, Key: key, IfMatch: head.ETag }),
-        );
-        const verified = await uploaded.Body?.transformToByteArray();
-        if (!verified || digest(verified) !== digest(bytes))
-          throw new Error('S3 checksum verification failed.');
-        const updated = await db.$transaction((tx) => source.replace(tx, file, object.id));
-        result.migrated += updated.count;
-        result.changed += updated.count ? 0 : 1;
-      }
-    }
+    for (const source of sources) await migrateFrom(source, '');
     return result;
   } finally {
     s3.destroy();

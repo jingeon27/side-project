@@ -1,6 +1,7 @@
 import { gunzipSync } from 'node:zlib';
 
 import { expect, test } from '@playwright/test';
+import dayjs from 'dayjs';
 
 interface IEvent {
   event_type: string;
@@ -25,7 +26,7 @@ test('자동 페이지뷰는 이동마다 한 번만 기록하고 공통 속성�
         code: 200,
         events_ingested: payload?.events?.length ?? 0,
         payload_size_bytes: 100,
-        server_upload_time: Date.now(),
+        server_upload_time: dayjs().valueOf(),
       }),
     });
   });

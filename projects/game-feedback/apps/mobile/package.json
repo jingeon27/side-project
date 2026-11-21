@@ -42,6 +42,7 @@
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
+    "dayjs": "catalog:",
     "eslint": "catalog:",
     "jiti": "catalog:",
     "jsdom": "catalog:",

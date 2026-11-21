@@ -1,29 +1,24 @@
 """Small action-conditional policy/value network over the public decision context.
 
 The same network guides local search and, published as champion-policy.json, decides live
-Counterpush moves in milliseconds (src/core/fast/policy.ts). CPU inference, MLX gradients.
+live Trophy decisions in milliseconds (src/core/fast/policy.ts). CPU inference, MLX gradients.
 """
 
 import json
 from pathlib import Path
 
 import numpy as np
-from more_itertools import chunked
 
 from .context import decision_context
 from .features import (
-    ACTION_SIZE,
-    SPEC,
-    STATE_SIZE,
     WEIGHT_SHAPES,
     action_features,
     checksum,
     context_features,
     exported,
     forward,
-    hide_towers,
 )
-from .samples import PolicyMetadata, TrainingSample
+from .samples import PolicyMetadata
 from .tactics import action_biases
 
 FORMAT = "clash-arena-policy-value-v4"
@@ -51,7 +46,9 @@ class Policy:
         self.metadata = metadata or {"format": FORMAT, "version": 0}
 
     def predict(self, observation, actions):
-        return self.read(decision_context(observation, actions))
+        context = decision_context(observation, actions)
+        del context["towers"]
+        return self.read(context)
 
     def read(self, context):
         """Action probabilities and value of a decision context, however it was read."""
@@ -71,7 +68,7 @@ class Policy:
         return checksum(self.weights)
 
     def live(self, catalogue):
-        """What `counterpush play` loads: the same weights and checksum as JSON.
+        """What `trophy serve --seed` loads: the same weights and checksum as JSON.
 
         `catalogue` is the card catalogue id of the rule set the weights learned under.
         """
@@ -122,93 +119,8 @@ class Policy:
         return policy
 
     def train(self, samples, seed, epochs=3, batch_size=32):
-        if not samples:
-            return {"updated": False, "reason": "no_completed_selfplay_samples"}
-        # Validate everything before the first gradient so a bad row cannot half-train the policy.
-        rows = [TrainingSample.model_validate(sample) for sample in samples]
-        import mlx.core as mx
-        import mlx.nn as nn
-        import mlx.optimizers as optim
-        from mlx.utils import tree_flatten
+        from .optimizer import train
 
-        mx.set_default_device(mx.cpu)
-        hidden, attention = SPEC.hidden, SPEC.attention
-
-        class Network(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.encoder = nn.Linear(STATE_SIZE, hidden)
-                self.query = nn.Linear(hidden, attention)
-                self.action = nn.Linear(ACTION_SIZE, attention)
-                self.value = nn.Linear(hidden, 1)
-
-            def __call__(self, states, actions):
-                h = nn.relu(self.encoder(states))
-                logits = mx.sum(
-                    nn.relu(self.action(actions)) * self.query(h)[:, None, :], axis=-1
-                ) / (attention**0.5)
-                return logits, mx.tanh(self.value(h)).squeeze(-1)
-
-        model = Network()
-        model.load_weights(
-            [(name, mx.array(value)) for name, value in self.weights.items()], strict=True
-        )
-        optimizer = optim.Adam(learning_rate=3e-4)
-
-        def loss(model, states, actions, biases, masks, targets, value_targets):
-            logits, values = model(states, actions)
-            logits = logits + biases
-            logits = mx.where(masks, logits, -1e9)
-            logp = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
-            policy_loss = -mx.mean(mx.sum(targets * logp, axis=-1))
-            return policy_loss + mx.mean((values - value_targets) ** 2)
-
-        gradient = nn.value_and_grad(model, loss)
-        rng = np.random.default_rng(seed)
-        losses = []
-        before = self.checksum()
-        for _ in range(epochs):
-            for batch in chunked((rows[index] for index in rng.permutation(len(rows))), batch_size):
-                width = max(len(row.actions) for row in batch)
-                # The live screen does not read tower hit points yet; learn both with and without them.
-                masked = [rng.random() < 0.5 for row in batch]
-                states = np.stack(
-                    [
-                        hide_towers(row.features.dense()) if hide else row.features.dense()
-                        for row, hide in zip(batch, masked)
-                    ]
-                )
-                acts = np.zeros((len(batch), width, ACTION_SIZE), np.float32)
-                masks = np.zeros((len(batch), width), bool)
-                biases = np.zeros((len(batch), width), np.float32)
-                targets = np.zeros((len(batch), width), np.float32)
-                for index, row in enumerate(batch):
-                    count = len(row.actions)
-                    acts[index, :count] = row.actionFeatures
-                    biases[index, :count] = (
-                        row.actionBiasWithoutTowers if masked[index] else row.actionBias
-                    )
-                    masks[index, :count] = True
-                    targets[index, :count] = row.target
-                # The value head learns the terminal result blended with the tower margin.
-                value_targets = np.array([row.value for row in batch], np.float32)
-                value, grads = gradient(
-                    model, *map(mx.array, (states, acts, biases, masks, targets, value_targets))
-                )
-                mx.eval(value, grads)
-                if not np.isfinite(float(value.item())):
-                    raise ValueError("Nonfinite self-play loss")
-                optimizer.update(model, grads)
-                mx.eval(model.parameters(), optimizer.state)
-                losses.append(float(value.item()))
-        self.weights = {
-            name: np.asarray(value).copy() for name, value in tree_flatten(model.parameters())
-        }
-        return {
-            "updated": before != self.checksum(),
-            "beforeSHA256": before,
-            "afterSHA256": self.checksum(),
-            "samples": len(samples),
-            "steps": len(losses),
-            "meanLoss": float(np.mean(losses)),
-        }
+        weights, report = train(self.weights, samples, seed, epochs, batch_size)
+        self.weights = weights
+        return report

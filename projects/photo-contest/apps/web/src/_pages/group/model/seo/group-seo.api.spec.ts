@@ -1,4 +1,5 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import dayjs from 'dayjs';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
@@ -132,7 +133,7 @@ describe('공개 그룹의 SEO·사이트맵 실제 API', () => {
     expect(new Set(allIds).size).toBe(count);
     expect(allIds).toEqual(expect.arrayContaining([...ids, publicId]));
     expect(allIds).not.toContain(privateId);
-    for (const group of pages.flat()) expect(Date.parse(group.lastModifiedAt)).not.toBeNaN();
+    for (const group of pages.flat()) expect(dayjs(group.lastModifiedAt).valueOf()).not.toBeNaN();
   });
 
   it('백엔드 연결 실패를 없는 그룹으로 취급하지 않아야 한다', async () => {

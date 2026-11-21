@@ -5,7 +5,7 @@ import unittest
 from clash_bot.arena.placement import DEPLOYMENT
 from clash_bot.arena.sim.candidates import dense_actions, legal_actions
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import CARDS, DECKS, TILE, Action, canonical, deck_ids
+from clash_bot.arena.sim.rules import CARD_ID, CARDS, DECKS, TILE, Action, canonical, deck_ids
 
 
 def tiles(arena, team, card):
@@ -17,6 +17,39 @@ def tiles(arena, team, card):
 
 
 class CandidateTest(unittest.TestCase):
+    def test_mirror_copies_spell_placement_and_charges_its_own_visible_hand_cost(self):
+        zap, mirror = CARD_ID["Zap"], CARD_ID["Mirror"]
+        deck = next(n for n, d in DECKS.items() if {"Zap", "Mirror"} <= set(d.cards))
+        others = [c for c in deck_ids(deck) if c not in (zap, mirror)]
+        order = [zap, *others[:3], mirror, *others[3:]]
+        arena = Arena(12, [order, order], [deck, deck], delays=[22, 22])
+        arena.play([Action(-1)] * 2, 320)
+        cast = next(a for a in legal_actions(arena.battle, 0) if a.card == zap and a.y > 16 * TILE)
+        arena.play([cast, Action(-1)], 80)
+        copied = Action(mirror, cast.x, cast.y)
+        self.assertIn(copied, legal_actions(arena.battle, 0))
+        self.assertIn(copied, dense_actions(arena.battle, 0))
+        player = arena.state()["players"][0]
+        self.assertEqual(player["hand_costs"][player["hand"].index(mirror)], 3)
+        arena.play([copied, Action(-1)], 64)
+        self.assertEqual(
+            arena.history[-1]["plays"], [{"team": 0, "action": copied.row(), "cost": 3}]
+        )
+
+    def test_both_sides_offer_legal_poison_at_the_observed_enemy_graveyard(self):
+        deck = [3, 6, 4, 7, 0, 1, 2, 5]
+        point = 3.7, 7
+        for team in (0, 1):
+            arena = Arena(41, [deck, deck])
+            arena.play([Action(-1)] * 2, 220)
+            x, y = canonical(*point, team)
+            moves = [Action(-1), Action(-1)]
+            moves[1 - team] = Action(3, round(x * TILE), round(y * TILE))
+            arena.play(moves, 22)
+            (grave,) = arena.state()["spells"]
+            observed = canonical(grave[3] / TILE, grave[4] / TILE, team)
+            self.assertEqual(tiles(arena, team, 6)[0], observed)
+
     def test_wait_remains_available_at_high_elixir_instead_of_forcing_a_card_or_skill(self):
         arena = Arena(41)
         arena.play([Action(-1)] * 2, 320)

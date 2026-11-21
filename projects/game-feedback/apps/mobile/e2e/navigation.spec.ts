@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { appRoutes } from '@game-feedback/bridge';
 
 import { expect, test } from './support/fixtures';
@@ -155,7 +157,7 @@ test('coaching and general-board deep links preserve the game and return to its 
   page,
   nativeHost,
 }) => {
-  const slug = `native-game-${Date.now().toString(36)}`;
+  const slug = `native-game-${dayjs().valueOf().toString(36)}`;
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-test-admin' },

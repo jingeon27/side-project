@@ -25,7 +25,11 @@ REPLAY_FIELDS = (
     "actionFeatures",
     "actionBias",
     "actionBiasWithoutTowers",
+    "source",
     "target",
+    "targetWithoutTowers",
+    "defensePairs",
+    "attackPairs",
     "outcome",
     "value",
 )
@@ -42,7 +46,20 @@ def write_replay(path, episode):
         {
             "completed": episode["completed"],
             "rulesID": episode["rulesID"],
-            "samples": [{key: row[key] for key in REPLAY_FIELDS} for row in episode["samples"]],
+            "gameID": episode["gameID"],
+            "leafExamples": episode["leafExamples"],
+            **(
+                {"practiceTrial": {k: episode["practiceTrial"][k] for k in ("goal", "verified")}}
+                if "practiceTrial" in episode
+                else {}
+            ),
+            "samples": [
+                {
+                    **{key: row[key] for key in REPLAY_FIELDS},
+                    **{key: row[key] for key in ("practiceGoal", "learnerDeck") if key in row},
+                }
+                for row in episode["samples"]
+            ],
         },
     )
 

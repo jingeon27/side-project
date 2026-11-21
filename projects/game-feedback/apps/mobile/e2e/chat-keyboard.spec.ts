@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
@@ -27,7 +29,7 @@ for (const width of [400, 1440]) {
     await page.goto(path);
     await expect.poll(nativeHost.currentPath).toBe(path);
     const input = page.getByRole('textbox', { name: '메시지 내용' });
-    const firstLine = `WebView 줄바꿈 ${width} ${Date.now().toString(36)}`;
+    const firstLine = `WebView 줄바꿈 ${width} ${dayjs().valueOf().toString(36)}`;
     await input.fill(firstLine);
     await input.press('Enter');
     await input.pressSequentially('둘째 줄');

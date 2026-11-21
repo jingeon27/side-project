@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -111,7 +112,11 @@ describe('post view counting', () => {
     );
     await state.db.postView.updateMany({
       where: { postId: created.id },
-      data: { lastViewedAt: new Date(Date.now() - 25 * 60 * 60 * 1000) },
+      data: {
+        lastViewedAt: dayjs()
+          .subtract(25 * 60 * 60 * 1000, 'millisecond')
+          .toDate(),
+      },
     });
     expect(await view(created.id, 'same-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 2);
   });

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
+import dayjs from 'dayjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
@@ -36,7 +37,9 @@ describe('쓰기 남용 제한', () => {
       data: {
         tokenHash: createHash('sha256').update(token).digest('hex'),
         userId: user.id,
-        expiresAt: new Date(Date.now() + 60 * 60_000),
+        expiresAt: dayjs()
+          .add(60 * 60_000, 'millisecond')
+          .toDate(),
       },
     });
     return `__Host-contest_session=${token}`;

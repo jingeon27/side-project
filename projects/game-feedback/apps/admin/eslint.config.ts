@@ -23,10 +23,6 @@ export default defineConfig([
         'error',
         { selector: 'TSEnumDeclaration', message: 'enum 대신 as const 객체와 유니온 타입을 사용하세요.' },
         {
-          selector: "VariableDeclaration[kind='let']",
-          message: 'const와 순수 변환을 우선하고 외부 가변 자원은 class로 캡슐화하세요.',
-        },
-        {
           selector:
             "CallExpression[callee.name=/^use(Query|SuspenseQuery|InfiniteQuery|SuspenseInfiniteQuery)$/] > ObjectExpression.arguments > Property[key.name='queryKey'] > ArrayExpression.value",
           message: 'queryKey는 도메인의 *.options.ts 팩토리에서 정의하고 재사용하세요.',

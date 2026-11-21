@@ -8,20 +8,26 @@ alone, as it is deployed: through its screen (`policy.screen`), which reads no t
 """
 
 import time
+from collections import Counter
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from ..policy.choice import card_choice, sample_card
+from ..policy.choice import card_choice
 from ..policy.noise import PerceptionNoise
-from ..policy.samples import SparseFeatures, value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from ..sim.rules import CARD_ID, LIVE_DECK, MATCHUP_DECKS, SPEC, Action
+from ..sim.status_effects import control_observations
+from .collection import choose, pool_trial_due, trial_due
+from .deck_practice import open_practice
+from .defense_rollout import focus_families, observed_attack
+from .form_usage import count_form_plays, form_counts, opening_receipt
+from .public_value import examples
 from .search import Workspace, search
 from .storage import seed_for
-from .targets import training_rows
+from .targets import seal_outcomes, terminal_values, training_rows
 
 
 class SelfplaySpec(BaseModel):
@@ -33,7 +39,8 @@ class SelfplaySpec(BaseModel):
     # learns what card attributes mean rather than one deck's cards.
     liveMirror: float = Field(ge=0, le=1)
     liveAgainstPool: float = Field(ge=0, le=1)
-    scriptedDefenderEvery: int = Field(ge=2)
+    pressureEvery: int = Field(ge=2)
+    familyExploration: float = Field(ge=0, le=1)
     decisionTicks: PositiveInt
     # The second side decides this many ticks after the first, drawn per game.
     decisionPhaseTicks: tuple[int, int]
@@ -68,12 +75,12 @@ def setup_for(game_id):
     if rng.random() < SELFPLAY.liveMirror:
         decks = [LIVE_DECK, LIVE_DECK]
     elif rng.random() < SELFPLAY.liveAgainstPool:
-        threats = sorted(set(DECKS) - {LIVE_DECK})
+        threats = sorted(set(MATCHUP_DECKS) - {LIVE_DECK})
         decks = [LIVE_DECK, threats[int(rng.integers(len(threats)))]]
         if rng.integers(2):
             decks.reverse()
     else:
-        names = sorted(DECKS)
+        names = sorted(MATCHUP_DECKS)
         decks = [names[int(rng.integers(len(names)))] for _ in range(2)]
     low, high = SELFPLAY.commandDelayTicks
     first, last = SELFPLAY.decisionPhaseTicks
@@ -83,17 +90,6 @@ def setup_for(game_id):
         "levels": [SPEC["level"] + int(rng.choice(SELFPLAY.levelOffsets)) for _ in range(2)],
         "phase": int(rng.integers(first, last + 1)),
     }
-
-
-def live_mirror(game):
-    """Only these games feed the Qwen studies: decision-v3 prompts know the live deck alone."""
-    return game["setup"]["decks"] == [LIVE_DECK, LIVE_DECK]
-
-
-def tower_damage(player):
-    """Share of this side's total tower hit points destroyed by the end of the game."""
-    hp = np.asarray(player["tower_hp"], np.float64)
-    return float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"])))
 
 
 def play_game(
@@ -106,12 +102,23 @@ def play_game(
     max_ticks=6200,
     report=None,
     setup=None,
+    initial_orders=None,
+    collector=None,
+    leaf_weights=None,
+    label_reference=None,
 ):
     """`simulations=0` plays each policy's best candidate without search, as deployed."""
     began = time.perf_counter()
+    if collector is not None and (not training or not simulations):
+        raise ValueError("A learner may collect positions only in searched training games")
+    actors = list(policies)
+    if collector is not None:
+        actors[collector[0]] = collector[1]
     setup = setup or live_setup()
+    pool_card = CARD_ID[setup["poolAttackCard"]] if "poolLearnerSeat" in setup else None
     arena = Arena(
         seed_for("environment", game_id),
+        initial_decks=initial_orders,
         decks=setup["decks"],
         delays=setup["delays"],
         levels=setup["levels"],
@@ -125,11 +132,21 @@ def play_game(
         for team in (0, 1)
     ]
     # The tick of each side's next decision; the second clock runs `phase` ticks behind.
-    due = [0, setup.get("phase", 0)]
+    opening_tick = open_practice(arena, setup, training)
+    due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
+    forms = form_counts()
+    first_receipt = None
+    controls = Counter()
+    policy_seats = {
+        seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
+    }
     unavailable, policy_only = [None, None], [0, 0]
+    trials = [{}, {}]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
+        if training:
+            controls.update(control_observations(state["entities"]))
         selected = [Action(-1), Action(-1)]
         for team, policy in enumerate(policies):
             if due[team] > state["tick"]:
@@ -141,26 +158,56 @@ def play_game(
             if len(candidates) == 1:
                 continue
             decisions += 1
-            if simulations == 0 or "scripted" in policy.metadata:
+            if (
+                simulations == 0
+                or "scripted" in policy.metadata
+                or (collector is not None and team != collector[0])
+            ):
                 prior = policy.deployed(observation, candidates, screens[team])
                 selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
                 continue
             result = None
+            context = screens[team].read(observation, candidates)
+            attack = observed_attack(context)
+            masked = {key: value for key, value in context.items() if key != "towers"}
+            observed_prior = policy.read(masked)[0]
+            reference = label_reference or actors[team]
+            prior = observed_prior if reference is policy else reference.read(masked)[0]
+            best = card_choice([a.card for a in candidates], prior)
+            deployed = candidates[best] if collector is not None else None
             if unavailable[team] is None:
                 try:
+                    compare_attack = (
+                        pool_trial_due(
+                            trials[team],
+                            state["tick"],
+                            state["players"][team],
+                            candidates,
+                            best,
+                            pool_card,
+                        )
+                        if pool_card is not None
+                        else (collector is not None or setup.get("offensePractice"))
+                        and trial_due(trials[team], state["tick"], context, candidates, best)
+                    )
                     result = search(
                         observation,
                         policy,
                         seed_for("search", game_id, state["tick"], team),
                         simulations=simulations,
                         depth=depth,
-                        step_ticks=SELFPLAY.searchTicks,
-                        first_ticks=SELFPLAY.decisionTicks,
                         root_size=SELFPLAY.rootActions,
                         noise=training,
                         opponent_policy=policies[1 - team],
                         workspace=workspace,
                         beliefs=beliefs[team],
+                        observed_prior=observed_prior,
+                        focus=focus_families(context, attack),
+                        defense=attack if training else None,
+                        leaf_weights=leaf_weights,
+                        reference_action=candidates[best],
+                        attack_baseline=best if compare_attack else None,
+                        pool_card=pool_card,
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
@@ -168,55 +215,51 @@ def play_game(
                 # The real native game remains authoritative. Finish with this seat's
                 # frozen screen policy, but invent no expert targets for these decisions.
                 policy_only[team] += 1
-                prior = policy.deployed(observation, candidates, screens[team])
-                selected[team] = candidates[card_choice([a.card for a in candidates], prior)]
+                selected[team] = (
+                    deployed
+                    or candidates[card_choice([a.card for a in candidates], observed_prior)]
+                )
                 continue
-            families = [action.card for action in result["actions"]]
-            if training:
-                temperature = 1 if state["tick"] < 1200 else 0.35
-                chosen = sample_card(families, result["target"], choices, temperature)
-            else:
-                chosen = card_choice(families, result["target"])
-            selected[team] = result["actions"][chosen]
+            selected[team], chosen = choose(
+                result["actions"],
+                result["target"],
+                choices,
+                state["tick"],
+                training,
+                deployed,
+                SELFPLAY.familyExploration,
+            )
             searches += result["simulations"]
             if training:
-                (
-                    rows,
-                    state_features,
-                    action_vectors,
-                    biases,
-                    masked_biases,
-                    target,
-                    stored_choice,
-                ) = training_rows(observation, result, screens[team], chosen)
                 samples.append(
                     {
                         "gameID": game_id,
+                        **({"learnerDeck": setup["decks"][team]} if deployed is not None else {}),
                         "rulesID": rules_id,
                         "team": team,
-                        "policyVersion": policy.metadata["version"],
-                        # The candidate list is rebuilt by search; keep only the public state.
-                        "observation": {
-                            key: value
-                            for key, value in observation.items()
-                            if key != "legalActions"
-                        },
-                        "features": SparseFeatures.of(state_features).model_dump(),
-                        "actions": [action.row() for action in rows],
-                        "actionFeatures": action_vectors.tolist(),
-                        "actionBias": biases.tolist(),
-                        "actionBiasWithoutTowers": masked_biases.tolist(),
-                        "target": target,
-                        "chosen": stored_choice,
-                        "search": {
-                            key: value
-                            for key, value in result.items()
-                            if key not in ("actions", "target")
-                        },
+                        "policyVersion": actors[team].metadata["version"],
+                        "teacherVersion": policy.metadata["version"],
+                        "referenceVersion": reference.metadata["version"],
+                        "behavior": "deployed_learner"
+                        if deployed is not None
+                        else "searched_teacher",
+                        "behaviorAction": selected[team].row(),
+                        **training_rows(
+                            observation, result, screens[team], chosen, reference, context=context
+                        ),
                         "outcome": None,
                     }
                 )
+        history_size = len(arena.history)
         outcomes = arena.play(selected, min(due) - state["tick"])
+        if training and len(arena.history) > history_size:
+            events = arena.history[history_size:]
+            count_form_plays(forms, state, arena.state(), events, policy_seats)
+            if "focusGoal" in setup and first_receipt is None:
+                actor = setup["focusSeat"]
+                first_receipt = opening_receipt(
+                    state, arena.state(), events, actor, opening_tick + arena.delays[actor]
+                )
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -229,18 +272,7 @@ def play_game(
             )
     state = arena.state()
     completed = bool(state["game_over"])
-    damage = [tower_damage(player) for player in state["players"]]
-    for sample in samples:
-        sample["outcome"] = (
-            (0 if state["winner"] == 2 else 1 if state["winner"] == sample["team"] else -1)
-            if completed
-            else None
-        )
-        sample["value"] = (
-            value_target(sample["outcome"], damage[1 - sample["team"]] - damage[sample["team"]])
-            if completed
-            else None
-        )
+    seal_outcomes(samples, state)
     return {
         "format": "clash-arena-selfplay-v2",
         "gameID": game_id,
@@ -256,7 +288,7 @@ def play_game(
                     else {}
                 ),
             }
-            for policy in policies
+            for policy in actors
         ],
         "completed": completed,
         "winner": state["winner"] if completed else None,
@@ -269,20 +301,24 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
+        **(
+            {
+                "firstReceipt": first_receipt,
+                "terminalValues": terminal_values(state) if completed else None,
+            }
+            if "focusGoal" in setup
+            else {}
+        ),
+        **(
+            {
+                "trainingStartTick": opening_tick,
+                "formExecutions": forms,
+                "controlUnitFrames": dict(controls),
+                "leafExamples": examples(samples) if completed else [],
+            }
+            if training
+            else {}
+        ),
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }
-
-
-def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
-    valid = []
-    for episode in episodes:
-        if not episode["completed"]:
-            continue
-        if episode["rulesID"] != rules_id:
-            continue  # A patch's dynamics/returns must not silently mix with this one.
-        valid.extend(row for row in episode["samples"] if row["outcome"] in (-1, 0, 1))
-    if len(valid) <= max_samples:
-        return valid
-    order = np.random.default_rng(seed).choice(len(valid), max_samples, replace=False)
-    return [valid[index] for index in order]

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from clash_bot.arena.policy.network import Policy
-from clash_bot.arena.sim.rules import DECKS, LIVE_DECK
+from clash_bot.arena.sim.rules import LIVE_DECK, POOL_DECKS
 from clash_bot.arena.training.evaluation import (
     evaluate,
     evaluation_setup,
@@ -60,6 +60,12 @@ class QualificationTest(unittest.TestCase):
         self.assertEqual(calls[0].kwargs["setup"], live_setup())
         self.assertEqual(calls[2].kwargs["setup"], calls[3].kwargs["setup"])
         self.assertNotEqual(calls[2].kwargs["setup"]["decks"][1], LIVE_DECK)
+        self.assertEqual(calls[2].args[1], calls[4].args[1])
+        self.assertEqual(calls[2].kwargs["setup"], calls[4].kwargs["setup"])
+        self.assertEqual(calls[4].args[0], [b, b])
+        self.assertEqual(
+            (len(calls), len(result["games"]), result["poolComparison"]["games"]), (5, 4, 1)
+        )
         with patch(
             "clash_bot.arena.training.evaluation.play_game",
             return_value={**game, "completed": False},
@@ -68,11 +74,57 @@ class QualificationTest(unittest.TestCase):
                 evaluate(a, b, "rules-a", 0, pairs=1)
 
     def test_full_evaluation_includes_every_threat_deck_before_promotion(self):
-        setups = [evaluation_setup(pair, 3) for pair in range(2 * (len(DECKS) - 1))]
+        setups = [evaluation_setup(pair, 3) for pair in range(4 * len(POOL_DECKS))]
         # Pairs differ in how far apart the two decision clocks run.
         self.assertGreater(len({row["phase"] for row in setups}), 10)
-        self.assertEqual({row["decks"][1] for row in setups}, set(DECKS))
-        self.assertTrue(all(row["decks"][0] == LIVE_DECK for row in setups))
+        self.assertTrue(all(row["decks"] == [LIVE_DECK, LIVE_DECK] for row in setups[::2]))
+        for seat in (0, 1):
+            self.assertCountEqual(
+                [row["decks"][seat] for row in setups[1::2] if row["decks"][1 - seat] == LIVE_DECK],
+                POOL_DECKS,
+            )
+
+    def test_high_mirror_score_cannot_hide_a_loss_against_the_same_pool_deck_control(self):
+        challenger = Policy(metadata={"version": 1})
+        champion = Policy(metadata={"version": 0})
+
+        def play(jobs, incumbent_wins):
+            matchups = []
+            for job in jobs:
+                decks = job["setup"]["decks"]
+                if decks[0] == decks[1]:
+                    matchups.append(([{"winner": 0}, {"winner": 1}], None))
+                    continue
+                live = decks.index(LIVE_DECK)
+                # The Graveyard side wins each scored mixed game for both incumbents below.
+                matchups.append(
+                    (
+                        [{"winner": live}, {"winner": live}],
+                        {"winner": 1 - live if incumbent_wins else live},
+                    )
+                )
+            return matchups
+
+        for incumbent_wins in (True, False):
+            result = evaluate(
+                challenger,
+                champion,
+                "rules",
+                0,
+                pairs=64,
+                play_matchups=lambda jobs: play(jobs, incumbent_wins),
+            )
+            self.assertEqual((result["gate"]["score"], len(result["games"])), (0.75, 128))
+            self.assertEqual(result["matchupStrata"]["mixedDeck"]["score"], 0.5)
+            pool = result["poolComparison"]
+            self.assertEqual(
+                (pool["games"], pool["challengerScore"], pool["championScore"]),
+                (32, 0, int(incumbent_wins)),
+            )
+            self.assertTrue(all(row["games"] for row in pool["byDeck"].values()))
+            self.assertEqual(result["gate"]["passed"], not incumbent_wins)
+            if incumbent_wins:
+                self.assertEqual(result["gate"]["reason"], "pool_deck_regression")
 
     def test_mixed_matchup_wins_cannot_hide_a_live_mirror_regression(self):
         challenger = Policy(metadata={"version": 1, "rulesID": "rules-a"})
@@ -101,27 +153,41 @@ class QualificationTest(unittest.TestCase):
             batches.append([job["identity"] for job in jobs])
             # The challenger wins both seats of even pairs and loses both of odd ones.
             return [
-                [
-                    {
-                        "winner": seat
-                        if int(job["identity"].rsplit("-", 1)[1]) % 2 == 0
-                        else 1 - seat
-                    }
-                    for seat in (0, 1)
-                ]
+                (
+                    [
+                        {
+                            "winner": seat
+                            if int(job["identity"].rsplit("-", 1)[1]) % 2 == 0
+                            else 1 - seat
+                        }
+                        for seat in (0, 1)
+                    ],
+                    {"winner": 2} if job["setup"]["decks"][0] != job["setup"]["decks"][1] else None,
+                )
                 for job in jobs
             ]
 
-        result = evaluate(a, b, "rules-a", 2, pairs=5, play_pairs=play, batch=2)
+        result = evaluate(a, b, "rules-a", 2, pairs=5, play_matchups=play, batch=2)
         self.assertEqual(
             batches,
-            [["holdout-2-0", "holdout-2-1"], ["holdout-2-2", "holdout-2-3"], ["holdout-2-4"]],
+            [
+                ["holdout-rules-a-2-0", "holdout-rules-a-2-1"],
+                ["holdout-rules-a-2-2", "holdout-rules-a-2-3"],
+                ["holdout-rules-a-2-4"],
+            ],
         )
         self.assertEqual(result["pairs"], [1, 0, 1, 0, 1])
         self.assertEqual([game["challengerSeat"] for game in result["games"]], [0, 1] * 5)
         stops = iter([False, True])
         result = evaluate(
-            a, b, "rules-a", 2, pairs=5, play_pairs=play, batch=2, should_stop=lambda: next(stops)
+            a,
+            b,
+            "rules-a",
+            2,
+            pairs=5,
+            play_matchups=play,
+            batch=2,
+            should_stop=lambda: next(stops),
         )
         self.assertEqual(result["pairs"], [1, 0])
         self.assertEqual(result["gate"]["reason"], "interrupted_evaluation")
@@ -133,6 +199,16 @@ class QualificationTest(unittest.TestCase):
         result = evaluate(a, a, "rules-a", 0, should_stop=lambda: True)
         self.assertFalse(result["complete"])
         self.assertEqual(result["gate"]["reason"], "interrupted_evaluation")
+
+    def test_a_new_rule_set_has_disjoint_holdout_worlds(self):
+        identities = []
+        game = {"completed": True, "rejectedCommands": 0, "winner": 0, "samples": []}
+        for rules in ("rules-a", "rules-b"):
+            policy = Policy(metadata={"version": 0, "rulesID": rules})
+            with patch("clash_bot.arena.training.evaluation.play_game", return_value=game) as play:
+                evaluate(policy, policy, rules, 0, pairs=2)
+            identities.append({call.args[1] for call in play.call_args_list})
+        self.assertTrue(identities[0].isdisjoint(identities[1]))
 
 
 if __name__ == "__main__":

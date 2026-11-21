@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import dayjs from 'dayjs';
 import supertest from 'supertest';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -12,7 +13,7 @@ const databaseUrl =
 const secret = 'test-only-forwarded-client-secret-'.repeat(2);
 const anonymousReadLimit = 240;
 
-function signed(client: string, signingSecret = secret, at = Math.floor(Date.now() / 1000)) {
+function signed(client: string, signingSecret = secret, at = Math.floor(dayjs().valueOf() / 1000)) {
   return {
     [FORWARDED_CLIENT_HEADERS.client]: client,
     [FORWARDED_CLIENT_HEADERS.timestamp]: String(at),
@@ -61,7 +62,7 @@ describe('rate limits for server-side rendering requests from one web container'
       if (variant === 0)
         return { ...signed('203.0.113.7'), [FORWARDED_CLIENT_HEADERS.client]: `192.0.2.${index % 250}` };
       if (variant === 1) return signed(`192.0.2.${index % 250}`, `${secret}-other`);
-      return signed(`192.0.2.${index % 250}`, secret, Math.floor(Date.now() / 1000) - 120);
+      return signed(`192.0.2.${index % 250}`, secret, Math.floor(dayjs().valueOf() / 1000) - 120);
     };
     await exhaust(request, forged);
     await request.get('/api/session').expect(429);

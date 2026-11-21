@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 import { expect, test } from './support/test';
 
 [
@@ -37,7 +39,7 @@ import { expect, test } from './support/test';
     await page.setViewportSize({ width: 393, height: 852 });
     const login = await page.request.post('/api/auth/demo', {
       headers: { Origin: origin },
-      data: { nickname: `태그형식_${locale}_${Date.now().toString(36)}` },
+      data: { nickname: `태그형식_${locale}_${dayjs().valueOf().toString(36)}` },
     });
     expect(login.ok()).toBe(true);
     await page.goto(`/${locale}/settings`);
