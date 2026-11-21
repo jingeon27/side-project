@@ -11,17 +11,25 @@ from ..sim.rules import Action
 from .improvement import improved_policy
 
 
-def seal_outcomes(samples, state):
-    if not state["game_over"]:
-        return
+def terminal_values(state):
     damage = []
     for player in state["players"]:
         hp = np.asarray(player["tower_hp"], np.float64)
         damage.append(float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"]))))
-    for sample in samples:
-        team = sample["team"]
-        outcome = 0 if state["winner"] == 2 else 1 if state["winner"] == team else -1
-        sample.update(outcome=outcome, value=value_target(outcome, damage[1 - team] - damage[team]))
+    outcomes = [
+        0 if state["winner"] == 2 else 1 if state["winner"] == team else -1 for team in (0, 1)
+    ]
+    return [
+        {"outcome": out, "value": value_target(out, damage[1 - team] - damage[team])}
+        for team, out in enumerate(outcomes)
+    ]
+
+
+def seal_outcomes(samples, state):
+    if state["game_over"]:
+        values = terminal_values(state)
+        for sample in samples:
+            sample.update(values[sample["team"]])
 
 
 def training_rows(observation, result, screen, chosen, policy, context=None):

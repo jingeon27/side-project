@@ -23,11 +23,11 @@ from ..sim.status_effects import control_observations
 from .collection import choose, trial_due
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
-from .form_usage import count_form_plays, form_counts
+from .form_usage import count_form_plays, form_counts, opening_receipt
 from .public_value import examples
 from .search import Workspace, search
 from .storage import seed_for
-from .targets import seal_outcomes, training_rows
+from .targets import seal_outcomes, terminal_values, training_rows
 
 
 class SelfplaySpec(BaseModel):
@@ -135,6 +135,7 @@ def play_game(
     due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     forms = form_counts()
+    first_receipt = None
     controls = Counter()
     policy_seats = {
         seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
@@ -239,9 +240,13 @@ def play_game(
         history_size = len(arena.history)
         outcomes = arena.play(selected, min(due) - state["tick"])
         if training and len(arena.history) > history_size:
-            count_form_plays(
-                forms, state, arena.state(), arena.history[history_size:], policy_seats
-            )
+            events = arena.history[history_size:]
+            count_form_plays(forms, state, arena.state(), events, policy_seats)
+            if "focusGoal" in setup and first_receipt is None:
+                actor = setup["focusSeat"]
+                first_receipt = opening_receipt(
+                    state, arena.state(), events, actor, opening_tick + arena.delays[actor]
+                )
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -283,6 +288,14 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
+        **(
+            {
+                "firstReceipt": first_receipt,
+                "terminalValues": terminal_values(state) if completed else None,
+            }
+            if "focusGoal" in setup
+            else {}
+        ),
         **(
             {
                 "trainingStartTick": opening_tick,

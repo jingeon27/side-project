@@ -52,7 +52,11 @@ def action_row(index, action, team, player):
             kind, card = "ability", NAMES[owner]
         case played:
             kind, card = "card", NAMES[played]
-            cost = CATALOGUE.card(card).elixir
+            cost = (
+                player["hand_costs"][player["hand"].index(played)]
+                if CARDS[played] == "Mirror"
+                else CATALOGUE.card(card).elixir
+            )
     return [chr(65 + index), kind, card, cost, *tile(action.x, action.y, team)]
 
 

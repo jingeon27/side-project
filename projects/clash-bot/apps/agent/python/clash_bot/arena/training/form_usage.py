@@ -9,6 +9,18 @@ def form_counts():
     return {key: Counter() for key in ("evolvedDeployments", "heroDeployments", "abilityUses")}
 
 
+def opening_receipt(before, after, events, actor, tick):
+    for event in events:
+        if event["tick"] != tick:
+            continue
+        for play in event["plays"]:
+            if play["team"] == actor:
+                forms = form_counts()
+                count_form_plays(forms, before, after, [{"plays": [play]}], {actor})
+                return {"tick": tick, "action": play["action"], "forms": forms}
+    return None
+
+
 def count_form_plays(counts, before, after, events, policy_seats):
     for event in events:
         for play in event["plays"]:

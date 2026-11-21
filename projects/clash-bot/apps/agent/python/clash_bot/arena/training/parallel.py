@@ -8,6 +8,7 @@ from concurrent.futures import ProcessPoolExecutor
 from ..policy.network import Policy
 from .deck_practice import practice_orders
 from .evaluation import play_pair
+from .focused_trial import focused_game
 from .pressure import opening_orders, pressure_policy
 from .selfplay import play_game
 
@@ -15,6 +16,8 @@ from .selfplay import play_game
 def play_frozen_game(job):
     current = Policy.load(job["current"], job["rulesID"])
     setup = job["setup"]
+    if "focusGoal" in setup:
+        return focused_game(job, current, Policy.load(job["labelReference"], job["rulesID"]))
     if "pressure" in setup:
         opponent = pressure_policy(setup, job["id"])
         orders = opening_orders(setup, job["seat"], job["id"])

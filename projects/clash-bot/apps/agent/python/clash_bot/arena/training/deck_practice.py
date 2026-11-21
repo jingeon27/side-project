@@ -17,6 +17,7 @@ from ..sim.rules import (
     canonical,
     deck_ids,
 )
+from .focus_opening import prepare
 from .storage import seed_for
 
 # Both players wait through their normal elixir recharge. Even the most expensive pool card
@@ -67,6 +68,10 @@ def practice_orders(setup, seat, game_id):
 
 
 def open_practice(arena, setup, training):
+    if "focusGoal" in setup:
+        if not training:
+            raise ValueError("Focused openings are for training games only")
+        return prepare(arena, setup)
     if training and "practiceDeck" in setup:
         arena.play([Action(-1), Action(-1)], OPENING_TICKS)
         opening = setup.get("offenseOpening")
