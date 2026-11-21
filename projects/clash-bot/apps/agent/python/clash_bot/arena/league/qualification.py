@@ -6,7 +6,7 @@ from ..policy.network import Policy
 from ..training.activity import opening_audit
 from ..training.benchmark import benchmark
 from ..training.evaluation import evaluate
-from ..training.parallel import play_frozen_pair
+from ..training.parallel import play_frozen_matchup, play_frozen_pair
 from .champions import checkpoint, evaluation_offset, publish_champion, store
 
 CONFIRMATION_PAIRS = 128
@@ -28,7 +28,9 @@ def assess(
         report=control.report,
         should_stop=control.stopped,
         # The saved checkpoints hold the same weights; workers load them by path.
-        play_pairs=lambda jobs: workers.map(play_frozen_pair, [{**job, **frozen} for job in jobs]),
+        play_matchups=lambda jobs: workers.map(
+            play_frozen_matchup, [{**job, **frozen} for job in jobs]
+        ),
         batch=workers.count,
     )
     result["openingAudit"] = {"tested": False, "passed": False}
@@ -71,6 +73,7 @@ def promising(result):
     return (
         gate["reason"] == "insufficient_evidence_of_improvement"
         and gate["score"] >= 0.55
+        and result["poolComparison"]["nonRegressing"]
         and all(result["matchupStrata"][s]["score"] >= 0.5 for s in ("liveMirror", "mixedDeck"))
     )
 
@@ -126,7 +129,9 @@ def qualify(control, workers, root, league, rules, learner, pairs):
         {
             "phase": "evaluated",
             "evaluation": {
-                key: value for key, value in result.items() if key not in ("games", "openingGames")
+                key: value
+                for key, value in result.items()
+                if key not in ("games", "openingGames", "poolControlGames")
             },
             "champion": league["champion"],
         }

@@ -143,7 +143,7 @@ def rules_identity():
         # Visibility and timing alter the information set/returns just as a balance patch does.
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
-        "evaluationSuite": "rules_scoped_live_mirror_pool_and_self_opening_v5",
+        "evaluationSuite": "live_mirror_and_oriented_mixed_with_same_deck_incumbent_v6",
         "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
         "policyMechanics": digest(
             {

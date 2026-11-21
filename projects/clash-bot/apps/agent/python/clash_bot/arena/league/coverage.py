@@ -76,6 +76,7 @@ def latest_evaluation(root, rules):
             "games": len(record["games"]),
             "gate": record["gate"],
             "matchupStrata": record["matchupStrata"],
+            "poolComparison": record["poolComparison"],
             "mirror": mirror_plays(record["games"]),
         }
     return None

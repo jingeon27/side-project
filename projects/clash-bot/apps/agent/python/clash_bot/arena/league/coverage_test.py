@@ -33,6 +33,7 @@ class EvaluationCoverageTest(unittest.TestCase):
             "challenger": {"version": 4},
             "gate": {"passed": False},
             "matchupStrata": {"liveMirror": {"score": 0.5}},
+            "poolComparison": {"games": 1, "challengerScore": 0, "championScore": 1},
             "games": [
                 game,
                 {**game, "challengerSeat": 1},
@@ -60,6 +61,7 @@ class EvaluationCoverageTest(unittest.TestCase):
         self.assertEqual(
             (snapshot["evaluation"], snapshot["games"], snapshot["mirror"]["games"]), (45, 3, 2)
         )
+        self.assertEqual(snapshot["poolComparison"], record["poolComparison"])
         for role in ("champion", "challenger"):
             used = snapshot["mirror"]["executed"][role]
             self.assertEqual(

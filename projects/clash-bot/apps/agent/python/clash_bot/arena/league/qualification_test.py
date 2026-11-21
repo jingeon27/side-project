@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from clash_bot.arena.league.champions import initialize
-from clash_bot.arena.league.qualification import qualify
+from clash_bot.arena.league.qualification import promising, qualify
 from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.sim.rules import rules_identity
 
@@ -26,7 +26,14 @@ class NoPlayPromotionTest(unittest.TestCase):
                 },
                 "games": [],
                 "matchupStrata": {"liveMirror": {"score": score}, "mixedDeck": {"score": score}},
+                "poolComparison": {"nonRegressing": True},
             }
+
+        self.assertFalse(
+            promising(
+                {**result(0.59), "openingAudit": audit, "poolComparison": {"nonRegressing": False}}
+            )
+        )
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
