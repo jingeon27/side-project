@@ -14,6 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+shorts = ["supertonic==1.3.1", "onnxruntime==1.32.0", "mlx-audio==0.6.5", "mlx==0.32.4"]
 image = [
     "mlx-vlm==0.7.12",
     "mlx==0.32.4",
@@ -37,4 +38,4 @@ story-studio-setup = "story_studio.setup:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-story_studio = ["models.json"]
+story_studio = ["models.json", "shorts/sounds/*.flac", "shorts/sounds/SOURCES.md"]

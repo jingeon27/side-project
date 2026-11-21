@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import { match } from 'ts-pattern';
+
 const engine = path.resolve(process.cwd(), '../engine');
 const run = (command: string, args: string[]) =>
   new Promise<void>((resolve, reject) => {
@@ -19,18 +21,18 @@ const data = path.resolve(process.env.STORY_STUDIO_DATA_DIR || path.join(process
 const local = path.join(data, 'local');
 const python = path.join(local, '.venv/bin/python');
 const [profile, ...extra] = process.argv.slice(2);
-if (extra.length || (profile !== undefined && profile !== '--image' && profile !== '--voice-training'))
-  throw new Error('설치 옵션은 --image 또는 --voice-training 중 하나를 사용해 주세요');
+if (extra.length) throw new Error('설치 옵션은 하나만 지정하세요.');
+const dependencies = match(profile)
+  .with(undefined, '--voice-training', () => 'apple-silicon')
+  .with('--image', () => 'image')
+  .with('--shorts-voice', () => 'shorts')
+  .otherwise(() => {
+    throw new Error('지원하는 설치 옵션은 --image, --voice-training, --shorts-voice입니다.');
+  });
 if (process.platform !== 'darwin' || process.arch !== 'arm64')
   throw new Error('현재 로컬 실행은 Apple Silicon Mac을 지원합니다');
 if (!existsSync(python))
   await run(process.env.PYTHON || 'python3.11', ['-m', 'venv', path.join(local, '.venv')]);
-await run(python, [
-  '-m',
-  'pip',
-  'install',
-  '-e',
-  `${engine}[${profile === '--image' ? 'image' : 'apple-silicon'}]`,
-]);
+await run(python, ['-m', 'pip', 'install', '-e', `${engine}[${dependencies}]`]);
 const options = profile ? ['--only', profile.slice(2)] : [];
 await run(python, ['-m', 'story_studio.setup', '--data-dir', data, ...options]);

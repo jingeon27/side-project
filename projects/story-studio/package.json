@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "shorts": "yarn workspace @story-studio/web shorts",
     "dev": "yarn workspace @story-studio/web dev",
     "build": "yarn workspace @story-studio/web build",
     "start": "yarn workspace @story-studio/web start",

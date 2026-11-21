@@ -78,6 +78,7 @@ MODEL_GROUPS = {
     'image': ('text', 'image'),
     'voice-training': ('voice-train',),
     'voice-verification': ('voice-asr',),
+    'shorts-voice': ('shorts-conversation', 'shorts-voice', 'voice'),
 }
 
 
@@ -126,6 +127,9 @@ def install_models(root, profile):
         return
     if profile == 'voice-training':
         print('로컬 음성 학습 모델 준비 완료', flush=True)
+        return
+    if profile == 'shorts-voice':
+        print('쇼츠용 한국어 내레이터 준비 완료', flush=True)
         return
     if profile == 'voice-verification':
         print('로컬 대사 확인 모델 준비 완료', flush=True)

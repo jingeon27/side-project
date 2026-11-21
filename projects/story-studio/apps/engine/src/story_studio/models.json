@@ -13,6 +13,18 @@
     "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-4bit",
     "revision": "f35faf19b0cc2160865af64ecf0f22f83d335135"
   },
+  "shorts-voice": {
+    "repo": "Supertone/supertonic-3",
+    "revision": "3cadd1ee6394adea1bd021217a0e650ede09a323",
+    "directory": "shorts-supertonic-3",
+    "patterns": ["onnx/*", "voice_styles/*.json", "LICENSE", "config.json"]
+  },
+  "shorts-conversation": {
+    "repo": "mlx-community/VoxCPM2-8bit",
+    "revision": "d52725898a0675703f7f9ddc5a4d1a3cdbb99032",
+    "directory": "shorts-voxcpm2",
+    "patterns": ["*.safetensors", "*.json", "README.md"]
+  },
   "voice-train": {
     "repo": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-4bit",
     "revision": "37e955a1deb861c088ae5f3a67043185f3d1a60c"

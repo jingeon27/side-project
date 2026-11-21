@@ -27,6 +27,12 @@ yarn workspace @side/story-studio dev
 
 예시 원고 편집과 이미 생성한 예시 영상 재생에는 모델 설치가 필요하지 않습니다. 모델 준비 전에는 생성 버튼이 비활성화됩니다. 운영용 빌드는 `yarn workspace @side/story-studio build`, 실행은 `yarn workspace @side/story-studio start`입니다.
 
+## 30초 다큐 쇼츠
+
+저장소 루트에서 `projects/story-studio/shorts status`로 오늘 제작함을 연다. 첫 설치는 `projects/story-studio/shorts setup-voice`로 한국어 화자를 준비한다. 로컬 에이전트의 [쇼츠 제작 스킬](.agents/skills/shorts-producer/SKILL.md)은 실베 후보와 1차 출처를 확인하고 대본과 컷을 준비한다. `projects/story-studio/shorts daily`는 준비된 원고에서 하루 두 편까지 한국어 내레이션·자막·브금을 합성한다. MP4와 편집 자료는 기본 `~/Movies/실베다큐`에 놓인다. [캡처·편집 명령](.agents/skills/shorts-producer/references/production.md) · [첫 14일 홍보 계획](.agents/skills/shorts-producer/references/promotion.md)
+
+`STORY_STUDIO_SHORTS_AMPLITUDE_KEY`를 지정한 CLI 실행은 명령의 실행 시도와 성공을 Amplitude에 기록한다. 이벤트 속성 `action`은 고정된 명령 이름이며 실행마다 새 임의 ID를 쓴다. 명령 인수, 로컬 경로, 원고, 출처 주소와 사용자 ID는 수집하지 않는다.
+
 ## 코드 구성
 
 - `apps/web`: 한국어 작업실, HTTP 계약, 작품과 참고 자료의 저장, 집필 작업
