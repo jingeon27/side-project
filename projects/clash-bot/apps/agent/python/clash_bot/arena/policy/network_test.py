@@ -76,6 +76,7 @@ class ExpertIterationTest(unittest.TestCase):
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
             "defensePairs": [],
+            "attackPairs": [],
             "outcome": 1,
             "value": 0.8,
         }

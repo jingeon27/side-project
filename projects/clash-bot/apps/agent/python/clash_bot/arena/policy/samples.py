@@ -66,6 +66,7 @@ class TrainingSample(BaseModel):
     target: list[float]
     targetWithoutTowers: list[float]
     defensePairs: list[tuple[int, int]] = Field(max_length=2)
+    attackPairs: list[tuple[int, int]] = Field(max_length=1)
     outcome: int
     value: float = Field(ge=-1, le=1)
 
@@ -97,9 +98,9 @@ class TrainingSample(BaseModel):
             raise ValueError("action features have the wrong width")
         if any(
             left == right or min(left, right) < 0 or max(left, right) >= self.source.count
-            for left, right in self.defensePairs
+            for left, right in (*self.defensePairs, *self.attackPairs)
         ):
-            raise ValueError("Defense pairs need distinct actions in the full candidate set")
+            raise ValueError("Matched preferences need distinct actions in the full candidate set")
         matrix = self.source.decode()[self.source.retained]
         if len(matrix) != len(self.actions) or not np.array_equal(
             matrix[:, ACTION_SIZE], [row[0] for row in self.actions]

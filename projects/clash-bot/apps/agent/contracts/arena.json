@@ -138,6 +138,7 @@
     "liveMirror": 0.5,
     "liveAgainstPool": 0.5,
     "pressureEvery": 4,
+    "familyExploration": 0.2,
     "decisionTicks": 20,
     "decisionPhaseTicks": [0, 19],
     "searchTicks": 40,

@@ -29,6 +29,7 @@ REPLAY_FIELDS = (
     "target",
     "targetWithoutTowers",
     "defensePairs",
+    "attackPairs",
     "outcome",
     "value",
 )
@@ -45,6 +46,8 @@ def write_replay(path, episode):
         {
             "completed": episode["completed"],
             "rulesID": episode["rulesID"],
+            "gameID": episode["gameID"],
+            "leafExamples": episode["leafExamples"],
             "samples": [{key: row[key] for key in REPLAY_FIELDS} for row in episode["samples"]],
         },
     )

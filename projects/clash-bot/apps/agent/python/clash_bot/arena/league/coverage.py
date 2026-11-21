@@ -6,10 +6,28 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from ..sim.rules import CARDS, DECKS, rules_identity
+from ..sim.rules import CARD_ID, CARDS, DECKS, rules_identity
 from ..training.coverage import card_coverage
 from ..training.form_usage import form_counts
 from ..training.storage import read_episode
+
+
+def feedback_counts(samples):
+    counts = Counter()
+    for row in samples:
+        counts["learnerDecisions"] += row["behavior"] == "deployed_learner"
+        trial = row["search"]["attackComparison"]
+        if not trial:
+            continue
+        counts["matchedTrials"] += 1
+        cards = {i: a[0] for i, a in zip(trial["tried"], trial["actions"], strict=True)}
+        counts["graveyardAvailable"] += CARD_ID["Graveyard"] in cards.values()
+        if trial["pair"]:
+            preferred = cards[trial["pair"][0]]
+            counts["rankedTrials"] += 1
+            counts["preferredWait"] += preferred == -1
+            counts["preferredGraveyard"] += preferred == CARD_ID["Graveyard"]
+    return counts
 
 
 def training_coverage(root, league):
@@ -19,9 +37,10 @@ def training_coverage(root, league):
     counts = {name: Counter() for name in CARDS}
     forms = form_counts()
     control_frames = Counter()
+    feedback = Counter()
     for episode in league["episodes"]:
         path = Path(episode)
-        cache = root / "coverage" / (path.name + ".v3.json")
+        cache = root / "coverage" / (path.name + ".v4.json")
         if cache.exists():
             small = json.loads(cache.read_bytes())
         else:
@@ -32,6 +51,7 @@ def training_coverage(root, league):
                 "cards": card_coverage([game])["allCards"],
                 "forms": game.get("formExecutions", {}),
                 "controlUnitFrames": game.get("controlUnitFrames", {}),
+                "feedback": feedback_counts(game["samples"]),
             }
             atomic_json(cache, small, compact=True)
         for name, facts in small["cards"].items():
@@ -39,6 +59,7 @@ def training_coverage(root, league):
         for key, values in small["forms"].items():
             forms[key].update(values)
         control_frames.update(small["controlUnitFrames"])
+        feedback.update(small["feedback"])
     for path in sorted((root / "checkpoints").glob("v[0-9]*/metadata.json")):
         m = json.loads(path.read_bytes())
         if m["rulesID"] != rules:
@@ -67,6 +88,7 @@ def training_coverage(root, league):
         },
         "formExecutions": forms,
         "controlUnitFrames": dict(control_frames),
+        "trainingFeedback": dict(feedback),
         "cardsByStage": summary,
         "cards": {card: dict(v) for card, v in counts.items()},
     }

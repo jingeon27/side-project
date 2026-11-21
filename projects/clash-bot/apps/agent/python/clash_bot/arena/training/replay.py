@@ -17,17 +17,19 @@ def labeled_cards(row):
 
 def replay_coverage(samples):
     cards = Counter()
-    defense_rows = defense_pairs = 0
+    defense_rows = defense_pairs = attack_pairs = 0
     for row in samples:
         cards.update(labeled_cards(row))
         defense_rows += bool(row["defensePairs"])
         defense_pairs += len(row["defensePairs"])
+        attack_pairs += len(row["attackPairs"])
     return {
         "cardsWithTarget": {card: cards[index] for index, card in enumerate(CARDS)},
         "abilityWithTarget": cards[-2],
         "missingCards": [card for index, card in enumerate(CARDS) if not cards[index]],
         "defenseRows": defense_rows,
         "defensePairs": defense_pairs,
+        "attackPairs": attack_pairs,
     }
 
 
@@ -42,12 +44,14 @@ def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
     if len(valid) <= max_samples:
         return valid
     support = defaultdict(list)
-    defenses = []
+    defenses, attacks = [], []
     for index, row in enumerate(valid):
         for card in sorted(labeled_cards(row)):
             support[card].append(index)
         if row["defensePairs"]:
             defenses.append(index)
+        if row["attackPairs"]:
+            attacks.append(index)
 
     rng = np.random.default_rng(seed)
     chosen = set()
@@ -64,5 +68,6 @@ def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
         needed = max(0, per_card - sum(index in chosen for index in indices))
         reserve(indices, needed)
     reserve(defenses, max(0, max_samples // 8 - sum(index in chosen for index in defenses)))
+    reserve(attacks, max(0, max_samples // 8 - sum(index in chosen for index in attacks)))
     reserve(range(len(valid)), max_samples - len(chosen))
     return [valid[index] for index in sorted(chosen)]

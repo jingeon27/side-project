@@ -58,7 +58,8 @@ def batch_arrays(rows, hidden):
     retained_mask = np.zeros((len(rows), keep), bool)
     retained = np.zeros((len(rows), keep), np.int32)
     targets = np.zeros((len(rows), keep), np.float32)
-    pairs = np.zeros((len(rows), max(len(row.defensePairs) for row in rows), 2), np.int32)
+    ranked = [row.defensePairs + row.attackPairs for row in rows]
+    pairs = np.zeros((len(rows), max(map(len, ranked)), 2), np.int32)
     pair_mask = np.zeros(pairs.shape[:2], bool)
     for index, (row, hide) in enumerate(zip(rows, hidden)):
         matrix = row.source.decode()
@@ -70,9 +71,9 @@ def batch_arrays(rows, hidden):
         retained_mask[index, :selected] = True
         retained[index, :selected] = row.source.retained
         targets[index, :selected] = row.targetWithoutTowers if hide else row.target
-        if row.defensePairs:
-            pairs[index, : len(row.defensePairs)] = row.defensePairs
-            pair_mask[index, : len(row.defensePairs)] = True
+        if ranked[index]:
+            pairs[index, : len(ranked[index])] = ranked[index]
+            pair_mask[index, : len(ranked[index])] = True
     values = np.array([row.value for row in rows], np.float32)
     return (
         states,

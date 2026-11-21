@@ -123,6 +123,23 @@ def root_priors(actions, prior, keep):
     return selected / selected.sum()
 
 
+def retain_reference(actions, prior, keep, reference):
+    """Try the student's deployed move without evicting the teacher's best tile for a card."""
+    if reference is None:
+        return keep
+    wanted = actions.index(reference)
+    if wanted in keep:
+        return keep
+    anchors = {
+        max(group, key=lambda i: prior[i]) for group in grouped_indices([a.card for a in actions])
+    }
+    extras = [i for i in keep if i not in anchors]
+    if not extras:
+        return keep
+    removed = min(extras, key=lambda i: (actions[i].card != reference.card, prior[i]))
+    return sorted([i for i in keep if i != removed] + [wanted])
+
+
 def exploration_prior(actions, prior, rng):
     groups = grouped_indices([action.card for action in actions])
     masses = rng.dirichlet(np.full(len(groups), 0.2))

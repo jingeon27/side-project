@@ -30,6 +30,7 @@ class ConservativeUpdateTest(unittest.TestCase):
                 "target": [0.4, 0.6],
                 "targetWithoutTowers": [0.6, 0.4],
                 "defensePairs": [[2, 1]],
+                "attackPairs": [],
                 "outcome": -1,
                 "value": -0.6,
             }

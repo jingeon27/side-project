@@ -53,8 +53,20 @@ class TrainingOpponentsTest(unittest.TestCase):
             all(job["setup"]["decks"][job["seat"]] == "counterpush" for job in scripted)
         )
         self.assertEqual(sum(job["selected"] == 2 for job in jobs), 4)
-        practice = [job for job in jobs if "practiceDeck" in job["setup"]]
+        practice = [
+            job
+            for job in jobs
+            if "practiceDeck" in job["setup"] and not job["setup"].get("offensePractice")
+        ]
         self.assertEqual(len(practice), 4)
+        funded = [job for job in jobs if job["setup"].get("offensePractice")]
+        self.assertEqual([job["setup"]["practiceLead"] for job in funded], ["Graveyard"] * 2)
+        mirrors = [job for job in jobs if job["collector"] is not None]
+        self.assertEqual(len(mirrors), 4)
+        self.assertEqual({job["seat"] for job in mirrors}, {0, 1})
+        self.assertTrue(all(job["setup"]["decks"] == [LIVE_DECK, LIVE_DECK] for job in mirrors))
+        self.assertTrue(all(job["collector"] == "/unused/checkpoints/v000004" for job in mirrors))
+        self.assertTrue(all(job["labelReference"] == "/unused/checkpoints/v000004" for job in jobs))
         self.assertTrue(
             all(
                 job["setup"]["decks"][job["seat"]] == job["setup"]["practiceDeck"]

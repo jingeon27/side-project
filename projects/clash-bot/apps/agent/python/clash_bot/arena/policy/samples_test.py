@@ -26,6 +26,7 @@ ROW = {
     "target": [0.25, 0.75],
     "targetWithoutTowers": [0.25, 0.75],
     "defensePairs": [[1, 0]],
+    "attackPairs": [],
     "outcome": -1,
     "value": -0.6,
     "observation": {"ignored": True},
@@ -58,6 +59,7 @@ class TrainingSampleTest(unittest.TestCase):
             {"defensePairs": [[1, 1]]},
             {"defensePairs": [[1, 2]]},
             {"defensePairs": [[-1, 0]]},
+            {"attackPairs": [[1, 2]]},
         ]:
             with self.subTest(change=sorted(change)), self.assertRaises(ValidationError):
                 TrainingSample.model_validate({**ROW, **change})
