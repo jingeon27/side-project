@@ -8,16 +8,24 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from . import mechanics
+from . import building_checks, mechanics
+from .attack_timing import unit_attack_timing
 from .candidates import legal_actions
+from .card_checks import catalogue_deployments
+from .control_checks import crowd_control, ram_interruptions
+from .crown_towers import crown_tower_combat
+from .death_children import death_children
 from .elixir import public_mana
 from .engine import Arena
-from .rules import CARDS, DECKS, Action, deck_ids, rules_identity
+from .form_checks import form_checks
+from .ice_cube_check import ice_cube_control
+from .rules import CARDS, MATCHUP_DECKS, Action, deck_ids, rules_identity
+from .shot_spawns import shot_spawn_eligibility
 
 
 def pool_deployments():
     plays = 0
-    for name in sorted(DECKS):
+    for name in sorted(MATCHUP_DECKS):
         for card in deck_ids(name):
             order = [card, *[other for other in deck_ids(name) if other != card]]
             arena = Arena(17, [order, order], [name, name])
@@ -39,13 +47,27 @@ def pool_deployments():
     return {
         "passed": True,
         "deckCardDeployments": plays,
-        "distinctCards": len(CARDS),
-        "decks": len(DECKS),
+        "distinctCards": len({c for d in MATCHUP_DECKS.values() for c in d.cards}),
+        "decks": len(MATCHUP_DECKS),
     }
 
 
 CHECKS = {
     "poolDeploymentsAndElixir": pool_deployments,
+    "catalogueBaseDeployment": catalogue_deployments,
+    "catalogueFormExecution": form_checks,
+    "knightAggroOutsideAttackRange": mechanics.knight_aggro,
+    "unitAttackTiming": unit_attack_timing,
+    "crownTowerCombat": crown_tower_combat,
+    "hutActivation": building_checks.hut_activation,
+    "spawnerWaves": building_checks.spawner_waves,
+    "buildingTargeting": building_checks.building_targeting,
+    "buildingEffects": building_checks.building_effects,
+    "deathChildren": death_children,
+    "crowdControl": crowd_control,
+    "heroIceCubeControl": ice_cube_control,
+    "ramChargeInterruption": ram_interruptions,
+    "buildingProjectileSpawnEligibility": shot_spawn_eligibility,
     "drillBarrelDeathSpawn": mechanics.drill_barrel,
     "poisonMovingExposure": mechanics.poison_exposure,
     "iceWizardArrivalDamage": mechanics.ice_wizard_arrival,
@@ -95,7 +117,7 @@ def verify(data_dir):
         "checks": checks,
         "unverified": [
             "live targeting/collision parity",
-            "all skills/evolutions",
+            "live damage, targeting and timing of each activated skill or evolution",
             "current balance parity",
         ],
     }

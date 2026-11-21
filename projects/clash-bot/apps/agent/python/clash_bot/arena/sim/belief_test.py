@@ -124,7 +124,9 @@ class BeliefTest(unittest.TestCase):
         self.assertEqual(observation["pending"], [])
         arena.play([Action(-1)] * 2, 25)
         sampler = BeliefSampler(arena.observe(0), 77)
-        self.assertEqual(set(sampler.openings[1]), {"drill_control"})
+        compatible = {name for name in DECKS if enemy[0] in deck_ids(name)}
+        self.assertIn("drill_control", compatible)
+        self.assertEqual(set(sampler.openings[1]), compatible)
         observation["decks"][1] = "drill_control"
         with self.assertRaisesRegex(ValueError, "hide the opponent deck"):
             BeliefSampler(observation, 77)
@@ -170,11 +172,15 @@ class KeptHypothesisTest(unittest.TestCase):
         for seed in range(40):
             sampler = BeliefSampler(arena.observe(0), seed, keep=True)
             sampler.conditioned()
-            kept.setdefault(sampler.sampled.names[1] == "drill_control", sampler.sampled)
+            name = sampler.sampled.names[1]
+            if name == "drill_control" or enemy[0] not in deck_ids(name):
+                kept.setdefault(name == "drill_control", sampler.sampled)
         self.assertEqual(set(kept), {True, False})
         arena.play([Action(-1), Action(enemy[0], round(3.5 * TILE), round(6.5 * TILE))], 60)
         sampler = BeliefSampler(arena.observe(0), 9, keep=True)
-        self.assertEqual(set(sampler.openings[1]), {"drill_control"})
+        self.assertEqual(
+            set(sampler.openings[1]), {name for name in DECKS if enemy[0] in deck_ids(name)}
+        )
         self.assertIsNone(sampler.resume(kept[False], into=Arena(0)))
         right = sampler.resume(kept[True], into=Arena(0))
         # The right deck continues only if its guessed opening hand held the played card.

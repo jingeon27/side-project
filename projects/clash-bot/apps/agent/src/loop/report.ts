@@ -12,12 +12,7 @@ import { trophyControl } from '../trophy/protocol.ts';
 import { eventsSince, loopDirectory, type LoopState } from './state.ts';
 
 // 계획(docs/self-improvement-plan.md)에 있지만 아직 라벨링이 없어 자동으로 돌지 않는 작업이다.
-const NOT_YET_AUTOMATED = [
-  'real_screen_label_queue',
-  'perception_retraining',
-  'measured_simulator_perception_noise',
-  'simulator_and_real_ranking_check',
-];
+const NOT_YET_AUTOMATED = ['measured_simulator_perception_noise', 'simulator_and_real_ranking_check'];
 
 const statusOf = (path: string) => readOptionalJsonFile(path, z.record(z.string(), z.unknown()));
 
@@ -30,6 +25,7 @@ export async function writeReport(dataDir: string, state: LoopState, now: Dayjs)
     from: state.reportedAt,
     to: now.toISOString(),
     arena: arena && pick(arena, ['phase', 'completedGenerations', 'completedGames', 'error']),
+    screenLabels: await statusOf(join(dataDir, 'trophy/labels/status.json')),
     trophy:
       trophy &&
       pick(trophy, [

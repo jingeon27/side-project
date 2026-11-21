@@ -8,6 +8,7 @@ alone, as it is deployed: through its screen (`policy.screen`), which reads no t
 """
 
 import time
+from collections import Counter
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
@@ -18,9 +19,11 @@ from ..policy.samples import value_target
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import DECKS, LIVE_DECK, SPEC, Action
+from ..sim.rules import LIVE_DECK, MATCHUP_DECKS, SPEC, Action
+from ..sim.status_effects import control_observations
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
+from .form_usage import count_form_plays, form_counts
 from .search import Workspace, search
 from .storage import seed_for
 from .targets import training_rows
@@ -70,12 +73,12 @@ def setup_for(game_id):
     if rng.random() < SELFPLAY.liveMirror:
         decks = [LIVE_DECK, LIVE_DECK]
     elif rng.random() < SELFPLAY.liveAgainstPool:
-        threats = sorted(set(DECKS) - {LIVE_DECK})
+        threats = sorted(set(MATCHUP_DECKS) - {LIVE_DECK})
         decks = [LIVE_DECK, threats[int(rng.integers(len(threats)))]]
         if rng.integers(2):
             decks.reverse()
     else:
-        names = sorted(DECKS)
+        names = sorted(MATCHUP_DECKS)
         decks = [names[int(rng.integers(len(names)))] for _ in range(2)]
     low, high = SELFPLAY.commandDelayTicks
     first, last = SELFPLAY.decisionPhaseTicks
@@ -127,9 +130,16 @@ def play_game(
     opening_tick = open_practice(arena, setup, training)
     due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
+    forms = form_counts()
+    controls = Counter()
+    policy_seats = {
+        seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
+    }
     unavailable, policy_only = [None, None], [0, 0]
     while not arena.state()["game_over"] and arena.state()["tick"] < max_ticks:
         state = arena.state()
+        if training:
+            controls.update(control_observations(state["entities"]))
         selected = [Action(-1), Action(-1)]
         for team, policy in enumerate(policies):
             if due[team] > state["tick"]:
@@ -210,7 +220,12 @@ def play_game(
                         "outcome": None,
                     }
                 )
+        history_size = len(arena.history)
         outcomes = arena.play(selected, min(due) - state["tick"])
+        if training and len(arena.history) > history_size:
+            count_form_plays(
+                forms, state, arena.state(), arena.history[history_size:], policy_seats
+            )
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -263,6 +278,7 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
+        **({"formExecutions": forms, "controlUnitFrames": dict(controls)} if training else {}),
         "samples": samples if completed else [],
         "truncatedSamplesDiscarded": 0 if completed else len(samples),
     }

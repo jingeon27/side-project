@@ -8,7 +8,7 @@ import numpy as np
 
 from clash_bot.arena.league.generation import learn, scheduled
 from clash_bot.arena.sim.engine import Arena
-from clash_bot.arena.sim.rules import CARDS, DECKS, LIVE_DECK, deck_ids
+from clash_bot.arena.sim.rules import CARDS, DECKS, LIVE_DECK
 from clash_bot.arena.training.deck_practice import open_practice, practice_orders, schedule_deck
 
 
@@ -24,7 +24,7 @@ class TrainingOpponentsTest(unittest.TestCase):
             orders = practice_orders(setup, seat, f"round-{index}")
             arena = Arena(index, orders, setup["decks"])
             self.assertGreater(open_practice(arena, setup, True), 0)
-            lead = deck_ids(deck)[0]
+            lead = CARDS.index(setup["practiceLead"])
             self.assertIn(lead, arena.initial_hands[seat], CARDS[lead])
             self.assertIn(
                 lead, [row[0] for row in arena.observe(seat)["legalActions"]], CARDS[lead]

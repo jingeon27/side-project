@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from clash_bot.channel import protocol_channel
 from clash_bot.perception.deployment_clocks import clock_matches
+from clash_bot.perception.labels.capture import capture
 
 
 class ScanInput(BaseModel):
@@ -201,7 +202,14 @@ def main():
         raise ValueError("Provide detector and reviewed real-client reference directories")
     directory = Path(sys.argv[1]).resolve()
     emit = protocol_channel()
-    worker = TrophyVision(directory, sys.argv[2])
+    from PIL import Image
+
+    from clash_bot.perception.labels.learning import EVAL, active_head
+    from clash_bot.perception.labels.reader import Reader
+
+    reader = Reader(directory, Path(sys.argv[2]))
+    worker = reader.vision
+    head, head_sha = active_head(EVAL, reader.fingerprint)
     emit({"type": "ready", "format": "trophy-visual-facts-v1", "readOnly": True})
     for line in sys.stdin:
         started = time.monotonic()
@@ -212,6 +220,12 @@ def main():
                 if request.op == "scan"
                 else worker.absence(request.model_dump())
             )
+            if request.op == "scan":
+                with Image.open(request.image) as image:
+                    result = reader.observe(image, result, head)
+                result["perceptionSHA256"] = reader.fingerprint
+                result["handHeadSHA256"] = head_sha
+                capture(request.image, result)
             emit(
                 {
                     "type": "result",

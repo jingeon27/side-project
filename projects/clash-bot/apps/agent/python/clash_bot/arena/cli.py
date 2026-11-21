@@ -27,6 +27,10 @@ def arguments():
     output.add_argument("--json", action="store_true", help="Print the full status record")
     commands.add_parser("stop")
     commands.add_parser(
+        "coverage",
+        help="Card comparison, executed play and optimizer coverage for the active league",
+    )
+    commands.add_parser(
         "verify", help="Check native pool/interactions; this does not certify live-client parity"
     )
     live = commands.add_parser(

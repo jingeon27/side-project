@@ -23,6 +23,7 @@ const ports = (patch: Partial<LoopPorts> = {}): LoopPorts => ({
   startArena: vi.fn(async () => ({ pid: DEAD_PID })),
   checkRules: vi.fn(async () => ({ engineUpdateAvailable: false, errors: [] })),
   lowerPriority: vi.fn(),
+  maintainLabels: vi.fn(async () => ({})),
   ...patch,
 });
 
@@ -84,7 +85,8 @@ it('checks balance patches daily and writes a report of the events since the las
     engineUpdateAvailable: true,
     needsReview: true,
   });
-  expect(report.notYetAutomated).toContain('perception_retraining');
+  expect(report.notYetAutomated).toContain('measured_simulator_perception_noise');
+  expect(report.screenLabels).toBeNull();
   const quiet = await tick(dataDir.path, next, now.add(1, 'hour'), SELF_IMPROVEMENT, fake);
   expect(fake.checkRules).toHaveBeenCalledOnce();
   expect(quiet.reportedAt).toBe(now.toISOString());

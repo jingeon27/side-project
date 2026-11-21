@@ -1,11 +1,12 @@
 """Regular deck coverage through legal opening positions and frozen-policy games."""
 
 from functools import cache
+from itertools import zip_longest
 
 import numpy as np
 
 from ..catalogue import current
-from ..sim.rules import DECKS, LIVE_DECK, Action, deck_ids
+from ..sim.rules import DECKS, LIVE_DECK, OMIT_OPENING, PRACTICE_DECKS, Action, deck_ids
 from .storage import seed_for
 
 # Both players wait through their normal elixir recharge. Even the most expensive pool card
@@ -16,10 +17,19 @@ OPENING_TICKS = 224
 @cache
 def rotation():
     lookup = current()
-    return sorted(
-        set(DECKS) - {LIVE_DECK},
-        key=lambda name: (-lookup.card(lookup.card_name(DECKS[name].cards[0])).elixir, name),
+
+    def by_cost(names):
+        return sorted(
+            names, key=lambda n: (-lookup.card(lookup.card_name(DECKS[n].cards[0])).elixir, n)
+        )
+
+    forms = {n for n, d in PRACTICE_DECKS.items() if any(d.forms)}
+    groups = (
+        by_cost(forms),
+        by_cost(PRACTICE_DECKS.keys() - forms),
+        by_cost(DECKS.keys() - PRACTICE_DECKS.keys() - {LIVE_DECK}),
     )
+    return [name for batch in zip_longest(*groups) for name in batch if name is not None]
 
 
 def schedule_deck(setup, index, seat):
@@ -27,13 +37,16 @@ def schedule_deck(setup, index, seat):
     deck = names[index % len(names)]
     decks = [LIVE_DECK, LIVE_DECK]
     decks[seat] = deck
-    return {**setup, "decks": decks, "practiceDeck": deck}
+    eligible = [card for card in DECKS[deck].cards if card not in OMIT_OPENING]
+    lead = eligible[(index // len(names)) % len(eligible)]
+    return {**setup, "decks": decks, "practiceDeck": deck, "practiceLead": lead}
 
 
 def practice_orders(setup, seat, game_id):
     rng = np.random.default_rng(seed_for("deck_practice_opening", game_id))
     orders = [rng.permutation(deck_ids(deck)).tolist() for deck in setup["decks"]]
-    lead = deck_ids(setup["practiceDeck"])[0]
+    deck = setup["practiceDeck"]
+    lead = deck_ids(deck)[DECKS[deck].cards.index(setup["practiceLead"])]
     orders[seat].remove(lead)
     orders[seat].insert(0, lead)
     return orders

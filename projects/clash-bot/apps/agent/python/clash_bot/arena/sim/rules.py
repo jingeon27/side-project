@@ -38,14 +38,38 @@ class DeckSpec(BaseModel):
         return self
 
 
-DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+MATCHUP_DECKS = {name: DeckSpec.model_validate(deck) for name, deck in SPEC["decks"].items()}
+practice = json.loads((CONTRACTS_DIR / "arena-practice.json").read_bytes())
+# A changed table needs fresh receipts before its extra cards can enter the learner.
+OMIT_OPENING = frozenset(practice["omitFromStartingHand"])
+MINIMUM_LEVELS = practice["minimumLevels"]
+FRIENDLY_SPELLS = frozenset(practice["friendlySpells"])
+PRACTICE_DECKS = (
+    {
+        **{
+            name: DeckSpec(cards=tuple(cards), forms=(0,) * 8)
+            for name, cards in practice["decks"].items()
+        },
+        **{
+            name: DeckSpec.model_validate(deck)
+            for name, deck in practice.get("formDecks", {}).items()
+        },
+    }
+    if practice["tableSHA256"] == SPEC["tableSHA256"] and practice["catalogueID"] == current().id
+    else {}
+)
+DECKS = {**MATCHUP_DECKS, **PRACTICE_DECKS}
 # The deck the live Trophy screen plays; half of the self-play games mirror it.
 LIVE_DECK = SPEC["liveDeck"]
 if LIVE_DECK not in DECKS:
     raise ValueError("The live deck must be one of the arena decks")
 # One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7.
 CARDS = list(
-    dict.fromkeys(card for name in (LIVE_DECK, *sorted(DECKS)) for card in DECKS[name].cards)
+    dict.fromkeys(
+        card
+        for name in (LIVE_DECK, *sorted(MATCHUP_DECKS), *sorted(PRACTICE_DECKS))
+        for card in DECKS[name].cards
+    )
 )
 CARD_ID = {card: index for index, card in enumerate(CARDS)}
 TILE = 1000 * royalesim.SUBTILE_PER_MILLITILE
@@ -70,16 +94,25 @@ def forms_of(name, order):
     return [form[card] for card in order]
 
 
-def new_battle():
+def new_battle(card_names=None):
     if royalesim.__version__ != SPEC["version"]:
         raise RuntimeError("Engine version differs from the pinned arena rules")
     return royalesim.Battle(
-        card_names=CARDS,
+        card_names=CARDS if card_names is None else card_names,
         slot_of_k=[[0, 1, 2], [0, 1, 2]],
         level=SPEC["level"],
         tower_level=SPEC["level"],
         calibration_overrides={"cards.CARD_TABLE": json.dumps(SPEC["table"])},
     )
+
+
+def pinned_table():
+    """The client table compiled into the pinned wheel, the one new_battle() runs."""
+    stem = SPEC["tableFile"].removeprefix("cards-").removesuffix(".json").replace("-", "_")
+    table = json.loads(getattr(royalesim, f"EMBEDDED_CARDS_{stem}_JSON"))
+    if table["version"] != SPEC["tableVersion"] or table["version"] != new_battle().card_table():
+        raise ValueError("Embedded card table differs from the pinned rules table")
+    return table
 
 
 def rules_identity():
@@ -110,6 +143,7 @@ def rules_identity():
                 name: json.loads((CONTRACTS_DIR / name).read_text())
                 for name in (
                     "fast-tactics.json",
+                    "hut-activation.json",
                     "combat-projection.json",
                     "placement-effects.json",
                     "deployment.json",
@@ -117,7 +151,8 @@ def rules_identity():
             }
         ),
         "trainingActor": "champion_anchored_search_teacher_v1",
-        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_decks_v4",
+        "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
+        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_card_forms_v5",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
         "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
         "rolloutTiming": ROLLOUT_CLOCK,
@@ -125,7 +160,8 @@ def rules_identity():
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not
         # the engine's exact balances and hit points.
         "policyInput": "live_screen_health_bars_subtile_motion_v3",
-        "towerLevels": "each_side_card_level_v1",
+        "towerLevels": "side_level_with_rarity_minimum_for_cards_v2",
+        "practiceSpec": digest(practice) if PRACTICE_DECKS else None,
         "tacticalActors": "own_live_deck_any_opponent_v1",
         "publicLedger": "confirmed_command_execution_v2",
         "hiddenDraws": "accept_before_execution_fifo_v2",

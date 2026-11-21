@@ -7,14 +7,14 @@ from more_itertools import chunked
 
 from clash_bot.statistics import paired_win_probability
 
-from ..sim.rules import DECKS, LIVE_DECK
+from ..sim.rules import LIVE_DECK, MATCHUP_DECKS
 from .selfplay import live_setup, play_game
 
 
 def evaluation_setup(pair, generation):
     """Half live mirrors, half fixed threat decks, with both policies taking each seat/deck."""
     setup = live_setup(pair + generation)
-    others = sorted(set(DECKS) - {LIVE_DECK})
+    others = sorted(set(MATCHUP_DECKS) - {LIVE_DECK})
     if pair % 2:
         setup["decks"][1] = others[(pair // 2 + generation) % len(others)]
     return setup
@@ -91,7 +91,7 @@ def evaluate(
     alpha = 0.05 / ((generation + 1) * (generation + 2))
     required_pairs = max(pairs, math.ceil(-math.log2(alpha)) + 1) if pairs >= 16 else pairs
     if pairs >= 16:
-        required_pairs = max(required_pairs, 2 * (len(DECKS) - 1))
+        required_pairs = max(required_pairs, 2 * (len(MATCHUP_DECKS) - 1))
     play_pairs = play_pairs or (
         lambda jobs: [
             play_pair(challenger, champion, rules_id, job["identity"], job["setup"]) for job in jobs

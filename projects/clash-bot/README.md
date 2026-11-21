@@ -6,6 +6,26 @@
 
 사용자가 설명한 필드 상황, 엘릭서 10 상한과 공유 재생, 8장 덱/4장 손패/FIFO, 카드별 역할과 구현 범위는 [학습 요구사항과 구조](docs/learning-design.md)에 있습니다.
 
+## 카드 스펙과 학습 현황
+
+`yarn workspace @side/clash-bot arena catalogue`는 고정 엔진 표의 해시를 확인하고 원수치를 로컬 `.data/arena/rules/engine-specs.json`에 기록합니다. 카드별 공격·어그로·최소 거리(타일), 배치·공격 시간(ms), 이동 속도 원수치, 표적, 형태별 능력과 소환 관계를 확인할 수 있습니다. 일반 유닛의 기준 레벨과 배율은 각 레코드의 `level_scaling`에 있습니다. 기본 프린세스 타워와 킹타워의 체력·한 발 피해는 레벨별 전투에서 측정합니다. 기본 카드 143장, 별도 참조용 엔진 미지원 2행과 유닛·투사체·효과 원표를 함께 보관합니다. 카드별 `createdByForm`은 각 형태가 소환·변신·발사하는 대상의 엔진 ID를 담습니다. 얼음 마법사 히어로의 얼음 큐브처럼 전용 유닛도 수치로 조회할 수 있습니다.
+
+```sh
+yarn workspace @side/clash-bot trophy card-status --card knight
+yarn workspace @side/clash-bot trophy card-status --card king_tower
+yarn workspace @side/clash-bot arena verify
+yarn workspace @side/clash-bot arena coverage
+yarn workspace @side/clash-bot loop status
+```
+
+자가대국에서 사용할 수 있는 기본 카드는 142장입니다. 이벤트 카드 바바리안 발사대는 현재 엔진에서 포탄이 명중해도 바바리안이 생성되지 않아 연습 덱에서 제외합니다. 엔진 교체 후 같은 검사를 통과하면 카탈로그 재생성 시 다시 들어갑니다. 자가대국은 실전 기준 덱 12개, 기본 카드 연습 덱 21개, 추가 형태 연습 덱 20개를 사용합니다. 진화 44종은 양 진영에서 필요한 횟수만큼 카드를 순환해 충전한 뒤 진화 배치를 확인했습니다. 히어로 18종과 액티브 능력이 있는 챔피언 8종은 양측 스킬 실행을 확인했고, 나머지 챔피언 등급 이벤트 카드 1종은 액티브 능력이 없습니다. `arena coverage`는 현재 리그에서 완료한 경기만 집계합니다. `compared`는 수읽기에 나온 카드 수, `executed`는 실제 배치된 카드 수, `optimizerTargetRows`는 저장된 학습 체크포인트에 양의 목표 확률로 들어간 카드 수입니다. `formExecutions`는 실제 실행된 진화 배치, 히어로 배치와 스킬 사용을 카드별로 집계합니다. 원본표가 바뀌면 `arena catalogue`와 `arena verify`로 연습 덱과 배치 검사를 갱신합니다.
+
+## 트로피전 화면 라벨링
+
+`trophy label-import <experiments 또는 경기 디렉터리>`로 확인된 화면을 등록하고 `trophy label`이 출력하는 로컬 주소에서 판독합니다. `trophy label-status`는 표본 수, `trophy perception-eval`은 현재 가중치로 재실행한 결과, `trophy card-status`는 카드별 확인 수준을 보여줍니다. 명령 앞에는 `yarn workspace @side/clash-bot`을 붙입니다. 인식에는 `perception:setup`과 해당 환경에서 검토한 손패·배치 시계 참조가 필요합니다.
+
+새 어댑터는 활성 경기의 정규화된 PNG를 저장한 직후 `trophy serve`에 `frame`을 보냅니다. 필드는 `matchId, sequence, image, imageSHA256, at, raw`입니다. 순번은 1부터 연속이며 `raw`는 그 프레임에서 실제 실행한 인식 출력입니다. 마지막에 `seal-frames`로 `matchId, total`을 보내고 경기를 완료합니다. 감독이 완료 후 자료를 가져옵니다. 과거 판단 화면의 재실행과 전체 프레임을 기록한 경기는 평가에 따로 표시됩니다. 사람의 블라인드 전체 경기 표본과 카드별 기준이 충족된 후보만 인식에 채택합니다.
+
 ## 설치
 
 저장소 루트에서 Node 24, Yarn 4.17.0을 사용합니다. 실행 환경은 Apple Silicon과 `python3.11`이 필요합니다.
@@ -20,7 +40,7 @@ yarn workspace @side/clash-bot perception:setup
 
 `arena:setup`은 같은 환경에 고정 버전의 네이티브 전투 엔진을 설치하고 엔진 수치표를 `.data/arena/rules/source/`에 둡니다. `perception:setup`은 고정 revision·SHA-256의 카드 분류기와 박스 제안 모델을 `.data/counterpush/detector/`에 내려받아 ONNX로 변환합니다. 원본 약 119MB와 변환본, 변환에만 쓰는 PyTorch 설치 공간이 추가로 필요합니다. 인식 워커는 ONNX CPU를 기본 1스레드로 사용합니다. 두 명령은 `runtime:setup`의 환경이 없으면 멈추고, 세 명령 모두 트로피 학습기나 자가대국이 실행 중이면 환경을 바꾸지 않습니다.
 
-인식 자산과 모델 경로의 `counterpush` 이름(`apps/agent/assets/counterpush`, `.data/counterpush/detector`, `profiles/counterpush.json`)은 저장소 밖 어댑터가 읽으므로 그대로 두었습니다. 분석 좌표는 368×652이며 `profiles/counterpush.json`이 덱 8장, 손패 네 영역, 엘릭서 막대, 아레나 영역과 강 위치를 소유하고 core 배치 검사도 이 프로필을 읽습니다. 이 자산과 프로필은 Counterpush 화면에서 만든 것이라 실제 클래시로얄 화면에서의 인식 정확도는 측정하지 않았습니다. 다시 만드는 일은 계획 문서의 라벨링 단계에서 합니다.
+인식 자산과 모델 경로의 `counterpush` 이름(`apps/agent/assets/counterpush`, `.data/counterpush/detector`, `profiles/counterpush.json`)은 저장소 밖 어댑터가 읽으므로 그대로 두었습니다. 분석 좌표는 368×652이며 `profiles/counterpush.json`이 덱 8장, 손패 네 영역, 엘릭서 막대, 아레나 영역과 강 위치를 소유하고 core 배치 검사도 이 프로필을 읽습니다. 이 자산과 프로필은 Counterpush 화면에서 만들었습니다. 현재 실제 트로피 화면의 파일럿 인식 결과는 `trophy perception-eval`로 확인할 수 있습니다. 전체 카드의 실전 인식률은 블라인드 측정 대기열에서 표본을 확보해 평가합니다.
 
 ## 자가대국과 빠른 정책
 
@@ -44,7 +64,7 @@ yarn workspace @side/clash-bot arena policy --version <번호>
 
 체크포인트에는 압축 가중치만 저장합니다. 다른 버전을 실전에 쓰려면 `arena policy --version <번호>`로 리그의 `policies/v<번호>.json`을 만든 뒤 `trophy serve --seed <파일>`로 지정합니다. 특징·추론·가중치 체크섬은 TypeScript와 Python이 같은 숫자를 내는지 `test-fixtures/fast-policy-cases.json`으로 검사합니다.
 
-카드 카탈로그(`contracts/card-catalogue.json`)는 `arena catalogue`가 고정한 엔진 수치표로 만들며, 엔진이 시뮬레이션할 수 있는 카드 143장과 필드 오브젝트(유닛, 진화·영웅형, 주문 효과)의 0~1 특징, 레벨 11 최대 체력을 담습니다. 값은 클라이언트 표의 근거값이며 엔진의 정확한 전투 규칙은 아닙니다. 내용이 바뀌면 id(내용 해시)가 바뀌고, 실시간 실행은 다른 카탈로그로 학습한 정책 파일을 읽지 않습니다.
+카드 카탈로그(`contracts/card-catalogue.json`)는 `arena catalogue`가 고정한 엔진 수치표로 만들며, 엔진이 배치할 수 있는 카드 143장과 필드 오브젝트(유닛, 진화·영웅형, 주문 효과)의 0~1 특징, 레벨 11 최대 체력을 담습니다. 값은 클라이언트 표의 근거값이며 엔진의 정확한 전투 규칙은 아닙니다. 내용이 바뀌면 id(내용 해시)가 바뀌고, 실시간 실행은 다른 카탈로그로 학습한 정책 파일을 읽지 않습니다.
 
 자가대국은 `contracts/arena.json`의 덱 풀(실전 덱과 11개 상대 덱)로 절반은 실전 덱 미러전, 나머지는 덱 조합을 둡니다. 실전 덱의 계약 키 이름은 `liveDeck: "counterpush"`이며, 바꾸면 `rulesID`가 바뀌어 새 리그가 시작되므로 그대로 두었습니다. 판단 간격·탐색 후보 수·입력 지연·레벨·인식 오류 비율도 같은 파일의 `selfplay`가 정합니다. 실전 덱을 바꾸려면 `liveDeck`과 덱 풀, 프로필의 덱 8장을 함께 바꿔야 하며, 판단 계약 decision-v3와 행동 사전 보정은 현재 덱의 카드 코드만 다룹니다.
 

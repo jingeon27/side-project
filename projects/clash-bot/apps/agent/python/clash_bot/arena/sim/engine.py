@@ -9,9 +9,12 @@ import json
 
 from .candidates import dense_actions
 from .elixir import ElixirLedger
+from .native_replay import Steps, restore
 from .rules import (
+    CARDS,
     FIELDS,
     LIVE_DECK,
+    MINIMUM_LEVELS,
     OBSERVATION_FORMAT,
     SPEC,
     command,
@@ -57,6 +60,7 @@ class Record:
     """An arena's public bookkeeping at one moment; with a battle save, enough to `adopt` later."""
 
     def __init__(self, arena):
+        self.initial_save, self.steps = arena.initial_save, arena.steps
         self.decks, self.delays, self.levels = arena.decks, arena.delays, arena.levels
         self.initial_hands, self.initial_next = arena.initial_hands, arena.initial_next
         self.history = arena.history.copy()
@@ -89,6 +93,7 @@ class Arena:
 
     @battle.setter
     def battle(self, battle):
+        self.initial_save, self.steps = None, None
         self._battle = battle
         self.changed()
 
@@ -121,11 +126,15 @@ class Arena:
             tower_hp=None,
             spawns=[],
             forms=[forms_of(name, order) for name, order in zip(self.decks, orders)],
-            levels=[[level] * len(order) for level, order in zip(self.levels, orders)],
-            # A side's crown towers are as strong as its cards, as a player's level sets both.
+            levels=[
+                [max(level, MINIMUM_LEVELS.get(CARDS[card], 1)) for card in order]
+                for level, order in zip(self.levels, orders)
+            ],
+            # A side's towers keep their rolled level; Champion cards start at level 11.
             tower_levels=list(self.levels),
         )
         self.changed()
+        self.initial_save, self.steps = self.battle.save(), None
         initial = self.state()
         self.initial_hands = [player["hand"] for player in initial["players"]]
         self.initial_next = [player["next_card"] for player in initial["players"]]
@@ -142,7 +151,8 @@ class Arena:
 
     def adopt(self, snapshot, source):
         """Load a saved battle with the public bookkeeping of the arena or record it came from."""
-        self.battle.load(snapshot)
+        restore(self.battle, snapshot, source.initial_save, source.steps)
+        self.initial_save, self.steps = source.initial_save, source.steps
         self.changed()
         self.decks, self.delays, self.levels = source.decks, source.delays, source.levels
         self.initial_hands, self.initial_next = source.initial_hands, source.initial_next
@@ -217,6 +227,7 @@ class Arena:
                 commands.append(cmd)
                 proposed.append((team, action))
         results = self.battle.step(commands, ticks)
+        self.steps = Steps(self.steps, tuple(commands), ticks)
         self.changed()
         for (team, action), result in zip(proposed, results):
             if result[1] != 0:

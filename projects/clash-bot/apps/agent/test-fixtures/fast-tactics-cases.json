@@ -803,5 +803,71 @@
       [1, 0],
       [1, 2]
     ]
+  },
+  {
+    "name": "An enemy Cannon 7.8 tiles away across the river wakes the nearer Hut",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["cannon", 12.5, 19.3, "?"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "cannon",
+            "x": 12.5,
+            "y": 19.3,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 5.5, 11.5],
+        ["B", "card", "goblin_hut", 4, 12.5, 11.5]
+      ],
+      "deployments": []
+    },
+    "bias": [-0.52, 1.48]
+  },
+  {
+    "name": "An enemy crown tower alone gives no Hut activation credit",
+    "context": {
+      "hand": ["barbarian_barrel", "knight", "skeletons", "goblin_hut"],
+      "elixir": 8,
+      "enemyElixir": {
+        "min": 0,
+        "max": 8
+      },
+      "own": [],
+      "enemy": [["king_tower", 12.5, 19.3, "?"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "king_tower",
+            "x": 12.5,
+            "y": 19.3,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "effects": [],
+      "actions": [
+        ["A", "card", "goblin_hut", 4, 5.5, 11.5],
+        ["B", "card", "goblin_hut", 4, 12.5, 11.5]
+      ],
+      "deployments": []
+    },
+    "bias": [-0.52, -0.52]
   }
 ]

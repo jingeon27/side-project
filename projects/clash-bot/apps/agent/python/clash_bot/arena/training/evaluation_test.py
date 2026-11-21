@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from clash_bot.arena.policy.network import Policy
-from clash_bot.arena.sim.rules import DECKS, LIVE_DECK
+from clash_bot.arena.sim.rules import LIVE_DECK, MATCHUP_DECKS
 from clash_bot.arena.training.evaluation import (
     evaluate,
     evaluation_setup,
@@ -68,10 +68,10 @@ class QualificationTest(unittest.TestCase):
                 evaluate(a, b, "rules-a", 0, pairs=1)
 
     def test_full_evaluation_includes_every_threat_deck_before_promotion(self):
-        setups = [evaluation_setup(pair, 3) for pair in range(2 * (len(DECKS) - 1))]
+        setups = [evaluation_setup(pair, 3) for pair in range(2 * (len(MATCHUP_DECKS) - 1))]
         # Pairs differ in how far apart the two decision clocks run.
         self.assertGreater(len({row["phase"] for row in setups}), 10)
-        self.assertEqual({row["decks"][1] for row in setups}, set(DECKS))
+        self.assertEqual({row["decks"][1] for row in setups}, set(MATCHUP_DECKS))
         self.assertTrue(all(row["decks"][0] == LIVE_DECK for row in setups))
 
     def test_mixed_matchup_wins_cannot_hide_a_live_mirror_regression(self):
