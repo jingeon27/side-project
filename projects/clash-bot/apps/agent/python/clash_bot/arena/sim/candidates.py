@@ -49,10 +49,13 @@ def candidate_actions(battle, team, tiles, state=None):
     for card in player["hand"]:
         if card < 0:
             continue
-        anchors = graves if card == CARD_ID["Poison"] else []
-        if CARDS[card] in FRIENDLY_SPELLS:
+        placement_card = player["mirror_target"] if CARDS[card] == "Mirror" else card
+        if placement_card < 0:
+            continue
+        anchors = graves if placement_card == CARD_ID["Poison"] else []
+        if CARDS[placement_card] in FRIENDLY_SPELLS:
             anchors = [*allies, (3.5, 6.5), (14.5, 6.5)]
-        for x, y in [*anchors, *tiles(placements()[card], threat, targets)]:
+        for x, y in [*anchors, *tiles(placements()[placement_card], threat, targets)]:
             x, y = canonical(x, y, team)
             action = Action(card, round(x * TILE), round(y * TILE))
             if action in seen:

@@ -16,16 +16,22 @@ def labeled_cards(row):
 
 
 def replay_coverage(samples):
-    cards = Counter()
+    cards, goals, decks = Counter(), Counter(), Counter()
     defense_rows = defense_pairs = attack_pairs = 0
     for row in samples:
         cards.update(labeled_cards(row))
+        if "practiceGoal" in row:
+            goals[row["practiceGoal"]] += 1
+        if "learnerDeck" in row:
+            decks[row["learnerDeck"]] += 1
         defense_rows += bool(row["defensePairs"])
         defense_pairs += len(row["defensePairs"])
         attack_pairs += len(row["attackPairs"])
     return {
         "cardsWithTarget": {card: cards[index] for index, card in enumerate(CARDS)},
         "abilityWithTarget": cards[-2],
+        "practiceGoals": dict(goals),
+        "directDeckRows": dict(decks),
         "missingCards": [card for index, card in enumerate(CARDS) if not cards[index]],
         "defenseRows": defense_rows,
         "defensePairs": defense_pairs,
@@ -43,9 +49,11 @@ def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
     ]
     if len(valid) <= max_samples:
         return valid
-    support = defaultdict(list)
+    support, goals = defaultdict(list), defaultdict(list)
     defenses, attacks = [], []
     for index, row in enumerate(valid):
+        if "practiceGoal" in row:
+            goals[row["practiceGoal"]].append(index)
         for card in sorted(labeled_cards(row)):
             support[card].append(index)
         if row["defensePairs"]:
@@ -62,6 +70,8 @@ def replay_samples(episodes, rules_id, max_samples=4096, seed=0):
         if count:
             chosen.update(rng.choice(remaining, count, replace=False).tolist())
 
+    for goal in sorted(goals, key=lambda key: (len(goals[key]), key)):
+        reserve(goals[goal], 1)
     per_card = min(8, max(1, max_samples // max(1, len(support))))
     for card in sorted(support, key=lambda card: (len(support[card]), card)):
         indices = support[card]

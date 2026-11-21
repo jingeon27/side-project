@@ -10,7 +10,7 @@ from ..policy.network import Policy
 from ..sim.rules import rules_identity
 from .activity import opening_audit
 from .evaluation import evaluate
-from .parallel import Workers, play_frozen_game, play_frozen_pair
+from .parallel import Workers, play_frozen_game, play_frozen_matchup, play_frozen_pair
 from .selfplay import setup_for
 
 
@@ -106,18 +106,24 @@ class PackagedParallelTests(unittest.TestCase):
                 rules,
                 0,
                 pairs=2,
-                play_pairs=lambda jobs: workers.map(
-                    play_frozen_pair, [{**job, **frozen} for job in jobs]
+                play_matchups=lambda jobs: workers.map(
+                    play_frozen_matchup, [{**job, **frozen} for job in jobs]
                 ),
                 batch=2,
             )
 
             def timeless(result):
-                games = [
-                    {key: value for key, value in game.items() if key != "elapsedSeconds"}
-                    for game in result["games"]
-                ]
-                return {**result, "games": games}
+                return {
+                    **result,
+                    **{
+                        field: [
+                            {key: value for key, value in game.items() if key != "elapsedSeconds"}
+                            for game in result[field]
+                        ]
+                        for field in ("games", "poolControlGames")
+                    },
+                }
 
             self.assertEqual(len(pooled["games"]), 4)
+            self.assertEqual(len(pooled["poolControlGames"]), 1)
             self.assertEqual(timeless(pooled), timeless(in_order))

@@ -17,6 +17,7 @@ from ..training.parallel import Workers
 from .champions import checkpoint, initialize
 from .control import Control
 from .generation import learn, next_version, selfplay
+from .practice import initialize_priority
 from .qualification import qualify
 
 
@@ -26,6 +27,8 @@ def open_league(control, data_dir, rules):
     active = control.directory / "active.json"
     previous = Path(json.loads(active.read_text())["root"]) if active.exists() else None
     league = initialize(root, rules, parent=None if previous == root else previous)
+    if previous != root:
+        initialize_priority(root, previous, rules)
     atomic_json(active, {"root": str(root), "rulesID": rules["id"]})
     return root, league
 
@@ -40,6 +43,8 @@ def run(
     pairs=16,
     evaluate_every=1,
     workers=1,
+    practice_games=0,
+    pool_games=0,
 ):
     data_dir = Path(data_dir)
     settings = {
@@ -49,6 +54,8 @@ def run(
         "pairs": pairs,
         "evaluateEvery": evaluate_every,
         "workers": workers,
+        "practiceGames": practice_games,
+        "poolGames": pool_games,
     }
     with Control(data_dir, hours) as control, Workers(workers) as pool:
         rules = rules_identity()

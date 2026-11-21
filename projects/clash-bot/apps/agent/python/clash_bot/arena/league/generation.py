@@ -3,8 +3,10 @@
 import json
 import shutil
 import uuid
+from itertools import chain
 
 import numpy as np
+from more_itertools import chunked
 
 from ..sim.rules import LIVE_DECK
 from ..training.coverage import card_coverage
@@ -17,6 +19,8 @@ from ..training.replay import replay_coverage, replay_samples
 from ..training.selfplay import SELFPLAY, live_setup, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
+from .pool_play import pool_jobs
+from .practice import focused_jobs, practice_history
 
 REPLAY_EPISODES = 256
 REPLAY_SAMPLES = 16384
@@ -112,17 +116,25 @@ def selfplay(control, workers, root, league, rules, version, settings):
     rng = np.random.default_rng(seed_for("opponent_pool", rules["id"], version))
     parent = json.loads((checkpoint(root, league["learner"]) / "metadata.json").read_bytes())
     leaf_weights = parent.get("training", {}).get("publicLeaf", {}).get("weights")
-    for begin in range(0, games, workers.count):
+    focus = focused_jobs(root, league, rules, version, settings.get("practiceGames", 0))
+    pool = pool_jobs(root, league, rules, version, settings)
+    regular = scheduled(root, league, rules, version, range(games), settings, rng)
+    for jobs in chunked(chain(pool, focus, regular), workers.count):
         if control.stopped():
             break
-        indexes = range(begin, min(games, begin + workers.count))
-        jobs = scheduled(root, league, rules, version, indexes, settings, rng)
         for job in jobs:
             job["leafWeights"] = leaf_weights
         control.report(
             {
                 "phase": "selfplay",
-                "game": begin + 1,
+                "game": len(played) + 1,
+                "scheduledGames": len(pool) + len(focus) + games,
+                "poolLearnerDecks": [
+                    j["setup"]["decks"][j["seat"]] for j in jobs if "poolLearnerSeat" in j["setup"]
+                ],
+                "practiceGoals": [
+                    j["setup"]["focusGoal"] for j in jobs if "focusGoal" in j["setup"]
+                ],
                 "candidate": version,
                 "activeWorkers": len(jobs),
             }
@@ -149,7 +161,7 @@ def selfplay(control, workers, root, league, rules, version, settings):
             store(root, league)
             control.report(
                 {
-                    "game": job["index"] + 1,
+                    "game": len(played),
                     "completedGames": control.state["completedGames"],
                     "lastPolicyOnlyDecisions": game["policyOnlyDecisions"],
                     "lastSearchUnavailable": game["searchUnavailable"],
@@ -165,7 +177,9 @@ def learn(control, root, league, rules, learner, version):
     control.report({"phase": "training", "candidate": version})
     # A wide window of compact replays reuses many games per update without reading the full
     # episodes, which keep observations only for exports.
-    history = [read_episode(replay_path(path)) for path in league["episodes"][-REPLAY_EPISODES:]]
+    _, _, recent_practice = practice_history(root, league, persist=True)
+    paths = dict.fromkeys([*league["episodes"][-REPLAY_EPISODES:], *recent_practice.values()])
+    history = [read_episode(replay_path(path)) for path in paths]
     samples = replay_samples(
         history, rules["id"], max_samples=REPLAY_SAMPLES, seed=seed_for("replay", version)
     )

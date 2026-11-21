@@ -139,6 +139,7 @@ def search(
     leaf_weights=None,
     reference_action=None,
     attack_baseline=None,
+    pool_card=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
@@ -242,7 +243,17 @@ def search(
         policies = [opponent_policy or policy] * 2
         policies[team] = policy
         attack_comparison = compare(
-            world, worlds, snapshots, offsets, candidates, attack_baseline, team, policies, seed
+            world,
+            worlds,
+            snapshots,
+            offsets,
+            candidates,
+            attack_baseline,
+            team,
+            policies,
+            seed,
+            pool_card,
+            prior,
         )
     return {
         "actions": root_actions,

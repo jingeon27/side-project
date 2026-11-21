@@ -18,16 +18,16 @@ from ..policy.noise import PerceptionNoise
 from ..policy.screen import Screen
 from ..sim.belief import PublicRootMismatch
 from ..sim.engine import Arena
-from ..sim.rules import LIVE_DECK, MATCHUP_DECKS, SPEC, Action
+from ..sim.rules import CARD_ID, LIVE_DECK, MATCHUP_DECKS, SPEC, Action
 from ..sim.status_effects import control_observations
-from .collection import choose, trial_due
+from .collection import choose, pool_trial_due, trial_due
 from .deck_practice import open_practice
 from .defense_rollout import focus_families, observed_attack
-from .form_usage import count_form_plays, form_counts
+from .form_usage import count_form_plays, form_counts, opening_receipt
 from .public_value import examples
 from .search import Workspace, search
 from .storage import seed_for
-from .targets import seal_outcomes, training_rows
+from .targets import seal_outcomes, terminal_values, training_rows
 
 
 class SelfplaySpec(BaseModel):
@@ -115,6 +115,7 @@ def play_game(
     if collector is not None:
         actors[collector[0]] = collector[1]
     setup = setup or live_setup()
+    pool_card = CARD_ID[setup["poolAttackCard"]] if "poolLearnerSeat" in setup else None
     arena = Arena(
         seed_for("environment", game_id),
         initial_decks=initial_orders,
@@ -135,6 +136,7 @@ def play_game(
     due = [opening_tick, opening_tick + setup.get("phase", 0)]
     samples, rejected, decisions, searches = [], 0, 0, 0
     forms = form_counts()
+    first_receipt = None
     controls = Counter()
     policy_seats = {
         seat for seat, policy in enumerate(policies) if not policy.metadata.get("scripted")
@@ -175,6 +177,19 @@ def play_game(
             deployed = candidates[best] if collector is not None else None
             if unavailable[team] is None:
                 try:
+                    compare_attack = (
+                        pool_trial_due(
+                            trials[team],
+                            state["tick"],
+                            state["players"][team],
+                            candidates,
+                            best,
+                            pool_card,
+                        )
+                        if pool_card is not None
+                        else (collector is not None or setup.get("offensePractice"))
+                        and trial_due(trials[team], state["tick"], context, candidates, best)
+                    )
                     result = search(
                         observation,
                         policy,
@@ -191,10 +206,8 @@ def play_game(
                         defense=attack if training else None,
                         leaf_weights=leaf_weights,
                         reference_action=candidates[best],
-                        attack_baseline=best
-                        if (collector is not None or setup.get("offensePractice"))
-                        and trial_due(trials[team], state["tick"], context, candidates, best)
-                        else None,
+                        attack_baseline=best if compare_attack else None,
+                        pool_card=pool_card,
                     )
                 except PublicRootMismatch as error:
                     unavailable[team] = {"tick": state["tick"], "evidence": str(error)}
@@ -221,6 +234,7 @@ def play_game(
                 samples.append(
                     {
                         "gameID": game_id,
+                        **({"learnerDeck": setup["decks"][team]} if deployed is not None else {}),
                         "rulesID": rules_id,
                         "team": team,
                         "policyVersion": actors[team].metadata["version"],
@@ -239,9 +253,13 @@ def play_game(
         history_size = len(arena.history)
         outcomes = arena.play(selected, min(due) - state["tick"])
         if training and len(arena.history) > history_size:
-            count_form_plays(
-                forms, state, arena.state(), arena.history[history_size:], policy_seats
-            )
+            events = arena.history[history_size:]
+            count_form_plays(forms, state, arena.state(), events, policy_seats)
+            if "focusGoal" in setup and first_receipt is None:
+                actor = setup["focusSeat"]
+                first_receipt = opening_receipt(
+                    state, arena.state(), events, actor, opening_tick + arena.delays[actor]
+                )
         rejected += sum(row[1] != 0 for row in outcomes)
         if report and decisions % 20 == 0:
             report(
@@ -283,6 +301,14 @@ def play_game(
         "searchUnavailable": unavailable,
         "policyOnlyDecisions": policy_only,
         "publicHistory": arena.history,
+        **(
+            {
+                "firstReceipt": first_receipt,
+                "terminalValues": terminal_values(state) if completed else None,
+            }
+            if "focusGoal" in setup
+            else {}
+        ),
         **(
             {
                 "trainingStartTick": opening_tick,

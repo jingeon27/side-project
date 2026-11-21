@@ -61,6 +61,13 @@ PRACTICE_DECKS = (
 DECKS = {**MATCHUP_DECKS, **PRACTICE_DECKS}
 # The deck the live Trophy screen plays; half of the self-play games mirror it.
 LIVE_DECK = SPEC["liveDeck"]
+POOL_DECKS = tuple(sorted(MATCHUP_DECKS.keys() - {LIVE_DECK}))
+POOL_ATTACKS = SPEC["poolAttackCards"]
+if set(POOL_ATTACKS) != set(POOL_DECKS) or any(
+    not cards or not set(cards) <= set(MATCHUP_DECKS[deck].cards)
+    for deck, cards in POOL_ATTACKS.items()
+):
+    raise ValueError("Each non-live matchup deck needs attack cards from its own deck")
 if LIVE_DECK not in DECKS:
     raise ValueError("The live deck must be one of the arena decks")
 # One battle catalogue for every pool deck. The live deck comes first so its cards keep ids 0..7.
@@ -136,7 +143,7 @@ def rules_identity():
         # Visibility and timing alter the information set/returns just as a balance patch does.
         "observationFormat": OBSERVATION_FORMAT,
         "opponentDeck": "public_play_inferred_pool_prior",
-        "evaluationSuite": "rules_scoped_live_mirror_pool_and_self_opening_v5",
+        "evaluationSuite": "live_mirror_and_oriented_mixed_with_same_deck_incumbent_v6",
         "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
         "policyMechanics": digest(
             {
@@ -150,7 +157,12 @@ def rules_identity():
                 )
             }
         ),
-        "trainingActor": "champion_search_deployed_learner_mirror_v2",
+        "trainingActor": "champion_search_learner_live_and_pool_decks_with_matched_form_trials_v4",
+        "poolAttackTrials": {
+            "cards": POOL_ATTACKS,
+            "choice": "matched_save_or_spend_with_living_princess_towers_v2",
+        },
+        "candidatePlacement": "native_legal_with_public_mirror_target_v2",
         "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
         "trainingOpponent": "rotating_forms_pressure_funded_and_supported_mirror_v7",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",

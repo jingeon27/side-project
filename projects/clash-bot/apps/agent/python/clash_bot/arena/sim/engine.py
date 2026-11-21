@@ -78,7 +78,6 @@ class Arena:
 
     def __init__(self, seed, initial_decks=None, decks=None, delays=(0, 0), levels=None):
         self.battle = new_battle()
-        self.catalogue = json.loads(self.battle.catalogue_json())
         self.reset(
             seed,
             initial_decks,
@@ -165,7 +164,6 @@ class Arena:
     def clone(self):
         copy = object.__new__(Arena)
         copy.battle = new_battle()
-        copy.catalogue = self.catalogue
         return copy.adopt(self.battle.save(), self)
 
     def observe(self, team, include_legal=True):
@@ -232,10 +230,11 @@ class Arena:
         for (team, action), result in zip(proposed, results):
             if result[1] != 0:
                 continue
+            player = before["players"][team]
             cost = (
-                before["players"][team]["abilities"][0][2]
+                player["abilities"][0][2]
                 if action.card == -2
-                else self.catalogue[action.card][2]
+                else player["hand_costs"][player["hand"].index(action.card)]
             )
             # A play runs, and is seen, the side's delay after the tick it was accepted on.
             self.pending.append(

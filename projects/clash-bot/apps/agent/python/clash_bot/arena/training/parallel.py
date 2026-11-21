@@ -7,7 +7,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 from ..policy.network import Policy
 from .deck_practice import practice_orders
-from .evaluation import play_pair
+from .evaluation import play_matchup, play_pair
+from .focused_trial import focused_game
 from .pressure import opening_orders, pressure_policy
 from .selfplay import play_game
 
@@ -15,6 +16,8 @@ from .selfplay import play_game
 def play_frozen_game(job):
     current = Policy.load(job["current"], job["rulesID"])
     setup = job["setup"]
+    if "focusGoal" in setup:
+        return focused_game(job, current, Policy.load(job["labelReference"], job["rulesID"]))
     if "pressure" in setup:
         opponent = pressure_policy(setup, job["id"])
         orders = opening_orders(setup, job["seat"], job["id"])
@@ -47,6 +50,12 @@ def play_frozen_pair(job):
     challenger = Policy.load(job["challenger"], job["rulesID"])
     champion = Policy.load(job["champion"], job["rulesID"])
     return play_pair(challenger, champion, job["rulesID"], job["identity"], job["setup"])
+
+
+def play_frozen_matchup(job):
+    challenger = Policy.load(job["challenger"], job["rulesID"])
+    champion = Policy.load(job["champion"], job["rulesID"])
+    return play_matchup(challenger, champion, job["rulesID"], job["identity"], job["setup"])
 
 
 # One game per core; each worker holds its own battle and a small policy.

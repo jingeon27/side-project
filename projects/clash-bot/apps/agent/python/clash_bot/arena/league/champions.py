@@ -92,6 +92,21 @@ def checkpoint(root, version):
     return Path(root) / "checkpoints" / f"v{version:06d}"
 
 
+def learner_history(root, league):
+    """Only updates reachable from the committed learner, including gaps left by a crash."""
+    version = league["learner"]
+    while version:
+        row = json.loads((checkpoint(root, version) / "metadata.json").read_bytes())
+        if (
+            row["rulesID"] != league["rulesID"]
+            or row["version"] != version
+            or not 0 <= row["parent"] < version
+        ):
+            raise ValueError("Broken learner checkpoint lineage")
+        yield row
+        version = row["parent"]
+
+
 def store(root, league):
     """Write league.json; the owner calls this after every change it must not lose."""
     atomic_json(Path(root) / "league.json", league)
