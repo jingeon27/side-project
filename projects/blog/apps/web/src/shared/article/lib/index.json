@@ -73,11 +73,11 @@
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
-    "updatedAt": "2026-11-15",
+    "updatedAt": "2026-11-21",
     "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
     "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
-    "title": "컴포넌트는 어떤 식으로 테스트할까? 라이브러리 테스트에서 배운 것들",
-    "description": "라이브러리 테스트를 읽고 피식의 무한 스크롤과 드롭다운 테스트를 보완했어요. 로딩 중 목록 유지와 중복 요청 방지, 메뉴 위치와 키보드 조작을 어떻게 확인했는지 적었어요.",
+    "title": "라이브러리에서 배운 컴포넌트 테스트",
+    "description": "TanStack Query, Radix, Base UI의 테스트를 참고해 피식에서 무한 스크롤의 중복 요청을 찾고, 드롭다운이 닫히는 도중에 삭제를 눌러 봤어요.",
     "slug": "무한-스크롤과-드롭다운-상태별로-테스트하기",
     "keywords": ["컴포넌트 테스트", "무한 스크롤", "드롭다운", "Playwright", "브라우저 테스트", "로딩 상태"],
     "id": "scroll-and-dropdown-states",
@@ -164,7 +164,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 19,
+    "readingMinutes": 12,
     "translations": {
       "ko": "무한-스크롤과-드롭다운-상태별로-테스트하기",
       "en": "testing-infinite-scroll-and-dropdown-states"
@@ -174,7 +174,7 @@
     "category": "engineering",
     "tags": ["testing", "playwright", "infinite-scroll", "dropdown"],
     "publishedAt": "2026-11-10",
-    "updatedAt": "2026-11-15",
+    "updatedAt": "2026-11-21",
     "coverImage": "/images/covers/scroll-and-dropdown-states.avif",
     "socialImage": "/images/covers/scroll-and-dropdown-states-og.jpg",
     "title": "How should you test a component? Lessons from library tests",
