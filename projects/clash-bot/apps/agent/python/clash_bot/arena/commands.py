@@ -29,6 +29,7 @@ def start(args, parser):
         0 <= args.hours <= 24
         and 0 <= args.generations <= 10000
         and 1 <= args.games <= 64
+        and 0 <= args.practice_games <= 256
         and 2 <= args.simulations <= 512
         and 2 <= args.depth <= 32
         and 1 <= args.pairs <= 256
@@ -41,6 +42,7 @@ def start(args, parser):
         hours=args.hours,
         generations=args.generations,
         games=args.games,
+        practice_games=args.practice_games,
         simulations=args.simulations,
         depth=args.depth,
         pairs=args.pairs,

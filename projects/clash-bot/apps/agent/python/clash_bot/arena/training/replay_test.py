@@ -30,3 +30,23 @@ class ReplayCoverageTest(unittest.TestCase):
         self.assertEqual(coverage["cardsWithTarget"]["Golem"], 1)
         self.assertIn("Pekka", coverage["missingCards"])
         self.assertEqual(coverage["defensePairs"], 1)
+
+    def test_skill_owners_keep_separate_seats_in_the_optimizer_batch(self):
+        def row(goal):
+            return {
+                "actions": [[-2, 0, 0]],
+                "targetWithoutTowers": [1],
+                "defensePairs": [],
+                "attackPairs": [],
+                "outcome": 1,
+                "practiceGoal": goal,
+            }
+
+        goals = ["hero:IceWizard", "hero:Knight", "champion:GoldenKnight"]
+        episode = {
+            "completed": True,
+            "rulesID": "rules",
+            "samples": [row(goals[0]) for _ in range(50)] + [row(g) for g in goals[1:]],
+        }
+        selected = replay_samples([episode], "rules", max_samples=3, seed=1)
+        self.assertEqual(replay_coverage(selected)["practiceGoals"], dict.fromkeys(goals, 1))

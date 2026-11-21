@@ -8,8 +8,11 @@ from clash_bot.files import atomic_json
 
 from ..sim.rules import CARD_ID, CARDS, DECKS, LIVE_DECK, rules_identity
 from ..training.coverage import card_coverage
+from ..training.focus_opening import KINDS, goal_decks
 from ..training.form_usage import form_counts
 from ..training.storage import read_episode
+from .champions import learner_history
+from .practice import practice_history
 
 
 def feedback_counts(samples):
@@ -107,21 +110,56 @@ def training_coverage(root, league):
             forms[key].update(values)
         control_frames.update(small["controlUnitFrames"])
         feedback.update(small["feedback"])
-    for path in sorted((root / "checkpoints").glob("v[0-9]*/metadata.json")):
-        m = json.loads(path.read_bytes())
-        if m["rulesID"] != rules:
-            continue
-        trained = m.get("training", {}).get("optimizerCoverage", {}).get("cardsWithTarget", {})
+    goals = Counter()
+    for metadata in learner_history(root, league):
+        optimizer = metadata["training"]["optimizerCoverage"]
+        trained = optimizer["cardsWithTarget"]
+        goals.update(optimizer["practiceGoals"])
         for card, count in trained.items():
             counts[card]["optimizerTargetRows"] += count
     summary = {
         key: sum(v[key] > 0 for v in counts.values())
         for key in ("compared", "searchTarget", "executed", "optimizerTargetRows")
     }
+    tried, verified, _latest = practice_history(root, league)
+
+    def practice_group(pool):
+        return {
+            "available": len(pool),
+            "attempts": sum(tried[g] for g in pool),
+            "verified": sum(verified[g] > 0 for g in pool),
+            "optimizer": sum(goals[g] > 0 for g in pool),
+            "missing": [g.split(":")[1] for g in pool if not goals[g]],
+        }
+
+    focused = {
+        kind: practice_group(sorted(g for g in goal_decks() if g.startswith(kind + ":")))
+        for kind in KINDS
+    }
+    baseline = None
+    priority_path = root / "practice-priority.json"
+    if priority_path.exists():
+        audit = json.loads(priority_path.read_bytes())
+        baseline = {
+            "sourceRulesID": audit["sourceRulesID"],
+            "sourceGames": audit["sourceGames"],
+            **{
+                label: practice_group(
+                    sorted(
+                        g
+                        for g, rank in audit["priority"].items()
+                        if g.startswith("card:") and rank == priority
+                    )
+                )
+                for priority, label in enumerate(("untrained", "comparedOnly"))
+            },
+        }
     return {
         "rulesID": rules,
         "completedTrainingGames": len(league["episodes"]),
         "availableCards": len(CARDS),
+        "focusedPractice": focused,
+        "practiceBaseline": baseline,
         "availableForms": {
             name: len(
                 {

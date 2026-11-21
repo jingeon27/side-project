@@ -48,7 +48,18 @@ def write_replay(path, episode):
             "rulesID": episode["rulesID"],
             "gameID": episode["gameID"],
             "leafExamples": episode["leafExamples"],
-            "samples": [{key: row[key] for key in REPLAY_FIELDS} for row in episode["samples"]],
+            **(
+                {"practiceTrial": {k: episode["practiceTrial"][k] for k in ("goal", "verified")}}
+                if "practiceTrial" in episode
+                else {}
+            ),
+            "samples": [
+                {
+                    **{key: row[key] for key in REPLAY_FIELDS},
+                    **({"practiceGoal": row["practiceGoal"]} if "practiceGoal" in row else {}),
+                }
+                for row in episode["samples"]
+            ],
         },
     )
 

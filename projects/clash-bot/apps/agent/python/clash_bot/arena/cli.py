@@ -16,6 +16,12 @@ def arguments():
     start.add_argument("--hours", type=float, default=8)
     start.add_argument("--generations", type=int, default=0)
     start.add_argument("--games", type=int, default=4)
+    start.add_argument(
+        "--practice-games",
+        type=int,
+        default=0,
+        help="Additional matched card/form training games per generation during catch-up",
+    )
     start.add_argument("--simulations", type=int, default=16)
     start.add_argument("--depth", type=int, default=6)
     start.add_argument("--pairs", type=int, default=16)

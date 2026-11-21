@@ -122,6 +122,14 @@ RoyaleSim에도 충돌·일부 효과의 미검증 가정이 남아 있다. [보
 
 로컬 채택은 시뮬레이터 안의 판정이다. 실제 클래시로얄 트로피 상대에서의 우위는 감독이 넘긴 챔피언을 트로피 실전 게이트로 비교해야 확인할 수 있다. 통계적 판정이며 모든 후속 경기의 승리를 보장하지 않는다.
 
+## 카드별 직접 사용과 형태별 연습
+
+감독은 일반 자가대국 4판에 카드·진화·스킬 연습을 추가한다. 현재 검증 풀의 직접 배치 142종, 진화 44종, 히어로 스킬 18종, 챔피언 스킬 8종이 대상이다. 첫 순회에서는 세대당 최대 56개, 이후에는 최대 2개씩 편성한다. 네 종류가 전체 표본 수에 비례해 진도를 나가며, 카드 안에서는 기존 학습 표본이 없는 카드와 비교만 했던 카드를 먼저 쓴다. 실행에 실패한 항목은 다른 손패·진영으로 다시 시도한다. 전 리그에서는 우선순위를 정할 때 쓸 집계만 가져온다.
+
+진화는 엘릭서를 채우고 덱을 실제로 순환시켜 충전한다. 히어로와 챔피언은 해당 유닛을 배치하고 스킬이 열렸을 때 연습한다. 거울은 직전 카드의 배치 규칙과 손패에 표시된 비용을 사용한다. 준비가 끝나면 같은 상태·지연·시드·동결 상대에서 대상 행동, 대기, 가능한 다른 선택을 각각 종국까지 둔다. 행동 전 공개 화면이 일치하고 네이티브 실행 기록에서 대상 카드나 스킬 소유자가 맞을 때만 위치 하나를 학습에 쓴다. 선택의 목표 확률은 각 분기의 승패와 타워 체력 차이로 정한다.
+
+`arena coverage`의 `focusedPractice`에는 종류별 대상 수, 시도 횟수, 실제 실행 후 비교까지 끝낸 종류 수(`verified`), 옵티마이저에 들어간 종류 수(`optimizer`), 미반영 목록이 나온다. 최근 일반 대국과 함께 각 연습 항목의 마지막 검증 표본을 보관한다. 비교용 분기와 준비 과정은 별도 학습 판수에서 제외한다. 모델 승격은 초기 상태에서 후보와 챔피언의 진영을 바꿔 둔 독립 평가로 판정한다.
+
 ## 명령
 
 저장소에서 실행한다. 파일 인수는 Yarn 작업 폴더의 영향을 받지 않도록 절대 경로로 지정한다.
@@ -129,7 +137,7 @@ RoyaleSim에도 충돌·일부 효과의 미검증 가정이 남아 있다. [보
 ```sh
 yarn workspace @side/clash-bot runtime:setup
 yarn workspace @side/clash-bot arena:setup
-yarn workspace @side/clash-bot arena start --background --hours 0 --games 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4
+yarn workspace @side/clash-bot arena start --background --hours 0 --games 4 --practice-games 56 --workers 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4
 yarn workspace @side/clash-bot arena status
 yarn workspace @side/clash-bot arena stop
 

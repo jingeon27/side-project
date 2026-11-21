@@ -94,7 +94,7 @@ yarn workspace @side/clash-bot loop stop
 
 감독은 60초마다 점검합니다. 주기와 인자, 재시작 한도는 `contracts/self-improvement.json`이 정합니다.
 
-- 자가대국이 돌고 있지 않으면 `arena start --hours 0 --games 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4`를 nice 10으로 시작합니다.
+- 자가대국이 돌고 있지 않으면 `arena start --hours 0 --games 4 --practice-games 56 --workers 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4`를 nice 10으로 시작합니다.
 - 자신이 시작한 실행이 실패하면 60·300·1800초 뒤 다시 시작하고, 6시간 안에 3번 실패하면 마지막 오류(`lastError`)를 남기고 멈춥니다. 그 실행이 `stopped`로 정상 종료하면 사용자의 정지로 보고 다음 `loop start`까지 다시 시작하지 않습니다. 감독이 시작하지 않은 자가대국은 멈추지 않습니다.
 - 리그 챔피언의 버전이 0보다 크고 바뀌면 `champion-policy.json`을 `.data/loop/simulation-champions/<가중치 SHA-256>.json`으로 복사하고 트로피 인계 파일을 씁니다.
 - 24시간마다 `arena rules`로 엔진·밸런스 변경을 확인해 사건으로 남깁니다. 새 표는 자동으로 활성화하지 않습니다.
