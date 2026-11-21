@@ -1,0 +1,54 @@
+{
+  "slug": "prime-board",
+  "title": "열 칸씩 두 번, 소수는 몇 개일까?",
+  "series": "숫자 관찰",
+  "theme": "cobalt",
+  "lead": {
+    "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=480608",
+    "title": "리만 가설에 관한 질문",
+    "published": "2026-11-21"
+  },
+  "sources": [
+    {
+      "label": "클레이 수학연구소의 리만 가설 소개",
+      "url": "https://www.claymath.org/millennium/Riemann-Hypothesis/"
+    }
+  ],
+  "description": "일에서 열까지, 그리고 구십일에서 백까지. 길이가 같은 두 구간에서 소수를 직접 셉니다.",
+  "comment": "101부터 110 사이에는 소수가 몇 개일까요?",
+  "tags": ["소수", "숫자", "30초다큐"],
+  "cover": "열 칸에 숨은 소수",
+  "credits": "직접 계산한 소수와 자체 제작 숫자판.",
+  "tonic": 57,
+  "music": [
+    { "at": 0, "mode": "tap", "note": "질문과 함께 피아노 한 음" },
+    { "at": 9, "mode": "pulse", "note": "윗줄을 세는 동안 짧게 연주" },
+    { "at": 20, "mode": "silence", "note": "아랫줄의 결과를 맨목소리로 정리" }
+  ],
+  "shots": [
+    {
+      "seconds": 9,
+      "head": "같은 열 칸",
+      "voice": "일에서 열까지, 구십일에서 백까지. 둘 다 열 칸이에요. 소수도 같은 수만큼 들어 있을까요?",
+      "caption": "둘 다 열 칸이에요.\n소수도 같은 수만큼 들어 있을까요?",
+      "visual": "두 줄의 숫자판을 한 화면에 보여준다.",
+      "credit": "자체 제작 숫자판"
+    },
+    {
+      "seconds": 11,
+      "head": "윗줄에는 네 개",
+      "voice": "윗줄을 하나씩 보면, 이와 삼, 그리고 오와 칠이 소수예요. 모두 네 개입니다.",
+      "caption": "2, 3, 5, 7이 소수예요.\n모두 네 개입니다.",
+      "visual": "윗줄의 소수 네 개를 표시한다.",
+      "credit": "직접 계산"
+    },
+    {
+      "seconds": 10,
+      "head": "아랫줄에는 한 개",
+      "voice": "아랫줄도 길이는 같은데, 구십칠 하나만 소수예요. 길이가 같은 구간도 소수의 개수는 달라요.",
+      "caption": "97 하나만 소수예요.\n구간의 길이가 같아도 개수는 달라요.",
+      "visual": "아랫줄의 97을 표시해 윗줄과 비교한다.",
+      "credit": "직접 계산"
+    }
+  ]
+}
