@@ -150,11 +150,11 @@ def rules_identity():
                 )
             }
         ),
-        "trainingActor": "champion_anchored_search_teacher_v1",
+        "trainingActor": "champion_search_deployed_learner_mirror_v2",
         "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
-        "trainingOpponent": "quarter_scripted_pressure_quarter_rotating_card_forms_v5",
+        "trainingOpponent": "rotating_forms_pressure_funded_and_supported_mirror_v7",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",
-        "searchPolicy": "matched_view_mass_focused_spaced_roots_v6",
+        "searchPolicy": "public_outcome_validated_leaf_and_family_trials_v7",
         "rolloutTiming": ROLLOUT_CLOCK,
         "searchLearning": json.loads((CONTRACTS_DIR / "search-learning.json").read_text()),
         # What a policy is given: the live screen's elixir bound, card cycle and health bars, not

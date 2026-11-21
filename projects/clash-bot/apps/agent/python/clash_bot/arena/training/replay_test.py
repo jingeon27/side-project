@@ -12,6 +12,7 @@ class ReplayCoverageTest(unittest.TestCase):
                 "actions": [[card, 0, 0]],
                 "targetWithoutTowers": [1],
                 "defensePairs": pairs,
+                "attackPairs": [],
                 "outcome": 0,
             }
 

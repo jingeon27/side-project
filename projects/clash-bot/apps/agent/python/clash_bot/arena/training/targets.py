@@ -5,10 +5,23 @@ import numpy as np
 from ..policy.dense import DenseActions
 from ..policy.features import action_features, context_features, forward, hide_towers
 from ..policy.projection import project_logits
-from ..policy.samples import SparseFeatures
+from ..policy.samples import SparseFeatures, value_target
 from ..policy.tactics import action_biases
 from ..sim.rules import Action
 from .improvement import improved_policy
+
+
+def seal_outcomes(samples, state):
+    if not state["game_over"]:
+        return
+    damage = []
+    for player in state["players"]:
+        hp = np.asarray(player["tower_hp"], np.float64)
+        damage.append(float(np.mean(1 - hp / np.maximum(1, player["tower_max_hp"]))))
+    for sample in samples:
+        team = sample["team"]
+        outcome = 0 if state["winner"] == 2 else 1 if state["winner"] == team else -1
+        sample.update(outcome=outcome, value=value_target(outcome, damage[1 - team] - damage[team]))
 
 
 def training_rows(observation, result, screen, chosen, policy, context=None):
@@ -35,7 +48,10 @@ def training_rows(observation, result, screen, chosen, policy, context=None):
 
     normal, masked = target(scores), target(masked_scores)
     comparison = result.get("defenseComparison") or {"pairs": []}
+    attack = result.get("attackComparison")
     return {
+        "observation": {key: value for key, value in observation.items() if key != "legalActions"},
+        "search": {key: value for key, value in result.items() if key not in ("actions", "target")},
         "features": SparseFeatures.of(state).model_dump(),
         "actions": [row.row() for row in rows],
         "actionFeatures": vectors[retained].tolist(),
@@ -47,11 +63,12 @@ def training_rows(observation, result, screen, chosen, policy, context=None):
         "target": normal["target"].tolist(),
         "targetWithoutTowers": masked["target"].tolist(),
         "defensePairs": [[pair["preferred"], pair["other"]] for pair in comparison["pairs"]],
+        "attackPairs": [attack["pair"]] if attack and attack["pair"] else [],
         "learning": {
             view: {key: value for key, value in label.items() if key != "target"}
             for view, label in (("normal", normal), ("withoutTowers", masked))
         },
-        "chosen": searched.index(chosen),
+        "chosen": searched.index(chosen) if chosen in searched else None,
         "projection": {
             "method": "differentiable_card_partition",
             "sourceCandidates": len(available),

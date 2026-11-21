@@ -1,17 +1,20 @@
 """One generation: frozen self-play games, then one learner update saved as a new candidate."""
 
+import json
 import shutil
 import uuid
 
 import numpy as np
 
+from ..sim.rules import LIVE_DECK
 from ..training.coverage import card_coverage
 from ..training.deck_practice import schedule_deck
 from ..training.evaluation import pfsp_weights
 from ..training.parallel import play_frozen_game
 from ..training.pressure import schedule_pressure
+from ..training.public_value import fit
 from ..training.replay import replay_coverage, replay_samples
-from ..training.selfplay import SELFPLAY, setup_for
+from ..training.selfplay import SELFPLAY, live_setup, setup_for
 from ..training.storage import read_episode, replay_path, seed_for, write_episode, write_replay
 from .champions import checkpoint, store
 
@@ -36,17 +39,22 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
     jobs = []
     every = SELFPLAY.pressureEvery
     for index in indexes:
-        scripted = index % every == every - 1
+        slot_in_cycle = index % every
+        cycle = (version - 1) * ((settings["games"] + every - 1) // every) + index // every
+        scripted = slot_in_cycle == every - 1
+        learner_mirror = slot_in_cycle == 1 and not scripted
         rates = [(row["wins"] + 1) / (row["games"] + 2) for row in league["opponents"]]
         selected = (
             None
-            if index % 2 == 0 or scripted
+            if slot_in_cycle == 0 or learner_mirror or scripted
             else league["opponents"][int(rng.choice(len(rates), p=pfsp_weights(rates)))]
         )
         opponent = league["champion"] if selected is None else selected["version"]
         game_id = f"train-{version}-{index}-{uuid.uuid4().hex[:8]}"
         setup = setup_for(game_id)
         seat = (version + index // (every if scripted else 2)) % 2
+        if learner_mirror:
+            seat = cycle % 2
         if scripted:
             slot = index // every
             setup = schedule_pressure(
@@ -55,12 +63,31 @@ def scheduled(root, league, rules, version, indexes, settings, rng):
                 seat,
                 (version + slot // 2) % 2 == 1,
             )
-        elif index % every == 0:
+        elif slot_in_cycle == 0:
             slots = (settings["games"] + every - 1) // every
             setup = schedule_deck(setup, (version - 1) * slots + index // every, seat)
+        elif learner_mirror:
+            setup = live_setup(seed_for("training-mirror", game_id))
+        elif slot_in_cycle == 2 and cycle % 2 == 0:
+            exercise = cycle // 2
+            seat = exercise % 2
+            setup = {
+                **setup,
+                "decks": [LIVE_DECK, LIVE_DECK],
+                "practiceDeck": LIVE_DECK,
+                "practiceLead": "Graveyard",
+                "offensePractice": True,
+                "offenseOpening": {
+                    "seat": seat,
+                    "right": bool((exercise // 4 + seat) % 2),
+                    "knight": exercise // 2 % 2 == 0,
+                },
+            }
         jobs.append(
             {
                 "current": str(checkpoint(root, league["champion"])),
+                "collector": str(checkpoint(root, league["learner"])) if learner_mirror else None,
+                "labelReference": str(checkpoint(root, league["learner"])),
                 "opponent": None if scripted else str(checkpoint(root, opponent)),
                 "selected": None if selected is None else opponent,
                 "index": index,
@@ -83,11 +110,15 @@ def selfplay(control, workers, root, league, rules, version, settings):
     """
     games, played = settings["games"], []
     rng = np.random.default_rng(seed_for("opponent_pool", rules["id"], version))
+    parent = json.loads((checkpoint(root, league["learner"]) / "metadata.json").read_bytes())
+    leaf_weights = parent.get("training", {}).get("publicLeaf", {}).get("weights")
     for begin in range(0, games, workers.count):
         if control.stopped():
             break
         indexes = range(begin, min(games, begin + workers.count))
         jobs = scheduled(root, league, rules, version, indexes, settings, rng)
+        for job in jobs:
+            job["leafWeights"] = leaf_weights
         control.report(
             {
                 "phase": "selfplay",
@@ -139,6 +170,7 @@ def learn(control, root, league, rules, learner, version):
         history, rules["id"], max_samples=REPLAY_SAMPLES, seed=seed_for("replay", version)
     )
     training = learner.train(samples, seed=seed_for("optimizer", version))
+    training["publicLeaf"] = fit(history, rules["id"])
     training["optimizerCoverage"] = replay_coverage(samples)
     if not training["updated"]:
         raise ValueError("Completed self-play data did not change policy weights")

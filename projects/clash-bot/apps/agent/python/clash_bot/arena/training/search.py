@@ -18,9 +18,11 @@ from ..sim.candidates import legal_actions
 from ..sim.clock import DECISION_TICKS, PLANNING_TICKS, advance_window, opponent_offsets
 from ..sim.engine import Arena
 from ..sim.rules import CARDS, ROLLOUT_CLOCK, SPEC, Action, command, digest, rules_identity
-from .bandits import Node, exploration_prior, pick, root_priors, root_subset
+from .attack_comparison import compare
+from .bandits import Node, exploration_prior, pick, retain_reference, root_priors, root_subset
 from .defense_rollout import comparisons
 from .improvement import improved_policy
+from .public_value import estimate
 from .rollout import frozen_move, rollout_choices
 
 
@@ -28,15 +30,6 @@ def terminal(state, team):
     if not state["game_over"]:
         return None
     return 0.0 if state["winner"] == 2 else 1.0 if state["winner"] == team else -1.0
-
-
-def position_value(observation):
-    state, team = observation["state"], observation["team"]
-    own, enemy = state["players"][team], state["players"][1 - team]
-    hp = lambda player: (
-        sum(h / max(1, m) for h, m in zip(player["tower_hp"], player["tower_max_hp"])) / 3
-    )
-    return float(np.tanh((hp(own) - hp(enemy)) * 2 + (own["crowns"] - enemy["crowns"]) * 0.6))
 
 
 class Workspace:
@@ -93,7 +86,7 @@ def reconstruct(sampler, workspace, particles, beliefs=None):
     return worlds, attempts, continued, conditioning
 
 
-def first_ply(world, team, root_actions, root_prior):
+def first_ply(world, team, root_actions, root_prior, leaf_weights):
     """One sampled world's root choices, shared by every simulation that starts from it.
 
     Returns (value, None) when there are no choices, otherwise (None, (actions, priors)).
@@ -112,19 +105,19 @@ def first_ply(world, team, root_actions, root_prior):
         )
     ]
     if not own_actions:
-        return position_value(world.observe(team, include_legal=False)), None
+        return estimate(world.observe(team, include_legal=False), leaf_weights), None
     priors = np.array([root_prior[root_actions.index(action)] for action in own_actions])
     priors /= priors.sum()
     return None, (own_actions, priors)
 
 
-def leaf_value(world, team, policy):
+def leaf_value(world, team, policy, leaf_weights):
     own = world.observe(team, include_legal=False)
     value = terminal(own["state"], team)
     if value is not None:
         return value
-    _, estimate = policy.predict(own, legal_actions(world.battle, team, world.state()))
-    return 0.75 * estimate + 0.25 * position_value(own)
+    _, network_value = policy.predict(own, legal_actions(world.battle, team, world.state()))
+    return 0.25 * network_value + 0.75 * estimate(own, leaf_weights)
 
 
 def search(
@@ -143,6 +136,9 @@ def search(
     observed_prior=None,
     focus=(),
     defense=None,
+    leaf_weights=None,
+    reference_action=None,
+    attack_baseline=None,
 ):
     """Search the best `root_size` of the observation's candidates.
 
@@ -179,6 +175,7 @@ def search(
     keep = root_subset(
         candidates, prior, rng, min(root_size, max(2, simulations // 2)), noise, focus
     )
+    keep = retain_reference(candidates, prior, keep, reference_action)
     root_actions = [candidates[index] for index in keep]
     root_prior = root_priors(candidates, prior, keep)
     learning_prior = root_prior.copy()
@@ -194,7 +191,7 @@ def search(
         index = simulation % len(worlds)
         world.adopt(snapshots[index], worlds[index])
         if index not in roots:
-            roots[index] = first_ply(world, team, root_actions, root_prior)
+            roots[index] = first_ply(world, team, root_actions, root_prior, leaf_weights)
         node, path = root, []
         for ply in range(depth):
             if ply == 0:
@@ -221,7 +218,7 @@ def search(
             reached = max(reached, ply + 1)
             node = node.children.setdefault(branch, Node())
         else:
-            value = leaf_value(world, team, policy)
+            value = leaf_value(world, team, policy, leaf_weights)
         elapsed_ticks = max(elapsed_ticks, world.state()["tick"] - root_tick)
         for visited, ours in reversed(path):
             visited.visits += 1
@@ -240,12 +237,20 @@ def search(
         if defense is not None and exact and len(worlds) >= 2
         else None
     )
+    attack_comparison = None
+    if attack_baseline is not None and exact and len(worlds) >= 2:
+        policies = [opponent_policy or policy] * 2
+        policies[team] = policy
+        attack_comparison = compare(
+            world, worlds, snapshots, offsets, candidates, attack_baseline, team, policies, seed
+        )
     return {
         "actions": root_actions,
         **improved_policy(learning_prior, values, visits),
         "prior": learning_prior.tolist(),
         "visits": visits.tolist(),
         "values": values.tolist(),
+        "leafModel": "validated_public_outcome" if leaf_weights is not None else "tower_baseline",
         "simulations": int(visits.sum()),
         "elapsedMs": (time.perf_counter() - began) * 1000,
         "beliefHypotheses": [sum(map(len, pool.values())) for pool in sampler.openings],
@@ -269,4 +274,5 @@ def search(
         "opponentOffsetsTicks": offsets,
         "focusedFamilies": list(focus),
         "defenseComparison": defense_comparison,
+        "attackComparison": attack_comparison,
     }

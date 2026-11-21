@@ -21,6 +21,43 @@ from clash_bot.arena.training.selfplay import (
 
 
 class MatchedObservationTest(unittest.TestCase):
+    def test_learner_collects_its_deployed_board_while_champion_labels_it(self):
+        teacher = Policy(seed=3, metadata={"version": 0})
+        student = Policy(seed=71, metadata={"version": 5})
+        setup = live_setup(3)
+        deployed = play_game(
+            [teacher, student],
+            "training-student-trajectory",
+            "r",
+            setup=setup,
+            simulations=0,
+            training=False,
+            max_ticks=340,
+        )
+        from clash_bot.arena.training.search import search
+        from clash_bot.arena.training.targets import training_rows
+
+        with (
+            patch("clash_bot.arena.training.selfplay.search", wraps=search) as expert,
+            patch("clash_bot.arena.training.selfplay.training_rows", wraps=training_rows) as labels,
+        ):
+            collected = play_game(
+                [teacher, teacher],
+                "training-student-trajectory",
+                "r",
+                setup=setup,
+                collector=(1, student),
+                label_reference=student,
+                simulations=2,
+                depth=1,
+                max_ticks=340,
+            )
+        self.assertEqual(collected["publicHistory"], deployed["publicHistory"])
+        self.assertGreater(len(labels.call_args_list), 0)
+        self.assertTrue(all(c.args[1] is teacher for c in expert.call_args_list))
+        self.assertTrue(all(c.args[4] is student for c in labels.call_args_list))
+        self.assertEqual([p["version"] for p in collected["policies"]], [0, 5])
+
     def test_no_improvement_teacher_replays_the_deployed_policy_without_a_second_screen_sample(
         self,
     ):

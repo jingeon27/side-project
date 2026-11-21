@@ -12,9 +12,9 @@
       "--depth",
       "8",
       "--pairs",
-      "16",
+      "32",
       "--evaluate-every",
-      "2"
+      "4"
     ],
     "niceness": 10,
     "restartDelaysSeconds": [60, 300, 1800],

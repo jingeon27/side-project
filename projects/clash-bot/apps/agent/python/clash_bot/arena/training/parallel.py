@@ -23,6 +23,11 @@ def play_frozen_game(job):
         orders = practice_orders(setup, job["seat"], job["id"]) if "practiceDeck" in setup else None
     policies = [opponent, opponent]
     policies[job["seat"]] = current
+    reference_path = job.get("labelReference", job["current"])
+    reference = (
+        current if reference_path == job["current"] else Policy.load(reference_path, job["rulesID"])
+    )
+    collector = (job["seat"], reference) if job.get("collector") else None
     return play_game(
         policies,
         job["id"],
@@ -31,6 +36,9 @@ def play_frozen_game(job):
         depth=job["depth"],
         setup=setup,
         initial_orders=orders,
+        collector=collector,
+        leaf_weights=job.get("leafWeights"),
+        label_reference=reference,
     )
 
 

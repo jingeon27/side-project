@@ -37,6 +37,8 @@ def card_coverage(episodes):
                 rows[name]["compared"] += 1
                 rows[name]["multiplePlacements"] += int(count > 1)
         for event in game["publicHistory"]:
+            if event["tick"] < game["trainingStartTick"]:
+                continue
             for play in event["plays"]:
                 card, team = play["action"][0], play["team"]
                 scripted = game["policies"][team].get("scripted")

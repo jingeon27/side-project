@@ -59,7 +59,7 @@ def initialize(root, rules, parent=None):
     if initial.exists():
         Policy.load(initial, rules["id"])  # Recover a crash before first pointer publication.
     else:
-        inherited = parent_champion(parent)
+        inherited, spent = parent_champion(parent)
         if inherited:
             policy = Policy(
                 weights=inherited.weights, metadata={"version": 0, "rulesID": rules["id"]}
@@ -67,7 +67,10 @@ def initialize(root, rules, parent=None):
             source = {
                 key: inherited.metadata[key] for key in ("rulesID", "version", "weightsSHA256")
             }
-            policy.save(initial, {"role": "inherited_champion", "inheritedFrom": source})
+            policy.save(
+                initial,
+                {"role": "inherited_champion", "inheritedFrom": source, "evaluationOffset": spent},
+            )
         else:
             policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
             policy.save(initial, {"role": "initial_random_policy"})
@@ -95,15 +98,23 @@ def store(root, league):
 
 
 def parent_champion(parent):
-    """The previous league's champion when that league used this policy format, else None."""
+    """Carry verified weights and spent tests. Changing training must not refund alpha."""
     if parent is None:
-        return None
+        return None, 0
     parent = Path(parent)
     if not parent.name.endswith(f"-{LEAGUE_KEY}") or not (parent / "league.json").exists():
-        return None
+        return None, 0
     league = LeagueState.model_validate_json((parent / "league.json").read_text())
     # Verifies format, rule set, network layout and checksum; a broken parent stops the start.
-    return Policy.load(checkpoint(parent, league.champion), league.rulesID)
+    return (
+        Policy.load(checkpoint(parent, league.champion), league.rulesID),
+        evaluation_offset(parent) + league.evaluations,
+    )
+
+
+def evaluation_offset(root):
+    metadata = json.loads((checkpoint(root, 0) / "metadata.json").read_bytes())
+    return metadata.get("evaluationOffset", 0)
 
 
 def catalogue_of(root):

@@ -12,6 +12,7 @@ PHASES = {
     "training": "학습 중",
     "trained": "학습 완료",
     "evaluating": "후보 평가 중",
+    "confirming": "같은 후보 추가 평가 중",
     "evaluated": "평가 완료",
     "opening_audit": "초반 대기 검증 중",
     "benchmarking": "기준 봇과 평가 중",

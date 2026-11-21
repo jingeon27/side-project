@@ -87,7 +87,9 @@ class LeagueTest(unittest.TestCase):
             league = initialize(previous, old)
             champion = Policy(seed=9, metadata={"version": 1, "rulesID": old["id"]})
             champion.save(checkpoint(previous, 1), {"role": "qualified_champion"})
-            (previous / "league.json").write_text(json.dumps({**league, "champion": 1}))
+            (previous / "league.json").write_text(
+                json.dumps({**league, "champion": 1, "evaluations": 44})
+            )
 
             root = Path(directory) / f"new-{LEAGUE_KEY}"
             started = initialize(root, RULES, parent=previous)
@@ -96,6 +98,8 @@ class LeagueTest(unittest.TestCase):
             start = Policy.load(checkpoint(root, 0), RULES["id"])
             self.assertEqual(start.checksum(), champion.checksum())
             self.assertEqual(start.metadata["role"], "inherited_champion")
+            self.assertEqual(start.metadata["evaluationOffset"], 44)
+            self.assertEqual(started["evaluations"], 0)
             self.assertEqual(
                 start.metadata["inheritedFrom"],
                 {"rulesID": old["id"], "version": 1, "weightsSHA256": champion.checksum()},
@@ -131,7 +135,7 @@ class LeagueTest(unittest.TestCase):
             league = initialize(root, RULES)
             promoted = Policy(seed=5, metadata={"version": 1, "rulesID": RULES["id"]})
             promoted.save(checkpoint(root, 1), {"role": "qualified_champion"})
-            publish_champion(root, {**league, "champion": 1})
+            publish_champion(root, {**league, "champion": 1, "evaluations": 44})
             live = json.loads((root / "champion-policy.json").read_text())
             self.assertEqual(live["weightsSHA256"], promoted.checksum())
             self.assertEqual(live["version"], 1)
@@ -171,10 +175,17 @@ class CompactReplayTest(unittest.TestCase):
             "target": [1.0] + [0.0] * (len(actions) - 1),
             "targetWithoutTowers": [1.0] + [0.0] * (len(actions) - 1),
             "defensePairs": [],
+            "attackPairs": [],
             "outcome": -1,
             "value": -0.7,
         }
-        episode = {"completed": True, "rulesID": RULES["id"], "samples": [sample]}
+        episode = {
+            "completed": True,
+            "gameID": "train-fixture",
+            "rulesID": RULES["id"],
+            "leafExamples": [],
+            "samples": [sample],
+        }
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "episodes" / "game.json.gz"
             write_episode(path, episode)

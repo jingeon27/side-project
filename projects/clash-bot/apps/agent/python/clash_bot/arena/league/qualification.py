@@ -7,21 +7,18 @@ from ..training.activity import opening_audit
 from ..training.benchmark import benchmark
 from ..training.evaluation import evaluate
 from ..training.parallel import play_frozen_pair
-from .champions import checkpoint, publish_champion, store
+from .champions import checkpoint, evaluation_offset, publish_champion, store
+
+CONFIRMATION_PAIRS = 128
 
 
-def qualify(control, workers, root, league, rules, learner, pairs):
-    """Evaluate the learner against the champion; a pass moves the pointer and the live file."""
+def assess(
+    control, workers, root, league, rules, learner, champion, frozen, pairs, confirmation_of=None
+):
     version = league["learner"]
-    champion = Policy.load(checkpoint(root, league["champion"]), rules["id"])
-    number = league["evaluations"]
+    number = evaluation_offset(root) + league["evaluations"]
     league["evaluations"] += 1
     store(root, league)  # Spend before play, including crashes.
-    frozen = {
-        "challenger": str(checkpoint(root, version)),
-        "champion": str(checkpoint(root, league["champion"])),
-        "rulesID": rules["id"],
-    }
     result = evaluate(
         learner,
         champion,
@@ -61,7 +58,58 @@ def qualify(control, workers, root, league, rules, learner, pairs):
                 if audit["complete"]
                 else "interrupted_opening_audit",
             }
+    if confirmation_of is not None:
+        result["confirmationOf"] = confirmation_of
     atomic_json(root / "evaluations" / f"v{version:06d}-e{number:06d}.json", result)
+    return number, result
+
+
+def promising(result):
+    if not result["complete"] or not result["openingAudit"]["passed"]:
+        return False
+    gate = result["gate"]
+    return (
+        gate["reason"] == "insufficient_evidence_of_improvement"
+        and gate["score"] >= 0.55
+        and all(result["matchupStrata"][s]["score"] >= 0.5 for s in ("liveMirror", "mixedDeck"))
+    )
+
+
+def qualify(control, workers, root, league, rules, learner, pairs):
+    """Only a fully qualified attempt publishes the frozen challenger."""
+    version = league["learner"]
+    champion = Policy.load(checkpoint(root, league["champion"]), rules["id"])
+    frozen = {
+        "challenger": str(checkpoint(root, version)),
+        "champion": str(checkpoint(root, league["champion"])),
+        "rulesID": rules["id"],
+    }
+    number, result = assess(control, workers, root, league, rules, learner, champion, frozen, pairs)
+    if (
+        not result["gate"]["passed"]
+        and 16 <= pairs < CONFIRMATION_PAIRS
+        and promising(result)
+        and not control.stopped()
+    ):
+        control.report(
+            {
+                "phase": "confirming",
+                "screeningEvaluation": number,
+                "confirmationPairs": CONFIRMATION_PAIRS,
+            }
+        )
+        _, result = assess(
+            control,
+            workers,
+            root,
+            league,
+            rules,
+            learner,
+            champion,
+            frozen,
+            CONFIRMATION_PAIRS,
+            confirmation_of=number,
+        )
     if result["gate"]["passed"]:
         league["champion"] = version
         if not any(row["version"] == version for row in league["opponents"]):
