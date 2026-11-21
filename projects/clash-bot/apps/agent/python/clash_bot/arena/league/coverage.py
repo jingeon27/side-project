@@ -6,7 +6,7 @@ from pathlib import Path
 
 from clash_bot.files import atomic_json
 
-from ..sim.rules import CARD_ID, CARDS, DECKS, rules_identity
+from ..sim.rules import CARD_ID, CARDS, DECKS, LIVE_DECK, rules_identity
 from ..training.coverage import card_coverage
 from ..training.form_usage import form_counts
 from ..training.storage import read_episode
@@ -28,6 +28,53 @@ def feedback_counts(samples):
             counts["preferredWait"] += preferred == -1
             counts["preferredGraveyard"] += preferred == CARD_ID["Graveyard"]
     return counts
+
+
+def mirror_plays(games):
+    roles = ("challenger", "champion")
+    used = {role: Counter(dict.fromkeys((*DECKS[LIVE_DECK].cards, "ability"), 0)) for role in roles}
+    openings = {role: Counter() for role in roles}
+    mirror_games = 0
+    for game in games:
+        if game["setup"]["decks"] != [LIVE_DECK, LIVE_DECK]:
+            continue
+        mirror_games += 1
+        opened = set()
+        for event in game["publicHistory"]:
+            for play in event["plays"]:
+                card = play["action"][0]
+                if card == -1:
+                    continue
+                role = "challenger" if play["team"] == game["challengerSeat"] else "champion"
+                name = "ability" if card == -2 else CARDS[card]
+                used[role][name] += 1
+                if card >= 0 and role not in opened:
+                    openings[role][name] += 1
+                    opened.add(role)
+    return {"games": mirror_games, "executed": used, "openingCards": openings}
+
+
+def latest_evaluation(root, rules):
+    """Read frozen holdout receipts so practiced choices can be checked in actual matches."""
+    for path in sorted((root / "evaluations").glob("v*-e*.json"), reverse=True):
+        record = json.loads(path.read_bytes())
+        if (
+            not record["complete"]
+            or record["rulesID"] != rules
+            or record["seedDomain"] != "holdout"
+            or record["trainingGamesIncluded"]
+        ):
+            continue
+        return {
+            "evaluation": record["generation"],
+            "challenger": record["challenger"]["version"],
+            "champion": record["champion"]["version"],
+            "games": len(record["games"]),
+            "gate": record["gate"],
+            "matchupStrata": record["matchupStrata"],
+            "mirror": mirror_plays(record["games"]),
+        }
+    return None
 
 
 def training_coverage(root, league):
@@ -89,6 +136,7 @@ def training_coverage(root, league):
         "formExecutions": forms,
         "controlUnitFrames": dict(control_frames),
         "trainingFeedback": dict(feedback),
+        "latestEvaluation": latest_evaluation(root, rules),
         "cardsByStage": summary,
         "cards": {card: dict(v) for card, v in counts.items()},
     }
