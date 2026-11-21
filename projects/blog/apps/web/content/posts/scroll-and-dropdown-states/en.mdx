@@ -138,13 +138,11 @@ The test waits for the final response before scrolling to the end again. An abse
 
 ### Recover from failed requests
 
-I tested initial-query and next-page failures separately. Both recover by fetching the first page again, so the final card count alone cannot distinguish them. The tests record which offset failed, then check that scrolling can fetch the next page after retry.
+I tested failures at two offsets. When offset `0` fails, the test clicks Retry on the error screen and checks that the first 24 cards appear. When offset `24` fails, the test starts with 24 cards, scrolls to trigger the error, and retries. It then scrolls again to check that the next page loads.
 
 When a next-page request fails, the 24 cards already displayed are replaced by the error screen. The list reads from an Apollo `QueryRef`. A failed `fetchMore` puts that reference into an error state, which activates the list's error boundary.
 
 The TanStack Query test checks that existing pages remain after a next-page failure. Keeping them in Photo Contest would require handling that error separately from failure of the whole list and offering retry below it. The expected result still needs to match the product's intended behavior.
-
-The preparation differs too. The initial-error case starts without cards, while the next-page case first loads 24 cards and then scrolls. Both establish that the error is visible before retrying. Error and retry belong together here because the test checks recovery from that specific failed query.
 
 A retry that also fails could have its own test. Two consecutive failure responses would let it check that the error and Retry button remain available.
 
