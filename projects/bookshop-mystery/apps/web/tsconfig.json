@@ -1,0 +1,12 @@
+{
+  "extends": "@side/config/typescript",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "types": ["vite/client"],
+    "noEmit": true
+  },
+  "include": ["src"]
+}

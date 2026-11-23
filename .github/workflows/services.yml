@@ -27,6 +27,7 @@ jobs:
       game-feedback: ${{ steps.select.outputs.game-feedback }}
       photo-contest: ${{ steps.select.outputs.photo-contest }}
       story-studio: ${{ steps.select.outputs.story-studio }}
+      bookshop-mystery: ${{ steps.select.outputs.bookshop-mystery }}
       production: ${{ steps.select.outputs.production }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -63,6 +64,22 @@ jobs:
         with:
           name: story-studio-browser-traces
           path: projects/story-studio/apps/web/test-results/
+  bookshop-verify:
+    name: Dawn Records web checks
+    needs: selection
+    if: needs.selection.outputs['bookshop-mystery'] == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      - run: yarn workspace @side/bookshop-mystery typecheck
+      - run: yarn workspace @bookshop-mystery/web exec playwright install --with-deps chromium
+      - run: yarn workspace @bookshop-mystery/web test:e2e
   shared-contract:
     name: Shared container contract
     needs: selection
@@ -551,6 +568,7 @@ jobs:
     needs:
       - selection
       - story-studio
+      - bookshop-verify
       - shared-contract
       - gf-verify
       - gf-integration
@@ -574,6 +592,50 @@ jobs:
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
         run: node deploy/shared-instance/scripts/service-ci.ts verify
+  bookshop-pages:
+    name: Dawn Records Cloudflare Pages
+    needs: [selection, verification]
+    if: always() && !cancelled() && needs.verification.result == 'success' && needs.selection.outputs.production == 'true' && needs.selection.outputs['bookshop-mystery'] == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: dawn-records-pages-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with: { node-version: '24' }
+      - name: Skip a superseded Pages deployment
+        id: latest
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: bash deploy/shared-instance/scripts/ci-superseded.sh bookshop-mystery main
+      - name: Install the locked workspace dependencies
+        if: steps.latest.outputs.deploy == 'true'
+        run: |
+          npm install --global @yarnpkg/cli-dist@4.17.0 --force
+          yarn install --immutable
+      - name: Build static files
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          VITE_AMPLITUDE_API_KEY: ${{ secrets.BOOKSHOP_MYSTERY_AMPLITUDE_API_KEY }}
+          VITE_AMPLITUDE_STAGE: production
+        run: yarn workspace @bookshop-mystery/web build
+      - name: Deploy to Cloudflare Pages
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.BOOKSHOP_MYSTERY_CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BOOKSHOP_MYSTERY_CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          : "${CLOUDFLARE_ACCOUNT_ID:?Set BOOKSHOP_MYSTERY_CLOUDFLARE_ACCOUNT_ID}"
+          : "${CLOUDFLARE_API_TOKEN:?Set BOOKSHOP_MYSTERY_CLOUDFLARE_API_TOKEN}"
+          pages_cwd=$(mktemp -d)
+          yarn workspace @bookshop-mystery/web exec wrangler pages deploy \
+            "$GITHUB_WORKSPACE/projects/bookshop-mystery/apps/web/dist" \
+            --cwd "$pages_cwd" --project-name dawn-records --branch main \
+            --commit-hash "$GITHUB_SHA" --commit-dirty=false
   # verification은 선택하지 않은 서비스의 skipped 검사 뒤에도 실행된다. 상태 함수가 없는 if는 암묵적 success()가
   # 그 skipped까지 이어받아 한 서비스만 바뀐 운영 실행의 발행·배포를 건너뛰므로, 앞 job의 성공을 직접 확인한다.
   gf-publish:

@@ -1,0 +1,557 @@
+{
+  "parts": [
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [0, -0.19, 0],
+      "scale": [11, 0.34, 9],
+      "color": "#423126",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "plane",
+      "position": [0, -0.015, 0],
+      "scale": [11, 9, 1],
+      "color": "#ffffff",
+      "texture": "walnut",
+      "rotation": [-90, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [0, 1.3, -4.25],
+      "scale": [13, 3, 0.15],
+      "color": "#272725",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [0, 0.31, -4.15],
+      "scale": [13, 0.22, 0.09],
+      "color": "#171a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [-3.1, 0.03, -2.7],
+      "scale": [2.3, 0.1, 1.48],
+      "color": "#302720",
+      "texture": "",
+      "rotation": [0, 9, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "plane",
+      "position": [-3.1, 0.087, -2.7],
+      "scale": [2.2, 1.41, 1],
+      "color": "#ffffff",
+      "texture": "closed",
+      "rotation": [-90, 9, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [2.3, 0.67, -3.7],
+      "scale": [0.27, 1.3, 0.42],
+      "color": "#483934",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [2.6199999999999997, 0.67, -3.7],
+      "scale": [0.27, 1.47, 0.42],
+      "color": "#4c584d",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [2.94, 0.67, -3.7],
+      "scale": [0.27, 1.6400000000000001, 0.42],
+      "color": "#776248",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [3.26, 0.67, -3.7],
+      "scale": [0.27, 1.3, 0.42],
+      "color": "#4c3931",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [3.58, 0.67, -3.7],
+      "scale": [0.27, 1.47, 0.42],
+      "color": "#6c6450",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "box",
+      "position": [3.9, 0.67, -3.7],
+      "scale": [0.27, 1.6400000000000001, 0.42],
+      "color": "#3c4a44",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "cylinder",
+      "position": [-3.58, 0.055, 0.73],
+      "scale": [0.62, 0.11, 0.62],
+      "color": "#302c20",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "cylinder",
+      "position": [-3.58, 0.89, 0.73],
+      "scale": [0.053, 1.7, 0.053],
+      "color": "#927551",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "cylinder",
+      "position": [-3.58, 1.67, 0.73],
+      "scale": [0.65, 0.25, 0.65],
+      "color": "#49432d",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "desk",
+      "shape": "cylinder",
+      "position": [-3.58, 1.54, 0.73],
+      "scale": [0.54, 0.035, 0.54],
+      "color": "#eac47b",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "receipt",
+      "shape": "box",
+      "position": [0, 0.013, 0],
+      "scale": [1.22, 0.024, 1.98],
+      "color": "#d9c79d",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "receipt",
+      "shape": "plane",
+      "position": [0, 0.028, 0],
+      "scale": [1.22, 1.98, 1],
+      "color": "#ffffff",
+      "texture": "receipt",
+      "rotation": [-90, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0, 0.24, 0],
+      "scale": [1.85, 0.49, 1.49],
+      "color": "#262c2a",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0, 0.52, 0],
+      "scale": [1.82, 0.27, 1.46],
+      "color": "#3f4a48",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0, 0.659, -0.24],
+      "scale": [1.63, 0.11, 0.82],
+      "color": "#3f4a48",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0, 0.691, 0.196],
+      "scale": [1.35, 0.016, 0.086],
+      "color": "#121717",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0, 0.42, 0.745],
+      "scale": [1.61, 0.11, 0.035],
+      "color": "#191c19",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [-0.6, 0.44, 0.771],
+      "scale": [0.062, 0.028, 0.014],
+      "color": "#a4af74",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "cylinder",
+      "position": [-0.72, -0.045, -0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "cylinder",
+      "position": [-0.72, -0.045, 0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "cylinder",
+      "position": [0.72, -0.045, -0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "cylinder",
+      "position": [0.72, -0.045, 0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "plane",
+      "position": [0, -0.052, 0],
+      "scale": [1.1, 0.55, 1],
+      "color": "#ffffff",
+      "texture": "serial-a",
+      "rotation": [90, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [-0.52, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [-0.375, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [-0.23000000000000004, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [-0.08500000000000008, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0.05999999999999994, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0.20499999999999996, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0.34999999999999987, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-a",
+      "shape": "box",
+      "position": [0.4949999999999999, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0, 0.24, 0],
+      "scale": [1.85, 0.49, 1.49],
+      "color": "#262c2a",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0, 0.52, 0],
+      "scale": [1.82, 0.27, 1.46],
+      "color": "#676359",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0, 0.659, -0.24],
+      "scale": [1.63, 0.11, 0.82],
+      "color": "#676359",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0, 0.691, 0.196],
+      "scale": [1.35, 0.016, 0.086],
+      "color": "#121717",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0, 0.42, 0.745],
+      "scale": [1.61, 0.11, 0.035],
+      "color": "#191c19",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [-0.6, 0.44, 0.771],
+      "scale": [0.062, 0.028, 0.014],
+      "color": "#a4af74",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "cylinder",
+      "position": [-0.72, -0.045, -0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "cylinder",
+      "position": [-0.72, -0.045, 0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "cylinder",
+      "position": [0.72, -0.045, -0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "cylinder",
+      "position": [0.72, -0.045, 0.51],
+      "scale": [0.19, 0.08, 0.19],
+      "color": "#151a18",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "plane",
+      "position": [0, -0.052, 0],
+      "scale": [1.1, 0.55, 1],
+      "color": "#ffffff",
+      "texture": "serial-b",
+      "rotation": [90, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [-0.52, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [-0.375, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [-0.23000000000000004, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [-0.08500000000000008, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0.05999999999999994, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0.20499999999999996, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0.34999999999999987, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "printer-b",
+      "shape": "box",
+      "position": [0.4949999999999999, 0.719, -0.45],
+      "scale": [0.091, 0.005, 0.045],
+      "color": "#32352f",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "record",
+      "shape": "box",
+      "position": [0, 0.04, 0],
+      "scale": [1.38, 0.08, 1.72],
+      "color": "#bbab88",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "record",
+      "shape": "box",
+      "position": [0, 0.085, 0],
+      "scale": [1.43, 0.04, 1.76],
+      "color": "#6e5035",
+      "texture": "",
+      "rotation": [0, 0, 0]
+    },
+    {
+      "group": "record",
+      "shape": "plane",
+      "position": [0, 0.108, 0],
+      "scale": [1.4, 1.73, 1],
+      "color": "#ffffff",
+      "texture": "ledger",
+      "rotation": [-90, 0, 0]
+    }
+  ],
+  "objects": [
+    {
+      "id": "receipt",
+      "position": [0.25, 0.02, 0.72],
+      "angle": -11
+    },
+    {
+      "id": "printer-a",
+      "position": [-1.54, 0, -1.13],
+      "angle": 16
+    },
+    {
+      "id": "printer-b",
+      "position": [0.85, 0, -1.57],
+      "angle": -11
+    },
+    {
+      "id": "record",
+      "position": [2.25, 0, 0.36],
+      "angle": 12
+    }
+  ]
+}

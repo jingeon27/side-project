@@ -1,0 +1,37 @@
+{
+  "name": "@bookshop-mystery/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc7 -p tsconfig.json",
+    "test:e2e": "playwright test",
+    "capture:browser": "node scripts/capture.mjs",
+    "capture:handoff": "node scripts/capture-handoff.mjs",
+    "preview:cloudflare": "wrangler dev",
+    "deploy:cloudflare": "wrangler deploy"
+  },
+  "dependencies": {
+    "@amplitude/analytics-browser": "catalog:",
+    "@base-ui/react": "catalog:",
+    "@side/design-system": "workspace:*",
+    "@use-funnel/core": "0.1.0",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "0.180.0",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "vite": "catalog:",
+    "wrangler": "4.163.0"
+  }
+}

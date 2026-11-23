@@ -55,23 +55,32 @@ describe('service CI selection and release gate', () => {
   });
 
   it.each([
-    ['projects/game-feedback/apps/web/src/page.tsx', true, false, false],
-    ['projects/photo-contest/apps/api/src/post.ts', false, true, false],
-    ['packages/design-system/src/button.tsx', true, true, true],
-    ['deploy/shared-instance/scripts/service.sh', true, true, true],
-    ['.github/workflows/services.yml', true, true, true],
-    ['yarn.lock', true, true, true],
-    ['projects/blog/package.json', false, false, false],
-    ['README.md', false, false, false],
-    ['projects/story-studio/.env.example', false, false, true],
-  ])('%s selects only affected services', (file, gameFeedback, photoContest, storyStudio) => {
-    expect(selectServices({ files: [file] })).toEqual({ gameFeedback, photoContest, storyStudio });
-  });
+    ['projects/game-feedback/apps/web/src/page.tsx', true, false, false, false],
+    ['projects/photo-contest/apps/api/src/post.ts', false, true, false, false],
+    ['packages/design-system/src/button.tsx', true, true, true, true],
+    ['deploy/shared-instance/scripts/service.sh', true, true, true, true],
+    ['.github/workflows/services.yml', true, true, true, true],
+    ['yarn.lock', true, true, true, true],
+    ['projects/blog/package.json', false, false, false, false],
+    ['README.md', false, false, false, false],
+    ['projects/story-studio/.env.example', false, false, true, false],
+    ['projects/bookshop-mystery/apps/web/index.html', false, false, false, true],
+  ])(
+    '%s selects only affected services',
+    (file, gameFeedback, photoContest, storyStudio, bookshopMystery) => {
+      expect(selectServices({ files: [file] })).toEqual({
+        gameFeedback,
+        photoContest,
+        storyStudio,
+        bookshopMystery,
+      });
+    },
+  );
 
   it('a move between projects selects both the deleted and added paths', () => {
     expect(
       selectServices({ files: ['projects/game-feedback/old.ts', 'projects/photo-contest/new.ts'] }),
-    ).toEqual({ gameFeedback: true, photoContest: true, storyStudio: false });
+    ).toEqual({ gameFeedback: true, photoContest: true, storyStudio: false, bookshopMystery: false });
   });
 
   it('an unknown base or manual run selects every service', () => {
@@ -79,11 +88,12 @@ describe('service CI selection and release gate', () => {
       gameFeedback: true,
       photoContest: true,
       storyStudio: true,
+      bookshopMystery: true,
     });
   });
 
   it('a selected failure, cancellation, skip or missing result blocks publication', () => {
-    const selection = { gameFeedback: true, photoContest: true, storyStudio: false };
+    const selection = { gameFeedback: true, photoContest: true, storyStudio: false, bookshopMystery: false };
     const success = Object.fromEntries(requiredChecks(selection).map((name) => [name, 'success']));
     expect(failedChecks({ selection, results: success })).toEqual([]);
     for (const result of ['failure', 'cancelled', 'skipped', 'undefined']) {
@@ -95,7 +105,7 @@ describe('service CI selection and release gate', () => {
   });
 
   it('unaffected service checks may be skipped but shared image verification is required', () => {
-    const selection = { gameFeedback: true, photoContest: false, storyStudio: false };
+    const selection = { gameFeedback: true, photoContest: false, storyStudio: false, bookshopMystery: false };
     const results = Object.fromEntries(requiredChecks(selection).map((name) => [name, 'success']));
     expect(failedChecks({ selection, results: { ...results, 'pc-verify': 'skipped' } })).toEqual([]);
     expect(failedChecks({ selection, results: { ...results, 'shared-contract': 'skipped' } })).toEqual([
@@ -119,7 +129,7 @@ describe('service CI selection and release gate', () => {
     expect(result.stderr).toContain('selection');
   });
   it('로컬 창작 스튜디오만 선택되면 해당 검사의 실패와 생략을 차단한다', () => {
-    const selection = { gameFeedback: false, photoContest: false, storyStudio: true };
+    const selection = { gameFeedback: false, photoContest: false, storyStudio: true, bookshopMystery: false };
     expect(requiredChecks(selection)).toEqual(['selection', 'story-studio']);
     expect(failedChecks({ selection, results: { selection: 'success', 'story-studio': 'skipped' } })).toEqual(
       ['story-studio'],
@@ -127,5 +137,14 @@ describe('service CI selection and release gate', () => {
     expect(failedChecks({ selection, results: { selection: 'success', 'story-studio': 'success' } })).toEqual(
       [],
     );
+  });
+  it('새벽 기록실 웹 검사가 실패하거나 생략되면 Pages 배포를 차단한다', () => {
+    const selection = { gameFeedback: false, photoContest: false, storyStudio: false, bookshopMystery: true };
+    expect(requiredChecks(selection)).toEqual(['selection', 'bookshop-verify']);
+    for (const result of ['failure', 'cancelled', 'skipped']) {
+      expect(
+        failedChecks({ selection, results: { selection: 'success', 'bookshop-verify': result } }),
+      ).toEqual(['bookshop-verify']);
+    }
   });
 });
