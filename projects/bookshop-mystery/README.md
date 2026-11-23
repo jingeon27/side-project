@@ -41,17 +41,20 @@ Create one original photorealistic cinematic still for a landscape hero of a Kor
 
 </details>
 
-## Cloudflare Workers 배포
+## Cloudflare Pages 배포
 
-`apps/web/wrangler.jsonc`는 `dist`를 정적 자산으로 제공한다. `dist/bundles`의 해시 파일은 1년간 캐시한다. `/unity/viewer.json`이 없을 때는 HTTP 404로 응답하며 화면이 WebGL 조사대로 전환된다.
+`main`에 조사 앱이나 공용 의존성 변경이 들어가면 GitHub Actions의 **Services**가 타입 검사와 브라우저 테스트를 통과한 버전의 정적 `dist`를 Cloudflare Pages의 `dawn-records` 프로젝트에 올린다. 운영 주소는 첫 배포 후 `https://dawn-records.pages.dev/`에서 열린다. [Cloudflare Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)
+
+GitHub Actions의 변수 `BOOKSHOP_MYSTERY_CLOUDFLARE_ACCOUNT_ID`에 대상 계정을 넣고, 시크릿 `BOOKSHOP_MYSTERY_CLOUDFLARE_API_TOKEN`에는 해당 계정의 **Cloudflare Pages Edit** 토큰을 등록한다. 운영 Amplitude 키는 시크릿 `BOOKSHOP_MYSTERY_AMPLITUDE_API_KEY`에서 가져온다. [Cloudflare Pages CI용 인증](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
+
+로컬에서는 `apps/web/wrangler.jsonc`로 같은 빌드를 미리 확인할 수 있다. 해시가 붙은 번들은 1년간 캐시한다. `/unity/viewer.json`이 없으면 HTTP 404와 함께 조사 화면이 브라우저 WebGL로 전환된다.
 
 ```sh
 yarn workspace @bookshop-mystery/web build
 yarn workspace @bookshop-mystery/web preview:cloudflare --ip 127.0.0.1 --port 43736
-yarn workspace @bookshop-mystery/web deploy:cloudflare --dry-run
 ```
 
-운영 배포에는 Cloudflare 계정 인증이 필요하다. 인증 후 `yarn workspace @bookshop-mystery/web deploy:cloudflare`를 실행한다. `VITE_AMPLITUDE_API_KEY`에는 브라우저 SDK 키를 환경변수나 Git에서 무시하는 `apps/web/.env.production.local`로 제공한다. [Cloudflare 정적 자산 설정](https://developers.cloudflare.com/workers/static-assets/)
+로컬 Amplitude 검증에서는 `VITE_AMPLITUDE_API_KEY`와 `VITE_AMPLITUDE_STAGE=preview`를 환경변수나 Git에서 무시하는 `apps/web/.env.production.local`로 제공한다.
 
 ## Unity 촬영과 웹 빌드
 
