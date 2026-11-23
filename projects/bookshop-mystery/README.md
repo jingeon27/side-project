@@ -108,6 +108,8 @@ python production/shorts_pipeline.py connect production/.work/google-oauth-clien
 python production/shorts_pipeline.py upload production/output/youtube/02-printers
 ```
 
+OAuth 앱의 게시 상태가 **테스트 중**이면 갱신 토큰은 7일 후 만료된다. 그때 `connect`를 다시 실행해 업로드할 채널을 선택하고 권한을 승인한다. [Google OAuth 갱신 토큰 만료](https://developers.google.com/identity/protocols/oauth2#expiration)
+
 기본 공개 범위는 `private`이다. `--privacy`로 공개 범위를 선택한다. `prepare --upload`는 생성 직후 연결된 채널에 전송한다. Story Studio 제작 환경에서 `--render`를 함께 사용하면 렌더링도 앞에 연결된다. 성공 시 영상 링크를 넣은 `promotion-with-link.md`가 생긴다. 네트워크가 끊기면 같은 폴더에 `upload`를 다시 실행해 이어서 전송한다. 세션이 만료된 경우 Studio에 영상이 있는지 확인한 뒤 새 패키지를 사용한다. [YouTube 재개 업로드 프로토콜](https://developers.google.com/youtube/data/guides/using_resumable_upload_protocol)
 
 ## 유입과 조사 결과

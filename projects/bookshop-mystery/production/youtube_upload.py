@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from requests.exceptions import RequestException
 
 SCOPE = "https://www.googleapis.com/auth/youtube.upload"
+AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/videos"
 PRIVACY = ("private", "unlisted", "public")
 RETRYABLE = {429, 500, 502, 503, 504}
@@ -36,8 +37,10 @@ def connect_channel(client_path, credentials_path):
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     client_config = json.loads(client_path.read_text(encoding="utf-8"))
-    if "installed" not in client_config:
+    desktop_client = client_config.get("installed") if isinstance(client_config, dict) else None
+    if not isinstance(desktop_client, dict):
         raise ValueError("Google Cloud에서 받은 데스크톱 앱 OAuth 클라이언트 JSON을 사용하세요.")
+    desktop_client["auth_uri"] = AUTHORIZATION_URL
     flow = InstalledAppFlow.from_client_config(client_config, [SCOPE], autogenerate_code_verifier=True)
     credentials = flow.run_local_server(
         host="127.0.0.1",
@@ -46,7 +49,7 @@ def connect_channel(client_path, credentials_path):
         success_message="채널 연결이 완료되었습니다. 터미널로 돌아가세요.",
         timeout_seconds=300,
         access_type="offline",
-        prompt="consent",
+        prompt="select_account consent",
     )
     if not credentials.refresh_token:
         raise ValueError("YouTube 갱신 토큰을 받지 못했습니다. 채널 연결을 다시 시도하세요.")

@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from requests.exceptions import ConnectionError
 
 from shorts_pipeline import FILES, prepare_package, read_episode
-from youtube_upload import STATE_FILE, file_hash, upload_package
+from youtube_upload import STATE_FILE, connect_channel, file_hash, upload_package
 
 LOCATION = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&upload_id=test"
 VIDEO = {"id": "TEST_videox", "status": {"privacyStatus": "private"}}
@@ -37,6 +37,27 @@ class YouTubePipelineTest(unittest.TestCase):
         }), encoding="utf-8")
         self.channel = Mock()
         self.channel.post.return_value = response(200, {"Location": LOCATION})
+
+    @patch("google_auth_oauthlib.flow.InstalledAppFlow.from_client_config")
+    def test_connect_requests_the_upload_scope_for_an_explicitly_selected_account(self, make_flow):
+        client = self.root / "client.json"
+        desktop_client = {"client_id": "test-client", "auth_uri": "https://accounts.google.com/o/oauth2/auth"}
+        client.write_text(json.dumps({"installed": desktop_client}), encoding="utf-8")
+        destination = self.root / "credentials.json"
+        run_server = make_flow.return_value.run_local_server
+        credentials = run_server.return_value
+        credentials.refresh_token = "test-refresh"
+        credentials.to_json.return_value = json.dumps({"refresh_token": "test-refresh"})
+
+        connect_channel(client, destination)
+
+        make_flow.assert_called_once_with(
+            {"installed": {**desktop_client, "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth"}},
+            ["https://www.googleapis.com/auth/youtube.upload"],
+            autogenerate_code_verifier=True,
+        )
+        self.assertEqual(run_server.call_args.kwargs["prompt"], "select_account consent")
+        self.assertEqual(stat.S_IMODE(destination.stat().st_mode), 0o600)
 
     def test_prepare_generates_upload_metadata_and_channel_copy(self):
         source = self.root / "rendered"
