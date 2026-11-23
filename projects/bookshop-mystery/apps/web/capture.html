@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="UTF-8" />
+  <title>제작용 장면 촬영</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #211c15;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+  <canvas id="scene"></canvas>
+  <script type="module">
+    import { front } from '/src/case-file.ts';
+    import { createDeskRenderer } from '/src/desk-renderer.ts';
+
+    const canvas = document.getElementById('scene');
+    const render = await createDeskRenderer(canvas);
+    window.drawFrame = ({ shot, width, height, position, mode }) => {
+      render.resize(width, height);
+      if (mode === 'back') render.draw(shot, { ...front, underside: true });
+      if (mode === 'front') render.draw(shot, front);
+      if (mode === 'capture') render.capture(shot, position, true);
+      if (mode === 'turn') render.turnPrinter(shot, position);
+      return canvas.toDataURL(mode === 'turn' ? 'image/jpeg' : 'image/png', 0.93).split(',')[1];
+    };
+  </script>
+</html>

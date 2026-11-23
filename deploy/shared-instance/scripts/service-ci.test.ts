@@ -134,6 +134,7 @@ describe('숨김 경로의 검사 선택과 배포 생략', () => {
     ['projects/game-feedback/.env.example', 'game-feedback', true, false],
     ['projects/game-feedback/apps/web/.npmrc', 'game-feedback', true, false],
     ['projects/photo-contest/.env.example', 'photo-contest', false, true],
+    ['projects/bookshop-mystery/apps/web/.env.example', 'bookshop-mystery', false, false],
     ['packages/design-system/.storybook/main.ts', 'game-feedback', true, true],
     ['projects/game-feedback-copy/.env.example', 'game-feedback', false, false],
     ['packages-old/.storybook/main.ts', 'game-feedback', false, false],
@@ -146,9 +147,13 @@ describe('숨김 경로의 검사 선택과 배포 생략', () => {
       writeFileSync(join(state.directory, '.event.json'), JSON.stringify({ before: release }));
 
       expect(run(process.execPath, [policy, 'select'], release)).toBe(
-        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nstory-studio=${file.startsWith('packages/')}\nproduction=true`,
+        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nstory-studio=${file.startsWith('packages/')}\nbookshop-mystery=${file.startsWith('packages/') || file.startsWith('projects/bookshop-mystery/')}\nproduction=true`,
       );
-      const selected = service === 'game-feedback' ? gameFeedback : photoContest;
+      const selected = {
+        'game-feedback': gameFeedback,
+        'photo-contest': photoContest,
+        'bookshop-mystery': true,
+      }[service];
       expect(run('bash', [superseded, service, 'main'], release)).toBe(`deploy=${!selected}`);
       if (selected) expect(run('bash', [superseded, service, 'main'], latest)).toBe('deploy=true');
     },
@@ -165,7 +170,9 @@ describe('운영 발행·배포 job 조건', () => {
       [...jobs].filter(([, job]) => job.needs.includes(gate)).flatMap(([name]) => [name, ...after(name)]);
     const gated = [...new Set(after('verification'))];
 
-    expect(gated).toEqual(expect.arrayContaining(['gf-publish', 'gf-deploy', 'pc-publish', 'pc-deploy']));
+    expect(gated).toEqual(
+      expect.arrayContaining(['gf-publish', 'gf-deploy', 'pc-publish', 'pc-deploy', 'bookshop-pages']),
+    );
     for (const name of gated) {
       const job = jobs.get(name);
       expect(job?.terms, name).toContain('!cancelled()');
@@ -235,6 +242,7 @@ describe('필수 검사로 지정하는 집계 job', () => {
                 'game-feedback': 'false',
                 'photo-contest': 'false',
                 'story-studio': 'false',
+                'bookshop-mystery': 'false',
                 production: 'false',
               },
             },

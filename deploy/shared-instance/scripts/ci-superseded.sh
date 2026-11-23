@@ -5,7 +5,7 @@
 set -euo pipefail
 SERVICE=${1:-}
 case "$SERVICE" in
-  photo-contest | game-feedback)
+  photo-contest | game-feedback | bookshop-mystery)
     policy="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/service-ci.ts"
     # macOS의 Bash 3에서도 같은 정책을 읽는다. 경로에는 공백이 없다.
     paths=()
@@ -13,7 +13,7 @@ case "$SERVICE" in
     [[ ${#paths[@]} -gt 0 ]]
     ;;
   *)
-    echo 'Usage: ci-superseded.sh <photo-contest|game-feedback> <branch | --paths>' >&2
+    echo 'Usage: ci-superseded.sh <photo-contest|game-feedback|bookshop-mystery> <branch | --paths>' >&2
     exit 2
     ;;
 esac

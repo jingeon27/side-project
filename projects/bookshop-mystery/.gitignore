@@ -1,0 +1,10 @@
+apps/unity/Library/
+apps/unity/Logs/
+apps/unity/Temp/
+apps/unity/UserSettings/
+apps/unity/obj/
+apps/web/public/unity/
+production/output/
+production/.work/
+production/__pycache__/
+apps/web/.wrangler/

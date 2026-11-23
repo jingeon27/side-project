@@ -1,0 +1,14 @@
+{
+  "name": "@side/bookshop-mystery",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "yarn workspace @bookshop-mystery/web dev",
+    "build": "yarn workspace @bookshop-mystery/web build",
+    "typecheck": "yarn workspace @bookshop-mystery/web typecheck",
+    "capture:browser": "yarn workspace @bookshop-mystery/web capture:browser",
+    "capture:handoff": "yarn workspace @bookshop-mystery/web capture:handoff",
+    "shorts:youtube": "python3 production/shorts_pipeline.py",
+    "test:youtube": "python3 -m unittest discover -s production -p 'test_*.py'"
+  }
+}
