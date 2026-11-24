@@ -10,6 +10,7 @@ import sys
 from .edition import DAILY_TARGET, archive, build_atomic, read_episode, run_day, seoul_date
 from .render import render_film
 from .verify import verify_movie
+from . import youtube
 
 
 def main():
@@ -25,12 +26,15 @@ def main():
     preview = cmds.add_parser('render', help='한 편을 지정한 새 폴더에 렌더')
     preview.add_argument('folder', type=Path)
     preview.add_argument('output', type=Path)
+    youtube.options(cmds.add_parser('youtube', help='YouTube 채널 연결과 완성본 업로드'), seoul_date())
     args = parser.parse_args()
     home = Path(os.environ.get('SHORTS_HOME', Path.home() / 'Movies/실베다큐')).expanduser().resolve()
     (home / 'inbox').mkdir(parents=True, exist_ok=True)
     data = Path(os.environ['STORY_STUDIO_DATA_DIR'])
     render = partial(render_film, data=data, cache=home / '.voices')
-    if args.command == 'verify':
+    if args.command == 'youtube':
+        result = youtube.run(home, args)
+    elif args.command == 'verify':
         result = verify_movie(args.movie)
     elif args.command == 'status':
         history = archive(home)
