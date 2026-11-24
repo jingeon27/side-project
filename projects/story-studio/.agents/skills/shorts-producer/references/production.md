@@ -13,6 +13,7 @@
 | `shorts daily [소재폴더 …]` | 한국 날짜 기준 최대 두 편. 폴더를 생략하면 inbox의 준비된 에피소드를 확인 |
 | `shorts render 소재폴더 새출력폴더` | 편집된 한 편의 별도 시안. 원본과 일일 제작 이력을 보존 |
 | `shorts verify short.mp4` | 실제 디코딩으로 1080×1920, 30fps, 900프레임, 30초, H.264/AAC 확인 |
+| `shorts youtube status` | 로컬에 연결된 YouTube 채널과 자동 업로드 설정 확인 |
 
 저장 위치는 기본 `~/Movies/실베다큐`이며 `YYYY-MM-DD/01-소재명`과 `02-소재명`이 하루 완성본이다. 실패하면 원고가 inbox에 남는다. 실행이 겹쳐도 아카이브에는 하나의 실베 글이 한 번만 들어간다.
 
@@ -29,4 +30,18 @@
 - `theme`의 `vermilion`은 콘트라베이스·셰이커 중심, `cobalt`는 업라이트 피아노 중심이다. `tonic`은 36~72 사이의 MIDI 음 번호다. `music`에는 0초부터 순서대로 `at`, `mode`, 편집용 `note`를 지정한다. `tap`, `pulse`, `steps`, `silence`, `bell`, `resolve`가 서로 다른 연주를 만든다. `silence`는 다음 큐까지 반주를 비운다. [악기 녹음 출처](../../../../apps/engine/src/story_studio/shorts/sounds/SOURCES.md)
 - 결과 폴더에는 `short.mp4`, 표지, 자막, `timeline.md`, `publish.md`, 실제 프레임·화자·음악 시점을 기록한 `edit.json`, 컷 PNG, 분리된 `narration.wav`와 `music.wav`, 최종 `mix.wav`가 들어간다. 편집표에는 댓글 게시 위치와 캡처가 연결된다.
 
-검색 색인은 갱신이 늦을 수 있다. 사용자가 저장한 목록이나 직접 준 원문 주소도 좋은 출발점이다. 디시 본문·댓글·회원 사진을 자동 복제하는 경로와 유튜브 계정 연결은 이 제작 명령의 입력에 들어가지 않는다. [디시 이용약관](https://nstatic.dcinside.com/dc/w/policy/policy_index.html) · [유튜브 수익 창출 정책](https://support.google.com/youtube/answer/1311392?hl=ko)
+검색 색인은 갱신이 늦을 수 있다. 사용자가 저장한 목록이나 직접 준 원문 주소도 좋은 출발점이다. 디시 본문·댓글·회원 사진의 수집·재사용에는 원자료의 이용 조건이 적용된다. [디시 이용약관](https://nstatic.dcinside.com/dc/w/policy/policy_index.html) · [유튜브 수익 창출 정책](https://support.google.com/youtube/answer/1311392?hl=ko)
+
+## 유튜브 자동 업로드
+
+1. 채널 소유자의 Google 계정으로 [Google Cloud 개인용 설정](https://console.cloud.google.com/auth/overview/personal)을 연다. 프로젝트에서 데스크톱 앱 OAuth 클라이언트를 만든다. AI 에이전트용 선택 항목이 보이면 지정한다. 같은 프로젝트에 [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)를 사용 설정하고 클라이언트 JSON을 Mac에 내려받는다. 개인용으로 설정하면 External 테스트 모드의 7일 토큰 만료를 피할 수 있다. [Google Auth Platform 안내](https://support.google.com/cloud/answer/15544987?hl=ko)
+2. 이 Mac의 터미널에서 `"$HOME/Movies/실베다큐/shorts" youtube connect "/내려받은/클라이언트.json" --auto private`을 실행한다. 브라우저에서 대상 YouTube 채널의 권한을 승인하고, 터미널에 표시된 채널과 자동 업로드 조건을 확인한다. `private`는 비공개, `unlisted`는 일부 공개, `public`은 공개다.
+3. 활성화한 서울 날짜부터 일일 제작 작업이 검증한 완성본을 하루 최대 두 편 올린다. `shorts youtube upload --auto --date YYYY-MM-DD`로 같은 날짜를 다시 실행하면 전송 중이던 영상은 이어받고 성공한 영상은 건너뛴다. 한 편만 선택하려면 `--episode 소재-slug`를 추가한다. 날짜별 제작함의 `episode.json`에서 업로드 제목, 설명, 출처, 태그를 수정할 수 있다. 영상은 일반 시청자용으로 표시하며, 아동용을 설정하려면 `shorts youtube auto on --privacy private --made-for-kids`를 사용한다.
+
+수동 전송은 `shorts youtube upload --date YYYY-MM-DD [--episode 소재-slug] [--privacy private|unlisted|public]`에서 대상과 설명을 확인하고 실행한다. 최종 전송 응답을 잃고 세션이 만료되면 [YouTube Studio](https://studio.youtube.com/)에서 해당 영상의 업로드 여부를 확인한다. Studio에 영상이 없으면 그 편만 수동으로 선택해 `--restart`를 붙인다. [YouTube의 이어 올리기 규격](https://developers.google.com/youtube/data/guides/using_resumable_upload_protocol)
+
+`shorts youtube auto off`로 자동 전송을 끈다. `shorts youtube disconnect`는 Google 권한 철회를 요청하고 Mac에 보관한 토큰, 채널 ID, 영상 ID, 세션 주소를 지운다. 재연결 시 편별 로컬 전송 상태로 중복을 막는다. 영상 공개 범위 변경과 영상 삭제는 [YouTube Studio](https://studio.youtube.com/)에서 할 수 있다.
+
+### 유튜브 연결의 데이터 처리
+
+Story Studio는 Google의 `youtube.upload` 권한으로 MP4와 제목·설명·태그·공개 범위를 전송하고, `youtube.readonly` 권한으로 요청이 대상 채널에 대한 것인지 확인한다. OAuth 갱신 토큰과 전송 상태는 이 Mac 사용자만 읽을 수 있는 `SHORTS_HOME/.youtube`에 저장한다. 업로드 응답의 영상 ID와 세션 주소는 작업 재시도에 사용하며, 다음 CLI 실행에서 28일이 지난 응답 정보는 지운다. 실행 측정 키가 설정되면 연결·업로드 등 명령의 종류와 성공 여부를 Amplitude에 보낸다. 승인은 언제든 [Google 계정 권한 관리](https://myaccount.google.com/permissions)에서 철회할 수 있다. 승인을 취소하고 로컬 연결 데이터를 삭제하려면 `shorts youtube disconnect`를 사용한다. [YouTube 서비스 약관](https://www.youtube.com/t/terms) · [Google 개인정보처리방침](https://policies.google.com/privacy)
