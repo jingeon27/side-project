@@ -86,7 +86,8 @@ def promo_art(episode, destination, font_path):
         if installed is None:
             raise ValueError("홍보 이미지에 사용할 한국어 글꼴을 --font로 지정하세요.")
         family, index = installed
-    with Image.open(ASSET) as source:
+    art = ASSET.parent / episode.get("coverImage", ASSET.name)
+    with Image.open(art) as source:
         board = ImageOps.fit(source.convert("RGB"), (1080, 1080), centering=(0.66, 0.5))
     mask = Image.new("L", (1, 1080))
     mask.putdata([
