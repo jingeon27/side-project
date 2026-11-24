@@ -33,9 +33,16 @@ def name(card):
     return NAMES[card] if card >= 0 else None
 
 
-def tower_fractions(player):
+def tower_fractions(player, team=0):
     hp = np.asarray(player["tower_hp"], np.float64)
-    return [round(float(value), 3) for value in hp / np.maximum(1, player["tower_max_hp"])]
+    normal = [round(float(value), 3) for value in hp / np.maximum(1, player["tower_max_hp"])]
+    return [normal[0], normal[2], normal[1]] if team else normal
+
+
+def fallen_princesses(player, team):
+    return sorted(
+        i if team == 0 else 1 - i for i, hp in enumerate(player["tower_hp"][1:3]) if hp == 0
+    )
 
 
 def tile(x, y, team):
@@ -201,5 +208,9 @@ def decision_context(observation, actions, types=None):
         "skill": "ready" if own["abilities"] and own["abilities"][0][0] else "not_visible",
         "actions": [action_row(index, action, team, own) for index, action in enumerate(actions)],
         "clock": state["tick"] / 20,
-        "towers": {"own": tower_fractions(own), "enemy": tower_fractions(enemy)},
+        "towers": {"own": tower_fractions(own, team), "enemy": tower_fractions(enemy, team)},
+        "fallenTowers": {
+            "own": fallen_princesses(own, team),
+            "enemy": fallen_princesses(enemy, team),
+        },
     }

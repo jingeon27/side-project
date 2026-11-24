@@ -1,5 +1,37 @@
 [
   {
+    "name": "Firecracker recoil can move her outside the side of a rolling barrel",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 6.75,
+      "y": 10,
+      "own": [{ "kind": "knight", "x": 4, "y": 14, "variant": "base", "velocity": [0, 0], "hp": null }],
+      "enemy": [
+        { "kind": "firecracker", "x": 8, "y": 14, "variant": "base", "velocity": [0, 0], "hp": null }
+      ],
+      "enemyCycle": [],
+      "enemyMana": { "min": 0, "max": 8 }
+    },
+    "expected": { "damage": [0, 215], "trajectoryDamage": 0, "opportunity": 0 }
+  },
+  {
+    "name": "The projectile side plus the Firecracker collision radius covers a recoil edge",
+    "input": {
+      "card": "barbarian_barrel",
+      "kind": "card",
+      "x": 7.25,
+      "y": 10,
+      "own": [{ "kind": "knight", "x": 4, "y": 14, "variant": "base", "velocity": [0, 0], "hp": null }],
+      "enemy": [
+        { "kind": "firecracker", "x": 8, "y": 14, "variant": "base", "velocity": [0, 0], "hp": null }
+      ],
+      "enemyCycle": [],
+      "enemyMana": { "min": 0, "max": 8 }
+    },
+    "expected": { "trajectoryDamage": 215, "opportunity": 1 }
+  },
+  {
     "name": "spawn kills a stationary observed skeleton",
     "input": {
       "card": "ice_wizard",

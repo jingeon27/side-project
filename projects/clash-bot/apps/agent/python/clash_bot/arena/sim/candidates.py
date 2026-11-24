@@ -7,7 +7,7 @@ from functools import cache
 import royalesim
 
 from ..catalogue import current
-from ..placement import placement_grid, placement_tiles
+from ..placement import placement_grid, placement_tiles, pocket_tiles
 from .rules import CARD_ID, CARDS, FIELDS, FRIENDLY_SPELLS, TILE, Action, canonical
 
 
@@ -33,6 +33,8 @@ def threat_and_targets(state, team):
 def candidate_actions(battle, team, tiles, state=None):
     state = state or json.loads(battle.state_json())
     player = state["players"][team]
+    enemy_hp = state["players"][1 - team]["tower_hp"]
+    fallen = [i if team == 0 else 1 - i for i, hp in enumerate(enemy_hp[1:3]) if hp == 0]
     threat, targets = threat_and_targets(state, team)
     graves = [
         point
@@ -52,10 +54,13 @@ def candidate_actions(battle, team, tiles, state=None):
         placement_card = player["mirror_target"] if CARDS[card] == "Mirror" else card
         if placement_card < 0:
             continue
+        placement = placements()[placement_card]
         anchors = graves if placement_card == CARD_ID["Poison"] else []
+        if placement in ("troop", "ranged_troop"):
+            anchors = pocket_tiles(fallen)
         if CARDS[placement_card] in FRIENDLY_SPELLS:
             anchors = [*allies, (3.5, 6.5), (14.5, 6.5)]
-        for x, y in [*anchors, *tiles(placements()[placement_card], threat, targets)]:
+        for x, y in [*anchors, *tiles(placement, threat, targets)]:
             x, y = canonical(x, y, team)
             action = Action(card, round(x * TILE), round(y * TILE))
             if action in seen:

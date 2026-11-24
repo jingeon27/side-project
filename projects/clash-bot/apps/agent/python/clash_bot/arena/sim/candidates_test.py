@@ -103,7 +103,7 @@ class CandidateTest(unittest.TestCase):
         self.assertEqual(tiles(arena, 0, 5), lanes)
         self.assertEqual(
             tiles(arena, 0, 3),
-            [(3.5, 25.5), (2.7, 25), (3.5, 24.5), (14.5, 25.5), (15.3, 25), (14.5, 24.5)],
+            [(3.5, 25.5), (2.5, 25.5), (3.5, 24.5), (14.5, 25.5), (15.5, 25.5), (14.5, 24.5)],
         )
         self.assertEqual(
             tiles(arena, 0, 2), [(9, 9), (7, 12), (11, 12), (3.5, 10), (14.5, 10), (9, 6)]

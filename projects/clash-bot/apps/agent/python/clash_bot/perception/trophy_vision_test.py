@@ -6,6 +6,8 @@ from pydantic import ValidationError
 
 from clash_bot.perception.trophy_vision import (
     INPUT,
+    clear_siege_identity,
+    identity,
     side_from_pixels,
     suppress_duplicates,
 )
@@ -37,3 +39,20 @@ class TrophyVisionTest(unittest.TestCase):
             {"kind": "goblin", "side": "red", "x": 43, "y": 414, "confidence": 0.85},
         ]
         self.assertEqual(len(suppress_duplicates(rows)), 2)
+
+    def test_low_score_siege_identity_needs_hostile_color_and_clear_class_margin(self):
+        box = [25, 280, 76, 347]
+        scores = {"royal-giant": 0.29, "royal-giant-evolution": 0.2, "giant": 0.1}
+        self.assertTrue(
+            clear_siege_identity("royal_giant", "royal-giant", scores, box, "red", {"red": 35})
+        )
+        self.assertFalse(
+            clear_siege_identity("royal_giant", "royal-giant", scores, box, "blue", {"red": 35})
+        )
+        scores["giant"] = 0.23
+        self.assertFalse(
+            clear_siege_identity("royal_giant", "royal-giant", scores, box, "red", {"red": 35})
+        )
+
+    def test_mother_witch_uses_the_policy_catalogue_key(self):
+        self.assertEqual(identity("mother-witch"), "witch_mother")

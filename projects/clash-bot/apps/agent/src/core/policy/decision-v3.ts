@@ -5,7 +5,9 @@ import { z } from 'zod';
 
 import type { BattleSituation, FieldUnit } from '../battle/battle-state.ts';
 import { CARD_INFO, type CardId } from '../cards.ts';
+import type { FallenPrincessTowers } from '../deployment.ts';
 import { tilePoint } from '../geometry.ts';
+import { possiblePrincessTowers } from '../placement/combat-motion.ts';
 import { combatBody, forecastEffect, forecastText, type CombatBody } from '../placement/combat-projection.ts';
 import type { Profile } from '../profile.ts';
 import type { ActionOption } from './actions.ts';
@@ -55,6 +57,7 @@ export type DecisionContext = {
   // 문자열로 직렬화하지 않는 빠른 정책 입력이다. 대전 시작 뒤 초, 화면에서 읽은 타워 체력 비율.
   clock?: number;
   towers?: { own: number[]; enemy: number[] };
+  fallenTowers?: FallenPrincessTowers;
 };
 
 export function decisionContext(
@@ -121,7 +124,7 @@ export type PublicDecisionContext = Omit<DecisionContext, 'elixir'> & {
   elixir: number | { min: number; max: number };
 };
 export function decisionProjection(
-  context: Pick<DecisionContext, 'bodies' | 'enemyCycle' | 'enemyElixir'>,
+  context: Pick<DecisionContext, 'bodies' | 'enemyCycle' | 'enemyElixir' | 'towers' | 'fallenTowers'>,
   action: DecisionAction,
 ) {
   return forecastEffect({
@@ -130,6 +133,7 @@ export function decisionProjection(
     x: action[4],
     y: action[5],
     own: context.bodies.own,
+    ownTowers: possiblePrincessTowers(context.towers?.own, context.fallenTowers?.own),
     enemy: context.bodies.enemy,
     enemyCycle: context.enemyCycle ?? [],
     enemyMana: context.enemyElixir,

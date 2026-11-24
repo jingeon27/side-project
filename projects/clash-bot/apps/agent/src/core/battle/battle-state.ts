@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
+import { isCatalogueBody } from '../card-catalogue.ts';
 import { cardIdSchema, type CardId } from '../cards.ts';
 import type { Point } from '../geometry.ts';
-import { UNIT_KINDS } from '../knowledge.ts';
 import { CardCycle } from './card-cycle.ts';
 import { ElixirLedger } from './elixir-ledger.ts';
 import {
@@ -20,12 +20,13 @@ export const healthSchema = z
     source: z.literal('visible_hp_bar'),
   })
   .refine((value) => value.minFraction <= value.maxFraction, 'HP fraction interval is reversed');
+export const fieldBodyNameSchema = z.string().refine(isCatalogueBody);
 const unitSchema = z.object({
   card: cardIdSchema.nullable(),
   x: z.number(),
   y: z.number(),
   confidence: z.number().min(0).max(1),
-  kind: z.enum(UNIT_KINDS).optional(),
+  kind: fieldBodyNameSchema.optional(),
   variant: z.enum(['base', 'evolution', 'hero', 'unknown']).optional(),
   trackId: z.string().optional(),
   health: healthSchema.optional(),

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { z } from 'zod';
 
+import { bodyVector, CARD_CATALOGUE, isCatalogueBody } from './card-catalogue.ts';
+
 // Level 11 reference potential, not measured live-screen damage or future hits.
 export const PLACEMENT_EFFECTS = z
   .strictObject({
@@ -40,6 +42,12 @@ const parameters = z
     turnUncertaintyTilesPerSecond: z.number(),
     stepSeconds: z.number(),
     ice_wizard: z.object({ deploySeconds: z.number() }),
+    firecrackerRecoil: z.strictObject({
+      distanceTiles: z.number().positive(),
+      attackRangeTiles: z.number().positive(),
+      windupSeconds: z.number().positive(),
+      lateralBodyPadding: z.number().nonnegative(),
+    }),
     barbarian_barrel: z.object({
       deploySeconds: z.number(),
       speed: z.number(),
@@ -98,3 +106,16 @@ export const COMBAT = {
 };
 export const referenceBodyHp = (kind: string) => bodySchema.parse(COMBAT.bodies[kind]).hp;
 export const referenceBodySpeed = (kind: string) => bodySchema.parse(COMBAT.bodies[kind]).speed;
+
+export function combatBodyReference(kind: string) {
+  if (Object.hasOwn(COMBAT.bodies, kind)) return COMBAT.bodies[kind];
+  if (kind === '?' || !isCatalogueBody(kind)) return undefined;
+  const traits = bodyVector(kind);
+  const features = CARD_CATALOGUE.bodyFeatures;
+  if ((traits[features.indexOf('effect')] ?? 0) > 0) return undefined;
+  return {
+    ground: traits[features.indexOf('flying')] === 0,
+    speed: 2 * (traits[features.indexOf('speed')] ?? 0),
+    hp: CARD_CATALOGUE.bodyHitpoints[kind],
+  };
+}

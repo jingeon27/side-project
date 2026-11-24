@@ -34,7 +34,7 @@ def placement_tiles(placement, threat, targets):
             points = [
                 (x + dx, y)
                 for x in (3.5, 14.5)
-                for dx, y in ((0, 25.5), (-0.8 if x < 9 else 0.8, 25), (0, 24.5))
+                for dx, y in ((0, 25.5), (-1 if x < 9 else 1, 25.5), (0, 24.5))
             ]
         case "area_spell":
             points = ([threat] if threat else []) + targets[:3] + ENEMY_TOWERS
@@ -66,6 +66,12 @@ def placement_tiles(placement, threat, targets):
 # Every own-side tile for a deployed card, and every second tile of the field for a spell, on
 # top of the placement rule's tiles. The policy ranks them all; search takes its best few.
 OWN_GRID = [(x + 0.5, y + 0.5) for y in range(15) for x in range(18)]
+
+
+def pocket_tiles(fallen):
+    return [(x, y) for i, x in enumerate((7.5, 10.5)) if i in fallen for y in (18.5, 19.5)]
+
+
 FIELD_GRID = [(x, y) for y in range(1, 32, 2) for x in range(1, 18, 2)]
 
 

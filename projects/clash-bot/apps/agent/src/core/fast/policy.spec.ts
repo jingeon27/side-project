@@ -103,9 +103,10 @@ describe('loading an exported policy', () => {
       expect(policy.version).toBe(4);
       const decision = policy.predict(fixture.cases[0]!.context);
       const bias = fastActionBias(fixture.cases[0]!.context);
-      decision.logits.forEach((logit, index) =>
-        expect(logit).toBeCloseTo(fixture.cases[0]!.logits[index]! + bias[index]!, 4),
-      );
+      decision.logits.forEach((logit, index) => {
+        expect(decision.probabilities[index]).toBeGreaterThan(0);
+        expect(logit).toBeCloseTo(fixture.cases[0]!.logits[index]! + bias[index]!, 4);
+      });
       await writeFile(path, JSON.stringify(exported('0'.repeat(64))));
       await expect(FastPolicy.load(path)).rejects.toThrow('체크섬');
       await writeFile(path, JSON.stringify(exported(fixture.deterministicWeightsSHA256, 'c'.repeat(64))));
@@ -119,6 +120,34 @@ describe('loading an exported policy', () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+});
+
+it('lets learned scores choose a legal Graveyard despite advice to wait for Mother Witch', () => {
+  const sample = fixture.cases[0]!.context;
+  const context: DecisionContext = {
+    ...sample,
+    enemyCycle: [['witch_mother', 0, 4]],
+    actions: sample.actions.slice(0, 2),
+  };
+  const initial = Object.fromEntries(
+    Object.entries(SHAPES).map(([name, shape]) => [
+      name,
+      new Float64Array(shape.reduce((size, dimension) => size * dimension, 1)),
+    ]),
+  ) as FastWeights;
+  const advised = new FastPolicy(initial, null).predict(context);
+  expect(advised.choice).toBe(0);
+  expect(advised.probabilities[1]).toBeGreaterThan(0);
+  const learned: FastWeights = {
+    ...initial,
+    'query.bias': Float64Array.from({ length: FAST_POLICY.attention }, (_, index) =>
+      index === 0 ? 2 * Math.sqrt(FAST_POLICY.attention) : 0,
+    ),
+    'action.weight': Float64Array.from({ length: initial['action.weight'].length }, (_, index) =>
+      index === 2 ? 1 : 0,
+    ),
+  };
+  expect(new FastPolicy(learned, null).predict(context).choice).toBe(1);
 });
 
 describe('cards and bodies read through the catalogue, not one slot per name', () => {

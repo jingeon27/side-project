@@ -9,8 +9,9 @@ from clash_bot.arena.training.rollout import rollout_choices
 
 
 class UniformPolicy:
-    def predict(self, observation, actions):
-        return np.full(len(actions), 1 / len(actions)), 0
+    def predict(self, observation, actions, placement_bias):
+        prior = np.exp(placement_bias)
+        return prior / prior.sum(), 0
 
 
 class RolloutProbabilityTest(unittest.TestCase):
@@ -20,9 +21,10 @@ class RolloutProbabilityTest(unittest.TestCase):
         dense = dense_actions(arena.battle, 0)
         selected, prior = rollout_choices(arena, 0, UniformPolicy(), np.random.default_rng(2))
         self.assertLess(len(selected), len(dense))
-        for family in {a.card for a in dense}:
+        families = {a.card for a in dense}
+        for family in families:
             self.assertAlmostEqual(
                 sum(p for a, p in zip(selected, prior) if a.card == family),
-                sum(a.card == family for a in dense) / len(dense),
-                places=7,
+                1 / len(families),
+                places=6,
             )

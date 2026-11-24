@@ -1,7 +1,456 @@
 [
   {
+    "name": "Royal Hogs approaching before contact favor an in-range pull over waiting",
+    "context": {
+      "clock": 8,
+      "hand": ["poison", "skeletons", "barbarian_barrel", "goblin_hut"],
+      "elixir": 5,
+      "enemyElixir": { "min": 3, "max": 8 },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          { "kind": "royal_hog", "x": 6.2, "y": 17.5, "variant": "base", "velocity": null, "hp": null }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "goblin_hut", 4, 6.5, 12.5],
+        ["C", "card", "goblin_hut", 4, 8.5, 14.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
+    ]
+  },
+  {
+    "name": "Without an immediate threat the central Hut has tower cover",
+    "context": {
+      "clock": 21,
+      "hand": ["poison", "skeletons", "barbarian_barrel", "goblin_hut"],
+      "elixir": 10,
+      "enemyElixir": { "min": 3, "max": 8 },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "goblin_hut", 4, 8.5, 10.5],
+        ["C", "card", "goblin_hut", 4, 8.5, 14.5],
+        ["D", "card", "goblin_hut", 4, 8.5, 12.5]
+      ]
+    },
+    "preferred": [
+      [1, 2],
+      [1, 3]
+    ],
+    "bias": [0, -0.0199973, -1.218381, -1.0774931]
+  },
+  {
+    "name": "With both princess towers standing Graveyard favors one tile outside either tower",
+    "context": {
+      "clock": 80,
+      "hand": ["graveyard", "poison", "knight", "skeletons"],
+      "elixir": 9,
+      "enemyElixir": { "min": 3, "max": 8 },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "card", "graveyard", 5, 2.5, 25.5],
+        ["B", "card", "graveyard", 5, 3.5, 25.5],
+        ["C", "card", "graveyard", 5, 1, 25],
+        ["D", "card", "graveyard", 5, 15.5, 25.5],
+        ["E", "card", "graveyard", 5, 14.5, 25.5],
+        ["F", "card", "graveyard", 5, 17, 25]
+      ]
+    },
+    "preferred": [
+      [0, 1],
+      [0, 2],
+      [3, 4],
+      [3, 5]
+    ]
+  },
+  {
+    "name": "Royal Giant is pulled into tower fire and Knight handles the nearby Hunter",
+    "context": {
+      "hand": ["goblin_hut", "knight", null, null],
+      "elixir": 7,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          { "kind": "royal_giant", "x": 4.5, "y": 16, "variant": "evolution", "velocity": null, "hp": null },
+          { "kind": "hunter", "x": 7, "y": 17, "variant": "base", "velocity": [0, -1], "hp": null }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "goblin_hut", 4, 7, 12],
+        ["C", "card", "goblin_hut", 4, 14.5, 10],
+        ["D", "card", "knight", 3, 7.5, 15],
+        ["E", "card", "knight", 3, 13.5, 12]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2],
+      [3, 0],
+      [3, 4]
+    ]
+  },
+  {
+    "name": "both sides lost one tower: knight pocket and central Graveyard use the exposed King",
+    "context": {
+      "clock": 190,
+      "hand": ["graveyard", "poison", "knight", "barbarian_barrel"],
+      "elixir": 8,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "fallenTowers": { "own": [0], "enemy": [1] },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [{ "kind": "knight", "x": 10.5, "y": 21, "variant": "base", "velocity": [0, 1], "hp": null }],
+        "enemy": []
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 9, 27],
+        ["C", "card", "graveyard", 5, 14.5, 25.5],
+        ["D", "card", "graveyard", 5, 3.5, 25.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [0, 2],
+      [1, 3]
+    ]
+  },
+  {
+    "name": "fund a pocket Knight that leaves enough for Graveyard",
+    "context": {
+      "clock": 185,
+      "hand": ["graveyard", "poison", "knight", "barbarian_barrel"],
+      "elixir": 8,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "fallenTowers": { "own": [0], "enemy": [1] },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "knight", 3, 10.5, 18.5],
+        ["C", "card", "knight", 3, 3.5, 0.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
+    ]
+  },
+  {
+    "name": "hold offensive Graveyard when a known Mother Witch can return",
+    "context": {
+      "clock": 150,
+      "hand": ["graveyard", "poison", "knight", "barbarian_barrel"],
+      "elixir": 10,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "enemyCycle": [["witch_mother", 0, 4]],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 2.5, 25.5]
+      ]
+    },
+    "bias": [0, 0.6884058]
+  },
+  {
+    "name": "double elixir attacks when a confirmed Mother Witch is out of cycle and off the board",
+    "context": {
+      "clock": 130,
+      "hand": ["graveyard", "poison", "knight", "barbarian_barrel"],
+      "elixir": 8,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "enemyCycle": [["witch_mother", 2, 4]],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 2.5, 25.5]
+      ]
+    },
+    "preferred": [[1, 0]]
+  },
+  {
+    "name": "one early Barbarian favors waiting over either opening Ice Wizard",
+    "context": {
+      "clock": 45,
+      "hand": ["ice_wizard", null, null, null],
+      "elixir": 3,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          { "kind": "barbarian", "x": 2.8, "y": 13.1, "variant": "base", "velocity": null, "hp": null }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "ice_wizard", 3, 2.5, 13.5],
+        ["C", "card", "ice_wizard", 3, 3.5, 9.5]
+      ]
+    },
+    "preferred": [
+      [0, 1],
+      [0, 2]
+    ]
+  },
+  {
+    "name": "wait and fund Graveyard plus Poison with a held Drill answer",
+    "context": {
+      "hand": ["graveyard", "poison", "furnace", "barbarian_barrel"],
+      "elixir": 6,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "enemyCycle": [["goblin_drill", 0, 4]],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "furnace", 4, 3.5, 4.5],
+        ["C", "card", "graveyard", 5, 2.5, 25.5]
+      ]
+    },
+    "bias": [0, -0.9051483, -0.4700858]
+  },
+  {
+    "name": "a single confirmed attack out of cycle permits a chip Graveyard at a deficit",
+    "context": {
+      "hand": ["graveyard", "poison", "furnace", "barbarian_barrel"],
+      "elixir": 5,
+      "enemyElixir": { "min": 6, "max": 10 },
+      "enemyCycle": [
+        ["goblin_drill", 3, 4],
+        ["bomber", 0, 4],
+        ["cannon", 0, 4],
+        ["skeletons", 0, 4],
+        ["fire_spirit", 0, 4]
+      ],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 2.5, 25.5],
+        ["C", "card", "graveyard", 5, 1, 17]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [0, 2]
+    ]
+  },
+  {
+    "name": "a second known attack or an active push keeps the defensive reserve",
+    "context": {
+      "hand": ["graveyard", "poison", "furnace", "barbarian_barrel"],
+      "elixir": 5,
+      "enemyElixir": { "min": 6, "max": 10 },
+      "enemyCycle": [
+        ["goblin_drill", 3, 4],
+        ["bomber", 0, 4],
+        ["cannon", 0, 4],
+        ["skeletons", 0, 4],
+        ["miner", 0, 4]
+      ],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": { "own": [], "enemy": [] },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 2.5, 25.5]
+      ]
+    },
+    "bias": [0, -0.4888902]
+  },
+  {
+    "name": "Poison covers the defenders and tower of the active Graveyard while retaining a Drill answer",
+    "context": {
+      "hand": ["knight", "poison", "furnace", "barbarian_barrel"],
+      "elixir": 6,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "enemyCycle": [["goblin_drill", 0, 4]],
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "effects": [["blue", "graveyard", 2.5, 25.5, 3]],
+      "bodies": {
+        "own": [],
+        "enemy": [{ "kind": "goblin", "x": 3.4, "y": 24, "variant": "base", "velocity": [0, 0], "hp": null }]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "poison", 4, 3.5, 25.5],
+        ["C", "card", "poison", 4, 14.5, 25.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2]
+    ]
+  },
+  {
+    "name": "no threat: wait beats draining elixir on a just-affordable unit",
+    "context": {
+      "hand": ["knight", "furnace", "goblin_hut", "skeletons"],
+      "elixir": 3,
+      "enemyElixir": { "min": 0, "max": 8 },
+      "own": [],
+      "enemy": [],
+      "bodies": { "own": [], "enemy": [] },
+      "effects": [],
+      "deployments": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "knight", 3, 3.5, 4],
+        ["C", "card", "skeletons", 1, 3.5, 4]
+      ]
+    },
+    "preferred": [
+      [0, 1],
+      [0, 2]
+    ]
+  },
+  {
+    "name": "a Hog that reaches the tower before the Hut spawns does not receive a pull",
+    "context": {
+      "hand": ["goblin_hut", "knight", null, null],
+      "elixir": 6,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "own": [],
+      "enemy": [["hog_rider", 14.4, 10.5, "base"]],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          { "kind": "hog_rider", "x": 14.4, "y": 10.5, "variant": "base", "velocity": null, "hp": null }
+        ]
+      },
+      "effects": [],
+      "deployments": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "goblin_hut", 4, 11.5, 10.5],
+        ["C", "card", "goblin_hut", 4, 14.5, 10.5]
+      ]
+    },
+    "bias": [0, -0.9645971, -0.9680696]
+  },
+  {
+    "name": "a defensive Graveyard covering the remaining enemy spawns is worth spending the reserve",
+    "context": {
+      "hand": ["graveyard", null, null, null],
+      "elixir": 5,
+      "enemyElixir": { "min": 0, "max": 10 },
+      "own": [],
+      "enemy": [],
+      "bodies": { "own": [], "enemy": [] },
+      "effects": [["red", "graveyard", 3.5, 6.5, 1]],
+      "deployments": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 3.5, 6.5],
+        ["C", "card", "graveyard", 5, 3.5, 25.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [0, 2]
+    ]
+  },
+  {
+    "name": "low opponent elixir and a tank in lane permit pressure without opening a random Hut",
+    "context": {
+      "hand": ["knight", "furnace", "goblin_hut", "graveyard"],
+      "elixir": 5,
+      "enemyElixir": { "min": 0, "max": 1 },
+      "own": [["knight", 14, 22, "base"]],
+      "enemy": [],
+      "bodies": {
+        "own": [{ "kind": "knight", "x": 14, "y": 22, "variant": "base", "velocity": [0, 1], "hp": null }],
+        "enemy": []
+      },
+      "effects": [],
+      "deployments": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 15.3, 25],
+        ["C", "card", "goblin_hut", 4, 14.5, 12],
+        ["D", "card", "graveyard", 5, 1, 17]
+      ]
+    },
+    "preferred": [
+      [1, 2],
+      [0, 2]
+    ],
+    "bias": [0, 1.4840338, -0.8031769, -3.5866143]
+  },
+  {
+    "name": "Hog ignores the nearby Knight: pull inside tower range even at low reserve",
+    "context": {
+      "hand": ["knight", "goblin_hut", "furnace", "graveyard"],
+      "elixir": 5,
+      "enemyElixir": { "min": 0, "max": 8 },
+      "own": [["knight", 5, 12, "base"]],
+      "enemy": [["hog_rider", 6, 13, "base"]],
+      "bodies": {
+        "own": [{ "kind": "knight", "x": 5, "y": 12, "variant": "base", "velocity": [0, 0], "hp": null }],
+        "enemy": [
+          { "kind": "hog_rider", "x": 6, "y": 13, "variant": "base", "velocity": [0, -1.1], "hp": null }
+        ]
+      },
+      "effects": [],
+      "deployments": [],
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "goblin_hut", 4, 8, 10.5],
+        ["C", "card", "goblin_hut", 4, 14.5, 10.5],
+        ["D", "card", "knight", 3, 6, 10.5],
+        ["E", "card", "furnace", 4, 8, 10.5]
+      ]
+    },
+    "preferred": [
+      [1, 0],
+      [1, 2],
+      [1, 3],
+      [1, 4]
+    ]
+  },
+  {
     "name": "empty field: save a two-elixir barrel and unsupported opening Graveyard",
     "context": {
+      "clock": 1,
       "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
       "elixir": 7,
       "enemyElixir": {
@@ -25,10 +474,10 @@
       ],
       "deployments": []
     },
-    "bias": [0, -5, -5, -4.75, 0, -9]
+    "bias": [0, -2.3753462, -2.3753462, -1.4412883, 0, -0.8093011]
   },
   {
-    "name": "left Knight: roll through it, never spend on the other lane",
+    "name": "left Knight: a roll through it has more value than a roll in the other lane",
     "context": {
       "hand": ["barbarian_barrel", "graveyard", "knight", "skeletons"],
       "elixir": 7,
@@ -62,7 +511,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, 9.125, -11, -10.75, 2, -9]
+    "bias": [0, 0.8146244, -2.432845, -0.0523147, 0.2449187, -0.8093011]
   },
   {
     "name": "reserve barrel for a possible Goblin Barrel",
@@ -91,7 +540,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, -9, -9, -4.75, 0, -9]
+    "bias": [0, -2.4218727, -2.4218727, 0.0087117, 0, -0.8093011]
   },
   {
     "name": "Graveyard counters are known out of cycle and three elixir remain",
@@ -124,7 +573,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, -5, -5, 0, 0, -9]
+    "bias": [0, -2.3753462, -2.3753462, 0.9294341, 0, -0.8093011]
   },
   {
     "name": "a known ready Poison makes unsupported Graveyard less attractive",
@@ -153,7 +602,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, -5, -5, -3, 0, -9]
+    "bias": [0, -2.3753462, -2.3753462, 0.5710767, 0, -0.8093011]
   },
   {
     "name": "flying enemy: Knight and barrel are not anti-air defenders",
@@ -191,7 +640,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, -11, -11, -10.75, -6, -9, 3.6]
+    "bias": [0, -2.432845, -2.432845, -0.0523147, -0.635149, -0.8093011, 0.421899]
   },
   {
     "name": "Graveyard effect without spawned bodies is not a guaranteed rolling hit",
@@ -219,7 +668,7 @@
       ],
       "deployments": []
     },
-    "bias": [0, -11, -11, -10.75, -4, -9]
+    "bias": [0, -2.432845, -2.432845, -0.0523147, -0.4621172, -0.8093011]
   },
   {
     "name": "left Drill: damage to an unrelated right Knight is not Drill defense",
@@ -835,7 +1284,7 @@
       ],
       "deployments": []
     },
-    "bias": [-0.52, 1.48]
+    "bias": [-0.0649086, 0.182918]
   },
   {
     "name": "An enemy crown tower alone gives no Hut activation credit",
@@ -868,6 +1317,142 @@
       ],
       "deployments": []
     },
-    "bias": [-0.52, -0.52]
+    "bias": [-0.0649086, -0.0649086]
+  },
+  {
+    "name": "Full elixir has a finite wait cost when a troop can cycle",
+    "context": {
+      "elixir": 10,
+      "hand": ["skeletons"],
+      "clock": 95,
+      "enemyElixir": {
+        "min": 2,
+        "max": 9
+      },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": []
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "skeletons", 1, 5, 4]
+      ]
+    },
+    "preferred": [[1, 0]]
+  },
+  {
+    "name": "A low reserve preserves a placement distinction for Graveyard",
+    "context": {
+      "elixir": 6,
+      "hand": ["graveyard", "poison"],
+      "clock": 95,
+      "enemyElixir": {
+        "min": 2,
+        "max": 9
+      },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "bomber",
+            "x": 4.6,
+            "y": 8.1,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "graveyard", 5, 17, 9],
+        ["C", "card", "graveyard", 5, 15, 25]
+      ]
+    },
+    "preferred": [
+      [0, 1],
+      [2, 1]
+    ]
+  },
+  {
+    "name": "Barbarian Barrel scores for its projected path rather than lane symmetry",
+    "context": {
+      "elixir": 7,
+      "hand": ["barbarian_barrel"],
+      "clock": 95,
+      "enemyElixir": {
+        "min": 2,
+        "max": 9
+      },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin",
+            "x": 4.2,
+            "y": 9,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "barbarian_barrel", 2, 4.5, 8.5],
+        ["C", "card", "barbarian_barrel", 2, 17.5, 9.5]
+      ]
+    },
+    "preferred": [
+      [1, 2],
+      [0, 2]
+    ]
+  },
+  {
+    "name": "A visible Drill favors a close Knight over troops in the opposite corner",
+    "context": {
+      "elixir": 3,
+      "hand": ["knight", "skeletons"],
+      "clock": 95,
+      "enemyElixir": {
+        "min": 2,
+        "max": 9
+      },
+      "own": [],
+      "enemy": [],
+      "deployments": [],
+      "bodies": {
+        "own": [],
+        "enemy": [
+          {
+            "kind": "goblin_drill",
+            "x": 16.8,
+            "y": 4.7,
+            "variant": "base",
+            "velocity": null,
+            "hp": null
+          }
+        ]
+      },
+      "actions": [
+        ["A", "wait", null, 0, 0, 0],
+        ["B", "card", "knight", 3, 0.5, 0.5],
+        ["C", "card", "skeletons", 1, 0.5, 0.5],
+        ["D", "card", "knight", 3, 16.5, 5.5]
+      ]
+    },
+    "preferred": [
+      [3, 1],
+      [3, 2]
+    ]
   }
 ]
