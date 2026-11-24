@@ -27,7 +27,12 @@ export type TStudioAction =
   | 'shorts-boards'
   | 'shorts-daily'
   | 'shorts-render'
-  | 'shorts-verify';
+  | 'shorts-verify'
+  | 'shorts-youtube-connect'
+  | 'shorts-youtube-auto'
+  | 'shorts-youtube-upload'
+  | 'shorts-youtube-status'
+  | 'shorts-youtube-disconnect';
 export type TStudioSource = 'blank' | 'sample' | 'demo' | TFormat;
 type TAnalyticsProperties = {
   landing_start_clicked: { source: TStudioSource };

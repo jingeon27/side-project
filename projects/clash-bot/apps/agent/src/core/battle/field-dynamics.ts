@@ -1,5 +1,5 @@
 import type { CardId } from '../cards.ts';
-import { CARD_MECHANICS, type UnitKind } from '../knowledge.ts';
+import { CARD_MECHANICS } from '../knowledge.ts';
 import { type FieldEffect, type FieldUnit } from './battle-state.ts';
 import { SpawnPatterns, type SpawnCast } from './spawn-patterns.ts';
 import { TowerHealthTracker, type TowerHpReading } from './tower-health.ts';
@@ -9,7 +9,7 @@ type UnitTrack = {
   key: string;
   side: 'red' | 'blue';
   card: CardId | null;
-  kind: UnitKind | undefined;
+  kind: FieldUnit['kind'];
   x: number;
   y: number;
   at: number;
@@ -32,8 +32,8 @@ type EffectTrack = {
 };
 
 type FieldScan = {
-  allies: Array<Omit<FieldUnit, 'kind'> & { kind?: UnitKind | null }>;
-  entities: Array<Omit<FieldUnit, 'kind'> & { kind?: UnitKind | null }>;
+  allies: Array<Omit<FieldUnit, 'kind'> & { kind?: FieldUnit['kind'] | null }>;
+  entities: Array<Omit<FieldUnit, 'kind'> & { kind?: FieldUnit['kind'] | null }>;
   spawnedUnits?: Array<Omit<FieldUnit, 'card'> & { side: 'red' | 'blue' }>;
   effects?: Array<Pick<FieldEffect, 'card' | 'side' | 'x' | 'y' | 'radius' | 'confidence'>>;
   ownTowerHp?: TowerHpReading[];

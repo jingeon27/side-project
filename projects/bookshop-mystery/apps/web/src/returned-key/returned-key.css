@@ -1,0 +1,235 @@
+.key-briefing {
+  width: min(61rem, calc(100% - 2 * var(--case-gutter)));
+  margin-inline: auto;
+  padding-block: calc(var(--safe-top) + 0.75rem) calc(var(--safe-bottom) + 2rem);
+}
+
+.key-briefing-layout {
+  display: grid;
+  align-items: center;
+  gap: clamp(0.9rem, 3vw, 2rem);
+  margin-top: clamp(0.8rem, 3vw, 1.5rem);
+}
+
+.key-briefing-layout > img {
+  width: 100%;
+  height: clamp(8rem, 27dvh, 15rem);
+  border-radius: 0.85rem;
+  object-fit: cover;
+  object-position: center 51%;
+}
+
+.key-briefing-copy h1,
+.key-evidence h1,
+.key-evidence h2 {
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+  word-break: keep-all;
+}
+
+.key-briefing-copy h1 {
+  font-family: var(--evidence-serif);
+  font-size: clamp(1.6rem, 5.5vw, 3rem);
+}
+
+.key-briefing-copy h1:focus {
+  outline: none;
+}
+
+.key-briefing-time {
+  margin: 0 0 0.35rem;
+  color: var(--color-accent-ink);
+  font-size: var(--text-label);
+  font-weight: var(--text-label--font-weight);
+}
+
+.key-briefing-copy p:not(.key-briefing-time) {
+  max-width: 30em;
+  margin: 0.6rem 0 1rem;
+  color: var(--color-muted);
+  line-height: 1.58;
+  word-break: keep-all;
+}
+
+.key-briefing-copy > button {
+  width: 100%;
+}
+
+.case-frame.key-investigation-tools {
+  max-width: 35rem;
+  padding-block: calc(5px + var(--safe-top)) 3px;
+}
+
+.case-frame.key-workspace {
+  max-width: 42rem;
+}
+
+.key-evidence h1 {
+  margin-bottom: 0.7rem;
+  font-size: clamp(1.2rem, 4.1vw, 1.65rem);
+}
+
+.key-evidence > p {
+  margin: 0 0 0.85rem;
+  color: var(--color-muted);
+  line-height: 1.56;
+  word-break: keep-all;
+}
+
+.key-envelope {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 0.8rem;
+  background: var(--color-surface);
+}
+
+.key-envelope > img {
+  width: 100%;
+  height: clamp(12rem, 50dvh, 28rem);
+  object-fit: cover;
+  object-position: center 51%;
+}
+
+.key-envelope figcaption {
+  padding: 0.72rem 0.85rem;
+  color: var(--color-muted);
+  font-size: var(--text-label);
+}
+
+.key-dropboxes {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.key-dropboxes li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.62rem 0.8rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.65rem;
+  background: var(--color-surface);
+}
+
+.key-dropboxes li p {
+  margin: 0.1rem 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-label);
+}
+
+.key-stamp {
+  display: grid;
+  width: 2.65rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 0.55rem;
+  background: var(--evidence-paper);
+  color: #67605a;
+}
+
+.key-stamp[data-color='blue'] {
+  color: #163d79;
+}
+
+.key-stamp svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+.key-records {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.key-records table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.key-records th,
+.key-records td {
+  padding: 0.56rem 0.6rem;
+  border-bottom: 1px solid var(--color-line);
+  text-align: start;
+}
+
+.key-records thead th {
+  color: var(--color-muted);
+  font-size: var(--text-label);
+}
+
+.key-records code,
+.key-records time {
+  font-family: var(--evidence-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.key-codes {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.65rem;
+  background: var(--color-surface);
+}
+
+.key-codes h2 {
+  font-size: var(--text-label);
+}
+
+.key-codes dl,
+.key-codes dd {
+  margin: 0;
+}
+
+.key-codes dl > div {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.55rem;
+  padding-block: 0.35rem 0;
+  color: var(--color-muted);
+  font-size: var(--text-label);
+}
+
+.key-codes dt,
+.key-ending strong {
+  color: var(--color-accent-ink);
+}
+
+.key-verdict-form {
+  max-width: 31rem;
+}
+
+.key-feedback {
+  margin: 0;
+  color: var(--color-accent-ink);
+  font-size: var(--text-label);
+  line-height: 1.5;
+}
+
+@media (min-width: 680px) {
+  .key-briefing-layout {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  }
+
+  .key-briefing-layout > img {
+    height: clamp(20rem, 57dvh, 33rem);
+  }
+
+  .key-briefing-copy > button {
+    width: auto;
+    min-width: 9rem;
+  }
+
+  .key-records {
+    grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.1rem;
+  }
+}

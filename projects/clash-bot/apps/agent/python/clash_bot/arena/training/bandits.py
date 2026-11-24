@@ -24,7 +24,11 @@ def pick(edges, actions, priors, rng, explore, cover=False):
         if action not in edges:
             edges[action] = {"n": 0, "w": 0.0, "p": float(prior), "available": 0}
         edges[action]["available"] += 1
-    groups = grouped_indices([action.card for action in actions])
+    groups = [
+        [i for i in group if priors[i] > 0]
+        for group in grouped_indices([action.card for action in actions])
+        if any(priors[i] > 0 for i in group)
+    ]
     rows = [edges[action] for action in actions]
 
     def group_score(indexes):
@@ -36,7 +40,7 @@ def pick(edges, actions, priors, rng, explore, cover=False):
 
     # With a bounded root, try every selected action before reusing a favourite. Hidden-hand
     # unavailability never counts as a visit; the caller only supplies this world's legal moves.
-    unvisited = [i for i, row in enumerate(rows) if row["n"] == 0]
+    unvisited = [i for i, row in enumerate(rows) if row["n"] == 0 and priors[i] > 0]
     eligible = (
         [[i for i in group if i in unvisited] for group in groups]
         if cover and unvisited
@@ -58,20 +62,25 @@ def pick(edges, actions, priors, rng, explore, cover=False):
 
 def root_subset(actions, prior, rng, size, explore, focus=()):
     """Keep the original best of each family, then compare separated alternatives."""
-    if len(actions) <= size:
-        return list(range(len(actions)))
-    groups = grouped_indices([action.card for action in actions])
+    wait = actions.index(Action(-1)) if Action(-1) in actions else None
+    selectable = {i for i, probability in enumerate(prior) if probability > 0 or i == wait}
+    if len(selectable) <= size:
+        return sorted(selectable)
+    groups = [
+        [i for i in group if i in selectable]
+        for group in grouped_indices([action.card for action in actions])
+        if any(i in selectable for i in group)
+    ]
     scores = np.log(np.maximum(prior, 1e-12))
     # 비교 기준인 각 카드의 원래 최선 위치는 잡음으로 지우지 않는다. 남는 예산만 탐색한다.
     ranked = sorted(groups, key=lambda group: -sum(prior[i] for i in group))
     keep = [max(group, key=lambda i: prior[i]) for group in ranked[:size]]
     if explore:
         scores = scores + rng.gumbel(size=len(scores))
-    wait = actions.index(Action(-1)) if Action(-1) in actions else None
     if wait is not None and wait not in keep:
         keep[-1] = wait
     by_family = {}
-    ranked_extra = np.argsort(-scores, kind="stable").tolist()
+    ranked_extra = [i for i in np.argsort(-scores, kind="stable").tolist() if i in selectable]
     for index in ranked_extra:
         by_family.setdefault(actions[index].card, []).append(index)
     order = [actions[group[0]].card for group in ranked]
@@ -128,7 +137,7 @@ def retain_reference(actions, prior, keep, reference):
     if reference is None:
         return keep
     wanted = actions.index(reference)
-    if wanted in keep:
+    if wanted in keep or prior[wanted] <= 0:
         return keep
     anchors = {
         max(group, key=lambda i: prior[i]) for group in grouped_indices([a.card for a in actions])

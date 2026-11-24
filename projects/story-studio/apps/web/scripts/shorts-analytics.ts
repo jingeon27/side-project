@@ -15,6 +15,11 @@ const actions: ReadonlyMap<string, TShortsAction> = new Map([
   ['daily', 'shorts-daily'],
   ['render', 'shorts-render'],
   ['verify', 'shorts-verify'],
+  ['youtube-connect', 'shorts-youtube-connect'],
+  ['youtube-auto', 'shorts-youtube-auto'],
+  ['youtube-upload', 'shorts-youtube-upload'],
+  ['youtube-status', 'shorts-youtube-status'],
+  ['youtube-disconnect', 'shorts-youtube-disconnect'],
 ]);
 
 type TRequestEvent = 'studio_request_clicked' | 'studio_request_succeeded';

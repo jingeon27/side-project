@@ -1,11 +1,13 @@
 import { match } from 'ts-pattern';
 
 import { bodyVector, CARD_CATALOGUE, catalogueCard } from '../card-catalogue.ts';
-import { COMBAT, referenceBodyHp, referenceBodySpeed } from '../combat-reference.ts';
+import { COMBAT, combatBodyReference, referenceBodyHp, referenceBodySpeed } from '../combat-reference.ts';
+import { firecrackerRecoil, possiblePrincessTowers, recoilPosition } from '../placement/combat-motion.ts';
 import type { CombatBody, EffectForecast } from '../placement/combat-projection.ts';
 import type { DecisionAction, DecisionContext } from '../policy/decision-v3.ts';
 import { graveyardDefense } from './graveyard.ts';
 import { FAST_TACTICS } from './tactics-spec.ts';
+import { alreadyPulled, chasesBuildings, hogThreat, royalGiantThreat, towerPull } from './tower-pull.ts';
 
 const distance = (x: number, y: number, body: Pick<CombatBody, 'x' | 'y'>) =>
   Math.hypot(x - body.x, y - body.y);
@@ -43,9 +45,17 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
   );
   const grave = graveyardDefense(context, action);
   const threats = context.bodies.enemy.flatMap((body, index) => {
-    if (['barrel', 'goblin_hut'].includes(body.kind) || future(body).y >= FAST_TACTICS.threatBoundary)
-      return [];
+    const approach = future(body);
+    const siege = chasesBuildings(body);
+    const siegeTiming = hogThreat(body) || royalGiantThreat(body);
     if (
+      ['barrel', 'goblin_hut'].includes(body.kind) ||
+      (approach.y >= FAST_TACTICS.threatBoundary && !siegeTiming)
+    )
+      return [];
+    if (siege && alreadyPulled(context, approach)) return [];
+    if (
+      !siege &&
       body.kind !== 'goblin_drill' &&
       context.bodies.own.some((own) => distance(own.x, own.y, body) < FAST_TACTICS.engagementRadius)
     )
@@ -61,8 +71,8 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
     const pressure =
       body.kind === 'goblin_drill'
         ? FAST_TACTICS.drillPriority * (knightCover ? 0.35 : 1)
-        : Math.min(1, Math.max(0, (FAST_TACTICS.threatBoundary - future(body).y) / 8));
-    return [{ body, index, pressure }];
+        : Math.min(1, Math.max(siegeTiming ? 0.85 : 0, (FAST_TACTICS.threatBoundary - approach.y) / 8));
+    return [{ body, index, pressure, pull: siege ? towerPull(context, action, approach, body) : 0, siege }];
   });
   const intercept = (body: CombatBody) => {
     if (body.kind === 'goblin_drill') {
@@ -87,28 +97,42 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
         )
       );
     }
-    if (!COMBAT.bodies[body.kind]?.ground) return 0;
+    if (!combatBodyReference(body.kind)?.ground) return 0;
     const landing =
       COMBAT.inputDelaySeconds +
       COMBAT.barbarian_barrel.deploySeconds +
       COMBAT.barbarian_barrel.length / COMBAT.barbarian_barrel.speed;
+    const target = future(body, landing);
+    const moved = recoilPosition(
+      target,
+      landing,
+      firecrackerRecoil(body, [
+        ...context.bodies.own,
+        ...possiblePrincessTowers(context.towers?.own, context.fallenTowers?.own),
+      ]),
+    );
     const catchScore = Math.max(
       0,
       1 -
-        distance(action[4], action[5] + COMBAT.barbarian_barrel.length, future(body, landing)) /
+        Math.max(
+          distance(action[4], action[5] + COMBAT.barbarian_barrel.length, target),
+          distance(action[4], action[5] + COMBAT.barbarian_barrel.length, moved),
+        ) /
           FAST_TACTICS.engagementRadius,
     );
     return durableFirecracker(body) ? catchScore * 0.4 : catchScore;
   };
   const usefulRoll = projection.targets.some(
     (hit) =>
+      threats.some((threat) => threat.index === hit.index) &&
       hit.trajectoryDamage > 0 &&
       (context.bodies.enemy[hit.index]?.kind !== 'goblin_drill' ||
         (hit.hp !== null && hit.hp[1] <= COMBAT.barbarian_barrel.damage)),
   );
-  const troopResponse = ({ body, index }: (typeof threats)[number]) => {
+  const troopResponse = ({ body, index, pull, siege }: (typeof threats)[number]) => {
+    if (siege && catalogueCard(action[2])?.placement === 'building') return pull;
     const hit = projection.targets.find((target) => target.index === index);
-    return match(action[2])
+    const response = match(action[2])
       .with('barbarian_barrel', () => {
         if (body.kind === 'goblin_drill') {
           const cleanup =
@@ -131,6 +155,7 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
       .otherwise(() =>
         action[2] !== 'graveyard' && canRespond(action[2], body) ? responds(action, future(body)) : 0,
       );
+    return siege && hit?.kill !== 'yes' ? response * FAST_TACTICS.buildingPull.directResponseScale : response;
   };
   const pendingResponse =
     action[2] === 'graveyard' ||
@@ -145,9 +170,28 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
     deployments.length ? FAST_TACTICS.deploymentPriority : 0,
     ...threats.map((t) => t.pressure),
   );
+  const hunterKnight =
+    action[2] === 'knight'
+      ? Math.max(
+          0,
+          ...context.bodies.enemy
+            .filter(
+              (body) =>
+                body.kind === 'hunter' &&
+                body.y <= 18 &&
+                context.bodies.enemy.some(
+                  (siege) =>
+                    royalGiantThreat(siege) &&
+                    distance(body.x, body.y, siege) <= FAST_TACTICS.royalGiantPull.hunterDistance,
+                ),
+            )
+            .map((hunter) => responds(action, future(hunter, COMBAT.inputDelaySeconds + 1))),
+        )
+      : 0;
   const benefit = Math.max(
     0,
     grave.response,
+    hunterKnight,
     pendingResponse * FAST_TACTICS.deploymentPriority,
     ...threats.map((t) => t.pressure * troopResponse(t)),
   );
@@ -189,11 +233,20 @@ export function fastDefense(context: DecisionContext, action: DecisionAction, pr
     bias:
       FAST_TACTICS.defenseWeight * (2 * benefit - pressure) +
       FAST_TACTICS.barrelContactWeight * contact +
+      FAST_TACTICS.buildingPull.weight * Math.max(0, ...threats.map((t) => t.pull * t.pressure)) +
+      FAST_TACTICS.royalGiantPull.knightResponseBonus * hunterKnight +
       COMBAT.policy.drillKnightDefense * drillKnight +
       (prematureSkeletons ? COMBAT.policy.preEmergenceSkeletons : 0) +
       (unansweredDrill ? COMBAT.policy.unansweredDrill : 0),
-    intercept: Math.max(0, ...threats.map((t) => intercept(t.body))),
+    intercept: action[2] === 'barbarian_barrel' ? Math.max(0, ...threats.map((t) => intercept(t.body))) : 0,
     usefulRoll,
     graveResponse: grave.response,
+    drillKnight,
+    benefit,
+    unansweredDrill,
+    siegePull: Math.max(
+      0,
+      ...threats.filter(({ body }) => hogThreat(body) || royalGiantThreat(body)).map(({ pull }) => pull),
+    ),
   };
 }

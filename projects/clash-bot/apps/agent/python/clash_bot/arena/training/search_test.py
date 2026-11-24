@@ -16,7 +16,7 @@ from clash_bot.arena.training.search import Workspace, search
 class PublicSearchTest(unittest.TestCase):
     def test_simulations_keep_the_frozen_opponents_response_even_after_value_backups(self):
         class WaitingOpponent:
-            def predict(self, _observation, actions):
+            def predict(self, _observation, actions, _placement_bias=None):
                 return np.array([float(action == Action(-1)) for action in actions]), 0.0
 
         world, workspace = Arena(1), Workspace()

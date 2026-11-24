@@ -145,6 +145,7 @@ def rules_identity():
         "opponentDeck": "public_play_inferred_pool_prior",
         "evaluationSuite": "live_mirror_and_oriented_mixed_with_same_deck_incumbent_v6",
         "policyChoice": json.loads((CONTRACTS_DIR / "fast-policy.json").read_text())["choice"],
+        "policyPlacementMass": "mean_over_legal_tiles_v1",
         "policyMechanics": digest(
             {
                 name: json.loads((CONTRACTS_DIR / name).read_text())
@@ -162,7 +163,7 @@ def rules_identity():
             "cards": POOL_ATTACKS,
             "choice": "matched_save_or_spend_with_living_princess_towers_v2",
         },
-        "candidatePlacement": "native_legal_with_public_mirror_target_v2",
+        "candidatePlacement": "native_legal_with_mirror_and_pocket_troops_v3",
         "controlObservation": "native_buff_aliases_and_knockback_per_unit_frame_v1",
         "trainingOpponent": "rotating_forms_pressure_funded_and_supported_mirror_v7",
         "tacticalTeacher": "paired_staggered_sampled_public_defender_v2",

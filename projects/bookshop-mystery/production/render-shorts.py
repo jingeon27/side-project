@@ -19,6 +19,7 @@ from story_studio.shorts.voice import narrate
 
 ROOT = Path(__file__).resolve().parent
 ASSETS = ROOT.parent / "apps/unity/Assets/Resources/Bookshop"
+WEB_ASSETS = ROOT.parent / "apps/web/public/assets"
 FONT = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
 MONO = "/System/Library/Fonts/Menlo.ttc"
 W, H = 1080, 1920
@@ -36,16 +37,22 @@ def paste_fitted(board, art, rect):
     board.paste(ImageOps.fit(art, (right - left, bottom - top), method=Image.Resampling.LANCZOS), (left, top))
 
 
-def source_image(directory, key):
-    path = directory / (key + ".png")
+def read_image(path):
     with Image.open(path) as raw:
         return raw.convert("RGB")
 
 
-def make_board(directory, episode, shot, target, index):
+def source_image(directory, key):
+    return read_image(directory / (key + ".png"))
+
+
+def make_board(directory, episode, shot, target, index, callout=None):
     key = shot["image"]
     substitute = {"labels": "desk", "transfer": "record", "book": "record"}
-    base = source_image(directory, substitute.get(key, key))
+    art = shot.get("art")
+    base = read_image(WEB_ASSETS / art) if art else source_image(directory, substitute.get(key, key))
+    if crop := shot.get("crop"):
+        base = base.crop(tuple(round(fraction * length) for fraction, length in zip(crop, base.size * 2)))
     base = ImageOps.fit(base, (W, H))
     base = ImageEnhance.Color(base).enhance(0.88)
     fade_start, fade_length, fade_opacity = (1270, 650, 228)
@@ -87,6 +94,13 @@ def make_board(directory, episode, shot, target, index):
         draw.line((165, 762, 880, 762), fill="#927050", width=2)
         text(draw, (164, 839), "이 동네로 돌아오면,", 53, "#674b37")
         text(draw, (164, 932), "제일 먼저 여기 들를 것.", 53, "#674b37")
+    if key == "key-log":
+        draw = ImageDraw.Draw(board)
+        draw.rounded_rectangle((76, 670, 922, 1100), fill="#ebddc0", outline="#ac8760", width=3, radius=14)
+        text(draw, (128, 724), "동명기록관 야간 일지", 54, "#34251c", bold=True)
+        draw.line((128, 817, 868, 817), fill="#938068", width=2)
+        text(draw, (126, 877), "03:00", 80, "#30251e", mono=True)
+        text(draw, (677, 877), "R3", 80, "#30251e", mono=True)
     draw = ImageDraw.Draw(board)
     first = index == 1
     warns_spoiler = first and episode.get("spoiler")
@@ -101,7 +115,10 @@ def make_board(directory, episode, shot, target, index):
         text(draw, (79, 153), "스포일러 포함", 36, GOLD, bold=True)
     for row, line in enumerate(lines):
         text(draw, (76, title_top + row * (size + 6)), line, size, bold=True)
-    if index == 4 and not episode.get("spoiler"):
+    if callout:
+        draw.rounded_rectangle((76, 1245, 700, 1338), fill="#211d17", radius=12)
+        text(draw, (101, 1263), callout, 48, GOLD, bold=True)
+    if index == 4 and not episode.get("spoiler") and not shot.get("callout"):
         draw.rounded_rectangle((76, 1255, 641, 1350), fill="#211d17", radius=12)
         text(draw, (102, 1272), "프로필에서 직접 조사하기", 49, GOLD, bold=True)
     board.save(target)
@@ -159,9 +176,17 @@ def make_short(episode, data, captures, renderer, speaker, output, original=None
                 "-c:v", "libx264", "-crf", 19, "-pix_fmt", "yuv420p", "-an",
                 destination / "assets/turn.mp4",
             )
-        shots, takes = [], []
+        shots, takes, reveal_points = [], [], []
         for index, shot in enumerate(episode["shots"], 1):
-            make_board(captures, episode, shot, source / f"frames/{index}.png", index)
+            artwork = [(0, None)]
+            if callout := shot.get("callout"):
+                artwork.append((callout["from"], callout["text"]))
+                if "to" in callout:
+                    artwork.append((callout["to"], None))
+            reveal_points.append([at for at, _ in artwork[1:]])
+            for variant, (_, label) in enumerate(artwork):
+                name = f"{index}.png" if variant == len(artwork) - 1 else f"{index}-{variant}.png"
+                make_board(captures, episode, shot, source / "frames" / name, index, label)
             style = {
                 **shot, "head": shot["heading"],
                 "camera": "push",
@@ -193,6 +218,8 @@ def make_short(episode, data, captures, renderer, speaker, output, original=None
             cuts, cues, captions = make_mix(musical, source, destination, scratch, data, cache)
         else:
             cuts, cues, captions, takes = reuse_tracks(episode, original, destination)
+        if any(reveal_points):
+            (source / "frames/reveals.json").write_text(json.dumps(reveal_points), encoding="utf-8")
         points = capture_frames(source, destination, len(cuts))
         parts = [
             render_cut(index, shot, cut, marks, spans, destination, scratch)

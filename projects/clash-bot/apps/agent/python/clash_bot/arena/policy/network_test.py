@@ -1,3 +1,5 @@
+import json
+import math
 import tempfile
 import unittest
 from copy import deepcopy
@@ -6,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from clash_bot.arena.policy.dense import DenseActions
-from clash_bot.arena.policy.features import forward, hide_towers
+from clash_bot.arena.policy.features import SPEC, forward, hide_towers
 from clash_bot.arena.policy.network import Policy, features
 from clash_bot.arena.policy.optimizer import defense_loss
 from clash_bot.arena.policy.samples import SparseFeatures
@@ -14,9 +16,30 @@ from clash_bot.arena.sim.engine import Arena
 from clash_bot.arena.sim.rules import Action
 from clash_bot.arena.training.replay import replay_samples
 from clash_bot.arena.training.selfplay import play_game
+from clash_bot.paths import FIXTURES_DIR
 
 
 class ExpertIterationTest(unittest.TestCase):
+    def test_learned_scores_can_override_advice_while_keeping_wait_available(self):
+        cases = json.loads((FIXTURES_DIR / "fast-tactics-cases.json").read_text())
+        context = next(
+            case["context"]
+            for case in cases
+            if case["name"] == "hold offensive Graveyard when a known Mother Witch can return"
+        )
+        initial = Policy()
+        policy = Policy(
+            weights={name: np.zeros_like(weight) for name, weight in initial.weights.items()}
+        )
+        advised, _ = policy.read(context)
+        self.assertGreater(advised[0], advised[1])
+        self.assertGreater(advised[1], 0)
+        policy.weights["query.bias"][0] = 2 * math.sqrt(SPEC.attention)
+        policy.weights["action.weight"][0, 2] = 1
+        learned, _ = policy.read(context)
+        self.assertGreater(learned[1], learned[0])
+        self.assertGreater(learned[0], 0)
+
     def test_defense_loss_ranks_tiles_and_differentiates_full_card_mass(self):
         import mlx.core as mx
 

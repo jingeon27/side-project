@@ -3,6 +3,13 @@
 import json
 import math
 
+from clash_bot.combat_motion import (
+    catalogue_body_reference,
+    firecracker_recoil,
+    motion_position,
+    poison_position,
+    recoil_position,
+)
 from clash_bot.paths import CONTRACTS_DIR
 
 COMBAT = json.loads((CONTRACTS_DIR / "combat-projection.json").read_text())
@@ -15,27 +22,8 @@ def rounded(value):
     return math.floor(value * 10 + 0.5) / 10
 
 
-def poison_position(unit, time, x, y, delay):
-    if unit["velocity"] is None:
-        return unit["x"], unit["y"]
-    vx, vy = unit["velocity"]
-    a = vx * vx + vy * vy
-    b = 2 * ((unit["x"] - x) * vx + (unit["y"] - y) * vy)
-    c = (unit["x"] - x) ** 2 + (unit["y"] - y) ** 2 - COMBAT["poison"]["radius"] ** 2
-    discriminant = b * b - 4 * a * c
-    if a == 0 or discriminant < 0:
-        return unit["x"] + vx * time, unit["y"] + vy * time
-    enter = max(delay, (-b - math.sqrt(discriminant)) / (2 * a))
-    exit = (-b + math.sqrt(discriminant)) / (2 * a)
-    if exit <= enter or time <= enter:
-        return unit["x"] + vx * time, unit["y"] + vy * time
-    until = enter + (exit - enter) / COMBAT["poison"]["slowMultiplier"]
-    travel = (
-        enter + (time - enter) * COMBAT["poison"]["slowMultiplier"]
-        if time <= until
-        else exit + time - until
-    )
-    return unit["x"] + vx * travel, unit["y"] + vy * travel
+def body_reference(kind):
+    return COMBAT["bodies"].get(kind) or catalogue_body_reference(kind)
 
 
 def screen_body(unit, river, reflected=False):
@@ -45,7 +33,7 @@ def screen_body(unit, river, reflected=False):
     point = [rounded(9 + (x - 184) * 11 / 178), rounded(16 - (y - river) * 9.5 / 130)]
     motion, velocity = unit.get("motion"), unit.get("velocity")
     tracked = bool(motion and velocity and motion["samples"] >= 2 and motion["elapsedMs"] >= 100)
-    reference, health = COMBAT["bodies"].get(kind), unit.get("health")
+    reference, health = body_reference(kind), unit.get("health")
     return {
         "kind": kind,
         "x": point[0],
@@ -61,12 +49,12 @@ def screen_body(unit, river, reflected=False):
             math.floor(reference["hp"] * health["minFraction"]),
             math.ceil(reference["hp"] * health["maxFraction"]),
         ]
-        if reference and health
+        if reference and reference["hp"] and health
         else None,
     }
 
 
-def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
+def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana, own_towers=()):
     reserve = (
         any(name == "goblin_barrel" and low == 0 for name, low, _ in enemy_cycle)
         and enemy_mana["max"] >= 3
@@ -98,12 +86,18 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
     }
     if kind == "ability" or card not in ("ice_wizard", "barbarian_barrel", "poison"):
         return result
+    shot_targets = [*own, *own_towers]
     for index, unit in enumerate(enemy):
         if unit["kind"] == "barrel":
             continue
-        reference = COMBAT["bodies"].get(unit["kind"])
+        reference = body_reference(unit["kind"])
         if card == "barbarian_barrel" and not (reference and reference["ground"]):
             continue
+        recoil_spec = COMBAT["firecrackerRecoil"]
+        roll_half_width = COMBAT["barbarian_barrel"]["width"] / 2 + (
+            recoil_spec["lateralBodyPadding"] if unit["kind"] == "firecracker" else 0
+        )
+        recoil = firecracker_recoil(unit, shot_targets, recoil_spec)
         delay = COMBAT["inputDelaySeconds"] + COMBAT[card]["deploySeconds"]
         duration = (
             COMBAT["poison"]["duration"]
@@ -120,10 +114,17 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
         )
         hits = []
         for time in times:
-            velocity = unit["velocity"] or [0, 0]
-            px, py = unit["x"] + velocity[0] * time, unit["y"] + velocity[1] * time
-            if card == "poison":
-                px, py = poison_position(unit, time, x, y, delay)
+            linear = motion_position(unit, time)
+            point = (
+                poison_position(unit, time, x, y, delay, COMBAT[card])
+                if card == "poison"
+                else linear
+            )
+            points = (
+                (point, recoil_position(point, time, recoil, recoil_spec["windupSeconds"]))
+                if recoil
+                else (point,)
+            )
             speed = reference["speed"] if reference else 2
             uncertainty = (
                 COMBAT["positionUncertaintyTiles"]
@@ -141,23 +142,23 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
             )
             if card == "barbarian_barrel":
                 roll_y = y + (time - delay) * COMBAT[card]["speed"]
-                dx, dy = (
-                    abs(px - x) - COMBAT[card]["width"] / 2,
-                    abs(py - roll_y) - COMBAT[card]["depth"] / 2,
-                )
+                contacts = [
+                    (
+                        abs(px - x) - roll_half_width,
+                        abs(py - roll_y) - COMBAT[card]["depth"] / 2,
+                    )
+                    for px, py in points
+                ]
                 hits.append(
                     [
-                        dx + uncertainty <= 0 and dy + uncertainty <= 0,
-                        dx - uncertainty <= 0 and dy - uncertainty <= 0,
+                        all(dx + uncertainty <= 0 and dy + uncertainty <= 0 for dx, dy in contacts),
+                        any(dx - uncertainty <= 0 and dy - uncertainty <= 0 for dx, dy in contacts),
                     ]
                 )
                 continue
             radius = COMBAT[card]["radius"]
-            points = (
-                [(px, py), (unit["x"] + velocity[0] * time, unit["y"] + velocity[1] * time)]
-                if card == "poison"
-                else [(px, py)]
-            )
+            if card == "poison":
+                points = (*points, linear)
             hits.append(
                 [
                     all(math.hypot(ax - x, ay - y) + uncertainty <= radius for ax, ay in points),
@@ -165,7 +166,8 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 ]
             )
         central = []
-        trajectory_quality = 0.0
+        paths = 2 if recoil else 1
+        roll_hit, best_quality = [False] * paths, [0.0] * paths
         for time in times:
             if (
                 card == "poison"
@@ -177,27 +179,38 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
             ):
                 central.append(False)
                 continue
-            velocity = unit["velocity"] or [0, 0]
-            px, py = unit["x"] + velocity[0] * time, unit["y"] + velocity[1] * time
-            if card == "poison":
-                px, py = poison_position(unit, time, x, y, delay)
+            point = (
+                poison_position(unit, time, x, y, delay, COMBAT[card])
+                if card == "poison"
+                else motion_position(unit, time)
+            )
+            points = (
+                (point, recoil_position(point, time, recoil, recoil_spec["windupSeconds"]))
+                if recoil
+                else (point,)
+            )
             if card == "barbarian_barrel":
-                width, depth = COMBAT[card]["width"] / 2, COMBAT[card]["depth"] / 2
-                cross = abs(px - x) / width
-                along = abs(py - y - (time - delay) * COMBAT[card]["speed"]) / depth
-                central.append(cross <= 1 and along <= 1)
-                trajectory_quality = max(
-                    trajectory_quality,
-                    max(0, 1 - cross) * max(0, 1 - along) * (1 - 0.25 * (time - delay) / duration),
-                )
+                width, depth = roll_half_width, COMBAT[card]["depth"] / 2
+                for path, (px, py) in enumerate(points):
+                    cross = abs(px - x) / width
+                    along = abs(py - y - (time - delay) * COMBAT[card]["speed"]) / depth
+                    roll_hit[path] |= cross <= 1 and along <= 1
+                    quality = (
+                        max(0, 1 - cross)
+                        * max(0, 1 - along)
+                        * (1 - 0.25 * (time - delay) / duration)
+                    )
+                    best_quality[path] = max(best_quality[path], quality)
                 continue
-            central.append(math.hypot(px - x, py - y) <= COMBAT[card]["radius"])
+            central.append(
+                all(math.hypot(px - x, py - y) <= COMBAT[card]["radius"] for px, py in points)
+            )
         trajectory_damage = (
             min(8, math.floor(sum(central) * COMBAT["stepSeconds"] / COMBAT[card]["tickSeconds"]))
             * COMBAT[card]["dps"]
             if card == "poison"
             else COMBAT[card]["damage"]
-            if any(central)
+            if (all(roll_hit) if card == "barbarian_barrel" else any(central))
             else 0
         )
         exposure = (
@@ -240,7 +253,7 @@ def forecast_effect(card, kind, x, y, own, enemy, enemy_cycle, enemy_mana):
                 "hp": hp,
                 "kill": kill,
                 "trajectoryDamage": trajectory_damage,
-                "trajectoryQuality": trajectory_quality,
+                "trajectoryQuality": min(best_quality),
             }
         )
     targets = result["targets"]

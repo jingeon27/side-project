@@ -40,6 +40,11 @@
   content: '';
 }
 
+.landing-catalog {
+  position: absolute;
+  inset: calc(var(--safe-top) + 0.75rem) 0 auto;
+}
+
 .landing-intro {
   padding-block: max(calc(var(--safe-top) + 5rem), clamp(10.75rem, 37dvh, 23rem)) 1.75rem;
 }

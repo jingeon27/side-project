@@ -39,26 +39,29 @@ async function main() {
     return setup.status ?? 1;
   }
   const python = path.join(data, 'local/.venv/bin/python');
-  const result = spawnSync(
-    existsSync(python) ? python : 'python3',
-    ['-m', 'story_studio.shorts', command, ...args],
-    {
-      env: {
-        ...process.env,
-        PYTHONPATH: path.resolve(web, '../engine/src'),
-        STORY_STUDIO_DATA_DIR: data,
-        SHORTS_NODE: process.execPath,
-        SHORTS_SCRIPT: script,
-      },
-      stdio: 'inherit',
+  const executable = existsSync(python) ? python : process.env.PYTHON || 'python3.11';
+  const result = spawnSync(executable, ['-m', 'story_studio.shorts', command, ...args], {
+    env: {
+      ...process.env,
+      PYTHONPATH: path.resolve(web, '../engine/src'),
+      STORY_STUDIO_DATA_DIR: data,
+      SHORTS_NODE: process.execPath,
+      SHORTS_SCRIPT: script,
     },
-  );
+    stdio: 'inherit',
+  });
   if (result.error) throw result.error;
   return result.status ?? 1;
 }
 
 try {
-  process.exitCode = await trackShortsInvocation(command, main);
+  const action =
+    command === 'youtube' &&
+    !args.some((arg) => ['--help', '-h'].includes(arg)) &&
+    !(args[0] === 'upload' && args.includes('--auto'))
+      ? `youtube-${args[0]}`
+      : command;
+  process.exitCode = await trackShortsInvocation(action, main);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;

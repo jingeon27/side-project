@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .choice import placement_count_bias
 from .context import decision_context
 from .features import (
     WEIGHT_SHAPES,
@@ -45,17 +46,21 @@ class Policy:
         }
         self.metadata = metadata or {"format": FORMAT, "version": 0}
 
-    def predict(self, observation, actions):
+    def predict(self, observation, actions, placement_bias=None):
         context = decision_context(observation, actions)
         del context["towers"]
-        return self.read(context)
+        return self.read(context, placement_bias)
 
-    def read(self, context):
+    def read(self, context, placement_bias=None):
         """Action probabilities and value of a decision context, however it was read."""
         logits, _probabilities, value = forward(
             self.weights, context_features(context), action_features(context)
         )
-        scores = logits + action_biases(context)
+        if placement_bias is None:
+            placement_bias = placement_count_bias(
+                [row[2] if row[1] == "card" else row[1] for row in context["actions"]]
+            )
+        scores = logits + action_biases(context) + placement_bias
         probabilities = np.exp(scores - scores.max())
         probabilities /= probabilities.sum()
         return probabilities, value

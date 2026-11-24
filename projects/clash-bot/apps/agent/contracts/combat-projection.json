@@ -10,6 +10,12 @@
   "ice_wizard": {
     "deploySeconds": 1
   },
+  "firecrackerRecoil": {
+    "distanceTiles": 1,
+    "attackRangeTiles": 6,
+    "windupSeconds": 0.65,
+    "lateralBodyPadding": 0.5
+  },
   "barbarian_barrel": {
     "deploySeconds": 0.5,
     "speed": 3.3333333333

@@ -56,7 +56,11 @@ class AttackFeedbackTest(unittest.TestCase):
         self.assertTrue(receipt["reserving"])
         self.assertEqual(receipt["ticks"], 480)
         self.assertTrue(all(casts == [True, True] for casts in receipt["executedCasts"].values()))
-        self.assertEqual(receipt["pair"], [actions.index(Action(-1)), baseline])
+        spent, saved = receipt["outcomes"]
+        for spent_result, saved_result in zip(spent, saved, strict=True):
+            self.assertGreater(spent_result["own_hp"], saved_result["own_hp"])
+            self.assertLess(spent_result["elixir"], saved_result["elixir"])
+        self.assertIsNone(receipt["pair"])
         self.assertEqual(world.battle.save(), before)
         self.assertEqual(world.history, [])
 

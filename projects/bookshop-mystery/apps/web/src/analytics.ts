@@ -7,21 +7,28 @@ import {
   type TRecordDocument,
   type TRenderer,
 } from './case-file';
+import { RETURNED_KEY_ID, type TReturnedKeyClue, type TReturnedKeyStep } from './returned-key/returned-key';
 
 export type TCaseEntryPoint = 'start' | 'primary' | 'previous' | 'timeline' | 'history' | 'resume' | 'replay';
 export type TRecordEntryPoint = 'step' | 'document' | 'primary';
 export type TPrinterFlipEntryPoint = 'primary' | 'toolbar';
 
 type TSource = 'youtube_shorts' | 'shared' | 'community' | 'direct';
+type TCaseId = typeof CASE_ID | typeof RETURNED_KEY_ID;
+type TObservedStep = TCaseStep | TReturnedKeyStep;
+type TObservedClue = TEvidence | TReturnedKeyClue;
 
 interface ICaseEvents {
+  case_catalog_viewed: { source: TSource };
+  case_catalog_selected: { source: TSource };
+  case_catalog_link_clicked: { from_step: 'landing' | TObservedStep };
   case_opened: { source: TSource };
   case_landing_viewed: { source: TSource };
   case_landing_cta_clicked: { intent: TLaunchIntent };
-  case_landing_link_clicked: { from_step: TCaseStep };
-  case_timeline_clicked: { from_step: TCaseStep; to_step: TCaseStep; suggested_next: boolean };
+  case_landing_link_clicked: { from_step: TObservedStep };
+  case_timeline_clicked: { from_step: TObservedStep; to_step: TObservedStep; suggested_next: boolean };
   case_scene_loaded: { renderer: TRenderer; load_bucket: 'under_8s' | '8s_or_more' };
-  case_evidence_opened: { clue_id: TEvidence; entry_point: TCaseEntryPoint };
+  case_evidence_opened: { clue_id: TObservedClue; entry_point: TCaseEntryPoint };
   case_printer_selected: { printer_id: TPrinter; entry_point: 'primary' | 'comparison' };
   case_printer_bottom_viewed: {
     printer_id: TPrinter;
@@ -34,7 +41,7 @@ interface ICaseEvents {
   case_hint_revealed: { hint_index: number };
   case_replay_started: Record<never, never>;
   case_verdict_opened: { entry_point: TCaseEntryPoint };
-  case_clue_found: { clue_id: TEvidence; first_clue: boolean };
+  case_clue_found: { clue_id: TObservedClue; first_clue: boolean };
   case_answer_submitted: Record<never, never>;
   case_completed: Record<never, never>;
   case_shared: { method: 'native' | 'copy' };
@@ -63,12 +70,17 @@ async function initialize(key: string) {
 
 const analytics = apiKey ? initialize(apiKey).catch(() => null) : null;
 
-export async function trackEvent<T extends keyof ICaseEvents>(event: T, data: ICaseEvents[T]) {
+export async function trackEvent<T extends keyof ICaseEvents>(
+  event: T,
+  data: ICaseEvents[T],
+  caseId: TCaseId = CASE_ID,
+) {
   if (!analytics) return;
   const amplitude = await analytics;
   if (!amplitude) return;
   try {
-    await amplitude.track(event, { case_id: CASE_ID, stage, ...data }).promise;
+    const context = event === 'case_catalog_viewed' ? { stage } : { case_id: caseId, stage };
+    await amplitude.track(event, { ...context, ...data }).promise;
   } catch {
     // Optional analytics cannot interrupt investigation.
   }

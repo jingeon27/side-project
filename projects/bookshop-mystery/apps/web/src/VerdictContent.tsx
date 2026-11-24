@@ -12,8 +12,9 @@ import {
 } from '@side/design-system';
 
 import { trackEvent } from './analytics';
-import { places, reasons } from './case-file';
+import { places, reasons, receiptCaseTitle } from './case-file';
 import { verdictIsCorrect, workLog } from './case-records';
+import { receiptLandingPath } from './case-routes';
 
 export const verdictFormId = 'final-verdict';
 
@@ -144,12 +145,11 @@ export function CaseEnding({ followed, animateCompletion, onFollow, onReplay }: 
   const [manualShare, setManualShare] = useState('');
 
   async function handleShare() {
-    const url = new URL('/', window.location.origin);
+    const url = new URL(receiptLandingPath, window.location.origin);
     url.searchParams.set('from', 'shared');
-    const title = '폐점한 서점의 마지막 영수증';
     if (navigator.share) {
       try {
-        await navigator.share({ title, url: url.href });
+        await navigator.share({ title: receiptCaseTitle, url: url.href });
         void trackEvent('case_shared', { method: 'native' });
         return;
       } catch (error) {

@@ -35,10 +35,13 @@ def graveyard_defense(context, action):
     effects = context.get("effects", [])
     poison_duration = COMBAT["poison"]["duration"]
     poison_radius = COMBAT["poison"]["radius"]
-    cast_delay = COMBAT["inputDelaySeconds"] + (
-        COMBAT[card]["deploySeconds"] if card in ("poison", "ice_wizard") else 1
-    )
-    strength = counter_strength(card)
+    deploy = {
+        "poison": COMBAT["poison"]["deploySeconds"],
+        "ice_wizard": COMBAT["ice_wizard"]["deploySeconds"],
+        "graveyard": SPEC["graveyardFirstSpawnSeconds"],
+    }
+    cast_delay = COMBAT["inputDelaySeconds"] + deploy.get(card, 1)
+    strength = 0 if card == "graveyard" and y >= 16 else counter_strength(card)
     pressure = response = 0.0
     for grave in effects:
         if grave[0] != "red" or grave[1] != "graveyard" or grave[3] >= 16:
@@ -59,22 +62,21 @@ def graveyard_defense(context, action):
         pressure = max(pressure, urgency)
         if not strength:
             continue
-        radius = (
-            poison_radius + 0.5
-            if card == "poison"
-            else 5
-            if card == "ice_wizard"
-            else SPEC["engagementRadius"]
-        )
+        ranges = {
+            "poison": poison_radius + 0.5,
+            "ice_wizard": 5,
+            "graveyard": COMBAT["policy"]["graveyardSpawnRadius"],
+        }
+        radius = ranges.get(card, SPEC["engagementRadius"])
         fit = coverage(x, y, grave, radius)
-        if card in ("skeletons", "ice_wizard") and any(
+        if card in ("skeletons", "ice_wizard", "graveyard") and any(
             poison[0] == "red"
             and poison[1] == "poison"
             and remaining(poison, poison_duration) > cast_delay
             and math.hypot(x - poison[2], y - poison[3]) <= poison_radius
             for poison in effects
         ):
-            fit *= 0.1 if card == "skeletons" else 0.5
+            fit *= 0.5 if card == "ice_wizard" else 0.1
         benefit = urgency * strength * fit * min(1, max(0, time - cast_delay) / 2)
         response = max(response, benefit)
     return pressure, response
