@@ -65,7 +65,7 @@ class YouTubePipelineTest(unittest.TestCase):
         for name in FILES:
             (source / name).write_bytes(b"rendered content")
         with patch("shorts_pipeline.promo_art") as draw:
-            draw.side_effect = lambda episode, path, font: path.write_bytes(b"poster")
+            draw.side_effect = lambda episode, path, font, play_url: path.write_bytes(b"poster")
             output = prepare_package(
                 read_episode("02-printers"), source, self.root / "youtube",
                 "https://example.test/play/?tag=one&tag=two&from=old#receipt",
@@ -73,6 +73,10 @@ class YouTubePipelineTest(unittest.TestCase):
         plan = json.loads((output / "upload.json").read_text(encoding="utf-8"))
         self.assertEqual(plan["video_sha256"], file_hash(output / "short.mp4"))
         self.assertEqual(plan["status"]["privacyStatus"], "private")
+        self.assertEqual(
+            plan["snippet"]["description"].splitlines()[0],
+            "사건 바로 풀기 https://example.test/play/?tag=one&tag=two#receipt",
+        )
         self.assertIn("from=youtube-shorts#receipt", (output / "profile-link.txt").read_text(encoding="utf-8"))
         self.assertIn("tag=one&tag=two&from=community#receipt", (output / "promotion.md").read_text(encoding="utf-8"))
         self.assertTrue((output / "promo-square.jpg").is_file())
