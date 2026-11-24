@@ -176,7 +176,7 @@
         ["B", "card", "graveyard", 5, 2.5, 25.5]
       ]
     },
-    "bias": [0, 0.6884058]
+    "bias": [0, -0.7615942]
   },
   {
     "name": "double elixir attacks when a confirmed Mother Witch is out of cycle and off the board",

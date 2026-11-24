@@ -43,7 +43,7 @@ function placementAdvice(
     ).length < 2
   )
     return -advice.emptyGraveyard;
-  if (card === 'graveyard' && crownTarget && !plan.twoCrown) {
+  if (card === 'graveyard' && crownTarget && !plan.twoCrown && !plan.witchHold) {
     const lane = x < 9 ? 0 : 1;
     if (plan.fallen.enemy.includes(lane)) return 0;
     const outsideX = lane === 0 ? 2.5 : 15.5;

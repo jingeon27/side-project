@@ -51,7 +51,7 @@ def placement_advice(context, action, defense, projection, crown_target, plan):
         < 2
     ):
         return -advice["emptyGraveyard"]
-    if card == "graveyard" and crown_target and not plan.two_crown:
+    if card == "graveyard" and crown_target and not plan.two_crown and not plan.witch_hold:
         lane = 0 if x < 9 else 1
         if lane in plan.fallen["enemy"]:
             return 0
