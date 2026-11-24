@@ -1,4 +1,5 @@
 export const CASE_ID = 'last-receipt';
+export const receiptCaseTitle = '폐점한 서점의 마지막 영수증';
 export const playPath = '/play/';
 
 export const clueIds = ['receipt', 'printers', 'record'] as const;
@@ -149,7 +150,8 @@ export function saveProgress(progress: IProgress) {
   }
 }
 
-export function classifySource(value: string | null) {
+export function visitSource() {
+  const value = new URLSearchParams(window.location.search).get('from');
   if (value === 'youtube-shorts') return 'youtube_shorts';
   if (value === 'shared') return 'shared';
   if (value === 'community') return 'community';

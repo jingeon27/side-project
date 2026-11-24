@@ -1,8 +1,8 @@
 # 새벽 기록실
 
-첫 사건 **폐점한 서점의 마지막 영수증**은 쇼츠에서 소개한 단서를 브라우저에서 이어서 조사하는 창작 미스터리다.
+쇼츠에서 소개한 단서를 브라우저에서 이어서 조사하는 창작 미스터리다. 홈에서 **폐점한 서점의 마지막 영수증**과 **새벽 세 시에 돌아온 열쇠**를 고를 수 있다.
 
-[비공개 플레이 프리뷰](https://dawn-records-last-receipt.observantsun5.chatgpt.site)
+[새벽 기록실](https://dawn.bambyul.com/)
 
 ## 로컬 실행
 
@@ -18,7 +18,7 @@ yarn workspace @side/bookshop-mystery build
 
 ## 조사 화면과 디자인 시스템
 
-`/`에서 사건 표지와 개요를 읽고 **조사 시작**으로 `/play/`에 들어간다. 돌아온 플레이어에게는 **이어서 조사** 또는 **결말 다시 보기**를 표시한다. 영수증 단계의 하단 **사건 소개**에서 랜딩을 다시 열 수 있다.
+`/`에서 사건을 선택한다. `/cases/last-receipt/`는 영수증 사건 소개를 열며, 기존 `/play/` 주소에서도 바로 조사를 시작할 수 있다. `/cases/returned-key/`에서는 봉투의 표식, 반납함, 야간 일지를 살펴 열쇠가 돌아온 경로를 추리한다. 진행과 결말은 사건별로 이 브라우저에 저장한다. 소개와 결말의 **사건 목록**으로 다른 사건을 고를 수 있다.
 
 타임라인에서 열린 단계를 눌러 이동한다. 현재 단계는 강조된 테두리와 글자로 표시하며, 확인한 단계는 체크를 표시한다. 잠긴 단계는 자물쇠와 점선으로 구분한다. 두 프린터의 밑면을 확인하면 프린터 단계에 Lottie 체크가 재생되고 이관 기록에 **다음** 표시가 나타난다. 프린터 화면에서 이관 기록을 누르면 이동한다. [ReUI Timeline](https://reui.io/components/timeline), [Shadcn Studio Timeline](https://shadcnstudio.com/blocks/marketing-ui/timeline-component), [ReUI 라이선스](apps/web/public/licenses/reui.txt)
 
@@ -26,7 +26,7 @@ yarn workspace @side/bookshop-mystery build
 
 이관 대장, 작업일지, 코드표를 확인하면 최종 추리가 열린다. 증거 수첩은 조사한 자료만 모으며, 추리 중에도 수첩을 열어 답안 초안과 함께 사용할 수 있다. 힌트는 요청할 때마다 한 단계씩 보여 준다. 결말에서 **다시 조사**를 선택하면 저장한 완료 기록을 보존한 채 현재 탭에서 처음부터 진행한다.
 
-`@use-funnel/core`를 브라우저 히스토리에 연결해 뒤로 가기와 앞으로 가기를 지원한다. 조사 단계는 `history.state`에 저장하고 주소의 경로만 바꿔 쇼츠 유입 매개변수와 해시를 보존한다. [토스 use-funnel](https://github.com/toss/use-funnel)
+`@use-funnel/core`를 브라우저 히스토리에 연결해 뒤로 가기와 앞으로 가기를 지원한다. 조사 단계는 사건별 `history.state`에 저장한다. 주소의 경로만 바꿔 사건 선택·조사 전환 중에도 쇼츠 유입 매개변수와 해시를 보존한다. [토스 use-funnel](https://github.com/toss/use-funnel)
 
 `@side/design-system`의 버튼, 폼, 다이얼로그, Disclosure, Tabs와 다크 테마 토큰을 사용한다. 증거 비교에 필요한 값과 터치 조작을 우선 배치하는 데 2025년 출시 이후 2026년에도 업데이트된 The Roottrees are Dead의 작은 화면용 개편을 참고했다. [출시 정보](https://store.steampowered.com/app/2754380/The_Roottrees_are_Dead/), [개발사 변경 기록](https://steamcommunity.com/app/2754380/announcements/)
 
@@ -72,13 +72,15 @@ Unity 소스는 같은 버전의 Unity API 어셈블리로 C# 컴파일을 확�
 
 ## 쇼츠 제작
 
-`production/episodes.json`은 세 편의 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
+`production/episodes.json`은 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
 
 ```sh
 yarn workspace @side/bookshop-mystery capture:browser http://127.0.0.1:43719
 ```
 
 `production/render-shorts.py`는 Story Studio Shorts의 내레이션, 반주, 자막, 인코딩을 재사용한다. Story Studio Python 실행 환경에서 `PYTHONPATH`에 Shorts 엔진의 `src` 경로를, `STORY_STUDIO_DATA_DIR`에 준비된 음성 모델 데이터 경로를 지정한다. `--renderer unity`를 주면 Unity 캡처 디렉터리를 읽는다. 작업 원본과 완성 파일은 각각 `production/.work`, `production/output`에 저장된다.
+
+열쇠 편은 웹과 같은 봉투·반납함 사진을 사용한다. `render-shorts.py --episode 04-returned-key`로 렌더링하고 `shorts_pipeline.py prepare 04-returned-key --source production/output --play-url https://dawn.bambyul.com/`으로 업로드 패키지와 홍보 초안을 만든다.
 
 새 편집본은 `production/output/revised`에 있다. 첫 컷의 표지 문구, 증거의 크기와 위치, 마지막 프로필 안내를 재편집했다. 같은 Python 환경에서 `--reuse-audio`에 기존 출력 폴더를 지정하면 내레이션, 반주, 자막 시점을 재사용한다.
 
@@ -114,10 +116,13 @@ OAuth 앱의 게시 상태가 **테스트 중**이면 갱신 토큰은 7일 후 
 
 ## 유입과 조사 결과
 
-Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에는 `case_id=last-receipt`와 `stage`가 붙는다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
+Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에 `stage`를 붙이고 사건 관련 이벤트에는 `case_id=last-receipt` 또는 `case_id=returned-key`를 함께 보낸다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
 
 | 이벤트                       | 속성 또는 시점                                                                                              |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `case_catalog_viewed`        | 사건 목록 진입과 `source`                                                                                   |
+| `case_catalog_selected`      | 사건 선택 클릭과 선택한 `case_id`, `source`                                                                 |
+| `case_catalog_link_clicked`  | 사건 목록으로 돌아가는 링크 클릭과 `from_step`                                                              |
 | `case_opened`                | 조사 화면 진입과 `source`                                                                                   |
 | `case_landing_viewed`        | 랜딩 진입과 `source`                                                                                        |
 | `case_landing_cta_clicked`   | 버튼 클릭, `intent`는 `start`, `resume`, `ending`                                                           |
@@ -134,8 +139,8 @@ Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌
 | `case_replay_started`        | 결말에서 다시 조사를 시작한 시점                                                                            |
 | `case_clue_found`            | `clue_id`, `first_clue`. 한 단서는 진행 중 한 번 기록                                                       |
 | `case_verdict_opened`        | 최종 추리 양식과 `entry_point`                                                                              |
-| `case_answer_submitted`      | 장소, 작업 기록, 작업 종류를 제출하는 시점                                                                  |
-| `case_completed`             | 올바른 장소, 작업 기록, 작업 종류가 확정된 시점                                                             |
+| `case_answer_submitted`      | 답안 제출 버튼으로 추리를 제출한 시점                                                                       |
+| `case_completed`             | 해당 사건의 올바른 답안이 확인된 시점                                                                       |
 | `case_shared`                | 공유 완료 또는 복사 성공의 `method`                                                                         |
 | `case_follow_clicked`        | 다음 사건 관심 표시를 클릭한 시점                                                                           |
 | `case_interest_saved`        | 브라우저 저장에 성공했을 때 `persistence=device`                                                            |

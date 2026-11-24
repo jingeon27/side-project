@@ -1,8 +1,10 @@
 import type { RefObject } from 'react';
 
-import { Button } from '@side/design-system';
+import { Button, buttonVariants } from '@side/design-system';
 
+import { trackEvent } from './analytics';
 import type { TLaunchIntent } from './case-file';
+import { caseHref, catalogPath, followCaseLink } from './case-routes';
 
 import './landing.css';
 
@@ -23,6 +25,18 @@ export function CaseLanding({ intent, heading, onStart }: ICaseLanding) {
     <main className="case-landing">
       <section className="landing-hero" aria-labelledby="case-title">
         <img className="landing-cover" src="/assets/last-receipt-cover.webp" alt="" fetchPriority="high" />
+        <div className="landing-shell landing-catalog">
+          <a
+            className={buttonVariants({ variant: 'secondary', size: 'md' })}
+            href={caseHref(catalogPath)}
+            onClick={(event) => {
+              void trackEvent('case_catalog_link_clicked', { from_step: 'landing' });
+              followCaseLink(event);
+            }}
+          >
+            사건 목록
+          </a>
+        </div>
         <div className="landing-shell landing-intro">
           <p className="landing-meta">약 5분</p>
           <h1 id="case-title" ref={heading} tabIndex={-1}>
