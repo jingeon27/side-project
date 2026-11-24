@@ -1,5 +1,11 @@
 import { sumBy } from 'es-toolkit';
 
+export function placementCountBias(families: readonly string[]) {
+  const counts = new Map<string, number>();
+  for (const family of families) counts.set(family, (counts.get(family) ?? 0) + 1);
+  return families.map((family) => -Math.log(counts.get(family)!));
+}
+
 // 한 카드의 여러 위치에 나뉜 확률을 먼저 합친다. 대기·스킬은 각각 별개의 선택이다.
 // 확률을 보정하거나 카드를 강제하지 않으며, Python policy.choice와 같은 결정을 한다.
 export function cardChoice(families: readonly string[], probabilities: readonly number[]) {

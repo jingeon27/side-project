@@ -25,7 +25,7 @@ class ScriptedPolicy:
         self.rng = np.random.default_rng(seed)
         self.metadata = {"version": -1, "scripted": name}
 
-    def predict(self, observation, actions):
+    def predict(self, observation, actions, _placement_bias=None):
         probabilities = np.zeros(len(actions))
         probabilities[self.choose(observation, actions, self.rng)] = 1
         return probabilities, 0.0

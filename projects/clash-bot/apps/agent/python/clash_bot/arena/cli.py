@@ -38,6 +38,9 @@ def arguments():
     output.add_argument("--summary", action="store_true", help="Print a short terminal summary")
     output.add_argument("--json", action="store_true", help="Print the full status record")
     commands.add_parser("stop")
+    confirm = commands.add_parser("confirm", help="Evaluate one frozen checkpoint on fresh seeds")
+    confirm.add_argument("--version", type=int, required=True)
+    confirm.add_argument("--workers", type=int, default=4)
     commands.add_parser(
         "coverage",
         help="Card comparison, executed play and optimizer coverage for the active league",

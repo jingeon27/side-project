@@ -7,6 +7,14 @@ from clash_bot.arena.training.bandits import pick, root_priors, root_subset
 
 
 class CardBanditsTest(unittest.TestCase):
+    def test_zero_probability_spend_is_not_added_by_root_selection_or_unvisited_coverage(self):
+        actions = [Action(-1), Action(2, TILE, TILE), Action(2, 2 * TILE, TILE)]
+        prior = np.array([0.3, 0.7, 0])
+        rng = np.random.default_rng(2)
+        self.assertEqual(root_subset(actions, prior, rng, 8, True), [0, 1])
+        edges = {actions[i]: {"n": 1, "w": 0, "p": prior[i], "available": 1} for i in (0, 1)}
+        self.assertIn(pick(edges, actions, prior, rng, 1.5, cover=True), actions[:2])
+
     def test_root_compares_spaced_positions_for_a_low_prior_defender_before_more_barrel_tiles(self):
         actions = [
             Action(-1),

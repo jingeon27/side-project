@@ -4,6 +4,7 @@ from unittest.mock import patch
 from clash_bot.arena.policy.network import Policy
 from clash_bot.arena.sim.rules import LIVE_DECK, POOL_DECKS
 from clash_bot.arena.training.evaluation import (
+    CONFIRMATION_PLAN,
     evaluate,
     evaluation_setup,
     paired_gate,
@@ -13,9 +14,42 @@ from clash_bot.arena.training.selfplay import live_setup
 
 
 class QualificationTest(unittest.TestCase):
-    def test_late_alpha_spending_increases_the_budget_instead_of_permanently_blocking_promotion(
-        self,
-    ):
+    def test_confirmation_threshold_does_not_shrink_with_evaluation_number(self):
+        a = Policy(metadata={"version": 1, "rulesID": "rules-a"})
+        b = Policy(metadata={"version": 0, "rulesID": "rules-a"})
+
+        def play(jobs):
+            return [
+                (
+                    [{"winner": 0}, {"winner": 1}],
+                    {"winner": 2} if job["setup"]["decks"][0] != job["setup"]["decks"][1] else None,
+                )
+                for job in jobs
+            ]
+
+        for number in (1, 132, 10000):
+            result = evaluate(
+                a,
+                b,
+                "rules-a",
+                number,
+                pairs=CONFIRMATION_PLAN["pairs"],
+                alpha=CONFIRMATION_PLAN["alpha"],
+                play_matchups=play,
+            )
+            self.assertEqual(result["requestedPairs"], 128)
+            self.assertEqual(result["gate"]["alpha"], 0.01)
+            self.assertTrue(result["gate"]["passed"])
+
+    def test_passing_score_still_needs_evidence_at_one_percent(self):
+        self.assertTrue(paired_gate([1] * 44 + [0] * 20 + [0.5] * 64)["passed"])
+        result = paired_gate([1] * 41 + [0] * 23 + [0.5] * 64)
+        self.assertGreater(result["score"], 0.55)
+        self.assertGreater(result["confidenceInterval"][0], 0.5)
+        self.assertGreater(result["oneSidedSignTestP"], 0.01)
+        self.assertFalse(result["passed"])
+
+    def test_screening_cannot_promote_even_a_sweep(self):
         challenger = Policy(seed=1, metadata={"version": 1, "rulesID": "rules-a"})
         champion = Policy(seed=2, metadata={"version": 0, "rulesID": "rules-a"})
 
@@ -28,10 +62,12 @@ class QualificationTest(unittest.TestCase):
             }
 
         with patch("clash_bot.arena.training.evaluation.play_game", side_effect=game):
-            result = evaluate(challenger, champion, "rules-a", 10000, pairs=16)
-        self.assertGreater(result["requestedPairs"], 16)
+            result = evaluate(challenger, champion, "rules-a", 10000, pairs=32)
+        self.assertEqual(result["requestedPairs"], 32)
         self.assertEqual(len(result["games"]), 2 * result["requestedPairs"])
-        self.assertTrue(result["gate"]["passed"])
+        self.assertEqual(result["gate"]["reason"], "screening_only")
+        self.assertFalse(result["gate"]["passed"])
+        self.assertIsNone(result["gate"]["alpha"])
 
     def test_ties_small_samples_and_nonfinite_results_cannot_promote(self):
         for scores in ([1] * 4, [0.5] * 64, [0] * 32, [float("nan")]):
@@ -112,6 +148,7 @@ class QualificationTest(unittest.TestCase):
                 "rules",
                 0,
                 pairs=64,
+                alpha=0.05,
                 play_matchups=lambda jobs: play(jobs, incumbent_wins),
             )
             self.assertEqual((result["gate"]["score"], len(result["games"])), (0.75, 128))
@@ -138,7 +175,7 @@ class QualificationTest(unittest.TestCase):
             return {"completed": True, "rejectedCommands": 0, "winner": winner, "samples": []}
 
         with patch("clash_bot.arena.training.evaluation.play_game", side_effect=game):
-            result = evaluate(challenger, champion, "rules-a", 0, pairs=64)
+            result = evaluate(challenger, champion, "rules-a", 0, pairs=64, alpha=0.05)
         self.assertGreater(result["gate"]["score"], 0.55)
         self.assertLess(result["matchupStrata"]["liveMirror"]["score"], 0.5)
         self.assertFalse(result["gate"]["passed"])

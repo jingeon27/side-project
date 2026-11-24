@@ -4,7 +4,7 @@ import { match } from 'ts-pattern';
 import type { BattleSituation } from '../battle/battle-state.ts';
 import { catalogueCard, type CatalogueCard } from '../card-catalogue.ts';
 import type { CardId } from '../cards.ts';
-import { DEPLOYMENT } from '../deployment.ts';
+import { DEPLOYMENT, pocketTiles, type FallenPrincessTowers } from '../deployment.ts';
 import { screenPoint, tilePoint } from '../geometry.ts';
 import { blockedDeployment } from '../placement/placement.ts';
 import type { ActionOption } from '../policy/actions.ts';
@@ -30,7 +30,7 @@ export const placementTiles = (
     .with('spawn_spell', () =>
       [3.5, 14.5].flatMap((x): Tile[] => [
         [x, 25.5],
-        [x + (x < 9 ? -0.8 : 0.8), 25],
+        [x + (x < 9 ? -1 : 1), 25.5],
         [x, 24.5],
       ]),
     )
@@ -82,6 +82,7 @@ export function fastCandidates(
   cards: Array<CardId | null>,
   elixir: number,
   situation: BattleSituation,
+  fallen?: FallenPrincessTowers,
 ): ActionOption[] {
   const enemies = situation.opponent.units.map((unit): Tile => tilePoint(profile, unit));
   const graves = (situation.effects ?? [])
@@ -96,7 +97,12 @@ export function fastCandidates(
   const plays = cards.flatMap((card, index) => {
     const entry = catalogueCard(card);
     if (card === null || !entry || entry.elixir > elixir) return [];
-    const anchors = card === 'poison' ? graves : [];
+    const anchors = [
+      ...(card === 'poison' ? graves : []),
+      ...(entry.placement === 'troop' || entry.placement === 'ranged_troop'
+        ? pocketTiles(fallen?.enemy ?? [])
+        : []),
+    ];
     return uniqBy(
       [
         ...anchors,

@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { CARD_CATALOGUE } from '../card-catalogue.ts';
 import type { DecisionContext } from '../policy/decision-v3.ts';
-import { cardChoice } from './choice.ts';
+import { cardChoice, placementCountBias } from './choice.ts';
 import { ACTION_SIZE, actionFeatures, contextFeatures, FAST_POLICY, STATE_SIZE } from './features.ts';
 import { forward, WEIGHT_SHAPES, type FastWeights } from './network.ts';
 import { fastActionBias } from './tactics.ts';
@@ -77,9 +77,10 @@ export class FastPolicy {
   }
 
   predict(context: DecisionContext) {
-    const mechanicsBias = fastActionBias(context);
-    const result = forward(this.weights, contextFeatures(context), actionFeatures(context), mechanicsBias);
     const families = context.actions.map((row) => (row[1] === 'card' ? `card:${row[2]}` : row[1]));
+    const mechanicsBias = fastActionBias(context);
+    const scores = placementCountBias(families).map((bias, index) => bias + mechanicsBias[index]!);
+    const result = forward(this.weights, contextFeatures(context), actionFeatures(context), scores);
     return {
       ...result,
       choice: cardChoice(families, result.probabilities),

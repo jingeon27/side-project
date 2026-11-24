@@ -71,6 +71,20 @@ const tiles = (profile: Profile, actions: ReturnType<typeof fastCandidates>, car
   actions.filter((action) => action.card === card).map((action) => tilePoint(profile, action.target));
 
 describe('fast policy candidates follow the simulator legal-action rules', () => {
+  it('offers the opened central placements to both melee and ranged troops', () => {
+    const profile = state.profile!;
+    const actions = fastCandidates(profile, ['knight', 'ice_wizard', 'skeletons', null], 5, situation(), {
+      own: [0],
+      enemy: [1],
+    });
+    for (const card of ['knight', 'ice_wizard', 'skeletons']) {
+      expect(tiles(profile, actions, card).slice(0, 2)).toEqual([
+        [10.5, 18.5],
+        [10.5, 19.5],
+      ]);
+    }
+  });
+
   it('offers Poison at the observed friendly-side Graveyard before any skeleton is seen', () => {
     const profile = state.profile!;
     const point = [3.7, 7] as const;

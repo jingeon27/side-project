@@ -29,21 +29,26 @@ export function graveyardDefense(context: DecisionContext, action: DecisionActio
   const strength = counterStrength(action[2]);
   const castDelay =
     COMBAT.inputDelaySeconds +
-    (action[2] === 'poison' || action[2] === 'ice_wizard' ? COMBAT[action[2]].deploySeconds : 1);
+    match(action[2])
+      .with('poison', () => COMBAT.poison.deploySeconds)
+      .with('ice_wizard', () => COMBAT.ice_wizard.deploySeconds)
+      .with('graveyard', () => FAST_TACTICS.graveyardFirstSpawnSeconds)
+      .otherwise(() => 1);
   const ownPoison = effects.filter((effect) => effect[0] === 'blue' && effect[1] === 'poison');
   const enemyPoison = effects.filter((effect) => effect[0] === 'red' && effect[1] === 'poison');
   const radius = match(action[2])
     .with('poison', () => COMBAT.poison.radius + 0.5)
     .with('ice_wizard', () => 5)
+    .with('graveyard', () => COMBAT.policy.graveyardSpawnRadius)
     .otherwise(() => FAST_TACTICS.engagementRadius);
   const exposed =
-    (action[2] === 'skeletons' || action[2] === 'ice_wizard') &&
+    (action[2] === 'skeletons' || action[2] === 'ice_wizard' || action[2] === 'graveyard') &&
     enemyPoison.some(
       (poison) =>
         remaining(poison, COMBAT.poison.duration) > castDelay &&
         Math.hypot(action[4] - poison[2], action[5] - poison[3]) <= COMBAT.poison.radius,
     );
-  const exposureFactor = action[2] === 'skeletons' ? 0.1 : 0.5;
+  const exposureFactor = action[2] === 'ice_wizard' ? 0.5 : 0.1;
   const positionFactor = exposed ? exposureFactor : 1;
   const windows = effects.flatMap((grave) => {
     if (grave[0] !== 'red' || grave[1] !== 'graveyard' || grave[3] >= 16) return [];
@@ -60,7 +65,7 @@ export function graveyardDefense(context: DecisionContext, action: DecisionActio
     const pressure = Math.min(1, time / 3) * (1 - existing);
     const response =
       pressure *
-      strength *
+      (action[2] === 'graveyard' && action[5] >= 16 ? 0 : strength) *
       coverage(action[4], action[5], grave, radius) *
       positionFactor *
       Math.min(1, Math.max(0, time - castDelay) / 2);

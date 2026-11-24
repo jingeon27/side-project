@@ -6,14 +6,17 @@ from pathlib import Path
 from clash_bot.files import atomic_json
 from clash_bot.paths import DATA_DIR
 
-from .league.champions import checkpoint, export_policy
+from .league.champions import checkpoint, export_policy, learner_history
+from .league.control import Control
 from .league.coverage import training_coverage
 from .league.loop import run
+from .league.qualification import qualify
 from .policy.network import Policy
+from .sim.rules import rules_identity
 from .sim.verification import verify
 from .tables import balance, catalogue_build
 from .training.benchmark import benchmark
-from .training.parallel import MAX_WORKERS
+from .training.parallel import MAX_WORKERS, Workers
 
 DATA = DATA_DIR
 CONTROL = DATA / "arena/control"
@@ -61,6 +64,40 @@ def verification(_args, _parser):
     return result
 
 
+def confirm(args, parser):
+    if args.version <= 0 or not 1 <= args.workers <= MAX_WORKERS:
+        parser.error("Use a saved learner version and a valid worker count")
+    with Control(DATA, hours=0) as control, Workers(args.workers) as workers:
+        root, league = active_league()
+        rules = rules_identity()
+        if rules["id"] != league["rulesID"]:
+            raise ValueError("The active league belongs to a different simulator rule set")
+        if args.version <= league["champion"] or not any(
+            row["version"] == args.version for row in learner_history(root, league)
+        ):
+            raise ValueError("Choose a committed learner checkpoint newer than the active champion")
+        policy = Policy.load(checkpoint(root, args.version), rules["id"])
+        control.report(
+            {
+                "root": str(root),
+                "rulesID": rules["id"],
+                "mode": "evaluation_only",
+                "candidate": args.version,
+                "learner": league["learner"],
+                "champion": league["champion"],
+            }
+        )
+        result = qualify(control, workers, root, league, rules, policy, pairs=None)
+        if result is None:
+            return {"complete": False, "championVersion": league["champion"]}
+        return {
+            "complete": result["complete"],
+            "gate": result["gate"],
+            "plan": result["confirmationPlan"],
+            "championVersion": league["champion"],
+        }
+
+
 def measure(args, parser):
     if not 1 <= args.pairs <= 64:
         parser.error("Play 1..64 seat-swapped pairs per rule bot")
@@ -85,6 +122,7 @@ def rules(args, _parser):
 
 COMMANDS = {
     "start": start,
+    "confirm": confirm,
     "verify": verification,
     "policy": live_policy,
     "coverage": lambda _args, _parser: training_coverage(*active_league()),

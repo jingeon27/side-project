@@ -59,7 +59,7 @@ def initialize(root, rules, parent=None):
     if initial.exists():
         Policy.load(initial, rules["id"])  # Recover a crash before first pointer publication.
     else:
-        inherited, spent = parent_champion(parent)
+        inherited, used_evaluations = parent_champion(parent)
         if inherited:
             policy = Policy(
                 weights=inherited.weights, metadata={"version": 0, "rulesID": rules["id"]}
@@ -69,7 +69,11 @@ def initialize(root, rules, parent=None):
             }
             policy.save(
                 initial,
-                {"role": "inherited_champion", "inheritedFrom": source, "evaluationOffset": spent},
+                {
+                    "role": "inherited_champion",
+                    "inheritedFrom": source,
+                    "evaluationOffset": used_evaluations,
+                },
             )
         else:
             policy = Policy(metadata={"version": 0, "rulesID": rules["id"]})
@@ -113,7 +117,7 @@ def store(root, league):
 
 
 def parent_champion(parent):
-    """Carry verified weights and spent tests. Changing training must not refund alpha."""
+    """Carry verified weights and the next unused evaluation number."""
     if parent is None:
         return None, 0
     parent = Path(parent)

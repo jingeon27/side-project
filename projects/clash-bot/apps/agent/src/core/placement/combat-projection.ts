@@ -1,9 +1,15 @@
 import { match } from 'ts-pattern';
 
 import type { FieldUnit } from '../battle/battle-state.ts';
-import { COMBAT } from '../combat-reference.ts';
+import { COMBAT, combatBodyReference } from '../combat-reference.ts';
 import { projectionScale, tilePoint } from '../geometry.ts';
 import type { Profile } from '../profile.ts';
+import {
+  firecrackerRecoil,
+  poisonPosition,
+  motionPosition as position,
+  recoilPosition,
+} from './combat-motion.ts';
 
 export type CombatBody = {
   kind: string;
@@ -44,7 +50,7 @@ export function combatBody(profile: Pick<Profile, 'riverY' | 'tileScale'>, unit:
         ] as [number, number])
       : null;
   const kind = unit.kind ?? unit.card ?? '?';
-  const reference = COMBAT.bodies[kind];
+  const hp = combatBodyReference(kind)?.hp;
   return {
     kind,
     x: point[0],
@@ -52,11 +58,8 @@ export function combatBody(profile: Pick<Profile, 'riverY' | 'tileScale'>, unit:
     variant: unit.variant ?? 'unknown',
     velocity,
     hp:
-      unit.health && reference
-        ? [
-            Math.floor(reference.hp * unit.health.minFraction),
-            Math.ceil(reference.hp * unit.health.maxFraction),
-          ]
+      unit.health && hp
+        ? [Math.floor(hp * unit.health.minFraction), Math.ceil(hp * unit.health.maxFraction)]
         : null,
   };
 }
@@ -72,30 +75,9 @@ const classifyKill = (
 };
 
 const round = (value: number) => Math.round(value * 10) / 10;
-const position = (unit: CombatBody, time: number) => ({
-  x: unit.x + (unit.velocity?.[0] ?? 0) * time,
-  y: unit.y + (unit.velocity?.[1] ?? 0) * time,
-});
-function poisonPosition(unit: CombatBody, time: number, x: number, y: number, delay: number) {
-  if (!unit.velocity) return position(unit, time);
-  const [vx, vy] = unit.velocity;
-  const a = vx * vx + vy * vy;
-  const b = 2 * ((unit.x - x) * vx + (unit.y - y) * vy);
-  const c = (unit.x - x) ** 2 + (unit.y - y) ** 2 - COMBAT.poison.radius ** 2;
-  const discriminant = b * b - 4 * a * c;
-  if (a === 0 || discriminant < 0) return position(unit, time);
-  const enter = Math.max(delay, (-b - Math.sqrt(discriminant)) / (2 * a));
-  const exit = (-b + Math.sqrt(discriminant)) / (2 * a);
-  if (exit <= enter || time <= enter) return position(unit, time);
-  const until = enter + (exit - enter) / COMBAT.poison.slowMultiplier;
-  return position(
-    unit,
-    time <= until ? enter + (time - enter) * COMBAT.poison.slowMultiplier : exit + time - until,
-  );
-}
-const uncertainty = (unit: CombatBody, time: number) => {
-  if (COMBAT.bodies[unit.kind]?.speed === 0) return COMBAT.positionUncertaintyTiles;
-  const speed = unit.velocity ? COMBAT.turnUncertaintyTilesPerSecond : (COMBAT.bodies[unit.kind]?.speed ?? 2);
+const uncertainty = (unit: CombatBody, time: number, referenceSpeed: number) => {
+  if (referenceSpeed === 0) return COMBAT.positionUncertaintyTiles;
+  const speed = unit.velocity ? COMBAT.turnUncertaintyTilesPerSecond : referenceSpeed;
   return COMBAT.positionUncertaintyTiles + time * speed;
 };
 
@@ -110,6 +92,7 @@ export function forecastEffect(input: {
   enemy: CombatBody[];
   enemyCycle: Array<[string, number, number]>;
   enemyMana: { min: number; max: number };
+  ownTowers?: ReadonlyArray<{ x: number; y: number }>;
 }): EffectForecast {
   const reserveBarrel =
     input.enemyCycle.some(([card, min]) => card === 'goblin_barrel' && min === 0) && input.enemyMana.max >= 3;
@@ -138,10 +121,16 @@ export function forecastEffect(input: {
   };
   if (input.kind === 'ability' || !['ice_wizard', 'barbarian_barrel', 'poison'].includes(input.card ?? ''))
     return empty;
+  const shotTargets = [...input.own, ...(input.ownTowers ?? [])];
   const targets = input.enemy.flatMap((unit, index) => {
     if (unit.kind === 'barrel') return [];
-    const reference = COMBAT.bodies[unit.kind];
+    const reference = combatBodyReference(unit.kind);
     if (input.card === 'barbarian_barrel' && !reference?.ground) return [];
+    const recoil = firecrackerRecoil(unit, shotTargets);
+    const scenarios = recoil ? [0, 1] : [0];
+    const rollHalfWidth =
+      COMBAT.barbarian_barrel.width / 2 +
+      (unit.kind === 'firecracker' ? COMBAT.firecrackerRecoil.lateralBodyPadding : 0);
     const delay =
       COMBAT.inputDelaySeconds +
       match(input.card)
@@ -162,22 +151,28 @@ export function forecastEffect(input: {
     const hits = times.map((time) => {
       const point =
         input.card === 'poison' ? poisonPosition(unit, time, input.x, input.y, delay) : position(unit, time);
+      const positions = recoil ? [point, recoilPosition(point, time, recoil)] : [point];
       const radius =
-        uncertainty(unit, time) +
+        uncertainty(unit, time, reference?.speed ?? 2) +
         COMBAT.inputDelayUncertainty * Math.hypot(...(unit.velocity ?? [reference?.speed ?? 2, 0]));
       if (input.card === 'barbarian_barrel') {
         const rollY = input.y + (time - delay) * COMBAT.barbarian_barrel.speed;
-        const dx = Math.abs(point.x - input.x) - COMBAT.barbarian_barrel.width / 2;
-        const dy = Math.abs(point.y - rollY) - COMBAT.barbarian_barrel.depth / 2;
-        return [dx + radius <= 0 && dy + radius <= 0, dx - radius <= 0 && dy - radius <= 0];
+        const contacts = positions.map((p): [number, number] => [
+          Math.abs(p.x - input.x) - rollHalfWidth,
+          Math.abs(p.y - rollY) - COMBAT.barbarian_barrel.depth / 2,
+        ]);
+        return [
+          contacts.every(([dx, dy]) => dx + radius <= 0 && dy + radius <= 0),
+          contacts.some(([dx, dy]) => dx - radius <= 0 && dy - radius <= 0),
+        ];
       }
-      const positions = input.card === 'poison' ? [point, position(unit, time)] : [point];
+      const points = input.card === 'poison' ? [...positions, position(unit, time)] : positions;
       const range = input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius;
       return [
-        positions.every(
+        points.every(
           (candidate) => Math.hypot(candidate.x - input.x, candidate.y - input.y) + radius <= range,
         ),
-        positions.some(
+        points.some(
           (candidate) => Math.hypot(candidate.x - input.x, candidate.y - input.y) - radius <= range,
         ),
       ];
@@ -186,20 +181,23 @@ export function forecastEffect(input: {
       input.card === 'barbarian_barrel'
         ? times.map((time) => {
             const point = position(unit, time);
-            const cross = Math.abs(point.x - input.x) / (COMBAT.barbarian_barrel.width / 2);
-            const along =
-              Math.abs(point.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) /
-              (COMBAT.barbarian_barrel.depth / 2);
-            return {
-              hit: cross <= 1 && along <= 1,
-              quality:
-                Math.max(0, 1 - cross) * Math.max(0, 1 - along) * (1 - (0.25 * (time - delay)) / duration),
-            };
+            const positions = recoil ? [point, recoilPosition(point, time, recoil)] : [point];
+            return positions.map((p) => {
+              const cross = Math.abs(p.x - input.x) / rollHalfWidth;
+              const along =
+                Math.abs(p.y - input.y - (time - delay) * COMBAT.barbarian_barrel.speed) /
+                (COMBAT.barbarian_barrel.depth / 2);
+              return {
+                hit: cross <= 1 && along <= 1,
+                quality:
+                  Math.max(0, 1 - cross) * Math.max(0, 1 - along) * (1 - (0.25 * (time - delay)) / duration),
+              };
+            });
           })
         : [];
     const central =
       input.card === 'barbarian_barrel'
-        ? rollContacts.map((contact) => contact.hit)
+        ? scenarios.map((path) => rollContacts.some((contact) => contact[path]?.hit))
         : times.map((time) => {
             if (
               input.card === 'poison' &&
@@ -211,9 +209,11 @@ export function forecastEffect(input: {
               input.card === 'poison'
                 ? poisonPosition(unit, time, input.x, input.y, delay)
                 : position(unit, time);
-            return (
-              Math.hypot(point.x - input.x, point.y - input.y) <=
-              (input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius)
+            const positions = recoil ? [point, recoilPosition(point, time, recoil)] : [point];
+            return positions.every(
+              (p) =>
+                Math.hypot(p.x - input.x, p.y - input.y) <=
+                (input.card === 'poison' ? COMBAT.poison.radius : COMBAT.ice_wizard.radius),
             );
           });
     const trajectoryPotential = () => {
@@ -224,7 +224,7 @@ export function forecastEffect(input: {
             Math.floor((central.filter(Boolean).length * COMBAT.stepSeconds) / COMBAT.poison.tickSeconds),
           ) * COMBAT.poison.dps
         );
-      if (!central.some(Boolean)) return 0;
+      if (input.card === 'barbarian_barrel' ? !central.every(Boolean) : !central.some(Boolean)) return 0;
       return input.card === 'ice_wizard' ? COMBAT.ice_wizard.damage : COMBAT.barbarian_barrel.damage;
     };
     const trajectoryDamage = trajectoryPotential();
@@ -267,7 +267,11 @@ export function forecastEffect(input: {
         hp: unit.hp,
         kill,
         trajectoryDamage,
-        trajectoryQuality: Math.max(0, ...rollContacts.map((contact) => contact.quality)),
+        trajectoryQuality: Math.min(
+          ...scenarios.map((path) =>
+            Math.max(0, ...rollContacts.map((sample) => sample[path]?.quality ?? 0)),
+          ),
+        ),
       },
     ];
   });

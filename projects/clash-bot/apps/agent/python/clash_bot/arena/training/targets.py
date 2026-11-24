@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from ..policy.choice import placement_count_bias
 from ..policy.dense import DenseActions
 from ..policy.features import action_features, context_features, forward, hide_towers
 from ..policy.projection import project_logits
@@ -41,11 +42,15 @@ def training_rows(observation, result, screen, chosen, policy, context=None):
     if context is None:
         context = screen.read(observation, available)
     state, vectors = context_features(context), action_features(context)
-    biases = action_biases(context)
-    masked_biases = action_biases({key: value for key, value in context.items() if key != "towers"})
+    families = [row.card for row in available]
+    placement_bias = placement_count_bias(families)
+    biases = action_biases(context) + placement_bias
+    masked_biases = (
+        action_biases({key: value for key, value in context.items() if key != "towers"})
+        + placement_bias
+    )
     scores = forward(policy.weights, state, vectors)[0] + biases
     masked_scores = forward(policy.weights, hide_towers(state), vectors)[0] + masked_biases
-    families = [row.card for row in available]
     values = np.asarray(result["values"])[searched]
     visits = np.asarray(result["visits"])[searched]
 

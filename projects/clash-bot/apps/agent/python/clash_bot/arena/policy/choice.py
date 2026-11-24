@@ -5,8 +5,14 @@ many legal tiles must not turn it into a hundred separate votes against the sing
 """
 
 import math
+from collections import Counter
 
 import numpy as np
+
+
+def placement_count_bias(families, counts=None):
+    counts = counts if counts is not None else Counter(families)
+    return np.array([-math.log(counts[family]) for family in families], dtype=np.float32)
 
 
 def grouped_indices(families):

@@ -36,7 +36,21 @@ BACKGROUND = {"drop", "dirt", "axe", "tower", "king-tower", "princess-tower", "g
 
 
 def identity(label):
-    return label.removesuffix("-evolution").removesuffix("-hero").replace("-", "_")
+    bare = label.removesuffix("-evolution").removesuffix("-hero")
+    return "witch_mother" if bare == "mother-witch" else bare.replace("-", "_")
+
+
+def clear_siege_identity(kind, label, scores, box, side, evidence):
+    minimum_width = {"royal_giant": 36, "hunter": 22}.get(kind)
+    if minimum_width is None or side != "red" or evidence["red"] < 30:
+        return False
+    support = scores.get(label, 0)
+    if box[2] - box[0] < minimum_width or support < 0.28:
+        return False
+    alternative = max(
+        (value for name, value in scores.items() if identity(name) != kind), default=0
+    )
+    return support >= 2.5 * alternative
 
 
 def side_from_pixels(pixels, box):
@@ -134,15 +148,20 @@ class TrophyVision:
             raise ValueError("Expected normalized 368x652 real-client screenshot")
         pixels = np.asarray(image)
         boxes = self.worker.proposals(image)
-        classifications = self.worker.classify(image, boxes)
+        classifications = self.worker.classify(image, boxes, include_labels=True)
         units = []
         for box, result in zip(boxes, classifications):
             label = result["label"]
             base = identity(label)
             score = result["raw_confidence"]
-            if label in BACKGROUND or score < 0.65 or not 70 < box[3] < 505:
+            if label in BACKGROUND or not 70 < box[3] < 505:
                 continue
             side, evidence = side_from_pixels(pixels, box)
+            tactical = score < 0.65 and clear_siege_identity(
+                base, label, result["label_scores"], box, side, evidence
+            )
+            if score < 0.65 and not tactical:
+                continue
             units.append(
                 {
                     "kind": base,
@@ -157,6 +176,11 @@ class TrophyVision:
                     else "base",
                     "side": side,
                     "sideEvidence": evidence,
+                    **(
+                        {"tacticalIdentity": "low_score_hostile_role_with_clear_margin"}
+                        if tactical
+                        else {}
+                    ),
                     "box": box,
                     "x": (box[0] + box[2]) / 2,
                     "y": box[3] - 4,
