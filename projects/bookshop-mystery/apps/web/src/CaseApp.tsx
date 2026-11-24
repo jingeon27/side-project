@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
-import { Button, FormActions } from '@side/design-system';
+import { Button, buttonVariants, FormActions } from '@side/design-system';
 
 import {
   trackEvent,
@@ -11,7 +11,6 @@ import {
 import {
   canOpenStep,
   CASE_ID,
-  classifySource,
   front,
   investigationIntent,
   nextInvestigationStep,
@@ -23,6 +22,7 @@ import {
   saveProgress,
   stepIds,
   stepLabels,
+  visitSource,
   type IOrientation,
   type IProgress,
   type TCaseRoute,
@@ -34,6 +34,7 @@ import {
   type TRenderer,
 } from './case-file';
 import { recordLabels } from './case-records';
+import { caseHref, catalogPath, followCaseLink } from './case-routes';
 import { CaseLanding } from './CaseLanding';
 import { PrinterControls, PrinterEvidence, ReceiptEvidence } from './EvidenceContent';
 import { EvidenceNotebook } from './EvidenceNotebook';
@@ -136,8 +137,7 @@ export function CaseApp() {
   });
 
   const trackVisit = useEffectEvent((landing: boolean) => {
-    const source = new URL(window.location.href).searchParams.get('from');
-    void trackEvent(landing ? 'case_landing_viewed' : 'case_opened', { source: classifySource(source) });
+    void trackEvent(landing ? 'case_landing_viewed' : 'case_opened', { source: visitSource() });
   });
 
   useEffect(() => {
@@ -257,7 +257,20 @@ export function CaseApp() {
 
   function renderPrimaryAction() {
     if (step === 'verdict') {
-      if (progress.solved) return null;
+      if (progress.solved) {
+        return (
+          <a
+            className={buttonVariants({ variant: 'accent', size: 'lg' })}
+            href={caseHref(catalogPath)}
+            onClick={(event) => {
+              void trackEvent('case_catalog_link_clicked', { from_step: step });
+              followCaseLink(event);
+            }}
+          >
+            사건 목록
+          </a>
+        );
+      }
       return (
         <Button key="submit-verdict" fullWidth variant="accent" size="lg" type="submit" form={verdictFormId}>
           추리 제출
@@ -321,7 +334,12 @@ export function CaseApp() {
         <div className="case-frame investigation-tools">
           <InvestigationTimeline
             step={step}
-            progress={progress}
+            steps={stepIds.map((id) => ({
+              id,
+              label: stepLabels[id],
+              complete: id === 'verdict' ? progress.solved : progress.clues.includes(id),
+              open: canOpenStep(id, progress),
+            }))}
             animatedClue={animatedStep === 'verdict' ? undefined : animatedStep}
             suggestedStep={suggestedStep}
             onSelect={(next) => handleNavigate(next, 'timeline')}

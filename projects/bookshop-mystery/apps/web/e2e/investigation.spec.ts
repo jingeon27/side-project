@@ -54,7 +54,7 @@ test('작은 화면에서 사건을 시작하고 타임라인으로 열린 단�
     const hostname = new URL(request.url()).hostname;
     if (hostname.endsWith('.amplitude.com')) analyticsRequests.push(hostname);
   });
-  await page.goto('/');
+  await page.goto('/cases/last-receipt/');
   await expect(page.getByRole('heading', { name: '폐점한 서점의 마지막 영수증' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '사건 개요' })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -185,7 +185,7 @@ test('작은 화면에서 사건을 시작하고 타임라인으로 열린 단�
 
 test('사건 소개와 조사 주소를 오가며 저장된 단서와 유입 링크를 보존한다', async ({ page }) => {
   const query = '?from=youtube-shorts&item=one&item=two#evidence';
-  await page.goto('/' + query);
+  await page.goto('/cases/last-receipt/' + query);
   await page.getByRole('button', { name: '조사 시작' }).click();
   await expect(page).toHaveURL((url) => url.pathname + url.search + url.hash === '/play/' + query);
 
@@ -199,7 +199,9 @@ test('사건 소개와 조사 주소를 오가며 저장된 단서와 유입 링
   await expect(page.getByText('원거래 일시')).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('button', { name: '이어서 조사' })).toBeVisible();
-  await expect(page).toHaveURL((url) => url.pathname + url.search + url.hash === '/' + query);
+  await expect(page).toHaveURL(
+    (url) => url.pathname + url.search + url.hash === '/cases/last-receipt/' + query,
+  );
   await page.goForward();
   await expect(action.getByRole('button', { name: '사건 소개', exact: true })).toBeVisible();
 
@@ -208,7 +210,9 @@ test('사건 소개와 조사 주소를 오가며 저장된 단서와 유입 링
   await expect(resumed.getByRole('button', { name: '프린터 B 밑면 보기', exact: true })).toBeVisible();
   await resumed.getByRole('button', { name: '영수증 보기', exact: true }).click();
   await resumed.getByRole('button', { name: '사건 소개', exact: true }).click();
-  await expect(resumed).toHaveURL((url) => url.pathname + url.search + url.hash === '/' + query);
+  await expect(resumed).toHaveURL(
+    (url) => url.pathname + url.search + url.hash === '/cases/last-receipt/' + query,
+  );
   await resumed.getByRole('button', { name: '이어서 조사', exact: true }).click();
   await expect(resumed.getByRole('button', { name: '프린터 A MX-41' })).toBeVisible();
   await resumed.close();
@@ -226,7 +230,7 @@ test('이전 버전 중간 진행은 새 문서부터 이어서 조사한다', a
       }),
     );
   });
-  await page.goto('/');
+  await page.goto('/cases/last-receipt/');
   await page.getByRole('button', { name: '이어서 조사' }).click();
   await expect(page.getByRole('tab', { name: '작업일지' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByText('2/3 확인')).toBeVisible();

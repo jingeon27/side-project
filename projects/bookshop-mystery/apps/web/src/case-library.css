@@ -1,0 +1,119 @@
+.case-library {
+  width: min(68rem, calc(100% - 2 * max(14px, var(--case-gutter))));
+  margin-inline: auto;
+  padding-block: calc(clamp(1.5rem, 5vw, 4.25rem) + var(--safe-top)) calc(2.5rem + var(--safe-bottom));
+}
+
+.case-library h1 {
+  margin: 0 0 clamp(1rem, 3vw, 1.75rem);
+  color: var(--color-ink);
+  font-family: var(--evidence-serif);
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+
+.case-library h1:focus {
+  outline: none;
+}
+
+.case-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.8rem, 2.5vw, 1.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-library-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.case-library-card:hover,
+.case-library-card:focus-visible {
+  border-color: var(--color-accent-ink);
+}
+
+.case-library-card:focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 3px;
+}
+
+.case-library-card > img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: 65% center;
+  background: var(--color-canvas);
+}
+
+.case-library-card[data-case='returned-key'] > img {
+  object-position: center 52%;
+}
+
+.case-library-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: start;
+  padding: clamp(0.85rem, 2.5vw, 1.4rem);
+}
+
+.case-library-time {
+  margin: 0 0 0.32rem;
+  color: var(--color-accent-ink);
+  font-size: var(--text-caption);
+  font-weight: var(--text-label--font-weight);
+}
+
+.case-library-copy h2 {
+  margin: 0;
+  font-family: var(--evidence-serif);
+  font-size: clamp(1.12rem, 3.4vw, 1.75rem);
+  font-weight: 750;
+  line-height: 1.28;
+  letter-spacing: -0.038em;
+  word-break: keep-all;
+}
+
+.case-library-premise {
+  margin: 0.38rem 0 0.8rem;
+  color: var(--color-muted);
+  font-size: var(--text-label);
+  line-height: 1.48;
+  word-break: keep-all;
+}
+
+.case-library-action {
+  margin-top: auto;
+  color: var(--color-accent-ink);
+  font-size: var(--text-label);
+  font-weight: var(--text-label--font-weight);
+}
+
+@media (max-width: 600px) {
+  .case-library-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-library-card {
+    grid-template-columns: clamp(5.5rem, 30%, 11rem) minmax(0, 1fr);
+    grid-template-rows: 1fr;
+  }
+
+  .case-library-card > img {
+    height: 100%;
+    min-height: 100%;
+    aspect-ratio: auto;
+  }
+}

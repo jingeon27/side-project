@@ -3,15 +3,6 @@ import { Check, LockKeyhole } from 'lucide-react';
 import { Button, StatusAnimation } from '@side/design-system';
 
 import {
-  canOpenStep,
-  isEvidence,
-  stepIds,
-  stepLabels,
-  type IProgress,
-  type TCaseStep,
-  type TEvidence,
-} from './case-file';
-import {
   Timeline,
   TimelineHeader,
   TimelineIndicator,
@@ -20,34 +11,32 @@ import {
   TimelineTitle,
 } from './reui/Timeline';
 
-interface IInvestigationTimeline {
-  step: TCaseStep;
-  progress: IProgress;
-  animatedClue?: TEvidence;
-  suggestedStep?: TCaseStep;
-  onSelect: (step: TCaseStep) => void;
+interface IInvestigationTimeline<TStep extends string> {
+  step: TStep;
+  steps: readonly { id: TStep; label: string; complete: boolean; open: boolean }[];
+  animatedClue?: TStep;
+  suggestedStep?: TStep;
+  onSelect: (step: TStep) => void;
 }
 
-export function InvestigationTimeline({
+export function InvestigationTimeline<TStep extends string>({
   step,
-  progress,
+  steps,
   animatedClue,
   suggestedStep,
   onSelect,
-}: IInvestigationTimeline) {
+}: IInvestigationTimeline<TStep>) {
   return (
     <Timeline
-      value={stepIds.indexOf(step) + 1}
+      value={steps.findIndex(({ id }) => id === step) + 1}
       orientation="horizontal"
       className="investigation-timeline"
       render={<ol aria-label="조사 진행도" role="list" />}
     >
-      {stepIds.map((id, index) => {
+      {steps.map(({ id, label, complete, open }, index) => {
         const current = id === step;
-        const complete = isEvidence(id) ? progress.clues.includes(id) : progress.solved;
-        const open = canOpenStep(id, progress);
         const suggested = id === suggestedStep;
-        const next = stepIds[index + 1];
+        const next = steps[index + 1];
         return (
           <TimelineItem
             key={id}
@@ -86,12 +75,12 @@ export function InvestigationTimeline({
                   ))}
               </TimelineIndicator>
               <TimelineTitle render={<span />}>
-                {stepLabels[id]}
+                {label}
                 {complete && <span className="sr-only"> 확인 완료</span>}
                 {!open && <span className="sr-only"> 잠김</span>}
               </TimelineTitle>
             </TimelineHeader>
-            <TimelineSeparator data-open={Boolean(next && canOpenStep(next, progress))} />
+            <TimelineSeparator data-open={Boolean(next?.open)} />
           </TimelineItem>
         );
       })}

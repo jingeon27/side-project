@@ -13,6 +13,8 @@ export default defineConfig({
       input: [
         fileURLToPath(new URL('./index.html', import.meta.url)),
         fileURLToPath(new URL('./play/index.html', import.meta.url)),
+        fileURLToPath(new URL('./cases/last-receipt/index.html', import.meta.url)),
+        fileURLToPath(new URL('./cases/returned-key/index.html', import.meta.url)),
       ],
     },
   },
