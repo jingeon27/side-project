@@ -1,10 +1,12 @@
 """Seat-swapped, disjoint-seed evaluation and explicit champion promotion gate."""
 
+import json
 import math
 
 import numpy as np
 from more_itertools import chunked
 
+from clash_bot.paths import CONTRACTS_DIR
 from clash_bot.statistics import paired_win_probability
 
 from ..sim.rules import LIVE_DECK, POOL_DECKS
@@ -20,7 +22,20 @@ def evaluation_setup(pair, generation):
     return setup
 
 
-def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
+QUALIFICATION = json.loads((CONTRACTS_DIR / "qualification.json").read_text())
+MINIMUM_SCORE = QUALIFICATION["minimumMeanScore"]
+MINIMUM_PAIRS = QUALIFICATION["minimumPairs"]
+MINIMUM_DECISIVE = 8
+
+
+CONFIRMATION_PLAN = {
+    "protocol": "single_frozen_matchup_v1",
+    "pairs": 128,
+    "alpha": 0.01,
+}
+
+
+def paired_gate(pair_scores, minimum_pairs=MINIMUM_PAIRS, alpha=CONFIRMATION_PLAN["alpha"]):
     if not pair_scores or any(
         not math.isfinite(score) or score < 0 or score > 1 for score in pair_scores
     ):
@@ -31,11 +46,12 @@ def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
     probability = paired_win_probability(won, lost)
     rng = np.random.default_rng(1977)
     bootstrap = scores[rng.integers(0, len(scores), (4096, len(scores)))].mean(axis=1)
-    interval = np.quantile(bootstrap, [alpha / 2, 1 - alpha / 2]).tolist()
+    interval = np.quantile(bootstrap, [0.025, 0.975]).tolist()
     passed = (
-        len(scores) >= minimum_pairs
-        and decisive >= 8
-        and float(scores.mean()) >= 0.55
+        alpha is not None
+        and len(scores) >= minimum_pairs
+        and decisive >= MINIMUM_DECISIVE
+        and float(scores.mean()) >= MINIMUM_SCORE
         and interval[0] > 0.5
         and probability <= alpha
     )
@@ -44,12 +60,17 @@ def paired_gate(pair_scores, minimum_pairs=16, alpha=0.05):
         "pairs": len(scores),
         "score": float(scores.mean()),
         "confidenceInterval": interval,
+        "confidenceLevel": 0.95,
         "pairWins": won,
         "pairLosses": lost,
         "pairTies": len(scores) - decisive,
         "oneSidedSignTestP": probability,
         "alpha": alpha,
-        "reason": "qualified" if passed else "insufficient_evidence_of_improvement",
+        "reason": "screening_only"
+        if alpha is None
+        else "qualified"
+        if passed
+        else "insufficient_evidence_of_improvement",
     }
 
 
@@ -111,6 +132,7 @@ def evaluate(
     should_stop=None,
     play_matchups=None,
     batch=1,
+    alpha=None,
 ):
     """Paired games as deployed, with the live deck and every configured threat deck.
 
@@ -120,10 +142,7 @@ def evaluate(
     for model in (challenger, champion):
         if model.metadata.get("rulesID", rules_id) != rules_id:
             raise ValueError("Evaluation policy belongs to another rule set")
-    # Fixed sample budgets eventually cannot pass an alpha-spent exact test,
-    # even with all wins. Increase the minimum before drawing holdout games.
-    alpha = 0.05 / ((generation + 1) * (generation + 2))
-    required_pairs = max(pairs, math.ceil(-math.log2(alpha)) + 1) if pairs >= 16 else pairs
+    required_pairs = pairs
     if pairs >= 16:
         required_pairs = max(required_pairs, 2 * len(POOL_DECKS))
     play_matchups = play_matchups or (
@@ -175,7 +194,6 @@ def evaluate(
                         "challengerScore": scores[pool_seat],
                     }
                 )
-    # Alpha spending bounds false promotion probability over repeated generations.
     complete = len(pair_scores) == required_pairs
     gate = paired_gate(pair_scores, alpha=alpha)
     strata = {
@@ -195,10 +213,11 @@ def evaluate(
     if not complete:
         gate = {**gate, "passed": False, "reason": "interrupted_evaluation"}
     return {
-        "format": "clash-arena-paired-eval-v3",
+        "format": "clash-arena-paired-eval-v4",
         "rulesID": rules_id,
         "generation": generation,
         "complete": complete,
+        "stage": "screening" if alpha is None else "confirmation",
         "challenger": {
             "version": challenger.metadata["version"],
             "weightsSHA256": challenger.checksum(),

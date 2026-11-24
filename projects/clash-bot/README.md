@@ -54,6 +54,8 @@ yarn workspace @side/clash-bot arena policy --version <번호>
 
 `arena status`는 터미널에서 진행 단계, 완료한 경기 수, 후보와 챔피언 버전, 마지막 평가 결과를 표시합니다. 파이프 또는 `--json`은 전체 기록을 반환합니다. 상태 조회는 Python 표준 라이브러리만 사용합니다. 명령 전체와 판정 규칙은 [자가대국 구현 문서](docs/arena-learning.md)에 있습니다.
 
+`arena confirm --version <버전>`은 저장된 후보를 기존 챔피언과 새 시드에서 평가합니다. 학습 루프 없이 확인 평가와 조건부 챔피언 게시만 실행합니다.
+
 자가대국 리그의 정책·가치 네트워크(약 151만 매개변수)는 화면으로 알 수 있는 판단 문맥(decision-v3)만으로 학습합니다. 리그는 챔피언이 바뀔 때마다 실전용 `champion-policy.json`을 게시하고, 트로피 `serve --seed`와 자가개선 감독이 이 파일을 읽습니다.
 
 - **입력(정책 형식 v4):** 카드와 필드 오브젝트를 이름 칸이 아니라 카드 카탈로그의 특징으로 읽습니다. 그래서 덱이 바뀌어도 가중치 모양이 같습니다. 필드는 두 타일 단위 격자(9×16)이고, 칸마다 오브젝트 특징과 화면에서 본 체력(최대 체력 대비)·이동 방향을 더합니다. 상대가 쓴 뒤 아직 손에 돌아오지 않은 카드, 내 진화 준비 상태도 넣습니다. 화면이 타워 체력을 늘 읽지는 못하므로 학습 표본의 절반은 타워 체력을 가립니다.
@@ -94,7 +96,7 @@ yarn workspace @side/clash-bot loop stop
 
 감독은 60초마다 점검합니다. 주기와 인자, 재시작 한도는 `contracts/self-improvement.json`이 정합니다.
 
-- 자가대국이 돌고 있지 않으면 `arena start --hours 0 --games 4 --pool-games 4 --practice-games 56 --workers 4 --simulations 16 --depth 8 --pairs 32 --evaluate-every 4`를 nice 10으로 시작합니다.
+- 자가대국이 돌고 있지 않으면 `arena start --hours 0 --games 4 --pool-games 4 --practice-games 8 --workers 4 --simulations 14 --depth 4 --pairs 32 --evaluate-every 4`를 nice 10으로 시작합니다.
 - 자신이 시작한 실행이 실패하면 60·300·1800초 뒤 다시 시작하고, 6시간 안에 3번 실패하면 마지막 오류(`lastError`)를 남기고 멈춥니다. 그 실행이 `stopped`로 정상 종료하면 사용자의 정지로 보고 다음 `loop start`까지 다시 시작하지 않습니다. 감독이 시작하지 않은 자가대국은 멈추지 않습니다.
 - 리그 챔피언의 버전이 0보다 크고 바뀌면 `champion-policy.json`을 `.data/loop/simulation-champions/<가중치 SHA-256>.json`으로 복사하고 트로피 인계 파일을 씁니다.
 - 24시간마다 `arena rules`로 엔진·밸런스 변경을 확인해 사건으로 남깁니다. 새 표는 자동으로 활성화하지 않습니다.
