@@ -19,30 +19,33 @@ describe('shorts command analytics', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('records a started and successful command without arguments, a user ID or an IP field', async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response());
-    vi.stubGlobal('fetch', fetch);
-    vi.stubEnv('STORY_STUDIO_SHORTS_AMPLITUDE_KEY', 'cli-test');
+  it.each(['render', 'youtube-upload'])(
+    'records %s without arguments, a user ID or an IP field',
+    async (command) => {
+      const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response());
+      vi.stubGlobal('fetch', fetch);
+      vi.stubEnv('STORY_STUDIO_SHORTS_AMPLITUDE_KEY', 'cli-test');
 
-    await expect(trackShortsInvocation('render', async () => 0)).resolves.toBe(0);
+      await expect(trackShortsInvocation(command, async () => 0)).resolves.toBe(0);
 
-    expect(fetch).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body));
-    const event = {
-      event_properties: { action: 'shorts-render' },
-      device_id: expect.any(String),
-      insert_id: expect.any(String),
-      time: expect.any(Number),
-    };
-    expect(body).toEqual({
-      api_key: 'cli-test',
-      events: [
-        { ...event, event_type: 'studio_request_clicked' },
-        { ...event, event_type: 'studio_request_succeeded' },
-      ],
-    });
-    expect(body.events[0].device_id).toBe(body.events[1].device_id);
-  });
+      expect(fetch).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body));
+      const event = {
+        event_properties: { action: `shorts-${command}` },
+        device_id: expect.any(String),
+        insert_id: expect.any(String),
+        time: expect.any(Number),
+      };
+      expect(body).toEqual({
+        api_key: 'cli-test',
+        events: [
+          { ...event, event_type: 'studio_request_clicked' },
+          { ...event, event_type: 'studio_request_succeeded' },
+        ],
+      });
+      expect(body.events[0].device_id).toBe(body.events[1].device_id);
+    },
+  );
 
   it('preserves a failed command result even if transmission also fails', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockRejectedValue(new Error('offline'));
