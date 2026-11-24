@@ -92,7 +92,9 @@ yarn workspace @side/bookshop-mystery capture:handoff http://127.0.0.1:43737
 
 ## YouTube 업로드와 홍보 패키지
 
-Python 3.11 이상에서 프로젝트 폴더로 이동해 실행한다. 패키지에는 MP4와 세로 표지, 자막, 정사각형 홍보 이미지, YouTube 제목과 설명, 고정 댓글 및 커뮤니티·SNS 문구가 들어간다. 공개 조사 주소를 `--play-url`로 주면 프로필과 홍보 게시물용 유입 링크도 생성한다.
+Python 3.11 이상에서 프로젝트 폴더로 이동해 실행한다. 패키지에는 MP4와 세로 표지, 자막, 정사각형 홍보 이미지, YouTube 제목과 설명, 고정 댓글 및 커뮤니티·SNS 문구가 들어간다. 설명 첫 줄에는 기본으로 `https://dawn.bambyul.com/`을 넣는다. `--play-url`로 공개 조사 주소를 지정하면 설명과 홍보 게시물에 같은 목적지를 사용한다.
+
+쇼츠 설명에는 주소가 텍스트로 표시된다. 채널의 고급 기능을 활성화하면 쇼츠마다 **관련 동영상**에 같은 채널의 가로 안내 영상을 연결할 수 있다. 안내 영상은 공개 또는 일부 공개로 설정하고 설명 첫 줄에 `https://dawn.bambyul.com/?from=youtube-shorts`를 넣는다. 업로드가 끝난 쇼츠의 세부정보에서 연결을 저장한다. [YouTube 링크 안내](https://support.google.com/youtube/answer/13748639?hl=ko) · [관련 동영상 추가](https://support.google.com/youtube/answer/14075157?hl=ko)
 
 ```sh
 cd projects/bookshop-mystery
