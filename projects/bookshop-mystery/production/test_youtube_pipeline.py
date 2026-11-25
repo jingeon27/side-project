@@ -75,12 +75,34 @@ class YouTubePipelineTest(unittest.TestCase):
         self.assertEqual(plan["status"]["privacyStatus"], "private")
         self.assertEqual(
             plan["snippet"]["description"].splitlines()[0],
-            "사건 바로 풀기 https://example.test/play/?tag=one&tag=two#receipt",
+            "https://example.test/play/?tag=one&tag=two#receipt",
         )
         self.assertIn("from=youtube-shorts#receipt", (output / "profile-link.txt").read_text(encoding="utf-8"))
         self.assertIn("tag=one&tag=two&from=community#receipt", (output / "promotion.md").read_text(encoding="utf-8"))
         self.assertTrue((output / "promo-square.jpg").is_file())
         self.assertFalse((output / STATE_FILE).exists())
+
+    def test_prepare_uses_the_case_path_for_every_episode(self):
+        source = self.root / "rendered"
+        source.mkdir()
+        for name in FILES:
+            (source / name).write_bytes(b"rendered content")
+        for slug, path in (
+            ("01-receipt", "/cases/last-receipt/"),
+            ("02-printers", "/cases/last-receipt/"),
+            ("03-explained", "/cases/last-receipt/"),
+            ("04-returned-key", "/cases/returned-key/"),
+        ):
+            with self.subTest(slug=slug), patch("shorts_pipeline.promo_art"):
+                package = prepare_package(read_episode(slug), source, self.root / "youtube")
+                plan = json.loads((package / "upload.json").read_text(encoding="utf-8"))
+                expected = "https://dawn.bambyul.com" + path
+                self.assertEqual(plan["snippet"]["description"].splitlines()[0], expected)
+                self.assertEqual(
+                    (package / "profile-link.txt").read_text(encoding="utf-8").strip(),
+                    expected + "?from=youtube-shorts",
+                )
+                self.assertIn(expected + "?from=community", (package / "promotion.md").read_text(encoding="utf-8"))
 
     def test_successful_retry_returns_same_receipt_without_a_new_upload(self):
         self.channel.put.return_value = response(201, content=VIDEO)
