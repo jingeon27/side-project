@@ -76,3 +76,9 @@ yarn workspace @side/deokdam build
 ```
 
 E2E는 전용 포트에서 Chromium 모바일·데스크톱 화면을 연다. 공개 카드, 당일 기록 보존, 기본 풀이 복구, 가벼운 요청 본문, 광고 보상 이벤트 전후를 확인한다. 결제는 내부 주문 DB와 승인·취소 응답을 대조하는 테스트를 갖춘다.
+
+[사주 통합 테스트](apps/web/src/features/reading/ai.integration.spec.ts)는 로컬 모델을 연결한 격리 웹 서버에 취업, 자녀 응원, 대입 풀이를 요청한다. CI는 운영 Compose의 웹 포트만 루프백에 임시로 연결해 같은 테스트를 실행한다.
+
+```sh
+DEOKDAM_TEST_ORIGIN=http://127.0.0.1:3469 yarn workspace @deokdam/web test:integration
+```
