@@ -27,6 +27,7 @@ export type TStudioAction =
   | 'shorts-boards'
   | 'shorts-daily'
   | 'shorts-render'
+  | 'shorts-render-story'
   | 'shorts-verify'
   | 'shorts-youtube-connect'
   | 'shorts-youtube-auto'

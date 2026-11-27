@@ -26,10 +26,14 @@ def main():
     preview = cmds.add_parser('render', help='한 편을 지정한 새 폴더에 렌더')
     preview.add_argument('folder', type=Path)
     preview.add_argument('output', type=Path)
+    story = cmds.add_parser('render-story', help='창작 상황극 한 편을 지정한 새 폴더에 렌더')
+    story.add_argument('folder', type=Path)
+    story.add_argument('output', type=Path)
     youtube.options(cmds.add_parser('youtube', help='YouTube 채널 연결과 완성본 업로드'), seoul_date())
     args = parser.parse_args()
     home = Path(os.environ.get('SHORTS_HOME', Path.home() / 'Movies/실베다큐')).expanduser().resolve()
-    (home / 'inbox').mkdir(parents=True, exist_ok=True)
+    if args.command != 'render-story':
+        (home / 'inbox').mkdir(parents=True, exist_ok=True)
     data = Path(os.environ['STORY_STUDIO_DATA_DIR'])
     render = partial(render_film, data=data, cache=home / '.voices')
     if args.command == 'youtube':
@@ -46,7 +50,7 @@ def main():
         result = run_day(home, args.date, [folder.resolve() for folder in folders], render)
     else:
         folder = args.folder.resolve()
-        build_atomic(folder, read_episode(folder), args.output.resolve(), render)
+        build_atomic(folder, read_episode(folder, original=args.command == 'render-story'), args.output.resolve(), render)
         result = {'folder': str(args.output.resolve())}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return int(bool(result.get('failures')))

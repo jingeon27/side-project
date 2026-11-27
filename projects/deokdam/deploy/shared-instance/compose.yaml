@@ -1,0 +1,101 @@
+name: side-deokdam
+services:
+  web:
+    image: ${DEOKDAM_WEB_IMAGE:?Set the verified image by digest}
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      DEOKDAM_READING_DB: /var/lib/deokdam/reading/knowledge.sqlite
+      DEOKDAM_AI_CONTAINER: '1'
+      DEOKDAM_AI_MODEL: deokdam-saju
+      DEOKDAM_AI_LOCAL_PORT: ''
+      NODE_OPTIONS: --max-old-space-size=320
+    networks:
+      edge: { aliases: [deokdam-web] }
+      inference: {}
+    volumes:
+      - reading:/var/lib/deokdam/reading
+      - orders:/var/lib/deokdam/orders
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3460/reading',{signal:AbortSignal.timeout(3000)}).then(response=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 4s
+      retries: 6
+      start_period: 15s
+    mem_limit: 512m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/deokdam/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+  deokdam-model:
+    image: ghcr.io/ggml-org/llama.cpp:server-v1.1.0@sha256:ce3817b50dae557848c3a5b7df6264f25b08792c9fc39d35b4e67e1d19b15b20
+    restart: unless-stopped
+    init: true
+    user: '65534:65534'
+    command:
+      - --model
+      - /models/Qwen3.5-0.8B-Q4_0.gguf
+      - --alias
+      - deokdam-saju
+      - --n-gpu-layers
+      - '0'
+      - --no-repack
+      - --threads
+      - '1'
+      - --threads-batch
+      - '1'
+      - --threads-http
+      - '2'
+      - --ctx-size
+      - '2048'
+      - --batch-size
+      - '128'
+      - --ubatch-size
+      - '128'
+      - --parallel
+      - '1'
+      - --cache-ram
+      - '0'
+      - --reasoning
+      - 'off'
+      - --sleep-idle-seconds
+      - '120'
+      - --no-webui
+    networks: [inference]
+    volumes:
+      - type: bind
+        source: ./models/Qwen3.5-0.8B-Q4_0.gguf
+        target: /models/Qwen3.5-0.8B-Q4_0.gguf
+        read_only: true
+        bind: { create_host_path: false }
+    healthcheck:
+      test: [CMD, curl, -fsS, -o, /dev/null, 'http://127.0.0.1:8080/health']
+      interval: 12s
+      timeout: 4s
+      retries: 6
+      start_period: 30s
+    cpus: 0.65
+    cpu_shares: 256
+    mem_limit: 640m
+    memswap_limit: 640m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: ['/tmp:size=32m,mode=1777']
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+networks:
+  edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-deokdam-edge' }
+  inference: { internal: true }
+volumes:
+  reading:
+  orders:

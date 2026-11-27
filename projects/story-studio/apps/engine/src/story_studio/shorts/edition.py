@@ -50,18 +50,27 @@ def local_asset(folder, record, field):
     return path
 
 
-def read_episode(folder):
+def read_episode(folder, *, original=False):
     episode = json.loads((folder / 'episode.json').read_text(encoding='utf8'))
     require_text(episode, ['slug', 'title', 'series', 'theme', 'description', 'comment', 'cover', 'credits'])
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', episode['slug']) or len(episode['slug']) > 80:
         raise ValueError('slug는 영문 소문자, 숫자, 붙임표로 지정하세요.')
     if episode['theme'] not in THEMES:
         raise ValueError(f'theme 값은 {sorted(THEMES)} 중 골라주세요.')
-    require_text(episode.get('lead'), ['url', 'title', 'published'])
-    post_number(episode['lead']['url'])
-    date.fromisoformat(episode['lead']['published'])
-    if not isinstance(episode.get('sources'), list) or not episode['sources']:
-        raise ValueError('사실을 확인한 1차 출처를 추가하세요.')
+    if original:
+        require_text(episode, ['cardPath'])
+        if episode.get('kind') != 'original' or episode['cardPath'] != '/cards/' + episode['slug']:
+            raise ValueError('창작 상황극에는 해당 회차의 공개 카드 경로가 필요합니다.')
+        if 'lead' in episode:
+            raise ValueError('창작 상황극은 원글 없이 작성하세요.')
+    else:
+        if episode.get('kind') == 'original':
+            raise ValueError('창작 상황극은 render-story에서 렌더하세요.')
+        require_text(episode.get('lead'), ['url', 'title', 'published'])
+        post_number(episode['lead']['url'])
+        date.fromisoformat(episode['lead']['published'])
+    if not isinstance(episode.get('sources'), list) or (not original and not episode['sources']):
+        raise ValueError('확인 자료는 목록으로 쓰고 다큐에는 1차 출처를 추가하세요.')
     for source in episode['sources']:
         require_text(source, ['label', 'url'])
         address = urlsplit(source['url'])
@@ -75,9 +84,16 @@ def read_episode(folder):
     if not isinstance(shots, list) or not 1 <= len(shots) <= 12:
         raise ValueError('1~12개의 컷을 지정하세요.')
     for shot in shots:
-        require_text(shot, ['head', 'voice', 'caption', 'visual', 'credit'])
+        require_text(shot, ['head', 'visual'])
+        if not original or 'credit' in shot:
+            require_text(shot, ['credit'])
+        if not original or {'voice', 'caption', 'recording', 'speaker', 'voiceTake', 'voiceLead'} & shot.keys():
+            require_text(shot, ['voice', 'caption'])
         if type(shot.get('seconds')) is not int or shot['seconds'] < 1:
             raise ValueError('컷의 seconds는 양의 정수입니다.')
+        if 'voiceLead' in shot and not (type(shot['voiceLead']) in (int, float)
+                                        and 0 <= shot['voiceLead'] < shot['seconds']):
+            raise ValueError('voiceLead는 컷 안에서 대사를 시작하는 초입니다.')
         if 'recording' in shot:
             local_asset(folder, shot, 'recording')
         if 'speaker' in shot and (not isinstance(shot['speaker'], str) or shot['speaker'] not in SPEAKERS):
@@ -88,6 +104,8 @@ def read_episode(folder):
         if shot.get('camera', 'hold') not in ('hold', 'push'):
             raise ValueError('카메라 움직임은 hold 또는 push로 지정하세요.')
         if 'sourceComment' in shot:
+            if original:
+                raise ValueError('창작 상황극에서는 다큐의 원문 댓글을 지정할 수 없습니다.')
             comment = shot['sourceComment']
             require_text(comment, ['quote', 'anchor', 'time'])
             local_asset(folder, comment, 'capture')
@@ -101,12 +119,24 @@ def read_episode(folder):
         if 'media' in shot:
             media = shot['media']
             local_asset(folder, media, 'file')
+            if media.get('fit', 'contain') not in ('contain', 'cover'):
+                raise ValueError('영상 채우기 방식은 contain 또는 cover여야 합니다.')
             box = media.get('box')
             if not isinstance(box, list) or len(box) != 4 or any(type(n) is not int for n in box):
                 raise ValueError('영상 위치에 [x, y, 너비, 높이]가 필요합니다.')
             x, y, w, h = box
             if min(x, y) < 0 or min(w, h) < 2 or x+w > 1080 or y+h > 1920:
                 raise ValueError('영상 위치는 세로 화면 안이어야 합니다.')
+            layer = media.get('layer', 'foreground')
+            if layer not in ('foreground', 'background') or (layer == 'background' and box != [0, 0, 1080, 1920]):
+                raise ValueError('배경 영상은 세로 화면 전체를 채워야 합니다.')
+            if 'focus' in media:
+                focus = media['focus']
+                if (media.get('fit') != 'cover' or not isinstance(focus, list) or len(focus) != 2
+                        or any(type(value) not in (int, float) or not 0 <= value <= 1 for value in focus)):
+                    raise ValueError('cover 영상의 focus에는 0~1 사이 가로와 세로 위치를 적으세요.')
+            if 'trimEnd' in media and not (type(media['trimEnd']) in (int, float) and 0 < media['trimEnd'] <= 30):
+                raise ValueError('trimEnd는 0초보다 크고 30초 이하여야 합니다.')
     if sum(shot['seconds'] for shot in shots) != 30:
         raise ValueError('컷 길이의 합이 30초여야 합니다.')
     if type(episode.get('tonic')) is not int or not 36 <= episode['tonic'] <= 72:
@@ -131,6 +161,8 @@ def archive(home):
     for receipt in sorted(home.glob('????-??-??/[0-9][0-9]-*/episode.json')):
         if (receipt.parent / 'short.mp4').is_file():
             entry = json.loads(receipt.read_text(encoding='utf8'))
+            if entry.get('kind') == 'original':
+                continue
             results.append({'date': receipt.parent.parent.name, 'post': post_number(entry['lead']['url']),
                             'title': entry['title'], 'folder': str(receipt.parent)})
     return results

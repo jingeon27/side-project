@@ -28,8 +28,8 @@ class Cut:
 def plan_cuts(shots, durations):
     if len(shots) != len(durations) or not shots:
         raise ValueError('컷과 음성 수가 다릅니다.')
-    minimum = [math.ceil((LEAD + length + (FINAL_TAIL if i == len(shots) - 1 else TAIL)) * FPS)
-               for i, length in enumerate(durations)]
+    minimum = [math.ceil((shot.get('voiceLead', LEAD) + length + (FINAL_TAIL if i == len(shots) - 1 else TAIL)) * FPS)
+               if length else 1 for i, (shot, length) in enumerate(zip(shots, durations))]
     remaining = FRAMES - sum(minimum)
     if remaining < 0:
         raise ValueError(f'원속도 음성과 말끝 여백에 {sum(minimum) / FPS:.1f}초가 필요합니다. 대사를 줄여 주세요.')

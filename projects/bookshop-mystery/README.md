@@ -72,7 +72,7 @@ Unity 소스는 같은 버전의 Unity API 어셈블리로 C# 컴파일을 확�
 
 ## 쇼츠 제작
 
-`production/episodes.json`은 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
+`production/episodes.json`은 에피소드별 사건 경로, 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
 
 ```sh
 yarn workspace @side/bookshop-mystery capture:browser http://127.0.0.1:43719
@@ -80,7 +80,7 @@ yarn workspace @side/bookshop-mystery capture:browser http://127.0.0.1:43719
 
 `production/render-shorts.py`는 Story Studio Shorts의 내레이션, 반주, 자막, 인코딩을 재사용한다. Story Studio Python 실행 환경에서 `PYTHONPATH`에 Shorts 엔진의 `src` 경로를, `STORY_STUDIO_DATA_DIR`에 준비된 음성 모델 데이터 경로를 지정한다. `--renderer unity`를 주면 Unity 캡처 디렉터리를 읽는다. 작업 원본과 완성 파일은 각각 `production/.work`, `production/output`에 저장된다.
 
-열쇠 편은 웹과 같은 봉투·반납함 사진을 사용한다. `render-shorts.py --episode 04-returned-key`로 렌더링하고 `shorts_pipeline.py prepare 04-returned-key --source production/output --play-url https://dawn.bambyul.com/`으로 업로드 패키지와 홍보 초안을 만든다.
+열쇠 편은 웹과 같은 봉투·반납함 사진을 사용한다. `render-shorts.py --episode 04-returned-key`로 렌더링하고 `shorts_pipeline.py prepare 04-returned-key --source production/output`으로 업로드 패키지와 홍보 초안을 만든다.
 
 새 편집본은 `production/output/revised`에 있다. 첫 컷의 표지 문구, 증거의 크기와 위치, 마지막 프로필 안내를 재편집했다. 같은 Python 환경에서 `--reuse-audio`에 기존 출력 폴더를 지정하면 내레이션, 반주, 자막 시점을 재사용한다.
 
@@ -92,7 +92,9 @@ yarn workspace @side/bookshop-mystery capture:handoff http://127.0.0.1:43737
 
 ## YouTube 업로드와 홍보 패키지
 
-Python 3.11 이상에서 프로젝트 폴더로 이동해 실행한다. 패키지에는 MP4와 세로 표지, 자막, 정사각형 홍보 이미지, YouTube 제목과 설명, 고정 댓글 및 커뮤니티·SNS 문구가 들어간다. 공개 조사 주소를 `--play-url`로 주면 프로필과 홍보 게시물용 유입 링크도 생성한다.
+Python 3.11 이상에서 프로젝트 폴더로 이동해 실행한다. 패키지에는 MP4와 세로 표지, 자막, 정사각형 홍보 이미지, YouTube 제목과 설명, 고정 댓글 및 커뮤니티·SNS 문구가 들어간다. 설명 첫 줄과 홍보 게시물은 `episodes.json`의 `casePath`를 사용한다. 영수증·프린터·해설 편은 `/cases/last-receipt/`로, 열쇠 편은 `/cases/returned-key/`로 연결한다. `--play-url`로 공개 HTTPS 주소를 지정해 덮어쓸 수 있다.
+
+쇼츠 설명에는 주소가 텍스트로 표시된다. 채널의 고급 기능을 활성화하면 쇼츠마다 **관련 동영상**에 같은 채널의 가로 안내 영상을 연결할 수 있다. 사건별 안내 영상은 공개 또는 일부 공개로 설정하고 설명 첫 줄에 해당 사건 주소와 `?from=youtube-shorts`를 넣는다. 업로드가 끝난 쇼츠의 세부정보에서 사건이 일치하는 안내 영상을 연결한다. [YouTube 링크 안내](https://support.google.com/youtube/answer/13748639?hl=ko) · [관련 동영상 추가](https://support.google.com/youtube/answer/14075157?hl=ko)
 
 ```sh
 cd projects/bookshop-mystery

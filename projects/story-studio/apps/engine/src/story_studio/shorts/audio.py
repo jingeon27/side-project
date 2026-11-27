@@ -88,7 +88,7 @@ def subtitle_spans(shot, cut, take):
     """Use phrase length as a guide, then snap to a nearby quiet 60 ms of the reading."""
     import numpy as np
     lines = [line.strip() for line in shot['caption'].splitlines() if line.strip()]
-    start = cut.first + round(LEAD * FPS)
+    start = cut.first + round(shot.get('voiceLead', LEAD) * FPS)
     length = round(len(take) / RATE * FPS)
     weights = [max(1, len(''.join(line.split()))) for line in lines]
     bounds = [0]
@@ -113,15 +113,21 @@ def make_mix(episode, source, output, temp, data, cache):
     import soundfile as sf
     takes = []
     for i, shot in enumerate(episode['shots']):
+        if 'voice' not in shot:
+            takes.append(None)
+            continue
         raw = (source / shot['recording'] if 'recording' in shot
                else narrate(data, cache, shot['voice'], speaker_for(episode, shot), shot.get('voiceTake', 1)))
         takes.append(voice_take(raw, temp / f'take-{i}.wav'))
-    cuts = plan_cuts(episode['shots'], [len(take) / RATE for take in takes])
+    cuts = plan_cuts(episode['shots'], [len(take) / RATE if take is not None else 0 for take in takes])
     cues = score_cues(episode, cuts)
     voice = np.zeros(RATE * 30, dtype='float32')
     captions = []
     for shot, cut, take in zip(episode['shots'], cuts, takes):
-        start = round((cut.start + LEAD) * RATE)
+        if take is None:
+            captions.append([])
+            continue
+        start = round((cut.start + shot.get('voiceLead', LEAD)) * RATE)
         voice[start:start + len(take)] = take
         captions.append(subtitle_spans(shot, cut, take))
     # Smooth 10 ms envelope. Longer rests let the acoustic decay come through.

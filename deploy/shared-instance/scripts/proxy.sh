@@ -30,10 +30,27 @@ for service in game-feedback photo-contest; do
   fi
   [[ "$(docker network inspect "$network" --format '{{index .Labels "dev.side.shared-instance"}}')" == "$ROOT" ]]
 done
+connect_deokdam() {
+  local network="${SIDE_NETWORK_PREFIX:-side}-deokdam-edge" proxy networks
+  if ! docker network inspect "$network" >/dev/null 2>&1; then return 0; fi
+  if [[ "$(docker network inspect "$network" --format '{{index .Labels "dev.side.shared-instance"}}')" != "$ROOT" ]]; then
+    echo 'The Deokdam network is not owned by this shared instance.' >&2
+    return 1
+  fi
+  proxy=$(compose ps -q proxy) || return 1
+  [[ -n "$proxy" ]] || return 1
+  networks=$(docker inspect "$proxy" --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}') || return 1
+  if ! grep -Fxq "$network" <<<"$networks"; then
+    docker network connect "$network" "$proxy"
+  fi
+}
 validate() { compose run --rm --no-deps -T proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; }
-reload() { compose exec -T proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; }
+reload() {
+  connect_deokdam || return 1
+  compose exec -T proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+}
 case "${1:-}" in
-  start) compose up -d proxy ;;
+  start) compose up -d proxy; connect_deokdam ;;
   reload) reload ;;
   validate) validate ;;
   sync)
@@ -41,12 +58,11 @@ case "${1:-}" in
     [[ $# == 2 && -f "$2" ]] || { echo 'Usage: proxy.sh sync <release Caddyfile>' >&2; exit 2; }
     cp "$ROOT/proxy/Caddyfile" "$ROOT/proxy/Caddyfile.previous"
     cat "$2" >"$ROOT/proxy/Caddyfile"
-    if ! validate; then
+    if ! validate || ! reload; then
       cat "$ROOT/proxy/Caddyfile.previous" >"$ROOT/proxy/Caddyfile"
-      echo 'The new Caddyfile is invalid; the previous file was restored.' >&2
+      echo 'Could not load the new Caddyfile; the previous file was restored.' >&2
       exit 1
     fi
-    reload
     ;;
   *) echo 'Usage: proxy.sh start | reload | validate | sync <release Caddyfile>' >&2; exit 2 ;;
 esac

@@ -18,7 +18,11 @@ def video_plan(request):
     duration = min(15, max(2, request.get("duration", 5)))
     # Generate real-time 24 fps motion (4n+1 frames) up to the quality budget, then fit the scene length.
     frames = min(plan["frames"], int(duration * FPS // 4) * 4 + 1)
-    return {"width": width, "height": height, "duration": duration, "frames": frames, "steps": plan["steps"]}
+    tiling = request.get("tiling", "aggressive")
+    if tiling not in ("aggressive", "auto"):
+        raise ValueError("영상 타일 방식은 aggressive 또는 auto여야 합니다")
+    return {"width": width, "height": height, "duration": duration, "frames": frames, "steps": plan["steps"],
+            "tiling": tiling}
 
 
 def generate_video(root, request, progress, examples_dir):
@@ -68,7 +72,7 @@ def generate_video(root, request, progress, examples_dir):
                      negative_prompt=negatives, image=str(image) if image else None,
                      width=plan["width"], height=plan["height"], num_frames=plan["frames"], steps=plan["steps"],
                      guide_scale=5.0, seed=request.get('seed', -1),
-                     output_path=str(path), no_compile=True, tiling="aggressive")
+                     output_path=str(path), no_compile=True, tiling=plan["tiling"])
     retimed = asset_path(root, "mp4")
     ffmpeg("-i", path, "-vf", f"setpts={plan['duration'] * FPS / plan['frames']}*PTS,fps=24", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", retimed)
     path.unlink(missing_ok=True)
