@@ -49,6 +49,7 @@ services:
       - deokdam-saju
       - --n-gpu-layers
       - '0'
+      - --no-repack
       - --threads
       - '1'
       - --threads-batch
