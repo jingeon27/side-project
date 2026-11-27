@@ -1,11 +1,13 @@
 # 덕담집 공용 EC2 배포
 
-[공용 EC2](../../../../deploy/shared-instance/README.md)의 기존 Caddy 뒤에서 덕담집 Next.js 컨테이너 하나를 운영한다. 웹 포트 3460은 덕담집 네트워크에서만 사용한다. 참고 자료와 주문은 서로 다른 SQLite 볼륨에 둔다.
+[공용 EC2](../../../../deploy/shared-instance/README.md)의 기존 Caddy 뒤에서 덕담집 웹을 운영한다. 서버 안의 llama.cpp가 Qwen3.5 0.8B 양자화 모델을 CPU로 실행한다. 웹과 모델 사이에는 전용 내부 Docker 네트워크를 쓰고, 모델 포트를 호스트에 게시하지 않는다. 참고 자료와 주문은 서로 다른 SQLite 볼륨에 둔다. [llama.cpp 서버](https://github.com/ggml-org/llama.cpp/blob/v1.1.0/tools/server/README.md) · [Qwen3.5 모델 파일](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF/blob/1c0b5292de5ccd62235595d1557c0d70d46c3d9d/Qwen3.5-0.8B-Q4_0.gguf)
+
+추론은 EC2 안에서 처리하므로 모델 API의 호출별 요금은 없다. 모델 파일은 약 563MB다. 모델 컨테이너의 한도는 CPU 0.35개, 메모리 896MiB이고, 모델 한 건씩 처리한다. 2분간 요청이 없으면 모델을 RAM에서 내린다. 기존 EC2 비용은 AWS 설정에 따르며 T3 Unlimited에서 평균 사용률이 기준을 넘으면 CPU 크레딧 요금이 생길 수 있다. [AWS CPU 크레딧 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode.html)
 
 ## 첫 배포
 
 1. `develop`에서 `main`으로 릴리스한다. `Services`의 `Deokdam image publish` 결과에서 `ghcr.io/jingeon27/side-project-deokdam-web@sha256:…` 값을 확인한다.
-2. 기존 EC2에 접속해 메모리와 디스크 여유를 확인한다. 같은 EC2를 가리키도록 `deokdam.bambyul.com`의 DNS 레코드를 연결한다. 변경된 호스트명을 사용하려면 `Caddyfile.deokdam`의 사이트 주소도 맞춘다.
+2. 기존 EC2에서 `free -m`, `df -h`, `docker stats --no-stream`으로 웹과 모델에 필요한 여유를 확인한다. T3 계열이라면 CloudWatch의 `CPUCreditBalance`와 `CPUSurplusCreditsCharged`도 본다. 운영 도메인의 DNS 레코드를 같은 EC2로 연결한다. 기본 사이트 주소는 `deokdam.bambyul.com`이다.
 3. EC2의 릴리스 체크아웃 루트에서 서비스 디렉터리와 설정을 준비한다.
 
 ```bash
@@ -17,9 +19,10 @@ install -m 644 "$deokdam_release/compose.yaml" "$deokdam_dir/compose.yaml"
 if [[ ! -e "$deokdam_dir/.env" ]]; then
   install -m 600 "$deokdam_release/service.env.example" "$deokdam_dir/.env"
 fi
+bash "$deokdam_release/fetch-model.sh" "$deokdam_dir/models"
 ```
 
-`.env`의 `DEOKDAM_WEB_IMAGE`에 검증 다이제스트를 지정한다. AI 풀이를 켤 때는 `DEOKDAM_AI_MODEL`과 `DEOKDAM_AI_API_KEY`에 덕담집의 모델과 서버 키를 넣는다. 같은 파일에 YouTube 공개 목록의 ID를 `DEOKDAM_SHORTS_PLAYLIST_ID`로 제공한다. 결제를 운영할 때는 `DEOKDAM_ORDER_DB=/var/lib/deokdam/orders/orders.sqlite`와 포트원 상점 설정을 입력한다.
+`.env`의 `DEOKDAM_WEB_IMAGE`에 검증 다이제스트를 지정한다. 모델은 체크섬을 확인한 파일을 읽기 전용으로 사용한다. 같은 파일에 YouTube 공개 목록의 ID를 `DEOKDAM_SHORTS_PLAYLIST_ID`로 제공한다. 결제를 운영할 때는 `DEOKDAM_ORDER_DB=/var/lib/deokdam/orders/orders.sqlite`와 포트원 상점 설정을 입력한다.
 
 ```bash
 network="${SIDE_NETWORK_PREFIX:-side}-deokdam-edge"
@@ -57,10 +60,10 @@ curl -fsS -o /dev/null https://deokdam.bambyul.com/reading
 curl -fsS -o /dev/null https://contest.bambyul.com/
 ```
 
-홈에서 공개 쇼츠를 재생하고, `/reading`에서 세 가지 고민으로 AI 풀이와 출처가 나오는지 확인한다. YouTube에 쇼츠를 추가할 때는 동일한 재생목록을 사용한다.
+홈에서 공개 쇼츠를 재생하고, `/reading`에서 세 가지 고민으로 AI 풀이와 출처가 나오는지 확인한다. 모델이 사용 중이거나 응답하지 않으면 화면에서 다시 시도하거나 기본 풀이를 열 수 있다. 첫 풀이 응답 시간과 피식의 응답, 메모리·CPU 크레딧을 확인한다. YouTube에 쇼츠를 추가할 때는 동일한 재생목록을 사용한다.
 
 ## 업데이트와 복구
 
 `DEOKDAM_WEB_IMAGE`를 새 다이제스트로 바꾼 후 `pull`과 `up -d --wait`를 실행한다. 응답 확인에 실패하면 직전 다이제스트로 같은 명령을 실행한다. 자료 DB는 이미지의 벡터 스냅샷을 기준으로 초기화된다. 결제를 열면 주문 볼륨을 백업하고 복구를 점검한다.
 
-덕담집 주소를 내릴 때는 `/config/deokdam/site.caddy`를 `/config/deokdam/site.disabled`로 옮긴 뒤 `proxy.sh reload`를 실행한다. `deokdam_compose stop`으로 웹 프로세스를 정지할 수 있다.
+덕담집 주소를 내릴 때는 `/config/deokdam/site.caddy`를 `/config/deokdam/site.disabled`로 옮긴 뒤 `proxy.sh reload`를 실행한다. `deokdam_compose stop`으로 웹과 모델을 정지할 수 있다.

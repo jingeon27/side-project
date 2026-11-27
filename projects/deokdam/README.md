@@ -18,27 +18,36 @@ yarn workspace @side/deokdam dev
 
 | 기능             | 동작                                                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 개인 풀이        | `DEOKDAM_AI_MODEL`과 `DEOKDAM_AI_API_KEY`를 설정하면 OpenAI 호환 JSON 풀이를 요청한다. 로컬 모델은 `DEOKDAM_AI_LOCAL_PORT`로 지정한 루프백 서버를 사용한다. 기본 환경은 오행과 고민에 맞춘 기본 풀이를 보여준다. 생년월일과 출생 시각을 서버에 보내지 않는다.                                                                                                                              |
+| 개인 풀이        | 공용 EC2의 내부 모델이 일간 오행, 고민, 선택 경험의 주제로 오늘 해볼 실천을 고른다. Mac에서는 `DEOKDAM_AI_MODEL`과 `DEOKDAM_AI_LOCAL_PORT`로 루프백 모델을 연결한다. 모델을 설정하지 않은 개발 환경은 기본 풀이를 보여준다.                                                                                                                                                                |
 | 보상형 광고      | `DEOKDAM_REWARDED_AD_UNIT`에 Google Ad Manager의 웹 보상형 동영상 단위를 둔다. 본인 풀이에서 성인으로 계산된 이용자가 선택하면 광고 SDK를 로드한다. GPT의 보상 이벤트를 받으면 추가 풀이를 열고 해당 탭에서 풀이를 다시 볼 수 있다. 보상은 그 브라우저의 추가 콘텐츠 열람으로 제공한다. [Google 보상형 광고 예제](https://developers.google.com/publisher-tag/samples/display-rewarded-ad) |
 | 7일 리포트       | 포트원 상점, 카드 채널, API 비밀키, 고객 문의 이메일, 공개 origin, 전용 SQLite 절대 경로를 설정해야 결제가 활성화된다. 카드 상품 한 편은 4,900원이다. 서버가 포트원에서 결제를 조회해 상점, 주문 번호, 금액과 통화가 맞고 승인된 경우 리포트를 발급한다. [포트원 인증 결제](https://developers.portone.io/opi/ko/integration/start/v2/checkout)                                            |
 | 구매 복구와 환불 | 구매 내역에서 결제 완료와 취소 상태를 재확인할 수 있다. 환불 요청은 주문에 접수하며 담당자가 포트원 관리자에서 처리한다. 브라우저를 바꾼 이용자는 영수증 번호로 지원 이메일에 문의할 수 있다. 리포트 발급 상태를 담은 DB는 가맹점별 영구 볼륨에 둔다.                                                                                                                                      |
 | Amplitude        | 덕담집 키가 설정된 경우에만 이벤트를 보낸다. 공개 회차, 이용 유형, 충분한 나이인지 여부, 상품 키를 기준으로 첫 풀이, 실제 기록, 광고 보상, 결제 확인, 리포트 발급을 관찰한다. 브라우저 클릭과 포트원 조회 후 서버 승인을 구분한다.                                                                                                                                                         |
 
-로컬 AI 검증에는 MLX VLM의 텍스트 모델을 사용했다. 모델 서버의 주소를 이 Mac에만 열고 같은 모델 경로를 `DEOKDAM_AI_MODEL`에 지정한다. 예를 들어 아래처럼 모델 서버를 실행한 뒤 `DEOKDAM_AI_LOCAL_PORT=3462`로 웹을 실행한다.
+운영과 같은 Qwen3.5 0.8B 모델을 Mac에서 확인하려면 [llama.cpp 릴리스](https://github.com/ggml-org/llama.cpp/releases/tag/b12774)의 `llama-server`를 사용한다. 모델을 받은 뒤 두 터미널에서 각각 실행한다. 모델 이름은 서버의 별칭과 맞춘다.
 
 ```sh
-python -m mlx_vlm.server --host 127.0.0.1 --port 3462 --model /absolute/path/to/text-model --max-tokens 220
+bash projects/deokdam/deploy/shared-instance/fetch-model.sh projects/deokdam/.data/inference
+llama-server --host 127.0.0.1 --port 3467 --alias deokdam-saju \
+  --model projects/deokdam/.data/inference/Qwen3.5-0.8B-Q4_0.gguf \
+  --n-gpu-layers 0 --threads 1 --threads-batch 1 --threads-http 2 --ctx-size 2048 \
+  --batch-size 128 --ubatch-size 128 --parallel 1 --cache-ram 0 \
+  --reasoning off --sleep-idle-seconds 120 --no-webui
+```
+
+```sh
+DEOKDAM_AI_MODEL=deokdam-saju DEOKDAM_AI_LOCAL_PORT=3467 yarn workspace @side/deokdam dev
 ```
 
 ## 사주 자료 검색
 
-브라우저가 계산한 일간 오행과 선택한 고민으로 SQLite의 `sqlite-vec`에서 해석 자료를 찾는다. 선택한 오행의 고전 설명과 같은 고민에서 가장 가까운 실천 자료를 골라 AI에 전달한다. 과거 경험을 적으면 브라우저에서 일곱 가지 중 관련 주제를 골라 검색과 풀이에 반영한다. 화면에는 경험의 주제와 참고한 자료명을 보여준다. 전체 원국은 기기 화면에 표시하고 모델은 일간 오행 범위의 풀이를 작성한다.
+브라우저가 계산한 일간 오행과 선택한 고민으로 SQLite의 `sqlite-vec`에서 고전 자료 한 건과 실천 후보 세 건을 찾는다. 로컬 모델은 고전 자료와 고민, 경험 주제를 보고 후보 중 하나를 고른다. 화면은 오행의 풀이와 선택된 실천의 한국어 문장을 보여준다. 전체 원국과 과거 경험 원문은 브라우저에 둔다. 출생 정보는 서버에 보내지 않는다.
 
 [자료 원고](apps/web/src/features/reading/knowledge/corpus.ts)에는 오행 다섯 건과 일곱 가지 고민의 실천 자료 21건이 있다. 오행은 『서경』 「홍범」을 참고해 요약했고, 실천 자료는 덕담집에서 작성했다. [『서경』 「홍범」](https://ctext.org/shang-shu/great-plan/zh) · [한국민족문화대백과사전 사주](https://encykorea.aks.ac.kr/Article/E0025957)
 
 AI 풀이를 처음 요청하면 자료, 이용 선택지 조합 35개, 경험 주제 7개의 벡터를 `apps/web/.data/reading-knowledge.sqlite`에 설치한다. 웹 프로세스에 쓰기 권한이 있는 전용 볼륨을 지정하려면 `DEOKDAM_READING_DB`에 SQLite 파일의 절대 경로를 둔다. 주문 DB와 분리하고 출생 정보와 경험 원문은 브라우저에 둔다. 임베딩은 `multilingual-e5-small`로 미리 계산한다. [모델 카드](https://huggingface.co/intfloat/multilingual-e5-small)
 
-자료나 풀이 선택지를 편집한 뒤에만 임베딩 파일을 다시 만든다. PyTorch, Transformers와 Hugging Face Hub가 설치된 Python을 `PYTHON`에 지정한다. 첫 생성은 모델을 덕담집의 `.data/embedding-models`에 받는다. 완성한 스냅샷을 원고와 함께 저장하면 웹 실행 중에는 별도 임베딩 서버가 필요 없다.
+검색할 자료의 제목·본문이나 고민 선택지를 편집한 뒤에 임베딩 파일을 다시 만든다. 화면에 보여주는 조언 문구는 그대로 편집할 수 있다. PyTorch, Transformers와 Hugging Face Hub가 설치된 Python을 `PYTHON`에 지정한다. 첫 생성은 모델을 덕담집의 `.data/embedding-models`에 받는다. 완성한 스냅샷을 원고와 함께 저장하면 웹 실행 중에는 별도 임베딩 서버가 필요 없다.
 
 ```sh
 yarn workspace @deokdam/web reading:embed
@@ -56,9 +65,7 @@ yarn workspace @deokdam/web reading:embed
 
 ## 운영 배포
 
-피식이 실행 중인 공용 EC2에 Node 24 웹 컨테이너를 올리고, 별도 Docker 네트워크를 공용 Caddy에 연결한다. `Services`가 Linux amd64에서 단위·브라우저 테스트, 운영 이미지, SQLite 확장과 Caddy 설정을 확인한다. `main`에서 게시한 검증 이미지의 다이제스트로 운영 버전을 지정한다.
-
-운영의 AI 풀이에는 서버 전용 API 키와 모델을 사용한다. SQLite의 참고 자료는 웹 프로세스가 조회한다. 운영 서버 설치와 업데이트, 도메인 연결과 복구 방법은 [덕담집 공용 EC2 배포](deploy/shared-instance/README.md)를 따른다.
+피식이 실행 중인 공용 EC2에서 Node 24 웹 컨테이너와 llama.cpp 모델 컨테이너를 운영한다. 웹 프로세스가 SQLite 자료를 조회하고 Docker 내부 네트워크로 모델을 호출한다. `Services`는 Linux amd64에서 단위·브라우저 테스트, SQLite 확장, 실제 로컬 추론, Caddy 설정을 검사한다. 운영 설치와 복구는 [덕담집 공용 EC2 배포](deploy/shared-instance/README.md)를 따른다.
 
 ## 검증
 

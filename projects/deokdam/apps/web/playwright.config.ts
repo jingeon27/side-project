@@ -14,7 +14,7 @@ export default defineConfig({
     env: {
       NEXT_DIST_DIR: '.data/e2e-next',
       NEXT_PUBLIC_DEOKDAM_AMPLITUDE_KEY: '',
-      DEOKDAM_AI_API_KEY: '',
+      DEOKDAM_AI_CONTAINER: '',
       DEOKDAM_AI_MODEL: '',
       DEOKDAM_SHORTS_PLAYLIST_ID: 'PLdeokdam-test-playlist00',
       DEOKDAM_PORTONE_API_SECRET: '',

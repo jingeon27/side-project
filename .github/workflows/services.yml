@@ -105,17 +105,19 @@ jobs:
         run: |
           docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_DEOKDAM_AMPLITUDE_KEY \
             -f projects/deokdam/apps/web/Dockerfile -t "deokdam-web:$GITHUB_SHA" .
-      - name: Verify the production Compose service and SQLite vector extension
+      - name: Verify local inference and SQLite in the production Compose services
         run: |
           directory="$RUNNER_TEMP/deokdam-compose"
           mkdir -p "$directory"
           cp projects/deokdam/deploy/shared-instance/compose.yaml "$directory/compose.yaml"
+          bash projects/deokdam/deploy/shared-instance/fetch-model.sh "$directory/models"
           printf 'DEOKDAM_WEB_IMAGE=deokdam-web:%s\nDEOKDAM_SHORTS_PLAYLIST_ID=PLdeokdam-test-playlist00\n' \
             "$GITHUB_SHA" > "$directory/.env"
           compose() { docker compose --env-file "$directory/.env" -f "$directory/compose.yaml" "$@"; }
           docker network create side-deokdam-edge
-          trap 'compose down -v; docker network rm side-deokdam-edge' EXIT
-          compose up -d --wait --wait-timeout 60
+          trap 'if (( $? != 0 )); then compose logs --tail=60; fi; compose down -v; docker network rm side-deokdam-edge' EXIT
+          compose up -d --wait --wait-timeout 120
+          test "$(docker network inspect side-deokdam_inference --format '{{.Internal}}')" = true
           compose exec -T web node - <<'NODE'
           const assert = require('node:assert/strict');
           const { createRequire } = require('node:module');
@@ -137,10 +139,14 @@ jobs:
               body: JSON.stringify({ topic: 'job', concern: 'silence', element: 'metal' }),
             });
             assert.equal(reading.status, 200);
-            assert.equal((await reading.json()).mode, 'basic');
+            const result = await reading.json();
+            assert.equal(result.mode, 'ai');
+            assert.equal(result.sources.length, 2);
+            assert.match(result.interpretation, /[가-힣]/);
           }
           verify().catch((error) => { console.error(error); process.exitCode = 1; });
           NODE
+          compose exec -T deokdam-model sh -c 'if [ -r /sys/fs/cgroup/memory.peak ]; then cat /sys/fs/cgroup/memory.peak; fi'
       - name: Validate the Deokdam route in the shared Caddy configuration
         env:
           GAME_FEEDBACK_DOMAIN: game.example.org

@@ -61,6 +61,16 @@ export const readingEmbeddingInputs = [
 
 export const readingKnowledgeFingerprint = createHash('sha256')
   .update(
-    JSON.stringify({ model: readingEmbeddingModel, references: readingReferences, queries: readingQueries }),
+    JSON.stringify({
+      model: readingEmbeddingModel,
+      references: readingReferences.map(({ id, scope, title, text, source }) => ({
+        id,
+        scope,
+        title,
+        text,
+        source,
+      })),
+      queries: readingQueries,
+    }),
   )
   .digest('hex');

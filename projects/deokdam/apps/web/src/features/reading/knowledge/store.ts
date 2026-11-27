@@ -99,13 +99,15 @@ export function findReadingReferences(input: TReadingInput) {
       WHERE scope = ?
       ORDER BY vec_distance_cosine(vec_int8(vector), vec_int8(?))
         + 0.35 * vec_distance_cosine(vec_int8(vector), vec_int8(?)), id
-      LIMIT 1
+      LIMIT ?
     `);
-    const references = [input.element, input.concern].map((scope) =>
-      referenceRow.parse(closest.get(scope, vector, experience)),
-    );
+    const classical = referenceRow.parse(closest.get(input.element, vector, experience, 1));
+    const practices = referenceRow
+      .array()
+      .min(1)
+      .parse(closest.all(input.concern, vector, experience, 3));
     db.exec('COMMIT');
-    return references;
+    return { classical, practices };
   } finally {
     db.close();
   }

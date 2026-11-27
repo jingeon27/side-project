@@ -5,7 +5,7 @@ import { seoulToday } from '@/shared/seoul-time';
 import { elementSchema, readingSchema, type TReading, type TReadingInput } from './contracts';
 
 function readingKey(input: TReadingInput) {
-  return ['deokdam.reading.v2', input.topic, input.concern, input.element, input.experience]
+  return ['deokdam.reading.v3', input.topic, input.concern, input.element, input.experience]
     .filter(Boolean)
     .join('.');
 }
