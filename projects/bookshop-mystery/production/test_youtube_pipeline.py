@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from requests.exceptions import ConnectionError
 
-from shorts_pipeline import FILES, prepare_package, read_episode
+from shorts_pipeline import FILES, check_case_packages, prepare_package, read_episode
 from youtube_upload import STATE_FILE, connect_channel, file_hash, upload_package
 
 LOCATION = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&upload_id=test"
@@ -92,6 +92,9 @@ class YouTubePipelineTest(unittest.TestCase):
             ("02-printers", "/cases/last-receipt/"),
             ("03-explained", "/cases/last-receipt/"),
             ("04-returned-key", "/cases/returned-key/"),
+            ("05-wet-map-opening", "/cases/wet-map/"),
+            ("06-wet-map-evidence", "/cases/wet-map/"),
+            ("07-wet-map-explained", "/cases/wet-map/"),
         ):
             with self.subTest(slug=slug), patch("shorts_pipeline.promo_art"):
                 package = prepare_package(read_episode(slug), source, self.root / "youtube")
@@ -103,6 +106,35 @@ class YouTubePipelineTest(unittest.TestCase):
                     expected + "?from=youtube-shorts",
                 )
                 self.assertIn(expected + "?from=community", (package / "promotion.md").read_text(encoding="utf-8"))
+
+    def test_case_stack_requires_all_episodes_and_the_current_video_hash(self):
+        case = "/cases/wet-map/"
+        site = self.root / "site"
+        page = site / "cases/wet-map/index.html"
+        page.parent.mkdir(parents=True)
+        page.write_text("<title>새 사건</title>", encoding="utf-8")
+        source = self.root / "rendered"
+        source.mkdir()
+        for name in FILES:
+            (source / name).write_bytes(b"rendered content")
+        packages = self.root / "queue"
+        episodes = ["05-wet-map-opening", "06-wet-map-evidence", "07-wet-map-explained"]
+        with patch("shorts_pipeline.promo_art") as draw:
+            draw.side_effect = lambda episode, path, font, play_url: path.write_bytes(b"poster")
+            prepare_package(read_episode(episodes[0]), source, packages)
+            with self.assertRaisesRegex(ValueError, episodes[1]):
+                check_case_packages(case, packages, site)
+            for slug in episodes[1:]:
+                prepare_package(read_episode(slug), source, packages)
+        self.assertEqual(check_case_packages(case, packages, site)["episodes"], episodes)
+        bad_caption = packages / episodes[0] / "captions.srt"
+        bad_caption.write_text(r"마른 자국\n폭 확인", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "자막에 줄바꿈"):
+            check_case_packages(case, packages, site)
+        bad_caption.write_bytes(b"rendered content")
+        (packages / episodes[1] / "short.mp4").write_bytes(b"changed")
+        with self.assertRaisesRegex(ValueError, "영상 해시"):
+            check_case_packages(case, packages, site)
 
     def test_successful_retry_returns_same_receipt_without_a_new_upload(self):
         self.channel.put.return_value = response(201, content=VIDEO)
