@@ -147,7 +147,7 @@ describe('숨김 경로의 검사 선택과 배포 생략', () => {
       writeFileSync(join(state.directory, '.event.json'), JSON.stringify({ before: release }));
 
       expect(run(process.execPath, [policy, 'select'], release)).toBe(
-        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nstory-studio=${file.startsWith('packages/')}\nbookshop-mystery=${file.startsWith('packages/') || file.startsWith('projects/bookshop-mystery/')}\nproduction=true`,
+        `game-feedback=${gameFeedback}\nphoto-contest=${photoContest}\nstory-studio=${file.startsWith('packages/')}\nbookshop-mystery=${file.startsWith('packages/') || file.startsWith('projects/bookshop-mystery/')}\ndeokdam=${file.startsWith('packages/') || file.startsWith('projects/deokdam/')}\nproduction=true`,
       );
       const selected = {
         'game-feedback': gameFeedback,
@@ -171,7 +171,14 @@ describe('운영 발행·배포 job 조건', () => {
     const gated = [...new Set(after('verification'))];
 
     expect(gated).toEqual(
-      expect.arrayContaining(['gf-publish', 'gf-deploy', 'pc-publish', 'pc-deploy', 'bookshop-pages']),
+      expect.arrayContaining([
+        'gf-publish',
+        'gf-deploy',
+        'pc-publish',
+        'pc-deploy',
+        'bookshop-pages',
+        'deokdam-publish',
+      ]),
     );
     for (const name of gated) {
       const job = jobs.get(name);
@@ -243,6 +250,7 @@ describe('필수 검사로 지정하는 집계 job', () => {
                 'photo-contest': 'false',
                 'story-studio': 'false',
                 'bookshop-mystery': 'false',
+                deokdam: 'false',
                 production: 'false',
               },
             },

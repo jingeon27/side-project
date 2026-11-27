@@ -1,0 +1,41 @@
+name: side-deokdam
+services:
+  web:
+    image: ${DEOKDAM_WEB_IMAGE:?Set the verified image by digest}
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      DEOKDAM_READING_DB: /var/lib/deokdam/reading/knowledge.sqlite
+      DEOKDAM_AI_LOCAL_PORT: ''
+      NODE_OPTIONS: --max-old-space-size=320
+    networks:
+      edge: { aliases: [deokdam-web] }
+    volumes:
+      - reading:/var/lib/deokdam/reading
+      - orders:/var/lib/deokdam/orders
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3460/reading',{signal:AbortSignal.timeout(3000)}).then(response=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 4s
+      retries: 6
+      start_period: 15s
+    mem_limit: 512m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/deokdam/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+networks:
+  edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-deokdam-edge' }
+volumes:
+  reading:
+  orders:

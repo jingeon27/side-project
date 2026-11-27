@@ -28,6 +28,7 @@ jobs:
       photo-contest: ${{ steps.select.outputs.photo-contest }}
       story-studio: ${{ steps.select.outputs.story-studio }}
       bookshop-mystery: ${{ steps.select.outputs.bookshop-mystery }}
+      deokdam: ${{ steps.select.outputs.deokdam }}
       production: ${{ steps.select.outputs.production }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -80,6 +81,91 @@ jobs:
       - run: yarn workspace @side/bookshop-mystery typecheck
       - run: yarn workspace @bookshop-mystery/web exec playwright install --with-deps chromium
       - run: yarn workspace @bookshop-mystery/web test:e2e
+  deokdam-verify:
+    name: Deokdam checks and Linux image
+    needs: selection
+    if: needs.selection.outputs.deokdam == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with: { node-version: '24' }
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      - run: yarn workspace @side/deokdam check
+      - run: yarn workspace @deokdam/web exec playwright install --with-deps chromium
+      - run: yarn workspace @side/deokdam test:e2e --workers=2
+      - name: Build the Deokdam image on Linux amd64
+        env:
+          NEXT_PUBLIC_DEOKDAM_AMPLITUDE_KEY: ${{ vars.DEOKDAM_AMPLITUDE_API_KEY }}
+        run: |
+          docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_DEOKDAM_AMPLITUDE_KEY \
+            -f projects/deokdam/apps/web/Dockerfile -t "deokdam-web:$GITHUB_SHA" .
+      - name: Verify the production Compose service and SQLite vector extension
+        run: |
+          directory="$RUNNER_TEMP/deokdam-compose"
+          mkdir -p "$directory"
+          cp projects/deokdam/deploy/shared-instance/compose.yaml "$directory/compose.yaml"
+          printf 'DEOKDAM_WEB_IMAGE=deokdam-web:%s\nDEOKDAM_SHORTS_PLAYLIST_ID=PLdeokdam-test-playlist00\n' \
+            "$GITHUB_SHA" > "$directory/.env"
+          compose() { docker compose --env-file "$directory/.env" -f "$directory/compose.yaml" "$@"; }
+          docker network create side-deokdam-edge
+          trap 'compose down -v; docker network rm side-deokdam-edge' EXIT
+          compose up -d --wait --wait-timeout 60
+          compose exec -T web node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const { createRequire } = require('node:module');
+          const { DatabaseSync } = require('node:sqlite');
+          const fromApp = createRequire('/app/projects/deokdam/apps/web/server.js');
+          const db = new DatabaseSync(process.env.DEOKDAM_READING_DB, { allowExtension: true });
+          fromApp('sqlite-vec').load(db);
+          assert.match(db.prepare('select vec_version() as version').get().version, /^v?0\.1\.9$/);
+          db.close();
+
+          async function verify() {
+            const origin = 'http://127.0.0.1:3460';
+            const home = await fetch(origin);
+            assert.equal(home.status, 200);
+            assert.match(await home.text(), /PLdeokdam-test-playlist00/);
+            const reading = await fetch(origin + '/api/readings', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ topic: 'job', concern: 'silence', element: 'metal' }),
+            });
+            assert.equal(reading.status, 200);
+            assert.equal((await reading.json()).mode, 'basic');
+          }
+          verify().catch((error) => { console.error(error); process.exitCode = 1; });
+          NODE
+      - name: Validate the Deokdam route in the shared Caddy configuration
+        env:
+          GAME_FEEDBACK_DOMAIN: game.example.org
+          GAME_FEEDBACK_API_DOMAIN: api.game.example.org
+          PHOTO_CONTEST_DOMAIN: contest.example.org
+          PHOTO_CONTEST_API_DOMAIN: api.contest.example.org
+          ACME_EMAIL: tls@example.org
+        run: |
+          image=$(docker compose -f deploy/shared-instance/compose.yaml config --images)
+          docker run --rm \
+            -e GAME_FEEDBACK_DOMAIN -e GAME_FEEDBACK_API_DOMAIN \
+            -e PHOTO_CONTEST_DOMAIN -e PHOTO_CONTEST_API_DOMAIN -e ACME_EMAIL \
+            -v "$PWD/deploy/shared-instance/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            -v "$PWD/projects/deokdam/deploy/shared-instance/Caddyfile.deokdam:/config/deokdam/site.caddy:ro" \
+            "$image" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Archive the verified main image
+        if: needs.selection.outputs.production == 'true'
+        run: docker save "deokdam-web:$GITHUB_SHA" | gzip > "$RUNNER_TEMP/deokdam-web.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: needs.selection.outputs.production == 'true'
+        with:
+          name: deokdam-web-${{ github.sha }}
+          path: ${{ runner.temp }}/deokdam-web.tar.gz
+          compression-level: 0
+          retention-days: 2
   shared-contract:
     name: Shared container contract
     needs: selection
@@ -569,6 +655,7 @@ jobs:
       - selection
       - story-studio
       - bookshop-verify
+      - deokdam-verify
       - shared-contract
       - gf-verify
       - gf-integration
@@ -638,6 +725,37 @@ jobs:
             --commit-hash "$GITHUB_SHA" --commit-dirty=false
   # verification은 선택하지 않은 서비스의 skipped 검사 뒤에도 실행된다. 상태 함수가 없는 if는 암묵적 success()가
   # 그 skipped까지 이어받아 한 서비스만 바뀐 운영 실행의 발행·배포를 건너뛰므로, 앞 job의 성공을 직접 확인한다.
+  deokdam-publish:
+    name: Deokdam image publish
+    needs: [selection, verification]
+    if: always() && !cancelled() && needs.verification.result == 'success' && needs.selection.outputs.production == 'true' && needs.selection.outputs.deokdam == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: deokdam-web-${{ github.sha }}
+          path: ${{ runner.temp }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the verified image by commit
+        run: |
+          gzip -dc "$RUNNER_TEMP/deokdam-web.tar.gz" | docker load
+          repository="ghcr.io/${GITHUB_REPOSITORY,,}-deokdam-web"
+          image="$repository:$GITHUB_SHA"
+          docker tag "deokdam-web:$GITHUB_SHA" "$image"
+          docker push "$image"
+          digest=$(docker image inspect --format '{{json .RepoDigests}}' "$image" |
+            jq -er --arg repository "$repository" '
+              map(select(startswith($repository + "@sha256:"))) | unique |
+              if length == 1 then .[0] else error("Expected one digest for the pushed GHCR repository") end')
+          printf 'Deokdam image digest: %s\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
   gf-publish:
     needs:
       - selection
