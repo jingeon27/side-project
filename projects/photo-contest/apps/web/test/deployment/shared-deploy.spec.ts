@@ -38,11 +38,21 @@ case "$1" in
   login) cat >/dev/null; echo 'Login Succeeded' ;;
   inspect)
     if [[ "$*" == *'.State.Status'* ]]; then echo "\${FAKE_WEB_STATE:-running}"; exit 0; fi
+    if [[ "$*" == *'.NetworkSettings.Networks'* ]]; then
+      printf '%s\\n' side-game-feedback-edge side-photo-contest-edge
+      if [[ "\${FAKE_DEOKDAM_NETWORK:-missing}" == attached ]]; then echo side-deokdam-edge; fi
+      exit 0
+    fi
     echo 'Web shutdown: exit=0 oom=false' ;;
-  network) if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
+  network)
+    if [[ "$2" == inspect && "$3" == *-deokdam-edge && "\${FAKE_DEOKDAM_NETWORK:-missing}" == missing ]]; then
+      exit 1
+    fi
+    if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
   compose)
     if [[ "$*" == *" config --quiet" && -n "\${FAKE_CONFIG_ERROR:-}" ]]; then echo "$FAKE_CONFIG_ERROR" >&2; exit 1; fi
     if [[ "$*" == *" ps -q web" ]]; then echo old-web; fi
+    if [[ "$*" == *" ps -q proxy" ]]; then echo running-proxy; fi
     if [[ "$*" == *" pg_dump "* ]]; then printf 'PGDMP fixture'; fi
     if [[ "$*" == *" -T migrate" && -n "\${FAKE_MIGRATE_SECONDS:-}" ]]; then sleep "$FAKE_MIGRATE_SECONDS"; fi ;;
 esac
@@ -436,6 +446,25 @@ describe('공유 호스트 원격 배포', () => {
       applied ? readFileSync(join(release, 'Caddyfile'), 'utf8') : '# previous\n',
     );
     expect(dockerCalls().some((call) => call.includes('caddy reload'))).toBe(applied);
+  });
+
+  it.each([
+    ['missing', false],
+    ['available', true],
+    ['attached', false],
+  ])('덕담집 네트워크가 %s 상태면 필요한 경우에만 실행 중인 프록시를 연결해야 한다', (network, connects) => {
+    const result = spawnSync('bash', [join(scripts, 'proxy.sh'), 'reload'], {
+      encoding: 'utf8',
+      env: environment({ SIDE_DEPLOY_ROOT: state.root, FAKE_DEOKDAM_NETWORK: network }),
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const calls = dockerCalls();
+    const connectIndex = calls.indexOf('network connect side-deokdam-edge running-proxy');
+    const reloadIndex = calls.findIndex((call) => call.includes('caddy reload'));
+    expect(reloadIndex).toBeGreaterThan(-1);
+    expect(connectIndex !== -1).toBe(connects);
+    expect(connectIndex).toBeLessThan(reloadIndex);
+    expect(calls.some((call) => call.includes(' up ') || call.includes(' restart '))).toBe(false);
   });
 
   it('prepare.sh를 다시 실행해도 호스트 프록시 파일은 덮어쓰지 않고 반영 방법만 알려야 한다', () => {
