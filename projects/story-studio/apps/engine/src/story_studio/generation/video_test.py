@@ -25,6 +25,12 @@ class VideoPlanTests(unittest.TestCase):
                     self.assertEqual((frames - 1) % 4, 0)
                     self.assertLessEqual(frames, PLANS[quality]['frames'])
 
+    def test_local_clip_can_request_adaptive_decode_tiling(self):
+        self.assertEqual(video_plan({})['tiling'], 'aggressive')
+        self.assertEqual(video_plan({'tiling': 'auto'})['tiling'], 'auto')
+        with self.assertRaisesRegex(ValueError, 'auto'):
+            video_plan({'tiling': 'unsupported'})
+
     def test_clamps_requested_duration_like_the_scene_contract(self):
         self.assertEqual(video_plan({'duration': 30})['duration'], 15)
         self.assertEqual(video_plan({'duration': 0})['duration'], 2)

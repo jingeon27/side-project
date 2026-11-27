@@ -79,31 +79,35 @@ async function boards(page: Page, input: string, output: string) {
     const box = await panel.boundingBox();
     if (!box || !((box.width === 1080 && box.height === 1920) || (box.width === 960 && box.height === 900)))
       throw new Error('컷 보드는 1080 × 1920 또는 960 × 900 CSS 픽셀로 만드세요.');
-    const marks = panel.locator('[data-from]');
-    const points = await marks.evaluateAll((nodes) =>
-      Array.from(new Set(nodes.map((node) => Number(node.getAttribute('data-from'))))).sort((a, b) => a - b),
-    );
+    const omitBackground = (await panel.getAttribute('data-transparent')) !== null;
+    const marks = panel.locator('[data-from], [data-until]');
+    const points = await marks.evaluateAll((nodes) => {
+      const times = nodes.flatMap((node) =>
+        [node.getAttribute('data-from'), node.getAttribute('data-until')]
+          .filter((value) => value !== null)
+          .map(Number),
+      );
+      return Array.from(new Set(times)).sort((a, b) => a - b);
+    });
     if (points.length > 16 || points.some((point) => !Number.isFinite(point) || point <= 0 || point >= 1))
-      throw new Error('data-from에는 컷 내부의 0과 1 사이 시점을 최대 16개 지정하세요.');
+      throw new Error('data-from과 data-until에는 컷 내부의 0과 1 사이 시점을 최대 16개 지정하세요.');
     reveals.push(points);
-    for (const [stage, time] of [0, ...points].slice(0, -1).entries()) {
+    for (const [stage, time] of [0, ...points].entries()) {
       await marks.evaluateAll((nodes, at) => {
         for (const node of nodes) {
-          if (node instanceof HTMLElement || node instanceof SVGElement)
-            node.style.visibility = Number(node.getAttribute('data-from')) > at ? 'hidden' : '';
+          if (!(node instanceof HTMLElement || node instanceof SVGElement)) continue;
+          const from = Number(node.getAttribute('data-from'));
+          const until = Number(node.getAttribute('data-until') ?? 1);
+          node.style.visibility = from <= at && at < until ? '' : 'hidden';
         }
       }, time);
+      const name = stage === points.length ? `${index + 1}.png` : `${index + 1}-${stage}.png`;
       await panel.screenshot({
-        path: path.join(output, `${index + 1}-${stage}.png`),
+        path: path.join(output, name),
         animations: 'disabled',
+        omitBackground,
       });
     }
-    await marks.evaluateAll((nodes) => {
-      for (const node of nodes) {
-        if (node instanceof HTMLElement || node instanceof SVGElement) node.style.visibility = '';
-      }
-    });
-    await panel.screenshot({ path: path.join(output, String(index + 1) + '.png'), animations: 'disabled' });
   }
   await writeFile(path.join(output, 'reveals.json'), JSON.stringify(reveals));
 }
