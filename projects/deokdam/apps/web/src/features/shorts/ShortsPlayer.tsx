@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 
 import { Play } from 'lucide-react';
 
@@ -15,11 +15,13 @@ interface IShortsPlayerProps {
   source: TShortsSource;
   title: string;
   episode?: string;
+  children?: ReactNode;
 }
 
-export function ShortsPlayer({ source, title, episode }: IShortsPlayerProps) {
+export function ShortsPlayer({ source, title, episode, children }: IShortsPlayerProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
+  const playLabel = source.kind === 'playlist' ? '쇼츠 모아보기' : '쇼츠 플레이어 열기';
 
   const handleToggle = () => {
     if (!open) {
@@ -29,9 +31,9 @@ export function ShortsPlayer({ source, title, episode }: IShortsPlayerProps) {
   };
 
   return (
-    <section className="shorts-panel" aria-labelledby={id + '-title'}>
+    <section className="shorts-panel" aria-labelledby={children ? undefined : id + '-title'}>
       <div className="shorts-panel-header">
-        <h3 id={id + '-title'}>{title}</h3>
+        {children ?? <h3 id={id + '-title'}>{title}</h3>}
         <Button
           variant="secondary"
           icon={open ? undefined : <Play size={16} aria-hidden />}
@@ -39,7 +41,7 @@ export function ShortsPlayer({ source, title, episode }: IShortsPlayerProps) {
           aria-controls={id}
           onClick={handleToggle}
         >
-          {open ? '플레이어 닫기' : '쇼츠 플레이어 열기'}
+          {open ? '플레이어 닫기' : playLabel}
         </Button>
       </div>
       <div id={id} hidden={!open}>

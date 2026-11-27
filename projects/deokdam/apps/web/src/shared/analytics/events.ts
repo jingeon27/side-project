@@ -7,6 +7,7 @@ export const event = {
   MessageCopied: 'deok_message_copied',
   ReadingRequested: 'reading_requested',
   ReadingShown: 'reading_shown',
+  ReadingBasisOpened: 'reading_basis_opened',
   DeokSaved: 'deok_saved',
   JournalOpened: 'journal_opened',
   JournalShared: 'journal_shared',
@@ -37,6 +38,7 @@ export interface IEventProperties {
     grounded: boolean;
     withExperience: boolean;
   };
+  reading_basis_opened: { topic: TTopic; mode: 'basic' | 'ai' };
   deok_saved: { topic: TTopic; surface: 'episode' | 'reading'; episode?: string; alternative: boolean };
   journal_opened: Record<string, never>;
   journal_shared: { method: 'copy' | 'share' };
