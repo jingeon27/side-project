@@ -40,9 +40,9 @@ interface IResult {
 }
 
 const experienceExamples = {
-  job: '예 지난 면접에 친구와 연습하고 갔더니 답변이 편했어요.',
-  parent: '예 아이에게 저녁 메뉴를 물어보니 먼저 자기 이야기를 시작했어요.',
-  admission: '예 모의고사에서 틀린 문제를 나눠 복습하니 다음 공부가 쉬웠어요.',
+  job: '친구와 면접 답변을 소리 내 연습했더니 다음 날 말이 편했어요.',
+  parent: '아이에게 저녁 메뉴를 물어보니 먼저 학교 얘기를 꺼냈어요.',
+  admission: '모의고사에서 틀린 문제를 이유별로 나누니 복습할 순서가 보였어요.',
 };
 
 export function PersonalReading({
@@ -114,6 +114,8 @@ export function PersonalReading({
 
   if (result) {
     const practice = practiceFor(result.input);
+    const action = result.reading.action ?? practice.action;
+    const sources = result.reading.sources ?? [];
     return (
       <div className="reading-result">
         <Button
@@ -129,46 +131,65 @@ export function PersonalReading({
         </div>
         {children}
         <div className="reading-panel">
-          <dl className="pillars" aria-label="만세력">
-            {[
-              ['년주', result.chart.year],
-              ['월주', result.chart.month],
-              ['일주', result.chart.day],
-              ['시주', result.chart.time],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value ?? '미상'}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="small-muted">
-            일간 오행 {elementDescriptions[result.chart.element].label}
-            {!result.chart.year || !result.chart.month ? '. 절기 전후를 가르려면 출생 시각이 필요해요.' : ''}
-          </p>
+          <p className="label">일간 오행 · {elementDescriptions[result.chart.element].label}</p>
           <h2>{result.reading.mode === 'ai' ? '오늘의 AI 풀이' : '오늘의 기본 풀이'}</h2>
           <p>{result.reading.interpretation}</p>
           {result.input.experience && (
             <p className="small-muted reading-experience-note">
-              <strong>경험 주제</strong> {experienceThemes[result.input.experience].label}
+              <strong>참고한 경험</strong> {experienceThemes[result.input.experience].label}
             </p>
           )}
-          {result.reading.sources?.length ? (
-            <p className="small-muted reading-basis">
-              <strong>풀이에 참고한 자료</strong>
-              <br />
-              {result.reading.sources.map(({ title }) => title).join(', ')}
-            </p>
-          ) : null}
         </div>
-        <section className="deok-card">
-          <div className="label">
-            <Clover size={18} aria-hidden />
-            오늘의 덕
-          </div>
-          <h2>{practice.action}</h2>
+        <section className="reading-action" aria-labelledby="reading-action-title">
+          <header className="reading-action-heading">
+            <div className="label">
+              <Clover size={18} aria-hidden />
+              오늘의 덕
+            </div>
+            <h2 id="reading-action-title">{action}</h2>
+          </header>
+          <RecordForm action={action} alternative={practice.alternative} topic={topic} />
         </section>
-        <RecordForm action={practice.action} alternative={practice.alternative} topic={topic} />
+        <details
+          className="reading-basis"
+          onToggle={(change) => {
+            if (change.currentTarget.open)
+              track(event.ReadingBasisOpened, { topic, mode: result.reading.mode });
+          }}
+        >
+          <summary>
+            {sources.length ? '만세력과 참고 자료' : '만세력 보기'}
+            <ChevronDown size={17} aria-hidden />
+          </summary>
+          <div className="reading-basis-content">
+            <dl className="pillars" aria-label="만세력">
+              {[
+                ['년주', result.chart.year],
+                ['월주', result.chart.month],
+                ['일주', result.chart.day],
+                ['시주', result.chart.time],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value ?? '미상'}</dd>
+                </div>
+              ))}
+            </dl>
+            {(!result.chart.year || !result.chart.month) && (
+              <p className="small-muted">절기 전후를 가르려면 출생 시각이 필요해요.</p>
+            )}
+            {sources.length > 0 && (
+              <div className="reading-sources small-muted">
+                <h3>풀이에 참고한 자료</h3>
+                <ul>
+                  {sources.map(({ id, title }) => (
+                    <li key={id}>{title}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </details>
         {adUnit && result.chart.adult && <RewardedReading unit={adUnit} input={result.input} />}
         {result.chart.adult && topic !== 'admission' && (
           <aside className="reading-invitation">
@@ -191,7 +212,7 @@ export function PersonalReading({
             <p>
               {topic === 'parent'
                 ? '부모인 내 사주로, 오늘 아이에게 건넬 말을 찾아요.'
-                : '요즘의 고민을 고르고 내 사주를 살펴봐요.'}
+                : '고른 고민과 만세력으로 오늘 해볼 일을 찾아요.'}
             </p>
           </div>
           {children}
@@ -295,8 +316,8 @@ export function PersonalReading({
                 과거에 겪은 일 <span>선택</span>
               </label>
               <p className="small-muted" id="past-experience-help">
-                겪은 일과 그때 내가 한 행동을 적어보세요. 문장은 이 기기에 두고, 경험의 주제만 풀이에
-                참고해요.
+                겪은 일과 그때 내가 한 행동을 한두 문장 적어보세요. 원문은 이 기기에 두고, 경험의 주제만
+                풀이에 참고해요.
               </p>
               <textarea
                 id="past-experience"
@@ -312,6 +333,11 @@ export function PersonalReading({
       </div>
       <div className="form-action-bar">
         <div className="site-width reading-width form-action-inner">
+          {form.formState.isSubmitting && (
+            <p className="form-progress small-muted" role="status">
+              풀이 자료를 살피고 있어요.
+            </p>
+          )}
           {error && (
             <p className="error-text" role="alert">
               {error}

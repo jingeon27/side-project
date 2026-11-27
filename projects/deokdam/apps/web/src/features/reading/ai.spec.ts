@@ -38,7 +38,7 @@ describe('reading provider', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('shares a daily request and sends only the reading choices and retrieved reference texts', async () => {
+  it('shares a daily request and sends the reading choices and concise reference advice', async () => {
     vi.stubEnv('DEOKDAM_AI_CONTAINER', '1');
     vi.stubEnv('DEOKDAM_AI_MODEL', 'test-model');
     const fetch = vi.fn().mockResolvedValue(answer('silence-next'));
@@ -47,6 +47,7 @@ describe('reading provider', () => {
     const results = await Promise.all([createReading(input), createReading(input)]);
     expect(results[0]).toMatchObject({
       mode: 'ai',
+      action: '다음 지원에 이어 쓸 경험 찾기',
       sources: [{ id: 'metal' }, { id: 'silence-next' }],
     });
     expect(results[0].interpretation).toContain('누구를 도왔는지 한 줄로 적어 보세요.');
@@ -67,8 +68,9 @@ describe('reading provider', () => {
     expect(prompt.practices).toHaveLength(3);
     expect(prompt.practices[0]).toMatchObject({
       id: 'silence-trim',
-      text: expect.stringContaining('최근 공고'),
+      advice: expect.stringContaining('최근 공고'),
     });
+    expect(prompt.practices[0]).not.toHaveProperty('text');
     expect(request.response_format.json_schema.schema.properties.referenceId.enum).toEqual(
       prompt.practices.map(({ id }: { id: string }) => id),
     );

@@ -39,6 +39,7 @@ test('parent reading supports an unknown time and sends only selected categories
   expect(Object.keys(payload).sort()).toEqual(['concern', 'element', 'topic']);
   expect(payload.topic).toBe('parent');
   await expect(page.getByRole('heading', { name: '오늘의 기본 풀이' })).toBeVisible();
+  await page.getByText('만세력 보기', { exact: true }).click();
   await expect(page.getByText('시주', { exact: true })).toBeVisible();
   await expect(page.getByText('미상', { exact: true })).toBeVisible();
 });
@@ -68,7 +69,7 @@ test('the story playlist contacts YouTube only after the reader opens the player
     route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>테스트 재생목록</p>' }),
   );
   await page.goto('/#stories');
-  const launcher = page.getByRole('button', { name: '쇼츠 플레이어 열기' });
+  const launcher = page.getByRole('button', { name: '쇼츠 모아보기' });
   await expect(page.locator('iframe')).toHaveCount(0);
   await launcher.click();
   const frame = page.locator('iframe[title="쇼츠 모아보기"]');
@@ -103,9 +104,7 @@ test('a failed reading preserves the form and offers a basic fallback', async ({
   await expect(page.getByRole('heading', { name: '오늘의 기본 풀이' })).toBeVisible();
 });
 
-test('an AI reading shows retrieved titles with the result and keeps them in the daily cache', async ({
-  page,
-}) => {
+test('an AI reading keeps its chosen action and sources through recording and reload', async ({ page }) => {
   const first = '금(金)이 모양을 바꾸는 이미지';
   const second = '지원서 첫 줄과 공고 맞춰보기';
   await page.route('**/api/readings', (route) =>
@@ -113,6 +112,7 @@ test('an AI reading shows retrieved titles with the result and keeps them in the
       json: {
         mode: 'ai',
         interpretation: '금의 다듬는 이미지처럼, 오늘은 지원서 첫 줄에서 내 역할을 또렷하게 써봐도 좋아요.',
+        action: second,
         sources: [
           { id: 'metal', title: first },
           { id: 'silence-trim', title: second },
@@ -124,14 +124,22 @@ test('an AI reading shows retrieved titles with the result and keeps them in the
   await page.getByLabel('내 생년월일').fill('20021120');
   await page.getByRole('button', { name: '내 풀이 보기' }).click();
   await expect(page.getByRole('heading', { name: '오늘의 AI 풀이' })).toBeVisible();
-  await expect(page.getByText('풀이에 참고한 자료')).toBeVisible();
-  await expect(page.getByText(first + ', ' + second)).toBeVisible();
+  await expect(page.getByRole('heading', { name: second })).toBeVisible();
+  await expect(page.getByRole('radio', { name: second })).toBeChecked();
+  await page.getByText('만세력과 참고 자료', { exact: true }).click();
+  await expect(page.getByRole('heading', { name: '풀이에 참고한 자료' })).toBeVisible();
+  await expect(page.getByRole('list').getByText(first)).toBeVisible();
+  await expect(page.getByRole('list').getByText(second)).toBeVisible();
+  await page.getByRole('button', { name: '오늘 해봤어요' }).click();
+  await expect(page.getByRole('region', { name: '오늘 기록' }).getByText(second)).toBeVisible();
 
   await page.unroute('**/api/readings');
   await page.reload();
   await page.getByLabel('내 생년월일').fill('20021120');
   await page.getByRole('button', { name: '내 풀이 보기' }).click();
-  await expect(page.getByText(first + ', ' + second)).toBeVisible();
+  await expect(page.getByRole('heading', { name: second })).toBeVisible();
+  await page.getByText('만세력과 참고 자료', { exact: true }).click();
+  await expect(page.getByRole('list').getByText(second)).toBeVisible();
 });
 
 test('the preview shows a real price, a sample day and an unavailable checkout without merchant credentials', async ({

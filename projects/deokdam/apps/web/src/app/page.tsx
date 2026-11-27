@@ -20,6 +20,7 @@ export default async function Home() {
   await connection();
   if (!featured) throw new Error('An episode is required for the home page');
   const playlist = shortsPlaylist(process.env.DEOKDAM_SHORTS_PLAYLIST_ID ?? channelShortsPlaylist);
+  const storiesHeading = <h2 id="stories-title">이야기 속 오늘의 덕</h2>;
   return (
     <>
       <main id="main-content" className="home">
@@ -90,13 +91,19 @@ export default async function Home() {
         </section>
         <section className="story-list" id="stories" aria-labelledby="stories-title">
           <div className="site-width">
-            <h2 id="stories-title">이야기 속 오늘의 덕</h2>
+            {playlist ? (
+              <ShortsPlayer source={playlist} title="쇼츠 모아보기">
+                {storiesHeading}
+              </ShortsPlayer>
+            ) : (
+              storiesHeading
+            )}
             <div className="story-rows">
               {episodes.map((episode) => (
                 <Link href={episodePath(episode.slug)} key={episode.slug} className="story-row">
                   <span className="story-image">
                     {episode.image && (
-                      <Image src={episode.image} alt="" fill sizes="(max-width: 760px) 84px, 116px" />
+                      <Image src={episode.image} alt="" fill sizes="(max-width: 760px) 88px, 112px" />
                     )}
                   </span>
                   <span className="story-copy">
@@ -110,7 +117,6 @@ export default async function Home() {
                 </Link>
               ))}
             </div>
-            {playlist && <ShortsPlayer source={playlist} title="쇼츠 모아보기" />}
           </div>
         </section>
       </main>

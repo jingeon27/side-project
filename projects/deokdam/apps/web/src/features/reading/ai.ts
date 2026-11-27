@@ -48,7 +48,12 @@ async function generate(
 ): Promise<TReading> {
   const concern = topics[input.topic].concerns.find(({ id }) => id === input.concern);
   const { classical, practices } = findReadingReferences(input);
-  const candidateIds = practices.map(({ id }) => id);
+  const candidates = practices.map(({ id }) => {
+    const reference = readingReferences.find((entry) => entry.id === id);
+    if (reference?.source !== 'editorial') throw new Error('Missing reading advice');
+    return reference;
+  });
+  const candidateIds = candidates.map(({ id }) => id);
   const selectionSchema = z.object({ referenceId: z.enum(candidateIds) }).strict();
   const element = elementDescriptions[input.element];
   const response = await fetch(config.url, {
@@ -82,8 +87,8 @@ async function generate(
             concern: concern?.label,
             element: element.label,
             experience: input.experience ? experienceThemes[input.experience].label : undefined,
-            classical: { title: classical.title, text: classical.text },
-            practices: practices.map(({ id, title, text }) => ({ id, title, text })),
+            classical: { title: classical.title, focus: element.focus },
+            practices: candidates.map(({ id, title, advice }) => ({ id, title, advice })),
           }),
         },
       ],
@@ -92,11 +97,12 @@ async function generate(
   if (!response.ok) throw new Error('Reading provider unavailable');
   const body = providerResponse.parse(await response.json());
   const selection = selectionSchema.parse(JSON.parse(body.choices[0]?.message.content ?? 'null'));
-  const selected = readingReferences.find(({ id }) => id === selection.referenceId);
-  if (selected?.source !== 'editorial') throw new Error('Missing reading advice');
+  const selected = candidates.find(({ id }) => id === selection.referenceId);
+  if (!selected) throw new Error('Missing reading advice');
   return {
     mode: 'ai',
     interpretation: `사주에서 ${element.label}의 비유는 ${element.focus}을 떠올리게 해요. ${selected.advice}`,
+    action: selected.title,
     sources: [classical, selected].map(({ id, title }) => ({ id, title })),
   };
 }
