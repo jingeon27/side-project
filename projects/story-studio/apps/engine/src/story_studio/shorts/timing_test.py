@@ -25,3 +25,11 @@ class ReadingTimelineTest(unittest.TestCase):
     def test_an_overfull_reading_requires_a_shorter_script(self):
         with self.assertRaisesRegex(ValueError, '대사를 줄여'):
             plan_cuts([{'seconds': 15}, {'seconds': 15}], [14.9, 14.8])
+
+    def test_delayed_reply_keeps_its_lead_without_a_synthetic_take_for_the_silent_cut(self):
+        shots = [{'seconds': 5}, {'seconds': 5, 'voiceLead': 2}, {'seconds': 20}]
+        silent, reply, end = plan_cuts(shots, [0, 4, 0])
+        self.assertEqual(silent.speech_seconds, 0)
+        self.assertGreaterEqual(reply.frames, (2 + 4 + TAIL) * FPS)
+        self.assertEqual(end.speech_seconds, 0)
+        self.assertEqual(silent.frames + reply.frames + end.frames, FRAMES)

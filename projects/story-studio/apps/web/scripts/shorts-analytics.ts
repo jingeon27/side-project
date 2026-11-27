@@ -14,6 +14,7 @@ const actions: ReadonlyMap<string, TShortsAction> = new Map([
   ['boards', 'shorts-boards'],
   ['daily', 'shorts-daily'],
   ['render', 'shorts-render'],
+  ['render-story', 'shorts-render-story'],
   ['verify', 'shorts-verify'],
   ['youtube-connect', 'shorts-youtube-connect'],
   ['youtube-auto', 'shorts-youtube-auto'],

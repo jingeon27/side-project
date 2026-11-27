@@ -1,0 +1,46 @@
+[
+  {
+    "slug": "baek-beonjjae-jiwonseo",
+    "title": "백 번째 지원서",
+    "topic": "job",
+    "hook": "서류를 100곳에 넣었는데, 면접 연락이 한 번도 안 왔다.",
+    "description": "친구와 자기소개서 첫 줄을 바꿔 읽다가, 잊고 있던 내 경험을 다시 떠올렸어요.",
+    "action": "친구와 자기소개서 첫 줄을 서로 읽어주기",
+    "message": "야, 우리 자소서 딱 첫 줄만 바꿔 읽을래? 네 것도 읽어줄게.",
+    "alternative": "누군가를 도왔던 경험을 한 줄 적어보기",
+    "image": "/images/baek-beonjjae-jiwonseo.webp"
+  },
+  {
+    "slug": "jiwotda-sseun-katok",
+    "title": "엄마가 지운 카톡",
+    "topic": "parent",
+    "hook": "오늘도 연락 없냐고 썼다가, 또 지웠다.",
+    "description": "같은 저녁, 엄마는 자녀가 좋아하는 만두를 떠올리고 먼저 물었어요.",
+    "action": "아이에게 좋아하는 저녁 메뉴 하나 물어보기",
+    "message": "오는 길에 만두 사 갈까? 김치만두 먹을래?",
+    "alternative": "아이에게 부담 없이 건넬 말을 한 줄 적어보기",
+    "image": "/images/jiwotda-sseun-katok.webp"
+  },
+  {
+    "slug": "chingu-hapgyeok",
+    "title": "축하한다는 한 줄",
+    "topic": "job",
+    "hook": "친구 합격 소식에 축하한다고 쓰고, 한참을 못 보냈다.",
+    "description": "친구에게 전할 말과 오늘의 나에게 필요한 말을 한 줄씩 써봤어요.",
+    "action": "친구에게 전할 축하와 내게 남길 말을 한 줄씩 쓰기",
+    "message": "준비하느라 고생했어. 진짜 축하해.",
+    "alternative": "내가 이번 주에 포기하지 않고 해낸 일 하나 적기",
+    "image": "/images/chingu-hapgyeok.webp"
+  },
+  {
+    "slug": "seongjeokpyo-nal",
+    "title": "성적표가 뜨는 날",
+    "topic": "admission",
+    "hook": "성적표가 뜨는 날인데, 집에서는 아무도 그 얘길 안 꺼냈다.",
+    "description": "성적을 말하기 전에 오늘 듣고 싶은 말을 가족에게 먼저 알려줬어요.",
+    "action": "가족에게 오늘 내가 듣고 싶은 말 한 문장 건네기",
+    "message": "오늘은 점수보다 고생했다는 말을 먼저 듣고 싶어.",
+    "alternative": "오늘 듣고 싶은 말을 나에게 한 문장 써주기",
+    "image": "/images/seongjeokpyo-nal.webp"
+  }
+]

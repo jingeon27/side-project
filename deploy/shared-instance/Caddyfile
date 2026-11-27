@@ -26,6 +26,9 @@
 	}
 }
 
+# Enables only the Deokdam route installed by the host operator.
+import /config/deokdam/*.caddy
+
 # Media, including GF avatars, is uploaded to S3 with presigned forms, so bodies are JSON
 # (PC 64KB, GF 256KB at the apps).
 (gf_request_body) {

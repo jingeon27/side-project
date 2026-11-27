@@ -1,0 +1,371 @@
+{
+  "baek-beonjjae-jiwonseo": {
+    "narrator": "ko-casual-male",
+    "cover": "서류 100곳, 면접 0번",
+    "intro": "서류 100곳\n면접 0번",
+    "tonic": 48,
+    "music": [
+      {
+        "at": 0,
+        "mode": "silence",
+        "note": "방의 여백에서 시작"
+      },
+      {
+        "at": 5.08,
+        "mode": "bell",
+        "note": "휴대폰에 들어온 쿠폰"
+      },
+      {
+        "at": 5.73,
+        "mode": "silence",
+        "note": "친구에게 보내는 말"
+      },
+      {
+        "at": 25.3,
+        "mode": "tap",
+        "note": "새 문장이 쓰이고 난 뒤 한 음"
+      }
+    ],
+    "shots": [
+      {
+        "seconds": 4,
+        "art": 1,
+        "focus": [0.62, 0.5],
+        "heading": "새로 고침",
+        "voice": "혹시 몰라서, 메일함을 또 열었다.",
+        "caption": "혹시 몰라서\n메일함을 또 열었다",
+        "voiceLead": 0.55,
+        "visual": "늦은 저녁, 책상에 앉은 사람이 턱을 괸 채 노트북을 본다. 지원과 면접 횟수가 보인다.",
+        "motion": {
+          "seed": 461,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. He slowly lifts his head and puts the hand that was supporting his cheek down on the wooden desk. His eyes stay on the laptop. Keep his oatmeal knit sweater, face, warm desk lamp and blue evening window consistent. No cut, reframing, titles, logos, text, lip sync or new characters.",
+          "tiling": "aggressive"
+        }
+      },
+      {
+        "seconds": 3,
+        "art": 2,
+        "focus": [0.79, 0.5],
+        "heading": "쿠폰 알림",
+        "visual": "휴대폰이 켜진다. 손이 닿을 즈음 할인 쿠폰이라는 게 보인다.",
+        "insert": {
+          "kind": "notice",
+          "text": "저녁 메뉴 2천 원 할인 쿠폰",
+          "from": 0.36
+        },
+        "motion": {
+          "seed": 813,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. The fingers close gently around the near edge of the glowing smartphone and slide it several centimeters toward the sweater cuff. One clear motivated reach. Keep the same natural five fingers, sweater sleeve, wooden desk and lamp reflections. Keep the screen blank and unreadable. No cut, reframing, titles, logos, text, lip sync or new characters.",
+          "duration": 5,
+          "trimEnd": 3.4
+        }
+      },
+      {
+        "seconds": 5,
+        "art": 3,
+        "focus": [0.22, 0.5],
+        "heading": "첫 줄",
+        "voice": "야, 첫 줄만 봐줄래? 너도 보내 줘.",
+        "caption": "야, 첫 줄만 봐줄래?\n너도 보내 줘",
+        "voiceLead": 0.8,
+        "visual": "화면이 바뀌고, 지원서 옆 휴대폰을 든 사람이 친구에게 말을 건다."
+      },
+      {
+        "seconds": 6,
+        "art": 3,
+        "focus": [0.75, 0.5],
+        "heading": "친구의 지원서",
+        "voice": "너 혼자 마감한 날 있잖아. 그 얘기 써 봐.",
+        "caption": "너 혼자 마감한 날 있잖아\n그 얘기 써 봐",
+        "voiceLead": 1.2,
+        "visual": "친구의 지원서 첫 줄을 읽고 그 사람이 했던 일을 짚어준다.",
+        "insert": {
+          "kind": "paper",
+          "label": "친구 자소서",
+          "text": "저는 책임감이 강합니다."
+        }
+      },
+      {
+        "seconds": 5,
+        "art": 4,
+        "focus": [0.54, 0.5],
+        "heading": "친구가 기억한 일",
+        "voice": "너 신입 세 명 가르친 거 있잖아. 그건 왜 뺐어?",
+        "caption": "너 신입 세 명 가르친 거 있잖아\n그건 왜 뺐어?",
+        "speaker": "ko-comment-male",
+        "voiceLead": 0.7,
+        "visual": "친구의 목소리가 들린다. 노트북을 보던 얼굴이 조금 풀린다.",
+        "motion": {
+          "seed": 1219,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. He looks down toward the unseen laptop display, makes one small nod, and a quiet relieved smile becomes visible. Keep his face, oatmeal sweater, desk lamp and window in the same places. No cut, reframing, titles, logos, text, lip sync or new characters.",
+          "duration": 7
+        }
+      },
+      {
+        "seconds": 7,
+        "art": 3,
+        "focus": [0.8, 0.5],
+        "heading": "다시 쓴 첫 문장",
+        "visual": "책상 위 원고로 돌아온다. 새로 쓴 첫 문장이 끝 안내 전에 남는다.",
+        "insert": {
+          "kind": "paper",
+          "label": "내 자소서",
+          "text": "신입 세 명의 첫 주를 맡았습니다.",
+          "from": 0.15,
+          "typed": true
+        },
+        "endcard": 0.61
+      }
+    ]
+  },
+  "jiwotda-sseun-katok": {
+    "narrator": "ko-casual-female",
+    "cover": "엄마가 지운 카톡",
+    "intro": "엄마가 지운 카톡",
+    "tonic": 53,
+    "music": [
+      {
+        "at": 0,
+        "mode": "silence",
+        "note": "혼자 앉은 식탁"
+      },
+      {
+        "at": 16.75,
+        "mode": "tap",
+        "note": "답장 앞의 짧은 여백"
+      },
+      {
+        "at": 25.6,
+        "mode": "resolve",
+        "note": "두 사람이 앉은 저녁"
+      }
+    ],
+    "shots": [
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.21, 0.5],
+        "heading": "쓰고 지운 말",
+        "visual": "휴대폰에 손을 댄 채 엄마가 빈 의자 쪽으로 고개를 돌린다.",
+        "insert": {
+          "kind": "draft",
+          "label": "보내기 전",
+          "text": "오늘도 연락 없었어?",
+          "from": 0.22,
+          "until": 0.72
+        },
+        "motion": {
+          "seed": 1407,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. The mother hesitates, makes two gentle thumb taps on the phone, and lowers the hand slightly. She glances in the direction of the empty chair. Preserve her burgundy cardigan and the evening dining table. The phone screen has no readable UI. No cut, reframing, titles, logos, text, lip sync or new characters.",
+          "duration": 6
+        }
+      },
+      {
+        "seconds": 5,
+        "art": 1,
+        "focus": [0.95, 0.5],
+        "heading": "빈 의자",
+        "voice": "만두는 어릴 때부터 잘 먹었지.",
+        "caption": "만두는 어릴 때부터 잘 먹었지",
+        "voiceLead": 1.1,
+        "visual": "같은 식탁의 빈 의자. 엄마는 자녀가 좋아하는 메뉴를 떠올린다."
+      },
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.08, 0.5],
+        "heading": "이번에 건넨 말",
+        "visual": "되돌아온 화면에 저녁 메뉴를 묻는 새 메시지가 나타난다.",
+        "insert": {
+          "kind": "message",
+          "text": "오는 길에 만두 사 갈까?\n김치만두 먹을래?",
+          "from": 0.29
+        }
+      },
+      {
+        "seconds": 7,
+        "art": 2,
+        "focus": [0.55, 0.5],
+        "heading": "답장",
+        "voice": "김치만두. 엄마 것도 같이 사 와.",
+        "caption": "김치만두\n엄마 것도 같이 사 와",
+        "speaker": "ko-casual-male",
+        "voiceLead": 0.95,
+        "visual": "자녀의 답장이 들리고, 김이 오르는 그릇에 손이 닿는다.",
+        "motion": {
+          "seed": 1673,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. One hand slides the ceramic plate of dumplings gently toward the other place setting. Soft steam continues to rise, while the camera holds on the table. Preserve the chopsticks, sleeve and warm lighting. No cut, reframing, titles, logos, text, lip sync or new characters.",
+          "duration": 7,
+          "trimEnd": 4.25
+        }
+      },
+      {
+        "seconds": 6,
+        "art": 2,
+        "focus": [0.93, 0.5],
+        "heading": "두 사람 몫",
+        "visual": "한쪽 접시와 젓가락에 시선을 둔다. 두 사람 몫의 식탁에서 이야기를 닫는다.",
+        "endcard": 0.56
+      }
+    ]
+  },
+  "chingu-hapgyeok": {
+    "narrator": "ko-casual-female",
+    "cover": "축하한다는 한 줄",
+    "intro": "축하한다는 한 줄",
+    "tonic": 45,
+    "music": [
+      {
+        "at": 0,
+        "mode": "silence",
+        "note": "알림을 읽는 방"
+      },
+      {
+        "at": 12.35,
+        "mode": "tap",
+        "note": "창문 쪽으로 시선이 갈 때"
+      },
+      {
+        "at": 23.8,
+        "mode": "resolve",
+        "note": "보낸 말과 나에게 남긴 말"
+      }
+    ],
+    "shots": [
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.55, 0.5],
+        "heading": "먼저 붙은 친구",
+        "voice": "친구한테 합격 문자가 왔다.",
+        "caption": "친구한테 합격 문자가 왔다",
+        "voiceLead": 0.65,
+        "visual": "휴대폰을 읽던 여자가 잠시 고개를 숙인 채 멈춘다.",
+        "motion": {
+          "seed": 1917,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. With her elbows close to the body, the young woman makes a short thumb tap on the phone and then pauses, taking a small breath. Her gaze drops for a moment. Her face, dusty blue shirt, bed and window remain recognizable. No cut, reframing, titles, logos, text, lip sync or new characters."
+        }
+      },
+      {
+        "seconds": 6,
+        "art": 2,
+        "focus": [0.97, 0.5],
+        "heading": "뒤집은 휴대폰",
+        "voice": "난 오늘도 연락이 없었다.",
+        "caption": "난 오늘도 연락이 없었다",
+        "voiceLead": 1.25,
+        "visual": "푸른 셔츠 소매와 이불 위로 뒤집어 내려놓은 휴대폰이 보인다."
+      },
+      {
+        "seconds": 6,
+        "art": 3,
+        "focus": [0.42, 0.5],
+        "heading": "그 친구의 밤",
+        "voice": "밤마다 나랑 면접 연습했었지.",
+        "caption": "밤마다 나랑 면접 연습했었지",
+        "voiceLead": 0.85,
+        "visual": "창밖 아파트 불빛을 보는 뒷모습. 전화로 연습을 같이 했던 밤을 떠올린다."
+      },
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.4, 0.5],
+        "heading": "보낸 문장",
+        "visual": "휴대폰을 다시 들어 친구에게 보낸 메시지를 한 번만 보여준다.",
+        "insert": {
+          "kind": "message",
+          "text": "준비하느라 고생했어.\n진짜 축하해.",
+          "from": 0.27
+        }
+      },
+      {
+        "seconds": 6,
+        "art": 3,
+        "focus": [0.72, 0.5],
+        "heading": "나에게 남긴 문장",
+        "visual": "고개를 들고 있던 뒷모습 위로 자신에게 남긴 말이 나온다.",
+        "insert": {
+          "kind": "paper",
+          "label": "오늘 메모",
+          "text": "나도 이번 주에 지원서 세 장 냈다.",
+          "from": 0.12
+        },
+        "endcard": 0.56
+      }
+    ]
+  },
+  "seongjeokpyo-nal": {
+    "narrator": "ko-casual-male",
+    "cover": "성적표가 뜨는 날",
+    "intro": "성적표가 뜨는 날",
+    "tonic": 51,
+    "music": [
+      {
+        "at": 0,
+        "mode": "silence",
+        "note": "식탁의 눈치와 대화"
+      },
+      {
+        "at": 26.2,
+        "mode": "tap",
+        "note": "밥을 집은 뒤의 한 음"
+      }
+    ],
+    "shots": [
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.63, 0.5],
+        "heading": "말 없는 저녁",
+        "voice": "밥 먹는 동안 아무도 점수를 안 물었다.",
+        "caption": "밥 먹는 동안\n아무도 점수를 안 물었다",
+        "voiceLead": 0.65,
+        "visual": "성적표가 나온 날, 수험생은 제 밥그릇 위에서 맞은편으로 시선을 든다.",
+        "motion": {
+          "seed": 2113,
+          "prompt": "A continuous, locked-camera shot of this hand-painted Korean gouache illustration. The student sets the spoon down quietly and raises his eyes toward the person at the left. Keep his charcoal cardigan, hair, dinner bowl and lamplight consistent. No cut, reframing, titles, logos, text, lip sync or new characters."
+        }
+      },
+      {
+        "seconds": 5,
+        "art": 2,
+        "focus": [0.26, 0.5],
+        "heading": "먼저 부른 사람",
+        "voice": "엄마.",
+        "caption": "엄마",
+        "voiceLead": 1.2,
+        "visual": "식탁 맞은편. 아이가 부르자 엄마의 시선을 받아 잠깐 기다린다."
+      },
+      {
+        "seconds": 6,
+        "art": 1,
+        "focus": [0.52, 0.5],
+        "heading": "듣고 싶었던 말",
+        "voice": "나 오늘 고생했다고 한 번만 말해줘.",
+        "caption": "나 오늘 고생했다고\n한 번만 말해줘",
+        "voiceLead": 0.6,
+        "visual": "점수를 말하기 전에 듣고 싶었던 말을 아이가 먼저 꺼낸다."
+      },
+      {
+        "seconds": 7,
+        "art": 2,
+        "focus": [0.62, 0.5],
+        "heading": "엄마의 대답",
+        "voice": "고생 많았어. 밥부터 먹자.",
+        "caption": "고생 많았어\n밥부터 먹자",
+        "voiceTake": 2,
+        "speaker": "ko-casual-female",
+        "voiceLead": 0.8,
+        "visual": "엄마가 아이 눈을 보며 대답한다. 돌아오는 말 뒤에 조용한 한 박자가 남는다."
+      },
+      {
+        "seconds": 6,
+        "art": 3,
+        "focus": [0.69, 0.5],
+        "heading": "첫 술",
+        "visual": "젓가락 사이에 밥 한 입이 떠오른다. 밥그릇을 비추며 닫는다.",
+        "endcard": 0.57
+      }
+    ]
+  }
+}

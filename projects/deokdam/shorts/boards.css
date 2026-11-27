@@ -1,0 +1,173 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.shot {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f9f5eb;
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans CJK KR', sans-serif;
+}
+
+.picture,
+.shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.picture {
+  object-fit: cover;
+  object-position: var(--focus-x) var(--focus-y);
+}
+
+.shade {
+  background:
+    linear-gradient(180deg, #160f12c2, #160f1240 16%, transparent 28%),
+    linear-gradient(0deg, #100e13db, #100e13a3 17%, #100e1336 30%, transparent 49%);
+}
+
+.series {
+  position: absolute;
+  top: 149px;
+  left: 76px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-weight: 750;
+  font-size: 34px;
+  letter-spacing: -0.045em;
+  text-shadow: 0 2px 14px #130f11de;
+}
+
+.series span {
+  padding-left: 17px;
+  border-left: 2px solid #e7d9c680;
+  color: #e6d9cd;
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.intro {
+  position: absolute;
+  top: 214px;
+  left: 72px;
+  right: 168px;
+  margin: 0;
+  font-size: 72px;
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.065em;
+  white-space: pre-line;
+  text-shadow: 0 3px 26px #190e14e6;
+}
+
+.intro.multiline {
+  top: 218px;
+  font-size: 100px;
+  line-height: 1.04;
+}
+
+.insert {
+  position: absolute;
+  white-space: pre-line;
+  line-height: 1.26;
+  letter-spacing: -0.034em;
+  font-size: 49px;
+  font-weight: 650;
+  color: #201e22;
+}
+
+.notice {
+  left: 75px;
+  bottom: 427px;
+  border-left: 5px solid #dbc9a3;
+  padding: 16px 23px;
+  color: #f6efe3;
+  background: #211c21e8;
+  font-size: 40px;
+}
+
+.draft,
+.message {
+  max-width: 740px;
+  bottom: 472px;
+  padding: 28px 34px;
+  border-radius: 20px;
+}
+
+.draft {
+  left: 76px;
+  background: #e8e1d7;
+}
+
+.message {
+  right: 162px;
+  background: #edf0dd;
+}
+
+.paper {
+  left: 76px;
+  right: 162px;
+  bottom: 505px;
+  padding: 25px 34px 29px;
+  border-radius: 4px;
+  background: #f5ead7;
+  border-left: 5px solid #bda586;
+  font-size: 46px;
+}
+
+.insert-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #625247;
+  font-size: 29px;
+  font-weight: 650;
+}
+
+.card-link {
+  position: absolute;
+  left: 76px;
+  right: 162px;
+  bottom: 280px;
+  overflow: hidden;
+  border-radius: 15px;
+  color: #251c1c;
+  background: #f9ede2;
+}
+
+.card-image {
+  display: block;
+  width: 100%;
+  height: 271px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.card-destination {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 24px 17px;
+  border-top: 1px solid #845f4747;
+  font-size: 34px;
+  line-height: 1.16;
+  letter-spacing: -0.045em;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.card-destination span {
+  color: #6b443a;
+  font-size: 31px;
+  font-weight: 600;
+}

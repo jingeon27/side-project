@@ -1,0 +1,55 @@
+{
+  "name": "@deokdam/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3460",
+    "start": "next start --hostname 127.0.0.1 --port 3460",
+    "build": "next build",
+    "lint": "eslint --max-warnings 0 .",
+    "typecheck": "next typegen && tsc7 --noEmit",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test",
+    "check": "yarn lint && yarn typecheck && yarn test",
+    "capture:card": "node scripts/capture-card.ts",
+    "reading:embed": "tsx scripts/embed-readings.ts"
+  },
+  "dependencies": {
+    "@amplitude/analytics-browser": "catalog:",
+    "@portone/browser-sdk": "0.2.1",
+    "@side/design-system": "workspace:*",
+    "dayjs": "catalog:",
+    "korean-lunar-calendar": "0.4.0",
+    "lucide-react": "catalog:",
+    "lunar-typescript": "1.8.7",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "sqlite-vec": "0.1.9",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@side/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/google-publisher-tag": "1.20261109.1",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/supertest": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "supertest": "catalog:",
+    "tailwindcss": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
+  }
+}

@@ -62,12 +62,45 @@ class DailyEditionTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'voiceTake'):
                     read_episode(folder)
 
+    def test_original_story_uses_its_own_card_and_stays_out_of_daily_archive(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            folder = candidate(root, 'original-story', 218)
+            manifest = folder / 'episode.json'
+            data = json.loads(manifest.read_text())
+            del data['lead']
+            data.update(kind='original', cardPath='/cards/original-story', sources=[])
+            manifest.write_text(json.dumps(data))
+            self.assertEqual(read_episode(folder, original=True)['cardPath'], '/cards/original-story')
+            with self.assertRaisesRegex(ValueError, 'render-story'):
+                read_episode(folder)
+            entry = root / '2026-11-27/01-original-story'
+            entry.mkdir(parents=True)
+            finished(folder, data, entry)
+            self.assertEqual(archive(root), [])
+
     def test_directed_host_keeps_individual_readers_and_existing_recordings(self):
         self.assertEqual(speaker_for({}, {}), SPEAKER)
         episode = {'narrator': PRESENTER}
         self.assertEqual(speaker_for(episode, {}), PRESENTER)
         self.assertEqual(speaker_for(episode, {'speaker': 'M4'}), 'M4')
         self.assertEqual(speaker_for(episode, {'speaker': 'M4', 'recording': 'assets/reader.wav'}), 'recording')
+
+    def test_original_accepts_a_silent_cut_but_rejects_a_partial_speech_take(self):
+        with TemporaryDirectory() as directory:
+            folder = candidate(Path(directory), 'quiet-story', 219)
+            manifest = folder / 'episode.json'
+            data = json.loads(manifest.read_text())
+            del data['lead']
+            data.update(kind='original', cardPath='/cards/quiet-story', sources=[])
+            shot = data['shots'][0]
+            del shot['voice'], shot['caption'], shot['credit']
+            manifest.write_text(json.dumps(data))
+            self.assertNotIn('voice', read_episode(folder, original=True)['shots'][0])
+            shot['voiceLead'] = 2
+            manifest.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'voice'):
+                read_episode(folder, original=True)
 
     def test_a_comment_crop_used_as_a_caption_matches_the_accessible_subtitles(self):
         with TemporaryDirectory() as directory:
@@ -104,6 +137,14 @@ class DailyEditionTest(unittest.TestCase):
                         media=dict(file='assets/queue.mp4', box=[0, 0, 640, 960]))
             manifest.write_text(json.dumps(data))
             self.assertEqual(read_episode(folder)['shots'][0]['speaker'], 'F3')
+            shot['media']['fit'] = 'cover'
+            manifest.write_text(json.dumps(data))
+            self.assertEqual(read_episode(folder)['shots'][0]['media']['fit'], 'cover')
+            shot['media']['fit'] = 'unsupported'
+            manifest.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError, 'cover'):
+                read_episode(folder)
+            del shot['media']['fit']
             shot['media']['file'] = 'episode.json'
             manifest.write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError, 'assets'):

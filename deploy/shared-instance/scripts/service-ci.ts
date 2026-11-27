@@ -3,12 +3,13 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-type TService = 'game-feedback' | 'photo-contest' | 'story-studio' | 'bookshop-mystery';
+type TService = 'game-feedback' | 'photo-contest' | 'story-studio' | 'bookshop-mystery' | 'deokdam';
 interface ISelection {
   gameFeedback: boolean;
   photoContest: boolean;
   storyStudio: boolean;
   bookshopMystery: boolean;
+  deokdam: boolean;
 }
 
 const COMMON_PATHS = [
@@ -56,14 +57,22 @@ export function selectServices({
     photoContest: changed('photo-contest'),
     storyStudio: changed('story-studio'),
     bookshopMystery: changed('bookshop-mystery'),
+    deokdam: changed('deokdam'),
   };
 }
 
-export function requiredChecks({ gameFeedback, photoContest, storyStudio, bookshopMystery }: ISelection) {
+export function requiredChecks({
+  gameFeedback,
+  photoContest,
+  storyStudio,
+  bookshopMystery,
+  deokdam,
+}: ISelection) {
   return [
     'selection',
     ...(storyStudio ? ['story-studio'] : []),
     ...(bookshopMystery ? ['bookshop-verify'] : []),
+    ...(deokdam ? ['deokdam-verify'] : []),
     ...(gameFeedback || photoContest ? ['shared-contract'] : []),
     ...(gameFeedback ? ['gf-verify', 'gf-integration', 'gf-components'] : []),
     ...(photoContest ? ['pc-verify', 'pc-browser', 'pc-components', 'pc-containers'] : []),
@@ -103,7 +112,7 @@ function selectFromEvent() {
   });
   appendFileSync(
     process.env.GITHUB_OUTPUT ?? '',
-    `game-feedback=${selected.gameFeedback}\nphoto-contest=${selected.photoContest}\nstory-studio=${selected.storyStudio}\nbookshop-mystery=${selected.bookshopMystery}\nproduction=${production}\n`,
+    `game-feedback=${selected.gameFeedback}\nphoto-contest=${selected.photoContest}\nstory-studio=${selected.storyStudio}\nbookshop-mystery=${selected.bookshopMystery}\ndeokdam=${selected.deokdam}\nproduction=${production}\n`,
   );
 }
 
@@ -114,7 +123,8 @@ function verifyResults() {
     !['true', 'false'].includes(String(outputs['game-feedback'])) ||
     !['true', 'false'].includes(String(outputs['photo-contest'])) ||
     !['true', 'false'].includes(String(outputs['story-studio'])) ||
-    !['true', 'false'].includes(String(outputs['bookshop-mystery']))
+    !['true', 'false'].includes(String(outputs['bookshop-mystery'])) ||
+    !['true', 'false'].includes(String(outputs.deokdam))
   )
     throw new Error('Service selection did not produce all decisions');
   const selection = {
@@ -122,6 +132,7 @@ function verifyResults() {
     photoContest: outputs['photo-contest'] === 'true',
     storyStudio: outputs['story-studio'] === 'true',
     bookshopMystery: outputs['bookshop-mystery'] === 'true',
+    deokdam: outputs.deokdam === 'true',
   };
   const results = Object.fromEntries(
     Object.entries(needs).map(([name, value]) => [name, String(record(value).result)]),
@@ -148,6 +159,7 @@ function verifyResults() {
     'story-studio': 'yarn workspace @side/story-studio check && yarn workspace @side/story-studio test:e2e',
     'bookshop-verify':
       'yarn workspace @side/bookshop-mystery typecheck && yarn workspace @bookshop-mystery/web test:e2e',
+    'deokdam-verify': 'yarn workspace @side/deokdam check && yarn workspace @side/deokdam test:e2e',
     selection: 'node deploy/shared-instance/scripts/service-ci.ts select',
   };
   const commands = failed.map((name) => `- ${name}: \`${reproduce[name]}\``);
@@ -170,7 +182,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
         service !== 'game-feedback' &&
         service !== 'photo-contest' &&
         service !== 'story-studio' &&
-        service !== 'bookshop-mystery'
+        service !== 'bookshop-mystery' &&
+        service !== 'deokdam'
       )
         throw new Error('Unknown service');
       process.stdout.write(`${servicePaths(service).join('\n')}\n`);

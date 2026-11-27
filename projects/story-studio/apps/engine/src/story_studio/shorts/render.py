@@ -61,11 +61,12 @@ def overlay(shot, caption):
                  stroke_width=5, stroke_fill=(0, 0, 0, 116))
         pen.text((503, y), line, font=face, fill='#fffaf3', anchor='mm',
                  stroke_width=2, stroke_fill=(20, 18, 16, 238))
-    credit = shot['credit']
-    if font(23).getlength(credit) > 865:
-        raise ValueError('화면에 넣을 출처를 한 줄로 줄여 주세요.')
-    pen.text((77, 1652), credit, font=font(23), fill='#ddd9cd', anchor='lm', stroke_width=1,
-             stroke_fill=(12, 11, 10, 190))
+    credit = shot.get('credit')
+    if credit:
+        if font(23).getlength(credit) > 865:
+            raise ValueError('화면에 넣을 출처를 한 줄로 줄여 주세요.')
+        pen.text((77, 1652), credit, font=font(23), fill='#ddd9cd', anchor='lm', stroke_width=1,
+                 stroke_fill=(12, 11, 10, 190))
     return img
 
 
@@ -130,6 +131,8 @@ def playlist(scratch, name, events, frames):
 
 def render_cut(i, shot, cut, points, captions, output, scratch):
     from PIL import Image
+    media = shot.get('media')
+    behind_board = media is not None and media.get('layer') == 'background'
     art_events = []
     for step, at in enumerate([0, *points]):
         filename = f'{i}.png' if step == len(points) else f'{i}-{step}.png'
@@ -138,7 +141,7 @@ def render_cut(i, shot, cut, points, captions, output, scratch):
         art_events.append((min(cut.frames - 1, round(at * cut.frames)), plate))
     blank = scratch / f'caption-{i}-blank.png'
     overlay(shot, '').save(blank)
-    if i == 1:
+    if i == 1 and not behind_board:
         with Image.open(art_events[0][1]) as art, Image.open(blank) as ink:
             Image.alpha_composite(art.convert('RGBA'), ink).convert('RGB').save(output / 'cover.jpg', quality=91)
     caption_events = [(0, blank)]
@@ -155,22 +158,35 @@ def render_cut(i, shot, cut, points, captions, output, scratch):
     if shot.get('camera') == 'push':
         move = (f",scale=1440:2560,zoompan=z='1+0.026*on/{max(1, cut.frames-1)}':"
                 f"x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s=1080x1920:fps={FPS}")
-    graph = f'[0:v]fps={FPS}{move},setsar=1[art];[1:v]fps={FPS},format=rgba[ink];'
+    alpha = ',format=rgba' if behind_board else ''
+    graph = f'[0:v]fps={FPS}{move},setsar=1{alpha}[art];[1:v]fps={FPS},format=rgba[ink];'
     media_input = []
     background = 'art'
-    if 'media' in shot:
-        media = shot['media']
+    if media:
         x, y, width, height = media['box']
         media_input = ['-i', output / media['file']]
-        graph += (f'[2:v]setpts=PTS-STARTPTS,fps={FPS},scale={width}:{height}:force_original_aspect_ratio=decrease,'
-                  f'pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1[clip];'
-                  f'[art][clip]overlay={x}:{y}:eof_action=pass:repeatlast=0[withclip];')
+        if media.get('fit') == 'cover':
+            focus_x, focus_y = media.get('focus', (.5, .5))
+            fit = (f'scale={width}:{height}:force_original_aspect_ratio=increase,'
+                   f'crop={width}:{height}:(iw-ow)*{focus_x}:(ih-oh)*{focus_y}')
+        else:
+            fit = (f'scale={width}:{height}:force_original_aspect_ratio=decrease,'
+                   f'pad={width}:{height}:(ow-iw)/2:(oh-ih)/2')
+        trim = f"trim=duration={media['trimEnd']}," if 'trimEnd' in media else ''
+        hold = f',tpad=stop_mode=clone:stop={cut.frames}' if behind_board else ''
+        graph += f'[2:v]{trim}setpts=PTS-STARTPTS,fps={FPS},{fit},setsar=1{hold}[clip];'
+        if behind_board:
+            graph += '[clip][art]overlay=format=auto[withclip];'
+        else:
+            graph += f'[art][clip]overlay={x}:{y}:eof_action=pass:repeatlast=0[withclip];'
         background = 'withclip'
     graph += f'[{background}][ink]overlay=0:0:format=auto,format=yuv420p[film]'
     part = scratch / f'{i}.mp4'
     ffmpeg('-f', 'concat', '-safe', 0, '-i', art_list, '-f', 'concat', '-safe', 0, '-i', text_list, *media_input,
            '-filter_complex_threads', 1, '-filter_complex', graph, '-map', '[film]', '-frames:v', cut.frames,
            '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', 18, part)
+    if i == 1 and behind_board:
+        ffmpeg('-i', part, '-frames:v', 1, '-q:v', 2, output / 'cover.jpg')
     return part
 
 
@@ -180,10 +196,15 @@ def stamp(frame):
 
 
 def export_text(episode, dest, cuts, cues, captions):
-    timeline = [f'# {episode["title"]}', '', f'실베 등록일 {episode["lead"]["published"]}  ·  [게시물]({episode["lead"]["url"]})', '', '## 컷과 내레이션', '']
+    original = episode.get('kind') == 'original'
+    if original:
+        context = f'창작 상황극. 웹 카드 경로 `{episode["cardPath"]}`.'
+    else:
+        context = f'실베 등록일 {episode["lead"]["published"]}  ·  [게시물]({episode["lead"]["url"]})'
+    timeline = [f'# {episode["title"]}', '', context, '', '## 컷과 내레이션', '']
     subtitles, timing = [], []
     for i, (shot, cut, spans) in enumerate(zip(episode['shots'], cuts, captions), 1):
-        timeline += [f'### {cut.start:.2f}–{cut.end:.2f}초', '', shot['voice'], '', shot['visual'],
+        timeline += [f'### {cut.start:.2f}–{cut.end:.2f}초', '', shot.get('voice', '대사 없이 진행'), '', shot['visual'],
                      '', f'[편집용 컷 {i}](frames/{i}.png)', '']
         for first, after, line in spans:
             subtitles += [str(len(subtitles)//4 + 1), f'{stamp(first)} --> {stamp(after)}', line, '']
@@ -192,16 +213,24 @@ def export_text(episode, dest, cuts, cues, captions):
             comment = shot['sourceComment']
             anchor = episode['lead']['url'].split('#')[0] + '#' + comment['anchor']
             timeline += [f'원문 댓글 {comment["time"]} · {speaker} 대독 · [게시 위치]({anchor}) · [캡처]({comment["capture"]})', '']
-        timing.append(dict(firstFrame=cut.first, frames=cut.frames, speaker=speaker, voiceStart=round(cut.start + LEAD, 4),
-                           voiceEnd=round(cut.start + LEAD + cut.speech_seconds, 4)))
+        timings = dict(firstFrame=cut.first, frames=cut.frames)
+        if cut.speech_seconds:
+            start = cut.start + shot.get('voiceLead', LEAD)
+            timings.update(speaker=speaker, voiceStart=round(start, 4), voiceEnd=round(start + cut.speech_seconds, 4))
+        timing.append(timings)
     timeline += ['## 음악 큐', ''] + [f'- {cue["at"]:.2f}초  {cue["note"]}' for cue in cues]
     sources = [f'- [{s["label"]}]({s["url"]})' for s in episode['sources']]
-    if all(s['url'] != episode['lead']['url'] for s in episode['sources']):
+    if not original and all(s['url'] != episode['lead']['url'] for s in episode['sources']):
         sources.append(f'- [소재를 찾은 실베 글]({episode["lead"]["url"]})')
     publish = [f'# {episode["title"]}', '', '## 설명', '', episode['description'], '', *sources,
                '', episode['credits'], '',
                ' '.join('#' + tag for tag in episode['tags']), '', '## 고정 댓글', '', episode['comment'],
                '', '## 표지 문구', '', episode['cover']]
+    if original:
+        publish += ['', '## 채널 프로필 링크의 도착 경로', '', f'`{episode["cardPath"]}?utm_source=youtube`', '',
+                    '공개 웹 주소를 연결한 뒤 휴대폰에서 영상과 같은 카드가 열리는지 확인합니다.',
+                    '', '## YouTube AI 사용 공개', '',
+                    'AI로 만든 화면과 한국어 합성 음성을 사용한 편입니다. 업로드 시 AI 사용 항목을 확인합니다.']
     (dest / 'timeline.md').write_text('\n'.join(timeline) + '\n', encoding='utf8')
     (dest / 'captions.srt').write_text('\n'.join(subtitles) + '\n', encoding='utf8')
     (dest / 'publish.md').write_text('\n'.join(publish) + '\n', encoding='utf8')
