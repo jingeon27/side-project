@@ -83,9 +83,10 @@ services:
       timeout: 4s
       retries: 6
       start_period: 30s
-    cpus: 0.35
-    mem_limit: 896m
-    memswap_limit: 896m
+    cpus: 0.65
+    cpu_shares: 256
+    mem_limit: 640m
+    memswap_limit: 640m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
