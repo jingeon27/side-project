@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -44,7 +44,7 @@ def upload_plan(episode, video, play_url=None):
     title = episode["title"]
     description = episode["description"] + "\n\n" + " ".join(f"#{tag}" for tag in TAGS)
     if play_url:
-        description = f"사건 바로 풀기 {campaign_url(play_url)}\n\n{description}"
+        description = f"{campaign_url(play_url)}\n\n{description}"
     if not title or len(title) > 100 or len(description.encode("utf-8")) > 5000:
         raise ValueError("YouTube 제목 또는 설명 허용 길이를 확인하세요.")
     if any(mark in title + description for mark in "<>"):
@@ -105,12 +105,16 @@ def promo_art(episode, destination, font_path, play_url=None):
     cta = ImageFont.truetype(str(family), 46, index=index)
     for row, line in enumerate(episode["cover"].splitlines()):
         draw.text((72, 76 + row * 83), line, font=heading, fill="#fff5e5", anchor="la")
-    address = urlsplit(play_url).hostname if play_url else None
+    target = urlsplit(play_url or "")
+    address = target.netloc + ("" if target.path == "/" else target.path)
+    if cta.getlength(address) > 936:
+        address = target.netloc
     draw.text((72, 931), address or "사건 직접 풀기", font=cta, fill="#ffc887", anchor="la")
     board.save(destination, quality=92, optimize=True)
 
 
 def prepare_package(episode, source, output, play_url=None, font=None):
+    play_url = campaign_url(play_url or urljoin(PLAY_URL, episode.get("casePath", "/")))
     destination = output / episode["slug"]
     if destination.exists():
         raise ValueError(f"이 패키지가 이미 있습니다. 다른 출력 폴더를 지정하세요. {destination}")
@@ -127,8 +131,7 @@ def prepare_package(episode, source, output, play_url=None, font=None):
         plan = upload_plan(episode, staged / "short.mp4", play_url)
         (staged / "upload.json").write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (staged / "promotion.md").write_text(promo_copy(episode, play_url), encoding="utf-8")
-        if play_url:
-            (staged / "profile-link.txt").write_text(campaign_url(play_url, "youtube-shorts") + "\n", encoding="utf-8")
+        (staged / "profile-link.txt").write_text(campaign_url(play_url, "youtube-shorts") + "\n", encoding="utf-8")
         promo_art(episode, staged / "promo-square.jpg", font, play_url)
         staged.rename(destination)
     return destination
@@ -166,7 +169,7 @@ def parser_for_pipeline():
     prepare.add_argument("episode")
     prepare.add_argument("--source", type=Path, help="영상 출력 루트. 내부의 에피소드 폴더를 읽습니다.")
     prepare.add_argument("--output", type=Path, default=OUTPUT)
-    prepare.add_argument("--play-url", default=PLAY_URL, help="설명 첫 줄에 넣을 공개 조사 주소")
+    prepare.add_argument("--play-url", help="에피소드에 지정된 사건 주소를 덮어쓸 공개 HTTPS 주소")
     prepare.add_argument("--font", type=Path)
     prepare.add_argument("--render", action="store_true", help="패키지 생성 전에 쇼츠를 렌더링합니다.")
     prepare.add_argument("--renderer", choices=("browser", "unity"), default="browser")

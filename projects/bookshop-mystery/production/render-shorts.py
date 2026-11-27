@@ -116,8 +116,13 @@ def make_board(directory, episode, shot, target, index, callout=None):
     for row, line in enumerate(lines):
         text(draw, (76, title_top + row * (size + 6)), line, size, bold=True)
     if callout:
-        draw.rounded_rectangle((76, 1245, 700, 1338), fill="#211d17", radius=12)
-        text(draw, (101, 1263), callout, 48, GOLD, bold=True)
+        callout_face = ImageFont.truetype(FONT, 48, index=6)
+        callout_lines = wrap(callout, callout_face, 574)
+        if len(callout_lines) > 2:
+            raise ValueError(f"화면 안내를 두 줄로 줄여 주세요. {callout}")
+        draw.rounded_rectangle((76, 1245, 700, 1338 + 54 * (len(callout_lines) - 1)), fill="#211d17", radius=12)
+        for row, line in enumerate(callout_lines):
+            text(draw, (101, 1263 + 54 * row), line, 48, GOLD, bold=True)
     if index == 4 and not episode.get("spoiler") and not shot.get("callout"):
         draw.rounded_rectangle((76, 1255, 641, 1350), fill="#211d17", radius=12)
         text(draw, (102, 1272), "프로필에서 직접 조사하기", 49, GOLD, bold=True)
@@ -180,7 +185,10 @@ def make_short(episode, data, captures, renderer, speaker, output, original=None
         for index, shot in enumerate(episode["shots"], 1):
             artwork = [(0, None)]
             if callout := shot.get("callout"):
-                artwork.append((callout["from"], callout["text"]))
+                label = callout["text"]
+                if callout.get("includeCasePath"):
+                    label += "\n" + episode["casePath"]
+                artwork.append((callout["from"], label))
                 if "to" in callout:
                     artwork.append((callout["to"], None))
             reveal_points.append([at for at, _ in artwork[1:]])
