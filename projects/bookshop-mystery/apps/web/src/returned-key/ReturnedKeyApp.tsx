@@ -3,8 +3,9 @@ import { useEffect, useEffectEvent, useRef, useState, type MouseEvent } from 're
 import { Button, buttonVariants, FormActions } from '@side/design-system';
 
 import { trackEvent, type TCaseEntryPoint } from '../analytics';
-import { visitSource, type TLaunchIntent } from '../case-file';
+import { visitSource } from '../case-file';
 import { caseHref, catalogPath, followCaseLink, returnedKeyPath } from '../case-routes';
+import { EvidenceCaseBriefing } from '../EvidenceCaseBriefing';
 import { createInvestigationFunnel } from '../investigation-funnel';
 import { InvestigationTimeline } from '../InvestigationTimeline';
 import {
@@ -31,12 +32,6 @@ const useReturnedKeyFunnel = createInvestigationFunnel({
   play: returnedKeyPath,
   isStep: isReturnedKeyStep,
 });
-
-const startLabels = {
-  start: '조사 시작',
-  resume: '이어서 조사',
-  ending: '결말 다시 보기',
-} satisfies Record<TLaunchIntent, string>;
 
 const nextActions = {
   envelope: { step: 'dropboxes', label: '반납함 비교' },
@@ -149,31 +144,16 @@ export function ReturnedKeyApp() {
   return (
     <>
       {isLanding && (
-        <main className="key-briefing">
-          <a
-            className={buttonVariants({ variant: 'secondary', size: 'md' })}
-            href={caseHref(catalogPath)}
-            onClick={handleCatalogLink}
-          >
-            사건 목록
-          </a>
-          <div className="key-briefing-layout">
-            <img src={dropboxImage} alt="" />
-            <div className="key-briefing-copy">
-              <p className="key-briefing-time">약 3분</p>
-              <h1 ref={heading} tabIndex={-1}>
-                {returnedKeyTitle}
-              </h1>
-              <p>
-                동명기록관의 출입문은 밤 10시에 잠겼어요. 그런데 새벽 3시 일지에 사라졌던 열쇠 봉투가
-                등장합니다.
-              </p>
-              <Button type="button" variant="accent" size="lg" onClick={handleStart}>
-                {startLabels[intent]}
-              </Button>
-            </div>
-          </div>
-        </main>
+        <EvidenceCaseBriefing
+          title={returnedKeyTitle}
+          description="동명기록관의 출입문은 밤 10시에 잠겼어요. 그런데 새벽 3시 일지에 사라졌던 열쇠 봉투가 등장합니다."
+          cover={dropboxImage}
+          minutes={3}
+          intent={intent}
+          heading={heading}
+          onCatalogLink={handleCatalogLink}
+          onStart={handleStart}
+        />
       )}
       <div className="case-app key-case-app" hidden={isLanding}>
         <div className="case-frame key-investigation-tools">

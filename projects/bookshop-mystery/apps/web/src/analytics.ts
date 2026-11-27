@@ -8,15 +8,16 @@ import {
   type TRenderer,
 } from './case-file';
 import { RETURNED_KEY_ID, type TReturnedKeyClue, type TReturnedKeyStep } from './returned-key/returned-key';
+import { WET_MAP_ID, type TWetMapClue, type TWetMapStep } from './wet-map/wet-map';
 
 export type TCaseEntryPoint = 'start' | 'primary' | 'previous' | 'timeline' | 'history' | 'resume' | 'replay';
 export type TRecordEntryPoint = 'step' | 'document' | 'primary';
 export type TPrinterFlipEntryPoint = 'primary' | 'toolbar';
 
 type TSource = 'youtube_shorts' | 'shared' | 'community' | 'direct';
-type TCaseId = typeof CASE_ID | typeof RETURNED_KEY_ID;
-type TObservedStep = TCaseStep | TReturnedKeyStep;
-type TObservedClue = TEvidence | TReturnedKeyClue;
+type TCaseId = typeof CASE_ID | typeof RETURNED_KEY_ID | typeof WET_MAP_ID;
+type TObservedStep = TCaseStep | TReturnedKeyStep | TWetMapStep;
+type TObservedClue = TEvidence | TReturnedKeyClue | TWetMapClue;
 
 interface ICaseEvents {
   case_catalog_viewed: { source: TSource };

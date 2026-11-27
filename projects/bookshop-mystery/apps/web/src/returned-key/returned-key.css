@@ -1,25 +1,3 @@
-.key-briefing {
-  width: min(61rem, calc(100% - 2 * var(--case-gutter)));
-  margin-inline: auto;
-  padding-block: calc(var(--safe-top) + 0.75rem) calc(var(--safe-bottom) + 2rem);
-}
-
-.key-briefing-layout {
-  display: grid;
-  align-items: center;
-  gap: clamp(0.9rem, 3vw, 2rem);
-  margin-top: clamp(0.8rem, 3vw, 1.5rem);
-}
-
-.key-briefing-layout > img {
-  width: 100%;
-  height: clamp(8rem, 27dvh, 15rem);
-  border-radius: 0.85rem;
-  object-fit: cover;
-  object-position: center 51%;
-}
-
-.key-briefing-copy h1,
 .key-evidence h1,
 .key-evidence h2 {
   margin: 0;
@@ -27,34 +5,6 @@
   line-height: 1.18;
   letter-spacing: -0.04em;
   word-break: keep-all;
-}
-
-.key-briefing-copy h1 {
-  font-family: var(--evidence-serif);
-  font-size: clamp(1.6rem, 5.5vw, 3rem);
-}
-
-.key-briefing-copy h1:focus {
-  outline: none;
-}
-
-.key-briefing-time {
-  margin: 0 0 0.35rem;
-  color: var(--color-accent-ink);
-  font-size: var(--text-label);
-  font-weight: var(--text-label--font-weight);
-}
-
-.key-briefing-copy p:not(.key-briefing-time) {
-  max-width: 30em;
-  margin: 0.6rem 0 1rem;
-  color: var(--color-muted);
-  line-height: 1.58;
-  word-break: keep-all;
-}
-
-.key-briefing-copy > button {
-  width: 100%;
 }
 
 .case-frame.key-investigation-tools {
@@ -214,19 +164,6 @@
 }
 
 @media (min-width: 680px) {
-  .key-briefing-layout {
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-  }
-
-  .key-briefing-layout > img {
-    height: clamp(20rem, 57dvh, 33rem);
-  }
-
-  .key-briefing-copy > button {
-    width: auto;
-    min-width: 9rem;
-  }
-
   .key-records {
     grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
     align-items: start;
