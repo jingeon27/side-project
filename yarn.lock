@@ -1938,6 +1938,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deokdam/web@workspace:projects/deokdam/apps/web":
+  version: 0.0.0-use.local
+  resolution: "@deokdam/web@workspace:projects/deokdam/apps/web"
+  dependencies:
+    "@amplitude/analytics-browser": "catalog:"
+    "@playwright/test": "catalog:"
+    "@portone/browser-sdk": "npm:0.2.1"
+    "@side/config": "workspace:*"
+    "@side/design-system": "workspace:*"
+    "@tailwindcss/postcss": "catalog:"
+    "@types/google-publisher-tag": "npm:1.20261109.1"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    dayjs: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    korean-lunar-calendar: "npm:0.4.0"
+    lucide-react: "catalog:"
+    lunar-typescript: "npm:1.8.7"
+    next: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
+    sqlite-vec: "npm:0.1.9"
+    tailwindcss: "catalog:"
+    tsx: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
+
 "@dimforge/rapier3d-compat@npm:~0.12.0":
   version: 0.12.0
   resolution: "@dimforge/rapier3d-compat@npm:0.12.0"
@@ -6473,6 +6506,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@portone/browser-sdk@npm:0.2.1":
+  version: 0.2.1
+  resolution: "@portone/browser-sdk@npm:0.2.1"
+  checksum: 10c0/af855b0694c431b695d1054db19b84e7e4ce61564bdc38778861c85c3f520d931919313f78498cd110d3bd79ced78b8324c51d9b1548c97fb16e2bdb2e1142d9
+  languageName: node
+  linkType: hard
+
 "@prisma/adapter-pg@npm:7.10.1":
   version: 7.10.1
   resolution: "@prisma/adapter-pg@npm:7.10.1"
@@ -8350,6 +8390,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@side/deokdam@workspace:projects/deokdam":
+  version: 0.0.0-use.local
+  resolution: "@side/deokdam@workspace:projects/deokdam"
+  languageName: unknown
+  linkType: soft
+
 "@side/design-system@workspace:*, @side/design-system@workspace:packages/design-system":
   version: 0.0.0-use.local
   resolution: "@side/design-system@workspace:packages/design-system"
@@ -9757,6 +9803,13 @@ __metadata:
   version: 7946.0.16
   resolution: "@types/geojson@npm:7946.0.16"
   checksum: 10c0/1ff24a288bd5860b766b073ead337d31d73bdc715e5b50a2cee5cb0af57a1ed02cc04ef295f5fa68dc40fe3e4f104dd31282b2b818a5ba3231bc1001ba084e3c
+  languageName: node
+  linkType: hard
+
+"@types/google-publisher-tag@npm:1.20261109.1":
+  version: 1.20261109.1
+  resolution: "@types/google-publisher-tag@npm:1.20261109.1"
+  checksum: 10c0/fbfca8d09b411aee5133684c2b1ad30b6b218256bea64f6b067cd84adc20eb350ae0f166202f9b3fbd731ad42161d380d53af1b57bb63634dfe401c4365ad0d4
   languageName: node
   linkType: hard
 
@@ -16584,6 +16637,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"korean-lunar-calendar@npm:0.4.0":
+  version: 0.4.0
+  resolution: "korean-lunar-calendar@npm:0.4.0"
+  checksum: 10c0/2335edaafc16b772b289702da4a59763605c916f564037fc6a5a012dad263cd32f86a361c54c9faaf9ee2c6418211c4620e9d61a51b1a06ce8d812a3443129dc
+  languageName: node
+  linkType: hard
+
 "lan-network@npm:^0.2.1":
   version: 0.2.1
   resolution: "lan-network@npm:0.2.1"
@@ -17130,6 +17190,13 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/0618af0eb06e0ea71a7c66b39b89158ff357093714fff5f4bfc1b4851af890ffc49092956b08daf89f38c7ff48f783bb14e7b52756aae4f6bed06da4cf297821
+  languageName: node
+  linkType: hard
+
+"lunar-typescript@npm:1.8.7":
+  version: 1.8.7
+  resolution: "lunar-typescript@npm:1.8.7"
+  checksum: 10c0/361f84ad1a3dadca40a87ad63952fc05c7294f418f268a94393ef71a21bf94afdb16513b6237fbd8d84b55b42117b7a96a604bb4533e3050db760e534d8ad04f
   languageName: node
   linkType: hard
 
@@ -22064,6 +22131,65 @@ __metadata:
   version: 1.5.2
   resolution: "sql-escaper@npm:1.5.2"
   checksum: 10c0/44a3dec22687b25b4f2866dbf736dbf85397475ab0ece65e0e0cd7da002cd1e9c8e45325e0e64c373278a77e23aa734f8b168e3a0b08dd824ab6675b77895aa1
+  languageName: node
+  linkType: hard
+
+"sqlite-vec-darwin-arm64@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec-darwin-arm64@npm:0.1.9"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"sqlite-vec-darwin-x64@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec-darwin-x64@npm:0.1.9"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"sqlite-vec-linux-arm64@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec-linux-arm64@npm:0.1.9"
+  conditions: os=linux & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"sqlite-vec-linux-x64@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec-linux-x64@npm:0.1.9"
+  conditions: os=linux & cpu=x64
+  languageName: node
+  linkType: hard
+
+"sqlite-vec-windows-x64@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec-windows-x64@npm:0.1.9"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"sqlite-vec@npm:0.1.9":
+  version: 0.1.9
+  resolution: "sqlite-vec@npm:0.1.9"
+  dependencies:
+    sqlite-vec-darwin-arm64: "npm:0.1.9"
+    sqlite-vec-darwin-x64: "npm:0.1.9"
+    sqlite-vec-linux-arm64: "npm:0.1.9"
+    sqlite-vec-linux-x64: "npm:0.1.9"
+    sqlite-vec-windows-x64: "npm:0.1.9"
+  dependenciesMeta:
+    sqlite-vec-darwin-arm64:
+      optional: true
+    sqlite-vec-darwin-x64:
+      optional: true
+    sqlite-vec-linux-arm64:
+      optional: true
+    sqlite-vec-linux-x64:
+      optional: true
+    sqlite-vec-windows-x64:
+      optional: true
+  checksum: 10c0/f4804fa37272a6d90d3eafd2594031f1938cadb36a08260b08de9bca3422394c79aee8ea51f723ffb9377c2dcb9ad7ff9fe037c0ce0ea9f8653d0d70a046abeb
   languageName: node
   linkType: hard
 

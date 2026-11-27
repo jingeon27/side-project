@@ -1,0 +1,12 @@
+{
+  "name": "@side/deokdam",
+  "private": true,
+  "scripts": {
+    "dev": "yarn workspace @deokdam/web dev",
+    "build": "yarn workspace @deokdam/web build",
+    "typecheck": "yarn workspace @deokdam/web typecheck",
+    "test": "yarn workspace @deokdam/web test",
+    "test:e2e": "yarn workspace @deokdam/web test:e2e",
+    "check": "yarn workspace @deokdam/web check"
+  }
+}
