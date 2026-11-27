@@ -48,7 +48,7 @@ yarn workspace @deokdam/web reading:embed
 
 [덕담집 쇼츠 제작 스킬](.agents/skills/deokdam-shorts/SKILL.md)이 4개 회차의 카드, 움직이는 컷과 편집표를 연결한다. 채널 프로필에는 회차 이름과 `/cards/<회차 슬러그>?utm_source=youtube`가 붙은 공개 주소를 등록한다. 휴대폰에서 해당 카드가 열리는지 검수한다. 출시는 순서대로 〈백 번째 지원서〉, 〈엄마가 지운 카톡〉, 〈축하한다는 한 줄〉, 〈성적표가 뜨는 날〉을 쓴다. [쇼츠 링크 안내](https://support.google.com/youtube/answer/13748639?hl=ko)
 
-[덕담집 사주극장](https://www.youtube.com/@deokdam-saju)의 [공개 쇼츠 재생목록](https://www.youtube.com/playlist?list=PLdR732KbVakE)을 홈에 연결했다. YouTube Studio에서 같은 목록에 쇼츠를 추가하면 웹 플레이어에도 나타난다. 다른 목록을 사용하려면 실행 환경의 `DEOKDAM_SHORTS_PLAYLIST_ID`를 지정한다. 개별 카드에 그 회차만 연결하려면 [회차 목록](apps/web/src/content/episodes.json)에 `youtubeVideoId`를 추가한다. 영상의 공개 범위와 삽입 허용 여부를 확인한다. 플레이어는 열기 버튼을 눌렀을 때 YouTube의 개인정보 보호 강화 주소를 불러온다. [YouTube 동영상·재생목록 삽입](https://support.google.com/youtube/answer/171780?hl=ko)
+[덕담집 사주극장](https://www.youtube.com/@deokdam-saju)의 [공개 쇼츠 재생목록](https://www.youtube.com/playlist?list=PLdR732KbVakE)을 홈에 연결했다. YouTube Studio에서 같은 목록에 쇼츠를 추가하면 웹 플레이어에도 나타난다. 다른 목록을 사용하려면 실행 환경의 `DEOKDAM_SHORTS_PLAYLIST_ID`를 지정한다. 개별 카드에 그 회차만 연결하려면 [회차 목록](apps/web/src/shared/episodes.json)에 `youtubeVideoId`를 추가한다. 영상의 공개 범위와 삽입 허용 여부를 확인한다. 플레이어는 열기 버튼을 눌렀을 때 YouTube의 개인정보 보호 강화 주소를 불러온다. [YouTube 동영상·재생목록 삽입](https://support.google.com/youtube/answer/171780?hl=ko)
 
 결제 채널 등록에는 상품 제목, 4,900원 가격, 첫날 샘플, 일곱 장의 제공 방식, 구매 복구·환불 절차를 제시한다. 포트원 심사와 카드 채널 연동을 확인한 뒤 상용 환경에 값을 등록한다. [포트원 사주·운세 업종 안내](https://help.portone.io/content/high-risk-industry)
 

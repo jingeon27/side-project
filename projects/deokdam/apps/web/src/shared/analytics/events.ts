@@ -1,4 +1,4 @@
-import type { TTopic } from '@/content/topics';
+import type { TTopic } from '@/shared/topics';
 
 export const event = {
   StartClicked: 'landing_start_clicked',

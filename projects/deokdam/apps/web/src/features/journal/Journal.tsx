@@ -8,10 +8,10 @@ import { Clover, Share2 } from 'lucide-react';
 
 import { Button } from '@side/design-system/ui/button';
 
-import { topics } from '@/content/topics';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
 import { seoulToday } from '@/shared/seoul-time';
+import { topics } from '@/shared/topics';
 
 import {
   deleteRecord,

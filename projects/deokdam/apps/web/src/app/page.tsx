@@ -4,10 +4,10 @@ import { connection } from 'next/server';
 
 import { ArrowRight, BookHeart, GraduationCap, HeartHandshake } from 'lucide-react';
 
-import { episodePath, episodes } from '@/content/episodes';
-import { topics, type TTopic } from '@/content/topics';
 import { ShortsPlayer } from '@/features/shorts/ShortsPlayer';
 import { shortsPlaylist } from '@/features/shorts/source';
+import { episodePath, episodes } from '@/shared/episodes';
+import { topics, type TTopic } from '@/shared/topics';
 import { ReadingLink } from '@/shared/ui/ReadingLink';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 

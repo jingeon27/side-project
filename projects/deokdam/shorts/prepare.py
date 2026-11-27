@@ -11,7 +11,7 @@ import tempfile
 SHORTS = Path(__file__).resolve().parent
 PROJECT = SHORTS.parent
 WEB = PROJECT / 'apps/web'
-CARDS = WEB / 'src/content/episodes.json'
+CARDS = WEB / 'src/shared/episodes.json'
 
 
 def read_json(path):

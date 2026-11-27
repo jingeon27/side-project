@@ -9,11 +9,11 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Button } from '@side/design-system/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system/ui/select';
 
-import { topics, type TTopic } from '@/content/topics';
 import { RewardedReading } from '@/features/ads/RewardedReading';
 import { RecordForm } from '@/features/journal/RecordForm';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
+import { topics, type TTopic } from '@/shared/topics';
 
 import type { IChart } from './chart';
 import {

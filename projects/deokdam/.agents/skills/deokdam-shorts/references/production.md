@@ -2,7 +2,7 @@
 
 ## 회차 입력
 
-[웹 카드](../../../../apps/web/src/content/episodes.json)가 제목, 행동, 메시지, 경로를 소유한다. [컷 편집표](../../../../shorts/storylines.json)에는 컷 길이, 장면 지시, 대사와 자막을 둔다. 자막은 한 호흡씩 나누고 숫자는 말하는 형태로 읽는다. `voiceLead`로 시선과 반응 뒤에 말을 시작할 수 있다. 침묵과 메시지 컷은 `voice`와 `caption`을 생략한다.
+[웹 카드](../../../../apps/web/src/shared/episodes.json)가 제목, 행동, 메시지, 경로를 소유한다. [컷 편집표](../../../../shorts/storylines.json)에는 컷 길이, 장면 지시, 대사와 자막을 둔다. 자막은 한 호흡씩 나누고 숫자는 말하는 형태로 읽는다. `voiceLead`로 시선과 반응 뒤에 말을 시작할 수 있다. 침묵과 메시지 컷은 `voice`와 `caption`을 생략한다.
 
 `art`는 `shorts/art/<슬러그>-<번호>.webp`를 가리킨다. `focus`는 화면에서 잘라낼 원화의 가로와 세로 기준 위치로, 두 값 모두 0과 1 사이다. `insert`는 알림, 초안, 보낸 메시지, 바꾼 문장처럼 화면에서 읽을 글에 쓴다. `from`과 `until`은 해당 컷 안에서 나타나고 사라지는 비율이다. 결말 컷의 `endcard` 시점에 메모를 내리고 실제 웹 카드의 행동과 프로필 안내를 보여준다. 모든 컷의 `seconds` 합은 30이다. 대화할 때는 `speaker`를 바꾸고, 음악은 장면마다 필요한 시점만 `music`에 둔다. [음성·반주 출처](../../../../../story-studio/apps/engine/src/story_studio/shorts/sounds/SOURCES.md)
 

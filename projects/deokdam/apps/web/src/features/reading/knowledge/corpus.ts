@@ -1,4 +1,4 @@
-import type { topics, TTopic } from '@/content/topics';
+import type { topics, TTopic } from '@/shared/topics';
 
 import type { TElement } from '../contracts';
 

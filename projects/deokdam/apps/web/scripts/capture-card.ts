@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test';
 
-import { episodePath, findEpisode } from '../src/content/episodes.ts';
+import { episodePath, findEpisode } from '../src/shared/episodes.ts';
 
 const [slug, origin, output] = process.argv.slice(2);
 if (!slug || !origin || !output) throw new Error('Usage: capture-card <episode> <web-origin> <image-path>');

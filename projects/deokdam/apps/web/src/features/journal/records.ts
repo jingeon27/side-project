@@ -2,8 +2,8 @@
 
 import { z } from 'zod';
 
-import { topicSchema } from '@/content/topics';
 import { seoulToday } from '@/shared/seoul-time';
+import { topicSchema } from '@/shared/topics';
 
 const recordSchema = z.object({
   date: z.iso.date(),

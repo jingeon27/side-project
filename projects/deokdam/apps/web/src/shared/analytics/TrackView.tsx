@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import type { TTopic } from '@/content/topics';
+import type { TTopic } from '@/shared/topics';
 
 import { track } from './browser';
 import { event } from './events';

@@ -8,10 +8,10 @@ import { useForm } from 'react-hook-form';
 
 import { Button } from '@side/design-system/ui/button';
 
-import type { TTopic } from '@/content/topics';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
 import { seoulToday } from '@/shared/seoul-time';
+import type { TTopic } from '@/shared/topics';
 
 import { parseRecords, readRecords, serverRecords, storeRecord, subscribeRecords } from './records';
 

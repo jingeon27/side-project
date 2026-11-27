@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
-import { topics } from '@/content/topics';
 import { seoulToday } from '@/shared/seoul-time';
+import { topics } from '@/shared/topics';
 
 import type { TReading, TReadingInput } from './contracts';
 import { experienceThemes } from './experience';

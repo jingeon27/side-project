@@ -6,9 +6,9 @@ import { Copy } from 'lucide-react';
 
 import { Button } from '@side/design-system/ui/button';
 
-import type { TTopic } from '@/content/topics';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
+import type { TTopic } from '@/shared/topics';
 
 interface ICopyMessageProps {
   episode: string;

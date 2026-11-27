@@ -5,13 +5,13 @@ import { notFound } from 'next/navigation';
 
 import { ArrowLeft, Clover } from 'lucide-react';
 
-import { episodes, findEpisode } from '@/content/episodes';
-import { topics } from '@/content/topics';
 import { CopyMessage } from '@/features/journal/CopyMessage';
 import { RecordForm } from '@/features/journal/RecordForm';
 import { ShortsPlayer } from '@/features/shorts/ShortsPlayer';
 import { shortsVideo } from '@/features/shorts/source';
 import { TrackView } from '@/shared/analytics/TrackView';
+import { episodes, findEpisode } from '@/shared/episodes';
+import { topics } from '@/shared/topics';
 import { ReadingLink } from '@/shared/ui/ReadingLink';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 

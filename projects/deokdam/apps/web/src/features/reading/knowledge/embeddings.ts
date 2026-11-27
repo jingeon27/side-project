@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { topics, topicSchema } from '@/content/topics';
+import { topics, topicSchema } from '@/shared/topics';
 
 import { elementSchema, type TReadingInput } from '../contracts';
 import { experienceThemes, experienceThemeSchema, type TExperienceTheme } from '../experience';

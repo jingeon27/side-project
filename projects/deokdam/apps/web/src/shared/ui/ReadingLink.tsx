@@ -5,9 +5,9 @@ import Link from 'next/link';
 
 import { ArrowRight } from 'lucide-react';
 
-import type { TTopic } from '@/content/topics';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
+import type { TTopic } from '@/shared/topics';
 
 interface IReadingLinkProps {
   topic?: TTopic;

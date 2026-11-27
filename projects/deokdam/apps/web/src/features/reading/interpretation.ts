@@ -1,4 +1,4 @@
-import { episodes } from '@/content/episodes';
+import { episodes } from '@/shared/episodes';
 
 import type { TElement, TReadingInput } from './contracts';
 import { experienceThemes } from './experience';

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { topics, topicSchema } from '@/content/topics';
 import { PersonalReading } from '@/features/reading/PersonalReading';
+import { topics, topicSchema } from '@/shared/topics';
 
 export const metadata: Metadata = { title: '내 사주 풀이' };
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { topics, topicSchema } from '@/content/topics';
+import { topics, topicSchema } from '@/shared/topics';
 
 import { experienceThemeSchema } from './experience';
 
