@@ -7,7 +7,7 @@ import type { TProvider } from '../src/features/account/navigation';
 import { AccountStore } from '../src/features/account/store';
 
 export const testOrigin = 'http://127.0.0.1:3461';
-export const testAccountFile = fileURLToPath(new URL('../.data/e2e-accounts.sqlite', import.meta.url));
+export const testAccountFile = fileURLToPath(new URL('../test-results/accounts.sqlite', import.meta.url));
 
 export async function signInFixture(
   context: BrowserContext,

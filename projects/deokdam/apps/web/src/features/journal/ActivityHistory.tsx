@@ -15,7 +15,7 @@ import { episodePath, findEpisode } from '@/shared/episodes';
 import { topics } from '@/shared/topics';
 
 import type { TActivity, TActivityPage } from './activity';
-import { changeRecord, journalQuery } from './records';
+import { changeRecord, journalKey } from './records';
 
 const sectionNames = {
   message: '만든 덕담',
@@ -90,7 +90,7 @@ export function ActivityHistory({ account, entries }: { account: string; entries
     mutationFn: (id: string) => changeRecord(account, 'DELETE', { id }),
     onSuccess: async () => {
       toast.success('기록을 지웠어요.');
-      await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
+      await cache.invalidateQueries({ queryKey: journalKey });
     },
     onError: () => toast.error('지우지 못했어요. 계정과 연결을 확인해 주세요.'),
   });

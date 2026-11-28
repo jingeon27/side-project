@@ -18,10 +18,10 @@ import { ActivityHistory } from './ActivityHistory';
 import type { TDeokRecord } from './contract';
 import { DeokPostcard } from './DeokPostcard';
 import { JournalRecovery } from './JournalRecovery';
-import { changeRecord, journalQuery } from './records';
+import { changeRecord, journalKey, journalQuery } from './records';
 
 export function Journal({ account }: { account: string }) {
-  const journal = useQuery(journalQuery);
+  const journal = useQuery(journalQuery(account));
   const cache = useQueryClient();
   const form = useForm<{ dates: string[] }>({ defaultValues: { dates: [] } });
   const selectedDates = useWatch({ control: form.control, name: 'dates' });
@@ -33,7 +33,7 @@ export function Journal({ account }: { account: string }) {
         form.getValues('dates').filter((date) => date !== record.date),
       );
       toast.success('기록을 지웠어요.');
-      await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
+      await cache.invalidateQueries({ queryKey: journalKey });
     },
     onError: () => toast.error('지우지 못했어요. 계정과 연결을 확인해 주세요.'),
   });
@@ -46,7 +46,16 @@ export function Journal({ account }: { account: string }) {
       </a>
     );
   const { records, activities } = journal.data;
-  const recovery = <JournalRecovery account={account} />;
+  const recovery = (
+    <>
+      {journal.data.needsRetry && (
+        <Button variant="secondary" loading={journal.isFetching} onClick={() => journal.refetch()}>
+          이 기기의 기록 다시 동기화
+        </Button>
+      )}
+      <JournalRecovery account={account} />
+    </>
+  );
   const startOfWeek = dayjs(seoulToday()).subtract(6, 'day').format('YYYY-MM-DD');
   const week = records.filter((record) => record.date >= startOfWeek && record.date <= seoulToday());
   const selected = week.filter((record) => selectedDates.includes(record.date));

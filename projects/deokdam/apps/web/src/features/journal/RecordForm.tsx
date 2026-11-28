@@ -14,7 +14,7 @@ import { event } from '@/shared/analytics/events';
 import type { TTopic } from '@/shared/topics';
 
 import { saveActivity } from './device-history';
-import { journalQuery, todayQuery } from './records';
+import { journalKey, todayQuery } from './records';
 
 interface IRecordFormProps {
   action: string;
@@ -50,7 +50,7 @@ export function RecordForm({ action, alternative, topic, episode }: IRecordFormP
           location: saved.location,
         });
       if (!saved.created) toast.info('이미 남긴 기록이에요.');
-      if (saved.location === 'account') await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
+      if (saved.location === 'account') await cache.invalidateQueries({ queryKey: journalKey });
     },
     onError: () => toast.error('저장하지 못했어요. 작성한 내용은 그대로 두었어요.'),
   });

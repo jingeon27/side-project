@@ -22,6 +22,7 @@ interface ICopyMessageProps {
 
 export function CopyMessage({ episode, topic, message }: ICopyMessageProps) {
   const form = useForm({ defaultValues: { draft: message } });
+  const { isReady } = form.formState;
   const draft = useWatch({ control: form.control, name: 'draft' });
   const story = findEpisode(episode);
   const save = useMutation({
@@ -42,10 +43,17 @@ export function CopyMessage({ episode, topic, message }: ICopyMessageProps) {
     >
       <div className="postcard-editor">
         <label htmlFor="message-draft">내 말투로 바꿔 보내기</label>
-        <textarea id="message-draft" {...form.register('draft')} maxLength={240} rows={2} />
+        <textarea
+          id="message-draft"
+          defaultValue={message}
+          readOnly={!isReady}
+          {...form.register('draft')}
+          maxLength={240}
+          rows={2}
+        />
         <Button
           variant="secondary"
-          disabled={!draft.trim()}
+          disabled={!isReady || !draft.trim()}
           loading={save.isPending}
           onClick={() => {
             track(event.MessageCreateClicked, { episode, topic });
