@@ -1,0 +1,8 @@
+.case-frame.comparison-tools {
+  max-width: 35rem;
+  padding-block: calc(5px + var(--safe-top)) 3px;
+}
+
+.case-frame.comparison-workspace {
+  max-width: 38rem;
+}
