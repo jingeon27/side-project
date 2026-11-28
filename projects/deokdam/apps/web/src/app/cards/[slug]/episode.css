@@ -1,0 +1,31 @@
+.episode-page .back-link {
+  margin-bottom: 0;
+}
+.episode-page .episode-heading {
+  margin-block: 10px 24px;
+  gap: 7px;
+}
+.episode-narrative {
+  margin-block: 32px 24px;
+}
+.episode-narrative h2 {
+  font-size: 16px;
+  font-weight: 750;
+}
+.episode-narrative blockquote {
+  margin: 13px 0 8px;
+  padding-inline-start: 14px;
+  border-inline-start: 2px solid #b2684c;
+  font-family: var(--font-display-kr);
+  font-size: clamp(19px, 3vw, 24px);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+.episode-narrative p {
+  line-height: 1.7;
+  color: var(--soft-ink);
+  word-break: keep-all;
+}
+.episode-page .episode-deok-card {
+  margin-block: 26px 20px;
+}

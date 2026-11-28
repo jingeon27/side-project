@@ -1,10 +1,14 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PersonalReading } from '@/features/reading/PersonalReading';
+import { publicMetadata } from '@/shared/site';
 import { topics, topicSchema } from '@/shared/topics';
 
-export const metadata: Metadata = { title: '내 사주 풀이' };
+export const metadata = publicMetadata(
+  '/reading',
+  '생년월일로 보는 AI 사주 풀이',
+  '생년월일과 태어난 시각으로 네 기둥을 읽고, 취업·대입·자녀 응원 고민에 맞는 오늘의 풀이와 실천 예시를 만나보세요.',
+);
 
 export default async function ReadingPage({ searchParams }: PageProps<'/reading'>) {
   const params = await searchParams;

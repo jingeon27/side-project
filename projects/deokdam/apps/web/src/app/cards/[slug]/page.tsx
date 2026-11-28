@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -10,10 +9,12 @@ import { RecordForm } from '@/features/journal/RecordForm';
 import { ShortsPlayer } from '@/features/shorts/ShortsPlayer';
 import { shortsVideo } from '@/features/shorts/source';
 import { TrackView } from '@/shared/analytics/TrackView';
-import { episodes, findEpisode } from '@/shared/episodes';
+import { episodes, episodeShareUrl, findEpisode } from '@/shared/episodes';
 import { topics } from '@/shared/topics';
 import { ReadingLink } from '@/shared/ui/ReadingLink';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
+
+import './episode.css';
 
 type TProps = PageProps<'/cards/[slug]'>;
 
@@ -24,7 +25,31 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: TProps): Promise<Metadata> {
   const episode = findEpisode((await params).slug);
-  return episode ? { title: episode.title, description: episode.hook } : {};
+  if (!episode) notFound();
+  const url = episodeShareUrl(episode.slug);
+  const title = `${episode.title} | 덕담집`;
+  const image = {
+    url: new URL(`/images/cards/${episode.slug}.jpg`, url).href,
+    width: 1200,
+    height: 630,
+    type: 'image/jpeg',
+    alt: `${episode.title}. ${episode.message}`,
+  };
+  return {
+    title: episode.title,
+    description: episode.message,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      locale: 'ko_KR',
+      siteName: '덕담집',
+      url,
+      title,
+      description: episode.message,
+      images: [image],
+    },
+    twitter: { card: 'summary_large_image', title, description: episode.message, images: [image] },
+  };
 }
 
 export default async function EpisodePage({ params }: TProps) {
@@ -35,14 +60,24 @@ export default async function EpisodePage({ params }: TProps) {
   return (
     <>
       <TrackView episode={episode.slug} topic={episode.topic} />
-      <main id="main-content" className="site-width reading-width inner-page">
-        <Link href="/#stories" className="back-link">
+      <main id="main-content" className="site-width reading-width inner-page episode-page">
+        <Link href="/stories" className="back-link">
           <ArrowLeft size={16} aria-hidden /> 이야기 모아보기
         </Link>
-        <div className="episode-heading">
-          <p className="label">{topics[episode.topic].label} 이야기</p>
+        <header className="episode-heading">
+          <p className="label">{topics[episode.topic].label} 상황극</p>
           <h1>{episode.title}</h1>
-          <p className="intro-quote">“{episode.hook}”</p>
+        </header>
+        <CopyMessage
+          key={episode.slug}
+          topic={episode.topic}
+          episode={episode.slug}
+          message={episode.message}
+        />
+        <div className="episode-narrative">
+          <h2>이 말을 건넨 날</h2>
+          <blockquote>“{episode.hook}”</blockquote>
+          <p>{episode.description}</p>
         </div>
         <section className="deok-card episode-deok-card" aria-labelledby="today-action" data-short-card>
           <div className="label">
@@ -50,7 +85,6 @@ export default async function EpisodePage({ params }: TProps) {
             오늘의 덕
           </div>
           <h2 id="today-action">{episode.action}</h2>
-          <CopyMessage topic={episode.topic} episode={episode.slug} message={episode.message} />
         </section>
         {video && <ShortsPlayer source={video} title={episode.title + ' 영상'} episode={episode.slug} />}
         <RecordForm
@@ -65,14 +99,6 @@ export default async function EpisodePage({ params }: TProps) {
             내 사주 풀이
           </ReadingLink>
         </aside>
-        <div className="episode-context">
-          {episode.image && (
-            <div className="episode-image">
-              <Image src={episode.image} alt="" fill sizes="(max-width: 760px) 100vw, 672px" />
-            </div>
-          )}
-          <p className="episode-intro">{episode.description}</p>
-        </div>
       </main>
       <SiteFooter />
     </>

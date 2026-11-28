@@ -1,72 +1,75 @@
 'use client';
 
+import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { seoulToday } from '@/shared/seoul-time';
-import { topicSchema } from '@/shared/topics';
+import { activitySchema } from './activity';
+import { recordSchema, type TDeokRecord } from './contract';
 
-const recordSchema = z.object({
-  date: z.iso.date(),
-  topic: topicSchema,
-  action: z.string().min(1).max(180),
-  note: z.string().max(240),
+const responseSchema = z.object({
+  account: z.uuid(),
+  records: z.array(recordSchema),
+  activities: z.array(activitySchema),
 });
-export type TDeokRecord = z.infer<typeof recordSchema>;
+export const journalQuery = queryOptions({
+  queryKey: ['account-journal'] as const,
+  queryFn: async ({ signal }) => {
+    const response = await fetch('/api/journal', { signal, cache: 'no-store' });
+    if (response.status === 401) return null;
+    if (!response.ok) throw new Error('journal_unavailable');
+    return responseSchema.parse(await response.json());
+  },
+  gcTime: 0,
+});
+
+export const todayQuery = queryOptions({
+  queryKey: [...journalQuery.queryKey, 'today'],
+  queryFn: async ({ signal }) => {
+    const response = await fetch('/api/journal?today=1', { signal, cache: 'no-store' });
+    if (response.status === 401) return null;
+    if (!response.ok) throw new Error('journal_unavailable');
+    return z
+      .object({ account: z.uuid(), today: z.object({ action: z.string() }).nullable() })
+      .parse(await response.json());
+  },
+  gcTime: 0,
+});
+
+export async function changeRecord(account: string, method: 'POST' | 'PUT' | 'DELETE', data: unknown) {
+  const response = await fetch('/api/journal', {
+    method,
+    headers: { 'content-type': 'application/json', 'x-deokdam-account': account },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (response.status === 401 || response.status === 409) throw new Error('account_changed');
+  if (!response.ok) throw new Error('journal_unavailable');
+  return z.object({ created: z.boolean().optional() }).parse(await response.json());
+}
 
 const prefix = 'deokdam.journal.v1.';
-const eventName = 'deokdam:journal';
-const emptySnapshot = '[]';
-
-export function readRecords(): string {
+export function legacyRecords() {
   try {
-    const entries = Object.keys(localStorage)
+    return Object.keys(localStorage)
       .filter((key) => key.startsWith(prefix))
-      .map((key) => localStorage.getItem(key) ?? 'null');
-    const records = entries.flatMap((raw) => {
-      try {
-        const result = recordSchema.safeParse(JSON.parse(raw));
-        return result.success ? [result.data] : [];
-      } catch {
-        return [];
-      }
-    });
-    return JSON.stringify(records.sort((first, second) => second.date.localeCompare(first.date)));
+      .flatMap((key) => {
+        try {
+          const parsed = recordSchema.safeParse(JSON.parse(localStorage.getItem(key) ?? 'null'));
+          return parsed.success && key === prefix + parsed.data.date ? [parsed.data] : [];
+        } catch {
+          return [];
+        }
+      });
   } catch {
-    return emptySnapshot;
+    return [];
   }
 }
 
-export function serverRecords() {
-  return emptySnapshot;
-}
-
-export function subscribeRecords(callback: () => void) {
-  const handleStorage = (storageEvent: StorageEvent) => {
-    if (!storageEvent.key || storageEvent.key.startsWith(prefix)) callback();
-  };
-  window.addEventListener('storage', handleStorage);
-  window.addEventListener(eventName, callback);
-  return () => {
-    window.removeEventListener('storage', handleStorage);
-    window.removeEventListener(eventName, callback);
-  };
-}
-
-export function storeRecord(values: Omit<TDeokRecord, 'date'>) {
-  const record = recordSchema.parse({ date: seoulToday(), ...values });
+export function forgetImported(record: TDeokRecord) {
   const key = prefix + record.date;
-  if (localStorage.getItem(key) && parseRecords(readRecords()).some((item) => item.date === record.date))
-    return false;
-  localStorage.setItem(key, JSON.stringify(record));
-  window.dispatchEvent(new Event(eventName));
-  return true;
-}
-
-export function deleteRecord(date: string) {
-  localStorage.removeItem(prefix + z.iso.date().parse(date));
-  window.dispatchEvent(new Event(eventName));
-}
-
-export function parseRecords(snapshot: string): TDeokRecord[] {
-  return JSON.parse(snapshot) as TDeokRecord[];
+  const raw = localStorage.getItem(key);
+  if (!raw) return;
+  const existing = recordSchema.safeParse(JSON.parse(raw));
+  if (existing.success && JSON.stringify(existing.data) === JSON.stringify(record))
+    localStorage.removeItem(key);
 }

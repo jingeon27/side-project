@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+
+import { useCallbackRef } from '@radix-ui/react-use-callback-ref';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@side/design-system/ui/button';
+import { toast } from '@side/design-system/ui/sonner';
 
 import type { TReadingInput } from '@/features/reading/contracts';
 import { elementDescriptions } from '@/features/reading/interpretation';
@@ -22,49 +26,56 @@ const followUp = {
 
 export function RewardedReading({ unit, input }: { unit: string; input: TReadingInput }) {
   const rewardKey = ['deokdam.reward', input.topic, input.concern, input.element].join('.');
-  const [granted, setGranted] = useState(() => {
+  const day = seoulToday();
+  const cache = useQueryClient();
+  const rewardQueryKey = ['reward', rewardKey, day];
+  const stored = () => {
     try {
-      return sessionStorage.getItem(rewardKey) === seoulToday();
+      return sessionStorage.getItem(rewardKey) === day;
     } catch {
       return false;
     }
+  };
+  const reward = useQuery({
+    queryKey: rewardQueryKey,
+    queryFn: stored,
+    staleTime: Infinity,
+    initialData: stored,
   });
-  const [pending, setPending] = useState(false);
-  const [feedback, setFeedback] = useState('');
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
-
-  const handleAd = async () => {
-    if (active.current) return;
-    const controller = new AbortController();
-    active.current = controller;
-    setPending(true);
-    setFeedback('');
-    track(event.RewardClicked, { topic: input.topic });
+  const handleGrant = useCallbackRef(() => {
+    cache.setQueryData(rewardQueryKey, true);
     try {
-      await playRewardedAd(unit, controller.signal, () => {
-        setGranted(true);
-        try {
-          sessionStorage.setItem(rewardKey, seoulToday());
-        } catch {
-          // The current screen still shows the granted reading.
-        }
-        track(event.RewardGranted, { topic: input.topic });
-      });
-      setFeedback('보상이 표시되지 않았다면 광고를 다시 열 수 있어요.');
+      sessionStorage.setItem(rewardKey, day);
     } catch {
-      if (!controller.signal.aborted)
-        setFeedback('지금 열 수 있는 광고가 없어요. 잠시 뒤 다시 시도해 주세요.');
-    } finally {
-      if (!controller.signal.aborted) setPending(false);
-      active.current = null;
+      /* The current screen still shows the reward. */
     }
-  };
-
+    track(event.RewardGranted, { topic: input.topic });
+  });
+  const ad = useMutation({
+    mutationFn: async () => {
+      const controller = new AbortController();
+      active.current = controller;
+      track(event.RewardClicked, { topic: input.topic });
+      try {
+        return await playRewardedAd(unit, controller.signal, handleGrant);
+      } finally {
+        active.current = null;
+      }
+    },
+    onSuccess: () => {
+      if (!cache.getQueryData(rewardQueryKey)) toast.info('광고를 마치면 추가 풀이가 열려요.');
+    },
+    onError: (error) => {
+      if (error.name !== 'AbortError')
+        toast.error('지금 열 수 있는 광고가 없어요. 잠시 뒤 다시 시도해 주세요.');
+    },
+  });
   return (
     <section className="reading-panel bonus-panel" aria-labelledby="bonus-heading">
       <h2 id="bonus-heading">내 고민 추가 풀이</h2>
-      {granted ? (
+      {reward.data ? (
         <p role="status">
           {elementDescriptions[input.element].label}의 상징을 오늘의 실천에 연결해 보세요.{' '}
           {followUp[input.topic]}
@@ -72,14 +83,15 @@ export function RewardedReading({ unit, input }: { unit: string; input: TReading
       ) : (
         <>
           <p>선택해서 광고를 보면 추가 풀이 한 장이 열려요.</p>
-          <Button variant="secondary" loading={pending} onClick={handleAd}>
+          <Button
+            variant="secondary"
+            loading={ad.isPending}
+            onClick={() => {
+              if (!active.current && !ad.isPending) ad.mutate();
+            }}
+          >
             광고 1편 보고 추가 풀이 열기
           </Button>
-          {feedback && (
-            <p role="status" className="small-muted">
-              {feedback}
-            </p>
-          )}
         </>
       )}
     </section>

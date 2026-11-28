@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@side/design-system/ui/button';
+import { toast } from '@side/design-system/ui/sonner';
 
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
-import { seoulToday } from '@/shared/seoul-time';
 import type { TTopic } from '@/shared/topics';
 
-import { parseRecords, readRecords, serverRecords, storeRecord, subscribeRecords } from './records';
+import { saveActivity } from './device-history';
+import { journalQuery, todayQuery } from './records';
 
 interface IRecordFormProps {
   action: string;
@@ -21,56 +22,66 @@ interface IRecordFormProps {
   topic: TTopic;
   episode?: string;
 }
-
-interface IFormValues {
-  choice: 'main' | 'alternative';
-  note: string;
-}
-
 export function RecordForm({ action, alternative, topic, episode }: IRecordFormProps) {
-  const snapshot = useSyncExternalStore(subscribeRecords, readRecords, serverRecords);
-  const [error, setError] = useState('');
-  const form = useForm<IFormValues>({ defaultValues: { choice: 'main', note: '' } });
-  const today = parseRecords(snapshot).find((record) => record.date === seoulToday());
+  const journal = useQuery(todayQuery);
+  const cache = useQueryClient();
+  const form = useForm({ defaultValues: { choice: 'main', note: '' } });
+  const today = journal.data?.today;
+  const surface = episode ? 'episode' : 'reading';
 
-  const handleSave = (values: IFormValues) => {
-    setError('');
-    const isAlternative = values.choice === 'alternative';
-    try {
-      const created = storeRecord({
-        topic,
-        action: isAlternative ? alternative : action,
-        note: values.note.trim(),
-      });
-      if (created)
+  const save = useMutation({
+    mutationFn: (input: { choice: string; note: string }) =>
+      saveActivity(
+        {
+          kind: 'practice',
+          topic,
+          action: input.choice === 'alternative' ? alternative : action,
+          note: input.note.trim(),
+        },
+        journal.data?.account,
+      ),
+    onSuccess: async (saved, input) => {
+      if (saved.created)
         track(event.DeokSaved, {
           topic,
-          alternative: isAlternative,
+          alternative: input.choice === 'alternative',
           episode,
-          surface: episode ? 'episode' : 'reading',
+          surface,
+          location: saved.location,
         });
-    } catch {
-      setError('저장할 수 없어요. 브라우저의 저장 설정을 확인하고 다시 눌러 주세요.');
-    }
-  };
-
-  if (today) {
+      if (!saved.created) toast.info('이미 남긴 기록이에요.');
+      if (saved.location === 'account') await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
+    },
+    onError: () => toast.error('저장하지 못했어요. 작성한 내용은 그대로 두었어요.'),
+  });
+  const handleSave = form.handleSubmit(async (values) => {
+    track(event.RecordSaveClicked, { surface, topic });
+    await save.mutateAsync(values).catch(() => undefined);
+  });
+  if (today || save.isSuccess)
     return (
       <section className="record-success" aria-label="오늘 기록">
         <CheckCircle2 aria-hidden />
         <div>
           <strong>오늘의 덕을 남겼어요</strong>
-          <p>{today.action}</p>
+          <p>
+            {today?.action ??
+              (save.data?.location === 'device'
+                ? '이 기기에 보관했어요. 로그인하면 내 기록장에서 이어볼 수 있어요.'
+                : '내 기록장에서 다시 볼 수 있어요.')}
+          </p>
         </div>
-        <Link href="/journal" className="plain-link">
+        <Link
+          href="/journal"
+          className="plain-link"
+          onClick={() => track(event.HistoryOpenClicked, { surface })}
+        >
           기록장 보기
         </Link>
       </section>
     );
-  }
-
   return (
-    <form className="record-form" onSubmit={form.handleSubmit(handleSave)}>
+    <form className="record-form" onSubmit={handleSave}>
       <fieldset>
         <legend>오늘 해본 일</legend>
         <label className="choice">
@@ -92,12 +103,9 @@ export function RecordForm({ action, alternative, topic, episode }: IRecordFormP
         placeholder="해보고 어땠나요?"
         {...form.register('note')}
       />
-      <Button type="submit">오늘 해봤어요</Button>
-      {error && (
-        <p role="alert" className="error-text">
-          {error}
-        </p>
-      )}
+      <Button type="submit" loading={form.formState.isSubmitting}>
+        오늘 해봤어요
+      </Button>
     </form>
   );
 }

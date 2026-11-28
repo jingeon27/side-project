@@ -30,6 +30,9 @@ description: 이 모노레포의 TypeScript와 React 코드를 작성하거나 �
 ## React 경계와 수명
 
 - 서버 응답은 프로젝트의 서버 캐시, 폼 초안은 RHF/Zod, 선택·필터는 URL이 소유한다. 이를 useState/ref에 복제하지 않는다. 상태·오류·재시도 값은 해당 라이브러리의 결과를 사용한다.
+- 짧은 복사·저장·삭제·결제 결과는 공용 Toaster 하나와 `toast.success/info/error`를 쓴다. 메시지 전용 `useState`와 빈 라이브 영역을 두지 않는다. 필드 검증은 폼에, 재시도·다음 행동이 필요한 실패는 해당 화면에 남긴다. 성공 알림은 서버나 브라우저 API가 작업을 확인한 뒤 띄운다.
+- `useState`·`useRef`·`useEffect`를 추가하기 전 폼 필드와 제출 상태는 RHF, 서버 데이터와 변경 상태는 프로젝트 조회 라이브러리, 선택은 URL 또는 기존 UI primitive로 표현할 수 있는지 본다. 특히 조회를 effect에서 호출하고 data/error/loading을 개별 상태에 복제하지 않는다. 고유한 열린 상태, 외부 자원의 생성·폐기처럼 수명 주인이 필요한 경우에는 해당 훅을 유지한다.
+- 외부 SDK나 지속 구독이 같은 함수 참조를 요구하면서 최신 핸들러를 읽어야 하면 라이브러리의 `useCallbackRef`를 우선한다. Radix 버전은 안정적인 **함수**를 반환한다. DOM 노드에는 React의 callback ref, 동기 중복 호출 잠금이나 AbortController에는 실제 수명에 맞는 참조를 쓴다. 단순 클릭과 값 저장을 위해 빈 콜백을 감싸지 않는다.
 - 진행 상태는 mutation·폼 제출·`loading.tsx`·링크 상태처럼 라이브러리와 프레임워크가 주는 값을 쓰고 `useTransition`으로 다시 만들지 않는다. `useTransition`은 Suspense 조회의 refetch·fetchMore가 fallback으로 바뀌지 않게 할 때, loading 경계가 없는 라우터 이동, action prop처럼 다른 pending 출처가 없는 동작에만 쓴다. pending을 읽지 않으면 `useTransition`을 두지 않는다.
 - 페이지 전용 조회·폼·탐색 조합과 하위 검증·테스트는 소유 화면에 둔다. 재사용 도메인 IO·표시와 여러 페이지의 조합을 구분하며 사용처 하나를 위해 범용 모드·훅·템플릿을 만들지 않는다.
 - 추상화는 컴포넌트 수준까지만 한다. 커스텀 훅은 되도록 새로 만들지 않고, 여러 화면의 폼·업로드·제출 흐름이 비슷해도 상태와 핸들러를 객체로 묶어 반환하는 훅으로 합치지 않는다. 글쓰기와 수정처럼 화면마다 폼 생성·mutation·제출·pending을 따로 소유하고, 공통 입력 컴포넌트와 순수 변환 함수·기본값만 공유한다.

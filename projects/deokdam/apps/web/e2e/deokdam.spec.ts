@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { signInFixture } from './account-fixture';
+
 const episodePath = '/cards/baek-beonjjae-jiwonseo';
 const action = '친구와 자기소개서 첫 줄을 서로 읽어주기';
 
@@ -7,13 +9,15 @@ test('a Shorts visitor can open the published card, save one action and choose w
   page,
   context,
 }) => {
+  await signInFixture(context);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto(episodePath + '?utm_source=youtube');
   await expect(page.getByRole('heading', { name: '백 번째 지원서' })).toBeVisible();
   await expect(page.getByRole('heading', { name: action })).toBeVisible();
   await page.getByLabel('내 말투로 바꿔 보내기').fill('야, 첫 줄만 서로 읽어볼래?');
   await page.getByRole('button', { name: '문장 복사' }).click();
-  await expect(page.getByRole('status')).toHaveText('복사했어요. 원하는 곳에 붙여 넣으세요.');
+  await expect(page.getByText('복사했어요. 원하는 곳에 붙여 넣으세요.')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('야, 첫 줄만 서로 읽어볼래?');
   await page.getByLabel('남기고 싶은 한 줄').fill('신입을 도왔던 일이 다시 생각났다');
   await page.getByRole('button', { name: '오늘 해봤어요' }).click();
   await expect(page.getByText('오늘의 덕을 남겼어요')).toBeVisible();
@@ -24,7 +28,15 @@ test('a Shorts visitor can open the published card, save one action and choose w
   await expect(page.getByText('신입을 도왔던 일이 다시 생각났다')).toBeVisible();
   await expect(page.getByRole('button', { name: '고른 덕 공유' })).toBeDisabled();
   await page.getByRole('checkbox', { name: action }).check();
-  await expect(page.getByRole('button', { name: '고른 덕 공유' })).toBeEnabled();
+  const save = page.getByRole('link', { name: '이미지 저장' });
+  await expect(save).toBeVisible();
+  const download = page.waitForEvent('download');
+  await save.click();
+  expect((await download).suggestedFilename()).toMatch(/이번 주의 덕.*png/);
+  await expect(page.getByRole('figure', { name: '공유할 엽서 미리보기' }).getByRole('img')).toHaveAttribute(
+    'alt',
+    action,
+  );
 });
 
 test('parent reading supports an unknown time and sends only selected categories', async ({ page }) => {
@@ -64,11 +76,41 @@ test('the styled selector and past experience send a topic code without the ente
   await expect(page.getByText('면접이나 발표에 관한 과거 경험', { exact: false })).toBeVisible();
 });
 
+test('the home story link and main menu lead to a dedicated story archive', async ({ page, context }) => {
+  await signInFixture(context);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: '쇼츠 모아보기' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /덕담집 사주극장 백 번째 지원서/ })).toBeVisible();
+  await page.getByRole('link', { name: '이야기 전체보기' }).click();
+  await expect(page).toHaveURL(/\/stories$/);
+  await expect(page.getByRole('heading', { level: 1, name: '이야기 속 오늘의 덕' })).toBeVisible();
+  const menu = page.getByRole('navigation', { name: '주 메뉴' });
+  await expect(menu.getByRole('link', { name: '이야기' })).toHaveAttribute('aria-current', 'page');
+  await page
+    .getByRole('list', { name: '공개 이야기' })
+    .getByRole('link', { name: '엄마가 지운 카톡' })
+    .click();
+  await expect(page.getByRole('heading', { name: '엄마가 지운 카톡' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: '이야기' })).toHaveAttribute('aria-current', 'location');
+  await page.getByRole('link', { name: '이야기 모아보기' }).click();
+  await expect(page).toHaveURL(/\/stories$/);
+  await menu.getByRole('link', { name: '기록장' }).click();
+  await expect(menu.getByRole('link', { name: '기록장' })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('main').getByRole('link', { name: '오늘의 덕 고르기' }).click();
+  await expect(page).toHaveURL(/\/stories$/);
+});
+
+test('old story bookmarks forward to the archive and preserve their query', async ({ page }) => {
+  await page.goto('/?utm_source=youtube#stories');
+  await expect(page).toHaveURL(/\/stories\?utm_source=youtube$/);
+  await expect(page.getByRole('list', { name: '공개 이야기' })).toBeVisible();
+});
+
 test('the story playlist contacts YouTube only after the reader opens the player', async ({ page }) => {
   await page.route('https://www.youtube-nocookie.com/embed?**', (route) =>
     route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>테스트 재생목록</p>' }),
   );
-  await page.goto('/#stories');
+  await page.goto('/stories');
   const launcher = page.getByRole('button', { name: '쇼츠 모아보기' });
   await expect(page.locator('iframe')).toHaveCount(0);
   await launcher.click();
@@ -104,7 +146,11 @@ test('a failed reading preserves the form and offers a basic fallback', async ({
   await expect(page.getByRole('heading', { name: '오늘의 기본 풀이' })).toBeVisible();
 });
 
-test('an AI reading keeps its chosen action and sources through recording and reload', async ({ page }) => {
+test('an AI reading keeps its chosen action and sources through recording and reload', async ({
+  page,
+  context,
+}) => {
+  await signInFixture(context);
   const first = '금(金)이 모양을 바꾸는 이미지';
   const second = '지원서 첫 줄과 공고 맞춰보기';
   await page.route('**/api/readings', (route) =>
