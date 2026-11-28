@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -22,9 +23,12 @@ FILES = ("short.mp4", "cover.jpg", "captions.srt")
 TAGS = ("추리게임", "웹게임", "쇼츠")
 
 
+def read_episodes():
+    return json.loads((ROOT / "episodes.json").read_text(encoding="utf-8"))
+
+
 def read_episode(slug):
-    episodes = json.loads((ROOT / "episodes.json").read_text(encoding="utf-8"))
-    for episode in episodes:
+    for episode in read_episodes():
         if episode["slug"] == slug:
             return episode
     raise ValueError(f"등록된 에피소드를 찾을 수 없습니다. {slug}")
@@ -55,7 +59,7 @@ def upload_plan(episode, video, play_url=None):
         "snippet": {
             "title": title,
             "description": description,
-            "tags": TAGS,
+            "tags": list(TAGS),
             "categoryId": "20",
             "defaultLanguage": "ko",
             "defaultAudioLanguage": "ko",
@@ -137,6 +141,37 @@ def prepare_package(episode, source, output, play_url=None, font=None):
     return destination
 
 
+def check_case_packages(case_path, packages, site):
+    if not re.fullmatch(r"/cases/[a-z0-9-]+/", case_path):
+        raise ValueError("사건 경로는 /cases/<이름>/ 형식이어야 합니다.")
+    page = site / case_path.strip("/") / "index.html"
+    if not page.is_file() or not page.stat().st_size:
+        raise ValueError(f"빌드에 사건 페이지가 없습니다. {page}")
+    episodes = [episode for episode in read_episodes() if episode.get("casePath") == case_path]
+    if not episodes:
+        raise ValueError(f"사건에 연결된 쇼츠가 없습니다. {case_path}")
+    ordered = sorted(episodes, key=lambda episode: bool(episode.get("spoiler")))
+    if ordered != episodes:
+        raise ValueError("해설을 같은 사건의 단서 영상 뒤에 두세요.")
+    url = urljoin(PLAY_URL, case_path)
+    for episode in episodes:
+        package = packages / episode["slug"]
+        for filename in (*FILES, "upload.json", "promo-square.jpg", "promotion.md", "profile-link.txt"):
+            asset = package / filename
+            if not asset.is_file() or not asset.stat().st_size:
+                raise ValueError(f"업로드 패키지에 필요한 파일이 없습니다. {asset}")
+        actual = json.loads((package / "upload.json").read_text(encoding="utf-8"))
+        expected = upload_plan(episode, package / "short.mp4", url)
+        if actual != expected:
+            raise ValueError(f"영상 해시, 제목 또는 사건 주소가 현재 제작본과 다릅니다. {package}")
+        captions = (package / "captions.srt").read_text(encoding="utf-8")
+        if r"\n" in captions:
+            raise ValueError(f"자막에 줄바꿈 기호가 그대로 표시됩니다. {package}")
+        if (package / "profile-link.txt").read_text(encoding="utf-8").strip() != campaign_url(url, "youtube-shorts"):
+            raise ValueError(f"프로필 링크가 사건 주소와 다릅니다. {package}")
+    return {"case": case_path, "site": str(page), "episodes": [episode["slug"] for episode in episodes]}
+
+
 def render_episode(options, source):
     command = [
         sys.executable, str(ROOT / "render-shorts.py"), "--episode", options.episode,
@@ -166,6 +201,10 @@ def parser_for_pipeline():
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest="command", required=True)
     prepare = commands.add_parser("prepare", help="영상, 업로드 정보와 홍보 파일을 패키지로 만듭니다.")
+    check = commands.add_parser("check-case", help="빌드와 업로드 패키지에 사건 한 세트가 모두 있는지 확인합니다.")
+    check.add_argument("case_path")
+    check.add_argument("--packages", required=True, type=Path)
+    check.add_argument("--site", required=True, type=Path)
     prepare.add_argument("episode")
     prepare.add_argument("--source", type=Path, help="영상 출력 루트. 내부의 에피소드 폴더를 읽습니다.")
     prepare.add_argument("--output", type=Path, default=OUTPUT)
@@ -189,6 +228,9 @@ def parser_for_pipeline():
 
 def main():
     options = parser_for_pipeline().parse_args()
+    if options.command == "check-case":
+        print(json.dumps(check_case_packages(options.case_path, options.packages, options.site), ensure_ascii=False))
+        return
     if options.command == "connect":
         from oauthlib.oauth2 import OAuth2Error
 

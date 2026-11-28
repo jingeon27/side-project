@@ -3,6 +3,7 @@ import type { MouseEvent } from 'react';
 export const catalogPath = '/';
 export const receiptLandingPath = '/cases/last-receipt/';
 export const returnedKeyPath = '/cases/returned-key/';
+export const wetMapPath = '/cases/wet-map/';
 
 const navigationEvent = 'dawn:case-navigation';
 

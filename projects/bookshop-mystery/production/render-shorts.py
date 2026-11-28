@@ -101,6 +101,9 @@ def make_board(directory, episode, shot, target, index, callout=None):
         draw.line((128, 817, 868, 817), fill="#938068", width=2)
         text(draw, (126, 877), "03:00", 80, "#30251e", mono=True)
         text(draw, (677, 877), "R3", 80, "#30251e", mono=True)
+    if evidence := shot.get("evidence"):
+        inset = ImageOps.contain(read_image(WEB_ASSETS / evidence), (850, 635))
+        board.paste(inset, (76, 496 + (635 - inset.height) // 2))
     draw = ImageDraw.Draw(board)
     first = index == 1
     warns_spoiler = first and episode.get("spoiler")
@@ -263,7 +266,9 @@ def make_short(episode, data, captures, renderer, speaker, output, original=None
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--renderer", choices=("browser", "unity"), default="browser")
-    parser.add_argument("--episode")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--episode")
+    selection.add_argument("--case-path", help="한 사건으로 연결되는 쇼츠를 순서대로 렌더링합니다.")
     parser.add_argument("--speaker", choices=("F2", "sohee-playful"), default="F2")
     parser.add_argument("--reuse-audio", type=Path, help="기존 편집 폴더의 음성, 반주, 자막 시점을 사용합니다.")
     parser.add_argument("--printer-handoff", type=Path, help="프린터 편 마지막 컷에 넣을 타임라인 영상")
@@ -273,16 +278,22 @@ def main():
     capture = ROOT / ".work" / (options.renderer + "-capture")
     output = options.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    for episode in json.loads((ROOT / "episodes.json").read_text()):
-        if not options.episode or episode["slug"] == options.episode:
-            with tempfile.TemporaryDirectory(prefix=".short-", dir=output) as staging:
-                original = options.reuse_audio / episode["slug"] if options.reuse_audio else None
-                handoff = options.printer_handoff if episode["slug"] == "02-printers" else None
-                make_short(episode, data, capture, options.renderer, options.speaker, Path(staging), original, handoff)
-                target = output / episode["slug"]
-                if target.exists():
-                    raise FileExistsError(f"기존 출력이 있습니다. 다른 위치에 보관하세요. {target}")
-                (Path(staging) / episode["slug"]).rename(target)
+    episodes = [
+        episode for episode in json.loads((ROOT / "episodes.json").read_text(encoding="utf-8"))
+        if (not options.episode or episode["slug"] == options.episode)
+        and (not options.case_path or episode.get("casePath") == options.case_path)
+    ]
+    if not episodes:
+        parser.error("조건에 일치하는 쇼츠를 찾을 수 없습니다.")
+    for episode in episodes:
+        target = output / episode["slug"]
+        if target.exists():
+            raise FileExistsError(f"기존 출력이 있습니다. 다른 위치에 보관하세요. {target}")
+        with tempfile.TemporaryDirectory(prefix=".short-", dir=output) as staging:
+            original = options.reuse_audio / episode["slug"] if options.reuse_audio else None
+            handoff = options.printer_handoff if episode["slug"] == "02-printers" else None
+            make_short(episode, data, capture, options.renderer, options.speaker, Path(staging), original, handoff)
+            (Path(staging) / episode["slug"]).rename(target)
 
 
 if __name__ == "__main__":

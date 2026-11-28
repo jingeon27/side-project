@@ -18,7 +18,7 @@ yarn workspace @side/bookshop-mystery build
 
 ## 조사 화면과 디자인 시스템
 
-`/`에서 사건을 선택한다. `/cases/last-receipt/`는 영수증 사건 소개를 열며, 기존 `/play/` 주소에서도 바로 조사를 시작할 수 있다. `/cases/returned-key/`에서는 봉투의 표식, 반납함, 야간 일지를 살펴 열쇠가 돌아온 경로를 추리한다. 진행과 결말은 사건별로 이 브라우저에 저장한다. 소개와 결말의 **사건 목록**으로 다른 사건을 고를 수 있다.
+`/`에서 사건을 선택한다. `/cases/last-receipt/`는 영수증 사건 소개를 열며, 기존 `/play/` 주소에서도 바로 조사를 시작할 수 있다. `/cases/returned-key/`에서는 봉투의 표식, 반납함, 야간 일지를 살펴 열쇠가 돌아온 경로를 추리한다. `/cases/wet-map/`에서는 마른 자국, 표찰, 선착장 작업 일지를 대조한다. 진행과 결말은 사건별로 이 브라우저에 저장한다. 소개와 결말의 **사건 목록**으로 다른 사건을 고를 수 있다.
 
 타임라인에서 열린 단계를 눌러 이동한다. 현재 단계는 강조된 테두리와 글자로 표시하며, 확인한 단계는 체크를 표시한다. 잠긴 단계는 자물쇠와 점선으로 구분한다. 두 프린터의 밑면을 확인하면 프린터 단계에 Lottie 체크가 재생되고 이관 기록에 **다음** 표시가 나타난다. 프린터 화면에서 이관 기록을 누르면 이동한다. [ReUI Timeline](https://reui.io/components/timeline), [Shadcn Studio Timeline](https://shadcnstudio.com/blocks/marketing-ui/timeline-component), [ReUI 라이선스](apps/web/public/licenses/reui.txt)
 
@@ -72,6 +72,8 @@ Unity 소스는 같은 버전의 Unity API 어셈블리로 C# 컴파일을 확�
 
 ## 쇼츠 제작
 
+[새벽 기록실 제작 스킬](.agents/skills/dawn-records-production/SKILL.md)에 사건 스토리, 조사 페이지, 쇼츠 검수와 대기 세트 편성 절차가 있다.
+
 `production/episodes.json`은 에피소드별 사건 경로, 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
 
 ```sh
@@ -118,7 +120,7 @@ OAuth 앱의 게시 상태가 **테스트 중**이면 갱신 토큰은 7일 후 
 
 ## 유입과 조사 결과
 
-Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에 `stage`를 붙이고 사건 관련 이벤트에는 `case_id=last-receipt` 또는 `case_id=returned-key`를 함께 보낸다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
+Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에 `stage`를 붙이고 사건 관련 이벤트에는 `case_id`에 `last-receipt`, `returned-key`, `wet-map` 중 해당 값을 보낸다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
 
 | 이벤트                       | 속성 또는 시점                                                                                              |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |

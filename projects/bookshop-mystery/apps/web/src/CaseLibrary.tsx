@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react';
 
 import { trackEvent } from './analytics';
 import { CASE_ID, receiptCaseTitle, visitSource } from './case-file';
-import { caseHref, followCaseLink, receiptLandingPath, returnedKeyPath } from './case-routes';
+import { caseHref, followCaseLink, receiptLandingPath, returnedKeyPath, wetMapPath } from './case-routes';
 import { envelopeImage, RETURNED_KEY_ID, returnedKeyTitle } from './returned-key/returned-key';
+import { WET_MAP_ID, wetMap, wetMapCover } from './wet-map/wet-map';
 
 import './case-library.css';
 
@@ -23,6 +24,14 @@ const cases = [
     minutes: 3,
     illustration: envelopeImage,
     path: returnedKeyPath,
+  },
+  {
+    id: WET_MAP_ID,
+    title: wetMap.title,
+    premise: wetMap.premise,
+    minutes: wetMap.minutes,
+    illustration: wetMapCover,
+    path: wetMapPath,
   },
 ] as const;
 
