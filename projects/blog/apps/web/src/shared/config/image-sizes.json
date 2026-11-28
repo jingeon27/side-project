@@ -327,6 +327,18 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/utf-8-and-utf-16-og.jpg": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/utf-8-and-utf-16.avif": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/utf-8-and-utf-16.svg": {
+    "width": 1200,
+    "height": 630
+  },
   "/images/covers/yarn-workspaces-turborepo-og.jpg": {
     "width": 1200,
     "height": 630

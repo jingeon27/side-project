@@ -26,6 +26,12 @@
     }
   },
   "posts": {
+    "utf-8-and-utf-16": {
+      "title": "How UTF-8 and UTF-16 turn characters into bytes",
+      "slug": "how-utf-8-and-utf-16-turn-characters-into-bytes",
+      "description": "Tracing code point U+AC00 into the UTF-8 bytes EA B0 80, bit by bit, shows how the marker bits in every byte tell a decoder where each character starts. It also covers UTF-16 surrogate pairs, what JavaScript's length counts, and how to count bytes and on-screen characters.",
+      "keywords": ["UTF-8", "UTF-16", "Unicode", "code points", "surrogate pairs", "grapheme clusters", "TIL"]
+    },
     "side-project-goals": {
       "title": "Why I do side projects",
       "slug": "why-i-do-side-projects",
