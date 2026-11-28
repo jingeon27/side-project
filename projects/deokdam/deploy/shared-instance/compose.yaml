@@ -70,7 +70,7 @@ services:
       - --reasoning
       - 'off'
       - --sleep-idle-seconds
-      - '120'
+      - '${DEOKDAM_MODEL_IDLE_SECONDS:-120}'
       - --no-webui
     networks: [inference]
     volumes:
@@ -87,8 +87,8 @@ services:
       start_period: 30s
     cpus: 0.65
     cpu_shares: 256
-    mem_limit: 640m
-    memswap_limit: 640m
+    mem_limit: 864m
+    memswap_limit: 864m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     read_only: true
