@@ -10,12 +10,13 @@ if (origin.protocol !== 'http:' || origin.hostname !== '127.0.0.1') {
 }
 
 const cases = [
+  { topic: 'job', concern: 'silence', element: 'metal', experience: 'application' },
   { topic: 'job', concern: 'silence', element: 'metal', experience: 'interview' },
   { topic: 'parent', concern: 'first-words', element: 'wood', experience: 'conversation' },
   { topic: 'admission', concern: 'scores', element: 'water' },
 ] as const satisfies readonly TReadingInput[];
 
-it.each(cases)('uses the running local model to select referenced advice for $topic', async (input) => {
+it.each(cases)('uses the running local model to select referenced advice for %j', async (input) => {
   const response = await request(origin.origin).post('/api/readings').send(input).expect(200);
   const reading = readingSchema.parse(response.body);
   expect(reading.mode).toBe('ai');

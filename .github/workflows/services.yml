@@ -106,6 +106,8 @@ jobs:
           docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_DEOKDAM_AMPLITUDE_KEY \
             -f projects/deokdam/apps/web/Dockerfile -t "deokdam-web:$GITHUB_SHA" .
       - name: Verify local inference and SQLite in the production Compose services
+        env:
+          DEOKDAM_MODEL_IDLE_SECONDS: '2'
         run: |
           directory="$RUNNER_TEMP/deokdam-compose"
           mkdir -p "$directory"
@@ -132,6 +134,7 @@ jobs:
           const assert = require('node:assert/strict');
           const { createRequire } = require('node:module');
           const { DatabaseSync } = require('node:sqlite');
+          const { setTimeout: delay } = require('node:timers/promises');
           const fromApp = createRequire('/app/projects/deokdam/apps/web/server.js');
           const db = new DatabaseSync(process.env.DEOKDAM_READING_DB, { allowExtension: true });
           fromApp('sqlite-vec').load(db);
@@ -155,6 +158,15 @@ jobs:
             assert.equal(fixture.headers.get('set-cookie'), null);
             assert.equal((await fetch(origin + '/api/journal')).status, 401);
             assert.match(await (await fetch(origin + '/sitemap.xml')).text(), /https:\/\/deokdam\.bambyul\.com\/stories/);
+
+            // The first real reading in the integration suite must wake the sleeping model.
+            for (let attempt = 0; attempt < 30; attempt++) {
+              const props = await fetch('http://deokdam-model:8080/props', { signal: AbortSignal.timeout(3000) });
+              assert.equal(props.status, 200);
+              if ((await props.json()).is_sleeping === true) return;
+              await delay(500);
+            }
+            throw new Error('The model did not enter its idle state before the reading tests');
           }
           verify().catch((error) => { console.error(error); process.exitCode = 1; });
           NODE

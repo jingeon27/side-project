@@ -2,7 +2,7 @@
 
 [공용 EC2](../../../../deploy/shared-instance/README.md)의 기존 Caddy 뒤에서 덕담집 웹을 운영한다. 서버 안의 llama.cpp가 Qwen3.5 0.8B 양자화 모델을 CPU로 실행한다. 웹과 모델 사이에는 전용 내부 Docker 네트워크를 쓰고, 모델 포트를 호스트에 게시하지 않는다. 참고 자료와 주문은 서로 다른 SQLite 볼륨에 둔다. [llama.cpp 서버](https://github.com/ggml-org/llama.cpp/blob/v1.1.0/tools/server/README.md) · [Qwen3.5 모델 파일](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF/blob/1c0b5292de5ccd62235595d1557c0d70d46c3d9d/Qwen3.5-0.8B-Q4_0.gguf)
 
-추론은 EC2 안에서 처리하므로 모델 API의 호출별 요금은 없다. 모델 파일은 약 563MB다. 모델 컨테이너는 CPU 0.65개와 메모리 640MiB로 한 번에 한 건을 처리한다. CPU 가중치 재배치에 필요한 메모리를 줄이기 위해 모델 서버를 `--no-repack`으로 실행한다. CPU가 경합할 때는 모델에 기존 서비스보다 낮은 CPU 가중치를 적용한다. 2분간 요청이 없으면 모델을 RAM에서 내린다. 기존 EC2 비용은 AWS 설정에 따르며 T3 Unlimited에서 평균 사용률이 기준을 넘으면 CPU 크레딧 요금이 생길 수 있다. [AWS CPU 크레딧 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode.html)
+추론은 EC2 안에서 처리하므로 모델 API의 호출별 요금은 없다. 모델 파일은 약 563MB다. 모델 컨테이너는 CPU 0.65개와 메모리 864MiB로 한 번에 한 건을 처리한다. 이 한도는 모델 가중치와 추론 작업 메모리를 함께 담기 위한 값이다. CPU 가중치 재배치에 필요한 메모리를 줄이기 위해 모델 서버를 `--no-repack`으로 실행한다. CPU가 경합할 때는 모델에 기존 서비스보다 낮은 CPU 가중치를 적용한다. 2분간 요청이 없으면 모델을 RAM에서 내린다. CI는 대기 시간을 2초로 줄이고 모델이 잠든 상태에서 첫 풀이를 요청한다. 기존 EC2 비용은 AWS 설정에 따르며 T3 Unlimited에서 평균 사용률이 기준을 넘으면 CPU 크레딧 요금이 생길 수 있다. [AWS CPU 크레딧 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode.html)
 
 ## 첫 배포
 
