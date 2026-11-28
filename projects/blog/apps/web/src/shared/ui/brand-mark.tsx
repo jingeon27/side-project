@@ -7,7 +7,7 @@ interface BrandMarkProps {
 export function BrandMark({
   className,
   size = 36,
-  imageHref = '/images/brand/bambyul-mascot.avif',
+  imageHref = '/images/brand/jingeon27-profile.avif',
 }: BrandMarkProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- ImageResponse needs a plain image element for the shared logo.
@@ -18,7 +18,7 @@ export function BrandMark({
       src={imageHref}
       alt=""
       aria-hidden="true"
-      style={{ backgroundColor: '#f7f3eb', borderRadius: '25%' }}
+      style={{ borderRadius: '25%' }}
     />
   );
 }
