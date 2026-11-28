@@ -12,7 +12,7 @@ export function publicMetadata(path: string, title: string, description: string)
     alt: '덕담집 사주극장, 백 번째 지원서 편',
   };
   return {
-    title,
+    title: { absolute: fullTitle },
     description,
     alternates: { canonical: url },
     openGraph: {

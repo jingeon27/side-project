@@ -17,6 +17,9 @@ test('publishes canonical public URLs and keeps account records out of search an
       ...episodes.map((episode) => episodeShareUrl(episode.slug)),
     ].sort(),
   );
+  await page.goto('/');
+  await expect(page).toHaveTitle('AI 사주와 오늘의 덕담 | 덕담집');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', await page.title());
   await page.goto('/stories?utm_source=youtube');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', siteOrigin + '/stories');
   await expect(page).toHaveTitle('이야기 속 오늘의 덕 | 덕담집');
