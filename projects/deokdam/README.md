@@ -8,7 +8,7 @@
 yarn workspace @side/deokdam dev
 ```
 
-로컬 주소는 http://127.0.0.1:3460 이다. 홈에서 취업 준비, 자녀 응원, 대입 준비를 고를 수 있다. 쇼츠의 카드 경로는 `/cards/<회차 슬러그>`, 기록은 `/journal`, 7일 상품은 `/shop`이다. 브라우저의 사이트 데이터에 덕 기록과 당일 풀이 캐시를 보관한다.
+로컬 주소는 http://127.0.0.1:3460 이다. 홈에서 취업 준비, 자녀 응원, 대입 준비를 고를 수 있다. 쇼츠의 카드 경로는 `/cards/<회차 슬러그>`, 기록은 `/journal`, 7일 상품은 `/shop`이다. 기록과 메모는 로그인 계정의 SQLite에, 당일 풀이 캐시는 브라우저에 보관한다. 공개 이야기 목록은 `/stories`다.
 
 한국 음력은 `korean-lunar-calendar`로 양력에 대응시키고, 만세력은 `lunar-typescript`로 계산한다. 절기를 따지는 년주와 월주는 서울 현지 시각으로 비교한다. 출생 시각을 입력하지 않으면 시주를 미상으로 표시하고 절기 경계에 걸리는 년주나 월주도 미상으로 표시한다. 달력 입력은 한국 표준시(UTC+9)를 기준으로 해석한다. [한국천문연구원 월력 자료](https://astro.kasi.re.kr/kor/life/post/calendarData?year=2024)
 
@@ -21,7 +21,7 @@ yarn workspace @side/deokdam dev
 | 개인 풀이        | 공용 EC2의 내부 모델이 일간 오행, 고민, 선택 경험의 주제로 오늘 해볼 실천을 고른다. Mac에서는 `DEOKDAM_AI_MODEL`과 `DEOKDAM_AI_LOCAL_PORT`로 루프백 모델을 연결한다. 모델을 설정하지 않은 개발 환경은 기본 풀이를 보여준다.                                                                                                                                                                |
 | 보상형 광고      | `DEOKDAM_REWARDED_AD_UNIT`에 Google Ad Manager의 웹 보상형 동영상 단위를 둔다. 본인 풀이에서 성인으로 계산된 이용자가 선택하면 광고 SDK를 로드한다. GPT의 보상 이벤트를 받으면 추가 풀이를 열고 해당 탭에서 풀이를 다시 볼 수 있다. 보상은 그 브라우저의 추가 콘텐츠 열람으로 제공한다. [Google 보상형 광고 예제](https://developers.google.com/publisher-tag/samples/display-rewarded-ad) |
 | 7일 리포트       | 포트원 상점, 카드 채널, API 비밀키, 고객 문의 이메일, 공개 origin, 전용 SQLite 절대 경로를 설정해야 결제가 활성화된다. 카드 상품 한 편은 4,900원이다. 서버가 포트원에서 결제를 조회해 상점, 주문 번호, 금액과 통화가 맞고 승인된 경우 리포트를 발급한다. [포트원 인증 결제](https://developers.portone.io/opi/ko/integration/start/v2/checkout)                                            |
-| 구매 복구와 환불 | 구매 내역에서 결제 완료와 취소 상태를 재확인할 수 있다. 환불 요청은 주문에 접수하며 담당자가 포트원 관리자에서 처리한다. 브라우저를 바꾼 이용자는 영수증 번호로 지원 이메일에 문의할 수 있다. 리포트 발급 상태를 담은 DB는 가맹점별 영구 볼륨에 둔다.                                                                                                                                      |
+| 구매 복구와 환불 | 구매 내역에서 결제 완료와 취소 상태를 재확인할 수 있다. 환불 요청은 주문에 접수하며 담당자가 포트원 관리자에서 처리한다. 다른 기기에서도 같은 제공자와 계정으로 로그인해 구매 내역을 연다. 리포트 발급 상태를 담은 DB는 가맹점별 영구 볼륨에 둔다.                                                                                                                                         |
 | Amplitude        | 덕담집 키가 설정된 경우에만 이벤트를 보낸다. 공개 회차, 이용 유형, 충분한 나이인지 여부, 상품 키를 기준으로 첫 풀이, 실제 기록, 광고 보상, 결제 확인, 리포트 발급을 관찰한다. 브라우저 클릭과 포트원 조회 후 서버 승인을 구분한다.                                                                                                                                                         |
 
 운영과 같은 Qwen3.5 0.8B 모델을 Mac에서 확인하려면 [llama.cpp 릴리스](https://github.com/ggml-org/llama.cpp/releases/tag/b12774)의 `llama-server`를 사용한다. 모델을 받은 뒤 두 터미널에서 각각 실행한다. 모델 이름은 서버의 별칭과 맞춘다.
@@ -82,3 +82,9 @@ E2E는 전용 포트에서 Chromium 모바일·데스크톱 화면을 연다. �
 ```sh
 DEOKDAM_TEST_ORIGIN=http://127.0.0.1:3469 yarn workspace @deokdam/web test:integration
 ```
+
+## 로그인과 기록장
+
+Google 웹 OAuth 클라이언트와 카카오 REST API 키 각각에 `/api/auth/google/callback`, `/api/auth/kakao/callback`을 등록한다. 운영 기준 주소는 `https://deokdam.bambyul.com`, 로컬은 `http://127.0.0.1:3460` 또는 `http://localhost:3460`이다. 각 제공자의 client ID와 secret은 웹 앱의 런타임 환경 설정에 둔다. 카카오는 로그인 활성화와 클라이언트 시크릿을 사용한다.
+
+계정·세션·기록은 `DEOKDAM_ACCOUNT_DB`에 저장한다. 로컬 기본값은 `.data/accounts.sqlite`, EC2는 영구 볼륨의 `/var/lib/deokdam/orders/accounts.sqlite`다. [구현 계획과 검증 기준](docs/account-and-reading-plan.md)에 사용자 흐름과 상태 관리 기준을 정리했다.

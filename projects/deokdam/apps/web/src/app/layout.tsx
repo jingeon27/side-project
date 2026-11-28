@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { Providers } from '@/shared/ui/Providers';
 import { SiteHeader } from '@/shared/ui/SiteHeader';
 
 import './globals.css';
@@ -17,8 +18,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a className="skip-link" href="#main-content">
           본문으로 건너뛰기
         </a>
-        <SiteHeader />
-        {children}
+        <Providers>
+          <SiteHeader />
+          {children}
+        </Providers>
       </body>
     </html>
   );
