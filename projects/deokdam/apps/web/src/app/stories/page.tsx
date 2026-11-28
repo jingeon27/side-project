@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -9,15 +8,17 @@ import { ShortsPlayer } from '@/features/shorts/ShortsPlayer';
 import { shortsPlaylist } from '@/features/shorts/source';
 import { TrackView } from '@/shared/analytics/TrackView';
 import { episodePath, episodes } from '@/shared/episodes';
+import { publicMetadata } from '@/shared/site';
 import { topics } from '@/shared/topics';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 
 import './stories.css';
 
-export const metadata: Metadata = {
-  title: '이야기 속 오늘의 덕',
-  description: '취업과 입시를 기다리는 사람들의 창작 상황극을 보고, 이야기 속 오늘의 덕을 만나보세요.',
-};
+export const metadata = publicMetadata(
+  '/stories',
+  '이야기 속 오늘의 덕',
+  '취업과 입시를 기다리는 사람들의 창작 쇼츠를 보고, 이야기 속 한마디를 나만의 덕담 엽서로 만들어 보세요.',
+);
 
 const channelShortsPlaylist = 'PLdR732KbVakE';
 

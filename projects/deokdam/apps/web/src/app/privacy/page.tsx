@@ -1,8 +1,11 @@
-import type { Metadata } from 'next';
-
+import { publicMetadata } from '@/shared/site';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 
-export const metadata: Metadata = { title: '개인정보 안내' };
+export const metadata = publicMetadata(
+  '/privacy',
+  '개인정보 안내',
+  '덕담집이 사주 입력, 덕담 엽서, 계정 기록, 광고와 결제 정보를 어떻게 처리하는지 확인하세요.',
+);
 
 export default function PrivacyPage() {
   return (
@@ -21,9 +24,14 @@ export default function PrivacyPage() {
         <section>
           <h2>덕 기록과 공유</h2>
           <p>
-            저장한 실천과 메모는 로그인한 계정의 기록장에 보관하며, 다른 기기에서도 볼 수 있어요. 기록장에서
-            하나씩 지울 수 있어요. 공유 엽서에는 내가 고른 행동만 담겨요. 로그인 전 작성한 기록 초안은 이 탭에
-            최대 15분 동안 보관해요. 예전 브라우저 기록은 직접 가져오기를 선택하면 계정에 저장돼요.
+            로그인 전에도 덕담을 만들고 풀이를 받고 실천과 메모를 남길 수 있어요. 이 기록은 이 브라우저에
+            보관하고, 처음 로그인한 계정의 기록장으로 옮겨요. 그 전에 사이트 데이터를 지우면 이 기기의 기록도
+            사라져요.
+          </p>
+          <p>
+            로그인하면 같은 계정으로 다른 기기에서 열거나 하나씩 지울 수 있어요. 받은 풀이는 고민 주제, 일간의
+            오행과 실제로 본 풀이를 보관해요. 주간 공유 엽서에는 내가 고른 행동만 담겨요. 이전 버전에서 남긴
+            실천은 기록장에서 직접 가져올 수 있어요.
           </p>
         </section>
         <section>

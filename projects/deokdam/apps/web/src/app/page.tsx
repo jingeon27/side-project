@@ -4,11 +4,24 @@ import Link from 'next/link';
 import { ArrowRight, BookHeart, GraduationCap, HeartHandshake } from 'lucide-react';
 
 import { episodePath, episodes } from '@/shared/episodes';
+import { publicMetadata, siteOrigin } from '@/shared/site';
 import { topics, type TTopic } from '@/shared/topics';
 import { ReadingLink } from '@/shared/ui/ReadingLink';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 import { StoriesLink } from '@/shared/ui/StoriesLink';
 
+export const metadata = publicMetadata(
+  '/',
+  'AI 사주와 오늘의 덕담',
+  '취업 준비와 대학 입시를 기다리는 하루, 생년월일로 사주를 읽고 나만의 덕담 엽서를 만들어 보세요.',
+);
+const website = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: '덕담집',
+  url: siteOrigin + '/',
+  inLanguage: 'ko',
+};
 const featured = episodes[0];
 const topicIcons = { job: BookHeart, parent: HeartHandshake, admission: GraduationCap };
 const topicOrder = ['job', 'parent', 'admission'] as const satisfies readonly TTopic[];
@@ -17,6 +30,7 @@ export default function Home() {
   if (!featured) throw new Error('An episode is required for the home page');
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }} />
       <main id="main-content" className="home">
         <section className="site-width home-hero" aria-labelledby="hero-title">
           <div className="hero-copy">

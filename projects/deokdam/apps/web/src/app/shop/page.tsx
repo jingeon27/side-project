@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { loginPath } from '@/features/account/navigation';
@@ -6,9 +5,14 @@ import { currentAccount } from '@/features/account/session';
 import { Checkout } from '@/features/shop/Checkout';
 import { portOneConfig } from '@/features/shop/portone';
 import { products, productSchema, reportPrice } from '@/features/shop/products';
+import { publicMetadata } from '@/shared/site';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 
-export const metadata: Metadata = { title: '7일 풀이' };
+export const metadata = publicMetadata(
+  '/shop',
+  '취업 준비와 자녀 응원을 위한 7일 풀이',
+  '취업을 준비하거나 자녀를 응원하는 하루에 어울리는 일곱 장의 풀이를 살펴보고 첫날의 실천을 미리 읽어보세요.',
+);
 
 export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {
   const params = await searchParams;

@@ -1,4 +1,5 @@
 import episodesData from './episodes.json' with { type: 'json' };
+import { siteOrigin } from './site';
 import type { TTopic } from './topics';
 
 interface IEpisode {
@@ -25,5 +26,5 @@ export function episodePath(slug: string) {
 }
 
 export function episodeShareUrl(slug: string) {
-  return new URL(episodePath(slug), 'https://deokdam.bambyul.com').href;
+  return new URL(episodePath(slug), siteOrigin).href;
 }
