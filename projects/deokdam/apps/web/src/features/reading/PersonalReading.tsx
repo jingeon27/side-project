@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import Link from 'next/link';
 
+import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, ChevronDown, Clover, ShieldCheck } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 
@@ -15,6 +16,7 @@ import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
 import { topics, type TTopic } from '@/shared/topics';
 
+import { BirthChartReport } from './BirthChartReport';
 import type { IChart } from './chart';
 import {
   BirthDateError,
@@ -34,6 +36,7 @@ interface IReadingForm extends TBirthInput {
 }
 
 interface IResult {
+  birth: TBirthInput;
   chart: IChart;
   input: TReadingInput;
   reading: TReading;
@@ -54,7 +57,6 @@ export function PersonalReading({
   adUnit?: string;
   children: ReactNode;
 }) {
-  const [result, setResult] = useState<IResult>();
   const concernOptions = topics[topic].concerns.map(({ id, label }) => ({ value: id, label }));
   const form = useForm<IReadingForm>({
     defaultValues: {
@@ -69,48 +71,60 @@ export function PersonalReading({
   const calendar = useWatch({ control: form.control, name: 'calendar' });
   const error = form.formState.errors.root?.message;
 
-  const handleReading = async (values: IReadingForm, fallback = false) => {
-    const birth = birthSchema.safeParse(values);
-    if (!birth.success) {
-      form.setError('root', {
-        message: birth.error.issues[0]?.message ?? '입력한 생년월일과 출생 시각을 확인해 주세요.',
-      });
-      return;
-    }
-    form.clearErrors();
-    const experience = classifyExperience(values.pastExperience);
-    track(event.ReadingRequested, { topic, withExperience: Boolean(experience) });
-    try {
-      const { calculateChart } = await import('./chart');
-      const chart = calculateChart(birth.data);
-      const input: TReadingInput = { topic, concern: values.concern, element: chart.element, experience };
-      const cached = readCachedReading(input);
-      const reading =
-        cached ??
-        (fallback
-          ? { mode: 'basic' as const, interpretation: basicInterpretation(input) }
-          : await requestReading(input));
-      rememberReading(input, reading);
-      setResult({ chart, input, reading });
-      track(event.ReadingShown, {
-        topic,
-        mode: reading.mode,
-        cached: Boolean(cached),
-        adult: chart.adult,
-        grounded: Boolean(reading.sources?.length),
-        withExperience: Boolean(experience),
-      });
-    } catch (reason) {
-      if (reason instanceof BirthDateError) {
-        form.setError('root', { type: 'validation', message: reason.message });
+  const readingRequest = useMutation({
+    mutationFn: async ({
+      values,
+      fallback,
+    }: {
+      values: IReadingForm;
+      fallback: boolean;
+    }): Promise<IResult | undefined> => {
+      const birth = birthSchema.safeParse(values);
+      if (!birth.success) {
+        form.setError('root', {
+          message: birth.error.issues[0]?.message ?? '입력한 생년월일과 출생 시각을 확인해 주세요.',
+        });
         return;
       }
-      form.setError('root', {
-        type: 'unavailable',
-        message: '지금 풀이를 불러오지 못했어요. 다시 시도하거나 기본 풀이를 열어보세요.',
-      });
-    }
-  };
+      form.clearErrors();
+      const experience = classifyExperience(values.pastExperience);
+      track(event.ReadingRequested, { topic, withExperience: Boolean(experience) });
+      try {
+        const { calculateChart } = await import('./chart');
+        const chart = calculateChart(birth.data);
+        const input: TReadingInput = { topic, concern: values.concern, element: chart.element, experience };
+        const cached = readCachedReading(input);
+        const reading =
+          cached ??
+          (fallback
+            ? { mode: 'basic' as const, interpretation: basicInterpretation(input) }
+            : await requestReading(input));
+        rememberReading(input, reading);
+        track(event.ReadingShown, {
+          topic,
+          mode: reading.mode,
+          cached: Boolean(cached),
+          adult: chart.adult,
+          grounded: Boolean(reading.sources?.length),
+          withExperience: Boolean(experience),
+        });
+        return { birth: birth.data, chart, input, reading };
+      } catch (reason) {
+        if (reason instanceof BirthDateError) {
+          form.setError('root', { type: 'validation', message: reason.message });
+          return;
+        }
+        form.setError('root', {
+          type: 'unavailable',
+          message: '지금 풀이를 불러오지 못했어요. 다시 시도하거나 기본 풀이를 열어보세요.',
+        });
+      }
+    },
+    gcTime: 0,
+  });
+  const handleReading = (values: IReadingForm, fallback = false) =>
+    readingRequest.mutateAsync({ values, fallback });
+  const result = readingRequest.data;
 
   if (result) {
     const practice = practiceFor(result.input);
@@ -121,7 +135,7 @@ export function PersonalReading({
         <Button
           variant="ghost"
           icon={<ArrowLeft size={16} aria-hidden />}
-          onClick={() => setResult(undefined)}
+          onClick={() => readingRequest.reset()}
         >
           입력으로 돌아가기
         </Button>
@@ -130,16 +144,27 @@ export function PersonalReading({
           <h1>내 사주 풀이</h1>
         </div>
         {children}
-        <div className="reading-panel">
+        <BirthChartReport chart={result.chart} birth={result.birth} />
+        <section className="reading-panel reading-interpretation">
           <p className="label">일간 오행 · {elementDescriptions[result.chart.element].label}</p>
           <h2>{result.reading.mode === 'ai' ? '오늘의 AI 풀이' : '오늘의 기본 풀이'}</h2>
+          <p className="reading-concern">
+            {topics[topic].concerns.find((item) => item.id === result.input.concern)?.label}
+          </p>
           <p>{result.reading.interpretation}</p>
+          {result.reading.example && (
+            <div className="reading-example">
+              <h3>이렇게 해보세요</h3>
+              <p>{result.reading.example}</p>
+            </div>
+          )}
           {result.input.experience && (
             <p className="small-muted reading-experience-note">
-              <strong>참고한 경험</strong> {experienceThemes[result.input.experience].label}
+              <strong>참고한 경험</strong> {experienceThemes[result.input.experience].label}.{' '}
+              {result.reading.mode === 'ai' && experienceThemes[result.input.experience].followUp}
             </p>
           )}
-        </div>
+        </section>
         <section className="reading-action" aria-labelledby="reading-action-title">
           <header className="reading-action-heading">
             <div className="label">
@@ -162,22 +187,19 @@ export function PersonalReading({
             <ChevronDown size={17} aria-hidden />
           </summary>
           <div className="reading-basis-content">
-            <dl className="pillars" aria-label="만세력">
-              {[
-                ['년주', result.chart.year],
-                ['월주', result.chart.month],
-                ['일주', result.chart.day],
-                ['시주', result.chart.time],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value ?? '미상'}</dd>
-                </div>
-              ))}
-            </dl>
-            {(!result.chart.year || !result.chart.month) && (
-              <p className="small-muted">절기 전후를 가르려면 출생 시각이 필요해요.</p>
-            )}
+            <p>
+              연·월주는 한국 시각의 절기 경계, 일·시주는 한국의 현지 시각으로 계산해요. 네 기둥의 전통적
+              의미는{' '}
+              <a
+                className="plain-link"
+                href="https://encykorea.aks.ac.kr/Article/E0025957"
+                target="_blank"
+                rel="noreferrer"
+              >
+                한국민족문화대백과사전의 사주 항목
+              </a>
+              에서 확인할 수 있어요.
+            </p>
             {sources.length > 0 && (
               <div className="reading-sources small-muted">
                 <h3>풀이에 참고한 자료</h3>
@@ -190,7 +212,13 @@ export function PersonalReading({
             )}
           </div>
         </details>
-        {adUnit && result.chart.adult && <RewardedReading unit={adUnit} input={result.input} />}
+        {adUnit && result.chart.adult && (
+          <RewardedReading
+            key={[topic, result.input.concern, result.input.element].join('/')}
+            unit={adUnit}
+            input={result.input}
+          />
+        )}
         {result.chart.adult && topic !== 'admission' && (
           <aside className="reading-invitation">
             <p>한 주 동안 이어갈 실천을 골라보세요.</p>
@@ -308,7 +336,10 @@ export function PersonalReading({
               </div>
               <p className="birth-info small-muted" id="birth-info">
                 <ShieldCheck size={16} aria-hidden />
-                <span>만세력은 이 기기에서 계산해요. 시각을 모르면 비워두세요.</span>
+                <span>
+                  생년월일로 태어난 해·달·날의 기둥을 이 기기에서 계산해요. 시각을 적으면 네 번째 기둥도 읽을
+                  수 있어요.
+                </span>
               </p>
             </div>
             <div className="reading-field reading-experience">

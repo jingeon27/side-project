@@ -48,6 +48,7 @@ describe('reading provider', () => {
     expect(results[0]).toMatchObject({
       mode: 'ai',
       action: '다음 지원에 이어 쓸 경험 찾기',
+      example: expect.any(String),
       sources: [{ id: 'metal' }, { id: 'silence-next' }],
     });
     expect(results[0].interpretation).toContain('누구를 도왔는지 한 줄로 적어 보세요.');

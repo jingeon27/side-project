@@ -103,6 +103,7 @@ async function generate(
     mode: 'ai',
     interpretation: `사주에서 ${element.label}의 비유는 ${element.focus}을 떠올리게 해요. ${selected.advice}`,
     action: selected.title,
+    example: selected.example,
     sources: [classical, selected].map(({ id, title }) => ({ id, title })),
   };
 }
