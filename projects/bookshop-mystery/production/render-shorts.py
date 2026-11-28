@@ -10,6 +10,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
+from music_roll_audio import exhibit_recording
 from story_studio.media import ffmpeg
 from story_studio.shorts.audio import make_mix, voice_take, RATE
 from story_studio.shorts.render import capture_frames, render_cut, stamp, wrap
@@ -164,6 +165,27 @@ def reuse_tracks(episode, original, destination):
     return cuts, edit["music"], sections, takes
 
 
+def play_music_roll_recording(destination, scratch, first_captions, voice_lead):
+    """Reproduce the exhibit recording before the narrator enters."""
+    import soundfile as sf
+
+    recording, cues = exhibit_recording()
+    if len(recording) > round(voice_lead * RATE):
+        raise ValueError("종소리의 끝과 내레이션이 겹칩니다.")
+    voice, _ = sf.read(destination / "narration.wav")
+    bed, _ = sf.read(destination / "music.wav")
+    bed[:round(voice_lead * RATE)] = 0
+    bed[:len(recording)] = recording
+    first_captions[:0] = [
+        (round(start * FPS), round(end * FPS), f"[종소리 · {second}초]") for second, start, end in cues
+    ]
+    sf.write(destination / "music.wav", bed, RATE, subtype="PCM_16")
+    premaster = scratch / "closing-bell.wav"
+    sf.write(premaster, voice + bed, RATE, subtype="PCM_24")
+    ffmpeg("-i", premaster, "-af", "loudnorm=I=-16:TP=-1.7:LRA=9", "-ar", RATE,
+           "-c:a", "pcm_s16le", destination / "mix.wav")
+
+
 def make_short(episode, data, captures, renderer, speaker, output, original=None, printer_handoff=None):
     cache = ROOT / ".work/voice"
     cache.mkdir(parents=True, exist_ok=True)
@@ -227,6 +249,8 @@ def make_short(episode, data, captures, renderer, speaker, output, original=None
         }
         if original is None:
             cuts, cues, captions = make_mix(musical, source, destination, scratch, data, cache)
+            if shots[0].get("musicRollPlayback"):
+                play_music_roll_recording(destination, scratch, captions[0], shots[0]["voiceLead"])
         else:
             cuts, cues, captions, takes = reuse_tracks(episode, original, destination)
         if any(reveal_points):
