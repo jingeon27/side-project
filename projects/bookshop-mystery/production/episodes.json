@@ -310,5 +310,166 @@
         "caption": "그사이 이동 기록은 19분 하나.\n그때 표찰이 치워졌어요."
       }
     ]
+  },
+  {
+    "slug": "08-music-roll-opening",
+    "casePath": "/cases/music-roll/",
+    "title": "오르골이 여섯 초 동안 남긴 네 번의 소리",
+    "cover": "여섯 초 동안\n네 번 울렸다",
+    "coverImage": "music-roll-cover.webp",
+    "description": "전시실이 문을 닫는 날, 마지막 오르골 소리가 녹음됐어요. 첫 소리부터 마지막 소리까지 딱 6초. 어느 종이띠의 어느 쪽 끝을 먼저 넣었을까요?\n\n위 주소에서 녹음과 세 종이띠를 비교할 수 있어요.",
+    "comment": "네 번 중 어느 소리 앞에서 가장 오래 기다렸나요? 들린 간격을 남겨 주세요.",
+    "shots": [
+      {
+        "seconds": 10,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-record.webp",
+        "heading": "마지막 녹음",
+        "voice": "이게 마지막 녹음이에요.",
+        "caption": "이게 마지막 녹음이에요.",
+        "voiceLead": 7.05,
+        "musicRollPlayback": true
+      },
+      {
+        "seconds": 6,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "heading": "남은 건 종이띠 세 장",
+        "voice": "새 전시장으로 갈 상자에 종이띠 세 장이 섞여 있었어요.",
+        "caption": "새 전시장으로 갈 상자에\n종이띠 세 장이 섞여 있었어요.",
+        "crop": [0.12, 0.08, 0.9, 0.96]
+      },
+      {
+        "seconds": 7,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-rolls.webp",
+        "heading": "네 번 울리는 띠가 셋",
+        "voice": "어느 띠를 넣어도 네 번 울려요. 그런데 기다리는 시간이 달라요.",
+        "caption": "어느 띠를 넣어도 네 번 울려요.\n그런데 기다리는 시간이 달라요."
+      },
+      {
+        "seconds": 7,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-guide.webp",
+        "heading": "어느 끝을 먼저 넣었을까?",
+        "voice": "어떤 띠를 어느 쪽부터 넣었을까요? 녹음에 맞춰 보세요.",
+        "caption": "어떤 띠를 어느 쪽부터 넣었을까요?\n녹음에 맞춰 보세요.",
+        "callout": {
+          "text": "dawn.bambyul.com",
+          "includeCasePath": true,
+          "from": 0.22
+        }
+      }
+    ]
+  },
+  {
+    "slug": "09-music-roll-evidence",
+    "casePath": "/cases/music-roll/",
+    "title": "오르골 종이띠를 반대쪽부터 넣으면?",
+    "cover": "같은 구멍 넷\n다른 리듬 둘",
+    "coverImage": "music-roll-cover.webp",
+    "description": "전시실 오르골은 종이띠를 1초에 한 칸씩 읽습니다. A띠를 양쪽에서 한 번씩 읽고, 긴 쉼이 어디로 옮겨가는지 보세요.\n\n위 주소에서 세 종이띠를 직접 뒤집어 볼 수 있어요.",
+    "comment": "A띠의 긴 쉼은 어느 끝부터 읽어야 먼저 나오나요? 나머지 두 띠의 정답은 다음 사람에게 남겨 주세요.",
+    "shots": [
+      {
+        "seconds": 6,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-guide.webp",
+        "heading": "종이띠를 뒤집으면?",
+        "voice": "같은 띠를 거꾸로 넣으면, 소리도 달라질까요?",
+        "caption": "같은 띠를 거꾸로 넣으면\n소리도 달라질까요?"
+      },
+      {
+        "seconds": 7,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-rolls.webp",
+        "heading": "A띠를 왼쪽부터",
+        "voice": "한 칸에 일 초. 에이 띠를 왼쪽부터 읽으면 한 칸, 두 칸, 세 칸이에요.",
+        "caption": "한 칸에 1초. A띠를 왼쪽부터 읽으면\n한 칸, 두 칸, 세 칸이에요."
+      },
+      {
+        "seconds": 8,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-rolls.webp",
+        "heading": "이번엔 오른쪽부터",
+        "voice": "반대쪽부터 넣으면 가장 긴 쉼이 맨 앞으로 와요. 구멍은 그대로인데요.",
+        "caption": "반대쪽부터 넣으면 가장 긴 쉼이 맨 앞으로 와요.\n구멍은 그대로인데요."
+      },
+      {
+        "seconds": 9,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-record.webp",
+        "heading": "녹음에서 가장 긴 쉼은?",
+        "voice": "마지막 녹음에선 가장 긴 쉼이 어디에 있죠? 세 띠를 직접 뒤집어 보세요.",
+        "caption": "마지막 녹음에선 가장 긴 쉼이 어디에 있죠?\n세 띠를 직접 뒤집어 보세요.",
+        "callout": {
+          "text": "dawn.bambyul.com",
+          "includeCasePath": true,
+          "from": 0.22
+        }
+      }
+    ]
+  },
+  {
+    "slug": "10-music-roll-explained",
+    "casePath": "/cases/music-roll/",
+    "title": "해설 | 마지막 오르골 소리는 어느 띠에서 났을까?",
+    "cover": "마지막 녹음을\n다시 들으면",
+    "coverImage": "music-roll-cover.webp",
+    "spoiler": true,
+    "description": "마지막으로 울린 오르골 사건의 해설입니다. 직접 추리하려면 위 주소에서 녹음과 종이띠를 먼저 조사하세요.",
+    "comment": "어떤 쉼에서 답을 찾았나요? 아직 조사 중인 분을 위해 댓글에는 결정적 단서만 남겨 주세요.",
+    "shots": [
+      {
+        "seconds": 10,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-record.webp",
+        "heading": "마지막 녹음",
+        "voice": "간격은 일 초, 삼 초, 이 초.",
+        "caption": "간격은 1초, 3초, 2초.",
+        "voiceLead": 7.05,
+        "musicRollPlayback": true
+      },
+      {
+        "seconds": 6,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-rolls.webp",
+        "heading": "세 칸이 가운데",
+        "voice": "가장 긴 쉼이 가운데죠. 가운데가 세 칸인 건 비 띠 하나예요.",
+        "caption": "가장 긴 쉼이 가운데죠.\n가운데가 세 칸인 건 B띠 하나예요."
+      },
+      {
+        "seconds": 7,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-rolls.webp",
+        "heading": "짧은 쉼이 먼저였다",
+        "voice": "비 띠의 왼쪽 끝에선 두 칸, 오른쪽 끝에선 한 칸 만에 다시 울려요.",
+        "caption": "B띠의 왼쪽 끝에선 두 칸,\n오른쪽 끝에선 한 칸 만에 다시 울려요."
+      },
+      {
+        "seconds": 7,
+        "image": "music-roll",
+        "art": "music-roll-cover.webp",
+        "evidence": "music-roll-guide.webp",
+        "heading": "B띠, 오른쪽 끝부터",
+        "voice": "처음 쉼은 일 초였죠. 비 띠를 오른쪽부터 넣은 소리였어요.",
+        "caption": "처음 쉼은 1초였죠.\nB띠를 오른쪽부터 넣은 소리였어요.",
+        "callout": {
+          "text": "dawn.bambyul.com",
+          "includeCasePath": true,
+          "from": 0.22
+        }
+      }
+    ]
   }
 ]

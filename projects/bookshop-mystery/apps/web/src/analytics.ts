@@ -7,17 +7,18 @@ import {
   type TRecordDocument,
   type TRenderer,
 } from './case-file';
+import { MUSIC_ROLL_ID, type TMusicClue, type TRollDirection } from './music-roll/music-roll';
 import { RETURNED_KEY_ID, type TReturnedKeyClue, type TReturnedKeyStep } from './returned-key/returned-key';
-import { WET_MAP_ID, type TWetMapClue, type TWetMapStep } from './wet-map/wet-map';
+import { WET_MAP_ID, type TWetMapClue } from './wet-map/wet-map';
 
 export type TCaseEntryPoint = 'start' | 'primary' | 'previous' | 'timeline' | 'history' | 'resume' | 'replay';
 export type TRecordEntryPoint = 'step' | 'document' | 'primary';
 export type TPrinterFlipEntryPoint = 'primary' | 'toolbar';
 
 type TSource = 'youtube_shorts' | 'shared' | 'community' | 'direct';
-type TCaseId = typeof CASE_ID | typeof RETURNED_KEY_ID | typeof WET_MAP_ID;
-type TObservedStep = TCaseStep | TReturnedKeyStep | TWetMapStep;
-type TObservedClue = TEvidence | TReturnedKeyClue | TWetMapClue;
+export type TCaseId = typeof CASE_ID | typeof RETURNED_KEY_ID | typeof WET_MAP_ID | typeof MUSIC_ROLL_ID;
+type TObservedStep = TCaseStep | TReturnedKeyStep | TObservedClue;
+type TObservedClue = TEvidence | TReturnedKeyClue | TWetMapClue | TMusicClue;
 
 interface ICaseEvents {
   case_catalog_viewed: { source: TSource };
@@ -36,6 +37,8 @@ interface ICaseEvents {
     first_view: boolean;
     entry_point: TPrinterFlipEntryPoint;
   };
+  case_recording_played: Record<never, never>;
+  case_roll_direction_selected: { direction: TRollDirection };
   case_record_viewed: { document_id: TRecordDocument; entry_point: TRecordEntryPoint; first_view: boolean };
   case_notebook_opened: { from_step: TCaseStep; item_count: number };
   case_notebook_item_opened: { item_id: 'receipt' | 'printers' | TRecordDocument };

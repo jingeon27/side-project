@@ -1,12 +1,3 @@
-.case-frame.wet-map-tools {
-  max-width: 35rem;
-  padding-block: calc(5px + var(--safe-top)) 3px;
-}
-
-.case-frame.wet-map-workspace {
-  max-width: 38rem;
-}
-
 .wet-map-evidence h1 {
   margin: 0 0 0.7rem;
   font-size: clamp(1.2rem, 4.1vw, 1.65rem);
