@@ -1,9 +1,41 @@
 import { expect, test } from '@playwright/test';
 
+import { findEpisode } from '../src/shared/episodes';
 import { signInFixture } from './account-fixture';
 
 const episodePath = '/cards/baek-beonjjae-jiwonseo';
 const action = '친구와 자기소개서 첫 줄을 서로 읽어주기';
+
+test('the postcard renders its original message before scripts arrive and preserves the first edit', async ({
+  page,
+  context,
+}) => {
+  const episode = findEpisode('baek-beonjjae-jiwonseo');
+  if (!episode) throw new Error('Expected published postcard');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const hydration = Promise.withResolvers<void>();
+  await page.route(
+    (url) => url.pathname.startsWith('/_next/static/') && url.pathname.endsWith('.js'),
+    async (route) => {
+      await hydration.promise;
+      await route.continue();
+    },
+  );
+  await page.goto(episodePath, { waitUntil: 'commit' });
+  const editor = page.getByLabel('내 말투로 바꿔 보내기');
+  try {
+    await expect(editor).toHaveValue(episode.message);
+    await expect(editor).not.toBeEditable();
+  } finally {
+    hydration.resolve();
+  }
+  await expect(editor).toBeEditable();
+  const firstEdit = '첫 줄부터 천천히 같이 읽어볼까?';
+  await editor.fill(firstEdit);
+  await page.getByRole('button', { name: '문장 복사' }).click();
+  await expect(page.getByText('복사했어요. 원하는 곳에 붙여 넣으세요.')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(firstEdit);
+});
 
 test('a Shorts visitor can open the published card, save one action and choose what to share', async ({
   page,
