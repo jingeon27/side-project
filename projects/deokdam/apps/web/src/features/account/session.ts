@@ -1,19 +1,23 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
-import { withAccounts } from './store';
+import { loopbackOrigin } from './local-login';
+import type { TAccountProvider } from './navigation';
+import { sessionSeconds, withAccounts } from './store';
 
 export const sessionCookie = 'deokdam.session';
 export const flowCookie = 'deokdam.login-flow';
-export const privateHeaders = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' };
+export const privateHeaders = {
+  'Cache-Control': 'private, no-store',
+  'Referrer-Policy': 'no-referrer',
+  'X-Robots-Tag': 'noindex, noarchive',
+};
 
 export function appOrigin(request: Request) {
+  const local = process.env.NODE_ENV === 'development' && loopbackOrigin(request.headers);
+  if (local) return local;
   const configured = process.env.DEOKDAM_PUBLIC_ORIGIN?.trim();
   if (configured) return new URL(configured).origin;
-  const host = request.headers.get('host');
-  if (process.env.NODE_ENV !== 'production' && host && /^(localhost|127\.0\.0\.1):3460$/.test(host)) {
-    return 'http://' + host;
-  }
   return 'https://deokdam.bambyul.com';
 }
 
@@ -33,3 +37,23 @@ export const cookieOptions = (origin: string, maxAge: number) => ({
   sameSite: 'lax' as const,
   maxAge,
 });
+
+export function signedInResponse(
+  request: NextRequest,
+  origin: string,
+  next: string,
+  provider: TAccountProvider,
+  subject: string,
+) {
+  const previous = request.cookies.get(sessionCookie)?.value;
+  const account = withAccounts((store) => {
+    const issued = store.signIn(provider, subject);
+    if (previous) store.signOut(previous);
+    return issued;
+  });
+  const response = NextResponse.redirect(new URL(next, origin), { status: 303, headers: privateHeaders });
+  response.cookies.set(sessionCookie, account.session, cookieOptions(origin, sessionSeconds));
+  response.cookies.set(flowCookie, '', cookieOptions(origin, 0));
+  response.cookies.set('deokdam.login-result', provider, { ...cookieOptions(origin, 60), httpOnly: false });
+  return response;
+}

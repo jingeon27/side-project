@@ -5,14 +5,18 @@ import { topicSchema } from '@/shared/topics';
 
 export const providerSchema = z.enum(['google', 'kakao']);
 export type TProvider = z.infer<typeof providerSchema>;
-export const providerNames = { google: 'Google', kakao: '카카오' } satisfies Record<TProvider, string>;
+export const accountProviderSchema = z.enum([...providerSchema.options, 'local']);
+export type TAccountProvider = z.infer<typeof accountProviderSchema>;
+export const providerNames = { google: 'Google', kakao: '카카오', local: '로컬 테스트' } satisfies Record<
+  TAccountProvider,
+  string
+>;
 
 export function returnPath(value: unknown): string {
   if (typeof value !== 'string' || !value.startsWith('/') || /[\\\s#]/.test(value)) return '/journal';
   const base = 'https://deokdam.bambyul.com';
   const url = URL.parse(value, base);
   if (!url || url.origin !== base) return '/journal';
-  if (url.pathname === '/journal' && url.searchParams.get('draft') === '1') return '/journal?draft=1';
   if (url.pathname === '/shop/orders') {
     const id = url.searchParams.get('paymentId');
     return id && /^dw-[a-f\d]{32}$/.test(id) ? '/shop/orders?paymentId=' + id : '/shop/orders';

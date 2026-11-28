@@ -8,9 +8,9 @@ import {
   flowCookie,
   privateHeaders,
   privateJson,
-  sessionCookie,
+  signedInResponse,
 } from '@/features/account/session';
-import { sessionSeconds, withAccounts } from '@/features/account/store';
+import { withAccounts } from '@/features/account/store';
 
 export async function GET(request: NextRequest, { params }: RouteContext<'/api/auth/[provider]/callback'>) {
   const provider = providerSchema.safeParse((await params).provider);
@@ -40,20 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteContext<'/api/a
       code,
       flow,
     );
-    const oldSession = request.cookies.get(sessionCookie)?.value;
-    const account = withAccounts((store) => {
-      const account = store.signIn(provider.data, subject);
-      if (oldSession) store.signOut(oldSession);
-      return account;
-    });
-    const response = redirect(flow.next);
-    response.cookies.set(sessionCookie, account.session, cookieOptions(origin, sessionSeconds));
-    response.cookies.set(flowCookie, '', cookieOptions(origin, 0));
-    response.cookies.set('deokdam.login-result', provider.data, {
-      ...cookieOptions(origin, 60),
-      httpOnly: false,
-    });
-    return response;
+    return signedInResponse(request, origin, flow.next, provider.data, subject);
   } catch {
     return failed('failed');
   }

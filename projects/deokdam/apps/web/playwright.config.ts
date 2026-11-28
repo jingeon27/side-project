@@ -16,6 +16,7 @@ export default defineConfig({
     env: {
       DEOKDAM_ACCOUNT_DB: fileURLToPath(new URL('./.data/e2e-accounts.sqlite', import.meta.url)),
       DEOKDAM_PUBLIC_ORIGIN: baseURL,
+      DEOKDAM_LOCAL_LOGIN: '1',
       DEOKDAM_GOOGLE_CLIENT_ID: 'deokdam-google-test',
       DEOKDAM_GOOGLE_CLIENT_SECRET: 'test-only',
       DEOKDAM_KAKAO_CLIENT_ID: 'deokdam-kakao-test',

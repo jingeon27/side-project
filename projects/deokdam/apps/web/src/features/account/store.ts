@@ -5,9 +5,10 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { z } from 'zod';
 
+import { activitySchema, type TActivity } from '@/features/journal/activity';
 import { recordSchema, type TDeokRecord } from '@/features/journal/contract';
 
-import { providerSchema, type TProvider } from './navigation';
+import { accountProviderSchema, type TAccountProvider, type TProvider } from './navigation';
 
 export const sessionSeconds = 30 * 24 * 60 * 60;
 export const flowSeconds = 600;
@@ -27,6 +28,10 @@ const initialize = `
   CREATE TABLE IF NOT EXISTS login_flows (
     state TEXT PRIMARY KEY, binding TEXT NOT NULL, provider TEXT NOT NULL, next TEXT NOT NULL,
     verifier TEXT NOT NULL, nonce TEXT NOT NULL, expires INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS history (
+    owner TEXT NOT NULL REFERENCES accounts(id), id TEXT NOT NULL, created TEXT NOT NULL,
+    entry TEXT NOT NULL, PRIMARY KEY(owner,id)
   );
   CREATE TABLE IF NOT EXISTS journal (
     owner TEXT NOT NULL REFERENCES accounts(id), date TEXT NOT NULL, topic TEXT NOT NULL,
@@ -65,7 +70,7 @@ export class AccountStore {
     return row ? flowSchema.parse(row) : undefined;
   }
 
-  signIn(provider: TProvider, subject: string) {
+  signIn(provider: TAccountProvider, subject: string) {
     const row = this.db
       .prepare(
         'INSERT INTO accounts VALUES (?,?,?) ON CONFLICT(provider,subject) DO UPDATE SET subject=excluded.subject RETURNING id',
@@ -86,7 +91,7 @@ export class AccountStore {
         'SELECT a.id, a.provider FROM accounts a JOIN sessions s ON a.id=s.owner WHERE s.hash=? AND s.expires > unixepoch()',
       )
       .get(digest(session));
-    return row ? z.object({ id: z.uuid(), provider: providerSchema }).parse(row) : null;
+    return row ? z.object({ id: z.uuid(), provider: accountProviderSchema }).parse(row) : null;
   }
 
   signOut(session: string) {
@@ -113,6 +118,43 @@ export class AccountStore {
         )
         .run(owner, record.date, record.topic, record.action, record.note).changes,
     );
+  }
+
+  activities(owner: string) {
+    return this.db
+      .prepare('SELECT entry FROM history WHERE owner=? ORDER BY created DESC, id DESC')
+      .all(owner)
+      .map((row) => activitySchema.parse(JSON.parse(z.string().parse(row.entry))));
+  }
+
+  addActivity(owner: string, entry: TActivity) {
+    const page = entry.page;
+    if (page.kind === 'practice') {
+      const saved = this.save(owner, {
+        date: entry.date,
+        topic: page.topic,
+        action: page.action,
+        note: page.note,
+      });
+      if (saved) return true;
+      const existing = this.db
+        .prepare('SELECT action,note,topic FROM journal WHERE owner=? AND date=?')
+        .get(owner, entry.date);
+      if (existing?.action === page.action && existing.note === page.note && existing.topic === page.topic)
+        return false;
+      // Two devices can have distinct guest entries for the same day. Keep the second as a history item.
+    }
+    return Boolean(
+      this.db
+        .prepare(
+          'INSERT INTO history(owner,id,created,entry) VALUES(?,?,?,?) ON CONFLICT(owner,id) DO NOTHING',
+        )
+        .run(owner, entry.id, entry.createdAt, JSON.stringify(entry)).changes,
+    );
+  }
+
+  removeActivity(owner: string, id: string) {
+    this.db.prepare('DELETE FROM history WHERE owner=? AND id=?').run(owner, id);
   }
 
   remove(owner: string, date: string) {

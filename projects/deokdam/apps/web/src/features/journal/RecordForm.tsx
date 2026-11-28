@@ -2,19 +2,19 @@
 
 import Link from 'next/link';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@side/design-system/ui/button';
 import { toast } from '@side/design-system/ui/sonner';
 
-import { loginPath } from '@/features/account/navigation';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
 import type { TTopic } from '@/shared/topics';
 
-import { changeRecord, journalQuery, keepDraft, todayQuery } from './records';
+import { saveActivity } from './device-history';
+import { journalQuery, todayQuery } from './records';
 
 interface IRecordFormProps {
   action: string;
@@ -29,46 +29,53 @@ export function RecordForm({ action, alternative, topic, episode }: IRecordFormP
   const today = journal.data?.today;
   const surface = episode ? 'episode' : 'reading';
 
-  const handleSave = form.handleSubmit(async (values) => {
-    const other = values.choice === 'alternative';
-    const input = { topic, action: other ? alternative : action, note: values.note.trim() };
-    track(event.RecordSaveClicked, { surface, topic });
-    const login = () => {
-      keepDraft({ ...input, alternative: other, episode });
-      window.location.assign(loginPath('/journal?draft=1'));
-    };
-    try {
-      if (journal.isError) {
-        toast.error('기록장을 불러오지 못했어요. 연결을 확인해 주세요.');
-        return;
-      }
-      if (!journal.data) {
-        login();
-        return;
-      }
-      const saved = await changeRecord(journal.data.account, 'POST', input);
-      if (saved.created) track(event.DeokSaved, { topic, alternative: other, episode, surface });
-      if (saved.created) toast.success('기록장에 저장했어요.');
-      if (!saved.created) toast.info('오늘은 이미 덕을 남겼어요.');
-      await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
-    } catch (error) {
-      if (error instanceof Error && error.message === 'account_changed') {
-        await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
-        toast.error('계정이 바뀌었어요. 초안을 확인하고 다시 저장해 주세요.');
-        return;
-      }
-      toast.error('기록을 남기지 못했어요. 작성한 내용을 확인하고 다시 눌러 주세요.');
-    }
+  const save = useMutation({
+    mutationFn: (input: { choice: string; note: string }) =>
+      saveActivity(
+        {
+          kind: 'practice',
+          topic,
+          action: input.choice === 'alternative' ? alternative : action,
+          note: input.note.trim(),
+        },
+        journal.data?.account,
+      ),
+    onSuccess: async (saved, input) => {
+      if (saved.created)
+        track(event.DeokSaved, {
+          topic,
+          alternative: input.choice === 'alternative',
+          episode,
+          surface,
+          location: saved.location,
+        });
+      if (!saved.created) toast.info('이미 남긴 기록이에요.');
+      if (saved.location === 'account') await cache.invalidateQueries({ queryKey: journalQuery.queryKey });
+    },
+    onError: () => toast.error('저장하지 못했어요. 작성한 내용은 그대로 두었어요.'),
   });
-  if (today)
+  const handleSave = form.handleSubmit(async (values) => {
+    track(event.RecordSaveClicked, { surface, topic });
+    await save.mutateAsync(values).catch(() => undefined);
+  });
+  if (today || save.isSuccess)
     return (
       <section className="record-success" aria-label="오늘 기록">
         <CheckCircle2 aria-hidden />
         <div>
           <strong>오늘의 덕을 남겼어요</strong>
-          <p>{today.action}</p>
+          <p>
+            {today?.action ??
+              (save.data?.location === 'device'
+                ? '이 기기에 보관했어요. 로그인하면 내 기록장에서 이어볼 수 있어요.'
+                : '내 기록장에서 다시 볼 수 있어요.')}
+          </p>
         </div>
-        <Link href="/journal" className="plain-link">
+        <Link
+          href="/journal"
+          className="plain-link"
+          onClick={() => track(event.HistoryOpenClicked, { surface })}
+        >
           기록장 보기
         </Link>
       </section>
@@ -96,15 +103,9 @@ export function RecordForm({ action, alternative, topic, episode }: IRecordFormP
         placeholder="해보고 어땠나요?"
         {...form.register('note')}
       />
-      {journal.isError ? (
-        <Button type="button" variant="secondary" onClick={() => journal.refetch()}>
-          기록장 다시 불러오기
-        </Button>
-      ) : (
-        <Button type="submit" disabled={journal.isPending} loading={form.formState.isSubmitting}>
-          {journal.data ? '오늘 해봤어요' : '로그인하고 기록 남기기'}
-        </Button>
-      )}
+      <Button type="submit" loading={form.formState.isSubmitting}>
+        오늘 해봤어요
+      </Button>
     </form>
   );
 }

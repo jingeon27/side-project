@@ -9,8 +9,11 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 
 import { Button } from '@side/design-system/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system/ui/select';
+import { toast } from '@side/design-system/ui/sonner';
 
 import { RewardedReading } from '@/features/ads/RewardedReading';
+import type { TActivityPage } from '@/features/journal/activity';
+import { saveActivity } from '@/features/journal/device-history';
 import { RecordForm } from '@/features/journal/RecordForm';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
@@ -71,6 +74,13 @@ export function PersonalReading({
   const calendar = useWatch({ control: form.control, name: 'calendar' });
   const error = form.formState.errors.root?.message;
 
+  const archive = useMutation({
+    mutationFn: (page: Extract<TActivityPage, { kind: 'reading' }>) => saveActivity(page),
+    onSuccess: (result) => {
+      if (result.created) track(event.HistorySaved, { kind: 'reading', location: result.location });
+    },
+    onError: () => toast.error('풀이를 기록에 담지 못했어요. 아래에서 다시 저장할 수 있어요.'),
+  });
   const readingRequest = useMutation({
     mutationFn: async ({
       values,
@@ -107,6 +117,14 @@ export function PersonalReading({
           adult: chart.adult,
           grounded: Boolean(reading.sources?.length),
           withExperience: Boolean(experience),
+        });
+        const practice = practiceFor(input);
+        archive.mutate({
+          kind: 'reading',
+          topic,
+          concern: input.concern,
+          element: input.element,
+          reading: { ...reading, action: reading.action ?? practice.action },
         });
         return { birth: birth.data, chart, input, reading };
       } catch (reason) {
@@ -152,6 +170,14 @@ export function PersonalReading({
             {topics[topic].concerns.find((item) => item.id === result.input.concern)?.label}
           </p>
           <p>{result.reading.interpretation}</p>
+          {archive.isError && archive.variables && (
+            <Button
+              variant="secondary"
+              onClick={() => archive.variables && archive.mutate(archive.variables)}
+            >
+              이 풀이 다시 저장
+            </Button>
+          )}
           {result.reading.example && (
             <div className="reading-example">
               <h3>이렇게 해보세요</h3>
@@ -165,6 +191,23 @@ export function PersonalReading({
             </p>
           )}
         </section>
+        {archive.isPending && (
+          <p className="small-muted" role="status">
+            이 풀이를 보관하고 있어요.
+          </p>
+        )}
+        {archive.isSuccess && (
+          <p className="small-muted reading-archive-link">
+            {archive.data.location === 'device' && '이 기기에 보관했어요. '}
+            <Link
+              className="plain-link"
+              href="/journal"
+              onClick={() => track(event.HistoryOpenClicked, { surface: 'reading' })}
+            >
+              기록장에서 다시 보기
+            </Link>
+          </p>
+        )}
         <section className="reading-action" aria-labelledby="reading-action-title">
           <header className="reading-action-heading">
             <div className="label">

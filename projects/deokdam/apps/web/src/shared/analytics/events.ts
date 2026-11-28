@@ -7,6 +7,10 @@ export const event = {
   SignOutClicked: 'signout_clicked',
   RecordSaveClicked: 'record_save_clicked',
   JournalImportClicked: 'journal_import_clicked',
+  MessageCreateClicked: 'message_create_clicked',
+  HistoryOpenClicked: 'history_open_clicked',
+  ArchivedReadingOpened: 'archived_reading_opened',
+  HistorySaved: 'history_saved',
   JournalImported: 'journal_imported',
   StartClicked: 'landing_start_clicked',
   StoriesLinkClicked: 'stories_link_clicked',
@@ -48,6 +52,10 @@ export interface IEventProperties {
   signout_clicked: { provider: TProvider };
   record_save_clicked: { surface: 'episode' | 'reading'; topic: TTopic };
   journal_import_clicked: Record<string, never>;
+  message_create_clicked: { episode: string; topic: TTopic };
+  history_open_clicked: { surface: 'reading' | 'episode' };
+  archived_reading_opened: { topic: TTopic; mode: 'basic' | 'ai' };
+  history_saved: { kind: 'message' | 'reading'; location: 'account' | 'device' };
   journal_imported: { count: number };
   landing_start_clicked: { surface: 'hero' | 'topics' | 'episode'; topic?: TTopic };
   stories_link_clicked: { surface: 'home' | 'header' };
@@ -67,7 +75,13 @@ export interface IEventProperties {
     withExperience: boolean;
   };
   reading_basis_opened: { topic: TTopic; mode: 'basic' | 'ai' };
-  deok_saved: { topic: TTopic; surface: 'episode' | 'reading'; episode?: string; alternative: boolean };
+  deok_saved: {
+    topic: TTopic;
+    surface: 'episode' | 'reading';
+    episode?: string;
+    alternative: boolean;
+    location?: 'account' | 'device';
+  };
   journal_opened: Record<string, never>;
   journal_shared: { method: 'copy' | 'share' };
   rewarded_ad_clicked: { topic: TTopic };

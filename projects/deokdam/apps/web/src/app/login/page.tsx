@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { LoginButtons } from '@/features/account/AccountActions';
+import { localLoginEnabled, localTestAccounts } from '@/features/account/local-login';
 import { providerSchema, returnPath } from '@/features/account/navigation';
 import { oauthConfig } from '@/features/account/oauth';
 import { currentAccount } from '@/features/account/session';
@@ -28,7 +30,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
         <p>
           {shop
             ? '로그인하면 결제한 풀이를 다른 기기에서도 다시 읽을 수 있어요.'
-            : '오늘 남긴 한 줄을 모아두고, 다른 기기에서도 이어보세요.'}
+            : '내가 만든 덕담, 받은 풀이, 해본 일을 다른 기기에서도 이어보세요.'}
         </p>
         {typeof params.error === 'string' && messages[params.error] && (
           <p className="error-text" role="alert">
@@ -36,10 +38,28 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
           </p>
         )}
         <LoginButtons next={next} enabled={providerSchema.options.filter((p) => Boolean(oauthConfig(p)))} />
-        <p className="small-muted">기기마다 처음 고른 로그인 방법을 사용해 주세요.</p>
+        <p className="small-muted">
+          이 브라우저에서 로그인 전에 남긴 기록은 지금 선택한 계정에 담겨요. 다른 기기에서도 같은 로그인
+          방법을 골라주세요.
+        </p>
         <Link className="plain-link" href="/privacy">
           개인정보 안내
         </Link>
+        {localLoginEnabled(await headers()) && (
+          <section className="local-login-panel" aria-label="로컬 테스트 로그인">
+            <h2>로컬 테스트 로그인</h2>
+            <div>
+              {localTestAccounts.map((key) => (
+                <form key={key} action="/api/auth/local-login" method="post">
+                  <input type="hidden" name="next" value={next} />
+                  <button type="submit" name="account" value={key}>
+                    테스트 계정 {key}로 로그인
+                  </button>
+                </form>
+              ))}
+            </div>
+          </section>
+        )}
       </section>
     </main>
   );

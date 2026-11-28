@@ -1327,3 +1327,64 @@ legend {
 .chart-note {
   margin-top: 18px;
 }
+.local-login-panel {
+  margin-top: 24px;
+  border-top: 1px dashed var(--line);
+  padding-top: 16px;
+}
+.local-login-panel h2 {
+  margin: 0 0 10px;
+  color: var(--soft-ink);
+  font-size: 0.84rem;
+}
+.local-login-panel > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.local-login-panel button {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 10px;
+  background: #fffdf7;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.archive-entry {
+  min-width: 0;
+  flex: 1;
+}
+.archive-entry > time {
+  display: block;
+  margin-bottom: 7px;
+}
+.history-list .archive-message {
+  font:
+    600 1.1rem/1.7 'Gowun Batang Display',
+    serif;
+  color: var(--ink);
+  white-space: pre-line;
+}
+.archive-source {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: 0.85rem;
+}
+.archive-reading summary {
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.archive-reading > div {
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+.archive-reading p + p {
+  margin-top: 10px;
+}
+
+.reading-archive-link {
+  margin-block: 8px 18px;
+}

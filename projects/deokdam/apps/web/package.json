@@ -23,6 +23,7 @@
     "@side/design-system": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "dayjs": "catalog:",
+    "idb": "8.0.3",
     "jose": "6.2.18",
     "korean-lunar-calendar": "0.4.0",
     "lucide-react": "catalog:",

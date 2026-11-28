@@ -8,7 +8,7 @@
 yarn workspace @side/deokdam dev
 ```
 
-로컬 주소는 http://127.0.0.1:3460 이다. 홈에서 취업 준비, 자녀 응원, 대입 준비를 고를 수 있다. 쇼츠의 카드 경로는 `/cards/<회차 슬러그>`, 기록은 `/journal`, 7일 상품은 `/shop`이다. 기록과 메모는 로그인 계정의 SQLite에, 당일 풀이 캐시는 브라우저에 보관한다. 공개 이야기 목록은 `/stories`다.
+로컬 주소는 http://127.0.0.1:3460 이다. 홈에서 취업 준비, 자녀 응원, 대입 준비를 고를 수 있다. 쇼츠의 카드 경로는 `/cards/<회차 슬러그>`, 기록은 `/journal`, 7일 상품은 `/shop`이다. 로그인 전 만든 덕담·받은 풀이·실천은 브라우저에 보관하고 로그인하면 선택한 계정의 기록장으로 옮긴다. 공개 이야기 목록은 `/stories`다.
 
 한국 음력은 `korean-lunar-calendar`로 양력에 대응시키고, 만세력은 `lunar-typescript`로 계산한다. 절기를 따지는 년주와 월주는 서울 현지 시각으로 비교한다. 출생 시각을 입력하지 않으면 시주를 미상으로 표시하고 절기 경계에 걸리는 년주나 월주도 미상으로 표시한다. 달력 입력은 한국 표준시(UTC+9)를 기준으로 해석한다. [한국천문연구원 월력 자료](https://astro.kasi.re.kr/kor/life/post/calendarData?year=2024)
 
@@ -57,7 +57,7 @@ yarn workspace @deokdam/web reading:embed
 
 [덕담집 쇼츠 제작 스킬](.agents/skills/deokdam-shorts/SKILL.md)이 4개 회차의 카드, 움직이는 컷과 편집표를 연결한다. 채널 프로필에는 회차 이름과 `/cards/<회차 슬러그>?utm_source=youtube`가 붙은 공개 주소를 등록한다. 휴대폰에서 해당 카드가 열리는지 검수한다. 출시는 순서대로 〈백 번째 지원서〉, 〈엄마가 지운 카톡〉, 〈축하한다는 한 줄〉, 〈성적표가 뜨는 날〉을 쓴다. [쇼츠 링크 안내](https://support.google.com/youtube/answer/13748639?hl=ko)
 
-[덕담집 사주극장](https://www.youtube.com/@deokdam-saju)의 [공개 쇼츠 재생목록](https://www.youtube.com/playlist?list=PLdR732KbVakE)을 홈에 연결했다. YouTube Studio에서 같은 목록에 쇼츠를 추가하면 웹 플레이어에도 나타난다. 다른 목록을 사용하려면 실행 환경의 `DEOKDAM_SHORTS_PLAYLIST_ID`를 지정한다. 개별 카드에 그 회차만 연결하려면 [회차 목록](apps/web/src/shared/episodes.json)에 `youtubeVideoId`를 추가한다. 영상의 공개 범위와 삽입 허용 여부를 확인한다. 플레이어는 열기 버튼을 눌렀을 때 YouTube의 개인정보 보호 강화 주소를 불러온다. [YouTube 동영상·재생목록 삽입](https://support.google.com/youtube/answer/171780?hl=ko)
+[덕담집 사주극장](https://www.youtube.com/@deokdam-saju)의 [공개 쇼츠 재생목록](https://www.youtube.com/playlist?list=PLdR732KbVakE)을 이야기 페이지에 연결했다. YouTube Studio에서 같은 목록에 쇼츠를 추가하면 웹 플레이어에도 나타난다. 다른 목록을 사용하려면 실행 환경의 `DEOKDAM_SHORTS_PLAYLIST_ID`를 지정한다. 개별 카드에 그 회차만 연결하려면 [회차 목록](apps/web/src/shared/episodes.json)에 `youtubeVideoId`를 추가한다. 영상의 공개 범위와 삽입 허용 여부를 확인한다. 플레이어는 열기 버튼을 눌렀을 때 YouTube의 개인정보 보호 강화 주소를 불러온다. [YouTube 동영상·재생목록 삽입](https://support.google.com/youtube/answer/171780?hl=ko)
 
 결제 채널 등록에는 상품 제목, 4,900원 가격, 첫날 샘플, 일곱 장의 제공 방식, 구매 복구·환불 절차를 제시한다. 포트원 심사와 카드 채널 연동을 확인한 뒤 상용 환경에 값을 등록한다. [포트원 사주·운세 업종 안내](https://help.portone.io/content/high-risk-industry)
 
@@ -88,3 +88,5 @@ DEOKDAM_TEST_ORIGIN=http://127.0.0.1:3469 yarn workspace @deokdam/web test:integ
 Google 웹 OAuth 클라이언트와 카카오 REST API 키 각각에 `/api/auth/google/callback`, `/api/auth/kakao/callback`을 등록한다. 운영 기준 주소는 `https://deokdam.bambyul.com`, 로컬은 `http://127.0.0.1:3460` 또는 `http://localhost:3460`이다. 각 제공자의 client ID와 secret은 웹 앱의 런타임 환경 설정에 둔다. 카카오는 로그인 활성화와 클라이언트 시크릿을 사용한다.
 
 계정·세션·기록은 `DEOKDAM_ACCOUNT_DB`에 저장한다. 로컬 기본값은 `.data/accounts.sqlite`, EC2는 영구 볼륨의 `/var/lib/deokdam/orders/accounts.sqlite`다. [구현 계획과 검증 기준](docs/account-and-reading-plan.md)에 사용자 흐름과 상태 관리 기준을 정리했다.
+
+로컬에서 `apps/web/.env.local`에 `DEOKDAM_LOCAL_LOGIN=1`을 두고 개발 서버의 [로그인 화면](http://127.0.0.1:3460/login)을 연다. 테스트 계정 A·B는 같은 서버 세션과 기록장을 사용해 계정 전환과 기기 간 열람을 확인할 수 있다. Playwright는 3461번 포트와 전용 DB를 쓴다. 운영 빌드에서 테스트 로그인 요청은 404로 응답한다.

@@ -3,24 +3,40 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 
+import { useMutation } from '@tanstack/react-query';
+
+import { syncDeviceHistory } from '@/features/journal/device-history';
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
 
-import { providerNames, providerSchema, type TProvider } from './navigation';
+import {
+  accountProviderSchema,
+  providerNames,
+  providerSchema,
+  type TAccountProvider,
+  type TProvider,
+} from './navigation';
 
-function consumeLoginResult() {
+function consumeLoginResult(sync: () => void) {
   const raw = document.cookie
     .split('; ')
     .find((entry) => entry.startsWith('deokdam.login-result='))
     ?.split('=')[1];
-  const provider = providerSchema.safeParse(raw);
+  const provider = accountProviderSchema.safeParse(raw);
   if (provider.success) {
     document.cookie = 'deokdam.login-result=; Max-Age=0; Path=/; SameSite=Lax';
-    track(event.SignInCompleted, { provider: provider.data });
+    if (provider.data !== 'local') track(event.SignInCompleted, { provider: provider.data });
+    if (location.pathname !== '/journal') sync();
   }
 }
 export function LoginMeasurement() {
-  useEffect(consumeLoginResult, []);
+  const { mutate: sync } = useMutation({
+    mutationFn: () => syncDeviceHistory(),
+    onSuccess: (count) => {
+      if (count) track(event.JournalImported, { count });
+    },
+  });
+  useEffect(() => consumeLoginResult(sync), [sync]);
   return null;
 }
 
@@ -52,12 +68,14 @@ export function LoginButtons({ next, enabled }: { next: string; enabled: TProvid
   );
 }
 
-export function SignOut({ provider }: { provider: TProvider }) {
+export function SignOut({ provider }: { provider: TAccountProvider }) {
   return (
     <form
       method="post"
       action="/api/auth/logout"
-      onSubmit={() => track(event.SignOutClicked, { provider })}
+      onSubmit={() => {
+        if (provider !== 'local') track(event.SignOutClicked, { provider });
+      }}
       className="account-line"
     >
       <span>{providerNames[provider]} 계정으로 이용 중</span>

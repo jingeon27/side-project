@@ -26,9 +26,10 @@ interface IPostcardProps {
   art?: string;
   source: TSource;
   children?: React.ReactNode;
+  onMessageExport?: (message: string) => void;
 }
 
-export function DeokPostcard({ title, message, art, source, children }: IPostcardProps) {
+export function DeokPostcard({ title, message, art, source, children, onMessageExport }: IPostcardProps) {
   const content = { title, message: message.trim(), art, journal: source.surface === 'journal' };
   const image = useQuery({
     queryKey: ['postcard', content],
@@ -73,6 +74,7 @@ export function DeokPostcard({ title, message, art, source, children }: IPostcar
   const reportClick = (method: TMethod) => track(event.PostcardActionClicked, { ...source, method });
   const reportComplete = (method: TMethod) => {
     track(event.PostcardExported, { ...source, method });
+    if (source.surface === 'episode' && method !== 'link') onMessageExport?.(content.message);
     if (source.surface === 'journal' && (method === 'share' || method === 'copy')) {
       track(event.JournalShared, { method });
     }

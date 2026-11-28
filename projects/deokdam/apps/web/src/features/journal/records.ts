@@ -1,14 +1,16 @@
 'use client';
 
 import { queryOptions } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { z } from 'zod';
 
-import { findEpisode } from '@/shared/episodes';
+import { activitySchema } from './activity';
+import { recordSchema, type TDeokRecord } from './contract';
 
-import { recordInput, recordSchema, type TDeokRecord } from './contract';
-
-const responseSchema = z.object({ account: z.uuid(), records: z.array(recordSchema) });
+const responseSchema = z.object({
+  account: z.uuid(),
+  records: z.array(recordSchema),
+  activities: z.array(activitySchema),
+});
 export const journalQuery = queryOptions({
   queryKey: ['account-journal'] as const,
   queryFn: async ({ signal }) => {
@@ -70,36 +72,4 @@ export function forgetImported(record: TDeokRecord) {
   const existing = recordSchema.safeParse(JSON.parse(raw));
   if (existing.success && JSON.stringify(existing.data) === JSON.stringify(record))
     localStorage.removeItem(key);
-}
-
-const draftKey = 'deokdam.login-draft';
-const draftSchema = recordInput.extend({
-  alternative: z.boolean(),
-  episode: z
-    .string()
-    .refine((slug) => Boolean(findEpisode(slug)))
-    .optional(),
-  expires: z.number(),
-});
-export type TRecordDraft = Omit<z.infer<typeof draftSchema>, 'expires'>;
-export function keepDraft(input: TRecordDraft) {
-  sessionStorage.setItem(
-    draftKey,
-    JSON.stringify({ ...input, expires: dayjs().add(15, 'minute').valueOf() }),
-  );
-}
-export function readDraft() {
-  try {
-    const raw = sessionStorage.getItem(draftKey);
-    if (!raw) return null;
-    const parsed = draftSchema.safeParse(JSON.parse(raw));
-    if (parsed.success && parsed.data.expires > dayjs().valueOf()) return parsed.data;
-    clearDraft();
-  } catch {
-    /* A disabled tab store has no draft to restore. */
-  }
-  return null;
-}
-export function clearDraft() {
-  sessionStorage.removeItem(draftKey);
 }

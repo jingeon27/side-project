@@ -43,6 +43,9 @@
 .postcard-editor {
   margin: 18px 0 12px;
 }
+.postcard-editor > button {
+  margin-top: 8px;
+}
 .postcard-editor label {
   display: block;
   margin-bottom: 7px;
