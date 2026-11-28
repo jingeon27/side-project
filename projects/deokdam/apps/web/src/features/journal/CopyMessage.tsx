@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 
-import { Copy } from 'lucide-react';
-
-import { Button } from '@side/design-system/ui/button';
-
-import { track } from '@/shared/analytics/browser';
-import { event } from '@/shared/analytics/events';
+import { findEpisode } from '@/shared/episodes';
 import type { TTopic } from '@/shared/topics';
+
+import { DeokPostcard } from './DeokPostcard';
 
 interface ICopyMessageProps {
   episode: string;
@@ -17,45 +14,21 @@ interface ICopyMessageProps {
 }
 
 export function CopyMessage({ episode, topic, message }: ICopyMessageProps) {
-  const [draft, setDraft] = useState(message);
-  const [feedback, setFeedback] = useState('');
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(draft.trim());
-      setFeedback('복사했어요. 원하는 곳에 붙여 넣으세요.');
-      track(event.MessageCopied, { episode, topic });
-    } catch {
-      setFeedback('문장을 길게 눌러 복사해 주세요.');
-    }
-  };
+  const form = useForm({ defaultValues: { draft: message } });
+  const draft = useWatch({ control: form.control, name: 'draft' });
+  const story = findEpisode(episode);
 
   return (
-    <div className="message-editor">
-      <label htmlFor="message-draft">내 말투로 바꿔 보내기</label>
-      <textarea
-        id="message-draft"
-        value={draft}
-        onChange={(input) => {
-          setDraft(input.target.value);
-          setFeedback('');
-        }}
-        maxLength={240}
-        rows={2}
-      />
-      <div className="message-buttons">
-        <Button
-          variant="secondary"
-          icon={<Copy size={16} aria-hidden />}
-          onClick={handleCopy}
-          disabled={!draft.trim()}
-        >
-          문장 복사
-        </Button>
-        <span role="status" className="small-muted">
-          {feedback}
-        </span>
+    <DeokPostcard
+      title={story?.title ?? '오늘의 덕담'}
+      art={story?.image}
+      message={draft}
+      source={{ surface: 'episode', episode, topic }}
+    >
+      <div className="postcard-editor">
+        <label htmlFor="message-draft">내 말투로 바꿔 보내기</label>
+        <textarea id="message-draft" {...form.register('draft')} maxLength={240} rows={2} />
       </div>
-    </div>
+    </DeokPostcard>
   );
 }

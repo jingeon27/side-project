@@ -23,3 +23,7 @@ export function findEpisode(slug: string) {
 export function episodePath(slug: string) {
   return '/cards/' + slug;
 }
+
+export function episodeShareUrl(slug: string) {
+  return new URL(episodePath(slug), 'https://deokdam.bambyul.com').href;
+}

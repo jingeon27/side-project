@@ -140,7 +140,9 @@ jobs:
             const origin = 'http://127.0.0.1:3460';
             const home = await fetch(origin);
             assert.equal(home.status, 200);
-            assert.match(await home.text(), /PLdeokdam-test-playlist00/);
+            const stories = await fetch(origin + '/stories');
+            assert.equal(stories.status, 200);
+            assert.match(await stories.text(), /PLdeokdam-test-playlist00/);
           }
           verify().catch((error) => { console.error(error); process.exitCode = 1; });
           NODE
