@@ -3,27 +3,44 @@
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { track } from '@/shared/analytics/browser';
+import { event } from '@/shared/analytics/events';
+
 import { activitySchema } from './activity';
 import { recordSchema, type TDeokRecord } from './contract';
+import { syncDeviceHistory } from './device-history';
 
 const responseSchema = z.object({
   account: z.uuid(),
   records: z.array(recordSchema),
   activities: z.array(activitySchema),
 });
-export const journalQuery = queryOptions({
-  queryKey: ['account-journal'] as const,
-  queryFn: async ({ signal }) => {
-    const response = await fetch('/api/journal', { signal, cache: 'no-store' });
-    if (response.status === 401) return null;
-    if (!response.ok) throw new Error('journal_unavailable');
-    return responseSchema.parse(await response.json());
-  },
-  gcTime: 0,
-});
+export const journalKey = ['account-journal'] as const;
+export function journalQuery(account: string) {
+  return queryOptions({
+    queryKey: [...journalKey, account],
+    queryFn: async ({ signal }) => {
+      const sync = await syncDeviceHistory(account).then(
+        (count) => ({ count, needsRetry: false }),
+        () => ({ count: 0, needsRetry: true }),
+      );
+      if (sync.count) track(event.JournalImported, { count: sync.count });
+      const response = await fetch('/api/journal', {
+        signal,
+        cache: 'no-store',
+        headers: { 'x-deokdam-account': account },
+      });
+      if (response.status === 401 || response.status === 409) return null;
+      if (!response.ok) throw new Error('journal_unavailable');
+      const history = responseSchema.parse(await response.json());
+      return { ...history, needsRetry: sync.needsRetry };
+    },
+    gcTime: 0,
+  });
+}
 
 export const todayQuery = queryOptions({
-  queryKey: [...journalQuery.queryKey, 'today'],
+  queryKey: [...journalKey, 'today'],
   queryFn: async ({ signal }) => {
     const response = await fetch('/api/journal?today=1', { signal, cache: 'no-store' });
     if (response.status === 401) return null;

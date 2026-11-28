@@ -8,6 +8,8 @@ import { seoulToday } from '@/shared/seoul-time';
 export async function GET(request: Request) {
   const account = await currentAccount();
   if (!account) return privateJson({ error: 'login_required' }, 401);
+  const expected = request.headers.get('x-deokdam-account');
+  if (expected && expected !== account.id) return privateJson({ error: 'account_changed' }, 409);
   if (new URL(request.url).searchParams.has('today')) {
     return privateJson({
       account: account.id,

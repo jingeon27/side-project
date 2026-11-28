@@ -1,8 +1,22 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type BrowserContext } from '@playwright/test';
+import { z } from 'zod';
 
+import { activitySchema } from '../src/features/journal/activity';
+import { recordSchema } from '../src/features/journal/contract';
 import { signInFixture, testOrigin } from './account-fixture';
+
+const accountHistory = z.object({
+  account: z.uuid(),
+  records: z.array(recordSchema),
+  activities: z.array(activitySchema),
+});
+async function readArchive(context: BrowserContext) {
+  const response = await context.request.get('/api/journal');
+  expect(response.status()).toBe(200);
+  return accountHistory.parse(await response.json());
+}
 
 test('guests create all three kinds of history before a real local login; only their chosen account receives them', async ({
   page,
@@ -35,7 +49,12 @@ test('guests create all three kinds of history before a real local login; only t
   await page.goto('/reading');
   await page.getByLabel('내 생년월일').fill('19920417');
   await page.getByLabel(/과거에 겪은 일/).fill(privateExperience);
+  const result = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/readings' && response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: '내 풀이 보기' }).click();
+  const received = z.object({ interpretation: z.string() }).parse(await (await result).json());
   await expect(page.getByRole('heading', { name: '오늘의 기본 풀이' })).toBeVisible();
   await page.getByRole('link', { name: '기록장에서 다시 보기' }).click();
   await expect(page.getByRole('button', { name: 'Google로 계속하기' })).toBeEnabled();
@@ -44,31 +63,54 @@ test('guests create all three kinds of history before a real local login; only t
   await expect(page.getByText(message)).toHaveCount(0);
   await page.getByRole('button', { name: '테스트 계정 ' + first + '로 로그인' }).click();
   await expect(page).toHaveURL(/\/journal$/);
-  await expect(page.getByRole('region', { name: '만든 덕담' }).getByText(message)).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: '만든 덕담' }).getByText(message, { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: '받은 풀이' })).toBeVisible();
   await expect(page.getByText(note)).toBeVisible();
-  const journal = await (await context.request.get('/api/journal')).json();
+  const expectedRecords = (history: z.infer<typeof accountHistory>) => ({
+    messages: history.activities
+      .filter(({ page: entry }) => entry.kind === 'message' && entry.text === message)
+      .map((entry) => entry.id),
+    readings: history.activities
+      .filter(
+        ({ page: entry }) =>
+          entry.kind === 'reading' && entry.reading.interpretation === received.interpretation,
+      )
+      .map((entry) => entry.id),
+    practice:
+      history.records.some((entry) => entry.note === note) ||
+      history.activities.some(({ page: entry }) => entry.kind === 'practice' && entry.note === note),
+  });
+  const journal = await readArchive(context);
+  const created = expectedRecords(journal);
+  expect(created.messages).toHaveLength(1);
+  expect(created.readings.length).toBeGreaterThan(0);
+  expect(created.practice).toBe(true);
   expect(JSON.stringify(journal)).not.toContain('19920417');
   expect(JSON.stringify(journal)).not.toContain(privateExperience);
-  expect(
-    journal.activities.filter((item: { page: { text?: string } }) => item.page.text === message),
-  ).toHaveLength(1);
   expect((await context.cookies()).find((item) => item.name === 'deokdam.session')?.httpOnly).toBe(true);
   const device = await browser.newContext({ baseURL: testOrigin });
   try {
     const second = await device.newPage();
     await second.goto('/login');
     await second.getByRole('button', { name: '테스트 계정 ' + first + '로 로그인' }).click();
-    await expect(second.getByText(message)).toBeVisible();
+    await expect(second.getByText(message, { exact: true })).toBeVisible();
     await expect(second.getByText(note)).toBeVisible();
-    const secondRecords = await (await device.request.get('/api/journal')).json();
-    expect(secondRecords.activities).toEqual(journal.activities);
+    const secondRecords = await readArchive(device);
+    expect(secondRecords.account).toBe(journal.account);
+    expect(expectedRecords(secondRecords)).toEqual(created);
     await second.getByRole('button', { name: '로그아웃' }).click();
     await expect(second.getByRole('heading', { name: '내 덕 기록장 열기' })).toBeVisible();
     expect((await device.request.get('/api/journal')).status()).toBe(401);
     await second.getByRole('button', { name: '테스트 계정 ' + other + '로 로그인' }).click();
     await expect(second.getByRole('heading', { name: '덕 기록장', exact: true })).toBeVisible();
-    expect(JSON.stringify(await (await device.request.get('/api/journal')).json())).not.toContain(suffix);
+    expect(JSON.stringify(await readArchive(device))).not.toContain(suffix);
+    expect(
+      (
+        await device.request.get('/api/journal', { headers: { 'x-deokdam-account': journal.account } })
+      ).status(),
+    ).toBe(409);
   } finally {
     await device.close();
   }
@@ -180,8 +222,21 @@ test('an interrupted import stays with the first account until a later retry', a
   await expect(page.getByText('덕담을 만들었어요. 로그인하면 기록장에서 다시 볼 수 있어요.')).toBeVisible();
   const subject = randomUUID();
   await signInFixture(context, 'kakao', subject);
-  await page.route('**/api/journal/activity', (route) => route.abort('failed'));
+  const received = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  await page.route('**/api/journal/activity', async (route) => {
+    received.resolve();
+    await release.promise;
+    await route.abort('failed');
+  });
   await page.goto('/journal');
+  await received.promise;
+  try {
+    await expect(page.getByText('기록장을 펼치고 있어요.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '첫 번째 덕을 남겨보세요' })).toHaveCount(0);
+  } finally {
+    release.resolve();
+  }
   await expect(page.getByRole('button', { name: '이 기기의 기록 다시 동기화' })).toBeVisible();
   await page.unroute('**/api/journal/activity');
   await signInFixture(context, 'google', subject);

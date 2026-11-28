@@ -102,11 +102,12 @@ export async function syncDeviceHistory(expected?: string) {
     }
     const pending = await tx.store.index('owner').getAll(account);
     await tx.done;
+    const added: string[] = [];
     for (const { entry } of pending) {
-      await send(account, entry);
+      if (await send(account, entry)) added.push(entry.id);
       await db.delete('pending', [account, entry.id]);
     }
-    return pending.length;
+    return added.length;
   } finally {
     db.close();
   }

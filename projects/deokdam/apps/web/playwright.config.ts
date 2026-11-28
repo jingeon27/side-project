@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: {
     command: 'yarn exec next dev --hostname 127.0.0.1 --port 3461',
     env: {
-      DEOKDAM_ACCOUNT_DB: fileURLToPath(new URL('./.data/e2e-accounts.sqlite', import.meta.url)),
+      DEOKDAM_ACCOUNT_DB: fileURLToPath(new URL('./test-results/accounts.sqlite', import.meta.url)),
       DEOKDAM_PUBLIC_ORIGIN: baseURL,
       DEOKDAM_LOCAL_LOGIN: '1',
       DEOKDAM_GOOGLE_CLIENT_ID: 'deokdam-google-test',
