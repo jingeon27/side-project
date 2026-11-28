@@ -39,7 +39,10 @@ test('English articles contain translated reading text and common labels', async
     const text = await page.evaluate(
       (html) => {
         const document = new DOMParser().parseFromString(html, 'text/html');
-        return document.querySelector('.article-prose')?.textContent;
+        const prose = document.querySelector('.article-prose');
+        // Inline literals can contain characters from another language, such as Unicode examples.
+        prose?.querySelectorAll('code:not(pre code)').forEach((literal) => literal.remove());
+        return prose?.textContent?.trim();
       },
       await response.text(),
     );
