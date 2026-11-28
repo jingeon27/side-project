@@ -1,7 +1,26 @@
+'use client';
+
+import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+
+import { StoriesLink } from './StoriesLink';
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    if (pathname !== '/') return;
+    const forwardLegacyStories = () => {
+      if (window.location.hash === '#stories') router.replace('/stories' + window.location.search);
+    };
+    forwardLegacyStories();
+    window.addEventListener('hashchange', forwardLegacyStories);
+    return () => window.removeEventListener('hashchange', forwardLegacyStories);
+  }, [pathname, router]);
+
+  const storyContext = pathname.startsWith('/cards/') ? 'location' : undefined;
   return (
     <header className="site-header">
       <div className="site-width header-inner">
@@ -17,9 +36,15 @@ export function SiteHeader() {
           <span>덕담집</span>
         </Link>
         <nav aria-label="주 메뉴">
-          <Link href="/#stories">이야기</Link>
-          <Link href="/reading">내 사주</Link>
-          <Link href="/journal">기록장</Link>
+          <StoriesLink surface="header" current={pathname === '/stories' ? 'page' : storyContext}>
+            이야기
+          </StoriesLink>
+          <Link href="/reading" aria-current={pathname === '/reading' ? 'page' : undefined}>
+            내 사주
+          </Link>
+          <Link href="/journal" aria-current={pathname === '/journal' ? 'page' : undefined}>
+            기록장
+          </Link>
         </nav>
       </div>
     </header>

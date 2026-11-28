@@ -26,5 +26,6 @@ it.each(cases)('uses the running local model to select referenced advice for $to
   if (selected?.source !== 'editorial') throw new Error('Expected the model to select an editorial practice');
   expect(selected.scope).toBe(input.concern);
   expect(reading.interpretation).toContain(selected.advice);
+  expect(reading.example).toBe(selected.example);
   expect(reading.action).toBe(selected.title);
 });

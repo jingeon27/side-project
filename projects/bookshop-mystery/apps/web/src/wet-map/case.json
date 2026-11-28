@@ -1,0 +1,14 @@
+{
+  "title": "비가 그친 뒤 사라진 표찰",
+  "premise": "비에 젖은 선착장 지도에 마른 자국이 하나 남았어요.",
+  "briefing": "밤 9시 20분, 젖은 지도 위에서 한 곳만 말라 있었어요. 남은 자국의 모양과 작업 일지를 대조해, 무엇이 언제 치워졌는지 밝혀 보세요.",
+  "minutes": 3,
+  "mark": { "width": 11, "height": 7, "notch": "right", "foundAt": "21:20" },
+  "plates": [
+    { "id": "storage", "name": "보관함 표찰", "width": 11, "height": 7, "notch": "center" },
+    { "id": "collection", "name": "수령 표찰", "width": 10, "height": 7, "notch": "right" },
+    { "id": "direction", "name": "방향 표찰", "width": 11, "height": 7, "notch": "right" }
+  ],
+  "rain": { "start": "21:10", "stop": "21:18" },
+  "moves": ["21:12", "21:19", "21:25"]
+}

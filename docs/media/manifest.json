@@ -106,8 +106,11 @@
       "route": "/ko",
       "width": 1280,
       "height": 800,
-      "sha256": "fc79ea37416cef306f38185ae0ad448ae59244053a317ec2b84562c3d8d247a0",
-      "bytes": 144800
+      "sha256": "4c0a9db110b5e33b88b0a7e3fff3c24d3f94374e9bcdec324e59df9c776f1263",
+      "bytes": 122375,
+      "sourceCommit": "0275b2160eaf24710ae5fd86737dbef479fc1432",
+      "sourceChange": "GitHub 프로필 로고를 적용한 블로그 홈 재촬영",
+      "capturedOn": "2026-11-28"
     }
   ]
 }

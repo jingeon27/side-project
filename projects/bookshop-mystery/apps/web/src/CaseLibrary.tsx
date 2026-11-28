@@ -2,8 +2,17 @@ import { useEffect, useRef } from 'react';
 
 import { trackEvent } from './analytics';
 import { CASE_ID, receiptCaseTitle, visitSource } from './case-file';
-import { caseHref, followCaseLink, receiptLandingPath, returnedKeyPath } from './case-routes';
+import {
+  caseHref,
+  followCaseLink,
+  musicRollPath,
+  receiptLandingPath,
+  returnedKeyPath,
+  wetMapPath,
+} from './case-routes';
+import { MUSIC_ROLL_ID, musicRoll, musicRollCover } from './music-roll/music-roll';
 import { envelopeImage, RETURNED_KEY_ID, returnedKeyTitle } from './returned-key/returned-key';
+import { WET_MAP_ID, wetMap, wetMapCover } from './wet-map/wet-map';
 
 import './case-library.css';
 
@@ -23,6 +32,22 @@ const cases = [
     minutes: 3,
     illustration: envelopeImage,
     path: returnedKeyPath,
+  },
+  {
+    id: WET_MAP_ID,
+    title: wetMap.title,
+    premise: wetMap.premise,
+    minutes: wetMap.minutes,
+    illustration: wetMapCover,
+    path: wetMapPath,
+  },
+  {
+    id: MUSIC_ROLL_ID,
+    title: musicRoll.title,
+    premise: musicRoll.premise,
+    minutes: musicRoll.minutes,
+    illustration: musicRollCover,
+    path: musicRollPath,
   },
 ] as const;
 

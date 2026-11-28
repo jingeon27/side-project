@@ -115,6 +115,8 @@ jobs:
           services:
             web:
               ports: ['127.0.0.1:3469:3460']
+              environment:
+                DEOKDAM_LOCAL_LOGIN: '1'
           YAML
           printf 'DEOKDAM_WEB_IMAGE=deokdam-web:%s\nDEOKDAM_SHORTS_PLAYLIST_ID=PLdeokdam-test-playlist00\n' \
             "$GITHUB_SHA" > "$directory/.env"
@@ -140,7 +142,19 @@ jobs:
             const origin = 'http://127.0.0.1:3460';
             const home = await fetch(origin);
             assert.equal(home.status, 200);
-            assert.match(await home.text(), /PLdeokdam-test-playlist00/);
+            const stories = await fetch(origin + '/stories');
+            assert.equal(stories.status, 200);
+            assert.match(await stories.text(), /PLdeokdam-test-playlist00/);
+            const login = await fetch(origin + '/login');
+            assert.equal(login.status, 200);
+            assert.doesNotMatch(await login.text(), /테스트 계정 A로 로그인/);
+            const fixture = await fetch(origin + '/api/auth/local-login', {
+              method: 'POST', headers: { origin }, body: new URLSearchParams({ account: 'A' }), redirect: 'manual',
+            });
+            assert.equal(fixture.status, 404);
+            assert.equal(fixture.headers.get('set-cookie'), null);
+            assert.equal((await fetch(origin + '/api/journal')).status, 401);
+            assert.match(await (await fetch(origin + '/sitemap.xml')).text(), /https:\/\/deokdam\.bambyul\.com\/stories/);
           }
           verify().catch((error) => { console.error(error); process.exitCode = 1; });
           NODE

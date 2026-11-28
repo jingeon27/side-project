@@ -1,6 +1,10 @@
 import { after, NextResponse, type NextRequest } from 'next/server';
 
-import { orderOwner, orderResponseHeaders } from '@/features/shop/http';
+import {
+  currentAccount,
+  privateHeaders as orderResponseHeaders,
+  privateJson,
+} from '@/features/account/session';
 import { orderIdSchema, orderRequestSchema } from '@/features/shop/order-contract';
 import { OrderStore, publicOrder } from '@/features/shop/order-store';
 import { fetchPayment, portOneConfig } from '@/features/shop/portone';
@@ -10,6 +14,12 @@ import { trackOrder } from '@/shared/analytics/server';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest, { params }: RouteContext<'/api/orders/[id]'>) {
+  const account = await currentAccount();
+  if (!account) return privateJson({ error: 'login_required' }, 401);
+  const expected = request.headers.get('x-deokdam-account');
+  if ((expected || request.method !== 'GET') && expected !== account.id)
+    return privateJson({ error: 'account_changed' }, 412);
+  const owner = 'account:' + account.id;
   const config = portOneConfig();
   if (!config) return NextResponse.json({ error: 'checkout_unavailable' }, { status: 503 });
   if (request.headers.get('origin') !== config.origin)
@@ -17,8 +27,6 @@ export async function POST(request: NextRequest, { params }: RouteContext<'/api/
   const id = orderIdSchema.safeParse((await params).id);
   const data = orderRequestSchema.safeParse(await request.json().catch(() => null));
   if (!id.success || !data.success) return NextResponse.json({ error: 'invalid_input' }, { status: 400 });
-  const owner = orderOwner(request);
-  if (!owner) return NextResponse.json({ error: 'order_not_found' }, { status: 404 });
 
   const store = new OrderStore(config.database);
   try {

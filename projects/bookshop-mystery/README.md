@@ -1,6 +1,6 @@
 # 새벽 기록실
 
-쇼츠에서 소개한 단서를 브라우저에서 이어서 조사하는 창작 미스터리다. 홈에서 **폐점한 서점의 마지막 영수증**과 **새벽 세 시에 돌아온 열쇠**를 고를 수 있다.
+쇼츠에서 소개한 단서를 브라우저에서 이어서 조사하는 창작 미스터리다. 홈에서 사건을 고르거나 영상에 안내된 사건 주소로 바로 들어갈 수 있다.
 
 [새벽 기록실](https://dawn.bambyul.com/)
 
@@ -18,7 +18,7 @@ yarn workspace @side/bookshop-mystery build
 
 ## 조사 화면과 디자인 시스템
 
-`/`에서 사건을 선택한다. `/cases/last-receipt/`는 영수증 사건 소개를 열며, 기존 `/play/` 주소에서도 바로 조사를 시작할 수 있다. `/cases/returned-key/`에서는 봉투의 표식, 반납함, 야간 일지를 살펴 열쇠가 돌아온 경로를 추리한다. 진행과 결말은 사건별로 이 브라우저에 저장한다. 소개와 결말의 **사건 목록**으로 다른 사건을 고를 수 있다.
+`/`에서 사건을 선택한다. `/cases/last-receipt/`는 영수증 사건 소개를 열며, 기존 `/play/` 주소에서도 바로 조사를 시작할 수 있다. `/cases/returned-key/`에서는 봉투의 표식, 반납함, 야간 일지를 살펴 열쇠가 돌아온 경로를 추리한다. `/cases/wet-map/`에서는 마른 자국, 표찰, 선착장 작업 일지를 대조한다. `/cases/music-roll/`에서는 마감 종소리가 울린 시각과 종이띠의 구멍 위치를 비교한다. 진행과 결말은 사건별로 이 브라우저에 저장한다. 소개와 결말의 **사건 목록**으로 다른 사건을 고를 수 있다.
 
 타임라인에서 열린 단계를 눌러 이동한다. 현재 단계는 강조된 테두리와 글자로 표시하며, 확인한 단계는 체크를 표시한다. 잠긴 단계는 자물쇠와 점선으로 구분한다. 두 프린터의 밑면을 확인하면 프린터 단계에 Lottie 체크가 재생되고 이관 기록에 **다음** 표시가 나타난다. 프린터 화면에서 이관 기록을 누르면 이동한다. [ReUI Timeline](https://reui.io/components/timeline), [Shadcn Studio Timeline](https://shadcnstudio.com/blocks/marketing-ui/timeline-component), [ReUI 라이선스](apps/web/public/licenses/reui.txt)
 
@@ -72,6 +72,8 @@ Unity 소스는 같은 버전의 Unity API 어셈블리로 C# 컴파일을 확�
 
 ## 쇼츠 제작
 
+[새벽 기록실 제작 스킬](.agents/skills/dawn-records-production/SKILL.md)에 사건 스토리, 조사 페이지, 쇼츠 검수와 대기 세트 편성 절차가 있다.
+
 `production/episodes.json`은 에피소드별 사건 경로, 대사, 화면 제목, 설명, 고정 댓글 초안이다. 기본 장면 데이터 및 종이를 다시 만들 때 Pillow가 설치된 Python으로 `production/make-scene.py`를 실행한다. 브라우저 세로 컷은 로컬 개발 서버를 켜고 저장소 루트에서 아래 명령으로 뽑는다.
 
 ```sh
@@ -118,34 +120,36 @@ OAuth 앱의 게시 상태가 **테스트 중**이면 갱신 토큰은 7일 후 
 
 ## 유입과 조사 결과
 
-Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에 `stage`를 붙이고 사건 관련 이벤트에는 `case_id=last-receipt` 또는 `case_id=returned-key`를 함께 보낸다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
+Amplitude 프로젝트는 `[prod] dawn-records`(914703)다. 키가 설정된 빌드는 자동 수집을 끈 상태에서 아래 이벤트를 보낸다. 모든 이벤트에 `stage`를 붙이고 사건 관련 이벤트에는 `case_id`에 `last-receipt`, `returned-key`, `wet-map`, `music-roll` 중 해당 값을 보낸다. 비공개 프리뷰와 테스트 플레이는 `VITE_AMPLITUDE_STAGE=preview`로 빌드한다. 운영 집계는 `stage=production`을 사용한다. 키가 비어 있으면 Amplitude 요청이 발생하지 않는다.
 
-| 이벤트                       | 속성 또는 시점                                                                                              |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `case_catalog_viewed`        | 사건 목록 진입과 `source`                                                                                   |
-| `case_catalog_selected`      | 사건 선택 클릭과 선택한 `case_id`, `source`                                                                 |
-| `case_catalog_link_clicked`  | 사건 목록으로 돌아가는 링크 클릭과 `from_step`                                                              |
-| `case_opened`                | 조사 화면 진입과 `source`                                                                                   |
-| `case_landing_viewed`        | 랜딩 진입과 `source`                                                                                        |
-| `case_landing_cta_clicked`   | 버튼 클릭, `intent`는 `start`, `resume`, `ending`                                                           |
-| `case_landing_link_clicked`  | 조사 중 사건 소개 버튼 클릭과 `from_step`                                                                   |
-| `case_timeline_clicked`      | 타임라인 클릭과 `from_step`, `to_step`, 추천한 다음 단계를 눌렀으면 `suggested_next=true`                   |
-| `case_scene_loaded`          | `renderer`, 8초 기준 `load_bucket`                                                                          |
-| `case_evidence_opened`       | `clue_id`, `entry_point`는 `start`, `primary`, `previous`, `timeline`, `history`, `resume`, `replay`        |
-| `case_printer_selected`      | `printer_id`, `entry_point`는 `primary` 또는 `comparison`                                                   |
-| `case_printer_bottom_viewed` | `printer_id`, 첫 열람이면 `first_view=true`, `entry_point`는 `primary` 또는 `toolbar`                       |
-| `case_record_viewed`         | `document_id`, `entry_point`는 `step`, `document`, `primary`. 현재 조사에서 처음 열었으면 `first_view=true` |
-| `case_notebook_opened`       | 열기 당시의 `from_step`, `item_count`                                                                       |
-| `case_notebook_item_opened`  | 수첩에서 펼친 자료의 `item_id`                                                                              |
-| `case_hint_revealed`         | 요청으로 확인한 힌트의 1부터 시작하는 `hint_index`                                                          |
-| `case_replay_started`        | 결말에서 다시 조사를 시작한 시점                                                                            |
-| `case_clue_found`            | `clue_id`, `first_clue`. 한 단서는 진행 중 한 번 기록                                                       |
-| `case_verdict_opened`        | 최종 추리 양식과 `entry_point`                                                                              |
-| `case_answer_submitted`      | 답안 제출 버튼으로 추리를 제출한 시점                                                                       |
-| `case_completed`             | 해당 사건의 올바른 답안이 확인된 시점                                                                       |
-| `case_shared`                | 공유 완료 또는 복사 성공의 `method`                                                                         |
-| `case_follow_clicked`        | 다음 사건 관심 표시를 클릭한 시점                                                                           |
-| `case_interest_saved`        | 브라우저 저장에 성공했을 때 `persistence=device`                                                            |
+| 이벤트                         | 속성 또는 시점                                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `case_catalog_viewed`          | 사건 목록 진입과 `source`                                                                                   |
+| `case_catalog_selected`        | 사건 선택 클릭과 선택한 `case_id`, `source`                                                                 |
+| `case_catalog_link_clicked`    | 사건 목록으로 돌아가는 링크 클릭과 `from_step`                                                              |
+| `case_opened`                  | 조사 화면 진입과 `source`                                                                                   |
+| `case_landing_viewed`          | 랜딩 진입과 `source`                                                                                        |
+| `case_landing_cta_clicked`     | 버튼 클릭, `intent`는 `start`, `resume`, `ending`                                                           |
+| `case_landing_link_clicked`    | 조사 중 사건 소개 버튼 클릭과 `from_step`                                                                   |
+| `case_timeline_clicked`        | 타임라인 클릭과 `from_step`, `to_step`, 추천한 다음 단계를 눌렀으면 `suggested_next=true`                   |
+| `case_scene_loaded`            | `renderer`, 8초 기준 `load_bucket`                                                                          |
+| `case_evidence_opened`         | `clue_id`, `entry_point`는 `start`, `primary`, `previous`, `timeline`, `history`, `resume`, `replay`        |
+| `case_printer_selected`        | `printer_id`, `entry_point`는 `primary` 또는 `comparison`                                                   |
+| `case_printer_bottom_viewed`   | `printer_id`, 첫 열람이면 `first_view=true`, `entry_point`는 `primary` 또는 `toolbar`                       |
+| `case_record_viewed`           | `document_id`, `entry_point`는 `step`, `document`, `primary`. 현재 조사에서 처음 열었으면 `first_view=true` |
+| `case_recording_played`        | 오르골 조사 화면의 녹음이 재생되기 시작한 시점                                                              |
+| `case_roll_direction_selected` | 오르골 조사에서 투입 방향을 바꾼 시점과 `direction`(`left` 또는 `right`)                                    |
+| `case_notebook_opened`         | 열기 당시의 `from_step`, `item_count`                                                                       |
+| `case_notebook_item_opened`    | 수첩에서 펼친 자료의 `item_id`                                                                              |
+| `case_hint_revealed`           | 요청으로 확인한 힌트의 1부터 시작하는 `hint_index`                                                          |
+| `case_replay_started`          | 결말에서 다시 조사를 시작한 시점                                                                            |
+| `case_clue_found`              | `clue_id`, `first_clue`. 한 단서는 진행 중 한 번 기록                                                       |
+| `case_verdict_opened`          | 최종 추리 양식과 `entry_point`                                                                              |
+| `case_answer_submitted`        | 답안 제출 버튼으로 추리를 제출한 시점                                                                       |
+| `case_completed`               | 해당 사건의 올바른 답안이 확인된 시점                                                                       |
+| `case_shared`                  | 공유 완료 또는 복사 성공의 `method`                                                                         |
+| `case_follow_clicked`          | 다음 사건 관심 표시를 클릭한 시점                                                                           |
+| `case_interest_saved`          | 브라우저 저장에 성공했을 때 `persistence=device`                                                            |
 
 주소 원문, 답안 원문, 검색어와 초대 토큰은 전송하지 않는다. SDK 식별자 저장을 끄고, 게임 진행 상태와 다음 사건 관심 표시를 브라우저에 저장한다.
 

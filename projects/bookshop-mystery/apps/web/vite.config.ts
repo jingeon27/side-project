@@ -1,8 +1,13 @@
+import { globSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import tailwindcss from '@tailwindcss/postcss';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+
+const webRoot = fileURLToPath(new URL('.', import.meta.url));
+const casePages = globSync('cases/*/index.html', { cwd: webRoot }).sort();
 
 export default defineConfig({
   plugins: [react()],
@@ -10,12 +15,7 @@ export default defineConfig({
   build: {
     assetsDir: 'bundles',
     rollupOptions: {
-      input: [
-        fileURLToPath(new URL('./index.html', import.meta.url)),
-        fileURLToPath(new URL('./play/index.html', import.meta.url)),
-        fileURLToPath(new URL('./cases/last-receipt/index.html', import.meta.url)),
-        fileURLToPath(new URL('./cases/returned-key/index.html', import.meta.url)),
-      ],
+      input: ['index.html', 'play/index.html', ...casePages].map((path) => resolve(webRoot, path)),
     },
   },
 });

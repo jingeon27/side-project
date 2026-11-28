@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-
-import { Copy } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { Button } from '@side/design-system/ui/button';
+import { toast } from '@side/design-system/ui/sonner';
 
 import { track } from '@/shared/analytics/browser';
 import { event } from '@/shared/analytics/events';
+import { findEpisode } from '@/shared/episodes';
 import type { TTopic } from '@/shared/topics';
+
+import { DeokPostcard } from './DeokPostcard';
+import { saveActivity } from './device-history';
 
 interface ICopyMessageProps {
   episode: string;
@@ -17,45 +21,55 @@ interface ICopyMessageProps {
 }
 
 export function CopyMessage({ episode, topic, message }: ICopyMessageProps) {
-  const [draft, setDraft] = useState(message);
-  const [feedback, setFeedback] = useState('');
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(draft.trim());
-      setFeedback('복사했어요. 원하는 곳에 붙여 넣으세요.');
-      track(event.MessageCopied, { episode, topic });
-    } catch {
-      setFeedback('문장을 길게 눌러 복사해 주세요.');
-    }
-  };
+  const form = useForm({ defaultValues: { draft: message } });
+  const { isReady } = form.formState;
+  const draft = useWatch({ control: form.control, name: 'draft' });
+  const story = findEpisode(episode);
+  const save = useMutation({
+    mutationFn: (text: string) => saveActivity({ kind: 'message', episode, text }),
+    onSuccess: (result) => {
+      if (result.created) track(event.HistorySaved, { kind: 'message', location: result.location });
+    },
+    onError: () => toast.error('덕담을 기록에 담지 못했어요. 덕담 만들기를 다시 눌러주세요.'),
+  });
 
   return (
-    <div className="message-editor">
-      <label htmlFor="message-draft">내 말투로 바꿔 보내기</label>
-      <textarea
-        id="message-draft"
-        value={draft}
-        onChange={(input) => {
-          setDraft(input.target.value);
-          setFeedback('');
-        }}
-        maxLength={240}
-        rows={2}
-      />
-      <div className="message-buttons">
+    <DeokPostcard
+      title={story?.title ?? '오늘의 덕담'}
+      art={story?.image}
+      message={draft}
+      source={{ surface: 'episode', episode, topic }}
+      onMessageExport={(text) => save.mutate(text)}
+    >
+      <div className="postcard-editor">
+        <label htmlFor="message-draft">내 말투로 바꿔 보내기</label>
+        <textarea
+          id="message-draft"
+          defaultValue={message}
+          readOnly={!isReady}
+          {...form.register('draft')}
+          maxLength={240}
+          rows={2}
+        />
         <Button
           variant="secondary"
-          icon={<Copy size={16} aria-hidden />}
-          onClick={handleCopy}
-          disabled={!draft.trim()}
+          disabled={!isReady || !draft.trim()}
+          loading={save.isPending}
+          onClick={() => {
+            track(event.MessageCreateClicked, { episode, topic });
+            save.mutate(draft.trim(), {
+              onSuccess: (result) =>
+                toast.success(
+                  result.location === 'account'
+                    ? '내 기록장에 덕담을 담았어요.'
+                    : '덕담을 만들었어요. 로그인하면 기록장에서 다시 볼 수 있어요.',
+                ),
+            });
+          }}
         >
-          문장 복사
+          덕담 만들기
         </Button>
-        <span role="status" className="small-muted">
-          {feedback}
-        </span>
       </div>
-    </div>
+    </DeokPostcard>
   );
 }

@@ -18,6 +18,7 @@ const storedOrder = orderSchema.omit({ report: true }).extend({
 });
 
 const databaseSchema = [
+  'CREATE TABLE IF NOT EXISTS claimed_order_owners (legacy TEXT PRIMARY KEY, account TEXT NOT NULL);',
   'CREATE TABLE IF NOT EXISTS orders (',
   'id TEXT PRIMARY KEY, owner TEXT NOT NULL, product TEXT NOT NULL,',
   'amount INTEGER NOT NULL, element TEXT, device_id TEXT, status TEXT NOT NULL,',
@@ -53,19 +54,39 @@ export class OrderStore {
     this.db.close();
   }
 
+  claim(account: string, legacy: string) {
+    this.db
+      .prepare(
+        'INSERT INTO claimed_order_owners(legacy,account) SELECT ?,? WHERE EXISTS(SELECT 1 FROM orders WHERE owner=?) ON CONFLICT DO NOTHING',
+      )
+      .run(legacy, account, legacy);
+  }
+
   list(owner: string) {
     return this.db
-      .prepare(select + ' WHERE owner = ? ORDER BY created_at DESC')
-      .all(owner)
+      .prepare(
+        select +
+          ' WHERE owner IN (SELECT ? UNION SELECT legacy FROM claimed_order_owners WHERE account=?) ORDER BY created_at DESC',
+      )
+      .all(owner, owner)
       .map((row) => storedOrder.parse(row));
   }
 
   find(owner: string, id: string) {
-    const order = this.db.prepare(select + ' WHERE owner = ? AND id = ?').get(owner, id);
+    const order = this.db
+      .prepare(
+        select +
+          ' WHERE owner IN (SELECT ? UNION SELECT legacy FROM claimed_order_owners WHERE account=?) AND id=?',
+      )
+      .get(owner, owner, id);
     return order ? storedOrder.parse(order) : undefined;
   }
 
   create(owner: string, input: z.infer<typeof createOrderSchema>) {
+    const previous = this.list(owner).find(
+      (order) => order.product === input.product && order.status !== 'refunded',
+    );
+    if (previous) return previous;
     const id = 'dw-' + randomUUID().replaceAll('-', '');
     this.db
       .prepare(
@@ -98,25 +119,27 @@ export class OrderStore {
     };
     const written = this.db
       .prepare(
-        "UPDATE orders SET status = 'issued', report_json = ? WHERE id = ? AND owner = ? AND status = 'pending'",
+        "UPDATE orders SET status = 'issued', report_json = ? WHERE id = ? AND owner IN (SELECT ? UNION SELECT legacy FROM claimed_order_owners WHERE account=?) AND status = 'pending'",
       )
-      .run(JSON.stringify(report), order.id, owner);
+      .run(JSON.stringify(report), order.id, owner, owner);
     return { changed: Boolean(written.changes), order: this.find(owner, order.id) ?? order };
   }
 
   markRefunded(owner: string, order: TStoredOrder) {
     this.db
-      .prepare("UPDATE orders SET status = 'refunded', report_json = NULL WHERE id = ? AND owner = ?")
-      .run(order.id, owner);
+      .prepare(
+        "UPDATE orders SET status = 'refunded', report_json = NULL WHERE id = ? AND owner IN (SELECT ? UNION SELECT legacy FROM claimed_order_owners WHERE account=?)",
+      )
+      .run(order.id, owner, owner);
     return this.find(owner, order.id) ?? order;
   }
 
   requestRefund(owner: string, order: TStoredOrder) {
     const written = this.db
       .prepare(
-        "UPDATE orders SET status = 'refund_requested', refund_requested_at = ? WHERE id = ? AND owner = ? AND status = 'issued'",
+        "UPDATE orders SET status = 'refund_requested', refund_requested_at = ? WHERE id = ? AND owner IN (SELECT ? UNION SELECT legacy FROM claimed_order_owners WHERE account=?) AND status = 'issued'",
       )
-      .run(dayjs().toISOString(), order.id, owner);
+      .run(dayjs().toISOString(), order.id, owner, owner);
     return { changed: Boolean(written.changes), order: this.find(owner, order.id) ?? order };
   }
 }

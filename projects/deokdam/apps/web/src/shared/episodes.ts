@@ -1,4 +1,5 @@
 import episodesData from './episodes.json' with { type: 'json' };
+import { siteOrigin } from './site';
 import type { TTopic } from './topics';
 
 interface IEpisode {
@@ -22,4 +23,8 @@ export function findEpisode(slug: string) {
 
 export function episodePath(slug: string) {
   return '/cards/' + slug;
+}
+
+export function episodeShareUrl(slug: string) {
+  return new URL(episodePath(slug), siteOrigin).href;
 }

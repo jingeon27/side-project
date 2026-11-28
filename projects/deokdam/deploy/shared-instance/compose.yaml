@@ -6,6 +6,7 @@ services:
     init: true
     env_file: .env
     environment:
+      DEOKDAM_ACCOUNT_DB: /var/lib/deokdam/orders/accounts.sqlite
       DEOKDAM_READING_DB: /var/lib/deokdam/reading/knowledge.sqlite
       DEOKDAM_AI_CONTAINER: '1'
       DEOKDAM_AI_MODEL: deokdam-saju

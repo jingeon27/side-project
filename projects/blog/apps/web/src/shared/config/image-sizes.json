@@ -7,6 +7,14 @@
     "width": 256,
     "height": 256
   },
+  "/images/brand/jingeon27-profile.avif": {
+    "width": 256,
+    "height": 256
+  },
+  "/images/brand/jingeon27-profile.png": {
+    "width": 256,
+    "height": 256
+  },
   "/images/covers/ai-workflow-parallel-en.avif": {
     "width": 1080,
     "height": 1276
@@ -318,6 +326,18 @@
   "/images/covers/typescript-patterns.avif": {
     "width": 1672,
     "height": 941
+  },
+  "/images/covers/utf-8-and-utf-16-og.jpg": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/utf-8-and-utf-16.avif": {
+    "width": 1200,
+    "height": 630
+  },
+  "/images/covers/utf-8-and-utf-16.svg": {
+    "width": 1200,
+    "height": 630
   },
   "/images/covers/yarn-workspaces-turborepo-og.jpg": {
     "width": 1200,

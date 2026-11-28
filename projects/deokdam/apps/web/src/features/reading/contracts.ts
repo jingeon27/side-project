@@ -23,8 +23,9 @@ export const readingSchema = z.object({
   interpretation: z.string().min(10).max(480),
   mode: z.enum(['basic', 'ai']),
   action: z.string().min(1).max(120).optional(),
+  example: z.string().min(1).max(420).optional(),
   sources: z
-    .array(z.object({ id: z.string(), title: z.string() }))
+    .array(z.object({ id: z.string().min(1).max(100), title: z.string().min(1).max(180) }))
     .max(2)
     .optional(),
 });

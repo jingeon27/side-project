@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+  <meta charset="utf-8" />
+  <title>덕담집 공유 이미지</title>
+  <style>
+    @font-face {
+      font-family: Gowun;
+      src: url('../public/fonts/gowun-batang-display.woff2') format('woff2');
+      font-weight: 700;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 504px 1fr;
+      height: 630px;
+      background: #faf5eb;
+      color: #33251f;
+      font: 700 32px Gowun;
+    }
+    .scene {
+      width: 100%;
+      height: 630px;
+      object-fit: cover;
+    }
+    article {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 56px 56px 52px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header img {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+    }
+    header span {
+      color: #843c2d;
+      letter-spacing: -0.05em;
+    }
+    blockquote {
+      align-self: center;
+      margin: 0;
+      font-size: 57px;
+      line-height: 1.42;
+      letter-spacing: -0.045em;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
+    }
+    footer {
+      padding-top: 17px;
+      border-top: 1px solid #ccb9a3;
+      color: #6b5143;
+      font-size: 27px;
+      letter-spacing: -0.025em;
+    }
+    body:has(.scene[hidden]) {
+      grid-template-columns: 1fr;
+    }
+    .scene[hidden] + article {
+      padding-inline: 110px;
+    }
+  </style>
+  <body>
+    <img class="scene" alt="" />
+    <article>
+      <header>
+        <img src="../public/images/deokdam-mark.png" alt="" />
+        <span>덕담집</span>
+      </header>
+      <blockquote></blockquote>
+      <footer></footer>
+    </article>
+  </body>
+</html>

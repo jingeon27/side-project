@@ -7,7 +7,7 @@ import { BrandMark } from '@/shared/ui/brand-mark';
 
 const size = { width: 1200, height: 630 };
 const brandImage = `data:image/png;base64,${readFileSync(
-  join(process.cwd(), 'public/images/brand/bambyul-mascot.png'),
+  join(process.cwd(), 'public/images/brand/jingeon27-profile.png'),
 ).toString('base64')}`;
 export const dynamic = 'force-static';
 

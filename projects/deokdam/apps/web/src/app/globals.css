@@ -150,6 +150,12 @@ button {
   min-height: 44px;
   white-space: nowrap;
 }
+.site-header nav a[aria-current] {
+  color: var(--terracotta-dark);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 7px;
+}
 .site-header nav a:hover,
 .site-footer a:hover {
   color: var(--terracotta);
@@ -280,8 +286,7 @@ button {
   border-radius: 6px;
   background: #55443a;
 }
-.feature-art img,
-.story-image img {
+.feature-art img {
   object-fit: cover;
 }
 .feature-art img {
@@ -336,8 +341,7 @@ button {
 .home-topics {
   margin-block: clamp(45px, 7vw, 92px) clamp(48px, 6.5vw, 84px);
 }
-.home-topics h2,
-.story-list h2 {
+.home-topics h2 {
   margin-bottom: 19px;
   font-family: var(--font-display-kr);
   font-size: clamp(26px, 3vw, 38px);
@@ -404,93 +408,17 @@ button {
 .topic-card:focus-within {
   background: var(--white);
 }
-.topic-link svg,
-.story-row > svg {
+.topic-link svg {
   flex: none;
   color: var(--terracotta-dark);
 }
 
-.story-list {
-  padding-block: clamp(42px, 6vw, 76px) clamp(34px, 5vw, 62px);
-  border-block: 1px solid var(--line);
-  background: var(--sheet);
-}
-.story-list h2 {
-  margin-bottom: 24px;
-}
-.story-rows {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(20px, 3.8vw, 56px);
-  border-bottom: 1px solid #dcd0c0;
-}
-.story-row {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) auto;
-  gap: clamp(10px, 1.55vw, 22px);
-  align-items: center;
-  border-top: 1px solid #dcd0c0;
-  padding: 19px 4px;
-}
-.story-row:hover {
-  background: #f8f1e7;
-}
-.story-image {
-  position: relative;
-  align-self: center;
-  aspect-ratio: 1.34;
-  overflow: clip;
-  border-radius: 6px;
-  background: #d6bdac;
-}
-.story-copy {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-.story-copy strong {
-  font-size: clamp(16px, 1.65vw, 21px);
-  line-height: 1.25;
-  letter-spacing: -0.035em;
-  word-break: keep-all;
-}
-.story-action {
-  color: var(--soft-ink);
-  font-size: 14px;
-  line-height: 1.45;
-  word-break: keep-all;
-}
-.story-topic {
-  width: fit-content;
-  color: var(--terracotta-dark);
-  font-size: 12px;
-  font-weight: 730;
-  line-height: 1.4;
-}
-.story-topic[data-topic='parent'] {
-  color: #445736;
-}
-.story-topic[data-topic='admission'] {
-  color: #634d77;
-}
 .shorts-panel {
   margin-block: 22px 26px;
   padding: clamp(16px, 4vw, 24px);
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--white);
-}
-.story-list .shorts-panel {
-  margin: 0 0 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.story-list .shorts-panel h2 {
-  margin: 0;
-}
-.story-list .shorts-panel .shorts-player {
-  margin-block-start: 20px;
 }
 .shorts-panel-header {
   display: flex;
@@ -1182,8 +1110,7 @@ legend {
     width: 35px;
     height: 35px;
   }
-  .topic-grid,
-  .story-rows {
+  .topic-grid {
     grid-template-columns: 1fr;
   }
   .topic-card {
@@ -1194,14 +1121,6 @@ legend {
   .topic-card + .topic-card {
     border-top: 1px solid var(--line);
     border-inline-start: 0;
-  }
-  .story-row {
-    grid-template-columns: 88px minmax(0, 1fr) auto;
-    gap: 14px;
-    padding: 16px 2px;
-  }
-  .story-action {
-    font-size: 13px;
   }
   .record-success {
     flex-wrap: wrap;
@@ -1239,4 +1158,233 @@ legend {
   .featured-story:hover img {
     scale: 1;
   }
+}
+
+.login-page {
+  min-height: 75dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+.login-paper {
+  width: min(100%, 436px);
+  padding: clamp(26px, 6vw, 52px) clamp(22px, 5vw, 40px);
+  border: 1px solid var(--color-line);
+  border-top: 3px solid #915038;
+  background: #fffaf1;
+  text-align: center;
+  box-shadow: 0 12px 36px #66452c0b;
+}
+.login-paper > img {
+  margin: 0 auto 16px;
+}
+.login-paper h1 {
+  font:
+    700 clamp(25px, 5vw, 32px)/1.4 'Gowun Batang Display',
+    serif;
+  color: #452d26;
+}
+.login-paper p {
+  line-height: 1.75;
+  margin: 10px 0 18px;
+  text-wrap: pretty;
+}
+.login-providers {
+  display: grid;
+  gap: 10px;
+  margin: 25px 0 14px;
+}
+.login-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 49px;
+  border-radius: 8px;
+  border: 1px solid #b8b2aa;
+  font-weight: 650;
+  background: white;
+  cursor: pointer;
+  color: #25221f;
+}
+.login-button.kakao {
+  background: #fee500;
+  border-color: #e8d400;
+  color: #231c16;
+}
+.login-button:disabled {
+  opacity: 0.54;
+  cursor: default;
+}
+.login-button span {
+  font-size: 1.05rem;
+}
+.account-line {
+  margin: 28px 0 0;
+  border-top: 1px solid #dacfc2;
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #675c51;
+}
+.recovery-panel {
+  margin: 0 0 24px;
+}
+.recovery-panel textarea {
+  width: 100%;
+  display: block;
+  margin: 6px 0 12px;
+}
+
+.chart-report {
+  padding: clamp(23px, 5vw, 44px);
+  background: #fffaf0;
+  border: 1px solid #dacbb8;
+  border-top: 3px solid #935038;
+}
+.chart-report h2,
+.reading-interpretation h2 {
+  font:
+    700 clamp(25px, 4vw, 34px)/1.4 'Gowun Batang Display',
+    serif;
+  letter-spacing: -0.035em;
+  color: #402f25;
+}
+.chart-report h3,
+.reading-example h3 {
+  margin: 24px 0 6px;
+  color: #573728;
+  font-size: clamp(18px, 3vw, 21px);
+  font-weight: 700;
+}
+.chart-report p,
+.reading-interpretation > p,
+.reading-example p {
+  font-size: clamp(16px, 2vw, 18px);
+  line-height: 1.85;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.chart-report .label,
+.chart-report .chart-birth,
+.chart-report .chart-note {
+  font-size: 14px;
+  color: #735c4b;
+}
+.chart-pillars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 22px 0;
+  border-block: 1px solid #d9c9b7;
+}
+.chart-pillars > div {
+  text-align: center;
+  padding: 12px 2px;
+}
+.chart-pillars > div + div {
+  border-left: 1px solid #e2d6c7;
+}
+.chart-pillars > div[data-day] {
+  background: #f4e6d7;
+}
+.chart-pillars dt {
+  font-size: 14px;
+  color: #6a5041;
+}
+.chart-pillars dd {
+  margin: 0;
+}
+.chart-pillars dd:first-of-type {
+  white-space: nowrap;
+  font:
+    700 clamp(26px, 5vw, 39px)/1.55 'Gowun Batang Display',
+    serif;
+  color: #733c2c;
+}
+.chart-pillars dd:last-child {
+  font-size: 12px;
+  color: #705949;
+}
+.reading-interpretation {
+  padding: clamp(22px, 5vw, 40px);
+}
+.reading-interpretation .reading-concern {
+  margin: 10px 0 15px;
+  font-weight: 650;
+  color: #7b4430;
+}
+.reading-example {
+  border-left: 2px solid #b88562;
+  margin: 22px 0 0;
+  padding-left: 16px;
+}
+.reading-example h3 {
+  margin-top: 0;
+}
+.chart-note {
+  margin-top: 18px;
+}
+.local-login-panel {
+  margin-top: 24px;
+  border-top: 1px dashed var(--line);
+  padding-top: 16px;
+}
+.local-login-panel h2 {
+  margin: 0 0 10px;
+  color: var(--soft-ink);
+  font-size: 0.84rem;
+}
+.local-login-panel > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.local-login-panel button {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 10px;
+  background: #fffdf7;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.archive-entry {
+  min-width: 0;
+  flex: 1;
+}
+.archive-entry > time {
+  display: block;
+  margin-bottom: 7px;
+}
+.history-list .archive-message {
+  font:
+    600 1.1rem/1.7 'Gowun Batang Display',
+    serif;
+  color: var(--ink);
+  white-space: pre-line;
+}
+.archive-source {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: 0.85rem;
+}
+.archive-reading summary {
+  font-weight: 650;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.archive-reading > div {
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+.archive-reading p + p {
+  margin-top: 10px;
+}
+
+.reading-archive-link {
+  margin-block: 8px 18px;
 }

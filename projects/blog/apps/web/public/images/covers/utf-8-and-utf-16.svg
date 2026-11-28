@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>U+AC00 written in UTF-8 and in UTF-16</title>
+  <desc>The top panel splits code point U+AC00 into three UTF-8 bytes, EA B0 80. The marker bits 1110, 10 and 10 are drawn in orange and the bits taken from the code point in navy. The bottom panel writes the same code point as one 16-bit UTF-16 unit, AC00, which fills two byte slots and leaves the third slot empty. An editorial illustration, not a product screenshot.</desc>
+  <rect width="1200" height="630" fill="#f3f5f9"/>
+  <rect x="36" y="36" width="1128" height="558" rx="26" fill="#ffffff" stroke="#dde3ec" stroke-width="2"/>
+
+  <!-- UTF-8: three bytes, each starting with marker bits -->
+  <rect x="56" y="56" width="1088" height="302" rx="18" fill="#eaf1fe"/>
+  <text x="92" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="700" fill="#1b2f5b">UTF-8</text>
+  <text x="1108" y="112" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="26" fill="#1b2f5b">U+AC00</text>
+  <g fill="#d3def6">
+    <rect x="92" y="165" width="300" height="162" rx="14"/>
+    <rect x="450" y="165" width="300" height="162" rx="14"/>
+    <rect x="808" y="165" width="300" height="162" rx="14"/>
+  </g>
+  <g fill="#ffffff" stroke="#9fb7ea" stroke-width="2">
+    <rect x="92" y="160" width="300" height="162" rx="14"/>
+    <rect x="450" y="160" width="300" height="162" rx="14"/>
+    <rect x="808" y="160" width="300" height="162" rx="14"/>
+  </g>
+  <g stroke="#e3eaf8" stroke-width="2">
+    <path d="M 132 256 H 352 M 490 256 H 710 M 848 256 H 1068"/>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="38" font-weight="700" text-anchor="middle">
+    <text x="242" y="230"><tspan fill="#c4621d">1110</tspan><tspan fill="#1b2f5b"> 1010</tspan></text>
+    <text x="600" y="230"><tspan fill="#c4621d">10</tspan><tspan fill="#1b2f5b"> 110000</tspan></text>
+    <text x="958" y="230"><tspan fill="#c4621d">10</tspan><tspan fill="#1b2f5b"> 000000</tspan></text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="34" font-weight="600" fill="#5a6a86" text-anchor="middle">
+    <text x="242" y="298">EA</text>
+    <text x="600" y="298">B0</text>
+    <text x="958" y="298">80</text>
+  </g>
+
+  <!-- UTF-16: one 16-bit unit with no marker bits -->
+  <rect x="56" y="376" width="1088" height="198" rx="18" fill="#e7f4ee"/>
+  <text x="92" y="436" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="700" fill="#17473a">UTF-16</text>
+  <text x="1108" y="430" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="26" fill="#17473a">U+AC00</text>
+  <rect x="92" y="469" width="658" height="86" rx="14" fill="#cfe9dc"/>
+  <rect x="92" y="464" width="658" height="86" rx="14" fill="#ffffff" stroke="#93cdb3" stroke-width="2"/>
+  <text x="126" y="519" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="34" font-weight="700" fill="#17473a">1010 1100 0000 0000</text>
+  <text x="716" y="519" text-anchor="end" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="34" font-weight="600" fill="#4d7a68">AC00</text>
+  <rect x="808" y="464" width="300" height="86" rx="14" fill="none" stroke="#a9d6c1" stroke-width="2" stroke-dasharray="10 9"/>
+</svg>

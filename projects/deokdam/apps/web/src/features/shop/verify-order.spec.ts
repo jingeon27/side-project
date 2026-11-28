@@ -28,6 +28,16 @@ describe('report orders', () => {
     expect(publicOrder(created)).not.toHaveProperty('element');
   });
 
+  it('keeps a claimed browser order exclusive to the first authenticated owner across devices', () => {
+    const previous = store().create(owner, product);
+    store().claim('account:first', owner);
+    store().claim('account:other', owner);
+    expect(store().find('account:other', previous.id)).toBeUndefined();
+    expect(store().create('account:first', product).id).toBe(previous.id);
+    expect(store().issue('account:first', previous).order.status).toBe('issued');
+    expect(store().list('account:first')).toHaveLength(1);
+  });
+
   it('grants one seven-day report after real payment status, verifies repeat calls, and handles refund requests', async () => {
     const order = store().create(owner, product);
     const mockPayment = async () => ({
