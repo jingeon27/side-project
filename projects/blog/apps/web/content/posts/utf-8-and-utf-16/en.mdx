@@ -1,0 +1,157 @@
+<Summary>
+
+I traced, bit by bit, how the Korean syllable `가` becomes the three UTF-8 bytes `EA B0 80`, to see how UTF-8 marks character boundaries with marker bits in every byte. I compared it with UTF-16, which writes the same character in 16-bit units, and looked at why `'😀'.length` is 2 in JavaScript and how to count bytes, code points, and on-screen characters.
+
+</Summary>
+
+![Diagram of code point U+AC00 written as three UTF-8 bytes, EA B0 80, with their marker bits, and as a single 16-bit UTF-16 unit, AC00](/images/covers/utf-8-and-utf-16.avif)
+
+Save the string `A가` as UTF-8 and the file holds four bytes: `41 EA B0 80`. `A` takes one byte and `가` takes three. There is no separator between them, yet a decoder ends `A` at `41` and reads `EA B0 80` together as `가`. I followed UTF-8's rules bit by bit to see why `가` needs exactly three bytes and how a decoder knows where each character ends.
+
+## Unicode assigns the number, UTF-8 writes the bytes
+
+A file ultimately stores bytes, so saving `A가` takes two decisions: which number each character gets, and which bytes represent that number.
+
+Unicode decides the numbers. `A` is `U+0041` and `가` is `U+AC00`, and these numbers are called **code points**. Encodings such as UTF-8 and UTF-16 decide how a code point is written as bytes. UTF stands for Unicode Transformation Format, and the 8 in UTF-8 means its basic unit is 8 bits, or one byte. A character uses one to four of these units, depending on its code point. Assigning `U+AC00` to `가` is Unicode's job; writing `U+AC00` as `EA B0 80` is UTF-8's.
+
+## The leading bits of the first byte say how many bytes to read
+
+The first byte of `A가`, `41`, is `01000001` in binary. In UTF-8, a byte whose first bit is 0 is a complete character on its own, so the decoder takes `A` from `41` and moves to the next byte. This one-byte form writes U+0000 to U+007F with the same byte values as ASCII, which means ASCII text can be read as UTF-8 unchanged.
+
+The next byte, `EA`, is `11101010`, and this time it starts with `1110`. UTF-8 writes the number of bytes a character uses as the count of consecutive 1s at the start of its first byte, and the 0 that follows ends the marker. `1110` has three 1s, so the decoder reads three bytes in total, including this one. The moment it sees `EA`, it knows that `B0` and `80` belong to the same character. Both of those bytes start with `10`.
+
+| Leading bits | What the decoder concludes |
+| --- | --- |
+| `0` | This byte is a complete character |
+| `110` | A character starts here and spans 2 bytes |
+| `1110` | A character starts here and spans 3 bytes |
+| `11110` | A character starts here and spans 4 bytes |
+| `10` | This byte continues a character that started earlier |
+
+`110` is a 3-bit marker that means two bytes, and `1110` is a 4-bit marker that means three bytes. The byte count comes from the number of leading 1s, not from the length of the marker.
+
+## A two-byte sequence has room for only 11 bits of the number
+
+Writing each hex digit of `AC00`, the code point of `가`, as four bits gives `1010 1100 0000 0000`. The first bit is 1, so this number needs all 16 bits.
+
+At first I couldn't see why two bytes, which are 16 bits, hold only 11 bits of the number. A decoder does read all 16 bits of a two-byte sequence, but some of them are marker bits. A byte has eight slots for 0s and 1s, and the two-byte form divides them like this:
+
+```text
+byte 1  110 xxxxx
+byte 2  10  xxxxxx
+```
+
+`110` takes three slots of the first byte and leaves five, and `10` takes two slots of the second and leaves six. That gives 5 + 6 = 11 slots for the number. Counting the same way gives the capacity of every form. Here are the ranges defined in [RFC 3629](https://www.rfc-editor.org/rfc/rfc3629), with examples.
+
+| Form | Byte pattern | Bits for the number | Code point range | Example |
+| --- | --- | --- | --- | --- |
+| 1 byte | `0xxxxxxx` | 7 | U+0000–U+007F | `A` → `41` |
+| 2 bytes | `110xxxxx 10xxxxxx` | 5 + 6 = 11 | U+0080–U+07FF | `é` → `C3 A9` |
+| 3 bytes | `1110xxxx 10xxxxxx 10xxxxxx` | 4 + 6 + 6 = 16 | U+0800–U+FFFF | `가` → `EA B0 80` |
+| 4 bytes | `11110xxx 10xxxxxx 10xxxxxx 10xxxxxx` | 3 + 6 + 6 + 6 = 21 | U+10000–U+10FFFF | `😀` → `F0 9F 98 80` |
+
+The code point of `가` needs 16 bits, so it does not fit in the 11 bits of the two-byte form and uses the three-byte form, which holds 16. It would also fit in four bytes, but UTF-8 accepts only the shortest form that can hold a number. That is why `가` is always three bytes.
+
+Now cut `1010110000000000` from the left into pieces of 4, 6, and 6 bits and drop each piece into the empty slots of a byte.
+
+| Part | Byte 1 | Byte 2 | Byte 3 |
+| --- | --- | --- | --- |
+| Marker added by UTF-8 | `1110` | `10` | `10` |
+| Bits taken from `AC00` | `1010` | `110000` | `000000` |
+| Stored byte | `11101010` | `10110000` | `10000000` |
+| Hex | `EA` | `B0` | `80` |
+
+Decoding reverses the steps. Remove the markers `1110`, `10`, and `10` from `EA B0 80`, join the remaining `1010`, `110000`, and `000000`, and you get `AC00` back.
+
+## Every continuation byte starts with 10
+
+When I had seen only the table of leading bits, I expected the three bytes of `가` to start with `1110`, `110`, and `10`. The table can make it look as if each byte counts down the bytes left, but the bytes actually stored are `11101010 10110000 10000000`.
+
+`110` marks the start of a new two-byte character. If the second byte started with `110`, the decoder would conclude that a new character begins there. The first byte has already said how many bytes to read, so the bytes that follow only need to say that they continue it. The second byte, `10110000`, does contain `110`, but it is read as `10` followed by `110000`. The leading `10` is the marker, and `110000` is part of the number of `가`.
+
+Continuation bytes get `10` because UTF-8 sorts bytes into roles by how they start. A byte that starts with 0 is a one-byte character such as `A`, and a byte that starts with 11 is the first byte of a character that takes two to four bytes. Giving the remaining pattern, `10`, to continuation bytes keeps the three roles from overlapping. Reading `가` one byte at a time looks like this:
+
+| Order | Actual byte | What the decoder knows |
+| --- | --- | --- |
+| First | `1110 1010` (`EA`) | Three bytes in total, including this one. Read two more |
+| Second | `10 110000` (`B0`) | The same character continues. Read one more |
+| Third | `10 000000` (`80`) | The same character continues. All three bytes are read |
+
+Working through this, I saw that every UTF-8 byte begins with bits that announce its role. Even the one-byte `A` carries its leading 0 as a marker. Because the marker shares the byte with the data, each byte holds fewer bits of the number than its size, but any byte tells you whether it starts a character or continues one. A decoder that starts reading in the middle of a byte sequence can skip the bytes that start with `10` and find where the next character begins.
+
+## When a character is split across chunks, the decoder waits
+
+Data from the network can arrive in several chunks, and nothing guarantees that chunk boundaries line up with character boundaries. The `EA B0` of `가` may arrive in one chunk and `80` in the next. If each chunk is turned into a string on its own, neither piece is valid UTF-8, and both become the replacement character `�`.
+
+A streaming decoder sees the first byte, `EA`, and knows that the character needs three bytes. It keeps the incomplete bytes and completes `가` when `80` arrives in the next chunk. In browsers and Node.js, the `stream: true` option of [`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/decode) does this.
+
+```js
+const first = new Uint8Array([0xea, 0xb0]);
+const second = new Uint8Array([0x80]);
+
+// Decoding each chunk with a new decoder breaks the character
+new TextDecoder().decode(first) + new TextDecoder().decode(second); // '��'
+
+// With stream: true, the same decoder waits for the missing byte
+const decoder = new TextDecoder();
+decoder.decode(first, { stream: true }); // ''
+decoder.decode(second, { stream: true }); // '\uAC00'
+decoder.decode(); // When the stream ends, call it once more to flush leftover bytes
+```
+
+For data that arrives as a `ReadableStream`, such as a `fetch` response body, connecting it to [`TextDecoderStream`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream) with `pipeThrough` handles this as well.
+
+## UTF-16 uses one or two 16-bit units
+
+UTF-16 reads 16 bits, or two bytes, at a time. Each 16-bit unit is called a **code unit**. The code point of `가`, `AC00`, fits in a single 16-bit unit as it is, so `가` takes two bytes in UTF-16. UTF-8 needed three bytes because of its marker bits, but UTF-16 adds no marker bits to characters in this range. `A`, on the other hand, takes one byte in UTF-8 and two in UTF-16, as `0041`.
+
+The code point of `😀`, `1F600`, needs 17 bits and does not fit in one unit. UTF-16 then writes it as two units that belong together, called a **surrogate pair**. Subtract `10000` from the code point, split the remaining 20 bits into two 10-bit halves, and add the first half to `D800` and the second to `DC00`.
+
+```text
+1F600 - 10000 = 0F600
+0F600 → 0000111101 1000000000 (high 10 bits, low 10 bits)
+D800 + 03D = D83D
+DC00 + 200 = DE00
+```
+
+The range from `D800` to `DFFF` is set aside for surrogate pairs, so no character is assigned to it. When the first unit falls between `D800` and `DBFF`, the decoder also reads the next unit and combines the two into one character. Where UTF-8 marks boundaries with leading bits, UTF-16 marks them with a reserved range of values. The [Unicode FAQ](https://www.unicode.org/faq/utf_bom.html) also walks through the calculation.
+
+## JavaScript's length counts UTF-16 code units
+
+A JavaScript string is a [sequence of UTF-16 code units](https://tc39.es/ecma262/#sec-ecmascript-language-types-string-type), and `length` is the number of those units. `가` is one unit, so its length is 1, and `😀` is a surrogate pair of two units, so `'😀'.length` is 2.
+
+```js
+'\uAC00'.length; // 1
+'😀'.length; // 2
+'😀'.charCodeAt(0).toString(16); // 'd83d', the first unit of the surrogate pair
+'😀'.codePointAt(0).toString(16); // '1f600', the code point of both units combined
+[...'😀'].length; // 1, iterating over a string splits it by code point
+```
+
+`charCodeAt` returns a single code unit as it is, while `codePointAt` combines a surrogate pair that starts at the given position into a code point. Cutting a string at a position based on `length` can therefore split a surrogate pair. `'😀'.slice(0, 1)` keeps only the orphaned first unit, `\uD83D`, and encoding it as UTF-8 produces `EF BF BD`, the bytes of the replacement character.
+
+## A character on screen is yet another unit
+
+One code point is not always one character on screen either. `👩‍💻` looks like a single character, but it is made of three code points: woman `U+1F469`, laptop `U+1F4BB`, and between them ZWJ `U+200D`, an invisible character that joins the two. A unit that a user perceives as one character is called a [grapheme cluster](https://www.unicode.org/reports/tr29/).
+
+The same string has a different length depending on what you count.
+
+| String | UTF-8 bytes | UTF-16 code units (`length`) | Code points | Grapheme clusters |
+| --- | --- | --- | --- | --- |
+| `A` | 1 | 1 | 1 | 1 |
+| `가` | 3 | 1 | 1 | 1 |
+| `😀` | 4 | 2 | 1 | 1 |
+| `👩‍💻` | 11 | 5 | 3 | 1 |
+
+To measure the size of the data you send, count UTF-8 bytes with [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder). To count the characters a user sees, split the string into grapheme clusters with [`Intl.Segmenter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter).
+
+```js
+const text = '👩‍💻';
+
+text.length; // 5
+[...text].length; // 3
+new TextEncoder().encode(text).length; // 11
+
+const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+[...segmenter.segment(text)].length; // 1
+```

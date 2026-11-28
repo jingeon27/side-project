@@ -1,5 +1,125 @@
 [
   {
+    "category": "til",
+    "tags": ["unicode", "encoding", "javascript"],
+    "publishedAt": "2026-11-28",
+    "coverImage": "/images/covers/utf-8-and-utf-16.avif",
+    "socialImage": "/images/covers/utf-8-and-utf-16-og.jpg",
+    "title": "[CS] UTF-8과 UTF-16이 글자를 바이트로 바꾸는 규칙",
+    "description": "한글 '가'가 UTF-8에서 EA B0 80 3바이트가 되는 과정을 비트 단위로 따라가며 바이트마다 붙는 표시 비트의 역할을 정리했어요. UTF-16의 서로게이트 쌍과 자바스크립트 length가 세는 단위, 바이트와 화면의 글자 수를 세는 방법도 함께 살펴봤어요.",
+    "slug": "utf-8과-utf-16이-글자를-바이트로-바꾸는-규칙",
+    "keywords": ["UTF-8", "UTF-16", "유니코드", "코드 포인트", "서로게이트 쌍", "그래핌 클러스터", "TIL"],
+    "id": "utf-8-and-utf-16",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "유니코드가-번호를-정하고-utf-8이-바이트로-적어요",
+        "title": "유니코드가 번호를 정하고, UTF-8이 바이트로 적어요",
+        "level": 2
+      },
+      {
+        "id": "첫-바이트의-앞자리가-몇-바이트를-읽을지-알려-줘요",
+        "title": "첫 바이트의 앞자리가 몇 바이트를 읽을지 알려 줘요",
+        "level": 2
+      },
+      {
+        "id": "2바이트-형식에는-번호를-담을-자리가-11비트뿐이에요",
+        "title": "2바이트 형식에는 번호를 담을 자리가 11비트뿐이에요",
+        "level": 2
+      },
+      {
+        "id": "이어지는-바이트에는-모두-10을-붙여요",
+        "title": "이어지는 바이트에는 모두 10을 붙여요",
+        "level": 2
+      },
+      {
+        "id": "글자가-청크-사이에서-나뉘어도-디코더가-기다려요",
+        "title": "글자가 청크 사이에서 나뉘어도 디코더가 기다려요",
+        "level": 2
+      },
+      {
+        "id": "utf-16은-16비트-칸을-하나나-두-개-써요",
+        "title": "UTF-16은 16비트 칸을 하나나 두 개 써요",
+        "level": 2
+      },
+      {
+        "id": "자바스크립트의-length는-utf-16-코드-유닛을-세요",
+        "title": "자바스크립트의 length는 UTF-16 코드 유닛을 세요",
+        "level": 2
+      },
+      {
+        "id": "화면에서-보는-한-글자는-또-다른-단위예요",
+        "title": "화면에서 보는 한 글자는 또 다른 단위예요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "utf-8과-utf-16이-글자를-바이트로-바꾸는-규칙",
+      "en": "how-utf-8-and-utf-16-turn-characters-into-bytes"
+    }
+  },
+  {
+    "category": "til",
+    "tags": ["unicode", "encoding", "javascript"],
+    "publishedAt": "2026-11-28",
+    "coverImage": "/images/covers/utf-8-and-utf-16.avif",
+    "socialImage": "/images/covers/utf-8-and-utf-16-og.jpg",
+    "title": "[CS] How UTF-8 and UTF-16 turn characters into bytes",
+    "description": "Tracing code point U+AC00 into the UTF-8 bytes EA B0 80, bit by bit, shows how the marker bits in every byte tell a decoder where each character starts. It also covers UTF-16 surrogate pairs, what JavaScript's length counts, and how to count bytes and on-screen characters.",
+    "slug": "how-utf-8-and-utf-16-turn-characters-into-bytes",
+    "keywords": ["UTF-8", "UTF-16", "Unicode", "code points", "surrogate pairs", "grapheme clusters", "TIL"],
+    "id": "utf-8-and-utf-16",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "unicode-assigns-the-number-utf-8-writes-the-bytes",
+        "title": "Unicode assigns the number, UTF-8 writes the bytes",
+        "level": 2
+      },
+      {
+        "id": "the-leading-bits-of-the-first-byte-say-how-many-bytes-to-read",
+        "title": "The leading bits of the first byte say how many bytes to read",
+        "level": 2
+      },
+      {
+        "id": "a-two-byte-sequence-has-room-for-only-11-bits-of-the-number",
+        "title": "A two-byte sequence has room for only 11 bits of the number",
+        "level": 2
+      },
+      {
+        "id": "every-continuation-byte-starts-with-10",
+        "title": "Every continuation byte starts with 10",
+        "level": 2
+      },
+      {
+        "id": "when-a-character-is-split-across-chunks-the-decoder-waits",
+        "title": "When a character is split across chunks, the decoder waits",
+        "level": 2
+      },
+      {
+        "id": "utf-16-uses-one-or-two-16-bit-units",
+        "title": "UTF-16 uses one or two 16-bit units",
+        "level": 2
+      },
+      {
+        "id": "javascripts-length-counts-utf-16-code-units",
+        "title": "JavaScript's length counts UTF-16 code units",
+        "level": 2
+      },
+      {
+        "id": "a-character-on-screen-is-yet-another-unit",
+        "title": "A character on screen is yet another unit",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "utf-8과-utf-16이-글자를-바이트로-바꾸는-규칙",
+      "en": "how-utf-8-and-utf-16-turn-characters-into-bytes"
+    }
+  },
+  {
     "category": "perspectives",
     "tags": ["side-project", "reflection", "learning"],
     "publishedAt": "2026-11-17",
