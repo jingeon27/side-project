@@ -1945,9 +1945,11 @@ __metadata:
     "@amplitude/analytics-browser": "catalog:"
     "@playwright/test": "catalog:"
     "@portone/browser-sdk": "npm:0.2.1"
+    "@radix-ui/react-use-callback-ref": "npm:1.1.1"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
     "@tailwindcss/postcss": "catalog:"
+    "@tanstack/react-query": "catalog:"
     "@types/google-publisher-tag": "npm:1.20261109.1"
     "@types/node": "catalog:"
     "@types/react": "catalog:"
@@ -1956,6 +1958,7 @@ __metadata:
     dayjs: "catalog:"
     eslint: "catalog:"
     jiti: "catalog:"
+    jose: "npm:6.2.18"
     korean-lunar-calendar: "npm:0.4.0"
     lucide-react: "catalog:"
     lunar-typescript: "npm:1.8.7"
@@ -6843,6 +6846,19 @@ __metadata:
     "@types/react-dom":
       optional: true
   checksum: 10c0/5406cdf5dd7299ae6cfdb4865dc5fd43ca3c475ebcd4e86830bd296d734255b61f749c9bde452ebfaad126033f92dd1112ee9d95982344ffad34491238dcc9b1
+  languageName: node
+  linkType: hard
+
+"@radix-ui/react-use-callback-ref@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@radix-ui/react-use-callback-ref@npm:1.1.1"
+  peerDependencies:
+    "@types/react": "*"
+    react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/5f6aff8592dea6a7e46589808912aba3fb3b626cf6edd2b14f01638b61dbbe49eeb9f67cd5601f4c15b2fb547b9a7e825f7c4961acd4dd70176c969ae405f8d8
   languageName: node
   linkType: hard
 
@@ -16431,6 +16447,13 @@ __metadata:
   bin:
     jiti: lib/jiti-cli.mjs
   checksum: 10c0/1b1e2310a490dce1aeea3da5f5dfe18273516c20ce48be2e98eb8ea452d5f3dcc8fd0cfd6d28b4052a24c5dbab6e3089b2d7e79f0bce7915b10d750929563c42
+  languageName: node
+  linkType: hard
+
+"jose@npm:6.2.18":
+  version: 6.2.18
+  resolution: "jose@npm:6.2.18"
+  checksum: 10c0/95144c43dfa0c8206f13f8133ed74ba9106785df81c864d6399af06616ad8fdbdc18937109aac099f560f6159aaf2fe2fca3984a6629c899af396a1e9986008d
   languageName: node
   linkType: hard
 
